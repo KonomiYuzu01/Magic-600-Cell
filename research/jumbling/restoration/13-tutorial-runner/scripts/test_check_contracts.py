@@ -404,6 +404,10 @@ class ContractTests(unittest.TestCase):
                 break
         else:
             print('SKIP note (test 6): no h4/L2 rising-u tau in NEAR of the clean-add cap.', flush=True)
+        for name, rule, st in (('Z36', 'r22d81/H2', self.z), ('A', 'h4/L2', self.a)):
+            letter, added, _, _ = self.adds[name]
+            self.assertGreater(oracle_u(added, 1), oracle_u(st, 1))
+            self.check_case(height_case(rule, st, [letter], 1, 1), contains='height_u_progress')
 
     def test_07_top_height_poses(self):
         tau = int(restore.NEAR[12][0])
@@ -429,6 +433,7 @@ class ContractTests(unittest.TestCase):
 
     def test_09_other_height_mutations(self):
         self.check_case(height_case('h4/L4', self.z, [[12, 14]]), contains='height_max')
+        self.check_case(height_case('h4/L4', self.a, [[12, INVERSE[14]]]), ['height_max'])
         for old, new in (('r22d81/U', 'r22d81/H6'), ('r22d81/H2', 'r22d81/H4'), ('h4/U', 'h4/L4')):
             self.check_case(changed(self.cases[old], rule=new, contract=new), contains='height_counts')
         self.check_case(changed(self.cases['r22d75/T0'], rule='r22d75/T1', contract='r22d75/T1'),

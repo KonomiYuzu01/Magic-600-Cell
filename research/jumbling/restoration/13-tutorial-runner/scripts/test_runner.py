@@ -16,6 +16,7 @@ import os
 from pathlib import Path
 import shutil
 import signal
+import struct
 import subprocess
 import sys
 import tempfile
@@ -77,6 +78,7 @@ def expected_verdict(record):
     at_end = [a for unit in (record['stuck'] or {}).get('units', []) for a in unit['attempts']]
     at_end += [a for data in ended if data['end'] is not None and data['end']['digest'] == final
                for a in data.get('attempts', [])]
+    at_end += record['phases']['lattice'].get('attempts', [])
     if result == 'error':
         return 'error'
     if record['config']['component'] is not None:
@@ -107,7 +109,7 @@ def check_record(test, out, record):
     config = record['config']
     test.assertEqual(set(config), {'literal_only', 'mode', 'component', 'bulk_order', 'phase_order',
         'subphase_order', 'tail_rules', 'budgets', 'clock_sentinel', 'kernel', 'lattice', 'literal_limit',
-        'seeds', 'source', 'scripts'})
+        'seeds', 'acceptance_config', 'source', 'scripts'})
     test.assertIs(config['literal_only'], True)
     test.assertIn(config['mode'], api.MODES)
     acceptance = config['mode'] == 'acceptance'
@@ -135,6 +137,15 @@ def check_record(test, out, record):
     test.assertIs(type(config['literal_limit']), int)
     test.assertGreaterEqual(config['literal_limit'], 0)
     test.assertIn(config['seeds'], ('atlas', 'default'))
+    frozen = config['acceptance_config']
+    if acceptance:
+        # The options acceptance mode checked against acceptance-config.json (plan revision 3e, E3).
+        test.assertEqual(set(frozen), {'file', 'sha256', 'options'})
+        test.assertEqual(set(frozen['options']), set(R.ACCEPTANCE_OPTIONS))
+        test.assertEqual((config['literal_limit'], config['seeds'], config['tail_rules']),
+                         tuple(frozen['options'][k] for k in ('literal_limit', 'seeds', 'tail_rules')))
+    else:
+        test.assertIsNone(frozen)
     source = config['source']
     test.assertEqual(set(source), {'commit', 'status_sha256', 'dirty'})
     if source['commit'] is not None:
@@ -397,14 +408,34 @@ def check_record(test, out, record):
         test.assertEqual(record['stuck']['reason'], 'no_rule' if tail['result'] == 'stuck' else 'timeout')
         test.assertIn(record['result'], ('stuck' if tail['result'] == 'stuck' else 'budget', 'error'))
     lattice_phase, played = phases['lattice'], own('lattice')
-    test.assertEqual(set(lattice_phase), {'result', 'steps', 'twists'})
-    test.assertIn(lattice_phase['result'], (None, 'solved', 'error'))
+    lattice_ends = ('stuck', 'budget', 'timeout', 'error')
+    test.assertIn(lattice_phase['result'], (None, 'solved') + lattice_ends)
     test.assertEqual(lattice_phase['steps'], len(played))
-    if played:
-        # A played lattice (P3) is solved by identity labels; the composition path is not run.
+    report = lattice_phase.get('report')
+    if report is not None:
+        # Played by P3's player, solved by identity labels, with no step when the restorer scheduled
+        # nothing (plan revision 3e, E2); the composition path is not run.
+        test.assertEqual(set(lattice_phase), {'result', 'steps', 'twists', 'report'})
         test.assertEqual((lattice_phase['result'], record['result']), ('solved', 'solved'))
         test.assertEqual(lattice_phase['twists'], sum(s['letters'] for s in played))
         test.assertIsNone(record['lattice'])
+        test.assertEqual(set(report), {'file', 'sha256'})
+        relative(report['file'])
+        test.assertEqual(hashlib.sha256((out / report['file']).read_bytes()).hexdigest(), report['sha256'])
+        test.assertEqual(R.read_json(out / report['file'])['player']['played']['total'], lattice_phase['twists'])
+    elif 'reason' in lattice_phase:
+        # A recorded End: nothing played, the run result follows the End.
+        test.assertEqual(set(lattice_phase), {'result', 'steps', 'twists', 'reason', 'details', 'attempts'})
+        test.assertIn(lattice_phase['result'], lattice_ends)
+        test.assertEqual((played, lattice_phase['twists'], record['lattice']), ([], None, None))
+        test.assertEqual(record['result'], {'stuck': 'stuck', 'error': 'error'}.get(lattice_phase['result'], 'budget'))
+        for attempt in lattice_phase['attempts']:
+            test.assertIs(type(attempt['timed_out']), bool)
+    else:
+        # Not entered, interrupted by a signal (attempts kept, P3-robust-01), or composed (stub only).
+        test.assertLessEqual({'result', 'steps', 'twists'}, set(lattice_phase))
+        test.assertLessEqual(set(lattice_phase), {'result', 'steps', 'twists', 'attempts'})
+        test.assertEqual(played, [])
 
     totals = record['totals']
     test.assertEqual(set(totals), {'bulk_twists', 'height_twists', 'high_twists', 'tail_twists',
@@ -412,7 +443,7 @@ def check_record(test, out, record):
     for phase in ('bulk', 'height', 'high', 'tail', 'fallback'):
         test.assertEqual(totals[phase + '_twists'], sum(s['letters'] for s in steps if s['phase'] == phase))
     composed = record['lattice']['twists'] if record['lattice'] else None
-    test.assertEqual(totals['lattice_twists'], lattice_phase['twists'] if played else composed)
+    test.assertEqual(totals['lattice_twists'], lattice_phase['twists'] if report is not None else composed)
     stuck = record['stuck']
     if record['result'] == 'stuck':
         test.assertIsNotNone(stuck)
@@ -421,7 +452,11 @@ def check_record(test, out, record):
         test.assertLessEqual(set(stuck), {'digest', 'off', 'heights', 'phase', 'reason', 'units', 'probe'})
         snapshot(stuck)
         test.assertEqual(stuck['digest'], current)
-        test.assertEqual(stuck['phase'], 'tail')
+        test.assertIn(stuck['phase'], ('tail', 'lattice'))
+        if stuck['phase'] == 'lattice':
+            test.assertEqual((lattice_phase['result'], stuck['reason'], stuck['units']),
+                             ('stuck', lattice_phase['reason'], []))
+            test.assertNotIn('probe', stuck)
         timed_out = False
         for unit in stuck['units']:
             test.assertEqual(set(unit), {'unit_key', 'size', 'attempts'})
@@ -430,7 +465,8 @@ def check_record(test, out, record):
                 test.assertTrue({'rule', 'outcome', 'seconds'} <= set(attempt))
                 test.assertIs(type(attempt['timed_out']), bool)
                 timed_out = timed_out or attempt['timed_out']
-        test.assertEqual(stuck['reason'], 'timeout' if timed_out else 'no_rule')
+        if stuck['phase'] == 'tail':
+            test.assertEqual(stuck['reason'], 'timeout' if timed_out else 'no_rule')
         if 'probe' in stuck:
             # Acceptance mode keeps a fallback word as evidence and never plays it.
             test.assertTrue(acceptance)
@@ -445,7 +481,7 @@ def check_record(test, out, record):
     test.assertIn(block['probe'], (None, True, False))
     test.assertEqual(block['probe'] is True, stuck is not None and 'probe' in stuck)
     if block['verdict'] is not None:            # set when the run finishes
-        ended_phases = list(height['sub'].values()) + [high]
+        ended_phases = list(height['sub'].values()) + [high, lattice_phase]
         attempts = [a for s in steps for a in s.get('attempts', [])]
         attempts += [a for unit in (stuck or {}).get('units', []) for a in unit['attempts']]
         attempts += [a for data in ended_phases for a in data.get('attempts', [])]
@@ -454,7 +490,7 @@ def check_record(test, out, record):
         test.assertEqual(block['timed_out_attempts'], sum(a['timed_out'] for a in attempts))
         test.assertEqual(block['verdict'], expected_verdict(record))
     if record['result'] == 'solved':
-        test.assertTrue(current == R.SOLVED or record['lattice'] is not None or played)
+        test.assertTrue(current == R.SOLVED or record['lattice'] is not None or report is not None)
     if record['lattice'] is not None:
         lattice = record['lattice']
         # Until the literal lattice phase is integrated, a composed lattice is a component run.
@@ -483,21 +519,34 @@ def replay(test, out, record, m=None):
 CHECKER = None
 
 
-def independent_check(out, allow_unchecked=False):
-    """check_run.py on a record. Another part of I0 upgrades it to runner-run/3 in parallel, so the
-    tests that call this need that checker. ``allow_unchecked`` lets a record pass whose height and
-    kernel contracts the stub check_contracts.py leaves unchecked until P4 (they are still counted)."""
+def checker():
+    """check_run.py, loaded once as its own module."""
     global CHECKER
     if CHECKER is None:
         spec = importlib.util.spec_from_file_location('tutorial_check_run', HERE / 'check_run.py')
         CHECKER = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(CHECKER)
+    return CHECKER
+
+
+def independent_check(out, allow_unchecked=False):
+    """check_run.py on a record. ``allow_unchecked`` lets a record pass whose contracts a test leaves
+    unchecked (they are still counted)."""
     rows = []
     if allow_unchecked:
-        final = CHECKER.check_run(out, rows.append, allow_unchecked=True)
+        final = checker().check_run(out, rows.append, allow_unchecked=True)
     else:
-        final = CHECKER.check_run(out, rows.append)
+        final = checker().check_run(out, rows.append)
     return final, rows
+
+
+REAL_ACCEPTANCE_CONFIG = R.acceptance_config
+
+
+def any_acceptance_config(args):
+    """Stands in for the committed acceptance options, so a test may run acceptance mode with its own."""
+    return {'file': R.ACCEPTANCE_CONFIG.relative_to(ROOT).as_posix(), 'sha256': '0' * 64,
+            'options': {name: getattr(args, name) for name in R.ACCEPTANCE_OPTIONS}}
 
 
 class TemporaryTest(unittest.TestCase):
@@ -507,6 +556,10 @@ class TemporaryTest(unittest.TestCase):
         environment = patch.dict(os.environ, JUMBLING_HOME_CACHE=str(self.tmp / 'cache/home_centroids.npy'))
         environment.start()
         self.addCleanup(environment.stop)
+        # AcceptanceConfigTests checks the committed options; the other tests choose their own.
+        frozen = patch.object(R, 'acceptance_config', side_effect=any_acceptance_config)
+        frozen.start()
+        self.addCleanup(frozen.stop)
 
     def args(self, out='run', *extra):
         return R.parse_args(['--scramble', '1', '7', '--out', str(self.tmp / out),
@@ -573,6 +626,10 @@ class FakeMechanics:
 
     def snapshot(self, state):
         return {'digest': state.digest(), 'off': len(state.off), 'heights': self.heights(state)}
+
+    def labels_identity(self, state):
+        # The turn is a rotation the labels do not see.
+        return not state.off
 
     def off_set(self, state):
         return state.off.copy()
@@ -652,6 +709,12 @@ def plugins(**given):
     return modules
 
 
+def stub_lattice():
+    """A lattice plugin that plays nothing, so the runner composes the program instead (R22D-57); the
+    composition path stays for such a stub only (plan revision 3e, E2)."""
+    return SimpleNamespace(STUB=True, SCRIPTS=[], play=lambda ctx: api.End('not_applicable'))
+
+
 class LatticePlay:
     """A lattice plugin with packet P3's interface whose child runs in process: it plays the
     scripted steps (rule, word, tree) on a copy of the current state and writes their ia16 words,
@@ -679,9 +742,13 @@ class LatticePlay:
             steps.append(api.LatticeStep(rule, writer.path, written['sha256'], written['letters'], tree_file,
                                          tree['sha256'], tree['size'], before, after, {'orbit': k}, 0.0))
             before = dict(after)
-        steps[-1].fields['labels_identity'] = True
+        if steps:
+            steps[-1].fields['labels_identity'] = True
         m.export(state, self.work / 'end-table.json')
-        result = api.LatticeResult(steps, self.work / 'end-table.json', {'restorer': 'scripted'})
+        # The parts of P3's report the runner and the checker read.
+        report = {'restorer': 'scripted', 'player': {'played': {'total': sum(s.letters for s in steps)},
+                                                      'final': {'labels_identity': True}}}
+        result = api.LatticeResult(steps, self.work / 'end-table.json', report)
         if self.edit is not None:
             self.edit(result)
         return result
@@ -866,7 +933,7 @@ class RecordTests(TemporaryTest):
         self.assertTrue(list((runner.out / 'logs').glob('*.log')))
 
     def test_lattice_pass_requires_exactly_the_right_run(self):
-        runner = StubRunner(self.args())
+        runner = StubRunner(self.args(), plugins(lattice=stub_lattice()))
         runner.initialize()
         runner.state.off.clear()
         # Keep a nonidentity lattice digest, without loading actual geometry.
@@ -906,7 +973,7 @@ class RecordTests(TemporaryTest):
                 self.assertEqual(runner.record['config']['component'], 'lattice_composition')
 
     def test_lattice_uses_relative_paths_without_chain_after_tail(self):
-        runner = StubRunner(self.args('run', '--tail-steps', '1'))
+        runner = StubRunner(self.args('run', '--tail-steps', '1'), plugins(lattice=stub_lattice()))
         runner.run()
         runner.state.off.clear()
         runner.state.digest = lambda: 'a' * 64
@@ -1088,11 +1155,9 @@ class PhaseTests(TemporaryTest):
         self.assertEqual(self.results(record)[:3], ['stuck', 'not_applicable', 'stuck'])
         self.assertEqual(record['config']['component'], 'height_stub')
         self.assertEqual(record['acceptance']['verdict'], 'component')
-        # The runner's own stubs before P1 and P2 do the same.
-        _, record = self.run_phases(FakeState({1, 2}, {1: 6}), importlib.import_module('rules_height'),
-                                    importlib.import_module('rules_kernel'))
-        self.assertEqual(self.results(record)[:4], ['stuck', 'stuck', 'not_applicable', 'stuck'])
-        self.assertEqual(record['config']['component'], 'height_stub')
+        # The runner's own plugins (P1 to P3) are not stubs, so none of them can make a component run.
+        for name in R.PLUGINS.values():
+            self.assertIs(getattr(importlib.import_module(name), 'STUB', False), False, name)
         # Any other plugin claiming not_applicable against its entry test is an error.
         height = Plugin('height', {'r22d75': [api.End('not_applicable')]})
         _, record = self.run_phases(FakeState({1, 2}, {1: 4}), height)
@@ -1348,7 +1413,10 @@ class LatticeTests(TemporaryTest):
         self.assertEqual([(s['index'], s['phase'], s['rule'], s['word'], s['letters'], s['orbit']) for s in record['steps']],
                          [(0, 'lattice', 'lattice/orbit-3', 'words/00000.ia16.gz', 2, 0),
                           (1, 'lattice', 'lattice/correction-0-0', 'words/00001.ia16.gz', 1, 1)])
-        self.assertEqual(record['phases']['lattice'], {'result': 'solved', 'steps': 2, 'twists': 3})
+        report = runner.out / 'lattice/report.json'
+        self.assertEqual(record['phases']['lattice'], {'result': 'solved', 'steps': 2, 'twists': 3, 'report': {
+            'file': 'lattice/report.json', 'sha256': hashlib.sha256(report.read_bytes()).hexdigest()}})
+        self.assertEqual(R.read_json(report)['player']['played']['total'], 3)
         self.assertEqual(record['totals']['lattice_twists'], 3)
         # The plugin's files move into the record unchanged: codes 60·grip + item, the scripted tree.
         data = gzip.decompress((runner.out / 'words/00000.ia16.gz').read_bytes())
@@ -1375,7 +1443,9 @@ class LatticeTests(TemporaryTest):
             'digest chain': (lambda r: setattr(r.steps[1], 'before', dict(r.steps[1].before, digest='a' * 64)),
                              'digest chain'),
             'labels': (lambda r: r.steps[-1].fields.pop('labels_identity'), 'identity labels'),
-            'no step': (lambda r: r.steps.clear(), 'LatticeSteps')}
+            'no report': (lambda r: setattr(r, 'report', None), 'a report'),
+            # No step although the restorer scheduled three twists.
+            'no step': (lambda r: r.steps.clear(), 'schedule nothing')}
         for name, (edit, reason) in cases.items():
             with self.subTest(name=name):
                 plugin = LatticePlay(self.SCRIPT, edit)
@@ -1390,37 +1460,156 @@ class LatticeTests(TemporaryTest):
                 self.assertEqual(len(list((plugin.work / 'words').iterdir())), 2)
                 self.assertEqual(runner.state.digest(), record['start']['digest'])
 
-    def test_lattice_ends_are_errors_until_p3(self):
-        # Recording a lattice End needs the checker's rules for it (I1). Until then every End but the
-        # stub's not_applicable ends the run error and leaves the lattice phase as it was.
+    def test_lattice_with_no_step(self):
+        # The restorer scheduled nothing (plan revision 3e, E2): solved with no row, after the runner
+        # tests the labels itself. A report or end table that says otherwise, or labels that are not
+        # the identity, end the run error with the lattice phase unchanged.
+        def empty(edit=None):
+            return LatticePlay([], edit)
+
+        runner, record = self.lattice_run('run', empty())
+        self.assertEqual((record['result'], record['error'], record['acceptance']['verdict']), ('solved', None, 'solved'))
+        self.assertEqual(record['steps'], [])
+        report = runner.out / 'lattice/report.json'
+        self.assertEqual(record['phases']['lattice'], {'result': 'solved', 'steps': 0, 'twists': 0, 'report': {
+            'file': 'lattice/report.json', 'sha256': hashlib.sha256(report.read_bytes()).hexdigest()}})
+        self.assertEqual(record['totals']['lattice_twists'], 0)
+        self.assertEqual(runner.state.digest(), record['start']['digest'])
+
+        def played(result):
+            result.report['player']['played']['total'] = 1
+
+        def final(result):
+            result.report['player']['final']['labels_identity'] = False
+
+        cases = {'scheduled': (empty(played), 'schedule nothing'),
+                 'final labels': (empty(final), 'schedule nothing'),
+                 'end table': (empty(lambda r: FakeMechanics().export(FakeState((), turn=2), r.end_table)),
+                               'schedule nothing'),
+                 'labels not the identity': (empty(), 'not the identity')}
+        for name, (plugin, reason) in cases.items():
+            with self.subTest(name=name):
+                args = self.args(name.replace(' ', '-'))
+                args.no_lattice = False
+                runner = StubRunner(args, plugins(lattice=plugin), FakeState((), turn=1))
+                if name == 'labels not the identity':
+                    runner.m.labels_identity = lambda state: False
+                record = runner.run()
+                check_record(self, runner.out, record)
+                self.assertEqual((record['result'], record['acceptance']['verdict']), ('error', 'error'))
+                self.assertIn(reason, record['error'])
+                self.assertEqual(record['phases']['lattice'], {'result': None, 'steps': 0, 'twists': None})
+                self.assertIsNone(record['totals']['lattice_twists'])
+                self.assertFalse((runner.out / 'lattice/report.json').exists())
+
+    def test_lattice_ends_are_recorded(self):
+        # An End of the real plugin is recorded with its reason, details and attempts (plan revision 3e,
+        # E2): stuck ends the run stuck, budget and timeout end it budget, error ends it error. Nothing
+        # was played, so the phase keeps steps 0 and twists null. An End that claims another result
+        # with every piece on the lattice ends the run error and leaves the phase unchanged.
         clock = {'rule': 'lattice/late', 'outcome': 'timeout', 'reason': 'lattice_wall_clock', 'timed_out': True}
-        ends = {'stuck': (False, api.End('stuck', 'restorer_no_solution', {'status': 'failure'})),
-                'stuck with a timed-out attempt': (False, api.End('stuck', 'restorer_no_solution', attempts=[clock])),
-                'timeout': (False, api.End('timeout', 'lattice_wall_clock', attempts=[clock])),
-                'budget': (False, api.End('budget', 'lattice_steps')),
-                'error': (False, api.End('error', 'player_failed', {'failure': 'final_labels_identity'})),
-                'not_applicable': (False, api.End('not_applicable')),
-                'handoff': (False, api.End('handoff')),
-                'lattice': (False, api.End('lattice')),
-                'stub stuck': (True, api.End('stuck', 'stub'))}
-        for name, (stub, end) in ends.items():
+        ends = {'stuck': (api.End('stuck', 'restorer_no_solution', {'status': 'failure'}), 'stuck', 'stuck'),
+                'stuck with a timed-out attempt': (api.End('stuck', 'restorer_no_solution', attempts=[clock]),
+                                                   'stuck', 'budget'),
+                'timeout': (api.End('timeout', 'lattice_wall_clock', attempts=[clock]), 'budget', 'budget'),
+                'budget': (api.End('budget', 'lattice_steps'), 'budget', 'budget'),
+                'error': (api.End('error', 'player_failed', {'failure': 'final_labels_identity'}), 'error', 'error')}
+        for name, (end, result, verdict) in ends.items():
+            with self.subTest(name=name):
+                plugin = SimpleNamespace(STUB=False, SCRIPTS=[], play=lambda ctx, end=end: end)
+                _, record = self.lattice_run(name.replace(' ', '-'), plugin)
+                self.assertEqual((record['result'], record['acceptance']['verdict']), (result, verdict))
+                self.assertEqual(record['phases']['lattice'], {'result': end.result, 'steps': 0, 'twists': None,
+                    'reason': end.reason, 'details': end.details, 'attempts': end.attempts})
+                self.assertEqual(record['acceptance']['timed_out_attempts'], len(end.attempts))
+                self.assertEqual((record['steps'], record['config']['component']), ([], None))
+                if result == 'error':
+                    self.assertIn('lattice phase error: player_failed', record['error'])
+                if end.result == 'stuck':
+                    self.assertEqual((record['stuck']['phase'], record['stuck']['reason'], record['stuck']['units']),
+                                     ('lattice', 'restorer_no_solution', []))
+                    self.assertEqual(record['stuck']['digest'], record['start']['digest'])
+                else:
+                    self.assertIsNone(record['stuck'])
+        claims = {'not_applicable': (False, api.End('not_applicable')),
+                  'handoff': (False, api.End('handoff')),
+                  'lattice': (False, api.End('lattice')),
+                  'stub stuck': (True, api.End('stuck', 'stub'))}
+        for name, (stub, end) in claims.items():
             with self.subTest(name=name):
                 plugin = SimpleNamespace(STUB=stub, SCRIPTS=[], play=lambda ctx, end=end: end)
                 _, record = self.lattice_run(name.replace(' ', '-'), plugin)
+                if stub:
+                    # A stub's stuck is recorded like the real plugin's.
+                    self.assertEqual((record['result'], record['phases']['lattice']['result']), ('stuck', 'stuck'))
+                    continue
                 self.assertEqual((record['result'], record['acceptance']['verdict']), ('error', 'error'))
-                self.assertIn(f'lattice End {end.result} ', record['error'])
+                self.assertIn(f'lattice claims {end.result} ', record['error'])
                 self.assertEqual(record['phases']['lattice'], {'result': None, 'steps': 0, 'twists': None})
                 self.assertEqual((record['steps'], record['stuck'], record['config']['component']), ([], None, None))
-        # The stub before P3 keeps the composition path (R22D-57), which makes the run a component;
-        # here its restorer fails, so the run ends error.
+        # The stub keeps the composition path (R22D-57), which makes the run a component; here its
+        # restorer fails, so the run ends error.
         def script(path, argv, tag, **kwargs):
             log = self.tmp / 'stub' / 'logs' / (tag + '.log')
             log.write_text('FAIL 0.0\n')
             return R.Child(1, 0.0, log)
 
-        _, record = self.lattice_run('stub', importlib.import_module('lattice_phase'), script)
+        _, record = self.lattice_run('stub', stub_lattice(), script)
         self.assertEqual((record['config']['component'], record['lattice']['restore_rc']), ('lattice_composition', 1))
         self.assertEqual((record['result'], record['acceptance']['verdict']), ('error', 'error'))
+
+
+class AcceptanceConfigTests(TemporaryTest):
+    """The committed acceptance options (plan revision 3e, E3) and the D19 provenance (E2)."""
+    def acceptance_args(self, out, *extra):
+        return R.parse_args(['--scramble', '1', '7', '--out', str(self.tmp / out), '--cache', str(self.tmp / 'cache'),
+                             '--mode', 'acceptance', *extra])
+
+    def test_committed_options_are_the_defaults(self):
+        raw = R.ACCEPTANCE_CONFIG.read_bytes()
+        doc = json.loads(raw)
+        self.assertEqual(doc['format'], 'acceptance-config/1')
+        self.assertEqual(set(doc['options']), set(R.ACCEPTANCE_OPTIONS))
+        # An acceptance run needs no option beyond --mode acceptance; the record keeps the file's sha.
+        frozen = REAL_ACCEPTANCE_CONFIG(self.acceptance_args('run'))
+        self.assertEqual(frozen, {'file': R.ACCEPTANCE_CONFIG.relative_to(ROOT).as_posix(),
+                                  'sha256': hashlib.sha256(raw).hexdigest(), 'options': doc['options']})
+        # Every clock is lifted and no step budget is set; the lattice phase runs.
+        self.assertEqual([doc['options'][k] for k in ('bulk_steps', 'tail_steps', 'high_steps', 'no_lattice')],
+                         [None, 0, None, False])
+
+    def test_acceptance_mode_refuses_other_options_before_any_write(self):
+        restorer = 'schedule11' if json.loads(R.ACCEPTANCE_CONFIG.read_bytes())['options']['lattice_restorer'] == 'late' \
+            else 'late'
+        cases = {'par': ('--par', '2'), 'tail_rules': ('--tail-rules', 'pure'), 'bulk_steps': ('--bulk-steps', '3'),
+                 'high_steps': ('--high-steps', '0'), 'no_lattice': ('--no-lattice',),
+                 'lattice_restorer': ('--lattice-restorer', restorer), 'literal_limit': ('--literal-limit', '40499'),
+                 'seeds': ('--seeds', 'default'), 'fallback_max_length': ('--fallback-max-length', '0'),
+                 'pair_shards': ('--pair-shards', '2'), 'tail_steps': ('--tail-steps', '5')}
+        self.assertEqual(set(cases), set(R.ACCEPTANCE_OPTIONS))
+        for name, extra in cases.items():
+            with self.subTest(name=name), patch.object(R, 'acceptance_config', REAL_ACCEPTANCE_CONFIG):
+                runner = StubRunner(self.acceptance_args(name, *extra))
+                with self.assertRaisesRegex(ValueError, f'differ from acceptance-config.json: {name}$'):
+                    runner.run()
+                self.assertIsNone(runner.record)
+                # The runner made its empty directories and wrote no file.
+                self.assertEqual([p for p in (self.tmp / name).rglob('*') if not p.is_dir()], [])
+        # Development mode reads nothing and records null.
+        runner = StubRunner(self.args('development', '--par', '2'))
+        runner.initialize()
+        self.assertIsNone(runner.record['config']['acceptance_config'])
+
+    def test_kernel_d19_is_recorded(self):
+        runner = StubRunner(self.args())
+        runner.initialize()
+        kernel = importlib.import_module('rules_kernel')
+        self.assertEqual(runner.record['config']['kernel']['d19'], {'file': kernel.D19.as_posix(),
+            'sha256': hashlib.sha256((ROOT / kernel.D19).read_bytes()).hexdigest()})
+        # A scripted high plugin names no D19.
+        runner = StubRunner(self.args('scripted'), plugins(high=Plugin('high')))
+        runner.initialize()
+        self.assertIsNone(runner.record['config']['kernel']['d19'])
 
 
 class TreeTests(TemporaryTest):
@@ -2505,14 +2694,15 @@ class ExactTests(TemporaryTest):
         R.atomic_json(library, {'macros': [w9]})
         args = R.parse_args(['--table', str(table), '--out', str(self.tmp / 'run'),
                              '--cache', str(self.shared)])
-        runner = R.Runner(args, m)
+        # A stub lattice plugin keeps the verify_late path (plan revision 3e, E2): a component run. The
+        # real plugin's play of this state is 16,184,022 retained twists (test_lattice_phase.py).
+        runner = R.Runner(args, m, plugins(lattice=stub_lattice()))
         with patch.object(R, 'LIBRARY', library):
             record = runner.run()
         out = runner.out
         check_record(self, out, record)
         self.assertEqual(record['result'], 'solved', record['error'])
         self.assertEqual(record['steps'], [])
-        # The lattice stub keeps the verify_late path until P3: a component run.
         self.assertEqual(record['config']['component'], 'lattice_composition')
         self.assertEqual(record['acceptance']['verdict'], 'component')
         self.assertEqual(record['phases']['lattice']['result'], 'solved')
@@ -2646,7 +2836,7 @@ class ExactTests(TemporaryTest):
         where r22d75's entry test holds again; the order goes on to h4. B starts at S2, and its first
         height step is an r22d75 step, (35, 13)(35, 13)⁻¹(14, 14), to heights {2: 395, 4: 1}. Its
         tree names the second letter as the inverse of the first. Both end at --high-steps 0, so no
-        tail runs on these 3,098-piece states. The plugins are scripted; contracts wait for P4."""
+        tail runs on these 3,098-piece states. The plugins are scripted (see scripted_check)."""
         if ExactTests.runs is not None:
             return ExactTests.runs
         m, root = self.mechanics, self.shared / 'table-runs'
@@ -2670,6 +2860,17 @@ class ExactTests(TemporaryTest):
         record_b = runner.run()
         ExactTests.runs = (root / 'a', record_a, a.calls, root / 'b', record_b, b.calls)
         return ExactTests.runs
+
+    def scripted_check(self, out):
+        """check_run.py with the height contracts left unchecked. The scripted height steps of runs A and B
+        are not rule steps: they have no tau or u fields, and B's r22d75 word has three letters. The real
+        contracts reject them (test_07 asserts it; the contracts' own tests are test_check_contracts.py and
+        test_check_run.py's test_v3_height_contracts), so test_07 and test_08 check the phase order and the
+        step trees only."""
+        C = checker().check_contracts
+        with patch.object(C, 'prepare', lambda row, st: {}), patch.object(C, 'on_letter', lambda ctx, k, st: None), \
+                patch.object(C, 'finish', lambda ctx, row, st: [C.UNCHECKED]):
+            return independent_check(out, allow_unchecked=True)
 
     def test_07_table_start_keeps_the_fixed_phase_order(self):
         out_a, record_a, calls_a, out_b, record_b, calls_b = self.table_runs()
@@ -2696,12 +2897,18 @@ class ExactTests(TemporaryTest):
         sub = record_b['phases']['height']['sub']
         self.assertEqual([sub[k]['result'] for k in api.SUBPHASES['height']], ['stuck', 'not_applicable', 'stuck'])
         self.assertEqual(calls_b, ['r22d75', 'r22d75', 'h4'])
-        # Needs the runner-run/3 checker: both records pass, with the fixed phase order. Their
-        # scripted height steps carry contract 'height', which stays unchecked until P4.
+        # The real contracts reject the scripted height steps, and nothing else in the records fails.
+        for out in (out_a, out_b):
+            with self.subTest(out=out.name, contracts='real'):
+                final, rows = independent_check(out)
+                self.assertIs(final['pass'], False, rows)
+                self.assertTrue(final['fails'] and all(f.startswith('height_') for f in final['fails']), final)
+        # With the height contracts left unchecked, both records pass with the fixed phase order.
         for out in (out_a, out_b):
             with self.subTest(out=out.name):
-                final, rows = independent_check(out, allow_unchecked=True)
+                final, rows = self.scripted_check(out)
                 self.assertIs(final['pass'], True, rows)
+                self.assertEqual(final['unchecked_contracts'], 1)
 
     def test_08_checker_rejects_tampered_step_trees(self):
         # Needs the runner-run/3 checker. Run B's closure tree with inverse_of passes; each change fails.
@@ -2741,7 +2948,7 @@ class ExactTests(TemporaryTest):
                 if name == 'wrong sha':
                     record['steps'][0]['tree']['sha256'] = 'a' * 64
                 R.atomic_json(out / 'run.json', record)
-                final, rows = independent_check(out, allow_unchecked=True)
+                final, rows = self.scripted_check(out)
                 self.assertIs(final['pass'], name == 'intact', rows)
                 if name != 'intact':
                     self.assertTrue(any('tree' in fail for fail in final['fails']), final['fails'])
@@ -2766,40 +2973,227 @@ class ExactTests(TemporaryTest):
         self.assertEqual([(s['rule'], s['letters']) for s in record['steps']],
                          [('lattice/orbit-0', 6), ('lattice/correction-0-0', 4)])
         self.assertEqual(runner.state.digest(), R.SOLVED)
-        # Needs the runner-run/3 checker. The stub check_lattice.py replays the words but leaves
-        # the lattice contract unchecked until P5.
-        final, rows = independent_check(runner.out, allow_unchecked=True)
+        # check_lattice.py (P5) replays the words and checks the lattice contract of both rows.
+        final, rows = independent_check(runner.out)
         self.assertIs(final['pass'], True, rows)
         self.assertEqual((final['end_digest'], final['lattice_twists'], final['verdict'], final['unchecked_contracts']),
-                         (R.SOLVED, 10, 'solved', 2))
+                         (R.SOLVED, 10, 'solved', 0))
 
-    def test_10_lattice_end_error_passes_the_checker(self):
-        # Until I1 a lattice End is an error that leaves the lattice phase unchanged, which the
-        # runner-run/3 checker accepts; a recorded stuck, budget or error lattice phase it would not.
+    def test_10_lattice_ends_pass_the_checker(self):
+        # A recorded lattice End (plan revision 3e, E2) passes the checker, which recomputes the
+        # verdict: stuck, budget when an attempt at the end state timed out, budget, error.
         m = self.mechanics
         state = m.sim.State(m.restore.ctx, menu=m.menu)
         play_real(m, state, self.lattice_word())
         table = self.tmp / 'lattice-input.json'
         m.export(state, table)
         clock = {'rule': 'lattice/late', 'outcome': 'timeout', 'reason': 'lattice_wall_clock', 'timed_out': True}
-        for end in (api.End('stuck', 'restorer_no_solution'), api.End('stuck', 'restorer_no_solution', attempts=[clock]),
-                    api.End('budget', 'lattice_steps'), api.End('error', 'player_failed')):
+        ends = ((api.End('stuck', 'restorer_no_solution'), 'stuck'),
+                (api.End('stuck', 'restorer_no_solution', attempts=[clock]), 'budget'),
+                (api.End('timeout', 'lattice_wall_clock', attempts=[clock]), 'budget'),
+                (api.End('budget', 'lattice_steps'), 'budget'),
+                (api.End('error', 'player_failed'), 'error'))
+        for end, verdict in ends:
             with self.subTest(end=end.result, attempts=len(end.attempts)):
                 out = self.tmp / f'run-{end.result}-{len(end.attempts)}'
                 args = R.parse_args(['--table', str(table), '--out', str(out), '--cache', str(self.shared)])
                 plugin = SimpleNamespace(STUB=False, SCRIPTS=[], play=lambda ctx, end=end: end)
                 record = R.Runner(args, m, plugins(lattice=plugin)).run()
                 check_record(self, out, record)
-                self.assertEqual((record['result'], record['acceptance']['verdict']), ('error', 'error'))
-                final, rows = independent_check(out, allow_unchecked=True)
+                self.assertEqual(record['phases']['lattice']['result'], end.result)
+                self.assertEqual(record['acceptance']['verdict'], verdict)
+                final, rows = independent_check(out)
                 self.assertIs(final['pass'], True, rows)
-                self.assertEqual(final['verdict'], 'error')
+                self.assertEqual(final['verdict'], verdict)
+
+    def test_11_kernel_end_to_end(self):
+        # A height stub ends at once at R22D-36 (n6 = 1, max 6), so r22d75 and r22d81 are stuck and h4 is
+        # not applicable; the real kernel (P2) with D19 plays one step, and the checker applies P4's
+        # kernel contract to its row (plan revision 3d, section 4).
+        m = self.mechanics
+        state = m.sim.State(m.restore.ctx, menu=m.menu)
+        play_real(m, state, WORD36)
+        z36 = state.digest()
+        table = self.tmp / 'r22d36.json'
+        m.export(state, table)
+        stub = Plugin('height', {name: [api.End('not_applicable', 'stub')] for name in ('r22d75', 'r22d81')},
+                      stub=True)
+        out = self.tmp / 'run'
+        args = R.parse_args(['--table', str(table), '--out', str(out), '--cache', str(self.shared), '--bulk-steps', '0',
+                             '--high-steps', '1', '--tail-rules', '', '--fallback-max-length', '0'])
+        record = R.Runner(args, m, plugins(height=stub)).run()
+        check_record(self, out, record)
+        self.assertNotEqual(record['result'], 'error', record['error'])
+        sub = record['phases']['height']['sub']
+        self.assertEqual([sub[k]['result'] for k in api.SUBPHASES['height']], ['stuck', 'stuck', 'not_applicable'])
+        # --bulk-steps 0 is the first reason the run is a component; the height stub is the second.
+        self.assertEqual((record['config']['component'], record['acceptance']['verdict']), ('bulk_budget', 'component'))
+        kernel = importlib.import_module('rules_kernel')
+        self.assertEqual(record['config']['kernel']['d19']['file'], kernel.D19.as_posix())
+        (row,) = record['steps']
+        self.assertEqual((row['phase'], row['family'], row['before']['digest']), ('high', 'F1', z36))
+        self.assertEqual(row['contract'], 'kernel_' + row['kind'])
+        self.assertLessEqual(R.read_json(out / row['word'])['word'][0], [12, 45])
+        final, rows = independent_check(out)
+        self.assertIs(final['pass'], True, rows)
+        self.assertEqual((final['verdict'], final['unchecked_contracts'], final['high_twists']),
+                         ('component', 0, row['letters']))
+        self.assertIs(rows[0]['unchecked'], False)
+        # The other kind fails the kernel contract. (high_exact protects nothing here: the target is
+        # the only piece above height 2.)
+        mutated = self.tmp / 'mutated'
+        shutil.copytree(out, mutated)
+        changed = json.loads(json.dumps(record))
+        kind = 'landing' if row['kind'] == 'lowering' else 'lowering'
+        changed['steps'][0].update(kind=kind, contract='kernel_' + kind)
+        R.atomic_json(mutated / 'run.json', changed)
+        final, rows = independent_check(mutated)
+        self.assertIs(final['pass'], False, rows)
+        self.assertTrue(any(fail.startswith('kernel_') for fail in rows[0]['fails']), rows)
+        # The D19 hash of the call must be the one config.kernel.d19 records (I1R-03).
+        self.assertEqual(row['kernel']['d19_sha256'], record['config']['kernel']['d19']['sha256'])
+        for label, edit in (('missing', lambda s: s['kernel'].pop('d19_sha256')),
+                            ('null', lambda s: s['kernel'].update(d19_sha256=None)),
+                            ('another', lambda s: s['kernel'].update(d19_sha256='0' * 64)),
+                            ('no kernel block', lambda s: s.pop('kernel'))):
+            with self.subTest(d19=label):
+                changed = json.loads(json.dumps(record))
+                edit(changed['steps'][0])
+                R.atomic_json(mutated / 'run.json', changed)
+                final, rows = independent_check(mutated)
+                self.assertIs(final['pass'], False, rows)
+                self.assertIn('kernel_d19', rows[0]['fails'], rows)
 
     @unittest.skipUnless(os.environ.get('RUNNER_SLOW') == '1', 'set RUNNER_SLOW=1 for depth 20')
     def test_04_slow_scramble_20(self):
         _, record = self.invoke('--scramble', '20', '7106')
         self.assertEqual(record['result'], 'solved')
-        self.assertIsNotNone(record['lattice'])
+        self.assertEqual(record['phases']['lattice']['result'], 'solved')
+
+
+class LatticeEndToEndTests(unittest.TestCase):
+    """Packet P3's plugin through the runner's lattice phase and the v3 checker (plan revision 3d, section 4):
+    test_lattice_phase.py's synthetic and w9 fixtures, whose restorer is a stub copying a fixed program."""
+    @classmethod
+    def setUpClass(cls):
+        with patch.dict(os.environ):
+            cls.T = importlib.import_module('test_lattice_phase')
+        cls.addClassCleanup(shutil.rmtree, cls.T.TEMPORARY, True)
+        cls.tmp = Path(tempfile.mkdtemp(prefix='tutorial-lattice-e2e-'))
+        cls.addClassCleanup(shutil.rmtree, cls.tmp)
+
+    def run_fixture(self, name, f):
+        T = self.T
+        out = self.tmp / name
+        args = R.parse_args(['--table', str(f.table), '--out', str(out), '--cache', str(T.TEMPORARY / 'cache'),
+                             '--lattice-restorer', 'late'])
+        with patch.object(T.L, 'LIBRARY', T.shared().library), patch.dict(T.L.RESTORERS, {'late': f.stub}):
+            runner = R.Runner(args, T.shared().mechanics, plugins())
+            record = runner.run()
+        check_record(self, out, record)
+        self.assertEqual((record['result'], record['error'], record['acceptance']['verdict']), ('solved', None, 'solved'))
+        self.assertEqual((record['config']['component'], record['lattice']), (None, None))
+        return runner, record
+
+    def test_signal_keeps_the_lattice_attempt(self):
+        # A signal during the restorer's call or the player's: the run ends error, the phase records no
+        # result, and the cancelled call keeps its attempt row with the time of both calls (I1R-04,
+        # P3-robust-01).
+        T = self.T
+        for stage in ('restore', 'play'):
+            with self.subTest(stage=stage):
+                f = T.fixture()
+                out = self.tmp / ('signal-' + stage)
+                args = R.parse_args(['--table', str(f.table), '--out', str(out), '--cache', str(T.TEMPORARY / 'cache'),
+                                     '--lattice-restorer', 'late'])
+                with patch.object(T.L, 'LIBRARY', T.shared().library), patch.dict(T.L.RESTORERS, {'late': f.stub}):
+                    runner = R.Runner(args, T.shared().mechanics, plugins())
+                    real, earlier = runner.execute, []
+
+                    def execute(argv, tag, seconds, **kwargs):
+                        if not tag.startswith('lattice-' + stage + '-'):
+                            child = real(argv, tag, seconds, **kwargs)
+                            earlier.append(child.seconds)
+                            return child
+                        runner.on_signal(signal.SIGTERM, None)
+                        return R.Child(-signal.SIGTERM, 2.0, out / 'logs' / 'cancelled.log', cancelled=True)
+
+                    with patch.object(runner, 'execute', execute):
+                        record = runner.run()
+                self.assertEqual(len(earlier), {'restore': 0, 'play': 1}[stage])
+                self.assertEqual((record['result'], record['error']), ('error', 'signal %d' % signal.SIGTERM))
+                lattice = record['phases']['lattice']
+                self.assertIsNone(lattice.get('result'))
+                self.assertEqual(lattice['attempts'], [{'rule': 'lattice/late', 'outcome': 'error',
+                                                        'reason': 'cancelled', 'timed_out': False,
+                                                        'seconds': sum(earlier) + 2.0}])
+                self.assertFalse([s for s in record['steps'] if s['phase'] == 'lattice'])
+
+    def test_synthetic_program(self):
+        runner, record = self.run_fixture('synthetic', self.T.fixture())
+        self.assertEqual([s['rule'] for s in record['steps']], ['lattice/orbit-23', 'lattice/orbit-34'])
+        self.assertEqual(runner.state.digest(), R.SOLVED)
+        final, rows = independent_check(runner.out)
+        self.assertIs(final['pass'], True, rows)
+        self.assertEqual((final['end_digest'], final['verdict'], final['unchecked_contracts']), (R.SOLVED, 'solved', 0))
+        self.assertEqual(final['lattice_twists'], record['totals']['lattice_twists'])
+
+    def test_w9_invisible_rotation(self):
+        # Solved by identity labels at a digest that is not SOLVED (R3-05); the checker replays to it.
+        T = self.T
+        f = T.fixture('invisible', nodes=[], factors=[], order='retained-first',
+                      sequence=[{'macro': 0, 'times': 1, 'inverse': False}], cascade=[0], counts=[0], invisible=True)
+        f.summary['runs'][0].pop('factors_per_orbit', None)
+        T.write(f.template / 'restore-summary.json', f.summary)
+        state = T.shared().mechanics.load(f.table)
+        for twist in T.correction_word(f.sequence):
+            self.assertTrue(state.apply(twist, journal=False).applied)
+        expected = state.digest()
+        self.assertNotEqual(expected, R.SOLVED)
+        runner, record = self.run_fixture('w9', f)
+        self.assertEqual([(s['rule'], s['letters']) for s in record['steps']], [('lattice/correction-0-0', 9)])
+        self.assertEqual(runner.state.digest(), expected)
+        final, rows = independent_check(runner.out)
+        self.assertIs(final['pass'], True, rows)
+        self.assertEqual((final['end_digest'], final['verdict'], final['unchecked_contracts'], final['lattice_twists']),
+                         (expected, 'solved', 0, 9))
+        # One retained letter more keeps every piece on the lattice but leaves labels that are not the
+        # identity. Everything else in the copy is made to agree with the ten letters (the row's end, its
+        # table, the report and the counts), so only the row's claim of identity labels fails (I1R-05).
+        s = T.shared()
+        retained = [i for i in range(len(s.menu.items)) if i not in s.restore.jumble_items(s.menu)
+                    and s.restore.element(s.menu, 0, i) != s.restore.I4]
+        out = self.tmp / 'w9-longer'
+        shutil.copytree(runner.out, out)
+        step = json.loads(json.dumps(record['steps'][0]))
+        raw = gzip.decompress((out / step['word']).read_bytes()) + struct.pack('<H', retained[0])
+        (out / step['word']).write_bytes(gzip.compress(raw, mtime=0))
+        tree = api.write_tree(out / step['tree']['file'], api.single(step['rule'], 10), 10)
+        state = s.mechanics.load(f.table)
+        for twist in T.correction_word(f.sequence) + [
+                s.sim.Twist(s.ctx, 0, s.restore.element(s.menu, 0, retained[0]), 'menu', {'menu': s.menu.name})]:
+            self.assertTrue(state.apply(twist, journal=False).applied)
+        after = s.mechanics.snapshot(state)
+        self.assertEqual(after['off'], 0)
+        s.mechanics.export(state, out / step['table'])
+        step.update(letters=10, word_sha256=hashlib.sha256(raw).hexdigest(), after=after,
+                    tree=dict(step['tree'], sha256=tree['sha256'], size=tree['size']))
+        report = R.read_json(out / 'lattice/report.json')
+        player = report['player']
+        for counts in (player['played'], player['scheduled']):
+            counts['corrections'] += 1
+        player['played']['total'] = 10
+        player['final']['digest'] = after['digest']
+        R.atomic_json(out / 'lattice/report.json', report)
+        longer = json.loads(json.dumps(record))
+        longer['steps'][0] = step
+        longer['phases']['lattice'].update(twists=10, report=dict(
+            longer['phases']['lattice']['report'], sha256=hashlib.sha256((out / 'lattice/report.json').read_bytes()).hexdigest()))
+        longer['totals']['lattice_twists'] = 10
+        R.atomic_json(out / 'run.json', longer)
+        final, rows = independent_check(out)
+        self.assertIs(final['pass'], False, rows)
+        self.assertEqual(final['fails'], ['labels_identity'], rows)
 
 
 class TimedResult(unittest.TextTestResult):

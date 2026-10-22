@@ -96,7 +96,7 @@ def read_ia16(path, sha256=None):
     return word
 
 
-def ia16_ranges(path, ranges):
+def ia16_ranges(path, ranges, *, info=None):
     """Read ranges in one separate pass, sharing storage for overlaps.
 
     A bytearray retains at most the prefix through the furthest requested end;
@@ -109,13 +109,15 @@ def ia16_ranges(path, ranges):
             for r in ranges)):
         raise Ia16Error('word_file')
     end = max((r[1] for r in ranges), default=0)
-    data, at = bytearray(), 0
-    for codes in ia16_chunks(path):
+    data, at, sha = bytearray(), 0, hashlib.sha256()
+    for codes in ia16_chunks(path, sha=sha):
         if at < end:
             data.extend(codes[:end - at].tobytes())
         at += len(codes)
     if end > at:
         raise Ia16Error('word_file')
+    if info is not None:
+        info.update(letters=at, sha256=sha.hexdigest())
     codes = np.frombuffer(data, dtype='<u2')
     return [codes[lo:hi] for lo, hi in ranges]
 
@@ -125,7 +127,7 @@ def _add(fails, name):
         fails.append(name)
 
 
-def check_tree_ranges(path, root, menu):
+def check_tree_ranges(path, root, menu, *, expected=None):
     """Validate ranges iteratively, then compare all backward references."""
     try:
         seen, references, at = {}, [], 0
@@ -167,15 +169,23 @@ def check_tree_ranges(path, root, menu):
                     return ['tree_malformed']
                 references.append((key, (lo, hi), other[:2]))
             seen[index] = (lo, hi, part['name'])
-        if at != root['letters'] or ia16_info(path)['letters'] != root['letters']:
+        expected = ia16_info(path) if expected is None else expected
+        if at != root['letters'] or expected['letters'] != root['letters']:
             return ['tree_malformed']
         # Deduplicate ranges; nested references can cover the same word many times.
         ranges = list(dict.fromkeys(r for _, mine, theirs in references for r in (mine, theirs)))
-        values = dict(zip(ranges, ia16_ranges(path, ranges))) if ranges else {}
+        info = {}
+        values = dict(zip(ranges, ia16_ranges(path, ranges, info=info)))
+        fails = []
+        if info['letters'] != expected['letters']:
+            _add(fails, 'letters')
+        if info['sha256'] != expected['sha256']:
+            _add(fails, 'word_sha256')
+        if fails:
+            return fails
         lookup = {restore.to_tuple(m): i for i, (_, m) in enumerate(menu.items)}
         inverse = np.array([lookup[restore.to_tuple(restore.transpose(m))]
                             for _, m in menu.items], dtype=np.uint16)
-        fails = []
         for key, mine, theirs in references:
             actual, expected = values[mine], values[theirs]
             # Bound temporary inverse arrays too, including for one enormous range.
@@ -291,6 +301,7 @@ class LatticeModel:
             self.place_pose[pd] = left[self.place_pose[ps]]
 
     def to_state(self):
+        """Return the exact rebuilt state and whether its labels and frames agree."""
         data = self.ctx.data
         if (not np.array_equal(np.sort(self.labels), np.arange(len(data.slot_piece)))
                 or self.place_pose.shape != (len(data.mask_offsets) - 1,)
@@ -309,12 +320,11 @@ class LatticeModel:
         state._compact()
         try:
             stickers = state.lattice_stickers()
-            if (not np.all(stickers['frame_agrees'])
-                    or not np.array_equal(stickers['labels'], self.labels)):
-                raise ModelLabelsError('model_labels')
+            agrees = bool(np.all(stickers['frame_agrees'])
+                          and np.array_equal(stickers['labels'], self.labels))
         except (ValueError, AssertionError, KeyError):
-            raise ModelLabelsError('model_labels') from None
-        return state
+            agrees = False
+        return state, agrees
 
 
 def _inside(base, name):
@@ -395,7 +405,10 @@ def replay_lattice_step(state, row, path, menu, *, stats=None):
         nonlocal model
         if model is not None:
             current, model = model, None
-            _replace_state(state, current.to_state())
+            rebuilt, agrees = current.to_state()
+            _replace_state(state, rebuilt)
+            if not agrees:
+                _add(fails, 'model_labels')
             counts['switches'] += 1
 
     try:
@@ -417,12 +430,13 @@ def replay_lattice_step(state, row, path, menu, *, stats=None):
             return fails
         root, tree_fails = _step_tree(path, row)
         if not tree_fails:
-            tree_fails = check_tree_ranges(path, root, menu)
+            tree_fails = check_tree_ranges(path, root, menu, expected=info)
         for name in tree_fails:
             _add(fails, name)
 
         on_lattice = state.is_lattice()
-        for codes in ia16_chunks(path):
+        replay_sha = hashlib.sha256()
+        for codes in ia16_chunks(path, sha=replay_sha):
             for code in codes.tolist():
                 if fast_letter(code, on_lattice):
                     if model is None:
@@ -446,6 +460,10 @@ def replay_lattice_step(state, row, path, menu, *, stats=None):
                     counts['simulated'] += 1
                     on_lattice = state.is_lattice()
                 counts['letters'] += 1
+        if counts['letters'] != row['letters']:
+            _add(fails, 'letters')
+        if replay_sha.hexdigest() != row['word_sha256']:
+            _add(fails, 'word_sha256')
         flush()
         off, end_digest = state.off_lattice_count(), state.digest()
         after = row.get('after')

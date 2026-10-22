@@ -17,6 +17,7 @@ import hashlib
 import json
 import math
 import os
+import resource
 from pathlib import Path
 import re
 import runpy
@@ -42,13 +43,18 @@ LAT = GM.parent / 'lattice/scripts'
 CHECKER = GM.parent / 'lattice/checker/verify_late.py'
 LIBRARY = J / 'restoration/09-general-method/data/library-merged.json.gz'
 SOLVED = hashlib.sha256(b'').hexdigest()
-# reopen reads the solver's earlier twists, so the v3 bulk leaves it out (owner, 20 October 2026).
+# reopen reads the solver's earlier twists, so the v3 bulk leaves it out: the integrator's default under the
+# owner's reading of 20 October 2026 that every rule reads only the current state.
 BULK_ORDER = ['seam', 'cover', 'close', 'conj', 'lock', 'improve', 'shift']
 TAIL_RULES = ['zero_bad', 'pure', 'close', 't1prime']
 # Clocks that acceptance mode lifts: the runner's own are off, a child's gets api.CLOCK_SENTINEL.
 CLOCKS = ('bulk_step_seconds', 'bulk_seconds', 'rule_seconds', 'greedy_seconds', 'cert_seconds',
           'height_seconds', 'height_cpu', 'kernel_seconds')
 PLUGINS = {'height': 'rules_height', 'high': 'rules_kernel', 'lattice': 'lattice_phase'}
+# The options every acceptance run uses (plan revision 3e, E3); --mode acceptance refuses any other value.
+ACCEPTANCE_CONFIG = SELF.parents[1] / 'acceptance-config.json'
+ACCEPTANCE_OPTIONS = ('literal_limit', 'seeds', 'tail_rules', 'lattice_restorer', 'fallback_max_length', 'par',
+                      'pair_shards', 'bulk_steps', 'tail_steps', 'high_steps', 'no_lattice')
 # r22b10_cert.py's own deadline reasons (:67, :72, :741, :860, :888, :909, :912). Its fixed
 # size caps (:123, :316) are not clocks and are not listed.
 CERT_DEADLINE_PHRASES = ('wall-clock budget exhausted', 'serialization budget exhausted', 'exceeded budget')
@@ -134,6 +140,22 @@ def source_identity():
         else:
             result.update(status_sha256=hashlib.sha256(output).hexdigest(), dirty=bool(output))
     return result
+
+
+def acceptance_config(args):
+    """The committed acceptance options (plan revision 3e, E3), checked against this run's options."""
+    raw = ACCEPTANCE_CONFIG.read_bytes()
+    doc = json.loads(raw)
+    options = doc.get('options') if isinstance(doc, dict) else None
+    if (not isinstance(doc, dict) or doc.get('format') != 'acceptance-config/1' or not isinstance(options, dict)
+            or set(options) != set(ACCEPTANCE_OPTIONS)):
+        raise ValueError('acceptance-config.json is malformed')
+    differ = [name for name in ACCEPTANCE_OPTIONS if getattr(args, name) != options[name]]
+    if differ:
+        raise ValueError('acceptance mode refuses options that differ from acceptance-config.json: '
+                         + ', '.join(differ))
+    return {'file': ACCEPTANCE_CONFIG.relative_to(ROOT).as_posix(),
+            'sha256': hashlib.sha256(raw).hexdigest(), 'options': options}
 
 
 def premise_details(details):
@@ -251,6 +273,15 @@ class Mechanics:
     def snapshot(self, state):
         return {'digest': state.digest(), 'off': int(state.off_lattice_count()),
                 'heights': self.heights(state)}
+
+    def labels_identity(self, state):
+        """Restored means identity sticker labels (owner decision, 15 October 2026)."""
+        if state.off_lattice_count():
+            return False
+        stickers = state.lattice_stickers()
+        labels = self.np.asarray(stickers['labels'])
+        return bool(self.np.all(stickers['frame_agrees'])) and bool(
+            self.np.array_equal(labels, self.np.arange(len(labels))))
 
     def off_set(self, state):
         return set(self.np.flatnonzero(state._kpose()[state.pose_id] < 0).tolist())
@@ -412,6 +443,8 @@ class Runner:
         atomic_json(self.out / 'run.json', self.record)
 
     def initialize(self):
+        acceptance = self.args.mode == 'acceptance'
+        frozen = acceptance_config(self.args) if acceptance else None
         source_id = source_identity()           # before the run writes anything under research/jumbling
         self.m = self.m or Mechanics(self.cache)
         if self.args.table:
@@ -430,10 +463,18 @@ class Runner:
                     'kernel_seconds', 'pair_shards', 'fallback_max_length', 'par')}
         for name in ('bulk_seconds', 'tail_steps'):
             budgets[name] = budgets[name] or None
-        acceptance = self.args.mode == 'acceptance'
         scripts = SCRIPTS + [p for plugin in self.plugin_modules().values()
                              for p in getattr(plugin, 'SCRIPTS', [])]
         start = dict(source, **self.m.snapshot(self.state))
+        d19 = getattr(self.plugin_modules()['high'], 'D19', None)
+        if d19 is not None:
+            # A rule outside the repository is recorded without its path; a missing one without a digest.
+            path = ROOT / d19
+            try:
+                sha = hashlib.sha256(path.read_bytes()).hexdigest()
+            except OSError:
+                sha = None
+            d19 = {'file': path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else None, 'sha256': sha}
         self.record = {'format': api.FORMAT, 'menu': 'I_a', 'start': start,
             'config': {'literal_only': True, 'mode': self.args.mode, 'component': None,
                 'bulk_order': BULK_ORDER.copy(), 'phase_order': list(api.PHASE_ORDER),
@@ -442,9 +483,9 @@ class Runner:
                 'budgets': api.recorded_budgets(self.args.mode, budgets, CLOCKS),
                 'clock_sentinel': api.CLOCK_SENTINEL if acceptance else None,
                 'kernel': {'seconds': None if acceptance else self.args.kernel_seconds,
-                           'wall_margin': self.args.kernel_wall_margin, 'd19': None, 'max_steps': 1},
+                           'wall_margin': self.args.kernel_wall_margin, 'd19': d19, 'max_steps': 1},
                 'lattice': {'restorer': self.args.lattice_restorer},
-                'literal_limit': self.args.literal_limit, 'seeds': self.args.seeds,
+                'literal_limit': self.args.literal_limit, 'seeds': self.args.seeds, 'acceptance_config': frozen,
                 'source': source_id,
                 'scripts': {Path(p).as_posix(): hashlib.sha256((ROOT / p).read_bytes()).hexdigest()
                             for p in scripts}},
@@ -617,6 +658,11 @@ class Runner:
                 end = api.End('budget', 'high_steps')
             else:
                 end = plugin.next_step(self.context(phase, sub))
+                if self.signal_number is not None:
+                    # A signal during the call is the operator's, not the rule's (P1-robust-04).
+                    data['attempts'] = list(getattr(end, 'attempts', []))
+                    self.save()
+                    self.check_signal()
             if isinstance(end, api.Proposal):
                 self.record_step(end, phase, sub)
                 data['steps'] += 1
@@ -1262,17 +1308,21 @@ class Runner:
             self.save()
             return
         plugin = self.plugin_modules()['lattice']
+        data = self.record['phases']['lattice']
         end = plugin.play(self.context('lattice', None))
+        if self.signal_number is not None:
+            # A signal during the phase is the operator's (P3-robust-01).
+            data['attempts'] = list(getattr(end, 'attempts', []))
+            self.save()
+            self.check_signal()
         if isinstance(end, api.LatticeResult):
             self.played_lattice(end)
             return
         if not isinstance(end, api.End):
             raise ValueError('the lattice plugin returns a LatticeResult or an End')
-        # Entered with every piece on the lattice, only the stub may answer not_applicable. Any other
-        # End ends the run error and leaves phases.lattice unchanged: recording a lattice End (stuck,
-        # budget, timeout) needs the checker's rules for it, which come with P3 (I1).
         if end.result != 'not_applicable' or not getattr(plugin, 'STUB', False):
-            raise ValueError(f'lattice End {safe_reason(end.result)} is integrated after packet P3')
+            self.lattice_end(end)
+            return
         # The stub before P3 plays nothing: the retained part is checked by composing its program (R22D-57).
         self.component('lattice_composition')
         started = time.monotonic()
@@ -1316,6 +1366,29 @@ class Runner:
         self.record['phases']['lattice'].update(result=self.record['result'], twists=twists)
         self.save()
 
+    def lattice_end(self, end):
+        """A lattice phase with no played step: stuck, budget, timeout or error (plan revision 3e, E2)."""
+        if end.result not in ('stuck', 'budget', 'timeout', 'error'):
+            raise ValueError(f'lattice claims {safe_reason(end.result)} with every piece on the lattice')
+        if any(type(a.get('timed_out')) is not bool for a in end.attempts):
+            raise ValueError('every plugin attempt records timed_out')
+        data = self.record['phases']['lattice']
+        # Nothing was played: steps stays 0 and twists null, as for a phase not entered.
+        data.update(result=end.result, reason=end.reason, details=end.details, attempts=end.attempts)
+        if end.result == 'error':
+            self.save()
+            raise RuntimeError(f'lattice phase error: {safe_reason(end.reason)}')
+        if end.result == 'stuck':
+            self.record['stuck'] = dict(self.m.snapshot(self.state), phase='lattice', reason=end.reason, units=[])
+        self.record['result'] = 'stuck' if end.result == 'stuck' else 'budget'
+        self.save()
+
+    def lattice_report(self, report):
+        path = self.out / 'lattice' / 'report.json'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        atomic_json(path, report)
+        return {'file': self.rel(path), 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}
+
     def played_lattice(self, result):
         """Record the lattice phase the plugin played twist by twist in its child (P3).
 
@@ -1323,10 +1396,25 @@ class Runner:
         runner does not replay the word: it loads the end table, which must reach the last
         step's after digest (plan, section 2); the checker replays every lattice word."""
         steps = result.steps
-        # A result with no step has no row to carry labels_identity (P3, section 4.7).
-        if not (isinstance(steps, list) and steps and all(isinstance(s, api.LatticeStep) for s in steps)):
-            raise ValueError('a played lattice phase has LatticeSteps')
+        if not (isinstance(steps, list) and all(isinstance(s, api.LatticeStep) for s in steps)
+                and isinstance(result.report, dict)):
+            raise ValueError('a played lattice phase has LatticeSteps and a report')
         expected = self.m.snapshot(self.state)
+        if not steps:
+            # The restorer scheduled nothing: no row carries labels_identity, so the runner tests the
+            # labels of the current state itself, and the checker tests them again (revision 3e, E2).
+            player = result.report.get('player', {})
+            if (player.get('played', {}).get('total') != 0 or read_json(result.end_table).get('digest')
+                    != expected['digest'] or player.get('final', {}).get('labels_identity') is not True):
+                raise ValueError('a lattice phase with no step must schedule nothing and keep the state')
+            if not self.m.labels_identity(self.state):
+                raise ValueError('a lattice phase with no step leaves labels that are not the identity')
+            self.record['phases']['lattice'].update(result='solved', steps=0, twists=0,
+                                                    report=self.lattice_report(result.report))
+            self.record['totals']['lattice_twists'] = 0
+            self.record['result'] = 'solved'
+            self.save()
+            return
         for s in steps:
             if ((s.contract, s.gate, s.standing, s.encoding) != ('lattice_literal', 'player', 'rule', 'ia16')
                     or not isinstance(s.rule, str) or not s.rule.startswith('lattice/')
@@ -1365,7 +1453,8 @@ class Runner:
         row['table'] = self.rel(self.table)      # only the end table exists (m4)
         self.state = state
         twists = sum(s.letters for s in steps)
-        self.record['phases']['lattice'].update(result='solved', steps=len(steps), twists=twists)
+        self.record['phases']['lattice'].update(result='solved', steps=len(steps), twists=twists,
+                                                report=self.lattice_report(result.report))
         self.record['totals']['lattice_twists'] = twists
         # Solved by identity labels; the digest may differ from SOLVED by rotations they do not see (R3-05).
         self.record['result'] = 'solved'
@@ -1409,7 +1498,7 @@ class Runner:
         acceptance['certificate_steps'] = sum(1 for s in steps if s.get('standing') == 'certificate')
         acceptance['fallback_steps'] = sum(1 for s in steps if s.get('standing') == 'fallback')
         phases = [record['phases']['height']['sub'][k] for k in api.SUBPHASES['height']]
-        phases.append(record['phases']['high'])
+        phases += [record['phases']['high'], record['phases']['lattice']]
         stuck = record['stuck'] or {}
         final = [a for unit in stuck.get('units', []) for a in unit['attempts']]
         attempts = [a for s in steps for a in s.get('attempts', [])] + final
@@ -1418,6 +1507,8 @@ class Runner:
         digest = steps[-1]['after']['digest'] if steps else record['phases']['bulk']['end']['digest']
         final += [a for data in phases if data.get('end') and data['end']['digest'] == digest
                   for a in data.get('attempts', [])]
+        # A lattice End plays nothing, so its attempts are at the final state (plan revision 3e, E2).
+        final += record['phases']['lattice'].get('attempts', [])
         acceptance['verdict'] = verdict(record, any(a.get('timed_out') for a in final))
         self.save()
 
@@ -1475,8 +1566,11 @@ def bulk_child(out, cache):
         path = out / 'words' / f'{index:05d}{suffix}'
         atomic_json(path, literal({'word': word}, before['digest'], after['digest']))
         runner.m.export(state, runner.table)
-        # The bulk child reports only words: one part per step (README section 6).
-        tree = runner.write_tree(index, api.single(rule, len(word)), len(word))
+        # conj plays (c, x)(d, y)(c, z) (seams.py:220-253): three named one-letter parts. Every other
+        # bulk rule is one span (plan revision 3e, E4).
+        parts = (api.flat(rule, [('x', 1), ('y', 1), ('z', 1)]) if rule == 'conj' and len(word) == 3
+                 else api.single(rule, len(word)))
+        tree = runner.write_tree(index, parts, len(word))
         record['steps'].append({'index': index, 'phase': 'bulk', 'subphase': None, 'rule': rule,
             'word': runner.rel(path), 'letters': len(word), 'encoding': 'json',
             'word_sha256': word_sha256(word), 'tree': tree, 'standing': 'rule',
@@ -1511,7 +1605,8 @@ def parse_args(argv=None):
     parser.add_argument('--no-lattice', action='store_true')
     parser.add_argument('--mode', choices=api.MODES, default='development',
                         help='acceptance: no clocks, certificate closures played, fallback only as a probe')
-    parser.add_argument('--lattice-restorer', choices=('late', 'schedule11'), default='late')
+    # schedule11 is the acceptance restorer, chosen from the D0 runs (plan revision 3e, E5).
+    parser.add_argument('--lattice-restorer', choices=('late', 'schedule11'), default='schedule11')
     parser.add_argument('--height-seconds', type=float, default=3600)
     parser.add_argument('--height-cpu', type=float, default=3600)
     parser.add_argument('--pair-shards', type=int, default=4)
@@ -1555,6 +1650,8 @@ def main(argv=None):
         bulk_child(Path(out), Path(cache))
         return 0
     args = parse_args(argv)
+    # Children inherit this limit, so none of them writes a core file into the repository (P1-robust-02).
+    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     if args.out.exists() and any(args.out.iterdir()):
         raise SystemExit('output directory must be empty')
     record = Runner(args).run()

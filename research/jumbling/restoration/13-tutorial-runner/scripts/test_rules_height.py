@@ -305,7 +305,7 @@ class CommittedTests(unittest.TestCase):
                 self.assertEqual(context['classA'], [407, 471, 492, 523, 533, 553, 590, 591])
 
     def test_05_missing_and_conflicting_first_lines(self):
-        for number, letter in ((1, [357, 1]), (2, [407, 1])):
+        for number, letter in ((1, [357, 1]), (1, [2, 1]), (2, [407, 1])):
             outputs = [output for _, output in self.rounds(number)]
             for output in outputs:
                 for i, line in enumerate(output):
@@ -477,7 +477,8 @@ class StubTests(TemporaryTest):
         self.assertEqual(len(self.last_calls), 1)
         self.assert_end(self.invoke('h4', start('h4') + end('STUCK', targets=[])), 'stuck', 'no_target')
         self.assertEqual(len(self.last_calls), 1)
-        self.assert_end(self.invoke('h4', start('h4') + end('STUCK', tau=None, u=0)), 'stuck', 'no_target')
+        self.assert_end(self.invoke('h4', start('h4') + end('STUCK', tau=None, u=0)),
+                        'error', 'inconsistent_output')
         self.assertEqual(len(self.last_calls), 1)
         self.assert_end(self.invoke('h4', end('BUDGET', tau=None, u=None)), 'budget', 'cpu_budget')
         result = self.invoke('h4', start('h4') + end('BUDGET', steps=1, digest=E, families={'L4': 1}))
@@ -691,6 +692,121 @@ class StubTests(TemporaryTest):
         duplicate = [outputs[0][0], outputs[0][1]]
         self.assertEqual(H.choose_pair(outputs + [duplicate])['result'], 'step')
         self.assertEqual(H.choose_pair([[], ['DONE {"first_letters_done": 0}\n']])['result'], 'undecided')
+
+    def test_14_parse_errors_survive_wall_kill(self):
+        for text, reason in (('START {broken json\n', 'malformed_output'),
+                             ('Traceback fixture crash\n', 'crash')):
+            with self.subTest(reason=reason):
+                result = self.invoke('r22d81', text, after='time.sleep(5)',
+                                     extra=('--height-seconds', '0.3'))
+                self.assert_end(result, 'error', reason)
+                self.assertTrue(result.attempts[-1]['timed_out'])
+        outputs = shard_outputs(choice=0)
+        outputs[1] = outputs[1].splitlines(keepends=True)[0] + 'FIRST {broken json\n'
+        result = self.invoke_shards(outputs, after='\nif shard == 1: time.sleep(5)',
+                                    extra=('--height-seconds', '0.3'))
+        self.assert_end(result, 'error', 'malformed_output')
+        self.assertTrue(result.attempts[-1]['timed_out'])
+        # A deciding STEP can coincide with the executor's timeout flag too.
+        for payload, reason in ((step('r22d81', input_digest=E), 'digest_mismatch'),
+                                (step('r22d81', step=2), 'missing_step')):
+            def killed(argv, tag, seconds, **kwargs):
+                log = self.tmp / (tag + '.log')
+                log.write_text(start('r22d81') + payload)
+                return R.Child(-signal.SIGKILL, 1, log, timeout=True)
+            self.assert_end(self.invoke('r22d81', execute=killed), 'error', reason)
+
+    def test_15_done_coverage_and_undecided_without_clock(self):
+        for choice in (None, 0):
+            outputs = [text.splitlines(keepends=True) for text in shard_outputs(choice=choice)]
+            outputs[1] = [line for line in outputs[1] if not
+                          (line.startswith('FIRST ') and json.loads(line[6:])['index'] == 5)]
+            outputs[1][-1] = event('DONE', first_letters_done=len(outputs[1]) - 2)
+            with self.subTest(choice=choice):
+                self.assert_end(self.invoke_shards([''.join(out) for out in outputs]),
+                                'error', 'inconsistent_output')
+        self.assert_end(self.invoke_shards(shard_outputs()), 'stuck', 'pair_exhausted')
+        # Exercise the defensive mapping when a chooser supplies no decision,
+        # despite complete DONE evidence and no clock ending either attempt.
+        with patch.object(H, '_pair_choice', return_value={'result': 'undecided'}):
+            result = self.invoke_shards(shard_outputs())
+        self.assert_end(result, 'error', 'inconsistent_output')
+        self.assertTrue(all(a['outcome'] == 'done' and not a['timed_out'] for a in result.attempts[1:]))
+
+    def test_16_end_lines_require_start(self):
+        for name, tag in (('r22d75', 'HEIGHT2'), ('r22d75', 'STUCK'),
+                          ('r22d81', 'HANDOFF'), ('r22d81', 'STUCK'),
+                          ('r22d81_pairs', 'STUCK'), ('r22d81_pairs', 'UNLOCKED'),
+                          ('h4', 'HANDOFF'), ('h4', 'STUCK')):
+            with self.subTest(script=name, tag=tag):
+                result = self.invoke(name, end(tag, tau=5, u=99))
+                self.assert_end(result, 'error', 'truncated')
+                self.assertNotEqual(self.invoke(name, start(name) + end(tag)).result, 'error')
+        for name, fields in (('r22d81', {'played_unreported': {'step': 1, 'family': 'H6'}}),
+                             ('h4', {'families': {'L4': 1}})):
+            text = end('BUDGET', steps=1, digest=E, **fields)
+            with self.subTest(script=name, tag='BUDGET'):
+                self.assert_end(self.invoke(name, text), 'error', 'truncated')
+                self.assert_end(self.invoke(name, start(name) + text), 'budget', 'cpu_budget')
+
+    def test_17_zero_step_end_identity(self):
+        for name, tags in (('r22d81', ('HANDOFF', 'STUCK', 'BUDGET')),
+                           ('r22d81_pairs', ('UNLOCKED', 'STUCK', 'BUDGET')),
+                           ('h4', ('HANDOFF', 'STUCK', 'BUDGET'))):
+            for tag in tags:
+                for fields in ({'tau': 5}, {'u': 99}):
+                    with self.subTest(script=name, tag=tag, fields=fields):
+                        self.assert_end(self.invoke(name, start(name) + end(tag, **fields)),
+                                        'error', 'inconsistent_output')
+        self.assert_end(self.invoke('r22d81', start('r22d81', tau=None, u=0) + end('STUCK')),
+                        'error', 'inconsistent_output')
+        self.assertEqual(len(self.last_calls), 1)
+        self.assert_end(self.invoke('r22d81', start('r22d81', tau=None, u=0) +
+                                    end('STUCK', tau=None, u=0)), 'stuck', 'no_target')
+        self.assertEqual(len(self.last_calls), 1)
+
+    def test_18_shard_crash_stops_sibling(self):
+        for crashed in (0, 1):
+            pid_dir = self.tmp / f'pids-{crashed}'
+            pid_dir.mkdir()
+            before = ('shard = int(sys.argv[sys.argv.index("--shard")+1])\n' +
+                      f'pid_dir = {str(pid_dir)!r}\n' +
+                      'with open(os.path.join(pid_dir, str(shard)), "w") as f: f.write(str(os.getpid()))\n' +
+                      f'if shard == {crashed}:\n' +
+                      '    while not os.path.exists(os.path.join(pid_dir, str(1-shard))): time.sleep(0.01)\n' +
+                      '    raise RuntimeError("fixture crash")\n' +
+                      'for _ in range(150):\n    print("heartbeat", flush=True)\n    time.sleep(0.2)\n')
+            began = time.monotonic()
+            result = self.invoke('two_letter_u', before=before, extra=('--mode', 'acceptance'))
+            elapsed = time.monotonic() - began
+            self.assert_end(result, 'error', 'crash')
+            self.assertLess(elapsed, 5, 'a crashed shard must stop its sibling promptly')
+            self.assertEqual(len(list(pid_dir.iterdir())), 2)
+            for path in pid_dir.iterdir():
+                with self.assertRaises(ProcessLookupError):
+                    os.kill(int(path.read_text()), 0)
+            sibling = next(a for a in result.attempts if a['shard'] == 1 - crashed)
+            self.assertTrue(sibling['stopped'])
+
+    def test_19_shard_wait_exception_stops_workers(self):
+        stopped = []
+
+        def worker(*args, stop_when, **kwargs):
+            deadline = time.monotonic() + 3
+            while time.monotonic() < deadline:
+                if stop_when('heartbeat'):
+                    stopped.append(True)
+                    return
+                time.sleep(0.01)
+
+        ctx = SimpleNamespace(budgets={'pair_shards': 2})
+        began = time.monotonic()
+        with patch.object(H, '_call', side_effect=worker), \
+                patch.object(H, 'as_completed', side_effect=KeyboardInterrupt):
+            with self.assertRaises(KeyboardInterrupt):
+                H._shards(ctx, {}, self.tmp / 'state.pkl', {'tau': 311, 'u': 2}, [])
+        self.assertEqual(stopped, [True, True])
+        self.assertLess(time.monotonic() - began, 1)
 
 
 class FakeHigh:

@@ -467,7 +467,8 @@ def play(ctx):
 
     def child_end(child, stage):
         if child.cancelled:
-            return end('error', 'cancelled')
+            # The call and its time stay in the record; the runner withholds the result (I1R-04).
+            return end('error', 'cancelled', attempt=True)
         if child.timeout:
             return end('timeout', 'lattice_wall_clock', attempt=True)
         if child.rc != 0:
@@ -523,6 +524,12 @@ def play(ctx):
         require(isinstance(summary, dict) and isinstance(summary.get('runs'), list)
                 and len(summary['runs']) == 1 and isinstance(summary['runs'][0], dict), 'runs')
         run = summary['runs'][0]
+        require(run.get('input') == 'table:start-table.json', 'input')
+        require(run.get('input_digest') == before['digest'], 'input_digest')
+        require(isinstance(summary.get('library'), dict) and summary['library'].get('sha256') == library_sha,
+                'library_sha256')
+        if restorer == 'schedule11':
+            require(summary.get('realign_sha256') == sha(ROOT / REALIGN), 'realign_sha256')
         status = run.get('status')
         if isinstance(status, str) and status.startswith('failure certificate:'):
             require(safe_record(status), 'status')
@@ -530,13 +537,7 @@ def play(ctx):
         if status != 'restored':
             return end('error', 'restorer_status', {'status': status if isinstance(status, str)
                                                  and safe_record(status) else 'invalid'})
-        require(run.get('input') == 'table:start-table.json', 'input')
-        require(run.get('input_digest') == before['digest'], 'input_digest')
-        require(isinstance(summary.get('library'), dict) and summary['library'].get('sha256') == library_sha,
-                'library_sha256')
         partition = orbit_partition(summary)
-        if restorer == 'schedule11':
-            require(summary.get('realign_sha256') == sha(ROOT / REALIGN), 'realign_sha256')
     except (Invalid, KeyError, TypeError, OSError) as exc:
         return end('error', 'restorer_output_invalid', {'check': str(exc) if isinstance(exc, Invalid) else 'summary'})
     argv = [sys.executable, '-I', '-B', Path(__file__).resolve(), '--_play',

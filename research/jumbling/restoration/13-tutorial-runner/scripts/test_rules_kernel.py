@@ -22,6 +22,7 @@ import hashlib
 import importlib.util
 import json
 import math
+import shutil
 import subprocess
 import time
 from types import SimpleNamespace
@@ -47,6 +48,16 @@ COPIED = ('family', 'kind', 'target', 'params', 'high_exact', 'off_before', 'off
 ATTEMPT_KEYS = {'rule', 'catalogue', 'outcome', 'reason', 'timed_out', 'seconds',
                 'kernel_seconds', 'ledger_status', 'stop_family'}
 Z36 = '8733a0aafd8e24ea1da990ebab0347074c20b11cf61d9ed04d34d25ef6f67261'
+
+
+def setUpModule():
+    # These acceptance-mode cases use test-only options (no bulk step, no lattice). The frozen
+    # acceptance configuration (plan revision 3e, E3) is tested in test_runner.py.
+    frozen = patch.object(R, 'acceptance_config', lambda args: None)
+    frozen.start()
+    unittest.addModuleCleanup(frozen.stop)
+
+
 END36 = 'd79c03679e3b065164219ebd747cc2de89bc5759c081f7b95e9554cbb8c11ea1'
 WORD36 = [[0, 12], [74, 8], [188, 4], [74, 4], [188, 8], [188, 4], [188, 4],
           [74, 8], [188, 8], [74, 4], [188, 8], [178, 1], [188, 4], [74, 8],
@@ -185,7 +196,7 @@ def step_document(start=None, word=None, result='lattice', family='F1', kind='la
     return doc, payload
 
 
-STUB_SOURCE = '''import argparse, json, sys, time
+STUB_SOURCE = '''import argparse, json, sys, tempfile, time
 from pathlib import Path
 p = argparse.ArgumentParser()
 p.add_argument('command', choices=['run'])
@@ -196,6 +207,9 @@ spec = json.loads(Path(SPEC_PATH).read_text())
 out = Path(a.out)
 Path(CAPTURE_PATH).write_text(json.dumps({'argv': sys.argv[1:], 'out_exists': out.is_dir(),
                                         'out_entries': sorted(x.name for x in out.iterdir())}))
+if spec.get('scratch'):
+    scratch = Path(tempfile.mkdtemp(prefix='r22d25-d19-', dir=a.cache))
+    (scratch / 'table.json').write_text('{}')
 if 'raw_record' in spec:
     (out / 'run.json').write_text(spec['raw_record'])
 elif spec.get('record') is not None:
@@ -521,7 +535,7 @@ class BMappingTests(unittest.TestCase):
                 r.plugin_phase('high')
         high = self.assert_end(c, 'error', 'kernel_record_missing', record_read=False)
         capture = json.loads(c.capture.read_text())
-        self.assertEqual(capture['out_entries'], [])
+        self.assertEqual(capture['out_entries'], ['cache'])
         self.assertTrue(capture['out_exists'])
         self.assertEqual(Path(option(capture['argv'], '--out')).name, 'kernel-2')
         self.assertEqual(high['details']['dir'], 'attempts/00000-high/kernel-2')
@@ -553,7 +567,7 @@ class BMappingTests(unittest.TestCase):
 
                 def capture(argv, tag, seconds, **kwargs):
                     calls.append(([str(x) for x in argv], tag, seconds))
-                    self.assertEqual(list(Path(option(argv, '--out')).iterdir()), [])
+                    self.assertEqual(sorted(p.name for p in Path(option(argv, '--out')).iterdir()), ['cache'])
                     return execute(argv, tag, seconds, **kwargs)
 
                 c.runner.execute = capture
@@ -566,11 +580,11 @@ class BMappingTests(unittest.TestCase):
                 self.assertEqual(option(argv, '--max-steps'), '1')
                 self.assertEqual(Path(option(argv, '--d19')), ROOT / D19)
                 self.assertEqual(Path(option(argv, '--table')), c.runner.out / 'tables/bulk-end.json')
-                self.assertEqual(Path(option(argv, '--cache')), CACHE)
+                self.assertEqual(Path(option(argv, '--cache')), Path(option(argv, '--out')) / 'cache')
                 self.assertEqual(tag, '00000-high-kernel')
                 saved = json.loads(c.capture.read_text())
                 self.assertEqual(saved['argv'], argv[4:])
-                self.assertEqual(saved['out_entries'], [])
+                self.assertEqual(saved['out_entries'], ['cache'])
 
     def test_b13_missing_dependency_stops_before_successful_tail(self):
         c = case(document(result='unsupported', reason='d19_missing'), tail_lands=True)
@@ -635,6 +649,52 @@ class BMappingTests(unittest.TestCase):
             rec = run_case(c, self)
         self.assertEqual(rec['result'], 'solved')
         self.assertIsNone(rec['steps'][0]['kernel']['d19_sha256'])
+        # Outside the repository and missing: neither its path nor a digest is recorded.
+        self.assertEqual(rec['config']['kernel']['d19'], {'file': None, 'sha256': None})
+
+    def test_b18_cache_and_interrupted_scratch_are_call_local(self):
+        for copy_fallback in (False, True):
+            with self.subTest(copy_fallback=copy_fallback):
+                c = case(document(), options=('--kernel-seconds', '0.2', '--kernel-wall-margin', '0.2'),
+                         scratch=True, sleep=5)
+                shared = c.base / 'shared-cache'
+                shared.mkdir()
+                home = shared / 'home_centroids.npy'
+                home.write_bytes(b'fixture cache seed')
+                c.runner.cache = shared
+                with patch.object(K.os, 'link', side_effect=OSError('fixture link failure')) if copy_fallback else \
+                        patch.object(K.os, 'link', wraps=os.link):
+                    run_case(c, self)
+                self.assert_end(c, 'timeout', 'kernel_wall_clock', timed_out=True, record_read=False)
+                argv = json.loads(c.capture.read_text())['argv']
+                cache = Path(option(argv, '--cache'))
+                self.assertEqual(cache, Path(option(argv, '--out')) / 'cache')
+                self.assertTrue(cache.is_relative_to(c.runner.out / 'attempts'))
+                self.assertTrue((cache / home.name).is_file())
+                self.assertEqual((cache / home.name).read_bytes(), home.read_bytes())
+                self.assertEqual(sorted(p.name for p in shared.iterdir()), [home.name])
+                self.assertTrue(list(cache.glob('r22d25-d19-*/table.json')))
+
+    def test_b19_main_cleans_temporary_tree_on_success_and_exception(self):
+        module = sys.modules[__name__]
+        for keep in ('0', '1'):
+            for fail in (False, True):
+                directory = Path(tempfile.mkdtemp(dir=TEMP, prefix='cleanup-'))
+                with self.subTest(keep=keep, fail=fail), \
+                        patch.object(module, 'TEMP', directory), \
+                        patch.object(module, 'status', return_value=b''), \
+                        patch.object(module, 'inventory', return_value={}), \
+                        patch.dict(os.environ, KEEP_TEMP=keep), \
+                        patch.object(unittest.TextTestRunner, 'run',
+                                     side_effect=RuntimeError('fixture run failure') if fail else None,
+                                     return_value=SimpleNamespace(wasSuccessful=lambda: True)):
+                    if fail:
+                        with self.assertRaisesRegex(RuntimeError, 'fixture run failure'):
+                            main()
+                    else:
+                        self.assertEqual(main(), 0)
+                    self.assertEqual(directory.exists(), keep == '1')
+                shutil.rmtree(directory, ignore_errors=True)
 
 
 def option(argv, name):
@@ -876,23 +936,27 @@ def status():
 
 
 def main(names=()):
-    started = time.monotonic()
-    before_status, before_files = status(), inventory()
-    module, loader = sys.modules[__name__], unittest.defaultTestLoader
-    suite = loader.loadTestsFromNames(names, module) if names else loader.loadTestsFromModule(module)
-    result = unittest.TextTestRunner(verbosity=2, resultclass=TimedResult).run(suite)
-    after_status, after_files = status(), inventory()
-    unchanged = before_status == after_status and before_files == after_files
-    if unchanged:
-        print('Worktree unchanged, including ignored files.', file=sys.stderr)
-    else:
-        changed = sorted(p for p in before_files.keys() | after_files.keys() if before_files.get(p) != after_files.get(p))
-        print('FAIL: acceptance changed the worktree (including ignored files):', changed, file=sys.stderr)
-    elapsed = time.monotonic() - started
-    print(f'Acceptance elapsed: {elapsed:.3f}s.', file=sys.stderr)
-    if elapsed > 20 * 60 and os.environ.get('KERNEL_SLOW') != '1':
-        print('Note: default acceptance took over 20 minutes; see each test duration above.', file=sys.stderr)
-    return 0 if result.wasSuccessful() and unchanged else 1
+    try:
+        started = time.monotonic()
+        before_status, before_files = status(), inventory()
+        module, loader = sys.modules[__name__], unittest.defaultTestLoader
+        suite = loader.loadTestsFromNames(names, module) if names else loader.loadTestsFromModule(module)
+        result = unittest.TextTestRunner(verbosity=2, resultclass=TimedResult).run(suite)
+        after_status, after_files = status(), inventory()
+        unchanged = before_status == after_status and before_files == after_files
+        if unchanged:
+            print('Worktree unchanged, including ignored files.', file=sys.stderr)
+        else:
+            changed = sorted(p for p in before_files.keys() | after_files.keys() if before_files.get(p) != after_files.get(p))
+            print('FAIL: acceptance changed the worktree (including ignored files):', changed, file=sys.stderr)
+        elapsed = time.monotonic() - started
+        print(f'Acceptance elapsed: {elapsed:.3f}s.', file=sys.stderr)
+        if elapsed > 20 * 60 and os.environ.get('KERNEL_SLOW') != '1':
+            print('Note: default acceptance took over 20 minutes; see each test duration above.', file=sys.stderr)
+        return 0 if result.wasSuccessful() and unchanged else 1
+    finally:
+        if os.environ.get('KEEP_TEMP') != '1':
+            shutil.rmtree(TEMP, ignore_errors=True)
 
 
 if __name__ == '__main__':

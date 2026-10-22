@@ -155,6 +155,20 @@ def write_tree(base, index, root, size=None):
             'size': tree_parts(root) if size is None else size}
 
 
+def write_report(base, restorer, start, end, total, labels=True, edit=None):
+    """The parts of the lattice plugin's report that the checker reads (plan revision 3e, E2; I1R-01), as
+    the record's {file, sha256}. ``edit`` changes the document before it is written."""
+    doc = {'restorer': restorer,
+           'player': {'input': {'digest': start}, 'scheduled': {'retained': total, 'corrections': 0},
+                      'played': {'retained': total, 'corrections': 0, 'total': total},
+                      'final': {'digest': end, 'labels_identity': labels}, 'result': 'solved', 'failure': None}}
+    if edit is not None:
+        edit(doc)
+    write(base / 'lattice/report.json', doc)
+    return {'file': 'lattice/report.json',
+            'sha256': hashlib.sha256((base / 'lattice/report.json').read_bytes()).hexdigest()}
+
+
 def write_ia16(base, index, word):
     data = np.array([60 * c + i for c, i in word], '<u2').tobytes()
     name = 'words/%05d.ia16.gz' % index
@@ -163,8 +177,21 @@ def write_ia16(base, index, word):
     return name, hashlib.sha256(data).hexdigest()
 
 
+# The committed acceptance options and the kernel's D19 rule, as the runner records them (plan revision 3e).
+ACCEPTANCE_CONFIG = HERE.parent / 'acceptance-config.json'
+D19 = 'research/jumbling/restoration/12-low-height/scripts/round22/r22d19_rule.py'
+
+
+def acceptance_records():
+    raw = ACCEPTANCE_CONFIG.read_bytes()
+    frozen = {'file': ACCEPTANCE_CONFIG.relative_to(REPO).as_posix(), 'sha256': hashlib.sha256(raw).hexdigest(),
+              'options': json.loads(raw)['options']}
+    return frozen, {'file': D19, 'sha256': hashlib.sha256((REPO / D19).read_bytes()).hexdigest()}
+
+
 def blank3(start, mode='development'):
     acceptance = mode == 'acceptance'
+    frozen, d19 = acceptance_records() if acceptance else (None, None)
     budgets = {name: None if acceptance else 3600 for name in CLOCKS}
     budgets.update(bulk_steps=None, tail_steps=None, high_steps=None, pair_shards=4,
                    fallback_max_length=1, par=1)
@@ -175,8 +202,10 @@ def blank3(start, mode='development'):
                        'subphase_order': {'height': list(SUBPHASES)},
                        'tail_rules': ['zero_bad', 'pure', 'close', 't1prime'], 'budgets': budgets,
                        'clock_sentinel': 1e9 if acceptance else None,
-                       'kernel': {'seconds': None if acceptance else 3600, 'wall_margin': 600, 'max_steps': 1},
-                       'lattice': {'restorer': 'late'}, 'literal_limit': 10000000, 'seeds': 'atlas',
+                       'kernel': {'seconds': None if acceptance else 3600, 'wall_margin': 600, 'd19': d19,
+                                  'max_steps': 1},
+                       'lattice': {'restorer': frozen['options']['lattice_restorer'] if acceptance else 'late'},
+                       'literal_limit': 10000000, 'seeds': 'atlas', 'acceptance_config': frozen,
                        'source': {'commit': None, 'status_sha256': None, 'dirty': None}, 'scripts': {}},
             'steps': [], 'phases': {}, 'result': None, 'error': None, 'stuck': None, 'lattice': None,
             'acceptance': {'verdict': None, 'certificate_steps': 0, 'fallback_steps': 0, 'probe': None,
@@ -1044,17 +1073,19 @@ class CheckRunTests(unittest.TestCase):
         shutil.copyfile(base / 'start-table.json', base / 'tables/bulk-end.json')
         rec = blank3({'kind': 'table', 'file': 'start-table.json', **start})
         # Two single letters at Z36 (integrator experiment): (n6, n4, n2) falls from
-        # (1, 0, 5799) to (0, 1, 3097) and then to (0, 0, 5405), which ends r22d75 (HEIGHT2).
+        # (1, 0, 5799) to (0, 1, 3097), tier 0, and then to (0, 0, 5405), tier 1, which ends
+        # r22d75 (HEIGHT2). The rows carry the fields the dispatcher (P1) writes for r22d75.
         docs = [start]
-        for index, letter in enumerate(([12, 14], [35, 13])):
+        for index, (rule, letter) in enumerate((('r22d75/T0', [12, 14]), ('r22d75/T1', [35, 13]))):
             apply(st, cls.menu, [letter])
             docs.append(state_record(st))
             name = 'words/%05d.json' % index
             write(base / name, {'word': [letter], 'input_digest': docs[-2]['digest'],
                                 'output_digest': docs[-1]['digest']})
-            rec['steps'].append(step3(base, {'index': index, 'phase': 'height', 'rule': 'r22d75/T0', 'word': name,
-                                             'letters': 1, 'contract': 'height_order', 'gate': 'r22d75',
-                                             'before': docs[-2], 'after': docs[-1]}, [letter], subphase='r22d75'))
+            rec['steps'].append(step3(base, {'index': index, 'phase': 'height', 'rule': rule, 'word': name,
+                                             'letters': 1, 'contract': rule, 'gate': 'r22d75',
+                                             'before': docs[-2], 'after': docs[-1]}, [letter], subphase='r22d75',
+                                      tau_before=None, tau_after=None, u_before=None, u_after=None, u_mid=None))
         assert docs[1]['heights'] == {'2': 3097, '4': 1} and docs[2]['heights'] == {'2': 5405}
         bulk = {'result': 'stuck', 'steps': 0, 'twists': 0, 'end': {**start, 'table': 'tables/bulk-end.json'}}
         rec['phases'] = phases3(bulk, [start] + [docs[2]] * 5,
@@ -1066,7 +1097,7 @@ class CheckRunTests(unittest.TestCase):
         cls.height3 = base
 
     @classmethod
-    def build_h46(cls):
+    def h46_state(cls):
         # Not reachable, and the checker does not ask: Z36 with one more off piece, posed as the
         # height-4 piece after WORD36's first 25 letters. Its maximum is 6 and n4 is 1.
         st = sim.State(restore.ctx, menu=cls.menu)
@@ -1078,6 +1109,11 @@ class CheckRunTests(unittest.TestCase):
         st.pose_id[int(np.flatnonzero(~off(st))[0])] = st._intern_matrix(matrix)
         st._compact()
         st._anchor_cache = {}
+        return st
+
+    @classmethod
+    def build_h46(cls):
+        st = cls.h46_state()
         start = state_record(st)
         assert start['heights'] == {'2': 5799, '4': 1, '6': 1}
         base = cls.tmp / 'h46'
@@ -1152,13 +1188,17 @@ class CheckRunTests(unittest.TestCase):
         apply(st, self.menu, word)
         after = state_record(st)
         name, sha = write_ia16(base, 0, word)
+        self.export(st, base / 'tables/00000.json')
         rec['steps'] = [{'index': 0, 'phase': 'lattice', 'subphase': None, 'rule': 'lattice/orbit-0', 'word': name,
                          'letters': len(word), 'encoding': 'ia16', 'word_sha256': sha,
                          'tree': write_tree(base, 0, {'name': 'orbit 0', 'letters': len(word),
                                                       'span': [0, len(word)]}),
                          'contract': 'lattice_literal', 'gate': 'player', 'standing': 'rule', 'attempts': [],
-                         'before': before, 'after': after, 'seconds': 0.0, 'labels_identity': labels}]
-        rec['phases']['lattice'] = {'result': 'lattice', 'steps': 1, 'twists': len(word)}
+                         'before': before, 'after': after, 'seconds': 0.0, 'labels_identity': labels,
+                         'table': 'tables/00000.json'}]
+        report = write_report(base, rec['config']['lattice']['restorer'], before['digest'], after['digest'],
+                              len(word))
+        rec['phases']['lattice'] = {'result': 'solved', 'steps': 1, 'twists': len(word), 'report': report}
         rec['totals']['lattice_twists'] = len(word)
         rec['result'] = rec['acceptance']['verdict'] = 'solved'
         return base, rec, after
@@ -1200,6 +1240,31 @@ class CheckRunTests(unittest.TestCase):
                 rec = copy.deepcopy(original)
                 edit(rec['config'])
                 self.check(base, rec, 'config')
+        # The committed acceptance options and the kernel's D19 rule (plan revision 3e, E2 and E3).
+        other = 'schedule11' if original['config']['lattice']['restorer'] == 'late' else 'late'
+        for label, edit, failure in (
+                ('no acceptance config', lambda c: c.update(acceptance_config=None), 'acceptance_config'),
+                ('another option', lambda c: c['budgets'].update(par=2), 'acceptance_config'),
+                ('a step budget', lambda c: c['budgets'].update(bulk_steps=5), 'acceptance_config'),
+                ('another restorer', lambda c: c['lattice'].update(restorer=other), 'acceptance_config'),
+                ('other tail rules', lambda c: c.update(tail_rules=['pure']), 'acceptance_config'),
+                ('another file', lambda c: c['acceptance_config'].update(sha256='0' * 64), 'acceptance_config'),
+                ('other recorded options', lambda c: c['acceptance_config']['options'].update(par=2),
+                 'acceptance_config'),
+                ('no d19', lambda c: c['kernel'].update(d19=None), 'kernel_d19'),
+                ('another d19', lambda c: c['kernel']['d19'].update(sha256='0' * 64), 'kernel_d19')):
+            with self.subTest(label=label):
+                rec = copy.deepcopy(original)
+                edit(rec['config'])
+                self.check(base, rec, failure)
+        # A development run records no acceptance options, and a D19 only if it is this checkout's.
+        base, rec = self.v3_case(label='development')
+        frozen, d19 = acceptance_records()
+        self.assertEqual(self.check(base, copy.deepcopy(rec))['verdict'], 'solved')
+        rec['config']['kernel']['d19'] = d19
+        self.assertEqual(self.check(base, copy.deepcopy(rec))['verdict'], 'solved')
+        rec['config']['acceptance_config'] = frozen
+        self.check(base, rec, 'acceptance_config')
 
     def test_v3_config(self):
         base, original = self.v3_case()
@@ -1335,21 +1400,30 @@ class CheckRunTests(unittest.TestCase):
                 C.check_tree(base, {**step, 'tree': write_tree(base, 0, root)}, word, inverses, fails)
                 self.assertEqual(fails, expected)
 
-    def test_v3_height_unchecked_contracts(self):
+    def test_v3_height_contracts(self):
+        """The height rows pass check_contracts with every contract checked; a hook that leaves one
+        unchecked is counted and fails the record unless the flag allows it."""
         base, rec = self.v3_case('height3')
-        final = self.check(base, rec, 'unchecked_contract')
-        self.assertEqual(final['unchecked_contracts'], 2)
         rows = []
-        final = C.check_run(base, rows.append, allow_unchecked=True)
+        final = C.check_run(base, rows.append)
         self.assertTrue(final['pass'], rows)
-        self.assertEqual((final['verdict'], final['height_twists'], final['unchecked_contracts']), ('stuck', 2, 2))
-        self.assertTrue(all(row['pass'] and row['unchecked'] and row['subphase'] == 'r22d75' for row in rows[:-1]), rows)
-        for flags, code in (([], 1), (['--allow-unchecked-contracts'], 0)):
-            with self.subTest(flags=flags):
-                proc = subprocess.run([sys.executable, '-I', '-B', str(HERE / 'check_run.py'), str(base), *flags],
-                                      cwd=REPO, capture_output=True, text=True, timeout=600, check=False)
-                self.assertEqual(proc.returncode, code, proc.stdout + proc.stderr)
-                self.assertEqual(json.loads(proc.stdout.splitlines()[-1])['unchecked_contracts'], 2)
+        self.assertEqual((final['verdict'], final['height_twists'], final['unchecked_contracts']), ('stuck', 2, 0))
+        self.assertTrue(all(row['pass'] and not row['unchecked'] and row['subphase'] == 'r22d75'
+                            for row in rows[:-1]), rows)
+        proc = subprocess.run([sys.executable, '-I', '-B', str(HERE / 'check_run.py'), str(base)],
+                              cwd=REPO, capture_output=True, text=True, timeout=600, check=False)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertEqual(json.loads(proc.stdout.splitlines()[-1])['unchecked_contracts'], 0)
+        for fields, failure in (({'contract': 'height_order'}, 'height_rule'),
+                                ({'rule': 'r22d75/T2', 'contract': 'r22d75/T2'}, 'height_tier')):
+            with self.subTest(fields=fields):
+                bad = copy.deepcopy(rec)
+                bad['steps'][0].update(fields)
+                self.check(base, bad, failure)
+        with patch.object(C.check_contracts, 'finish', lambda *a: [C.UNCHECKED]):
+            self.assertEqual(self.check(base, rec, 'unchecked_contract')['unchecked_contracts'], 2)
+            final = self.check(base, rec, allow_unchecked=True)
+            self.assertEqual(final['unchecked_contracts'], 2)
 
     def test_v3_contract_hooks(self):
         """prepare sees the state before a step, on_letter each letter, finish the state after (M6)."""
@@ -1401,18 +1475,18 @@ class CheckRunTests(unittest.TestCase):
             with self.subTest(label=label):
                 rec = copy.deepcopy(original)
                 edit(rec)
-                self.check(base, rec, 'entry_test', allow_unchecked=True)
+                self.check(base, rec, 'entry_test')
 
     def test_v3_phase_order(self):
         base, original = self.v3_case('height3')
         rec = copy.deepcopy(original)
         rec['steps'][0]['subphase'] = 'r22d81'          # r22d75 entered again after r22d81
-        self.check(base, rec, 'phase_order', allow_unchecked=True)
+        self.check(base, rec, 'phase_order')
         rec = copy.deepcopy(original)
         h4 = rec['phases']['height']['sub']['h4']       # high ran although h4 never did
         h4['result'] = None
         del h4['start'], h4['end']
-        self.check(base, rec, 'phase_order', allow_unchecked=True)
+        self.check(base, rec, 'phase_order')
 
     def test_v3_omitted_phases(self):
         """A phase or sub-phase is left out only after a result that ends the run, or in an
@@ -1477,7 +1551,7 @@ class CheckRunTests(unittest.TestCase):
         rec['phases']['tail'] = {'result': None, 'steps': 0}
         rec.update(result='error', error='r22d75 crashed', stuck=None)
         rec['acceptance']['verdict'] = 'error'
-        self.assertEqual(self.check(base, rec, allow_unchecked=True)['verdict'], 'error')
+        self.assertEqual(self.check(base, rec)['verdict'], 'error')
         # The same shape in the tail, a step recorded at a lattice configuration, already fails the
         # tail's own step contract (its unit must be off and land) before the phase rule is reached.
         base, rec, _ = self.played_case()
@@ -1487,7 +1561,7 @@ class CheckRunTests(unittest.TestCase):
         rec['totals'].update(lattice_twists=None, tail_twists=rec['steps'][0]['letters'])
         rec.update(result='error', error='stepchk crashed')
         rec['acceptance']['verdict'] = 'error'
-        self.check(base, rec, 'landed', allow_unchecked=True)
+        self.check(base, rec, 'landed')
 
     def test_interrupted_plugin_phase_rules(self):
         """check_plugin_phase on a phase that an exception cut off, with stand-in snapshots."""
@@ -1550,7 +1624,7 @@ class CheckRunTests(unittest.TestCase):
         base, rec = self.v3_case('height3')
         rec['steps'][0]['attempts'] = [{'timed_out': True}]
         rec['acceptance']['timed_out_attempts'] = 1
-        self.assertEqual(self.check(base, rec, allow_unchecked=True)['verdict'], 'stuck')
+        self.assertEqual(self.check(base, rec)['verdict'], 'stuck')
 
     def test_v3_verdict_order(self):
         """The verdict is the first match in the order of plan section 0."""
@@ -1655,10 +1729,9 @@ class CheckRunTests(unittest.TestCase):
     def test_v3_played_lattice(self):
         base, rec, after = self.played_case()
         self.assertEqual(after['digest'], C.SOLVED)
-        self.assertEqual(self.check(base, rec, 'unchecked_contract')['unchecked_contracts'], 1)
-        final = self.check(base, rec, allow_unchecked=True)
-        self.assertEqual((final['end_digest'], final['lattice_twists'], final['lattice_checked'], final['verdict']),
-                         (C.SOLVED, 3, False, 'solved'))
+        final = self.check(base, rec)
+        self.assertEqual((final['end_digest'], final['lattice_twists'], final['lattice_checked'], final['verdict'],
+                          final['unchecked_contracts']), (C.SOLVED, 3, False, 'solved', 0))
         original = rec
         for label, edit, failure in (
                 ('labels not identity', lambda s: s.update(labels_identity=False), 'labels_identity'),
@@ -1669,24 +1742,173 @@ class CheckRunTests(unittest.TestCase):
             with self.subTest(label=label):
                 rec = copy.deepcopy(original)
                 edit(rec['steps'][0])
-                self.check(base, rec, failure, allow_unchecked=True)
+                self.check(base, rec, failure)
         with patch.object(C.check_lattice, 'replay_lattice_step', lambda *a: 1 / 0):
-            self.check(base, original, 'lattice_step', allow_unchecked=True)
+            self.check(base, original, 'lattice_step')
+        # The plugin's report must agree with the replay and the frozen configuration, field by field,
+        # with its hash refreshed each time (I1R-01).
+        start, total = original['steps'][0]['before']['digest'], original['phases']['lattice']['twists']
+        restorer = original['config']['lattice']['restorer']
+        report = base / 'lattice/report.json'
+        saved = report.read_bytes()
+
+        def field(*keys, value):
+            def edit(doc):
+                for key in keys[:-1]:
+                    doc = doc[key]
+                doc[keys[-1]] = value
+            return edit
+
+        for label, edit in (('restorer', field('restorer', value='schedule11' if restorer != 'schedule11' else 'late')),
+                            ('input digest', field('player', 'input', 'digest', value=C.SOLVED)),
+                            ('final digest', field('player', 'final', 'digest', value=start)),
+                            ('final labels', field('player', 'final', 'labels_identity', value=False)),
+                            ('result', field('player', 'result', value='failed')),
+                            ('failure', field('player', 'failure', value='x')),
+                            ('played split', field('player', 'played', 'corrections', value=1)),
+                            ('played total', field('player', 'played', 'total', value=total + 1)),
+                            ('scheduled', field('player', 'scheduled', 'corrections', value=1))):
+            with self.subTest(report=label):
+                rec = copy.deepcopy(original)
+                rec['phases']['lattice']['report'] = write_report(base, restorer, start, C.SOLVED, total, edit=edit)
+                self.check(base, rec, 'lattice_report')
+        report.write_bytes(saved)
+        for label, edit in (('hash', lambda r: r.update(sha256='0' * 64)),
+                            ('file', lambda r: r.update(file='lattice/none.json')),
+                            ('extra key', lambda r: r.update(extra=1)),
+                            ('no report', None)):
+            with self.subTest(report=label):
+                rec = copy.deepcopy(original)
+                if edit is None:
+                    rec['phases']['lattice'].pop('report')
+                else:
+                    edit(rec['phases']['lattice']['report'])
+                self.check(base, rec, 'lattice_report')
+        # The last lattice row's table must hold the replayed end state (I1R-02).
+        table = base / 'tables/00000.json'
+        saved = table.read_bytes()
+        st = sim.State(restore.ctx, menu=self.menu)
+        apply(st, self.menu, self.played_letters)
+        self.export(st, base / 'tables/start.json')
+        for label, edit in (('missing', lambda s: s.pop('table')),
+                            ('another path', lambda s: s.update(table='tables/start.json'))):
+            with self.subTest(table=label):
+                rec = copy.deepcopy(original)
+                edit(rec['steps'][0])
+                self.check(base, rec, 'table')
+        for label, content in (('another state', (base / 'tables/start.json').read_bytes()), ('malformed', b'{}'),
+                               ('truncated', saved[:20]), ('deleted', None)):
+            with self.subTest(table=label):
+                if content is None:
+                    table.unlink()
+                else:
+                    table.write_bytes(content)
+                try:
+                    self.check(base, original, 'table')
+                finally:
+                    table.write_bytes(saved)
+        self.check(base, original)
 
     def test_v3_lattice_labels_not_digest(self):
-        """A played lattice is solved by identity labels, and its end digest is the replayed
-        one, which may differ from SOLVED by rotations the labels do not see (R3-05)."""
+        """A played lattice is solved by identity labels that the checker replays itself, and its end
+        digest is the replayed one (R3-05). Here a lattice configuration one letter short: the row's
+        claim of identity labels fails. The case where the digest differs from SOLVED by a rotation
+        the labels do not see is test_runner.py's test_w9_invisible_rotation, through the real plugin."""
         base, rec, after = self.played_case(prefix=2)
         self.assertEqual(after['off'], 0)
         self.assertNotEqual(after['digest'], C.SOLVED)
-        replay = C.check_lattice.replay_lattice_step
-
-        def confirmed(*args):                   # as if P5 had confirmed the contract and the labels
-            return [name for name in replay(*args) if name != 'unchecked_contract']
-
-        with patch.object(C.check_lattice, 'replay_lattice_step', confirmed):
-            final = self.check(base, rec)
+        final = self.check(base, rec, 'labels_identity')
         self.assertEqual((final['end_digest'], final['unchecked_contracts']), (after['digest'], 0))
+
+    def lattice_end_case(self, end, result, verdict, attempts=(), label=None):
+        """A lattice End recorded at the played fixture's start: nothing played (revision 3e, E2)."""
+        base, rec = self.case('played', label or '%s-%s-%d' % (end, verdict, len(attempts)))
+        start = snap(rec['start'])
+        rec['phases']['lattice'] = {'result': end, 'steps': 0, 'twists': None, 'reason': 'restorer_no_solution',
+                                    'details': {}, 'attempts': [dict(a) for a in attempts]}
+        if end == 'stuck':
+            rec['stuck'] = {**start, 'phase': 'lattice', 'reason': 'restorer_no_solution', 'units': []}
+        rec['result'] = result
+        rec['error'] = 'lattice phase error: player_failed' if result == 'error' else None
+        rec['acceptance'].update(verdict=verdict, timed_out_attempts=sum(a['timed_out'] for a in attempts))
+        return base, rec
+
+    def test_v3_lattice_ends(self):
+        """A recorded lattice End passes with the run result it implies; the verdict counts its attempts."""
+        clock = {'rule': 'lattice/late', 'outcome': 'timeout', 'reason': 'lattice_wall_clock', 'timed_out': True}
+        for end, result, verdict, attempts in (('stuck', 'stuck', 'stuck', ()), ('stuck', 'stuck', 'budget', (clock,)),
+                                               ('timeout', 'budget', 'budget', (clock,)),
+                                               ('budget', 'budget', 'budget', ()), ('error', 'error', 'error', ())):
+            with self.subTest(end=end, attempts=len(attempts)):
+                base, rec = self.lattice_end_case(end, result, verdict, attempts)
+                final = self.check(base, rec)
+                self.assertEqual((final['verdict'], final['lattice_twists'], final['end_digest']),
+                                 (verdict, None, rec['start']['digest']))
+        base, original = self.lattice_end_case('stuck', 'stuck', 'stuck', label='mutations')
+        for label, edit, failure in (
+                ('run result', lambda r: r.update(result='budget'), 'result'),
+                ('verdict without the clock', lambda r: (r['phases']['lattice']['attempts'].append(clock),
+                                                         r['acceptance'].update(timed_out_attempts=1)), 'verdict'),
+                ('twists', lambda r: r['phases']['lattice'].update(twists=0), 'phase_twists'),
+                ('claimed lattice', lambda r: r['phases']['lattice'].update(result='lattice'), 'phase_result'),
+                ('not on the lattice', lambda r: r['phases']['lattice'].update(result='handoff'), 'phase_result')):
+            with self.subTest(label=label):
+                rec = copy.deepcopy(original)
+                edit(rec)
+                self.check(base, rec, failure)
+        # An End after played rows is not a recorded End: a played phase is solved (K1).
+        base, rec, _ = self.played_case()
+        rec['phases']['lattice'].update(result='stuck')
+        rec['result'] = rec['acceptance']['verdict'] = 'stuck'
+        rec['stuck'] = {**snap(rec['steps'][-1]['after']), 'phase': 'lattice', 'reason': 'x', 'units': []}
+        self.check(base, rec, 'phase_result')
+
+    def test_v3_lattice_with_no_step(self):
+        """Nothing scheduled: solved only when the checker's own state has identity labels (revision 3e, E2)."""
+        def no_step(base, rec, total=0, labels=True):
+            digest = (rec['steps'][-1]['after'] if rec['steps'] else rec['start'])['digest']
+            report = write_report(base, rec['config']['lattice']['restorer'], digest, digest, total, labels=labels)
+            rec['phases']['lattice'] = {'result': 'solved', 'steps': 0, 'twists': 0, 'report': report}
+            rec['totals']['lattice_twists'] = 0
+            return rec
+
+        base, rec = self.v3_case(label='no-step')
+        final = self.check(base, no_step(base, rec))
+        self.assertEqual((final['verdict'], final['lattice_twists'], final['end_digest']), ('solved', 0, C.SOLVED))
+        for label, args, failure in (('scheduled', {'total': 1}, 'lattice_report'),
+                                     ('report labels', {'labels': False}, 'lattice_report')):
+            with self.subTest(label=label):
+                base, rec = self.v3_case(label=label.replace(' ', '-'))
+                self.check(base, no_step(base, rec, **args), failure)
+        # At the played fixture's start the labels are not the identity.
+        base, rec = self.case('played', 'labels')
+        rec['result'] = rec['acceptance']['verdict'] = 'solved'
+        self.check(base, no_step(base, rec), 'labels_identity')
+
+    def test_v3_high_phase_bound(self):
+        """The kernel's letter bound over the whole high phase, from the checker's own start (P4-falsepass-02)."""
+        base, rec = self.case('h46', 'bound')
+        st = self.h46_state()
+        start = state_record(st)
+        word = [[12, 14]] * 7
+        apply(st, self.menu, word)
+        after = state_record(st)
+        write(base / 'words/00000.json', {'word': word, 'input_digest': start['digest'], 'output_digest': after['digest']})
+        rec['steps'] = [step3(base, {'index': 0, 'phase': 'high', 'rule': 'r22d25/F1', 'word': 'words/00000.json',
+                                     'letters': 7, 'contract': 'kernel_landing', 'gate': 'r22d25',
+                                     'before': start, 'after': after}, word)]
+        rec['phases'] = phases3(rec['phases']['bulk'], [start] * 4 + [after] * 2,
+                                ['stuck', 'stuck', 'not_applicable', 'stuck', 'stuck'], {4: (1, 7)})
+        rec['stuck'] = {**after, 'phase': 'tail', 'reason': 'no_rule', 'units': []}
+        rec['totals']['high_twists'] = 7
+        write(base / 'run.json', rec)
+        # With ST_LIMIT 0 the bound is 6 n6 = 6 letters at h46's start: 7 is one over, 6 is within.
+        for limit, over in ((0, True), (1, False)):
+            with self.subTest(limit=limit), patch.object(C.check_contracts, 'ST_LIMIT', limit):
+                final = C.check_run(base, lambda row: None)
+                self.assertIs('kernel_letter_bound' in final['fails'], over, final['fails'])
+        with patch.object(C.check_contracts, 'check_high_phase', lambda *a: 1 / 0):
+            self.assertIn('contract', C.check_run(base, lambda row: None)['fails'])
 
     def test_v3_lattice_composition(self):
         """Until I1 the lattice is checked by composition: verify_late, a component, no end digest."""
@@ -1712,12 +1934,11 @@ class CheckRunTests(unittest.TestCase):
 
 @unittest.skipUnless((HERE / 'runner.py').is_file(), 'runner.py is not present')
 class RunnerRecordTests(unittest.TestCase):
-    """Format 3 records written by the real runner.py with the stub plugins, checked as written."""
+    """Format 3 records written by the real runner.py and its plugins, checked as written."""
     RUNS = {'acceptance': ['--scramble', '10', '7001', '--mode', 'acceptance'],
             'development': ['--scramble', '10', '7001'],
-            # Z36 with no bulk step and no tail rule: every applicable plugin is a stub.
-            'stubs': ['--table', 'z36.json', '--mode', 'acceptance', '--bulk-steps', '0', '--tail-rules', '',
-                      '--fallback-max-length', '0']}
+            # Z36 (R22D-36) with no bulk step and no tail rule: the height dispatcher (P1) runs.
+            'dispatcher': ['--table', 'z36.json', '--bulk-steps', '0', '--tail-rules', '', '--fallback-max-length', '0']}
 
     @classmethod
     def setUpClass(cls):
@@ -1800,20 +2021,32 @@ class RunnerRecordTests(unittest.TestCase):
         self.assertEqual(proc.stdout, output.read_text())
         self.assertEqual(json.loads(proc.stdout.splitlines()[-1])['verdict'], 'solved')
 
-    def test_stub_record(self):
-        """The stubs make the record a component; h4 is not applicable at Z36 (max 6)."""
-        base, original = self.run_copy('stubs')
+    def test_dispatcher_record(self):
+        """At R22D-36 r22d75 plays (12, 14) and then (35, 13) to HEIGHT2 (3ab25d21...); r22d81, h4 and high
+        are not applicable (n4 = n6 = 0); the tail has no rule and is stuck. The checker recomputes every
+        entry test and checks the height contracts and the trees (plan revision 3d, section 4). With
+        --bulk-steps 0 the bulk ends on its step budget, so the run is a component and its verdict says so."""
+        base, original = self.run_copy('dispatcher')
+        self.assertEqual((original['config']['component'], original['result']), ('bulk_budget', 'stuck'))
         sub = original['phases']['height']['sub']
-        self.assertEqual((sub['r22d75']['result'], sub['h4']['result'], original['phases']['tail']['result']),
-                         ('stuck', 'not_applicable', 'stuck'))
-        self.assertEqual(self.check(base, original)['verdict'], 'component')
+        self.assertEqual([sub[k]['result'] for k in SUBPHASES], ['handoff', 'not_applicable', 'not_applicable'])
+        self.assertEqual((original['phases']['high']['result'], original['phases']['tail']['result']),
+                         ('not_applicable', 'stuck'))
+        self.assertEqual([(s['rule'], read(base / s['word'])['word']) for s in original['steps']],
+                         [('r22d75/T0', [[12, 14]]), ('r22d75/T1', [[35, 13]])])
+        end = original['steps'][-1]['after']
+        self.assertTrue(end['digest'].startswith('3ab25d21'))
+        self.assertEqual((end['off'], end['heights']), (5405, {'2': 5405}))
+        final = self.check(base, original)
+        self.assertEqual((final['verdict'], final['end_digest'], final['unchecked_contracts'], final['height_twists']),
+                         ('component', end['digest'], 0, 2))
         for label, edit, failure in (
-                ('verdict', lambda rec: rec['acceptance'].update(verdict='stuck'), 'verdict'),
-                ('component', lambda rec: rec['config'].update(component=None), 'component'),
-                ('h4 entered at height 6', lambda rec: rec['phases']['height']['sub']['h4'].update(result='stuck'),
-                 'entry_test'),
+                ('verdict', lambda rec: rec['acceptance'].update(verdict='solved'), 'verdict'),
+                ('r22d81 entered at height 2', lambda rec: rec['phases']['height']['sub']['r22d81'].update(
+                    result='stuck'), 'entry_test'),
                 ('phase order', lambda rec: rec['config'].update(phase_order=['bulk', 'high', 'height', 'tail',
-                                                                              'lattice']), 'phase_order')):
+                                                                              'lattice']), 'phase_order'),
+                ('tree', lambda rec: rec['steps'][0]['tree'].update(sha256='0' * 64), 'tree_sha256')):
             with self.subTest(label=label):
                 rec = copy.deepcopy(original)
                 edit(rec)

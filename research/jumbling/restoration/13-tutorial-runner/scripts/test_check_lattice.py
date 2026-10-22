@@ -379,7 +379,8 @@ class CLatticeTests(unittest.TestCase):
             model.play(code)
             if n in self.prefixes:
                 started = time.perf_counter()
-                state = model.to_state()
+                state, agrees = model.to_state()
+                self.assertTrue(agrees)
                 out.append(time.perf_counter() - started)
                 self.assertEqual(state.digest(), self.prefixes[n][0])
                 np.testing.assert_array_equal(model.labels, self.prefixes[n][1])
@@ -393,7 +394,8 @@ class CLatticeTests(unittest.TestCase):
             for letter in self.W[:50]:
                 model.play(60 * letter[0] + letter[1])
                 self.apply_one(reference, letter)
-            rebuilt = model.to_state()
+            rebuilt, agrees = model.to_state()
+            self.assertTrue(agrees)
             self.assertEqual(rebuilt.digest(), reference.digest())
             np.testing.assert_array_equal(model.labels, reference.lattice_stickers()['labels'])
             ends.append(rebuilt.digest())
@@ -419,7 +421,22 @@ class CLatticeTests(unittest.TestCase):
         self.assertEqual((stats['letters'], stats['fast'], stats['simulated'], stats['switches']), (1000, 1000, 0, 2))
         self.assertEqual(state.digest(), self.T.digest())
         self.assertEqual(stats['digest'], self.T.digest())
-        print(f'Test D retained replay: {1000 / stats["seconds"]:.1f} letters/s (includes files, conversions and end checks).', flush=True)
+        model = C.LatticeModel.from_state(clone(self.Y), self.menu)
+        codes = code_word(self.W)
+        self.assertTrue(all(C.fast_letter(code, True) for code in codes))
+        started = time.perf_counter()
+        for code in codes:
+            if C.fast_letter(code, True):
+                model.play(code)
+            else:
+                self.fail('a retained fixture letter must use the model')
+        model_seconds = time.perf_counter() - started
+        rebuilt, agrees = model.to_state()
+        self.assertTrue(agrees)
+        self.assertEqual(rebuilt.digest(), self.T.digest())
+        print(f'Test D retained model loop: {1000 / model_seconds:.1f} letters/s; '
+              f'whole step: {1000 / stats["seconds"]:.1f} letters/s '
+              '(includes files, conversions and end checks).', flush=True)
         second = copy.deepcopy(self.rows[1])
         path = (directory / second['word']).resolve()
         self.assertEqual(C.check_tree_ranges(path, self.roots[1], self.menu), [])
@@ -505,6 +522,83 @@ class CLatticeTests(unittest.TestCase):
                     stats = self.replay(state, row, path, failures)
                 self.assertEqual(state.digest(), self.Y.digest())
                 self.assertEqual(stats['letters'], 0)
+
+    def test_f_replay_rechecks_replaced_word(self):
+        for longer in (False, True):
+            with self.subTest(longer=longer):
+                directory, _, _, _ = self.case()
+                word = [(5, 2), (5, self.inverse[2])] * 10
+                replacement = word + word[:2] if longer else [(6, i) for _, i in word]
+                row = make_row(directory, 2, word, formats.span('identity', 0, len(word)),
+                               snapshot(self.solved), snapshot(self.solved), identity=True)
+                path = directory / row['word']
+                real_info = C.ia16_info
+
+                def replaced_after_verify(path):
+                    info = real_info(path)
+                    write_word(path, replacement)
+                    return info
+
+                state = clone(self.solved)
+                with patch.object(C, 'ia16_info', side_effect=replaced_after_verify) as verify, \
+                        patch.object(C, 'check_tree_ranges', return_value=[]):
+                    expected = {'word_sha256', 'letters'} if longer else {'word_sha256'}
+                    stats = self.replay(state, row, path, expected)
+                verify.assert_called_once_with(path)
+                self.assertEqual(stats['letters'], len(replacement))
+                self.assertEqual(state.digest(), SOLVED, 'the replacement has the same exact end state')
+
+    def test_f_range_pass_rechecks_replaced_word(self):
+        for longer in (False, True):
+            with self.subTest(longer=longer):
+                directory, _, _, _ = self.case()
+                word = [(5, 2), (5, self.inverse[2])]
+                replacement = word + word if longer else [(6, i) for _, i in word]
+                second = formats.span('inverse', 1, 2)
+                second['inverse_of'] = [0]
+                root = formats.group('identity', [formats.span('forward', 0, 1), second])
+                path = directory / 'race.ia16.gz'
+                write_word(path, word)
+                real_info = C.ia16_info
+
+                def replaced_after_verify(path):
+                    info = real_info(path)
+                    write_word(path, replacement)
+                    return info
+
+                with patch.object(C, 'ia16_info', side_effect=replaced_after_verify) as verify:
+                    failures = C.check_tree_ranges(path, root, self.menu)
+                verify.assert_called_once_with(path)
+                self.assertEqual(set(failures), {'word_sha256', 'letters'} if longer else {'word_sha256'})
+
+    def test_f_model_label_failure_keeps_exact_end(self):
+        for bad_claim in (False, True):
+            with self.subTest(bad_claim=bad_claim):
+                _, row, path, state = self.case()
+                if bad_claim:
+                    row['after'] = {'digest': '0' * 64, 'off': 1}
+                    row['labels_identity'] = True
+                real_stickers = sim.State.lattice_stickers
+                calls = 0
+
+                def failed_crosscheck(st):
+                    nonlocal calls
+                    calls += 1
+                    stickers = real_stickers(st)
+                    if calls == 2:
+                        stickers['frame_agrees'] = stickers['frame_agrees'].copy()
+                        stickers['frame_agrees'][0] = False
+                    return stickers
+
+                expected = {'model_labels', 'after_digest', 'after_off', 'labels_identity'} if bad_claim else {'model_labels'}
+                with patch.object(sim.State, 'lattice_stickers', failed_crosscheck):
+                    stats = self.replay(state, row, path, expected)
+                self.assertGreaterEqual(calls, 3, 'step-end checks must still run after the conversion verdict')
+                self.assertEqual(state.digest(), self.T.digest())
+                self.assertNotEqual(state.digest(), self.Y.digest())
+                self.assertEqual(stats['digest'], self.T.digest())
+                self.assertIs(stats['labels_identity'], False)
+                self.assertEqual((stats['letters'], stats['fast'], stats['simulated']), (1000, 1000, 0))
 
     def test_f_row_guards_and_end_claims(self):
         guards = [('encoding', 'json'), ('letters', -1), ('letters', True), ('letters', 1.0),

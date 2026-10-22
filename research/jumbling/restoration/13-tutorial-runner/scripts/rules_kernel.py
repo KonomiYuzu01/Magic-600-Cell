@@ -7,8 +7,10 @@ research, catalogue r22d25-cat/1, with no coverage claim.
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import re
+import shutil
 import sys
 import time
 
@@ -158,8 +160,16 @@ def next_step(ctx):
         d19_sha256 = hashlib.sha256((ROOT / D19).read_bytes()).hexdigest()
     except FileNotFoundError:
         d19_sha256 = None
+    cache = directory / 'cache'
+    cache.mkdir()
+    home = ctx.cache / 'home_centroids.npy'
+    if home.is_file():
+        try:
+            os.link(home, cache / home.name)
+        except OSError:
+            shutil.copyfile(home, cache / home.name)
     argv = [sys.executable, '-I', '-B', ROOT / KERNEL, 'run', '--table', ctx.table,
-            '--out', directory, '--cache', ctx.cache, '--seconds', seconds,
+            '--out', directory, '--cache', cache, '--seconds', seconds,
             '--d19', ROOT / D19, '--max-steps', '1']
     started = time.monotonic()
     try:

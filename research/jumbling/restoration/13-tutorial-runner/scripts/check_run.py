@@ -75,6 +75,13 @@ STEP_KEYS = {'index', 'phase', 'subphase', 'rule', 'word', 'letters', 'encoding'
              'standing', 'before', 'after', 'seconds'}
 PLAYED_KEYS = {'contract', 'gate', 'attempts'}          # every step outside the bulk phase
 ACCEPTANCE_KEYS = {'verdict', 'certificate_steps', 'fallback_steps', 'probe', 'timed_out_attempts'}
+# The committed options of every acceptance run (plan revision 3e, E3).
+ACCEPTANCE_CONFIG = 'research/jumbling/restoration/13-tutorial-runner/acceptance-config.json'
+ACCEPTANCE_OPTIONS = ('literal_limit', 'seeds', 'tail_rules', 'lattice_restorer', 'fallback_max_length', 'par',
+                      'pair_shards', 'bulk_steps', 'tail_steps', 'high_steps', 'no_lattice')
+LATTICE_ENDS = ('stuck', 'budget', 'timeout', 'error')
+# The state-only D19 rule the kernel plugin passes (rules_kernel.py, D19).
+D19 = 'research/jumbling/restoration/12-low-height/scripts/round22/r22d19_rule.py'
 TREE_KEYS = {'name', 'letters', 'parts', 'span', 'inverse_of', 'same_as'}
 TREE_MAX_DEPTH = 64
 # A contract that check_contracts.py or check_lattice.py does not check yet.
@@ -144,7 +151,7 @@ def record_paths(base, doc, fails):
             add(fails, 'path')
     elif isinstance(doc, dict):
         for key, value in doc.items():
-            if key in PATH_KEYS and value is not None:
+            if key in PATH_KEYS and value is not None and not (key == 'unit' and type(value) is int):
                 try:
                     inside(base, value)
                 except (ValueError, OSError, RuntimeError):
@@ -287,6 +294,49 @@ def check_error(record, fails):
         add(fails, 'error')
 
 
+def check_acceptance_config(config, fails):
+    """An acceptance run used the committed options of this checkout (plan revision 3e, E3)."""
+    frozen = config.get('acceptance_config')
+    if config.get('mode') != 'acceptance':
+        if frozen is not None:
+            add(fails, 'acceptance_config')
+        return
+    try:
+        raw = (REPO / ACCEPTANCE_CONFIG).read_bytes()
+        committed = json.loads(raw)['options']
+    except (OSError, ValueError, KeyError, TypeError):
+        add(fails, 'acceptance_config')
+        return
+    budgets = config.get('budgets') if isinstance(config.get('budgets'), dict) else {}
+    lattice = config.get('lattice') if isinstance(config.get('lattice'), dict) else {}
+    recorded = {'literal_limit': config.get('literal_limit'), 'seeds': config.get('seeds'),
+                'tail_rules': config.get('tail_rules'), 'lattice_restorer': lattice.get('restorer'),
+                **{name: budgets.get(name, 'missing') for name in
+                   ('fallback_max_length', 'par', 'pair_shards', 'bulk_steps', 'tail_steps', 'high_steps')}}
+    # config.budgets records an unlimited tail as null (runner.py, initialize).
+    expected = dict(committed, tail_steps=committed.get('tail_steps') or None) if isinstance(committed, dict) else {}
+    if (not isinstance(frozen, dict) or set(frozen) != {'file', 'sha256', 'options'}
+            or frozen['file'] != ACCEPTANCE_CONFIG or frozen['sha256'] != hashlib.sha256(raw).hexdigest()
+            or frozen['options'] != committed or not isinstance(committed, dict)
+            or set(committed) != set(ACCEPTANCE_OPTIONS) or committed['no_lattice'] is not False
+            or any(recorded[name] != expected[name] for name in recorded)):
+        add(fails, 'acceptance_config')
+
+
+def check_kernel_d19(config, fails):
+    """The D19 rule a run's kernel used is this checkout's; an acceptance run records it (revision 3e, E2)."""
+    kernel = config.get('kernel') if isinstance(config.get('kernel'), dict) else {}
+    d19 = kernel.get('d19')
+    if d19 is None and config.get('mode') != 'acceptance':
+        return
+    try:
+        sha = hashlib.sha256((REPO / D19).read_bytes()).hexdigest()
+    except OSError:
+        sha = None
+    if sha is None or d19 != {'file': D19, 'sha256': sha}:
+        add(fails, 'kernel_d19')
+
+
 def check_v3_config(record, fails):
     """Format 3 configuration: mode, component, the fixed orders and the lifted clocks."""
     config = record.get('config')
@@ -313,6 +363,8 @@ def check_v3_config(record, fails):
     order = config.get('bulk_order')
     if not isinstance(order, list) or any(rule not in BULK_RULES for rule in order) or len(set(order)) != len(order):
         add(fails, 'bulk_order')
+    check_acceptance_config(config, fails)
+    check_kernel_d19(config, fails)
     check_source(source, fails)
     check_error(record, fails)
     return config
@@ -435,6 +487,12 @@ def check_v3_step(step, config, fails):
         add(fails, 'contract')
     if 'labels_identity' in step and (phase != 'lattice' or type(step['labels_identity']) is not bool):
         add(fails, 'labels_identity')
+    # Each kernel call hashes the D19 rule it ran; it must be the rule the configuration records (I1R-03).
+    d19 = config['kernel'].get('d19') if isinstance(config.get('kernel'), dict) else None
+    if phase == 'high' and isinstance(d19, dict) and (
+            not isinstance(step.get('kernel'), dict) or step['kernel'].get('d19_sha256') != d19.get('sha256')
+            or not digest(step['kernel']['d19_sha256'])):
+        add(fails, 'kernel_d19')
 
 
 def load_word_v3(base, step, fails):
@@ -720,13 +778,31 @@ def check_v3_phases(record, steps, positions, start, ends, fails):
         add(fails, 'entry_test')
     if 'end' in tail:
         ends[5].check(tail['end'], 'tail_end', fails, heights=True)
-    # Lattice: entered only with every piece on the lattice.
+    # The kernel's letter bound over the whole high phase, from the checker's own start
+    # snapshot, whenever the phase played a step (an error run included; P4-falsepass-02).
+    if nsteps[4]:
+        high_rows = [step for step, k in zip(steps, positions) if k == 4]
+        try:
+            named = check_contracts.check_high_phase({'off': starts(4).count, 'heights': starts(4).heights()},
+                                                     high_rows)
+            if not isinstance(named, list) or any(not isinstance(n, str) or not n for n in named):
+                raise TypeError('failures are a list of names')
+        except Exception:  # a crashed hook cannot pass a phase
+            named = ['contract']
+        for name in named:
+            add(fails, name)
+    # Lattice: entered only with every piece on the lattice. A played phase is solved (K1);
+    # with no played step its result is solved (nothing scheduled) or an End (revision 3e, E2).
     played = nsteps[6] or record.get('lattice') is not None
-    results.append(lattice.get('result') if played or lattice.get('result') is not None else None)
+    lat = lattice.get('result')
+    results.append(lat if played or lat is not None else None)
     if not integer(lattice.get('steps')) or lattice['steps'] != nsteps[6]:
         add(fails, 'phase_steps')
-    if played and starts(6).count:
+    if (played or lat is not None) and starts(6).count:
         add(fails, 'entry_test')
+    if ((nsteps[6] and lat != 'solved') or (lat is not None and lat not in ('solved',) + LATTICE_ENDS)
+            or (lat in LATTICE_ENDS and (nsteps[6] or record.get('lattice') is not None and lat != 'error'))):
+        add(fails, 'phase_result')
     # Fixed order: a position runs only after the one before it ran and did not end the run,
     # and is left out only after a result that ends the run (plan section 0, phase results):
     # an error, a budget or timeout after the bulk, or a stuck tail. An exception can end the
@@ -745,14 +821,18 @@ def check_v3_phases(record, steps, positions, start, ends, fails):
             add(fails, 'phase_order')
     # Run results (plan section 0, phase results): a budget or timeout after the bulk ends the
     # run budget; a stuck tail ends it stuck; an error in any phase ends it error.
-    if 'error' in results[1:5]:
+    # A lattice End ends the run the same way: stuck, budget (or timeout) or error.
+    lat = results[6]
+    if 'error' in results[1:5] or lat == 'error':
         if run_result != 'error':
             add(fails, 'result')
     elif run_result != 'error':
-        if ((any(r in ('budget', 'timeout') for r in results[1:5]) or result in ('budget', 'timeout'))
-                and run_result != 'budget'):
+        if ((any(r in ('budget', 'timeout') for r in results[1:5]) or result in ('budget', 'timeout')
+                or lat in ('budget', 'timeout')) and run_result != 'budget'):
             add(fails, 'result')
-        if (result == 'stuck') != (run_result == 'stuck'):
+        if (result == 'stuck' or lat == 'stuck') != (run_result == 'stuck'):
+            add(fails, 'result')
+        if lat == 'solved' and run_result != 'solved':
             add(fails, 'result')
     component = record['config'].get('component')
     if ((record.get('lattice') is not None and component is None)
@@ -784,6 +864,13 @@ def check_acceptance(record, steps, final, ends, fails):
         attempts += data['attempts']
         if data.get('result') is not None and ends[k].digest == final.digest:
             final_attempts += data['attempts']
+    lattice = phases.get('lattice') if isinstance(phases.get('lattice'), dict) else {}
+    if 'attempts' in lattice:
+        if not valid_attempts(lattice['attempts']):
+            add(fails, 'attempts')
+        else:
+            attempts += lattice['attempts']
+            final_attempts += lattice['attempts']
     probe = isinstance(stuck.get('probe'), dict)
     counts = {'certificate_steps': sum(s.get('standing') == 'certificate' for s in steps),
               'fallback_steps': sum(s.get('standing') == 'fallback' for s in steps),
@@ -854,6 +941,50 @@ def check_probe(base, probe, end, st, fails):
     # off set strictly shrinks.
     if after.digest != doc['output_digest'] or not fallback_kept(end, after, mask):
         add(fails, 'probe')
+
+
+def labels_identity(st):
+    """Restored means identity sticker labels (owner decision, 15 October 2026), from the simulator."""
+    if st.off_lattice_count():
+        return False
+    stickers = st.lattice_stickers()
+    labels = np.asarray(stickers['labels'])
+    return bool(np.all(stickers['frame_agrees'])) and bool(np.array_equal(labels, np.arange(len(labels))))
+
+
+def check_lattice_report(base, data, twists, restorer, start, end, fails):
+    """The plugin's report the runner kept: present, unchanged, and agreeing with the replay (I1R-01): the
+    restorer the configuration names, the digests the checker replayed at the phase's start and end, a
+    solved player with no failure, and the replayed length, all of it scheduled."""
+    report = data.get('report')
+    try:
+        raw = inside(base, report['file']).read_bytes()
+        doc = json.loads(raw)
+        player = doc['player']
+        played = player['played']
+        ok = (set(report) == {'file', 'sha256'} and hashlib.sha256(raw).hexdigest() == report['sha256']
+              and doc['restorer'] == restorer and player['input']['digest'] == start
+              and player['final']['digest'] == end and player['final']['labels_identity'] is True
+              and player['result'] == 'solved' and player['failure'] is None
+              and integer(played['retained']) and integer(played['corrections'])
+              and played['retained'] + played['corrections'] == played['total'] == twists
+              and player['scheduled'] == {'retained': played['retained'], 'corrections': played['corrections']})
+    except (OSError, ValueError, KeyError, TypeError):
+        ok = False
+    if not ok:
+        add(fails, 'lattice_report')
+
+
+def check_step_table(base, step, current, menu, fails):
+    """A row's table is the runner's checkpoint after that step, tables/<index>.json, and it loads to the
+    state the checker replayed (I1R-02)."""
+    try:
+        ok = (step['table'] == 'tables/%05d.json' % step['index']
+              and load_table(inside(base, step['table']), menu).digest() == current.digest)
+    except (OSError, ValueError, EOFError, zlib.error, KeyError, TypeError, IndexError):
+        ok = False
+    if not ok:
+        add(fails, 'table')
 
 
 def run_verifier(argv, cwd, report, seconds):
@@ -1147,6 +1278,7 @@ def check_run(run_dir, emit, report_parent=None, verify_seconds=7200, allow_unch
         # Format 3: each step's position in the fixed order, and ends[k], the checker's
         # snapshot after the last step at position k or, without one, where k was passed.
         first, ends, positions, at = current, [None] * len(POSITIONS), [], 0
+        lattice_start = None                        # the replayed digest where the lattice phase starts
         for index, (step, word) in enumerate(zip(steps, words)):
             sf = step_fails[index]
             phase = step.get('phase')
@@ -1232,6 +1364,10 @@ def check_run(run_dir, emit, report_parent=None, verify_seconds=7200, allow_unch
             before.st = None
             current = Snapshot(st)
             current.check(step.get('after'), 'after', sf, heights=heights, n=phase == 'bulk')
+            if v3 and 'table' in step:
+                check_step_table(base, step, current, menu, sf)
+            if phase == 'lattice' and lattice_start is None:
+                lattice_start = before.digest
             if word is not None and word['output_digest'] != current.digest:
                 add(sf, 'output_digest')
             if phase in counts:
@@ -1292,16 +1428,33 @@ def check_run(run_dir, emit, report_parent=None, verify_seconds=7200, allow_unch
                         check_probe(base, stuck['probe'], current, st, fails)
         lattice = record.get('lattice')
         played = v3 and any(s.get('phase') == 'lattice' for s in steps)
+        restorer = config['lattice'].get('restorer') if isinstance(config.get('lattice'), dict) else None
         if played:
             # Plan section 2, end digest (R3-05): a played lattice is solved by identity
             # labels; the replayed digest may differ from SOLVED by rotations they do not see.
             lattice_twists = counts['lattice']
             if lattice is not None:
                 add(fails, 'lattice')
-            last = [s for s in steps if s.get('phase') == 'lattice'][-1]
+            lattice_rows = [s for s in steps if s.get('phase') == 'lattice']
+            last = lattice_rows[-1]
             if (type(last.get('labels_identity')) is not bool
                     or (record.get('result') == 'solved' and (last['labels_identity'] is not True or current.count))):
                 add(fails, 'labels_identity')
+            # Only the phase's end table exists (runner.py, played_lattice); the step loop compared it with
+            # the replay (I1R-02).
+            if 'table' not in last or any('table' in s for s in lattice_rows[:-1]):
+                add(fails, 'table')
+            end_digest = current.digest
+            if shaped:
+                check_lattice_report(base, record['phases']['lattice'], lattice_twists, restorer, lattice_start,
+                                     current.digest, fails)
+        elif v3 and shaped and lattice is None and record['phases']['lattice'].get('result') == 'solved':
+            # The restorer scheduled nothing (revision 3e, E2): the checker tests the labels itself.
+            lattice_twists = 0
+            if current.count or not labels_identity(st):
+                add(fails, 'labels_identity')
+            check_lattice_report(base, record['phases']['lattice'], 0, restorer, current.digest, current.digest,
+                                 fails)
             end_digest = current.digest
         else:
             if lattice is not None:
@@ -1318,9 +1471,13 @@ def check_run(run_dir, emit, report_parent=None, verify_seconds=7200, allow_unch
             data = record['phases']['lattice']
             if data.get('twists') != lattice_twists or (data['twists'] is not None and not integer(data['twists'])):
                 add(fails, 'phase_twists')
-            # The composition path records the run's result; an error can cut it short.
-            if (not played and data.get('result') != (record.get('result') if lattice is not None else None)
-                    and not (lattice is not None and data.get('result') is None and record.get('result') == 'error')):
+            # The composition path records the run's result; an error can cut it short. Without it, a
+            # phase with no played step has no result, solved (nothing scheduled) or an End, which
+            # check_v3_phases holds against the run's result.
+            if not played and (
+                    (lattice is not None and data.get('result') != record.get('result')
+                     and not (data.get('result') is None and record.get('result') == 'error'))
+                    or (lattice is None and data.get('result') not in (None, 'solved') + LATTICE_ENDS)):
                 add(fails, 'phase_result')
         totals = record['totals']
         for phase in counts:

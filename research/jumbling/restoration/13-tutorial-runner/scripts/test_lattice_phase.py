@@ -271,7 +271,7 @@ def new_context(f, *, initialized=False, restorer='late', wrapper=None, mode='de
     s = shared()
     base = Path(tempfile.mkdtemp(prefix='context-', dir=TEMPORARY))
     r = R.Runner(R.parse_args(['--table', str(f.table), '--out', str(base / 'run'),
-        '--cache', str(TEMPORARY / 'cache'), '--mode', mode]), s.mechanics)
+        '--cache', str(TEMPORARY / 'cache'), '--mode', mode, '--lattice-restorer', restorer]), s.mechanics)
     if initialized:
         r.initialize()
         ctx = r.context('lattice', None)
@@ -612,7 +612,12 @@ class ResultChecks:
         letters, count = sum(s.letters for s in result.steps), len(result.steps)
         r.played_lattice(result)
         self.assertEqual(r.record['result'], 'solved')
-        self.assertEqual(r.record['phases']['lattice'], {'result': 'solved', 'steps': count, 'twists': letters})
+        # The runner keeps the plugin's report next to the record (plan revision 3e, E2).
+        report = {'file': 'lattice/report.json',
+                  'sha256': hashlib.sha256((r.out / 'lattice/report.json').read_bytes()).hexdigest()}
+        self.assertEqual(r.record['phases']['lattice'], {'result': 'solved', 'steps': count, 'twists': letters,
+                                                         'report': report})
+        self.assertEqual(json.loads((r.out / 'lattice/report.json').read_text()), result.report)
         self.assertEqual(r.record['totals']['lattice_twists'], letters)
         self.assertIsNone(r.record['lattice'])
         self.assertIsNone(r.record['config']['component'])
@@ -791,6 +796,68 @@ class G_FailureTests(EndChecks, unittest.TestCase):
                 ctx.budgets.clear()
             self.check_end(L.play(ctx), 'error', check)
 
+    def test_07_failure_certificate_identity(self):
+        f = fixture()
+        status = 'failure certificate: nu outside the span of the correction library'
+        stub = make_stub(f.template, status=status)
+        for restorer in ('late', 'schedule11'):
+            checks = (None, 'runs', 'input', 'input_digest', 'library_sha256')
+            if restorer == 'schedule11':
+                checks += ('realign_sha256',)
+            for check in checks:
+                def wrapper(execute, ctx):
+                    ctx.budgets['lattice_restorer'] = restorer
+
+                    def call(argv, tag, seconds, **kwargs):
+                        self.assertTrue(tag.startswith('lattice-restore-'), 'a certificate must not start the player')
+                        child = execute(argv, tag, seconds, **kwargs)
+                        path = ctx.work_dir / 'restore/restore-summary.json'
+                        summary = read(path)
+                        summary['realign_sha256'] = L.sha(ROOT / L.REALIGN)
+                        run = summary['runs'][0]
+                        if check == 'runs':
+                            summary['runs'].append(dict(run))
+                        elif check == 'input':
+                            run['input'] = 'table:another.json'
+                        elif check == 'input_digest':
+                            run['input_digest'] = '0' * 64
+                        elif check == 'library_sha256':
+                            summary['library']['sha256'] = '0' * 64
+                        elif check == 'realign_sha256':
+                            summary['realign_sha256'] = '0' * 64
+                        write(path, summary)
+                        return child
+                    return call
+
+                with self.subTest(restorer=restorer, check=check), \
+                        patch.dict(L.RESTORERS, {'schedule11': stub}):
+                    result, _, _ = invoke(f, stub=stub, wrapper=wrapper)
+                    if check is None:
+                        self.check_end(result, 'stuck', 'restorer_no_solution', timed_out=False)
+                    else:
+                        self.check_end(result, 'error', 'restorer_output_invalid', check=check)
+
+    def test_08_main_cleans_temporary_tree_on_success_and_exception(self):
+        module = sys.modules[__name__]
+        for keep in ('0', '1'):
+            for fail in (False, True):
+                directory = Path(tempfile.mkdtemp(dir=TEMPORARY, prefix='cleanup-'))
+                with self.subTest(keep=keep, fail=fail), \
+                        patch.object(module, 'TEMPORARY', directory), \
+                        patch.object(module, 'status', return_value=b''), \
+                        patch.object(module, 'inventory', return_value={}), \
+                        patch.dict(os.environ, KEEP_TEMP=keep), \
+                        patch.object(unittest.TextTestRunner, 'run',
+                                     side_effect=RuntimeError('fixture run failure') if fail else None,
+                                     return_value=types.SimpleNamespace(wasSuccessful=lambda: True)):
+                    if fail:
+                        with self.assertRaisesRegex(RuntimeError, 'fixture run failure'):
+                            main()
+                    else:
+                        self.assertEqual(main(), 0)
+                    self.assertEqual(directory.exists(), keep == '1')
+                shutil.rmtree(directory, ignore_errors=True)
+
     def test_05_child_outcomes(self):
         for stage in ('restore', 'play'):
             for kind, outcome, reason in (('timeout', 'timeout', 'lattice_wall_clock'),
@@ -806,7 +873,12 @@ class G_FailureTests(EndChecks, unittest.TestCase):
                             return execute(argv, tag, seconds, **kwargs)
                         return call
                     result, _, _ = invoke(fixture(), wrapper=wrapper)
-                    self.check_end(result, outcome, reason, timed_out=True if outcome == 'timeout' else None)
+                    # A timed-out or cancelled call keeps its attempt row and its time (I1R-04).
+                    self.check_end(result, outcome, reason, timed_out={'timeout': True, 'cancelled': False}.get(kind))
+                    if kind != 'exit':
+                        self.assertEqual((result.attempts[0]['outcome'], result.attempts[0]['reason']),
+                                         (outcome, reason))
+                        self.assertGreaterEqual(result.attempts[0]['seconds'], 0.125)
 
     def test_06_play_output_tampering(self):
         s, f = shared(), fixture()
@@ -1034,24 +1106,27 @@ def status():
 
 
 def main(names=()):
-    started = time.monotonic()
-    before_status, before_files = status(), inventory()
-    loader = unittest.TestLoader()
-    suite = loader.loadTestsFromNames(names, sys.modules[__name__]) if names else loader.loadTestsFromModule(sys.modules[__name__])
     try:
-        result = unittest.TextTestRunner(verbosity=2, resultclass=TimedResult).run(suite)
+        started = time.monotonic()
+        before_status, before_files = status(), inventory()
+        loader = unittest.TestLoader()
+        suite = loader.loadTestsFromNames(names, sys.modules[__name__]) if names else loader.loadTestsFromModule(sys.modules[__name__])
+        try:
+            result = unittest.TextTestRunner(verbosity=2, resultclass=TimedResult).run(suite)
+        finally:
+            after_status, after_files = status(), inventory()
+        unchanged = before_status == after_status and before_files == after_files
+        if unchanged:
+            print('Worktree unchanged, including ignored files.', file=sys.stderr)
+        else:
+            changed = sorted(p for p in before_files.keys() | after_files.keys() if before_files.get(p) != after_files.get(p))
+            print('FAIL: acceptance changed the worktree, including ignored files:', changed, file=sys.stderr)
+        print(f'--_play children: {PLAY_CHILDREN}; test E kept in children; test H kept in default suite.', file=sys.stderr)
+        print(f'Acceptance elapsed: {time.monotonic() - started:.3f}s.', file=sys.stderr)
+        return 0 if result.wasSuccessful() and unchanged else 1
     finally:
-        after_status, after_files = status(), inventory()
-    unchanged = before_status == after_status and before_files == after_files
-    if unchanged:
-        print('Worktree unchanged, including ignored files.', file=sys.stderr)
-    else:
-        changed = sorted(p for p in before_files.keys() | after_files.keys() if before_files.get(p) != after_files.get(p))
-        print('FAIL: acceptance changed the worktree, including ignored files:', changed, file=sys.stderr)
-    print(f'--_play children: {PLAY_CHILDREN}; test E kept in children; test H kept in default suite.', file=sys.stderr)
-    print(f'Acceptance elapsed: {time.monotonic() - started:.3f}s.', file=sys.stderr)
-    shutil.rmtree(TEMPORARY)
-    return 0 if result.wasSuccessful() and unchanged else 1
+        if os.environ.get('KEEP_TEMP') != '1':
+            shutil.rmtree(TEMPORARY, ignore_errors=True)
 
 
 if __name__ == '__main__':

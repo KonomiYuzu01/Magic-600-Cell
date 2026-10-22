@@ -7,7 +7,7 @@ normalized steps, end (tag and payload), status and an optional reason.
 when decided, and each output's end. Historical truncated shards can decide a
 pair; the live adapter rejects every unexplained truncation.
 """
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import math
 import os
@@ -16,6 +16,7 @@ import pickle
 import re
 import signal
 import sys
+import threading
 
 import runner_api as api
 
@@ -371,13 +372,13 @@ def _stop_when(name, line):
     return False
 
 
-def _call(ctx, snap, path, name, extra=(), shard=None, expected=None):
+def _call(ctx, snap, path, name, extra=(), shard=None, expected=None, *, stop_when=None):
     cpu = float(ctx.child_clock('height_cpu'))
     tag = f'{ctx.work_dir.name}-{name}' + (f'-shard{shard}' if shard is not None else '')
     argv = [sys.executable, '-I', '-B', '-u', str(ROOT / RULE_SCRIPTS[name]),
             '--snapshot', str(path), '--expect', snap['digest'], '--cpu', str(cpu), *map(str, extra)]
     child = ctx.execute(argv, tag, ctx.wall('height_seconds'),
-                        stop_when=None if shard is not None else lambda line: _stop_when(name, line))
+                        stop_when=stop_when if shard is not None else lambda line: _stop_when(name, line))
     attempt = dict(script=name, tag=tag, shard=shard, outcome=None, reason=None, rc=child.rc,
                    seconds=float(child.seconds), stopped=bool(child.stopped), timed_out=False)
     call = {'parsed': None, 'attempt': attempt, 'result': None, 'reason': None, 'details': {}}
@@ -407,15 +408,18 @@ def _call(ctx, snap, path, name, extra=(), shard=None, expected=None):
         if shard is None and status in ('step', 'no_target'):
             return finish('step' if status == 'step' else 'stuck',
                           'step' if status == 'step' else 'no_target')
+        if status in ('malformed', 'mismatch', 'missing_step', 'crash'):
+            return finish(status, parsed['reason'], 'error')
+        if shard is not None and status == 'done' and start is not None:
+            indices = [row.get('index') for row in parsed['firsts']]
+            _need(all(_integer(index, high=start['first_letters']) for index in indices))
+            _need(parsed['end']['payload']['first_letters_done'] == len(indices) and
+                  set(indices) == set(range(shard, start['first_letters'], start['nshards'])),
+                  'inconsistent_output')
         if child.timeout:
             return finish('timeout', 'wall_clock', 'timeout')
-        if status in ('malformed', 'mismatch', 'missing_step'):
-            return finish(status, parsed['reason'], 'error')
         if shard is not None:
             if status in ('done', 'budget') and child.rc == 0 and start is not None:
-                if status == 'done':
-                    _need(parsed['end']['payload']['first_letters_done'] == len(parsed['firsts']),
-                          'inconsistent_output')
                 return finish(status, 'cpu_budget' if status == 'budget' else 'done',
                               'budget' if status == 'budget' else None)
         elif status == 'end' and child.rc == 0:
@@ -432,10 +436,18 @@ def _call(ctx, snap, path, name, extra=(), shard=None, expected=None):
                  type(pending['step']) is int and pending.get('family') == 'H6') or
                 (name == 'h4' and payload.get('families') == {'L4': 1} and
                  type(payload['families']['L4']) is int))
+            if end_tag != 'BUDGET' or exception:
+                _need(start is not None, 'truncated')
             if steps != 0 and not exception:
                 return finish('missing_step', 'missing_step', 'error')
             if steps == 0 and 'digest' in payload:
                 _need(payload['digest'] == snap['digest'], 'digest_mismatch')
+            if steps == 0 and start is not None and name != 'r22d75':
+                _target_fields(payload)
+                _need(payload['tau'] == start['tau'] and payload['u'] == start['u'],
+                      'inconsistent_output')
+                if name == 'r22d81_pairs':
+                    _need(payload['tau'] == expected['tau'], 'inconsistent_output')
             details = _details(payload)
             if end_tag in ('HEIGHT2', 'HANDOFF'):
                 return finish('handoff', 'handoff', 'handoff', details)
@@ -477,18 +489,29 @@ def pair_end_digest(ctx, letters):
 
 def _shards(ctx, snap, path, stuck, attempts):
     n = ctx.budgets['pair_shards']
+    event = threading.Event()
+    calls, first_error = [None] * n, None
     with ThreadPoolExecutor(max_workers=n) as pool:
-        futures = [pool.submit(_call, ctx, snap, path, 'two_letter_u',
-                               ('--shard', i, '--nshards', n), i,
-                               {'tau': stuck['tau'], 'u': stuck['u'], 'shard': i, 'nshards': n})
-                   for i in range(n)]
-        calls = [future.result() for future in futures]
+        try:
+            futures = {pool.submit(_call, ctx, snap, path, 'two_letter_u',
+                                  ('--shard', i, '--nshards', n), i,
+                                  {'tau': stuck['tau'], 'u': stuck['u'], 'shard': i, 'nshards': n},
+                                  stop_when=lambda line: event.is_set()): i for i in range(n)}
+            for future in as_completed(futures):
+                call = calls[futures[future]] = future.result()
+                if call['result'] == 'error' and first_error is None:
+                    first_error = call
+                    event.set()
+        except BaseException:
+            event.set()
+            raise
+        finally:
+            event.set()
     attempts.extend(call['attempt'] for call in calls)
-    for call in calls:
-        if call['result'] == 'error':
-            return api.End('error', call['reason'], call['details'], attempts)
+    if first_error is not None:
+        return api.End('error', first_error['reason'], first_error['details'], attempts)
     try:
-        parsed = [dict(call['parsed'], status=call['attempt']['outcome']) for call in calls]
+        parsed = [call['parsed'] for call in calls]
         chosen = _pair_choice(parsed)
         if chosen['result'] == 'step':
             step = chosen['step']
@@ -497,10 +520,12 @@ def _shards(ctx, snap, path, stuck, attempts):
             return _proposal(ctx, snap, step, 'two_letter_u', attempts)
         if chosen['result'] == 'exhausted' and all(c['attempt']['outcome'] == 'done' for c in calls):
             return api.End('stuck', 'pair_exhausted', attempts=attempts)
-        timeout = any(call['result'] == 'timeout' for call in calls)
-        reason = 'cpu_rlimit' if any(c['reason'] == 'cpu_rlimit' for c in calls) else 'cpu_budget'
-        return api.End('timeout' if timeout else 'budget', 'wall_clock' if timeout else reason,
-                       attempts=attempts)
+        if any(call['result'] == 'timeout' for call in calls):
+            return api.End('timeout', 'wall_clock', attempts=attempts)
+        if any(call['attempt']['outcome'] == 'budget' for call in calls):
+            reason = 'cpu_rlimit' if any(c['reason'] == 'cpu_rlimit' for c in calls) else 'cpu_budget'
+            return api.End('budget', reason, attempts=attempts)
+        return api.End('error', 'inconsistent_output', attempts=attempts)
     except (OutputError, ValueError) as exc:
         return api.End('error', exc.reason if isinstance(exc, OutputError) else 'malformed_output',
                        attempts=attempts)
