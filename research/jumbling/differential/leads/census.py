@@ -89,7 +89,8 @@ def isolate_cache(path=None):
             _CACHE_DIR = tempfile.mkdtemp(prefix='jumbling-census-')
             atexit.register(shutil.rmtree, _CACHE_DIR, True)
         path = _CACHE_DIR
-    seams.CACHE = _outside(path, 'the centroid cache') / 'home_centroids.npy'
+    directory = _outside(path, 'the centroid cache directory')
+    seams.CACHE = _outside(directory / 'home_centroids.npy', 'the centroid cache')
     return seams.CACHE
 
 

@@ -417,6 +417,22 @@ class CensusTests(TimedCase):
             census._CACHE_DIR = saved
         self.assertEqual(census.seams.CACHE, before)
 
+        real = Path.resolve
+
+        def resolve(path, strict=False):
+            # Only the cache file itself is a link into the repository.
+            return ROOT / 'work' / 'home_centroids.npy' if path.name == 'home_centroids.npy' else real(path, strict)
+
+        try:
+            with tempfile.TemporaryDirectory(prefix='jumbling-census-cache-') as temporary:
+                with patch.object(Path, 'resolve', resolve), \
+                        self.assertRaisesRegex(census.CensusError, 'outside the repository'):
+                    census.isolate_cache(temporary)
+                self.assertEqual(census.seams.CACHE, before)
+                self.assertEqual(census.isolate_cache(temporary), Path(temporary).resolve() / 'home_centroids.npy')
+        finally:
+            census.seams.CACHE = before
+
 
 class CLISmokeTests(TimedCase):
     def test_output_file_resolving_into_repository_is_refused(self):
