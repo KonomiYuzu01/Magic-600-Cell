@@ -332,6 +332,30 @@ def godot_run(godot, stage, temporary, env, arguments, *, graphics=False, expect
     return run
 
 
+def stills_report(output):
+    presets = {file.stem for file in (ROOT / LAB / "presets").glob("g1-*.json")}
+    expected = {(preset, pose) for preset in presets for pose in ("rest", "mid")}
+    seen, paths = set(), set()
+    pattern = r"LOOKLAB_STILL preset=(g1-[a-z-]+) pose=(rest|mid) path=(work/loop-memory/looklab/captures/capture-[^ ]+\.png)"
+    lines = output.splitlines()
+    for line in lines:
+        if not line.startswith("LOOKLAB_STILL") or line.startswith("LOOKLAB_STILLS_PASS"):
+            continue
+        match = re.fullmatch(pattern, line)
+        if match is None:
+            raise CheckFailure("stills: malformed still result")
+        preset, pose, relative = match.groups()
+        path = ROOT / relative
+        if (preset, pose) not in expected or (preset, pose) in seen or relative in paths or not inside(path, ROOT) or not path.is_file():
+            raise CheckFailure("stills: repeated, unexpected or missing capture: " + line)
+        seen.add((preset, pose)); paths.add(relative)
+    if len(presets) != 6 or seen != expected:
+        raise CheckFailure("stills: expected every G1 preset at rest and mid-turn exactly once")
+    passes = [line for line in lines if line.startswith("LOOKLAB_STILLS_PASS")]
+    if passes != ["LOOKLAB_STILLS_PASS presets=6 stills=12 size=1600x1000"]:
+        raise CheckFailure("stills: missing, repeated or malformed PASS result")
+
+
 def godot_lane(mode, temporary, env, parent):
     godot = find_godot(parent)
     packages = godot.parent / "GodotSharp/Tools/nupkgs"
@@ -367,18 +391,22 @@ def godot_lane(mode, temporary, env, parent):
             __import__("runpy").run_path(str(ROOT / LAB / "lane_ll4.py"))["run"](godot, stage, temporary, env, common, godot_run, CheckFailure)
             __import__("runpy").run_path(str(ROOT / LAB / "lane_ll5.py"))["headless"](godot, stage, temporary, env, common, godot_run, CheckFailure)
             __import__("runpy").run_path(str(ROOT / LAB / "lane_ll6.py"))["run"](godot, stage, temporary, env, common, godot_run, CheckFailure)
+            __import__("runpy").run_path(str(ROOT / LAB / "lane_ll7.py"))["run"](godot, stage, temporary, env, common, godot_run, CheckFailure)
         elif mode == "--godot-gpu":
             run = godot_run(godot, stage, temporary, env, [*common, "stage0-gpu"], graphics=True)
             if "LOOKLAB_STAGE0_GPU_PASS" not in run.stdout:
                 raise CheckFailure("stage 0 graphics result missing")
             godot_run(godot, stage, temporary, env, [*common, "stage0-gpu", "float-offset"], graphics=True, expected_failure="float-offset")
             run = godot_run(godot, stage, temporary, env, [*common, "geometry"], graphics=True)
-            if "LOOKLAB_GEOMETRY_PASS cases=10 samples=3000 framed=1 target=RGBA32F" not in run.stdout or "LOOKLAB_DRAW_COUNT_PASS instances=600 visible=600 primitives=6096000" not in run.stdout:
+            if "LOOKLAB_GEOMETRY_PASS cases=10 samples=3000 framed=1 target=RGBA32F" not in run.stdout or "LOOKLAB_DRAW_COUNT_PASS instances=600 visible=600 primitives=6096000" not in run.stdout or "LOOKLAB_LAYOUT_GEOMETRY_PASS cases=6 samples=1800 target=RGBA32F" not in run.stdout:
                 raise CheckFailure("shader geometry or full draw-count result missing")
-            for fault in ("transpose-q", "missing-instance", "missing-view-frame"):
+            for fault in ("transpose-q", "missing-instance", "missing-view-frame", "layout-no-blend"):
                 godot_run(godot, stage, temporary, env, [*common, "geometry", fault], graphics=True, expected_failure=fault)
             __import__("runpy").run_path(str(ROOT / LAB / "lane_ll3.py"))["graphics"](globals(), godot, stage, temporary, env, common)
             __import__("runpy").run_path(str(ROOT / LAB / "lane_ll5.py"))["graphics"](godot, stage, temporary, env, common, godot_run, CheckFailure)
+        elif mode == "--stills":
+            run = godot_run(godot, stage, temporary, env, [*common, "stills"], graphics=True)
+            stills_report(run.stdout)
         else:
             godot_run(godot, stage, temporary, env, common, timeout=7200)
     finally:
@@ -388,8 +416,8 @@ def godot_lane(mode, temporary, env, parent):
 
 def main(argv=None):
     args = sys.argv[1:] if argv is None else argv
-    if args not in ([], ["--godot"], ["--godot-gpu"], ["--run"]):
-        print("looklab usage: check.py [--godot | --godot-gpu | --run]", file=sys.stderr)
+    if args not in ([], ["--godot"], ["--godot-gpu"], ["--run"], ["--stills"]):
+        print("looklab usage: check.py [--godot | --godot-gpu | --run | --stills]", file=sys.stderr)
         return 2
     temporary = Path(tempfile.gettempdir()) / f"looklab-check-{uuid4().hex}"
     result, before = 0, None
@@ -397,7 +425,7 @@ def main(argv=None):
         temporary.mkdir()
         before = snapshot(ROOT)
         env = child_env(temporary)
-        if args != ["--run"]:
+        if args not in (["--run"], ["--stills"]):
             core_check(temporary, env)
         if args:
             godot_lane(args[0], temporary, env, os.environ)
@@ -415,8 +443,8 @@ def main(argv=None):
             print(f"looklab check: could not remove {temporary}: {exc}")
             result = 1
         after = snapshot(ROOT) if before is not None else None
-        if before is not None and args == ["--run"]:
-            # The interactive app may write its own outputs, such as saved presets and captures.
+        if before is not None and args in (["--run"], ["--stills"]):
+            # Interactive use and stills may write the app's own outputs.
             original = before
             before, after = ({key: value for key, value in state.items() if not app_output(key, original)}
                              for state in (before, after))
@@ -425,7 +453,7 @@ def main(argv=None):
             print("looklab check: checkout changed: " + ", ".join(changed))
             result = 1
         elif before is not None:
-            outside = " outside " + " and ".join(APP_OUTPUTS) if args == ["--run"] else ""
+            outside = " outside " + " and ".join(APP_OUTPUTS) if args in (["--run"], ["--stills"]) else ""
             print(f"looklab check: checkout unchanged{outside} (including ignored files)")
     return result
 

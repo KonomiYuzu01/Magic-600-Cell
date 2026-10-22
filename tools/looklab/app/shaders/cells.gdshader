@@ -46,6 +46,12 @@ uniform vec4 cvd_r2 = vec4(0.0, 0.0, 1.0, 0.0);
 uniform bool geometry_check = false;
 uniform bool transpose_q = false;
 uniform int geometry_width = 300;
+uniform sampler2D cell_layout : filter_nearest, repeat_disable;
+uniform mat4 spin;
+uniform float turn_angle;
+uniform float hemisphere_offset;
+uniform float hemisphere_scale;
+uniform float hemisphere_clamp;
 
 varying vec3 projected;
 varying float visible_w;
@@ -75,12 +81,44 @@ void vertex() {
         world += ((c - 1.0) * x - s * y) * plane_u + (s * x + (c - 1.0) * y) * plane_v;
     }
     visible_w = world.w;
+    vec4 posed = world;
     if (transpose_q) world = transpose(q) * world;
     else world = q * world;
     float factor = 1.0;
     if (projection_kind == 0) factor = d4 / (d4 - world.w);
     if (projection_kind == 1) factor = 1.0 / (1.0 - world.w);
     projected = world.xyz * factor;
+    if (projection_kind >= 3) {
+        int target_cell = INSTANCE_ID;
+        float blend = 0.0;
+        if (moving > 0.5 && theta != 0.0) {
+            vec4 targets = texelFetch(cell_layout, ivec2(INSTANCE_ID, 1), 0);
+            target_cell = int(theta * turn_angle > 0.0 ? targets.x : targets.y);
+            blend = clamp(abs(theta / turn_angle), 0.0, 1.0);
+        }
+        vec3 placed = vec3(0.0);
+        for (int k = 0; k < 2; k++) {
+            int chart = k == 0 ? INSTANCE_ID : target_cell;
+            vec3 chart_point;
+            if (projection_kind == 3) {
+                vec4 centre = texelFetch(cell_layout, ivec2(chart, 0), 0);
+                vec4 turned_centre = transpose_q ? transpose(q) * centre : q * centre;
+                float side = turned_centre.w >= 0.0 ? 1.0 : -1.0;
+                chart_point = vec3(-side * world.x, world.y, world.z) / max(1.0 + side * world.w, hemisphere_clamp) - vec3(side * hemisphere_offset, 0.0, 0.0);
+            } else {
+                int row = projection_kind == 4 ? 2 : 6;
+                vec4 r0 = texelFetch(cell_layout, ivec2(chart, row), 0);
+                vec4 r1 = texelFetch(cell_layout, ivec2(chart, row + 1), 0);
+                vec4 r2 = texelFetch(cell_layout, ivec2(chart, row + 2), 0);
+                vec4 r3 = texelFetch(cell_layout, ivec2(chart, row + 3), 0);
+                chart_point = vec3(dot(r0, posed), dot(r1, posed), dot(r2, posed)) + r3.xyz;
+            }
+            placed += (k == 0 ? 1.0 - blend : blend) * chart_point;
+        }
+        if (projection_kind == 3) projected = placed * hemisphere_scale;
+        else if (projection_kind == 4) projected = (spin * vec4(placed, 0.0)).xyz;
+        else projected = placed;
+    }
     float w = 5.0 - projected.z;
     // Godot's Vulkan/D3D12 depth is reversed (near=1, far=0).
     vec4 clip = vec4(projected.x * zoom / aspect, projected.y * zoom, (0.05 / 99.95) * (100.0 - w), w);

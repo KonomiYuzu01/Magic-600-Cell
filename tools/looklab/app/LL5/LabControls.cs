@@ -19,7 +19,7 @@ internal sealed partial class LabControls : VBoxContainer
     {
         this.state = state; this.status = status;
         Preview = new CvdPreview(state, view); AddChild(Preview);
-        Palette = new PalettePanel(state, view.Geometry.CellStructure); AddChild(Palette);
+        Palette = new PalettePanel(state, view.Geometry.CellStructure, () => view.Colouring); AddChild(Palette);
         Costs = new CostMeter(state, CostTable.Load(Path.Combine(root, "tools/looklab/data/cost.json"), state.Schema)); AddChild(Costs);
         AddChild(new HSeparator());
         state.Changed += Refresh; UpdateStatus(baseStatus);
