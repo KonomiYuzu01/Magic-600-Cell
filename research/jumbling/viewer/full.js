@@ -973,14 +973,16 @@ function capOrientation(center) {
   }
   return q;
 }
-function frameTutorial(cap) {
+function frameTutorial(cap, moving) {
+  const selectionOnly = shot.ghost === 'none';
+  const moved = selectionOnly && shot.emph === 'moved' ? new Set(moving) : null;
   const centers = Array.from({ length: COUNTS.cells }, (_, i) => capCenter(i));
   let facets = centers.map((_, i) => i);
   if (cap !== null) {
     shotQ = capOrientation(centers[cap]);
     // The selected cap projects to the origin; stereo uses the opposite (-w) pole.
     $('pole').value = 'negative-w';
-    if (shot.view === 'local') {
+    if (shot.view === 'local' && !selectionOnly) {
       const distance = (v) => v.reduce((s, x, k) => s + (x - centers[cap][k]) ** 2, 0);
       facets = [cap, ...facets.filter((i) => i !== cap)
         .sort((a, b) => distance(centers[a]) - distance(centers[b]) || a - b).slice(0, 4)];
@@ -1006,41 +1008,65 @@ function frameTutorial(cap) {
   const pose = new THREE.Matrix4(), transform = new THREE.Matrix4(), point = new THREE.Vector4();
   const { pole, basis } = poleParameters();
   const pole4 = new THREE.Vector4(...pole), basis4 = basis.map((b) => new THREE.Vector4(...b));
-  const perspective = shot.proj === 'persp', local = shot.view === 'local';
-  // The same pixel scale on both axes: fit 85% (global) or 80% (local) of
-  // the SHORTER image side, keeping the cap's projected centre at image centre.
-  const limit = (local ? 0.80 : 0.85) * Math.tan(camera.fov * Math.PI / 360) * Math.min(1, camera.aspect);
-  let distance = camera.near, minZ = Infinity;
-  for (const facet of facets) {
-    frame.fromArray(A['cell_frames.f32'], facet * 16);
-    if (local) transform.multiplyMatrices(q, frame); // Fixed cells, never their home pieces' current poses.
-    for (let sticker = 0; sticker < COUNTS.base_stickers; sticker++) {
-      if (!local) {
-        const piece = A['slot_piece.u32'][facet * 433 + sticker];
-        pose.fromArray(state.poses, state.index[piece] * 16).transpose();
-        transform.multiplyMatrices(q, pose).multiply(frame);
-        if (shot.proj === 'stereo') {
-          point.fromArray(stickerHome, sticker * 4).applyMatrix4(transform);
-          // Fit only stickers in the cap-facing hemisphere, away from the stereo pole.
-          // This affects camera distance only; the meshes still draw every sticker.
-          if (point.dot(pole4) > 0) continue;
+  const perspective = shot.proj === 'persp', local = shot.view === 'local' && !selectionOnly;
+  // Ghost-free views fit every posed, emphasised sticker, including ones outside
+  // the cap's neighbourhood or the cap-facing stereographic hemisphere.
+  const visitPoints = (visit) => {
+    for (const facet of facets) {
+      frame.fromArray(A['cell_frames.f32'], facet * 16);
+      if (local) transform.multiplyMatrices(q, frame); // Fixed cells, never their home pieces' current poses.
+      for (let sticker = 0; sticker < COUNTS.base_stickers; sticker++) {
+        if (!local) {
+          const piece = A['slot_piece.u32'][facet * 433 + sticker];
+          if (selectionOnly && ((moved && !moved.has(piece))
+            || (shot.emph === 'off' && state.lattice[state.index[piece]] >= 0))) continue;
+          pose.fromArray(state.poses, state.index[piece] * 16).transpose();
+          transform.multiplyMatrices(q, pose).multiply(frame);
+          if (!selectionOnly && shot.proj === 'stereo') {
+            point.fromArray(stickerHome, sticker * 4).applyMatrix4(transform);
+            // With ghosts, retain the hemisphere fit; the mesh still draws everything.
+            if (point.dot(pole4) > 0) continue;
+          }
+        }
+        for (let vi = geometry.mesh.offsets[sticker]; vi < geometry.mesh.offsets[sticker + 1]; vi++) {
+          point.fromArray(home, vi * 4).applyMatrix4(transform);
+          const scale = perspective ? 1.18 / (1.18 - point.w) : 1 / (1 - point.dot(pole4));
+          const x = scale * (perspective ? point.x : point.dot(basis4[0]));
+          const y = scale * (perspective ? point.y : point.dot(basis4[1]));
+          const z = scale * (perspective ? point.z : point.dot(basis4[2]));
+          requireValue(Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z),
+            'Tutorial view has a non-finite projection');
+          visit(x, y, z);
         }
       }
-      for (let vi = geometry.mesh.offsets[sticker]; vi < geometry.mesh.offsets[sticker + 1]; vi++) {
-        point.fromArray(home, vi * 4).applyMatrix4(transform);
-        const scale = perspective ? 1.18 / (1.18 - point.w) : 1 / (1 - point.dot(pole4));
-        const x = scale * (perspective ? point.x : point.dot(basis4[0]));
-        const y = scale * (perspective ? point.y : point.dot(basis4[1]));
-        const z = scale * (perspective ? point.z : point.dot(basis4[2]));
-        requireValue(Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z),
-          'Tutorial view has a non-finite projection');
-        distance = Math.max(distance, z + Math.max(Math.abs(x), Math.abs(y)) / limit, z + camera.near * 1.1);
-        minZ = Math.min(minZ, z);
-      }
     }
+  };
+  let centerX = 0, centerY = 0, centerZ = 0;
+  if (selectionOnly) {
+    let minX = Infinity, minY = Infinity, minZ = Infinity;
+    let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+    visitPoints((x, y, z) => {
+      minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+      minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
+    });
+    // An empty emphasis set draws an empty canvas with the valid default camera.
+    if (minX === Infinity) return;
+    centerX = (minX + maxX) / 2;
+    centerY = (minY + maxY) / 2;
+    centerZ = (minZ + maxZ) / 2;
   }
-  controls.target.set(0, 0, 0);
-  camera.position.set(0, 0, distance);
+  // Equal pixel scale on both axes; the selection fills 80% of the SHORTER side.
+  const limit = (selectionOnly || local ? 0.80 : 0.85)
+    * Math.tan(camera.fov * Math.PI / 360) * Math.min(1, camera.aspect);
+  let distance = selectionOnly ? -Infinity : camera.near, minZ = Infinity;
+  visitPoints((x, y, z) => {
+    distance = Math.max(distance, z + Math.max(Math.abs(x - centerX), Math.abs(y - centerY)) / limit,
+      z + camera.near * 1.1);
+    minZ = Math.min(minZ, z);
+  });
+  controls.target.set(centerX, centerY, centerZ);
+  camera.position.set(centerX, centerY, distance);
   controls.maxDistance = Math.max(50, distance * 2);
   camera.far = Math.max(100, distance - minZ + 1);
   camera.updateProjectionMatrix();
@@ -1065,7 +1091,7 @@ async function startShot() {
   app.header = s.header;
   app.tutorial = t;
   app.offLattice = s.off;
-  frameTutorial(shot.cap);
+  frameTutorial(shot.cap, moving);
   app.ready = true;
   mesh.visible = true;
   if (ghostMesh) ghostMesh.visible = true;

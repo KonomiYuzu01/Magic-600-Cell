@@ -136,11 +136,55 @@ uses the opposite, −w pole. Global perspective fits the whole posed puzzle to 
 centroids are within 90° of the cap centre (opposite the projection pole with no
 cap), while still drawing all stickers. Local view requires a cap and fits its
 fixed, unposed facet and four nearest face neighbours to about 80%. With no cap, Global retains
-the page's default rotation. The canvas has no panels or overlays. After
+the page's default rotation. With `ghost=none`, both Local and Global instead fit
+all emphasised stickers in their current poses, centre on their projected extent
+and fill about 80% of the shorter image side. This includes selected stickers
+outside the cap's neighbours or the cap-facing stereo hemisphere; `emph=none`
+fits every sticker. An empty emphasis set leaves an empty canvas. The canvas has
+no panels or overlays. After
 the first complete frame, `document.documentElement.dataset.shotReady` is `"1"`;
 failure sets it to `"error"` with `dataset.shotError`. Without `shot`, fixture menus
 and controls work as before. These are headless research pictures, not Windows,
 DirectX or performance evidence. Colours remain provisional.
+
+## Tutorial figures
+
+`make_figures.py` batches the export and capture steps. The list document has
+format `magic600-tutorial-figures/1` and a non-empty `figures` array:
+
+```json
+{
+ "format": "magic600-tutorial-figures/1",
+ "figures": [
+  {"id":"step0-before","record":"research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7001/run","step":0,"when":"before","view":"local","proj":"stereo","emph":"moved","ghost":"none"}
+ ]
+}
+```
+
+Run from the repository root (the integrator supplies `figures.json`):
+
+```text
+python3 -I -B research/jumbling/viewer/make_figures.py --list research/jumbling/tutorial/figures/figures.json --out research/jumbling/tutorial/figures --vendor /path/to/pinned-three
+python3 -I -B research/jumbling/viewer/make_figures.py --list research/jumbling/tutorial/figures/figures.json --out research/jumbling/tutorial/figures --vendor /path/to/pinned-three --check
+python3 -I -B research/jumbling/viewer/test_make_figures.py
+```
+
+IDs are unique, 1 to 64 lowercase letters, digits or hyphens, starting with a letter
+or digit. `record` is a repository-relative run directory; outside records and
+start seeds 9011 to 9073 are refused. `cap`, `ghost`, `w` and `h` are optional,
+with the screenshot defaults above. `--vendor` is optional with a matching
+installed three.js package. Each distinct record/step/before-or-after state is
+exported once into temporary data, then one capture run produces all pictures.
+Output is `png/<id>.png` and `manifest.json` (`magic600-tutorial-figures-manifest/1`),
+with each original entry, the export's tutorial provenance and state counts,
+resolved capture parameters, PNG SHA-256, tool versions and page/module digests.
+The manifest has no absolute paths. Temporary export and capture data is removed.
+`--check` exports and captures again in temporary data, compares every PNG hash
+and state digest, and names differences with exit status 1; it preserves existing
+output. Unlisted files in `png/` are reported and kept; only `--prune` removes
+them after a successful generation. `--check` and `--prune` cannot be combined.
+The unit tests use synthetic capture bytes and committed development records;
+they start no browser and establish no capture or native-rendering result.
 
 ## What it shows
 
