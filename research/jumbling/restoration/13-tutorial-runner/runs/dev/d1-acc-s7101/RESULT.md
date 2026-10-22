@@ -1,6 +1,6 @@
 # D1, seed 7101 at depth 40, acceptance mode (development line d1-acc-s7101)
 
-Status: **in progress** (progress note, 22 October 2026, 12:13 UTC; bulk stuck at 97 steps, tail running; run 1 was interrupted at 97 steps, run 2 restarted at 08:12 UTC). The run has not ended; the check has not run.
+Status: **in progress** (progress note, 22 October 2026, 21:15 UTC; runs 1 and 2 were killed by container restarts; run 3 starts with checkpoints; run 1 was interrupted at 97 steps, run 2 restarted at 08:12 UTC). The run has not ended; the check has not run.
 
 ## Question
 
@@ -76,6 +76,39 @@ Full step-by-step table: `bulk-vs-census.md`.
   sub-phases) and **high** are `not_applicable`, as the plan expected for a state at height 2. The **tail** phase is
   running. Its first attempt (index 97) found 22 straddling blocks and works on unit `u2198` (block 2, 111 pieces)
   with a transport census (P 3, about 609,000 commutators after 249 s at the last log line).
+
+## Run 2 interrupted (container restart between 15:39 and 21:02 UTC)
+
+Run 2 was alive at 15:39 UTC (102 steps saved). At 21:02 UTC the container had just restarted (uptime 17 s), and the
+runner was gone without an exit code. Run 2 started before the runner had `--resume`, so it cannot be resumed. Its
+output directory, as the kill left it, is in `interrupted-run2/` (11 MB, no cache). One exception: the six child logs
+`logs/attempts-<index>-units-units.log` are left out, because they contain absolute scratch paths. The record itself
+(`run.json`) has none. Its `result` field reads `budget` only because the run never finished; that is not a result.
+
+Its last save, at 20,509 s of runner time:
+
+| index | phase | rule | letters | off after | seconds | unit |
+|---|---|---|---|---|---|---|
+| 0-96 | bulk | 27 seam, 7 cover, 63 conj | 223 in all | 1,193 | 7,152 in all | |
+| 97 | tail | zero_bad | 60 | 1,082 | 1,368 | u2198 |
+| 98 | tail | zero_bad | 48 | 971 | 1,376 | u60011 |
+| 99 | tail | zero_bad | 96 | 860 | 1,323 | u149477 |
+| 100 | tail | zero_bad | 24 | 759 | 1,387 | u106783 |
+| 101 | tail | pure | 576 | 673 | 866 | u160130 |
+
+- Phases: bulk `stuck` (97 steps, 223 twists); height and high `not_applicable`; tail running (5 steps, 804
+  twists); lattice not reached.
+- Step 102 was unfinished, on unit `u107733` (78 pieces). Its `pure` attempt had found a 24-letter word: off 673 to
+  650, with 55 lattice pieces of the carrier knocked off as collateral, and `pure-check` agreed. The word's start
+  digest is `e48ad986…` and its end digest `2f3203e7…`. The attempt was then closing that collateral with
+  `close-pure-close`. Its last log line reads step 2, 46 left, at 5,287 s.
+- Times are cloud timings of research code on a shared headless Linux machine, not performance evidence.
+
+## Run 3 (with checkpoints)
+
+From now on the line follows the integrator's checkpoint procedure (22 October 2026). The branch merges commit
+`04057a4` of `claude/repair-pair-list`, which adds `--resume` to `runner.py` and `scripts/checkpoint.py`. Run 3
+starts from the scramble in `out3/`, with `checkpoint.py` keeping a verified copy in `out3-checkpoint/`.
 
 ## Not run
 
