@@ -68577,6 +68577,36 @@
    "cap": 357
   },
   {
+   "id": "03-h4-l2-23-before",
+   "record": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7302/component-checkpoint",
+   "step": 16,
+   "when": "before",
+   "view": "local",
+   "proj": "stereo",
+   "emph": "moved",
+   "ghost": "none",
+   "w": 1200,
+   "h": 800,
+   "cs": 0.5,
+   "ss": 0.62,
+   "cap": 23
+  },
+  {
+   "id": "03-h4-l2-23-after",
+   "record": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7302/component-checkpoint",
+   "step": 16,
+   "when": "after",
+   "view": "local",
+   "proj": "stereo",
+   "emph": "moved",
+   "ghost": "none",
+   "w": 1200,
+   "h": 800,
+   "cs": 0.5,
+   "ss": 0.62,
+   "cap": 23
+  },
+  {
    "id": "03-pair-6999b921-before",
    "state": {
     "start": {
@@ -139047,7 +139077,8 @@
    "w": 1200,
    "h": 800,
    "cs": 0.5,
-   "ss": 0.62
+   "ss": 0.62,
+   "cap": 320
   },
   {
    "id": "appa-late-cycle-region-after",
@@ -139353,7 +139384,8 @@
    "w": 1200,
    "h": 800,
    "cs": 0.5,
-   "ss": 0.62
+   "ss": 0.62,
+   "cap": 320
   }
  ],
  "sheets": [
@@ -139407,7 +139439,7 @@
     "After [268, 50]; 665631fe2dc8",
     "After [91, 15]; 0fc676b52af1"
    ],
-   "columns": 4
+   "columns": 2
   },
   {
    "id": "ch06-invisible-rotation",
@@ -139485,7 +139517,7 @@
     "After W^-1; 392 off; fffff5b8eda0",
     "After V prime^-1; 392 off; fee07e63a8cf"
    ],
-   "columns": 5
+   "columns": 2
   },
   {
    "id": "05-close-b20",
@@ -139496,12 +139528,12 @@
     "05-close-b20-part-3"
    ],
    "labels": [
-    "Start; 111 Bad(W) chambers; fde9e0fde60b",
-    "After V: Bad(W) vacated; dfd0564c1a7b",
-    "After middle W: b20 landed; cafcaa60ee2d",
-    "After V^-1; aab10f250f0a"
+    "Start; 507 off; fde9e0fde60b",
+    "After V; dfd0564c1a7b",
+    "After the middle: b20 landed; cafcaa60ee2d",
+    "After V^-1; 447 off; aab10f250f0a"
    ],
-   "columns": 4
+   "columns": 2
   },
   {
    "id": "ch06-d0-sequence",
@@ -139644,6 +139676,18 @@
    "columns": 2
   },
   {
+   "id": "03-h4-l2-23",
+   "panels": [
+    "03-h4-l2-23-before",
+    "03-h4-l2-23-after"
+   ],
+   "labels": [
+    "Before (23,14); n2=103,630; e9065103b7f5",
+    "After: n2=103,571, n4=936 kept; 6999b9214d6e"
+   ],
+   "columns": 2
+  },
+  {
    "id": "03-pair-6999b921",
    "panels": [
     "03-pair-6999b921-before",
@@ -139655,7 +139699,7 @@
     "After (541,2): u=1; fbd3f69d547c",
     "After (593,54): u=0; 391490f78b2f"
    ],
-   "columns": 3
+   "columns": 2
   },
   {
    "id": "03-freeing-pair-c312a2fc",
@@ -139669,7 +139713,7 @@
     "After (553,5): holder 535 free; ffe4baf861e0",
     "After (535,3): u=21; 6c7a79d9aa68"
    ],
-   "columns": 3
+   "columns": 2
   },
   {
    "id": "03-h4-h2-no-target",
@@ -139699,7 +139743,7 @@
     "After (364,3): u=8",
     "After (263,6): u=2"
    ],
-   "columns": 3
+   "columns": 2
   },
   {
    "id": "03-r22d36-piece-58388",
@@ -139713,7 +139757,7 @@
     "S2: h=4; 7cd868f64669",
     "After (35,13): h=2; 3ab25d214b6c"
    ],
-   "columns": 3
+   "columns": 2
   },
   {
    "id": "appa-conj-region",

@@ -23,9 +23,9 @@ ROOT = HERE.parents[2]
 LIST_FORMAT = 'magic600-tutorial-figures/1'
 MANIFEST_FORMAT = 'magic600-tutorial-figures-manifest/1'
 ID = re.compile(r'[a-z0-9][a-z0-9-]{0,63}')
-PARAMETERS = ('view', 'proj', 'emph', 'ghost', 'cap', 'w', 'h', 'cs', 'ss')
+PARAMETERS = ('view', 'proj', 'emph', 'ghost', 'cap', 'w', 'h', 'cs', 'ss', 'fit')
 REQUIRED = {'id', 'record', 'step', 'when', 'view', 'proj', 'emph'}
-OPTIONAL = {'cap', 'ghost', 'w', 'h', 'cs', 'ss'}
+OPTIONAL = {'cap', 'ghost', 'w', 'h', 'cs', 'ss', 'fit'}
 
 
 def recipe_exporter():
@@ -56,7 +56,21 @@ def read_json(path):
 
 
 def write_json(path, document):
-    Path(path).write_text(json.dumps(document, indent=1, allow_nan=False) + '\n', encoding='utf-8')
+    def render(value, depth=0):
+        if isinstance(value, dict) and value:
+            items = [f'{json.dumps(key)}: {render(item, depth + 1)}' for key, item in value.items()]
+            opening, closing = '{', '}'
+        elif isinstance(value, list) and any(isinstance(item, (dict, list)) for item in value):
+            items = [render(item, depth + 1) for item in value]
+            opening, closing = '[', ']'
+        else:
+            return json.dumps(value, allow_nan=False)
+        return (opening + '\n' + ',\n'.join(' ' * (depth + 1) + item for item in items)
+                + '\n' + ' ' * depth + closing)
+
+    # Preserve the standard encoder's key/scalar semantics before formatting.
+    document = json.loads(json.dumps(document, allow_nan=False))
+    Path(path).write_text(render(document) + '\n', encoding='utf-8')
 
 
 def record_directory(name):
@@ -93,9 +107,16 @@ def load_list(path):
                 raise ValueError(f'{name}: invalid step or when')
             records.add(record_directory(entry['record']))
         for key, choices in (('view', ('local', 'global')), ('proj', ('persp', 'stereo')),
-                             ('emph', ('moved', 'off', 'none')), ('ghost', ('near', 'all', 'none'))):
+                             ('emph', ('moved', 'off', 'none')), ('ghost', ('near', 'all', 'none')),
+                             ('fit', ('all', 'cap', 'core'))):
             if key in entry and entry[key] not in choices:
                 raise ValueError(f'{name}: invalid {key}')
+        fit = entry.get('fit', 'all')
+        ghost = entry.get('ghost', 'near' if entry['view'] == 'local' else 'all')
+        if fit == 'cap' and entry['view'] != 'local':
+            raise ValueError(f'{name}: fit=cap requires view=local')
+        if fit == 'core' and (ghost != 'none' or entry['emph'] == 'none'):
+            raise ValueError(f'{name}: fit=core requires ghost=none and emph other than none')
         if 'cap' in entry and (type(entry['cap']) is not int or not 0 <= entry['cap'] < 600):
             raise ValueError(f'{name}: invalid cap (0..599)')
         for key in ('w', 'h'):
@@ -163,11 +184,10 @@ def export_key(entry):
 
 
 def compose_sheet(sheet, pictures):
-    """Fixed Pillow default font, no PNG metadata, white RGB pixels, fixed layout."""
+    """Scalable Pillow default font, no PNG metadata, white RGB pixels, fixed layout."""
     import PIL
     from PIL import Image, ImageDraw, ImageFont
 
-    font = ImageFont.load_default()
     panels = []
     for name in sheet['panels']:
         with Image.open(pictures / f'{name}.png') as source:
@@ -176,6 +196,11 @@ def compose_sheet(sheet, pictures):
             panel.paste(rgba, (0, 0), rgba)
             panels.append(panel)
     width, height = max(p.width for p in panels), max(p.height for p in panels)
+    margin, gap = 12, 12
+    columns, rows = sheet['columns'], (len(panels) + sheet['columns'] - 1) // sheet['columns']
+    canvas_width = margin * 2 + columns * width + (columns - 1) * gap
+    size = max(24, round(canvas_width / 60))
+    font = ImageFont.load_default(size=size)
     measure = ImageDraw.Draw(Image.new('RGB', (1, 1)))
     line_height = measure.textbbox((0, 0), 'Ag', font=font)[3] + 6
     labels = []
@@ -190,10 +215,8 @@ def compose_sheet(sheet, pictures):
                 line += char
             lines.append(line)
         labels.append(lines)
-    margin, gap = 12, 12
     label_height = max(map(len, labels)) * line_height + gap
-    columns, rows = sheet['columns'], (len(panels) + sheet['columns'] - 1) // sheet['columns']
-    canvas = Image.new('RGB', (margin * 2 + columns * width + (columns - 1) * gap,
+    canvas = Image.new('RGB', (canvas_width,
                              margin * 2 + rows * (height + label_height) + (rows - 1) * gap), 'white')
     draw = ImageDraw.Draw(canvas)
     for i, (panel, lines) in enumerate(zip(panels, labels)):
@@ -208,7 +231,8 @@ def compose_sheet(sheet, pictures):
     return {'id': sheet['id'], 'entry': sheet,
             'panels': [{'id': name, 'png_sha256': sha((pictures / f'{name}.png').read_bytes())}
                        for name in sheet['panels']],
-            'composition': {'pillow': PIL.__version__, 'font': 'Pillow default', 'margin': margin, 'gap': gap},
+            'composition': {'pillow': PIL.__version__, 'font': 'Pillow default (scalable)', 'size': size,
+                            'margin': margin, 'gap': gap},
             'png': f'png/{sheet["id"]}.png', 'png_sha256': sha(output.read_bytes())}
 
 
@@ -250,7 +274,7 @@ def build(figures, temporary, vendor, sheets=()):
                 or result['tutorial_sha256'] != tutorial_sha or result['png_sha256'] != digest):
             raise ValueError(f'{name}: capture provenance or PNG hash mismatch')
         rows.append({'id': name, 'entry': entry, 'tutorial': tutorial,
-                     'capture': {key: result[key] for key in (*PARAMETERS, 'header_digest', 'tutorial_sha256')},
+                     'capture': {key: result[key] for key in (*PARAMETERS, 'framing', 'header_digest', 'tutorial_sha256')},
                      'png': f'png/{name}.png', 'png_sha256': digest})
     manifest = {'format': MANIFEST_FORMAT, 'versions': captured['versions'],
                 'sources': captured['sources'], 'figures': rows}
@@ -269,6 +293,7 @@ def differences(manifest, baseline, out):
     for name in previous.keys() & current.keys():
         old, new = previous[name], current[name]
         if (old['png_sha256'] != new['png_sha256'] or old.get('entry') != new.get('entry')
+                or old.get('capture') != new.get('capture')
                 or old.get('tutorial') != new.get('tutorial') or old.get('panels') != new.get('panels')
                 or old.get('composition') != new.get('composition')):
             different.add(name)

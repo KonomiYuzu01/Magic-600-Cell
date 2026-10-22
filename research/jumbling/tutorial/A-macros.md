@@ -114,7 +114,7 @@ middle and after states, with the same moved-piece emphasis; read its first and 
 - **Rule**: h4 ([section 3.5.5](03-height.md#355-h4pair-the-two-letter-u-step)).
 - **Shape**: a first letter at a class-A cap that frees a blocked holder, then a second letter at that holder.
 
-**Example.** The freeing pair used in Figure 3.12: **(553, 5), (535, 3)**, two letters, at `c312a2fcb7f2…`.
+**Example.** The freeing pair used in Figure 3.13: **(553, 5), (535, 3)**, two letters, at `c312a2fcb7f2…`.
 For fixed τ = 597, **u = 41 → 41 → 21**. The first letter frees holder 535; (n6, n4, n2) remains
 (0, 734, 102,750) and off remains 103,484. Source:
 [`ROUND/cloud/height4-descent-bbef1c8e/end_summary.txt`](../restoration/12-low-height/runs/round22/cloud/height4-descent-bbef1c8e/end_summary.txt),
@@ -129,7 +129,7 @@ directory supply the choice: `_pair_choice` selects class A, order index 299, by
 
 Figure A.5. Computed tree `appa-h4-pair-tree`. No runner record holds this cloud-line step.
 
-**Region.** [Figure 3.12](03-height.md#355-h4pair-the-two-letter-u-step) already shows this example before, between
+**Region.** [Figure 3.13](03-height.md#355-h4pair-the-two-letter-u-step) already shows this example before, between
 and after its letters, with the moved pieces opaque. Its first and last panels are the region pair.
 
 ## High
@@ -460,7 +460,8 @@ Figure A.14. Computed tree `appa-late-cycle-tree`; no runner record holds this s
 star(X)⁻¹ [406] and star(Y) [404], not the entire 11,306-letter orbit step.
 
 **Region.** Figure A.15 replays those 810 letters from the actual committed handoff table. The caps span the puzzle,
-so both panels use global perspective, with the same 280 pieces whose exact poses change drawn opaque.
+so both panels use global perspective, turned to cap 320 (the first cap of the replay), with the same 280 pieces
+whose exact poses change drawn opaque.
 
 ![Figure A.15: Before and after the late program's first three-cycle, using its actual handoff and literal 810-letter replay](figures/png/appa-late-cycle-region.png)
 

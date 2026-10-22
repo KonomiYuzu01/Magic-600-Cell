@@ -8,6 +8,7 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { execFileSync } from 'node:child_process';
+import { isDeepStrictEqual } from 'node:util';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '../../..');
@@ -45,15 +46,19 @@ function shotsList(path) {
   const names = new Set();
   return shots.map((s) => {
     insist(s && typeof s === 'object' && !Array.isArray(s)
-      && Object.keys(s).every((k) => ['name', 'state', 'view', 'proj', 'emph', 'ghost', 'cap', 'w', 'h', 'cs', 'ss'].includes(k)), 'Invalid shot entry');
+      && Object.keys(s).every((k) => ['name', 'state', 'view', 'proj', 'emph', 'ghost', 'fit', 'cap', 'w', 'h', 'cs', 'ss'].includes(k)), 'Invalid shot entry');
     insist(typeof s.name === 'string' && NAME.test(s.name) && !names.has(s.name), 'Invalid or duplicate shot name');
     insist(typeof s.state === 'string' && NAME.test(s.state), `Invalid state for ${s.name}`);
     names.add(s.name);
-    const shot = { view: 'global', proj: 'persp', emph: 'moved', w: 1600, h: 1000, cs: 0.76, ss: 0.82, ...s };
+    const shot = { view: 'global', proj: 'persp', emph: 'moved', fit: 'all', w: 1600, h: 1000, cs: 0.76, ss: 0.82, ...s };
     if (!('ghost' in shot)) shot.ghost = shot.view === 'local' ? 'near' : 'all';
     insist(['global', 'local'].includes(shot.view) && ['persp', 'stereo'].includes(shot.proj)
       && ['moved', 'off', 'none'].includes(shot.emph) && ['near', 'all', 'none'].includes(shot.ghost),
       `Invalid view, proj, emph or ghost for ${shot.name}`);
+    insist(['all', 'cap', 'core'].includes(shot.fit), `Invalid fit for ${shot.name}`);
+    insist(shot.fit !== 'cap' || shot.view === 'local', `${shot.name}: fit=cap requires view=local`);
+    insist(shot.fit !== 'core' || (shot.ghost === 'none' && shot.emph !== 'none'),
+      `${shot.name}: fit=core requires ghost=none and emph other than none`);
     insist(!('cap' in shot) || (Number.isInteger(shot.cap) && shot.cap >= 0 && shot.cap < 600),
       `Invalid cap for ${shot.name} (0..599)`);
     insist(['w', 'h'].every((k) => Number.isInteger(shot[k]) && shot[k] > 0 && shot[k] <= 8192),
@@ -196,17 +201,18 @@ async function render(browser, base, files, forbidden, shots, states, directory)
         return route.abort();
       });
       const query = new URLSearchParams({ shot: shot.state, view: shot.view, proj: shot.proj,
-        emph: shot.emph, ghost: shot.ghost, w: String(shot.w), h: String(shot.h), cs: String(shot.cs), ss: String(shot.ss) });
+        emph: shot.emph, ghost: shot.ghost, fit: shot.fit,
+        w: String(shot.w), h: String(shot.h), cs: String(shot.cs), ss: String(shot.ss) });
       if (shot.cap !== null) query.set('cap', String(shot.cap));
       await page.goto(`${base}full.html?${query}`, { waitUntil: 'load' });
       await page.waitForFunction(() => ['1', 'error'].includes(document.documentElement.dataset.shotReady));
-      const ready = await page.evaluate(() => ({ ...document.documentElement.dataset }));
+      const ready = await page.evaluate(() => ({ ...document.documentElement.dataset, framing: window.fullViewer.view.framing }));
       insist(ready.shotReady === '1', `${shot.name}: ${ready.shotError || 'drawing failed'}`);
       insist(!errors.length, `${shot.name}: browser errors: ${errors.join('; ')}`);
       insist(!forbidden.length, forbidden.join('\n'));
       const png = await page.locator('#canvas').screenshot({ type: 'png', animations: 'disabled' });
       writeFileSync(join(directory, `${shot.name}.png`), png);
-      results.push({ ...shot, ...states.get(shot.state), png_sha256: sha(png) });
+      results.push({ ...shot, framing: ready.framing, ...states.get(shot.state), png_sha256: sha(png) });
       console.log(`captured ${shot.name} (${shot.w} x ${shot.h})`);
     } finally { await context.close(); }
   }
@@ -241,7 +247,7 @@ async function main() {
     if (baseline) {
       const different = results.filter((s) => {
         const previous = baseline.shots.find((p) => p.name === s.name);
-        return !previous || Object.keys(s).some((k) => previous[k] !== s[k]);
+        return !previous || !isDeepStrictEqual(previous, s);
       }).map((s) => s.name);
       for (const s of baseline.shots) if (!results.some((r) => r.name === s.name)) different.push(s.name);
       if (different.length) { console.error(`Shots differ: ${different.join(', ')}`); process.exitCode = 1; }

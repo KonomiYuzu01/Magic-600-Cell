@@ -400,7 +400,7 @@ step the program reads τ and u (section 3.1.2), then tries four families in ord
 first letter it finds. Every letter must be admissible and certain and leave no piece above height 6. When none of
 the four has a letter and τ exists, the plugin starts R22D-88's pair program at the same state (section 3.4.4).
 
-![Figure 3.5: the target τ = 274 at 1ff0061f…, its three straddlers and cap 124, before and after the U letter (124, 2)](figures/png/03-target-274.png)
+![Figure 3.5: the U letter (124, 2) at 1ff0061f…: the 2,771 pieces it moves, around cap 124, before and after; u at τ = 274 falls from 3 to 0](figures/png/03-target-274.png)
 
 ### 3.4.1 r22d81/H6
 
@@ -549,7 +549,7 @@ with the simulator's own tests (`stradded`, `:165-169`). The copy runs no admiss
 - **Where in the code**: `r22d81_pairs.py:88-92` (meet), `:235-282` (pairs), `:178-187` (replay of the chosen
   letters with the guard at every prefix).
 
-![Figure 3.8: the mechanics of r22d88/U2 with τ = 311 fixed by hand, not a runner step: the pair (364, 3), (263, 6) at fe273a8c…, the before, middle and after states, with u 8 → 8 → 2](figures/png/03-u2-fe273a8c.png)
+![Figure 3.8: the mechanics of r22d88/U2 with τ = 311 fixed by hand, not a runner step: the pair (364, 3), (263, 6) at fe273a8c…, the before, middle and after states in views centred on caps 364, 364 and 263, with u 8 → 8 → 2](figures/png/03-u2-fe273a8c.png)
 
 **Ends of the pair program at the runner's call.** The runner stops the program at its first `STEP`. Before any step
 it can end in four ways:
@@ -620,7 +620,7 @@ checks the count prediction after every letter it plays, U and retained letters 
   Five of the six `h4` letters of example (c) are U letters.
 - **Where in the code**: `h4_unlock.py:235-245` (the guard), `:270-288`.
 
-![Figure 3.10: h4/U (357, 1) at 0ad859c2…: τ = 482 and its straddlers before and after, u 80 → 11, every height unchanged](figures/png/03-h4-u-357.png)
+![Figure 3.10: h4/U (357, 1) at 0ad859c2…: the same 2,486 pieces around cap 357 before and after; u at τ = 482 falls from 80 to 11, every height unchanged](figures/png/03-h4-u-357.png)
 
 ### 3.5.3 h4/L2
 
@@ -631,8 +631,12 @@ checks the count prediction after every letter it plays, U and retained letters 
 - **Step played (tree)**: one span `h4/L2 [1]`.
 - **Contract**: max ≤ 4; n4 and every height-4 pose kept; n2 falls; u does not rise; τ not null and unchanged.
 - **No step**: the program prints `STUCK` with τ, u and the table (`:304-305`); section 3.5.4 says what follows.
-- **Evidence**: no record has an `h4/L2` step (`RESULT.md` gives "L2 0" for its run,
-  `research/jumbling/restoration/12-low-height/runs/round22/cloud/height4-descent-bbef1c8e/RESULT.md:278`).
+- **Evidence**: stage 12's cloud line has no `h4/L2` step (`RESULT.md` gives "L2 0" for its run,
+  `research/jumbling/restoration/12-low-height/runs/round22/cloud/height4-descent-bbef1c8e/RESULT.md:278`); there
+  (23, 14) came first, as R22D-75's T2 letter (example (c)). The runner played it as an `h4/L2` step in D2's run at the
+  seed 7302 stop: step 16, (23, 14) at `e9065103…`, after the four U letters (357, 1), (357, 3), (593, 3), (593, 43),
+  with n2 103,630 → 103,571 and n4 = 936 kept, to `6999b921…`. D2's run at the seed 7306 stop played another, its step
+  16 (section 3.8.4). Both are **run on one instance**, and both records are last checkpoints that were not checked.
 - **Without a target.** With τ null the program would skip U and try L2, and after an L2 letter it would fail at
   `h4_unlock.py:314`, which counts u at τ. The runner never lets it get there. It stops the program at a `START` line
   with τ null and ends the sub-phase `stuck`, reason `no_target`, with the note "no target; L2 is not run without a
@@ -643,6 +647,8 @@ checks the count prediction after every letter it plays, U and retained letters 
   `research/jumbling/restoration/13-tutorial-runner/packets/P1.md:636-646`). The end state can differ: the program's
   L2 letters would have lowered n2 first.
 - **Where in the code**: `h4_unlock.py:289-303`.
+
+![Figure 3.11: h4/L2 (23, 14) at e9065103…, step 16 of D2's run at the seed 7302 stop: the pieces the letter moves, around cap 23, before and after; n2 falls from 103,630 to 103,571, n4 = 936 and every height-4 pose kept](figures/png/03-h4-l2-23.png)
 
 ### 3.5.4 How the h4 sub-phase ends
 
@@ -729,9 +735,9 @@ crash, a cancelled call or a malformed line gives the results of section 3.2.
   `:218-220` (end lines); `rules_height.py:246-275` (shard parse), `:278-351` (checks and choice), `:490-531`
   (shards).
 
-![Figure 3.11: the pair at 6999b921…: τ = 482, its one straddler (piece 2492), the eight blocked holders and the clean holder 593, class A, and the chosen pair (541, 2), (593, 54)](figures/png/03-pair-6999b921.png)
+![Figure 3.12: the chosen pair (541, 2), (593, 54) at 6999b921…: the same 5,525 pieces, piece 2492 (the one straddler of τ = 482) among them, before, between and after the two letters, in views centred on caps 541, 541 and 593](figures/png/03-pair-6999b921.png)
 
-![Figure 3.12: the freeing pair at c312a2fc…: τ = 597, its ten blocked holders, and the first letter (553, 5) that frees holder 535 before (535, 3)](figures/png/03-freeing-pair-c312a2fc.png)
+![Figure 3.13: the freeing pair (553, 5), (535, 3) at c312a2fc…: the same 4,920 pieces before, between and after the two letters, in views centred on caps 553, 553 and 535; the first letter frees holder 535 of τ = 597](figures/png/03-freeing-pair-c312a2fc.png)
 
 ## 3.6 The contracts the checker tests
 
@@ -829,7 +835,7 @@ on Z36 and asserts these steps, results and fields (`test_rules_height.py:863-91
 runs (section 3.6). At Z36, R22D-81's program would also take (12, 14) first, as an H6 letter (**computed**, record
 section A0); the runner does not call it there, since `r22d75` comes first.
 
-![Figure 3.13: piece 58388 of the R22D-36 fixture at heights 6, 4 and 2 across Z36, S2 and the state after (35, 13), with caps 12 and 35](figures/png/03-r22d36-piece-58388.png)
+![Figure 3.14: piece 58388 of the R22D-36 fixture at heights 6, 4 and 2 across Z36, S2 and the state after (35, 13), in views centred on caps 12, 12 and 35](figures/png/03-r22d36-piece-58388.png)
 
 ### 3.8.2 Example (b): from the seed 7302 census stop
 
@@ -885,9 +891,9 @@ letters. They change no height and move the blockers off τ's cut. After step 5,
 revision whose digest is not recorded. Its `START` gives τ = 482, u = 80 and 18 targets. L4 has no letter, and the
 first cap that U tries is 357, whose items 1 to 11 give u = 11, 8, 41, 34, 8, 57, 45, 8, 8, 108, 13. Run 0 then failed
 its own after-letter check and printed no step (`h4_unlock_run0_prediction_assert.txt:2-8`; `RESULT.md:82-90`). The
-audit reads its U letter as (357, 1), the first item that lowers u (stage 12 README :1882). The committed revision was
-not run at `bbef1c8e…`, so it is not shown that the runner's first `h4` step there would be `h4/U` (357, 1). Nothing
-after it has been computed on this path.
+audit reads its U letter as (357, 1), the first item that lowers u (stage 12 README :1882). The runner, with the
+committed revision, later reached `bbef1c8e…` in D2's run at the seed 7302 stop and proposed `h4/U` (357, 1) there
+(step 12, an unchecked checkpoint; section 3.8.4).
 
 **Evidence**: **computed** for the `r22d75` and `r22d81` letters. These are records of the rule programs run to their
 own ends, not runner records. They are what the runner would play: it takes the first step at each state, and τ
@@ -957,10 +963,10 @@ line's `end_summary.txt` byte for byte; H4-unlock from the stop with the 25 lett
 `2430f4cc…` with no letter; and the full pair search at `2430f4cc…` printed round 4's outputs again
 (`PROOFS-B.md:3950-3953`). The plugin's choice rule, applied to the recorded outputs, gives the same three pairs and
 `exhausted` (`CommittedTests.test_04_pair_rounds`, `test_rules_height.py:274-305`). That the committed `two_letter_u.py`
-prints the same rows for indices 0 to 510 at `6999b921…` is not shown. The runner itself was not run from
-`bbef1c8e…`.
+prints the same rows for indices 0 to 510 at `6999b921…` is not shown. The runner reached `bbef1c8e…` in D2's
+run at seed 7302, and its `h4` sub-phase ended at the same stall (section 3.8.4).
 
-![Figure 3.14: the stall at 2430f4cc…: τ = 597 with its 8 straddlers, the clean holder 535 and the blocked holders 578, 583, 588 and 595 with 1,123 straddlers between them](figures/png/03-stall-2430f4cc.png)
+![Figure 3.15: the stall at 2430f4cc…, in global perspective: the 8 straddlers of τ = 597 and the 1,123 straddlers of its blocked holders 578, 583, 588 and 595, 1,128 pieces in all (some are in both sets), drawn alike](figures/png/03-stall-2430f4cc.png)
 
 ### 3.8.4 Example (d): the other 3000-twist census stops (seeds 7304 to 7307)
 
@@ -975,8 +981,8 @@ prints the same rows for indices 0 to 510 at `6999b921…` is not shown. The run
 | 7307 | (275, 14), (516, 13) T0; (50, 15), (474, 13), (494, 15) T1; (147, 14) T2 | (0, 1,585, 98,984), 100,569 |
 
 Each ends stuck with n6 = 0 and almost every cap blocked: 559, 578, 574 and 562 of 600 (`PROOFS-B.md:3881-3882`,
-`:3890`). At seed 7305 the same letter (421, 12) is the first candidate twice in a row. In the runner, `r22d81` would
-be `not_applicable` at each end and `h4` would start there. What `h4` does at these states has not been computed.
+`:3890`). At seed 7305 the same letter (421, 12) is the first candidate twice in a row. In the runner, `r22d81` is
+then `not_applicable` and `h4` starts there; D2 ran this (below).
 
 **Provenance.** The records (`runs/round22/cloud/census-k3000-s7304/r22d75_census_k3000.txt`, the same file name for
 seeds 7306 and 7307, and `census-k3000-s7305/r22d75.txt`) were made by the lines' copies of `r22d75_census.py`,
@@ -985,6 +991,34 @@ limit on the `BUDGET` line (record section C). The integrator re-ran the copies 
 fields aside (`PROOFS-B.md:3897-3899`).
 
 **Evidence**: **computed** (one scramble per seed; each census stopped on its clock).
+
+**The runner at the five stops (D2).** The development runs of D2 started the runner at the census stops of seeds
+7302 and 7304 to 7307 with the bulk off (`--bulk-steps 0`, `--pair-shards 3`, `--kernel-seconds 3600`; **run on one
+instance** each, development mode, `runs/dev/d2-s730N/` of stage 13). At every stop `r22d75` played one letter per step
+and stopped (`no_step`) at the end digest and counts of its record: seven steps to `1ff0061f…` at 7302 (example (b)),
+and the letters of the table above at 7304 to 7307.
+
+| Seed | `r22d75` | `r22d81` | `h4` | End of the height phase: n4, off |
+| --- | --- | --- | --- | --- |
+| 7302 | 7 steps to `1ff0061f…` | 5 steps to `bbef1c8e…`, `handoff` | 10 steps (13 twists) to `2430f4cc…`, `stuck`, `pair_exhausted` | 734, 103,484 |
+| 7304 | 6 steps to `ac127dc3…` | `not_applicable` | no step, `stuck`, `pair_exhausted` | 797, 96,471 |
+| 7305 | 11 steps to `cc5ef7ec…` | `not_applicable` | no step, `stuck`, `pair_exhausted` | 1,419, 109,872 |
+| 7306 | 9 steps to `16c4aefe…` | `not_applicable` | 9 steps (10 twists) to `ac4be82c…`, `stuck`, `pair_exhausted` | 1,955, 110,315 |
+| 7307 | 6 steps to `895b45de…` | `not_applicable` | no step, `stuck`, `pair_exhausted` | 1,585, 100,569 |
+
+- At 7302 `h4` took the path of example (c) in another order: four U letters and one L2 letter to `6999b921…`, then
+  the same five steps as example (c) to the same stall at `2430f4cc…` (section 3.8.3).
+- At 7306 `h4` played U, U, L4 (n4 2,591 → 1,955), four U letters, one L2 letter and one pair.
+- At 7304, 7305 and 7307 `h4` found no letter, and its pair search went through every first letter in three shards
+  without a pair.
+- No run ended its height phase at n4 = 0. The high phase was then stuck at the stops of 7304 to 7307
+  (`kernel_exhausted`, section 4.18); at 7302 the run was lost during the kernel call.
+
+The records at 7304, 7305 and 7307 are complete, and the checker passes them (verdict `error`: the tail stopped while
+listing the units, section 5.18). The records at 7302 and 7306 are the last checkpoints of runs that a lost container
+ended; they are not checked. Seed 7303 has no committed stop; its run from the scramble is in section 2.15. After its
+bulk, `r22d75` played five letters (n4 1,169 → 929, n6 89 → 87), `r22d81` found no step (τ 214, u 89), and `h4` was
+`not_applicable` (n6 = 87).
 
 ### 3.8.5 Example (e): the mechanics of a U2 step
 
@@ -1004,12 +1038,12 @@ statements). No state is known where the runner itself reaches R22D-88.
 
 - No finite run shows that the height phase brings every scramble to height 2. Example (c) ends stuck at height 4
   with 734 pieces there, and the high phase is stuck at the same state.
-- No runner run from a scramble or a census stop has taken a height step (stage 13 README at `88dacaf`, :1183-1187).
-  The D0 acceptance runs on the committed head, seeds 7001 (depth 10) and 7106 (depth 20), have only height-2 pieces
+- Runner height steps from a scramble or a census stop exist only in the D2 development runs (section 3.8.4; **run on
+  one instance** each; four of the six records are checked). The D0 acceptance runs on the committed head, seeds 7001 (depth 10) and 7106 (depth 20), have only height-2 pieces
   after the bulk, so all three height sub-phases are `not_applicable` (**run on one instance** each; their records
   `research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7001/run/run.json` and
   `research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7106/run/run.json`; stage 13 README at `88dacaf`,
-  :1545-1557). The examples are records of the rule programs, one plugin test and this chapter's record.
+  :1545-1557). The other examples are records of the rule programs, one plugin test and this chapter's record.
 - At `35c3d4f` three zero-step ends of the programs end the run `error` (section 3.2). One of them, R22D-81's second
   stuck end, can occur in acceptance mode.
 - The rules are not protected: they take lattice pieces off and can raise N.
@@ -1020,8 +1054,8 @@ statements). No state is known where the runner itself reaches R22D-88.
 
 | Rule | Figure | State |
 | --- | --- | --- |
-| `r22d75/T0` | 3.2, 3.13 | `015d839e…` (64, 15); Z36 (12, 14) |
-| `r22d75/T1` | 3.13 | S2 (35, 13) |
+| `r22d75/T0` | 3.2, 3.14 | `015d839e…` (64, 15); Z36 (12, 14) |
+| `r22d75/T1` | 3.14 | S2 (35, 13) |
 | `r22d75/T2` | 3.4 | `bbef1c8e…` (23, 14) |
 | `r22d81/H6` | 3.6 | `9a227291…` (274, 13) |
 | `r22d81/U` | 3.5 | `1ff0061f…` (124, 2) |
@@ -1030,8 +1064,8 @@ statements). No state is known where the runner itself reaches R22D-88.
 | `r22d88/U2` | missing | no development state is known where the runner reaches it. Figure 3.8 shows a pair at `fe273a8c…` with τ = 311 fixed by hand: a figure of the mechanics, not of a runner step |
 | `h4/L4` | 3.9 | `391490f7…` (482, 15) |
 | `h4/U` | 3.10 | `0ad859c2…` (357, 1) |
-| `h4/L2` | missing | no development record has an `h4/L2` step |
-| `h4/pair` | 3.11, 3.12 | `6999b921…`, `c312a2fc…` |
+| `h4/L2` | 3.11 | `e9065103…` (23, 14), step 16 of D2's run at the seed 7302 stop |
+| `h4/pair` | 3.12, 3.13 | `6999b921…`, `c312a2fc…` |
 
 ## 3.10 Where in the code
 
@@ -1065,18 +1099,23 @@ statements). No state is known where the runner itself reaches R22D-88.
    `BUDGET` end the run `error`, `malformed_output` (section 3.2). The fix belongs to the runner's integrator: either
    the plugin compares τ and u only when the end line carries them, or the programs print them. A test through `_call`
    with the real programs' lines would cover it; record section A has three such logs.
-2. Whether the committed `h4_unlock.py` chooses (357, 1) at `bbef1c8e…`, as the audit reads run 0 of an earlier
-   revision (section 3.8.2).
+2. Answered by D2 (an unchecked checkpoint, section 3.8.2): the committed `h4_unlock.py` chooses (357, 1) at
+   `bbef1c8e…`, as the audit read run 0 of an earlier revision.
 3. Whether the committed `two_letter_u.py` prints the recorded rows for indices 0 to 510 at `6999b921…`, which earlier
-   revisions made (section 3.8.3).
+   revisions made (section 3.8.3). In D2's run at the seed 7302 stop it chose the same pair at the same order index,
+   119 of 2,065 first letters (step 17), but the checkpoint keeps no rows.
 4. Whether the committed `r22d75_from_snapshot.py` prints the recorded letters at the seed 7302 stop and at the census
    stops, which scripts with the same rule code made (sections 3.8.2 and 3.8.4).
-5. Whether the runner's bulk hands over at any census stop, and what `h4` does at the stops of seeds 7304 to 7307.
+5. Whether the runner's bulk hands over at any census stop. At seed 7305's stop it ran for its whole 21,600 s clock
+   (80 steps, `timeout`; section 2.15); the other full runs from the stops were killed or dropped before their bulk
+   ended. What `h4` does at the stops of seeds 7302 and 7304 to 7307 is in section 3.8.4.
 6. Whether the runner's order in `r22d81` (H4 and H2 before U2) and R22D-88's order (U2 before H4 and H2) ever choose
    different steps.
 7. Figures for the rules that no development run of the runner's order has played: `r22d81/H4`, `r22d81/H2` and
-   `r22d88/U2` (Figures 3.7 and 3.8 show their tests with a forced target only), `r22d88/U`, which the runner cannot
-   play, and `h4/L2`. Under the integrator's reading of the owner's figure decision of 22 October 2026, they stay
-   listed as missing until a development state is found where the runner plays them.
-8. Coverage: whether the height phase reaches n4 = 0 from any scramble. Example (c) ends stuck, and no run has
-   tested more.
+   `r22d88/U2` (Figures 3.7 and 3.8 show their tests with a forced target only), and `r22d88/U`, which the runner
+   cannot play. Under the integrator's reading of the owner's figure decision of 22 October 2026, they stay listed as
+   missing until a development state is found where the runner plays them. `h4/L2` was found that way: D2's run at
+   the seed 7302 stop played it (Figure 3.11).
+8. Coverage: whether the height phase reaches n4 = 0 from any scramble. Example (c) ends stuck, and so does every
+   D2 run: n4 is 734, 797, 1,419, 1,955 and 1,585 at the end of the height phase from the stops of seeds 7302 and 7304
+   to 7307, and 929 after the bulk and height phases of seed 7303 (sections 2.15 and 3.8.4).

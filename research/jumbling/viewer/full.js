@@ -241,9 +241,14 @@ function shotParameters() {
   const cap = PARAMETERS.get('cap');
   requireValue(cap === null || (/^(0|[1-9][0-9]*)$/.test(cap) && Number(cap) < 600), 'Invalid shot cap (0..599)');
   const view = choice('view', 'global', ['global', 'local']);
+  const ghost = choice('ghost', view === 'local' ? 'near' : 'all', ['near', 'all', 'none']);
+  const emph = choice('emph', 'moved', ['moved', 'off', 'none']);
+  const fit = choice('fit', 'all', ['all', 'cap', 'core']);
+  requireValue(fit !== 'cap' || view === 'local', 'Shot fit=cap requires view=local');
+  requireValue(fit !== 'core' || (ghost === 'none' && emph !== 'none'),
+    'Shot fit=core requires ghost=none and emph other than none');
   return { name, view, proj: choice('proj', 'persp', ['persp', 'stereo']),
-    ghost: choice('ghost', view === 'local' ? 'near' : 'all', ['near', 'all', 'none']),
-    emph: choice('emph', 'moved', ['moved', 'off', 'none']), cap: cap === null ? null : Number(cap),
+    ghost, emph, fit, cap: cap === null ? null : Number(cap),
     w: size('w', 1600), h: size('h', 1000), cs: shrink('cs', 0.76), ss: shrink('ss', 0.82) };
 }
 
@@ -990,15 +995,21 @@ function capOrientation(center) {
   return q;
 }
 function frameTutorial(cap, moving) {
+  const fit = shot.fit ?? 'all';
   const selectionOnly = shot.ghost === 'none';
-  const moved = selectionOnly && shot.emph === 'moved' ? new Set(moving) : null;
+  const local = shot.view === 'local' && (!selectionOnly || fit === 'cap');
+  const selectionFit = selectionOnly && !local;
+  const moved = shot.emph === 'moved' ? new Set(moving) : null;
+  const emphasized = (piece) => moved ? moved.has(piece)
+    : shot.emph === 'off' && state.lattice[state.index[piece]] < 0;
   const centers = Array.from({ length: COUNTS.cells }, (_, i) => capCenter(i));
-  let facets = centers.map((_, i) => i);
+  const allFacets = centers.map((_, i) => i);
+  let facets = allFacets;
   if (cap !== null) {
     shotQ = capOrientation(centers[cap]);
     // The selected cap projects to the origin; stereo uses the opposite (-w) pole.
     $('pole').value = 'negative-w';
-    if (shot.view === 'local' && !selectionOnly) {
+    if (local) {
       const distance = (v) => v.reduce((s, x, k) => s + (x - centers[cap][k]) ** 2, 0);
       facets = [cap, ...facets.filter((i) => i !== cap)
         .sort((a, b) => distance(centers[a]) - distance(centers[b]) || a - b).slice(0, 4)];
@@ -1024,21 +1035,23 @@ function frameTutorial(cap, moving) {
   const pose = new THREE.Matrix4(), transform = new THREE.Matrix4(), point = new THREE.Vector4();
   const { pole, basis } = poleParameters();
   const pole4 = new THREE.Vector4(...pole), basis4 = basis.map((b) => new THREE.Vector4(...b));
-  const perspective = shot.proj === 'persp', local = shot.view === 'local' && !selectionOnly;
-  // Ghost-free views fit every posed, emphasised sticker, including ones outside
-  // the cap's neighbourhood or the cap-facing stereographic hemisphere.
-  const visitPoints = (visit) => {
-    for (const facet of facets) {
+  const perspective = shot.proj === 'persp';
+  let corePieces = null;
+  // The emphasis pass always visits every posed selected sticker, independently
+  // of the fixed cap framing and the ghost-facing stereographic hemisphere.
+  const visitPoints = (visit, emphasisOnly = false) => {
+    for (const facet of emphasisOnly ? allFacets : facets) {
       frame.fromArray(A['cell_frames.f32'], facet * 16);
-      if (local) transform.multiplyMatrices(q, frame); // Fixed cells, never their home pieces' current poses.
+      if (local && !emphasisOnly) transform.multiplyMatrices(q, frame); // Fixed cells, never their home pieces' current poses.
       for (let sticker = 0; sticker < COUNTS.base_stickers; sticker++) {
-        if (!local) {
-          const piece = A['slot_piece.u32'][facet * 433 + sticker];
-          if (selectionOnly && ((moved && !moved.has(piece))
-            || (shot.emph === 'off' && state.lattice[state.index[piece]] >= 0))) continue;
+        const piece = A['slot_piece.u32'][facet * 433 + sticker];
+        if (emphasisOnly && !emphasized(piece)) continue;
+        if (!local || emphasisOnly) {
+          if (!emphasisOnly && ((selectionFit && shot.emph !== 'none' && !emphasized(piece))
+            || (corePieces && !corePieces.has(piece)))) continue;
           pose.fromArray(state.poses, state.index[piece] * 16).transpose();
           transform.multiplyMatrices(q, pose).multiply(frame);
-          if (!selectionOnly && shot.proj === 'stereo') {
+          if (!emphasisOnly && !selectionOnly && shot.proj === 'stereo') {
             point.fromArray(stickerHome, sticker * 4).applyMatrix4(transform);
             // With ghosts, retain the hemisphere fit; the mesh still draws everything.
             if (point.dot(pole4) > 0) continue;
@@ -1052,13 +1065,39 @@ function frameTutorial(cap, moving) {
           const z = scale * (perspective ? point.z : point.dot(basis4[2]));
           requireValue(Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z),
             'Tutorial view has a non-finite projection');
-          visit(x, y, z);
+          visit(x, y, z, piece);
         }
       }
     }
   };
+  const sums = new Map();
+  if (shot.emph !== 'none') visitPoints((x, y, z, piece) => {
+    if (!sums.has(piece)) sums.set(piece, [0, 0, 0, 0]);
+    const sum = sums.get(piece);
+    sum[0] += x; sum[1] += y; sum[2] += z; sum[3]++;
+  }, true);
+  const centroids = Array.from(sums, ([piece, [x, y, z, count]]) => ({ piece, x: x / count, y: y / count, z: z / count }));
+  if (fit === 'core' && centroids.length) {
+    const median = (key) => {
+      const values = centroids.map((p) => p[key]).sort((a, b) => a - b), middle = Math.floor(values.length / 2);
+      return values.length % 2 ? values[middle] : (values[middle - 1] + values[middle]) / 2;
+    };
+    const x = median('x'), y = median('y');
+    const distance = (p) => Math.max(Math.abs(p.x - x), Math.abs(p.y - y));
+    corePieces = new Set(centroids.slice().sort((a, b) => distance(a) - distance(b) || a.piece - b.piece)
+      .slice(0, Math.ceil(3 * centroids.length / 4)).map((p) => p.piece));
+  }
+  const reportFraming = () => {
+    camera.updateMatrixWorld();
+    let inFrame = 0;
+    for (const { x, y, z } of centroids) {
+      point.fromArray([x, y, z, 1]).applyMatrix4(camera.matrixWorldInverse).applyMatrix4(camera.projectionMatrix);
+      if (point.w > 0 && Math.abs(point.x / point.w) <= 1 && Math.abs(point.y / point.w) <= 1) inFrame++;
+    }
+    app.view.framing = { fit, pieces: centroids.length, in_frame: inFrame };
+  };
   let centerX = 0, centerY = 0, centerZ = 0;
-  if (selectionOnly) {
+  if (selectionFit) {
     let minX = Infinity, minY = Infinity, minZ = Infinity;
     let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
     visitPoints((x, y, z) => {
@@ -1067,15 +1106,15 @@ function frameTutorial(cap, moving) {
       minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
     });
     // An empty emphasis set draws an empty canvas with the valid default camera.
-    if (minX === Infinity) return;
+    if (minX === Infinity) { reportFraming(); return; }
     centerX = (minX + maxX) / 2;
     centerY = (minY + maxY) / 2;
     centerZ = (minZ + maxZ) / 2;
   }
   // Equal pixel scale on both axes; the selection fills 80% of the SHORTER side.
-  const limit = (selectionOnly || local ? 0.80 : 0.85)
+  const limit = (selectionFit || local ? 0.80 : 0.85)
     * Math.tan(camera.fov * Math.PI / 360) * Math.min(1, camera.aspect);
-  let distance = selectionOnly ? -Infinity : camera.near, minZ = Infinity;
+  let distance = selectionFit ? -Infinity : camera.near, minZ = Infinity;
   visitPoints((x, y, z) => {
     distance = Math.max(distance, z + Math.max(Math.abs(x - centerX), Math.abs(y - centerY)) / limit,
       z + camera.near * 1.1);
@@ -1087,6 +1126,7 @@ function frameTutorial(cap, moving) {
   camera.far = Math.max(100, distance - minZ + 1);
   camera.updateProjectionMatrix();
   controls.update();
+  reportFraming();
 }
 async function startShot() {
   document.documentElement.classList.add('shot');

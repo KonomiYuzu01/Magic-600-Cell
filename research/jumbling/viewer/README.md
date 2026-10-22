@@ -109,8 +109,8 @@ them when the option is omitted. No download occurs. The capture script serves
 only the page, checked retained geometry, these modules and the listed tutorial
 states on 127.0.0.1. It uses Playwright Chromium, SwiftShader and device scale 1.
 The output manifest records Node, Playwright and Chromium versions, page and module
-hashes, each shot's parameters (including the resolved cap, or null, and ghost mode),
-state digest, tutorial hash and PNG hash. `--check`
+hashes, each shot's parameters (including the resolved cap, or null, ghost mode and
+`fit`), its framing report, state digest, tutorial hash and PNG hash. `--check`
 renders to a temporary directory, compares the manifest and names changed shots;
 it leaves the original pictures and manifest alone.
 
@@ -140,7 +140,20 @@ the page's default rotation. With `ghost=none`, both Local and Global instead fi
 all emphasised stickers in their current poses, centre on their projected extent
 and fill about 80% of the shorter image side. This includes selected stickers
 outside the cap's neighbours or the cap-facing stereo hemisphere; `emph=none`
-fits every sticker. An empty emphasis set leaves an empty canvas. The canvas has
+fits every sticker. An empty emphasis set leaves an empty canvas.
+
+Optional `fit=all|cap|core` (also a capture-list and figure recipe field) defaults
+to `all`, preserving the framing above. `cap` requires `view=local` and always
+frames the selected fixed cap and its four nearest cells, including with
+`ghost=none`. `core` requires `ghost=none` and `emph=moved|off`: it frames
+`ceil(3*n/4)` emphasised pieces nearest the coordinate-wise median of their
+projected vertex centroids, using L∞ distance in x/y and piece index to break
+ties. All stickers of each kept piece determine the bounds. Both options only
+change framing; emphasised pieces outside the image are cut off.
+`fullViewer.view.framing` reports `{fit, pieces, in_frame}`: all emphasised pieces
+and how many projected centroids lie inside the image rectangle in front of the
+camera. It counts the full emphasis set even with ghosts, and counts zero for
+`emph=none`; it does not measure occlusion or sticker coverage. The canvas has
 no panels or overlays. After
 the first complete frame, `document.documentElement.dataset.shotReady` is `"1"`;
 failure sets it to `"error"` with `dataset.shotError`. Without `shot`, fixture menus
@@ -171,17 +184,20 @@ python3 -I -B research/jumbling/viewer/test_make_figures.py
 
 IDs are unique, 1 to 64 lowercase letters, digits or hyphens, starting with a letter
 or digit. `record` is a repository-relative run directory; outside records and
-start seeds 9011 to 9073 are refused. `cap`, `ghost`, `w` and `h` are optional,
-with the screenshot defaults above. `--vendor` is optional with a matching
+start seeds 9011 to 9073 are refused. `cap`, `ghost`, `fit`, `w`, `h`, `cs` and `ss`
+are optional, with the screenshot defaults above. `--vendor` is optional with a matching
 installed three.js package. Each distinct record/step/before-or-after state is
 exported once into temporary data, then one capture run produces all pictures.
 Output is `png/<id>.png` and `manifest.json` (`magic600-tutorial-figures-manifest/1`),
 with each original entry, the export's tutorial provenance and state counts,
-resolved capture parameters, PNG SHA-256, tool versions and page/module digests.
-The manifest has no absolute paths. Temporary export and capture data is removed.
-`--check` exports and captures again in temporary data, compares every PNG hash
-and state digest, and names differences with exit status 1; it preserves existing
-output. Unlisted files in `png/` are reported and kept; only `--prune` removes
+resolved capture parameters (including `fit` and the `framing` report in each
+row's `capture`), PNG SHA-256, tool versions and page/module digests.
+Omitting `fit` leaves the original `entry` unchanged. The manifest has no absolute
+paths; objects use one-space indentation and scalar lists stay on one line.
+Temporary export and capture data is removed.
+`--check` exports and captures again in temporary data, compares PNG hashes,
+state digests, capture parameters and framing, and names differences with exit
+status 1; it preserves existing output. Unlisted files in `png/` are reported and kept; only `--prune` removes
 them after a successful generation. `--check` and `--prune` cannot be combined.
 The unit tests use synthetic capture bytes and committed development records;
 they start no browser and establish no capture or native-rendering result.
@@ -221,9 +237,11 @@ For a standalone export, save the recipe as JSON and use
 
 The list may also contain `"sheets": [{"id":"pair", "panels":["step0-before",
 "step0-after"], "labels":["Before","After"], "columns":2}]`. Sheets use the
-captured panel pixels, a white background and Pillow's fixed default font, with
-labels beneath each panel. The manifest records their panel hashes, composition
-settings and Pillow version. `--check` covers sheet pixels and provenance too.
+captured panel pixels, a white background and Pillow's scalable default font, with
+labels beneath each panel. Font size is `max(24, round(canvas width / 60))` pixels.
+The manifest records their panel hashes, composition settings (including
+`font: "Pillow default (scalable)"` and `size`) and Pillow version.
+`--check` covers sheet pixels and provenance too.
 Every tutorial entry uses `cs: 0.5` and `ss: 0.62`.
 
 Run `python3 -I -B research/jumbling/viewer/check_recipes.py` for browser-free

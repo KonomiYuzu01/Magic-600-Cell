@@ -167,7 +167,7 @@ In unit order:
 Each unit holds the same pieces as E2's unit file of that name (`runs/round22/line-a/units/eb5-k40-k00-b05.json` and
 `…-b06.json`; record field `units.order[].e2_unit`). The census took 15.8 s (**measured**).
 
-![Figure 5.2: The state with 71 off pieces after E2's b15 step, with its two units drawn and numbered in unit order: b05 (61 pieces, key 9013) first, b06 (10 pieces, key 16314) second](figures/png/05-units-71.png)
+![Figure 5.2: The state with 71 off pieces after E2's b15 step: its two units, each drawn alone in its own panel in global perspective and labelled in unit order, b05 (61 pieces, key 9013) first and b06 (10 pieces, key 16314) second](figures/png/05-units-71.png)
 
 ## 5.4 Rules, the class cell model, and the choice of the step
 
@@ -981,7 +981,7 @@ three tests of sections 5.17.1 to 5.17.3 have the same text, seven lines lower.
 | Item | Value |
 | --- | --- |
 | State | E2's replay 2 after b21: table `runs/round22/line-a/replay2/run1/z-b21.json.gz`, digest `a3fef11c…`, 437 off |
-| Unit | b04, 45 pieces, key 2198 |
+| Unit | b04, 45 pieces (`units/eb5-k40-k00-b04.json`, smallest piece 3265; the test passes the label 2198 as its key, :2752) |
 | W | `replay2/inputs/b04-cp4-W.json`, 288 letters, given to `t1prime` directly |
 | V′ | from `tclose2.py`, 339 letters. Its own result says `V_source: certificate`: its peeling certificate gave V′; the runner records `V_source: tclose2` (:2764, :2768) |
 | Word | 288 + 339 + 288 + 339 = 1,254 letters |
@@ -991,7 +991,7 @@ three tests of sections 5.17.1 to 5.17.3 have the same text, seven lines lower.
 The test passes `--greedy-seconds 0` (:2745-2747). `tclose2.py` tries its peeling certificate before the greedy
 search, so that option did not decide this V′.
 
-![Figure 5.4: The T1′ step for b04 at 437 off pieces in five panels: the start; after W (the unit lands, the lattice pieces W takes off are marked); after V′ (Bad(W⁻¹) vacated); after the middle W⁻¹ (those pieces back on the lattice); after V′⁻¹](figures/png/05-t1prime-b04.png)
+![Figure 5.4: The T1′ step for b04 at 437 off pieces in five panels, the same 131 pieces in each (unit b04's 45 and 86 others): the start; after W (the unit lands; 478 off); after V′; after the middle W⁻¹ (392 off); after V′⁻¹ (392 off)](figures/png/05-t1prime-b04.png)
 
 ### 5.17.2 A closure with a certificate V: unit b20 at 507 off pieces
 
@@ -1000,7 +1000,7 @@ search, so that option did not decide this V′.
 | Item | Value |
 | --- | --- |
 | State | E2's literal run 1 after b16: `runs/round22/line-a/literal/run1/z-02-b16.json.gz`, digest `fde9e0fd…`, 507 off |
-| Unit | b20, 60 pieces, key 1201 |
+| Unit | b20, 60 pieces (`units/eb5-k40-k00-b20.json`, smallest piece 161661; the test passes the label 1201 as its key, :2792) |
 | Core | `replay2/inputs/cores/b20-core.json`, middle 36 letters, given to `close` directly |
 | T = Bad(W) | 111 chambers, digest `395d1d21…`; N1 and N2 true |
 | V | from an R22B-10 certificate, 20,232 letters, sha256 `2a5e1a1c…` |
@@ -1019,7 +1019,7 @@ The same 40,500-letter word was also played twist by twist by `stepchk.py`: stri
 (**measured**, cloud timing of research code; `runs/round22/line-a/literal/run1/03-b20-stepchk.json`; stage 12
 `README.md:1870`).
 
-![Figure 5.5: The b20 closure at 507 off pieces in four panels: the start with the 111 chambers of Bad(W) outlined; after V (those chambers vacated); after the 36-letter middle (the unit landed); after V⁻¹](figures/png/05-close-b20.png)
+![Figure 5.5: The b20 closure at 507 off pieces in four panels, the same 70 pieces in each (unit b20's 60 and 10 others): the start; after V; after the 36-letter middle (the unit lands); after V⁻¹ (447 off)](figures/png/05-close-b20.png)
 
 ### 5.17.3 A T1′ step with a certificate V′: unit b07 at 324 off pieces
 
@@ -1081,7 +1081,7 @@ the landing word's inverse and V′⁻¹: 3 + 1 + 336,206 + 1 + 336,206 = 672,41
 `runs/round22/line-a/literal/run3/t1.out`; stage 12 `README.md:934-938`, :1870). The runner has no rule that makes
 such a preparation, and it lands one unit per step.
 
-![Figure 5.7: The pure word for b05 at 71 off pieces: the three edge cells of its cycle with their shifts (2, 3, 4), and the 86 lattice pieces of cell X that the word takes off](figures/png/05-pure-b05-71.png)
+![Figure 5.7: The pure word for b05 at 71 off pieces: the same 147 pieces before and after, unit b05's 61 and 86 lattice pieces that the word takes off (71 → 96 off); the cycle's edge cells and their shifts (2, 3, 4) are named in the panel labels](figures/png/05-pure-b05-71.png)
 
 ### 5.17.5 E2's tail, 737 to 0 off pieces, as literal words
 
@@ -1121,13 +1121,19 @@ themselves are left out of the repository). The lattice phase from the end (dige
 
 ## 5.18 What the tail does not settle
 
-- **Coverage.** No runner run from a scramble or a census stop has taken a tail, fallback or certificate step; the D0
-  runs never entered the tail (stage 13 `README.md:1634-1636`, section 5.1). The acceptance batches have not been run
-  (:1228-1233). That the rules find a step at every state is not proved; a finite test never shows it. At E2's state
-  with 71 off pieces no rule has a step for either unit, provided both transport censuses end without an error
-  (**computed** for `pure`, `close` with the pure core and `t1prime` for b05, and `pure` for b06; inferred from the
-  census's class line for `zero_bad` and the transport core; section 5.17.4). A run that reaches that state stops
-  there unless the fallback of length 1 finds a word, or ends `budget` if a census times out in development mode.
+- **Coverage.** The D0 runs never entered the tail (stage 13 `README.md:1634-1636`, section 5.1). D1's development run
+  (seed 7101, depth 40) took the first tail step from a scramble: index 97, `zero_bad` on unit 2198, 60 letters, landing
+  all 111 of its pieces (1,193 → 1,082 off, `cc41acca…`) in 1,486.8 s; the run was killed by a container restart during
+  the next unit's transport census (**run on one instance**, `runs/dev/d1-dev-s7101/run1-interrupted/`, not checked). No
+  runner run has taken a fallback or certificate step. At the 3000-twist census stops of seeds 7304, 7305 and 7307 the
+  tail's first action, listing the units, ran past `rule_seconds` (3,600 s) and ended each run `error` (**run on one
+  instance** each, `runs/dev/d2-s730N/component/`); at seed 7306's stop it was still running when the container was
+  lost (an unchecked checkpoint). The acceptance batches have not been run (:1228-1233). That the
+  rules find a step at every state is not proved; a finite test never shows it. At E2's state with 71 off pieces no rule
+  has a step for either unit, provided both transport censuses end without an error (**computed** for `pure`, `close`
+  with the pure core and `t1prime` for b05, and `pure` for b06; inferred from the census's class line for `zero_bad` and
+  the transport core; section 5.17.4). A run that reaches that state stops there unless the fallback of length 1 finds a
+  word, or ends `budget` if a census times out in development mode.
 - **Higher heights.** Both search programs screen out a unit whose domain does not have exactly one hub pair
   (`cellpure5.py:191`, `transport_census.py:110`), and they work in one class at a time. What they do with a unit that
   a stuck high phase leaves at a higher left height is not tested.

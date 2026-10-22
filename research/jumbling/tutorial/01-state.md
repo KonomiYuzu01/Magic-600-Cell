@@ -323,7 +323,7 @@ domains. In domain order (**computed**, record `C_seed7001.domain_sizes_in_domai
 Only domain 4 holds more than one pose. With the last pose as representative, its representative changes from pose 4
 to pose 8 (`D_representatives.representative_pose_id`).
 
-![Figure 1.2: the start of seed 7001, off pieces tinted by domain, misaligned caps outlined](figures/png/s7001-start.png)
+![Figure 1.2: the start of seed 7001 in global perspective: the 26,519 off pieces opaque, the other pieces as faint ghosts, each sticker in the colour of its home cell](figures/png/s7001-start.png)
 
 ## 1.6 Left heights and the height histogram
 
@@ -465,7 +465,7 @@ The first bulk step at this state, with the rules in the runner's bulk order, is
 (72, 18): N falls from 13,270 to 11,704, off from 26,519 to 23,422, and the digest becomes `ab254e2a…` (**computed**,
 record `E_bulk0`, script `:211-223`). Chapter 2 gives the rule.
 
-![Figure 1.4: the cut of cap 72 at the start of seed 7001, cut cells covered inside only, outside only, and on both sides by one domain](figures/png/s7001-step0-before.png)
+![Figure 1.4: the 3,097 pieces that the letter (72, 18) moves at the start of seed 7001, in the local stereographic view centred on cap 72](figures/png/s7001-step0-before.png)
 
 ## 1.8 Seams, face pieces and the cover graph
 
@@ -575,7 +575,7 @@ The tail phase (chapter 5) works unit by unit. A unit is a set of off pieces rea
   of one **class cell**: the set of off pieces of one domain with the same sign vector over the 120 caps of their frame
   class (stage 12, LC-01, lines 83-84).
 
-![Figure 1.6: the 22 units at the depth 40 stop of seed 7101, numbered in unit order](figures/png/01-units-depth40-stop.png)
+![Figure 1.6: the 1,193 off pieces of the 22 units at the depth 40 stop of seed 7101 (7e128820…), in global perspective, all drawn alike](figures/png/01-units-depth40-stop.png)
 
 ## 1.10 The digest and the solved test
 
@@ -662,7 +662,7 @@ The committed record [`runs/depth10-seed7001/run.json`](../restoration/13-tutori
 shows the same nine steps. It is a format 1 record (`runner-run/1`), made on 19 October 2026 by an earlier runner
 whose bulk order still ended with `reopen`, a rule that never fires there (stage 13 README section 5).
 
-![Figure 1.7: a piece rotated invisibly to the labels: same labels as solved, different digest](figures/png/01-invisible-rotation.png)
+![Figure 1.7: the end state 71dbda5c… of the D0 record of seed 7106: every sticker label is at home, yet the 1,206 pieces drawn here in global perspective have an exact pose that differs from solved](figures/png/01-invisible-rotation.png)
 
 ## 1.11 Snapshots: what the runner records about a state
 

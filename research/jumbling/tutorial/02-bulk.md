@@ -254,7 +254,7 @@ Sources:
 - The older format 1 record `runs/depth10-seed7001/run.json` of stage 13 has the same words. Its runner had reopen
   last in its order, and reopen never fired.
 
-![Figure 2.2: Seed 7001, step 1: the cut of cap 72 before and after the face match (72, 18)](figures/png/bulk-facematch-7001-s1.png)
+![Figure 2.2: Seed 7001, step 1: the 3,097 pieces that the face match (72, 18) moves, before and after it; all of them land (26,519 → 23,422 off)](figures/png/bulk-facematch-7001-s1.png)
 
 ### Example: a face match that closes a cut and puts no piece on the lattice (seed 7106, step 18)
 
@@ -295,7 +295,7 @@ record A and agree with the D0 record, step by step (**run on one instance**). T
 `runs/depth20-seed7106/run.json` of stage 13, with reopen last in its order, and the census record
 `runs/round1/ia-k20-s7106.json` of stage 11 have the same words.
 
-![Figure 2.3: Seed 7106, step 18: the face match (592, 9) closes the cut of cap 592, aligns cap 550 and moves no piece onto the lattice](figures/png/bulk-facematch-7106-s18.png)
+![Figure 2.3: Seed 7106, step 18: the 2,808 pieces inside cap 592 before and after the face match (592, 9), which moves no piece onto the lattice (3,097 off before and after)](figures/png/bulk-facematch-7106-s18.png)
 
 ## 2.5 cover (U1b, the cover order)
 
@@ -360,7 +360,7 @@ are also in the census record
 [`runs/round2/ia-k40-s7101.json`](../restoration/11-scramble-census/runs/round2/ia-k40-s7101.json), index 16. Chapter
 1 computes the same four tops (section 1.8).
 
-![Figure 2.4: Seed 7101, step 17: cap 30 covers caps 2 and 9; the face pieces of their cuts inside cap 30 are all aligned](figures/png/bulk-cover-7101-s17.png)
+![Figure 2.4: Seed 7101, step 17: the same 3,295 pieces around cap 30 before and after the cover letter (30, 49); 52,580 → 50,075 off](figures/png/bulk-cover-7101-s17.png)
 
 ## 2.6 close (U2, close a cut)
 
@@ -720,7 +720,9 @@ included (`runner.py:732-735`; `runner_api.py:175-214`). A `conj` step's tree is
 Every bulk word has at most three letters, so every tree expands to single twists at once.
 - The 28 bulk rows of the two D0 records have the tree `{"name":"seam","letters":1,"span":[0,1]}`, size 1, sha256
   `22f912e3…` (**run on one instance** each).
-- No run has written a `conj` tree yet (section 2.7).
+- D1's interrupted record holds the first runner `conj` and `cover` rows with their trees: 63 conj and 7 cover rows
+  (`runs/dev/d1-dev-s7101/run1-interrupted/`; **run on one instance**, not checked, since the run was killed).
+  Appendix A.1 shows the conj tree of index 29.
 
 ## 2.15 What the bulk achieved on the development inputs
 
@@ -729,8 +731,11 @@ Every bulk word has at most three letters, so every tree expands to single twist
 | 10 (7001) | 26,519 | 9 / 0 / 0 | the solved digest; the lattice phase is not entered | census round 1; D0 record `runs/dev/d0-s7001` |
 | 20 (7106) | 51,828 | 19 / 0 / 0 | on the lattice (`1b263d3e…`), not solved; the lattice phase restores it in 1,516,410 twists with `schedule11` (8,701,310 with `late`) | census round 1; D0 record `runs/dev/d0-s7106`; section 2.4 |
 | 40 (7101) | 90,441 | 27 / 7 / 63 | 1,193 off after two rounds with 75-minute budgets; the second was killed at 110 minutes, 49 minutes into a search | census rounds 1 and 2 |
+| 40 (7101), runner D1 | 90,441 | 27 / 7 / 63 | `stuck` at `7e128820…`: the census's 97 steps exactly, then no 98th step; 1,193 off, all at height 2 | D1 record `runs/dev/d1-dev-s7101/run1-interrupted` |
 | 3000 (7302) | 118,821 | 0 / 7 / 102 | 100,584 off after 75 minutes | census, "A descent from 3000 twists" |
 | 3000 (7304 to 7307) | 116,870 to 123,181 | see the census table | 95,569 to 108,823 off after 5.25 hours each | census, "Four longer descents" |
+| 3000 (7303), runner D2 | 116,111 | 0 / 10 / 124 | `timeout` on the 18,900 s bulk clock after 134 steps: 96,817 off, N 113,022 | D2 record `runs/dev/d2-s7303/run2` |
+| 3000 (7305), runner D2 from the census stop | 105,437 at the stop | 0 / 1 / 79 | `timeout` on the 21,600 s bulk clock after 80 steps: 101,937 off, N 131,542 → 126,592, n4 2,297 unchanged | D2 record `runs/dev/d2-s7305/full-interrupted` |
 
 Labels:
 - The census rows are **measured** ([census](../restoration/11-scramble-census/README.md)). The census ran reopen last
@@ -742,12 +747,22 @@ Labels:
   `runs/check.out`, `runs/round3/check.out` and `runs/heights/check.out` (the descent from 3000 twists of seed 7302)
   of stage 11, and `runs/round22/cloud-k3000-check.out` and `cloud-k3000-check-s7305.out` of stage 12.
 - The checker passes both D0 records (`check.jsonl` in each D0 directory).
+- The three runner rows are **run on one instance** each, in development mode (source commits `35c3d4f` and, for seed
+  7303, `13dcbd2`), under `runs/dev/` of stage 13. The checker passes the seed 7303 record (`run2/check.jsonl`: pass
+  true, all 139 steps). The seed 7305 run was stopped by a signal on the integrator's instruction four steps into its
+  height phase; the checker replays and passes all 84 of its steps but fails the record on the height phase's totals
+  (`phase_steps`, `phase_twists`: after the signal the runner left the parent phase's counts at 0;
+  `full-interrupted/check.jsonl`). The D1 run was killed by a container restart in its tail and has no check; its 97 bulk steps agree with the
+  census record step by step in rule, twists, N and off (`bulk-comparison.md`; the census never searched past that
+  point for as long).
 
 What the runs show:
 - **No census run got stuck.** Every run that did not reach the lattice was stopped by its clock, and every step it
   took lowered N (**measured**, census, "What the runs show", item 1). So the result `stuck` has not been seen in the
-  census. No runner record yet shows where the runner's bulk stops on a deeper scramble: the runs D1 (seed 7101) and
-  D2 (depth 3000) are not in the repository.
+  census. The runner's D1 record shows the first `stuck` bulk: after the census's 97 steps no rule found a 98th step,
+  with 1,193 pieces off, all at height 2, and the run went on to the tail (section 5.18). From 3000 twists, the
+  runner's bulk for seed 7303 was still lowering N when its 18,900 s clock ended it, and from seed 7305's census stop
+  the bulk ran its whole 21,600 s clock: 80 more steps, 3,500 more pieces back (105,437 → 101,937 off), no hand-over.
 - **Three rules did all the work**: seam, cover and conj (**measured**, item 2).
 - **A fast start, then a slow tail.** Broadly, the deeper the scramble, the sooner single-letter steps run out, but not
   in strict order of depth. The first conj step came after 29 steps at depth 40, 27 at 60, 9 and 19 at 100 (two
@@ -808,9 +823,9 @@ uniform bound on a restoration exists ([stage 10](../restoration/10-x1-unbounded
    that does not meet c is not in the repository. Record C checks it at 28 states only.
 2. **An exact tie-break for cover.** Until there is one, cover's choices are defined by the runner's float
    arithmetic and the BLAS kernel of the recorded machine (R22D-90).
-3. **No runner record with conj, cover, lock, improve or shift.** The D0 records have only seam steps. The conj tree
-   of section 2.7 is source behaviour that no run has written yet. D1 (seed 7101, depth 40) will be the first runner
-   record with cover and conj steps, if it repeats the census.
+3. **No runner record with lock, improve or shift.** The D0 records have only seam steps; the D1 and D2 records add
+   cover and conj steps (D1 repeats the census's first 97 steps exactly). No runner record has a lock, improve or
+   shift step yet.
 4. **Reopen.** Whether reopen would ever find a step where the seven rules find none is not known (section 2.11).
 5. **The pinned commit.** Every line number refers to `88dacaf`, chapter 1's to `35c3d4f`. The two agree for every
    file cited here except `check_run.py` after line 966. The tutorial's citations are to be re-pinned to one commit,

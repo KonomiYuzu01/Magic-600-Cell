@@ -325,7 +325,7 @@ writes the status `failure certificate: nu outside the span of the correction li
 
 **Where in the code.** `restore_lattice_late.py:311-353`; `restore_schedule11_late.py:290-332`; `nucoords.py:109-196`.
 
-![Figure 6.3: Before lattice/correction-0-7 of the depth 40 program of seed 7101, in the stereographic local view centred on the first cap of macro 7: the state T = solved · C⁻¹, whose labels are those of the played state before the first correction step (rule L4), with the pieces that the 9 letters of macro 7 (mirror2) move drawn opaque and the stickers near the cap as ghosts](figures/png/ch06-correction-before.png)
+![Figure 6.3: Before lattice/correction-0-7 of the depth 40 program of seed 7101, in the stereographic local view centred on the first cap of macro 7: the state T = solved · C⁻¹, whose labels are those of the played state before the first correction step (rule L4), with the 2,981 pieces that the 9 letters of macro 7 (mirror2) move drawn opaque and no other piece drawn](figures/png/ch06-correction-before.png)
 
 ![Figure 6.4: After lattice/correction-0-7: the same view and pieces after the 9 letters of macro 7 (mirror2), which changes the 14 sign bits b10, b12, b14, b17, b18, b21, b22, b23, b25, b26, b27, b28, b31 and b33 of ν](figures/png/ch06-correction-after.png)
 
@@ -784,7 +784,7 @@ with a tree of 92 parts (record section E; section 6.17.2).
 
 ![Figure 6.6: Before lattice/orbit-6 of the seed 7106 handoff (row 19, digest 1b263d3e…): the whole puzzle in perspective, with the pieces whose exact pose the step changes drawn opaque (among them the six orbit-6 pieces out of place and collateral pieces of later orbits)](figures/png/s7106-step19-before.png)
 
-![Figure 6.7: After lattice/orbit-6 (digest 949da503…): the same view and the same pieces; every orbit-6 piece is at home with the identity frame, and the collateral pieces have moved](figures/png/s7106-step19-after.png)
+![Figure 6.7: After lattice/orbit-6 (digest 949da503…): the same view and the same 4,341 pieces at their poses after the step; by the record every orbit-6 piece is now at home with the identity frame, and the collateral pieces have moved](figures/png/s7106-step19-after.png)
 
 ![Figure 6.8: The step tree of lattice/orbit-6 at the seed 7106 handoff: 24 parts and 194 letters, four twisted cycles that share one seed, with arrows for the inverse_of and same_as references](figures/svg/ch06-orbit6-tree.svg)
 
@@ -1499,7 +1499,7 @@ costs at this state (**computed**, record section C; the cost of the plan played
 
 Each plan wins on 12 orbits; no tie occurs here.
 
-![Figure 6.12: The lattice phase of the D0 record of seed 7106 as a sequence of 36 panels in cascade order: the state before row 19, then the state after each of rows 19 to 53, each panel labelled with its row, rule, letters and after digest](figures/png/ch06-d0-sequence.png)
+![Figure 6.12: The lattice phase of the D0 record of seed 7106 as a sequence of 36 panels in cascade order: the pieces whose exact pose differs from solved, before row 19 and after each of rows 19 to 53, each panel labelled with its row, rule, letters and after digest](figures/png/ch06-d0-sequence.png)
 
 ### 6.17.2 The same handoff under the late restorer (development mode)
 
@@ -1631,8 +1631,9 @@ same directory). T is the input of figures 6.3 and 6.4.
 
 - **Gaps in the runs.** No runner run has played a correction step from a development scramble or census stop, or
   ended its lattice phase with an `End` or with nothing scheduled (stage 13 `README.md:1634-1636`); the plugin's
-  fixtures cover them (sections 6.9 and 6.14). D1 (seed 7101, depth 40) and D2 are running and have no recorded result
-  (:1578). The slow test `LATTICE_PHASE_SLOW=1`, schedule11 on the rebuilt seed 7106 handoff
+  fixtures cover them (sections 6.9 and 6.14). No D1 or D2 record so far reached the lattice phase: D1's development
+  run was killed in its tail (section 5.18), and no recorded D2 run went past its high or tail phase (sections 4.18
+  and 5.18). The slow test `LATTICE_PHASE_SLOW=1`, schedule11 on the rebuilt seed 7106 handoff
   (`test_lattice_phase.py:1052-1076`), has not been run (stage 13 `README.md:1631`).
 - **Finite evidence.** The runs of this chapter show the phase on a few inputs. They do not show that every scramble is
   restored.
