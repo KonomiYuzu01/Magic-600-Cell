@@ -1,0 +1,13 @@
+{
+  "words": 40,
+  "passed": 40,
+  "all_admissible": true,
+  "all_on_lattice": true,
+  "all_nu_agree": true,
+  "ok": true,
+  "evidence_kind": "source and fixture replay; cloud timings of research code",
+  "python": "3.11.15",
+  "numpy": "2.3.5",
+  "cpu_count": 4,
+  "commit": "11615e0b0f0eebeef7d8624d0fc5b0424f3ea254"
+}

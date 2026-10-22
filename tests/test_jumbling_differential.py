@@ -757,6 +757,65 @@ class IndependenceTests(unittest.TestCase):
         self.assertTrue(all(p.suffix == '.py' and (JUMBLING / 'differential/candidate') in p.parents for p in files))
         self.assertEqual(I.scan_paths(files, I.CANDIDATE_POLICY), [])
 
+    @staticmethod
+    def _candidate_imports(source):
+        """Lines of a `differential.references` module that could load candidate code.
+
+        A static import of `differential.candidate` (absolute or relative); a bare
+        import of a candidate module's name, which a `sys.path` change would reach;
+        any dynamic loading (`importlib`, `__import__`, `runpy`, `exec`, `eval`,
+        `compile`, `sys.modules`), which the reference modules never need; and any
+        string, other than a dict key, that names the candidate package as a module
+        or a path.
+        """
+        import ast
+        import re
+        package = ['differential', 'references']
+        modules = {p.stem for p in (JUMBLING / 'differential/candidate').glob('*.py')} - {'__init__'}
+        dynamic = {'importlib', 'runpy', '__import__', 'exec', 'eval', 'compile', 'import_module', 'modules'}
+        named = re.compile(r'(^|[./\\])candidate([./\\]|$)')
+        tree = ast.parse(source)
+        keys = {id(key) for node in ast.walk(tree) if isinstance(node, ast.Dict) for key in node.keys}
+        lines = set()
+        for node in ast.walk(tree):
+            names = []
+            if isinstance(node, ast.Import):
+                names = [alias.name for alias in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                parts = package[:len(package) - node.level + 1] if node.level else []
+                base = '.'.join(parts + ([node.module] if node.module else []))
+                names = [base] + [base + '.' + alias.name for alias in node.names]
+            elif ((isinstance(node, ast.Name) and node.id in dynamic)
+                  or (isinstance(node, ast.Attribute) and node.attr in dynamic)
+                  or (isinstance(node, ast.Constant) and isinstance(node.value, str)
+                      and id(node) not in keys and named.search(node.value))):
+                lines.add(node.lineno)
+            if any(n == 'differential.candidate' or n.startswith('differential.candidate.')
+                   or n.split('.')[0] in dynamic | modules or n.split('.')[-1] in dynamic for n in names):
+                lines.add(node.lineno)
+        return sorted(lines)
+
+    def test_reference_modules_never_import_the_candidate(self):
+        files = sorted((JUMBLING / 'differential/references').glob('*.py'))
+        self.assertTrue({'nu.py', 'corrections.py', 'word_check.py', 'session_engine.py'}
+                        <= {p.name for p in files})
+        for path in files:
+            with self.subTest(path=path.name):
+                self.assertEqual(self._candidate_imports(path.read_text(encoding='utf-8')), [])
+        for source in ('from differential.candidate import store', 'import differential.candidate.store',
+                       'from ..candidate import store', 'from .. import candidate',
+                       'from differential import candidate',
+                       "importlib.import_module('differential.candidate.store')",
+                       "from importlib import import_module as load\nload('..candidate.store', __package__)",
+                       "__import__('differential.candidate.store', fromlist=['store'])",
+                       "sys.path.insert(0, str(Path(__file__).parents[1] / 'candidate'))\nimport store",
+                       "store = sys.modules['differential.candidate.store']",
+                       "exec('import differential.candidate')",
+                       "runpy.run_path('../candidate/session.py')"):
+            with self.subTest(planted=source):
+                self.assertIn(2, self._candidate_imports('\n' + source))
+        self.assertEqual(self._candidate_imports("row = {'candidate': 1, 'reference': 2}"), [])
+
     def test_planted_harness_imports(self):
         for source in ('import seams', 'from differential.candidate import store',
                        'import differential.candidate.store', 'from .candidate import store',
