@@ -115,7 +115,9 @@ the admissible caps' N_c.
   165,529 pieces off).
 
 With `--extract DIR --height4`, it also replays the six height-4 states of
-stage 12 from draft #112's branch.
+stage 12 from draft #112's branch. Their start records are read from the
+extraction too, stage 11's `ia-k3000-s7302.json` included: it is not on
+`main` either.
 
 ```sh
 python -B research/jumbling/differential/references/obs_refs.py --out DIR [--states fixtures stop40 deep] [--extract DIR --height4]

@@ -337,17 +337,14 @@ def height4_inputs(extract):
 
 
 def height4_state(extract, descriptor):
-    """Replay data from the extraction and the one stage-11 record on main."""
+    """Replay a state from the extraction: its stage-12 or stage-11 start record is on #112's branch only."""
     census, _, _, sim, _ = _modules()
     source, stop, prefix, checkpoints, expected = descriptor
     relative = Path(source)
     stage11 = Path('research/jumbling/restoration/11-scramble-census')
-    if relative.is_relative_to(STAGE12):
-        path = _extracted_file(_outside(extract, '--extract'), relative)
-    elif relative == stage11 / 'runs/heights/ia-k3000-s7302.json':
-        path = ROOT / relative
-    else:
+    if not (relative.is_relative_to(STAGE12) or relative == stage11 / 'runs/heights/ia-k3000-s7302.json'):
         raise ValueError('height-4 descriptor names an input outside its allowed source directories')
+    path = _extracted_file(_outside(extract, '--extract'), relative)
     record = _read(path)
     state = sim.State(census.restore.ctx, menu=census.menu())
     _play(state, record['history'] + record['moves'], source)

@@ -386,6 +386,32 @@ class DeepReferenceTests(TimedCase):
                          '3061502ba1f6f56555d9404a420d9da14b1cd3f5918d749a8e4e0d19cfefe12a')
 
 
+class HeightFourInputTests(TimedCase):
+    def test_both_start_records_are_read_beneath_the_extraction(self):
+        # Synthetic extraction only: the stage-11 record, like stage 12's, is not on main.
+        stage11 = 'research/jumbling/restoration/11-scramble-census/runs/heights/ia-k3000-s7302.json'
+        stage12 = str(R.STAGE12 / 'runs/round22/cloud/census-k3000-s7304/ia-k3000-s7304.json')
+        global _TEMP_ROOT
+        try:
+            with tempfile.TemporaryDirectory(prefix='jumbling-height4-') as temporary:
+                extract = _TEMP_ROOT = Path(temporary).resolve()
+                for source in (stage11, stage12):
+                    with self.subTest(source=source):
+                        descriptor = (source, 'f' * 64, [], {}, 'f' * 64)
+                        with self.assertRaises(FileNotFoundError):
+                            R.height4_state(extract, descriptor)
+                        path = extract / source
+                        path.parent.mkdir(parents=True, exist_ok=True)
+                        path.write_text(json.dumps({'history': [], 'moves': [], 'off_now': 0}), encoding='utf-8')
+                        # The planted empty record is read: solved is not the descriptor's stop.
+                        with self.assertRaisesRegex(AssertionError, 'stop_digest'):
+                            R.height4_state(extract, descriptor)
+                with self.assertRaisesRegex(ValueError, 'outside its allowed source directories'):
+                    R.height4_state(extract, ('research/jumbling/fixtures/wj-I_a.json', 'f' * 64, [], {}, 'f' * 64))
+        finally:
+            _TEMP_ROOT = None
+
+
 class CLISmokeTests(TimedCase):
     def test_repository_out_or_extract_is_refused_before_research_imports(self):
         for args, option in ((['--out', str(ROOT / 'work/forbidden-observations')], '--out'),
@@ -429,7 +455,7 @@ class CLISmokeTests(TimedCase):
 
 
 _CASES = (TreeHeightTests, DomainTests, RimSummaryTests, CutCellTests, OffGripSeamTests,
-          DeepReferenceTests, CLISmokeTests)
+          DeepReferenceTests, HeightFourInputTests, CLISmokeTests)
 
 
 def load_tests(loader, tests, pattern):
