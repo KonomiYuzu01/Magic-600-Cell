@@ -757,6 +757,38 @@ class IndependenceTests(unittest.TestCase):
         self.assertTrue(all(p.suffix == '.py' and (JUMBLING / 'differential/candidate') in p.parents for p in files))
         self.assertEqual(I.scan_paths(files, I.CANDIDATE_POLICY), [])
 
+    @staticmethod
+    def _candidate_imports(source):
+        """Lines of a `differential.references` module that import the candidate."""
+        import ast
+        package = ['differential', 'references']
+        lines = []
+        for node in ast.walk(ast.parse(source)):
+            if isinstance(node, ast.Import):
+                names = [alias.name for alias in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                parts = package[:len(package) - node.level + 1] if node.level else []
+                base = '.'.join(parts + ([node.module] if node.module else []))
+                names = [base] + [base + '.' + alias.name for alias in node.names]
+            else:
+                continue
+            if any(n == 'differential.candidate' or n.startswith('differential.candidate.') for n in names):
+                lines.append(node.lineno)
+        return lines
+
+    def test_reference_modules_never_import_the_candidate(self):
+        files = sorted((JUMBLING / 'differential/references').glob('*.py'))
+        self.assertTrue({'nu.py', 'corrections.py', 'word_check.py', 'session_engine.py'}
+                        <= {p.name for p in files})
+        for path in files:
+            with self.subTest(path=path.name):
+                self.assertEqual(self._candidate_imports(path.read_text(encoding='utf-8')), [])
+        for source in ('from differential.candidate import store', 'import differential.candidate.store',
+                       'from ..candidate import store', 'from .. import candidate',
+                       'from differential import candidate'):
+            with self.subTest(planted=source):
+                self.assertEqual(self._candidate_imports('\n' + source), [2])
+
     def test_planted_harness_imports(self):
         for source in ('import seams', 'from differential.candidate import store',
                        'import differential.candidate.store', 'from .candidate import store',

@@ -2,8 +2,11 @@
 
 Status: EN2 slice 1 supplies the NumPy-free harness core; slice 2 adds the J1
 adapter and replays; slice 3 adds named-cap straddler sets and the cost leads
-in [`leads/`](leads/README.md). Reference values follow in a later packet.
-The store prototype is a separate packet under `candidate/`. Evidence here is
+in [`leads/`](leads/README.md); slice 4 adds the reference values of ν, the
+corrections, the observations and the word checks in
+[`references/`](references/README.md), and the optional-state session
+prototype `candidate/session.py`. The store prototype is a separate packet
+under `candidate/`. Evidence here is
 source, synthetic engines and fixture replays with the J1 reference engine;
 it establishes no candidate-engine, Windows/DirectX or performance result.
 
@@ -241,6 +244,10 @@ executing scanned code. Violations name their path and line.
 - `CANDIDATE_POLICY` allows standard-library modules, `numpy` and modules
   inside `differential.candidate`, including relative imports that stay there.
   It forbids J1, `exact`, the harness modules and other modules.
+
+The reference modules under `references/` are outside both policies: they may
+import J1, the research scripts, the harness and `differential.leads`, but never
+`differential.candidate`, which `IndependenceTests` checks separately.
 
 Both policies reject dynamic-code names `__import__`, `importlib`, `runpy`,
 `exec`, `eval` and `compile`, and references to `sys.path`. Straightforward
