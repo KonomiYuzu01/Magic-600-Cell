@@ -229,7 +229,7 @@ The colour-vision preview and grid overlay belong to app state.
 | `turnMs` | Motion / number | 150..900; step 1 | Duration in milliseconds of each generator or inverse turn. |
 | `easeA` | Motion / number | 0..1; step 0.01 | First easing control x at (a,0). |
 | `easeB` | Motion / number | 0..1; step 0.01 | Second easing control x at (1-b,1). |
-| `projection` | Structure / enum | perspective, stereographic, orthographic | 4D projection kind; stereographic fixes d4 to one. |
+| `projection` | Structure / enum | perspective, stereographic, orthographic, hemispheres, hopfRings, ringSheet | 4D projection or Global layout; stereographic fixes d4 to one, and the three layouts place each cell in a chart. |
 | `d4` | Structure / number | 1.01..4; step 0.01 | 4D perspective eye parameter used before the 3D camera. |
 | `stickerShrink` | Structure / number | 0..1; step 0.01 | S-B ss: sticker shrink around each sticker centre. |
 | `highlight` | Structure / enum | none, fibration, orbit | Structure highlighting mode. |
