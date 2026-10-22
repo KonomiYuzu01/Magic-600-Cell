@@ -24,11 +24,18 @@ Output: `{'record': 'ia-k3000-s7302.json', 'run': 'ia-k3000-s7302', 'moves': 313
 values. Wall time about 95 minutes (04:03 to 05:38 UTC), against the plan's estimate of about 1,650 s. The table is
 not committed (it is rebuilt by this command).
 
-## Step 2: component run (running, started 05:39 UTC)
+## Step 2: component run
 
     python3 -I -B -u $S/runner.py --table <dir>/tables/s7302-stop.json --out <dir>/out-c --cache <dir>/cache --bulk-steps 0 --height-seconds 12000 --height-cpu 12000 --pair-shards 3 --kernel-seconds 3600
 
-Progress note at 07:39 UTC (from `run.json`, not yet checked). `config.component` is `bulk_budget`; the bulk is
+**First attempt (05:39 UTC): lost to a container restart.** The cloud container restarted at about 09:03 UTC and
+killed the runner and its children with no signal handler run. So no `.rc`, no final record and no check exist. The
+last log writes are at 09:03:16, in the three shards of the `h4` `two_letter_u` pass that began at 06:25. That pass
+had run about 2 h 38 min wall time without finishing. The partial record is kept outside the repository, not
+committed, because the second attempt repeats it. **Second attempt:** the same command with a fresh `--out` and
+`--cache` (`<dir>/out-c2`, `<dir>/cache2`), started 13:38 UTC.
+
+Partial record of the first attempt, as of 07:39 UTC (from `run.json`, not yet checked). `config.component` is `bulk_budget`; the bulk is
 `budget` (0 steps).
 
 - `r22d75`: 7 one-letter steps (T0, T1 ×3, T2 ×3), `015d839e…` → `1ff0061f…`, then `stuck` (`no_step`, 94.7 s
