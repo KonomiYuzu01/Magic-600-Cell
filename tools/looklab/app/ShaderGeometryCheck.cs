@@ -36,6 +36,9 @@ internal static class ShaderGeometryCheck
         string drawing = FileAccess.GetFileAsString("res://shaders/cells.gdshader");
         const string framingStatement = "clip.xy = (clip.xy - view_frame.xy * clip.w) * view_frame.z;";
         if (!drawing.Contains(framingStatement, StringComparison.Ordinal)) throw new Exception("geometry: production framing statement missing");
+        const string blendStatement = "blend = clamp(abs(theta / turn_angle), 0.0, 1.0);";
+        if (!drawing.Contains(blendStatement, StringComparison.Ordinal)) throw new Exception("layout-geometry: production blend statement missing");
+        if (fault == "layout-no-blend") drawing = drawing.Replace(blendStatement, "", StringComparison.Ordinal);
         var source = new ShaderSource(fault == "missing-view-frame" ? drawing.Replace(framingStatement, "", StringComparison.Ordinal) : drawing);
         using var fixture = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "tools/looklab/fixtures/sb-reference.json")));
         JsonElement f = fixture.RootElement, parameters = f.GetProperty("parameters");
@@ -51,7 +54,7 @@ internal static class ShaderGeometryCheck
             if (points.Length != 300) throw new Exception("geometry: expected 300 sampled vertices per case");
             SetCase(view, structure, q, theta, points.Length, fault == "transpose-q");
             using var target = new FloatTarget();
-            Godot.Collections.Array<RDUniform> uniforms = Bindings(target, view, source, points);
+            Godot.Collections.Array<RDUniform> uniforms = Bindings(target, view, source, points.Select(p => p.GetProperty("vertex").GetInt32()).ToArray());
             byte[] result = target.Draw(source.Vertex(), source.Fragment(), points.Length, (uint)points.Length * 3, uniforms);
             for (int index = 0; index < points.Length; index++)
             {
@@ -80,7 +83,7 @@ internal static class ShaderGeometryCheck
         using (var target = new FloatTarget())
         {
             byte[] result = target.Draw(source.Vertex(), source.Fragment(), framedPoints.Length, (uint)framedPoints.Length * 3,
-                Bindings(target, view, source, framedPoints));
+                Bindings(target, view, source, framedPoints.Select(p => p.GetProperty("vertex").GetInt32()).ToArray()));
             for (int index = 0; index < framedPoints.Length; index++)
             {
                 int vertex = framedPoints[index].GetProperty("vertex").GetInt32();
@@ -95,15 +98,61 @@ internal static class ShaderGeometryCheck
         }
         cases++; samples += framedPoints.Length;
         GD.Print($"LOOKLAB_GEOMETRY_PASS cases={cases} samples={samples} framed=1 target=RGBA32F tolerance=1e-4+1e-4*abs(expected)");
+        view.SetViewFrame(FocusFrame.Neutral);
+        LayoutCases(view, source, structure, fault);
         host.GetTree().Quit();
+    }
+
+    private static void LayoutCases(LookViewport view, ShaderSource source, StructureValues structure, string fault)
+    {
+        double[] q = Geometry.Identity(), spin = Geometry.Identity();
+        Geometry.Rotate(q, 0, 2, .4); Geometry.Rotate(q, 1, 3, -.7); Geometry.Rotate(q, 2, 3, .3);
+        Geometry.Rotate(spin, 0, 2, .5); Geometry.Rotate(spin, 1, 2, -.3);
+        float[] layout = view.Layout.CellLayout(view.Turn);
+        for (int cell = 0; cell < Geometry.Cells; cell++)
+        {
+            double w = 0;
+            for (int col = 0; col < 4; col++) w += q[col * 4 + 3] * layout[cell * 4 + col];
+            if (Math.Abs(w) < 1e-4) throw new Exception("layout-geometry: cell centre is too close to the hemisphere equator: " + cell);
+        }
+        var moving = new HashSet<int>(); var stationary = new HashSet<int>(); var random = new Random(7707);
+        while (moving.Count < 150 || stationary.Count < 150)
+        {
+            int vertex = random.Next(Geometry.Cells * Geometry.BaseVertices);
+            int slot = vertex / Geometry.BaseVertices * Geometry.StickersPerCell + view.Geometry.BaseStickerIds.Span[vertex % Geometry.BaseVertices];
+            HashSet<int> group = view.Turn.IsMoving(slot) ? moving : stationary;
+            if (group.Count < 150) group.Add(vertex);
+        }
+        int[] vertices = moving.Concat(stationary).OrderBy(v => v).ToArray();
+        foreach (ProjectionKind kind in new[] { ProjectionKind.Hemispheres, ProjectionKind.HopfRings, ProjectionKind.RingSheet })
+            foreach (double theta in new[] { 0.0, (kind == ProjectionKind.HopfRings ? -1 : 1) * view.Turn.Angle / 2 })
+            {
+                StructureValues p = structure with { Projection = kind };
+                SetCase(view, p, q, theta, vertices.Length, false, spin);
+                using var target = new FloatTarget();
+                byte[] result = target.Draw(source.Vertex(), source.Fragment(), vertices.Length, (uint)vertices.Length * 3,
+                    Bindings(target, view, source, vertices));
+                for (int index = 0; index < vertices.Length; index++)
+                {
+                    LookLab.Core.Projection expected = view.Geometry.Project(vertices[index], p, q, view.Turn, theta, view.Layout, spin);
+                    double[] core = { expected.NdcX, expected.NdcY, expected.W };
+                    for (int component = 0; component < 3; component++)
+                    {
+                        float actual = BinaryPrimitives.ReadSingleLittleEndian(result.AsSpan(index * 16 + component * 4, 4));
+                        if (!Near(actual, core[component])) throw new Exception($"{(fault == "layout-no-blend" ? fault : "layout-geometry")}: {kind} theta={theta:R} vertex={vertices[index]} component={component} actual={actual:R} core={core[component]:R}; tolerance=1e-4+1e-4*abs(expected)");
+                    }
+                }
+            }
+        GD.Print("LOOKLAB_LAYOUT_GEOMETRY_PASS cases=6 samples=1800 target=RGBA32F");
     }
 
     private static bool Near(double actual, double expected) => double.IsFinite(actual) &&
         Math.Abs(actual - expected) <= AbsoluteTolerance + RelativeTolerance * Math.Abs(expected);
 
-    private static void SetCase(LookViewport view, StructureValues p, double[] q, double theta, int width, bool transpose)
+    private static void SetCase(LookViewport view, StructureValues p, double[] q, double theta, int width, bool transpose, double[]? spin = null)
     {
         view.Material.SetShaderParameter("q", LookViewport.Matrix(q));
+        view.Material.SetShaderParameter("spin", LookViewport.Matrix(spin ?? view.Spin));
         foreach (var (name, value) in new[] { ("cs", p.Cs), ("ss", p.Ss), ("d4", p.D4), ("zoom", p.Zoom), ("aspect", p.Aspect), ("theta", theta) })
             view.Material.SetShaderParameter(name, (float)value);
         view.Material.SetShaderParameter("projection_kind", (int)p.Projection);
@@ -119,7 +168,7 @@ internal static class ShaderGeometryCheck
         return bytes;
     }
 
-    private static Godot.Collections.Array<RDUniform> Bindings(FloatTarget target, LookViewport view, ShaderSource source, JsonElement[] samples)
+    private static Godot.Collections.Array<RDUniform> Bindings(FloatTarget target, LookViewport view, ShaderSource source, int[] samples)
     {
         RenderingDevice rd = target.Device;
         // Fetch actual MultiMesh transforms/custom data and actual mesh attributes,
@@ -130,7 +179,7 @@ internal static class ShaderGeometryCheck
         var inputs = new float[samples.Length * 28];
         for (int i = 0; i < samples.Length; i++)
         {
-            int g = samples[i].GetProperty("vertex").GetInt32(), cell = g / Geometry.BaseVertices, vi = g % Geometry.BaseVertices;
+            int g = samples[i], cell = g / Geometry.BaseVertices, vi = g % Geometry.BaseVertices;
             Transform3D model = view.Instances.GetInstanceTransform(cell); Color custom = view.Instances.GetInstanceCustomData(cell);
             Vector3 position = positions[vi];
             float[] item = { position.X, position.Y, position.Z, uv[vi].X, uv[vi].Y, cell, 0, 0,

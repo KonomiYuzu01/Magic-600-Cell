@@ -60,7 +60,7 @@ def main():
     number("turnMs", "Motion", 150, 900, 1, 190, "Duration in milliseconds of each generator or inverse turn.")
     number("easeA", "Motion", 0, 1, .01, 1 / 3, "First easing control x at (a,0).")
     number("easeB", "Motion", 0, 1, .01, 1 / 3, "Second easing control x at (1-b,1).")
-    add("projection", "Structure", "enum", "perspective", "4D projection kind; stereographic fixes d4 to one.", values=["perspective", "stereographic", "orthographic"])
+    add("projection", "Structure", "enum", "perspective", "4D projection or Global layout: perspective, stereographic (d4 fixed to one) and orthographic project the cells; hemispheres, hopfRings and ringSheet place each cell in a chart.", values=["perspective", "stereographic", "orthographic", "hemispheres", "hopfRings", "ringSheet"])
     number("d4", "Structure", 1.01, 4, .01, 1.18, "4D perspective eye parameter used before the 3D camera.")
     number("stickerShrink", "Structure", 0, 1, .01, .82, "S-B ss: sticker shrink around each sticker centre.")
     add("highlight", "Structure", "enum", "none", "Structure highlighting mode.", values=["none", "fibration", "orbit"], cost="highlight")
@@ -87,6 +87,18 @@ def main():
     write(HERE / "parameters.json", {"format": "magic600-look-parameters", "version": 1, "parameters": parameters})
     write(LAB / "presets/default.json", {"format": "magic600-look-preset", "version": 1, "name": "S-B geometry default", "family": None, "scene": None,
                                        "params": {p["id"]: p["default"] for p in parameters}})
+    for id, name, projection in [("perspective", "G1 perspective", "perspective"),
+                                 ("stereographic", "G1 stereographic", "stereographic"),
+                                 ("orthographic", "G1 orthographic", "orthographic"),
+                                 ("hemispheres", "G1 two hemispheres", "hemispheres"),
+                                 ("hopf-rings", "G1 Hopf rings", "hopfRings"),
+                                 ("ring-sheet", "G1 ring sheet", "ringSheet")]:
+        params = {p["id"]: p["default"] for p in parameters}
+        params["projection"] = projection
+        if projection == "orthographic":
+            params["fieldOfView"] = 2 * math.atan(1 / 3.27)
+        write(LAB / f"presets/g1-{id}.json", {"format": "magic600-look-preset", "version": 1, "name": name,
+                                            "family": None, "scene": None, "params": params})
     features = dict.fromkeys((p["costFeature"] for p in parameters if p["costFeature"]), None)
     write(HERE / "cost.json", {"format": "magic600-look-cost", "version": 1, "features": features})
     commands = json.loads((ROOT / "docs/progress/1.0/command-table.json").read_bytes())

@@ -52,7 +52,7 @@ internal static partial class Program
 
     private static void LL6ProjectionAndRestAnchors()
     {
-        foreach (ProjectionKind kind in Enum.GetValues<ProjectionKind>())
+        foreach (ProjectionKind kind in new[] { ProjectionKind.Perspective, ProjectionKind.Stereographic, ProjectionKind.Orthographic })
             foreach (double[] world in new[] { new[] { .2, -.4, .3, .7 }, new[] { -.5, .3, -.8, -.2 } })
             {
                 StructureValues p = FocusParameters(.24, kind);
@@ -130,7 +130,7 @@ internal static partial class Program
     private static void LL6FocusSweep()
     {
         var random = new Random(60006);
-        foreach (ProjectionKind kind in Enum.GetValues<ProjectionKind>())
+        foreach (ProjectionKind kind in new[] { ProjectionKind.Perspective, ProjectionKind.Stereographic, ProjectionKind.Orthographic })
             for (int i = 0; i < 120; i++)
             {
                 StructureValues p = FocusParameters(random.NextDouble() * .3, kind, 1.01 + random.NextDouble() * 2.99,
@@ -161,7 +161,7 @@ internal static partial class Program
         var random = new Random(60601);
         double[] anchors = ViewFraming.MovingRestAnchors(Mesh, Turn, 0);
         Check(anchors.Chunk(4).All(a => Math.Sqrt(a.Sum(x => x * x)) < 4), "orthographic w guard unexpectedly reachable");
-        foreach (ProjectionKind kind in Enum.GetValues<ProjectionKind>())
+        foreach (ProjectionKind kind in new[] { ProjectionKind.Perspective, ProjectionKind.Stereographic, ProjectionKind.Orthographic })
             foreach (var (guard, edge) in new[] { ("w", .5), ("w", 1.0), ("x", 1.0), ("x", 1.25),
                 ("y", 1.0), ("y", 1.25), ("den", .02), ("den", .1) })
             {

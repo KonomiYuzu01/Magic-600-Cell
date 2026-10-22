@@ -48,6 +48,15 @@ public static class ViewFraming
         return anchors;
     }
 
+    public static int[] MovingRestCells(TurnData turn) => Enumerable.Range(0, Geometry.Slots).Where(turn.IsMoving)
+        .Select(slot => slot / Geometry.StickersPerCell).ToArray();
+
+    public static Projection Camera(ReadOnlySpan<double> placed, StructureValues p)
+    {
+        double w = 5 - placed[2];
+        return new Projection(placed[0] * p.Zoom / p.Aspect / w, placed[1] * p.Zoom / w, w);
+    }
+
     public static Projection Project(ReadOnlySpan<double> world, StructureValues p)
     {
         double factor = p.Projection switch
@@ -88,6 +97,26 @@ public static class ViewFraming
             if (!double.IsFinite(projected.W) || !double.IsFinite(projected.NdcX) || !double.IsFinite(projected.NdcY)) continue;
             double a = Smooth(projected.W, .5, 1) * (1 - Smooth(Math.Abs(projected.NdcX), 1, 1.25)) *
                 (1 - Smooth(Math.Abs(projected.NdcY), 1, 1.25)) * g;
+            weight += a; x += a * projected.NdcX; y += a * projected.NdcY;
+        }
+        double m = 1 + (magnification - 1) * Math.Min(1, weight), bound = 1 - 1 / m;
+        return new FocusFrame(Math.Clamp(x / Math.Max(weight, 1), -bound, bound),
+            Math.Clamp(y / Math.Max(weight, 1), -bound, bound), m);
+    }
+
+    public static FocusFrame Target(ReadOnlySpan<double> anchors, ReadOnlySpan<int> cells, ReadOnlySpan<double> q, ReadOnlySpan<double> spin,
+        StructureValues p, GlobalLayout layout, double magnification = 3)
+    {
+        if (!GlobalLayout.IsLayout(p.Projection)) return Target(anchors, q, p, magnification);
+        if (anchors.Length % 4 != 0 || cells.Length != anchors.Length / 4) throw Json.Error("anchors", "one chart cell per 4D anchor required");
+        double weight = 0, x = 0, y = 0;
+        for (int i = 0; i < cells.Length; i++)
+        {
+            double[] placed = layout.Place(p.Projection, cells[i], anchors.Slice(i * 4, 4), q, spin);
+            Projection projected = Camera(placed, p);
+            if (!double.IsFinite(projected.W) || !double.IsFinite(projected.NdcX) || !double.IsFinite(projected.NdcY)) continue;
+            double a = Smooth(projected.W, .5, 1) * (1 - Smooth(Math.Abs(projected.NdcX), 1, 1.25)) *
+                (1 - Smooth(Math.Abs(projected.NdcY), 1, 1.25));
             weight += a; x += a * projected.NdcX; y += a * projected.NdcY;
         }
         double m = 1 + (magnification - 1) * Math.Min(1, weight), bound = 1 - 1 / m;
