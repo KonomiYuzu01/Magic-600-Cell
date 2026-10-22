@@ -65,6 +65,26 @@ Tools: Python standard library (the packet environment is CPython 3.14.7).
 The generators contain their editable production source. Rerunning them requires
 the scoped read-only S-B source copy for the S-B fixtures; acceptance only needs committed fixtures.
 
+## Hopf ring fixture
+
+`hopf-rings.json` is generated and checked with:
+
+```text
+python tools/looklab/fixtures/make_hopf_fixture.py
+python tools/looklab/fixtures/make_hopf_fixture.py --check
+```
+
+Input `assets/model.npz`: `680de6710e8a05b12dd4ba2ea22c866e645af032a31faf985d869798521f8b13`
+(verified against `assets/manifest.json` before reading the archive).
+Only `normals.npy`, `orbit_id.npy`, `face_offsets.npy` and `face_values.npy` are read from it.
+`tools/looklab/fixtures/rings.json` is read only for the LH-05 comparison; its SHA-256 is
+`14edb56d2cc6a08d8252d29a13acc6a121123ec52965bc0f09f61fef811b4ded`.
+Tools: Python standard library (CPython 3.14.7); the generator is the kept production source.
+
+The fixture reproduces the view lab's ring facts of 11 October 2026 and records how
+`rings.json` differs: ten rings in the chosen right cover and ten in a left cover,
+with a 7-regular ring graph rather than a single Hopf cover's 3-regular graph.
+
 ## Synthetic inverse-path fixture
 
 `three-cycle-turn.json` is a test-only 3-cycle of slots 0, 1 and 2, with angle

@@ -3,7 +3,7 @@ id: owner-decisions-2026-10-22
 type: decision
 status: verified
 visibility: public
-summary: Owner answers of 22 October 2026, given for now - every recommended option of the re-plan and of design-table topic DT-J1; schedule option B with the 2.5 freeze at about stage day 34; the branch-only jumbling records come to main; ENG-0J starts; W-J runs in the renderer selection; design-table card limits.
+summary: Owner answers of 22 October 2026, given for now - every recommended option of the re-plan and of design-table topic DT-J1; schedule option B with the 2.5 freeze at about stage day 34; the branch-only jumbling records come to main; ENG-0J starts; W-J runs in the renderer selection; design-table card limits; a one-off NumPy install in the cloud session for EN2's J1 tests.
 related: [owner-decisions-2026-10-02, owner-decisions-2026-10-03, owner-decisions-2026-10-09-jumbling, owner-decisions-2026-10-17-jumbling-pr, owner-decisions-2026-10-17-repair-pairs]
 supersedes: []
 claims:
@@ -13,11 +13,12 @@ claims:
   - {id: replan-q4-option-b, evidence_kind: decision, checked_at: 2026-10-22}
   - {id: dt-j1-batch, evidence_kind: decision, checked_at: 2026-10-22}
   - {id: design-table-card-limits, evidence_kind: decision, checked_at: 2026-10-22}
+  - {id: numpy-cloud-session, evidence_kind: decision, checked_at: 2026-10-22}
 ---
 
 # Owner decisions, 22 October 2026: re-plan answers and the DT-J1 batch
 
-The owner gave these answers in a chat message in Chinese, accepting every recommended option "for now"; this page records them in English. The owner may revisit any of them.
+The owner gave these answers in chat messages in Chinese, accepting every recommended option "for now"; this page records them in English. The owner may revisit any of them.
 
 ## Re-plan
 
@@ -49,6 +50,14 @@ The questions are in section 5 of the [re-plan](../../progress/1.0/replan-2026-1
    - O10 (b): a repair is committed once, after a preview that the solver can step through twist by twist.
    - O11 (b): each repair row also shows its change in N as a numeral, in a fixed column. This adds one field to the rows that the [17 October exception](owner-decisions-2026-10-17-repair-pairs.md) names.
 7. **Card limits from the next topic.** In round 1 each role gives at most six cards. In round 2 each role gives at most four, each answering other cards by ID.
+
+## Tools
+
+8. **NumPy for EN2's J1 tests in the cloud session: option (a).**
+   - EN2's tests run the J1 reference engine, which needs NumPy. The allowlisted `engine-python` entry covers Windows only, so an install on Linux is a source outside the allowlist.
+   - The owner allowed a one-off install of NumPy 2.3.5 in the cloud session, from the hash-pinned `tools/python/engine.txt`, into a virtual environment outside the repository.
+   - The allowlist, the lockfile and the installer are unchanged. The permission covers that session only, not other sessions or machines.
+   - Option (b), running J1's checks only on Windows CI or the owner's machine, was not taken. Windows CI still runs them.
 
 ## Effect
 
