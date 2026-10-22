@@ -21,6 +21,7 @@ from dataclasses import dataclass, fields
 from functools import lru_cache
 import hashlib
 import json
+from numbers import Integral
 
 # This import must precede research imports: it isolates the centroid cache.
 from differential.leads import census
@@ -297,42 +298,60 @@ def off_grip_seams(state):
 
 
 RIM_VALUES = ('N_c', 'In_c', 'Out_c', 'A_c', 'F_c', 'at_floor')
+STATUSES = ('admissible', 'blocked', 'uncertain')
+
+
+def _count(value):
+    """A non-negative integer (Python or NumPy), never a bool."""
+    return isinstance(value, Integral) and not isinstance(value, bool) and value >= 0
+
+
+def _hex64(value):
+    return isinstance(value, str) and len(value) == 64 and all(c in '0123456789abcdef' for c in value)
 
 
 def _gap(reference):
     """The first gap of a reference, or None when it is complete and self-consistent.
 
-    Every piece has a domain key; the pose classes of `pose_counts` hold every
-    piece and are exactly those of `heights`; the counts by left height follow
-    from them; all 600 caps have a row whose values its status requires; and
-    grip N is the sum of N_c over the admissible caps.
+    The state digest and a domain key for every piece; the pose classes of
+    `pose_counts` hold every piece and are exactly those of `heights`, each with
+    two non-negative heights; the counts by left height follow from them; all
+    600 caps have a known status and exactly the values it requires; N is a
+    count, and grip N the sum of N_c over the admissible caps.
     """
-    if len(reference.domain_keys) != rim.NP:
-        return 'pieces'
-    counts = reference.pose_counts
-    if (set(counts) != set(reference.heights) or sum(counts.values()) != rim.NP
-            or any(type(n) is not int or n <= 0 for n in counts.values())):
-        return 'pose classes'
-    left = Counter()
+    if not _hex64(reference.digest):
+        return 'digest'
     try:
-        for pose, n in counts.items():
-            left[reference.heights[pose][0]] += n
-        if left_counts(left) != reference.height_counts:
-            return 'height counts'
-    except (TypeError, IndexError, ValueError):
+        if len(reference.domain_keys) != rim.NP or not all(map(_hex64, set(reference.domain_keys))):
+            return 'pieces'
+    except TypeError:
+        return 'pieces'
+    counts, heights = reference.pose_counts, reference.heights
+    if (not isinstance(counts, dict) or not isinstance(heights, dict) or set(counts) != set(heights)
+            or not all(_count(n) and n > 0 for n in counts.values()) or sum(counts.values()) != rim.NP):
+        return 'pose classes'
+    if not all(isinstance(pair, tuple) and len(pair) == 2 and all(map(_count, pair))
+               for pair in heights.values()):
         return 'heights'
-    if set(reference.rim) != set(range(600)):
+    left = Counter()
+    for pose, n in counts.items():
+        left[heights[pose][0]] += n
+    if left_counts(left) != reference.height_counts:
+        return 'height counts'
+    if not isinstance(reference.rim, dict) or set(reference.rim) != set(range(600)):
         return 'caps'
     for c in range(600):
         row = reference.rim[c]
+        if not isinstance(row, RimSummary) or row.status not in STATUSES:
+            return f'cap {c}'
         values = [getattr(row, name) for name in RIM_VALUES]
         if row.status != 'admissible':
             if any(value is not None for value in values):
                 return f'cap {c}'
-        elif (any(value is None for value in values) or row.F_c != abs(row.In_c - row.Out_c)
-              or row.at_floor != (row.N_c == row.F_c)):
+        elif (not all(map(_count, values[:5])) or not isinstance(row.at_floor, (bool, np.bool_))
+              or row.F_c != abs(row.In_c - row.Out_c) or row.at_floor != (row.N_c == row.F_c)):
             return f'cap {c}'
-    if reference.n_total is None or reference.grip_n != sum(
+    if not (_count(reference.n_total) and _count(reference.grip_n)) or reference.grip_n != sum(
             row.N_c for row in reference.rim.values() if row.status == 'admissible'):
         return 'N'
     return None

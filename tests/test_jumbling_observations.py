@@ -287,6 +287,13 @@ class RimSummaryTests(TimedCase):
             'floor flag inconsistent': {'rim': rows(admissible, replace(
                 reference.rim[admissible], at_floor=not reference.rim[admissible].at_floor))},
             'grip N not the sum': {'grip_n': reference.grip_n + 1},
+            'height pairs cut to the left height': {
+                'heights': {p: (pair[0],) for p, pair in reference.heights.items()}},
+            'right heights missing': {'heights': {p: (pair[0], None) for p, pair in reference.heights.items()}},
+            'a piece without a domain key': {'domain_keys': (None,) + reference.domain_keys[1:]},
+            'a cap without a status': {'rim': rows(blocked, O.RimSummary(None))},
+            'no digest': {'digest': None},
+            'no N': {'n_total': None},
         }
         for name, changes in partials.items():
             with self.subTest(partial=name), self.assertRaisesRegex(ValueError, 'complete'):
