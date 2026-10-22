@@ -391,12 +391,12 @@ atlas|default` (default `atlas`) and `--cert-seconds S` (default 3,600). In deve
 the `--rule-seconds` limit (default 3,600); only the two lattice programs have none. An `--out` path that contains
 `.json` anywhere once resolved is a usage error, reported before any file is written (RV1-07).
 
-Options added by I0 (`scripts/runner.py:1512-1520`): `--mode` (above), `--lattice-restorer late|schedule11` (default
-`late`), `--height-seconds` and `--height-cpu` (default 3,600 each), `--pair-shards` (default 4), `--kernel-seconds`
-(default 3,600), `--kernel-wall-margin` (default 600) and `--high-steps` (default none; a step budget that ends the
-high phase `budget`). Until P1 to P3 only `--mode` and `--high-steps` change what a run does. The height, kernel and
-lattice options are recorded and handed to the stub plugins in `ctx.budgets` (`scripts/runner.py:592-599`), which
-ignore them; the lattice path always runs `restore_lattice_late.py` (:1290-1292).
+Options added by I0 (`scripts/runner.py:1606-1615`): `--mode` (above), `--lattice-restorer late|schedule11` (default
+`schedule11` since I1, the restorer `acceptance-config.json` names; section 9, "The acceptance restorer"),
+`--height-seconds` and `--height-cpu` (default 3,600 each), `--pair-shards` (default 4), `--kernel-seconds` (default
+3,600), `--kernel-wall-margin` (default 600) and `--high-steps` (default none; a step budget that ends the high phase
+`budget`). The height, kernel and lattice options reach the plugins of section 4 in `ctx.budgets`
+(`scripts/runner.py:634-640`). In acceptance mode every option must equal `acceptance-config.json` (section 2).
 
 ## 2. The record
 
@@ -676,6 +676,10 @@ For a format 3 record (I0, extended by I1) it also checks:
   a checkout where either file has changed. Test: `test_v3_acceptance_config`. Seven changes to the acceptance
   options or their record fail, and so do two changes to the D19 record. A development record passes without a D19
   record and with this checkout's, and fails with acceptance options.
+  Whenever `config.kernel.d19` is recorded, every high row must also carry `kernel.d19_sha256` equal to its `sha256`,
+  the hash of the rule that kernel call ran. A missing or null hash, another hash and a missing `kernel` block fail
+  `kernel_d19` (review finding I1R-03; `scripts/check_run.py:490-495`; test: `test_runner.py`
+  `ExactTests.test_11_kernel_end_to_end`).
 - **Step labels** (`scripts/check_run.py:451-489`): the step keys; the phase and sub-phase; the encoding (`ia16` for
   lattice steps); `word_sha256`; the standing (`fallback` exactly on fallback steps and only in development mode;
   `certificate` exactly on `slp_apply` steps in development mode); `construction: certificate` exactly on `slp_apply`
@@ -723,12 +727,22 @@ For a format 3 record (I0, extended by I1) it also checks:
     `lattice` block, and the last row must have a boolean `labels_identity`. Unless the run ends `error`, the run's
     result must be `solved`, the last row's `labels_identity` true and no piece off. `check_lattice.py` replays every
     row ("Hooks" below). The runner keeps the plugin's report as `lattice/report.json`. `phases.lattice.report` must
-    have exactly the keys `file` and `sha256`, name a file inside the run directory and match that file's sha256. The
-    report's `player.played.total` must equal the lattice rows' letters, and its `player.final.labels_identity` must
-    be true (`check_lattice_report`, :949-960). Otherwise the record fails `lattice_report`.
+    have exactly the keys `file` and `sha256`, `file` must be exactly `lattice/report.json` (an identical copy under
+    another name fails), and `sha256` must match that file. The report must agree with the replay and the
+    configuration (review finding I1R-01; `check_lattice_report`, :955-976, called at :1449-1451): `restorer` equal to
+    `config.lattice.restorer`; `player.input.digest` equal to the checker's digest where the lattice phase starts and
+    `player.final.digest` to its digest at the end; `player.final.labels_identity` true; `player.result` `solved` and
+    `player.failure` null; `player.played.retained` and `.corrections` integers whose sum equals `.total` and the
+    lattice rows' letters; and `player.scheduled` equal to those two played counts. Otherwise the record fails
+    `lattice_report`.
+  - The phase's end table (review finding I1R-02). Only the last lattice row may carry `table`, and it must
+    (:1444-1447). Every format 3 row that carries `table` must name `tables/<index:05d>.json`, and that table must
+    load to the state the checker replayed after the row (`check_step_table`, :979-988, called at :1368-1369).
+    Otherwise the record fails `table`.
   - No row and result `solved`: the restorer scheduled nothing (E2). The checker requires that no piece is off. It
     tests the labels of its own replayed state: every frame must agree and the labels must be the identity
-    (`labels_identity`, :940-946, :1412-1418). It checks the report as above with 0 twists, and `twists` must be 0.
+    (`labels_identity`, :946-952, :1453-1457). It checks the report as above with 0 twists and with its own digest as
+    both input and final digest, and `twists` must be 0.
   - A recorded `End` (`stuck`, `budget`, `timeout` or `error`) passes only with no lattice row, and on the composition
     path only as `error`. Its `twists` stays null. An `error` End needs an `error` run. Unless the run ends `error`, a
     `stuck` End needs a `stuck` run and a `budget` or `timeout` End a `budget` run. A stuck run also has its `stuck`
@@ -736,12 +750,16 @@ For a format 3 record (I0, extended by I1) it also checks:
     (:861-867). So a stuck lattice phase with a timed-out attempt has the verdict `budget`. Any other result
     (`lattice`, `handoff`, `not_applicable`) fails `phase_result`.
   - Tests:
-    - `test_v3_played_lattice`.
+    - `test_v3_played_lattice`: besides the row changes, nine changes to the report's fields (restorer, input
+      digest, final digest, final labels, result, failure, played split, played total, scheduled), each written with
+      a fresh hash, fail `lattice_report`, and so do another hash, a missing file, an identical copy under another
+      name, an extra key and no report. A row without its table, a table under another path, and a table file
+      holding another state, `{}`, a truncated body or deleted fail `table`.
     - `test_v3_lattice_labels_not_digest`: a word that leaves labels other than the identity, in a row that claims
       identity labels, fails.
     - `test_v3_lattice_with_no_step`: the record passes at the solved state. It fails when the report counts a
-      played twist, when the report's labels are not the identity, and when the checker's own labels are not the
-      identity.
+      played twist, when the report's labels are not the identity, when the reference names an identical copy under
+      another name, and when the checker's own labels are not the identity.
     - `test_v3_lattice_ends`: five `End`s with their run results and verdicts, five changes to the record, and an
       `End` after a played row.
     - In `test_runner.py`, on records the runner wrote: `test_10_lattice_ends_pass_the_checker`, and, through P3's
@@ -1054,9 +1072,9 @@ Test counts in this section are counted with `grep "def test_"`, per file and pe
     - `test_07` and `test_08` keep their scripted height plugins, whose steps are not rule steps: they have no τ or u fields, and run B's `r22d75` word has three letters. In the packets' integration check with the real P4 they failed on `height_rule`, `height_fields` and `height_tau` (`packets/REVIEW.md`, K2). `test_07` now asserts that the real contracts reject both records with `height_` failures only. Both tests then check the phase order and the step trees through `scripted_check`, which leaves the height contracts unchecked (one per record).
   - Not changed in I1:
     - the b20 acceptance-mode test of the plan (`--literal-limit 40499`) is not written, and a comment at :2072-2073 still names it;
-    - `test_04_slow_scramble_20` (:3033) still asserts that `record['lattice']` is not None. Only the stub composition path sets it (`scripts/runner.py:1338`), so the real lattice plugin does not. This test was not run.
+    - `test_04_slow_scramble_20` asserted that `record['lattice']` is not None, which only the stub composition path sets (`scripts/runner.py:1338`). It now asserts that `phases.lattice.result` is `solved`, and it ran in the suite below.
 
-  TODO-T: result, test count, skips and time of this file on the merged I1 candidate (headless Linux, worktree unchanged).
+  On 22 October 2026 the integrator ran the nine test files of this stage on the final I1 candidate, commit `cd5e6e8`, in two concurrent lanes on a four-core headless Linux machine shared with other jobs (cloud timings of research code; measured (finite inputs)). Every file exited 0 and left the worktree, ignored files included, unchanged. This file: OK, 83 tests, one skipped, 1,181.3 s.
 - `scripts/test_check_run.py` (RUN-2's acceptance check, extended by RUN-4, I0 and I1).
   - Before I0 it had 66 tests. Before the integrator's fix they passed in 1,604 s in Codex's run and in 1,632 s in the acceptance run. RUN-2's tests are kept, and the format 1 lattice fixture is now built from a format 2 run. New positive and negative tests cover the format 2 checks and the verifier's time limit, with the gaps listed in section 7.
   - On 20 October 2026, with the fixes and before I0, in this checkout: OK, 66 tests, 482 s (headless Linux).
@@ -1102,7 +1120,7 @@ Test counts in this section are counted with `grep "def test_"`, per file and pe
     - With `--bulk-steps 0` the bulk ends on its step budget, so the run is a component (`bulk_budget`) with result `stuck`. The checker gives the verdict `component`, with 0 unchecked contracts and 2 height twists.
     - These mutations fail: the verdict, `r22d81` entered at height 2, the phase order, and a tree sha256.
 
-  TODO-T: result, test count and time of this file on the merged I1 candidate (headless Linux, worktree unchanged).
+  In the same run (above): OK, 100 tests, 822.3 s.
 - Real plugins under test. I0's tests ran no real height, kernel or lattice plugin. In I1 the real plugins run in `test_runner.py` (`ExactTests.test_11` for P2, `LatticeEndToEndTests` for P3 with stub restorers) and in `test_check_run.py` (`RunnerRecordTests.test_dispatcher_record` for P1), as well as in the packets' own test files below. Fixture times that the packets rely on were measured by I0 on 20 October 2026 (headless Linux, four cores, two other single-threaded jobs running; measured (finite inputs)):
   - the kernel with `--seconds 1` at the R22D-36 state: 18.6 s (result `budget`, no step);
   - `eb6.straddler_set` on all 600 caps: 2.5 s at the R22D-36 state (6,489 straddlers), and 18.9 s at the seed 7102 stop (29,212 straddlers);
@@ -1135,7 +1153,7 @@ Test counts in this section are counted with `grep "def test_"`, per file and pe
   - `test_check_contracts.py`: 11 tests, 109.7 s;
   - `test_check_lattice.py`: 21 tests, 83.9 s.
 
-  In that run, Test D printed 8,862.0 model letters per second against 1,541.1 whole-step letters per second. Codex's report gives 21 in-memory mutants caught, and Test D at 8,204.7 against 2,489.7 in its own run. TODO-T: results and times of the five files on the merged I1 candidate (headless Linux, worktree unchanged).
+  In that run, Test D printed 8,862.0 model letters per second against 1,541.1 whole-step letters per second. Codex's report gives 21 in-memory mutants caught, and Test D at 8,204.7 against 2,489.7 in its own run. In the run on the final candidate `cd5e6e8` (above), with the integrator's test edits: `test_rules_height.py` OK, 27 tests, 97.5 s; `test_rules_kernel.py` OK, 28 tests, one skipped, 71.4 s; `test_lattice_phase.py` OK, 25 tests, one skipped, 153.2 s; `test_check_contracts.py` OK, 11 tests, 117.1 s; `test_check_lattice.py` OK, 21 tests, 82.1 s, with Test D at 9,774.3 model letters per second against 2,218.0 whole-step letters per second.
 - `scripts/test_literal_lattice.py` (LLP's acceptance check).
   - Its 16 tests, one of them skipped (the play of the committed depth 20 record, which needs `LATTICE_SLOW=1`), passed in 1,525 s in Codex's run and in 1,578 s in the acceptance run. They cover:
     - the expansion of every node kind;
@@ -1150,8 +1168,8 @@ Test counts in this section are counted with `grep "def test_"`, per file and pe
   - On 20 October 2026, with the fixes, in this checkout: OK, 18 tests, 1 skipped, 468 s. The two fixtures played their 16,184,022 retained twists at about 92,000 twists per second (cloud timing of research code, headless Linux; measured (finite inputs)).
   - I1 did not change `literal_lattice.py` or this file. The observer keyword came with P3, and its tests are in `test_lattice_phase.py`, class B.
 
-  TODO-T: result and time of this file on the merged I1 candidate.
-- `scripts/test_check_r22d25.py` (part of the R22D-25 packet): 7 tests, unchanged in I1. They are format checks and record mutations for `check_r22d25.py`, run by stage 12's `test_r22d25.py` and also on their own. On 20 October 2026 they ran inside `test_r22d25.py` (stage 12), which passed; `test_check_r22d25.py` was not run on its own in this checkout. TODO-T: result of this file run on its own on the merged I1 candidate.
+  On the final candidate `cd5e6e8` (run above): OK, 18 tests, one skipped, 453.9 s; the two fixtures played their 16,184,022 retained twists at 93,978 and 95,778 twists per second.
+- `scripts/test_check_r22d25.py` (part of the R22D-25 packet): 7 tests, unchanged in I1. They are format checks and record mutations for `check_r22d25.py`, run by stage 12's `test_r22d25.py` and also on their own. On 20 October 2026 they ran inside `test_r22d25.py` (stage 12), which passed; On its own, on the final candidate `cd5e6e8` (run above): OK, 7 tests, 198.0 s.
 - Two records made with RUN-1's runner on 19 October 2026 and passed by RUN-2's `check_run.py` (`runs/`, format 1, measured (finite inputs)):
   - the depth 10 scramble of seed 7001, solved by the bulk phase in 9 twists (38 s);
   - the depth 20 scramble of seed 7106. The bulk phase brings it onto the lattice in 19 twists, all of rule `seam`. The lattice phase restores it in 8,701,310 twists. `verify_late.py` passed it in the runner and again in the checker (654 s in all); it checks the lattice word by composition and does not play it twist by twist (rule 5).
@@ -1173,7 +1191,7 @@ Test counts in this section are counted with `grep "def test_"`, per file and pe
   `lattice_composition`.
 - A lattice phase that ends with no played step. Since I1 a lattice `End` and a phase with nothing scheduled are
   recorded (section 8). Only the tests' scripted plugins produce them (`scripts/test_runner.py:1458-1555`,
-  :2960-2985). In the D0 run with the late restorer, the real plugin solved the lattice phase (section 9).
+  :2960-2985). In every D0 run with seed 7106, with either restorer, the real plugin solved the lattice phase (section 9).
 - `ia16` words in `record_step`: it writes every word as JSON, gzipped above 100,000 letters
   (`scripts/runner.py:726-730`, :755). Only the lattice plugin writes `ia16` words, which the runner moves into the
   record (rule 5).
@@ -1211,7 +1229,7 @@ Test counts in this section are counted with `grep "def test_"`, per file and pe
   that development never used: three fresh seeds at each of the depths 10, 20, 40, 100, 300, 1000 and 3000 (seeds 9011
   to 9073). They run in batches from shallow to deep. Every word is played twist by twist, the lattice phase included,
   and the checker replays every record twist by twist. None of them has been run. Every batch uses the options of
-  `acceptance-config.json`. Its lattice restorer is `late` until D0's numbers decide it (`PLAN.md`, E5; section 9).
+  `acceptance-config.json`. Its lattice restorer is `schedule11`, chosen from D0's numbers (`PLAN.md`, E5; section 9).
 
 ## 7. Review findings
 
@@ -1455,6 +1473,33 @@ What stays deferred, as `PLAN.md` E1 says:
     (`scripts/test_lattice_phase.py:1123`).
 
 The other integration items, K2 and K3.2 to K3.6, are done by the changes listed under "What I1 integrated".
+
+**The review of the I1 candidate.** One fast Sol review of the whole candidate over `8ae8c4a` (call
+20261022T032556Z-abbb1e64; risk tier "other code and tools") found five findings. The integrator adopted all five and
+fixed them in commit `35c3d4f`:
+
+- I1R-01 (`major`): a lattice report that contradicted the replay passed as solved, because the checker read only its
+  played total and final labels. The checker now compares the whole report with the replay and the configuration
+  (section 3, "The lattice phase").
+- I1R-02 (`major`): the phase's persisted end table was not checked. The checker now loads every row's table and
+  compares it with its replay, and only the last lattice row may carry one (section 3).
+- I1R-03 (`major`): a kernel call's own D19 hash could contradict `config.kernel.d19`. Every high row must now carry
+  the configured hash (section 3, "The kernel's D19 rule").
+- I1R-04 (`minor`): a signal during the restorer or the player lost the lattice attempt. Such a call now ends `error`
+  / `cancelled` with one attempt row that carries the time of the calls so far (`scripts/lattice_phase.py:468-476`);
+  `test_signal_keeps_the_lattice_attempt` (`scripts/test_runner.py:3105`) cancels once during each call.
+- I1R-05 (`minor`): the shortened w9 case could pass without the labels being tested. The negative case now appends one
+  retained letter, so every piece stays on the lattice, rewrites the row, its table, the report and the counts to
+  agree with the longer word, and asserts that the only failure is `labels_identity`
+  (`test_w9_invisible_rotation`, `scripts/test_runner.py:3148`).
+
+The first scoped verification (call 20261022T035029Z-9cbfac0a) found I1R-02 to I1R-05 fixed and kept I1R-01 open: a
+report reference naming an identical copy of the report under another name still passed. Commit `cd5e6e8` requires
+the name `lattice/report.json`, with a test of that copy in a played and in a zero-step phase; with the condition
+removed, the zero-step test fails. The same commit completes the report of the runner tests' scripted lattice plugin
+(`LatticePlay`), which the new report checks rejected, and runs `D_PluginTests.test_02` in acceptance mode with
+`schedule11`, since acceptance mode now refuses `late`. The second and last scoped verification (call
+20261022T042038Z-ca61a85d) passed with no finding. The nine test files then passed on `cd5e6e8` (section 5).
 
 ## 9. Development runs
 
