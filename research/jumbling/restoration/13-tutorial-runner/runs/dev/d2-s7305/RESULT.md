@@ -117,6 +117,11 @@ Progress note at 11:33 UTC: 46 bulk steps (45 `conj`, 1 `cover`), 136 twists, 14
 `bulk-progress.json`: `{"step_started": 26759.9}`. `logs/bulk.log` still empty. The bulk clock (21,600 s) ends about
 13:31 UTC.
 
+Progress note at 13:33 UTC: the bulk ended `timeout` on its clock after 80 steps (79 `conj`, 1 `cover`), 238 twists,
+at `736ea9e7…`, N 126,592, 101,937 off, (n2, n4, n6) = (99,640, 2,297, 0). The last bulk step: `conj`, 3 letters,
+620 s. The height phase started at 13:32 UTC (`logs/00080-r22d75-r22d75.log`). `bulk-progress.json` still reads
+`{"step_started": 33760.8}`.
+
 ## Not run
 
 No Windows, DirectX, native or performance check was run; none is claimed. The component run's tail and lattice phases
