@@ -129,28 +129,42 @@ foreach ($overlay in 'grips','certificates','straddles','angle') {
 
 Repeat with I_a/I_b as time permits. Write unmeasured for every missing cost; estimate none. Fill [RESULT.md](RESULT.md) only with the exact matching build's verified GPU/capture evidence. Preserve Andrey Astrelin's primary MPUlt credit and upstream notices in the repository; this probe bundles no Managed DirectX DLLs.
 
-## Deep-state export (handoff RH-23)
+## Deep-state export (handoff RH-23, re-plan R3)
 
-`deep_export.py` rebuilds one I_a scramble exactly as the scramble census drew it (`research/jumbling/theory/restore.py scramble`, with the seed and twist count given). It writes the three render-contract arrays and a `header.json` in the format `magic600-jumbling-render/1`, like `wj.py export` does for a fixture stage; the header's `source` names the census draw instead of a fixture stage. With `--record` it first compares the fresh scramble with the census record of a run that did not continue an earlier one: the twist history and, at the start of the run, the off-lattice count, N, the heights of the off-lattice pieces and the number of off-lattice poses. It writes no array if any field differs, reads every written array back against its SHA-256, and prints one JSON line without paths. Exit 0 is a match, 1 a mismatch, 2 a refused request; a non-empty `--out` is refused before the draw. `test_deep_export.py` checks it on the committed 10-twist record `ia-k10-s7001` without writing a file.
+`deep_export.py` rebuilds one I_a state from committed inputs. It plays, in order:
+
+1. the scramble exactly as the scramble census drew it (`research/jumbling/theory/restore.py scramble`, with the seed and twist count given);
+2. with `--descent`, the census record's own descent moves;
+3. with `--letters`, a fixed list of letters (`[grip, menu item]` twists) from a JSON file, checking the state digest at the checkpoints the file lists.
+
+Every move and letter must be admissible and certain. The tool plays only the twists it is given and chooses none. It writes the three render-contract arrays and a `header.json` in the format `magic600-jumbling-render/1`, like `wj.py export` does for a fixture stage; the header's `source` names the census draw, the descent and the letters instead of a fixture stage, and its `revision` counts every twist played.
+
+With `--record` it first compares the fresh scramble with the census record of a run that did not continue an earlier one: the twist history and, at the start of the run, the off-lattice count, N, the heights of the off-lattice pieces and the number of off-lattice poses. With `--descent` it then compares the record's end: the twist count, N, the off-lattice count, the heights and the off-lattice poses. A phase runs only when every earlier phase matched. The tool writes no array if any field or checkpoint differs, reads every written array back against its SHA-256, and prints one JSON line without paths. Exit 0 is a match, 1 a mismatch or a simulator failure, 2 a refused request; a non-empty `--out`, a `--summary` inside `--out`, and a malformed record or letters file are refused before the draw. `test_deep_export.py` checks it on the committed 10-twist record `ia-k10-s7001` (its scramble, its 9-move descent to the lattice, and the scramble's own history replayed as letters) without writing a file.
 
 ```powershell
 python -I -B work/experiments/renderer-wj/deep_export.py --seed 7302 --twists 3000 --record <census record> --out <new private directory> --summary work/experiments/renderer-wj/deep/ia-k3000-s7302-summary.json
+python -I -B work/experiments/renderer-wj/deep_export.py --seed 7302 --twists 3000 --record <census record> --descent --letters work/experiments/renderer-wj/deep/bbef1c8e-letters.json --out <new private directory> --summary work/experiments/renderer-wj/deep/bbef1c8e-summary.json
 python -I -B work/experiments/renderer-wj/test_deep_export.py
 ```
 
-The census record for seed 7302 is `research/jumbling/restoration/11-scramble-census/runs/heights/ia-k3000-s7302.json` on the branch of draft pull request #112 (commit `ec0f0ac`), not on `main`. The export of 22 October 2026 matched it in every compared field. Its [summary](deep/ia-k3000-s7302-summary.json):
+The census record for seed 7302 is `research/jumbling/restoration/11-scramble-census/runs/heights/ia-k3000-s7302.json` on the branch of draft pull request #112 (commit `ec0f0ac`), not on `main`. Two states were exported on 22 October 2026, and both matched every compared field and checkpoint:
 
-| Field | Seed 7302, 3000 twists | W-J fixture end stages: S4, I_a, I_b |
-|---|---|---|
-| Pieces | 177,120 | 177,120 each |
-| Pose-table entries | 2,684 (488 in K+, 2,196 off the lattice; all in use) | 1,591, 1,333, 1,248 |
-| Off-lattice pieces | 118,821 (heights 2: 116,665; 4: 1,971; 6: 185) | 117,498, 121,184, 128,013 |
-| Largest entry numerator or denominator | 32 | 32, 16, 16 |
-| State digest | `1335f47e0c5647a948dd11f87ba4bad27c787d00992be1f783d970c88a542ace` | |
-| `pose_index.i32`, `<i4` [177120] | `4dcd6c01da27b0050185e16da45c3052b5193b80ca404aaf7513c16adf663663` | |
-| `poses.f32`, `<f4` [2684, 4, 4] | `53594f844fa4fbf7ba3bde1f71c459619d86b0ffa8a63d957cf468a6894f62d9` | |
-| `pose_lattice.i32`, `<i4` [2684] | `792560baee664ca70c398cb6222f9747e4cf13a7156562b08ea1fb38f24be9d4` | |
+- the 3000-twist scramble of seed 7302 ([summary](deep/ia-k3000-s7302-summary.json));
+- the height-4 state `bbef1c8e…` of the jumbling line ([summary](deep/bbef1c8e-summary.json)). It is the same scramble, then the record's 313 descent moves to the census stop `015d839e…`, then the 12 letters in [bbef1c8e-letters.json](deep/bbef1c8e-letters.json). The letters and the digests after the descent and after letters 7 and 12 are copied from `research/jumbling/restoration/12-low-height/scripts/round22/r22d25_d19_stops.py` at `ec0f0ac`. Its end values agree with that branch's record of the state: 102,960, 936 and 0 pieces at heights 2, 4 and 6, 103,896 pieces off the lattice, and N = 132,930.
 
-A separate read-back of the written files gave the same hashes, shapes and counts, the identity as pose 0, and orthogonal matrices within 1e-5. The pose table is 171,776 bytes of float32 matrices. The draw took 2,477 s of research code on the owner's machine; that is not a performance result.
+| Field | Seed 7302, 3000 twists | Height-4 state `bbef1c8e…` | W-J fixture end stages: S4, I_a, I_b |
+|---|---|---|---|
+| Twists played | 3,000 | 3,325 (3,000 + 313 + 12) | 640 to 885 |
+| Pieces | 177,120 | 177,120 | 177,120 each |
+| Pose-table entries | 2,684 (488 in K+, 2,196 off the lattice; all in use) | 2,798 (610 in K+, 2,188 off the lattice; all in use) | 1,591, 1,333, 1,248 |
+| Off-lattice pieces | 118,821 (heights 2: 116,665; 4: 1,971; 6: 185) | 103,896 (heights 2: 102,960; 4: 936) | 117,498, 121,184, 128,013 |
+| Total misalignment N | 145,574 | 132,930 | |
+| Largest entry numerator or denominator | 32 | 16 | 32, 16, 16 |
+| State digest | `1335f47e0c5647a948dd11f87ba4bad27c787d00992be1f783d970c88a542ace` | `bbef1c8ec0de78dead1473322a8c1236e48f9ccfe0017ce724461bb7f37ae299` | |
+| `pose_index.i32`, `<i4` [177120] | `4dcd6c01da27b0050185e16da45c3052b5193b80ca404aaf7513c16adf663663` | `74abe28bd6eafc148c8667922b759909a299ad447ba70fd3275a849c7c7368df` | |
+| `poses.f32`, `<f4` [poses, 4, 4] | `53594f844fa4fbf7ba3bde1f71c459619d86b0ffa8a63d957cf468a6894f62d9` | `1eb6d743de34e1e1aeba82699f73527ff69ee1a032abdbd43b4e0177afb341e6` | |
+| `pose_lattice.i32`, `<i4` [poses] | `792560baee664ca70c398cb6222f9747e4cf13a7156562b08ea1fb38f24be9d4` | `9dc4459076cf342c06e229cbecc54aa15dd73c8e6fe1bbf2307523a7b69f76b2` | |
 
-This is source/fixture evidence from the CPU. No W-J run on a deep state has been made. The probe loads five fixture stages, a motion document and lattice controls per menu (`prepare_wj.py`) and sizes its pose table from those stages, so a run on this state needs a deep fixture built around it first. The arrays stay in private storage; the command above rebuilds them, and the digests in the summary check the rebuild. The Look Lab needs the same export (LH-26).
+For each state, a separate read-back of the written files gave the same hashes, shapes and counts, the identity as pose 0, and orthogonal matrices within 1e-5. The pose tables are 171,776 and 179,072 bytes of float32 matrices. The runs took 2,477 s and 2,634 s of research code on the owner's machine; those are not performance results.
+
+This is source/fixture evidence from the CPU. No W-J run on a deep state has been made. The probe loads five fixture stages, a motion document and lattice controls per menu (`prepare_wj.py`) and sizes its pose table from those stages, so a run on either state needs a deep fixture built around it first. The arrays stay in private storage; the commands above rebuild them, and the digests in the summaries check the rebuild. The Look Lab needs the same export (LH-26).

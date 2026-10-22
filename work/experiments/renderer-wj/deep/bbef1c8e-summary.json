@@ -1,0 +1,65 @@
+{
+ "N": 132930,
+ "descent": {
+  "digest": "015d839ecbb37bbdde74ae9391d5d7f274dea7fee4b4fdf0092d224eef907a1f",
+  "moves": 313,
+  "moves_sha256": "7ef8355551a9b871c2822aa5f2064a9d9c607d4cd0af57d81f0ebcd103dd7d73"
+ },
+ "digest": "bbef1c8ec0de78dead1473322a8c1236e48f9ccfe0017ce724461bb7f37ae299",
+ "files": {
+  "pose_index.i32": {
+   "dtype": "<i4",
+   "sha256": "74abe28bd6eafc148c8667922b759909a299ad447ba70fd3275a849c7c7368df",
+   "shape": [
+    177120
+   ]
+  },
+  "pose_lattice.i32": {
+   "dtype": "<i4",
+   "sha256": "9dc4459076cf342c06e229cbecc54aa15dd73c8e6fe1bbf2307523a7b69f76b2",
+   "shape": [
+    2798
+   ]
+  },
+  "poses.f32": {
+   "dtype": "<f4",
+   "sha256": "1eb6d743de34e1e1aeba82699f73527ff69ee1a032abdbd43b4e0177afb341e6",
+   "shape": [
+    2798,
+    4,
+    4
+   ]
+  }
+ },
+ "format": "magic600-wj-deep-export/1",
+ "history_sha256": "fa66c27665b1f92394c7986a784e4608af4e5d0933fc88e262e78dc9f00a3959",
+ "kplus_poses": 610,
+ "left_heights": {
+  "2": 102960,
+  "4": 936
+ },
+ "letters": {
+  "checkpoints": {
+   "0": "pass",
+   "12": "pass",
+   "7": "pass"
+  },
+  "count": 12,
+  "sha256": "9b7ac8b1d0b9ae9a79bc6c7a229c055f17ffab1535a143a878bdf47837e78550"
+ },
+ "max_denominator": 16,
+ "max_entry_height": 16,
+ "menu": "I_a",
+ "mismatches": [],
+ "off_lattice": 103896,
+ "off_poses": 2188,
+ "pieces": 177120,
+ "poses": 2798,
+ "readback": "pass",
+ "record_check": "pass",
+ "revision": 3325,
+ "seconds": 2634.496,
+ "seed": 7302,
+ "start_digest": "1335f47e0c5647a948dd11f87ba4bad27c787d00992be1f783d970c88a542ace",
+ "twists": 3000
+}

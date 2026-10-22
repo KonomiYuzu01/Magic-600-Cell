@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-22] update | W-J: the height-4 state bbef1c8e in the render format
+The export tool now also replays a census record's descent and a committed list of letters, checked against known digests, and it exported the jumbling line's height-4 state `bbef1c8e…` (3000 twists of seed 7302, 313 descent moves, 12 letters): 2,798 pose-table entries, 936 pieces at height 4 ([w-j-probe-results](evidence/w-j-probe-results.md)). With the 3000-twist scramble this gives both states that re-plan item R3 asks for; no W-J run on either has been made.
+
 ## [2026-10-22] update | W-J: a deep I_a state in the render format
 The renderer line rebuilt the I_a census scramble of seed 7302 at 3000 twists, matched it against its census record and exported it in the render format: 2,684 pose-table entries, against at most 1,591 in the W-J fixtures ([w-j-probe-results](evidence/w-j-probe-results.md)). No W-J run on a deep state has been made; the probe's README and protocol now also record that the GPU lattice check passed (handoff RO-15).
 

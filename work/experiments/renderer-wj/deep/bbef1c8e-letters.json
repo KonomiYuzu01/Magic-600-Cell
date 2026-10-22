@@ -1,0 +1,11 @@
+{
+ "format": "magic600-wj-letters/1",
+ "state": "bbef1c8e",
+ "source": "research/jumbling/restoration/12-low-height/scripts/round22/r22d25_d19_stops.py at commit ec0f0ac: STATES['bbef1c8e'], the seven letters R75_7302 and the five letters R80, played after the history and the 313 descent moves of the census record runs/heights/ia-k3000-s7302.json (seed 7302, 3000 twists)",
+ "letters": [[64, 15], [185, 14], [357, 12], [471, 12], [263, 14], [407, 13], [523, 12], [124, 2], [274, 13], [46, 1], [46, 3], [104, 14]],
+ "checkpoints": {
+  "0": "015d839ecbb37bbdde74ae9391d5d7f274dea7fee4b4fdf0092d224eef907a1f",
+  "7": "1ff0061fc5863c8ccbc1d734b003ff49afa5b58969b0031e51fd1e5cf1a07d81",
+  "12": "bbef1c8ec0de78dead1473322a8c1236e48f9ccfe0017ce724461bb7f37ae299"
+ }
+}

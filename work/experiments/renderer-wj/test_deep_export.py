@@ -13,6 +13,7 @@ import os
 import time
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 HERE = Path(__file__).resolve().parent
@@ -47,6 +48,32 @@ def main():
             print(f'{name}: FAIL ({type(exc).__name__})', flush=True)
         else:
             print(f'{name}: PASS', flush=True)
+
+    def invoke(argv):
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with redirect_stdout(stdout), redirect_stderr(stderr):
+            code = E.main(argv)
+        return code, stdout.getvalue(), stderr.getvalue()
+
+    def clone(st):
+        result = E.sim.State(st.ctx, filtered=st.filtered, menu=st.menu)
+        result.pose_id = st.pose_id.copy()
+        result._poses, result._lookup = list(st._poses), dict(st._lookup)
+        result.journal = list(st.journal)
+        return result
+
+    def word_sha(word):
+        raw = json.dumps([list(p) for p in word], separators=(',', ':')).encode('utf-8')
+        return hashlib.sha256(raw).hexdigest()
+
+    def summary_line(stdout):
+        lines = stdout.splitlines()
+        assert len(lines) == 1
+        info = json.loads(lines[0])
+        assert lines[0] == json.dumps(info, sort_keys=True)
+        for root in (str(ROOT), ROOT.as_posix(), json.dumps(str(ROOT))[1:-1]):
+            assert root not in lines[0]
+        return info
 
     started = time.perf_counter()
     try:
@@ -113,7 +140,7 @@ def main():
         case('mutated ' + field, mutant)
 
     def render_header():
-        hd = E.header(M, 7001, 10, f)
+        hd = E.header(M, 7001, 10, dict(f, revision=10, descent='not run', letters='not run'))
         assert hd['dimension'] == 4 and hd['format'] == 'magic600-jumbling-render/1'
         assert hd['revision'] == 10 and hd['digest'] == f['digest']
         assert hd['pieces'] == f['pieces'] and hd['poses'] == f['poses']
@@ -143,6 +170,8 @@ def main():
         assert summary['format'] == 'magic600-wj-deep-export/1'
         assert summary['menu'] == 'I_a' and summary['seed'] == 7001 and summary['twists'] == 10
         assert summary['seconds'] >= 0 and 'history' not in summary
+        assert summary['start_digest'] == f['digest'] and summary['revision'] == 10
+        assert summary['descent'] == summary['letters'] == summary['readback'] == 'not run'
         for field, value in f.items():
             if field != 'history':
                 assert summary[field] == value
@@ -162,6 +191,284 @@ def main():
         assert stderr.getvalue() == 'refused: out\n'
 
     case('non-empty out refused before drawing, no writes', refuse_nonempty)
+
+    def refuse_summary_inside_out():
+        out = HERE / 'deep' / 'no-such-export-directory'
+        assert not out.exists()
+        for summary in (out, out / 'poses.f32', out / 'sub' / '..' / 'header.json'):
+            with patch.object(E, 'draw', side_effect=AssertionError('draw must not run')) as mocked_draw:
+                code, stdout, stderr = invoke(['--seed', '7001', '--twists', '0', '--out', str(out),
+                                              '--summary', str(summary)])
+            mocked_draw.assert_not_called()
+            assert code == 2 and not stdout and stderr == 'refused: summary\n'
+        with patch.object(E, 'draw', side_effect=RuntimeError('stop after the argument checks')) as mocked_draw:
+            code, stdout, stderr = invoke(['--seed', '7001', '--twists', '0', '--out', str(out),
+                                          '--summary', str(out.parent / 'no-such-export-summary.json')])
+        mocked_draw.assert_called_once_with(7001, 0)
+        assert code == 1 and not stdout and stderr == 'failed: state\n'
+
+    case('summary inside out refused before drawing, no writes', refuse_summary_inside_out)
+
+    replay = {}
+
+    def census_descent():
+        end = clone(st)
+        problems, count = E.descend(end, M, record)
+        assert problems == [] and count == 9
+        df = E.facts(end, M, hist)
+        assert df['off_lattice'] == df['N'] == df['off_poses'] == 0
+        assert df['left_heights'] == record['heights_end'] == {}
+        assert end.journal == st.journal == []
+        replay['descent_facts'] = df
+
+    case('committed descent, nine certain moves to the lattice', census_descent)
+
+    def blocked_descent():
+        altered = copy.deepcopy(record)
+        altered['moves'][0] = [2, 18]
+        end = clone(st)
+        problems, count = E.descend(end, M, altered)
+        assert problems == ['moves.0'] and count == 0
+        assert end.digest() == f['digest'] and end.journal == []
+
+    case('mutated descent move blocked at moves.0', blocked_descent)
+
+    for field, value in [('twists', record['twists'] + 1), ('N_now', record['N_now'] + 1),
+                         ('off_now', record['off_now'] + 1), ('heights_end', {'2': 1}),
+                         ('off_poses_end', record['off_poses_end'] + 1)]:
+        def mutant(field=field, value=value):
+            altered = copy.deepcopy(record)
+            altered[field] = value
+            problems, count = E.descend(clone(st), M, altered)
+            assert problems == [field] and count == 9
+        case('mutated descent ' + field, mutant)
+
+    def descent_header():
+        provenance = {'moves': 9, 'moves_sha256': word_sha(record['moves']),
+                      'digest': replay['descent_facts']['digest']}
+        info = dict(replay['descent_facts'], revision=19, descent=provenance, letters='not run')
+        hd = E.header(M, 7001, 10, info)
+        assert hd['revision'] == 19 and hd['digest'] == info['digest']
+        assert hd['files'] == info['files']
+        assert hd['source']['descent'] == {'record_twists': 9,
+                                            'moves_sha256': word_sha(record['moves'])}
+        assert 'letters' not in hd['source']
+
+    case('descent header revision and provenance', descent_header)
+
+    def main_descent():
+        with patch.object(E, 'draw', return_value=(clone(st), M, hist)) as mocked_draw:
+            code, stdout, stderr = invoke(['--seed', '7001', '--twists', '10',
+                                          '--record', str(RECORD), '--descent'])
+        mocked_draw.assert_called_once_with(7001, 10)
+        assert code == 0 and not stderr
+        info = summary_line(stdout)
+        assert info['record_check'] == 'pass' and info['mismatches'] == []
+        assert info['off_lattice'] == info['N'] == 0 and info['left_heights'] == {}
+        assert info['start_digest'] == f['digest'] and info['revision'] == 19
+        assert info['descent'] == {'moves': 9, 'moves_sha256': word_sha(record['moves']),
+                                   'digest': info['digest']}
+        assert info['letters'] == info['readback'] == 'not run'
+        for field, value in replay['descent_facts'].items():
+            if field != 'history':
+                assert info[field] == value
+
+    case('main descent, one sanitized final-state JSON line', main_descent)
+
+    def missing_record():
+        with patch.object(E, 'draw', side_effect=AssertionError('draw must not run')) as draw:
+            code, stdout, stderr = invoke(['--seed', '7001', '--twists', '10', '--descent'])
+        draw.assert_not_called()
+        assert code == 2 and not stdout and stderr == 'refused: descent\n'
+
+    case('descent without record refused before drawing', missing_record)
+
+    solved, _, _ = E.draw(7001, 0)
+    letters_doc = {'format': 'magic600-wj-letters/1', 'letters': [list(h) for h in hist],
+                   'checkpoints': {'0': solved.digest(), '10': f['digest']},
+                   'source': 'ignored provenance'}
+
+    def letters_replay():
+        end = clone(solved)
+        problems, count, checked = E.play_letters(end, M, letters_doc)
+        assert problems == [] and count == 10 and checked == {'0': 'pass', '10': 'pass'}
+        lf = E.facts(end, M, [])
+        assert lf['digest'] == f['digest'] and lf['files'] == f['files']
+        assert end.journal == []
+        replay['letters_facts'] = lf
+
+    case('ten history letters reproduce scramble digest and array hashes', letters_replay)
+
+    def wrong_checkpoint():
+        doc = copy.deepcopy(letters_doc)
+        doc['checkpoints']['10'] = '0' * 64
+        problems, count, checked = E.play_letters(clone(solved), M, doc)
+        assert problems == ['letters.checkpoint.10'] and count == 10
+        assert checked == {'0': 'pass', '10': 'fail'}
+
+    case('wrong letter checkpoint detected at letters.checkpoint.10', wrong_checkpoint)
+
+    def blocked_letter():
+        doc = {'format': 'magic600-wj-letters/1', 'letters': [[2, 18], hist[0]],
+               'checkpoints': {'0': f['digest'], '1': '0' * 64}}
+        end = clone(st)
+        problems, count, checked = E.play_letters(end, M, doc)
+        assert problems == ['letters.1'] and count == 0 and checked == {'0': 'pass'}
+        assert end.digest() == f['digest'] and end.journal == []
+
+    case('blocked letter stops at letters.1 without later checkpoints', blocked_letter)
+
+    def uncertain_replay():
+        end = clone(st)
+        uncertain = SimpleNamespace(applied=True, uncertain=1)
+        with patch.object(end, 'apply', return_value=uncertain):
+            assert E.descend(end, M, record) == (['moves.0'], 0)
+            doc = {'format': 'magic600-wj-letters/1', 'letters': hist, 'checkpoints': {}}
+            assert E.play_letters(end, M, doc) == (['letters.1'], 0, {})
+
+    case('uncertain moves and letters are failures', uncertain_replay)
+
+    def letters_header():
+        provenance = {'count': 10, 'sha256': word_sha(hist),
+                      'checkpoints': {'0': 'pass', '10': 'pass'}}
+        info = dict(replay['letters_facts'], revision=10, descent='not run', letters=provenance)
+        hd = E.header(M, 7001, 0, info)
+        assert hd['revision'] == 10 and hd['digest'] == f['digest']
+        assert hd['source']['twists'] == 0
+        assert hd['source']['letters'] == {'count': 10, 'sha256': word_sha(hist)}
+        assert 'descent' not in hd['source']
+
+    case('letters header revision and provenance', letters_header)
+
+    def main_letters():
+        with patch.object(E, 'draw', return_value=(clone(solved), M, [])) as draw:
+            with patch.object(Path, 'read_text', return_value=json.dumps(letters_doc)):
+                code, stdout, stderr = invoke(['--seed', '7001', '--twists', '0',
+                                              '--letters', 'letters.json'])
+        draw.assert_called_once_with(7001, 0)
+        assert code == 0 and not stderr
+        info = summary_line(stdout)
+        assert info['digest'] == f['digest'] and info['files'] == f['files']
+        assert info['start_digest'] == solved.digest() and info['revision'] == 10
+        assert info['letters'] == {'count': 10, 'sha256': word_sha(hist),
+                                   'checkpoints': {'0': 'pass', '10': 'pass'}}
+        assert info['history_sha256'] == word_sha([]) and info['mismatches'] == []
+        assert info['record_check'] == info['descent'] == info['readback'] == 'not run'
+
+    case('main letters, final arrays and scramble provenance', main_letters)
+
+    bad_letters = [('format', dict(letters_doc, format='unknown')),
+                   ('grip 600', dict(letters_doc, letters=[[600, 0]])),
+                   ('item range', dict(letters_doc, letters=[[0, len(M.items)]])),
+                   ('boolean grip', dict(letters_doc, letters=[[True, 0]])),
+                   ('checkpoint range', dict(letters_doc, checkpoints={'11': f['digest']})),
+                   ('large checkpoint', dict(letters_doc, checkpoints={'9' * 5000: f['digest']})),
+                   ('non-hex digest', dict(letters_doc, checkpoints={'0': 'g' * 64})),
+                   ('checkpoint key', dict(letters_doc, checkpoints={'-1': f['digest']})),
+                   ('object shape', []), ('JSON null', None)]
+    for name, doc in bad_letters:
+        def malformed(doc=doc):
+            with patch.object(E, 'draw', side_effect=AssertionError('draw must not run')) as draw:
+                with patch.object(Path, 'read_text', return_value=json.dumps(doc)):
+                    code, stdout, stderr = invoke(['--seed', '7001', '--twists', '0',
+                                                  '--letters', 'letters.json'])
+            draw.assert_not_called()
+            assert code == 2 and not stdout and stderr == 'refused: letters\n'
+        case('malformed letters ' + name + ' refused before drawing', malformed)
+
+    def malformed_records():
+        for field, value in [('moves', [[600, 0]]), ('twists', '9'), ('N_now', None),
+                             ('history', None), ('heights_end', [])]:
+            altered = dict(record, **{field: value})
+            with patch.object(E, 'draw', side_effect=AssertionError('draw must not run')) as draw:
+                with patch.object(Path, 'read_text', return_value=json.dumps(altered)):
+                    code, stdout, stderr = invoke(['--seed', '7001', '--twists', '10',
+                                                  '--record', str(RECORD), '--descent'])
+            draw.assert_not_called()
+            assert code == 2 and not stdout and stderr == 'refused: ' + field + '\n'
+
+    case('malformed record fields refused before drawing', malformed_records)
+
+    def phase_order():
+        for field in ('N_start', 'N_now'):
+            altered = dict(record, **{field: record[field] + 1})
+
+            def reader(path, *args, **kwargs):
+                return json.dumps(altered if path == RECORD else letters_doc)
+
+            with patch.object(Path, 'read_text', autospec=True, side_effect=reader):
+                with patch.object(E, 'draw', return_value=(clone(st), M, hist)):
+                    with patch.object(E, 'play_letters') as letters:
+                        with patch.object(E, 'descend', wraps=E.descend) as descent:
+                            code, stdout, stderr = invoke(['--seed', '7001', '--twists', '10',
+                                                          '--record', str(RECORD), '--descent',
+                                                          '--letters', 'letters.json'])
+            assert code == 1 and not stderr
+            info = summary_line(stdout)
+            assert info['mismatches'] == [field] and info['record_check'] == 'fail'
+            assert info['letters'] == info['readback'] == 'not run'
+            letters.assert_not_called()
+            if field == 'N_start':
+                descent.assert_not_called()
+                assert info['revision'] == 10 and info['descent'] == 'not run'
+                assert info['digest'] == f['digest']
+            else:
+                descent.assert_called_once()
+                assert info['revision'] == 19 and info['descent']['moves'] == 9
+                assert info['digest'] == replay['descent_facts']['digest']
+
+    case('start and descent mismatches prevent later phases', phase_order)
+
+    def letters_after_descent():
+        doc = {'format': 'magic600-wj-letters/1', 'letters': [hist[0]],
+               'checkpoints': {'0': replay['descent_facts']['digest']}}
+
+        def reader(path, *args, **kwargs):
+            return json.dumps(record if path == RECORD else doc)
+
+        with patch.object(Path, 'read_text', autospec=True, side_effect=reader):
+            with patch.object(E, 'draw', return_value=(clone(st), M, hist)):
+                code, stdout, stderr = invoke(['--seed', '7001', '--twists', '10',
+                                              '--record', str(RECORD), '--descent',
+                                              '--letters', 'letters.json'])
+        assert code == 0 and not stderr
+        info = summary_line(stdout)
+        assert info['revision'] == 20 and info['record_check'] == 'pass'
+        assert info['letters']['count'] == 1 and info['letters']['checkpoints'] == {'0': 'pass'}
+        assert info['descent']['digest'] == replay['descent_facts']['digest']
+        hd = E.header(M, 7001, 10, info)
+        assert hd['revision'] == 20
+        assert hd['source']['letters'] == {'count': 1, 'sha256': word_sha(doc['letters'])}
+        assert hd['source']['descent']['record_twists'] == 9
+
+    case('letters run after descent with combined revision and provenance', letters_after_descent)
+
+    def checkpoint_failure_summary():
+        doc = dict(letters_doc, checkpoints={'10': '0' * 64})
+        with patch.object(Path, 'read_text', return_value=json.dumps(doc)):
+            with patch.object(E, 'draw', return_value=(clone(solved), M, [])):
+                code, stdout, stderr = invoke(['--seed', '7001', '--twists', '0',
+                                              '--letters', 'letters.json'])
+        assert code == 1 and not stderr
+        info = summary_line(stdout)
+        assert info['record_check'] == info['readback'] == 'not run'
+        assert info['mismatches'] == ['letters.checkpoint.10']
+        assert info['letters']['checkpoints'] == {'10': 'fail'} and info['revision'] == 10
+
+    case('main letter checkpoint failure is a state mismatch', checkpoint_failure_summary)
+
+    def simulator_failures():
+        for error in (ValueError, TypeError, RuntimeError):
+            with patch.object(E, 'draw', side_effect=error('private simulator diagnostic')):
+                code, stdout, stderr = invoke(['--seed', '7001', '--twists', '10'])
+            assert code == 1 and not stdout and stderr == 'failed: state\n'
+            with patch.object(E, 'draw', return_value=(clone(st), M, hist)):
+                with patch.object(E, 'play', side_effect=error('private simulator diagnostic')):
+                    code, stdout, stderr = invoke(['--seed', '7001', '--twists', '10',
+                                                  '--record', str(RECORD), '--descent'])
+            assert code == 1 and not stdout and stderr == 'failed: state\n'
+
+    case('simulator draw and play exceptions fail without leaking diagnostics', simulator_failures)
     return int(bool(failures))
 
 
