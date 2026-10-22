@@ -1,6 +1,6 @@
 # D2, seed 7303 from its 3000-twist scramble (development line d2-s7303)
 
-Status: **in progress** (progress note, 22 October 2026, 13:10 UTC). The first run was killed by a container restart;
+Status: **in progress** (progress note, 22 October 2026, 15:10 UTC). The first run was killed by a container restart;
 a second run of the same command started at 07:08 UTC. No check has run yet.
 
 ## Question
@@ -66,6 +66,13 @@ Progress at 13:10 UTC: 113 bulk steps (106 `conj`, 7 `cover`), 325 twists; state
 {2: 96,444, 4: 1,176, 6: 89}. `bulk-progress.json`: `{"step_started": 21577.624746481}`; `logs/bulk.log` is empty.
 Run 2's scramble build took about 1 h 46 min (start table written 08:54 UTC), so its bulk clock of 18,900 s ends at
 about 14:09 UTC.
+
+Progress at 15:10 UTC (provisional, from the live `run.json`):
+- bulk `timeout` after 134 steps (124 `conj`, 10 `cover`); end `516f427d…`, 96,817 off, {2: 95,559, 4: 1,169, 6: 89};
+- height `r22d75`: 5 steps (T0 1, T1 2, T2 2), then `stuck` (`no_step`) at `d01dc91e…`, 100,650 off,
+  {2: 99,634, 4: 929, 6: 87};
+- `r22d81` `stuck` (`no_step`; r22d81 77 s, r22d81_pairs 179 s); `h4` `not_applicable` (n6 > 0);
+- the high phase's kernel is running (`attempts/00139-high`).
 
 ## Next step
 
