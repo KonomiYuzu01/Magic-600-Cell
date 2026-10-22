@@ -1,0 +1,54 @@
+# D1, seed 7101 at depth 40, development mode (line d1-dev-s7101)
+
+Status: **in progress** (progress note, 22 October 2026, 06:50 UTC). The runner is still in the bulk phase, working on
+step index 97. The run has not ended and nothing has been checked yet.
+
+## Question
+
+What does the tutorial runner do on the scramble of depth 40 with seed 7101 in development mode (`PLAN.md`, section 4,
+D1)? Do its bulk steps agree with the census record `11-scramble-census/runs/round2/ia-k40-s7101.json`?
+
+## Command
+
+Run from the repository root at commit `35c3d4f` (record `config.source.commit`
+`35c3d4f6ef1693fa19f3d0f155cd1cba8c43870b`, `dirty` false), detached:
+
+    S=research/jumbling/restoration/13-tutorial-runner/scripts
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/runner.py --scramble 40 7101 \
+      --out <dir>/run --cache <dir>/cache --bulk-step-seconds 21600 --height-seconds 12000 --height-cpu 12000 \
+      --pair-shards 3 --kernel-seconds 3600 > <dir>/runner.out 2>&1; echo $? > <dir>/runner.rc
+
+Started at 04:03 UTC. Mode `development` (the default). Lattice restorer `schedule11` (the default).
+
+## Start
+
+Digest `be08cfaa04612751a5852bc79aec6f20a8f86634f2279e9a6ba1147041bfbf0a`, 90,441 pieces off, all at height 2.
+
+## Bulk comparison with the census record (first 97 steps)
+
+The census record holds 97 steps and 223 twists (`moves`). The runner's first 97 bulk steps agree with it exactly. For
+every step the rule, the number of twists, the twists themselves (the step's word against the next slice of the
+census `moves`), N before and after, and off after are the same. There are 0 mismatches.
+
+- Rules: 27 `seam`, 7 `cover`, 63 `conj`; 223 twists in all.
+- N is 1,736 after index 95 and 1,734 after index 96. 1,193 pieces are off after index 96, all at height 2.
+- The state after index 96 has digest `7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818`.
+- The 97 steps took 7,395 s of step time (the census reached its 97th step at 3,610 s).
+- The step-by-step table, with the runner's time for each step, is in `bulk-comparison.md`.
+
+This shows agreement with one earlier run over 97 steps, nothing more (`PLAN.md`, section 4).
+
+## Progress
+
+At 06:50 UTC, about 9,980 s after the start, `bulk-progress.json` reads `{"step_started": 7517.779213569}`. Step index
+97 has been searched for about 2,460 s of its 21,600 s step clock. `logs/bulk.log` is empty, and `runner.out` has no
+output yet.
+
+## Not yet run or finished
+
+- The rest of the run (bulk after index 96, height, high, tail, lattice) and `check_run.py`.
+- Windows, DirectX, the native host, input, long-session and performance checks: none. Times are cloud timings of
+  research code on a shared headless Linux machine, not performance evidence.
+
+Next step: wait for `<dir>/runner.rc`, copy the run directory here, write the results, then run `check_run.py`
+detached.
