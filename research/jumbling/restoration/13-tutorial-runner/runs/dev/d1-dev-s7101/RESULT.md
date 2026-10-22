@@ -1,6 +1,6 @@
 # D1, seed 7101 at depth 40, development mode (line d1-dev-s7101)
 
-Status: **in progress** (progress note, 22 October 2026, 06:50 UTC). The runner is still in the bulk phase, working on
+Status: **in progress** (progress notes, 22 October 2026). The runner is in the tail phase; see "Progress". At the first note it was
 step index 97. The run has not ended and nothing has been checked yet.
 
 ## Question
@@ -40,7 +40,18 @@ This shows agreement with one earlier run over 97 steps, nothing more (`PLAN.md`
 
 ## Progress
 
-At 06:50 UTC, about 9,980 s after the start, `bulk-progress.json` reads `{"step_started": 7517.779213569}`. Step index
+Second note, 08:50 UTC (about 17,200 s after the start):
+
+- The bulk phase ended `stuck` after the 97 steps above (223 twists), at `7e128820…` with 1,193 off. No step index 97
+  was found within the step clock.
+- Height (all three subphases) and high are `not_applicable` (all 1,193 off pieces are at height 2), as the plan
+  expected.
+- The tail is running. Step 97 is `zero_bad` on unit 2198 (111 pieces): 60 letters, `standing` `rule`, contract
+  `strict_prime`, gate `stepchk`, 1,486.8 s. It lands all 111 pieces with no collateral. Off goes from 1,193 to 1,082
+  (all at height 2), and the digest becomes `cc41accae7cac3add5ab1c3b734b5ba7bee72c1008ec666caf27a1150fdb9938`.
+- Step 98 is being searched (unit 60011, transport pair passes; `logs/attempts-00098-u60011-transport.log`).
+
+First note, 06:50 UTC, about 9,980 s after the start, `bulk-progress.json` reads `{"step_started": 7517.779213569}`. Step index
 97 has been searched for about 2,460 s of its 21,600 s step clock. `logs/bulk.log` is empty, and `runner.out` has no
 output yet.
 
