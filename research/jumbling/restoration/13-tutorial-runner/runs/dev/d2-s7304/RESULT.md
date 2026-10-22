@@ -90,7 +90,14 @@ The end digest `ac127dc3…` and the end counts match stage 12's R22D-75 table e
 stage 12's; that the runner's six words are these letters follows from the matching end digest and per-step counts,
 which were not compared step by step here.
 
-Checker: running (`check_run.py <dir>/component --out <dir>/check-c/check.jsonl`).
+Checker:
+
+    python3 -I -B -u $S/check_run.py <dir>/component --out <dir>/check-c/check.jsonl
+
+Exit code 0, about a minute. Final row: `pass` true, `verdict` `error`, `result` `error`, end digest
+`ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980`, 6 steps, 6 height twists,
+`unchecked_contracts` 0, `lattice_checked` false. All six step rows pass with no fails. Report in
+`component/check.jsonl`; `component/check.out` is its stdout and stderr (identical to it: no stderr).
 
 ## Step 3: full run
 
@@ -101,5 +108,5 @@ Started about 07:13 UTC, after the component runner had finished. Running. Like 
 
 ## Next step
 
-Wait for the component check (`check-c/check.rc`) and copy `check.jsonl` and `check.out` into `component/`; wait for
+Wait for
 the full run (`runner-f.rc`), copy it to `full/`, run `check_run.py` on it.

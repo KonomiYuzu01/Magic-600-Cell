@@ -1,0 +1,7 @@
+{"fails": [], "index": 0, "pass": true, "phase": "height", "rule": "r22d75/T1", "subphase": "r22d75", "unchecked": false}
+{"fails": [], "index": 1, "pass": true, "phase": "height", "rule": "r22d75/T1", "subphase": "r22d75", "unchecked": false}
+{"fails": [], "index": 2, "pass": true, "phase": "height", "rule": "r22d75/T1", "subphase": "r22d75", "unchecked": false}
+{"fails": [], "index": 3, "pass": true, "phase": "height", "rule": "r22d75/T1", "subphase": "r22d75", "unchecked": false}
+{"fails": [], "index": 4, "pass": true, "phase": "height", "rule": "r22d75/T2", "subphase": "r22d75", "unchecked": false}
+{"fails": [], "index": 5, "pass": true, "phase": "height", "rule": "r22d75/T2", "subphase": "r22d75", "unchecked": false}
+{"bulk_twists": 0, "end_digest": "ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980", "fails": [], "fallback_twists": 0, "height_twists": 6, "high_twists": 0, "lattice_checked": false, "lattice_twists": null, "pass": true, "result": "error", "steps": 6, "tail_twists": 0, "unchecked_contracts": 0, "verdict": "error"}
