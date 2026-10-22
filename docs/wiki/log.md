@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-22] decision | Jumbling: smaller cells and stickers in the tutorial's pictures
+Shown three settings of the page's shrink controls, the owner chose cell shrink 0.50 and sticker shrink 0.62 for every puzzle picture of the tutorial ([decision page](decisions/owner-decisions-2026-10-22-figures-and-merge.md), decision 4).
+
 ## [2026-10-22] decision | Jumbling: the tutorial's main figures show the actual puzzle
 After four abstract prototypes, the owner chose pictures of the actual puzzle as the tutorial's main figures: captures of the full-state page in its stereographic local view centred on the step's cap, with the moved pieces opaque, and perspective overviews; abstract drawings remain for step trees and tables ([owner-decisions-2026-10-22-figures-and-merge](decisions/owner-decisions-2026-10-22-figures-and-merge.md), decision 3).
 

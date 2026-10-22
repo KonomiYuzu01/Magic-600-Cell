@@ -9,6 +9,7 @@ supersedes: []
 claims:
   - {id: figure-coverage, evidence_kind: decision, checked_at: 2026-10-22}
   - {id: figure-puzzle-pictures, evidence_kind: decision, checked_at: 2026-10-22}
+  - {id: figure-shrink, evidence_kind: decision, checked_at: 2026-10-22}
   - {id: merge-112-by-integrator, evidence_kind: decision, checked_at: 2026-10-22}
   - {id: figures-and-merge-readings, evidence_kind: decision, checked_at: 2026-10-22}
 ---
@@ -47,6 +48,14 @@ confirmed the second prototype:
 - Abstract drawings stay only where nothing geometric is shown: step trees, rule tables, the cover graph and the
   height trees.
 
+## Decision 4: smaller cells and stickers in the puzzle pictures
+
+The owner asked for smaller cells and stickers in the tutorial's pictures. The integrator showed three settings of the
+full-state page's two shrink controls, drawn on the same two states (a local stereographic view and a global
+perspective view): A, the page's default, cell (facet) shrink 0.76 and sticker shrink 0.82; B, 0.62 and 0.72; C, 0.50
+and 0.62. The owner chose C. Every puzzle picture of the tutorial is drawn with cell shrink 0.50 and sticker shrink
+0.62 (`cs` and `ss` in `research/jumbling/tutorial/figures/figures.json`). The page's own default stays as it is.
+
 ## Decision 2: the integrator merges pull request 112
 
 When the tutorial and its acceptance are written, the integrator merges pull request 112 itself.
@@ -76,6 +85,7 @@ When the tutorial and its acceptance are written, the integrator merges pull req
 
 ## Effect
 
-- The tutorial's figure catalogue is planned against the four layers above, with puzzle pictures as the main figures.
+- The tutorial's figure catalogue is planned against the four layers above, with puzzle pictures as the main figures,
+  drawn with cell shrink 0.50 and sticker shrink 0.62.
 - Pull request 112 no longer waits for the owner to merge it; the integrator does so once reading 2 holds. This
   updates the last item of the tutorial-first decision's "Effect" and the merge conditions of 17 October (reading 3).
