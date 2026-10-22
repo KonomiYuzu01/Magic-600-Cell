@@ -110,6 +110,10 @@ From now on the line follows the integrator's checkpoint procedure (22 October 2
 `04057a4` of `claude/repair-pair-list`, which adds `--resume` to `runner.py` and `scripts/checkpoint.py`. Run 3
 starts from the scramble in `out3/`, with `checkpoint.py` keeping a verified copy in `out3-checkpoint/`.
 
+- Run 3, first start (21:15 UTC): a container restart killed it after 46 bulk steps and 404 s of runner time,
+  before the first checkpoint round at 900 s. No checkpoint existed, so its directory was not kept (46 bulk steps,
+  reproducible) and run 3 started again from the scramble at 22:08 UTC, with `checkpoint.py` beside it.
+
 ## Not run
 
 - `check_run.py` (it runs after the runner ends).
