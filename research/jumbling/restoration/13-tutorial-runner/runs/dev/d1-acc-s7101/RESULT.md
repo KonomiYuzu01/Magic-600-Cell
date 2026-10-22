@@ -1,6 +1,6 @@
 # D1, seed 7101 at depth 40, acceptance mode (development line d1-acc-s7101)
 
-Status: **in progress** (progress note, 22 October 2026, 08:15 UTC; run 1 was interrupted at 97 steps, run 2 restarted at 08:12 UTC). The run has not ended; the check has not run.
+Status: **in progress** (progress note, 22 October 2026, 10:12 UTC; run 1 was interrupted at 97 steps, run 2 restarted at 08:12 UTC). The run has not ended; the check has not run.
 
 ## Question
 
@@ -61,6 +61,14 @@ Full step-by-step table: `bulk-vs-census.md`.
   above is from run 1.
 - Run 2 started at 08:12 UTC: the same command, on the same commit, in fresh `--out` and `--cache` directories. The
   rest of this report is about run 2. A later container restart would cost the same again.
+
+## Progress of run 2
+
+- 10:12 UTC (2 h 0 min after the restart): run 2 has the same 97 bulk steps (`compare.py` against the census finds no
+  difference; 223 twists) and the same digest `7e128820…` after index 96. It reached that point at 7,152 s of runner
+  time, against 9,225 s in run 1. Index 96 took 1,248 s, against 1,694 s in run 1. The 98th bulk step (index 97)
+  started about 75 s before this note. `bulk-progress.json` holds only `step_started`; `logs/bulk.log` and
+  `runner.out` are empty. These are cloud timings of research code on a shared machine, not performance evidence.
 
 ## Not run
 
