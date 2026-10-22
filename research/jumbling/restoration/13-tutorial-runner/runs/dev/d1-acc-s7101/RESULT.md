@@ -1,6 +1,6 @@
 # D1, seed 7101 at depth 40, acceptance mode (development line d1-acc-s7101)
 
-Status: **in progress** (progress note, 22 October 2026, 10:12 UTC; run 1 was interrupted at 97 steps, run 2 restarted at 08:12 UTC). The run has not ended; the check has not run.
+Status: **in progress** (progress note, 22 October 2026, 12:13 UTC; bulk stuck at 97 steps, tail running; run 1 was interrupted at 97 steps, run 2 restarted at 08:12 UTC). The run has not ended; the check has not run.
 
 ## Question
 
@@ -69,6 +69,13 @@ Full step-by-step table: `bulk-vs-census.md`.
   time, against 9,225 s in run 1. Index 96 took 1,248 s, against 1,694 s in run 1. The 98th bulk step (index 97)
   started about 75 s before this note. `bulk-progress.json` holds only `step_started`; `logs/bulk.log` and
   `runner.out` are empty. These are cloud timings of research code on a shared machine, not performance evidence.
+
+- 12:13 UTC: the **bulk phase ended `stuck`** after 97 steps and 223 twists, at `7e128820…` with 1,193 off (all at
+  height 2) and N 1,734. Every bulk rule failed at the 98th step. The last bulk save came at about 7,152 s and the
+  tail's first attempt started at 12:08 UTC, so that search took roughly 1 h 55 min. **Height** (all three
+  sub-phases) and **high** are `not_applicable`, as the plan expected for a state at height 2. The **tail** phase is
+  running. Its first attempt (index 97) found 22 straddling blocks and works on unit `u2198` (block 2, 111 pieces)
+  with a transport census (P 3, about 609,000 commutators after 249 s at the last log line).
 
 ## Not run
 
