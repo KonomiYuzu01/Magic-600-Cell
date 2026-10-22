@@ -67,8 +67,8 @@ After I1 the plugins and the checker's helpers are real. The runner records the 
 with the plugin's report. It also records a lattice `End` and a lattice phase with no step. Acceptance mode reads the
 frozen `acceptance-config.json`. `config.kernel.d19` is recorded, and a bulk `conj` step has a tree of three parts.
 The checker applies the kernel's phase bound, the played lattice result and the new record fields (sections 2 and 3).
-The development runs (D0 so far) are in section 5. Research code, headless Linux; nothing here is Windows, DirectX or
-performance evidence.
+The development runs (D0 so far, repeated on the committed head) are in section 9. Research code, headless Linux;
+nothing here is Windows, DirectX or performance evidence.
 
 Labels: **certificate** (an exact computation with a replayable record), **measured** (a result on finite inputs).
 
@@ -565,8 +565,9 @@ Run results stay `solved`, `stuck`, `budget` and `error`. Some examples:
   - every later phase, the tail included, is `not_applicable`;
   - the lattice phase is not entered;
   - the result and the verdict are `solved`.
-- `--scramble 20 7106` (measured, D0 on 22 October 2026). D0 ran on the uncommitted I1 candidate, so
-  `config.source.dirty` is true. It is to be repeated on the committed head (section 9).
+- `--scramble 20 7106` (measured, D0 on 22 October 2026). The first D0 runs ran on the uncommitted I1 candidate, so
+  their `config.source.dirty` is true. D0 was repeated on the committed head `cd5e6e8` with the same steps and end
+  digests, and those records are in `runs/dev/` (section 9).
   - The start has 51,828 pieces off, all at height 2.
   - 19 bulk steps of one letter, all of rule `seam`, end `lattice`.
   - Height, high and tail are `not_applicable`.
@@ -1509,7 +1510,7 @@ twist counts and times, before batch 1 (below). D1 (seed 7101, depth 40) and D2 
 D2 is depth 3000: the stops of seeds 7302 and 7304 to 7307, and seed 7303 from its scramble. All times are cloud
 timings of research code on a headless Linux machine shared with other jobs.
 
-**D0** (22 October 2026, measured):
+**D0** (22 October 2026, measured, on uncommitted I1 candidates; see "Provenance" below):
 
 - `--scramble 10 7001 --mode acceptance`:
   - nine bulk steps of one letter each, all `seam`; the bulk ends `lattice` at the solved digest;
@@ -1541,6 +1542,20 @@ timings of research code on a headless Linux machine shared with other jobs.
   - result and verdict `solved`. `check_run.py` replays all 54 words and passes the record with verdict `solved`,
     end digest `71dbda5c…` and 0 unchecked contracts, in 78 s.
 
+**D0 on the committed head** (22 October 2026, measured). Both acceptance runs again, on commit `cd5e6e8` in a
+detached worktree of that commit, so `config.source.dirty` is false:
+
+- `--scramble 10 7001 --mode acceptance`: the same nine `seam` steps to the solved digest; result and verdict
+  `solved`, 41.9 s. `check_run.py` passes the record with verdict `solved` and 0 unchecked contracts in 7 s.
+- `--scramble 20 7106 --mode acceptance`, now with `schedule11` from `acceptance-config.json`:
+  - the same start and the same 19 `seam` bulk steps to `1b263d3e…`; height, high and tail are `not_applicable`;
+  - the lattice phase is `solved` in 35 orbit steps in the same cascade order, with no correction step. The phase is
+    1,516,410 twists, as in the development-mode run above;
+  - restorer 611.5 s. Player 65.5 s, of which the retained part took 56.9 s. Runner 750 s in all;
+  - final digest `71dbda5c…`, with identity labels: the end digest of the development-mode run;
+  - result and verdict `solved`. `check_run.py` replays all 54 words and passes the record with verdict `solved`,
+    end digest `71dbda5c…` and 0 unchecked contracts, in 81 s.
+
 **Bounds** (stage 09, `09-general-method/METHOD.md:175`, "Lattice-phase length"). On the committed cascade the late
 restorer needs at most 1,324,660,182 retained twists. The schedule of round 11 (schedule11) needs at most 20,866,844.
 The corrections add at most 25,852 twists to either. D0's late run used 8,701,310 retained twists and its schedule11
@@ -1552,11 +1567,15 @@ runner's default now name it. On seed 7106 it played 5.7 times fewer lattice twi
 (576 s against 545 s). Its proved bound is 63 times smaller. `late` stays available in development mode. Every
 acceptance batch uses `schedule11`.
 
-**Provenance.** The D0 records are not in the repository. They ran on uncommitted I1 candidates over `8ae8c4a`, so
-`config.source.dirty` is true. Their `config.scripts` show `rules_height.py`, `rules_kernel.py` and `lattice_phase.py`
-as committed at `8ae8c4a`, before the FIX patch of section 8, and a `runner.py` that has changed since. D0 is to be
-repeated on the committed head before anything relies on these numbers. D1, D2 and the acceptance batches have not
-been run.
+**Provenance.** The two runs on the committed head are in `runs/dev/d0-s7001/` and `runs/dev/d0-s7106/`: the run
+directory (`run/`), the runner's last line (`runner.out`) and the checker's output (`check.jsonl`). They leave out what
+the checker does not read: the restorer's intermediates under `attempts/` (its summary, solutions, merged library,
+start labels and play result, 11 MB for seed 7106; `lattice/report.json` keeps the digests of the first three), the
+empty `units/` and `bulk-progress.json`. `check.jsonl` is the checker's output on these copies. The first D0 runs are
+not in the repository. They ran on uncommitted I1 candidates over `8ae8c4a`, so `config.source.dirty` is true. Their
+`config.scripts` show `rules_height.py`, `rules_kernel.py` and `lattice_phase.py` as committed at `8ae8c4a`, before
+the FIX patch of section 8, and a `runner.py` that has changed since. The runs on the committed head give the same
+`seam` steps, lattice lengths and end digests. D1 and D2 are running; the acceptance batches have not been run.
 
 ## Replay
 
@@ -1598,6 +1617,7 @@ word (not run). The `--out` path of the runner must not contain `.json`.
 | `scripts/check_r22d25.py` | The independent checker of `r22d25-run/1` records (packet R22D-25, with the kernel of stage 12). The integrator's fixes: only `assets/manifest.json` must match its recorded digest (R22D25-robust-02, R22D25-contract-04), and an `unsupported` record must show its cause (R22D25-false-pass-05) |
 | `scripts/test_check_r22d25.py` | Its tests: format checks and record mutations, run by stage 12's `test_r22d25.py` or on their own |
 | `runs/depth10-seed7001/`, `runs/depth20-seed7106/` | The two format 1 records of section 5: `run.json`, the words, the lattice phase's summary, report and solutions (gzipped), the logs, the runner's last line (`runner.json`) and the checker's output (`check.jsonl`) |
+| `runs/dev/d0-s7001/`, `runs/dev/d0-s7106/` | The format 3 records of D0 on the committed head (section 9): the run directory without the restorer's intermediates, the runner's last line (`runner.out`) and the checker's output (`check.jsonl`) |
 
 ## Checks not run
 
@@ -1614,7 +1634,7 @@ word (not run). The `--out` path of the runner must not contain `.json`.
 - A runner run from a scramble or a census stop with any of these: a height, high, tail, fallback or certificate
   step, or a lattice phase that ends with an `End` or with nothing scheduled. The D0 runs have none of them
   (section 9).
-- D0 on the committed head, D1, D2 and the acceptance batches (section 9).
+- D1, D2 and the acceptance batches (section 9).
 - The fast review of the fixes covered the fixes only, not the whole patches. The fixes for IF-01 to IF-03 (in
   `test_literal_lattice.py` and stage 09's `test_sched11_late.py`) and the fix to `test_check_run.py`
   (RUN4-robust-05) came after it and have had no review.
