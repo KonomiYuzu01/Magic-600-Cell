@@ -315,11 +315,63 @@
    }
   },
   "high": {
-   "result": null,
+   "result": "stuck",
    "steps": 0,
    "twists": 0,
-   "start": null,
-   "end": null
+   "start": {
+    "digest": "ac4be82cf80e857137af957ff75438525ba950062e46a2fc5249aa0d7199d8f2",
+    "off": 110315,
+    "heights": {
+     "2": 108360,
+     "4": 1955
+    }
+   },
+   "end": {
+    "digest": "ac4be82cf80e857137af957ff75438525ba950062e46a2fc5249aa0d7199d8f2",
+    "off": 110315,
+    "heights": {
+     "2": 108360,
+     "4": 1955
+    }
+   },
+   "reason": "kernel_exhausted",
+   "details": {
+    "kernel_result": "stuck",
+    "kernel_reason": null,
+    "ledger_status": {
+     "F1": "exhausted",
+     "F2": "exhausted",
+     "F3": "exhausted",
+     "d19": "exhausted",
+     "S": "exhausted",
+     "ST": "exhausted",
+     "T1": "exhausted"
+    },
+    "record_sha256": "53548c332bf9401e530217a5dfd399b5359daf37f8387c68b564881df4d1fab1",
+    "dir": "attempts/00018-high/kernel",
+    "catalogue": "r22d25-cat/1"
+   },
+   "attempts": [
+    {
+     "rule": "r22d25",
+     "catalogue": "r22d25-cat/1",
+     "outcome": "stuck",
+     "reason": "kernel_exhausted",
+     "timed_out": false,
+     "seconds": 2914.6021465289996,
+     "kernel_seconds": 2907.1227492319995,
+     "ledger_status": {
+      "F1": "exhausted",
+      "F2": "exhausted",
+      "F3": "exhausted",
+      "d19": "exhausted",
+      "S": "exhausted",
+      "ST": "exhausted",
+      "T1": "exhausted"
+     },
+     "stop_family": null
+    }
+   ]
   },
   "tail": {
    "result": null,
@@ -1367,6 +1419,6 @@
   "tail_twists": 0,
   "fallback_twists": 0,
   "lattice_twists": null,
-  "seconds": 10344.187347
+  "seconds": 13262.197306
  }
 }
