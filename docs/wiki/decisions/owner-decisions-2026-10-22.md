@@ -4,7 +4,7 @@ type: decision
 status: verified
 visibility: public
 summary: Owner answers of 22 October 2026, given for now - every recommended option of the re-plan and of design-table topic DT-J1; schedule option B with the 2.5 freeze at about stage day 34; the branch-only jumbling records come to main; ENG-0J starts; W-J runs in the renderer selection; design-table card limits.
-related: [owner-decisions-2026-10-02, owner-decisions-2026-10-03, owner-decisions-2026-10-09-jumbling]
+related: [owner-decisions-2026-10-02, owner-decisions-2026-10-03, owner-decisions-2026-10-09-jumbling, owner-decisions-2026-10-17-jumbling-pr, owner-decisions-2026-10-17-repair-pairs]
 supersedes: []
 claims:
   - {id: replan-q1-records-to-main, evidence_kind: decision, checked_at: 2026-10-22}
@@ -23,7 +23,7 @@ The owner gave these answers in a chat message in Chinese, accepting every recom
 
 The questions are in section 5 of the [re-plan](../../progress/1.0/replan-2026-10-22.md).
 
-1. **Q1 (a): the branch-only jumbling records come to `main`.** The six decision records, the five handoff pages and the briefing line with the repair-list exception go to `main` in a documentation-only pull request. Draft pull request #112 stays a draft. This changes the 17 October rule that kept #112's pages off `main` until it merges.
+1. **Q1 (a): the branch-only jumbling records come to `main`.** The six decision records, the five handoff pages and the briefing line with the repair-list exception go to `main` in a documentation-only pull request. Draft pull request #112 stays a draft. This changes the [17 October rule](owner-decisions-2026-10-17-jumbling-pr.md) that kept #112's pages off `main` until it merges.
 2. **Q2 (a): ENG-0J starts now** on the parts that need no further owner answer. These are EN1 (revision 2, with a proposal for state-contract section 5 through an Astra plan check) and EN2 (the harness and the store).
 3. **Q3 (a): the renderer selection runs W-J** on the selected candidate (RH-17).
 4. **Q4: option B (cut).**
@@ -47,7 +47,7 @@ The questions are in section 5 of the [re-plan](../../progress/1.0/replan-2026-1
    - O8 (1): a solve ends on the sticker test. Jumble turns off at N = 0 and ν = 0 through a label checkpoint certified by G = 𝒦, and 600-cell-Full's tools run after the crossing. No separate pose fact is shown. The change to state-contract section 5 goes through EN1's Astra plan check.
    - O9 (a): the repair list opens with no row focused.
    - O10 (b): a repair is committed once, after a preview that the solver can step through twist by twist.
-   - O11 (b): each repair row also shows its change in N as a numeral, in a fixed column. This adds one field to the rows that the 17 October exception names.
+   - O11 (b): each repair row also shows its change in N as a numeral, in a fixed column. This adds one field to the rows that the [17 October exception](owner-decisions-2026-10-17-repair-pairs.md) names.
 7. **Card limits from the next topic.** In round 1 each role gives at most six cards. In round 2 each role gives at most four, each answering other cards by ID.
 
 ## Effect
