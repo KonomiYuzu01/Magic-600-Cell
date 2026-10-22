@@ -68,7 +68,24 @@ dt { color: var(--muted); } dd { margin: 0; min-width: 0; overflow-wrap: anywher
   .stage { height: min(90vw, 65vh); min-height: 300px; }
   body { padding: 10px; }
 }
+html.shot, html.shot body { margin: 0; padding: 0; max-width: none; overflow: hidden; }
+html.shot body > :not(main), html.shot aside, html.shot .hint, html.shot .transport,
+html.shot #markers, html.shot #badge { display: none !important; }
+html.shot main { display: block; }
+html.shot .view { border: 0; border-radius: 0; }
+html.shot .stage { width: var(--shot-width); height: var(--shot-height); min-height: 0; }
 </style>
+<script>
+if (new URLSearchParams(location.search).has('shot')) {
+  document.documentElement.classList.add('shot');
+  const shotError = (message) => {
+    document.documentElement.dataset.shotError = String(message);
+    document.documentElement.dataset.shotReady = 'error';
+  };
+  window.addEventListener('error', (event) => shotError(event.message || 'Tutorial module or resource failed to load'), true);
+  window.addEventListener('unhandledrejection', (event) => shotError(event.reason?.message || event.reason));
+}
+</script>
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",

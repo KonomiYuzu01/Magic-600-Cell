@@ -1,0 +1,446 @@
+{
+ "format": "tutorial-ch03-examples/1",
+ "sources": {
+  "research/jumbling/restoration/13-tutorial-runner/scripts/rules_height.py": "711c94495e589a7839c0169aa2bf2025c672132319f9a8d3d16f5a523def913a",
+  "research/jumbling/restoration/13-tutorial-runner/scripts/runner_api.py": "b92e73d33345da33ee3e6e7974d9ab8db1d35193dc69371b0e13d55bade08459",
+  "research/jumbling/restoration/13-tutorial-runner/scripts/check_contracts.py": "6479d47e3a9a28251257bc5e451e5f5acaf0d9ed95d109dc7ec41ee0d7c8b88a",
+  "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/r22d75_from_snapshot.py": "15a6b764b12c493f5f90dd3fb643e79182ddf1775d50f76d53dfa75540584aac",
+  "research/jumbling/restoration/12-low-height/scripts/round22/r22d81_rule.py": "0ef504d1484e9f3328592057f3be46cf60cce6bebd44619cd48f2a5f43ce48c5",
+  "research/jumbling/restoration/12-low-height/scripts/round22/r22d81_pairs.py": "2a0cfb8c28f35f65dee06a7258c12767fbe439dd4a9308535cf0385bc53ed2f8",
+  "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/h4_unlock.py": "12078831f1b41c46b9a9f50a1fa88ddabdcafdbb9b766c1a278a662c0ffc44a7",
+  "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/two_letter_u.py": "ce5fb13584630e8c87d08273eaf41b74b68798a30ae606b1f55dd3da07fd93c9"
+ },
+ "states": {
+  "Z36": {
+   "digest": "8733a0aafd8e24ea1da990ebab0347074c20b11cf61d9ed04d34d25ef6f67261",
+   "off": 5800,
+   "heights": {
+    "2": 5799,
+    "6": 1
+   }
+  },
+  "S2": {
+   "digest": "7cd868f6466953eb6ea1e0d466ed66857d34edaea7dd7c554c1e74975005541b",
+   "off": 3098,
+   "heights": {
+    "2": 3097,
+    "4": 1
+   }
+  },
+  "S2_u": {
+   "0": 196,
+   "35": 0
+  },
+  "setup_seconds": 6.9
+ },
+ "A_ends": {
+  "cases": [
+   {
+    "label": "A0 r22d81 at Z36, acceptance clock",
+    "state": "Z36",
+    "program": "research/jumbling/restoration/12-low-height/scripts/round22/r22d81_rule.py",
+    "mode": "acceptance",
+    "cpu_argument": 1000000000.0,
+    "extra": [],
+    "expected": null,
+    "tags": [
+     "LOADED",
+     "START",
+     "STEP",
+     "HANDOFF"
+    ],
+    "lines": [
+     "START {\"prefix\": [], \"tau\": 12, \"u\": 0, \"targets\": [[12, 1], [91, 1]], \"digest\": \"8733a0aafd8e24ea1da990ebab0347074c20b11cf61d9ed04d34d25ef6f67261\", \"n2_n4_n6\": [5799, 0, 1], \"off\": 5800, \"N\": 2934, \"cpu\": 2.6}",
+     "STEP {\"step\": 1, \"family\": \"H6\", \"letter\": [12, 14], \"length\": 1, \"input_digest\": \"8733a0aafd8e24ea1da990ebab0347074c20b11cf61d9ed04d34d25ef6f67261\", \"tau\": null, \"u\": 0, \"targets\": [], \"checks\": {\"blocked_caps\": 9, \"cap_bound_prunes\": 3}, \"digest\": \"7cd868f6466953eb6ea1e0d466ed66857d34edaea7dd7c554c1e74975005541b\", \"n2_n4_n6\": [3097, 1, 0], \"off\": 3098, \"N\": 1780, \"cpu\": 2.8}",
+     "HANDOFF {\"steps\": 1, \"digest\": \"7cd868f6466953eb6ea1e0d466ed66857d34edaea7dd7c554c1e74975005541b\", \"n2_n4_n6\": [3097, 1, 0], \"off\": 3098, \"N\": 1780, \"cpu\": 2.8}"
+    ],
+    "result": null,
+    "reason": "step",
+    "attempt": {
+     "script": "r22d81",
+     "shard": null,
+     "outcome": "step",
+     "reason": "step",
+     "rc": 0,
+     "stopped": false,
+     "timed_out": false
+    }
+   },
+   {
+    "label": "A1 r22d81_pairs at S2, --target 35 (u = 0)",
+    "state": "S2",
+    "program": "research/jumbling/restoration/12-low-height/scripts/round22/r22d81_pairs.py",
+    "mode": "acceptance",
+    "cpu_argument": 1000000000.0,
+    "extra": [
+     "--target",
+     "35"
+    ],
+    "expected": {
+     "tau": 35,
+     "u": 0
+    },
+    "tags": [
+     "START",
+     "UNLOCKED"
+    ],
+    "lines": [
+     "START {\"prefix\": [], \"u\": 0, \"meet_prune\": true, \"tau\": 35, \"digest\": \"7cd868f6466953eb6ea1e0d466ed66857d34edaea7dd7c554c1e74975005541b\", \"n2_n4_n6\": [3097, 1, 0], \"off\": 3098, \"N\": 1780, \"cpu\": 0.6}",
+     "UNLOCKED {\"steps\": 0, \"held6\": 0, \"lowered_to_4_by_items_1_to_59\": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], \"tau\": 35, \"digest\": \"7cd868f6466953eb6ea1e0d466ed66857d34edaea7dd7c554c1e74975005541b\", \"n2_n4_n6\": [3097, 1, 0], \"off\": 3098, \"N\": 1780, \"cpu\": 0.7}"
+    ],
+    "result": "error",
+    "reason": "malformed_output",
+    "attempt": {
+     "script": "r22d81_pairs",
+     "shard": null,
+     "outcome": "malformed",
+     "reason": "malformed_output",
+     "rc": 0,
+     "stopped": false,
+     "timed_out": false
+    }
+   },
+   {
+    "label": "A2 r22d81_pairs at S2, --target 0, --cpu 0.001",
+    "state": "S2",
+    "program": "research/jumbling/restoration/12-low-height/scripts/round22/r22d81_pairs.py",
+    "mode": "development",
+    "cpu_argument": 0.001,
+    "extra": [
+     "--target",
+     "0"
+    ],
+    "expected": {
+     "tau": 0,
+     "u": 196
+    },
+    "tags": [
+     "START",
+     "BUDGET"
+    ],
+    "lines": [
+     "START {\"prefix\": [], \"u\": 196, \"meet_prune\": true, \"tau\": 0, \"digest\": \"7cd868f6466953eb6ea1e0d466ed66857d34edaea7dd7c554c1e74975005541b\", \"n2_n4_n6\": [3097, 1, 0], \"off\": 3098, \"N\": 1780, \"cpu\": 0.6}",
+     "BUDGET {\"steps\": 0, \"limit_cpu\": 0.001, \"tau\": 0, \"digest\": \"7cd868f6466953eb6ea1e0d466ed66857d34edaea7dd7c554c1e74975005541b\", \"n2_n4_n6\": [3097, 1, 0], \"off\": 3098, \"N\": 1780, \"cpu\": 0.7}"
+    ],
+    "result": "error",
+    "reason": "malformed_output",
+    "attempt": {
+     "script": "r22d81_pairs",
+     "shard": null,
+     "outcome": "malformed",
+     "reason": "malformed_output",
+     "rc": 0,
+     "stopped": false,
+     "timed_out": false
+    }
+   },
+   {
+    "label": "A3 r22d81 at Z36, --cpu 2.2",
+    "state": "Z36",
+    "program": "research/jumbling/restoration/12-low-height/scripts/round22/r22d81_rule.py",
+    "mode": "development",
+    "cpu_argument": 2.2,
+    "extra": [],
+    "expected": null,
+    "tags": [
+     "LOADED",
+     "START",
+     "BUDGET"
+    ],
+    "lines": [
+     "START {\"prefix\": [], \"tau\": 12, \"u\": 0, \"targets\": [[12, 1], [91, 1]], \"digest\": \"8733a0aafd8e24ea1da990ebab0347074c20b11cf61d9ed04d34d25ef6f67261\", \"n2_n4_n6\": [5799, 0, 1], \"off\": 5800, \"N\": 2934, \"cpu\": 2.7}",
+     "BUDGET {\"steps\": 0, \"limit_cpu\": 2.2, \"digest\": \"8733a0aafd8e24ea1da990ebab0347074c20b11cf61d9ed04d34d25ef6f67261\", \"n2_n4_n6\": [5799, 0, 1], \"off\": 5800, \"N\": 2934, \"cpu\": 2.9}"
+    ],
+    "result": "error",
+    "reason": "malformed_output",
+    "attempt": {
+     "script": "r22d81",
+     "shard": null,
+     "outcome": "malformed",
+     "reason": "malformed_output",
+     "rc": 0,
+     "stopped": false,
+     "timed_out": false
+    }
+   }
+  ],
+  "A3_tries": [
+   {
+    "cpu": 2.2,
+    "tags": [
+     "LOADED",
+     "START",
+     "BUDGET"
+    ],
+    "result": "error",
+    "reason": "malformed_output"
+   }
+  ]
+ },
+ "B_formats": [
+  {
+   "label": "r22d75: START, STUCK",
+   "program_lines": "r22d75_from_snapshot.py:91, :95",
+   "result": "stuck",
+   "reason": "no_step",
+   "outcome": "stuck"
+  },
+  {
+   "label": "r22d75: START, BUDGET",
+   "program_lines": ":91, :100",
+   "result": "budget",
+   "reason": "cpu_budget",
+   "outcome": "budget"
+  },
+  {
+   "label": "r22d81: START, STUCK with tau and u",
+   "program_lines": "r22d81_rule.py:244, :293",
+   "result": "stuck",
+   "reason": "no_step",
+   "outcome": "stuck"
+  },
+  {
+   "label": "r22d81: START, STUCK with tau null",
+   "program_lines": ":244, :293",
+   "result": "stuck",
+   "reason": "no_step",
+   "outcome": "stuck"
+  },
+  {
+   "label": "r22d81: START, BUDGET with 0 steps",
+   "program_lines": ":244, :310",
+   "result": "error",
+   "reason": "malformed_output",
+   "outcome": "malformed"
+  },
+  {
+   "label": "r22d81: BUDGET before START",
+   "program_lines": ":310",
+   "result": "budget",
+   "reason": "cpu_budget",
+   "outcome": "budget"
+  },
+  {
+   "label": "r22d81: START, BUDGET with 1 step and an unreported H6 letter",
+   "program_lines": ":296, :310",
+   "result": "budget",
+   "reason": "cpu_budget",
+   "outcome": "budget"
+  },
+  {
+   "label": "r22d81: NOT_APPLICABLE",
+   "program_lines": ":240",
+   "result": "error",
+   "reason": "invariant_height_above_6",
+   "outcome": "not_applicable"
+  },
+  {
+   "label": "pairs: START with u = 0, UNLOCKED with 0 steps",
+   "program_lines": "r22d81_pairs.py:196, :298",
+   "result": "error",
+   "reason": "malformed_output",
+   "outcome": "malformed"
+  },
+  {
+   "label": "pairs: START, BUDGET with 0 steps",
+   "program_lines": ":196, :300",
+   "result": "error",
+   "reason": "malformed_output",
+   "outcome": "malformed"
+  },
+  {
+   "label": "pairs: START, STUCK with 0 steps",
+   "program_lines": ":196, :284-285",
+   "result": "stuck",
+   "reason": "no_step",
+   "outcome": "stuck"
+  },
+  {
+   "label": "pairs: START whose u differs from the STUCK line of r22d81",
+   "program_lines": ":196",
+   "result": "error",
+   "reason": "inconsistent_output",
+   "outcome": "mismatch"
+  },
+  {
+   "label": "pairs: START whose digest differs from the state",
+   "program_lines": ":196",
+   "result": "error",
+   "reason": "digest_mismatch",
+   "outcome": "mismatch"
+  },
+  {
+   "label": "h4: START with tau null",
+   "program_lines": "h4_unlock.py:259",
+   "result": null,
+   "reason": "no_target",
+   "outcome": "stuck"
+  },
+  {
+   "label": "h4: START, STUCK with a table",
+   "program_lines": ":259, :305",
+   "result": "stuck",
+   "reason": "no_step",
+   "outcome": "stuck"
+  },
+  {
+   "label": "h4: START, BUDGET with 0 steps",
+   "program_lines": ":259, :320",
+   "result": "budget",
+   "reason": "cpu_budget",
+   "outcome": "budget"
+  },
+  {
+   "label": "h4: BUDGET before START",
+   "program_lines": ":256, :320",
+   "result": "budget",
+   "reason": "cpu_budget",
+   "outcome": "budget"
+  },
+  {
+   "label": "h4: START, BUDGET with 1 step, families {L4: 1}",
+   "program_lines": ":259, :320",
+   "result": "budget",
+   "reason": "cpu_budget",
+   "outcome": "budget"
+  },
+  {
+   "label": "h4: STUCK without START",
+   "program_lines": ":305",
+   "result": "error",
+   "reason": "truncated",
+   "outcome": "malformed"
+  },
+  {
+   "label": "r22d81: START whose digest differs from the state",
+   "program_lines": ":244",
+   "result": "error",
+   "reason": "digest_mismatch",
+   "outcome": "mismatch"
+  },
+  {
+   "label": "r22d81: START, then a Traceback (exit 1)",
+   "program_lines": "-",
+   "result": "error",
+   "reason": "crash",
+   "outcome": "crash"
+  },
+  {
+   "label": "r22d81: START only, exit 0",
+   "program_lines": "-",
+   "result": "error",
+   "reason": "truncated",
+   "outcome": "truncated"
+  },
+  {
+   "label": "r22d81: START, a STEP numbered 2",
+   "program_lines": ":304-305",
+   "result": "error",
+   "reason": "missing_step",
+   "outcome": "missing_step"
+  }
+ ],
+ "C_r22d75": {
+  "reference": "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/r22d75_from_snapshot.py",
+  "reference_from_line": 42,
+  "reference_sha256": "15a6b764b12c493f5f90dd3fb643e79182ddf1775d50f76d53dfa75540584aac",
+  "others": [
+   {
+    "file": "research/jumbling/restoration/12-low-height/scripts/round22/r22d75_height_first.py",
+    "from_line": 27,
+    "sha256": "4e882d09d8919dc01163c49365bcf61e033561ad789d671d4609e7c16c69209f",
+    "differences": [
+     "@@ -52 +52 @@",
+     "- while stats()[0]>0:",
+     "+ while sum(stats()[:2])>0:",
+     "@@ -58,2 +58,2 @@",
+     "- else:report('HANDOFF_R22D25',steps=steps)",
+     "-except Budget:report('BUDGET',steps=steps,limit_cpu=1000)",
+     "+ else:report('HEIGHT2',steps=steps)",
+     "+except Budget:report('BUDGET',steps=steps,limit_cpu=A.cpu)"
+    ]
+   },
+   {
+    "file": "research/jumbling/restoration/12-low-height/scripts/round22/r22d75_census.py",
+    "from_line": 36,
+    "sha256": "0146f5bd11d842b498a63fb66a3caf3a956b2a9e2e2bb6e318bd95f4ab02de5b",
+    "differences": [
+     "@@ -59 +59 @@",
+     "-except Budget:report('BUDGET',steps=steps,limit_cpu=1000)",
+     "+except Budget:report('BUDGET',steps=steps,limit_cpu=A.cpu)"
+    ]
+   },
+   {
+    "file": "research/jumbling/restoration/12-low-height/scripts/round22/cloud/census-k3000-s7304/r22d75_census_k3000.py",
+    "from_line": 34,
+    "sha256": "9334eabcf02212aee5642238f9d9f23f23c774e4bb77130179c232da96c96541",
+    "differences": [
+     "@@ -59 +59 @@",
+     "-except Budget:report('BUDGET',steps=steps,limit_cpu=1000)",
+     "+except Budget:report('BUDGET',steps=steps,limit_cpu=A.cpu)"
+    ]
+   },
+   {
+    "file": "research/jumbling/restoration/12-low-height/scripts/round22/cloud/census-k3000-s7305/r22d75_census_k3000.py",
+    "from_line": 36,
+    "sha256": "085d6cf497f7e792d9f62ec1fe04bfb3be58d8a1cfc1620c7fba05b8e0de0c0e",
+    "differences": [
+     "@@ -59 +59 @@",
+     "-except Budget:report('BUDGET',steps=steps,limit_cpu=1000)",
+     "+except Budget:report('BUDGET',steps=steps,limit_cpu=A.cpu)"
+    ]
+   },
+   {
+    "file": "research/jumbling/restoration/12-low-height/scripts/round22/cloud/census-k3000-s7306/r22d75_census_k3000.py",
+    "from_line": 32,
+    "sha256": "977d88dfed22c56c0563f40e9a48a0526d00c7524dab3552d46539e7aece0a49",
+    "differences": [
+     "@@ -59 +59 @@",
+     "-except Budget:report('BUDGET',steps=steps,limit_cpu=1000)",
+     "+except Budget:report('BUDGET',steps=steps,limit_cpu=A.cpu)"
+    ]
+   },
+   {
+    "file": "research/jumbling/restoration/12-low-height/scripts/round22/cloud/census-k3000-s7307/r22d75_census_k3000.py",
+    "from_line": 34,
+    "sha256": "ccd314bad0cb0dbc7bcdd277734a1340fcf4fb77627f79b5d49802e5ccb28de7",
+    "differences": [
+     "@@ -59 +59 @@",
+     "-except Budget:report('BUDGET',steps=steps,limit_cpu=1000)",
+     "+except Budget:report('BUDGET',steps=steps,limit_cpu=A.cpu)"
+    ]
+   }
+  ]
+ },
+ "D_sha256": [
+  {
+   "result_line": 22,
+   "file": "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/r22d75_from_snapshot.py",
+   "recorded": "15a6b764b12c493f5f90dd3fb643e79182ddf1775d50f76d53dfa75540584aac",
+   "committed": "15a6b764b12c493f5f90dd3fb643e79182ddf1775d50f76d53dfa75540584aac",
+   "equal": true
+  },
+  {
+   "result_line": 23,
+   "file": "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/h4_unlock.py",
+   "recorded": "12078831f1b41c46b9a9f50a1fa88ddabdcafdbb9b766c1a278a662c0ffc44a7",
+   "committed": "12078831f1b41c46b9a9f50a1fa88ddabdcafdbb9b766c1a278a662c0ffc44a7",
+   "equal": true
+  },
+  {
+   "result_line": 24,
+   "file": "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/two_letter_u.py",
+   "recorded": "ce5fb13584630e8c87d08273eaf41b74b68798a30ae606b1f55dd3da07fd93c9",
+   "committed": "ce5fb13584630e8c87d08273eaf41b74b68798a30ae606b1f55dd3da07fd93c9",
+   "equal": true
+  },
+  {
+   "result_line": 25,
+   "file": "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/end_summary.py",
+   "recorded": "5f0b5b9a752888434cad66105144cea14c5f00213665b5000dd35103a0baeb63",
+   "committed": "5f0b5b9a752888434cad66105144cea14c5f00213665b5000dd35103a0baeb63",
+   "equal": true
+  }
+ ],
+ "seconds": 37.0
+}

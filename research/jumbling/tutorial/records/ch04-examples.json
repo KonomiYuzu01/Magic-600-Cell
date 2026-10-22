@@ -1,0 +1,416 @@
+{
+ "format": "tutorial-ch04-examples/1",
+ "scripts": {
+  "research/jumbling/restoration/12-low-height/scripts/round22/r22d25_search.py": "b2e2fa4ed1c34579589a68c2d7151e8209b60233b2665d2670d6ff7cd07f6c4b",
+  "research/jumbling/restoration/12-low-height/scripts/round22/r22d25_state.py": "ca45c9ba5ba14b10d48d1d2946c1265acdc8f6e609a5ef83737f79fde8201316",
+  "research/jumbling/restoration/12-low-height/scripts/round22/r22d19_rule.py": "587bfc4bc241e78b00d4539a5ff238b00a2741900ffb44a02fb36b7499f044da",
+  "research/jumbling/restoration/13-tutorial-runner/scripts/rules_kernel.py": "da3c855a2176bc1cf7c93a547929a6a65c20ab2bd0d4cfd6da681a63c2c70eae"
+ },
+ "A_z36": {
+  "snapshot": {
+   "digest": "8733a0aafd8e24ea1da990ebab0347074c20b11cf61d9ed04d34d25ef6f67261",
+   "off": 5800,
+   "heights": {
+    "2": 5799,
+    "6": 1
+   },
+   "high_units": [
+    {
+     "first": 58388,
+     "pieces": 1,
+     "height": 6,
+     "branch": 1,
+     "caps_whole": [
+      0,
+      10,
+      12,
+      35,
+      38,
+      45,
+      67,
+      91
+     ]
+    }
+   ],
+   "height2_units": 57,
+   "clean_caps": 556
+  },
+  "cap_12": {
+   "clean": true,
+   "holds_unit_whole": true,
+   "lattice_inside": 0,
+   "other_off_inside": 2702,
+   "other_off_inside_heights": [
+    [
+     2
+    ],
+    [
+     2702
+    ]
+   ]
+  },
+  "caps_0_to_12": {
+   "0": "blocked",
+   "1": "blocked",
+   "2": "target_not_whole",
+   "3": "blocked",
+   "4": "blocked",
+   "5": "blocked",
+   "6": "blocked",
+   "7": "target_not_whole",
+   "8": "blocked",
+   "9": "blocked",
+   "10": "blocked",
+   "11": "target_not_whole",
+   "12": null
+  },
+  "cap_12_items_1_to_14": {
+   "1": {
+    "prune": "retained"
+   },
+   "2": {
+    "prune": "retained"
+   },
+   "3": {
+    "prune": "retained"
+   },
+   "4": {
+    "prune": "retained"
+   },
+   "5": {
+    "prune": "retained"
+   },
+   "6": {
+    "prune": "retained"
+   },
+   "7": {
+    "prune": "retained"
+   },
+   "8": {
+    "prune": "retained"
+   },
+   "9": {
+    "prune": "retained"
+   },
+   "10": {
+    "prune": "retained"
+   },
+   "11": {
+    "prune": "retained"
+   },
+   "12": {
+    "prune": "target_height"
+   },
+   "13": {
+    "prune": "target_height"
+   },
+   "14": {
+    "prune": null,
+    "gate": {
+     "ok": true,
+     "reason": null,
+     "kind": "lowering",
+     "letters": 1,
+     "input_digest": "8733a0aafd8e24ea1da990ebab0347074c20b11cf61d9ed04d34d25ef6f67261",
+     "output_digest": "7cd868f6466953eb6ea1e0d466ed66857d34edaea7dd7c554c1e74975005541b",
+     "off_before": 5800,
+     "off_after": 3098,
+     "unit_on_lattice": 0,
+     "collateral": 0,
+     "others_exact": 3097,
+     "others_landed": 2702,
+     "heights_after": {
+      "2": 3097,
+      "4": 1
+     }
+    }
+   }
+  },
+  "search_step": {
+   "status": "candidate",
+   "reason": null,
+   "ledger": {
+    "F1": {
+     "status": "budget",
+     "tried": 1,
+     "pruned": {
+      "blocked": 531,
+      "target_not_whole": 177,
+      "retained": 11,
+      "target_height": 2
+     },
+     "cursor": {
+      "unit": 58388,
+      "grip": 12,
+      "item": 14
+     }
+    },
+    "F2": {
+     "status": "budget",
+     "tried": 0,
+     "pruned": {},
+     "cursor": {
+      "phase": "not_reached",
+      "state": "8733a0aafd8e24ea1da990ebab0347074c20b11cf61d9ed04d34d25ef6f67261"
+     }
+    },
+    "F3": {
+     "status": "budget",
+     "tried": 0,
+     "pruned": {},
+     "cursor": {
+      "phase": "not_reached",
+      "state": "8733a0aafd8e24ea1da990ebab0347074c20b11cf61d9ed04d34d25ef6f67261"
+     }
+    },
+    "d19": {
+     "status": "not_applicable",
+     "tried": 0,
+     "pruned": {},
+     "cursor": null
+    },
+    "S": {
+     "status": "not_applicable",
+     "tried": 0,
+     "pruned": {},
+     "cursor": null
+    },
+    "ST": {
+     "status": "not_applicable",
+     "tried": 0,
+     "pruned": {},
+     "cursor": null
+    },
+    "T1": {
+     "status": "budget",
+     "tried": 0,
+     "pruned": {},
+     "cursor": {
+      "phase": "not_reached",
+      "state": "8733a0aafd8e24ea1da990ebab0347074c20b11cf61d9ed04d34d25ef6f67261"
+     }
+    }
+   },
+   "family": "F1",
+   "kind": "lowering",
+   "target": [
+    58388
+   ],
+   "params": {
+    "height": 6
+   },
+   "high_exact": false,
+   "word": {
+    "word": [
+     [
+      12,
+      14
+     ]
+    ],
+    "input_digest": "8733a0aafd8e24ea1da990ebab0347074c20b11cf61d9ed04d34d25ef6f67261",
+    "output_digest": "7cd868f6466953eb6ea1e0d466ed66857d34edaea7dd7c554c1e74975005541b"
+   },
+   "gate": {
+    "ok": true,
+    "reason": null,
+    "kind": "lowering",
+    "letters": 1,
+    "input_digest": "8733a0aafd8e24ea1da990ebab0347074c20b11cf61d9ed04d34d25ef6f67261",
+    "output_digest": "7cd868f6466953eb6ea1e0d466ed66857d34edaea7dd7c554c1e74975005541b",
+    "off_before": 5800,
+    "off_after": 3098,
+    "unit_on_lattice": 0,
+    "collateral": 0,
+    "others_exact": 3097,
+    "others_landed": 2702,
+    "heights_after": {
+     "2": 3097,
+     "4": 1
+    }
+   }
+  },
+  "gate_12_45": {
+   "ok": true,
+   "reason": null,
+   "kind": "lowering",
+   "letters": 1,
+   "input_digest": "8733a0aafd8e24ea1da990ebab0347074c20b11cf61d9ed04d34d25ef6f67261",
+   "output_digest": "d79c03679e3b065164219ebd747cc2de89bc5759c081f7b95e9554cbb8c11ea1",
+   "off_before": 5800,
+   "off_after": 3098,
+   "unit_on_lattice": 0,
+   "collateral": 0,
+   "others_exact": 3097,
+   "others_landed": 2702,
+   "heights_after": {
+    "2": 3097,
+    "4": 1
+   },
+   "output_is_END36": true
+  }
+ },
+ "B_after_f1": {
+  "snapshot": {
+   "digest": "7cd868f6466953eb6ea1e0d466ed66857d34edaea7dd7c554c1e74975005541b",
+   "off": 3098,
+   "heights": {
+    "2": 3097,
+    "4": 1
+   },
+   "high_units": [
+    {
+     "first": 58388,
+     "pieces": 1,
+     "height": 4,
+     "branch": 4,
+     "caps_whole": [
+      12,
+      27,
+      35,
+      43,
+      72,
+      75,
+      122,
+      137
+     ]
+    }
+   ],
+   "height2_units": 29,
+   "clean_caps": 573
+  },
+  "clock_seconds": 60.0,
+  "search_step": {
+   "status": "budget",
+   "reason": null,
+   "ledger": {
+    "F1": {
+     "status": "not_applicable",
+     "tried": 0,
+     "pruned": {},
+     "cursor": null
+    },
+    "F2": {
+     "status": "not_applicable",
+     "tried": 0,
+     "pruned": {},
+     "cursor": null
+    },
+    "F3": {
+     "status": "not_applicable",
+     "tried": 0,
+     "pruned": {},
+     "cursor": null
+    },
+    "d19": {
+     "status": "budget",
+     "tried": 0,
+     "pruned": {},
+     "cursor": {
+      "adapter": "d19",
+      "state": "7cd868f6466953eb6ea1e0d466ed66857d34edaea7dd7c554c1e74975005541b"
+     }
+    },
+    "S": {
+     "status": "budget",
+     "tried": 0,
+     "pruned": {},
+     "cursor": {
+      "phase": "not_reached",
+      "state": "7cd868f6466953eb6ea1e0d466ed66857d34edaea7dd7c554c1e74975005541b"
+     }
+    },
+    "ST": {
+     "status": "budget",
+     "tried": 0,
+     "pruned": {},
+     "cursor": {
+      "phase": "not_reached",
+      "state": "7cd868f6466953eb6ea1e0d466ed66857d34edaea7dd7c554c1e74975005541b"
+     }
+    },
+    "T1": {
+     "status": "budget",
+     "tried": 0,
+     "pruned": {},
+     "cursor": {
+      "phase": "not_reached",
+      "state": "7cd868f6466953eb6ea1e0d466ed66857d34edaea7dd7c554c1e74975005541b"
+     }
+    }
+   }
+  },
+  "plugin_stop_family": "d19",
+  "elapsed_seconds": 60.0
+ },
+ "C_tables": {
+  "inverse_items": [
+   0,
+   1,
+   5,
+   9,
+   8,
+   2,
+   7,
+   6,
+   4,
+   3,
+   10,
+   11,
+   45,
+   47,
+   14,
+   44,
+   51,
+   48,
+   49,
+   43,
+   50,
+   21,
+   46,
+   23,
+   54,
+   25,
+   58,
+   35,
+   40,
+   59,
+   30,
+   42,
+   32,
+   39,
+   56,
+   27,
+   52,
+   37,
+   38,
+   33,
+   28,
+   41,
+   31,
+   19,
+   15,
+   12,
+   22,
+   13,
+   17,
+   18,
+   20,
+   16,
+   36,
+   53,
+   24,
+   55,
+   34,
+   57,
+   26,
+   29
+  ],
+  "home_chambers_per_cap": {
+   "caps": 600,
+   "least": 3097,
+   "largest": 3097,
+   "chambers": 177120
+  }
+ },
+ "seconds": 86.4
+}
