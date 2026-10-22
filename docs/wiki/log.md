@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-22] decision | The DT-M1 batch and a hold on design
+The owner chose every recommended option of DT-M1, for now, keeping each question's other options on record as alternatives, and put the design line and the round table on hold after their current stage ([decision](decisions/owner-decisions-2026-10-22-dt-m1.md)); no further design-table topic opens until the owner resumes it.
+
 ## [2026-10-22] decision | Jumbling records from draft #112 on main
 Under Q1 of the 22 October answers, six decision records came to `main` from #112's branch ([#112 merge rule](decisions/owner-decisions-2026-10-17-jumbling-pr.md), [repair list](decisions/owner-decisions-2026-10-17-repair-pairs.md), [B′(h) goal](decisions/owner-decisions-2026-10-18-bprime-goal.md), [machine tutorial](decisions/owner-decisions-2026-10-18-machine-tutorial.md), [tutorial acceptance](decisions/owner-decisions-2026-10-20-tutorial-acceptance.md), [research stop](decisions/owner-decisions-2026-10-20-research-stop.md)), with the handoff pages, the requirements draft's repair-list exception and the briefing's jumbling line; #112 stays a draft. The pages are unchanged except two links to a branch-only research page and a dated note on the #112 merge rule.
 

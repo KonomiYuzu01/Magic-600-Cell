@@ -1,6 +1,6 @@
 # DT-M1: Command model and keyboard model
 
-Status: **settled; waiting for the owner's batch** (see the [outcome](#outcome) at the end). Opened on 22 October 2026 by the main session under the [round protocol](../README.md), as the second design-table topic of the [re-plan](../../replan-2026-10-22.md) (section 4). The card limits apply from this topic on: at most six cards per role in round 1, and at most four in round 2, each answering other cards by ID (owner, 22 October 2026: [decision](../../../../wiki/decisions/owner-decisions-2026-10-22.md)).
+Status: **settled with the owner, for now.** On 22 October 2026 the owner chose every recommended option and kept the other options of each question on record as alternatives ([owner answers](#owner-answers-22-october-2026), at the end). The round table and the design line are on hold after this topic. Opened on 22 October 2026 by the main session under the [round protocol](../README.md), as the second design-table topic of the [re-plan](../../replan-2026-10-22.md) (section 4). The card limits apply from this topic on: at most six cards per role in round 1, and at most four in round 2, each answering other cards by ID (owner, 22 October 2026: [decision](../../../../wiki/decisions/owner-decisions-2026-10-22.md)).
 
 ## Question
 
@@ -964,3 +964,25 @@ Each question offers two or three options. "Recommended" marks the option that t
 - G6 takes the keyboard model and the key letters; G5 takes the motion rows if Q10 adds them.
 - The terms go to DH-09.
 - No handoff row (H-01 to H-10) changes unless Q10 adds rows to H-03; XM6 joins H-06 and H-09.
+
+## Owner answers (22 October 2026)
+
+The owner chose every recommended option, for now, and asked that the other options of every question stay on record as alternatives ([decision](../../../../wiki/decisions/owner-decisions-2026-10-22-dt-m1.md)). The owner may revisit any answer; until then the alternatives below are kept, not discarded. The options that the outcome lists as "not offered" stay out: the filter removed them, not the owner.
+
+| Question | Chosen | Alternatives kept |
+| --- | --- | --- |
+| Q1, the keyboard model (K1) | (a) the grip-and-twist block bound by position, one fixed map of chords for the frequent commands, and prefix groups with tips, all under the palette | (b) the block and the chords, with the palette alone for every other command; (c) either of these with 0.4's switched key sets, the active set always shown and stored in each binding |
+| Q2, binding the other commands (K5) | (b) by position, except undo and redo, which keep their office-software characters, with a conflict check whenever the layout changes | (a) every other key by position; (c) every mnemonic chord and prefix second key by character, with the conflict check against each layout |
+| Q3, the grip keys after a rebind (K2) | (a) keys relative to the piece: M9's transported slot order, each slot with its transported frame | (b) keys that stick to their caps; (c) hosting cells first, then ascending cap ID, recomputed at each rebind |
+| Q4, undo (C5) | (a) one key with a durable action order; an undo that another action has superseded is refused as stale | (b) two keys, one per class |
+| Q5, a commit or undo while a job runs (C5) | (a) it goes ahead and cancels the jobs that read the replaced revision; file jobs finish | (b) a commit other than undo is refused as busy, while undo goes ahead |
+| Q6, a commit typed while another is in flight (C5) | (a) refused as busy and shown in place | (b) one ordered queue under E11's conditions, which reopens U5-011, U6-013/2 and U4-061 |
+| Q7, typing the 48 jumble twists (C6) | (a) four seat keys, pending XM1 | (b) axis then angle through a prefix group; (c) no Jumble keys: the drag and the palette |
+| Q8, messages for refused key presses (C3) | (a) the first refusals of each category show their message in place | (b) the message only on request |
+| Q9, the key scale (K3) | (a) no key numbers: keys open with the learning path's steps | (b) a separate numbered scale under a word of its own; (c) keys keep L0 to L6, and the glossary levels and the reward ladder are renamed |
+| Q10, motion for the new changes (A3) | (a) H-03 gains rows for a draft step, a preview scrub, an operation commit and a key opening or remap | (b) these four changes do not move in 1.0 |
+
+What follows from the answers:
+
+- **Engineering continues.** EN4 carries fix-first items 2 to 4 and the rules settled here into the final command table. ENG-0J's line 145 changes with Q7 (a), and EN3 names the menu-twist row and the seat keys. EN2 runs XM1; if XM1 finds that the closing set is often a left coset, Q7 goes back to the owner.
+- **The design side waits.** The round table and the design line are on hold after this topic (owner, 22 October 2026). The parts that belong to them wait until the owner resumes them: G6's key letters, G5's timing for the new H-03 rows, and the DH-09 terms.
