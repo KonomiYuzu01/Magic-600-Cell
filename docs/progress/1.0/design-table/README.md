@@ -9,14 +9,16 @@ The design table is how the four roles of charter section 5 work on one design q
 Subagents cannot message each other directly. The main session carries the exchange through one round record per topic, and every role reads the whole record before it answers.
 
 1. **Open.** The main session writes `topics/<topic>.md` with the question, the owner's input, the relevant handoff (H-01 to H-05) and what is out of scope.
-2. **Round 1 (parallel).** The main session runs all four roles concurrently on the same record. Each returns comments in the card format (`id`, `on`, `kind`, `claim`, `evidence`, `needs_owner`). The main session appends them unchanged under `## Round 1`.
-3. **Round 2 (cross-examination).** All four roles run again on the updated record and answer each other's comments by ID: support, object or propose an alternative. The main session appends the replies under `## Round 2`.
+2. **Round 1 (parallel).** The main session runs all four roles concurrently on the same record. Each returns at most six comments in the card format (`id`, `on`, `kind`, `claim`, `evidence`, `needs_owner`). The main session appends them unchanged under `## Round 1`.
+3. **Round 2 (cross-examination).** All four roles run again on the updated record and answer each other's comments by ID: support, object or propose an alternative. Each role returns at most four cards, and each card answers other cards by ID. The main session appends the replies under `## Round 2`.
 4. **Settle.** The main session writes `## Outcome`, settling the round in this order:
    - Filter: an option that breaks the mathematical contract, protection, the human-solve boundary, the renderer gate, data safety or an owner design requirement is out.
    - A demonstrated engineering failure that affects the work or correctness is fixed first.
    - Among the admissible options, the owner's 8B order applies: core workflow (designer), then legibility and delight (artist), then cost beyond the gates (engineer), then notation preference (mathematician).
    - An unmeasured objection becomes an experiment (Look Lab, Taste Lab or the living test), not a veto.
 5. **Owner.** Items marked `needs_owner`, and all taste, scope and UX choices, go to the owner once per topic, with two or three options in a few lines. The owner's answer is recorded in the outcome.
+
+The card limits apply from the second topic on (owner, 22 October 2026: [decision](../../../wiki/decisions/owner-decisions-2026-10-22.md)).
 
 Two rounds per topic. A third round runs only when round 2 produced new evidence; two rounds without new evidence end in an experiment, as `AGENTS.md` requires.
 

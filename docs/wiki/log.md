@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-22] decision | Re-plan answers and the DT-J1 batch
+The owner accepted every recommended option for now: schedule option B with the 2.5 freeze at about stage day 34, the branch-only jumbling records to main, ENG-0J started, W-J in the renderer selection, the eleven DT-J1 answers and design-table card limits ([decision](decisions/owner-decisions-2026-10-22.md)).
+
 ## [2026-10-20] decision | Wrapper calls disable Codex plugins and connectors (owner exception)
 Every wrapper call now passes `--disable` for `plugins`, `apps`, `remote_plugin` and `skill_mcp_dependency_install`, so no plugin or connector MCP server starts in a wrapper call ([codex-mcp-isolation](evidence/codex-mcp-isolation.md)). The owner waived the Codex plan check and review for this change; the planned pre-call check was not implemented.
 
