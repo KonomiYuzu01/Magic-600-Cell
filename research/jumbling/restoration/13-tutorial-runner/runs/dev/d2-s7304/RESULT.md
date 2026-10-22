@@ -105,7 +105,13 @@ Exit code 0, about a minute. Final row: `pass` true, `verdict` `error`, `result`
 
 A first start (about 07:13 UTC, after the component runner had finished) was killed about ten minutes in by a
 container restart, during its first bulk step; its partial output was discarded. Restarted at 07:23 UTC in fresh
-`--out` and `--cache` directories. Running. Like the component run it uses the default
+`--out` and `--cache` directories. Running.
+
+Progress note, 09:23 UTC (2 hours in): the runner is in the bulk phase. The record written so far (`run.json`,
+interim `result` `budget`) has 14 bulk steps, all rule `conj` of 3 letters each, taking 746.1, 306.7, 689.3, 343.6,
+457.0, 35.2, 365.1, 580.5, 638.6, 298.4, 638.1, 611.3, 608.2 and 585.3 s. These are the first bulk `conj` steps in a
+runner run (README section 6 says none had been written before). `bulk-progress.json` is
+`{"step_started": 6962.024108378}`; `logs/bulk.log` and the runner's stdout are still empty. Like the component run it uses the default
 `rule_seconds` of 3,600 s, so its tail may meet the same `units` time-out.
 
 ## Next step
