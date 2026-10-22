@@ -196,10 +196,15 @@ internal sealed partial class LookViewport : Node3D
             velocity *= (float)(1 - response);
         }
         Vector2 size = GetViewport().GetVisibleRect().Size;
-        Material.SetShaderParameter("aspect", size.Y > 0 ? size.X / size.Y : 1);
+        PushCamera(size.Y > 0 ? size.X / size.Y : 1);
+        FrameStepped?.Invoke(delta);
+    }
+
+    internal void PushCamera(double aspect)
+    {
+        Material.SetShaderParameter("aspect", (float)aspect);
         Material.SetShaderParameter("q", Matrix(Q));
         Material.SetShaderParameter("spin", Matrix(Spin));
-        FrameStepped?.Invoke(delta);
     }
 
     public void Drag(Vector2 relative)

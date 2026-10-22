@@ -1,0 +1,33 @@
+{
+  "format": "magic600-look-shot",
+  "version": 1,
+  "id": "g2",
+  "name": "G2 shot: slow drift, one turn and its inverse",
+  "size": [
+    1600,
+    1000
+  ],
+  "seconds": 10,
+  "heroFrame": 60,
+  "ease": [
+    0.3333333333333333,
+    0.3333333333333333
+  ],
+  "camera": [
+    {
+      "seconds": 10,
+      "dragX": 0.5,
+      "dragY": 0.15
+    }
+  ],
+  "turns": [
+    {
+      "start": 2,
+      "seconds": 1
+    },
+    {
+      "start": 6,
+      "seconds": 1
+    }
+  ]
+}
