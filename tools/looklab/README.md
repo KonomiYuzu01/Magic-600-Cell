@@ -869,3 +869,51 @@ new result is `LOOKLAB_LAYOUT_GEOMETRY_PASS cases=6 samples=1800 target=RGBA32F`
 removing the production blend statement must fail as `layout-no-blend`.
 The integrator runs `--godot-gpu` and `--stills` after integration. Headless
 checks provide no rendered, window-input or performance evidence.
+
+## The G2 shot (LL8)
+
+A shot is a fixed camera drag path and turn schedule, stored in format
+`magic600-look-shot`. The committed `data/shots/g2.json` is ten seconds at
+24 fps and 1600 x 1000: a slow drift, one turn and its inverse, with frame 60
+as the hero still. It is called a shot because a preset's `scene` already
+means a scene look. Every preset renders the same 240 states. The shot sets
+all timing, including easing; preset `turnMs`, `easeA`, `easeB`, `inertia`,
+`cameraDamping` and `settle` do not apply.
+
+```text
+python tools/looklab/check.py --shot [preset ...]
+```
+
+Supply preset stems such as `default g1-hopf-rings`, or omit them to render
+every preset in ordinal order. This requires a real graphics window. Each
+run writes one `<stem>.png` hero still per preset and `manifest.json` under
+`work/loop-memory/looklab/shots/<run>/`. The manifest format is
+`magic600-look-shot-run`; it records input and still digests, the track digest,
+capture waits, tool versions and source identity: commit, clean flag and a
+digest of the staged app/core sources. It names the graphics adapter and
+stays private. Dirty sources produce a draft run. Clean, committed Look Lab
+sources produce a formal run: once every preset has passed, its stills are
+copied byte for byte to `work/gallery/looklab/shots/<run>/`; the manifest is
+not mirrored.
+
+After the sequence, every preset re-captures the hero, first and last frames
+with eight frame waits, comparing their bytes with the sequence captures
+(three waits each). A mismatch means stale readback or history-dependent
+effects. The hero image must also differ from the first and last images;
+otherwise the readback is frozen or the turn does not show in that look. The
+first and last images may match: the ring sheet ignores the camera, and the
+shot starts and ends at rest with the same labels. The shot must therefore
+put its hero frame inside a turn, at an angle that differs from the first and
+last frames. Either failure stops the run before its manifest is written.
+
+`check.py --godot` adds `ll8-shot`, a synthetic headless check of camera and
+turn bindings, capture order and waits, hero pixels, gallery copies and every
+manifest field. Its three injected faults cover a camera never pushed to the
+material, stale capture and frozen capture. `check.py --godot-gpu` adds
+`ll8-capture`: 48 encoded colours through production readback, with delayed
+and frozen faults, then the shot's spot check with ambient occlusion and
+depth of field enabled. Headless checks provide no GPU evidence; the
+integrator runs the GPU probe and `--shot` after integration.
+
+Clips are not made until the owner approves FFmpeg. Renders and manifests
+stay private and are never committed.

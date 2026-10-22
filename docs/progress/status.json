@@ -37,16 +37,18 @@
      ]},
     {"id": "2.3", "track": "stage-2", "title": "Redesign", "status": "in_progress", "acceptance": null, "acceptance_source": null, "blocker": null,
      "items": [
-      {"id": "command-model", "title": "Command model", "weight": 1, "done": false, "evidence": null},
-      {"id": "keyboard-model", "title": "Keyboard model", "weight": 1, "done": false, "evidence": null},
+      {"id": "command-model", "title": "Command model", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/120"},
+      {"id": "keyboard-model", "title": "Keyboard model", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/120"},
       {"id": "state-charts", "title": "State charts", "weight": 1, "done": false, "evidence": null},
       {"id": "hardest-screens", "title": "The three hardest screens", "weight": 1, "done": false, "evidence": null},
       {"id": "design-tokens", "title": "Design tokens", "weight": 1, "done": false, "evidence": null},
-      {"id": "g1", "title": "G1 structure catalogue: visual modes kept as presets", "weight": 1, "done": false, "evidence": null},
+      {"id": "g1", "title": "G1 structure catalogue: visual modes kept as presets", "weight": 1, "done": true, "evidence": "docs/wiki/decisions/owner-decisions-2026-10-22-g1.md"},
       {"id": "g2", "title": "G2 metaphor decision: manifesto signed", "weight": 1, "done": false, "evidence": null},
       {"id": "g3", "title": "G3 preference search: finalist presets", "weight": 1, "done": false, "evidence": null},
       {"id": "g4", "title": "G4 sticker palette frozen", "weight": 1, "done": false, "evidence": null},
-      {"id": "g5", "title": "G5 key moments: motion parameter table", "weight": 1, "done": false, "evidence": null}
+      {"id": "g5", "title": "G5 key moments: motion parameter table", "weight": 1, "done": false, "evidence": null},
+      {"id": "g1-exit", "title": "G1 exit: a chosen layout as the first layout specification (H-04), with the first visual feature list (H-01)", "weight": 1, "done": false, "evidence": null},
+      {"id": "g2-shot", "title": "G2 shot: one fixed shot rendered as a hero still per preset (LL8; clips wait for FFmpeg)", "weight": 1, "done": true, "evidence": "f2dc894"}
      ]},
     {"id": "2.4", "track": "stage-2", "title": "Experiments (12-day renderer window, days 3-14, day-7 go/no-go)", "status": "in_progress", "acceptance": "A renderer is selected only if it renders all 259,800 sticker slots at full detail with the most complex animation at an average of at least 30 fps and a 99th-percentile frame time of at most 33.3 ms on the owner's machine.", "acceptance_source": "docs/wiki/decisions/renderer-candidates.md", "blocker": null,
      "items": [
@@ -63,7 +65,9 @@
       {"id": "l2-binding", "title": "Level 2 build identity bound to the loaded files (L2-V-002 fix)", "weight": 1, "done": false, "evidence": null},
       {"id": "h09", "title": "H-09 renderer constraints delivered", "weight": 1, "done": true, "evidence": "0d3def4"},
       {"id": "wj-gpu", "title": "W-J GPU checks and gate runs (E-2.4-0J items 1-6; overlay costs open)", "weight": 1, "done": true, "evidence": "docs/wiki/evidence/w-j-probe-results.md"},
-      {"id": "anchor-w3", "title": "W3 re-accepted after the anchor change (S-B, Qt, Godot, W-J)", "weight": 1, "done": true, "evidence": "4d213d1"}
+      {"id": "anchor-w3", "title": "W3 re-accepted after the anchor change (S-B, Qt, Godot, W-J)", "weight": 1, "done": true, "evidence": "4d213d1"},
+      {"id": "wj-deep-export", "title": "W-J deep state exported in the render format (handoff RH-23)", "weight": 1, "done": true, "evidence": "docs/wiki/evidence/w-j-probe-results.md"},
+      {"id": "wj-deep-export-h4", "title": "W-J height-4 state bbef1c8e exported in the render format (re-plan R3)", "weight": 1, "done": true, "evidence": "docs/wiki/evidence/w-j-probe-results.md"}
      ]},
     {"id": "2.5", "track": "stage-2", "title": "Freeze", "status": "not_started", "acceptance": "Stage 2 closes with the 2.5 freeze gates; target: working day 20, counting only the owner's working days; exit days are targets and no gate is relaxed.", "acceptance_source": "docs/wiki/decisions/owner-decisions-2026-10-02.md", "blocker": null,
      "items": [

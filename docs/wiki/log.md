@@ -2,6 +2,18 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-22] decision | G1 keeps every structure mode and layout
+The owner kept all seven G1 structure modes and all four greybox layouts in the Look Lab and chose no single layout, so the G1 exit's first layout specification (H-04) and visual feature list (H-01) stay open; Look Lab work continues ([decision](decisions/owner-decisions-2026-10-22-g1.md)).
+
+## [2026-10-22] update | W-J: the height-4 state bbef1c8e in the render format
+The export tool now also replays a census record's descent and a committed list of letters, checked against known digests, and it exported the jumbling line's height-4 state `bbef1c8e…` (3000 twists of seed 7302, 313 descent moves, 12 letters): 2,798 pose-table entries, 936 pieces at height 4 ([w-j-probe-results](evidence/w-j-probe-results.md)). With the 3000-twist scramble this gives both states that re-plan item R3 asks for; no W-J run on either has been made.
+
+## [2026-10-22] update | W-J: a deep I_a state in the render format
+The renderer line rebuilt the I_a census scramble of seed 7302 at 3000 twists, matched it against its census record and exported it in the render format: 2,684 pose-table entries, against at most 1,591 in the W-J fixtures ([w-j-probe-results](evidence/w-j-probe-results.md)). No W-J run on a deep state has been made; the probe's README and protocol now also record that the GPU lattice check passed (handoff RO-15).
+
+## [2026-10-22] decision | The DT-M1 batch and a hold on design
+The owner chose every recommended option of DT-M1, for now, keeping each question's other options on record as alternatives, and put the design line and the round table on hold after their current stage ([decision](decisions/owner-decisions-2026-10-22-dt-m1.md)); no further design-table topic opens until the owner resumes it.
+
 ## [2026-10-22] decision | NumPy for EN2's J1 tests in the cloud session
 The owner allowed a one-off install of NumPy 2.3.5 from the hash-pinned `tools/python/engine.txt` into a virtual environment outside the repository, so that EN2's J1 tests run in the cloud session ([decision](decisions/owner-decisions-2026-10-22.md)); the allowlist, the lockfile and the installer are unchanged.
 
