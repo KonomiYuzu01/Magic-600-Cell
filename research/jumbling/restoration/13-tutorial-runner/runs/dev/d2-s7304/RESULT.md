@@ -103,7 +103,9 @@ Exit code 0, about a minute. Final row: `pass` true, `verdict` `error`, `result`
 
     python3 -I -B -u $S/runner.py --table <dir>/tables/s7304-stop.json --out <dir>/full --cache <dir>/cache-f --height-seconds 12000 --height-cpu 12000 --pair-shards 3 --kernel-seconds 3600 --bulk-seconds 21600 --bulk-step-seconds 21600
 
-Started about 07:13 UTC, after the component runner had finished. Running. Like the component run it uses the default
+A first start (about 07:13 UTC, after the component runner had finished) was killed about ten minutes in by a
+container restart, during its first bulk step; its partial output was discarded. Restarted at 07:23 UTC in fresh
+`--out` and `--cache` directories. Running. Like the component run it uses the default
 `rule_seconds` of 3,600 s, so its tail may meet the same `units` time-out.
 
 ## Next step
