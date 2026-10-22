@@ -1,6 +1,6 @@
 # D2, seed 7303 from its 3000-twist scramble (development line d2-s7303)
 
-Status: **in progress** (progress note, 22 October 2026, 09:10 UTC). The first run was killed by a container restart;
+Status: **in progress** (progress note, 22 October 2026, 11:10 UTC). The first run was killed by a container restart;
 a second run of the same command started at 07:08 UTC. No check has run yet.
 
 ## Question
@@ -57,6 +57,10 @@ Progress at 09:10 UTC: 25 bulk steps (24 `conj`, 1 `cover`), 73 twists; after st
 `{"step_started": 7298.523741719}`; `logs/bulk.log` is empty. All 25 steps are identical to run 1's first 25 (rule,
 word sha256 and digest after each step). Run 2 reaches each step later than run 1 did, so its bulk clock will end
 after fewer steps.
+
+Progress at 11:10 UTC: 75 bulk steps (70 `conj`, 5 `cover`), 215 twists; after step 74 the state is `89e3f27d…`,
+99,063 off, N 115,820, heights {2: 97,798, 4: 1,176, 6: 89}. `bulk-progress.json`:
+`{"step_started": 14364.328920746}`; `logs/bulk.log` is empty. All 75 steps are identical to run 1's first 75.
 
 ## Next step
 
