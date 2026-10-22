@@ -159,7 +159,7 @@ Source: [jumbling plan](../../jumbling-plan.md) section 3b, made standalone at m
 | 4 | W-J fixtures (`research/jumbling/fixtures/wj.py`) | all three fixtures replay with J1 and match every reference (`wj.py check`, 9 October 2026; cloud timings only) |
 | 5 | Engineering handoff of 18 and 21 October | 30 EH items and 24 EO items; nothing of ENG-0J started (EH-21) |
 | 6 | DT-J1 and the owner's answers (22 October 2026) | the aids settled; O1 to O11 answered with the recommended options |
-| 7 | Revision 2 with amendment A5 | this revision; Astra plan check in two shards: no blocker, two majors and four minors, all adopted and fixed here |
+| 7 | Revision 2 with amendment A5 | this revision; Astra plan check in two shards: no blocker, two majors and four minors, all adopted and fixed here; the scoped verification of the majors passed, and A5 entered the state contract |
 | — | Product engine, store, command rows, harness | not started |
 
 ## 6. Constraints and owned files
@@ -186,7 +186,7 @@ Source: [jumbling plan](../../jumbling-plan.md) section 3b, made standalone at m
 
 ## 8. Proposed amendment A5: label checkpoints and the end of a solve
 
-Proposed by the integrator on 22 October 2026 for the owner's answer O8 (1). After the Astra plan check of this revision it enters section 7 of the state contract as written here, with the plan check's fixes; where it differs from section 5, it holds.
+Proposed by the integrator on 22 October 2026 for the owner's answer O8 (1). After the Astra plan check of this revision it enters section 7 of the state contract as written here, with the plan check's fixes; where it differs from section 5, it holds. It entered on 22 October 2026, after the plan check and the scoped verification of its majors (contract revision `state-contract 2026-10-22 A1-A5`).
 
 ### A5 Label checkpoints
 - **ν.** On a lattice configuration X, ν(X) is the invariant of the labelled state π(X) of A3: 35 sign bits b0 to b34, 8 frame bits f0, f3, f6, f8, f11, f22, f25 and f32, and two values modulo 5, C5_17 and C5_28 (`research/jumbling/manual/04-lattice.md` section 4.3; reference `research/jumbling/restoration/03-retained-group-and-lattice-restorer/scripts/nucoords.py`). ν is defined on lattice configurations only.
