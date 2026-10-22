@@ -214,6 +214,12 @@ independently of J1's poses.
 - **Identities missing from slice 3's results**: a covers result has no
   contract revision, and a repair-list result no library digest. Asking for
   one is a mismatch (`RecordMismatch` with the recorded value `None`).
+- **The I_a@40 stop's "20 caps that hold off-grip seams"**
+  (`research/jumbling/theory/open-problems.md`, R1 in detail) is not
+  reproduced. By the reading of `off_grip_seams`, 39 caps hold an off-grip
+  cell and 25 hold a whole group, and no count of that reading is 20; the
+  experiment script behind the prose was not kept. The other prose values at
+  that stop agree ([results](results/summary.md)).
 
 ## Inputs outside this repository
 
