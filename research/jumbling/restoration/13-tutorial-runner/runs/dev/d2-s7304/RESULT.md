@@ -1,6 +1,20 @@
 # Development line d2-s7304: D2, the 3000-twist stop of seed 7304
 
-Status: in progress (progress note, 22 October 2026).
+Status: stopped, 22 October 2026. Steps 1 and 2 are done and checked; step 3 (the full run) did not finish: container
+restarts killed all three starts (see "Step 3" and "Next step").
+
+## Summary
+
+| Item | Value |
+| --- | --- |
+| Start table | `7e2304b2…`, 95,569 off, (n2, n4, n6) = (94,384, 1,185, 0): as required |
+| Component run | `result` `error` ("rule subprocess exceeded rule_seconds": the tail's `units` subprocess ran past 3,600 s); `acceptance.verdict` `error`; `config.component` `bulk_budget`; 6 steps, 6 twists |
+| Component run, height | `r22d75` 6 one-letter steps to `ac127dc3…`, (95,674, 797, 0), 96,471 off, then stuck: matches stage 12 exactly; `r22d81` `not_applicable`; `h4` `stuck` (`pair_exhausted`) |
+| Component run, high | `stuck` (`kernel_exhausted`, `r22d25-cat/1`), as expected |
+| Component check | `check_run.py` passes: verdict `error`, end digest `ac127dc3…`, 0 unchecked contracts |
+| Full run | not finished: three starts killed by container restarts (about 10 min, 2 h 20 min and 2 h 33 min in), all in the bulk; every bulk step written was `conj` of 3 letters (16 steps in the longest) |
+| Full check | not run (no finished record) |
+
 
 ## Question
 
@@ -125,10 +139,31 @@ without one.
 Progress note, 11:44 UTC (third start, 2 hours in): bulk phase, 11 steps, all `conj` of 3 letters (33 letters),
 taking 1087, 425, 998, 458, 628, 48, 493, 814, 806, 406 and 858 s (rounded). The first ten have the same rule and
 length as the second start's; their times are about 1.4 times longer on this machine. `bulk-progress.json`
-`{"step_started": 7098.542108416}`; the runner's stdout is still empty. Like the component run it uses the default
-`rule_seconds` of 3,600 s, so its tail may meet the same `units` time-out.
+`{"step_started": 7098.542108416}`; the runner's stdout is still empty.
+
+The third start was killed by a fourth container restart at about 12:15 UTC, about 2 h 33 min in, during its 14th
+bulk step. It had 13 steps, all `conj` of 3 letters (steps 11 and 12: 836 and 727 s); `bulk-progress.json`
+`{"step_started": 8662.548048537}`. Its partial output is not committed: it holds fewer steps than `full-killed-2/`,
+over the same rules and lengths. Container restarts came at about 04:25, 07:20, 09:43 and 12:15 UTC, 2 to 3 hours
+apart, so the full run (a 21,600 s bulk clock plus the later phases) was not started a fourth time.
+
+Like the component run, the full run uses the default `rule_seconds` of 3,600 s, so its tail may meet the same
+`units` time-out if the bulk ends.
+
+The 16 bulk `conj` steps of `full-killed-2/` give no bulk end state, so nothing about the hand-over after the bulk
+is known from this line.
 
 ## Next step
 
-Wait for
-the full run (`runner-f.rc`), copy it to `full/`, run `check_run.py` on it.
+1. Run step 3 on a machine that stays up for at least eight hours: rebuild the start table with the step 1 command
+   (about 3,600 s here), then run the step 3 command into fresh `--out` and `--cache` directories, copy the output to
+   `full/`, and run `check_run.py <dir>/full --out <dir>/check-f/check.jsonl`.
+2. Whether to repeat the component run, or run the full run, with a larger `--rule-seconds` so that the tail's
+   `units` subprocess can finish is the integrator's decision; this line kept the commands as given.
+
+## Not run or not finished
+
+- Step 3, the full run, and its check (above).
+- The tail and lattice phases from this stop: the component run's tail ended in the `units` time-out.
+- Windows, DirectX, the native host, input, long-session and performance checks: none. Only headless Linux checks
+  ran. Times are cloud timings of research code on a shared headless Linux machine, not performance evidence.
