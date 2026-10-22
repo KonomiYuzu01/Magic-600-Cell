@@ -36,3 +36,10 @@ The cache directory is outside the repository. Started at 13:40 UTC. Bulk compar
   before and after digests and word hashes, and recorded `resumes: [{at_step: 25, seconds: 508.3, source: 4024027
   (dirty: the untracked run files)}]`. This differs from step 4 of the task (restore a checkpoint into an empty
   `out/`) only because no checkpoint existed. The resume's own checks are the same.
+- 16:49 UTC: **the container had restarted again** (uptime 0 min, no processes, no `runner.rc`). The local record's
+  last save was at 15:49 UTC: 29 bulk steps, 787 s of runner time. The branch held one checkpoint (`773deea`, step
+  25). Following step 4, I moved the surviving `out/` out of the repository, restored the checkpoint into an empty
+  `out/` (`checkpoint.py --restore`, exit 0, 25 steps) and started the identical runner with `--resume`, plus
+  `checkpoint.py` beside it. Steps 25 to 28 are run again. Both restarts came soon after this session went idle (the
+  last saves were at 13:49 and 15:49 UTC), so the container is probably reclaimed when the session is idle, not
+  restarted at random. From now on this session keeps a monitor on the run so that it stays active.
