@@ -12,6 +12,9 @@ const DTYPES = { '<f4': Float32Array, '<i4': Int32Array, '<u4': Uint32Array };
 const PARAMETERS = new URLSearchParams(location.search);
 const B64 = PARAMETERS.has('b64');
 const SHOT = PARAMETERS.has('shot');
+// Cell-centre angles: the 56 vertex-touching neighbours end at 44.4775 degrees;
+// the next shell starts at 49.1176 degrees. 45 degrees separates them for every cap.
+const NEAR_GHOST_ANGLE = Math.PI / 4;
 let shot = null, shotQ = null, ghostMesh = null;
 const app = { ready: false, errors: [], model: null, playing: false, view: { menu: 'S4', state: 'end', t: 0 } };
 window.fullViewer = app;
@@ -231,7 +234,9 @@ function shotParameters() {
   };
   const cap = PARAMETERS.get('cap');
   requireValue(cap === null || (/^(0|[1-9][0-9]*)$/.test(cap) && Number(cap) < 600), 'Invalid shot cap (0..599)');
-  return { name, view: choice('view', 'global', ['global', 'local']), proj: choice('proj', 'persp', ['persp', 'stereo']),
+  const view = choice('view', 'global', ['global', 'local']);
+  return { name, view, proj: choice('proj', 'persp', ['persp', 'stereo']),
+    ghost: choice('ghost', view === 'local' ? 'near' : 'all', ['near', 'all', 'none']),
     emph: choice('emph', 'moved', ['moved', 'off', 'none']), cap: cap === null ? null : Number(cap),
     w: size('w', 1600), h: size('h', 1000) };
 }
@@ -294,6 +299,10 @@ uniform bool uProbe;
 out vec3 vProjected;
 out vec4 vWorld, vClip;
 flat out int vClass, vOff, vFocus, vMoved;
+#ifdef TUTORIAL_NEAR_GHOSTS
+uniform float uGhostCosine;
+flat out int vGhostNear;
+#endif
 ivec2 address(int i) { return ivec2(i % uWidth, i / uWidth); }
 vec4 vectorAt(sampler2D t, int i) { return texelFetch(t, address(i), 0); }
 int intAt(isampler2D t, int i) { return texelFetch(t, address(i), 0).r; }
@@ -315,6 +324,9 @@ vec3 project4(vec4 x) {
 void main() {
   int piece;
   vec4 home;
+#ifdef TUTORIAL_NEAR_GHOSTS
+  vec4 stickerHome = vec4(0.0);
+#endif
   vClass = gl_InstanceID;
   if (uProbe) {
     piece = intAt(uProbePieces, gl_VertexID);
@@ -330,6 +342,12 @@ void main() {
     int f = gl_InstanceID * 4;
     home = mat4(vectorAt(uFrames,f), vectorAt(uFrames,f+1),
                 vectorAt(uFrames,f+2), vectorAt(uFrames,f+3)) * shrunk;
+#ifdef TUTORIAL_NEAR_GHOSTS
+    // Classify the whole sticker by its posed shrink anchor, never by its home cell.
+    stickerHome = mat4(vectorAt(uFrames,f), vectorAt(uFrames,f+1),
+                       vectorAt(uFrames,f+2), vectorAt(uFrames,f+3))
+                * ((uNormal + uFacetShrink*(center-uNormal)) / uRadius);
+#endif
   }
   int pose = intAt(uIndex, piece);
   vOff = intAt(uLattice, pose) < 0 ? 1 : 0;
@@ -339,6 +357,12 @@ void main() {
              || (uFilter == 3 && piece != uIsolate);
   vec4 world = posePoint(pose, home);
   if (intAt(uMoving, piece) != 0 && uSweep != vec2(0.0)) world = sweepPoint(world);
+#ifdef TUTORIAL_NEAR_GHOSTS
+  vec4 stickerWorld = uQ * posePoint(pose, stickerHome);
+  // A selected cap is at +w; without one use the current projection's facing direction.
+  vec4 direction = uProjection == 0 ? vec4(0.0,0.0,0.0,1.0) : -uPole;
+  vGhostNear = dot(stickerWorld, direction) >= uGhostCosine * length(stickerWorld) ? 1 : 0;
+#endif
   vWorld = world;
   vProjected = project4(uQ * world);
   vClip = projectionMatrix * viewMatrix * vec4(vProjected,1.0);
@@ -352,6 +376,9 @@ precision highp int;
 in vec3 vProjected;
 in vec4 vWorld, vClip;
 flat in int vClass, vOff, vFocus, vMoved;
+#ifdef TUTORIAL_NEAR_GHOSTS
+flat in int vGhostNear;
+#endif
 uniform bool uTint, uProbe;
 uniform int uFocus, uProbeOutput, uEmphasis, uShotPass;
 uniform float uRadius;
@@ -370,12 +397,15 @@ void main() {
   }
   bool emphasized = uEmphasis == 1 ? vMoved != 0 : vOff != 0;
   if ((uShotPass == 1 && !emphasized) || (uShotPass == 2 && emphasized)) discard;
+#ifdef TUTORIAL_NEAR_GHOSTS
+  if (vGhostNear == 0) discard;
+#endif
   vec3 color = hsv(fract(float(vClass)*0.61803398875),0.61,0.90);
   vec3 n = normalize(cross(dFdx(vProjected), dFdy(vProjected)));
   color *= 0.5 + 0.5*abs(dot(n,normalize(vec3(0.3,0.5,1.0))));
   if (uTint && vOff != 0) color = mix(color,uTintColor,0.4);
   if (uFocus >= 0) color = vFocus != 0 ? mix(color,uHighlight,0.8) : color*0.22;
-  outColor = vec4(color,uShotPass == 2 ? 0.12 : 1.0);
+  outColor = vec4(color,uShotPass == 2 ? 0.08 : 1.0);
 }`;
 
 function cssColor(name) { return new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue(name).trim()); }
@@ -439,7 +469,7 @@ function makeRenderer() {
   mesh.frustumCulled = false;
   mesh.visible = false;
   scene.add(mesh);
-  if (emphasize) {
+  if (emphasize && shot.ghost !== 'none') {
     // Mark opaque emphasis pixels, then keep ghosts off those pixels entirely.
     // Depth writes alone would not stop many front ghost layers hiding the emphasis.
     material.stencilWrite = true;
@@ -447,7 +477,9 @@ function makeRenderer() {
     material.stencilZPass = THREE.ReplaceStencilOp;
     const ghostMaterial = new THREE.RawShaderMaterial({ glslVersion: THREE.GLSL3,
       vertexShader: VERTEX, fragmentShader: FRAGMENT,
-      uniforms: { ...uniforms, uShotPass: { value: 2 } }, side: THREE.DoubleSide, forceSinglePass: true,
+      defines: shot.ghost === 'near' ? { TUTORIAL_NEAR_GHOSTS: 1 } : {},
+      uniforms: { ...uniforms, uShotPass: { value: 2 }, uGhostCosine: { value: Math.cos(NEAR_GHOST_ANGLE) } },
+      side: THREE.DoubleSide, forceSinglePass: true,
       transparent: true, blending: THREE.NormalBlending, depthTest: true, depthWrite: false,
       stencilWrite: true, stencilWriteMask: 0, stencilRef: 1, stencilFunc: THREE.NotEqualStencilFunc });
     ghostMesh = new THREE.Mesh(g, ghostMaterial);
@@ -955,6 +987,12 @@ function frameTutorial(cap) {
     }
   }
   const A = geometry.A, normal = geometry.mesh.normal, radius = geometry.mesh.normal_length;
+  const stickerHome = new Float64Array(COUNTS.base_stickers * 4);
+  for (let sticker = 0; sticker < COUNTS.base_stickers; sticker++) {
+    for (let k = 0; k < 4; k++) {
+      stickerHome[sticker * 4 + k] = (normal[k] + 0.76 * (geometry.anchors[sticker * 4 + k] - normal[k])) / radius;
+    }
+  }
   const home = new Float64Array(COUNTS.base_vertices * 4);
   for (let vi = 0; vi < COUNTS.base_vertices; vi++) {
     const local = A['mesh_sticker.u32'][vi];
@@ -981,6 +1019,12 @@ function frameTutorial(cap) {
         const piece = A['slot_piece.u32'][facet * 433 + sticker];
         pose.fromArray(state.poses, state.index[piece] * 16).transpose();
         transform.multiplyMatrices(q, pose).multiply(frame);
+        if (shot.proj === 'stereo') {
+          point.fromArray(stickerHome, sticker * 4).applyMatrix4(transform);
+          // Fit only stickers in the cap-facing hemisphere, away from the stereo pole.
+          // This affects camera distance only; the meshes still draw every sticker.
+          if (point.dot(pole4) > 0) continue;
+        }
       }
       for (let vi = geometry.mesh.offsets[sticker]; vi < geometry.mesh.offsets[sticker + 1]; vi++) {
         point.fromArray(home, vi * 4).applyMatrix4(transform);

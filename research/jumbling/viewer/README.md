@@ -93,7 +93,7 @@ Create a JSON list, for example `/tmp/tutorial-shots.json`:
 ```json
 [
  {"name":"step0-before-global","state":"step0-before","view":"global","proj":"persp","emph":"moved","w":1600,"h":1000},
- {"name":"step0-after-local","state":"step0-after","view":"local","proj":"stereo","emph":"off","cap":72,"w":1600,"h":1000}
+ {"name":"step0-after-local","state":"step0-after","view":"local","proj":"stereo","emph":"off","ghost":"near","cap":72,"w":1600,"h":1000}
 ]
 ```
 
@@ -109,8 +109,8 @@ them when the option is omitted. No download occurs. The capture script serves
 only the page, checked retained geometry, these modules and the listed tutorial
 states on 127.0.0.1. It uses Playwright Chromium, SwiftShader and device scale 1.
 The output manifest records Node, Playwright and Chromium versions, page and module
-hashes, each shot's parameters (including the resolved cap, or null), state digest,
-tutorial hash and PNG hash. `--check`
+hashes, each shot's parameters (including the resolved cap, or null, and ghost mode),
+state digest, tutorial hash and PNG hash. `--check`
 renders to a temporary directory, compares the manifest and names changed shots;
 it leaves the original pictures and manifest alone.
 
@@ -120,14 +120,22 @@ letters, digits, underscores or hyphens. `w` and `h` default to 1600 and 1000 CS
 pixels (each accepts 1 to 8192). Defaults are `view=global`, `proj=persp` and
 `emph=moved` highlights the step's moved pieces; `emph=off` highlights pieces whose
 state `pose_lattice` entry is negative; `emph=none` draws everything opaque.
-With emphasis, the selected stickers are opaque and the rest are 0.12-alpha ghosts
-drawn afterwards without depth writes or painting over the opaque selection.
+With emphasis, the selected stickers are always opaque wherever they are. The rest
+are 0.08-alpha ghosts drawn afterwards without depth writes or painting over the
+opaque selection. Optional `ghost=near|all|none` (also a capture-list field) defaults
+to `near` in Local and `all` in Global; `none` removes ghosts. `near` keeps only
+stickers whose posed, shrunk centroid is within θ = 45° of the cap centre. From
+the retained cell centres, the 56 cells sharing a vertex with a cap reach at most
+44.4775° and the nearest other cell starts at 49.1176°; 45° separates these shells
+for every cap. With no cap, `near` uses the current projection's facing direction.
 Optional `cap=0..599` (a number in capture-list entries) defaults to the first
 `tutorial.json` cap, or none for an empty list. In both views it rotates Q to put
 that cap at +w, nearest the perspective eye, and centres its projection; stereo
-uses the opposite, −w pole. Global view fits the whole posed puzzle to about 85%
-of the shorter image side. Local view requires a cap and fits its fixed, unposed
-facet and four nearest face neighbours to about 80%. With no cap, Global retains
+uses the opposite, −w pole. Global perspective fits the whole posed puzzle to about
+85% of the shorter image side. Global stereo frames only stickers whose posed
+centroids are within 90° of the cap centre (opposite the projection pole with no
+cap), while still drawing all stickers. Local view requires a cap and fits its
+fixed, unposed facet and four nearest face neighbours to about 80%. With no cap, Global retains
 the page's default rotation. The canvas has no panels or overlays. After
 the first complete frame, `document.documentElement.dataset.shotReady` is `"1"`;
 failure sets it to `"error"` with `dataset.shotError`. Without `shot`, fixture menus

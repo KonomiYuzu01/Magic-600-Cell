@@ -137,7 +137,7 @@ class TutorialExport(unittest.TestCase):
             self.assertEqual(tutorial['caps'], [72])
 
     @unittest.skipUnless(shutil.which('node'), 'node is missing; capture parameter check skipped')
-    def test_capture_cap_defaults_overrides_and_manifest(self):
+    def test_capture_cap_and_ghost_defaults_overrides_and_manifest(self):
         empty = self.root / 'empty-caps'
         shutil.copytree(self.outputs['before'], empty)
         tutorial = json.loads((empty / 'tutorial.json').read_text())
@@ -147,13 +147,17 @@ class TutorialExport(unittest.TestCase):
 const globals = { json, sha, insist: assert.ok, readFileSync, realpathSync, join, relative, isAbsolute, sep };
 globals.insideFile = sourceFunction('capture_tutorial.mjs', 'insideFile', globals);
 const dataFiles = sourceFunction('capture_tutorial.mjs', 'dataFiles', globals);
-const shots = [
+const entries = [
   { name: 'default', state: 'before', view: 'global', proj: 'persp', emph: 'moved', w: 1600, h: 1000 },
   { name: 'override', state: 'before', view: 'local', proj: 'stereo', emph: 'off', cap: 0, w: 1000, h: 1600 },
-  { name: 'no-cap', state: 'empty-caps', view: 'global', proj: 'persp', emph: 'none', w: 800, h: 800 }
+  { name: 'no-cap', state: 'empty-caps', view: 'global', proj: 'persp', emph: 'none', ghost: 'none', w: 800, h: 800 }
 ];
+const shots = sourceFunction('capture_tutorial.mjs', 'shotsList', {
+  json, insist: assert.ok, NAME: /^[A-Za-z0-9_-]{1,64}$/,
+  readFileSync: () => Buffer.from(JSON.stringify(entries))
+})('unused');
 const files = new Map(), states = dataFiles(files, input.root, shots);
-assert.deepEqual(shots.map((s) => s.cap), [72, 0, null]);
+assert.deepEqual(Array.from(shots, (s) => s.cap), [72, 0, null]);
 assert.throws(() => dataFiles(new Map(), input.root,
   [{ name: 'invalid-local', state: 'empty-caps', view: 'local' }]), /local view needs a cap/);
 const urls = [];
@@ -172,11 +176,14 @@ const manifest = await render(browser, 'http://127.0.0.1:1/', files, [], shots, 
 assert.equal(new URL(urls[0]).searchParams.get('cap'), '72');
 assert.equal(new URL(urls[1]).searchParams.get('cap'), '0');
 assert.equal(new URL(urls[2]).searchParams.has('cap'), false);
+assert.deepEqual(urls.map((url) => new URL(url).searchParams.get('ghost')), ['all', 'near', 'none']);
 assert.deepEqual(Array.from(manifest, (s) => s.cap), [72, 0, null]);
+assert.deepEqual(Array.from(manifest, (s) => s.ghost), ['all', 'near', 'none']);
 assert.ok(manifest.every((s) => s.png_sha256 === sha(png)));
 process.stdout.write(JSON.stringify(manifest));
 """, {'root': str(self.root), 'out': str(self.root / 'synthetic-capture')})
         self.assertEqual([s['cap'] for s in result], [72, 0, None])
+        self.assertEqual([s['ghost'] for s in result], ['all', 'near', 'none'])
 
     def copy_record(self, directory):
         base = Path(directory) / 'run'
@@ -296,6 +303,38 @@ class JavaScriptSyntax(unittest.TestCase):
 
 @unittest.skipUnless(shutil.which('node'), 'node is missing; tutorial view math checks skipped')
 class TutorialViewMath(unittest.TestCase):
+    def test_near_ghost_angle_contains_exactly_vertex_touching_cells_for_every_cap(self):
+        angle = run_node(self, r"""
+const source = readFileSync(join(here, 'full.js'), 'utf8');
+const declaration = source.match(/^const NEAR_GHOST_ANGLE = [^;]+;/m);
+assert.ok(declaration, 'near ghost angle not found');
+process.stdout.write(JSON.stringify(runInNewContext(`${declaration[0]}\nNEAR_GHOST_ANGLE`)));
+""", None)
+        self.assertAlmostEqual(angle, np.pi / 4, places=12)
+        # Topological oracle: vertex pieces identify all 20 cells incident at each
+        # retained vertex, independently of the angular classifier and shell order.
+        with np.load(exporter.ROOT / 'assets/model.npz') as model:
+            vertices = np.flatnonzero(model['orbit_id'] == 34)
+            self.assertEqual(len(vertices), 120)
+            offsets, faces = model['face_offsets'], model['face_values']
+            incidence = np.zeros((600, 120), dtype=np.int32)
+            for vertex, piece in enumerate(vertices):
+                hosts = faces[offsets[piece]:offsets[piece + 1]]
+                self.assertEqual(len(hosts), 20)
+                incidence[hosts, vertex] = 1
+        np.testing.assert_array_equal(incidence.sum(axis=1), np.full(600, 4))
+        touching = incidence @ incidence.T > 0
+        # 56 neighbours, plus the cap itself.
+        np.testing.assert_array_equal(touching.sum(axis=1), np.full(600, 57))
+        mesh = json.loads((exporter.ROOT / 'assets/mesh.json').read_text())
+        frames = np.fromfile(exporter.ROOT / 'assets/cell_frames.f32', '<f4').reshape(600, 4, 4).transpose(0, 2, 1)
+        centers = frames @ np.array(mesh['normal'])
+        centers /= np.linalg.norm(centers, axis=1)[:, None]
+        angles = np.arccos(np.clip(centers @ centers.T, -1, 1))
+        np.testing.assert_array_equal(angles <= angle, touching)
+        self.assertAlmostEqual(np.rad2deg(angles[touching].max()), 44.4775, places=4)
+        self.assertAlmostEqual(np.rad2deg(angles[~touching].min()), 49.1176, places=4)
+
     def test_cap_orientation_is_proper_and_faces_positive_w(self):
         # Independent retained centres; include exact coordinate-axis edge cases.
         mesh = json.loads((exporter.ROOT / 'assets/mesh.json').read_text())
@@ -329,6 +368,17 @@ const parse = (query) => sourceFunction('full.js', 'shotParameters', {
 })();
 assert.equal(parse('shot=step').cap, null);
 assert.equal(parse('shot=step').emph, 'moved');
+assert.equal(parse('shot=step').ghost, 'all');
+assert.equal(parse('shot=step&view=local&proj=stereo').ghost, 'near');
+assert.equal(parse('shot=step&view=local&proj=persp').ghost, 'near');
+for (const view of ['global', 'local']) {
+  for (const ghost of ['near', 'all', 'none']) {
+    assert.equal(parse(`shot=step&view=${view}&ghost=${ghost}`).ghost, ghost);
+  }
+}
+for (const ghost of ['', 'bad', 'NEAR', 'null', '0']) {
+  assert.throws(() => parse(`shot=step&ghost=${ghost}`), /Invalid shot ghost/);
+}
 assert.equal(parse('shot=step&cap=0&emph=off').cap, 0);
 assert.equal(parse('shot=step&cap=599&emph=off').emph, 'off');
 for (const value of ['', '-1', '600', '1.5', 'NaN', '1x']) {
@@ -341,6 +391,16 @@ const list = (entry) => sourceFunction('capture_tutorial.mjs', 'shotsList', {
 assert.equal(list({ name: 'a', state: 's', cap: 0, emph: 'off' })[0].cap, 0);
 assert.equal(list({ name: 'a', state: 's', cap: 599 })[0].cap, 599);
 assert.equal(list({ name: 'a', state: 's' })[0].cap, undefined);
+assert.equal(list({ name: 'a', state: 's' })[0].ghost, 'all');
+assert.equal(list({ name: 'a', state: 's', view: 'local' })[0].ghost, 'near');
+for (const view of ['global', 'local']) {
+  for (const ghost of ['near', 'all', 'none']) {
+    assert.equal(list({ name: 'a', state: 's', view, ghost })[0].ghost, ghost);
+  }
+}
+for (const ghost of ['', 'bad', 'NEAR', null, false, 0]) {
+  assert.throws(() => list({ name: 'a', state: 's', ghost }), /Invalid view, proj, emph or ghost/);
+}
 for (const cap of [-1, 600, 1.5, '72', null]) {
   assert.throws(() => list({ name: 'a', state: 's', cap }), /Invalid cap/);
 }

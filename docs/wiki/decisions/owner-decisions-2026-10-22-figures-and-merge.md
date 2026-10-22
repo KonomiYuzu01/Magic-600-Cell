@@ -3,11 +3,12 @@ id: owner-decisions-2026-10-22-figures-and-merge
 type: decision
 status: verified
 visibility: public
-summary: Owner decisions of 22 October 2026 - the tutorial's illustrations cover every rule, every macro, one worked example per phase and the reading concepts (several dozen to more than a hundred figures); and the integrator merges pull request 112 itself once the tutorial and its acceptance are written.
+summary: Owner decisions of 22 October 2026 - the tutorial's illustrations cover every rule, every macro, one worked example per phase and the reading concepts (several dozen to more than a hundred figures); the main figures are pictures of the actual puzzle; and the integrator merges pull request 112 itself once the tutorial and its acceptance are written.
 related: [owner-decisions-2026-10-22-tutorial-first, owner-decisions-2026-10-20-tutorial-acceptance, owner-decisions-2026-10-17-jumbling-pr]
 supersedes: []
 claims:
   - {id: figure-coverage, evidence_kind: decision, checked_at: 2026-10-22}
+  - {id: figure-puzzle-pictures, evidence_kind: decision, checked_at: 2026-10-22}
   - {id: merge-112-by-integrator, evidence_kind: decision, checked_at: 2026-10-22}
   - {id: figures-and-merge-readings, evidence_kind: decision, checked_at: 2026-10-22}
 ---
@@ -33,6 +34,19 @@ To the standard of a finished product the illustrations cover four layers:
 
 The owner expects this to come to several dozen to more than a hundred figures, not a dozen or so.
 
+## Decision 3: the main figures show the actual puzzle
+
+After seeing four abstract drawing styles (cap nets, ring sheets, projections of centroids, diagrams), the owner said
+that most figures should be pictures of the actual puzzle. The integrator proposed pictures of the full-state page
+(`research/jumbling/viewer/full.html` in its shot mode, all 259,800 stickers of the exact state), and the owner
+confirmed the second prototype:
+
+- The main figure of a step is the stereographic local view centred on the step's cap. The pieces the step moves are
+  drawn opaque, and the stickers near the cap are faint ghosts.
+- Whole-puzzle overviews use the perspective view.
+- Abstract drawings stay only where nothing geometric is shown: step trees, rule tables, the cover graph and the
+  height trees.
+
 ## Decision 2: the integrator merges pull request 112
 
 When the tutorial and its acceptance are written, the integrator merges pull request 112 itself.
@@ -40,8 +54,10 @@ When the tutorial and its acceptance are written, the integrator merges pull req
 ## Integrator readings (the owner may change them)
 
 1. **Figures.** Every figure follows reading 4 of the [tutorial-first decision](owner-decisions-2026-10-22-tutorial-first.md):
-   SVG drawn by repository scripts from exact simulator states of development seeds, never a seed of the test set,
-   each with a manifest entry and a check that draws it again and compares; colours are provisional and decide nothing
+   drawn by repository scripts from exact simulator states of development seeds, never a seed of the test set, each
+   with a manifest entry and a check that draws it again and compares. The puzzle pictures of decision 3 are headless
+   Chromium captures of the research page (`research/jumbling/viewer/capture_tutorial.mjs`), not pictures of the
+   Direct3D 12 renderer and not Windows evidence; the abstract drawings are SVG; colours are provisional and decide nothing
    for the design track, and G1 to G6 stay with the owner. A rule that has not fired in any development run is drawn
    from the first development state where it fires; until one exists the catalogue lists the figure as missing and
    says why, and no figure stands in for it. The drawing style is a matter of taste, so the integrator shows the owner
@@ -60,6 +76,6 @@ When the tutorial and its acceptance are written, the integrator merges pull req
 
 ## Effect
 
-- The tutorial's figure catalogue is planned against the four layers above.
+- The tutorial's figure catalogue is planned against the four layers above, with puzzle pictures as the main figures.
 - Pull request 112 no longer waits for the owner to merge it; the integrator does so once reading 2 holds. This
   updates the last item of the tutorial-first decision's "Effect" and the merge conditions of 17 October (reading 3).

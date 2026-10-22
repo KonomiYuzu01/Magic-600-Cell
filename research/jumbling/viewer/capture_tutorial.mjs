@@ -45,13 +45,15 @@ function shotsList(path) {
   const names = new Set();
   return shots.map((s) => {
     insist(s && typeof s === 'object' && !Array.isArray(s)
-      && Object.keys(s).every((k) => ['name', 'state', 'view', 'proj', 'emph', 'cap', 'w', 'h'].includes(k)), 'Invalid shot entry');
+      && Object.keys(s).every((k) => ['name', 'state', 'view', 'proj', 'emph', 'ghost', 'cap', 'w', 'h'].includes(k)), 'Invalid shot entry');
     insist(typeof s.name === 'string' && NAME.test(s.name) && !names.has(s.name), 'Invalid or duplicate shot name');
     insist(typeof s.state === 'string' && NAME.test(s.state), `Invalid state for ${s.name}`);
     names.add(s.name);
     const shot = { view: 'global', proj: 'persp', emph: 'moved', w: 1600, h: 1000, ...s };
+    if (!('ghost' in shot)) shot.ghost = shot.view === 'local' ? 'near' : 'all';
     insist(['global', 'local'].includes(shot.view) && ['persp', 'stereo'].includes(shot.proj)
-      && ['moved', 'off', 'none'].includes(shot.emph), `Invalid view, proj or emph for ${shot.name}`);
+      && ['moved', 'off', 'none'].includes(shot.emph) && ['near', 'all', 'none'].includes(shot.ghost),
+      `Invalid view, proj, emph or ghost for ${shot.name}`);
     insist(!('cap' in shot) || (Number.isInteger(shot.cap) && shot.cap >= 0 && shot.cap < 600),
       `Invalid cap for ${shot.name} (0..599)`);
     insist(['w', 'h'].every((k) => Number.isInteger(shot[k]) && shot[k] > 0 && shot[k] <= 8192),
@@ -190,7 +192,7 @@ async function render(browser, base, files, forbidden, shots, states, directory)
         return route.abort();
       });
       const query = new URLSearchParams({ shot: shot.state, view: shot.view, proj: shot.proj,
-        emph: shot.emph, w: String(shot.w), h: String(shot.h) });
+        emph: shot.emph, ghost: shot.ghost, w: String(shot.w), h: String(shot.h) });
       if (shot.cap !== null) query.set('cap', String(shot.cap));
       await page.goto(`${base}full.html?${query}`, { waitUntil: 'load' });
       await page.waitForFunction(() => ['1', 'error'].includes(document.documentElement.dataset.shotReady));
