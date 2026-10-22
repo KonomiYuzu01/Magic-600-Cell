@@ -1,7 +1,7 @@
 # D1, seed 7101 at depth 40, development mode (line d1-dev-s7101)
 
-Status: **in progress** (progress notes, 22 October 2026). The runner is in the tail phase; see "Progress". At the first note it was
-step index 97. The run has not ended and nothing has been checked yet.
+Status: **in progress** (progress notes, 22 October 2026). Run 1 was killed by a container restart in the tail phase.
+Run 2 (same command) is running; see "Progress". Nothing has been checked yet.
 
 ## Question
 
@@ -39,6 +39,19 @@ census `moves`), N before and after, and off after are the same. There are 0 mis
 This shows agreement with one earlier run over 97 steps, nothing more (`PLAN.md`, section 4).
 
 ## Progress
+
+Third note, 13:38 UTC: **run 1 was interrupted, and run 2 has started.**
+
+- The cloud container restarted some time after 09:03 UTC, the time of the last line in run 1's logs. The restart
+  killed run 1, so it left no exit code. The runner has no resume option.
+- Run 1 had reached tail step index 98: unit 60011, transport pair passes, last log line
+  `{"P": 3, "entry_pair": [149, 234], "updates": 454, "sec": 980}`. Its 98 recorded steps (97 bulk, 1 tail) are as
+  described below. Its record as left on disk is in `run1-interrupted/`: `run.json` reads `result` `budget` with
+  tail `result` null, because the runner never finished writing it. The runner's stdout, which was empty, is in
+  `run1-interrupted-runner.out`.
+- In run 1's copied logs `attempts-00097-units-units.log` and `attempts-00098-units-units.log`, the absolute run
+  directory prefix was replaced by `<dir>`. No other file was changed.
+- At 13:37 UTC run 2 started: the same command at the same commit, in fresh `--out` and `--cache` directories.
 
 Second note, 08:50 UTC (about 17,200 s after the start):
 

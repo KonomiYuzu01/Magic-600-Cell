@@ -1,0 +1,29 @@
+{
+ "table": "00097.json",
+ "max_depth": 10,
+ "classes": {
+  "3": {
+   "cells": 2641,
+   "free_grips": 116,
+   "home_cells": 1441,
+   "occupied_points": 1516,
+   "foreign_cells": 6,
+   "foreign_untracked": 0,
+   "off_contents": 12,
+   "free_cells_by_kind": {
+    "3": 718,
+    "4": 479
+   },
+   "vacant_home_points_by_kind": {
+    "3": 2,
+    "4": 1
+   },
+   "pairs": 674,
+   "commutators": 2346194,
+   "base_clean_powers": 250820
+  }
+ },
+ "units": {},
+ "digest": "cc41accae7cac3add5ab1c3b734b5ba7bee72c1008ec666caf27a1150fdb9938",
+ "off": 1082
+}
