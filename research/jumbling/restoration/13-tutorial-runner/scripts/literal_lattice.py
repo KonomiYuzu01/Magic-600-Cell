@@ -221,6 +221,39 @@ def state_labels(state):
     return labels
 
 
+class ObserverLetters:
+    """Exact I_a encodings from this player's menu, used only by observed play."""
+
+    def __init__(self, sim, ctx, menu):
+        from exact import matmul, transpose
+        from sim.kplus import to_tuple
+        self.menu, self.matmul, self.transpose, self.key = menu, matmul, transpose, to_tuple
+        self.items = {}
+        for i, (_, matrix) in enumerate(menu.items):
+            self.items.setdefault(to_tuple(matrix), []).append(i)
+        self.frames = {}
+        self.primitives = {m: self.code(sim.primitive(ctx, m), 'primitive_letter')
+                           for m in itertools.chain(range(1, 1201), range(-1200, 0))}
+        self.corrections = {}
+
+    def code(self, twist, check):
+        grip = twist.grip
+        if grip not in self.frames:
+            frame = self.menu.frame(grip)
+            self.frames[grip] = frame, self.transpose(frame)
+        frame, inverse = self.frames[grip]
+        base = self.key(self.matmul(self.matmul(inverse, twist.matrix), frame))
+        matches = self.items.get(base, ())
+        require(len(matches) == 1 and 0 <= grip < 600, check)
+        return int(60 * grip + matches[0])
+
+    def correction(self, twist):
+        key = twist.grip, self.key(twist.matrix)
+        if key not in self.corrections:
+            self.corrections[key] = self.code(twist, 'correction_letter')
+        return self.corrections[key]
+
+
 class LatticePlay:
     """One sticker gather per primitive, with exact auxiliary pose accounting.
 
@@ -347,7 +380,7 @@ def script_digests():
     return {p.relative_to(ROOT).as_posix(): sha(p) for p in sorted(paths)}
 
 
-def play(restore_dir, start_table, run_index=0, library=None, seconds=None):
+def play(restore_dir, start_table, run_index=0, library=None, seconds=None, observer=None):
     """Return a report even for failed checks; no output is written by this API."""
     started = time.monotonic()
     directory, table = Path(restore_dir), Path(start_table)
@@ -387,12 +420,18 @@ def play(restore_dir, start_table, run_index=0, library=None, seconds=None):
                               'correction_index': index, 'repetition': repetition,
                               'twist_within_macro': twist_index})
                         require(menu.contains(twist), 'correction_menu')
+                        if observer is not None and not target:
+                            code = observer_letters.correction(twist)
                         outcome = state.apply(twist, journal=False)
                         require(outcome.applied and not outcome.uncertain, 'correction_admissible')
                         if not target:
                             report['played']['corrections'] += 1
                             report['played']['total'] += 1
+                            if observer is not None:
+                                observer.correction_twist(code)
                     require(state.is_lattice(), 'correction_lattice')
+                if observer is not None and not target:
+                    observer.correction_end(index, lambda: state)
         finally:
             # Target construction is verification work, never played length.
             if not target:
@@ -477,7 +516,11 @@ def play(restore_dir, start_table, run_index=0, library=None, seconds=None):
         # Older corrections-first outputs hash the labels before correcting,
         # although their start-labels file contains the corrected labels.
         require(report['input']['labels_sha256'] == run['input_labels_sha256'], 'input_labels_sha256')
+        if observer is not None:
+            observer_letters = ObserverLetters(sim, ctx, menu)
         deadline = None if seconds is None else time.monotonic() + seconds
+        if observer is not None:
+            observer.begin(program, factors, sequence, order)
         if order == 'corrections-first':
             corrections(current, sequence)
             if sequence:
@@ -495,6 +538,9 @@ def play(restore_dir, start_table, run_index=0, library=None, seconds=None):
                     # twists are all played; their auxiliary pose fields can
                     # be reused. Tree paths keep primitive pose accounting.
                     lattice.defer_poses = program.nodes[leaf]['op'] == 'word'
+                    if observer is not None:
+                        lattice.defer_poses = False
+                        codes = []
                     leaf_count = 0
                     try:
                         for move in letters:
@@ -506,11 +552,17 @@ def play(restore_dir, start_table, run_index=0, library=None, seconds=None):
                             count += 1
                             report['played']['retained'] += 1
                             report['played']['total'] += 1
+                            if observer is not None:
+                                codes.append(observer_letters.primitives[move])
                     finally:
                         if lattice.defer_poses:
                             lattice.transport_word(word, sg, leaf_count)
                         lattice.defer_poses = False
+                        if observer is not None:
+                            observer.leaf(leaf, sg, codes)
                 require(count == program.lengths[node], 'factor_played_length')
+                if observer is not None:
+                    observer.factor_end(factor_index, lattice.state)
         finally:
             report['seconds']['retained'] += time.monotonic() - t0
         require(report['played']['retained'] == retained_length, 'retained_played_length')
@@ -531,6 +583,8 @@ def play(restore_dir, start_table, run_index=0, library=None, seconds=None):
             lattice = None
         report['final'] = {'digest': current.digest(),
                            'labels_identity': bool(np.array_equal(state_labels(current), np.arange(NS)))}
+        if observer is not None:
+            observer.final(current)
         require(report['final']['labels_identity'], 'final_labels_identity')
         require(report['played']['corrections'] == correction_length, 'correction_played_length')
         tick({'phase': 'complete', 'factor_index': len(factors), 'twist_within_factor': 0})
