@@ -1,0 +1,228 @@
+{
+  "states": [
+    {
+      "state": "S4-10",
+      "status": "pass",
+      "seconds": {
+        "replay": 0.23732951700367266,
+        "observe": 17.973566746004508,
+        "observe_seams": 17.267901831000927,
+        "off_grip": 0.39996560200233944
+      },
+      "file": "observation-S4-10.json"
+    },
+    {
+      "state": "S4-20",
+      "status": "pass",
+      "seconds": {
+        "replay": 0.5583459430054063,
+        "observe": 15.905273399999714,
+        "observe_seams": 15.271452657994814,
+        "off_grip": 2.3828015660037636
+      },
+      "file": "observation-S4-20.json"
+    },
+    {
+      "state": "S4-60",
+      "status": "pass",
+      "seconds": {
+        "replay": 4.485510083002737,
+        "observe": 17.013696762005566,
+        "observe_seams": 17.323150912998244,
+        "off_grip": 18.768094360006216
+      },
+      "file": "observation-S4-60.json"
+    },
+    {
+      "state": "S4-150",
+      "status": "pass",
+      "seconds": {
+        "replay": 19.395344384000055,
+        "observe": 19.980265796999447,
+        "observe_seams": 19.841415643997607,
+        "off_grip": 42.63472884699877
+      },
+      "file": "observation-S4-150.json"
+    },
+    {
+      "state": "S4-300",
+      "status": "pass",
+      "seconds": {
+        "replay": 52.90848785699927,
+        "observe": 24.28398004599876,
+        "observe_seams": 24.348484391004604,
+        "off_grip": 58.74534281199885
+      },
+      "file": "observation-S4-300.json"
+    },
+    {
+      "state": "S4-640",
+      "status": "pass",
+      "seconds": {
+        "replay": 146.68071546800638,
+        "observe": 32.52638563900109,
+        "observe_seams": 31.744747401004133,
+        "off_grip": 74.94753542599938
+      },
+      "file": "observation-S4-640.json"
+    },
+    {
+      "state": "I_a-10",
+      "status": "pass",
+      "seconds": {
+        "replay": 0.7641365590025089,
+        "observe": 17.5940335300038,
+        "observe_seams": 16.3832482910002,
+        "off_grip": 0.4299631519970717
+      },
+      "file": "observation-I_a-10.json"
+    },
+    {
+      "state": "I_a-20",
+      "status": "pass",
+      "seconds": {
+        "replay": 0.6267465810014983,
+        "observe": 14.193553769000573,
+        "observe_seams": 13.734055011002056,
+        "off_grip": 2.874505108993617
+      },
+      "file": "observation-I_a-20.json"
+    },
+    {
+      "state": "I_a-60",
+      "status": "pass",
+      "seconds": {
+        "replay": 4.445344100000511,
+        "observe": 15.395944562995282,
+        "observe_seams": 15.04401601999416,
+        "off_grip": 16.836334513995098
+      },
+      "file": "observation-I_a-60.json"
+    },
+    {
+      "state": "I_a-150",
+      "status": "pass",
+      "seconds": {
+        "replay": 18.29761601700011,
+        "observe": 17.637218496995047,
+        "observe_seams": 17.325458665000042,
+        "off_grip": 32.52767233699706
+      },
+      "file": "observation-I_a-150.json"
+    },
+    {
+      "state": "I_a-300",
+      "status": "pass",
+      "seconds": {
+        "replay": 43.93082522199984,
+        "observe": 19.49265728699538,
+        "observe_seams": 18.424885077001818,
+        "off_grip": 44.645966673997464
+      },
+      "file": "observation-I_a-300.json"
+    },
+    {
+      "state": "I_a-841",
+      "status": "pass",
+      "seconds": {
+        "replay": 175.60025951900025,
+        "observe": 23.718068710004445,
+        "observe_seams": 22.61583991599764,
+        "off_grip": 66.11114590299985
+      },
+      "file": "observation-I_a-841.json"
+    },
+    {
+      "state": "I_b-10",
+      "status": "pass",
+      "seconds": {
+        "replay": 0.22651733300153865,
+        "observe": 16.64776910499495,
+        "observe_seams": 16.578864312003134,
+        "off_grip": 1.4374657430016669
+      },
+      "file": "observation-I_b-10.json"
+    },
+    {
+      "state": "I_b-20",
+      "status": "pass",
+      "seconds": {
+        "replay": 1.0141152479991433,
+        "observe": 14.694011917003081,
+        "observe_seams": 14.799162758004968,
+        "off_grip": 3.4357366140029626
+      },
+      "file": "observation-I_b-20.json"
+    },
+    {
+      "state": "I_b-60",
+      "status": "pass",
+      "seconds": {
+        "replay": 4.068312651994347,
+        "observe": 16.03614971799834,
+        "observe_seams": 16.28766702199937,
+        "off_grip": 16.69669433600211
+      },
+      "file": "observation-I_b-60.json"
+    },
+    {
+      "state": "I_b-150",
+      "status": "pass",
+      "seconds": {
+        "replay": 20.128753667995625,
+        "observe": 20.584838490001857,
+        "observe_seams": 19.237166154998704,
+        "off_grip": 28.219173006000347
+      },
+      "file": "observation-I_b-150.json"
+    },
+    {
+      "state": "I_b-300",
+      "status": "pass",
+      "seconds": {
+        "replay": 58.38661472900276,
+        "observe": 23.601723760002642,
+        "observe_seams": 22.100390692001383,
+        "off_grip": 35.246299202000955
+      },
+      "file": "observation-I_b-300.json"
+    },
+    {
+      "state": "I_b-885",
+      "status": "pass",
+      "seconds": {
+        "replay": 226.10729350800102,
+        "observe": 27.650692565999634,
+        "observe_seams": 26.037501275000977,
+        "off_grip": 49.726325796997116
+      },
+      "file": "observation-I_b-885.json"
+    },
+    {
+      "state": "stop40",
+      "status": "pass",
+      "seconds": {
+        "replay": 4.452113096995163,
+        "observe": 18.821784639003454,
+        "observe_seams": 18.508260129005066,
+        "off_grip": 0.44066865000058897
+      },
+      "file": "observation-stop40.json"
+    },
+    {
+      "state": "deep",
+      "status": "pass",
+      "seconds": {
+        "replay": 170.03048929399665,
+        "observe": 60.815459495999676,
+        "observe_seams": 57.91782180999871,
+        "off_grip": 1.2664667680001003
+      },
+      "file": "observation-deep.json"
+    }
+  ],
+  "status": "pass",
+  "prose_discrepancies_are_separate": true,
+  "height4_units": "recorded only; the requested comparisons cover heights, off and blocked caps",
+  "evidence_kind": "source and fixture replay; cloud research timings"
+}

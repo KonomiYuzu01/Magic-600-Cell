@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-22] update | EN2 reference values in J1: ν, corrections, observations, height-4 states and word checks
+The reference runs of ENG-0J revision 2 (acceptance items 3 and 8, with amendment A5) ran headless in the cloud session ([results](../../research/jumbling/differential/references/results/summary.md)): ν on E3, I1 and I2, the 40 CERT-LB-V2 words, the 36 corrections, 20 observed states, stage 12's six height-4 states and five recorded words (b06-14 has 672,417 letters) all give the recorded or expected values, while one prose count, "the 20 caps that hold off-grip seams" at the I_a@40 stop, matches no count of the reference reading (39 caps hold an off-grip cell, 25 a whole group). They are runs of research code against research records; the candidate engine's comparisons wait for EN3 and EN4.
+
 ## [2026-10-22] update | EN2 cost leads in J1: X1 to X5, XM1, heights, classification and meshes
 The cost leads of ENG-0J revision 2 (acceptance item 5) ran headless in the cloud session ([results](../../research/jumbling/differential/leads/results/summary.md)): in J1 a repair list takes 3.5 s to about 3 minutes, entry heights under the I_a menu are unbounded (3,018 bits at the X1 witness H6030), the exact covers differ from the research float test only where d is blocked, and a full-detail mesh of every exposed face has 5,760,000 triangles. They are cloud timings of research code; EN3 and EN4 confirm or overturn them with a product engine.
 
