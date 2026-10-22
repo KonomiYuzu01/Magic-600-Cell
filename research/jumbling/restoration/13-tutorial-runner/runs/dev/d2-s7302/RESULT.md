@@ -33,7 +33,18 @@ killed the runner and its children with no signal handler run. So no `.rc`, no f
 last log writes are at 09:03:16, in the three shards of the `h4` `two_letter_u` pass that began at 06:25. That pass
 had run about 2 h 38 min wall time without finishing. The partial record is kept outside the repository, not
 committed, because the second attempt repeats it. **Second attempt:** the same command with a fresh `--out` and
-`--cache` (`<dir>/out-c2`, `<dir>/cache2`), started 13:38 UTC.
+`--cache` (`<dir>/out-c2`, `<dir>/cache2`), started 13:38 UTC. A minute later the integrator's line update
+arrived (resume and checkpoints; the full run of step 3 is dropped). That attempt was stopped by PID with SIGTERM
+after about one minute, before its first step.
+
+**Third attempt (13:39 UTC), with checkpoints.** The branch merged `04057a4` of `claude/repair-pair-list` (runner
+`--resume`, `scripts/checkpoint.py`), and the run started with `--out` under this directory:
+
+    python3 -I -B -u $S/runner.py --table <dir>/tables/s7302-stop.json --out research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7302/component --cache <dir>/cache3 --bulk-steps 0 --height-seconds 12000 --height-cpu 12000 --pair-shards 3 --kernel-seconds 3600
+    python3 -I -B $S/checkpoint.py --run research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7302/component --pid <runner pid> --trailer ... --trailer ...
+
+After a container restart, the procedure is: restore with `checkpoint.py --run <out> --restore`, then repeat the
+runner command with `--resume`, then start the checkpoint helper again.
 
 Partial record of the first attempt, as of 07:39 UTC (from `run.json`, not yet checked). `config.component` is `bulk_budget`; the bulk is
 `budget` (0 steps).
@@ -47,5 +58,7 @@ Partial record of the first attempt, as of 07:39 UTC (from `run.json`, not yet c
 
 ## Next steps
 
-1. When the component run ends: copy its output to `out-c/`, run `check_run.py`, record the steps.
-2. Full run (step 3), then the reproduction (step 4) if time allows.
+1. When the component run ends: run `check_run.py` on `component/`, commit the run directory and delete
+   `component-checkpoint/` in the same commit, then write the final report.
+2. The full run (step 3) is dropped by the integrator's line update of 22 October, 13:37 UTC: the component runs at
+   7304, 7305 and 7307 show the high phase's kernel exhausted at the stop. The reproduction (step 4) is not run.
