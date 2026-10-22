@@ -1,6 +1,6 @@
 # Development line d2-s7306: D2, the 3000-twist stop of seed 7306
 
-Status: in progress (progress note, 22 October 2026, 09:00 UTC). Step 1 is done; step 2 (component run) was interrupted by a container restart and is running again.
+Status: in progress (progress note, 22 October 2026, 13:40 UTC). Step 1 is done; step 2 (component run) was interrupted by two container restarts and is running a third time.
 
 ## Question
 
@@ -40,7 +40,12 @@ high phase's first kernel call (`attempts/00018-high`) started at 08:47:50. At a
 was restarted and every process was killed: the runner wrote no `runner-c.rc`, no final result and no error. That
 record (`<dir>/out-c`) is incomplete and is not checked. The component run was started again from the start, in a
 fresh output directory `<dir>/out-c2` with the same command and the same cache, at 08:56 UTC on commit `f080344`
-(this note only; no code changed since `35c3d4f`). The run reported below is that second run.
+(this note only; no code changed since `35c3d4f`).
+
+**Second restart.** The second run (`<dir>/out-c2`) was killed by another container restart at about 09:03 UTC,
+after 4 `r22d75` steps (last log 09:02:44); the container came back at 13:37 UTC. That record is incomplete and not
+checked either. A third run (`<dir>/out-c3`) was started from the start with the same command and cache after this
+note was committed. The run reported below is the last one that finishes.
 
 ## Next step
 
