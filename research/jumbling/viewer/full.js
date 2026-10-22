@@ -232,13 +232,19 @@ function shotParameters() {
     requireValue(/^[1-9][0-9]*$/.test(value) && Number(value) <= 8192, `Invalid shot ${key} (1..8192)`);
     return Number(value);
   };
+  const shrink = (key, fallback) => {
+    const value = PARAMETERS.get(key) ?? String(fallback);
+    requireValue(/^(0|1)(\.[0-9]{1,2})?$/.test(value) && Number(value) >= 0.4 && Number(value) <= 1,
+      `Invalid shot ${key} (0.40..1.00)`);
+    return Number(value);
+  };
   const cap = PARAMETERS.get('cap');
   requireValue(cap === null || (/^(0|[1-9][0-9]*)$/.test(cap) && Number(cap) < 600), 'Invalid shot cap (0..599)');
   const view = choice('view', 'global', ['global', 'local']);
   return { name, view, proj: choice('proj', 'persp', ['persp', 'stereo']),
     ghost: choice('ghost', view === 'local' ? 'near' : 'all', ['near', 'all', 'none']),
     emph: choice('emph', 'moved', ['moved', 'off', 'none']), cap: cap === null ? null : Number(cap),
-    w: size('w', 1600), h: size('h', 1000) };
+    w: size('w', 1600), h: size('h', 1000), cs: shrink('cs', 0.76), ss: shrink('ss', 0.82) };
 }
 
 async function loadTutorial() {
@@ -992,7 +998,7 @@ function frameTutorial(cap, moving) {
   const stickerHome = new Float64Array(COUNTS.base_stickers * 4);
   for (let sticker = 0; sticker < COUNTS.base_stickers; sticker++) {
     for (let k = 0; k < 4; k++) {
-      stickerHome[sticker * 4 + k] = (normal[k] + 0.76 * (geometry.anchors[sticker * 4 + k] - normal[k])) / radius;
+      stickerHome[sticker * 4 + k] = (normal[k] + shot.cs * (geometry.anchors[sticker * 4 + k] - normal[k])) / radius;
     }
   }
   const home = new Float64Array(COUNTS.base_vertices * 4);
@@ -1000,8 +1006,8 @@ function frameTutorial(cap, moving) {
     const local = A['mesh_sticker.u32'][vi];
     for (let k = 0; k < 4; k++) {
       const anchor = geometry.anchors[local * 4 + k];
-      home[vi * 4 + k] = (normal[k] + 0.76 * (anchor - normal[k])
-        + 0.76 * 0.82 * (A['mesh_vertices.f32'][vi * 4 + k] - anchor)) / radius;
+      home[vi * 4 + k] = (normal[k] + shot.cs * (anchor - normal[k])
+        + shot.cs * shot.ss * (A['mesh_vertices.f32'][vi * 4 + k] - anchor)) / radius;
     }
   }
   const q = new THREE.Matrix4().fromArray(cameraQ()), frame = new THREE.Matrix4();
@@ -1079,6 +1085,9 @@ async function startShot() {
   document.documentElement.style.setProperty('--shot-height', `${shot.h}px`);
   $('canvas').setAttribute('aria-label', 'Full puzzle at the recorded tutorial step');
   $('projection').value = shot.proj === 'persp' ? 'perspective' : 'stereographic';
+  // Facet (cell) and sticker shrink of the picture; draw() reads them through syncView().
+  $('facetShrink').value = String(shot.cs);
+  $('stickerShrink').value = String(shot.ss);
   geometry = await loadGeometry();
   const { s, t, moving } = await loadTutorial();
   state = s;

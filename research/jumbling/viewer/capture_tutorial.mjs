@@ -45,11 +45,11 @@ function shotsList(path) {
   const names = new Set();
   return shots.map((s) => {
     insist(s && typeof s === 'object' && !Array.isArray(s)
-      && Object.keys(s).every((k) => ['name', 'state', 'view', 'proj', 'emph', 'ghost', 'cap', 'w', 'h'].includes(k)), 'Invalid shot entry');
+      && Object.keys(s).every((k) => ['name', 'state', 'view', 'proj', 'emph', 'ghost', 'cap', 'w', 'h', 'cs', 'ss'].includes(k)), 'Invalid shot entry');
     insist(typeof s.name === 'string' && NAME.test(s.name) && !names.has(s.name), 'Invalid or duplicate shot name');
     insist(typeof s.state === 'string' && NAME.test(s.state), `Invalid state for ${s.name}`);
     names.add(s.name);
-    const shot = { view: 'global', proj: 'persp', emph: 'moved', w: 1600, h: 1000, ...s };
+    const shot = { view: 'global', proj: 'persp', emph: 'moved', w: 1600, h: 1000, cs: 0.76, ss: 0.82, ...s };
     if (!('ghost' in shot)) shot.ghost = shot.view === 'local' ? 'near' : 'all';
     insist(['global', 'local'].includes(shot.view) && ['persp', 'stereo'].includes(shot.proj)
       && ['moved', 'off', 'none'].includes(shot.emph) && ['near', 'all', 'none'].includes(shot.ghost),
@@ -58,6 +58,10 @@ function shotsList(path) {
       `Invalid cap for ${shot.name} (0..599)`);
     insist(['w', 'h'].every((k) => Number.isInteger(shot[k]) && shot[k] > 0 && shot[k] <= 8192),
       `Invalid dimensions for ${shot.name} (1..8192)`);
+    // Facet (cell) and sticker shrink: 0.40 to 1.00 in steps of 0.01, as the page's sliders.
+    insist(['cs', 'ss'].every((k) => typeof shot[k] === 'number' && shot[k] >= 0.4 && shot[k] <= 1
+      && Number.isInteger(Math.round(shot[k] * 100)) && Math.abs(shot[k] * 100 - Math.round(shot[k] * 100)) < 1e-9),
+      `Invalid cs or ss for ${shot.name} (0.40..1.00)`);
     return shot;
   });
 }
@@ -192,7 +196,7 @@ async function render(browser, base, files, forbidden, shots, states, directory)
         return route.abort();
       });
       const query = new URLSearchParams({ shot: shot.state, view: shot.view, proj: shot.proj,
-        emph: shot.emph, ghost: shot.ghost, w: String(shot.w), h: String(shot.h) });
+        emph: shot.emph, ghost: shot.ghost, w: String(shot.w), h: String(shot.h), cs: String(shot.cs), ss: String(shot.ss) });
       if (shot.cap !== null) query.set('cap', String(shot.cap));
       await page.goto(`${base}full.html?${query}`, { waitUntil: 'load' });
       await page.waitForFunction(() => ['1', 'error'].includes(document.documentElement.dataset.shotReady));

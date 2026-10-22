@@ -127,7 +127,8 @@ class MakeFigures(unittest.TestCase):
         original = dict(self.entries[0])
         for field, value in (('step', True), ('step', -1), ('when', 'during'), ('cap', 600),
                              ('cap', True), ('w', 0), ('h', 8193), ('h', 1.5), ('view', 'bad'),
-                             ('proj', 'bad'), ('emph', 'bad'), ('ghost', None), ('unknown', 1)):
+                             ('proj', 'bad'), ('emph', 'bad'), ('ghost', None), ('unknown', 1),
+                             ('cs', 0.3), ('cs', 1.2), ('ss', 0.555), ('ss', True)):
             with self.subTest(field=field, value=value):
                 self.entries = [{**original, field: value}]
                 self.assert_refused('invalid')
@@ -320,7 +321,7 @@ function frame(view, proj, emph, ghost, moving = [5], aspect = 1.6) {
   const controls = { target: coordinates(), update() {} };
   controls.target.set(0, 0, 0);
   const slots = new Uint32Array(6 * 433); for (let i = 0; i < 6; i++) slots[i * 433] = i;
-  const globals = { THREE: { Matrix4, Vector4 }, shot: { view, proj, emph, ghost },
+  const globals = { THREE: { Matrix4, Vector4 }, shot: { view, proj, emph, ghost, cs: 0.76, ss: 0.82 },
     COUNTS: { cells: 6, base_stickers: 1, base_vertices: 3 }, camera, controls,
     capCenter: i => [i, 0, 0, 1], capOrientation: identity, cameraQ: identity, $: () => ({}),
     requireValue: assert.ok, poleParameters: () => ({ pole: [0, 0, 0, -1],

@@ -22,9 +22,9 @@ ROOT = HERE.parents[2]
 LIST_FORMAT = 'magic600-tutorial-figures/1'
 MANIFEST_FORMAT = 'magic600-tutorial-figures-manifest/1'
 ID = re.compile(r'[a-z0-9][a-z0-9-]{0,63}')
-PARAMETERS = ('view', 'proj', 'emph', 'ghost', 'cap', 'w', 'h')
+PARAMETERS = ('view', 'proj', 'emph', 'ghost', 'cap', 'w', 'h', 'cs', 'ss')
 REQUIRED = {'id', 'record', 'step', 'when', 'view', 'proj', 'emph'}
-OPTIONAL = {'cap', 'ghost', 'w', 'h'}
+OPTIONAL = {'cap', 'ghost', 'w', 'h', 'cs', 'ss'}
 
 
 def sha(raw):
@@ -84,6 +84,11 @@ def load_list(path):
         for key in ('w', 'h'):
             if key in entry and (type(entry[key]) is not int or not 1 <= entry[key] <= 8192):
                 raise ValueError(f'{name}: invalid {key} (1..8192)')
+        for key in ('cs', 'ss'):
+            # Facet (cell) and sticker shrink, 0.40 to 1.00 in steps of 0.01 as the page's sliders.
+            if key in entry and (type(entry[key]) not in (int, float) or not 0.4 <= entry[key] <= 1
+                                 or abs(entry[key] * 100 - round(entry[key] * 100)) > 1e-9):
+                raise ValueError(f'{name}: invalid {key} (0.40..1.00)')
         records.add(record_directory(entry['record']))
     # Reject reserved seeds before any simulator replay or capture, including when
     # a later figure names the reserved record. The exporter checks them again.
@@ -125,7 +130,7 @@ def build(figures, temporary, vendor):
             states[key] = (state, tutorial, sha(raw))
         state, _, _ = states[key]
         shots.append({'name': entry['id'], 'state': state,
-                      **{key: entry[key] for key in PARAMETERS if key in entry}})
+                      'cs': 0.76, 'ss': 0.82, **{key: entry[key] for key in PARAMETERS if key in entry}})
     shot_list = temporary / 'shots.json'
     write_json(shot_list, shots)
     capture(data, shot_list, pictures, vendor)
