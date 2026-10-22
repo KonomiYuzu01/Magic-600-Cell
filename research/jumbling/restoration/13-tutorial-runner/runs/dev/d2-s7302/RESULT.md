@@ -28,6 +28,16 @@ not committed (it is rebuilt by this command).
 
     python3 -I -B -u $S/runner.py --table <dir>/tables/s7302-stop.json --out <dir>/out-c --cache <dir>/cache --bulk-steps 0 --height-seconds 12000 --height-cpu 12000 --pair-shards 3 --kernel-seconds 3600
 
+Progress note at 07:39 UTC (from `run.json`, not yet checked). `config.component` is `bulk_budget`; the bulk is
+`budget` (0 steps).
+
+- `r22d75`: 7 one-letter steps (T0, T1 ×3, T2 ×3), `015d839e…` → `1ff0061f…`, then `stuck` (`no_step`, 94.7 s
+  attempt) at (n2, n4, n6) = (103,103, 1,019, 172), 104,294 off. As expected.
+- `r22d81`: 5 steps (U, H6, U, U, H6) → `bbef1c8e…`, result `handoff`, (n2, n4, n6) = (102,960, 936, 0), 103,896
+  off. As expected.
+- `h4` (new): 5 steps so far (U, U, U, U, L2) → `6999b921…`; at 07:39 attempt `00017-h4` runs a `two_letter_u`
+  pass in three shards.
+
 ## Next steps
 
 1. When the component run ends: copy its output to `out-c/`, run `check_run.py`, record the steps.
