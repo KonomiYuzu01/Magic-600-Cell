@@ -364,6 +364,10 @@ class CostLeadTests(unittest.TestCase):
                 self.assertEqual(row['exact'][field], row['filtered'][field])
             self.assertEqual(row['exact']['filtered_evaluations'], 0)
             self.assertGreater(row['filtered']['filtered_evaluations'], 0)
+            # Both modes were warmed untimed: no timed call builds an anchor or cap cache.
+            for mode in ('exact', 'filtered'):
+                self.assertEqual(row[mode]['cache_entries_added']['anchors'], 0)
+                self.assertEqual(row[mode]['cache_entries_added']['cap_forms'], 0)
         self.assertEqual(json.loads((out / 'classify-summary.json').read_text()), summary)
         self.assertEqual(len((out / 'classify-caps.jsonl').read_text().splitlines()), len(CAPS))
         self.assertEqual(STATE.filtered, previous)
@@ -417,7 +421,7 @@ class CostLeadTests(unittest.TestCase):
     def test_census_end_and_letters_and_scramble_inputs(self):
         # An external census-format empty walk still goes through census.walk(end=True).
         record = _TEMP_ROOT / 'record.json'
-        record.write_text(json.dumps({'menu': 'I_a', 'k': 0, 'seed': 7, 'history': [],
+        record.write_text(json.dumps({'menu': 'I_a', 'k': 0, 'seed': 7, 'history': [], 'off_scramble': 0,
                                       'steps': [], 'moves': []}), encoding='utf-8')
         letters = _TEMP_ROOT / 'letters.json'
         letters.write_text('[[0, 1]]', encoding='utf-8')

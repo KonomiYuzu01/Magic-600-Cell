@@ -39,11 +39,14 @@ CORRECTION35_DIGEST = "80642dd327e7c86b085019db9fda41c87a2f540386d2bfeb90397bf1a
 WIDTHS = (31, 53, 63, 64)
 
 
-def output_directory(path):
-    """Resolve and validate before creating anything, including parent directories."""
+def output_directory(path, filenames=()):
+    """Resolve and validate the directory and each output file before creating anything."""
     path = Path(path).resolve()
     if path.is_relative_to(ROOT):
         raise ValueError("--out must be outside the repository")
+    for name in filenames:
+        if (path / name).resolve().is_relative_to(ROOT):
+            raise ValueError(f"--out must be outside the repository: {name} resolves inside it")
     path.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -326,7 +329,7 @@ def main(argv=None):
     parser.add_argument("--every", type=int, default=1)
     parser.add_argument("--widths", action="store_true")
     args = parser.parse_args(argv)
-    out = output_directory(args.out)
+    out = output_directory(args.out, ("heights-steps.jsonl", "heights-summary.json"))
     if args.every < 1:
         raise ValueError("--every must be positive")
     selected = args.fixture or args.journals or args.h6030 or args.correction35 or args.word

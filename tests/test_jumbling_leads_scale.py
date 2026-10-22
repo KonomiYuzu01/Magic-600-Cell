@@ -310,7 +310,24 @@ class MeshesTests(_TimedCase):
         self.assertGreater(result["totals"]["corners_not_float32_exact_vertices_1e9"], 0)
         self.assertGreater(result["totals"]["collapsed_triangles_float32"], 0)
         self.assertGreaterEqual(result["totals"]["corners_not_exact_vertices_1e9"], result["totals"]["corners_not_float32_exact_vertices_1e9"])
-        _MEASUREMENTS["sticker_comparison"] = {k: result[k] for k in ("differing_stickers", "largest_ratio", "totals", "explanation")}
+        # Per sticker: the triangle counts against the asset's own offsets and Euler's 2V - 4.
+        offsets = json.loads((ROOT / "assets/mesh.json").read_text(encoding="utf-8"))["offsets"]
+        for row in result["stickers"]:
+            s = row["sticker"]
+            self.assertEqual(row["retained_triangles"], (offsets[s + 1] - offsets[s]) // 3, s)
+            self.assertEqual(row["exact_triangles"], 2 * row["exact_vertices"] - 4, s)
+        # Stickers 268, 322 and 399 are tetrahedra whose only extra stored points are an exact
+        # zero coordinate stored as tiny distinct values; each such point adds two hull triangles.
+        for s, extra in ((268, 1), (322, 2), (399, 3)):
+            row = result["stickers"][s]
+            self.assertEqual(row["exact_vertices"], 4)
+            self.assertEqual(row["near_coincident_points_float32"], extra)
+            self.assertEqual(row["retained_triangles"], row["exact_triangles"] + 2 * extra)
+            self.assertEqual(row["corners_not_float32_exact_vertices_1e9"] + row["collapsed_triangles_float32"]
+                             + row["duplicate_triangles_float32"], 0)
+        self.assertEqual(result["unattributed_stickers"], [])
+        _MEASUREMENTS["sticker_comparison"] = {k: result[k] for k in ("differing_stickers", "largest_ratio", "totals",
+                                                                       "unattributed_stickers", "explanation")}
 
 
 class X3PreviewTests(_TimedCase):
@@ -384,7 +401,7 @@ class X3PreviewTests(_TimedCase):
         letters, expected = _blocked_word()
         with tempfile.TemporaryDirectory(dir=_TEMP_ROOT) as directory:
             path = Path(directory) / "census-record.json"
-            path.write_text(json.dumps({"menu": "I_a", "k": 0, "seed": 17,
+            path.write_text(json.dumps({"menu": "I_a", "k": 0, "seed": 17, "off_scramble": 0,
                                         "history": [], "moves": [], "steps": []}), encoding="utf-8")
             state = x3.start_state(("record", str(path)), then=letters[:1],
                                    start_digest=expected.digest(), ctx=CTX)
@@ -445,6 +462,19 @@ class CLISmokeTests(_TimedCase):
             self.assertEqual((root / "meshes/exposed-mesh-vertices.f32").stat().st_size, mr["base_mesh"]["cut_bytes"])
             offsets = json.loads((root / "meshes/exposed-mesh-offsets.json").read_text())
             self.assertEqual(offsets["offsets"][-1] * 16, mr["base_mesh"]["cut_bytes"])
+
+    def test_all_clis_refuse_output_files_resolving_into_repository(self):
+        real = Path.resolve
+        for main, name in ((heights.main, "heights-summary.json"), (meshes.main, "exposed-mesh-offsets.json"),
+                           (x3.main, "x3-letters.jsonl")):
+            def resolve(path, strict=False, name=name):
+                return ROOT / "assets" / "manifest.json" if path.name == name else real(path, strict)
+
+            out = _TEMP_ROOT / f"linked-{name}"
+            with self.subTest(cli=main.__module__), patch.object(Path, "resolve", resolve):
+                with self.assertRaisesRegex(ValueError, f"{name} resolves inside it"):
+                    main(["--out", str(out)])
+            self.assertFalse(out.exists())
 
     def test_all_clis_refuse_output_inside_repository(self):
         for main in (heights.main, meshes.main, x3.main):

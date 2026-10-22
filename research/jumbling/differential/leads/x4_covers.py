@@ -208,7 +208,7 @@ def main(argv=None):
     if args.jobs < 1:
         parser.error('--jobs must be positive')
     try:
-        out = covers.output_directory(args.out)
+        out = covers.output_directory(args.out, ('x4-pairs.jsonl', 'x4-summary.json'))
     except ValueError as error:
         parser.error(str(error))
     started = perf_counter()

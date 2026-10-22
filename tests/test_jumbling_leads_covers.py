@@ -8,7 +8,9 @@ import sys
 
 sys.dont_write_bytecode = True
 
+from contextlib import redirect_stderr
 from copy import deepcopy
+import io
 import json
 import os
 from pathlib import Path
@@ -16,6 +18,7 @@ import subprocess
 import tempfile
 from time import perf_counter
 import unittest
+from unittest.mock import patch
 
 REPO = Path(__file__).resolve().parents[1]
 JUMBLING = REPO / 'research' / 'jumbling'
@@ -281,6 +284,22 @@ class CLISmokeTests(TimedCase):
                 completed = self.run_cli(script, '--out', REPO)
                 self.assertNotEqual(completed.returncode, 0)
                 self.assertIn('--out must be outside the repository', completed.stderr)
+
+    def test_refuse_output_files_resolving_into_repository(self):
+        real = Path.resolve
+        for module, name in ((x4, 'x4-summary.json'), (xm1, 'xm1-steps.jsonl')):
+            def resolve(path, strict=False, name=name):
+                return REPO / 'assets' / 'manifest.json' if path.name == name else real(path, strict)
+
+            out = _TEMP_ROOT / f'linked-{name}'
+            with self.subTest(module=module.__name__), patch.object(Path, 'resolve', resolve), \
+                    patch.object(census, 'walk', side_effect=AssertionError('measured before refusing')):
+                error = io.StringIO()
+                with redirect_stderr(error), self.assertRaises(SystemExit) as stopped:
+                    module.main(['--out', str(out)])
+                self.assertEqual(stopped.exception.code, 2)
+                self.assertIn(f'{name} resolves inside it', error.getvalue())
+            self.assertFalse(out.exists())
 
     def test_xm1_seed7001(self):
         out = _TEMP_ROOT / 'xm1-smoke'

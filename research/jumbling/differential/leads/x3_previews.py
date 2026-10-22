@@ -226,7 +226,7 @@ def main(argv=None):
     parser.add_argument("--label")
     parser.add_argument("--sample-every", type=int, default=100)
     args = parser.parse_args(argv)
-    out = heights.output_directory(args.out)
+    out = heights.output_directory(args.out, ("x3-letters.jsonl", "x3-summary.json"))
     if args.sample_every < 1:
         raise ValueError("--sample-every must be positive")
     if args.word and args.start is None:

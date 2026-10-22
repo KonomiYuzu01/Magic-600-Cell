@@ -201,11 +201,14 @@ def compare_recorded(result: RepairListResult, recorded, *, step):
     _compare_rows(result.outcomes, expected, step=step, kind='outcome')
 
 
-def output_directory(path):
-    """Validate before any output write, resolving existing symlink ancestors."""
+def output_directory(path, filenames=()):
+    """Validate the directory and each output file before any write, resolving symlinks."""
     directory = Path(path).resolve()
     if directory.is_relative_to(census.ROOT):
         raise ValueError('--out must be outside the repository')
+    for name in filenames:
+        if (directory / name).resolve().is_relative_to(census.ROOT):
+            raise ValueError(f'--out must be outside the repository: {name} resolves inside it')
     return directory
 
 

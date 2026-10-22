@@ -1,9 +1,12 @@
 """Cost of J1 exact classification against amendment A2's filtered sign test.
 
-The exact call runs first, the filtered call second on the same state and cap.
-Statuses, inside sets and blocked flags must agree at every observation; any
-disagreement is retained as a failure. These are cloud research timings, never
-product performance evidence. The original state's filter setting is restored.
+At each cap both modes first run once untimed, so that neither timed call
+builds a cache (J1's anchor groups, the Regions geometry) that the other then
+reuses. Then the exact call runs, the filtered call second, on the same state
+and cap. Statuses, inside sets and blocked flags must agree at every
+observation; any disagreement is retained as a failure. These are cloud
+research timings, never product performance evidence. The original state's
+filter setting is restored.
 """
 
 import sys
@@ -26,16 +29,30 @@ import sim  # noqa: E402
 from differential.leads.x2_straddlers import environment, output_directory, selected_caps, times  # noqa: E402
 
 
+CACHES = ('anchors', 'cap_forms', 'cap_float_rows', 'vforms', 'float_rows', 'vertices')
+
+
+def _cache_sizes(state):
+    regions = state.ctx.regions
+    return (len(state._anchor_cache), len(regions._capcache), len(regions._capfloat),
+            len(regions._vcache), len(regions._fcache), len(regions._xcache))
+
+
 def _observation(state, cap, filtered):
     state.filtered = filtered
+    before = _cache_sizes(state)
     started = perf_counter()
     cl = state.classify(cap, need_inside=True, stop_at_straddle=True)
     elapsed = perf_counter() - started
+    # Entries added during the timed call (the Regions caches are LRUs, so a full
+    # one can still miss without growing; the anchor and cap caches never evict).
+    grown = [after - first for first, after in zip(before, _cache_sizes(state))]
     return {'seconds': elapsed, 'status': cl.status, 'blocked': cl.straddle is not None,
             'inside': None if cl.inside is None else cl.inside.tolist(),
             'counts': dict(cl.counts), 'uncertain_pieces': cl.uncertain,
             'exact_evaluations': cl.exact_evaluations,
-            'filtered_evaluations': cl.filtered_evaluations}
+            'filtered_evaluations': cl.filtered_evaluations,
+            'cache_entries_added': dict(zip(CACHES, grown))}
 
 
 def measure(state, caps=None):
@@ -43,6 +60,9 @@ def measure(state, caps=None):
     previous = state.filtered
     try:
         for cap in selected_caps(caps):
+            for mode in (False, True):  # untimed warm-up of both modes
+                state.filtered = mode
+                state.classify(cap, need_inside=True, stop_at_straddle=True)
             exact = _observation(state, cap, False)
             filtered = _observation(state, cap, True)
             agreement = {key: exact[key] == filtered[key] for key in ('status', 'inside', 'blocked')}
@@ -56,6 +76,10 @@ def measure(state, caps=None):
                'evaluation_counts': {mode: {kind: sum(row[mode][kind] for row in rows)
                                             for kind in ('exact_evaluations', 'filtered_evaluations')}
                                      for mode in ('exact', 'filtered')},
+               'cache_entries_added_while_timed': {
+                   mode: {kind: sum(row[mode]['cache_entries_added'][kind] for row in rows)
+                          for kind in CACHES}
+                   for mode in ('exact', 'filtered')},
                'passed': all(row['passed'] for row in rows),
                'failures': [{'cap': row['cap'], 'fields': [key for key, ok in row['agreement'].items() if not ok]}
                             for row in rows if not row['passed']]}
@@ -82,7 +106,8 @@ def run(states, out, caps=None):
                'failures': [{'state': item['state'], **failure}
                             for item in summaries for failure in item['failures']],
                'evidence': 'J1 source/fixture replay; cloud research timings, not product performance',
-               'timing': 'exact first, filtered second; includes J1 certificate construction'}
+               'timing': ('both modes warmed untimed at each cap, then exact first, filtered second; '
+                          'includes J1 certificate construction')}
     (directory / 'classify-summary.json').write_text(json.dumps(summary, indent=2, sort_keys=True) + '\n',
                                                    encoding='utf-8')
     return rows, summary

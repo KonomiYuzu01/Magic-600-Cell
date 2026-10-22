@@ -3,8 +3,9 @@
 The census (`research/jumbling/restoration/11-scramble-census`) recorded each run as a scramble
 (menu I_a, depth k, seed) and the moves of the research restorer, grouped in steps. `walk`
 rebuilds a record as the census replay check does (`scripts/check_records.py`): the scramble from
-(k, seed), checked against the record's history, then each step's twists, with N and the off
-count checked before and after every step against the record. Every twist must be admissible.
+(k, seed), checked against the record's history and its off count, then each step's twists, with N
+and the off count checked before and after every step against the record (and at the start of a
+continued round). Every twist must be admissible.
 
 The cost-lead scripts in this package measure at the yielded states. Evidence kind: source and
 fixture replay with the J1 reference engine and the research restorer (`theory/restore.py`,
@@ -69,16 +70,26 @@ def menu():
     return _MENU
 
 
+def _outside(path, what):
+    """`path` resolved (symlinks included); a path inside the repository is refused."""
+    resolved = Path(path).resolve()
+    if resolved.is_relative_to(ROOT):
+        raise CensusError(f'{what} must be outside the repository')
+    return resolved
+
+
 def isolate_cache(path=None):
     """Point the research centroid cache (`seams.CACHE`, under `work/` by default) outside the
-    repository: into `path`, or into a temporary directory removed at exit. Returns the file."""
+    repository: into `path`, or into a temporary directory removed at exit. Returns the file.
+    A path or temporary directory inside the repository is refused before anything is created."""
     global _CACHE_DIR
     if path is None:
         if _CACHE_DIR is None:
+            _outside(tempfile.gettempdir(), 'the temporary directory')
             _CACHE_DIR = tempfile.mkdtemp(prefix='jumbling-census-')
             atexit.register(shutil.rmtree, _CACHE_DIR, True)
         path = _CACHE_DIR
-    seams.CACHE = Path(path) / 'home_centroids.npy'
+    seams.CACHE = _outside(path, 'the centroid cache') / 'home_centroids.npy'
     return seams.CACHE
 
 
@@ -127,6 +138,11 @@ def scramble(record):
     st, hist = restore.scramble(menu(), record['k'], record['seed'])
     if [list(h) for h in hist] != [list(h) for h in record['history']]:
         raise CensusError('the rebuilt scramble differs from the record history')
+    off = int(st.off_lattice_count())
+    if 'off_scramble' not in record:
+        raise CensusError('the record has no off_scramble to check the scramble against')
+    if off != record['off_scramble']:
+        raise CensusError(f"the scramble has {off} pieces off, the record has {record['off_scramble']}")
     return seams.SeamRestorer(st, menu())
 
 
@@ -145,13 +161,30 @@ def walk(seed_or_path, last=None, end=False):
     last = total if last is None else last
     if not 0 <= last <= total:
         raise ValueError(f'last step {last} is outside 0..{total}')
+    # A round that continues an earlier run records its start (N and off count) at a step
+    # boundary, as the census replay check (`scripts/check_records.py`) checks it.
+    start = record.get('continued_from_moves') if 'N_start' in record else None
+    bounds = [0]
+    for step in record['steps']:
+        bounds.append(bounds[-1] + step['twists'])
+    if start is not None and start not in bounds:
+        raise CensusError(f'continued_from_moves {start} is not a step boundary')
+
+    def check_start(where):
+        got = (S.misalignment(), int(S.st.off_lattice_count()))
+        if got != (record['N_start'], record['off_start']):
+            raise CensusError(f"{where}: (N, off) at the round's start is {got}, the record has "
+                              f"{(record['N_start'], record['off_start'])}")
+
     pos = 0
     for j, step in enumerate(record['steps'][:last]):
         word = [tuple(m) for m in record['moves'][pos:pos + step['twists']]]
-        pos += step['twists']
         N = S.misalignment()
         if N != step['N_before']:
             raise CensusError(f"step {j + 1}: N before is {N}, the record has {step['N_before']}")
+        if pos == start:
+            check_start(f'step {j + 1}')
+        pos += step['twists']
         moves, digest = len(S.moves), S.st.digest()
         yield Step(j + 1, step['rule'], word, step, S)
         if len(S.moves) != moves or S.st.digest() != digest:
@@ -163,6 +196,8 @@ def walk(seed_or_path, last=None, end=False):
             raise CensusError(f"step {j + 1}: (N, off) after is {got}, the record has "
                               f"{(step['N_after'], step['off_after'])}")
     if last == total:
+        if pos == start:
+            check_start('the end')
         want = end_digest(path, record)
         if want is not None and S.st.digest() != want:
             raise CensusError(f'{path.name}: the end digest differs from the census replay check')

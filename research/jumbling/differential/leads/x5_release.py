@@ -198,7 +198,7 @@ def main(argv=None):
     parser.add_argument('--out', required=True)
     args = parser.parse_args(argv)
     try:
-        directory = output_directory(args.out)
+        directory = output_directory(args.out, ('x5-checks.jsonl', 'x5-summary.json'))
     except ValueError as error:
         parser.error(str(error))
     rows, summary = run_release()

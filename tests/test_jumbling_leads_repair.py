@@ -368,7 +368,74 @@ class ReleaseCheckTests(TimedCase):
         json.dumps({'rows': rows, 'summary': summary})
 
 
+class CensusTests(TimedCase):
+    def _copy(self, directory, record, **changes):
+        target = Path(directory) / 'record.json'
+        target.write_text(json.dumps(dict(record, **changes)), encoding='utf-8')
+        return target
+
+    def test_scramble_off_count_and_round_start_are_checked(self):
+        global _TEMP_ROOT
+        _, record = census.load(7001)
+        try:
+            with tempfile.TemporaryDirectory(prefix='jumbling-census-record-') as temporary:
+                _TEMP_ROOT = Path(temporary).resolve()
+                for changes, message in (({'off_scramble': 0}, 'pieces off'),
+                                         ({'N_start': record['N_start'] + 1}, "round's start")):
+                    with self.subTest(changes=changes), self.assertRaisesRegex(census.CensusError, message):
+                        next(census.walk(self._copy(temporary, record, **changes)))
+                missing = {key: value for key, value in record.items() if key != 'off_scramble'}
+                with self.assertRaisesRegex(census.CensusError, 'no off_scramble'):
+                    next(census.walk(self._copy(temporary, missing)))
+                with self.assertRaisesRegex(census.CensusError, 'not a step boundary'):
+                    next(census.walk(self._copy(temporary, record, continued_from_moves=len(record['moves']) + 1)))
+                # A round starting at the record's end is checked after the last step.
+                at_end = dict(continued_from_moves=len(record['moves']), N_start=record['N_now'],
+                              off_start=record['off_now'])
+                self.assertEqual(len(list(census.walk(self._copy(temporary, record, **at_end)))),
+                                 len(record['steps']))
+                with self.assertRaisesRegex(census.CensusError, "the end: .*round's start"):
+                    list(census.walk(self._copy(temporary, record, **dict(at_end, N_start=record['N_now'] + 1))))
+                self.assertEqual(next(census.walk(self._copy(temporary, record))).n, 1)
+        finally:
+            _TEMP_ROOT = None
+
+    def test_centroid_cache_inside_repository_is_refused(self):
+        before = census.seams.CACHE
+        for path in (ROOT, ROOT / 'work', JUMBLING / 'theory'):
+            with self.subTest(path=path), self.assertRaisesRegex(census.CensusError, 'outside the repository'):
+                census.isolate_cache(path)
+        saved = census._CACHE_DIR
+        try:
+            census._CACHE_DIR = None
+            with patch.object(census.tempfile, 'gettempdir', return_value=str(ROOT / 'work')), \
+                    patch.object(census.tempfile, 'mkdtemp', side_effect=AssertionError('made a directory')) as made:
+                with self.assertRaisesRegex(census.CensusError, 'outside the repository'):
+                    census.isolate_cache()
+                made.assert_not_called()
+        finally:
+            census._CACHE_DIR = saved
+        self.assertEqual(census.seams.CACHE, before)
+
+
 class CLISmokeTests(TimedCase):
+    def test_output_file_resolving_into_repository_is_refused(self):
+        real = Path.resolve
+        for module, function, name in ((X1, 'run_walk', 'x1-summary.json'), (X5, 'run_release', 'x5-checks.jsonl')):
+            def resolve(path, strict=False, name=name):
+                return ROOT / 'assets' / 'manifest.json' if path.name == name else real(path, strict)
+
+            with self.subTest(module=module.__name__), \
+                    tempfile.TemporaryDirectory(prefix='jumbling-repair-out-') as temporary, \
+                    patch.object(Path, 'resolve', resolve), patch.object(module, function) as run:
+                error = io.StringIO()
+                with redirect_stderr(error), self.assertRaises(SystemExit) as stopped:
+                    module.main(['--out', temporary])
+                self.assertEqual(stopped.exception.code, 2)
+                self.assertIn(f'{name} resolves inside it', error.getvalue())
+                run.assert_not_called()
+                self.assertEqual(list(Path(temporary).iterdir()), [])
+
     def test_output_inside_repository_is_refused_before_measurement(self):
         for module, function in ((X1, 'run_walk'), (X5, 'run_release')):
             with self.subTest(module=module.__name__), patch.object(module, function) as run:
@@ -410,7 +477,8 @@ class CLISmokeTests(TimedCase):
 def load_tests(loader, tests, pattern):
     if _IN_PROCESS:
         return unittest.TestSuite(loader.loadTestsFromTestCase(case) for case in
-                                  (RecordedRepairTests, TypedResultTests, WalkTests, ReleaseCheckTests, CLISmokeTests))
+                                  (RecordedRepairTests, TypedResultTests, WalkTests, ReleaseCheckTests, CensusTests,
+                                   CLISmokeTests))
     from tests import isolated_numpy
     return isolated_numpy.suite('test_jumbling_leads_repair', 'repair and release leads in an isolated NumPy process',
                                 'NumPy is required for the repair-list and release-check leads')

@@ -26,17 +26,19 @@ section 2).
 `census.py` rebuilds the records of the scramble census
 (`research/jumbling/restoration/11-scramble-census/runs/`) step by step, as the
 census replay check does: the scramble from (k, seed), checked against the
-recorded history, then each step's twists, with N and the off count checked
-before and after every step and J1's end digest checked against the census
-replay check. `walk(seed)` yields each step with the restorer at the state
+recorded history and off count, then each step's twists, with N and the off
+count checked before and after every step and at the start of a continued
+round, and J1's end digest checked against the census replay check. `walk(seed)` yields each step with the restorer at the state
 before it; the consumer must hand it back unchanged, and the walk checks that.
 `state_at(seed, n)` returns one state. The research centroid cache goes to a
-temporary directory, so nothing is written in the repository.
+temporary directory; a cache path or temporary directory that resolves inside
+the repository is refused, so nothing is written there.
 
 ## Leads
 
 Every command runs from the repository root with `python -B`, takes `--out DIR`
-and refuses a directory inside the repository before it writes anything. Each
+and refuses a directory inside the repository, or an output file that
+resolves inside it, before it writes anything. Each
 summary states the CPU count, the Python and NumPy versions and the commit
 (`null` outside a Git checkout).
 
@@ -153,8 +155,11 @@ measured state's digest. Writes `x2-caps.jsonl` and `x2-summary.json`.
 
 `classify_cost.py` classifies each cap twice on the same state, exact first
 (`state.filtered = False`) and then with amendment A2's filtered sign test,
-with `need_inside=True`. Status, inside set and blocked flag must agree; a
-difference is recorded as a failure, never averaged away.
+with `need_inside=True`. Both modes first run once untimed at each cap, so
+that neither timed call builds a J1 cache the other reuses; each observation
+records the cache entries added while it was timed. Status, inside set and
+blocked flag must agree; a difference is recorded as a failure, never averaged
+away.
 
 ```sh
 python -B research/jumbling/differential/leads/classify_cost.py --out DIR [--fixture I_a|S4|I_b] [--census SEED] [--scramble K SEED] [--caps C ...]
@@ -188,7 +193,10 @@ on main. Writes `heights-steps.jsonl` and `heights-summary.json`.
 exact integer arithmetic, with an Euler check per face, and scales the counts
 by the orbit sizes. It builds the base mesh of the exposed cut faces in memory
 and compares the exact sticker faces with the retained float32 sticker asset
-(`assets/mesh.json`, `assets/mesh_vertices.f32`), sticker by sticker.
+(`assets/mesh.json`, `assets/mesh_vertices.f32`), sticker by sticker: extra
+stored points, near-coincident points (an exact zero coordinate stored as tiny
+distinct values), collapsed and repeated triangles, and the stickers that none
+of these counts explains.
 
 ```sh
 python -B research/jumbling/differential/leads/meshes.py --out DIR [--write-mesh]

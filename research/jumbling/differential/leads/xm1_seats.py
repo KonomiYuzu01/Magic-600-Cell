@@ -166,7 +166,7 @@ def main(argv=None):
                         default=list(census.RECORDS))
     args = parser.parse_args(argv)
     try:
-        out = output_directory(args.out)
+        out = output_directory(args.out, ('xm1-steps.jsonl', 'xm1-summary.json'))
     except ValueError as error:
         parser.error(str(error))
     started = perf_counter()

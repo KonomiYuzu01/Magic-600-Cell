@@ -188,6 +188,11 @@ def sticker_comparison(ctx):
             return int((distances > 1e-9).sum())
 
         stored_exact = exact.astype("<f4").astype(np.float64)
+        # Distinct stored points within 1e-9 of one float32-rounded exact vertex (an exact zero
+        # coordinate stored as a tiny nonzero value): each one is an extra hull point.
+        distances = np.linalg.norm(unique[:, None, :] - stored_exact[None, :, :], axis=2)
+        close = distances.min(axis=1) <= 1e-9
+        near_coincident = int(close.sum()) - len(set(distances.argmin(axis=1)[close].tolist()))
         triangles = retained.reshape(-1, 3, 4)
         collapsed = sum(len({tuple(p) for p in tri}) < 3 for tri in triangles)
         canonical_triangles = {tuple(sorted(tuple(p) for p in tri)) for tri in triangles}
@@ -200,17 +205,26 @@ def sticker_comparison(ctx):
                      "unique_points_not_exact_vertices_1e9": not_vertices(unique, exact),
                      "corners_not_float32_exact_vertices_1e9": not_vertices(retained, stored_exact),
                      "unique_points_not_float32_exact_vertices_1e9": not_vertices(unique, stored_exact),
+                     "near_coincident_points_float32": near_coincident,
                      "collapsed_triangles_float32": collapsed,
                      "duplicate_triangles_float32": len(triangles) - len(canonical_triangles)})
     additive = ("exact_triangles", "retained_triangles", "retained_corners", "retained_unique_points",
                 "corners_not_exact_vertices_1e9", "unique_points_not_exact_vertices_1e9",
                 "corners_not_float32_exact_vertices_1e9", "unique_points_not_float32_exact_vertices_1e9",
-                "collapsed_triangles_float32", "duplicate_triangles_float32")
+                "near_coincident_points_float32", "collapsed_triangles_float32", "duplicate_triangles_float32")
     totals = {key: sum(row[key] for row in rows) for key in additive}
+    # Extra triangles that none of the reported counts accounts for: every corner is a
+    # float32-rounded exact vertex, no two stored points share one, and no triangle is
+    # collapsed or repeated.
+    unattributed = [row["sticker"] for row in rows
+                    if row["retained_triangles"] > row["exact_triangles"]
+                    and not (row["corners_not_float32_exact_vertices_1e9"] or row["near_coincident_points_float32"]
+                             or row["collapsed_triangles_float32"] or row["duplicate_triangles_float32"])]
     return {"stickers": rows, "sticker_count": len(rows),
             "differing_stickers": sum(row["exact_triangles"] != row["retained_triangles"] for row in rows),
             "largest_ratio": max(row["ratio"] for row in rows), "totals": totals,
-            "explanation": "build_assets.py uses ConvexHull of floating region points. The retained triangle soup contains extra points besides the exact host vertices, repeated triangles and triangles whose corners collapse at float32 precision. It is not a minimal triangulation of the exact host polyhedron. Raw 1e-9 vertex matching also counts float32 rounding error; the separately reported float32-rounded reference separates that error from extra stored points. Counts do not reconstruct the unavailable pre-float32 hull inputs."}
+            "unattributed_stickers": unattributed,
+            "explanation": "build_assets.py uses ConvexHull of floating region points. The retained triangle soup contains extra points besides the exact host vertices, repeated triangles and triangles whose corners collapse at float32 precision. It is not a minimal triangulation of the exact host polyhedron. Raw 1e-9 vertex matching also counts float32 rounding error; the separately reported float32-rounded reference separates that error from extra stored points. Counts do not reconstruct the unavailable pre-float32 hull inputs. Near-coincident points are distinct stored points within 1e-9 of one float32-rounded exact vertex (an exact zero coordinate stored as a tiny nonzero value); each adds hull points and triangles. unattributed_stickers lists the stickers with more triangles than the exact count that none of these counts explains."}
 
 
 def build_base_mesh(faces):
@@ -257,7 +271,8 @@ def main(argv=None):
     parser.add_argument("--out", required=True)
     parser.add_argument("--write-mesh", action="store_true")
     args = parser.parse_args(argv)
-    out = heights.output_directory(args.out)
+    out = heights.output_directory(args.out, ("meshes-orbits.jsonl", "meshes-summary.json",
+                                              "exposed-mesh-vertices.f32", "exposed-mesh-offsets.json"))
     started = perf_counter()
     ctx = sim.get_context()
     faces = orbit_faces(ctx)

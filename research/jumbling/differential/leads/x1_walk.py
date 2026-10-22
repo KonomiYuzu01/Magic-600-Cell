@@ -25,7 +25,7 @@ if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from differential.leads import census
-from differential.leads.repair_list import (compare_recorded, output_directory,
+from differential.leads.repair_list import (compare_recorded, completed_rows, output_directory,
                                             repair_list, run_metadata)
 
 FINDABILITY = census.CENSUS / 'runs' / 'findability'
@@ -65,6 +65,11 @@ def _expected_pairs(record):
     return before + 59 * record['neighbours_of_c']
 
 
+def _listed(result, step):
+    """A completed list's rows, read through completed_rows; None for an interrupted job."""
+    return completed_rows(result, step=step) if result.status == 'completed' else None
+
+
 def measure_step(step, *, max_pairs=None, recorded=None, density=None):
     """Measure one census Step; max_pairs is only for the bounded test smoke."""
     started = perf_counter()
@@ -86,16 +91,17 @@ def measure_step(step, *, max_pairs=None, recorded=None, density=None):
         requests.append({'step': step.n, 'cap': cap, 'place': place,
                          'N_c': S.scores(cap)[0],
                          'meeting_misaligned_caps': list(result.coverage.meeting_caps),
-                         'pairs': pairs, 'listed_rows': result.rows, 'status': result.status,
+                         'pairs': pairs, 'listed_rows': _listed(result, step.n), 'status': result.status,
                          'input_digest': result.input_digest,
                          'seconds': seconds, 'seconds_per_pair': seconds / pairs if pairs else None})
         results.append(result)
     complete = all(r.status == 'completed' for r in results)
     prior = results[:-1]
-    prior_empty = (all(not r.rows for r in prior)
+    prior_empty = (all(not _listed(r, step.n) for r in prior)
                    if all(r.status == 'completed' for r in prior) else None)
     own = (x, d, y, z, step.record['N_after'] - step.record['N_before'])
-    first = bool(results[-1].rows and results[-1].rows[0] == own) if results[-1].status == 'completed' else None
+    at_c = _listed(results[-1], step.n)
+    first = bool(at_c and at_c[0] == own) if at_c is not None else None
     density_ok = None
     if density is not None and (rows := density.get((step.n, c))) is not None:
         if results[-1].status == 'completed':
@@ -114,7 +120,7 @@ def measure_step(step, *, max_pairs=None, recorded=None, density=None):
                       'expected_pairs': _expected_pairs(recorded), 'seconds': seconds,
                       'seconds_per_pair': seconds / pairs if pairs else None,
                       'order_seconds': order_seconds, 'wall_seconds': perf_counter() - started,
-                      'listed_rows': sum(len(r.rows or ()) for r in results),
+                      'listed_rows': sum(len(_listed(r, step.n) or ()) for r in results),
                       'status': 'completed' if complete else 'cut_off', 'checks': checks}
 
 
@@ -201,7 +207,7 @@ def main(argv=None):
     parser.add_argument('--rest')
     args = parser.parse_args(argv)
     try:
-        directory = output_directory(args.out)
+        directory = output_directory(args.out, ('x1-requests.jsonl', 'x1-summary.json'))
         requests, summary = run_walk(steps=args.steps, jobs=args.jobs, rest=args.rest)
     except ValueError as error:
         parser.error(str(error))

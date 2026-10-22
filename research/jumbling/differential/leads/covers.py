@@ -269,9 +269,12 @@ def covers_query(S, c):
     return timed_covers_query(S, c)[0]
 
 
-def output_directory(value):
-    """Resolve before writing, including existing symlinked parents."""
+def output_directory(value, filenames=()):
+    """Resolve the directory and each output file before writing, including symlinks."""
     path = Path(value).resolve()
     if path.is_relative_to(census.ROOT):
         raise ValueError('--out must be outside the repository')
+    for name in filenames:
+        if (path / name).resolve().is_relative_to(census.ROOT):
+            raise ValueError(f'--out must be outside the repository: {name} resolves inside it')
     return path
