@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-22] decision | EN2A-002-R2 merges under an owner exception
+The owner chose option (a) for finding EN2A-002-R2 of pull request #124 (EN2 slice 3): its fix, which keeps the centroid cache's checked `.npy` name, merges without a third Codex verification round, with its regression test as the adjudicating experiment ([decision](decisions/owner-decisions-2026-10-22.md)). The exception covers that finding only; the review rules are unchanged.
+
 ## [2026-10-22] update | EN2 cost leads in J1: X1 to X5, XM1, heights, classification and meshes
 The cost leads of ENG-0J revision 2 (acceptance item 5) ran headless in the cloud session ([results](../../research/jumbling/differential/leads/results/summary.md)): in J1 a repair list takes 3.5 s to about 3 minutes, entry heights under the I_a menu are unbounded (3,018 bits at the X1 witness H6030), the exact covers differ from the research float test only where d is blocked, and a full-detail mesh of every exposed face has 5,760,000 triangles. They are cloud timings of research code; EN3 and EN4 confirm or overturn them with a product engine.
 
