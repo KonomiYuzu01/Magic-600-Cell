@@ -97,6 +97,17 @@
       {"id": "j4", "title": "J4 orbit data for candidate menus", "weight": 1, "done": true, "evidence": "research/jumbling/explorer/explorer-results.json"},
       {"id": "renderer-packet", "title": "Renderer packet to owner", "weight": 1, "done": true, "evidence": "docs/progress/1.0/packets/renderer/E-2.4-0J-jumbling.md"},
       {"id": "engineering-packet", "title": "Engineering packet to owner", "weight": 1, "done": true, "evidence": "docs/progress/1.0/packets/engineering/ENG-0J-jumbling-backend.md"}
+     ]},
+    {"id": "jumbling-freeze", "track": "jumbling", "title": "Jumble enters the 2.5 freeze (option B)", "status": "in_progress", "acceptance": null, "acceptance_source": null, "blocker": null,
+     "items": [
+      {"id": "dt-j1", "title": "DT-J1 solver aids settled with the owner", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/116"},
+      {"id": "records", "title": "Branch-only jumbling records on main", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/117"},
+      {"id": "en1", "title": "ENG-0J revision 2 plan-checked by Astra", "weight": 2, "done": false, "evidence": null},
+      {"id": "en2", "title": "Jumbling harness and store", "weight": 2, "done": false, "evidence": null},
+      {"id": "en3", "title": "Jumbling command rows and interfaces", "weight": 2, "done": false, "evidence": null},
+      {"id": "dt-j2", "title": "DT-J2 views settled", "weight": 1, "done": false, "evidence": null},
+      {"id": "dt-j3", "title": "DT-J3 encodings settled", "weight": 1, "done": false, "evidence": null},
+      {"id": "dt-j4", "title": "DT-J4 words and motion settled", "weight": 1, "done": false, "evidence": null}
      ]}
   ]
 }

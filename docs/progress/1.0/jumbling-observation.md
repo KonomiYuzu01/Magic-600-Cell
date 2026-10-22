@@ -17,7 +17,7 @@ The restoration method has two phases, and each needs different things on screen
 
 | Phase | What the solver does | What the view must show |
 | --- | --- | --- |
-| U, shape | Reads the seams and closes misaligned cuts until the shape is restored (N = 0) | where the shape is wrong (seams, holes, overhangs); the misalignment N_c of each cap; the domain of each piece; which caps are blocked and why; whether a twist or word the solver proposes closes a cut or lowers N |
+| U, shape | Reads the seams and closes misaligned cuts until the shape is restored (N = 0) | where the shape is wrong (seams, holes, overhangs); the misalignment N_c of each cap; the domain of each piece; which caps are blocked and why; whether a twist or word the solver proposes closes a cut or lowers N; at a cap the solver names, the three-twist repairs that lower N (rule 6) |
 | L, labels | The retained method (orbit-first block building) on a lattice configuration | the retained views and filters, unchanged |
 
 At a deep stop (open problem R1), the solver also needs:
@@ -39,7 +39,7 @@ So the views answer two questions, matching D8:
    - every piece a previewed twist or word moves (its collateral);
    - protection conflicts (as in the retained design);
    - hidden pieces that matter to the selected action are drawn as an outline in the reference scope, with a count.
-6. **The tools never choose.** A check answers about a twist or word the solver proposes. No view lists the twists that close a cut or lower N, ranks caps by how promising they are, or marks a "next move" (human-solve boundary, 2 October 2026). Showing N_c, the floor and blocked caps is allowed: these are facts about the configuration, not choices.
+6. **The tools never choose.** A check answers about a twist or word the solver proposes. No view lists the twists that close a cut or lower N, ranks caps by how promising they are, or marks a "next move" (human-solve boundary, 2 October 2026). Showing N_c, the floor and blocked caps is allowed: these are facts about the configuration, not choices. One exception (owner, 17 October 2026: [record](../../wiki/decisions/owner-decisions-2026-10-17-repair-pairs.md)): for a cap c the solver names, the program may list the pairs (x, d) of the three-twist repair (manual section 2.3) that lower N, each with its y and z, and the solver picks one. The list is in menu order of x, then d, marks no pair as best, and is empty when no pair at c lowers N; the program does not choose the cap and makes no twist itself. Measured on one record: 1 to 61 pairs at the cap where a repair was found, a median of 5; from step 44 on a median of 3, with a single pair at 15 of 52 steps.
 7. **The scramble journal is never shown.** "Pieces moved by scramble record t" is not a filter. The solver's own twist record is allowed ("pieces moved by my twist k"; reopening, U7).
 8. **Hover only inspects.** Inspecting, selecting a cap, assigning a grip and moving the camera stay separate actions.
 
@@ -64,7 +64,7 @@ A piece has a fixed identity (its id and its home region) wherever it is. A slot
 | Predicate | Definition | Source |
 | --- | --- | --- |
 | Lattice status | on or off the lattice (pose in K⁺) | `pose_lattice` |
-| Domain | the pieces of one domain γK⁺: same tree positions (t_L, t_R) (restoration T6); the lattice domain is (v₀, v₀) | new per-pose field (section 6) |
+| Domain | the pieces of one domain γK⁺: same tree positions (t_L, t_R) (restoration T6); the lattice domain is (v₀, v₀) | new per-pose field (section 8) |
 | Height | tree heights (d_L, d_R), for example "height at least 2" | new per-pose field |
 | Inside cap c | the certified inside set of an admissible cap c | engine classification |
 | Lens of c and d | inside c and inside d | engine |
@@ -81,7 +81,7 @@ Predicates combine with and, or and not, and save as a live query or as frozen i
 
 ### 3.3 Tints
 
-- **Domain tint** (restoration section 3, "the solver's view"): one colour per domain, the lattice domain neutral. Domains seen so far: 6 at the I_a@40 stop, 18 at an S4@60 stop. The palette must keep about 20 domains apart in both theme families, or fall back to "largest domains coloured, the rest one colour, with a count".
+- **Domain tint** (restoration section 3, "the solver's view"): one colour per domain, the lattice domain neutral. Domains seen so far: 6 at the I_a@40 stop, 18 at an S4@60 stop; on the W-J I_a fixture path the count passes 20 at record 82 and reaches 37 at record 300 (`research/jumbling/theory/results/paths-I_a-300.json`, series `domains`). The palette must keep about 20 domains apart in both theme families, or fall back to "largest domains coloured, the rest one colour, with a count".
 - **Off-lattice tint**: already in the research viewer.
 - **Height tint**: optional, a ramp over d_L + d_R.
 - A tint never replaces the sticker label: the label stays readable (A3: effects never hide structure).
@@ -96,7 +96,7 @@ Predicates combine with and, or and not, and save as a live query or as frozen i
 - By restoration M1, a cut is closed exactly when every contact across it joins one domain and nothing on it sticks out or is left open. The raw view shows the second half (holes and overhangs). A contact between two domains without a gap is visible only through the domain tint. Phase U is done when neither shows anything (N = 0, restoration M3).
 
 **Requirements.**
-1. Exposed faces are drawn in a neutral material, distinct from every sticker colour, optionally tinted by domain. This needs new geometry: the 3-faces of each piece on the cut hyperplanes of its region (section 6). Its size is not known and must be measured before the contract revision.
+1. Exposed faces are drawn in a neutral material, distinct from every sticker colour, optionally tinted by domain. This needs new geometry: the 3-faces of each piece on the cut hyperplanes of its region (section 8). Its size is not known and must be measured before the contract revision.
 2. The cut hyperplane of a selected cap can be shown as a translucent overlay, without hiding geometry.
 3. Projection: the existing chain (rotation Q, then perspective with eye distance d4 or stereographic from a named pole, then the 3D camera). The raw view adds one preset, **cap-centred**: stereographic from the antipode of the selected cap's pole, so that cap sits undistorted in the middle.
 4. The raw view is a view mode, not a filter: switching to it changes no selection or saved filter, and switching back restores the previous shrink and filters.
@@ -160,9 +160,10 @@ All exact, on the current revision, about a proposal the solver makes:
 - would the twist (c, x) close c's cut, and what would N_c become (one cap's count, by restoration M2);
 - would the word w lower N, and by how much (a sum of own-cut changes);
 - why cap c cannot improve alone (its floor);
-- is cap c blocked, and by which piece.
+- is cap c blocked, and by which piece;
+- at a cap c the solver names, which pairs (x, d) of the three-twist repair lower N, each with its y and z (the one exception to rule 6, owner, 17 October 2026).
 
-The engine answers within the command layer's preview and gates (`fresh_preview`). No check returns a list of good twists.
+The engine answers within the command layer's preview and gates (`fresh_preview`). Apart from the repair list, no check returns a list of good twists.
 
 ## 8. Data the engine and the render contract must add
 
@@ -172,10 +173,11 @@ The engine answers within the command layer's preview and gates (`fresh_preview`
 | Rim summary: N_c, In_c, Out_c, A_c, blocked | cap, per revision | Global cap map, floor | 600 rows; exact |
 | Cut cell states of one cap | cap, on request | cut slice view | exact; computed when the solver opens the slice |
 | Off-grip seam cells, with holding caps | revision | Global count, seam slice | exact |
+| Repair list of one cap: the pairs (x, d) whose repair lowers N, with y and z | cap, on request | the repair list (rule 6) | exact; the research script tries every pair at the cap, 118 to 1,593 at the 63 repair steps of one record, in 3 to 5 minutes per cap |
 | Exposed-face meshes | piece region | raw view holes, cut slice | new asset; size to be measured |
 | Filter results | query, per revision | piece sets with SHA-256 | as the retained filters |
 
-These extend `magic600-jumbling-render/1` and the view model of ENG-0J. They are proposals for the 2.5 freeze, not authorized changes. The research code computes all of them except the exposed-face meshes (`rim.py`, `seams.py`, `trees.py`), headless and in research timings only. How fast a product engine computes them is an open engineering question, not a performance claim.
+These extend `magic600-jumbling-render/1` and the view model of ENG-0J. They are proposals for the 2.5 freeze, not authorized changes. The research code computes all of them except the exposed-face meshes (`rim.py`, `seams.py`, `trees.py`, and `research/jumbling/restoration/11-scramble-census/scripts/density.py` for the repair list), headless and in research timings only. How fast a product engine computes them is an open engineering question, not a performance claim.
 
 ## 9. What exists today
 
@@ -189,7 +191,7 @@ The full-state research page (`research/jumbling/viewer/full.html`) has:
 
 It has no domain tint, no exposed faces, no cap map, no cut slice and no checks.
 
-**Deep test input.** Random admissible scrambles leave about a third of the pieces on the lattice (I_a: 63 to 69% off from 700 to 1,400 twists), so they under-test every view and filter here. `research/jumbling/theory/deep_scramble.py` gives a 360-twist I_a scramble with 93.5% of the pieces off the lattice ([open problems](../../../research/jumbling/theory/open-problems.md), structure results). By the lattice-prefix rule it can follow any retained scramble, which mixes the colours as well, without changing which pieces are off the lattice. Views, filters and the cut slice are to be judged on it as well as on the W-J fixtures and the I_a@40 stop.
+**Deep test input.** Random admissible scrambles leave about a third of the pieces on the lattice (I_a: 63 to 69% off from 700 to 1,400 twists; 71% after the 1,000-twist scramble of the [scramble census](../../../research/jumbling/restoration/11-scramble-census/README.md)), so they under-test every view and filter here. `research/jumbling/theory/deep_scramble.py` gives a 360-twist I_a scramble with 93.5% of the pieces off the lattice ([open problems](../../../research/jumbling/theory/open-problems.md), structure results). By the lattice-prefix rule it can follow any retained scramble, which mixes the colours as well, without changing which pieces are off the lattice. Views, filters and the cut slice are to be judged on it as well as on the W-J fixtures and the I_a@40 stop.
 
 ## 10. Questions for the design table and the owner
 
@@ -201,5 +203,6 @@ It has no domain tint, no exposed faces, no cap map, no cut slice and no checks.
 6. The default filters and view on entering Jumble.
 7. The motion of the turn preview in the slice (part of G-values; owner).
 8. The Global layout for Jumble: Hopf rings, ring sheet, two hemispheres or the 1.0 perspective (section 6.1).
+9. How the repair list of a cap is shown and picked from, and how the solver steps through its three twists.
 
 Not run: no Windows, Direct3D 12, input or performance check applies to this page.
