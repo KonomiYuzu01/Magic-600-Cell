@@ -19,7 +19,8 @@ its acceptance test is the owner's (decisions of
 | [4. High](04-high.md) | the kernel: F1, F2, F3, D19, S·T and T1 in blocker order; gates and the letter bound |
 | [5. The tail](05-tail.md) | units, zero_bad, pure, close (V·W·V⁻¹), t1prime (W·V′·W⁻¹·V′⁻¹), the fallback and the probe |
 | [6. The lattice phase](06-lattice.md) | corrections, the cascade order, orbit steps under schedule11, the literal player, identity labels |
-| 7. Records, trees and the independent check | in revision |
+| [7. Records, trees and the independent check](07-records.md) | the run directory and `run.json`, step rows, words, step trees, phase results, the acceptance verdict, the two modes, clocks, the independent checker |
+| [Appendix A. Macros](A-macros.md) | every step with named parts: its shape, rule, step tree and the region it acts on |
 
 ## How to read it
 

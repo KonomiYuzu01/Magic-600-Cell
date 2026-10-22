@@ -5,23 +5,23 @@ pictures of `figures.json` that no chapter embeds yet (worked-example sequences 
 
 | Chapter | Figure | File | Source | Status |
 |---|---|---|---|---|
-| 01-state.md | Figure 1.1 | `svg/01-menu-items.svg` | `diagrams.py` | missing: (no reason recorded) |
+| 01-state.md | Figure 1.1 | `svg/01-menu-items.svg` | `diagrams.py` | drawn |
 | 01-state.md | Figure 1.2 | `png/s7001-start.png` | `dev/d0-s7001` step 0 before, global persp | drawn |
-| 01-state.md | Figure 1.3 | `svg/01-height-histograms.svg` | `diagrams.py` | missing: (no reason recorded) |
+| 01-state.md | Figure 1.3 | `svg/01-height-histograms.svg` | `diagrams.py` | drawn |
 | 01-state.md | Figure 1.4 | `png/s7001-step0-before.png` | `dev/d0-s7001` step 0 before, local stereo | drawn |
-| 01-state.md | Figure 1.5 | `svg/01-cover-graph-7101.svg` | `diagrams.py` | missing: (no reason recorded) |
+| 01-state.md | Figure 1.5 | `svg/01-cover-graph-7101.svg` | `diagrams.py` | drawn |
 | 01-state.md | Figure 1.6 | `png/01-units-depth40-stop.png` | not in `figures.json` | missing: (no reason recorded) |
 | 01-state.md | Figure 1.7 | `png/01-invisible-rotation.png` | not in `figures.json` | missing: (no reason recorded) |
-| 01-state.md | Figure 1.8 | `svg/01-phase-transitions.svg` | `diagrams.py` | missing: (no reason recorded) |
-| 01-state.md | Figure 1.9 | `svg/01-step-tree-closure.svg` | `diagrams.py` | missing: (no reason recorded) |
-| 02-bulk.md | Figure 2.1 | `svg/bulk-n-7101.svg` | `diagrams.py` | missing: (no reason recorded) |
+| 01-state.md | Figure 1.8 | `svg/01-phase-transitions.svg` | `diagrams.py` | drawn |
+| 01-state.md | Figure 1.9 | `svg/01-step-tree-closure.svg` | `diagrams.py` | drawn |
+| 02-bulk.md | Figure 2.1 | `svg/bulk-n-7101.svg` | `diagrams.py` | drawn |
 | 02-bulk.md | Figure 2.2 | `png/bulk-facematch-7001-s1.png` | not in `figures.json` | missing: (no reason recorded) |
 | 02-bulk.md | Figure 2.3 | `png/bulk-facematch-7106-s18.png` | not in `figures.json` | missing: (no reason recorded) |
 | 02-bulk.md | Figure 2.4 | `png/bulk-cover-7101-s17.png` | not in `figures.json` | missing: (no reason recorded) |
-| 02-bulk.md | Figure 2.5 | `svg/bulk-conj-7101-s30.svg` | `diagrams.py` | missing: (no reason recorded) |
-| 03-height.md | Figure 3.1 | `svg/03-counts-7302.svg` | `diagrams.py` | missing: (no reason recorded) |
-| 03-height.md | Figure 3.2 | `svg/03-r22d75-prediction-cap64.svg` | `diagrams.py` | missing: (no reason recorded) |
-| 03-height.md | Figure 3.3 | `svg/03-call-flow.svg` | `diagrams.py` | missing: (no reason recorded) |
+| 02-bulk.md | Figure 2.5 | `svg/bulk-conj-7101-s30.svg` | `diagrams.py` | drawn |
+| 03-height.md | Figure 3.1 | `svg/03-counts-7302.svg` | `diagrams.py` | drawn |
+| 03-height.md | Figure 3.2 | `svg/03-r22d75-prediction-cap64.svg` | `diagrams.py` | drawn |
+| 03-height.md | Figure 3.3 | `svg/03-call-flow.svg` | `diagrams.py` | drawn |
 | 03-height.md | Figure 3.4 | `png/03-r22d75-t2-cap23.png` | not in `figures.json` | missing: (no reason recorded) |
 | 03-height.md | Figure 3.5 | `png/03-target-274.png` | not in `figures.json` | missing: (no reason recorded) |
 | 03-height.md | Figure 3.6 | `png/03-h6-274.png` | not in `figures.json` | missing: (no reason recorded) |
@@ -33,34 +33,36 @@ pictures of `figures.json` that no chapter embeds yet (worked-example sequences 
 | 03-height.md | Figure 3.12 | `png/03-freeing-pair-c312a2fc.png` | not in `figures.json` | missing: (no reason recorded) |
 | 03-height.md | Figure 3.13 | `png/03-r22d36-piece-58388.png` | not in `figures.json` | missing: (no reason recorded) |
 | 03-height.md | Figure 3.14 | `png/03-stall-2430f4cc.png` | not in `figures.json` | missing: (no reason recorded) |
-| 04-high.md | Figure 4.1 | `svg/ch04-family-order.svg` | `diagrams.py` | missing: (no reason recorded) |
-| 04-high.md | Figure 4.2 | `svg/ch04-tier-shapes.svg` | `diagrams.py` | missing: (no reason recorded) |
+| 04-high.md | Figure 4.1 | `svg/ch04-family-order.svg` | `diagrams.py` | drawn |
+| 04-high.md | Figure 4.2 | `svg/ch04-tier-shapes.svg` | `diagrams.py` | drawn |
 | 04-high.md | Figure 4.3 | `png/ch04-point-model.png` | not in `figures.json` | missing: (no reason recorded) |
-| 04-high.md | Figure 4.4 | `svg/ch04-d19-tree.svg` | `diagrams.py` | missing: (no reason recorded) |
+| 04-high.md | Figure 4.4 | `svg/ch04-d19-tree.svg` | `diagrams.py` | drawn |
 | 04-high.md | Figure 4.5 | `png/ch04-r22d36-f1.png` | not in `figures.json` | missing: (no reason recorded) |
 | 04-high.md | Figure 4.6 | `png/ch04-r22d16-step.png` | not in `figures.json` | missing: (no reason recorded) |
-| 04-high.md | Figure 4.7 | `svg/ch04-six-stops-caps.svg` | `diagrams.py` | missing: (no reason recorded) |
-| 05-tail.md | Figure 5.1 | `svg/05-tail-loop.svg` | `diagrams.py` | missing: (no reason recorded) |
+| 04-high.md | Figure 4.7 | `svg/ch04-six-stops-caps.svg` | `diagrams.py` | drawn |
+| 05-tail.md | Figure 5.1 | `svg/05-tail-loop.svg` | `diagrams.py` | drawn |
 | 05-tail.md | Figure 5.2 | `png/05-units-71.png` | not in `figures.json` | missing: (no reason recorded) |
 | 05-tail.md | Figure 5.3 | `png/05-class-cells-71.png` | not in `figures.json` | missing: (no reason recorded) |
 | 05-tail.md | Figure 5.4 | `png/05-t1prime-b04.png` | not in `figures.json` | missing: (no reason recorded) |
 | 05-tail.md | Figure 5.5 | `png/05-close-b20.png` | not in `figures.json` | missing: (no reason recorded) |
-| 05-tail.md | Figure 5.6 | `svg/05-tree-b07-certificate.svg` | `diagrams.py` | missing: (no reason recorded) |
+| 05-tail.md | Figure 5.6 | `svg/05-tree-b07-certificate.svg` | `diagrams.py` | drawn |
 | 05-tail.md | Figure 5.7 | `png/05-pure-b05-71.png` | not in `figures.json` | missing: (no reason recorded) |
-| 05-tail.md | Figure 5.8 | `svg/05-e2-trajectory.svg` | `diagrams.py` | missing: (no reason recorded) |
-| 06-lattice.md | Figure 6.1 | `svg/ch06-phase-flow.svg` | `diagrams.py` | missing: (no reason recorded) |
-| 06-lattice.md | Figure 6.2 | `svg/ch06-nu-grid.svg` | `diagrams.py` | missing: (no reason recorded) |
+| 05-tail.md | Figure 5.8 | `svg/05-e2-trajectory.svg` | `diagrams.py` | drawn |
+| 06-lattice.md | Figure 6.1 | `svg/ch06-phase-flow.svg` | `diagrams.py` | drawn |
+| 06-lattice.md | Figure 6.2 | `svg/ch06-nu-grid.svg` | `diagrams.py` | drawn |
 | 06-lattice.md | Figure 6.3 | `png/ch06-correction-before.png` | not in `figures.json` | missing: (no reason recorded) |
 | 06-lattice.md | Figure 6.4 | `png/ch06-correction-after.png` | not in `figures.json` | missing: (no reason recorded) |
-| 06-lattice.md | Figure 6.5 | `svg/ch06-twisted-cycle.svg` | `diagrams.py` | missing: (no reason recorded) |
+| 06-lattice.md | Figure 6.5 | `svg/ch06-twisted-cycle.svg` | `diagrams.py` | drawn |
 | 06-lattice.md | Figure 6.6 | `png/s7106-step19-before.png` | `dev/d0-s7106` step 19 before, global persp | drawn |
 | 06-lattice.md | Figure 6.7 | `png/s7106-step19-after.png` | `dev/d0-s7106` step 19 after, global persp | drawn |
-| 06-lattice.md | Figure 6.8 | `svg/ch06-orbit6-tree.svg` | `diagrams.py` | missing: (no reason recorded) |
-| 06-lattice.md | Figure 6.9 | `svg/ch06-late-three-cycle.svg` | `diagrams.py` | missing: (no reason recorded) |
-| 06-lattice.md | Figure 6.10 | `svg/ch06-retained-first.svg` | `diagrams.py` | missing: (no reason recorded) |
+| 06-lattice.md | Figure 6.8 | `svg/ch06-orbit6-tree.svg` | `diagrams.py` | drawn |
+| 06-lattice.md | Figure 6.9 | `svg/ch06-late-three-cycle.svg` | `diagrams.py` | drawn |
+| 06-lattice.md | Figure 6.10 | `svg/ch06-retained-first.svg` | `diagrams.py` | drawn |
 | 06-lattice.md | Figure 6.11 | `png/ch06-invisible-rotation.png` | not in `figures.json` | missing: (no reason recorded) |
 | 06-lattice.md | Figure 6.12 | `png/ch06-d0-sequence.png` | not in `figures.json` | missing: (no reason recorded) |
-| 06-lattice.md | Figure 6.13 | `svg/ch06-d20-steps.svg` | `diagrams.py` | missing: (no reason recorded) |
+| 06-lattice.md | Figure 6.13 | `svg/ch06-d20-steps.svg` | `diagrams.py` | drawn |
+| 07-records.md | Figure 7.1 | `svg/07-t1prime-b04-tree.svg` | `diagrams.py` | drawn |
+| 07-records.md | Figure 7.3 | `svg/07-seed7001-bulk-steps.svg` | `diagrams.py` | drawn |
 |  |  | `png/s7001-end.png` | `dev/d0-s7001` step 8 after, global persp | drawn |
 |  |  | `png/s7001-step0-after.png` | `dev/d0-s7001` step 0 after, local stereo | drawn |
 |  |  | `png/s7001-step1-after.png` | `dev/d0-s7001` step 1 after, local stereo | drawn |
@@ -125,4 +127,4 @@ pictures of `figures.json` that no chapter embeds yet (worked-example sequences 
 |  |  | `png/s7106-step9-after.png` | `dev/d0-s7106` step 9 after, local stereo | drawn |
 |  |  | `png/s7106-step9-before.png` | `dev/d0-s7106` step 9 before, local stereo | drawn |
 
-67 drawn, 52 missing.
+93 drawn, 28 missing.

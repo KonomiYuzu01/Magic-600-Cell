@@ -15,61 +15,43 @@ runner is [runner.py](../restoration/13-tutorial-runner/scripts/runner.py) and i
 [check_contracts.py](../restoration/13-tutorial-runner/scripts/check_contracts.py) and
 [check_lattice.py](../restoration/13-tutorial-runner/scripts/check_lattice.py).
 
-**Citations.** Code is cited as `path:line` at commit `88dacaf` (22 October 2026), the pin of chapters 2, 4, 5 and 6.
-The stage 13 scripts are the same at `cd5e6e8`, the commit that made the committed D0 records of section 7.12. The
-head `41cc08d`, on which the chapter's script ran, and the head `78aa725`, which adds chapters 1 to 6, change nothing in
-stage 13 after `88dacaf`. Chapters 1 and 3 cite `35c3d4f`, the earlier commit of the same day that added
-`acceptance-config.json` and the `schedule11` default. There `check_run.py` has one line where `88dacaf` has lines 965 and 966, so a
-`check_run.py` line after 966 has a number one smaller at `35c3d4f`; `test_check_run.py`, `test_runner.py` and
-`test_lattice_phase.py` differ too (open question 10). After its first full citation, a file is named by its short
-name:
+**Citations.** Code citations give `path:line` from the repository root. Every line number refers to commit
+`35c3d4f`, unless a later commit is named beside the citation. After its first full citation, a file is named by its
+short name:
 
 | Short name | Path |
 | --- | --- |
 | `runner.py`, `runner_api.py`, `rules_height.py`, `rules_kernel.py`, `lattice_phase.py`, `literal_lattice.py`, `check_run.py`, `check_contracts.py`, `check_lattice.py`, `test_runner.py`, `test_check_run.py`, `test_rules_height.py`, `test_lattice_phase.py` | `research/jumbling/restoration/13-tutorial-runner/scripts/` |
-| `acceptance-config.json`, `README.md` (the stage 13 README), `runs/dev/d0-s7001/`, `runs/dev/d0-s7106/`, `runs/depth10-seed7001/` | `research/jumbling/restoration/13-tutorial-runner/` |
+| `acceptance-config.json`, `README.md` (the stage 13 README), `runs/dev/d0-s7001/`, `runs/dev/d0-s7106/`, `runs/depth10-seed7001/`, `runs/depth20-seed7106/` | `research/jumbling/restoration/13-tutorial-runner/` |
 | `verify_late.py` | `research/jumbling/restoration/09-general-method/scripts/lattice/checker/` |
 | `METHOD.md` | `research/jumbling/restoration/09-general-method/` |
 | `test_r22d25.py`, `r22d19_rule.py` | `research/jumbling/restoration/12-low-height/scripts/round22/` |
 | `ch07_examples.py` | `research/jumbling/tutorial/scripts/` |
 | `ch07-examples.json` | `research/jumbling/tutorial/records/` |
 
-**The chapter's script and record.** [scripts/ch07_examples.py](scripts/ch07_examples.py) makes the values of sections
-7.6.2, 7.12.1, 7.12.3 and 7.12.4 that no committed record holds, and [records/ch07-examples.json](records/ch07-examples.json)
-keeps them (format `tutorial-ch07-examples/1`). The script writes nothing into the repository. It runs the committed
+**The chapter's script and record.** [scripts/ch07_examples.py](scripts/ch07_examples.py) makes the examples of sections
+7.6.2 and 7.12, and [records/ch07-examples.json](records/ch07-examples.json) keeps them (format
+`tutorial-ch07-examples/1`, committed in `dd43945`). The script writes nothing into the repository. It runs the committed
 runner and checker as child processes with `python3 -I -B`, in new directories given by `--work` and `--cache`. It uses
 development seed 7001 and the committed R22D-36 word only. It checks the committed record `runs/dev/d0-s7001/run` and
 four changed copies of it, runs the runner twice in development mode, and prints three trees with the runner's own tree
 helper. Command, from the repository root:
 `python3 -I -B research/jumbling/tutorial/scripts/ch07_examples.py --out <new file> --work <new dir> --cache <new dir>`.
-The run for this chapter took 119.3 s on headless Linux with Python 3.13.16 and NumPy 2.5.3 (**measured**). The record
-keeps the sha256 of every source the script read or ran: `runner.py`, `runner_api.py`, `check_run.py`,
+The recorded run took 119.3 s on headless Linux with Python 3.13.16 and NumPy 2.5.3 (**measured**, record keys
+`seconds` and `versions`). The record keeps selected source hashes: `runner.py`, `runner_api.py`, `check_run.py`,
 `check_contracts.py`, `check_lattice.py`, `acceptance-config.json`, and the committed `run.json` and `check.jsonl` of
 `runs/dev/d0-s7001`. It also keeps the sha256 of the repository's `git status` (ignored files included) before and
-after the run; the two are equal. The record's sha256 is
-`441976af152ecd4f647d60c6f39d5daf69405dd6f39c0aa5b2871bc3a8d51c92`; the script's is
-`d9cacf7abda90d1ed065d33064268d554363ca9607f3a03e1fcd60f3cc247001`. Two comment lines of the script (line 9, its run
-time, and line 75, a line citation) were corrected after the run; no code line changed.
+after the run; the two are equal. The runner and checker used for those examples match `cd5e6e8`; the checker includes
+the later report-filename check described in Rule R7.9.
 
 **Evidence labels.** **computed**: an exact computation with a replayable record or script. **proved (model review
 only)**: a proof checked by models, not yet by a person. **run on one instance**: a result on the finite inputs named.
 **measured**: a time or a count measured on one machine. A sentence that says what the code does is a reading of the
-cited lines. Where tests exercise that code, they are named. The nine test files of stage 13 were last recorded passing
-on 22 October 2026 on commit `cd5e6e8` (`README.md:1078`, `:1106`, `:1124`, `:1157`, `:1172-1173`; **measured**):
-
-| Test file | Result |
-| --- | --- |
-| `test_runner.py` | OK, 83 tests, one skipped, 1,181.3 s |
-| `test_check_run.py` | OK, 100 tests, 822.3 s |
-| `test_rules_height.py` | OK, 27 tests, 97.5 s |
-| `test_rules_kernel.py` | OK, 28 tests, one skipped, 71.4 s |
-| `test_lattice_phase.py` | OK, 25 tests, one skipped, 153.2 s |
-| `test_check_contracts.py` | OK, 11 tests, 117.1 s |
-| `test_check_lattice.py` | OK, 21 tests, 82.1 s |
-| `test_literal_lattice.py` | OK, 18 tests, one skipped, 453.9 s |
-| `test_check_r22d25.py` | OK, 7 tests, 198.0 s |
-
-They were not run again for this chapter. Test names and lines are cited at `88dacaf`.
+cited lines. Where tests exercise that code, they are named. The last recorded full stage 13 test run passed on
+22 October 2026 on commit `cd5e6e8` (**measured**, finite inputs;
+`research/jumbling/restoration/13-tutorial-runner/README.md:1078`, `:1124`, `:1157`, `:1172-1173` at `88dacaf`,
+section 5). All nine test files passed. They were not run again for this chapter. Their timings are omitted here;
+the numerical examples below come from the chapter's record or committed files under `runs/`.
 
 ## 7.1 Why the record exists
 
@@ -81,7 +63,7 @@ Five decisions shape the record.
 | Owner, 20 October, items 3 and 4 ([page](../../../docs/wiki/decisions/owner-decisions-2026-10-20-tutorial-acceptance.md)) | Every word is played literally, the lattice phase included. A step known only by a certificate counts as stuck, and a step of the exhaustive fallback counts as a failure of coverage. Every step records the rule that fired, the word, its length and the digests before and after. An independent checker that shares no code with the runner replays every record twist by twist. |
 | Owner, 20 October, item 5 (same page) | A batch passes when every one of its scrambles reaches the solved state and the checker passes every record (section 7.8.1). |
 | Reading 1 of 20 October, accepted by the owner the same day (same page, "Two readings") | The checker shares only the definition of the puzzle (section 7.11.1). |
-| Owner, 20 October, content of the tutorial (same page), with the integrator's reading on that page | The owner asked for detailed illustrations and for every macro to expand down to single twists. The integrator's reading: every step is a tree of named parts with their lengths. The runner records the tree of every step, and the checker checks that the tree expands to exactly the word it replays. |
+| The integrator's reading, accepted with the owner's content decision of 20 October (same page) | The owner asked for detailed illustrations and for every macro to expand down to single twists. The integrator read this as a tree of named parts with their lengths for every step. The runner records the tree, and the checker checks that it expands to exactly the word it replays. |
 
 The record is what makes a run checkable by a second program. The checker reads the record, the files it names, two
 files of its own checkout (`acceptance-config.json` and the D19 rule) and the puzzle definition. It plays every letter
@@ -96,7 +78,7 @@ The runner writes into one directory, given by `--out`. The directory must be ne
 Two kinds of path occur in the record:
 
 - Paths to the run's own files are relative to the run directory (`runner.py:435-436`). The checker requires each to
-  stay inside it (`check_run.py:130-139`, `:148-170`).
+  stay inside it (`research/jumbling/restoration/13-tutorial-runner/scripts/check_run.py:130-139`, `:148-170`).
 - Three configuration paths are relative to the repository: `config.acceptance_config.file` (`runner.py:157`),
   `config.kernel.d19.file` (`runner.py:477`) and the keys of `config.scripts` (`runner.py:490-491`). The checker
   compares the first two with the paths of its own checkout (`check_run.py:79`, `:84`; section 7.11.2) and checks only
@@ -109,12 +91,12 @@ Two kinds of path occur in the record:
 | `tables/bulk-end.json` | The state where the bulk ended. Written at the start, rewritten by the bulk child after every bulk step, and exported again at the bulk's end. | `runner.py:458-459`, `:1568`, `:612` | yes |
 | `tables/NNNNN.json` | The state after step `NNNNN`: every height, high, tail and fallback step; in the lattice phase only its last step. | `runner.py:757-758`, `:1206-1210`, `:1451-1453` | yes |
 | `words/NNNNN.json` | The word of step `NNNNN` as JSON letters; `words/NNNNN.json.gz` above 100,000 letters. | `runner.py:726-730`, `:1201-1204`, `:1565-1567` | yes |
-| `words/NNNNN.ia16.gz` | The word of a lattice step as `ia16` codes (section 7.5). | `lattice_phase.py:218-224`, moved at `runner.py:1441-1443` | yes |
+| `words/NNNNN.ia16.gz` | The word of a lattice step as `ia16` codes (section 7.5). | `research/jumbling/restoration/13-tutorial-runner/scripts/lattice_phase.py:218-224`, moved at `runner.py:1441-1443` | yes |
 | `step-trees/NNNNN.json.gz` | The tree of step `NNNNN` (section 7.6). | `runner.py:732-735`; lattice trees `lattice_phase.py:241-242`, moved at `runner.py:1442-1444` | yes |
 | `units/NNNNN.json` | A copy of the unit a tail or fallback step landed. | `runner.py:1203-1205` | yes |
 | `probe/word.json`, `probe/unit.json` | Acceptance mode only: the word the fallback found but did not play, and its unit (section 7.9). | `runner.py:1246-1255` | yes |
 | `lattice/report.json` | The lattice plugin's report; its sha256 is in `phases.lattice.report`. | `runner.py:1386-1390` | yes |
-| `lattice/library-merged.json`, `lattice/restore-summary.json` and the other files of the composition path | Only when a stub lattice plugin answered (section 7.11.5). | `runner.py:1329-1350` | through `verify_late.py` |
+| `lattice/library-merged.json`, `lattice/restore-summary.json` and the other files of the composition path | Only when a stub lattice plugin answered (section 7.11.5). | `runner.py:1329-1350` | through `research/jumbling/restoration/09-general-method/scripts/lattice/checker/verify_late.py` |
 | `bulk-progress.json` | The bulk child's heartbeat, read for the bulk step clock. | `runner.py:575`, `:1549`, `:1581-1582` | no |
 | `attempts/` | Working files of every rule, census and gate call. | `runner.py:636`, `:1269` | no |
 | `logs/` | Child logs, `logs/bulk.log`, and after an error `logs/runner.log` with the traceback. They can name absolute paths and are scrubbed before publication. | `runner.py:512`, `:579`, `:1482` | no |
@@ -247,7 +229,7 @@ Sources: bulk `runner.py:1574-1577`; height and high `runner.py:759-764`,
 `research/jumbling/restoration/13-tutorial-runner/scripts/rules_height.py:154-195`, `:345-351`, `:469-475`,
 `research/jumbling/restoration/13-tutorial-runner/scripts/rules_kernel.py:30-31`, `:204-214`; tail and fallback
 `runner.py:1215-1228`, `:929-945`, `:1011-1013`; lattice `runner.py:1445-1453`,
-`research/jumbling/restoration/13-tutorial-runner/scripts/lattice_phase.py:253-254`, `:271-273`, `:310`.
+`lattice_phase.py:253-254`, `:271-273`, `:310`.
 
 The `letters` key is the step's length: the number of twists in its word. It is recorded as it is, however large
 (18 October, item 3).
@@ -262,7 +244,7 @@ before it stand (`runner.py:1479-1486`; section 7.7). For a tail, fallback or bu
 state has already changed and the word, unit and table files may exist; the record is not saved with them, and the run
 ends `error`.
 
-**Evidence.** Reading of the code. Tests: `test_runner.py` (`RecordTests`, `PhaseTests`, `LatticeTests`,
+**Evidence.** Reading of the code. Tests: `research/jumbling/restoration/13-tutorial-runner/scripts/test_runner.py` (`RecordTests`, `PhaseTests`, `LatticeTests`,
 `IntegrityTests`, `ExactTests`, `LatticeEndToEndTests`). The committed records of seeds 7001 and 7106 and the
 chapter's development and height records carry rows of the bulk, height and lattice kinds and pass the checker (**run
 on one instance**, section 7.12).
@@ -295,7 +277,7 @@ Where attempts are kept:
 A signal (SIGTERM or SIGHUP) during a lattice child cancels it. The plugin then returns one attempt,
 `{rule: lattice/<restorer>, outcome: error, reason: cancelled, timed_out: false, seconds}`, which the runner keeps in
 `phases.lattice.attempts`. The phase records no result, and the run ends `error` with `error: signal N`
-(`lattice_phase.py:468-471`; `runner.py:1313-1317`, `:1479-1486`; `test_runner.py:3105-3137`).
+(`lattice_phase.py:468-471`; `runner.py:1313-1317`, `:1479-1486`; `test_runner.py:3098-3130`).
 
 ## 7.5 Words: `json` and `ia16`
 
@@ -318,7 +300,7 @@ its bytes differ from the hashed string. An `ia16` file holds no digests: the ro
 **Test.** A letter is valid when grip and item are integers with 0 ≤ grip < 600 and 0 ≤ item < 60. An `ia16` code is
 valid when it is below 600 · 60 = 36,000 (`runner_api.py:31`, `:228-231`, `:247-248`). An `ia16` file is gzip with
 mtime 0 (its bytes 4 to 7 are zero) and holds whole 16-bit codes (`runner_api.py:268-290`). Decoding is
-grip = code div 60, item = code mod 60 (`check_lattice.py:93`).
+grip = code div 60, item = code mod 60 (`research/jumbling/restoration/13-tutorial-runner/scripts/check_lattice.py:93`).
 
 **Step played (tree).** The word itself is the leaf level of every tree: each span of the tree names a range of these
 letters (section 7.6).
@@ -381,7 +363,7 @@ The checker adds four rules that the runner's check does not test (section 7.11.
 `name`, `letters`, `parts`, `span`, `inverse_of` and `same_as`; a group's `parts` list is not empty; the row's `tree`
 has exactly the keys `file`, `sha256` and `size`; and `size` is the number of parts (`check_run.py:85`, `:529-531`,
 `:561-567`, `:580-583`, `:593-594`). A plugin tree that breaks one of them is written by the runner and fails the
-checker (open question 8).
+checker.
 
 **Step played (tree).** The file `step-trees/NNNNN.json.gz` is gzip with mtime 0 of the compact JSON of the root
 followed by a newline: `json.dumps(root, separators=(',', ':'), allow_nan=False)` and `\n`, in UTF-8. Keys keep the
@@ -398,9 +380,9 @@ before the state changes (`runner.py:751-752`). For tail, fallback and bulk step
 and its files written, but before the row is saved (`runner.py:1212`, `:1571-1573`). For lattice steps it comes before
 any file is moved into the record (`runner.py:1427-1429`).
 
-**Evidence.** Reading of the code. Tests: `test_runner.py` (`TreeTests`, `test_runner.py:1622`: malformed trees
-refused; a closure's tree names V and its inverse), `test_check_run.py` (`test_v3_tree_failures`, `:1320`;
-`test_v3_tree_same_as`, `:1378`), `test_lattice_phase.py` (orbit and correction trees, `:505-561`). A changed tree
+**Evidence.** Reading of the code. Tests: `test_runner.py` (`TreeTests`, `test_runner.py:1615`: malformed trees
+refused; a closure's tree names V and its inverse), `research/jumbling/restoration/13-tutorial-runner/scripts/test_check_run.py` (`test_v3_tree_failures`, `:1320`;
+`test_v3_tree_same_as`, `:1378`), `research/jumbling/restoration/13-tutorial-runner/scripts/test_lattice_phase.py` (orbit and correction trees, `:505-561`). A changed tree
 fails the checker (**run on one instance**, section 7.12.4).
 
 **Where in the code.** `runner_api.py:130-223`; `runner.py:732-735`, `:751-752`, `:1233-1244`, `:1569-1573`;
@@ -443,7 +425,7 @@ The tree depends on the phase, the rule and, for bulk and height steps, the word
 In a closure, `middle` is the core word P·Q·P⁻¹ of chapter 5 as one span. In a T1′ step the core is W⁻¹, so `middle`
 names `W` by `inverse_of` (`runner.py:1024-1026`, `:1240-1242`).
 
-**The tree of a lattice orbit step.** It follows the restorer's program (chapter 6; `literal_lattice.py:115-160`). The
+**The tree of a lattice orbit step.** It follows the restorer's program (chapter 6; `research/jumbling/restoration/13-tutorial-runner/scripts/literal_lattice.py:115-160`). The
 program has nodes j, each with an `op` (`word`, `path`, `conj` or `prod`) and a length; the `word` and `path` nodes are
 the program's words. A step plays the factors `factor_first` to `factor_first + factor_count − 1` of its orbit, each a
 pair (j, sign). The tree is built as follows (`lattice_phase.py:136-194`):
@@ -479,14 +461,14 @@ script with the part lengths that `test_runner.py` asserts for three steps of st
 - In these tests the words W (b04, b07) and the core (b20) are read from stage 12's `replay2/inputs` files and passed to
   `t1prime` or `close` directly. The tutorial's rules did not choose them at that state.
 - b20 and b07 go through the gate `slp_apply` in development mode, so their rows have `standing: certificate`
-  (asserted for b20 at `test_runner.py:2817`). Such a step gives the verdict `stuck` (section 7.8, row 3); in
+  (asserted for b20 at `test_runner.py:2810`). Such a step gives the verdict `stuck` (section 7.8, row 3); in
   acceptance mode it would be played with `standing: rule`.
 
 The steps are test results in development mode (**run on one instance**, in the test run of 22 October 2026 on
 `cd5e6e8`).
 
-The T1′ step for the unit b04 at the state of 437 off pieces (`test_runner.py:2745-2782`,
-`test_03_stored_literal_t1prime`, which asserts this tree at `:2780-2782`): 1,254 letters, from 437 to 392 off; size
+The T1′ step for the unit b04 at the state of 437 off pieces (`test_runner.py:2738-2775`,
+`test_03_stored_literal_t1prime`, which asserts this tree at `:2773-2775`): 1,254 letters, from 437 to 392 off; size
 5; sha256 `24f8659857bb9938de44c7d07e1a4f62be7f7309050e2735f9b708b241350304`.
 
 ```json
@@ -499,11 +481,11 @@ The T1′ step for the unit b04 at the state of 437 off pieces (`test_runner.py:
 
 The file holds this tree in the compact form of Rule R7.3, with `V\u207b\u00b9` for `V⁻¹`.
 
-The closure for b20 at the state of 507 off, whose V is built as a certificate and expanded (`test_runner.py:2794-2817`,
+The closure for b20 at the state of 507 off, whose V is built as a certificate and expanded (`test_runner.py:2787-2810`,
 `test_05_certificate_closure_at_current_state`): V 20,232, middle 36, V⁻¹ 20,232 (`inverse_of [0]`); 40,500 letters;
 from 507 to 447 off; size 4; sha256 `d8c15bdfd26794501667cecdb064d1769cf251772191619db825a60aaa085985`.
 
-The T1′ step for b07 at the state of 324 off (`test_runner.py:2819-2837`, `test_06_certificate_t1prime_at_z1`): W 48,
+The T1′ step for b07 at the state of 324 off (`test_runner.py:2812-2830`, `test_06_certificate_t1prime_at_z1`): W 48,
 V 139,774, middle 48 (`inverse_of [0]`), V⁻¹ 139,774 (`inverse_of [1]`); 279,644 letters; from 324 to 213 off; size 5;
 sha256 `1e4eb4dc5e4cb138211d162920379135f2320c9c168991133817264b327b1e43`.
 
@@ -621,8 +603,8 @@ reason `bulk_budget` (`runner.py:615-617`). A bulk that ends `stuck` does not en
 reason: the height, high and tail phases start from its end state.
 
 **Test.** Each run result is the first that applies. `run.json` starts with the placeholder `result: budget`
-(`runner.py:500`), so a run killed in a way the runner cannot catch keeps `budget` (`README.md:1273-1274`,
-RUN3-false-pass-01).
+(`runner.py:500`), so a run killed in a way the runner cannot catch keeps `budget` (`README.md:1273-1274` at
+`88dacaf`, RUN3-false-pass-01).
 
 **Step played (tree).** None.
 
@@ -630,10 +612,10 @@ RUN3-false-pass-01).
 
 **No step.** Not applicable.
 
-**Evidence.** Reading of the code. Tests: `test_runner.py` (`PhaseTests`, `test_runner.py:1097`: one test per phase
-result; `LatticeTests`, `:1398`; `LatticeEndToEndTests`, `:3081`), `test_check_run.py` (`test_v3_phase_order`,
+**Evidence.** Reading of the code. Tests: `test_runner.py` (`PhaseTests`, `test_runner.py:1090`: one test per phase
+result; `LatticeTests`, `:1391`; `LatticeEndToEndTests`, `:3074`), `test_check_run.py` (`test_v3_phase_order`,
 `:1480`; `test_v3_omitted_phases`, `:1491`; `test_v3_interrupted_phase_entry`, `:1538`; `test_v3_lattice_ends`,
-`:1840`).
+`:1836`).
 
 **Where in the code.** `runner.py:1463-1492` (`run`), `:571-619` (`bulk`), `:642-724`, `:1257-1299`, `:1301-1461`.
 
@@ -686,7 +668,7 @@ Why each row is where it is:
 acceptance mode the bulk has no step budget and no clock (section 7.9), so `bulk_budget` arises there only after a
 signal during the bulk. The runner then kills the bulk child, keeps the placeholder bulk result `budget`, sets
 `bulk_budget`, and ends the run `error` (`runner.py:584-587`, `:604-605`, `:610-618`). The verdict is then `error` by
-row 1, but the record shows a bulk result `budget` that no budget caused (open question 9).
+row 1, but the record shows a bulk result `budget` that no budget caused.
 
 **Test.** The verdict is computed at the end of every run, error runs included, in a `finally` block
 (`runner.py:1487-1491`).
@@ -700,7 +682,7 @@ verdict differs.
 **No step.** Not applicable.
 
 **Evidence.** Reading of the code. Tests: `test_runner.py` (`test_component_run_that_ends_stuck_is_component`,
-`:1262`; `test_verdict_order`, `:1293`; `test_probe_word_is_coverage_failure`, `:1314`), `test_check_run.py`
+`:1255`; `test_verdict_order`, `:1286`; `test_probe_word_is_coverage_failure`, `:1307`), `test_check_run.py`
 (`test_v3_verdict_timed_out_attempt`, `:1604`; `test_v3_verdict_earlier_timeout`, `:1622`; `test_v3_verdict_order`,
 `:1629`; `test_v3_probe`, `:1700`).
 
@@ -723,8 +705,9 @@ record (20 October, item 5). In terms of the record and the checker's output, a 
 
 Read both `pass` and `verdict`. When the checker replays the record to the end, it writes its own verdict even when
 `pass` is false: in the changed copy b of section 7.12.4 the final row has `pass: false` and `verdict: solved` (**run
-on one instance**). When the checker stops before the replay (Rule R7.9, step 4) or the record is malformed, its
-`verdict` and `end_digest` are null (copies a, c and d). The checker's `end_digest` need not be the solved digest: a
+on one instance**). When the checker stops before the replay (Rule R7.9, step 4), its `verdict` and `end_digest` are
+null (copies a, c and d). An exception can also leave them null if they have not yet been computed. The checker's
+`end_digest` need not be the solved digest: a
 played lattice phase ends with identity labels at a digest that may differ from it (section 7.12.2). This table is the
 integrator's reading of item 5 for this chapter, not a separate owner decision.
 
@@ -741,7 +724,7 @@ integrator's reading of item 5 for this chapter, not a separate owner decision.
 `acceptance-config/1`, or `options` that are not exactly the eleven names below (`runner.py:150-152`). It refuses to
 start when any of the eleven options differs from the file: `literal_limit`, `seeds`, `tail_rules`,
 `lattice_restorer`, `fallback_max_length`, `par`, `pair_shards`, `bulk_steps`, `tail_steps`, `high_steps`, `no_lattice`
-(`runner.py:153-156`). The file's values are the runner's defaults (`test_runner.py:1575-1586`,
+(`runner.py:153-156`). The file's values are the runner's defaults (`test_runner.py:1568-1579`,
 `test_committed_options_are_the_defaults`), so `runner.py --scramble <k> <seed> --mode acceptance` needs no other
 option:
 
@@ -783,7 +766,7 @@ refused. The late restorer runs only in development mode, with `--lattice-restor
 | Fallback | plays a step, `standing: fallback` | runs once, for the first unit, as a probe when no rule gives a step; its word is written to `probe/` and never played | `runner.py:1273-1283` |
 | The checker: `budgets.cert_seconds` | a positive number | null | `check_run.py:355-360` |
 | The checker: `acceptance_config` | must be null | must match the checkout's file | `check_run.py:297-323` |
-| The checker: a `probe` in the stuck block | fails `probe` | replayed under the fallback contract | `check_run.py:1424-1429`, `:908-943` |
+| The checker: a `probe` in the stuck block | fails `probe` | replayed under the fallback contract | `check_run.py:1423-1428`, `:908-943` |
 | The checker: standings | `certificate` exactly on `slp_apply` rows; `fallback` exactly on fallback rows | neither may occur | `check_run.py:470-474` |
 
 The certificate path and the tail's outcomes are in chapter 5. In both modes the gate `slp_apply` checks a certificate
@@ -801,11 +784,11 @@ and `acceptance_config` when the recorded file, sha256, options or restorer diff
 (`check_run.py:297-323`).
 
 **No step.** When the file is malformed or an option differs, the runner raises before it writes `run.json`. It has
-made its empty directories and writes no file (`runner.py:150-156`, `:1480-1481`; `test_runner.py:1588-1608`,
+made its empty directories and writes no file (`runner.py:150-156`, `:1480-1481`; `test_runner.py:1581-1601`,
 `test_acceptance_mode_refuses_other_options_before_any_write`).
 
-**Evidence.** Reading of the code. Tests: `test_runner.py` (`AcceptanceConfigTests`, `:1569-1619`; the certificate
-closure played in acceptance mode, `CertificateTests`, `:1906`; the probe, `:1314`; the clock adapter, `:2180`). The
+**Evidence.** Reading of the code. Tests: `test_runner.py` (`AcceptanceConfigTests`, `:1562-1612`; the certificate
+closure played in acceptance mode, `CertificateTests`, `:1899`; the probe, `:1307`; the clock adapter, `:2173`). The
 seed 7001 runs of section 7.12.1 in both modes reach the same digests after every step (**run on one instance**).
 
 **Where in the code.** `runner.py:145-158`, `:445-505`, `:1178-1231`, `:1257-1299`, `:1606-1609`;
@@ -845,7 +828,7 @@ Sources: defaults `runner.py:1593-1615`, recorded `:460-465`; the list of lifted
 `:510`, `:545-548`.
 
 The sentinel is a finite number because the child programs take their clocks as command-line numbers: null cannot be
-passed and most of them reject infinity (`runner_api.py:26-28`). 10⁹ s is about 31.7 years. The cap of
+passed and most of them reject infinity (`runner_api.py:26-28`). The cap of
 `jordan_target.py` is the one clock acceptance mode cannot lift. When it cuts the search before its condition line, the
 attempt ends `timeout` with `timed_out: true` (`runner.py:871-872`).
 
@@ -860,12 +843,10 @@ A timed-out attempt at a state where another rule or unit took the step does not
 
 **No step.** Not applicable.
 
-**Evidence.** Reading of the code. Tests: `test_runner.py` (`ClockTests`, `:2162`: the adapter gives the sentinel in
-acceptance mode, `:2180`; `tclose2.py`'s greedy clock is a timed-out attempt, `:2215`; `jordan_target.py`'s cap before
-its condition is a timed-out attempt, `:2237`; the certificate deadlines, `:2273`; a run with no clock lets a child
-finish, `:1750`). A limit of the sentinel (**measured**, 20 October 2026, `README.md:314-317`): a capturing
-`subprocess.run` rejects a timeout above 2³¹ − 1 milliseconds, about 24.9 days, so no call passes the sentinel to a
-capturing `subprocess.run`.
+**Evidence.** Reading of the code. Tests: `test_runner.py` (`ClockTests`, `:2155`: the adapter gives the sentinel in
+acceptance mode, `:2173`; the greedy clock is a timed-out attempt, `:2208`; the Jordan search's cap before its
+condition is a timed-out attempt, `:2230`; the certificate deadlines, `:2266`; a run with no clock lets a child
+finish, `:1743`).
 
 **Where in the code.** `runner_api.py:107-127`; `runner.py:51-52`, `:507-554`, `:571-619`, `:866-872`, `:1593-1615`;
 `rules_height.py:376-380`; `rules_kernel.py:155-158`; `lattice_phase.py:510`, `:548`.
@@ -880,76 +861,81 @@ format 3. Its command is `python3 -I -B check_run.py RUN [--out FILE] [--verify-
 
 **Reads.** `run.json`; the files it names (words, trees, units, tables, the probe, the lattice report); two files of the
 checker's own checkout, `acceptance-config.json` and the D19 rule `r22d19_rule.py` (section 7.11.2); and the puzzle
-definition (section 7.11.1). It never reads `attempts/`, `logs/`, `bulk-progress.json` or `cache/`. For formats 1 and
-2, and for the composition path of a stub lattice plugin, it also runs `verify_late.py` and writes a new `check/`
-directory (section 7.11.5).
+definition (section 7.11.1). It never reads `attempts/`, `logs/`, `bulk-progress.json` or `cache/`. A lattice block in
+formats 1 and 2, or on the composition path of a stub lattice plugin, also makes it run `verify_late.py` and write a
+new `check/` directory (section 7.11.5).
 
-**Order.** The checker works in this order (`check_run.py:1152-1507`):
+**Order.** The checker works in this order (`check_run.py:1151-1506`):
 
-1. Read `run.json`; a duplicate JSON key fails (`check_run.py:108-121`). Check `format`, `menu: I_a` and the run
-   result (`solved`, `stuck`, `budget` or `error`); no forbidden key anywhere (`forbidden_key`); and every path: run
-   paths relative and inside the run directory, with no absolute, home, Windows or parent path in any string (`path`;
-   `check_run.py:124-170`, `:1181-1208`).
-2. Check `config` (section 7.11.2).
-3. For each row, before any replay (`check_run.py:1211-1232`): load a `json` word and check its `word_sha256`
+1. Read `run.json`; a duplicate JSON key fails (`check_run.py:108-121`). Check that the record is an object and its
+   format is known (`check_run.py:1180-1187`).
+2. Check `config` (section 7.11.2). Then check `menu: I_a`, the run result (`solved`, `stuck`, `budget` or `error`),
+   and that no forbidden key occurs anywhere (`forbidden_key`). Check every path: run paths relative and inside the
+   run directory, with no absolute, home, Windows or parent path in any string (`path`; `check_run.py:124-170`,
+   `:1190-1207`).
+3. For each row, before any replay (`check_run.py:1210-1231`): load a `json` word and check its `word_sha256`
    (`load_word_v3`, `:498-520`); for a lattice row, check only that its word path is inside the run directory
-   (`:1213-1219`); check the closure keys of tail rows; check the row's labels (section 7.11.3); check the tree and,
-   for a `json` word, its expansion against the word (`:1226`; section 7.11.3); and check that a strict′ row landed its
-   whole unit (`landed`, `:1229-1231`).
-4. If steps 1 to 3 found any failure, stop before the simulator (`check_run.py:1233-1244`). Each row's line then lists
-   the row's own failures, or else the run's failures, or else `record`. The final row has `end_digest` null, every
-   twist count 0, `lattice_twists` null, `lattice_checked` false and `verdict` null.
+   (`:1212-1218`); check the closure keys of tail rows; check the row's labels (section 7.11.3); check the tree and,
+   for a `json` word, its expansion against the word (`:1225`; section 7.11.3); and check that a strict′ row landed its
+   whole unit (`landed`, `:1228-1230`).
+4. If steps 1 to 3 found any failure, stop before rebuilding the start state (`check_run.py:1232-1243`). Each row's
+   line then lists the row's own failures, or else the run's failures, or else `record`. The final row has
+   `end_digest` null, every non-lattice twist count 0, `lattice_twists` null, `lattice_checked` false and `verdict` null.
 5. Rebuild the start: the census scramble `restore.scramble(menu, k, seed)`, or the stored start table through the
-   checker's own table loader. Compare the start snapshot (`check_run.py:1245-1255`, `:173-190`).
-6. Replay every row in order (`check_run.py:1283-1395`):
+   checker's own table loader. Compare the start snapshot (`check_run.py:1244-1254`, `:173-190`).
+6. Replay every row in order (`check_run.py:1282-1394`):
    - its `index`, its rule and its phase, and its position in the fixed order, which may not be earlier than the row
-     before it (`phase_order`; `:1286-1302`);
+     before it (`phase_order`; `:1285-1301`);
    - its `before` snapshot: the digest and the off count; the heights for every row outside the bulk; N instead of the
-     heights for bulk rows (`:1303-1307`). Then the word's input digest, `letters` and `parts` (`:1308-1318`);
-   - every letter on the exact simulator, each admitted and certain (`admissible`; `:1340-1349`). A lattice row goes to
-     `check_lattice.replay_lattice_step` instead (section 7.11.4; `:1319-1328`);
-   - for height and high rows, the contract hooks of `check_contracts.py`: `prepare` before the replay, `on_letter`
-     after each letter, `finish` after the last (`:1330-1364`);
-   - its `after` snapshot (`:1366-1367`). If the row has `table`, the table is `tables/NNNNN.json` with the row's own
-     index and loads to the replayed state (`table`; `:1368-1369`, `:979-988`). Then the word's output digest
-     (`:1372-1373`);
-   - its contract: N strictly decreases for bulk rows (`N_decrease`; `:1379-1383`); strict′ for tail rows and the
-     fallback contract for fallback rows (`check_unit`; `:1384-1386`, `:618-658`); the height and kernel contracts
+     heights for bulk rows (`:1302-1306`). Then the word's input digest, `letters` and `parts` (`:1307-1317`);
+   - every letter on the exact simulator, each admitted and certain (`admissible`; `:1339-1348`). A lattice row goes to
+     the lattice helper instead (section 7.11.4; `:1318-1327`);
+   - for height and high rows, the contract hooks: `prepare` before the replay, `on_letter` after each letter,
+     `finish` after the last (`check_run.py:1329-1363`, calling `research/jumbling/restoration/13-tutorial-runner/scripts/check_contracts.py`);
+   - its `after` snapshot (`check_run.py:1365-1366`). If the row has `table`, the table is `tables/NNNNN.json` with the
+     row's own index and loads to the replayed state (`table`; `:1367-1368`, `:978-987`). Then the word's output
+     digest (`:1371-1372`);
+   - its contract: N strictly decreases for bulk rows (`N_decrease`; `:1378-1382`); strict′ for tail rows and the
+     fallback contract for fallback rows (`check_unit`; `:1383-1385`, `:618-658`); the height and kernel contracts
      through the hooks (chapters 3 and 4).
 7. After the last bulk row, or at once when there is none, check the bulk's end: its snapshot, its table
    `tables/bulk-end.json`, and that the table loads to the replayed state (`bulk_end_digest`, `bulk_end_off`,
-   `bulk_end_heights`, `bulk_table`, `bulk_table_digest`; `:1264-1277`, `:1394-1395`).
+   `bulk_end_heights`, `bulk_table`, `bulk_table_digest`; `:1263-1276`, `:1393-1394`).
 8. Check the phases (section 7.11.3; `check_v3_phases`, `:709-841`), with the kernel's letter bound over the whole high
    phase (`:781-793`; chapter 4).
 9. Check the stuck block's snapshot and shape, and replay the probe on a copy of the end state under the fallback
-   contract (`stuck`, `probe`; `:1417-1429`, `:908-943`).
-10. Check the end (`:1430-1470`):
-    - a played lattice phase: the record has no `lattice` block (`lattice`); the last lattice row has a boolean
+   contract (`stuck`, `probe`; `:1416-1428`, `:908-943`).
+10. Check the end (`:1429-1469`):
+    - a played lattice phase: the record's `lattice` is null (`lattice`); the last lattice row has a boolean
       `labels_identity`, and for a solved run it is true and no piece is off (`labels_identity`); only the last
-      lattice row has `table` (`table`, `:1444-1447`); and the lattice report agrees with the replay (`lattice_report`,
+      lattice row has `table` (`table`, `:1443-1446`); and the lattice report agrees with the replay (`lattice_report`,
       below);
     - a lattice phase with result `solved` and no row: no piece is off and the checker's own label test passes
-      (`labels_identity`; `:946-952`, `:1452-1456`), and the report is checked as below, with 0 twists and the current
-      digest as both start and end (`:1457-1458`);
-    - otherwise a solved run must end at the solved digest (`solved_digest`; `:1466-1467`), and a composition block goes
+      (`labels_identity`; `:946-952`, `:1451-1455`), and the report is checked as below, with 0 twists and the current
+      digest as both start and end (`:1456-1457`);
+    - otherwise a solved run must end at the solved digest (`solved_digest`; `:1465-1466`), and a composition block goes
       to `verify_late.py` (section 7.11.5).
 
-    The report check (`check_lattice_report`, `check_run.py:955-976`) passes only when all of these hold:
-    `phases.lattice.report` has exactly the keys `file` and `sha256`; `file` is `lattice/report.json`; the sha256 of
-    that file's bytes is `sha256`; the report's `restorer` is `config.lattice.restorer`; `player.input.digest` is the
+    The report check (`check_lattice_report`, `check_run.py:955-975`) passes only when all of these hold:
+    `phases.lattice.report` has exactly the keys `file` and `sha256`; the sha256 of the named file's bytes is `sha256`;
+    the report's `restorer` is `config.lattice.restorer`; `player.input.digest` is the
     replayed digest where the lattice phase starts, and `player.final.digest` the replayed end digest;
     `player.final.labels_identity` is true; `player.result` is `solved` and `player.failure` is null;
     `player.played.retained` and `player.played.corrections` are non-negative integers whose sum is
     `player.played.total`, which equals the lattice rows' replayed letters; and `player.scheduled` is
-    `{retained, corrections}` of `player.played`. Otherwise the record fails `lattice_report`.
-11. Check `phases.lattice.twists` and the lattice phase's result (`phase_twists`, `phase_result`; `:1471-1482`), and
+    `{retained, corrections}` of `player.played`. Otherwise the record fails `lattice_report`. At `cd5e6e8` the check
+    also requires `file` to be exactly `lattice/report.json` (`check_run.py:955-976` at that commit). The pinned check
+    accepts an identical report at another path inside the run directory. This later condition applies to both a
+    played phase and a phase that scheduled nothing; the examples in section 7.12 use the later checker.
+11. Check `phases.lattice.twists` and the lattice phase's result (`phase_twists`, `phase_result`;
+    `check_run.py:1470-1481`), and
     the totals against the replayed letters (`bulk_twists` and the other twist names, `lattice_twists`;
-    `:1483-1490`).
-12. Recount the acceptance block and recompute the verdict (`acceptance`, `verdict`; `:1491-1492`, `:844-899`).
+    `:1482-1489`).
+12. Recount the acceptance block and recompute the verdict (`acceptance`, `verdict`; `:1490-1491`, `:844-899`).
 
 **Test.** Each check that fails adds a failure name. A row's line (`index`, `phase`, `subphase`, `rule`, `pass`,
 `fails`, `unchecked`) lists that row's failures. The final row lists every failure, the rows' failures included
-(`check_run.py:1165-1178`). `record` on a row's line means the row was not checked: the checker stopped at another
+(`check_run.py:1164-1177`). `record` on a row's line means the row was not checked: the checker stopped at another
 row's or the run's failure (step 4), or the record could not be read.
 
 **Step played (tree).** The checker plays every letter of every row again, twist by twist. That includes a
@@ -958,25 +944,27 @@ replay.
 
 **Contract.** A record passes when no check fails. The final row is
 `{pass, result, steps, bulk_twists, height_twists, high_twists, tail_twists, fallback_twists, lattice_twists,
-end_digest, lattice_checked, fails, verdict, unchecked_contracts}` (`check_run.py:1500-1507`). `end_digest` is the
-replayed digest at the end. It is null when the checker stopped before the replay (step 4), when the record is
-malformed, and on the composition path of format 3 (`:1468-1470`). `lattice_checked` is true only when `verify_late.py`
-passed a composition block. `verdict` is null unless the phases had the format 3 shape after a full replay (`:1193`,
-`:1491-1492`).
+end_digest, lattice_checked, fails, verdict, unchecked_contracts}` (`check_run.py:1499-1506`). For format 3,
+`end_digest` is the replayed digest at the end, or null on the composition path (`:1467-1469`). Both `end_digest` and
+`verdict` stay null when the record could not be replayed (step 4), or an exception prevented their computation.
+`lattice_checked` is true only when `verify_late.py`
+passed a composition block. `verdict` is null unless the phases had the format 3 shape after a full replay
+(`check_run.py:1192`, `:1490-1491`).
 
 **No step.** A malformed record still gets a failing final row: an exception adds `record` to the run's failures, and
-every row not yet written gets `record` (`check_run.py:1493-1496`). The checker exits 0 when the record passes and 1
-otherwise (`check_run.py:1539`).
+every row not yet written gets `record` (`check_run.py:1492-1495`). The checker exits 0 when the record passes and 1
+otherwise (`check_run.py:1538`).
 
-**Evidence.** Reading of the code. Tests: `test_check_run.py` (100 tests on `cd5e6e8`), among them
-`test_v3_acceptance_config` (`:1231`), `test_v3_played_lattice` (`:1729`; the report `:1748-1789`, the table
-`:1792-1811`), `test_v3_lattice_with_no_step` (`:1870`) and `RunnerRecordTests.test_dispatcher_record`
-(`:2034-2063`); the per-row `kernel_d19` check in `test_runner.py:3060-3072`; `test_check_contracts.py`;
+**Evidence.** Reading of the code. `test_check_run.py` has 100 tests; its last recorded full pass was on `cd5e6e8`
+(preamble). Among them are
+`test_v3_acceptance_config` (`:1231`), `test_v3_played_lattice` (`:1729`; the report `:1748-1786`, the table
+`:1788-1807`), `test_v3_lattice_with_no_step` (`:1866`) and `RunnerRecordTests.test_dispatcher_record`
+(`:2024-2053`); the per-row `kernel_d19` check in `test_runner.py:3053-3065`; `test_check_contracts.py`;
 `test_check_lattice.py`. The committed records of seeds 7001 and 7106 pass, the chapter's development and height
 records pass, and four changed copies fail (**run on one instance**, section 7.12).
 
-**Where in the code.** `check_run.py:1152-1507` (`check_run`, `finish`), `:451-495`, `:523-615`, `:709-841`,
-`:844-899`, `:955-988`; `check_lattice.py:392-504`.
+**Where in the code.** `check_run.py:1151-1506` (`check_run`, `finish`), `:451-495`, `:523-615`, `:709-841`,
+`:844-899`, `:955-987`; `check_lattice.py:392-504`.
 
 ### 7.11.1 What the checker may share with the runner
 
@@ -998,21 +986,21 @@ Not imported: `runner.py`, `runner_api.py`, the rule plugins, `lattice_phase.py`
 (`check_run.py:173-190`), its own tree checks (`check_run.py:523-615`), and its own `ia16` reader and label model
 (`check_lattice.py:45-96`, `:268-327`).
 
-One program of the lattice line is run, not imported. For records of formats 1 and 2, and for the composition path of a
-stub lattice plugin, the checker runs `verify_late.py` as a child process (`check_run.py:3-6`, `:52`, `:1106`; section
+One program of the lattice line is run, not imported. For a lattice block in formats 1 and 2, and for the composition
+path of a stub lattice plugin, the checker runs `verify_late.py` as a child process (`check_run.py:3-6`, `:52`, `:1105`; section
 7.11.5). It is the same verifier the runner runs on that path (`runner.py:43`, `:1346`). A format 3 record made with the
-real lattice plugin never reaches it. Whether this child process fits reading 1 is open question 5.
+real lattice plugin never reaches it. The import scan does not establish independence for this child process.
 
 A scan of the source enforces the import boundary for `check_run.py`, `check_contracts.py` and `check_lattice.py`
-(`test_check_run.py:2077-2137`, `IndependenceTests`):
+(`test_check_run.py:2067-2127`, `IndependenceTests`):
 
 - imports outside the standard library must be one of `numpy`, `sim`, `restore`, `trees`, `rim`, `check_contracts`,
   `check_lattice`; relative imports are refused;
 - imports whose names begin with `runner`, `rules_`, `lattice_phase`, `literal_lattice`, `eb6`, `seams`, `orient`,
-  `buffer`, `r22d25_` or `verify_late` are refused (`:2084-2085`);
+  `buffer`, `r22d25_` or `verify_late` are refused (`test_check_run.py:2074-2075`);
 - only `menu`, `element`, `scramble`, `ctx`, `to_tuple` and `transpose` of `restore`, and `Domains` of `rim`, may be
-  used, and neither module may be used as a value (`:2121-2122`);
-- the names `__import__`, `importlib`, `runpy`, `exec` and `eval` are refused (`:2118-2119`).
+  used, and neither module may be used as a value (`:2111-2112`);
+- the names `__import__`, `importlib`, `runpy`, `exec` and `eval` are refused (`:2108-2109`).
 
 The scan reads imports and names only. It does not see a program started as a child process.
 
@@ -1049,8 +1037,8 @@ For a format 3 record (`check_run.py:340-370`):
 - the row keys `index`, `phase`, `subphase`, `rule`, `word`, `letters`, `encoding`, `word_sha256`, `tree`, `standing`,
   `before`, `after` and `seconds`, and also `contract`, `gate` and `attempts` outside the bulk; `seconds` finite and not
   negative (`step_keys`);
-- the phase and sub-phase (`phase`, `subphase`); the encoding, `ia16` exactly on lattice rows (`encoding`);
-  `word_sha256` a sha256 (`word_sha256`);
+- the phase and sub-phase (`phase`, `subphase`); the encoding is `json` or `ia16`, with `ia16` required on lattice
+  rows (`encoding`); `word_sha256` a sha256 (`word_sha256`);
 - the standing: `fallback` exactly on fallback rows and only in development mode; `certificate` exactly on `slp_apply`
   rows in development mode (`standing`);
 - `construction: certificate` exactly on `slp_apply` rows, each with a `certificate_sha256` (`certificate_keys`);
@@ -1083,10 +1071,30 @@ For a format 3 record (`check_run.py:340-370`):
 For a lattice row the checker holds no word before the replay, so it checks the structure only (`check_run.py:526-527`).
 `check_lattice.py` checks the ranges on the `ia16` codes during the replay (`check_lattice.py:130-205`).
 
-**Tables** (`check_step_table`, `check_run.py:979-988`, called at `:1368-1369`): a row's `table` must be
+**Tables** (`check_step_table`, `check_run.py:978-987`, called at `:1367-1368`): a row's `table` must be
 `tables/NNNNN.json` with the row's own index, and that file must load, through the checker's own table loader, to the
 state the checker replayed after the row (`table`). A played lattice phase has `table` on its last row only
-(`check_run.py:1444-1447`).
+(`check_run.py:1443-1446`).
+
+**Lattice end and report.** After a played phase, `record.lattice` must be null (`lattice`), and its last row must
+have a boolean `labels_identity`; for a solved run it must be true and no piece may be off (`labels_identity`;
+`check_run.py:1429-1450`). A phase that scheduled nothing needs no piece off and the checker's own label test to
+pass (`labels_identity`; `:1451-1458`). Both branches check the report (`lattice_report`; `:955-975`):
+
+| Field | Required value |
+| --- | --- |
+| `phases.lattice.report` | exactly `file` and `sha256` |
+| Report bytes | their sha256 equals the recorded `sha256` |
+| `restorer` | `config.lattice.restorer` |
+| `player.input.digest`, `player.final.digest` | the replayed lattice start and end digests; the current digest for both when nothing was scheduled |
+| `player.final.labels_identity` | true |
+| `player.result`, `player.failure` | `solved`, null |
+| `player.played.retained`, `player.played.corrections` | non-negative integers whose sum equals `player.played.total` and the replayed lattice twists; all zero when nothing was scheduled |
+| `player.scheduled` | exactly the `retained` and `corrections` counts of `player.played` |
+
+The runner writes `lattice/report.json`. The checker also requires that exact filename from `cd5e6e8`
+(`check_run.py:955-976` at that commit); the pinned check permits another path inside the run directory. A played
+phase's table checks are the ones above (`table`).
 
 **Phases** (`check_run.py:709-841`):
 
@@ -1117,8 +1125,9 @@ state the checker replayed after the row (`table`). A played lattice phase has `
 - The run's result agrees with the phases (`result`; `:822-836`): an `error` of a height sub-phase, the high phase or
   the lattice phase gives `error`. Otherwise a `budget` or `timeout` of those or of the tail gives `budget`; a stuck tail
   or lattice phase gives `stuck`, and only they do; a solved lattice phase gives `solved`.
-- `config.component` is `lattice_composition` exactly when the record has a composition block (`component`;
-  `:837-840`).
+- A composition block requires a non-null `config.component`. The reason `lattice_composition` requires a composition
+  block (`component`; `:837-840`). The checker permits an earlier reason such as `bulk_budget` on a composition run;
+  the runner keeps the first reason (`runner.py:412-414`).
 
 ### 7.11.4 Lattice steps
 
@@ -1139,7 +1148,7 @@ A lattice word can be long, so the checker streams it from its `ia16` file (`che
    off, `after_off`; the digest, `after_digest`) and, where the row has it, `labels_identity` against the played state
    (`labels_identity`).
 
-A crash inside the helper fails the row as `lattice_step` (`check_run.py:1321-1326`). The lattice phase as a whole is
+A crash inside the helper fails the row as `lattice_step` (`check_run.py:1320-1325`). The lattice phase as a whole is
 then checked at the end (Rule R7.9, step 10).
 
 ### 7.11.5 Records of formats 1 and 2, and the composition path
@@ -1147,17 +1156,18 @@ then checked at the end (Rule R7.9, step 10).
 The checker also reads records of formats 1 and 2. Their lattice phase was not played twist by twist: `verify_late.py`
 checked the retained part of the lattice word by composing permutations and played only the corrections. The checker
 runs `verify_late.py` as a child process with a time limit, `--verify-seconds` (default 7,200 s), and writes its report
-in a new `check/` directory of the run directory, or of the `--out` file's parent (`check_run.py:3-6`, `:991-1149`,
-`:1514-1515`).
+in a new `check/` directory of the run directory, or of the `--out` file's parent (`check_run.py:3-6`, `:990-1148`,
+`:1513-1514`).
 
 In format 3 this path is used only when a stub lattice plugin answered `not_applicable`. The runner then runs the late
-restorer and `verify_late.py` itself (`runner.py:1326-1367`). The run is a component run, `lattice_composition`; its
+restorer and `verify_late.py` itself (`runner.py:1326-1367`). It requests the component reason `lattice_composition`,
+keeping an earlier component reason if one was set (`runner.py:412-414`, `:1327`). Its
 lattice result is the run's result, `solved` or `error` (`lattice verification failed`, `runner.py:1363-1366`); and the
-checker's `end_digest` is null (`check_run.py:1460-1470`). With the real lattice plugin, a format 3 run plays its
+checker's `end_digest` is null (`check_run.py:1459-1469`). With the real lattice plugin, a format 3 run plays its
 lattice phase and the checker replays it.
 
 `--allow-unchecked-contracts` lets a record pass when a contract hook leaves a row unchecked. Such rows are counted in
-`unchecked_contracts` and marked `unchecked: true` (`check_run.py:1165-1178`, `:1516-1518`). With the real hooks, every
+`unchecked_contracts` and marked `unchecked: true` (`check_run.py:1164-1177`, `:1515-1517`). With the real hooks, every
 hook names failures or nothing (`check_contracts.py:289-296`; `check_lattice.py:392-504`), and the height rows of
 section 7.12.3 report `unchecked: false` (**run on one instance**). An acceptance check runs without the option.
 
@@ -1168,7 +1178,8 @@ The checker checks the words played, not the runner's choices (`check_run.py:8`)
 - that the rule that fired was the first rule, in the tutorial's order, that fires at that state, or that the
   candidates before it fail. That needs rule code, which the checker may not share;
 - a `stuck` claim: that no rule of the phase has a step (`check_run.py:693-694`);
-- a claimed `budget` or `timeout`: evidence for it is deferred (`README.md:1340-1345`, "Deferred by decision");
+- a claimed `budget` or `timeout`: evidence for it is deferred (`README.md:1340-1345` at `88dacaf`, "Deferred by
+  decision");
 - the content of attempts, beyond their shape and their `timed_out` count;
 - the runner's times;
 - the lattice report beyond the fields of Rule R7.9, step 10; for example `cascade_order` and the restorer's own
@@ -1182,16 +1193,16 @@ rules of chapters 2 to 6 and the runner's tests, not on the checker.
 ## 7.12 Examples
 
 Sections 7.12.1 and 7.12.2 use the committed D0 records, made on 22 October 2026 on commit `cd5e6e8` in acceptance
-mode, with `config.source.dirty` false (`README.md:1545-1557`, `:1570-1578`). Sections 7.12.1, 7.12.3 and 7.12.4 also
+mode, with `config.source.dirty` false (`README.md:1545-1557`, `:1570-1578` at `88dacaf`). Sections 7.12.1, 7.12.3 and 7.12.4 also
 use runs and checks made by the chapter's script on 22 October 2026, on the head `41cc08d` with `config.source.dirty`
 false; their values are in `ch07-examples.json`. The `scripts` map of the chapter's development run equals that of the
 committed record (**computed**, key `C_dev7001.scripts_equal_to_d0`). Every example is **run on one instance**. Times
-are **measured** on one shared headless Linux machine.
+are **measured** on headless Linux. The cited records keep the values; a time with no such record is omitted.
 
 ### 7.12.1 Seed 7001 at depth 10, acceptance mode
 
 The committed record `runs/dev/d0-s7001/run/run.json`, made by `runner.py --scramble 10 7001 --mode acceptance`
-(`README.md:1548-1549`; `ch07-examples.json`, key `A_d0`).
+(`README.md:1548-1549` at `88dacaf`; `ch07-examples.json`, key `A_d0`).
 
 - Start: digest `1438ebed…`, 26,519 pieces off, all at height 2; N = 13,270.
 - `config`: `mode: acceptance`, `component` null, `lattice.restorer: schedule11`, `acceptance_config.sha256`
@@ -1220,7 +1231,7 @@ The committed record `runs/dev/d0-s7001/run/run.json`, made by `runner.py --scra
 - `result: solved`; `acceptance: {verdict: solved, certificate_steps: 0, fallback_steps: 0, probe: null,
   timed_out_attempts: 0}`; `totals.bulk_twists` 9, `totals.lattice_twists` null; `totals.seconds` 41.9.
 - The committed `check.jsonl` passes it: `pass: true`, `verdict: solved`, `end_digest` the solved digest,
-  `unchecked_contracts` 0 (7 s, `README.md:1549`). The chapter's script ran the checker again on a copy of the run
+  `unchecked_contracts` 0. The chapter's script ran the checker again on a copy of the run
   directory: exit 0 in 9.2 s, with lines equal to the committed ones.
 - The chapter's script recomputed every row's `word_sha256` from its word file, and found the tree bytes of step 0
   equal to the compact JSON of its root and a newline (**computed**).
@@ -1238,7 +1249,7 @@ The committed record `runs/dev/d0-s7001/run/run.json`, made by `runner.py --scra
 ### 7.12.2 Seed 7106 at depth 20: a played lattice phase
 
 The committed record `runs/dev/d0-s7106/run/run.json` and its checker output `runs/dev/d0-s7106/check.jsonl`, made by
-`runner.py --scramble 20 7106 --mode acceptance` (`README.md:1550-1557`). The values below were read from the
+`runner.py --scramble 20 7106 --mode acceptance` (`README.md:1550-1557` at `88dacaf`). The values below were read from the
 committed files.
 
 - Start: digest `9ad04d45…`, 51,828 pieces off, all at height 2.
@@ -1260,15 +1271,15 @@ committed files.
 - The end digest `71dbda5c…` is not the solved digest. The run is solved by identity labels; the digest differs by
   rotations the labels do not see (chapter 6; section 7.7).
 - The committed checker output passes it: `pass: true`, `verdict: solved`, `end_digest` `71dbda5c…`, `lattice_twists`
-  1,516,410, `unchecked_contracts` 0. The checker replayed all 54 words twist by twist in 81 s (`README.md:1557`).
+  1,516,410, `unchecked_contracts` 0. The checker replayed all 54 words twist by twist.
 
 ### 7.12.3 Two height steps from the R22D-36 state, development mode
 
-The R22D-36 state is made from the solved state by the committed 26-letter word `WORD36` (`test_r22d25.py:39-42`): 5,800
+The R22D-36 state is made from the solved state by the committed 26-letter word `WORD36` (`research/jumbling/restoration/12-low-height/scripts/round22/test_r22d25.py:39-42`): 5,800
 pieces off, 5,799 at height 2 and one at height 6, digest `8733a0aa…` (`test_r22d25.py:285-286`). The chapter's script
 plays the word, exports the state as a table and runs `runner.py --table <R22D-36 table> --bulk-steps 0
---fallback-max-length 0 --tail-rules '' --out <new dir> --cache <new dir>` in development mode (`ch07_examples.py:258-270`;
-key `D_z36`). These options skip the bulk and give the tail no rule, to show the height rows quickly.
+--fallback-max-length 0 --tail-rules '' --out <new dir> --cache <new dir>` in development mode (record key `D_z36`).
+These options skip the bulk and give the tail no rule, to show the height rows quickly.
 
 - The bulk ends `budget` at once (`--bulk-steps 0`), so the run is a component run, `bulk_budget`.
 - Sub-phase `r22d75` plays two steps:
@@ -1292,23 +1303,23 @@ key `D_z36`). These options skip the bulk and give the tail no rule, to show the
   `totals.seconds` 69.0.
 - The checker passes it, with both height contracts checked (`unchecked: false`): `pass: true`, `verdict: component`,
   `unchecked_contracts` 0 (7.2 s).
-- `test_check_run.py:2034-2063` (`test_dispatcher_record`) makes the same run and asserts the same two words, the end
+- `test_check_run.py:2024-2053` (`test_dispatcher_record`) makes the same run and asserts the same two words, the end
   digest `3ab25d21…`, the sub-phase results, the component `bulk_budget` and the checker's verdict `component`.
-  `test_rules_height.py:863-886` (`test_01_r22d36_and_h4`) asserts the two steps' digests, off counts and heights.
+  `research/jumbling/restoration/13-tutorial-runner/scripts/test_rules_height.py:863-886` (`test_01_r22d36_and_h4`) asserts the two steps' digests, off counts and heights.
 
 ![Figure 7.4: The run from the R22D-36 state: the phase blocks in the fixed order, the two height steps and the stuck tail with its 54 units](figures/07-z36-phase-blocks.svg)
 
 ### 7.12.4 Four changed copies
 
 The chapter's script copied the committed record of section 7.12.1 four times, changed each copy, and ran the checker
-on it (`ch07_examples.py:208-256`; key `B_tampered`). Each check exited 1.
+on it (record key `B_tampered`). Each check exited 1.
 
 | Copy | Change | Row lines | Final row | Replay |
 | --- | --- | --- | --- | --- |
 | a | the item of step 3's letter (11, 18) raised to (11, 19) in its word file; `word_sha256` not updated | step 3: `word_sha256`; every other row: `record` | `fails: [word_sha256]`; `end_digest` and `verdict` null; `bulk_twists` 0 | none: stopped before the simulator |
 | b | the same change, with step 3's `word_sha256` updated to match | steps 0 to 2 pass; step 3: `after_digest`, `after_off`, `after_N`, `output_digest`, `N_decrease`; steps 4 to 8: `before_digest`, `before_off`, `before_N`, `input_digest`, `after_digest`, `after_off`, `after_N`, `output_digest` | the rows' failures and `bulk_end_digest`, `bulk_end_off`, `bulk_end_heights`, `bulk_table_digest`, `phase_result`, the start and end failures of `r22d75`, `r22d81`, `h4`, `height` and `high`, `entry_test`, `solved_digest`; `end_digest` `16c4a6fa…`; `bulk_twists` 9; `verdict: solved`; `pass: false` | played; the replay leaves the recorded path at step 3 |
 | c | step 2's tree span moved from [0, 1] to [1, 2], with the tree's sha256 updated | step 2: `tree_expansion`; every other row: `record` | `fails: [tree_expansion]`; `end_digest` and `verdict` null | none |
-| d | `config.lattice.restorer` and `config.acceptance_config.options.lattice_restorer` set to `late`, and `config.acceptance_config.sha256` set to `987b82a2…`, the sha256 of the file with `schedule11` replaced by `late` | every row: `acceptance_config` | `fails: [acceptance_config]`; `end_digest` and `verdict` null | none |
+| d | `config.lattice.restorer` and `config.acceptance_config.options.lattice_restorer` set to `late`, and `config.acceptance_config.sha256` replaced by the hash of the file with `schedule11` replaced by `late` | every row: `acceptance_config` | `fails: [acceptance_config]`; `end_digest` and `verdict` null | none |
 
 In copies a and c the rows without a failure of their own read `record`: they were not checked, because the checker
 stopped (Rule R7.9, step 4). In copy d the run's failure, `acceptance_config`, stands on every row. Copy d is a record
@@ -1327,20 +1338,17 @@ failure names are `test_check_run.py:1301` and `:1740` (`word_sha256`) and `:133
 - A finite set of records shows nothing about scrambles outside it. No uniform bound on the length of a restoration
   exists (**proved (model review only)**; [stage 10](../restoration/10-x1-unbounded/README.md), through
   [METHOD](../restoration/09-general-method/METHOD.md) section 5, T15-04).
-- The lattice phase has bounds for every input (chapter 6; `METHOD.md:175`, "Lattice-phase length"; **proved (model
-  review only)**). The round 11 schedule `schedule11`, which the runner runs by default and acceptance mode requires
+- The lattice phase has bounds for every input (chapter 6; `research/jumbling/restoration/09-general-method/METHOD.md:175`, "Lattice-phase length"; **proved (model
+  review only)**). The default restorer, required in acceptance mode, is the round 11 schedule `schedule11`
   (`runner.py:1608-1609`; `acceptance-config.json`), needs at most 20,866,844 retained twists. The late restorer on
   the committed cascade, available only in development mode with `--lattice-restorer late`, needs at most
   1,324,660,182. The corrections add at most 25,852 twists to either. These bound the lattice phase's total, the sum of
   the `letters` of its rows (`phases.lattice.twists`, equal to `totals.lattice_twists`); the record keeps each row's
   actual length.
-- On seed 7106 at depth 20, D0 played 8,701,310 lattice twists with `late` and 1,516,410 with `schedule11`, neither
-  with a correction (**run on one instance**; `README.md:1519-1543`, `:1550-1562`). The `late` count comes from a run
-  in acceptance mode on an uncommitted candidate, made while `acceptance-config.json` still named `late`. It equals the
-  lattice length of the committed format 1 record of the same scramble, which was checked by composition
-  (`README.md:1174-1176`). The `schedule11` count comes from a development-mode run on an uncommitted candidate and
-  again from the committed acceptance record of section 7.12.2. The `late` count has not been repeated on the committed
-  head (open question 3).
+- The committed format 1 record of seed 7106 at depth 20 (`runs/depth20-seed7106/run.json`, `totals.lattice_twists`)
+  records 8,701,310 lattice twists with the late restorer, checked by composition. The committed acceptance record of
+  section 7.12.2 records 1,516,410 with `schedule11`, replayed twist by twist (**run on one instance** each). These
+  records use different formats and different checks; they do not measure the effect of choosing a restorer alone.
 
 ## 7.14 Code index
 
@@ -1367,38 +1375,11 @@ failure names are `test_check_run.py:1301` and `:1740` (`word_sha256`) and `:133
 | Options and their defaults | `runner.py:1586-1634` |
 | Lattice step trees | `lattice_phase.py:136-201` |
 | Lattice plugin, its ends and its report | `lattice_phase.py:456-580` |
-| Checker | `check_run.py:1152-1507` |
+| Checker | `check_run.py:1151-1506` |
 | Checker: configuration, acceptance options, D19 | `check_run.py:279-370` |
 | Checker: row labels, trees, phases, verdict, probe | `check_run.py:451-495`, `:523-615`, `:709-841`, `:844-899`, `:908-943` |
-| Checker: labels, lattice report, step tables | `check_run.py:946-988` |
-| Checker: composition path | `check_run.py:991-1149` |
+| Checker: labels, lattice report, step tables | `check_run.py:946-987` |
+| Checker: composition path | `check_run.py:990-1148` |
 | Contract hooks | `check_contracts.py:194-314` |
 | Lattice replay | `check_lattice.py:45-96`, `:130-205`, `:268-327`, `:392-504` |
-| Independence scan | `test_check_run.py:2077-2137` |
-
-## 7.15 Open questions
-
-1. `README.md:470` still lists `lattice_restorer` `late` among the values of `acceptance-config.json` (section 2). The
-   file, the runner's default and sections 1 and 9 of the same README name `schedule11`. This chapter follows the file.
-2. The owner page of 18 October 2026 has a correction dated 22 October (lines 38-41) that calls the late restorer "the
-   lattice phase the runner runs". After E5 the runner's default and acceptance restorer is `schedule11`. The page
-   needs an update by the integrator.
-3. The `late` count of D0 on seed 7106 (8,701,310 twists) comes from a run on an uncommitted candidate and from the
-   format 1 record checked by composition. It has not been repeated on the committed head.
-4. The acceptance batches have not been run (`README.md:1578`). No acceptance seed is used in this chapter.
-5. The checker runs `verify_late.py` as a child process for formats 1 and 2 and for the composition path of a stub
-   lattice plugin. Reading 1 says the checker shares no verifier code. The owner has not said whether running that
-   program fits the reading. A format 3 record made with the real plugins never reaches it.
-6. The checker does not check the rule choice, a `stuck` claim, or evidence for a `budget` or `timeout`
-   (`README.md:1345`). A passing record therefore does not show that the tutorial's rules were followed in order.
-7. No committed record has a folded lattice tree (`tree_folded` or `tree_folded_depth` above 0) or a correction step.
-   Only the unit tests cover them (`test_lattice_phase.py:505-561`).
-8. The runner's own tree check lets through unknown keys and empty groups, which the checker rejects as
-   `tree_malformed`. A plugin tree of that kind would give a record that the runner writes and the checker fails.
-9. A signal during the bulk records the component `bulk_budget` and a bulk result `budget` that no budget caused. The
-   verdict is `error`, so the acceptance outcome is not changed, but the record is misleading.
-10. The tutorial's chapters cite different commits: chapters 1 and 3 `35c3d4f`; chapters 2, 4, 5, 6 and this chapter
-    `88dacaf`. The tutorial should be re-pinned to one commit before it is merged.
-11. Some line citations in sections 3 and 5 of `README.md` refer to an earlier layout of the files. For example it
-    cites `test_v3_lattice_ends` at `test_check_run.py:1760` (now `:1840`) and the checker's lattice rules at
-    `check_run.py:788-799` (now `:796-805`).
+| Independence scan | `test_check_run.py:2067-2127` |
