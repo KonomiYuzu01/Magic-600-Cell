@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-22] decision | Jumbling: the tutorial and its acceptance first
+The owner asked for the tutorial to be written and its acceptance test carried out first, to the standard of a finished product, which restarts for that scope the work the research stop of 20 October halted ([owner-decisions-2026-10-22-tutorial-first](decisions/owner-decisions-2026-10-22-tutorial-first.md)). The context section of the 18 October decision is corrected: its lattice bound of 20,866,844 twists belongs to the round 11 construction, not to the late restorer the runner plays.
+
 ## [2026-10-21] update | Jumbling: handoff entries of 21 October for the five 1.0 lines
 At the owner's request the renderer, engineering, Look Lab, Taste Lab and design-table pages of `docs/progress/1.0/jumbling-handoff/` gained a second entry, which records the work of 18 to 20 October and the state after the research stopped: what each line can use now, what will not arrive, what it must not assume and what waits for the owner. Their Summary, Open items and Checks not run sections now describe the current state; the logs stay append-only, and older items carry "Updated by" or "Superseded in part by" marks.
 

@@ -35,7 +35,10 @@ and if not, which research route reaches that goal fastest. The integrator's ans
   40-twist scrambles to the lattice, and runs into a slow tail on the other 40-twist scramble and on every deeper one;
   experiment E2 took the depth 40 stop from 1,193 off pieces to 0, with the unit, the kind of step and the order chosen
   by hand; the lattice phase has a bound of 20,866,844 twists for every input (proved, model review) and runs as its
-  own program.
+  own program. (Corrected on 22 October 2026: 20,866,844 bounds the construction of round 11, which the runner does
+  not run; the lattice phase the runner runs, the late restorer on the committed cascade, has a bound of 1,324,660,182
+  retained twists and 25,852 for the corrections,
+  [METHOD](../../../research/jumbling/restoration/09-general-method/METHOD.md), "Lattice-phase length".)
 
 In the same exchange the owner noted that lengths like 10^500 are far beyond what a person can carry out, and asked
 what happens above left height 4. The integrator's answers:
