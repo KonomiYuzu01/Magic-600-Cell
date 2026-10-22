@@ -5,6 +5,7 @@ Set RUNNER_SLOW=1 to include the depth-20 run through the lattice phase. The tes
 check_run.py on a record say so where they call independent_check.
 """
 import ast
+import copy
 from contextlib import nullcontext, redirect_stdout
 import gzip
 import hashlib
@@ -97,7 +98,7 @@ def check_record(test, out, record):
 
     A step tree is checked with runner_api.check_tree and by its sha over the uncompressed
     bytes; that it expands to exactly the replayed word is check_run.py's job."""
-    test.assertEqual(set(record), {'format', 'menu', 'start', 'config', 'phases', 'steps', 'stuck',
+    test.assertEqual(set(record) - {'resumes'}, {'format', 'menu', 'start', 'config', 'phases', 'steps', 'stuck',
                                   'lattice', 'result', 'error', 'acceptance', 'totals'})
     test.assertEqual(record['format'], 'runner-run/3')
     test.assertEqual(record['menu'], 'I_a')
@@ -109,7 +110,7 @@ def check_record(test, out, record):
     config = record['config']
     test.assertEqual(set(config), {'literal_only', 'mode', 'component', 'bulk_order', 'phase_order',
         'subphase_order', 'tail_rules', 'budgets', 'clock_sentinel', 'kernel', 'lattice', 'literal_limit',
-        'seeds', 'acceptance_config', 'source', 'scripts'})
+        'seeds', 'acceptance_config', 'source', 'scripts', 'code', 'no_lattice'})
     test.assertIs(config['literal_only'], True)
     test.assertIn(config['mode'], api.MODES)
     acceptance = config['mode'] == 'acceptance'
@@ -375,7 +376,7 @@ def check_record(test, out, record):
     results, closed = [], False
     for name, data in height['sub'].items():
         test.assertLessEqual({'result', 'steps', 'start', 'end'}, set(data))
-        test.assertLessEqual(set(data), {'result', 'steps', 'start', 'end', 'reason', 'details', 'attempts'})
+        test.assertLessEqual(set(data), {'result', 'steps', 'twists', 'start', 'end', 'reason', 'details', 'attempts'})
         if data['result'] is None:
             closed = True
             continue
@@ -397,7 +398,7 @@ def check_record(test, out, record):
         ended('high', high, own('high'))
         test.assertEqual(high['twists'], sum(s['letters'] for s in own('high')))
     tail = phases['tail']
-    test.assertEqual(set(tail), {'result', 'steps'})
+    test.assertEqual(set(tail), {'result', 'steps', 'twists'})
     test.assertIn(tail['result'], (None, 'lattice', 'stuck', 'timeout', 'budget', 'not_applicable'))
     test.assertEqual(tail['steps'], sum(1 for s in steps if s['phase'] in ('tail', 'fallback')))
     if tail['result'] is not None:
@@ -728,6 +729,7 @@ class LatticePlay:
     def play(self, ctx):
         m, self.work = ctx.mechanics, ctx.work_dir / 'play'
         state, before, steps = m.load(ctx.table), ctx.snapshot(), []
+        start = before['digest']
         for k, (rule, word, tree) in enumerate(self.script):
             if isinstance(m, FakeMechanics):
                 m.play(state, word)
@@ -745,9 +747,15 @@ class LatticePlay:
         if steps:
             steps[-1].fields['labels_identity'] = True
         m.export(state, self.work / 'end-table.json')
-        # The parts of P3's report the runner and the checker read.
-        report = {'restorer': 'scripted', 'player': {'played': {'total': sum(s.letters for s in steps)},
-                                                      'final': {'labels_identity': True}}}
+        # The parts of P3's report the runner and the checker read (I1R-01): the run's restorer, the start and end
+        # digests, a solved player, and played and scheduled counts that add up to the steps' twists.
+        corrections = sum(s.letters for s in steps if s.rule.startswith('lattice/correction'))
+        retained = sum(s.letters for s in steps) - corrections
+        report = {'restorer': ctx.budgets.get('lattice_restorer'), 'player': {
+            'input': {'digest': start}, 'result': 'solved', 'failure': None,
+            'played': {'retained': retained, 'corrections': corrections, 'total': retained + corrections},
+            'scheduled': {'retained': retained, 'corrections': corrections},
+            'final': {'digest': m.snapshot(state)['digest'], 'labels_identity': True}}}
         result = api.LatticeResult(steps, self.work / 'end-table.json', report)
         if self.edit is not None:
             self.edit(result)
@@ -804,6 +812,387 @@ class StubRunner(R.Runner):
             return R.Trial(attempts=[{'unit_key': unit.key, 'rule': 'pure', 'outcome': 'no word',
                                       'reason': 'stub exhausted', 'seconds': 0.0, 'timed_out': False}])
         return R.Trial(self.make_candidate(table, unit, work))
+
+
+class PowerLoss(BaseException):
+    """A test SIGKILL: bypass the exception handler and suppress finish()."""
+
+
+def without_times(doc):
+    if isinstance(doc, dict):
+        return {k: without_times(v) for k, v in doc.items() if k not in ('seconds', 'resumes')}
+    if isinstance(doc, list):
+        return [without_times(v) for v in doc]
+    return doc
+
+
+class ResumeTests(TemporaryTest):
+    """P6: every saved boundary and an uncommitted word, using state-only stub steps."""
+    SCRIPT = {'r22d75': [api.End('stuck', '75 exhausted')],
+              'r22d81': [('r22d81/H6', [[1, 2]])],
+              'h4': [('h4/L4', [[2, 2]])],
+              'high': [api.End('stuck', 'high exhausted')]}
+
+    def runner(self, name, resume=False, script=None, start=None, extra=()):
+        args = self.args(name, '--resume', *extra) if resume else self.args(name, *extra)
+        saved = R.read_json(args.out / 'run.json') if resume else {'steps': []}
+        script = copy.deepcopy(self.SCRIPT if script is None else script)
+        for name in script:
+            count = sum((s['subphase'] or s['phase']) == name for s in saved['steps'])
+            script[name] = script[name][count:]
+        modules = plugins(height=Plugin('height', {k: v for k, v in script.items() if k != 'high'}),
+                          high=Plugin('high', {'high': script.get('high', [])}))
+        return StubRunner(args, modules, start or FakeState({1, 2, 3}, {1: 6, 2: 4}))
+
+    def run_stub(self, runner):
+        with bulk_finds_nothing(runner):
+            return runner.run()
+
+    def interrupted(self, runner, at_step, inside=False):
+        write = R.atomic_json
+
+        def crash(path, doc):
+            write(path, doc)
+            path = Path(path)
+            if inside:
+                stop = path.parent == runner.out / 'words' and int(path.name.split('.')[0]) == at_step
+            else:
+                stop = path == runner.out / 'run.json' and len(doc['steps']) == at_step
+            if stop:
+                raise PowerLoss()
+
+        with bulk_finds_nothing(runner), patch.object(runner, 'finish'), patch.object(R, 'atomic_json', side_effect=crash):
+            with self.assertRaises(PowerLoss):
+                runner.run()
+        return R.read_json(runner.out / 'run.json')
+
+    def test_every_step_boundary_and_uncommitted_word(self):
+        original = self.run_stub(self.runner('original'))
+        self.assertEqual(original['result'], 'solved')
+        self.assertEqual(len(original['steps']), 5)
+        for inside in (False, True):
+            for index in range(5 if inside else 6):
+                name = f'cut-{inside}-{index}'
+                with self.subTest(inside=inside, index=index):
+                    cut = self.runner(name)
+                    before = self.interrupted(cut, index, inside)
+                    self.assertEqual(len(before['steps']), index)
+                    for directory in ('words', 'step-trees', 'tables', 'attempts', 'units'):
+                        R.atomic_json(cut.out / directory / '00100.json', {})
+                    R.atomic_json(cut.out / 'bulk-progress.json', {})
+                    (cut.out / 'run.json.tmp').write_text('partial')
+                    resumed = self.runner(name, resume=True)
+                    result = self.run_stub(resumed)
+                    self.assertEqual(without_times(original), without_times(result))
+                    self.assertEqual(result['resumes'][0]['at_step'], index)
+                    self.assertGreaterEqual(result['totals']['seconds'], before['totals']['seconds'])
+                    self.assertEqual(result['resumes'][0]['seconds'], before['totals']['seconds'])
+                    self.assertEqual(replay(self, resumed.out, result).digest(), R.SOLVED)
+                    check_record(self, resumed.out, result)
+                    self.assertFalse(list(resumed.out.rglob('*.tmp')))
+                    self.assertFalse((resumed.out / 'bulk-progress.json').exists())
+                    self.assertFalse(any((resumed.out / d / '00100.json').exists() for d in
+                                         ('words', 'step-trees', 'tables', 'attempts', 'units')))
+
+    def test_saved_height_and_high_counters_and_high_budget(self):
+        cases = [('r22d75', FakeState({1, 2}, {1: 6}), {'r22d75': [('r22d75/T0', [[1, 4]])]}),
+                 ('r22d81', FakeState({1, 2}, {1: 6}), {'r22d81': [('r22d81/H6', [[1, 4]])]}),
+                 ('h4', FakeState({1, 2}, {1: 4}), {'h4': [('h4/L4', [[1, 4]])]}),
+                 ('high', FakeState({1, 2}, {1: 6}), {'high': [('r22d25/F1', [[1, 4]])]})]
+        for phase, start, script in cases:
+            with self.subTest(phase=phase):
+                extra = ('--high-steps', '1') if phase == 'high' else ()
+                original = self.run_stub(self.runner('whole-' + phase, script=script, start=start, extra=extra))
+                cut = self.runner('cut-' + phase, script=script, start=start, extra=extra)
+                self.interrupted(cut, 1)
+                resumed = self.runner('cut-' + phase, True, script=script, start=start, extra=extra)
+                result = self.run_stub(resumed)
+                self.assertEqual(without_times(original), without_times(result))
+                data = result['phases']['high'] if phase == 'high' else result['phases']['height']['sub'][phase]
+                self.assertEqual((data['steps'], data['twists']), (1, 1))
+                if phase == 'high':
+                    self.assertEqual((result['result'], data['result']), ('budget', 'budget'))
+
+    def test_signal_resume_and_multiple_resumes(self):
+        cut = self.runner('signal')
+        record = self.interrupted(cut, 1)
+        record.update(result='error', error='signal 15')
+        R.atomic_json(cut.out / 'run.json', record)
+        resumed = self.runner('signal', True)
+        self.interrupted(resumed, 2)
+        final = self.run_stub(self.runner('signal', True))
+        self.assertEqual((final['result'], final['error']), ('solved', None))
+        self.assertEqual([r['at_step'] for r in final['resumes']], [1, 2])
+        self.assertLessEqual(final['resumes'][0]['seconds'], final['resumes'][1]['seconds'])
+
+    def test_stuck_high_is_not_reentered_after_tail_step(self):
+        start = FakeState({1, 2}, {1: 6})
+        original = self.run_stub(self.runner('whole-high-stuck', script={}, start=start))
+        cut = self.runner('cut-high-stuck', script={}, start=start)
+        self.interrupted(cut, 1)
+        resumed = self.runner('cut-high-stuck', True, script={}, start=start)
+        actual = self.run_stub(resumed)
+        self.assertEqual(actual['phases']['high']['result'], 'stuck')
+        self.assertEqual(resumed.plugins['high'].calls, [])
+        self.assertEqual(without_times(actual), without_times(original))
+
+    def test_finished_phase_files_at_the_resume_count_survive(self):
+        # The D2 shape: high ends stuck with its kernel record in attempts/<count>-high, and the
+        # container dies in the tail's unit listing before a tail row. Resume keeps that record.
+        start = FakeState({1, 2}, {1: 6})
+        cut = self.runner('cut-high-files', script={}, start=start)
+
+        def stuck(ctx):
+            kernel = ctx.work_dir / 'kernel'
+            kernel.mkdir(parents=True)
+            R.atomic_json(kernel / 'run.json', {'result': 'stuck'})
+            return api.End('stuck', 'kernel_exhausted', details={'dir': cut.rel(kernel)})
+
+        cut.plugins['high'].next_step = stuck
+        with bulk_finds_nothing(cut), patch.object(cut, 'finish'), patch.object(cut, 'units', side_effect=PowerLoss()):
+            with self.assertRaises(PowerLoss):
+                cut.run()
+        saved = R.read_json(cut.out / 'run.json')
+        self.assertEqual((len(saved['steps']), saved['phases']['high']['details']['dir']),
+                         (0, 'attempts/00000-high/kernel'))
+        (cut.out / 'attempts/00000-tail-stray').mkdir()
+        resumed = self.runner('cut-high-files', True, script={}, start=start)
+        result = self.run_stub(resumed)
+        self.assertEqual(resumed.plugins['high'].calls, [])
+        self.assertEqual(result['phases']['high'], saved['phases']['high'])
+        self.assertTrue((resumed.out / 'attempts/00000-high/kernel/run.json').is_file())
+        self.assertFalse((resumed.out / 'attempts/00000-tail-stray').exists())
+
+    def test_interrupted_lattice_restarts_with_clean_work_directory(self):
+        args = self.args('lattice-restart')
+        args.no_lattice = False
+        start = FakeState((), turn=1)
+
+        def interrupted_play(ctx):
+            (ctx.work_dir / 'restore').mkdir()
+            runner.on_signal(signal.SIGTERM, None)
+            return api.End('error', 'cancelled', attempts=[{'rule': 'lattice', 'timed_out': False}])
+
+        modules = plugins(lattice=SimpleNamespace(SCRIPTS=[], play=interrupted_play))
+        runner = StubRunner(args, modules, start)
+        record = runner.run()
+        self.assertEqual(record['error'], 'signal 15')
+        self.assertTrue((args.out / 'attempts/00000-lattice/restore').exists())
+        args.resume = True
+        result = StubRunner(args, plugins(lattice=LatticePlay([])), start).run()
+        self.assertEqual(result['result'], 'solved')
+        check_record(self, args.out, result)
+        self.assertFalse((args.out / 'attempts/00000-lattice/restore').exists())
+
+    def test_interrupted_plugin_attempt_is_not_a_completed_phase_attempt(self):
+        start = FakeState({1, 2}, {1: 6})
+        script = {'r22d75': [('r22d75/T0', [[1, 2]])]}
+        original = self.run_stub(self.runner('whole-cancel', script=script, start=start))
+        cut = self.runner('cut-cancel', script=script, start=start)
+
+        def cancelled(ctx):
+            cut.on_signal(signal.SIGTERM, None)
+            return api.End('error', 'cancelled', attempts=[{'rule': 'height', 'timed_out': False}])
+
+        cut.plugins['height'].next_step = cancelled
+        record = self.run_stub(cut)
+        self.assertEqual(record['error'], 'signal 15')
+        self.assertTrue(record['phases']['height']['sub']['r22d75']['attempts'])
+        result = self.run_stub(self.runner('cut-cancel', True, script=script, start=start))
+        self.assertEqual(without_times(result), without_times(original))
+
+    def tree(self, root):
+        return {p.relative_to(root).as_posix(): p.read_bytes() if p.is_file() else None
+                for p in root.rglob('*')}
+
+    def refused(self, runner):
+        before = self.tree(runner.out)
+        with self.assertRaises(R.ResumeError):
+            runner.run()
+        self.assertEqual(before, self.tree(runner.out), 'a refusal must not write or clean up')
+
+    def test_resume_refusals_write_nothing(self):
+        cut = self.runner('source')
+        original = self.interrupted(cut, 1)
+        changes = {
+            'format': lambda r: r.update(format='runner-run/2'),
+            'start': lambda r: r['start'].update(digest='0' * 64),
+            'config': lambda r: r['config'].update(literal_limit=0),
+            'scripts': lambda r: r['config']['scripts'].update({next(iter(r['config']['scripts'])): '0' * 64}),
+            'code missing': lambda r: r['config'].pop('code'),
+            'code changed': lambda r: r['config']['code'].update(sha256='0' * 64),
+            'source seed': lambda r: r['start'].update(seed=8),
+            'source depth': lambda r: r['start'].update(k=2),
+            'solved': lambda r: r.update(result='solved'),
+            'stuck': lambda r: r.update(result='stuck'),
+            'stuck block': lambda r: r.update(stuck={'phase': 'tail'}),
+            'error': lambda r: r.update(result='error', error='rule crashed'),
+            'step before': lambda r: r['steps'][0]['before'].update(digest='0' * 64),
+            'step after': lambda r: r['steps'][0]['after'].update(digest='0' * 64),
+            'word hash': lambda r: r['steps'][0].update(word_sha256='0' * 64),
+            'lattice word': lambda r: r['steps'][0].update(encoding='ia16'),
+        }
+        for name in api.SUBPHASES['height']:
+            for result in ('budget', 'timeout', 'error'):
+                changes[name + result] = lambda r, n=name, v=result: r['phases']['height']['sub'][n].update(result=v)
+        for name in ('high', 'tail', 'lattice'):
+            for result in ('budget', 'timeout', 'error'):
+                changes[name + result] = lambda r, n=name, v=result: r['phases'][n].update(result=v)
+        for label, edit in changes.items():
+            name = label.replace(' ', '-')
+            with self.subTest(label=label):
+                out = self.tmp / name
+                shutil.copytree(cut.out, out)
+                record = copy.deepcopy(original)
+                edit(record)
+                R.atomic_json(out / 'run.json', record)
+                self.refused(self.runner(name, True))
+        bad = self.runner('bad-word')
+        self.interrupted(bad, 1)
+        word = R.read_json(bad.out / 'run.json')['steps'][0]['word']
+        (bad.out / word).write_bytes(b'\x1f\x8b' + b'broken gzip' * 5)
+        self.refused(self.runner('bad-word', True))
+        record = copy.deepcopy(original)
+        record['format'] = 'runner-run/2'
+        R.atomic_json(cut.out / 'run.json', record)
+        before = self.tree(cut.out)
+        with patch('sys.stderr', new=io.StringIO()) as stderr:
+            self.assertEqual(R.main(['--scramble', '1', '7', '--out', str(cut.out), '--resume']), 2)
+            self.assertIn('resume refused', stderr.getvalue())
+        self.assertEqual(before, self.tree(cut.out))
+
+    def test_source_table_and_cli_refusals(self):
+        source = self.tmp / 'table.json'
+        FakeMechanics().export(FakeState({1, 2}, {1: 6}), source)
+        args = R.parse_args([
+            '--table', str(source), '--out', str(self.tmp / 'table'), '--cache', str(self.tmp / 'cache'),
+            '--bulk-steps', '0', '--no-lattice'])
+        runner = StubRunner(args)
+        runner.initialize()
+        args.resume = True
+        StubRunner(args).resume()                # same table loads to the same digest
+        FakeMechanics().export(FakeState({2}), source)
+        self.refused(StubRunner(args))
+        missing = self.tmp / 'missing'
+        with patch('sys.stderr', new=io.StringIO()):
+            self.assertEqual(R.main(['--scramble', '1', '7', '--out', str(missing), '--resume']), 2)
+        self.assertFalse(missing.exists())
+        with patch('sys.stderr', new=io.StringIO()), self.assertRaises(SystemExit):
+            R.main(['--scramble', '1', '7', '--out', str(runner.out)])
+
+    def test_output_and_checkpoint_excluded_but_simulator_and_versions_pinned(self):
+        root = self.tmp / 'copy'
+        source = root / 'research/jumbling/sim/twists.py'
+        source.parent.mkdir(parents=True)
+        source.write_text('original')
+        driver = source.parents[1] / 'driver.py'
+        driver.write_text('pinned entry point')
+        subprocess.run(['git', 'init', '-b', 'fingerprint-fixture', str(root)], check=True, capture_output=True)
+        out = root / 'research/jumbling/restoration/ordinary-output'
+        args = self.args('unused')
+        args.out = out
+        modules = plugins(height=Plugin('height'), high=Plugin('high'), lattice=stub_lattice())
+        with patch.object(R, 'ROOT', root), patch.object(R, 'SCRIPTS', [driver.relative_to(root)]):
+            for name in ('runs', 'cache', '__pycache__'):
+                R.atomic_json(source.parent / name / 'generated.json', {})
+            runner = StubRunner(args, modules)
+            runner.initialize()
+            initial = R.code_identity(out)
+            R.atomic_json(out / 'extra.json', {})
+            R.atomic_json(out.with_name(out.name + '-checkpoint') / 'run.json', {})
+            for name in ('runs', 'cache', '__pycache__'):
+                R.atomic_json(source.parent / name / 'generated.json', {'changed': True})
+            self.assertEqual(initial, R.code_identity(out))
+            args.resume = True
+            resumed = StubRunner(args, modules)
+            resumed.resume()
+            self.assertEqual(resumed.record['config']['code'], initial)
+            excluded = (out, out.with_name(out.name + '-checkpoint'))
+            self.assertEqual(resumed.record['resumes'][0]['source'], R.source_identity(excluded))
+            self.assertEqual(runner.record['config']['source'], R.source_identity(excluded))
+            source.write_text('changed simulator')
+            self.assertNotIn(source.relative_to(root).as_posix(), resumed.record['config']['scripts'])
+            self.refused(StubRunner(args, modules))
+            source.write_text('original')
+            import numpy as np
+            with patch.object(np, '__version__', 'different'):
+                self.refused(StubRunner(args, modules))
+            with patch.object(R.sys, 'version', 'different'):
+                self.refused(StubRunner(args, modules))
+
+    def test_signal_after_saved_lattice_is_terminal_without_writes(self):
+        args = self.args('lattice')
+        args.no_lattice = False
+        start = FakeState((), turn=1)
+        runner = StubRunner(args, plugins(lattice=LatticePlay([])), start)
+        save = runner.save
+
+        def signal_after_result():
+            save()
+            if runner.record['phases']['lattice']['result'] is not None:
+                runner.on_signal(signal.SIGTERM, None)
+
+        with patch.object(runner, 'save', side_effect=signal_after_result):
+            result = runner.run()
+        self.assertEqual((result['result'], result['error']), ('error', 'signal 15'))
+        args.resume = True
+        self.refused(StubRunner(args, plugins(lattice=LatticePlay([])), start))
+
+    def test_bulk_child_rebuilds_before_constructing_state_only_restorer(self):
+        class Restorer:
+            def __init__(self, state, menu, order):
+                self.state, self.order, self.moves = state, order, []
+
+            def misalignment(self):
+                return len(self.state.off)
+
+            def seam(self):
+                piece = min(self.state.off)
+                self.state.off.remove(piece)
+                self.moves.append((piece, 1))
+                return [self.moves[-1]]
+
+            cover = level1 = level2 = improve = shift = conj = seam
+
+        mechanics = FakeMechanics()
+        mechanics.menu = None
+        mechanics.seams = SimpleNamespace(SeamRestorer=Restorer)
+        args = self.args('bulk', '--bulk-steps', '2')
+        runner = R.Runner(args, mechanics, plugins())
+        runner.initialize()
+        whole = self.tmp / 'bulk-whole'
+        shutil.copytree(runner.out, whole)
+        with patch.object(R, 'Mechanics', return_value=mechanics), patch.object(R.threading, 'Thread'):
+            R.bulk_child(whole, self.tmp / 'cache')
+        expected = R.read_json(whole / 'run.json')
+        first = copy.deepcopy(expected)
+        first['steps'] = first['steps'][:1]
+        state = mechanics.load(runner.out / 'start-table.json')
+        mechanics.apply_word(state, R.read_json(whole / first['steps'][0]['word']))
+        first['phases']['bulk'].update(steps=1, twists=1,
+            end=dict(mechanics.snapshot(state), table='tables/bulk-end.json'))
+        first['totals']['bulk_twists'] = 1
+        R.atomic_json(runner.out / 'run.json', first)
+        shutil.copyfile(whole / first['steps'][0]['word'], runner.out / first['steps'][0]['word'])
+        tree = first['steps'][0]['tree']['file']
+        shutil.copyfile(whole / tree, runner.out / tree)
+        # A partial step overwrote the current table: only replay can recover it.
+        mechanics.export(FakeState(()), runner.out / 'tables/bulk-end.json')
+        constructed = []
+
+        class ObservedRestorer(Restorer):
+            def __init__(self, state, menu, order):
+                constructed.append(state.off.copy())
+                super().__init__(state, menu, order)
+
+        mechanics.seams.SeamRestorer = ObservedRestorer
+        with patch.object(R, 'Mechanics', return_value=mechanics), patch.object(R.threading, 'Thread'):
+            R.bulk_child(runner.out, self.tmp / 'cache')
+        actual = R.read_json(runner.out / 'run.json')
+        self.assertEqual(constructed, [{2}])
+        self.assertEqual([(s['before'], s['after']) for s in actual['steps']],
+                         [(s['before'], s['after']) for s in expected['steps']])
+        self.assertEqual((actual['phases']['bulk']['steps'], actual['phases']['bulk']['twists']), (2, 2))
 
 
 class RecordTests(TemporaryTest):
@@ -2479,7 +2868,7 @@ class IntegrityTests(TemporaryTest):
         self.assertEqual((record['result'], record['acceptance']['verdict'], record['error']),
                          ('error', 'error', 'stepchk digest mismatch'))
         self.assertEqual([s['unit_key'] for s in record['steps']], [1])
-        self.assertEqual(record['phases']['tail'], {'result': None, 'steps': 1})
+        self.assertEqual(record['phases']['tail'], {'result': None, 'steps': 1, 'twists': 1})
         self.assertIsNone(record['stuck'])
 
 
@@ -2487,22 +2876,32 @@ def bulk_stub(out, cache):
     """Commit one step, corrupt only the uncommitted table, then block with a child."""
     runner = R.Runner(type('Args', (), {'out': out, 'cache': cache})(), FakeMechanics())
     runner.record = R.read_json(out / 'run.json')
+    runner.started -= runner.record['totals']['seconds']
     state = runner.m.load(out / 'start-table.json')
-    before = dict(runner.m.snapshot(state), N=2)
+    for step in runner.record['steps']:
+        runner.m.apply_word(state, R.read_json(out / step['word']))
+    index = len(runner.record['steps'])
+    piece = min(state.off)
+    before = dict(runner.m.snapshot(state), N=len(state.off))
     del before['heights']
-    state.off.remove(1)
-    after = dict(runner.m.snapshot(state), N=1)
+    state.off.remove(piece)
+    after = dict(runner.m.snapshot(state), N=len(state.off))
     del after['heights']
-    word = {'word': [[1, 1]], 'input_digest': before['digest'], 'output_digest': after['digest']}
-    R.atomic_json(out / 'words/00000.json', word)
+    word = {'word': [[piece, 1]], 'input_digest': before['digest'], 'output_digest': after['digest']}
+    word_file = f'words/{index:05d}.json'
+    R.atomic_json(out / word_file, word)
     runner.table = out / 'tables/bulk-end.json'
     runner.m.export(state, runner.table)
-    runner.record['steps'].append({'index': 0, 'phase': 'bulk', 'subphase': None, 'rule': 'close',
-        'word': 'words/00000.json', 'letters': 1, 'encoding': 'json', 'word_sha256': R.word_sha256(word['word']),
-        'tree': runner.write_tree(0, api.single('close', 1), 1), 'standing': 'rule',
+    runner.record['steps'].append({'index': index, 'phase': 'bulk', 'subphase': None, 'rule': 'close',
+        'word': word_file, 'letters': 1, 'encoding': 'json', 'word_sha256': R.word_sha256(word['word']),
+        'tree': runner.write_tree(index, api.single('close', 1), 1), 'standing': 'rule',
         'before': before, 'after': after, 'seconds': 0.0})
-    runner.record['phases']['bulk'].update(steps=1, twists=1,
+    runner.record['phases']['bulk'].update(steps=index + 1, twists=index + 1,
         end=dict(runner.m.snapshot(state), table='tables/bulk-end.json'))
+    if index:
+        runner.record['phases']['bulk']['result'] = 'lattice'
+        runner.save()
+        return
     runner.save()
     # Recovery has to replay the checkpoint; loading this partial table would be wrong.
     runner.m.export(FakeState(()), runner.table)
@@ -2584,6 +2983,7 @@ class BulkTests(TemporaryTest):
                 self.assertEqual(record['result'], 'error')
                 self.assertEqual(record['error'], f'signal {number}')
                 self.assertEqual(record['acceptance']['verdict'], 'error')
+                self.assertIsNone(record['config']['component'], 'an interrupted bulk has not ended on its budget')
                 self.assertEqual(len(record['steps']), 1)
                 self.assertEqual(record['totals']['bulk_twists'], 1)
                 self.assertEqual(record['phases']['bulk']['twists'], 1)
@@ -2592,6 +2992,18 @@ class BulkTests(TemporaryTest):
                 self.assertEqual(table.off, {2})
                 self.assertEqual(table.digest(), record['steps'][0]['after']['digest'])
                 self.assert_processes_exited(pids.values())
+                # Resume the actual signal checkpoint through the real parent/child pipeline.
+                resumed = subprocess.run([sys.executable, '-I', '-B', str(Path(__file__)),
+                    '--_signal-parent', str(out), str(self.tmp / 'cache'), '--resume'], cwd=ROOT,
+                    capture_output=True, text=True, timeout=20, start_new_session=True)
+                self.assertEqual(resumed.returncode, 0, resumed.stdout + resumed.stderr)
+                continued = R.read_json(out / 'run.json')
+                check_record(self, out, continued)
+                self.assertEqual((continued['result'], continued['acceptance']['verdict']), ('solved', 'solved'))
+                self.assertIsNone(continued['config']['component'])
+                self.assertEqual([r['at_step'] for r in continued['resumes']], [1])
+                self.assertEqual([R.read_json(out / s['word'])['word'] for s in continued['steps']],
+                                 [[[1, 1]], [[2, 1]]])
 
 
 class ExactTests(TemporaryTest):
@@ -3064,6 +3476,39 @@ class ExactTests(TemporaryTest):
                 self.assertIs(final['pass'], False, rows)
                 self.assertIn('kernel_d19', rows[0]['fails'], rows)
 
+    def test_12_resume_pending_height_handoff_passes_independent_checker(self):
+        """A1/A2: interruption after the real dispatcher's final row, before handoff is saved."""
+        m = self.mechanics
+        state = m.sim.State(m.restore.ctx, menu=m.menu)
+        play_real(m, state, WORD36)
+        source = self.tmp / 'source-table.json'
+        m.export(state, source)
+
+        def arguments(name, resume=False):
+            return R.parse_args(['--table', str(source), '--out', str(self.tmp / name),
+                                 '--cache', str(self.shared), '--bulk-steps', '0', '--tail-rules', '',
+                                 '--fallback-max-length', '0', *(['--resume'] if resume else [])])
+
+        original = R.Runner(arguments('whole'), m).run()
+        self.assertEqual(len(original['steps']), 2)
+        cut = R.Runner(arguments('cut'), m)
+        save = cut.save
+
+        def crash():
+            save()
+            if len(cut.record['steps']) == 2:
+                raise PowerLoss()
+
+        with patch.object(cut, 'save', side_effect=crash), patch.object(cut, 'finish'):
+            with self.assertRaises(PowerLoss):
+                cut.run()
+        result = R.Runner(arguments('cut', True), m).run()
+        self.assertEqual(without_times(result), without_times(original))
+        final, rows = independent_check(cut.out)
+        self.assertTrue(final['pass'], rows)
+        self.assertEqual(result['phases']['height']['sub']['r22d75']['result'], 'handoff')
+        self.assertEqual((final['height_twists'], final['verdict']), (2, 'component'))
+
     @unittest.skipUnless(os.environ.get('RUNNER_SLOW') == '1', 'set RUNNER_SLOW=1 for depth 20')
     def test_04_slow_scramble_20(self):
         _, record = self.invoke('--scramble', '20', '7106')
@@ -3261,7 +3706,7 @@ if __name__ == '__main__':
         sys.exit(0)
     if len(sys.argv) > 1 and sys.argv[1] == '--_signal-parent':
         args = R.parse_args(['--scramble', '1', '7', '--out', sys.argv[2], '--cache', sys.argv[3],
-                             '--bulk-steps', '2', '--no-lattice'])
+                             '--bulk-steps', '2', '--no-lattice', *(['--resume'] if '--resume' in sys.argv[4:] else [])])
         with patch.object(R, 'SELF', Path(__file__)):
             record = StubRunner(args).run()
         sys.exit(2 if record['result'] == 'error' else 0)

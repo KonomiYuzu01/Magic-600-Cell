@@ -1,0 +1,5 @@
+loaded 6.3s
+nu(w9) {8: (1, 0), 25: (1, 0)}
+library 36 rank2 34 rank5 2
+{"input": "table:start-table.json", "input_digest": "1b263d3e9e0b9dcd2feece889acf0d20c8c96492e2a5e895034be3dd9c46578e", "input_labels_sha256": "92ec795687358ac7bb585041ea5c4bca3a263df1ae9c17fc2ed930f703ea0c65", "nu_input": {}, "moved_pieces_input": 3091, "corrections": [], "w9": false, "status": "restored", "factors": 12215, "bound": 20866844, "retained_length": 1516410, "new_nodes": 24491, "seconds": 5.1}
+done 609.5s nodes 24596

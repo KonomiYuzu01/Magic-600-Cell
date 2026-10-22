@@ -4,7 +4,7 @@ type: decision
 status: verified
 visibility: public
 summary: Owner decision of 22 October 2026 - write the jumbling tutorial and carry out its acceptance test first, to the standard of a finished product; this restarts, for that scope, the work the research stop of 20 October halted.
-related: [owner-decisions-2026-10-20-research-stop, owner-decisions-2026-10-20-tutorial-acceptance, owner-decisions-2026-10-18-machine-tutorial, owner-decisions-2026-10-17-jumbling-pr]
+related: [owner-decisions-2026-10-22-figures-and-merge, owner-decisions-2026-10-20-research-stop, owner-decisions-2026-10-20-tutorial-acceptance, owner-decisions-2026-10-18-machine-tutorial, owner-decisions-2026-10-17-jumbling-pr]
 supersedes: []
 claims:
   - {id: tutorial-first, evidence_kind: decision, checked_at: 2026-10-22}
@@ -54,4 +54,6 @@ of 17 October that scrambles are not restricted, so it is the owner's.
 
 - The research stop of 20 October no longer holds for the scope above.
 - Draft pull request #112 stays a draft until its merge conditions hold
-  ([record](owner-decisions-2026-10-17-jumbling-pr.md)).
+  ([record](owner-decisions-2026-10-17-jumbling-pr.md)). Updated by
+  [owner-decisions-2026-10-22-figures-and-merge](owner-decisions-2026-10-22-figures-and-merge.md): the integrator
+  merges it itself once the tutorial and its acceptance are written.

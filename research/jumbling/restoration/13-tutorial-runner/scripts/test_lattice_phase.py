@@ -295,10 +295,10 @@ def new_context(f, *, initialized=False, restorer='late', wrapper=None, mode='de
     return ctx, r
 
 
-def invoke(f, *, wrapper=None, seconds=None, initialized=False, stub=None, mode='development'):
-    ctx, r = new_context(f, initialized=initialized, wrapper=wrapper, mode=mode)
+def invoke(f, *, wrapper=None, seconds=None, initialized=False, stub=None, mode='development', restorer='late'):
+    ctx, r = new_context(f, initialized=initialized, restorer=restorer, wrapper=wrapper, mode=mode)
     original_state = r.state.digest() if initialized else ctx.state
-    with patch.object(L, 'LIBRARY', shared().library), patch.dict(L.RESTORERS, {'late': stub or f.stub}), \
+    with patch.object(L, 'LIBRARY', shared().library), patch.dict(L.RESTORERS, {restorer: stub or f.stub}), \
             patch.object(L, 'PLAY_SECONDS', seconds):
         result = L.play(ctx)
     assert (r.state.digest() == original_state) if initialized else ctx.state is original_state
@@ -643,8 +643,16 @@ class D_PluginTests(ResultChecks, unittest.TestCase):
               f'{startup:.3f}s startup, validation and finalization overhead (cloud research)', flush=True)
 
     def test_02_corrected_and_runner(self):
+        # Acceptance mode takes the frozen restorer, schedule11 (plan revision 3e, E5). The stub stands in for it,
+        # with the realignment data's hash that a schedule11 summary must carry.
         f = fixture('corrected', order='retained-first', sequence=[{'macro': 0, 'times': 1, 'inverse': False}])
-        result, _, r = invoke(f, initialized=True, mode='acceptance')
+        template = Path(tempfile.mkdtemp(prefix='schedule11-', dir=TEMPORARY)) / 'template'
+        shutil.copytree(f.template, template)
+        summary = read(template / 'restore-summary.json')
+        summary['realign_sha256'] = L.sha(ROOT / L.REALIGN)
+        write(template / 'restore-summary.json', summary)
+        result, _, r = invoke(f, initialized=True, mode='acceptance', restorer='schedule11', stub=make_stub(template))
+        self.assertEqual(result.report['restorer'], 'schedule11')
         self.check_result(result, f)
         self.assertEqual([step.rule for step in result.steps],
                          ['lattice/orbit-23', 'lattice/orbit-34', 'lattice/correction-0-0'])

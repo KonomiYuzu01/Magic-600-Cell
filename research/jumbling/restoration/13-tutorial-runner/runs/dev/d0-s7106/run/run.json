@@ -1,0 +1,2019 @@
+{
+ "format": "runner-run/3",
+ "menu": "I_a",
+ "start": {
+  "kind": "scramble",
+  "k": 20,
+  "seed": 7106,
+  "digest": "9ad04d455632d217ec922cad22721d5b3bd5d56f63786fdb78ad7c9620097083",
+  "off": 51828,
+  "heights": {
+   "2": 51828
+  }
+ },
+ "config": {
+  "literal_only": true,
+  "mode": "acceptance",
+  "component": null,
+  "bulk_order": [
+   "seam",
+   "cover",
+   "close",
+   "conj",
+   "lock",
+   "improve",
+   "shift"
+  ],
+  "phase_order": [
+   "bulk",
+   "height",
+   "high",
+   "tail",
+   "lattice"
+  ],
+  "subphase_order": {
+   "height": [
+    "r22d75",
+    "r22d81",
+    "h4"
+   ]
+  },
+  "tail_rules": [
+   "zero_bad",
+   "pure",
+   "close",
+   "t1prime"
+  ],
+  "budgets": {
+   "bulk_steps": null,
+   "bulk_step_seconds": null,
+   "bulk_seconds": null,
+   "tail_steps": null,
+   "high_steps": null,
+   "rule_seconds": null,
+   "greedy_seconds": null,
+   "cert_seconds": null,
+   "height_seconds": null,
+   "height_cpu": null,
+   "kernel_seconds": null,
+   "pair_shards": 4,
+   "fallback_max_length": 1,
+   "par": 1
+  },
+  "clock_sentinel": 1000000000.0,
+  "kernel": {
+   "seconds": null,
+   "wall_margin": 600,
+   "d19": {
+    "file": "research/jumbling/restoration/12-low-height/scripts/round22/r22d19_rule.py",
+    "sha256": "587bfc4bc241e78b00d4539a5ff238b00a2741900ffb44a02fb36b7499f044da"
+   },
+   "max_steps": 1
+  },
+  "lattice": {
+   "restorer": "schedule11"
+  },
+  "literal_limit": 10000000,
+  "seeds": "atlas",
+  "acceptance_config": {
+   "file": "research/jumbling/restoration/13-tutorial-runner/acceptance-config.json",
+   "sha256": "3e042b0b510dbe326a4195460173339e84dc66f615265bb5bee350bd90bf7d34",
+   "options": {
+    "literal_limit": 10000000,
+    "seeds": "atlas",
+    "tail_rules": [
+     "zero_bad",
+     "pure",
+     "close",
+     "t1prime"
+    ],
+    "lattice_restorer": "schedule11",
+    "fallback_max_length": 1,
+    "par": 1,
+    "pair_shards": 4,
+    "bulk_steps": null,
+    "tail_steps": 0,
+    "high_steps": null,
+    "no_lattice": false
+   }
+  },
+  "source": {
+   "commit": "cd5e6e8c81c078f042fa4544cbf8f3c11d6b445e",
+   "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "dirty": false
+  },
+  "scripts": {
+   "research/jumbling/restoration/13-tutorial-runner/scripts/runner.py": "cd576897291482030aab89c709f7dcea136183b46c5c3a9509fdf4b3fe4f8ce4",
+   "research/jumbling/restoration/13-tutorial-runner/scripts/runner_api.py": "b92e73d33345da33ee3e6e7974d9ab8db1d35193dc69371b0e13d55bade08459",
+   "research/jumbling/theory/seams.py": "e42dac099632ec063f63b3880cd4957cc49b1193b732e4fa2bf87eeb7882204b",
+   "research/jumbling/theory/restore.py": "2a7bfd448f24ecafd544aa54bae914dec817b801fb044dcee660c2ce46893861",
+   "research/jumbling/theory/orient.py": "922c51544e296ef27ddc187f28cf321a155ff1dec41629b13f9d70c670869eed",
+   "research/jumbling/theory/buffer.py": "219509d954fe966f9ea9ad12b638736146672a030b13135e1e1cf2327c330076",
+   "research/jumbling/theory/trees.py": "8431eedfb778a68b04e5938f3bcfee92feac8e54e718471ea33d6ccedb55a642",
+   "research/jumbling/sim/state.py": "7b92119080a1a7bb3155a0d91a2ac83f20b7f3d4e2c07fb976c17ff447e44259",
+   "research/jumbling/restoration/09-general-method/scripts/gm/mkblocks2.py": "f7ac57a543cc7e3626a4baff13e6460c31e0c2fa563009125fb28e255b21ffac",
+   "research/jumbling/restoration/09-general-method/scripts/gm/tclose2.py": "ba1fd9bf32117ce405e49f81a499425646d4aee7c5e23a22e53d5ab1490b9584",
+   "research/jumbling/restoration/09-general-method/scripts/gm/fallback.py": "56f2ac790b71056798ce0407572927c2514b20df9e03c0edfb985fc324d62946",
+   "research/jumbling/restoration/12-low-height/scripts/cellpure5.py": "6eb1a497fa7fba9a3f7d4ccbc5e6581e9a1cf4d294fca855dd5863fe22017061",
+   "research/jumbling/restoration/12-low-height/scripts/round22/transport_census.py": "3cf13dc1a9103e0f220ea9182def1d19233ad89d5146585a84adbfd308e7cbc7",
+   "research/jumbling/restoration/12-low-height/scripts/round22/stepchk.py": "beb3f2dfa07868be973706bc2540de2f68d613ba6fb6e85cca0678d7477896a1",
+   "research/jumbling/restoration/12-low-height/scripts/round22/prep_t1prime.py": "a9d7c252d18248e36e8f0a94bec6712a5743a270a772ea54adf6d0416695cc94",
+   "research/jumbling/restoration/12-low-height/scripts/round22/jordan_target.py": "6273bcffa56893d5b11bcc101e7239e6a68ad811c141b51cd71c77f92e5be2a1",
+   "research/jumbling/restoration/12-low-height/scripts/r22b10_cert.py": "1c59ab5bfec0964963dbff2d97e3ddecb7a02d0304eb42f4792c0abb8c70238e",
+   "research/jumbling/restoration/12-low-height/scripts/check_r22b10.py": "e0405f8144cd66ff17dee4b93191f9b4c2ac97bb4faf285a8c554c3a1ffe596b",
+   "research/jumbling/restoration/12-low-height/scripts/expand_slp.py": "757d497d220c4b963485cf00f67e6ba7fb1db285d46bd56b9f8644d6b95448be",
+   "research/jumbling/restoration/12-low-height/scripts/slp_apply.py": "0485e23561ce43f6af86f9a7548b96e5a9e7653a39bc6a75ad71109e391a0cbe",
+   "research/jumbling/restoration/09-general-method/scripts/lattice/scripts/restore_lattice_late.py": "0c36b264ed28b65cc949a67a101ab7c225ec5c7d449dca1bf89f4b3a26c83989",
+   "research/jumbling/restoration/09-general-method/scripts/lattice/checker/verify_late.py": "0b954399a776c40f7ef32581ebac6fa9ec070f9571d115bf4f980a1fd0175b57",
+   "research/jumbling/restoration/13-tutorial-runner/scripts/rules_height.py": "711c94495e589a7839c0169aa2bf2025c672132319f9a8d3d16f5a523def913a",
+   "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/r22d75_from_snapshot.py": "15a6b764b12c493f5f90dd3fb643e79182ddf1775d50f76d53dfa75540584aac",
+   "research/jumbling/restoration/12-low-height/scripts/round22/r22d81_rule.py": "0ef504d1484e9f3328592057f3be46cf60cce6bebd44619cd48f2a5f43ce48c5",
+   "research/jumbling/restoration/12-low-height/scripts/round22/r22d81_pairs.py": "2a0cfb8c28f35f65dee06a7258c12767fbe439dd4a9308535cf0385bc53ed2f8",
+   "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/h4_unlock.py": "12078831f1b41c46b9a9f50a1fa88ddabdcafdbb9b766c1a278a662c0ffc44a7",
+   "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/two_letter_u.py": "ce5fb13584630e8c87d08273eaf41b74b68798a30ae606b1f55dd3da07fd93c9",
+   "research/jumbling/restoration/12-low-height/scripts/round22/r22d31_snapshots.py": "1e18b548b181dff29a1fee4c914acc785706887773b7cc75cbb62f8c25fb6256",
+   "research/jumbling/restoration/12-low-height/scripts/eb6.py": "f0b37865f1c8b237b27089af5d0eded3dc188988304c2d3ef6289ea62f4b469a",
+   "research/jumbling/restoration/13-tutorial-runner/scripts/rules_kernel.py": "da3c855a2176bc1cf7c93a547929a6a65c20ab2bd0d4cfd6da681a63c2c70eae",
+   "research/jumbling/restoration/12-low-height/scripts/round22/r22d25_search.py": "b2e2fa4ed1c34579589a68c2d7151e8209b60233b2665d2670d6ff7cd07f6c4b",
+   "research/jumbling/restoration/12-low-height/scripts/round22/r22d25_state.py": "ca45c9ba5ba14b10d48d1d2946c1265acdc8f6e609a5ef83737f79fde8201316",
+   "research/jumbling/restoration/12-low-height/scripts/round22/r22d19_rule.py": "587bfc4bc241e78b00d4539a5ff238b00a2741900ffb44a02fb36b7499f044da",
+   "research/jumbling/restoration/12-low-height/scripts/screen.py": "55acf5d2aba9f1ec57acfb7420e4e897548ed033b5a0c65cd7f32aee2332e48b",
+   "research/jumbling/theory/blocks.py": "7143a86f90f58688587f9b7ac493f3bf52b7f38202fbd702e08769624163a413",
+   "research/jumbling/theory/classes.py": "88357545e2513f76b9809742b7d77e234167cb88dc8f433f9de85c95c42f77cd",
+   "research/jumbling/theory/e3_class.py": "452d9a043ab01174bf62323e8f9a2b110d835dd87ac58922574b458fcfff9afd",
+   "research/jumbling/theory/rim.py": "a53626a88584dcea44646a4a4473a177a3697ed5ac26b061b639a4576debc750",
+   "research/jumbling/restoration/13-tutorial-runner/scripts/lattice_phase.py": "4f342f7b098d27083251ba5944c606a589883c8f2728add9c0ea13ea710c46e0",
+   "research/jumbling/restoration/13-tutorial-runner/scripts/literal_lattice.py": "164904b0e2881322454a32adf63ec8293f285531c0405249d43ee85d514937f0",
+   "research/jumbling/restoration/09-general-method/scripts/schedule11/restore_schedule11_late.py": "812695ed76ea8f724722366cee0d9229a9d26feda1e44ca49a2160c25674f73b",
+   "research/jumbling/restoration/09-general-method/scripts/lattice/scripts/rlib.py": "fb1a42be38d2df3c7fcefe51fa0d6ca2c62d520125386914ead5a87d1fe90f9d",
+   "research/jumbling/restoration/09-general-method/scripts/lattice/scripts/kit.py": "8127e7837efd464fd8214cb525a6de7d655154629a017022dd94f63a0582943f",
+   "research/jumbling/restoration/09-general-method/scripts/lattice/scripts/nucoords.py": "43d2e0fd6c76f553a8cf7da3f02edde8c76c79a6f7a62eed96ec28a4308ebbc6",
+   "research/jumbling/restoration/09-general-method/scripts/schedule11/sched11.py": "d1e051d8de9162c4334b7c119a069f5fb3bb091087847aad71ef0a9392ff96c5",
+   "research/jumbling/restoration/03-retained-group-and-lattice-restorer/scripts/rlib.py": "fb1a42be38d2df3c7fcefe51fa0d6ca2c62d520125386914ead5a87d1fe90f9d",
+   "research/jumbling/restoration/03-retained-group-and-lattice-restorer/scripts/kit.py": "8127e7837efd464fd8214cb525a6de7d655154629a017022dd94f63a0582943f",
+   "research/jumbling/restoration/03-retained-group-and-lattice-restorer/scripts/nucoords.py": "43d2e0fd6c76f553a8cf7da3f02edde8c76c79a6f7a62eed96ec28a4308ebbc6"
+  }
+ },
+ "phases": {
+  "bulk": {
+   "result": "lattice",
+   "steps": 19,
+   "twists": 19,
+   "end": {
+    "digest": "1b263d3e9e0b9dcd2feece889acf0d20c8c96492e2a5e895034be3dd9c46578e",
+    "off": 0,
+    "heights": {},
+    "table": "tables/bulk-end.json"
+   }
+  },
+  "height": {
+   "result": "not_applicable",
+   "steps": 0,
+   "twists": 0,
+   "start": {
+    "digest": "1b263d3e9e0b9dcd2feece889acf0d20c8c96492e2a5e895034be3dd9c46578e",
+    "off": 0,
+    "heights": {}
+   },
+   "end": {
+    "digest": "1b263d3e9e0b9dcd2feece889acf0d20c8c96492e2a5e895034be3dd9c46578e",
+    "off": 0,
+    "heights": {}
+   },
+   "sub": {
+    "r22d75": {
+     "result": "not_applicable",
+     "steps": 0,
+     "start": {
+      "digest": "1b263d3e9e0b9dcd2feece889acf0d20c8c96492e2a5e895034be3dd9c46578e",
+      "off": 0,
+      "heights": {}
+     },
+     "end": {
+      "digest": "1b263d3e9e0b9dcd2feece889acf0d20c8c96492e2a5e895034be3dd9c46578e",
+      "off": 0,
+      "heights": {}
+     }
+    },
+    "r22d81": {
+     "result": "not_applicable",
+     "steps": 0,
+     "start": {
+      "digest": "1b263d3e9e0b9dcd2feece889acf0d20c8c96492e2a5e895034be3dd9c46578e",
+      "off": 0,
+      "heights": {}
+     },
+     "end": {
+      "digest": "1b263d3e9e0b9dcd2feece889acf0d20c8c96492e2a5e895034be3dd9c46578e",
+      "off": 0,
+      "heights": {}
+     }
+    },
+    "h4": {
+     "result": "not_applicable",
+     "steps": 0,
+     "start": {
+      "digest": "1b263d3e9e0b9dcd2feece889acf0d20c8c96492e2a5e895034be3dd9c46578e",
+      "off": 0,
+      "heights": {}
+     },
+     "end": {
+      "digest": "1b263d3e9e0b9dcd2feece889acf0d20c8c96492e2a5e895034be3dd9c46578e",
+      "off": 0,
+      "heights": {}
+     }
+    }
+   }
+  },
+  "high": {
+   "result": "not_applicable",
+   "steps": 0,
+   "twists": 0,
+   "start": {
+    "digest": "1b263d3e9e0b9dcd2feece889acf0d20c8c96492e2a5e895034be3dd9c46578e",
+    "off": 0,
+    "heights": {}
+   },
+   "end": {
+    "digest": "1b263d3e9e0b9dcd2feece889acf0d20c8c96492e2a5e895034be3dd9c46578e",
+    "off": 0,
+    "heights": {}
+   }
+  },
+  "tail": {
+   "result": "not_applicable",
+   "steps": 0
+  },
+  "lattice": {
+   "result": "solved",
+   "steps": 35,
+   "twists": 1516410,
+   "report": {
+    "file": "lattice/report.json",
+    "sha256": "7b46d50699903703b513d34a6057b9c566cf3c0907bc6099d1b2d965d88194e8"
+   }
+  }
+ },
+ "steps": [
+  {
+   "index": 0,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "seam",
+   "word": "words/00000.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "1c06e5f5ce42b99b45bc2387f150e9c5af7eca220ee413ca54409c5168a73a9d",
+   "tree": {
+    "file": "step-trees/00000.json.gz",
+    "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "size": 1
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "9ad04d455632d217ec922cad22721d5b3bd5d56f63786fdb78ad7c9620097083",
+    "off": 51828,
+    "N": 26942
+   },
+   "after": {
+    "digest": "8a60401eb058626fd651d0dd1810a56d76967a44663df863c9b0a0d2f8350b2a",
+    "off": 48731,
+    "N": 25376
+   },
+   "seconds": 19.264555
+  },
+  {
+   "index": 1,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "seam",
+   "word": "words/00001.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "fe1ce2ec72e9a7f3d64591cc8c6ea651c86e85f1e2adbb7ec6a384627d89388d",
+   "tree": {
+    "file": "step-trees/00001.json.gz",
+    "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "size": 1
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "8a60401eb058626fd651d0dd1810a56d76967a44663df863c9b0a0d2f8350b2a",
+    "off": 48731,
+    "N": 25376
+   },
+   "after": {
+    "digest": "3d5614dbde65e864466324a740d1c789f51b0193c11873851b77d75821b3bf64",
+    "off": 45634,
+    "N": 23810
+   },
+   "seconds": 2.051255
+  },
+  {
+   "index": 2,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "seam",
+   "word": "words/00002.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "c43926bb4730ed349f9f604d6684a090d67d6cb8bd66bc83911d76cad16a6efc",
+   "tree": {
+    "file": "step-trees/00002.json.gz",
+    "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "size": 1
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "3d5614dbde65e864466324a740d1c789f51b0193c11873851b77d75821b3bf64",
+    "off": 45634,
+    "N": 23810
+   },
+   "after": {
+    "digest": "a814ce69625980fe9ef9abb43fe23ec5323912e78403a5bfc2c43845e3e11bae",
+    "off": 42537,
+    "N": 22244
+   },
+   "seconds": 2.824107
+  },
+  {
+   "index": 3,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "seam",
+   "word": "words/00003.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "4703b4099060c643fc38cb79b87e160dc8a97ebe431d2194f61e5bd1cde8f66a",
+   "tree": {
+    "file": "step-trees/00003.json.gz",
+    "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "size": 1
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "a814ce69625980fe9ef9abb43fe23ec5323912e78403a5bfc2c43845e3e11bae",
+    "off": 42537,
+    "N": 22244
+   },
+   "after": {
+    "digest": "d02d1801bf8d6b511e48292bba6b7b983078d06e4bb1b91f1d04ead8a318311c",
+    "off": 39440,
+    "N": 20678
+   },
+   "seconds": 1.944576
+  },
+  {
+   "index": 4,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "seam",
+   "word": "words/00004.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "12d5cf14cef79f703d2b46c2d10cc021e8a110e2c403d7b47c476853c43568d0",
+   "tree": {
+    "file": "step-trees/00004.json.gz",
+    "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "size": 1
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "d02d1801bf8d6b511e48292bba6b7b983078d06e4bb1b91f1d04ead8a318311c",
+    "off": 39440,
+    "N": 20678
+   },
+   "after": {
+    "digest": "c406fcb71ebd83700b9d481ca4423c68746afabe2f5f5f39a139181398deb394",
+    "off": 36343,
+    "N": 19112
+   },
+   "seconds": 2.081359
+  },
+  {
+   "index": 5,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "seam",
+   "word": "words/00005.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "a62352a955822554c5cd7dc79b6025d3002a164dcede9668e3a09777cd1280ca",
+   "tree": {
+    "file": "step-trees/00005.json.gz",
+    "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "size": 1
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "c406fcb71ebd83700b9d481ca4423c68746afabe2f5f5f39a139181398deb394",
+    "off": 36343,
+    "N": 19112
+   },
+   "after": {
+    "digest": "5c65985bfbe2366d5a89857b6d7cb1c593b11d9f8cb871f14ef0b9d652d47086",
+    "off": 33729,
+    "N": 17648
+   },
+   "seconds": 2.401388
+  },
+  {
+   "index": 6,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "seam",
+   "word": "words/00006.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "e5ce1488bfdad539f3129f2d223d1e3fd02e2ff07793c76f36fc3f76b039d94a",
+   "tree": {
+    "file": "step-trees/00006.json.gz",
+    "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "size": 1
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "5c65985bfbe2366d5a89857b6d7cb1c593b11d9f8cb871f14ef0b9d652d47086",
+    "off": 33729,
+    "N": 17648
+   },
+   "after": {
+    "digest": "0e1874bc4ebced059bb0527e37166ad22e9b2241a0f099a1fb1fedb1686aad76",
+    "off": 31422,
+    "N": 16196
+   },
+   "seconds": 1.978244
+  },
+  {
+   "index": 7,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "seam",
+   "word": "words/00007.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "be98dd0c9771933bb67df0f6fd5535378b6066d4ceaa7d215e978eaf1e2b4415",
+   "tree": {
+    "file": "step-trees/00007.json.gz",
+    "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "size": 1
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "0e1874bc4ebced059bb0527e37166ad22e9b2241a0f099a1fb1fedb1686aad76",
+    "off": 31422,
+    "N": 16196
+   },
+   "after": {
+    "digest": "15d6e7b190de1994a8d5d9d92848c77ab803eb7251bb7dbd69320b00b25d0a41",
+    "off": 28660,
+    "N": 14836
+   },
+   "seconds": 2.089846
+  },
+  {
+   "index": 8,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "seam",
+   "word": "words/00008.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "339551d54017c6edab88b8e6a335a4ebe67c9419aa57b67a8c7d871d90cd43b7",
+   "tree": {
+    "file": "step-trees/00008.json.gz",
+    "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "size": 1
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "15d6e7b190de1994a8d5d9d92848c77ab803eb7251bb7dbd69320b00b25d0a41",
+    "off": 28660,
+    "N": 14836
+   },
+   "after": {
+    "digest": "d2e2ad45719b18a73de319a1c01147eb477575422d052e5d90dae12ea7bf740d",
+    "off": 25958,
+    "N": 13476
+   },
+   "seconds": 1.921178
+  },
+  {
+   "index": 9,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "seam",
+   "word": "words/00009.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "b5274baf404fc1459990d2fa3874ed2c4270fab5f5f2fa925ab8f9ccf7e3c30b",
+   "tree": {
+    "file": "step-trees/00009.json.gz",
+    "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "size": 1
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "d2e2ad45719b18a73de319a1c01147eb477575422d052e5d90dae12ea7bf740d",
+    "off": 25958,
+    "N": 13476
+   },
+   "after": {
+    "digest": "c22e54a2e8298642fe1f0177908f35898ff692fabb1d8e8b122b013106e2c92c",
+    "off": 23256,
+    "N": 11910
+   },
+   "seconds": 2.108475
+  },
+  {
+   "index": 10,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "seam",
+   "word": "words/00010.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "273110e54ff9e4fdcaff77800a11442ac82e72d162d5c7de0ee741ac47fc5030",
+   "tree": {
+    "file": "step-trees/00010.json.gz",
+    "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "size": 1
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "c22e54a2e8298642fe1f0177908f35898ff692fabb1d8e8b122b013106e2c92c",
+    "off": 23256,
+    "N": 11910
+   },
+   "after": {
+    "digest": "c8adcd49491a6fa598fb0afd750b53e6163611cb14c22644acb98a2e8b00670b",
+    "off": 20554,
+    "N": 10550
+   },
+   "seconds": 2.13853
+  },
+  {
+   "index": 11,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "seam",
+   "word": "words/00011.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "ed19d02ff94e0ab1feecefba40577f14facb3cf61f9d3803dbbd10a158559e0a",
+   "tree": {
+    "file": "step-trees/00011.json.gz",
+    "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "size": 1
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "c8adcd49491a6fa598fb0afd750b53e6163611cb14c22644acb98a2e8b00670b",
+    "off": 20554,
+    "N": 10550
+   },
+   "after": {
+    "digest": "bd70a010a97c5e4caadc85e548c8ab63f96eba2815a57cab81fadf105812209b",
+    "off": 17457,
+    "N": 8984
+   },
+   "seconds": 1.916951
+  },
+  {
+   "index": 12,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "seam",
+   "word": "words/00012.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "25644e9c5a699c586cf1494bbfeac7a26bc95b5899647ce14a98ebf6c1b22859",
+   "tree": {
+    "file": "step-trees/00012.json.gz",
+    "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "size": 1
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "bd70a010a97c5e4caadc85e548c8ab63f96eba2815a57cab81fadf105812209b",
+    "off": 17457,
+    "N": 8984
+   },
+   "after": {
+    "digest": "1570dcd622e3c1cb05910ad0f732f0ddf8db837ef84b2a386430d604f093724d",
+    "off": 14755,
+    "N": 7624
+   },
+   "seconds": 2.042778
+  },
+  {
+   "index": 13,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "seam",
+   "word": "words/00013.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "fe448e7fff00f415b40b98a664a9f065af735de67f84da6e515f1d687299ff7b",
+   "tree": {
+    "file": "step-trees/00013.json.gz",
+    "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "size": 1
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "1570dcd622e3c1cb05910ad0f732f0ddf8db837ef84b2a386430d604f093724d",
+    "off": 14755,
+    "N": 7624
+   },
+   "after": {
+    "digest": "9e715aaecb5c6a075a00396ac07ca5956f3029f2c116b37061c926f2dc3e207b",
+    "off": 12053,
+    "N": 6264
+   },
+   "seconds": 2.02423
+  },
+  {
+   "index": 14,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "seam",
+   "word": "words/00014.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "9b88c79042becaf32be056c5af6e6826af47218cd1269224928dea767e935d6d",
+   "tree": {
+    "file": "step-trees/00014.json.gz",
+    "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "size": 1
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "9e715aaecb5c6a075a00396ac07ca5956f3029f2c116b37061c926f2dc3e207b",
+    "off": 12053,
+    "N": 6264
+   },
+   "after": {
+    "digest": "07f86f7309972717511ce4c546e0a67800b841d4977739f4704110cd81480060",
+    "off": 8956,
+    "N": 4698
+   },
+   "seconds": 1.832613
+  },
+  {
+   "index": 15,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "seam",
+   "word": "words/00015.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "65911c458a0dac8a5d7a10595b84f3121d1ae8e99e06f44b0fa2efe2859d7864",
+   "tree": {
+    "file": "step-trees/00015.json.gz",
+    "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "size": 1
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "07f86f7309972717511ce4c546e0a67800b841d4977739f4704110cd81480060",
+    "off": 8956,
+    "N": 4698
+   },
+   "after": {
+    "digest": "f3b66414aead309a19e42b1462cad86a9a2b485e6e9cf1b9c03ac1795e52e128",
+    "off": 6194,
+    "N": 3338
+   },
+   "seconds": 2.095044
+  },
+  {
+   "index": 16,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "seam",
+   "word": "words/00016.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "54d4ed7d65328ba77dbac3e771b83605ab05297c76a3d00a36b8131ea97b656a",
+   "tree": {
+    "file": "step-trees/00016.json.gz",
+    "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "size": 1
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "f3b66414aead309a19e42b1462cad86a9a2b485e6e9cf1b9c03ac1795e52e128",
+    "off": 6194,
+    "N": 3338
+   },
+   "after": {
+    "digest": "6ad02947ab7da45819fc19d323595fb8a25f038a6e852e207a4f1e3246ad8678",
+    "off": 3097,
+    "N": 1772
+   },
+   "seconds": 1.889184
+  },
+  {
+   "index": 17,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "seam",
+   "word": "words/00017.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "752dd182336ad9f5c739074643dc296f0ac81a23b9ae0cca01f9b34e636a6984",
+   "tree": {
+    "file": "step-trees/00017.json.gz",
+    "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "size": 1
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "6ad02947ab7da45819fc19d323595fb8a25f038a6e852e207a4f1e3246ad8678",
+    "off": 3097,
+    "N": 1772
+   },
+   "after": {
+    "digest": "cbb94994229ecbc86417ee4ec9a530b3bcc5a8fe0095a84f23b9ddfd8e3167ac",
+    "off": 3097,
+    "N": 1566
+   },
+   "seconds": 1.82875
+  },
+  {
+   "index": 18,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "seam",
+   "word": "words/00018.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "61abe9564b748f0780e072e5f4a0395b572e735ab3bf12b9a22ce619f929aa9b",
+   "tree": {
+    "file": "step-trees/00018.json.gz",
+    "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "size": 1
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "cbb94994229ecbc86417ee4ec9a530b3bcc5a8fe0095a84f23b9ddfd8e3167ac",
+    "off": 3097,
+    "N": 1566
+   },
+   "after": {
+    "digest": "1b263d3e9e0b9dcd2feece889acf0d20c8c96492e2a5e895034be3dd9c46578e",
+    "off": 0,
+    "N": 0
+   },
+   "seconds": 1.921641
+  },
+  {
+   "index": 19,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-6",
+   "word": "words/00019.ia16.gz",
+   "letters": 194,
+   "encoding": "ia16",
+   "word_sha256": "cc755d7ade626c876aeee99a58a6f15e0df809fbe9a54b0b75ad62f62f3d955e",
+   "tree": {
+    "file": "step-trees/00019.json.gz",
+    "sha256": "7ec1f0e9ee9b664975a9ae57c07de743e93c0d42207ff0d9ef0f925336259769",
+    "size": 24
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "1b263d3e9e0b9dcd2feece889acf0d20c8c96492e2a5e895034be3dd9c46578e",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "949da5035110f818e293cbeeb9733f3970ae328f20df56fa2335cdb07d0f315e",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 0.3275764010004423,
+   "orbit": 6,
+   "factor_first": 0,
+   "factor_count": 4,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 20,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-0",
+   "word": "words/00020.ia16.gz",
+   "letters": 1274,
+   "encoding": "ia16",
+   "word_sha256": "93da09f2936e152dddb1bf11eabb71ed0a4ec95189ea446933f95e820ac74467",
+   "tree": {
+    "file": "step-trees/00020.json.gz",
+    "sha256": "e6a1b4dba610e008f891f217d53f7d85f380762f7ca5d824408d00c87ab306f4",
+    "size": 14
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "949da5035110f818e293cbeeb9733f3970ae328f20df56fa2335cdb07d0f315e",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "af85bc764382117c71d695a310b6244e88dd87e0efe80c1f5e004f8553beffa9",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 0.3010846369998035,
+   "orbit": 0,
+   "factor_first": 4,
+   "factor_count": 2,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 21,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-17",
+   "word": "words/00021.ia16.gz",
+   "letters": 2054,
+   "encoding": "ia16",
+   "word_sha256": "f2d6f2b80e14ec9a68afaf6b4f760cc2577d3b690345cc0507b6ae88560c6748",
+   "tree": {
+    "file": "step-trees/00021.json.gz",
+    "sha256": "c06c89efc2fc4402b02292e7566c9cb44b3112218a522aed612f614f37bc5127",
+    "size": 159
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "af85bc764382117c71d695a310b6244e88dd87e0efe80c1f5e004f8553beffa9",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "240b53781428594bb21c43210e552bae79b437d938b1150b78ee60d416d300c3",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 0.5800031250000757,
+   "orbit": 17,
+   "factor_first": 6,
+   "factor_count": 29,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 22,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-15",
+   "word": "words/00022.ia16.gz",
+   "letters": 6786,
+   "encoding": "ia16",
+   "word_sha256": "da3bf6f79cb8234ed4e91af6ee8652066e0dbbb3a2421cf03441360bd4c7a62b",
+   "tree": {
+    "file": "step-trees/00022.json.gz",
+    "sha256": "67da9269e4447246d7d8cd06e06618b81a049d71882fcaaf587bd8d2ae7d21ef",
+    "size": 279
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "240b53781428594bb21c43210e552bae79b437d938b1150b78ee60d416d300c3",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "bd8583c6db9d0e0a8461383e0850871f6159d05d2baa16a6d0b544fa7b8018b0",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 0.6731653940005344,
+   "orbit": 15,
+   "factor_first": 35,
+   "factor_count": 55,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 23,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-2",
+   "word": "words/00023.ia16.gz",
+   "letters": 2406,
+   "encoding": "ia16",
+   "word_sha256": "3f315dfaed6b0b7b868f8eab63e95206d758c40e338c0d37fc6bfd5b4ce00e8c",
+   "tree": {
+    "file": "step-trees/00023.json.gz",
+    "sha256": "74f3e84a66814ee420372da1887513bd825be4ecd985b356908ab652810ebdb1",
+    "size": 39
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "bd8583c6db9d0e0a8461383e0850871f6159d05d2baa16a6d0b544fa7b8018b0",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "923727937e72a7874275ab8d27ba6f0840c6bbd4744e261461b60c22d3718d2d",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 0.2850367900000492,
+   "orbit": 2,
+   "factor_first": 90,
+   "factor_count": 7,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 24,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-22",
+   "word": "words/00024.ia16.gz",
+   "letters": 20272,
+   "encoding": "ia16",
+   "word_sha256": "dcb651d9c110fe5d43f6e7d110e9bcaf73f6f778d079cf9a2aad3f267fa2d425",
+   "tree": {
+    "file": "step-trees/00024.json.gz",
+    "sha256": "c03318a81cc5b6022758c4f950a572fb63cd10d386bf6a0608d514e0c22883a6",
+    "size": 1344
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "923727937e72a7874275ab8d27ba6f0840c6bbd4744e261461b60c22d3718d2d",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "58d273bc5c475307e5caab7af13fd7c2e88421530f0d812fb9b26e225bf738c6",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 1.0949591700000383,
+   "orbit": 22,
+   "factor_first": 97,
+   "factor_count": 268,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 25,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-21",
+   "word": "words/00025.ia16.gz",
+   "letters": 32570,
+   "encoding": "ia16",
+   "word_sha256": "27f59fecd322caa33b2f77bafdcff2b509986387de01607987a117f46ac14531",
+   "tree": {
+    "file": "step-trees/00025.json.gz",
+    "sha256": "fa5d7caa968936a9d986500c3dbef95b53b9ddaad2caa6829388c95968e47368",
+    "size": 2329
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "58d273bc5c475307e5caab7af13fd7c2e88421530f0d812fb9b26e225bf738c6",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "877dbdddcbbfa38092425656175bcf6299b889d853cc540be399575dd43cd53b",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 1.4934224720000202,
+   "orbit": 21,
+   "factor_first": 365,
+   "factor_count": 465,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 26,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-8",
+   "word": "words/00026.ia16.gz",
+   "letters": 5828,
+   "encoding": "ia16",
+   "word_sha256": "355b01b63381f9f5de828aaf9c21abbb56068ee9a84ca75a07d3d844aee06db8",
+   "tree": {
+    "file": "step-trees/00026.json.gz",
+    "sha256": "700032855854fb3534e6f946baf9ab28c9233f6190873769f3f465b2e44a4b2c",
+    "size": 194
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "877dbdddcbbfa38092425656175bcf6299b889d853cc540be399575dd43cd53b",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "9f1e61f934da96892c3bd4f5e270c9303af2293c93495cbda52360e41a166aec",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 0.4084281529994769,
+   "orbit": 8,
+   "factor_first": 830,
+   "factor_count": 38,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 27,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-23",
+   "word": "words/00027.ia16.gz",
+   "letters": 51808,
+   "encoding": "ia16",
+   "word_sha256": "f29cca7c3d02d99507d1339dcd481775dca36f6ac8293e011686df2b7f35aad7",
+   "tree": {
+    "file": "step-trees/00027.json.gz",
+    "sha256": "372ec0dacae5d40584307804ed7f07a53a2059ee9b0b1d59c506bcafb0c03be8",
+    "size": 3769
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "9f1e61f934da96892c3bd4f5e270c9303af2293c93495cbda52360e41a166aec",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "5d73f1daf00759a3bb828a5658672bda338b7d0e62173208cd7cf690fe5fea7c",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 2.0952902969993374,
+   "orbit": 23,
+   "factor_first": 868,
+   "factor_count": 753,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 28,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-9",
+   "word": "words/00028.ia16.gz",
+   "letters": 14480,
+   "encoding": "ia16",
+   "word_sha256": "9609a53df18c2b0ce4ac5cc0c308b3fe30e888eed65042a249bb10982219d122",
+   "tree": {
+    "file": "step-trees/00028.json.gz",
+    "sha256": "ecf7268ee100ffe76d96dd2deef3dbee61870af095d397fb38fbf0b733e3894a",
+    "size": 324
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "5d73f1daf00759a3bb828a5658672bda338b7d0e62173208cd7cf690fe5fea7c",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "8a71f01474df25550a1edd35056f877ca5b503c214fabb5b5e634aed96aa74d5",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 0.600035807000495,
+   "orbit": 9,
+   "factor_first": 1621,
+   "factor_count": 64,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 29,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-29",
+   "word": "words/00029.ia16.gz",
+   "letters": 52530,
+   "encoding": "ia16",
+   "word_sha256": "cf9d834b59d6424455aec7049b68d3fc0800678216f7bc7a84bd92cecac821e1",
+   "tree": {
+    "file": "step-trees/00029.json.gz",
+    "sha256": "a33fbd0e8c809be1308c0d983c96d33a0aa59bd9be6f549aa02ddeb0ec68f81c",
+    "size": 1539
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "8a71f01474df25550a1edd35056f877ca5b503c214fabb5b5e634aed96aa74d5",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "d63d8afb3796f0e6a597cbe9a36bf02a79e012b9dd948e830b4f194f8373d727",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 1.8368724060001114,
+   "orbit": 29,
+   "factor_first": 1685,
+   "factor_count": 307,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 30,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-25",
+   "word": "words/00030.ia16.gz",
+   "letters": 41688,
+   "encoding": "ia16",
+   "word_sha256": "2ced50639b04b30ee8ed59d39be7a1b68a9cc0f37182334f0101f4265ee86cb4",
+   "tree": {
+    "file": "step-trees/00030.json.gz",
+    "sha256": "7af80405829c0a9c9b0f2d3d6d361a3b60a37f2260f1b35354d143289baf7ce1",
+    "size": 2417
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "d63d8afb3796f0e6a597cbe9a36bf02a79e012b9dd948e830b4f194f8373d727",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "0f96232914e690fccaec92ca096b73275ea526048b632f1bd3a865ef07f7873c",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 1.6998788880000575,
+   "orbit": 25,
+   "factor_first": 1992,
+   "factor_count": 481,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 31,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-13",
+   "word": "words/00031.ia16.gz",
+   "letters": 16478,
+   "encoding": "ia16",
+   "word_sha256": "65e7d71c6661079ac4a059d12b371e5936254a257e06a10010abda96a0dbe0d5",
+   "tree": {
+    "file": "step-trees/00031.json.gz",
+    "sha256": "93830cb16126293fb6d4cf52dcdf2c1f1961604653b0efff87b0df95bd8ff11d",
+    "size": 939
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "0f96232914e690fccaec92ca096b73275ea526048b632f1bd3a865ef07f7873c",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "d5eceaa50ecaec808868b6ed4f02aed268074e8d1b83b0e9f318d3dcabc3a7b3",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 0.8182269179997093,
+   "orbit": 13,
+   "factor_first": 2473,
+   "factor_count": 187,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 32,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-11",
+   "word": "words/00032.ia16.gz",
+   "letters": 7570,
+   "encoding": "ia16",
+   "word_sha256": "3c9deb25f0886268ab78b645917eaf50faffacbc90bbf1e123f765fb48233cd3",
+   "tree": {
+    "file": "step-trees/00032.json.gz",
+    "sha256": "75feda23bcf82bdfa3b12e547e4e836be1500fc818add87ed36c7f2409c585e4",
+    "size": 359
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "d5eceaa50ecaec808868b6ed4f02aed268074e8d1b83b0e9f318d3dcabc3a7b3",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "db6074401c94dfa245b05701822ac8b01eed1dadb19a3c790e0c1749bbfb85b0",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 0.4766886980005438,
+   "orbit": 11,
+   "factor_first": 2660,
+   "factor_count": 71,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 33,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-10",
+   "word": "words/00033.ia16.gz",
+   "letters": 83700,
+   "encoding": "ia16",
+   "word_sha256": "ef94607205478f116fa45052002e3000a3cbf67579c49cb11ea8a40a8c8c8715",
+   "tree": {
+    "file": "step-trees/00033.json.gz",
+    "sha256": "839f165125652368dbc90c2a7811629c6ab1414c914a20c7f8e2943e4337f86e",
+    "size": 529
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "db6074401c94dfa245b05701822ac8b01eed1dadb19a3c790e0c1749bbfb85b0",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "9f7ef7ecf9fa61230e675f60f0e70db0b863b0a4166700a4dda4508f6fc38833",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 2.4290733729994827,
+   "orbit": 10,
+   "factor_first": 2731,
+   "factor_count": 105,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 34,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-34",
+   "word": "words/00034.ia16.gz",
+   "letters": 7854,
+   "encoding": "ia16",
+   "word_sha256": "78e582b4c5f53b1819f399ac503cde30acde9717dc442b5392beef406c06f877",
+   "tree": {
+    "file": "step-trees/00034.json.gz",
+    "sha256": "fe415ff96e85aba6510f038b2308d65b80904274673eb2a0bdb147089b295801",
+    "size": 174
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "9f7ef7ecf9fa61230e675f60f0e70db0b863b0a4166700a4dda4508f6fc38833",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "2ce2129e88908014563323bf73b992c2000649810ccb8ed2c3b6245075e63b49",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 0.4373359020000862,
+   "orbit": 34,
+   "factor_first": 2836,
+   "factor_count": 18,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 35,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-28",
+   "word": "words/00035.ia16.gz",
+   "letters": 325790,
+   "encoding": "ia16",
+   "word_sha256": "a2d11451e5e4647c97afed85556187448319ba24286a20afbe88e86ac2cd5a71",
+   "tree": {
+    "file": "step-trees/00035.json.gz",
+    "sha256": "e81be0ae9dc61ae402a585092eb2cb73cb16a4403b70c982f625421882caebae",
+    "size": 1029
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "2ce2129e88908014563323bf73b992c2000649810ccb8ed2c3b6245075e63b49",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "691f30786bd74f4a42b6bf5601592d765cf8241ed92ac812e2aea89e9f10a76b",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 8.989315872000589,
+   "orbit": 28,
+   "factor_first": 2854,
+   "factor_count": 203,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 36,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-26",
+   "word": "words/00036.ia16.gz",
+   "letters": 77828,
+   "encoding": "ia16",
+   "word_sha256": "2716637653203255bb476a61c6f25493c848c4afcb77b6adb92043ef6e7f769a",
+   "tree": {
+    "file": "step-trees/00036.json.gz",
+    "sha256": "41e0c5d7e04cffa272379e3ab5825900c8ce00d621e42d8826b659a1a2142b1c",
+    "size": 5609
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "691f30786bd74f4a42b6bf5601592d765cf8241ed92ac812e2aea89e9f10a76b",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "37ecd3fee7328294d3d40a1f31066b9022326a2a7754dc9a44c627b4784c8bc1",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 3.4623018590000356,
+   "orbit": 26,
+   "factor_first": 3057,
+   "factor_count": 1121,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 37,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-24",
+   "word": "words/00037.ia16.gz",
+   "letters": 59828,
+   "encoding": "ia16",
+   "word_sha256": "920136e98fb6797657cd8f4c59d3859a460687124a76ac818145c2ca16268e7e",
+   "tree": {
+    "file": "step-trees/00037.json.gz",
+    "sha256": "0d289b0c3463bc804c126f0bb858a36dce1281938588d260ed05a9a0e26a169f",
+    "size": 4254
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "37ecd3fee7328294d3d40a1f31066b9022326a2a7754dc9a44c627b4784c8bc1",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "e05d3965f0fc88ce62ebde57e934329f4a8b99f719c833bb51f2a89946ec81a8",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 2.388646923000124,
+   "orbit": 24,
+   "factor_first": 4178,
+   "factor_count": 850,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 38,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-16",
+   "word": "words/00038.ia16.gz",
+   "letters": 43348,
+   "encoding": "ia16",
+   "word_sha256": "8f2da26082eee5c6ae51fc20069d84f42818d8e664e51f3a3e8939b691b14287",
+   "tree": {
+    "file": "step-trees/00038.json.gz",
+    "sha256": "f83dc2383de38618b277db593b010d868ed56eab9ddb1cf2a645a386244d0c95",
+    "size": 2139
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "e05d3965f0fc88ce62ebde57e934329f4a8b99f719c833bb51f2a89946ec81a8",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "4ae673ae74c677b99722180d4321cedc9b82bc7b436d17f4a6c1ffd0955d0972",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 1.7780896660005965,
+   "orbit": 16,
+   "factor_first": 5028,
+   "factor_count": 427,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 39,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-14",
+   "word": "words/00039.ia16.gz",
+   "letters": 24266,
+   "encoding": "ia16",
+   "word_sha256": "3f1f00eefb94e9b4d2ebf25b1d01410be326ca3d808afbb957dd59b7d31c2f6d",
+   "tree": {
+    "file": "step-trees/00039.json.gz",
+    "sha256": "c9379e8190fd802e16c588f21f3c9fbb5024cc5b4a351f2dc98eca26c6ecf012",
+    "size": 664
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "4ae673ae74c677b99722180d4321cedc9b82bc7b436d17f4a6c1ffd0955d0972",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "bce5e525e65d654f4bd91b126df1a651f3aa6c1c3ddea0cb6d93b9e3249c69fd",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 0.9752107419999447,
+   "orbit": 14,
+   "factor_first": 5455,
+   "factor_count": 132,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 40,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-12",
+   "word": "words/00040.ia16.gz",
+   "letters": 26778,
+   "encoding": "ia16",
+   "word_sha256": "982c76d831517ee2a3042e6dd24d5015272cba8b784a0a45df12d8c557cf1a9e",
+   "tree": {
+    "file": "step-trees/00040.json.gz",
+    "sha256": "6e16a5890821b5f6923b8a964a5abe159e0639d8bcf2c842f102130111c605e4",
+    "size": 1529
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "bce5e525e65d654f4bd91b126df1a651f3aa6c1c3ddea0cb6d93b9e3249c69fd",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "ac0023e67e02b1a7e508dfe636a73af363b97a8b1f2b18db83f9ee2f03855196",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 1.1688919799998985,
+   "orbit": 12,
+   "factor_first": 5587,
+   "factor_count": 305,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 41,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-3",
+   "word": "words/00041.ia16.gz",
+   "letters": 14726,
+   "encoding": "ia16",
+   "word_sha256": "07f0ae3fc6dc867014e917aed8532ed0bd7a05596545a3ab36d9e9d449475bf7",
+   "tree": {
+    "file": "step-trees/00041.json.gz",
+    "sha256": "d80bad80999af3367fee9e7c6afc1894d870ca4cab22a16d76ba99fa607d152e",
+    "size": 124
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "ac0023e67e02b1a7e508dfe636a73af363b97a8b1f2b18db83f9ee2f03855196",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "baef86a573538f4f9d1de672dfbf4c2ede23845e1380a360d2f5245580cfb399",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 0.642921323000337,
+   "orbit": 3,
+   "factor_first": 5892,
+   "factor_count": 24,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 42,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-33",
+   "word": "words/00042.ia16.gz",
+   "letters": 31938,
+   "encoding": "ia16",
+   "word_sha256": "b700340ba6dcfa9c56356b485968264b36d087ad8a508d155176f7068c6d67cb",
+   "tree": {
+    "file": "step-trees/00042.json.gz",
+    "sha256": "8d9355af7960ffe7b06cc5f77956999f27c3cc7afd7a0813ccb45ce5cbb9ed48",
+    "size": 2544
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "baef86a573538f4f9d1de672dfbf4c2ede23845e1380a360d2f5245580cfb399",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "27b40ccdd5ad0c84f2c9fd8f5acb7247edad1f72033eb354c74a4fb61f976a28",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 1.2962793409997175,
+   "orbit": 33,
+   "factor_first": 5916,
+   "factor_count": 508,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 43,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-32",
+   "word": "words/00043.ia16.gz",
+   "letters": 75218,
+   "encoding": "ia16",
+   "word_sha256": "76ec551d0465223f98d9f3d610a9d4454e07cd7bec6c126b3bb7bc8f36a4eb3a",
+   "tree": {
+    "file": "step-trees/00043.json.gz",
+    "sha256": "7a7d4d0c62c6159b282d286c80afa8b219f52ec13697f0345eb6086fe7de0ab7",
+    "size": 3564
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "27b40ccdd5ad0c84f2c9fd8f5acb7247edad1f72033eb354c74a4fb61f976a28",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "c07843df028890b3e2ed5dd400d632c77841751ebaba2f213eef20ed7cdac492",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 2.749937348000458,
+   "orbit": 32,
+   "factor_first": 6424,
+   "factor_count": 708,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 44,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-31",
+   "word": "words/00044.ia16.gz",
+   "letters": 86470,
+   "encoding": "ia16",
+   "word_sha256": "19fa6b186bfcb13fe4488887ac3011fc2d36ef7443bdbc0c24ad87b142671b0d",
+   "tree": {
+    "file": "step-trees/00044.json.gz",
+    "sha256": "8e783215ab554d8599b98d4ec160ed511637c7294150f0d61d36e453faf5a084",
+    "size": 6199
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "c07843df028890b3e2ed5dd400d632c77841751ebaba2f213eef20ed7cdac492",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "81c0ed2104a956c6400708ca88b1d7cd672d7d11489490f78ab6c250a17e2286",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 3.308102832000259,
+   "orbit": 31,
+   "factor_first": 7132,
+   "factor_count": 1239,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 45,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-30",
+   "word": "words/00045.ia16.gz",
+   "letters": 90234,
+   "encoding": "ia16",
+   "word_sha256": "8bbd55b43bf82533c01fc27abd14f69396dce5e6fd2970c7f6a1a28c43466c0f",
+   "tree": {
+    "file": "step-trees/00045.json.gz",
+    "sha256": "b5f94b4037ad158394565b9e4cb7325454e2ed2a07d66e9eefb47c8fd1d3d834",
+    "size": 6499
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "81c0ed2104a956c6400708ca88b1d7cd672d7d11489490f78ab6c250a17e2286",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "b10527bb80a9475741654e5a3800df88d67a832ceeffa053c896ae3befc8e3a5",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 3.3053671709994887,
+   "orbit": 30,
+   "factor_first": 8371,
+   "factor_count": 1299,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 46,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-27",
+   "word": "words/00046.ia16.gz",
+   "letters": 84332,
+   "encoding": "ia16",
+   "word_sha256": "8a61e1922e7c77a1e5cc1941e2290d673088b6b8af5d7a28c326403fefb4bfd4",
+   "tree": {
+    "file": "step-trees/00046.json.gz",
+    "sha256": "7f42dc07295887be7dcd742452ef3f5dcac0d53db816bc07d6d2625c9d3f014c",
+    "size": 5249
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "b10527bb80a9475741654e5a3800df88d67a832ceeffa053c896ae3befc8e3a5",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "5ac790e90f493a85d04d0ab05dba04992def3c1321c582b421e91ca4829b9562",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 3.0382152660004067,
+   "orbit": 27,
+   "factor_first": 9670,
+   "factor_count": 1049,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 47,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-20",
+   "word": "words/00047.ia16.gz",
+   "letters": 25308,
+   "encoding": "ia16",
+   "word_sha256": "33159aa087edcefc7ed3bde980de71a07c00f39b55b60d4cfecc146a86fcd19e",
+   "tree": {
+    "file": "step-trees/00047.json.gz",
+    "sha256": "63e8ff9708274b1a216b4f403633872a5010c1544244c402c185251ac5d025d7",
+    "size": 2094
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "5ac790e90f493a85d04d0ab05dba04992def3c1321c582b421e91ca4829b9562",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "9f2e0bbb6679b8717858eda9db4f0680d4a32da14fa62c7e0e3b75216a296bf9",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 1.0559905890004302,
+   "orbit": 20,
+   "factor_first": 10719,
+   "factor_count": 418,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 48,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-19",
+   "word": "words/00048.ia16.gz",
+   "letters": 61658,
+   "encoding": "ia16",
+   "word_sha256": "25007e2fc14217865ef1755ad604b5b547373447dccf02cbe5053321c320d4c1",
+   "tree": {
+    "file": "step-trees/00048.json.gz",
+    "sha256": "85da401a15fe5cc33298c7f06362a7e1b3c982fc877bd8880cf2bb2870c27642",
+    "size": 2549
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "9f2e0bbb6679b8717858eda9db4f0680d4a32da14fa62c7e0e3b75216a296bf9",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "dff8ef7ec067f4a1223fd789cc4578762c72e01d23f66ed336c0a020c891528f",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 2.0459751979997236,
+   "orbit": 19,
+   "factor_first": 11137,
+   "factor_count": 509,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 49,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-18",
+   "word": "words/00049.ia16.gz",
+   "letters": 123108,
+   "encoding": "ia16",
+   "word_sha256": "0eae398d428880e6af6739281f536a4c321e97204117d2e13941baa0e7d766b9",
+   "tree": {
+    "file": "step-trees/00049.json.gz",
+    "sha256": "9cb88e05a24c720f58469a1e8fa71a594262174f942fbadd616d770ee87bcb9c",
+    "size": 2299
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "dff8ef7ec067f4a1223fd789cc4578762c72e01d23f66ed336c0a020c891528f",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "86fd0e1152f03fcf0481370740439f46e743ae265c9a66b90bb57a5a788ae3d8",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 3.972557904000496,
+   "orbit": 18,
+   "factor_first": 11646,
+   "factor_count": 459,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 50,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-7",
+   "word": "words/00050.ia16.gz",
+   "letters": 2850,
+   "encoding": "ia16",
+   "word_sha256": "d669a6cd30f0aac8960e0214a2eee8dbbf6902261309968b95795a7b29e2a421",
+   "tree": {
+    "file": "step-trees/00050.json.gz",
+    "sha256": "664032e2ad9b2c842c148db9fdf8558e630448d8ad75ed6b2ee7895766412a4b",
+    "size": 139
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "86fd0e1152f03fcf0481370740439f46e743ae265c9a66b90bb57a5a788ae3d8",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "3de9e507a8ccf6a647222115d432b712899686677bb8f14b4d09fff04920eeb9",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 0.19955848900008277,
+   "orbit": 7,
+   "factor_first": 12105,
+   "factor_count": 27,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 51,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-5",
+   "word": "words/00051.ia16.gz",
+   "letters": 6706,
+   "encoding": "ia16",
+   "word_sha256": "93a499c17949634351d44e1d09943ef4ae04513a7a4bb23bbad2d03afea7fff5",
+   "tree": {
+    "file": "step-trees/00051.json.gz",
+    "sha256": "9d947a0e47c95e60f9824bc624e88b3aca39696af86b550338c8424709013df2",
+    "size": 179
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "3de9e507a8ccf6a647222115d432b712899686677bb8f14b4d09fff04920eeb9",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "d888dcba601dc6cbcd227337951670a79479a835853222d5bdc392754ac728a5",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 0.2893295459998626,
+   "orbit": 5,
+   "factor_first": 12132,
+   "factor_count": 35,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 52,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-4",
+   "word": "words/00052.ia16.gz",
+   "letters": 4034,
+   "encoding": "ia16",
+   "word_sha256": "70d3bdd8ba1ddbd7ee02072087eb753e8ba80c6282f7d9df3540adb5d786cfc0",
+   "tree": {
+    "file": "step-trees/00052.json.gz",
+    "sha256": "564e8f8f3502e94930ae293c65c967bb84536fcea02f900f06f4f0f2b9301359",
+    "size": 209
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "d888dcba601dc6cbcd227337951670a79479a835853222d5bdc392754ac728a5",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "2c4264ca955f84092b6fda479cf89cc053eec2a726f5e0071a2a58c419e4dbbc",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 0.2379561929992633,
+   "orbit": 4,
+   "factor_first": 12167,
+   "factor_count": 41,
+   "tree_folded": 0,
+   "tree_folded_depth": 0
+  },
+  {
+   "index": 53,
+   "phase": "lattice",
+   "subphase": null,
+   "rule": "lattice/orbit-1",
+   "word": "words/00053.ia16.gz",
+   "letters": 4498,
+   "encoding": "ia16",
+   "word_sha256": "12daa20282f9d05813d0dc82864204ea78334f90e4a3ad027b9edee62300a064",
+   "tree": {
+    "file": "step-trees/00053.json.gz",
+    "sha256": "5f7a5b0661a79a8343fc9b571cf5617f5f5b855aeb8ec370ebdf6c3e38135f07",
+    "size": 39
+   },
+   "contract": "lattice_literal",
+   "gate": "player",
+   "standing": "rule",
+   "before": {
+    "digest": "2c4264ca955f84092b6fda479cf89cc053eec2a726f5e0071a2a58c419e4dbbc",
+    "off": 0,
+    "heights": {}
+   },
+   "after": {
+    "digest": "71dbda5c4f9b266ed638eb91ab70e43c010d03290a7c1bcf22ab95b61bc3126b",
+    "off": 0,
+    "heights": {}
+   },
+   "attempts": [],
+   "seconds": 0.22594796100020176,
+   "orbit": 1,
+   "factor_first": 12208,
+   "factor_count": 7,
+   "tree_folded": 0,
+   "tree_folded_depth": 0,
+   "labels_identity": true,
+   "table": "tables/00053.json"
+  }
+ ],
+ "stuck": null,
+ "lattice": null,
+ "result": "solved",
+ "error": null,
+ "acceptance": {
+  "verdict": "solved",
+  "certificate_steps": 0,
+  "fallback_steps": 0,
+  "probe": null,
+  "timed_out_attempts": 0
+ },
+ "totals": {
+  "bulk_twists": 19,
+  "height_twists": 0,
+  "high_twists": 0,
+  "tail_twists": 0,
+  "fallback_twists": 0,
+  "lattice_twists": 1516410,
+  "seconds": 749.643773
+ }
+}

@@ -1,0 +1,115 @@
+{
+ "restorer": "schedule11",
+ "restorer_script": "research/jumbling/restoration/09-general-method/scripts/schedule11/restore_schedule11_late.py",
+ "restore_seconds": 611.4782637700005,
+ "play_seconds": 65.52367646600032,
+ "restore_summary_sha256": "96ae4fa5b68c70a30501c3b8e17508b38b08440b7827bea0952f206546097782",
+ "solutions_sha256": "da2751402dd861873c43597cd13307e069669312244327e323fa07e9e7c7c803",
+ "library_sha256": "8a13eb6c4f4359ce4dd58a0018cf86eed3089111e11f20b7c00476f6393a661a",
+ "realign_sha256": "c4d5d54346c31d09f72e83a41dcc3872ecba0eb93d20f5ab0644dc83b8094a51",
+ "cascade_order": [
+  6,
+  0,
+  17,
+  15,
+  2,
+  22,
+  21,
+  8,
+  23,
+  9,
+  29,
+  25,
+  13,
+  11,
+  10,
+  34,
+  28,
+  26,
+  24,
+  16,
+  14,
+  12,
+  3,
+  33,
+  32,
+  31,
+  30,
+  27,
+  20,
+  19,
+  18,
+  7,
+  5,
+  4,
+  1
+ ],
+ "skipped_orbits": [],
+ "step_counts": {
+  "orbit": 35,
+  "correction": 0
+ },
+ "tree_folded": 0,
+ "tree_folded_depth": 0,
+ "player": {
+  "format": "literal-lattice/1",
+  "restore_dir": "restore",
+  "run": 0,
+  "input": {
+   "table": "start-table.json",
+   "digest": "1b263d3e9e0b9dcd2feece889acf0d20c8c96492e2a5e895034be3dd9c46578e",
+   "labels_sha256": "92ec795687358ac7bb585041ea5c4bca3a263df1ae9c17fc2ed930f703ea0c65"
+  },
+  "order": "corrections-first",
+  "scheduled": {
+   "retained": 1516410,
+   "corrections": 0
+  },
+  "played": {
+   "retained": 1516410,
+   "corrections": 0,
+   "total": 1516410
+  },
+  "junction": {
+   "T_digest": null,
+   "labels_equal": null
+  },
+  "final": {
+   "digest": "71dbda5c4f9b266ed638eb91ab70e43c010d03290a7c1bcf22ab95b61bc3126b",
+   "labels_identity": true
+  },
+  "result": "solved",
+  "failure": null,
+  "position": null,
+  "seconds": {
+   "retained": 56.92511059099979,
+   "corrections": 4.435999471752439e-06,
+   "total": 64.95597121999981
+  },
+  "model_files_checked": true,
+  "scripts": {
+   "research/jumbling/exact.py": "763dc7803c82971d76520c53cfb2a492e230e901dcf9cfa6a8fbdf34308bc7a6",
+   "research/jumbling/fixtures/wj.py": "23329ef0b69482ff566af3bc8a5be51b27032cf67a47bb3c84683129b09d0aa2",
+   "research/jumbling/restoration/13-tutorial-runner/scripts/lattice_phase.py": "4f342f7b098d27083251ba5944c606a589883c8f2728add9c0ea13ea710c46e0",
+   "research/jumbling/restoration/13-tutorial-runner/scripts/literal_lattice.py": "164904b0e2881322454a32adf63ec8293f285531c0405249d43ee85d514937f0",
+   "research/jumbling/restoration/13-tutorial-runner/scripts/runner_api.py": "b92e73d33345da33ee3e6e7974d9ab8db1d35193dc69371b0e13d55bade08459",
+   "research/jumbling/sim/__init__.py": "ee479dbd6ef7d7cbc9ecdf9f9b316584b7e8efa8e2ce711cb698324c6e6d10e9",
+   "research/jumbling/sim/kernel.py": "97076ffce3bdf9f10f69d221234750898fc43848a6fafc24a1c23d1b681e143c",
+   "research/jumbling/sim/kplus.py": "122b4b65e6508fb02be195759635b2c94d4ca86a30b240c069c00e7eb60e8a5d",
+   "research/jumbling/sim/model.py": "635b32f724d0d0ff822fe8cd52b62a853f922f7b581aed931bf626513cf5b4df",
+   "research/jumbling/sim/regions.py": "54ffdfff32310b88a03dbc1dbe335c2780312aa83b2e20026a3935fbdf68b709",
+   "research/jumbling/sim/state.py": "7b92119080a1a7bb3155a0d91a2ac83f20b7f3d4e2c07fb976c17ff447e44259",
+   "research/jumbling/sim/twists.py": "d55f00f366a26f05c584cbc7e5f9e4dac7bd6ae5ea6058d21b74f4e61b68e4cb",
+   "research/jumbling/theory/classes.py": "88357545e2513f76b9809742b7d77e234167cb88dc8f433f9de85c95c42f77cd",
+   "research/jumbling/theory/deep_scramble.py": "5398d0ef1d30ebb6fbef294f4b5130f5d9ef4f462767cc04ad75084603d48c8a",
+   "research/jumbling/theory/e3_class.py": "452d9a043ab01174bf62323e8f9a2b110d835dd87ac58922574b458fcfff9afd",
+   "research/jumbling/theory/groups.py": "e2ebd8cdb14e8ca19f515c1ae464b79bbcca51be797adbb8dfe1e5b481ca2d72",
+   "research/jumbling/theory/orient.py": "922c51544e296ef27ddc187f28cf321a155ff1dec41629b13f9d70c670869eed",
+   "research/jumbling/theory/restore.py": "2a7bfd448f24ecafd544aa54bae914dec817b801fb044dcee660c2ce46893861",
+   "research/jumbling/theory/rim.py": "a53626a88584dcea44646a4a4473a177a3697ed5ac26b061b639a4576debc750",
+   "research/jumbling/theory/seams.py": "e42dac099632ec063f63b3880cd4957cc49b1193b732e4fa2bf87eeb7882204b",
+   "research/jumbling/theory/trees.py": "8431eedfb778a68b04e5938f3bcfee92feac8e54e718471ea33d6ccedb55a642",
+   "research/jumbling/witness.py": "cb99604d8bfece8725c9a568e53e67ba14de99be117affef97cd97be85414277"
+  }
+ }
+}
