@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-22] decision | The DT-M1 batch and a hold on design
+The owner chose every recommended option of DT-M1, for now, keeping each question's other options on record as alternatives, and put the design line and the round table on hold after their current stage ([decision](decisions/owner-decisions-2026-10-22-dt-m1.md)); no further design-table topic opens until the owner resumes it.
+
 ## [2026-10-22] decision | NumPy for EN2's J1 tests in the cloud session
 The owner allowed a one-off install of NumPy 2.3.5 from the hash-pinned `tools/python/engine.txt` into a virtual environment outside the repository, so that EN2's J1 tests run in the cloud session ([decision](decisions/owner-decisions-2026-10-22.md)); the allowlist, the lockfile and the installer are unchanged.
 
