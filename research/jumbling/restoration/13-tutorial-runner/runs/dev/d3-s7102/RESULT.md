@@ -51,3 +51,26 @@ The cache directory is outside the repository. Started at 13:40 UTC. Bulk compar
   with the identical command. The resume was accepted. The record's `resumes` now holds two entries, at steps 25 and
   77. The first resume (15:43 UTC, at step 25) is not in it, because it lived only in the local `out/` that the
   16:49 restore replaced. Step 77 (index 77) runs again. From now on the integrator's session sends the check-ins.
+- 22:06 and 23:04 UTC: **fourth and fifth container restarts**, each found at a check-in with uptime 0 min, no
+  processes and no `runner.rc`. Both times the runner had finished index 77 again (word file written at 22:11:55
+  after the 22:06 resume; the 21:08 resume's copy was saved at 21:14). Both times the container died before the
+  checkpoint helper's next 900 s round, so the branch still holds only the step 77 checkpoint `09ece1f`. Both
+  surviving local copies (78 steps) agree with the census record at all 78 indices (186 twists; index 77 is `conj`,
+  3 twists, N 34,622 to 34,588, 34,258 off). Each time I restored `09ece1f` into an empty `out/` and resumed (accepted,
+  restore exit 0). A restore drops the resume entries made after its checkpoint, so `resumes` shows [25, 77].
+
+## Problem: the run cannot get past index 77 under the current regime
+
+Evidence: the container now lives only a few minutes after each check-in turn ends (the last saves came 5 to 6 min
+after the 21:08 and 22:06 resumes, and nothing was saved after that). The checkpoint helper's default interval is
+900 s. One bulk step at this point takes about 5 min (index 77: 282 s on its second run), and the census steps
+after index 77 grow to several hundred seconds each (the census record's cumulative times rise from 3,816 s to
+4,658 s over its last 30 steps). So every cycle restores step 77, recomputes index 77 and dies before a checkpoint
+can save it. Following step 4 exactly, the run makes no progress. Its state stays at 77 steps, 183 twists, N 34,622,
+34,258 off.
+
+I have changed nothing to work around this. Options for the integrator, none taken: keep the container alive
+between check-ins (an environment setting); a shorter `checkpoint.py --every` interval (a documented option of the
+helper, but not the command this task gives); or resuming the surviving local `out/` instead of the older
+checkpoint (the resume checks every step's digests, but that is not what step 4 says). I keep restoring and
+resuming at each check-in as instructed.
