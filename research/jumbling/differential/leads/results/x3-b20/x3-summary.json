@@ -1,0 +1,316 @@
+{
+  "cpu_count": 4,
+  "python": "3.11.15",
+  "numpy": "2.3.5",
+  "commit": "13bec8a714285a615a00fbfe4eb587c75e9ee86b",
+  "evidence_kind": "source and fixture replay with the J1 reference engine; cloud research timings, not product performance evidence",
+  "production_command": [
+    "python",
+    "-B",
+    "b20_runs.py",
+    "x3",
+    "<out>"
+  ],
+  "inputs": [
+    {
+      "label": "b20-closure",
+      "status": "complete",
+      "refused": null,
+      "expanded_length": 40500,
+      "steps": 40500,
+      "attempted_steps": 40500,
+      "start_digest": "fde9e0fde60bf0eb9ea3ac8e2a34a9d420601bb02d5d2fbbb86bf096fd1b0403",
+      "end_digest": "aab10f250f0aedbbcc0fbf0eb655cb0e4434a839c22fc7957559a27437f46e7c",
+      "off_before": 507,
+      "off_after": 447,
+      "lattice_pieces_lifted_off": 0,
+      "off_pieces_landed": 60,
+      "other_off_exact_pose_unchanged": 447,
+      "other_off_exact_pose_changed": 0,
+      "samples": [
+        {
+          "step": 0,
+          "off_lattice": 507,
+          "poses": 469,
+          "height_bits": 4
+        },
+        {
+          "step": 1000,
+          "off_lattice": 507,
+          "poses": 682,
+          "height_bits": 4
+        },
+        {
+          "step": 2000,
+          "off_lattice": 507,
+          "poses": 713,
+          "height_bits": 4
+        },
+        {
+          "step": 3000,
+          "off_lattice": 507,
+          "poses": 788,
+          "height_bits": 4
+        },
+        {
+          "step": 4000,
+          "off_lattice": 507,
+          "poses": 695,
+          "height_bits": 4
+        },
+        {
+          "step": 5000,
+          "off_lattice": 507,
+          "poses": 816,
+          "height_bits": 4
+        },
+        {
+          "step": 6000,
+          "off_lattice": 507,
+          "poses": 798,
+          "height_bits": 4
+        },
+        {
+          "step": 7000,
+          "off_lattice": 507,
+          "poses": 748,
+          "height_bits": 4
+        },
+        {
+          "step": 8000,
+          "off_lattice": 507,
+          "poses": 754,
+          "height_bits": 4
+        },
+        {
+          "step": 9000,
+          "off_lattice": 507,
+          "poses": 710,
+          "height_bits": 4
+        },
+        {
+          "step": 10000,
+          "off_lattice": 507,
+          "poses": 757,
+          "height_bits": 4
+        },
+        {
+          "step": 11000,
+          "off_lattice": 507,
+          "poses": 668,
+          "height_bits": 4
+        },
+        {
+          "step": 12000,
+          "off_lattice": 507,
+          "poses": 732,
+          "height_bits": 4
+        },
+        {
+          "step": 13000,
+          "off_lattice": 507,
+          "poses": 724,
+          "height_bits": 4
+        },
+        {
+          "step": 14000,
+          "off_lattice": 507,
+          "poses": 655,
+          "height_bits": 4
+        },
+        {
+          "step": 15000,
+          "off_lattice": 507,
+          "poses": 690,
+          "height_bits": 4
+        },
+        {
+          "step": 16000,
+          "off_lattice": 507,
+          "poses": 660,
+          "height_bits": 4
+        },
+        {
+          "step": 17000,
+          "off_lattice": 507,
+          "poses": 721,
+          "height_bits": 4
+        },
+        {
+          "step": 18000,
+          "off_lattice": 507,
+          "poses": 686,
+          "height_bits": 4
+        },
+        {
+          "step": 19000,
+          "off_lattice": 507,
+          "poses": 626,
+          "height_bits": 4
+        },
+        {
+          "step": 20000,
+          "off_lattice": 507,
+          "poses": 590,
+          "height_bits": 4
+        },
+        {
+          "step": 21000,
+          "off_lattice": 447,
+          "poses": 579,
+          "height_bits": 4
+        },
+        {
+          "step": 22000,
+          "off_lattice": 447,
+          "poses": 659,
+          "height_bits": 4
+        },
+        {
+          "step": 23000,
+          "off_lattice": 447,
+          "poses": 748,
+          "height_bits": 4
+        },
+        {
+          "step": 24000,
+          "off_lattice": 447,
+          "poses": 703,
+          "height_bits": 4
+        },
+        {
+          "step": 25000,
+          "off_lattice": 447,
+          "poses": 771,
+          "height_bits": 4
+        },
+        {
+          "step": 26000,
+          "off_lattice": 447,
+          "poses": 783,
+          "height_bits": 4
+        },
+        {
+          "step": 27000,
+          "off_lattice": 447,
+          "poses": 691,
+          "height_bits": 4
+        },
+        {
+          "step": 28000,
+          "off_lattice": 447,
+          "poses": 785,
+          "height_bits": 4
+        },
+        {
+          "step": 29000,
+          "off_lattice": 447,
+          "poses": 598,
+          "height_bits": 4
+        },
+        {
+          "step": 30000,
+          "off_lattice": 447,
+          "poses": 707,
+          "height_bits": 4
+        },
+        {
+          "step": 31000,
+          "off_lattice": 447,
+          "poses": 582,
+          "height_bits": 4
+        },
+        {
+          "step": 32000,
+          "off_lattice": 447,
+          "poses": 721,
+          "height_bits": 4
+        },
+        {
+          "step": 33000,
+          "off_lattice": 447,
+          "poses": 748,
+          "height_bits": 4
+        },
+        {
+          "step": 34000,
+          "off_lattice": 447,
+          "poses": 797,
+          "height_bits": 4
+        },
+        {
+          "step": 35000,
+          "off_lattice": 447,
+          "poses": 760,
+          "height_bits": 4
+        },
+        {
+          "step": 36000,
+          "off_lattice": 447,
+          "poses": 672,
+          "height_bits": 4
+        },
+        {
+          "step": 37000,
+          "off_lattice": 447,
+          "poses": 686,
+          "height_bits": 4
+        },
+        {
+          "step": 38000,
+          "off_lattice": 447,
+          "poses": 770,
+          "height_bits": 4
+        },
+        {
+          "step": 39000,
+          "off_lattice": 447,
+          "poses": 743,
+          "height_bits": 4
+        },
+        {
+          "step": 40000,
+          "off_lattice": 447,
+          "poses": 710,
+          "height_bits": 4
+        },
+        {
+          "step": 40500,
+          "off_lattice": 447,
+          "poses": 466,
+          "height_bits": 4
+        }
+      ],
+      "seconds": {
+        "total": 298.0971019430126,
+        "median": 0.00729044050012817,
+        "p95": 0.008411219699382855,
+        "largest": 0.05784080499961419,
+        "twist_construction": 1.0895423729998583,
+        "preview_wall": 299.47580681900035
+      },
+      "sources": [
+        {
+          "file": "z-02-b16.json.gz",
+          "sha256": "b659492c5495131cb7eff0073097677d3bf5763d3e66dc2f7fe58a9ac08941e5"
+        },
+        {
+          "file": "03-b20-V-word.json.gz",
+          "sha256": "1ae91e59bc4be23a02fa58fa4b4f24d165b47f188c8f63785d331775c9c8bb9a"
+        },
+        {
+          "file": "b20-core.json",
+          "sha256": "b5abdc4c23cef1969cd149a70bf284107ce570406b7604c8f1856b1282b5dcef"
+        }
+      ],
+      "expected": {
+        "end_digest": "aab10f250f0aedbbcc0fbf0eb655cb0e4434a839c22fc7957559a27437f46e7c",
+        "off_before": 507,
+        "off_after": 447,
+        "landed": 60,
+        "others_exact": 447
+      }
+    }
+  ],
+  "sample_every": 1000
+}

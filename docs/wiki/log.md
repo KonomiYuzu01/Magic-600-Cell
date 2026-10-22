@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-22] update | EN2 cost leads in J1: X1 to X5, XM1, heights, classification and meshes
+The cost leads of ENG-0J revision 2 (acceptance item 5) ran headless in the cloud session ([results](../../research/jumbling/differential/leads/results/summary.md)): in J1 a repair list takes 3.5 s to about 3 minutes, entry heights under the I_a menu are unbounded (3,018 bits at the X1 witness H6030), the exact covers differ from the research float test only where d is blocked, and a full-detail mesh of every exposed face has 5,760,000 triangles. They are cloud timings of research code; EN3 and EN4 confirm or overturn them with a product engine.
+
 ## [2026-10-22] decision | G1 keeps every structure mode and layout
 The owner kept all seven G1 structure modes and all four greybox layouts in the Look Lab and chose no single layout, so the G1 exit's first layout specification (H-04) and visual feature list (H-01) stay open; Look Lab work continues ([decision](decisions/owner-decisions-2026-10-22-g1.md)).
 

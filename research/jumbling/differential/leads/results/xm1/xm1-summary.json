@@ -1,0 +1,195 @@
+{
+  "evidence_kind": "source and fixture replay: J1 and research restorer",
+  "timing_kind": "cloud research code; not product performance evidence",
+  "cpu_count": 4,
+  "load_average": [
+    5.00634765625,
+    4.89599609375,
+    3.95166015625
+  ],
+  "python": "3.11.15",
+  "numpy": "2.3.5",
+  "commit": "8fa2e3d4a286b81af451d43dfc6a5145e517dbbf",
+  "menu_identity": "fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c",
+  "menu_order_digest": "5a0429d2946fbf58b495d8f300e24a3fa164b1d9518ce4a5c3f4ef0a40625c3c",
+  "sources": [
+    {
+      "seed": 7001,
+      "record": "runs/round1/ia-k10-s7001.json",
+      "sha256": "7245ef19d0a5eede13b9db803f379dec2b77150c0b2b9b9e4db0cf5cf8b0c7c5"
+    },
+    {
+      "seed": 7106,
+      "record": "runs/round1/ia-k20-s7106.json",
+      "sha256": "f64453d7564bb67cd11c45fdfc73a2ed3b0ee9f04accb05d3faa17760e2bca3d"
+    },
+    {
+      "seed": 7107,
+      "record": "runs/round1/ia-k40-s7107.json",
+      "sha256": "221264f38f051ee5ccd2050b0b53d9997f29974eed9a4320a0e6ede9f8bb0313"
+    },
+    {
+      "seed": 7101,
+      "record": "runs/round2/ia-k40-s7101.json",
+      "sha256": "e46e044ad60621e41c88e1be6e9bfc8e5781c6d8219d5fe390052431d4b341cb"
+    },
+    {
+      "seed": 7102,
+      "record": "runs/round2/ia-k100-s7102.json",
+      "sha256": "418cb9b2bef64e892f551cd144995a17fefabd3324d7a755bc0d52dfa5eeb01b"
+    },
+    {
+      "seed": 7103,
+      "record": "runs/round2/ia-k1000-s7103.json",
+      "sha256": "16d8e0764b7b1f789fbf9f9c04440a37599bd91727f3d10d06f2dde547f4dd30"
+    },
+    {
+      "seed": 7104,
+      "record": "runs/round2/ia-k60-s7104.json",
+      "sha256": "65e17fc6e688faa5b173c817a1e5146a40a5e8ad99b648476fce172005766ceb"
+    },
+    {
+      "seed": 7105,
+      "record": "runs/round3/ia-k200-s7105.json",
+      "sha256": "a4f4c601eccffa61da52fc3e34a28568ad66eaac32d9e21212a4fe872f26a0e3"
+    },
+    {
+      "seed": 7108,
+      "record": "runs/round3/ia-k100-s7108.json",
+      "sha256": "2422668f05c962c1405f9cc2a29c8e2575d4b26a25ce25e1c19509bbe63ba261"
+    },
+    {
+      "seed": 7109,
+      "record": "runs/round3/ia-k400-s7109.json",
+      "sha256": "be80d8ffd4053713d7ff34f9c3386eab7af36da2bdf8cf4313bad47b1b759db6"
+    }
+  ],
+  "steps": 124,
+  "cases": {
+    "outside_lattice": {
+      "steps": 78,
+      "one_seat": 78,
+      "one_left_coset": 32,
+      "split_over_seats": 0,
+      "split_sizes": {},
+      "answer": "outside_lattice: 78 steps; 78 in one seat; 32 in one left coset; 0 split over seats ({})."
+    },
+    "inside_lattice_only": {
+      "steps": 0,
+      "one_seat": 0,
+      "one_left_coset": 0,
+      "split_over_seats": 0,
+      "split_sizes": {},
+      "answer": "inside_lattice_only: 0 steps; 0 in one seat; 0 in one left coset; 0 split over seats ({})."
+    },
+    "both": {
+      "steps": 4,
+      "one_seat": 4,
+      "one_left_coset": 4,
+      "split_over_seats": 0,
+      "split_sizes": {},
+      "answer": "both: 4 steps; 4 in one seat; 4 in one left coset; 0 split over seats ({})."
+    },
+    "neither": {
+      "steps": 42,
+      "one_seat": 42,
+      "one_left_coset": 42,
+      "split_over_seats": 0,
+      "split_sizes": {},
+      "answer": "neither: 42 steps; 42 in one seat; 42 in one left coset; 0 split over seats ({})."
+    }
+  },
+  "seats": [
+    {
+      "seat": 0,
+      "name": 0,
+      "items": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ]
+    },
+    {
+      "seat": 1,
+      "name": 12,
+      "items": [
+        12,
+        16,
+        20,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32
+      ]
+    },
+    {
+      "seat": 2,
+      "name": 13,
+      "items": [
+        13,
+        17,
+        19,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42
+      ]
+    },
+    {
+      "seat": 3,
+      "name": 14,
+      "items": [
+        14,
+        21,
+        23,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51
+      ]
+    },
+    {
+      "seat": 4,
+      "name": 15,
+      "items": [
+        15,
+        18,
+        22,
+        33,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59
+      ]
+    }
+  ],
+  "seconds": 1432.7629750340002
+}
