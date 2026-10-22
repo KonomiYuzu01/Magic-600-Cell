@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "<repo>/research/jumbling/restoration/13-tutorial-runner/scripts/runner.py", line 1471, in run
+    if self.phases_between() == 'budget':
+       ~~~~~~~~~~~~~~~~~~~^^
+  File "<repo>/research/jumbling/restoration/13-tutorial-runner/scripts/runner.py", line 709, in phases_between
+    results.append(self.plugin_phase('height', sub))
+                   ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "<repo>/research/jumbling/restoration/13-tutorial-runner/scripts/runner.py", line 665, in plugin_phase
+    self.check_signal()
+    ~~~~~~~~~~~~~~~~~^^
+  File "<repo>/research/jumbling/restoration/13-tutorial-runner/scripts/runner.py", line 428, in check_signal
+    raise RunSignal(f'signal {self.signal_number}')
+RunSignal: signal 15

@@ -1,7 +1,21 @@
 # D2, seed 7305: the runner from the 3000-twist stop (development line d2-s7305)
 
-Status: step 1 done, step 2 (component run) done and checked, step 3 (full run) running. Times are cloud timings of
-research code on a shared headless Linux machine, not performance evidence.
+Status: finished. Step 1 done; step 2 (component run) done and checked, and it is this line's D2 result for seed 7305;
+step 3 (full run) was stopped with SIGTERM on the integrator's instruction (13:37 UTC) and is kept as an interrupted
+record. Times are cloud timings of research code on a shared headless Linux machine, not performance evidence.
+
+**Summary.**
+
+- Start `273eab69…`, 105,437 off, (n2, n4, n6) = (103,140, 2,297, 0), as expected.
+- Component run: `r22d75` plays exactly the expected 11 letters to `cc5ef7ec…` (n4 = 1,419) and is stuck; `r22d81` is
+  `not_applicable`; `h4` is `stuck` (`pair_exhausted`) with no step; the high phase is `stuck` (`kernel_exhausted`)
+  with no step; the tail's unit listing exceeds `rule_seconds` (3,600 s) and the run ends `error`. Verdict `error`,
+  `config.component` `bulk_budget`. `check_run.py` passes it (end `cc5ef7ec…`, 0 unchecked contracts).
+- Full run (interrupted): the bulk ends `timeout` on its 21,600 s clock after 80 steps (79 `conj`, 1 `cover`) and 238
+  twists, N 131,542 → 126,592, off 105,437 → 101,937, at `736ea9e7…` with n4 unchanged at 2,297. `r22d75` had played
+  4 steps when the run was stopped. `check_run.py` fails this record with `phase_steps` and `phase_twists` only: the
+  runner left `phases.height` at 0 steps and 0 twists while its sub-phase `r22d75` records 4 (see step 3). Every one of
+  the 84 steps replays and passes.
 
 ## Question
 
@@ -100,7 +114,7 @@ The step times are the recorded play times; each `r22d75` attempt took about one
 `cc5ef7ecf0510ea9a74fc52bafe324d6d8f58294c4b0e20b40b97b414dada062`, 0 unchecked contracts, 0 fails, all 11 steps pass,
 `lattice_checked` false. About 25 s (07:30:51 to 07:31:16 UTC).
 
-## Step 3: full run (running)
+## Step 3: full run (stopped by SIGTERM, `full-interrupted/`)
 
     python3 -I -B -u $S/runner.py --table <dir>/tables/s7305-stop.json --out <dir>/out-f --cache <dir>/cache --height-seconds 12000 --height-cpu 12000 --pair-shards 3 --kernel-seconds 3600 --bulk-seconds 21600 --bulk-step-seconds 21600
 
@@ -122,7 +136,61 @@ at `736ea9e7…`, N 126,592, 101,937 off, (n2, n4, n6) = (99,640, 2,297, 0). The
 620 s. The height phase started at 13:32 UTC (`logs/00080-r22d75-r22d75.log`). `bulk-progress.json` still reads
 `{"step_started": 33760.8}`.
 
+**Stopped.** At 13:37 UTC the integrator dropped the full run (the component record is the D2 result for this seed;
+a full run only puts a six-hour bulk in front of the same phases). The runner (one process) was sent SIGTERM by its
+process id (`kill -TERM <pid>`) at 13:37:37 UTC; it wrote `runner.rc` 2 within two seconds. Then:
+
+    python3 -I -B -u $S/check_run.py <dir>/out-f --out <dir>/chk-f/check.jsonl
+
+The whole output directory is in `full-interrupted/` (8.7 MB, no file over 20 MB), with `runner.out`, `check.jsonl` and
+`check.out`. In `full-interrupted/logs/runner.log` the absolute paths were replaced by `<repo>` and `<dir>`; the
+records are unchanged. Every step is listed in `full-steps.md`.
+
+**Outcome.**
+
+- `result` `error`, `error` "signal 15" (traceback in `logs/runner.log`: `run` → `phases_between` → `plugin_phase` →
+  `check_signal`, `runner.py:428`); `acceptance.verdict` `error` (certificate steps 0, fallback steps 0, probe null,
+  timed-out attempts 0); `config.component` `bulk_budget`; `config.source` commit `35c3d4f6…`, `dirty` false.
+- 84 steps, 242 twists (bulk 238, height 4); runner time 22,008.5 s.
+- The `r22d75` attempt that was running at the signal is recorded as `cancelled` (rc −9, 24.8 s).
+
+**Phases:**
+
+| Phase | Result | Steps | Twists | Start | End |
+|---|---|---|---|---|---|
+| bulk | `timeout` (clock 21,600 s) | 80 | 238 | `273eab69…`, 105,437 off, N 131,542, (103,140, 2,297, 0) | `736ea9e7…`, 101,937 off, N 126,592, (99,640, 2,297, 0) |
+| height | null (cut off by the signal) | 0 recorded (4 played) | 0 recorded (4 played) | null recorded | null |
+| — `r22d75` | null | 4 | 4 | `736ea9e7…` | null; the last step reached `b78611f6…`, 104,941 off, (103,003, 1,938) |
+| — `r22d81`, `h4` | null (not reached) | 0 | 0 | — | — |
+| high, tail, lattice | null (not reached) | 0 | — | — | — |
+
+Bulk rules: 79 `conj` steps of 3 letters and one `cover` step of 1 letter (step 13, 22.5 s). The bulk's step times ran
+from about 300 to 620 s for `conj`; 21,198 s of step time in all. The four height steps are `r22d75/T1`, one letter
+each, 2.1 to 2.4 s.
+
+**Expected and actual first steps** (`PLAN.md`, section 4, D2, full run):
+
+| | Expected | Actual |
+|---|---|---|
+| bulk | on, `--bulk-seconds 21600`; "if the clock ends the bulk, the run is `component`" | the clock ended it: `timeout`, 80 steps, 238 twists; `config.component` `bulk_budget` |
+| height | not predicted after a bulk | `r22d75` played 4 steps (n4 2,297 → 1,938) before the signal |
+| later phases | not predicted | not reached |
+
+**Check.** `check_run.py` exits 1: `pass` false, `fails` `["phase_steps", "phase_twists"]`, verdict `error`, end
+digest `b78611f6ea470cdac4d2add15525f5268420d7d70478dc2a3b25b3491cf97933`, 0 unchecked contracts, `lattice_checked`
+false. All 84 step rows pass (84 rows with `pass` true, no failing row), so the words replay to the recorded digests.
+The failure comes from the phase totals: `check_run.py:739-745` requires `phases.height.steps` and `twists` to equal
+the sum over its sub-phases (4 and 4), and the record has 0 and 0 for the height phase while `r22d75` has `steps` 4.
+README section 2 says a phase that an error cut off after some of its steps keeps `result: null` and its steps stand;
+here the runner did not fill in the parent height phase's counts. This is a lead for the integrator (the runner's
+height totals after a signal inside a sub-phase, or the checker's rule for such a record), not a fix: as the line's
+rules require, neither the runner nor the checker was changed and the record was not edited. The check took about
+6 minutes (13:37:51 to 13:43:39 UTC).
+
 ## Not run
 
-No Windows, DirectX, native or performance check was run; none is claimed. The component run's tail and lattice phases
-did not run to an end (see "The error").
+- No Windows, DirectX, native or performance check was run; none is claimed.
+- The component run's tail and lattice phases did not run to an end (see "The error"): no tail step, no lattice phase.
+- The full run was stopped in its height phase on the integrator's instruction; its height, high, tail and lattice
+  phases did not run to an end, and its record fails the checker on the height phase's totals (above).
+- No run with a larger `--rule-seconds` was made.
