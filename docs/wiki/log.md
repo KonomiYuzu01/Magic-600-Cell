@@ -5,6 +5,12 @@ Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 ## [2026-10-22] decision | G1 keeps every structure mode and layout
 The owner kept all seven G1 structure modes and all four greybox layouts in the Look Lab and chose no single layout, so the G1 exit's first layout specification (H-04) and visual feature list (H-01) stay open; Look Lab work continues ([decision](decisions/owner-decisions-2026-10-22-g1.md)).
 
+## [2026-10-22] decision | The DT-M1 batch and a hold on design
+The owner chose every recommended option of DT-M1, for now, keeping each question's other options on record as alternatives, and put the design line and the round table on hold after their current stage ([decision](decisions/owner-decisions-2026-10-22-dt-m1.md)); no further design-table topic opens until the owner resumes it.
+
+## [2026-10-22] decision | NumPy for EN2's J1 tests in the cloud session
+The owner allowed a one-off install of NumPy 2.3.5 from the hash-pinned `tools/python/engine.txt` into a virtual environment outside the repository, so that EN2's J1 tests run in the cloud session ([decision](decisions/owner-decisions-2026-10-22.md)); the allowlist, the lockfile and the installer are unchanged.
+
 ## [2026-10-22] decision | Jumbling records from draft #112 on main
 Under Q1 of the 22 October answers, six decision records came to `main` from #112's branch ([#112 merge rule](decisions/owner-decisions-2026-10-17-jumbling-pr.md), [repair list](decisions/owner-decisions-2026-10-17-repair-pairs.md), [B′(h) goal](decisions/owner-decisions-2026-10-18-bprime-goal.md), [machine tutorial](decisions/owner-decisions-2026-10-18-machine-tutorial.md), [tutorial acceptance](decisions/owner-decisions-2026-10-20-tutorial-acceptance.md), [research stop](decisions/owner-decisions-2026-10-20-research-stop.md)), with the handoff pages, the requirements draft's repair-list exception and the briefing's jumbling line; #112 stays a draft. The pages are unchanged except two links to a branch-only research page and a dated note on the #112 merge rule.
 
