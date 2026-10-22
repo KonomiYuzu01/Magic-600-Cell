@@ -32,6 +32,8 @@ CHECKS: list[list[str]] = [
     ["tests/test_engine_lifecycle.py"],
     ["tests/test_oracle.py"],
     ["tests/test_full_reference_replay.py"],
+    ["tests/test_jumbling_differential.py"],
+    ["tests/test_jumbling_store.py"],
     ["tests/test_scramble.py"],
     ["tests/test_piece_filters.py"],
     ["tests/test_frame_preferences.py"],
