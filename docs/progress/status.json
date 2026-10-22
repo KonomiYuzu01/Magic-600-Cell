@@ -100,7 +100,7 @@
     {"id": "jumbling-freeze", "track": "jumbling", "title": "Jumble enters the 2.5 freeze (option B)", "status": "in_progress", "acceptance": null, "acceptance_source": null, "blocker": null,
      "items": [
       {"id": "dt-j1", "title": "DT-J1 solver aids settled with the owner", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/116"},
-      {"id": "records", "title": "Branch-only jumbling records on main", "weight": 1, "done": false, "evidence": null},
+      {"id": "records", "title": "Branch-only jumbling records on main", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/117"},
       {"id": "en1", "title": "ENG-0J revision 2 plan-checked by Astra", "weight": 2, "done": false, "evidence": null},
       {"id": "en2", "title": "Jumbling harness and store", "weight": 2, "done": false, "evidence": null},
       {"id": "en3", "title": "Jumbling command rows and interfaces", "weight": 2, "done": false, "evidence": null},
