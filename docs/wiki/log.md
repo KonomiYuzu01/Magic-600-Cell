@@ -8,6 +8,12 @@ The export tool now also replays a census record's descent and a committed list 
 ## [2026-10-22] update | W-J: a deep I_a state in the render format
 The renderer line rebuilt the I_a census scramble of seed 7302 at 3000 twists, matched it against its census record and exported it in the render format: 2,684 pose-table entries, against at most 1,591 in the W-J fixtures ([w-j-probe-results](evidence/w-j-probe-results.md)). No W-J run on a deep state has been made; the probe's README and protocol now also record that the GPU lattice check passed (handoff RO-15).
 
+## [2026-10-22] decision | The DT-M1 batch and a hold on design
+The owner chose every recommended option of DT-M1, for now, keeping each question's other options on record as alternatives, and put the design line and the round table on hold after their current stage ([decision](decisions/owner-decisions-2026-10-22-dt-m1.md)); no further design-table topic opens until the owner resumes it.
+
+## [2026-10-22] decision | NumPy for EN2's J1 tests in the cloud session
+The owner allowed a one-off install of NumPy 2.3.5 from the hash-pinned `tools/python/engine.txt` into a virtual environment outside the repository, so that EN2's J1 tests run in the cloud session ([decision](decisions/owner-decisions-2026-10-22.md)); the allowlist, the lockfile and the installer are unchanged.
+
 ## [2026-10-22] decision | Jumbling records from draft #112 on main
 Under Q1 of the 22 October answers, six decision records came to `main` from #112's branch ([#112 merge rule](decisions/owner-decisions-2026-10-17-jumbling-pr.md), [repair list](decisions/owner-decisions-2026-10-17-repair-pairs.md), [B′(h) goal](decisions/owner-decisions-2026-10-18-bprime-goal.md), [machine tutorial](decisions/owner-decisions-2026-10-18-machine-tutorial.md), [tutorial acceptance](decisions/owner-decisions-2026-10-20-tutorial-acceptance.md), [research stop](decisions/owner-decisions-2026-10-20-research-stop.md)), with the handoff pages, the requirements draft's repair-list exception and the briefing's jumbling line; #112 stays a draft. The pages are unchanged except two links to a branch-only research page and a dated note on the #112 merge rule.
 
