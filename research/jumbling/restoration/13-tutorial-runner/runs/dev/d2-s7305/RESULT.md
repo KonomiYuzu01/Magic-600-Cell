@@ -28,6 +28,23 @@ off. Both match the expected values. Wall time about 2,300 s (started 04:04 UTC,
 
 Started 05:13 UTC on 22 October 2026.
 
+Progress note at 07:14 UTC (from `run.json`; the run is not finished, no `bulk-progress.json` since the bulk is
+skipped):
+
+- bulk: `budget`, 0 steps (`--bulk-steps 0`);
+- height: `stuck`, 11 steps, 11 twists, `273eab69…` (105,437 off; n2 103,140, n4 2,297) to `cc5ef7ec…` (109,872 off;
+  n2 108,453, n4 1,419):
+  - `r22d75`: `stuck` (`no_step`) after 11 steps, at `cc5ef7ec…`, as expected (11 letters, n4 = 1,419). The last
+    `r22d75` attempt finished 05:25 UTC;
+  - `r22d81`: `not_applicable` (n6 = 0), as expected;
+  - `h4`: `stuck` (`pair_exhausted`), 0 steps; its pair shards finished about 05:37 UTC;
+- high: `stuck` (`kernel_exhausted`), 0 steps; the kernel's ledger shows F1, F2, F3, d19, S, ST and T1 all
+  `exhausted`; the kernel log finished 06:29 UTC;
+- tail: running since 06:29 UTC (`attempts/00011`); its units log is still empty;
+- lattice: not reached yet.
+
+Next: wait for `runner.rc`, then run `check_run.py` on the record.
+
 ## Step 3: full run (not started)
 
 ## Not run
