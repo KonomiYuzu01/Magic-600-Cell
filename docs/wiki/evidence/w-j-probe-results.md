@@ -12,6 +12,8 @@ claims:
   - {id: wj-i-b-gate-met, evidence_kind: performance, path: work/experiments/renderer-wj/results/wj-I_b-20261010T193029102Z-summary.json, sha256: 3ce21f3f2b5d70644bc5c013f5517e9c20fd904b3cce5f85ba6d4b34c6857330, checked_at: 2026-10-10}
   - {id: wj-w3-reaccepted, evidence_kind: performance, path: work/experiments/renderer-wj/results/w3-20261010T194430557Z-summary.json, sha256: 3cc627af916c9e564851d57b2c853ef389e24ddf5b634629908ce6e0cfa7c868, checked_at: 2026-10-10}
   - {id: wj-result-card, evidence_kind: actual_windows_directx, path: work/experiments/renderer-wj/RESULT.md, sha256: 56a0fd7db1279acf9882b2b42c1b15c7bf521c3f3537ba620faf1aae30191f13, checked_at: 2026-10-10}
+  - {id: wj-deep-export-7302, evidence_kind: fixture, path: work/experiments/renderer-wj/deep/ia-k3000-s7302-summary.json, sha256: a86477321d0e15c234c5dabc01d9d520b72da534d6a083c265582c27b93e556b, checked_at: 2026-10-22}
+  - {id: wj-deep-export-bbef1c8e, evidence_kind: fixture, path: work/experiments/renderer-wj/deep/bbef1c8e-summary.json, sha256: 336dd31c7210b4f59a3b84a7aacdecc4d87fe4d947bf3a246468587c2cd7b2e4, checked_at: 2026-10-22}
 ---
 
 # W-J probe results
@@ -54,8 +56,25 @@ The results hold only on the owner's machine, under the recorded conditions, for
 - **A runner defect voided the first attempt.** The runner assigned its confirmation text to `$overlay`. PowerShell names ignore case, so that is the parameter `-Overlay`, whose value set rejects the text, and every series stopped after run 1. The four runs of that attempt count for nothing. The fix renames the variable (review `20261010T200533Z-4f7766fb`, pass).
 - **Stray console input can reach the confirmation prompt.** In one I_a series, text that was pasted or typed while the probe was on screen appeared at the prompt. The runner refused that run, as it should, and the series ran again from run 1. All three capture runners now flush the console input buffer before the prompt. That flush has not been tested in an attended run yet.
 
+## Deep states in the render format (CPU)
+
+Before any W-J run on a deep state, the jumbling handoff asks for a render-format export of one, with its array digests and pose-table size (item RH-23). The re-plan of 22 October 2026 asks for one 3000-twist scramble and one height-4 state (R3). On 22 October 2026 `deep_export.py` exported both from committed inputs and matched each against every compared field and checkpoint ([README](../../../work/experiments/renderer-wj/README.md)).
+
+The I_a census scramble of seed 7302 at 3000 twists ([summary](../../../work/experiments/renderer-wj/deep/ia-k3000-s7302-summary.json)) matched its census record:
+- 2,684 pose-table entries, 488 in K+ and 2,196 off the lattice, all in use; the end stages of the three W-J fixtures have 1,248 to 1,591;
+- 118,821 pieces off the lattice, at heights 2, 4 and 6;
+- largest entry numerator or denominator 32, as at the S4 fixture's end.
+
+The height-4 state `bbef1c8e…` of the jumbling line ([summary](../../../work/experiments/renderer-wj/deep/bbef1c8e-summary.json)) is the same scramble, then the census record's 313 descent moves, then 12 committed letters ([letters](../../../work/experiments/renderer-wj/deep/bbef1c8e-letters.json)). The tool played only those twists. The record's end fields, the census stop digest and the digests after letters 7 and 12 all matched. The state has:
+- 2,798 pose-table entries, 610 in K+ and 2,188 off the lattice, all in use;
+- 103,896 pieces off the lattice, 102,960 at height 2 and 936 at height 4;
+- largest entry numerator or denominator 16.
+
+This is CPU evidence about the data. It is not a W-J run and not a performance result.
+
 ## What it does not show
 
 - It does not show that W-J is accepted. The overlay costs (acceptance item 7) are unmeasured.
+- It gives no W-J run on a deep state. The probe needs a deep fixture built around an exported state first.
 - It does not show that any renderer is selected. Selection needs the day-7 go/no-go ruling ([renderer-candidates](../decisions/renderer-candidates.md)).
 - It gives no results for the overlays, other hardware, other resolutions or refresh rates, frame generation, or long sessions.
