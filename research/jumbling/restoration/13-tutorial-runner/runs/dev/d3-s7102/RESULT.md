@@ -27,3 +27,12 @@ The cache directory is outside the repository. Started at 13:40 UTC. Bulk compar
 
 - 13:50 UTC: the start state matches the census record (115,566 off, N 73,454). The first two bulk steps agree with
   the census record (rule, twists, N, off and the twists themselves).
+- 15:43 UTC check-in: **the container had restarted** (uptime 0 min, no runner or checkpoint process, no
+  `runner.rc`). The record's last save was at 13:49 UTC: 25 bulk steps, 39 twists, 508 s of runner time. The
+  checkpoint helper had committed **no checkpoint**: the runner stopped before the first 900 s round, and
+  `checkpoint.out` is empty. So there was no `out-checkpoint` to restore. The local `out/` and the cache had survived on
+  disk. I started the identical runner command with `--resume` on that `out/`, appending to `runner.out`, and
+  started `checkpoint.py` beside it again. The resume was accepted: it replayed the 25 steps, checked each step's
+  before and after digests and word hashes, and recorded `resumes: [{at_step: 25, seconds: 508.3, source: 4024027
+  (dirty: the untracked run files)}]`. This differs from step 4 of the task (restore a checkpoint into an empty
+  `out/`) only because no checkpoint existed. The resume's own checks are the same.
