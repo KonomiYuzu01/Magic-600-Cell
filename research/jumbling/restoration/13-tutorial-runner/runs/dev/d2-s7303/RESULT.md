@@ -1,6 +1,7 @@
 # D2, seed 7303 from its 3000-twist scramble (development line d2-s7303)
 
-Status: **in progress** (progress note, 22 October 2026, 06:50 UTC). The run has not ended; no check has run yet.
+Status: **in progress** (progress note, 22 October 2026, 07:10 UTC). The first run was killed by a container restart;
+a second run of the same command started at 07:08 UTC. No check has run yet.
 
 ## Question
 
@@ -21,7 +22,7 @@ The run was started detached at 04:05 UTC in development mode, the default.
 Start digest `ee1a56a8bef6b56dbb3debc117b394c1d43260497c678c3a2838ae0b17a76822`, 116,111 pieces off, left heights
 {2: 114,470, 4: 1,552, 6: 89}. This matches the 3000-twist table of `11-scramble-census/README.md` (seed 7303).
 
-## Progress at 06:50 UTC
+## Run 1 (killed by a container restart; partial record in `killed-1/`)
 
 The scramble build took about 70 minutes; the bulk began at about 05:15 UTC, so its 18,900 s clock ends at about
 10:30 UTC.
@@ -35,6 +36,22 @@ The scramble build took about 70 minutes; the bulk began at about 05:15 UTC, so 
 - `bulk-progress.json`: `{"step_started": 9969.249017724}` (step 74 under way). `logs/bulk.log` is empty.
 
 Times are cloud timings of research code on a shared headless Linux machine, not performance evidence.
+
+Between 06:50 and 07:08 UTC the session's container was restarted. The restart killed the runner (no exit code,
+no `runner.rc`; `runner.out` is empty) during bulk step 82. The runner has no resume option. Its last `run.json`,
+written after step 81, is kept unchanged in `killed-1/d2-s7303/` (with `tables/bulk-end.json` of that state):
+
+- 82 bulk steps: 77 `conj`, 5 `cover`; 236 twists; 6,614 s of step time;
+- after step 81: digest `b431232b…`, 98,912 off, N 115,540, heights {2: 97,647, 4: 1,176, 6: 89};
+- `bulk-progress.json` at the kill: `{"step_started": 11007.014704082}`;
+- `phases.bulk.result` reads `budget`, the value written after each step; the bulk had not ended.
+
+This partial record was not checked. It is evidence of the interruption, not a result.
+
+## Run 2 (same command, fresh `--out` and `--cache`, started 07:08 UTC)
+
+Running. The bulk rules break ties by fixed keys, so run 2 should repeat run 1's first 82 steps; the comparison will
+be recorded here.
 
 ## Next step
 
