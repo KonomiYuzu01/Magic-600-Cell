@@ -112,6 +112,11 @@ from 131,542 at the start to 130,232; off from 105,437 to 105,144. The last five
 331, 313, 500 and 325 s, N 130,444 → 130,232. `bulk-progress.json`: `{"step_started": 19721.4}` (a step is running).
 `logs/bulk.log` is empty so far.
 
+Progress note at 11:33 UTC: 46 bulk steps (45 `conj`, 1 `cover`), 136 twists, 14,222 s of step time; N 128,758 and
+103,780 off after the last step (the last three: `conj` 3 letters, 407, 346 and 332 s, N 128,924 → 128,758).
+`bulk-progress.json`: `{"step_started": 26759.9}`. `logs/bulk.log` still empty. The bulk clock (21,600 s) ends about
+13:31 UTC.
+
 ## Not run
 
 No Windows, DirectX, native or performance check was run; none is claimed. The component run's tail and lattice phases
