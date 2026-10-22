@@ -43,3 +43,11 @@ The cache directory is outside the repository. Started at 13:40 UTC. Bulk compar
   `checkpoint.py` beside it. Steps 25 to 28 are run again. Both restarts came soon after this session went idle (the
   last saves were at 13:49 and 15:49 UTC), so the container is probably reclaimed when the session is idle, not
   restarted at random. From now on this session keeps a monitor on the run so that it stays active.
+- 18:51 UTC: the runner was alive at 77 bulk steps and 183 twists, at N 34,622 and 34,258 off, after 7,476 s of runner
+  time. All 77 steps agree with the census record (`compare.py`: no difference).
+- 21:08 UTC: **third container restart** (uptime 0 min, no processes, no `runner.rc`). The local record's last save
+  was at 18:53 UTC (78 steps, 7,908 s). The last pushed checkpoint was `09ece1f` (step 77). As in step 4, I moved the
+  surviving `out/` out of the repository, restored the checkpoint into an empty `out/` (exit 0, 77 steps) and resumed
+  with the identical command. The resume was accepted. The record's `resumes` now holds two entries, at steps 25 and
+  77. The first resume (15:43 UTC, at step 25) is not in it, because it lived only in the local `out/` that the
+  16:49 restore replaced. Step 77 (index 77) runs again. From now on the integrator's session sends the check-ins.
