@@ -728,6 +728,7 @@ class LatticePlay:
     def play(self, ctx):
         m, self.work = ctx.mechanics, ctx.work_dir / 'play'
         state, before, steps = m.load(ctx.table), ctx.snapshot(), []
+        start = before['digest']
         for k, (rule, word, tree) in enumerate(self.script):
             if isinstance(m, FakeMechanics):
                 m.play(state, word)
@@ -745,9 +746,15 @@ class LatticePlay:
         if steps:
             steps[-1].fields['labels_identity'] = True
         m.export(state, self.work / 'end-table.json')
-        # The parts of P3's report the runner and the checker read.
-        report = {'restorer': 'scripted', 'player': {'played': {'total': sum(s.letters for s in steps)},
-                                                      'final': {'labels_identity': True}}}
+        # The parts of P3's report the runner and the checker read (I1R-01): the run's restorer, the start and end
+        # digests, a solved player, and played and scheduled counts that add up to the steps' twists.
+        corrections = sum(s.letters for s in steps if s.rule.startswith('lattice/correction'))
+        retained = sum(s.letters for s in steps) - corrections
+        report = {'restorer': ctx.budgets.get('lattice_restorer'), 'player': {
+            'input': {'digest': start}, 'result': 'solved', 'failure': None,
+            'played': {'retained': retained, 'corrections': corrections, 'total': retained + corrections},
+            'scheduled': {'retained': retained, 'corrections': corrections},
+            'final': {'digest': m.snapshot(state)['digest'], 'labels_identity': True}}}
         result = api.LatticeResult(steps, self.work / 'end-table.json', report)
         if self.edit is not None:
             self.edit(result)

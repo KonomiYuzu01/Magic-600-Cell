@@ -1773,8 +1773,11 @@ class CheckRunTests(unittest.TestCase):
                 rec['phases']['lattice']['report'] = write_report(base, restorer, start, C.SOLVED, total, edit=edit)
                 self.check(base, rec, 'lattice_report')
         report.write_bytes(saved)
+        # An identical copy under another name has the same hash, but it is not the file the runner writes.
+        shutil.copyfile(report, base / 'lattice/alternate.json')
         for label, edit in (('hash', lambda r: r.update(sha256='0' * 64)),
                             ('file', lambda r: r.update(file='lattice/none.json')),
+                            ('alternate copy', lambda r: r.update(file='lattice/alternate.json')),
                             ('extra key', lambda r: r.update(extra=1)),
                             ('no report', None)):
             with self.subTest(report=label):
@@ -1784,6 +1787,7 @@ class CheckRunTests(unittest.TestCase):
                 else:
                     edit(rec['phases']['lattice']['report'])
                 self.check(base, rec, 'lattice_report')
+        (base / 'lattice/alternate.json').unlink()
         # The last lattice row's table must hold the replayed end state (I1R-02).
         table = base / 'tables/00000.json'
         saved = table.read_bytes()
@@ -1880,6 +1884,12 @@ class CheckRunTests(unittest.TestCase):
             with self.subTest(label=label):
                 base, rec = self.v3_case(label=label.replace(' ', '-'))
                 self.check(base, no_step(base, rec, **args), failure)
+        # An identical copy of the report under another name is not the file the runner writes (I1R-01).
+        base, rec = self.v3_case(label='alternate-copy')
+        rec = no_step(base, rec)
+        shutil.copyfile(base / 'lattice/report.json', base / 'lattice/alternate.json')
+        rec['phases']['lattice']['report']['file'] = 'lattice/alternate.json'
+        self.check(base, rec, 'lattice_report')
         # At the played fixture's start the labels are not the identity.
         base, rec = self.case('played', 'labels')
         rec['result'] = rec['acceptance']['verdict'] = 'solved'

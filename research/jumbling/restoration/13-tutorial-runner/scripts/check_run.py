@@ -953,16 +953,17 @@ def labels_identity(st):
 
 
 def check_lattice_report(base, data, twists, restorer, start, end, fails):
-    """The plugin's report the runner kept: present, unchanged, and agreeing with the replay (I1R-01): the
-    restorer the configuration names, the digests the checker replayed at the phase's start and end, a
-    solved player with no failure, and the replayed length, all of it scheduled."""
+    """The plugin's report the runner kept: the file the runner writes, lattice/report.json, unchanged, and
+    agreeing with the replay (I1R-01): the restorer the configuration names, the digests the checker replayed at
+    the phase's start and end, a solved player with no failure, and the replayed length, all of it scheduled."""
     report = data.get('report')
     try:
         raw = inside(base, report['file']).read_bytes()
         doc = json.loads(raw)
         player = doc['player']
         played = player['played']
-        ok = (set(report) == {'file', 'sha256'} and hashlib.sha256(raw).hexdigest() == report['sha256']
+        ok = (set(report) == {'file', 'sha256'} and report['file'] == 'lattice/report.json'
+              and hashlib.sha256(raw).hexdigest() == report['sha256']
               and doc['restorer'] == restorer and player['input']['digest'] == start
               and player['final']['digest'] == end and player['final']['labels_identity'] is True
               and player['result'] == 'solved' and player['failure'] is None
