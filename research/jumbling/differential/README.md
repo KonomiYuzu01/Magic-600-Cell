@@ -1,7 +1,8 @@
 # Jumbling differential harness
 
 Status: EN2 slice 1 supplies the NumPy-free harness core; slice 2 adds the J1
-adapter and replays. Reference values and cost leads follow in later packets.
+adapter and replays; slice 3 adds named-cap straddler sets and the cost leads
+in [`leads/`](leads/README.md). Reference values follow in a later packet.
 The store prototype is a separate packet under `candidate/`. Evidence here is
 source, synthetic engines and fixture replays with the J1 reference engine;
 it establishes no candidate-engine, Windows/DirectX or performance result.
@@ -35,9 +36,10 @@ Every adapter uses these definitions:
 All hashes are 64-character lowercase hexadecimal strings. A survey returns
 exactly the requested integer grip ids, each mapped to one letter: `a`
 (admissible), `b` (blocked) or `u` (uncertain). Adapters extract these letters
-from their engine's data. The harness never reads or compares a chosen straddle
-witness, certificates or points; returning certificate objects as survey values
-is a contract error.
+from their engine's data. A survey never reads or compares a chosen straddle witness,
+certificates or points; returning certificate objects as survey values is a
+contract error. Straddler sets are a separate, optional comparison (section
+"Named-cap straddler sets").
 
 `compare(reference, candidate, steps, survey=None, grips=None)` checks fields in
 the order `status`, `moved`, `moved_set`, `digest`, `lattice`, then surveyed
@@ -185,6 +187,47 @@ original records. CI uses the default bounded run.
 J1 against J1 exercises the harness, adapter and recorded references. It
 does not establish agreement with a candidate engine. Headless timings of
 these research replays are not product performance evidence.
+
+## Named-cap straddler sets
+
+A blocked cap's early exit names one straddling piece; the straddler-set rule
+of ENG-0J item 2 needs all of them. `straddlers.straddler_set(state, cap,
+budget=None)` follows J1's pose groups and anchor supersets but keeps every
+straddler, each with J1's exact certificate (two points of the posed piece on
+opposite sides of the cut). It returns `blocked`, the sorted `pieces`, the
+`certificates`, a status, the counts and the evaluation counts. A finite
+exact-evaluation budget may leave pieces uncertain: they count only as
+`uncertain_pieces` and make the status `uncertain`, never clear and never
+straddlers. `check_certificate(state, cap, piece, certificate)` parses the two
+points anew and checks exactly that both lie in the piece's posed region and
+on opposite sides of the cut; it trusts no cached h value, vertex index or
+scan order. Private J1 dependencies: `State._kpose`, `_groups`, `_anchors`,
+`_pose_matrix`, `_eval` and `_straddle_certificate`.
+
+`compare(..., straddlers=None, caps=None, certify=None)` adds this comparison
+after the surveys. `straddlers` selects steps as `survey` does, and `caps`
+(required with it) names the caps. Each engine's optional `straddlers(caps)`
+returns, per requested cap, `blocked` (equal to `bool(pieces)`), `pieces` (a
+sorted list of unique piece ids) and `certificates` keyed by exactly those
+pieces; an uncertain set is a contract error. A bad reference mapping raises
+`ReferenceContractError`; a bad candidate mapping, or a missing method when
+straddler steps are selected, reports `contract`. The blocked flags and piece
+sets are compared cap by cap (field `straddlers`). Certificate contents are
+never compared between engines: when the caller supplies `certify`, bound to
+the reference engine's current state, each candidate certificate is checked
+with it (field `certificate`). `Report.straddlers_compared` counts the
+straddler observations, including a failing one. `J1Engine` implements
+`straddlers` and `certify` with `straddlers.py`.
+
+`tests/test_jumbling_straddlers.py` checks the full sets at four caps of the
+`wj-I_a` state after 60 records against J1's per-piece path over every off
+piece and against the survey, the budget and filtered cases, certificates that
+must fail (moved, swapped, renamed, malformed), J1 against J1 through the
+harness with alternative certificate points, planted set, flag, certificate
+and contract faults stopping at the first bad step, and the X2 and
+classification-cost smoke runs. Synthetic engines in
+`tests/test_jumbling_differential.py` check the comparison's contract without
+NumPy.
 
 ## Import independence
 
