@@ -114,6 +114,14 @@ starts from the scramble in `out3/`, with `checkpoint.py` keeping a verified cop
   before the first checkpoint round at 900 s. No checkpoint existed, so its directory was not kept (46 bulk steps,
   reproducible) and run 3 started again from the scramble at 22:08 UTC, with `checkpoint.py` beside it.
 
+- Run 3, second start (22:08 UTC): killed the same way, after 45 bulk steps and 308 s, again before its first
+  checkpoint (container uptime 23 s at the 23:05 check-in). Started a third time at 23:06 UTC, not kept.
+- Observation for the integrator: run 2 lived from 08:12 to after 15:39 UTC while this session kept a background
+  wait open (`until [ -e <dir>/runner.rc ]; do sleep 60; done`, 2 h timeout). Both run 3 starts after 21:05, with
+  no wait open, died within minutes of the session's turn ending. That suggests the container is reclaimed when the
+  session is idle. From the third start on, the session keeps that one background wait open again (it wakes only
+  when the run ends or after 2 h).
+
 ## Not run
 
 - `check_run.py` (it runs after the runner ends).
