@@ -1,0 +1,26 @@
+LETTER {"n": 1, "letter": [64, 15], "n2_n4_n6": [99935, 1098, 172], "off": 101205, "N": 130670, "digest": "446f4e00093ba0942e37580a21516fca2fd69ace7d1abc7c1756ad4a9bc36b87"}
+LETTER {"n": 2, "letter": [185, 14], "n2_n4_n6": [100797, 1093, 172], "off": 102062, "N": 131082, "digest": "cc5fa964f9293f95244855d470daff706f3df795c28a2e92f8fc616e006261e8"}
+LETTER {"n": 3, "letter": [357, 12], "n2_n4_n6": [101801, 1026, 172], "off": 102999, "N": 131600, "digest": "3a4c0a56d7ad24486786b9ac8e98d1a755a4d74630bbb9539c6b8271cc4dbf54"}
+LETTER {"n": 4, "letter": [471, 12], "n2_n4_n6": [103525, 1019, 172], "off": 104716, "N": 132288, "digest": "0251a333866ca1985376f6ec900cdfe59cd621171dcd18fb2666f43490b047b3"}
+LETTER {"n": 5, "letter": [263, 14], "n2_n4_n6": [103304, 1019, 172], "off": 104495, "N": 132304, "digest": "fd7a61a658014b4de67f526684feac48850e8f4d0adbfd8718ea0c19cdc5779a"}
+LETTER {"n": 6, "letter": [407, 13], "n2_n4_n6": [103146, 1019, 172], "off": 104337, "N": 132504, "digest": "4f58b063ec46555af8da249543633cfb28992066ce7ef174b3fa1099acc16fea"}
+LETTER {"n": 7, "letter": [523, 12], "n2_n4_n6": [103103, 1019, 172], "off": 104294, "N": 132702, "digest": "1ff0061fc5863c8ccbc1d734b003ff49afa5b58969b0031e51fd1e5cf1a07d81"}
+LETTER {"n": 8, "letter": [124, 2], "n2_n4_n6": [103103, 1019, 172], "off": 104294, "N": 132876, "digest": "9a22729150ec96498cc0b77cd672829610c595b65c78b49a8b2881365d74f964"}
+LETTER {"n": 9, "letter": [274, 13], "n2_n4_n6": [102593, 926, 13], "off": 103532, "N": 132572, "digest": "c9cefc314def428f866dce5adc58f91abfec9e72dd98c0fb5253911c884b2125"}
+LETTER {"n": 10, "letter": [46, 1], "n2_n4_n6": [102593, 926, 13], "off": 103532, "N": 132764, "digest": "7465613dc264b22906db4a49db527ff796bf22e4fa7e388ffc5d029976262384"}
+LETTER {"n": 11, "letter": [46, 3], "n2_n4_n6": [102593, 926, 13], "off": 103532, "N": 132710, "digest": "198e936fb8fbe695748a5cdf00466fb72fa6b97b3cee5bac49488c63f8f95414"}
+LETTER {"n": 12, "letter": [104, 14], "n2_n4_n6": [102960, 936, 0], "off": 103896, "N": 132930, "digest": "bbef1c8ec0de78dead1473322a8c1236e48f9ccfe0017ce724461bb7f37ae299"}
+LETTER {"n": 13, "letter": [23, 14], "n2_n4_n6": [102901, 936, 0], "off": 103837, "N": 133134, "digest": "0ad859c24e540a55de416e8a901e4da7b3ddbccc3d6e19a50629ac7b35a87e05"}
+LETTER {"n": 14, "letter": [357, 1], "n2_n4_n6": [102901, 936, 0], "off": 103837, "N": 133084, "digest": "52c9a7154dc67a7de81b09b11fff2cd20f45c2eb0a3f0bbe1655fcf47a51f8e9"}
+LETTER {"n": 15, "letter": [357, 3], "n2_n4_n6": [102901, 936, 0], "off": 103837, "N": 133044, "digest": "e13f5264ae0471fad49390737d82aa7ffc175c693360141bda267afc6ed81ac0"}
+LETTER {"n": 16, "letter": [593, 3], "n2_n4_n6": [102901, 936, 0], "off": 103837, "N": 133238, "digest": "c7d5be2271b315ecaee7713a54ff2fff439c9261e2ee1b179ddde04761e2ae06"}
+LETTER {"n": 17, "letter": [593, 43], "n2_n4_n6": [103571, 936, 0], "off": 104507, "N": 133668, "digest": "6999b9214d6ea25486daf67e650773babff08f1a41742acfddd6eec2f88787ab"}
+LETTER {"n": 18, "letter": [541, 2], "n2_n4_n6": [103571, 936, 0], "off": 104507, "N": 134004, "digest": "fbd3f69d547c87e00b800b83185cf1df5921f85e0e026b53ab2f789a35e134a1"}
+LETTER {"n": 19, "letter": [593, 54], "n2_n4_n6": [103282, 936, 0], "off": 104218, "N": 133834, "digest": "391490f78b2fe76ea07cede387bf335f76d34885c47a7aa0c09ebc8ad3d27da8"}
+LETTER {"n": 20, "letter": [482, 15], "n2_n4_n6": [102750, 734, 0], "off": 103484, "N": 133558, "digest": "c312a2fcb7f2a502908f71b2d9acee8cb9868fb63930b4949483ee5061e830d1"}
+LETTER {"n": 21, "letter": [553, 5], "n2_n4_n6": [102750, 734, 0], "off": 103484, "N": 133566, "digest": "ffe4baf861e0b2c04064af75f840192334b35466622716677b02e45216bd5683"}
+LETTER {"n": 22, "letter": [535, 3], "n2_n4_n6": [102750, 734, 0], "off": 103484, "N": 133678, "digest": "6c7a79d9aa68769261c3ba3d613bfaff5d2d539e57797664418f46e85f594744"}
+LETTER {"n": 23, "letter": [535, 6], "n2_n4_n6": [102750, 734, 0], "off": 103484, "N": 133700, "digest": "b2651c24f07172eb2cf18fa2cf5b61eba12fa2fb2271711feb7c249fb0e27b51"}
+LETTER {"n": 24, "letter": [363, 10], "n2_n4_n6": [102750, 734, 0], "off": 103484, "N": 133828, "digest": "f738bfbbf3a5f0feee1fc8d8b2f7ddc81b04370e23541b9489efd433535c861b"}
+LETTER {"n": 25, "letter": [535, 8], "n2_n4_n6": [102750, 734, 0], "off": 103484, "N": 133818, "digest": "2430f4cc99ea121a6d3476ec21b66fc401e277d13809ad5e1c979e6e0abe1472"}
+END {"digest": "2430f4cc99ea121a6d3476ec21b66fc401e277d13809ad5e1c979e6e0abe1472", "lattice_at_bbef1c8e_now_off": 2289, "off_at_bbef1c8e_now_lattice": 2701, "height4_of_bbef1c8e_now": {"4": 652, "2": 284}, "lattice_at_015d839e_now_off": 10984, "height6_of_015d839e_now": {"4": 185}}

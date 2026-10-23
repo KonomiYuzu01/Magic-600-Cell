@@ -1,0 +1,69 @@
+{
+ "input_digest": "3df781aa71e97904c756b6a49830907a78c802172167f062947920b1870d838c",
+ "V_source": "certificate",
+ "after_V": {
+  "occupied_badW": 0,
+  "off_set_unchanged": true,
+  "off_exact_poses_unchanged": true
+ },
+ "parts": [
+  {
+   "part": "V",
+   "twists": 333,
+   "input_digest": "3df781aa71e97904c756b6a49830907a78c802172167f062947920b1870d838c",
+   "output_digest": "6421155b763853202fe632d6a7970d1c2d673e411d468c02776c021d8976702b",
+   "off_end": 977
+  },
+  {
+   "part": "P",
+   "twists": 0,
+   "input_digest": "6421155b763853202fe632d6a7970d1c2d673e411d468c02776c021d8976702b",
+   "output_digest": "6421155b763853202fe632d6a7970d1c2d673e411d468c02776c021d8976702b",
+   "off_end": 977
+  },
+  {
+   "part": "Q",
+   "twists": 96,
+   "input_digest": "6421155b763853202fe632d6a7970d1c2d673e411d468c02776c021d8976702b",
+   "output_digest": "c0c77ea25c48bc0dd535ef04017012bf43e67641e773fa3542926b12e7c84176",
+   "off_end": 944
+  },
+  {
+   "part": "Pinv",
+   "twists": 0,
+   "input_digest": "c0c77ea25c48bc0dd535ef04017012bf43e67641e773fa3542926b12e7c84176",
+   "output_digest": "c0c77ea25c48bc0dd535ef04017012bf43e67641e773fa3542926b12e7c84176",
+   "off_end": 944
+  },
+  {
+   "part": "Vinv",
+   "twists": 333,
+   "input_digest": "c0c77ea25c48bc0dd535ef04017012bf43e67641e773fa3542926b12e7c84176",
+   "output_digest": "fbd60ecbec3cc486d0e0964fe662761ef4b19b70bd29aa370da0eebb76ad93ab",
+   "off_end": 944
+  }
+ ],
+ "end": {
+  "digest": "fbd60ecbec3cc486d0e0964fe662761ef4b19b70bd29aa370da0eebb76ad93ab",
+  "off": 944,
+  "T_restored": 33,
+  "collateral": 0,
+  "protected_still_off": 944,
+  "protected_exact_pose_changed": 0,
+  "free_on_K": 0,
+  "free_still_off": 0,
+  "free_pose_changed": 0,
+  "lattice_of_S_on_K_at_end": 176143,
+  "lattice_of_S": 176143,
+  "lattice_of_S_same_exact_pose": 176143
+ },
+ "length": 762,
+ "times": {
+  "ghost_premises": 18.6,
+  "menu_and_condition": 19.7,
+  "certificate": 173.1,
+  "prepare": 12.6,
+  "replay": 39.1
+ },
+ "seconds": 263.1
+}

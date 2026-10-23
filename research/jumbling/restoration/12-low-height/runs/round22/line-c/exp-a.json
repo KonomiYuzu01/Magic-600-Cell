@@ -1,0 +1,257 @@
+{
+ "b12": {
+  "start_digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+  "end_digest": "4a0f42717312551e7f531ad3f57de63f0da61236e0b8d54050681d08a2ac0093",
+  "letters": 1158,
+  "unit_size": 41,
+  "unit_on_lattice": 41,
+  "collateral": 0,
+  "others": 1152,
+  "others_exact": 1152,
+  "others_landed": 0,
+  "off_before": 1193,
+  "off_after": 1152,
+  "strict_prime": true,
+  "output_digest_matches": true,
+  "end_table_digest": "4a0f42717312551e7f531ad3f57de63f0da61236e0b8d54050681d08a2ac0093"
+ },
+ "b14": {
+  "start_digest": "4a0f42717312551e7f531ad3f57de63f0da61236e0b8d54050681d08a2ac0093",
+  "end_digest": "526737851b93521afb404c48caf2ad93e48f7828c50a360fd07aae9e7910134a",
+  "letters": 60,
+  "unit_size": 78,
+  "unit_on_lattice": 78,
+  "collateral": 17,
+  "others": 1074,
+  "others_exact": 1074,
+  "others_landed": 0,
+  "off_before": 1152,
+  "off_after": 1091,
+  "strict_prime": false,
+  "end_table_digest": "526737851b93521afb404c48caf2ad93e48f7828c50a360fd07aae9e7910134a"
+ },
+ "b15": {
+  "landing_word": {
+   "letters": 432,
+   "cycle": [
+    [
+     217,
+     324
+    ],
+    [
+     134,
+     217
+    ],
+    [
+     134,
+     324
+    ]
+   ],
+   "exact": {
+    "all_admissible": true,
+    "off_before": 1091,
+    "off_after": 1152,
+    "digest_after": "0b5e08a5c047a0f32a64b84711251a6d8cd83a40c24504c8f484621c62daa25e",
+    "carrier_on_after": 25,
+    "carrier_size": 25,
+    "others_off": 1066,
+    "others_exact_pose_kept": 1066,
+    "lattice_pieces_in_X_before": 86,
+    "newly_off_eq_lattice_pieces_of_X": true,
+    "off_after_eq_others_plus_latX": true
+   }
+  },
+  "closure": {
+   "result": "no V",
+   "times": {
+    "ghost_premises": 16.9,
+    "menu_and_condition": 24.9
+   },
+   "premises": {
+    "state_digest": "0b5e08a5c047a0f32a64b84711251a6d8cd83a40c24504c8f484621c62daa25e",
+    "off": 1152,
+    "N1": false,
+    "N2": false,
+    "fixed_occupied": [
+     63080,
+     63081,
+     63084,
+     63114,
+     63115,
+     63134,
+     63135,
+     63136,
+     63137,
+     63138,
+     69356,
+     69357,
+     69361,
+     74638,
+     74640,
+     74641,
+     74651,
+     74652,
+     74657,
+     74658,
+     74672,
+     74674,
+     87840,
+     99278,
+     99281
+    ],
+    "deficits": [
+     {
+      "orbit": 448,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 449,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 452,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 482,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 483,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 500,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 501,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 502,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 503,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 504,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 773,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 774,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 778,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 876,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 878,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 879,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 885,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 886,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 888,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 889,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 892,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 893,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 1223,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 1370,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     },
+     {
+      "orbit": 1372,
+      "have": 0,
+      "need": 1,
+      "deficit": 1
+     }
+    ]
+   }
+  }
+ }
+}

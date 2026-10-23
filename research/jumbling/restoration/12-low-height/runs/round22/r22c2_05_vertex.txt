@@ -1,0 +1,18 @@
+{"off": 1193, "blocks": [33, 72, 111, 63, 45, 61, 10, 111, 33, 58, 34, 29, 41, 101, 78, 25, 111, 86, 5, 16, 60, 10], "straddling": 22, "status_3": 0, "sec": 27}
+{"Q_free_common_cap": 286, "case": "b15", "all_fixed_chambers_movable_by_its_retained_group": 25}
+{"Q_free_common_cap": 429, "case": "u130", "all_fixed_chambers_movable_by_its_retained_group": 48}
+{"Q_free_common_cap": 555, "case": "u180", "all_fixed_chambers_movable_by_its_retained_group": 32}
+{"b06_Q": 375, "cell": 385, "outside_holes": 1183, "type_deficits": {"6": 2}, "reference_landing_item": 14}
+{"item": 14, "fixed": [], "Q_only_fixed": [], "minimal_Qfree_blockers": [], "first_certificate": null}
+{"item": 21, "fixed": [], "Q_only_fixed": [], "minimal_Qfree_blockers": [], "first_certificate": null}
+{"item": 23, "fixed": [], "Q_only_fixed": [], "minimal_Qfree_blockers": [], "first_certificate": null}
+{"item": 43, "fixed": [], "Q_only_fixed": [], "minimal_Qfree_blockers": [], "first_certificate": null}
+{"item": 44, "fixed": [], "Q_only_fixed": [], "minimal_Qfree_blockers": [], "first_certificate": null}
+{"item": 45, "fixed": [18427, 18563, 18429, 18564, 21754, 21768, 21769, 21770, 21771, 29372], "Q_only_fixed": [], "minimal_Qfree_blockers": [[[0, 1, 2, 3, 4, 5], 10]], "first_certificate": {"chamber": 18427, "caps": [{"grip": 17, "Q": null, "units": [0, 1, 2, 3, 4, 5], "moves": true, "off_witness": [83, 1]}, {"grip": 60, "Q": [12964, "straddle"], "units": [0, 1, 2, 3, 4, 5], "moves": true, "off_witness": [83, 1]}, {"grip": 56, "Q": [11723, "straddle"], "units": [0, 1, 2, 3, 4, 5], "moves": true, "off_witness": [83, 1]}, {"grip": 67, "Q": [11722, "in"], "units": [0, 1, 2, 3, 4, 5], "moves": true, "off_witness": [83, 1]}, {"grip": 91, "Q": [11722, "in"], "units": [0, 1, 2, 3, 4, 5], "moves": true, "off_witness": [83, 1]}]}}
+{"item": 46, "fixed": [], "Q_only_fixed": [], "minimal_Qfree_blockers": [], "first_certificate": null}
+{"item": 47, "fixed": [], "Q_only_fixed": [], "minimal_Qfree_blockers": [], "first_certificate": null}
+{"item": 48, "fixed": [], "Q_only_fixed": [], "minimal_Qfree_blockers": [], "first_certificate": null}
+{"item": 49, "fixed": [], "Q_only_fixed": [], "minimal_Qfree_blockers": [], "first_certificate": null}
+{"item": 50, "fixed": [], "Q_only_fixed": [], "minimal_Qfree_blockers": [], "first_certificate": null}
+{"item": 51, "fixed": [], "Q_only_fixed": [], "minimal_Qfree_blockers": [], "first_certificate": null}
+completed_without_cutoff

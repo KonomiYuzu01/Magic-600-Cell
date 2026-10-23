@@ -1,0 +1,16 @@
+{
+  "format": "acceptance-config/1",
+  "options": {
+    "literal_limit": 10000000,
+    "seeds": "atlas",
+    "tail_rules": ["zero_bad", "pure", "close", "t1prime"],
+    "lattice_restorer": "schedule11",
+    "fallback_max_length": 1,
+    "par": 1,
+    "pair_shards": 4,
+    "bulk_steps": null,
+    "tail_steps": 0,
+    "high_steps": null,
+    "no_lattice": false
+  }
+}

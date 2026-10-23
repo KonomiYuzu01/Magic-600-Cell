@@ -1,0 +1,838 @@
+{
+ "format": "tutorial-ch02-examples/1",
+ "bulk_order": [
+  "seam",
+  "cover",
+  "close",
+  "conj",
+  "lock",
+  "improve",
+  "shift"
+ ],
+ "solved_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+ "A_bulk_s7001": {
+  "k": 10,
+  "seed": 7001,
+  "start": {
+   "digest": "1438ebed339490d2875e343063e7e79fd51b6a7621f2bf1a054beb5ef7c6d6b1",
+   "off": 26519,
+   "N": 13270
+  },
+  "start_same_as_d0": true,
+  "result": "lattice",
+  "end_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "end_is_solved_digest": true,
+  "steps": [
+   {
+    "rule": "seam",
+    "word": [
+     [
+      72,
+      18
+     ]
+    ],
+    "N_before": 13270,
+    "N_after": 11704,
+    "off_after": 23422,
+    "digest_after": "ab254e2af1775b8161092aed06d35252e81e63fa427fd75dc2d7f9aeb5b1c7f9"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      380,
+      38
+     ]
+    ],
+    "N_before": 11704,
+    "N_after": 10138,
+    "off_after": 20325,
+    "digest_after": "908f050bc7e43e0273e99a509b0d19f41fe49619094834b0067290775239ed22"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      519,
+      26
+     ]
+    ],
+    "N_before": 10138,
+    "N_after": 8572,
+    "off_after": 17228,
+    "digest_after": "5b8a06998e9bb6624595bc8b7933bdec462cff8c73b4337bf73a24dfa4df7d36"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      11,
+      18
+     ]
+    ],
+    "N_before": 8572,
+    "N_after": 7212,
+    "off_after": 14466,
+    "digest_after": "48256dda6acffd017fbe7b560b85d1a70653b3890a6d172d7b769d1eec809af9"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      279,
+      12
+     ]
+    ],
+    "N_before": 7212,
+    "N_after": 5852,
+    "off_after": 11764,
+    "digest_after": "7266d536a60125ae21c0a62320235b9f13da256b784d792b2fa0e092bf253549"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      120,
+      24
+     ]
+    ],
+    "N_before": 5852,
+    "N_after": 4286,
+    "off_after": 8667,
+    "digest_after": "e024fd075eeb5b64deb9a4f4cf5096f81d41aaa2d8785e39ae76ca1d334cb172"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      310,
+      57
+     ]
+    ],
+    "N_before": 4286,
+    "N_after": 2926,
+    "off_after": 5859,
+    "digest_after": "6dd3be75ac435c0ceeab5fc3952c69e67176724ce55e2ea53ff255364bfdbede"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      151,
+      35
+     ]
+    ],
+    "N_before": 2926,
+    "N_after": 1566,
+    "off_after": 3097,
+    "digest_after": "3420321c8ad49126036742faab368caa2203e83c64c8a0dddae0edd67fc96f46"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      194,
+      58
+     ]
+    ],
+    "N_before": 1566,
+    "N_after": 0,
+    "off_after": 0,
+    "digest_after": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   }
+  ],
+  "same_as_d0_record": true,
+  "d0_record": {
+   "file": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7001/run/run.json",
+   "format": "runner-run/3",
+   "mode": "acceptance",
+   "source_commit": "cd5e6e8c81c078f042fa4544cbf8f3c11d6b445e",
+   "bulk_result": "lattice"
+  }
+ },
+ "C_cache_s7001": {
+  "states_checked": 9,
+  "values_compared": {
+   "scores": 4671,
+   "inside": 4671,
+   "balance": 20
+  },
+  "mismatches": 0,
+  "per_step": [
+   {
+    "index": 0,
+    "cap": 72,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 6
+    },
+    "mismatches": []
+   },
+   {
+    "index": 1,
+    "cap": 380,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 5
+    },
+    "mismatches": []
+   },
+   {
+    "index": 2,
+    "cap": 519,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 3
+    },
+    "mismatches": []
+   },
+   {
+    "index": 3,
+    "cap": 11,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 2
+    },
+    "mismatches": []
+   },
+   {
+    "index": 4,
+    "cap": 279,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 2
+    },
+    "mismatches": []
+   },
+   {
+    "index": 5,
+    "cap": 120,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 2
+    },
+    "mismatches": []
+   },
+   {
+    "index": 6,
+    "cap": 310,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 0
+    },
+    "mismatches": []
+   },
+   {
+    "index": 7,
+    "cap": 151,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 0
+    },
+    "mismatches": []
+   },
+   {
+    "index": 8,
+    "cap": 194,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 0
+    },
+    "mismatches": []
+   }
+  ]
+ },
+ "B_s7106_index17": {
+  "before": {
+   "N": 1772,
+   "off": 3097,
+   "digest": "6ad02947ab7da45819fc19d323595fb8a25f038a6e852e207a4f1e3246ad8678",
+   "survey": {
+    "523": {
+     "N_c": 1463,
+     "best": 103,
+     "drop": 1360,
+     "In": 886,
+     "Out": 783,
+     "A": 103,
+     "floor": 103,
+     "face_test_bound": 1566
+    },
+    "550": {
+     "N_c": 103,
+     "best": 103,
+     "drop": 0,
+     "In": 680,
+     "Out": 783,
+     "A": 680,
+     "floor": 103,
+     "face_test_bound": 0
+    },
+    "592": {
+     "N_c": 206,
+     "best": 0,
+     "drop": 206,
+     "In": 680,
+     "Out": 680,
+     "A": 577,
+     "floor": 0,
+     "face_test_bound": 206
+    }
+   },
+   "face_caps": [
+    592
+   ],
+   "cap_523": {
+    "scores_none": false,
+    "N_c": 1463,
+    "inside_pieces": 3386,
+    "inside_off": 3097
+   },
+   "cap_550": {
+    "scores_none": false,
+    "N_c": 103,
+    "inside_pieces": 2808,
+    "inside_off": 0
+   },
+   "cap_592": {
+    "scores_none": false,
+    "N_c": 206,
+    "inside_pieces": 2808,
+    "inside_off": 0
+   }
+  },
+  "cap_592_items": {
+   "best_items": [
+    2,
+    9,
+    11
+   ],
+   "closing_items": [
+    2,
+    9,
+    11
+   ],
+   "after_item_9": 0,
+   "after_item_0": 206
+  },
+  "after": {
+   "N": 1566,
+   "off": 3097,
+   "digest": "cbb94994229ecbc86417ee4ec9a530b3bcc5a8fe0095a84f23b9ddfd8e3167ac",
+   "survey": {
+    "523": {
+     "N_c": 1566,
+     "best": 0,
+     "drop": 1566,
+     "In": 783,
+     "Out": 783,
+     "A": 0,
+     "floor": 0,
+     "face_test_bound": 1566
+    }
+   },
+   "face_caps": [
+    523
+   ],
+   "cap_523": {
+    "scores_none": false,
+    "N_c": 1566,
+    "inside_pieces": 3097,
+    "inside_off": 3097
+   },
+   "cap_550": {
+    "scores_none": false,
+    "N_c": 0,
+    "inside_pieces": 3097,
+    "inside_off": 0
+   },
+   "cap_592": {
+    "scores_none": false,
+    "N_c": 0,
+    "inside_pieces": 2808,
+    "inside_off": 0
+   }
+  }
+ },
+ "A_bulk_s7106": {
+  "k": 20,
+  "seed": 7106,
+  "start": {
+   "digest": "9ad04d455632d217ec922cad22721d5b3bd5d56f63786fdb78ad7c9620097083",
+   "off": 51828,
+   "N": 26942
+  },
+  "start_same_as_d0": true,
+  "result": "lattice",
+  "end_digest": "1b263d3e9e0b9dcd2feece889acf0d20c8c96492e2a5e895034be3dd9c46578e",
+  "end_is_solved_digest": false,
+  "steps": [
+   {
+    "rule": "seam",
+    "word": [
+     [
+      20,
+      34
+     ]
+    ],
+    "N_before": 26942,
+    "N_after": 25376,
+    "off_after": 48731,
+    "digest_after": "8a60401eb058626fd651d0dd1810a56d76967a44663df863c9b0a0d2f8350b2a"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      77,
+      28
+     ]
+    ],
+    "N_before": 25376,
+    "N_after": 23810,
+    "off_after": 45634,
+    "digest_after": "3d5614dbde65e864466324a740d1c789f51b0193c11873851b77d75821b3bf64"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      117,
+      13
+     ]
+    ],
+    "N_before": 23810,
+    "N_after": 22244,
+    "off_after": 42537,
+    "digest_after": "a814ce69625980fe9ef9abb43fe23ec5323912e78403a5bfc2c43845e3e11bae"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      156,
+      39
+     ]
+    ],
+    "N_before": 22244,
+    "N_after": 20678,
+    "off_after": 39440,
+    "digest_after": "d02d1801bf8d6b511e48292bba6b7b983078d06e4bb1b91f1d04ead8a318311c"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      580,
+      31
+     ]
+    ],
+    "N_before": 20678,
+    "N_after": 19112,
+    "off_after": 36343,
+    "digest_after": "c406fcb71ebd83700b9d481ca4423c68746afabe2f5f5f39a139181398deb394"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      74,
+      18
+     ]
+    ],
+    "N_before": 19112,
+    "N_after": 17648,
+    "off_after": 33729,
+    "digest_after": "5c65985bfbe2366d5a89857b6d7cb1c593b11d9f8cb871f14ef0b9d652d47086"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      167,
+      44
+     ]
+    ],
+    "N_before": 17648,
+    "N_after": 16196,
+    "off_after": 31422,
+    "digest_after": "0e1874bc4ebced059bb0527e37166ad22e9b2241a0f099a1fb1fedb1686aad76"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      162,
+      57
+     ]
+    ],
+    "N_before": 16196,
+    "N_after": 14836,
+    "off_after": 28660,
+    "digest_after": "15d6e7b190de1994a8d5d9d92848c77ab803eb7251bb7dbd69320b00b25d0a41"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      228,
+      23
+     ]
+    ],
+    "N_before": 14836,
+    "N_after": 13476,
+    "off_after": 25958,
+    "digest_after": "d2e2ad45719b18a73de319a1c01147eb477575422d052e5d90dae12ea7bf740d"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      320,
+      33
+     ]
+    ],
+    "N_before": 13476,
+    "N_after": 11910,
+    "off_after": 23256,
+    "digest_after": "c22e54a2e8298642fe1f0177908f35898ff692fabb1d8e8b122b013106e2c92c"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      305,
+      33
+     ]
+    ],
+    "N_before": 11910,
+    "N_after": 10550,
+    "off_after": 20554,
+    "digest_after": "c8adcd49491a6fa598fb0afd750b53e6163611cb14c22644acb98a2e8b00670b"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      409,
+      33
+     ]
+    ],
+    "N_before": 10550,
+    "N_after": 8984,
+    "off_after": 17457,
+    "digest_after": "bd70a010a97c5e4caadc85e548c8ab63f96eba2815a57cab81fadf105812209b"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      328,
+      20
+     ]
+    ],
+    "N_before": 8984,
+    "N_after": 7624,
+    "off_after": 14755,
+    "digest_after": "1570dcd622e3c1cb05910ad0f732f0ddf8db837ef84b2a386430d604f093724d"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      407,
+      41
+     ]
+    ],
+    "N_before": 7624,
+    "N_after": 6264,
+    "off_after": 12053,
+    "digest_after": "9e715aaecb5c6a075a00396ac07ca5956f3029f2c116b37061c926f2dc3e207b"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      338,
+      19
+     ]
+    ],
+    "N_before": 6264,
+    "N_after": 4698,
+    "off_after": 8956,
+    "digest_after": "07f86f7309972717511ce4c546e0a67800b841d4977739f4704110cd81480060"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      462,
+      32
+     ]
+    ],
+    "N_before": 4698,
+    "N_after": 3338,
+    "off_after": 6194,
+    "digest_after": "f3b66414aead309a19e42b1462cad86a9a2b485e6e9cf1b9c03ac1795e52e128"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      394,
+      30
+     ]
+    ],
+    "N_before": 3338,
+    "N_after": 1772,
+    "off_after": 3097,
+    "digest_after": "6ad02947ab7da45819fc19d323595fb8a25f038a6e852e207a4f1e3246ad8678"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      592,
+      9
+     ]
+    ],
+    "N_before": 1772,
+    "N_after": 1566,
+    "off_after": 3097,
+    "digest_after": "cbb94994229ecbc86417ee4ec9a530b3bcc5a8fe0095a84f23b9ddfd8e3167ac"
+   },
+   {
+    "rule": "seam",
+    "word": [
+     [
+      523,
+      33
+     ]
+    ],
+    "N_before": 1566,
+    "N_after": 0,
+    "off_after": 0,
+    "digest_after": "1b263d3e9e0b9dcd2feece889acf0d20c8c96492e2a5e895034be3dd9c46578e"
+   }
+  ],
+  "same_as_d0_record": true,
+  "d0_record": {
+   "file": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7106/run/run.json",
+   "format": "runner-run/3",
+   "mode": "acceptance",
+   "source_commit": "cd5e6e8c81c078f042fa4544cbf8f3c11d6b445e",
+   "bulk_result": "lattice"
+  }
+ },
+ "C_cache_s7106": {
+  "states_checked": 19,
+  "values_compared": {
+   "scores": 9861,
+   "inside": 9861,
+   "balance": 173
+  },
+  "mismatches": 0,
+  "per_step": [
+   {
+    "index": 0,
+    "cap": 20,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 18
+    },
+    "mismatches": []
+   },
+   {
+    "index": 1,
+    "cap": 77,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 16
+    },
+    "mismatches": []
+   },
+   {
+    "index": 2,
+    "cap": 117,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 19
+    },
+    "mismatches": []
+   },
+   {
+    "index": 3,
+    "cap": 156,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 17
+    },
+    "mismatches": []
+   },
+   {
+    "index": 4,
+    "cap": 580,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 13
+    },
+    "mismatches": []
+   },
+   {
+    "index": 5,
+    "cap": 74,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 15
+    },
+    "mismatches": []
+   },
+   {
+    "index": 6,
+    "cap": 167,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 10
+    },
+    "mismatches": []
+   },
+   {
+    "index": 7,
+    "cap": 162,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 12
+    },
+    "mismatches": []
+   },
+   {
+    "index": 8,
+    "cap": 228,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 10
+    },
+    "mismatches": []
+   },
+   {
+    "index": 9,
+    "cap": 320,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 9
+    },
+    "mismatches": []
+   },
+   {
+    "index": 10,
+    "cap": 305,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 7
+    },
+    "mismatches": []
+   },
+   {
+    "index": 11,
+    "cap": 409,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 8
+    },
+    "mismatches": []
+   },
+   {
+    "index": 12,
+    "cap": 328,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 4
+    },
+    "mismatches": []
+   },
+   {
+    "index": 13,
+    "cap": 407,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 5
+    },
+    "mismatches": []
+   },
+   {
+    "index": 14,
+    "cap": 338,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 5
+    },
+    "mismatches": []
+   },
+   {
+    "index": 15,
+    "cap": 462,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 3
+    },
+    "mismatches": []
+   },
+   {
+    "index": 16,
+    "cap": 394,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 2
+    },
+    "mismatches": []
+   },
+   {
+    "index": 17,
+    "cap": 592,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 0
+    },
+    "mismatches": []
+   },
+   {
+    "index": 18,
+    "cap": 523,
+    "compared": {
+     "scores": 519,
+     "inside": 519,
+     "balance": 0
+    },
+    "mismatches": []
+   }
+  ]
+ },
+ "seconds": 446.2
+}

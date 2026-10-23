@@ -1,0 +1,1 @@
+{"run": "ia-k3000-s7305", "record": "ia-k3000-s7305.json", "result": "time-limit", "continued_from_moves": 49, "steps": 35, "twists": 103, "off_now": 105437, "N_now": 131542, "heights_now": {"2": 103140, "4": 2297}, "off_poses_now": 1805, "digest": "273eab69dee9e3a2f4a3997a75f6b8d9ad16814fa26b941bf7a219247f9bab6d", "pass": true, "fails": []}

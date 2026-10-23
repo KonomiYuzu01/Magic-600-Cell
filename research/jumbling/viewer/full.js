@@ -9,7 +9,13 @@ const $ = (id) => document.getElementById(id);
 const COUNTS = { pieces: 177120, slots: 259800, cells: 600, base_stickers: 433, base_vertices: 30480 };
 const MENUS = ['S4', 'I_a', 'I_b'];
 const DTYPES = { '<f4': Float32Array, '<i4': Int32Array, '<u4': Uint32Array };
-const B64 = new URLSearchParams(location.search).has('b64');
+const PARAMETERS = new URLSearchParams(location.search);
+const B64 = PARAMETERS.has('b64');
+const SHOT = PARAMETERS.has('shot');
+// Cell-centre angles: the 56 vertex-touching neighbours end at 44.4775 degrees;
+// the next shell starts at 49.1176 degrees. 45 degrees separates them for every cap.
+const NEAR_GHOST_ANGLE = Math.PI / 4;
+let shot = null, shotQ = null, ghostMesh = null;
 const app = { ready: false, errors: [], model: null, playing: false, view: { menu: 'S4', state: 'end', t: 0 } };
 window.fullViewer = app;
 let catalog, geometry, overlay, state, renderer, scene, camera, controls, mesh, material, width = 1024;
@@ -178,17 +184,27 @@ async function loadState(menu, stage, o) {
   requireValue(entry, `${menu}/${stage}: state was not exported`);
   const path = stage === 'solved' ? 'full/solved/' : `full/${menu}/${stage}/`;
   const h = await jsonFile(`${path}header.json`);
-  checkDimension(h, 'header.json');
-  requireValue(h.format === 'magic600-jumbling-render/1' && h.pieces === 177120
-    && Number.isInteger(h.poses) && h.poses >= 1 && h.poses <= 177121
-    && Number.isInteger(h.revision) && h.revision >= 0 && hexDigest(h.digest), 'header.json: invalid state counts or digest');
-  requireValue(sameIdentity(h.model_identity, geometry.header.model_identity) && h.contract_revision === o.header.contract_revision
+  requireValue(h.contract_revision === o.header.contract_revision
     && (stage === 'solved' || h.menu_identity === o.header.menu_identity), 'header.json: state identity or contract mismatch');
   requireValue(h.digest === entry.digest && h.revision === entry.revision && h.fixture.stage === (stage === 'solved' ? 'start' : stage),
     'header.json: catalog revision mismatch');
   if (stage === 'end') requireValue(h.digest === o.header.end.digest && h.revision === o.header.end.records, 'header.json: end survey mismatch');
   if (stage === 'sweep-before') requireValue(h.digest === o.header.sweep.before.digest && h.revision === o.header.sweep.from_revision
     && sameArrayFiles(h.files, o.header.sweep.before.arrays), 'header.json: sweep revision mismatch');
+  const s = await loadStateArrays(path, h);
+  requireValue(s.off === entry.off_lattice && (stage !== 'end' || s.off === o.header.end.off_lattice),
+    'header.json: lattice count differs from fixture');
+  return s;
+}
+
+// Fixture and tutorial states share every array, model and dimension check, before upload.
+async function loadStateArrays(path, h) {
+  checkDimension(h, 'header.json');
+  requireValue(h.format === 'magic600-jumbling-render/1' && h.pieces === 177120
+    && Number.isInteger(h.poses) && h.poses >= 1 && h.poses <= 177121
+    && Number.isInteger(h.revision) && h.revision >= 0 && hexDigest(h.digest), 'header.json: invalid state counts or digest');
+  requireValue(sameIdentity(h.model_identity, geometry.header.model_identity)
+    && hexDigest(h.menu_identity) && typeof h.contract_revision === 'string', 'header.json: state identity or contract mismatch');
   exactFiles(h.files, ['pose_index.i32', 'poses.f32', 'pose_lattice.i32'], 'header.json');
   const [index, poses, lattice] = await Promise.all([
     arrayFile(`${path}pose_index.i32`, h.files['pose_index.i32'], '<i4', [177120]),
@@ -200,8 +216,68 @@ async function loadState(menu, stage, o) {
     'header.json: pose zero must be the identity');
   let off = 0;
   for (const p of index) if (lattice[p] < 0) off++;
-  requireValue(off === entry.off_lattice && (stage !== 'end' || off === o.header.end.off_lattice), 'header.json: lattice count differs from fixture');
   return { header: h, index, poses, lattice, off };
+}
+
+function shotParameters() {
+  const name = PARAMETERS.get('shot');
+  requireValue(/^[A-Za-z0-9_-]{1,64}$/.test(name), 'Invalid tutorial shot name');
+  const choice = (key, fallback, values) => {
+    const value = PARAMETERS.get(key) ?? fallback;
+    requireValue(values.includes(value), `Invalid shot ${key}`);
+    return value;
+  };
+  const size = (key, fallback) => {
+    const value = PARAMETERS.get(key) ?? String(fallback);
+    requireValue(/^[1-9][0-9]*$/.test(value) && Number(value) <= 8192, `Invalid shot ${key} (1..8192)`);
+    return Number(value);
+  };
+  const shrink = (key, fallback) => {
+    const value = PARAMETERS.get(key) ?? String(fallback);
+    requireValue(/^(0|1)(\.[0-9]{1,2})?$/.test(value) && Number(value) >= 0.4 && Number(value) <= 1,
+      `Invalid shot ${key} (0.40..1.00)`);
+    return Number(value);
+  };
+  const cap = PARAMETERS.get('cap');
+  requireValue(cap === null || (/^(0|[1-9][0-9]*)$/.test(cap) && Number(cap) < 600), 'Invalid shot cap (0..599)');
+  const view = choice('view', 'global', ['global', 'local']);
+  const ghost = choice('ghost', view === 'local' ? 'near' : 'all', ['near', 'all', 'none']);
+  const emph = choice('emph', 'moved', ['moved', 'off', 'none']);
+  const fit = choice('fit', 'all', ['all', 'cap', 'core']);
+  requireValue(fit !== 'cap' || view === 'local', 'Shot fit=cap requires view=local');
+  requireValue(fit !== 'core' || (ghost === 'none' && emph !== 'none'),
+    'Shot fit=core requires ghost=none and emph other than none');
+  return { name, view, proj: choice('proj', 'persp', ['persp', 'stereo']),
+    ghost, emph, fit, cap: cap === null ? null : Number(cap),
+    w: size('w', 1600), h: size('h', 1000), cs: shrink('cs', 0.76), ss: shrink('ss', 0.82) };
+}
+
+// A shot comes either from a record step (run_sha256, step, when) or from a figures.json
+// state recipe (the recipe with its digest, and every input file it read with its hash).
+function tutorialProvenance(t, h) {
+  const record = hexDigest(t.run_sha256) && Number.isInteger(t.step) && t.step >= 0
+    && ['before', 'after'].includes(t.when);
+  const recipe = t.state !== null && typeof t.state === 'object' && !Array.isArray(t.state)
+    && t.state.digest === t.digest && Array.isArray(t.inputs)
+    && t.inputs.every((i) => i !== null && typeof i === 'object' && typeof i.file === 'string' && hexDigest(i.sha256));
+  return t.format === 'magic600-tutorial-shot/1' && hexDigest(t.digest) && t.digest === h.digest
+    && (record || recipe) && Number.isInteger(t.letter_count) && t.letter_count >= 0
+    && Array.isArray(t.caps) && new Set(t.caps).size === t.caps.length
+    && t.caps.every((c) => Number.isInteger(c) && c >= 0 && c < 600);
+}
+
+async function loadTutorial() {
+  const path = `tutorial/${shot.name}/`;
+  const [h, t] = await Promise.all([jsonFile(`${path}header.json`), jsonFile(`${path}tutorial.json`)]);
+  requireValue(tutorialProvenance(t, h), 'tutorial.json: invalid provenance or state digest');
+  requireValue(t.moved?.file === 'moved.i32' && Number.isInteger(t.moved.count)
+    && t.moved.count >= 0 && t.moved.count <= COUNTS.pieces, 'tutorial.json: invalid moved set');
+  const [s, movingBytes] = await Promise.all([loadStateArrays(path, h), checkedBytes(`${path}moved.i32`, t.moved)]);
+  requireValue(movingBytes.byteLength === t.moved.count * 4, 'moved.i32: byte count mismatch');
+  const moving = new Int32Array(movingBytes);
+  requireValue(moving.every((p, i) => validId(p) && (i === 0 || moving[i - 1] < p)), 'moved.i32: invalid or unsorted ids');
+  requireValue(s.off === t.off_lattice, 'tutorial.json: off-lattice count mismatch');
+  return { s, t, moving };
 }
 
 // Texture rows all have the same width. Scalar integer arrays use R32I/R32UI; 4-vectors
@@ -243,7 +319,11 @@ uniform mat4 uQ, viewMatrix, projectionMatrix;
 uniform bool uProbe;
 out vec3 vProjected;
 out vec4 vWorld, vClip;
-flat out int vClass, vOff, vFocus;
+flat out int vClass, vOff, vFocus, vMoved;
+#ifdef TUTORIAL_NEAR_GHOSTS
+uniform float uGhostCosine;
+flat out int vGhostNear;
+#endif
 ivec2 address(int i) { return ivec2(i % uWidth, i / uWidth); }
 vec4 vectorAt(sampler2D t, int i) { return texelFetch(t, address(i), 0); }
 int intAt(isampler2D t, int i) { return texelFetch(t, address(i), 0).r; }
@@ -265,6 +345,9 @@ vec3 project4(vec4 x) {
 void main() {
   int piece;
   vec4 home;
+#ifdef TUTORIAL_NEAR_GHOSTS
+  vec4 stickerHome = vec4(0.0);
+#endif
   vClass = gl_InstanceID;
   if (uProbe) {
     piece = intAt(uProbePieces, gl_VertexID);
@@ -280,14 +363,27 @@ void main() {
     int f = gl_InstanceID * 4;
     home = mat4(vectorAt(uFrames,f), vectorAt(uFrames,f+1),
                 vectorAt(uFrames,f+2), vectorAt(uFrames,f+3)) * shrunk;
+#ifdef TUTORIAL_NEAR_GHOSTS
+    // Classify the whole sticker by its posed shrink anchor, never by its home cell.
+    stickerHome = mat4(vectorAt(uFrames,f), vectorAt(uFrames,f+1),
+                       vectorAt(uFrames,f+2), vectorAt(uFrames,f+3))
+                * ((uNormal + uFacetShrink*(center-uNormal)) / uRadius);
+#endif
   }
   int pose = intAt(uIndex, piece);
   vOff = intAt(uLattice, pose) < 0 ? 1 : 0;
   vFocus = piece == uFocus ? 1 : 0;
+  vMoved = intAt(uMoving, piece);
   bool hidden = (uFilter == 1 && vOff == 0) || (uFilter == 2 && vOff == 1)
              || (uFilter == 3 && piece != uIsolate);
   vec4 world = posePoint(pose, home);
   if (intAt(uMoving, piece) != 0 && uSweep != vec2(0.0)) world = sweepPoint(world);
+#ifdef TUTORIAL_NEAR_GHOSTS
+  vec4 stickerWorld = uQ * posePoint(pose, stickerHome);
+  // A selected cap is at +w; without one use the current projection's facing direction.
+  vec4 direction = uProjection == 0 ? vec4(0.0,0.0,0.0,1.0) : -uPole;
+  vGhostNear = dot(stickerWorld, direction) >= uGhostCosine * length(stickerWorld) ? 1 : 0;
+#endif
   vWorld = world;
   vProjected = project4(uQ * world);
   vClip = projectionMatrix * viewMatrix * vec4(vProjected,1.0);
@@ -300,9 +396,12 @@ precision highp float;
 precision highp int;
 in vec3 vProjected;
 in vec4 vWorld, vClip;
-flat in int vClass, vOff, vFocus;
+flat in int vClass, vOff, vFocus, vMoved;
+#ifdef TUTORIAL_NEAR_GHOSTS
+flat in int vGhostNear;
+#endif
 uniform bool uTint, uProbe;
-uniform int uFocus, uProbeOutput;
+uniform int uFocus, uProbeOutput, uEmphasis, uShotPass;
 uniform float uRadius;
 uniform vec3 uTintColor, uHighlight;
 out vec4 outColor;
@@ -317,19 +416,27 @@ void main() {
     else outColor = vClip / vClip.w;
     return;
   }
+  bool emphasized = uEmphasis == 1 ? vMoved != 0 : vOff != 0;
+  if ((uShotPass == 1 && !emphasized) || (uShotPass == 2 && emphasized)) discard;
+#ifdef TUTORIAL_NEAR_GHOSTS
+  if (vGhostNear == 0) discard;
+#endif
   vec3 color = hsv(fract(float(vClass)*0.61803398875),0.61,0.90);
   vec3 n = normalize(cross(dFdx(vProjected), dFdy(vProjected)));
   color *= 0.5 + 0.5*abs(dot(n,normalize(vec3(0.3,0.5,1.0))));
   if (uTint && vOff != 0) color = mix(color,uTintColor,0.4);
   if (uFocus >= 0) color = vFocus != 0 ? mix(color,uHighlight,0.8) : color*0.22;
-  outColor = vec4(color,1.0);
+  outColor = vec4(color,uShotPass == 2 ? 0.08 : 1.0);
 }`;
 
 function cssColor(name) { return new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue(name).trim()); }
 function makeRenderer() {
   const canvas = $('canvas');
-  const context = canvas.getContext('webgl2', { antialias: true, preserveDrawingBuffer: true });
+  const emphasize = SHOT && shot.emph !== 'none';
+  const context = canvas.getContext('webgl2', { antialias: true, preserveDrawingBuffer: true,
+    ...(emphasize ? { stencil: true } : {}) });
   requireValue(context, 'WebGL2 is required for the full-state drawing');
+  requireValue(!emphasize || context.getContextAttributes().stencil, 'Tutorial emphasis needs a stencil buffer');
   renderer = new THREE.WebGLRenderer({ canvas, context, antialias: true, preserveDrawingBuffer: true });
   renderer.setPixelRatio(1);
   renderer.debug.onShaderError = (gl, program, vs, fs) => {
@@ -343,6 +450,7 @@ function makeRenderer() {
   camera.position.set(0, 0, 5);
   controls = new OrbitControls(camera, canvas);
   controls.enableDamping = false;
+  if (SHOT) controls.enabled = false;
   controls.minDistance = 0.05;
   controls.maxDistance = 50;
   controls.addEventListener('change', () => { dirty = true; });
@@ -365,6 +473,8 @@ function makeRenderer() {
     uBasis2: { value: new THREE.Vector4(0, 0, 1, 0) }, uProjection: { value: 0 },
     uFilter: { value: 0 }, uIsolate: { value: 0 }, uFocus: { value: -1 },
     uTint: { value: false }, uTintColor: { value: cssColor('--tint') }, uHighlight: { value: cssColor('--highlight') },
+    uEmphasis: { value: SHOT ? ['none', 'moved', 'off'].indexOf(shot.emph) : 0 },
+    uShotPass: { value: emphasize ? 1 : 0 },
     uProbe: { value: false }, uProbeOutput: { value: 0 },
     uIndex: { value: null }, uPoses: { value: null }, uLattice: { value: null }, uMoving: { value: null },
     uProbeHome: { value: null }, uProbePieces: { value: null },
@@ -380,6 +490,25 @@ function makeRenderer() {
   mesh.frustumCulled = false;
   mesh.visible = false;
   scene.add(mesh);
+  if (emphasize && shot.ghost !== 'none') {
+    // Mark opaque emphasis pixels, then keep ghosts off those pixels entirely.
+    // Depth writes alone would not stop many front ghost layers hiding the emphasis.
+    material.stencilWrite = true;
+    material.stencilRef = 1;
+    material.stencilZPass = THREE.ReplaceStencilOp;
+    const ghostMaterial = new THREE.RawShaderMaterial({ glslVersion: THREE.GLSL3,
+      vertexShader: VERTEX, fragmentShader: FRAGMENT,
+      defines: shot.ghost === 'near' ? { TUTORIAL_NEAR_GHOSTS: 1 } : {},
+      uniforms: { ...uniforms, uShotPass: { value: 2 }, uGhostCosine: { value: Math.cos(NEAR_GHOST_ANGLE) } },
+      side: THREE.DoubleSide, forceSinglePass: true,
+      transparent: true, blending: THREE.NormalBlending, depthTest: true, depthWrite: false,
+      stencilWrite: true, stencilWriteMask: 0, stencilRef: 1, stencilFunc: THREE.NotEqualStencilFunc });
+    ghostMesh = new THREE.Mesh(g, ghostMaterial);
+    ghostMesh.frustumCulled = false;
+    ghostMesh.visible = false;
+    ghostMesh.renderOrder = 1;
+    scene.add(ghostMesh);
+  }
   new ResizeObserver(resize).observe($('stage'));
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { theme(); dirty = true; });
   theme();
@@ -405,7 +534,7 @@ function bindState(s, o) {
   const moving = new Int32Array(COUNTS.pieces);
   o.moving.forEach((p) => { moving[p] = 1; });
   const arrays = { uIndex: [s.index, 1], uPoses: [s.poses, 4], uLattice: [s.lattice, 1],
-    uMoving: [moving, 1], uProbeHome: [o.home, 4], uProbePieces: [o.pieces, 1] };
+    uMoving: [moving, 1], uProbeHome: [o.home ?? new Float32Array(64), 4], uProbePieces: [o.pieces ?? new Int32Array(16), 1] };
   const next = [];
   try {
     for (const [key, [a, channels]] of Object.entries(arrays)) next.push([key, dataTexture(a, channels)]);
@@ -414,11 +543,12 @@ function bindState(s, o) {
   next.forEach(([key, texture]) => { material.uniforms[key].value = texture; });
   stateTextures.forEach((t) => t.dispose());
   stateTextures = next.map(([, t]) => t);
-  material.uniforms.uPlaneU.value.set(...o.header.sweep.plane_u);
-  material.uniforms.uPlaneV.value.set(...o.header.sweep.plane_v);
+  material.uniforms.uPlaneU.value.set(...(o.header?.sweep.plane_u ?? [0, 0, 0, 0]));
+  material.uniforms.uPlaneV.value.set(...(o.header?.sweep.plane_v ?? [0, 0, 0, 0]));
 }
 
 function cameraQ() {
+  if (shotQ) return shotQ.slice();
   const q = Array.from({ length: 16 }, (_, i) => i % 5 === 0 ? 1 : 0);
   // This is SPEC's column-major rotate(a,b,t), including its multiplication order.
   for (const [a, b, degrees] of [[0, 3, Number($('rotateX').value)], [1, 3, Number($('rotateY').value)]]) {
@@ -589,11 +719,16 @@ function setTime(t) {
 function fail(error) {
   const message = error instanceof Error ? error.message : String(error);
   app.errors.push(message);
+  if (SHOT) {
+    document.documentElement.dataset.shotError = message;
+    document.documentElement.dataset.shotReady = 'error';
+  }
   app.ready = false;
   app.model = null;
   app.drawn = null;
   pause();
   if (mesh) mesh.visible = false;
+  if (ghostMesh) ghostMesh.visible = false;
   clearMarkers();
   selectedCertificate = null;
   $('error').hidden = false;
@@ -657,6 +792,12 @@ function draw() {
   if (!renderer || !app.ready) return;
   syncView();
   renderer.render(scene, camera);
+  if (SHOT && document.documentElement.dataset.shotReady !== '1') {
+    const gl = renderer.getContext();
+    gl.finish();
+    requireValue(gl.getError() === gl.NO_ERROR, 'Tutorial frame: WebGL error');
+    document.documentElement.dataset.shotReady = '1';
+  }
   // Only this mesh draws triangles. Points do not inflate the instance count.
   app.drawn = { triangles: renderer.info.render.triangles, calls: renderer.info.render.calls,
     instances: renderer.info.render.triangles / (mesh.geometry.attributes.position.count / 3),
@@ -787,6 +928,7 @@ function hashSelection() {
   return m ? { menu: m[1], stage: m[2] } : null;
 }
 window.addEventListener('hashchange', () => {
+  if (SHOT) return;
   const h = hashSelection();
   if (h && catalog?.menus[h.menu]) loadSelection(h.menu, h.stage, false).catch(fail);
 });
@@ -806,6 +948,7 @@ function animate(now) {
 }
 async function start() {
   requireValue(new Uint8Array(new Uint32Array([1]).buffer)[0] === 1, 'Little-endian typed arrays are required');
+  if (SHOT) { await startShot(); return; }
   [catalog, geometry] = await Promise.all([jsonFile('full/catalog.json'), loadGeometry()]);
   checkDimension(catalog, 'catalog.json');
   requireValue(catalog.format === 'magic600-full-viewer/1' && catalog.menus && Object.keys(catalog.menus).length
@@ -821,6 +964,197 @@ async function start() {
   const h = hashSelection();
   const menu = h && catalog.menus[h.menu] ? h.menu : Object.keys(catalog.menus)[0];
   await loadSelection(menu, h?.stage || 'end');
+}
+
+function capCenter(cap) {
+  const frames = geometry.A['cell_frames.f32'];
+  const matrix = Array.from(frames.subarray(cap * 16, cap * 16 + 16));
+  return matColumn(matrix, geometry.mesh.normal).map((x) => x / geometry.mesh.normal_length);
+}
+// Pure column-major SO(4) rotation, also exercised by the headless Node math check.
+function capOrientation(center) {
+  if (center.length !== 4 || !center.every(Number.isFinite) || Math.hypot(...center) === 0) {
+    throw new Error('Invalid cap centre');
+  }
+  const q = Array.from({ length: 16 }, (_, i) => i % 5 === 0 ? 1 : 0);
+  const v = center.slice();
+  // Each proper plane rotation clears one coordinate and makes w positive.
+  // +w is near the perspective eye: project4 divides by (1.18 - w).
+  for (let i = 0; i < 3; i++) {
+    const length = Math.hypot(v[i], v[3]);
+    if (length === 0) continue;
+    const c = v[3] / length, s = v[i] / length;
+    for (let col = 0; col < 4; col++) {
+      const x = q[col * 4 + i], w = q[col * 4 + 3];
+      q[col * 4 + i] = c * x - s * w;
+      q[col * 4 + 3] = s * x + c * w;
+    }
+    v[i] = 0;
+    v[3] = length;
+  }
+  return q;
+}
+function frameTutorial(cap, moving) {
+  const fit = shot.fit ?? 'all';
+  const selectionOnly = shot.ghost === 'none';
+  const local = shot.view === 'local' && (!selectionOnly || fit === 'cap');
+  const selectionFit = selectionOnly && !local;
+  const moved = shot.emph === 'moved' ? new Set(moving) : null;
+  const emphasized = (piece) => moved ? moved.has(piece)
+    : shot.emph === 'off' && state.lattice[state.index[piece]] < 0;
+  const centers = Array.from({ length: COUNTS.cells }, (_, i) => capCenter(i));
+  const allFacets = centers.map((_, i) => i);
+  let facets = allFacets;
+  if (cap !== null) {
+    shotQ = capOrientation(centers[cap]);
+    // The selected cap projects to the origin; stereo uses the opposite (-w) pole.
+    $('pole').value = 'negative-w';
+    if (local) {
+      const distance = (v) => v.reduce((s, x, k) => s + (x - centers[cap][k]) ** 2, 0);
+      facets = [cap, ...facets.filter((i) => i !== cap)
+        .sort((a, b) => distance(centers[a]) - distance(centers[b]) || a - b).slice(0, 4)];
+    }
+  }
+  const A = geometry.A, normal = geometry.mesh.normal, radius = geometry.mesh.normal_length;
+  const stickerHome = new Float64Array(COUNTS.base_stickers * 4);
+  for (let sticker = 0; sticker < COUNTS.base_stickers; sticker++) {
+    for (let k = 0; k < 4; k++) {
+      stickerHome[sticker * 4 + k] = (normal[k] + shot.cs * (geometry.anchors[sticker * 4 + k] - normal[k])) / radius;
+    }
+  }
+  const home = new Float64Array(COUNTS.base_vertices * 4);
+  for (let vi = 0; vi < COUNTS.base_vertices; vi++) {
+    const local = A['mesh_sticker.u32'][vi];
+    for (let k = 0; k < 4; k++) {
+      const anchor = geometry.anchors[local * 4 + k];
+      home[vi * 4 + k] = (normal[k] + shot.cs * (anchor - normal[k])
+        + shot.cs * shot.ss * (A['mesh_vertices.f32'][vi * 4 + k] - anchor)) / radius;
+    }
+  }
+  const q = new THREE.Matrix4().fromArray(cameraQ()), frame = new THREE.Matrix4();
+  const pose = new THREE.Matrix4(), transform = new THREE.Matrix4(), point = new THREE.Vector4();
+  const { pole, basis } = poleParameters();
+  const pole4 = new THREE.Vector4(...pole), basis4 = basis.map((b) => new THREE.Vector4(...b));
+  const perspective = shot.proj === 'persp';
+  let corePieces = null;
+  // The emphasis pass always visits every posed selected sticker, independently
+  // of the fixed cap framing and the ghost-facing stereographic hemisphere.
+  const visitPoints = (visit, emphasisOnly = false) => {
+    for (const facet of emphasisOnly ? allFacets : facets) {
+      frame.fromArray(A['cell_frames.f32'], facet * 16);
+      if (local && !emphasisOnly) transform.multiplyMatrices(q, frame); // Fixed cells, never their home pieces' current poses.
+      for (let sticker = 0; sticker < COUNTS.base_stickers; sticker++) {
+        const piece = A['slot_piece.u32'][facet * 433 + sticker];
+        if (emphasisOnly && !emphasized(piece)) continue;
+        if (!local || emphasisOnly) {
+          if (!emphasisOnly && ((selectionFit && shot.emph !== 'none' && !emphasized(piece))
+            || (corePieces && !corePieces.has(piece)))) continue;
+          pose.fromArray(state.poses, state.index[piece] * 16).transpose();
+          transform.multiplyMatrices(q, pose).multiply(frame);
+          if (!emphasisOnly && !selectionOnly && shot.proj === 'stereo') {
+            point.fromArray(stickerHome, sticker * 4).applyMatrix4(transform);
+            // With ghosts, retain the hemisphere fit; the mesh still draws everything.
+            if (point.dot(pole4) > 0) continue;
+          }
+        }
+        for (let vi = geometry.mesh.offsets[sticker]; vi < geometry.mesh.offsets[sticker + 1]; vi++) {
+          point.fromArray(home, vi * 4).applyMatrix4(transform);
+          const scale = perspective ? 1.18 / (1.18 - point.w) : 1 / (1 - point.dot(pole4));
+          const x = scale * (perspective ? point.x : point.dot(basis4[0]));
+          const y = scale * (perspective ? point.y : point.dot(basis4[1]));
+          const z = scale * (perspective ? point.z : point.dot(basis4[2]));
+          requireValue(Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z),
+            'Tutorial view has a non-finite projection');
+          visit(x, y, z, piece);
+        }
+      }
+    }
+  };
+  const sums = new Map();
+  if (shot.emph !== 'none') visitPoints((x, y, z, piece) => {
+    if (!sums.has(piece)) sums.set(piece, [0, 0, 0, 0]);
+    const sum = sums.get(piece);
+    sum[0] += x; sum[1] += y; sum[2] += z; sum[3]++;
+  }, true);
+  const centroids = Array.from(sums, ([piece, [x, y, z, count]]) => ({ piece, x: x / count, y: y / count, z: z / count }));
+  if (fit === 'core' && centroids.length) {
+    const median = (key) => {
+      const values = centroids.map((p) => p[key]).sort((a, b) => a - b), middle = Math.floor(values.length / 2);
+      return values.length % 2 ? values[middle] : (values[middle - 1] + values[middle]) / 2;
+    };
+    const x = median('x'), y = median('y');
+    const distance = (p) => Math.max(Math.abs(p.x - x), Math.abs(p.y - y));
+    corePieces = new Set(centroids.slice().sort((a, b) => distance(a) - distance(b) || a.piece - b.piece)
+      .slice(0, Math.ceil(3 * centroids.length / 4)).map((p) => p.piece));
+  }
+  const reportFraming = () => {
+    camera.updateMatrixWorld();
+    let inFrame = 0;
+    for (const { x, y, z } of centroids) {
+      point.fromArray([x, y, z, 1]).applyMatrix4(camera.matrixWorldInverse).applyMatrix4(camera.projectionMatrix);
+      if (point.w > 0 && Math.abs(point.x / point.w) <= 1 && Math.abs(point.y / point.w) <= 1) inFrame++;
+    }
+    app.view.framing = { fit, pieces: centroids.length, in_frame: inFrame };
+  };
+  let centerX = 0, centerY = 0, centerZ = 0;
+  if (selectionFit) {
+    let minX = Infinity, minY = Infinity, minZ = Infinity;
+    let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+    visitPoints((x, y, z) => {
+      minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+      minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
+    });
+    // An empty emphasis set draws an empty canvas with the valid default camera.
+    if (minX === Infinity) { reportFraming(); return; }
+    centerX = (minX + maxX) / 2;
+    centerY = (minY + maxY) / 2;
+    centerZ = (minZ + maxZ) / 2;
+  }
+  // Equal pixel scale on both axes; the selection fills 80% of the SHORTER side.
+  const limit = (selectionFit || local ? 0.80 : 0.85)
+    * Math.tan(camera.fov * Math.PI / 360) * Math.min(1, camera.aspect);
+  let distance = selectionFit ? -Infinity : camera.near, minZ = Infinity;
+  visitPoints((x, y, z) => {
+    distance = Math.max(distance, z + Math.max(Math.abs(x - centerX), Math.abs(y - centerY)) / limit,
+      z + camera.near * 1.1);
+    minZ = Math.min(minZ, z);
+  });
+  controls.target.set(centerX, centerY, centerZ);
+  camera.position.set(centerX, centerY, distance);
+  controls.maxDistance = Math.max(50, distance * 2);
+  camera.far = Math.max(100, distance - minZ + 1);
+  camera.updateProjectionMatrix();
+  controls.update();
+  reportFraming();
+}
+async function startShot() {
+  document.documentElement.classList.add('shot');
+  shot = shotParameters();
+  document.documentElement.style.setProperty('--shot-width', `${shot.w}px`);
+  document.documentElement.style.setProperty('--shot-height', `${shot.h}px`);
+  $('canvas').setAttribute('aria-label', 'Full puzzle at the recorded tutorial step');
+  $('projection').value = shot.proj === 'persp' ? 'perspective' : 'stereographic';
+  // Facet (cell) and sticker shrink of the picture; draw() reads them through syncView().
+  $('facetShrink').value = String(shot.cs);
+  $('stickerShrink').value = String(shot.ss);
+  geometry = await loadGeometry();
+  const { s, t, moving } = await loadTutorial();
+  state = s;
+  shot.cap ??= t.caps[0] ?? null;
+  requireValue(shot.view !== 'local' || shot.cap !== null, 'Local view needs a cap (cap=0..599 or tutorial caps)');
+  makeRenderer();
+  bindState(s, { moving });
+  app.view = { state: 'tutorial', t: 0, ...shot };
+  app.model = { ...COUNTS, poses: s.header.poses };
+  app.header = s.header;
+  app.tutorial = t;
+  app.offLattice = s.off;
+  frameTutorial(shot.cap, moving);
+  app.ready = true;
+  mesh.visible = true;
+  if (ghostMesh) ghostMesh.visible = true;
+  draw();
 }
 requestAnimationFrame(animate);
 start().catch(fail);

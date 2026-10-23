@@ -1,0 +1,88 @@
+{
+  "format": "r22d25-run/1",
+  "catalogue": "r22d25-cat/1",
+  "limits": {
+    "direct": 244,
+    "S": 244,
+    "T": 720,
+    "ST": 964
+  },
+  "start": {
+    "kind": "table",
+    "file": "start-table.json",
+    "digest": "895b45de8a9a83604ca8bf988a3c9a287e404e59bd22a5004703d0852b252507",
+    "off": 100569,
+    "heights": {
+      "2": 98984,
+      "4": 1585
+    }
+  },
+  "steps": [],
+  "result": "stuck",
+  "ledger": {
+    "F1": {
+      "status": "exhausted",
+      "tried": 0,
+      "pruned": {},
+      "cursor": null
+    },
+    "F2": {
+      "status": "exhausted",
+      "tried": 0,
+      "pruned": {},
+      "cursor": null
+    },
+    "F3": {
+      "status": "exhausted",
+      "tried": 0,
+      "pruned": {},
+      "cursor": null
+    },
+    "d19": {
+      "status": "exhausted",
+      "tried": 0,
+      "pruned": {},
+      "cursor": null
+    },
+    "S": {
+      "status": "exhausted",
+      "tried": 0,
+      "pruned": {
+        "blocked": 3547906,
+        "lattice_inside": 1770,
+        "target_not_whole": 238124
+      },
+      "cursor": null
+    },
+    "ST": {
+      "status": "exhausted",
+      "tried": 0,
+      "pruned": {},
+      "cursor": null
+    },
+    "T1": {
+      "status": "exhausted",
+      "tried": 0,
+      "pruned": {
+        "blocked": 57396498,
+        "target_not_whole": 3804674,
+        "lattice_inside": 76228
+      },
+      "cursor": null
+    }
+  },
+  "last": {
+    "digest": "895b45de8a9a83604ca8bf988a3c9a287e404e59bd22a5004703d0852b252507",
+    "off": 100569,
+    "heights": {
+      "2": 98984,
+      "4": 1585
+    }
+  },
+  "scripts": {
+    "research/jumbling/restoration/12-low-height/scripts/round22/r22d25_state.py": "ca45c9ba5ba14b10d48d1d2946c1265acdc8f6e609a5ef83737f79fde8201316",
+    "research/jumbling/restoration/12-low-height/scripts/round22/r22d25_search.py": "b2e2fa4ed1c34579589a68c2d7151e8209b60233b2665d2670d6ff7cd07f6c4b",
+    "assets/manifest.json": "b5db4469f3da9ba3cdbd93806a703f594153e61b08ce32d4fcce9de9c5cc60bc"
+  },
+  "seconds": 2636.5712071750004
+}

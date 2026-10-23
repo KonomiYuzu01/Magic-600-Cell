@@ -1,0 +1,520 @@
+CONTEXT {"digest": "6999b9214d6ea25486daf67e650773babff08f1a41742acfddd6eec2f88787ab", "tau": 482, "u": 1, "straddlers": [2492], "targets": [[12, 121], [34, 2], [65, 118], [71, 13], [94, 13], [140, 13], [142, 13], [171, 67], [180, 13], [181, 13], [206, 48], [299, 49], [388, 45], [482, 284], [500, 77], [517, 178], [551, 52], [597, 205]], "holders": [[513, false], [529, false], [547, false], [555, false], [562, false], [564, false], [580, false], [585, false], [593, true]], "blocked_holders": {"513": 226, "529": 185, "547": 329, "555": 345, "562": 160, "564": 80, "580": 366, "585": 291}, "blocked_holder_straddlers": 1550, "clean_caps": 38, "first_letter_caps": [2, 20, 23, 39, 59, 62, 66, 70, 93, 112, 136, 167, 185, 262, 263, 277, 301, 357, 358, 363, 364, 370, 394, 407, 422, 471, 492, 523, 533, 541, 552, 553, 590, 591, 593], "classA": [357, 370, 541, 552, 590, 591, 593], "first_letters": 2065, "shard": 1, "nshards": 3, "cpu": 50.4}
+FIRST {"index": 511, "cls": "B", "first": [20, 40], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 514, "cls": "B", "first": [20, 43], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 517, "cls": "B", "first": [20, 46], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 520, "cls": "B", "first": [20, 49], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 523, "cls": "B", "first": [20, 52], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 526, "cls": "B", "first": [20, 55], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 529, "cls": "B", "first": [20, 58], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 532, "cls": "B", "first": [23, 2], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 535, "cls": "B", "first": [23, 5], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 538, "cls": "B", "first": [23, 8], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 541, "cls": "B", "first": [23, 11], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 544, "cls": "B", "first": [23, 14], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 547, "cls": "B", "first": [23, 17], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 550, "cls": "B", "first": [23, 20], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 553, "cls": "B", "first": [23, 23], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 556, "cls": "B", "first": [23, 26], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 559, "cls": "B", "first": [23, 29], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 562, "cls": "B", "first": [23, 32], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 565, "cls": "B", "first": [23, 35], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 568, "cls": "B", "first": [23, 38], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 571, "cls": "B", "first": [23, 41], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 574, "cls": "B", "first": [23, 44], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 577, "cls": "B", "first": [23, 47], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 580, "cls": "B", "first": [23, 50], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 583, "cls": "B", "first": [23, 53], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 586, "cls": "B", "first": [23, 56], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 589, "cls": "B", "first": [23, 59], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 592, "cls": "B", "first": [39, 3], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 595, "cls": "B", "first": [39, 6], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 598, "cls": "B", "first": [39, 9], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 601, "cls": "B", "first": [39, 12], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 604, "cls": "B", "first": [39, 15], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 607, "cls": "B", "first": [39, 18], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 610, "cls": "B", "first": [39, 21], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 613, "cls": "B", "first": [39, 24], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 616, "cls": "B", "first": [39, 27], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 619, "cls": "B", "first": [39, 30], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 622, "cls": "B", "first": [39, 33], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 625, "cls": "B", "first": [39, 36], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 628, "cls": "B", "first": [39, 39], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 631, "cls": "B", "first": [39, 42], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 634, "cls": "B", "first": [39, 45], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 637, "cls": "B", "first": [39, 48], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 640, "cls": "B", "first": [39, 51], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 643, "cls": "B", "first": [39, 54], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 646, "cls": "B", "first": [39, 57], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 649, "cls": "B", "first": [59, 1], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 652, "cls": "B", "first": [59, 4], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 655, "cls": "B", "first": [59, 7], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 658, "cls": "B", "first": [59, 10], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 661, "cls": "B", "first": [59, 13], "valid": false}
+FIRST {"index": 664, "cls": "B", "first": [59, 16], "valid": false}
+FIRST {"index": 667, "cls": "B", "first": [59, 19], "valid": false}
+FIRST {"index": 670, "cls": "B", "first": [59, 22], "valid": false}
+FIRST {"index": 673, "cls": "B", "first": [59, 25], "valid": false}
+FIRST {"index": 676, "cls": "B", "first": [59, 28], "valid": false}
+FIRST {"index": 679, "cls": "B", "first": [59, 31], "valid": false}
+FIRST {"index": 682, "cls": "B", "first": [59, 34], "valid": false}
+FIRST {"index": 685, "cls": "B", "first": [59, 37], "valid": false}
+FIRST {"index": 688, "cls": "B", "first": [59, 40], "valid": false}
+FIRST {"index": 691, "cls": "B", "first": [59, 43], "valid": false}
+FIRST {"index": 694, "cls": "B", "first": [59, 46], "valid": false}
+FIRST {"index": 697, "cls": "B", "first": [59, 49], "valid": false}
+FIRST {"index": 700, "cls": "B", "first": [59, 52], "valid": false}
+FIRST {"index": 703, "cls": "B", "first": [59, 55], "valid": false}
+FIRST {"index": 706, "cls": "B", "first": [59, 58], "valid": false}
+FIRST {"index": 709, "cls": "B", "first": [62, 2], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 712, "cls": "B", "first": [62, 5], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 715, "cls": "B", "first": [62, 8], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 718, "cls": "B", "first": [62, 11], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 721, "cls": "B", "first": [62, 14], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 724, "cls": "B", "first": [62, 17], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 727, "cls": "B", "first": [62, 20], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 730, "cls": "B", "first": [62, 23], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 733, "cls": "B", "first": [62, 26], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 736, "cls": "B", "first": [62, 29], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 739, "cls": "B", "first": [62, 32], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 742, "cls": "B", "first": [62, 35], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 745, "cls": "B", "first": [62, 38], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 748, "cls": "B", "first": [62, 41], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 751, "cls": "B", "first": [62, 44], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 754, "cls": "B", "first": [62, 47], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 757, "cls": "B", "first": [62, 50], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 760, "cls": "B", "first": [62, 53], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 763, "cls": "B", "first": [62, 56], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 766, "cls": "B", "first": [62, 59], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 769, "cls": "B", "first": [66, 3], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 772, "cls": "B", "first": [66, 6], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 775, "cls": "B", "first": [66, 9], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 778, "cls": "B", "first": [66, 12], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 781, "cls": "B", "first": [66, 15], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 784, "cls": "B", "first": [66, 18], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 787, "cls": "B", "first": [66, 21], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 790, "cls": "B", "first": [66, 24], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 793, "cls": "B", "first": [66, 27], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 796, "cls": "B", "first": [66, 30], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 799, "cls": "B", "first": [66, 33], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 802, "cls": "B", "first": [66, 36], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 805, "cls": "B", "first": [66, 39], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 808, "cls": "B", "first": [66, 42], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 811, "cls": "B", "first": [66, 45], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 814, "cls": "B", "first": [66, 48], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 817, "cls": "B", "first": [66, 51], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 820, "cls": "B", "first": [66, 54], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 823, "cls": "B", "first": [66, 57], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 826, "cls": "B", "first": [70, 1], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 829, "cls": "B", "first": [70, 4], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 832, "cls": "B", "first": [70, 7], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 835, "cls": "B", "first": [70, 10], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 838, "cls": "B", "first": [70, 13], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 841, "cls": "B", "first": [70, 16], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 844, "cls": "B", "first": [70, 19], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 847, "cls": "B", "first": [70, 22], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 850, "cls": "B", "first": [70, 25], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 853, "cls": "B", "first": [70, 28], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 856, "cls": "B", "first": [70, 31], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 859, "cls": "B", "first": [70, 34], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 862, "cls": "B", "first": [70, 37], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 865, "cls": "B", "first": [70, 40], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 868, "cls": "B", "first": [70, 43], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 871, "cls": "B", "first": [70, 46], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 874, "cls": "B", "first": [70, 49], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 877, "cls": "B", "first": [70, 52], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 880, "cls": "B", "first": [70, 55], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 883, "cls": "B", "first": [70, 58], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 886, "cls": "B", "first": [93, 2], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 889, "cls": "B", "first": [93, 5], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 892, "cls": "B", "first": [93, 8], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 895, "cls": "B", "first": [93, 11], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 898, "cls": "B", "first": [93, 14], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 901, "cls": "B", "first": [93, 17], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 904, "cls": "B", "first": [93, 20], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 907, "cls": "B", "first": [93, 23], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 910, "cls": "B", "first": [93, 26], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 913, "cls": "B", "first": [93, 29], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 916, "cls": "B", "first": [93, 32], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 919, "cls": "B", "first": [93, 35], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 922, "cls": "B", "first": [93, 38], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 925, "cls": "B", "first": [93, 41], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 928, "cls": "B", "first": [93, 44], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 931, "cls": "B", "first": [93, 47], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 934, "cls": "B", "first": [93, 50], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 937, "cls": "B", "first": [93, 53], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 940, "cls": "B", "first": [93, 56], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 943, "cls": "B", "first": [93, 59], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 946, "cls": "B", "first": [112, 3], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 949, "cls": "B", "first": [112, 6], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 952, "cls": "B", "first": [112, 9], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 955, "cls": "B", "first": [112, 12], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 958, "cls": "B", "first": [112, 15], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 961, "cls": "B", "first": [112, 18], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 964, "cls": "B", "first": [112, 21], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 967, "cls": "B", "first": [112, 24], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 970, "cls": "B", "first": [112, 27], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 973, "cls": "B", "first": [112, 30], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 976, "cls": "B", "first": [112, 33], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 979, "cls": "B", "first": [112, 36], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 982, "cls": "B", "first": [112, 39], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 985, "cls": "B", "first": [112, 42], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 988, "cls": "B", "first": [112, 45], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 991, "cls": "B", "first": [112, 48], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 994, "cls": "B", "first": [112, 51], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 997, "cls": "B", "first": [112, 54], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1000, "cls": "B", "first": [112, 57], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1003, "cls": "B", "first": [136, 1], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1006, "cls": "B", "first": [136, 4], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1009, "cls": "B", "first": [136, 7], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1012, "cls": "B", "first": [136, 10], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1015, "cls": "B", "first": [136, 13], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1018, "cls": "B", "first": [136, 16], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1021, "cls": "B", "first": [136, 19], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1024, "cls": "B", "first": [136, 22], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1027, "cls": "B", "first": [136, 25], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1030, "cls": "B", "first": [136, 28], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1033, "cls": "B", "first": [136, 31], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1036, "cls": "B", "first": [136, 34], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1039, "cls": "B", "first": [136, 37], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1042, "cls": "B", "first": [136, 40], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1045, "cls": "B", "first": [136, 43], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1048, "cls": "B", "first": [136, 46], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1051, "cls": "B", "first": [136, 49], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1054, "cls": "B", "first": [136, 52], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1057, "cls": "B", "first": [136, 55], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1060, "cls": "B", "first": [136, 58], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1063, "cls": "B", "first": [167, 2], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1066, "cls": "B", "first": [167, 5], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1069, "cls": "B", "first": [167, 8], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1072, "cls": "B", "first": [167, 11], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1075, "cls": "B", "first": [167, 14], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1078, "cls": "B", "first": [167, 17], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1081, "cls": "B", "first": [167, 20], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1084, "cls": "B", "first": [167, 23], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1087, "cls": "B", "first": [167, 26], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1090, "cls": "B", "first": [167, 29], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1093, "cls": "B", "first": [167, 32], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1096, "cls": "B", "first": [167, 35], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1099, "cls": "B", "first": [167, 38], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1102, "cls": "B", "first": [167, 41], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1105, "cls": "B", "first": [167, 44], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1108, "cls": "B", "first": [167, 47], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1111, "cls": "B", "first": [167, 50], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1114, "cls": "B", "first": [167, 53], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1117, "cls": "B", "first": [167, 56], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1120, "cls": "B", "first": [167, 59], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1123, "cls": "B", "first": [185, 3], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1126, "cls": "B", "first": [185, 6], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1129, "cls": "B", "first": [185, 9], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1132, "cls": "B", "first": [185, 12], "valid": false}
+FIRST {"index": 1135, "cls": "B", "first": [185, 15], "valid": false}
+FIRST {"index": 1138, "cls": "B", "first": [185, 18], "valid": false}
+FIRST {"index": 1141, "cls": "B", "first": [185, 21], "valid": false}
+FIRST {"index": 1144, "cls": "B", "first": [185, 24], "valid": false}
+FIRST {"index": 1147, "cls": "B", "first": [185, 27], "valid": false}
+FIRST {"index": 1150, "cls": "B", "first": [185, 30], "valid": false}
+FIRST {"index": 1153, "cls": "B", "first": [185, 33], "valid": false}
+FIRST {"index": 1156, "cls": "B", "first": [185, 36], "valid": false}
+FIRST {"index": 1159, "cls": "B", "first": [185, 39], "valid": false}
+FIRST {"index": 1162, "cls": "B", "first": [185, 42], "valid": false}
+FIRST {"index": 1165, "cls": "B", "first": [185, 45], "valid": false}
+FIRST {"index": 1168, "cls": "B", "first": [185, 48], "valid": false}
+FIRST {"index": 1171, "cls": "B", "first": [185, 51], "valid": false}
+FIRST {"index": 1174, "cls": "B", "first": [185, 54], "valid": false}
+FIRST {"index": 1177, "cls": "B", "first": [185, 57], "valid": false}
+FIRST {"index": 1180, "cls": "B", "first": [262, 1], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1183, "cls": "B", "first": [262, 4], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1186, "cls": "B", "first": [262, 7], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1189, "cls": "B", "first": [262, 10], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1192, "cls": "B", "first": [262, 13], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1195, "cls": "B", "first": [262, 16], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1198, "cls": "B", "first": [262, 19], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1201, "cls": "B", "first": [262, 22], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1204, "cls": "B", "first": [262, 25], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1207, "cls": "B", "first": [262, 28], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1210, "cls": "B", "first": [262, 31], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1213, "cls": "B", "first": [262, 34], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1216, "cls": "B", "first": [262, 37], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1219, "cls": "B", "first": [262, 40], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1222, "cls": "B", "first": [262, 43], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1225, "cls": "B", "first": [262, 46], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1228, "cls": "B", "first": [262, 49], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1231, "cls": "B", "first": [262, 52], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1234, "cls": "B", "first": [262, 55], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1237, "cls": "B", "first": [262, 58], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1240, "cls": "B", "first": [263, 2], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1243, "cls": "B", "first": [263, 5], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1246, "cls": "B", "first": [263, 8], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1249, "cls": "B", "first": [263, 11], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1252, "cls": "B", "first": [263, 14], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1255, "cls": "B", "first": [263, 17], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1258, "cls": "B", "first": [263, 20], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1261, "cls": "B", "first": [263, 23], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1264, "cls": "B", "first": [263, 26], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1267, "cls": "B", "first": [263, 29], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1270, "cls": "B", "first": [263, 32], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1273, "cls": "B", "first": [263, 35], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1276, "cls": "B", "first": [263, 38], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1279, "cls": "B", "first": [263, 41], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1282, "cls": "B", "first": [263, 44], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1285, "cls": "B", "first": [263, 47], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1288, "cls": "B", "first": [263, 50], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1291, "cls": "B", "first": [263, 53], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1294, "cls": "B", "first": [263, 56], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1297, "cls": "B", "first": [263, 59], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1300, "cls": "B", "first": [277, 3], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1303, "cls": "B", "first": [277, 6], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1306, "cls": "B", "first": [277, 9], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1309, "cls": "B", "first": [277, 12], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1312, "cls": "B", "first": [277, 15], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1315, "cls": "B", "first": [277, 18], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1318, "cls": "B", "first": [277, 21], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1321, "cls": "B", "first": [277, 24], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1324, "cls": "B", "first": [277, 27], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1327, "cls": "B", "first": [277, 30], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1330, "cls": "B", "first": [277, 33], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1333, "cls": "B", "first": [277, 36], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1336, "cls": "B", "first": [277, 39], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1339, "cls": "B", "first": [277, 42], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1342, "cls": "B", "first": [277, 45], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1345, "cls": "B", "first": [277, 48], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1348, "cls": "B", "first": [277, 51], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1351, "cls": "B", "first": [277, 54], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1354, "cls": "B", "first": [277, 57], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1357, "cls": "B", "first": [301, 1], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1360, "cls": "B", "first": [301, 4], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1363, "cls": "B", "first": [301, 7], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1366, "cls": "B", "first": [301, 10], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1369, "cls": "B", "first": [301, 13], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1372, "cls": "B", "first": [301, 16], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1375, "cls": "B", "first": [301, 19], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1378, "cls": "B", "first": [301, 22], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1381, "cls": "B", "first": [301, 25], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1384, "cls": "B", "first": [301, 28], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1387, "cls": "B", "first": [301, 31], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1390, "cls": "B", "first": [301, 34], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1393, "cls": "B", "first": [301, 37], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1396, "cls": "B", "first": [301, 40], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1399, "cls": "B", "first": [301, 43], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1402, "cls": "B", "first": [301, 46], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1405, "cls": "B", "first": [301, 49], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1408, "cls": "B", "first": [301, 52], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1411, "cls": "B", "first": [301, 55], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1414, "cls": "B", "first": [301, 58], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1417, "cls": "B", "first": [358, 2], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1420, "cls": "B", "first": [358, 5], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1423, "cls": "B", "first": [358, 8], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1426, "cls": "B", "first": [358, 11], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1429, "cls": "B", "first": [358, 14], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1432, "cls": "B", "first": [358, 17], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1435, "cls": "B", "first": [358, 20], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1438, "cls": "B", "first": [358, 23], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1441, "cls": "B", "first": [358, 26], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1444, "cls": "B", "first": [358, 29], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1447, "cls": "B", "first": [358, 32], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1450, "cls": "B", "first": [358, 35], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1453, "cls": "B", "first": [358, 38], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1456, "cls": "B", "first": [358, 41], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1459, "cls": "B", "first": [358, 44], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1462, "cls": "B", "first": [358, 47], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1465, "cls": "B", "first": [358, 50], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1468, "cls": "B", "first": [358, 53], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1471, "cls": "B", "first": [358, 56], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1474, "cls": "B", "first": [358, 59], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1477, "cls": "B", "first": [363, 3], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1480, "cls": "B", "first": [363, 6], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1483, "cls": "B", "first": [363, 9], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1486, "cls": "B", "first": [363, 12], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1489, "cls": "B", "first": [363, 15], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1492, "cls": "B", "first": [363, 18], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1495, "cls": "B", "first": [363, 21], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1498, "cls": "B", "first": [363, 24], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1501, "cls": "B", "first": [363, 27], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1504, "cls": "B", "first": [363, 30], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1507, "cls": "B", "first": [363, 33], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1510, "cls": "B", "first": [363, 36], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1513, "cls": "B", "first": [363, 39], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1516, "cls": "B", "first": [363, 42], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1519, "cls": "B", "first": [363, 45], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1522, "cls": "B", "first": [363, 48], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1525, "cls": "B", "first": [363, 51], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1528, "cls": "B", "first": [363, 54], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1531, "cls": "B", "first": [363, 57], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1534, "cls": "B", "first": [364, 1], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1537, "cls": "B", "first": [364, 4], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1540, "cls": "B", "first": [364, 7], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1543, "cls": "B", "first": [364, 10], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1546, "cls": "B", "first": [364, 13], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1549, "cls": "B", "first": [364, 16], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1552, "cls": "B", "first": [364, 19], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1555, "cls": "B", "first": [364, 22], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1558, "cls": "B", "first": [364, 25], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1561, "cls": "B", "first": [364, 28], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1564, "cls": "B", "first": [364, 31], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1567, "cls": "B", "first": [364, 34], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1570, "cls": "B", "first": [364, 37], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1573, "cls": "B", "first": [364, 40], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1576, "cls": "B", "first": [364, 43], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1579, "cls": "B", "first": [364, 46], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1582, "cls": "B", "first": [364, 49], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1585, "cls": "B", "first": [364, 52], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1588, "cls": "B", "first": [364, 55], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1591, "cls": "B", "first": [364, 58], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1594, "cls": "B", "first": [394, 2], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1597, "cls": "B", "first": [394, 5], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1600, "cls": "B", "first": [394, 8], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1603, "cls": "B", "first": [394, 11], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1606, "cls": "B", "first": [394, 14], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1609, "cls": "B", "first": [394, 17], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1612, "cls": "B", "first": [394, 20], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1615, "cls": "B", "first": [394, 23], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1618, "cls": "B", "first": [394, 26], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1621, "cls": "B", "first": [394, 29], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1624, "cls": "B", "first": [394, 32], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1627, "cls": "B", "first": [394, 35], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1630, "cls": "B", "first": [394, 38], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1633, "cls": "B", "first": [394, 41], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1636, "cls": "B", "first": [394, 44], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1639, "cls": "B", "first": [394, 47], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1642, "cls": "B", "first": [394, 50], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1645, "cls": "B", "first": [394, 53], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1648, "cls": "B", "first": [394, 56], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1651, "cls": "B", "first": [394, 59], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1654, "cls": "B", "first": [407, 3], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1657, "cls": "B", "first": [407, 6], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1660, "cls": "B", "first": [407, 9], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1663, "cls": "B", "first": [407, 12], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1666, "cls": "B", "first": [407, 15], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1669, "cls": "B", "first": [407, 18], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1672, "cls": "B", "first": [407, 21], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1675, "cls": "B", "first": [407, 24], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1678, "cls": "B", "first": [407, 27], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1681, "cls": "B", "first": [407, 30], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1684, "cls": "B", "first": [407, 33], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1687, "cls": "B", "first": [407, 36], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1690, "cls": "B", "first": [407, 39], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1693, "cls": "B", "first": [407, 42], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1696, "cls": "B", "first": [407, 45], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1699, "cls": "B", "first": [407, 48], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1702, "cls": "B", "first": [407, 51], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1705, "cls": "B", "first": [407, 54], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1708, "cls": "B", "first": [407, 57], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1711, "cls": "B", "first": [422, 1], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1714, "cls": "B", "first": [422, 4], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1717, "cls": "B", "first": [422, 7], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1720, "cls": "B", "first": [422, 10], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1723, "cls": "B", "first": [422, 13], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1726, "cls": "B", "first": [422, 16], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1729, "cls": "B", "first": [422, 19], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1732, "cls": "B", "first": [422, 22], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1735, "cls": "B", "first": [422, 25], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1738, "cls": "B", "first": [422, 28], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1741, "cls": "B", "first": [422, 31], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1744, "cls": "B", "first": [422, 34], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1747, "cls": "B", "first": [422, 37], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1750, "cls": "B", "first": [422, 40], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1753, "cls": "B", "first": [422, 43], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1756, "cls": "B", "first": [422, 46], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1759, "cls": "B", "first": [422, 49], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1762, "cls": "B", "first": [422, 52], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1765, "cls": "B", "first": [422, 55], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1768, "cls": "B", "first": [422, 58], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1771, "cls": "B", "first": [471, 2], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1774, "cls": "B", "first": [471, 5], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1777, "cls": "B", "first": [471, 8], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1780, "cls": "B", "first": [471, 11], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1783, "cls": "B", "first": [471, 14], "valid": false}
+FIRST {"index": 1786, "cls": "B", "first": [471, 17], "valid": false}
+FIRST {"index": 1789, "cls": "B", "first": [471, 20], "valid": false}
+FIRST {"index": 1792, "cls": "B", "first": [471, 23], "valid": false}
+FIRST {"index": 1795, "cls": "B", "first": [471, 26], "valid": false}
+FIRST {"index": 1798, "cls": "B", "first": [471, 29], "valid": false}
+FIRST {"index": 1801, "cls": "B", "first": [471, 32], "valid": false}
+FIRST {"index": 1804, "cls": "B", "first": [471, 35], "valid": false}
+FIRST {"index": 1807, "cls": "B", "first": [471, 38], "valid": false}
+FIRST {"index": 1810, "cls": "B", "first": [471, 41], "valid": false}
+FIRST {"index": 1813, "cls": "B", "first": [471, 44], "valid": false}
+FIRST {"index": 1816, "cls": "B", "first": [471, 47], "valid": false}
+FIRST {"index": 1819, "cls": "B", "first": [471, 50], "valid": false}
+FIRST {"index": 1822, "cls": "B", "first": [471, 53], "valid": false}
+FIRST {"index": 1825, "cls": "B", "first": [471, 56], "valid": false}
+FIRST {"index": 1828, "cls": "B", "first": [471, 59], "valid": false}
+FIRST {"index": 1831, "cls": "B", "first": [492, 3], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1834, "cls": "B", "first": [492, 6], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1837, "cls": "B", "first": [492, 9], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1840, "cls": "B", "first": [492, 12], "valid": false}
+FIRST {"index": 1843, "cls": "B", "first": [492, 15], "valid": false}
+FIRST {"index": 1846, "cls": "B", "first": [492, 18], "valid": false}
+FIRST {"index": 1849, "cls": "B", "first": [492, 21], "valid": false}
+FIRST {"index": 1852, "cls": "B", "first": [492, 24], "valid": false}
+FIRST {"index": 1855, "cls": "B", "first": [492, 27], "valid": false}
+FIRST {"index": 1858, "cls": "B", "first": [492, 30], "valid": false}
+FIRST {"index": 1861, "cls": "B", "first": [492, 33], "valid": false}
+FIRST {"index": 1864, "cls": "B", "first": [492, 36], "valid": false}
+FIRST {"index": 1867, "cls": "B", "first": [492, 39], "valid": false}
+FIRST {"index": 1870, "cls": "B", "first": [492, 42], "valid": false}
+FIRST {"index": 1873, "cls": "B", "first": [492, 45], "valid": false}
+FIRST {"index": 1876, "cls": "B", "first": [492, 48], "valid": false}
+FIRST {"index": 1879, "cls": "B", "first": [492, 51], "valid": false}
+FIRST {"index": 1882, "cls": "B", "first": [492, 54], "valid": false}
+FIRST {"index": 1885, "cls": "B", "first": [492, 57], "valid": false}
+FIRST {"index": 1888, "cls": "B", "first": [523, 1], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1891, "cls": "B", "first": [523, 4], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1894, "cls": "B", "first": [523, 7], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1897, "cls": "B", "first": [523, 10], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1900, "cls": "B", "first": [523, 13], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1903, "cls": "B", "first": [523, 16], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1906, "cls": "B", "first": [523, 19], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1909, "cls": "B", "first": [523, 22], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1912, "cls": "B", "first": [523, 25], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1915, "cls": "B", "first": [523, 28], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1918, "cls": "B", "first": [523, 31], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1921, "cls": "B", "first": [523, 34], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1924, "cls": "B", "first": [523, 37], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1927, "cls": "B", "first": [523, 40], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1930, "cls": "B", "first": [523, 43], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1933, "cls": "B", "first": [523, 46], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1936, "cls": "B", "first": [523, 49], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1939, "cls": "B", "first": [523, 52], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1942, "cls": "B", "first": [523, 55], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1945, "cls": "B", "first": [523, 58], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1948, "cls": "B", "first": [533, 2], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1951, "cls": "B", "first": [533, 5], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1954, "cls": "B", "first": [533, 8], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1957, "cls": "B", "first": [533, 11], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1960, "cls": "B", "first": [533, 14], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1963, "cls": "B", "first": [533, 17], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1966, "cls": "B", "first": [533, 20], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1969, "cls": "B", "first": [533, 23], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1972, "cls": "B", "first": [533, 26], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1975, "cls": "B", "first": [533, 29], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1978, "cls": "B", "first": [533, 32], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1981, "cls": "B", "first": [533, 35], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1984, "cls": "B", "first": [533, 38], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1987, "cls": "B", "first": [533, 41], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1990, "cls": "B", "first": [533, 44], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1993, "cls": "B", "first": [533, 47], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1996, "cls": "B", "first": [533, 50], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 1999, "cls": "B", "first": [533, 53], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 2002, "cls": "B", "first": [533, 56], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 2005, "cls": "B", "first": [533, 59], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 2008, "cls": "B", "first": [553, 3], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 2011, "cls": "B", "first": [553, 6], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 2014, "cls": "B", "first": [553, 9], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 2017, "cls": "B", "first": [553, 12], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 2020, "cls": "B", "first": [553, 15], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 2023, "cls": "B", "first": [553, 18], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 2026, "cls": "B", "first": [553, 21], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 2029, "cls": "B", "first": [553, 24], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 2032, "cls": "B", "first": [553, 27], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 2035, "cls": "B", "first": [553, 30], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 2038, "cls": "B", "first": [553, 33], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 2041, "cls": "B", "first": [553, 36], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 2044, "cls": "B", "first": [553, 39], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 2047, "cls": "B", "first": [553, 42], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 2050, "cls": "B", "first": [553, 45], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 2053, "cls": "B", "first": [553, 48], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 2056, "cls": "B", "first": [553, 51], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 2059, "cls": "B", "first": [553, 54], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+FIRST {"index": 2062, "cls": "B", "first": [553, 57], "valid": true, "u_t": 1, "freed": null, "second_caps": [], "successes": []}
+DONE {"first_letters_done": 518, "cpu": 768.6}

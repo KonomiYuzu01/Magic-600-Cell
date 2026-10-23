@@ -28,7 +28,7 @@ The work in flight was finished and recorded on the branch of draft pull request
   ([stage 12](../../../research/jumbling/restoration/12-low-height/README.md), section 11);
 - packets P1 to P5 of the tutorial runner, implemented by Codex and reviewed by the integrator; one `major` finding,
   P3-falsepass-01, is open, and the patches are kept, not applied
-  (stage 13, section 8: `research/jumbling/restoration/13-tutorial-runner/README.md`, on #112's branch only).
+  ([stage 13](../../../research/jumbling/restoration/13-tutorial-runner/README.md), section 8).
 
 Not started: I1, the integration of the five packets, and with it every run of the runner with the existing rules
 connected (stage 13, section 8). None of the 21 scrambles of the

@@ -1,0 +1,3 @@
+LOADED {"digest": "273eab69dee9e3a2f4a3997a75f6b8d9ad16814fa26b941bf7a219247f9bab6d", "off": 105437, "cpu": 2363.4}
+START {"tau": null, "u": 0, "targets": [], "digest": "cc5ef7ecf0510ea9a74fc52bafe324d6d8f58294c4b0e20b40b97b414dada062", "n2_n4_n6": [108453, 1419, 0], "off": 109872, "N": 134346, "cpu": 22.6}
+HANDOFF {"steps": 0, "digest": "cc5ef7ecf0510ea9a74fc52bafe324d6d8f58294c4b0e20b40b97b414dada062", "n2_n4_n6": [108453, 1419, 0], "off": 109872, "N": 134346, "cpu": 26.9}

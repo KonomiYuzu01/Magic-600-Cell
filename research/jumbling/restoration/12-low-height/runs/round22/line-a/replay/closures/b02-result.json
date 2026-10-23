@@ -1,0 +1,69 @@
+{
+ "input_digest": "af3468653fbf29f394528bba3b3aec49248e8fbfd59bf74738f83ad8dc6224b6",
+ "V_source": "certificate",
+ "after_V": {
+  "occupied_badW": 0,
+  "off_set_unchanged": true,
+  "off_exact_poses_unchanged": true
+ },
+ "parts": [
+  {
+   "part": "V",
+   "twists": 49,
+   "input_digest": "af3468653fbf29f394528bba3b3aec49248e8fbfd59bf74738f83ad8dc6224b6",
+   "output_digest": "7bda37dbfb3b45aef27744bec2876027bd52477d4d524a4a394d1f9d60f50fab",
+   "off_end": 1088
+  },
+  {
+   "part": "P",
+   "twists": 0,
+   "input_digest": "7bda37dbfb3b45aef27744bec2876027bd52477d4d524a4a394d1f9d60f50fab",
+   "output_digest": "7bda37dbfb3b45aef27744bec2876027bd52477d4d524a4a394d1f9d60f50fab",
+   "off_end": 1088
+  },
+  {
+   "part": "Q",
+   "twists": 60,
+   "input_digest": "7bda37dbfb3b45aef27744bec2876027bd52477d4d524a4a394d1f9d60f50fab",
+   "output_digest": "8b851c997e1c92f0b6cc021c7b4804f14fa60ab7e35bd00e3335071a117369cc",
+   "off_end": 977
+  },
+  {
+   "part": "Pinv",
+   "twists": 0,
+   "input_digest": "8b851c997e1c92f0b6cc021c7b4804f14fa60ab7e35bd00e3335071a117369cc",
+   "output_digest": "8b851c997e1c92f0b6cc021c7b4804f14fa60ab7e35bd00e3335071a117369cc",
+   "off_end": 977
+  },
+  {
+   "part": "Vinv",
+   "twists": 49,
+   "input_digest": "8b851c997e1c92f0b6cc021c7b4804f14fa60ab7e35bd00e3335071a117369cc",
+   "output_digest": "3df781aa71e97904c756b6a49830907a78c802172167f062947920b1870d838c",
+   "off_end": 977
+  }
+ ],
+ "end": {
+  "digest": "3df781aa71e97904c756b6a49830907a78c802172167f062947920b1870d838c",
+  "off": 977,
+  "T_restored": 111,
+  "collateral": 0,
+  "protected_still_off": 977,
+  "protected_exact_pose_changed": 0,
+  "free_on_K": 0,
+  "free_still_off": 0,
+  "free_pose_changed": 0,
+  "lattice_of_S_on_K_at_end": 176032,
+  "lattice_of_S": 176032,
+  "lattice_of_S_same_exact_pose": 176032
+ },
+ "length": 158,
+ "times": {
+  "ghost_premises": 16.4,
+  "menu_and_condition": 25.1,
+  "certificate": 166.0,
+  "prepare": 7.3,
+  "replay": 5.8
+ },
+ "seconds": 220.6
+}

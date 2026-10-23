@@ -1,0 +1,33 @@
+{"safe_all_grips": 562, "letters": 6182, "off_lattice": 3097, "sec": 28}
+{"orbits": 1816, "singletons": 1781, "sec": 28}
+{"safe_all_grips": 600, "letters": 6600, "off_lattice": 0, "sec": 41}
+{"least": 25, "route": "atlas", "size": 1434, "s": 10, "e": 9, "f": 22, "steps": 1, "sec": 46.765}
+{"least": 64, "route": "atlas", "size": 2386, "s": 46, "e": 5, "f": 20, "steps": 2, "sec": 47.299}
+{"least": 67, "route": "atlas", "size": 3591, "s": 22, "e": 9, "f": 17, "steps": 8, "sec": 47.915}
+{"least": 69, "route": "atlas", "size": 7182, "s": 46, "e": 5, "f": 5, "steps": 14, "sec": 48.707}
+{"least": 16, "route": "atlas", "size": 3555, "s": 94, "e": 6, "f": 6, "steps": 1, "sec": 49.221}
+{"least": 70, "route": "atlas", "size": 7188, "s": 46, "e": 11, "f": 18, "steps": 19, "sec": 50.649}
+{"least": 17, "route": "atlas", "size": 7122, "s": 190, "e": 14, "f": 32, "steps": 1, "sec": 51.976}
+{"least": 105, "route": "atlas", "size": 2400, "s": 9214, "e": 5, "f": 5, "steps": 10, "sec": 53.458}
+{"least": 81, "route": "atlas", "size": 3597, "s": 46, "e": 13, "f": 18, "steps": 9, "sec": 54.264}
+{"least": 41, "route": "atlas", "size": 7152, "s": 142, "e": 12, "f": 17, "steps": 5, "sec": 55.613}
+{"least": 31, "route": "atlas", "size": 3567, "s": 766, "e": 12, "f": 19, "steps": 1, "sec": 56.532}
+{"least": 22, "route": "atlas", "size": 7143, "s": 766, "e": 17, "f": 25, "steps": 2, "sec": 58.004}
+{"least": 116, "route": "atlas", "size": 120, "s": 190, "e": 5, "f": 5, "steps": 0, "sec": 58.28}
+{"least": 75, "route": "atlas", "size": 1440, "s": 1534, "e": 5, "f": 5, "steps": 9, "sec": 59.147}
+{"least": 82, "route": "atlas", "size": 7194, "s": 46, "e": 5, "f": 17, "steps": 34, "sec": 60.366}
+{"least": 74, "route": "atlas", "size": 7194, "s": 46, "e": 5, "f": 5, "steps": 30, "sec": 61.478}
+{"least": 33, "route": "atlas", "size": 7167, "s": 70, "e": 10, "f": 31, "steps": 5, "sec": 63.01}
+{"least": 23, "route": "atlas", "size": 7161, "s": 1534, "e": 6, "f": 6, "steps": 6, "sec": 64.509}
+{"least": 32, "route": "atlas", "size": 7149, "s": 766, "e": 5, "f": 5, "steps": 5, "sec": 65.835}
+{"least": 115, "route": "atlas", "size": 2400, "s": 46, "e": 5, "f": 19, "steps": 23, "sec": 66.492}
+{"least": 108, "route": "atlas", "size": 3600, "s": 94, "e": 8, "f": 16, "steps": 29, "sec": 67.375}
+{"least": 106, "route": "atlas", "size": 7200, "s": 142, "e": 5, "f": 20, "steps": 42, "sec": 69.061}
+{"least": 83, "route": "atlas", "size": 7200, "s": 94, "e": 5, "f": 17, "steps": 42, "sec": 70.377}
+{"least": 90, "route": "atlas", "size": 7200, "s": 94, "e": 5, "f": 5, "steps": 29, "sec": 71.759}
+{"least": 34, "route": "atlas", "size": 7176, "s": 142, "e": 13, "f": 20, "steps": 9, "sec": 73.405}
+{"least": 66, "route": "atlas", "size": 7173, "s": 142, "e": 12, "f": 33, "steps": 10, "sec": 75.036}
+{"least": 65, "route": "atlas", "size": 7176, "s": 1534, "e": 5, "f": 17, "steps": 10, "sec": 77.451}
+{"least": 14, "route": "atlas", "size": 7098, "s": 286, "e": 25, "f": 31, "steps": 2, "sec": 79.348}
+{"least": 12, "route": "atlas", "size": 7083, "s": 562, "e": 16, "f": 45, "steps": 2, "sec": 81.77}
+{"complete": true, "missing": [], "V_length": 336206, "bound": 2599112, "seconds": 83.782576, "sec": 83.783}

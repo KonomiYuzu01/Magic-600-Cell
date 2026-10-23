@@ -11,7 +11,8 @@ jumbling plan is [`jumbling-plan.md`](../jumbling-plan.md) and the view requirem
 [`jumbling-observation.md`](../jumbling-observation.md).
 Since 22 October 2026 these pages are also on `main`
 ([owner decision](../../../wiki/decisions/owner-decisions-2026-10-22.md), Q1). They cite research files in their version on
-#112's branch (`git show ec0f0ac:<path>`), which can differ from the version on `main` or be missing there.
+#112's branch (`git show ec0f0ac:<path>`); since #112 merged, those files are on `main` as well, where a later version
+can differ from the one cited.
 
 ## Pages
 

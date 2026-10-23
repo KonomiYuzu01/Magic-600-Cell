@@ -1,0 +1,6730 @@
+# PROOFS-B: lemmas toward B′(h) at low heights (theory round 22)
+
+18 October 2026. **Model review only.** The senior reviewer (a Codex model called read-only through the project's
+review wrapper) wrote these proofs in theory round 22. The integrator read each one against the sources, re-ran every
+computation listed here, and wrote them in this form. No human has reviewed them and nothing here is formalized. The
+file is written so that it can be handed to the owner's Lean formalization agent (Archon) once the owner decides; E2
+and the Lean plan wait for that decision
+([record](../../../../docs/wiki/decisions/owner-decisions-2026-10-17-jumbling-m2.md)).
+
+The lemmas serve conjecture B′(h) of the [stage 12 README](README.md), section 1, which is to be proved as an
+existence statement with explicit bounds that need not be small
+([owner decision, 18 October 2026](../../../../docs/wiki/decisions/owner-decisions-2026-10-18-bprime-goal.md)). The
+review record of the round, with its finding ids, is
+[`SENIOR-REVIEW.md`](../09-general-method/SENIOR-REVIEW.md) section 27. Line (c) of the round (the T2 catalogue and T3
+unlocking) was a joint attack of the senior reviewer and the solver; its lemmas, after the cross-examination and a
+second round by the senior reviewer, are in section 7. The second round of line (a) (R22A2) closes section 2.
+
+Evidence kind: exact synthetic geometry over Q(√5) and source evidence; headless Linux. Nothing here is a Windows,
+DirectX, input or performance result.
+
+## 0. How each lemma is written
+
+- **Objects**: what the lemma is about; section 1 defines the shared ones.
+- **Hypotheses** H1, H2, ...: each is a finite exact check at the current state Z, and the function or script that
+  decides it is named. No hypothesis refers to the history of Z.
+- **Statement** and **proof**.
+- **Bound**: an explicit expression, where the lemma gives one. A bound containing a factor such as 7,200^n, lcm(1,
+  ..., 13,205) or a binomial coefficient in 177,120 is an *existence bound*: it shows that a finite search decides the
+  question and that a word of at most that length exists. It is not a length a person can execute; under the size
+  criterion of 14 October only bounds of human scale count as lengths.
+- **Instances**: computations at named states, with the command (section 6) and its output. An instance is evidence
+  about one state. It is never part of a proof.
+- **Uses**: results proved elsewhere and used here as given. Until they are formalized they are the axioms of this
+  file.
+- **Status**: *proved* (model review); *computed* (exact computation, re-run by the integrator); *conditional* (proved
+  under hypotheses that are not shown to hold at every state of 𝒞_h); *open*.
+
+Words are chronological: the first letter acts first. For a word w of retained letters, π_w is the permutation of the
+home chambers that w induces, and the holes after w are π_w(holes). A product of words uv means u, then v.
+
+## 1. Objects
+
+The setting is that of [`METHOD.md`](../09-general-method/METHOD.md),
+[`buffer-transport.md`](../../theory/buffer-transport.md) section 1 and `SENIOR-REVIEW.md` section 4.
+
+- **O1, pieces and the lattice.** Menu I_a on the retained 600-cell-Full geometry: 177,120 pieces, each with an exact
+  pose, a rotation of R⁴ with entries in Q(√5). K⁺, the rotation group of the 600-cell, has order 7,200. A piece is
+  on the lattice when its pose lies in K⁺ and off otherwise; n(Z) is the number of off pieces. Ω is the set of the
+  177,120 home chambers; a chamber is a hole of Z when no lattice piece occupies it, so |holes(Z)| = n(Z).
+- **O2, letters.** There are 600 grips. A letter (c, j) applies the element of menu item j at grip c
+  (`restore.element`) to every piece whose region lies inside the cap of c. It is admissible when no piece straddles
+  the cut of c; a word is admissible when every prefix is. The items of a grip whose element lies in K⁺ are its
+  *retained* letters (11 besides the identity, closed under inverses); the other 48 are jumble letters. A retained
+  letter keeps every piece's lattice membership. A lattice piece never straddles a cut.
+- **O3, heights.** The left height of a piece is the tree distance of the left factor of its pose (`trees.pose_tree`);
+  off pieces have even height at least 2. 𝒞_h is the set of reachable states whose off pieces all have left height at
+  most h.
+- **O4, steps.** A unit is a rigid block of off pieces or one frame part of a multi-frame block. A word w admissible
+  at Z is a *strict′ step* for a unit U when, after w, U and every lattice piece of Z are on the lattice and every
+  other off piece of Z is on the lattice or at its exact pose of Z; it is *strict* when every other off piece keeps its
+  exact pose. The *endpoint collateral* C_Z(w) is the set of lattice pieces of Z that are off after w.
+- **O5, SAFE-ALL.** A(Z): the grips whose cut no piece straddles and whose cap holds no off piece, with their 11
+  retained letters each. A word over A(Z) is admissible at every prefix, fixes every off piece and maps the holes by
+  π_w. G(Z) is the group these letters generate on Ω, Fix(G) its fixed chambers. For a target T ⊆ Ω: N1, every chamber
+  of T ∩ Fix(G) is a hole; N2, |holes ∩ Δ| ≥ |T ∩ Δ| for every orbit Δ. Proposition N (N1 and N2 are necessary),
+  Jordan certificates, Theorem A and Corollary A1 are those of `buffer-transport.md` sections 2 and 3. Decided by
+  `buffer.condition` and `buffer.check_jordan` (`research/jumbling/theory/buffer.py`).
+- **O6, ghosts and Bad.** For a word W, the ghost of a home chamber is a virtual lattice piece there at the identity
+  pose, moved by W as a piece there would be. Bad(W) is the set of chambers whose ghost straddles a cut at some prefix
+  or ends off the lattice (`fastghost.Ghost`, `ghostlib.ghost`). If a SAFE-ALL word V has Bad(W) ⊆ holes(Z·V), then
+  V·W·V⁻¹ takes no lattice piece off (AU-03, `SENIOR-REVIEW.md` section 9).
+- **O7, the class-cell model (LC-01).** Fix a class of grips P (120 grips) and put G_P = Sym⁺(P), of order 7,200, and
+  H_P = G_P ∩ K⁺. The labels are the five cosets G_P/H_P; label 0 is H_P. A cell is a sign vector over the 120 caps of
+  P; there are 2,641 cells, one of them outer. A point is a pair (C, ℓ), so there are N_P = 13,205 points. A content
+  is the set of pieces with the same cell and the same domain; a class-P off content has poses h·k with h ∈ G_P and
+  k ∈ K⁺ and sits at the point (C, hH_P); the lattice pieces of a home cell C (a cell that holds home chambers) form
+  its lattice content, at (C, 0). The *kind* of a cell is the number of caps of P that contain it (vertex, edge,
+  triangle, tetrahedron). A grip of P is *free* when it is admissible and its cap holds only lattice pieces and P's
+  frames. A letter (c, g) at a free grip sends (C, ℓ) to (gC, gℓ) when C lies in the cap of c and fixes it otherwise.
+  Decided by `e3_class.Model` and `classes.py` (`research/jumbling/theory/`).
+- **O8, LC-03 (used throughout).** Over free class-P letters: every letter stays admissible (own pieces never
+  straddle a cut of P, foreign pieces stay outside free caps); all pieces of one cell C receive one accumulated
+  rotation a_C ∈ G_P, so their points move exactly as the model says; and a rotation that fixes a nonempty cell and all
+  its five labels is the identity.
+
+## 2. Line (a): transport without endpoint collateral
+
+### R22A-01. Zero Bad means zero endpoint collateral (proved)
+
+- Objects: a state Z, a class P, a word W over the free class-P letters of Z.
+- Hypotheses: H1, every letter of W is at a grip of P that is free at Z (O7).
+- Statement.
+  1. No ghost of a home chamber straddles a cut of P, and Bad(W) is the union of Ω_C over the home cells C whose
+     label-0 point (C, 0) W sends to a point of nonzero label.
+  2. C_Z(W) is the set of lattice pieces of Z at chambers of Bad(W). So C_Z(W) = ∅ exactly when
+     Bad(W) ⊆ holes(Z).
+  3. If W lands a nonempty off content of kind κ, Bad(W) contains Ω_C for at least one home cell C of kind κ: at
+     least 111 chambers for a triangle cell and 87 for a tetrahedron cell, even when they are all holes.
+- Proof.
+  1. A ghost of a chamber of cell C has pose 1 ∈ H_P, so it never straddles a cut of P (O8). After W its pose is the
+     accumulated rotation a_C ∈ G_P, which lies in K⁺ exactly when a_C ∈ H_P, that is, when a_C sends label 0 to
+     label 0. All ghosts of Ω_C share a_C.
+  2. A lattice piece of Z in cell C has a pose k ∈ K⁺ and ends at a_C·k, which lies in K⁺ exactly when a_C ∈ K⁺ ∩
+     G_P = H_P, the condition of item 1 for the ghost of its chamber.
+  3. Class-P words act on points as permutations and keep the kind of a cell. Let S_κ be the finite set of label-0
+     points of home cells of kind κ. W sends the unit's point p ∉ S_κ into S_κ, so W cannot send all of S_κ into S_κ;
+     some (C, 0) ∈ S_κ goes to a nonzero label (a label-0 point outside a home cell would put a lattice ghost off
+     the body, which a pose in K⁺ cannot do), and Ω_C ⊆ Bad(W) by item 1.
+- Remark. The guarantee concerns endpoints, not prefixes: at the depth 40 stop the first jumble letter of any landing
+  word takes at least 3,097 − 1,193 = 1,904 lattice pieces off (M1-03), so no landing word there keeps every lattice
+  piece on the lattice at every prefix.
+- Uses: O8 (LC-03); M1-03 for the remark.
+
+### R22A-02. Whole-cell ownership (proved)
+
+- Objects: Z, P, a word W over the free class-P letters of Z, a nonempty class-P off content Q of cell C.
+- Hypotheses: H1 as in R22A-01; H2, Q is a class-P off content (O7).
+- Statement. W keeps the exact pose of every piece of Q if and only if W fixes all five points (C, 0), ..., (C, 4).
+  Fixing only the point of Q is not enough. A lattice content of a home cell C stays on the lattice if and only if W
+  sends (C, 0) to a point of label 0; its chamber and exact pose need not be fixed. Pieces of a foreign frame never
+  move.
+- Proof. All pieces of C receive a_C (O8). If W fixes the five points, a_C fixes C and its labels, so a_C = 1 (O8).
+  Conversely, if one piece of Q with pose γ keeps it, a_C·γ = γ and γ is invertible, so a_C = 1 and all five points
+  are fixed. A lattice piece of C with pose k ends at a_C·k, which lies in K⁺ exactly when a_C ∈ H_P. Foreign pieces
+  lie outside every free cap.
+- Counterexample to the point rule: the nonidentity C3 rotations of a triangle cell in LC-12 fix two labels; a content
+  at one of them keeps its point and changes its exact pose.
+- Uses: O8; LC-12 for the counterexample.
+
+### R22A-03. The transport lemma (proved)
+
+- Objects: Z, P, the point model of O7, a class-P off content U at p = (X, ℓ). The *owned set* O_U consists of the
+  label-0 points of the home cells that hold lattice pieces, every point of the cell of every other class-P off
+  content, and every point of every *excluded* cell (a cell with an off piece of another class or with two off
+  contents). U's own ownership is removed; ownership of the same points by anyone else is kept.
+- Hypotheses.
+  - H1: U is a whole content at p with ℓ ≠ 0.
+  - H2: every grip used is free at Z.
+  - H3: no point of the fibre {(X, 0), ..., (X, 4)} lies in O_U (U is not glued to another content of its cell).
+  - H4: a path p = q_0, q_1, ..., q_m with q_{i+1} = A_i^{L_i}(q_i), where A_i = [x_i, y_i] is the commutator of two
+    letters at free grips and L_i is the least common multiple of the lengths of the cycles of A_i that meet O_U (1
+    when none does); q_m = (H, 0) for a home cell H of U's kind with no point of its fibre in O_U.
+  - All four are exact computations in the model (`zpath4.py`, section 6).
+- Statement. W = A_0^{L_0} ··· A_{m−1}^{L_{m−1}}, a word of 4·Σ L_i letters, is admissible at Z and is a strict step
+  for U with C_Z(W) = ∅.
+- Proof.
+  1. A point on a cycle of length λ is fixed by A^e exactly when λ divides e, so each A_i^{L_i} fixes every point of
+     O_U, and so does W.
+  2. Every other class-P off content and every excluded cell has its whole fibre in O_U, so it keeps its exact pose
+     (R22A-02). Every home cell with lattice pieces keeps label 0 at label 0, so Bad(W) consists of chambers of
+     vacant home cells only and C_Z(W) = ∅ (R22A-01).
+  3. W sends p to (H, 0), so the pieces of U receive a rotation that takes label ℓ to label 0: they land.
+  4. Admissibility at every prefix is O8.
+  5. Free cells: a class-P word sends the fibre of each cell bijectively onto the fibre of a cell, so a power that
+     fixes a point of a cell fixes that cell. The cells that meet O_U are therefore permuted among themselves by each
+     clean power, and so are the other cells; by H3, U is in one of the other cells at every power boundary (not
+     necessarily inside a power).
+- A failed test refutes this construction only, not every word with C_Z = ∅.
+- Uses: R22A-01, R22A-02, O8.
+
+### R22A-04. Bounds and completeness for clean powers (proved)
+
+- Statement. Put N_P = 13,205 and E = lcm(1, ..., N_P). For every commutator A, L_A divides the order of A on the
+  points, which divides E. If the component of p in the graph of R22A-03 has f points, a reachable target has a path
+  of at most f − 1 clean powers and a word of at most 4E(f − 1) ≤ 4E(N_P − 1) letters.
+- Completeness. Every power of A that fixes O_U has an exponent divisible by L_A, so the powers A^{L_A}, one per
+  commutator, generate every individually clean power. Each has finite order, so its inverse is a positive power of
+  it and the undirected components of the graph are its reachability classes. The component of p, computed over every
+  commutator of the alphabet with no pair filter, decides whether this family reaches a target. A search cut at a
+  fixed number of powers finds witnesses but proves no absence. With m commutators (m ≤ (120 · 59)²) a breadth-first
+  search examines at most m·N_P point moves.
+- Remark (integrator, not reviewed): the order of a permutation of N_P points is at most Landau's function g(N_P), and
+  ln g(N) ≤ 1.05313·√(N ln N) (Massias, Nicolas and Robin, 1989), so E can be replaced by g(N_P) < e^{373}.
+- Existence bound only. The paths found at the depth 40 stop have 1 to 3 powers with exponents up to 6 (section 4 of
+  this file and the stage 12 README).
+
+### R22A-05. No merging; target capacity (proved)
+
+- Statement.
+  1. Under class-P words distinct points stay distinct and distinct cells stay distinct. Two contents that start at
+     different points never end at one point.
+  2. Capacity. Let M_κ be the number of home cells of kind κ in class P and v_κ the number of those that hold no
+     lattice piece. Along any sequence of class-P words after which every original and every landed lattice piece is
+     on the lattice, at most v_κ initially distinct off contents of kind κ land.
+  3. Type counts. If each home cell of kind κ has b_{κ,t} chambers of type t, N_t is the number of chambers of type t
+     and h_t the number of holes of type t, then max(0, M_κ − Σ_t min(M_κ·b_{κ,t}, N_t − h_t)) ≤ v_κ ≤
+     min over t with b_{κ,t} > 0 of ⌊h_t / b_{κ,t}⌋.
+- Proof.
+  1. Each letter permutes the cells and, cell by cell, the five labels; so does every word.
+  2. At the start M_κ − v_κ label-0 points of kind κ hold lattice contents. At the end these contents are still on the
+     lattice, at distinct label-0 points of kind κ (kinds are preserved), and every landed content of kind κ is at a
+     further distinct label-0 point of kind κ (item 1). There are M_κ such points, so at most v_κ contents land. Moving
+     lattice contents between home cells does not change the count.
+  3. Vacant cells have disjoint chambers, which gives the upper bound. Each nonvacant cell holds at least one lattice
+     piece, and the lattice pieces of type t in cells of kind κ number at most min(M_κ·b_{κ,t}, N_t − h_t), which gives
+     the lower bound.
+- Consequence. A cell partly filled by an earlier landing (a 33-piece content in a 111-chamber triangle cell leaves 78
+  holes there) cannot receive another content by class-P words while its content stays: its label-0 point is taken.
+- Instance (R22A-08): at the depth 40 stop class 3 has capacity three triangle contents and one tetrahedron content,
+  against five triangle contents (b00, b02, b07, b13, b14) and two tetrahedron contents (b01, b11) that clean powers
+  move; class 4 has capacity 0 for every kind and class 2 has no tetrahedron capacity. These are obstructions for one
+  fixed class, not after a SAFE preparation or words of another class.
+
+### R22A-06. Entry and closure (proved; conditional on the hypotheses)
+
+- Entry. Objects as in R22A-03; r = (H, 0) an occupied label-0 point of a home cell of U's kind, h its lattice
+  content; A a commutator at free grips and L the least common multiple of the lengths of the cycles of A that meet
+  O_U \ {r}.
+  - Hypotheses: H1 to H3 of R22A-03; H4, a clean path T from p to a point q; H5, q and r lie on one cycle of A, of
+    length λ, with r = A^d(q), and gcd(L, λ) divides d.
+  - Statement. Choose e ≡ d (mod λ) with L | e and 0 ≤ e < ord(A) (Chinese remainder theorem). Then W = T·A^e lands U
+    at (H, 0), keeps every other protected off content at its exact pose, and takes off no lattice piece outside h.
+    It takes all of h off exactly when A^e(r) has a nonzero label; A^e(r) can also be a vacant label-0 point, and then
+    W takes nothing off. |W| ≤ 4E·f with f as in R22A-04.
+  - Proof. T and A^e fix every owner other than r (as in R22A-03); apply R22A-02 to each owner and read r's final
+    label. Reducing e modulo ord(A) keeps the exact action: A^{ord(A)} fixes every point, hence every non-outer cell
+    with its labels, hence (O8) every accumulated rotation is 1.
+- Closure. For this W compute Bad(W) completely, at every chamber of the union of its caps.
+  - Hypothesis: a SAFE-ALL word V at Z with Bad(W) ⊆ holes(Z·V).
+  - Statement. V·W·V⁻¹ is a strict step of 2|V| + |W| letters.
+  - Proof. V fixes every off piece, so W meets the same off geometry at Z·V and acts on the off pieces as at Z; it
+    takes no lattice piece off (O6). After W the off pieces are those of Z without U, at their poses of Z, so every
+    letter of V⁻¹ is still a SAFE letter: it is admissible, fixes the off pieces and keeps the landed pieces of U on
+    the lattice.
+  - V must vacate all of Bad(W): the part of Bad(W) in initially vacant cells (from T) counts too, because V can move
+    lattice pieces into it. If h has 22 pieces in a 111-chamber triangle cell and W sends its label 0 off, Bad(W) holds
+    all 111 chambers.
+- Empty cell first. A SAFE word V′ with Ω_H ⊆ holes(Z·V′) exists exactly when N1 and the target-orbit test of M1-17
+  hold for Ω_H. After V′ the owners are recomputed; H is then vacant, and the graph of R22A-03 at Z·V′ must still reach
+  (H, 0). If it does, V′ followed by that path is a strict step.
+- Other classes, or landing other units first, need fresh checks; nothing here proves that either always exists.
+- Uses: R22A-02, R22A-03, R22A-04, O6, O8, M1-17.
+
+### R22A-07. Glued contents (proved; instance computed)
+
+- Statement. If a class-P off content U and a nonempty lattice content h lie in the same cell X at Z, every class-P
+  word that lands U takes every piece of h off the lattice: Ω_X ⊆ Bad(W).
+- Proof. All pieces of X receive one rotation a. Take a pose γ ∉ K⁺ of a piece of U and a pose k ∈ K⁺ of a piece of h.
+  If a·γ and a·k both lay in K⁺, then a = (a·k)·k⁻¹ ∈ K⁺ and γ = a⁻¹·(a·γ) ∈ K⁺, a contradiction.
+- The SAFE remedy and its limit. If a SAFE-ALL word V vacates Ω_X, then V·W·V⁻¹ with W from Theorem C (edge cell, at
+  most 720 letters when the two poles and a common neighbour are free) or from LC-12 (vertex cell, at most 104 letters
+  under its free-grip hypotheses) is a strict′ step of at most 2|V| + 720 or 2|V| + 104 letters. Triangle and
+  tetrahedron contents cannot land in their own cell (LC-12); they need a transport.
+- Instance (R22A-08): at the depth 40 stop Ω_X has occupied chambers fixed by the whole SAFE-ALL group for each of the
+  seven glued units: 4 for b03, 4 for b18, 5 for b04, 6 for b05, 5 for b12, 6 for b15 and 27 for b06. N1 fails, so by
+  Proposition N no SAFE-ALL word of any length vacates Ω_X, and no closure V·W·V⁻¹ with W a class-P landing word
+  exists for these units at this state. A step that changes the off geometry has to come first.
+- Uses: O8, Theorem C, LC-12, Proposition N.
+
+### R22A-08. Vacant home cells at the depth 40 stop (computed)
+
+- Statement. At the depth 40 stop (state digest `7e128820…`, 1,193 off pieces), counting home cells that hold no
+  lattice piece: class 2 has two triangle cells and one edge cell (the edge cell holds the off content b17 itself, so
+  it is no target for another unit); class 3 has three triangle cells and one tetrahedron cell; class 4 has none. N1
+  fails for the own cell of every glued unit, with the fixed occupied counts of R22A-07. The free grips number 113,
+  116 and 111 in classes 2, 3 and 4.
+- Command: `scripts/round22/r22a08_vacancy.py` (section 6); output `runs/round22/r22a08_vacancy.txt`.
+
+### R22A-09. The five disputed units (computed)
+
+- b02, b07, b13, b14 and b21 had model paths in a census that protected points instead of cells; their exact replays
+  turned another off content of a moved cell to another pose at the same point. R22A-02 explains the failure.
+- Under the whole-cell rule all five have strict′ steps (section 4): b02 60, b07 48, b13 60 and b14 60 letters in
+  class 3, b21 84 letters in class 2, each replayed exactly. Command: `scripts/round22/transport_census.py`
+  (section 6); records `runs/round22/line-a/census-class3.json` and `census-class24.json`.
+- A wider exact decision procedure exists for one fixed free class alphabet: record the accumulated rotation
+  a_C ∈ G_P of each of the 2,640 non-outer cells; accept when U lands, every lattice content ends at label 0 and every
+  other protected off cell has a_C = 1. There are at most 7,200^2,640 records, so breadth-first search terminates, and a
+  reachable accepting record has a word of at most 7,200^2,640 − 1 letters (existence bound). It admits intermediate
+  disturbance that cancels later and lattice contents that change cells. It was not run.
+
+### Round 2 of line (a)
+
+After the census and the closures of section 4 the senior reviewer took line (a) a second round (findings R22A2-01 to
+R22A2-06, 18 October 2026): whether b19's V can be built, whether the census steps compose, and what bounds and
+failure modes the closures have. Its exact computation is `scripts/round22/r22a2_04_sequence.py` (section 6); the
+integrator re-ran it and got the output `runs/round22/r22a2_04_sequence.txt`. Throughout, Z is the depth 40 stop
+(digest `7e128820…`, 1,193 off pieces), G = G(Z), and the *middles* are the words that land one unit each: the ten
+census steps (b00, b01, b02, b07, b11, b13, b14, b16, b20, b21) and the entry transports of b08, b09, b10 and b19
+(section 4).
+
+### R22A2-01. b19's vacating word by construction (computed hypotheses; proved consequence)
+
+- Objects: W, b19's 84-letter entry transport (`runs/round22/line-a/closures/b19-core.json`); T = Bad(W), 198
+  chambers, 15 occupied (`closures/b19-target.json`); the 20 orbits Δ of G that meet T (orbits 16 to 35 of
+  `buffer.Alphabet`, sizes 120 to 7,200), d = |Δ|.
+- Hypotheses (finite checks at Z):
+  - H1: N1 and N2 hold for T.
+  - H2: every Δ has a global Jordan certificate (w, p) with |w| = 120 (H1 of R22B-08; `buffer.check_jordan`, on all
+    177,120 chambers). The orbit of 120 chambers has p = 73.
+  - H3: on every Δ the SAFE letter (0, 1) moves r chambers with 2 ≤ r and 2r − 1 ≤ d (H2 of R22B-08); r runs from 4
+    to 204, and r = 4 on the orbit of 120 chambers.
+- Statement. A SAFE-ALL word V with T ⊆ holes(Z·V) exists with |V| ≤ B19 = 2·Σ_Δ |T ∩ Δ|·A_Δ, where
+  A_Δ = s_Δ + 2e_Δ + 2f_Δ, s_Δ = 4 + 4·[120·M_Δ + 2(d − p)]·[C(d, r) − 1] with M_Δ as in R22B-08, e_Δ = (d − 2)(2d − 1)
+  and f_Δ = (d − 3)(2d − 3)(2d − 1). B19 is a 539-digit integer, so |V| < 10^539, and V·W·V⁻¹ is a strict step of at
+  most 84 + 2·B19 < 10^540 letters (R22A-06).
+- Proof. R22B-08 turns H2 and H3 into a seed on Δ that fixes every other chamber, of at most s_Δ letters; R22B-05
+  gives the tables with e_Δ and f_Δ; R22B-01 clears T ∩ Δ orbit by orbit using only the current holes, with the
+  bound above; R22A-06 closes.
+- Construction bound, an existence bound in the sense of section 0: the seed search on the subset graphs, the
+  complete Schreier tables and the expanded V were not run.
+- Command: section 6. `r22a2_04_sequence.py` checks H1 to H3 (its CORE row for b19 and its assertions); b19's closure
+  bound 84 + 2·B19 is the difference of its two ALL_RECLOSURES_BOUND rows. `jordan_target.py` on
+  `closures/b19-target.json` rechecks H1 and H2 alone.
+- Uses: R22A-06, R22B-01, R22B-05, R22B-08.
+
+### R22A2-02. When a second strict′ step survives the first (proved)
+
+- Objects: strict′ steps w1 and w2 at Z for disjoint units; Z1 = Z·w1. Bad(w2) is the complete ghost Bad set of O6,
+  prefix straddling and endpoint failure both.
+- Statement. w2 is a strict′ step for its unit at Z1 if and only if Bad(w2) ⊆ holes(Z1).
+- Proof. Every off piece of Z1 was off at Z with the same pose, so its trajectory under w2 is the one the strict′
+  check of w2 at Z accepted: admissible, and ending on the lattice or at its pose of Z. Every other piece of Z1 is a
+  lattice piece; piece trajectories are independent, so each follows the ghost of its chamber. All of them survive
+  every cut and end on the lattice exactly when none occupies Bad(w2). This covers the pieces of w2's unit that w1
+  may already have landed.
+- A test at Z alone. Let L = Ω \ holes(Z), φ1 the map of w1's good ghosts to their end chambers, and D1 the end
+  chambers of the pieces w1 lands. The occupied chambers of Z1 are φ1(L) ∪ D1, so the criterion is
+  Bad(w2) ∩ φ1(L) = ∅ and Bad(w2) ∩ D1 = ∅, two finite exact checks. Applied in both directions it decides mutual
+  survival; it says nothing about equal final poses. Disjoint unions of the two words' caps are a stronger sufficient
+  condition. Distinct destination cells alone are not: after b07, b14's word has 111 occupied Bad chambers although
+  the two land in different triangle cells.
+- Capacity case. If w1 is a class-P clean-power step landing only U1 in a previously vacant home cell H1 of kind κ,
+  every occupied home label-0 point stays fixed and every other off content stays exact, so v_κ drops by exactly one
+  and the other kinds' counts do not change (R22A-05). Another class-P census word w2 then survives exactly when it
+  sends (H1, 0) to label 0.
+- Uses: O4, O6.
+
+### R22A2-03. The thirteen supplied steps compose at most six deep (computed)
+
+- Objects: the thirteen supplied strict′ steps at Z: the ten census words and the complete closures V·W·V⁻¹ of b08,
+  b09 and b10 (section 4).
+- Statement. Write i: j when the word for j is not a strict′ step after the word for i (R22A2-02). The failing
+  directions are exactly
+  - b00: b02, b08, b10, b16, b21; b02: b00, b08, b10, b16, b21; b08: b00, b02, b10, b16, b21;
+    b10: b00, b02, b08, b16, b21; b16: b00, b02, b08, b10, b21; b21: b08, b10, b16;
+  - b01: b07, b09, b11, b13; b11: b01, b07, b09, b13; b07: b01, b09, b13, b14; b13: b01, b07, b09, b14;
+    b09: b01, b07, b11, b13, b14, b20; b14: b09; b20: b09;
+
+  52 failing and 104 passing directions. The largest set of words compatible in both directions has four members
+  (twelve such sets). Used once each, in some order and with no further preparation, at most six of the words are
+  strict′ in succession, for example b21, b00, b14, b07, b11, b20; 261 subsets are reachable. So no order of all
+  thirteen unchanged words is strict′ throughout.
+- Proof. Each word fixes the original occupied chambers and every passing transition keeps the earlier landing sets
+  (both checked exactly), so after any successful prefix the occupied set is the original one plus the landing sets of
+  the chosen units. The subset search over these sets is therefore complete for every length, not a bounded search.
+- The counts are occupied Bad chambers (a blocked prefix or endpoint collateral). For instance b16's word after b00
+  meets 19 occupied chambers and b00's after b16 meets 45; b10's closure after b08 meets 33 and b08's after b10 34.
+- Command: section 6 (the MATRIX and FIXED_WORDS_MAX rows).
+- Uses: R22A2-02.
+
+### R22A2-04. Fresh closures land fourteen units in a checked order (proved; computed hypotheses)
+
+- Objects: a SAFE subgroup G0 at Z (here all of G); pairwise disjoint off units U_i with middles W_i, each landing U_i
+  and keeping every other off piece of Z at its exact pose; B_i = Bad(W_i), φ_i the map of W_i's good ghosts to their
+  end chambers, D_i the landing chambers of U_i; h_Δ the holes of Z in the G0-orbit Δ.
+- Hypotheses (finite checks at Z), for a proposed order of the units:
+  - H1: every orbit of size at least 2 that meets some B_i has a global Jordan certificate.
+  - H2: φ_i maps every chamber of its good domain into the same G0-orbit.
+  - H3: before step i, h_Δ − Σ_{j earlier} |D_j ∩ Δ| ≥ |B_i ∩ Δ| on every orbit Δ, singletons included (so N1 is the
+    singleton case).
+- Statement. Then fresh SAFE words V_i exist such that V_1·W_1·V_1⁻¹, V_2·W_2·V_2⁻¹, ... in that order is a sequence
+  of strict steps, each landing its unit.
+- Proof (induction along the order). Earlier strict closures leave every remaining off piece at its pose of Z, so
+  every letter of G0 is still SAFE, and the Jordan certificates still give independent alternating factors on the old
+  orbits (Lemma M). H3 and Corollary A1, applied to G0, give V_i with B_i ⊆ holes after V_i. V_i·W_i·V_i⁻¹ is strict
+  (R22A-06): the remaining off trajectories do not change, every occupied ghost is good, and V_i⁻¹ is SAFE after U_i
+  lands. The old lattice pieces stay in their G0-orbits under all three parts (H2), and U_i adds exactly |D_i ∩ Δ|
+  occupied chambers to Δ, so the hole count of Δ drops by exactly that much. No certificate on an orbit that merges
+  later is used.
+- Instance at Z. Every one of the fourteen middles has the stronger property φ_i(x) = x for every good chamber x; their
+  Bad sets meet only the 20 orbits certified in R22A2-01; replay confirms each middle's off-piece contract. The order
+  b00, b01, b02, b07, b08, b11, b13, b19, b09, b10, b14, b16, b21, b20 satisfies H3: the off counts before the steps
+  are 1,193, 1,160, 1,088, 977, 866, 833, 804, 703, 687, 629, 595, 517, 406 and 396, and 336 after the last; the least
+  slack over the target orbits before each step is 11, 1, 11, 0, 9, 0, 0, 0, 0, 2, 0, 1, 0, 0. All 2^14 subsets are
+  reachable. Without b19 the thirteen land in a similar order and leave 352 (all 2^13 subsets reachable).
+- Order matters. b01 and b09 each use one hole of the 120-chamber orbit 35, which has two; with both before b07, b11,
+  b13 or b19, which need one there, H3 fails. This is about the certificate of G0, not about every later strategy.
+- Bound. With A_Δ of R22A2-01 and k_iΔ = |B_i ∩ Δ|, closure i has at most |W_i| + 4·Σ_Δ k_iΔ·A_Δ letters. The
+  fourteen middles have 1,116 letters together, and the sum of the fourteen closure bounds is a 541-digit integer
+  (< 10^541); for the thirteen without b19, 1,032 letters and a 540-digit bound (< 10^540). Construction bounds only:
+  no V_i and no multi-step sequence was built or replayed; the existence follows from the induction and the checked
+  hypotheses.
+- Command: section 6 (CORE, RECLOSURE, RESOURCE_STEP, OFF_AFTER and ALL_RECLOSURES_BOUND rows).
+- Uses: R22A-06, R22A2-01, Corollary A1, Lemma M.
+
+### R22A2-05. A shared target: a fresh closure, not the old preparation (proved; instance computed and built)
+
+- Statement. After a strict step, take a remaining unit's middle W. Its off-piece contract survives, because every
+  remaining off piece keeps its pose. If N1, N2 and the needed Jordan certificates hold for the complete Bad(W) at the
+  new state, a new SAFE word V makes V·W·V⁻¹ a strict step, even when W enters a home cell an earlier landing now
+  occupies; it has |W| + 2|V| letters. V⁻¹ can change the cell in which the unit ends, so the middle's entry cell is
+  not the closure's final cell.
+- Instance. b08 and b10 enter the same home cell {35, 178, 189}, and their recorded preparations are the same
+  63-letter word; the supplied closures fail in both orders (R22A2-03). After either closure the other core's
+  111-chamber Bad set still passes N1 and N2 for G, with the Jordan certificates of R22A2-01: the full closure's Bad
+  set is the preimage of the core's under a permutation of G, so the orbit demands are the same. So a new V lands the
+  second unit, with |b10's step| ≤ 144 + 2·B(T), B(T) = 2·Σ_Δ |T ∩ Δ|·A_Δ, or by R22B-02 ≤ 144 + 2·[C(177,120, 1,160)
+  − 1]; for b08 after b10, ≤ 96 + 2·[C(177,120, 1,159) − 1]. The old 63-letter preparation does not do it: b10's
+  270-letter closure after b08 meets 33 occupied chambers. The same argument covers b01 and b11 and b16 and b21; the
+  order of R22A2-04 gives capacity for all fourteen at once.
+- Built (line (a), round 3; measured, exact). At the state after b08's 222-letter step, N1 and N2 hold for b10's
+  Bad(W) (111 chambers, 26 occupied), the peeling certificate of Theorem B is complete with a V of 396 letters
+  (its bound 1,371), and V·W·V⁻¹ is a strict′ step of 936 = 144 + 2·396 letters. Its replay from the exported table
+  (`stepchk.py`) lands all 34 pieces, takes no lattice piece off and keeps every other off piece at its exact pose
+  (1,160 to 1,126 off; `runs/round22/line-a/b10-after-b08/`).
+- No contradiction with R22A-05: its capacity bound is for words inside one class, while V may use retained letters
+  of other classes and move lattice contents before the class-P middle. With all extra work restricted to class P the
+  capacity obstruction stands.
+- Uses: R22A-06, R22A2-02, R22A2-04, R22B-02.
+
+### R22A2-06. Closure bounds and the two failure modes at the stop (proved; instances computed)
+
+- Bound. With E = lcm(1, ..., 13,205) and f_path the size of the clean-power component used for the entry, R22A-06
+  gives |W| ≤ 4E·f_path. If the seed-and-table certificate holds for T = Bad(W), then
+  |V·W·V⁻¹| ≤ 4E·f_path + 4·Σ_Δ |T ∩ Δ|·(s_Δ + 2e_Δ + 2f_Δ); if V is known to exist only by Corollary A1 or the
+  target-orbit test, |V·W·V⁻¹| ≤ 4E·f_path + 2·[C(177,120, n(Z)) − 1]. For a given W replace 4E·f_path by |W|. T is
+  the complete Bad set, initially vacant cells that the transport path disturbs included.
+- Failure criteria. N1 fails exactly when T holds an occupied G-fixed chamber; N2 fails exactly when some orbit has
+  fewer holes than T has chambers there; over all orbits, N1 is the singleton case of N2. Passing both does not prove
+  existence without the group certificate.
+- Instances at Z. The four entry targets pass: b19 198 Bad chambers (15 occupied), b08 and b10 111 (20), b09 87
+  (24). For the glued units every class-P landing W has the unit's own cell in Bad(W) (R22A-07), and that cell holds
+  occupied SAFE-fixed chambers: b03 4, b04 5, b05 6, b06 27, b12 5, b15 6 and
+  b18 4, an N1 obstruction to every such closure. There are also N2 deficits on orbits of size at least 2: for b05 and
+  b15 the own cell meets orbit 7 (7,125 chambers, no hole) once; for b06 orbit 6 (7,126 chambers, 2 holes) 56 times,
+  and eleven more orbits fall short. Since the own cell lies in every such Bad(W), no SAFE word of any length vacates
+  it, whatever the search budget.
+- Command: section 6 (GLUE rows).
+- Uses: Proposition N, R22A-06, R22A-07, R22B-01, R22B-02.
+
+### The order of R22A2-04 at the actual states, and b17 (computed; the integrator's replay)
+
+- What was run (`scripts/round22/replay_a3.sh`, section 6). R22A2-04's order at the depth 40 stop, each step built at
+  the state the previous built step reached: the unit's census word alone when it is strict′ there, otherwise a fresh
+  closure V·W·V⁻¹ with R22A2-04's middle W (`tclose2.py`: V from the peeling certificate of Theorem B, else a
+  300-second greedy search). Every built step is replayed from the exported pose table (`stepchk.py`) before the next
+  one starts. A unit with neither is skipped, and the replay goes on from the last built state.
+- Built, each landing its unit, taking no lattice piece off and keeping every other off piece at its exact pose: b00
+  (census word, 60 letters, 1,193 → 1,160 off pieces), b01 (census word, 84, → 1,088), b02 (closure, 158, → 977),
+  b08 (closure, 762, → 944), b11 (closure, 878, → 915), b09 (closure, 970, → 857) and b10 (closure, 1,172, → 823);
+  every V came from the peeling certificate. Seven units in 4,084 letters, 1,193 → 823 (digest `743992e8…`).
+- Proved, not built: b07 (tried after b02), b13 and b19 (after b11), b14, b16, b21 and b20 (after b10). At each of
+  these states the census word is not strict′ and the greedy search did not finish V, but N1 and N2 hold for the
+  closure's complete Bad(W), and `jordan_target.py` finds a global Jordan certificate on every orbit of size at least
+  2 that meets it (20 orbits for b07, b13 and b19, 19 for each of the four at 823; none has 2 to 7 chambers). So by
+  Corollary A1 each has a strict′ closure step at the state where it was tried (R22A-06, R22A2-05), as R22A2-04
+  predicts from the stop. Their V are not built, so the states after these steps are not known exactly, and the
+  replay went on without them.
+- b17. At the stop b17 (86 pieces of class 2, the whole content of the edge cell {542, 593}) is moved by no clean
+  power, and its pole 542 holds pieces of b08, b09 and b10, so Theorem C does not apply there (R22C3-05). At the state
+  of 823 those three have landed: the cell's 86 home chambers are vacant, both poles and the five common neighbours
+  495, 496, 552, 570 and 590 are free, and exactly one landing rotation fixes the edge (menu item 26 at 542), so
+  Theorem C gives a pure-cell step of at most 720 letters. `cellpure4.py --search` builds one of 432 letters (a cycle
+  through the edge cells {542, 593}, {542, 570} and {570, 593}); its replay lands all 86 pieces, takes no lattice piece
+  off and keeps the other 737 off pieces at their exact poses: 823 → 737 (digest `2e3b8f99…`). An order turned a unit
+  that no step could move at the stop into one with a short pure step.
+- At the state of 737. The closures of b14, b16, b21 and b20 still have their premises: their Bad(W) is that of the
+  same words (a fixed word's Bad set does not depend on the state), N1 and N2 hold, and every orbit that meets it has
+  a global Jordan certificate (19 each), so each still has a strict′ step there. b21's Bad(W) is b16's (digest
+  `1b0e8081…`), so b16's certificates serve both. The other off pieces at 737 are those at 823 less b17's, at the same
+  poses, so W's ghost premises carry over; b17's landed pieces enter only through the occupancy of Bad(W), which the
+  test reads at 737. b15 and b05 without a preparation (`exp_b.py`): `cellpure4.py` finds a landing word W of 432
+  letters for each (all 25 and 61 pieces land; the 86 lattice pieces of the cell go off), but at Z1 = Z·W 17 and 48
+  occupied chambers of Bad(W⁻¹) (86 chambers; 25 and 61 occupied) are fixed by every SAFE letter, so N1 fails and
+  this T1′ has no closure. 48 is also the count R22C3-05 records at the stop: landing b00, b01 and b02 freed none of
+  b05's. b06, a vertex content, has no landing word of this family. None of the three was tried after the orders
+  R22C3-05 proposes.
+- Totals. Built: eight units in 4,516 letters, 1,193 → 737. Proved at 737 and not built: four more. Left at 737: b03,
+  b04, b05, b06, b07, b12, b13, b14, b15, b16, b18, b19, b20 and b21.
+- Command: section 6. Records: `runs/round22/line-a/replay/`.
+- Uses: R22A2-04, R22A2-05, R22A-06, Corollary A1, Theorem B, Theorem C, R22C3-01.
+
+### The replay continued with certificate steps (E2; computed; the integrator's replay)
+
+- What was run (`scripts/round22/replay_slp.py` and, for b06, `scripts/round22/e2_b06_prep1.py`, `e2_b06_prep2.py`
+  and `e2_b06_t1.py`; section 6). From the state of 737 a plan of steps, each built at the state that the previous
+  successful step reached:
+  - a literal word (b12's T1′ word of `runs/round22/t1prime-k40/`);
+  - a closure V·W·V⁻¹ with R22A2-04's middle W: N1 and N2 of its complete Bad(W) are read at the current state
+    (`jordan_target.py`) and, if both hold, V is built there as an R22B-10 certificate (`r22b10_cert.py`) and checked
+    (`check_r22b10.py`);
+  - a T1′ step W·V′·W⁻¹·V′⁻¹ (R22C-T1′): W lands the unit and takes the lattice pieces Q off; V′ vacates
+    T = Bad(W⁻¹) at Z1 = Z·W, a literal word from `tclose2.py` or else a certificate built and checked at Z1. W is
+    a stored word or the class-cell pure twist that `cellpure4.py --search` finds at the current state.
+  Every program is applied to the exact state by `slp_apply.py`, which evaluates a certificate as its straight-line
+  program without expanding it, and checks the strict′ contract against the state in front of the step: the unit
+  lands, no lattice piece goes off, and every other off piece keeps its exact pose or lands. Only such a step
+  advances the state; its exported end table starts the next.
+- Run 1, from 737 (digest `2e3b8f99…`). b12 by its T1′ word (1,158 letters; 737 → 696); b14, b16, b20 and b21 by
+  closures with certificate V (696 → 618 → 507 → 447 → 437; each certificate passes the checker; the step lengths
+  are integers of 151 to 161 digits). The closures of b07, b13 and b19 fail N2 at 437: their targets (198 chambers
+  each; b07 and b13 share one) lack holes on SAFE orbits of 7,200, 3,600, 2,400 and 120 chambers (30, 11, 4 and 0
+  holes where 33, 21, 17 and 1 are needed). At 737 the target of b07 and b13 already failed on the last three (15 of
+  21, 5 of 17 and 0 of 1); b19's was not tested there. Round 3 proved these closures at the states of 977 and 915,
+  and there are only as many holes as off pieces (O10), so the landings in between used them up: the resources of
+  R22C3-02 run out at actual states, not only in principle.
+- Run 2, from 437 (digest `a3fef11c…`): T1′ steps. b04 (W of 288 letters from `cellpure4.py`, Q = 86; V′ literal;
+  1,254 letters; 437 → 392), b03 (W 60, Q 111; V′ literal; 1,106 letters; → 329) and b18 (W 60, Q 111; 770 letters;
+  → 324); then b07 (W 48, Q 186), b13 (W 60, Q 197) and b19 (W 84, Q 198), whose closures had failed, each with V′ a
+  certificate at its middle (T of 198 chambers; N1, N2 and 20 Jordan certificates; 163, 155 and 147 digits;
+  → 213 → 112 → 96); then b15, whose blockers in COV-04 (b07, b12, b13 and b14) had all landed (W of 432 letters
+  from `cellpure4.py`, Q = 86, T of 86 chambers; N1, N2 and 19 Jordan certificates; V′ a certificate; 163 digits;
+  → 71). N2 asks, orbit by orbit, for a hole outside the target for each occupied chamber of the target. At a
+  closure's middle Z these are the chambers of the lattice pieces that W takes off; at a T1′ middle Z1 they are only
+  the landing chambers of the unit, since every other chamber of T is a hole there (COV-06). So a closure needs one
+  hole outside Bad(W) per lattice piece that W takes off, a T1′ step one outside T per landing piece: that is why
+  the T1′ steps passed where the closures had run out of holes.
+- b05 at 71. Its T1′ with the 432-letter word of `cellpure4.py` (Q = 86; T of 86 chambers, 61 occupied) fails N1:
+  31 occupied chambers of T are fixed by every SAFE letter at Z1, where the only off pieces besides Q are b06's 10.
+  COV-04 put 31 of b05's fixed chambers at 737 behind {b03, b04, b06}, and of these only b06 is still off.
+- b06 with b05, a branch at the state of 324 (`runs/round22/line-a/replay2/b06-324/`). The grip-91 letter W = (91, 14)
+  lands b06 (10 pieces) and b05 (61) together. Its element is off K⁺, so W takes all lattice pieces of cap 91 off and
+  T = Bad(W⁻¹) is the whole chamber set of cap 91 (3,097 chambers), of which 71, the landing chambers L, are
+  occupied at Z1. So N2 at Z1 reads, orbit by orbit, |H ∖ T| ≥ |L| for the holes H in front of W. A SAFE-ALL
+  preparation X keeps every off piece at its exact pose (so L is fixed) and moves H. `e2_b06_prep1.py` gives
+  X0 = (178, 7), counted for b06 against its cell; after it N2 still fails by 6 on five orbits (2, 1, 1, 1 and 1).
+  `e2_b06_prep2.py`, counting against the orbits of that middle, adds (256, 1), which keeps the holes inside T, and
+  (75, 1), which moves one hole out of T: the deficit is 0. With X = (178, 7)(256, 1)(75, 1), at Z1 = Z·X·W (3,343
+  off pieces, Q = 3,090) the ghost premises of W⁻¹ hold, N1 and N2 hold, and all 29 orbits of size at least 2 that
+  meet T have Jordan certificates, so V′ exists (Corollary A1). The builder of E22-1b builds V′ there (3,097 targets;
+  `b06-14-v-cert.json.gz`), the checker passes it, and `slp_apply.py` applies X·W·V′·W⁻¹·V′⁻¹ from 324: b06 lands,
+  b05 lands, no lattice piece goes off and the other 253 off pieces keep their exact poses, 324 → 253 (digest
+  `8e1a57da…`; a program of 1.8·10¹⁸³ letters). This is the first strict′ step for b06, and it needs no partner: the
+  type deficit of R22C2-05 and COV-04 is a matter of where the holes are, which a SAFE-ALL preparation changes, and
+  the Bad set of a letter off K⁺ is its whole cap, whose type vector has type 6, unlike the edge middles of M1-13
+  (R22C-V). The step is checked exactly; it has the form of R22C-T1′ with U = b06 ∪ b05, after a SAFE-ALL
+  preparation, which keeps every lattice piece on the lattice and so needs no undoing.
+- b06 with b05 at 71, the last two units (`runs/round22/line-a/replay2/b06-71/`). They are the only off pieces, so
+  there are 71 holes, as many as landing chambers, and N2 at the whole-cap middle needs every hole outside cap 91
+  (H ∩ Bad(W) = ∅, COV-03). `e2_b06_prep1.py` gives X0 = (178, 7) again; after it one hole is still in T and N2 fails
+  by 6 on five orbits (2, 1, 1, 1 and 1). `e2_b06_prep2.py` adds (170, 1) and (75, 1): no hole is left in T and the
+  deficit is 0. With X = (178, 7)(170, 1)(75, 1), at Z1 = Z·X·W the 3,097 off pieces are Q, the whole lattice
+  content of cap 91. N1 holds: the 715 chambers of T that every SAFE letter fixes are holes. N2 holds with equality
+  on each of the 29 orbits of size at least 2 that meet T (2,382 chambers of T), and each has a Jordan certificate.
+  `tclose2.py` finds no literal V′; the builder builds V′ (3,097 targets; about 3.5·10¹⁶³ letters) and the checker
+  passes it. `slp_apply.py` applies X·W·V′·W⁻¹·V′⁻¹ from 71: b06 (10 pieces) and b05 (61) land and no lattice piece
+  goes off, 71 → 0 (digest `3f84154f…`; a program of 7.0·10¹⁶³ letters). No piece is off: the state is on the
+  lattice.
+- Totals. With round 3, all 22 units land, 1,193 → 0 in 21 strict′ steps (eight in round 3, thirteen in E2). The
+  literal steps have 8,804 letters (4,516 in round 3, 4,288 in E2); the certificate steps have explicit lengths of
+  147 to 164 digits, and the whole route is under 10¹⁶⁴ letters (about 8.1·10¹⁶³). These are existence bounds, not
+  words to play.
+- The lattice phase from the end table (digest `3f84154f…`, every piece on the lattice): the lattice restorer reaches
+  the solved state in 162,976,586 retained twists (143,641 factors) and 21 corrections of 18,055 twists, 162,994,641
+  in all, and its independent checker passes, identity labels on all 259,800 stickers included
+  (`runs/round22/line-a/replay2/lattice/`). So the depth 40 stop is restored to the solved state end to end, but the
+  nine certificate steps are not words to play (round 6 of line (b), section 3).
+- Command: section 6. Records: `runs/round22/line-a/replay2/`.
+- Uses: R22C-T1′, R22C-V, R22B-10, Corollary A1, R22C3-02, COV-04, COV-06.
+
+Open after round 2 and the replay: E2 built every step it used at the state in front of it and landed every unit,
+so along this trajectory nothing is left (the seven steps proved but not built and the units left at 737 are settled
+there). Open: coverage of B′(2) at every state of 𝒞_2 (section 8). Nothing here is formalized.
+
+## 3. Line (b): the vacating word V
+
+### R22B-01. Certified three-cycles give a polynomial bound (proved; conditional on the certificate)
+
+- Objects: Z, its holes H, a target T, the SAFE-ALL group G(Z); the orbits Δ_1, ..., Δ_r of size at least 2 that meet
+  T, in a fixed order, d_i = |Δ_i|, k_i = |T ∩ Δ_i|.
+- Hypotheses (every word checked letter by letter against A(Z), every permutation evaluated exactly on Ω):
+  - H1: N1 and N2 hold for T; every d_i ≥ 5.
+  - H2 (seed): for each i, distinct a_i, b_i, c_i ∈ Δ_i and a word C_i of at most s_i letters that acts on Δ_i as the
+    three-cycle (a_i b_i c_i) and fixes every Δ_j with j < i pointwise.
+  - H3 (first table): for each x ∈ Δ_i \ {a_i}, a word P_x of at most e_i letters that fixes a_i and sends x to b_i.
+  - H4 (second table): for each z ∈ Δ_i \ {a_i, b_i}, a word Q_z of at most f_i letters that fixes a_i and b_i and
+    sends c_i to z.
+- Statement. A procedure that reads only the current holes builds a SAFE-ALL word V with T ⊆ holes(Z·V) and
+  |V| ≤ 2·Σ_i k_i·(s_i + 2e_i + 2f_i). If every s_i, e_i, f_i is at most L, then |V| ≤ 10·|T|·L, and |T| ≤ n(Z) by N1
+  and N2.
+- Proof (index i dropped).
+  1. For distinct x, y ∈ Δ \ {a} put z = π_{P_x}(y); z ∉ {a, b} by injectivity. U = P_x·Q_z⁻¹ sends (a, x, y) to
+     (a, b, c). The word U·C·U⁻¹ induces the three-cycle (a x y) on Δ, fixes every earlier orbit pointwise (C does,
+     and U maps each orbit to itself) and has at most s + 2e + 2f letters.
+  2. For a three-cycle (x y z) avoiding a: (a x y) followed by (a z x) is (x y z). So every three-cycle on Δ costs at
+     most 2(s + 2e + 2f).
+  3. Let t ∈ T ∩ Δ be occupied. By N2 and because t is not a hole, some hole z ∈ (H ∩ Δ) \ T exists. Choose r ∈ Δ \
+     {z, t}. If r is a hole apply (z r t), otherwise (z t r). In both cases the holes of Δ change from H ∩ Δ to
+     ((H ∩ Δ) \ {z}) ∪ {t} and every other chamber of Δ keeps its status. At most k such operations clear T ∩ Δ.
+  4. Earlier orbits are fixed pointwise, so their cleared targets stay clear; later orbits can be permuted, but their
+     hole counts do not change, so N2 still holds when their turn comes. Targets in singleton orbits are holes by N1
+     and never move. Induction over the orbits gives the bound. Prefixes of the words may move earlier targets; the
+     preservation holds at the boundaries of the completed three-cycles, and every prefix is admissible because every
+     letter is a SAFE letter.
+- Tables from short letters. If the graph on Δ \ {a} whose edges are the SAFE letters fixing a (with their inverses) is
+  connected, a breadth-first tree gives e ≤ d − 2; likewise f ≤ d − 3 with letters fixing a and b. Then
+  |V| ≤ 2·Σ_i k_i·(s_i + 4d_i − 10).
+- Without tables. If every Δ_i has a Jordan certificate and a seed C_i, G(Z) contains Alt(Δ_i) acting on Δ_i alone
+  (Theorem A), which is transitive on ordered triples when d_i ≥ 5. A breadth-first search over ordered triples finds a
+  word u of at most d_i(d_i − 1)(d_i − 2) − 1 letters that carries the seed's triple to a wanted one, and u⁻¹·C_i·u is
+  the wanted three-cycle. Then |V| ≤ Σ_i k_i·[s_i + 2(d_i(d_i − 1)(d_i − 2) − 1)].
+- Counterexample (abstract): without the condition on earlier orbits the construction is unsound. The diagonal A5 on
+  two copies of five points contains every three-cycle in each projection, but the holes {1, 2′} cannot cover the
+  targets {1, 1′}: one permutation would have to send both 1 and 2 to 1.
+- Uses: Proposition N, Theorem A.
+
+### R22B-02. A bound in n alone whenever V exists (proved)
+
+- Statement. Let N = 177,120. If some SAFE-ALL word vacates T at Z, one of at most C(N, n(Z)) − 1 ≤ N^{n(Z)} − 1
+  letters does, and breadth-first search on hole sets (at most C(N, n) vertices, at most 6,600 letters per vertex)
+  finds it from the state alone. Consequently no family of states with bounded n has shortest vacating words of
+  unbounded length. With a certificate as in R22B-01 whose lengths are all at most L, |V| ≤ 10·n·L.
+- Proof. SAFE-ALL words permute the n-element hole set and keep the off geometry; a shortest path in the graph of hole
+  sets repeats no vertex.
+- What it does not give: coverage, that is, a vacatable target for every state. A large number of SAFE grips does not
+  supply it. Instance: at the depth 40 stop the 549 SAFE grips leave 1,237 singleton orbits and only 1,193 holes, so at
+  least 44 SAFE-fixed chambers are occupied, and a target containing one of them has no V.
+- Existence bound only.
+
+### R22B-03. Cluster certificates and separated commutators (proved; instance computed)
+
+- Cluster lemma. Let w be a SAFE-ALL word with permutation p, H the holes and T the target. If P ⊆ H ∩ T, Q ⊆ T \ P,
+  p fixes P pointwise and p(X) = Q for a given X ⊆ H \ P, then every chamber of P ∪ Q is a hole after w, since the new
+  holes p(H) contain p(P) ∪ p(X). The exact test for keeping P ∪ Q vacant is p⁻¹(P ∪ Q) ⊆ H.
+- Separated overlap. Let a and b be permutations with moved supports A and B, I = A ∩ B, and c = a·b·a⁻¹·b⁻¹
+  (chronological). The support of c lies in I ∪ a⁻¹(I) ∪ b⁻¹(I). If a(I) ∩ I = ∅ and b(I) ∩ I = ∅, the three sets are
+  disjoint and c is the product over r ∈ I of the disjoint three-cycles (r, b⁻¹(r), a⁻¹(r)).
+- Proof. A point outside A ∪ B is fixed. A point x ∈ A \ B is moved only if a(x) ∈ I, so x ∈ a⁻¹(I); a point of
+  B \ A is moved only if b(x) ∈ I. For r ∈ I: a(r) ∈ A \ I lies outside B, so b fixes it and c(r) = b⁻¹(r); s = b⁻¹(r)
+  lies in B \ I, outside A, so c(s) = a⁻¹(r); u = a⁻¹(r) lies in A \ I, outside B, and c(u) = r. Under separation
+  a⁻¹(I) ⊆ A \ B and b⁻¹(I) ⊆ B \ A, so the three sets are disjoint.
+- Instance at b00 (depth 40 stop, transport target of section 10 of the stage 12 README): the first commutator of the
+  greedy search, [(113, 4), (178, 10), (113, 8), (178, 10)], is separated: 335 disjoint three-cycles, 65 target holes
+  gained and none lost. The second, [(33, 8), (88, 5), (33, 4), (88, 2)], is not (overlap 1,810, 943 returns each way):
+  it gains 16, loses 8 and moves 31 vacated target chambers. The greedy search counts net gains, so a greedy V must be
+  checked as a whole. A successful greedy run with moves of 1, 4 or 6 letters has at most 6·|T \ H| letters, since
+  every accepted move lowers the occupied target count; this bounds successful runs and decides nothing.
+- Command: `scripts/round22/r22b03_clusters.py`.
+
+### R22B-04. b00's original target can be vacated (computed hypotheses; proved consequence)
+
+- Statement. At the depth 40 stop, Bad(W) of b00's transport word (`runs/lc13-k40/transport-b00-word.json`) has 111
+  chambers, all occupied (digest `391e9473…`). N1 and N2 hold, and each of its 19 target orbits (sizes 1,440 to 7,200,
+  holding 1 to 15 targets) has a Jordan certificate checked on all 177,120 chambers (words of 120 letters, primes 1,009
+  to 5,783). By Corollary A1 a SAFE-ALL V with Bad(W) ⊆ holes(Z·V) exists. Breadth-first search on the joint images of
+  the target finds one of at most ∏_i C(d_i, k_i) − 1 ≤ 7,200^111 − 1 letters (existence bound).
+- Proof. Theorem A gives the independent alternating factors on the 19 orbits; Corollary A1 turns the counts into
+  vacancy. A shortest path in the graph of target images is simple; its inverse vacates the target.
+- The earlier failures for b00 (peeling stopped after 35 chambers, greedy bounded at 300 seconds) were not
+  nonexistence. No V for b00 is constructed yet: the clean-power probe stops with 34 chambers occupied, and the
+  bounded builder of the R22B-01 certificate completes two of the 19 orbits per run (E22-1, section 4). R22B-09 gives
+  a construction of the certificate that terminates.
+- Command: `scripts/round22/r22b04_jordan.py`; output `runs/round22/r22b04_jordan.txt`.
+- Uses: Theorem A, Corollary A1.
+
+### R22B-05. Tables of Schreier words always exist (proved)
+
+- Objects: Z, the SAFE-ALL letters S = A(Z) (closed under inverses, O2), a target orbit Δ with d = |Δ| ≥ 5, distinct
+  anchors a, b, c ∈ Δ. For a chamber x and a word w, x·w is the image of x under w.
+- Hypotheses:
+  - H1: G(Z) induces on Δ a group that contains Alt(Δ). A Jordan certificate of Δ decides it
+    (`buffer.check_jordan`).
+- Statement. For every x ∈ Δ \ {a} there is a SAFE word P_x of at most e letters that fixes a and sends x to b, and
+  for every z ∈ Δ \ {a, b} a SAFE word Q_z of at most f letters that fixes a and b and sends c to z, with
+  e ≤ (d − 2)(2d − 1) and f ≤ (d − 3)(2d − 3)(2d − 1). These are H3 and H4 of R22B-01, whose proof is unchanged; the
+  table words need not fix the earlier orbits, since a conjugate of a seed fixes them whenever the seed does.
+- Proof.
+  1. A breadth-first tree on Δ from a over single SAFE letters gives words R_x with a·R_x = x, R_a empty and
+     |R_x| ≤ d − 1 (Δ is an orbit, so its letter graph is connected).
+  2. For x ∈ Δ and s ∈ S put h(x, s) = R_x·s·R_{x·s}⁻¹. It fixes a and has at most L1 = 2d − 1 letters. These words
+     generate the stabilizer G_a: if s_1 ⋯ s_t fixes a and x_j = a·s_1 ⋯ s_j, the product of the h(x_{j−1}, s_j)
+     telescopes to s_1 ⋯ s_t, because x_0 = x_t = a.
+  3. By H1, G_a induces on Δ \ {a} a group containing Alt(d − 1), which is transitive. A breadth-first tree from b on
+     Δ \ {a} over the words of step 2 gives B_x with b·B_x = x in at most d − 2 edges; P_x = B_x⁻¹, and
+     e ≤ (d − 2)·L1.
+  4. For x ∈ Δ \ {a} and h a word of step 2, j(x, h) = B_x·h·B_{x·h}⁻¹ fixes a and b, has at most L2 = 2e + L1
+     letters, and these words generate G_{a,b} by the same telescoping. G_{a,b} induces a group containing
+     Alt(d − 2), transitive on Δ \ {a, b} since d − 2 ≥ 3. A breadth-first tree from c gives Q_z in at most d − 3
+     edges, so f ≤ (d − 3)·L2 = (d − 3)(2d − 3)(2d − 1).
+- Sharper bounds at an instance use the expanded lengths: L1 ≤ 2·max|R_x| + 1 and L2 ≤ 2·max|B_x| + L1. Tree depth
+  alone does not bound a path when its edges are words of different lengths.
+- Without H1, building all these Schreier words and testing the two reachability graphs still decides H3 and H4 for
+  the chosen anchors, exactly and in finitely many steps. A failure then concerns the full stabilizers, not, as in
+  E22-1 (section 4), the graphs of single letters.
+- Bound: with R22B-01, |V| ≤ 2·Σ_i k_i·(s_i + 2e_i + 2f_i) with e_i and f_i as above, polynomial in the d_i once the
+  seeds are given.
+- Uses: Schreier's lemma; the point stabilizer of Alt(d) is Alt(d − 1).
+
+### R22B-06. Moving the anchors: a decision procedure, and no guarantee (proved; counterexample checked)
+
+- Convention. With chronological words, g⁻¹·C·g acts on Δ as the three-cycle (a·g, b·g, c·g); g·C·g⁻¹ has the
+  anchors a·g⁻¹, b·g⁻¹, c·g⁻¹. (The first version of section 4 gave the forward anchors for g·C·g⁻¹; corrected.)
+- Selection test. A breadth-first search over the ordered pairs (a′, b′) in the orbit of (a, b) under single SAFE
+  letters keeps a word g for each pair. At each pair it tests whether the graph on Δ \ {a′} of the letters that fix
+  a′ is connected, and the graph on Δ \ {a′, b′} of the letters that fix a′ and b′; the second test does not depend on
+  the third anchor. If both hold, g⁻¹·C·g with third anchor c·g repairs both single-letter tables. There are at most
+  d(d − 1) pairs, so a passing pair has a word g of at most d(d − 1) − 1 letters, and exhausting the pair orbit decides
+  whether any conjugate of C repairs the single-letter tables. A search bounded in radius decides that radius only.
+- Statement (negative). Neither a seed nor a Jordan certificate guarantees that some anchor pair passes.
+- Counterexample (checked by enumeration). On nine points let r = (0 1 2 3 4 5 6 7 8), t = (0 1 2), b = r·t, and take
+  the letters S = {r, r⁻¹, b, b⁻¹}. Both r and b are nine-cycles, so every letter moves every point and every
+  single-letter stabilizer graph has no edges, for every choice of anchors. Yet r⁻¹·b = t is a seed; the conjugates of
+  t by powers of r are the three-cycles of consecutive points, which generate A9 (the group S generates has order
+  181,440); and t·r⁻²·t·r² = (0 1 3 4 2) is a Jordan word, since 9/2 < 5 ≤ 9 − 3. Conjugates of single letters are
+  again derangements, so longer conjugators around one letter do not help. The word tables of R22B-05 still exist.
+- Instance: at b00, whether another anchor pair repairs a failed single-letter table was not computed; an isolated c
+  or a few unreached chambers do not decide it.
+
+### R22B-07. Seeds: an exact criterion and a fallback that always works (proved)
+
+- Objects: G = G(Z) acting on Ω, N = |Ω| = 177,120; an orbit Δ with d ≥ 5; E the union of the orbits before Δ in the
+  chosen order; K the subgroup of G that fixes E pointwise.
+- Hypotheses:
+  - H1: G induces on Δ a group that contains Alt(Δ).
+- Statement. A seed for Δ (a SAFE word acting on Δ as a three-cycle and fixing E pointwise) exists if and only if K
+  acts nontrivially on Δ. The following finite exact procedure decides it and, when it holds, gives a seed of at most
+  s ≤ 2·(2N − 1)^{|E| + d − 3} letters (an existence bound).
+- Proof. E is a union of orbits, so it is G-invariant and K is normal in G; hence the group K|Δ that K induces on Δ
+  is normal in G|Δ, which is Alt(d) or Sym(d). For d ≥ 5 every nontrivial normal subgroup of either contains Alt(d)
+  (the fact Theorem A uses), so a nontrivial K|Δ contains a three-cycle. Conversely a seed lies in K and acts
+  nontrivially on Δ.
+- Procedure. Take Schreier point stabilizers (R22B-05, step 2) successively for the points of E, keeping the words.
+  If every resulting word acts trivially on Δ, no seed exists. Otherwise stabilize d − 3 further points of Δ; the
+  remaining words act on the last three points and generate a group containing A3, so one of them acts there as a
+  three-cycle, or two act as distinct transpositions and their product is a three-cycle. That word fixes E and the
+  stabilized points of Δ, so it is a seed. Each stabilizer step multiplies the word length by at most 2N − 1, which
+  gives the bound; the procedure needs no random search and no length cutoff.
+- Global Jordan certificates (R22B-04) give Alt(Δ) acting on Δ alone (Theorem A), so K|Δ contains Alt(Δ) for every
+  order of the orbits. At b00 a missing seed (orbits 67 and 105 in one E22-1 run) is therefore a failure of the
+  bounded search, not of existence, and no reordering is needed.
+- Counterexample to the global hypothesis: the diagonal A5 on two five-point orbits induces A5 on each orbit, but
+  fixing either orbit pointwise forces the identity on the other, whichever orbit comes first.
+- Uses: Theorem A; the normal subgroups of Alt(d) and Sym(d), d ≥ 5.
+
+### R22B-08. A seed from a Jordan word and a letter of small support (proved)
+
+- Objects: an orbit Δ with d chambers; the orbits before it are arbitrary.
+- Hypotheses:
+  - H1: a global Jordan certificate (w, p) for Δ: |w| = ℓ, p prime with d/2 < p ≤ d − 3, π_w has exactly one cycle of
+    length divisible by p, a p-cycle inside Δ (checked on all of Ω, `buffer.check_jordan`).
+  - H2: a SAFE word h of q letters whose moved support R on Δ has r chambers, with 2 ≤ r and 2r − 1 ≤ d. h may move
+    the earlier orbits.
+- Construction and proof.
+  1. Let M be the least common multiple of the cycle lengths of π_w other than the p-cycle. p does not divide M, so
+     A = w^M is one p-cycle inside Δ and fixes every other chamber; |A| = ℓM.
+  2. A breadth-first search in the single-letter graph of Δ from the set supp(A) gives for each x ∈ Δ a word u_x
+     that carries some point of supp(A) to x, of at most d − p letters (a shortest path from the set visits at most
+     the d − p points outside it). The conjugates u_x⁻¹·A·u_x and their inverses are p-cycles inside Δ that fix every
+     other chamber, of at most J = ℓM + 2(d − p) letters. Their supports cover Δ and meet pairwise (2p > d), so they
+     generate a transitive group, primitive by the long-prime-cycle block argument of Theorem A, and containing
+     Alt(Δ) by Jordan's theorem; the generators are even, so the group is Alt(Δ) on Δ and fixes every other chamber.
+     At most d − p + 1 conjugates are needed.
+  3. Choose R′ with |R′| = r and R ∩ R′ = {z}, possible since 2r − 1 ≤ d. Alt(Δ) is transitive on the r-subsets of
+     Δ (extend a bijection between two subsets to a permutation and correct its parity inside the source subset), so a
+     breadth-first search over r-subsets with the generators of step 2 finds U with R·U = R′ in at most C(d, r) − 1
+     steps: |U| ≤ J·(C(d, r) − 1).
+  4. Put h′ = U⁻¹·h·U and C = h·h′·h⁻¹·h′⁻¹. On Δ the supports of h and h′ meet exactly in z, so by R22B-03 C acts
+     on Δ as the three-cycle (z, z·h′⁻¹, z·h⁻¹). U fixes every chamber outside Δ, and Δ is G-invariant, so h′ = h
+     outside Δ and C is the identity there. C is a seed for every order of the orbits.
+- Bound: s ≤ 4q + 4·[ℓM + 2(d − p)]·[C(d, r) − 1].
+- The construction does not need h to be a seed or to respect earlier orbits, and it cancels h's action outside Δ.
+  It relies on the Jordan theorem as used in Theorem A, not on a new formalization of it. No complete subset search
+  was run at a large instance.
+- Uses: Theorem A, Jordan's theorem, R22B-03.
+
+### R22B-09. b00: all hypotheses hold; a construction bound (computed hypotheses; proved consequence)
+
+- Statement. At the depth 40 stop (state `7e128820…`, target digest `391e9473…`, 111 chambers, all occupied, N1 and
+  N2 hold) each of b00's 19 target orbits has the Jordan certificate of R22B-04 (H1 of R22B-08, rechecked on all
+  177,120 chambers) and a single SAFE letter with support r on the orbit, 36 ≤ r ≤ 204 and 2r − 1 ≤ d (H2 of
+  R22B-08). For example orbit 67 (d = 3,600) has p = 2,287 and r = 72 for letter (0, 1), and orbit 105 (d = 2,400)
+  has p = 1,291 and r = 63 for letter (0, 2), so neither is an obstruction. With ℓ = 120, the computed M of each
+  certificate, J = 120M + 2(d − p), s = 4 + 4J·[C(d, r) − 1], e = (d − 2)(2d − 1) and f = (d − 3)(2d − 3)(2d − 1),
+  R22B-01, R22B-05 and R22B-08 give a certificate and a vacating word V with
+  |V| ≤ B = 2·Σ k(s + 2e + 2f), a 539-digit integer printed exactly (B < 10^539).
+- B is a construction bound, an existence bound in the sense of section 0: larger than the 7,200^111 − 1 of R22B-04,
+  but it comes from a construction of the seed-and-table certificate that terminates. No complete certificate and no
+  V for b00 was built.
+- Command: `scripts/round22/r22b09_bound.py`; output `runs/round22/r22b09_bound.txt`.
+- Uses: R22B-01, R22B-04, R22B-05, R22B-08.
+
+### R22B-10. A checker for certificates with word-valued tables (specification; implemented, E22-1b)
+
+- Inputs: the state, the target and their digests; the SAFE alphabet and the chamber orbits; for every target orbit
+  of size at least 2 the Jordan word itself and its prime, not a trial number. Checks first: target chambers unique,
+  N1, N2, each Jordan certificate on all of Ω.
+- Order: decreasing orbit size, then least chamber. Per orbit a SAFE letter that meets H2 of R22B-08 and the seed of
+  R22B-08, or R22B-07 when no letter meets H2; the completed seed is checked on its orbit and on every earlier orbit.
+  Anchors a = the least chamber the seed moves, b = a·C, c = b·C; moving the anchors (R22B-06) is optional, since
+  R22B-05 works for every triple.
+- Tables: the Schreier transversals and word-valued trees of R22B-05. An edge names its chamber, its parent and its
+  complete word. A P edge is checked as a completed word: it fixes a and sends child to parent; a Q edge fixes a and
+  b and sends parent to child. Letters inside an edge word may move the anchors. Every required vertex has exactly one
+  parent, there are no parent cycles, and every path ends at its root. Path cost is the sum of the expanded edge
+  lengths, which gives e and f. A Q path is reversed by reversing the order of its edge words, not the letters inside
+  them.
+- Words may be stored as an acyclic straight-line program whose leaves are SAFE letters and whose nodes are
+  concatenation, inverse and nonnegative integer powers. References are checked and acyclic, expanded lengths are
+  computed with exact integers (never the node count), and u·v is evaluated as u then v.
+- Final check: V evaluated on all 177,120 chambers, T ⊆ holes after V, and |V| ≤ 2·Σ k_i(s_i + 2e_i + 2f_i). An
+  interrupted run reports an incomplete certificate, never nonexistence.
+- Controls the checker must reject: an anchor moved by a completed edge word, the wrong conjugation direction, a
+  reversed Q segment, a leaf that is not a SAFE letter, a cyclic reference, a false power length, a seed that moves an
+  earlier orbit. The existing `check_r22b01.py` assumes single-letter edges and must be extended this way.
+- Implementation (E22-1b, section 4): `scripts/r22b10_cert.py` builds the certificate and `scripts/check_r22b10.py`
+  checks it without importing the builder; `scripts/test_r22b10.py` holds the controls above. One change from this
+  specification: the checker evaluates V on every target orbit, not on all 177,120 chambers. Every SAFE letter keeps
+  each orbit of the SAFE-ALL group, so every node of the program does too, and the occupancy of the targets after V
+  is the same as on all chambers, collateral of earlier steps included.
+
+### Round 3 of line (b)
+
+After E22-1b (section 4) the senior reviewer took line (b) a third round (findings R22B-11 to R22B-18, 18 October
+2026): shorter seeds, Alt on every orbit, an audit of the two certificates and their checker, and the bound that short
+seeds would give. Its exact computation is `scripts/round22/r22b13_seeds.py` (section 6); the integrator re-ran it and
+got the output `runs/round22/r22b13_seeds.txt`. Z is the depth 40 stop (digest `7e128820…`), shared by b00 and b19.
+
+### R22B-11. E22-1's seeds protected fewer orbits (checked in the source)
+
+- Statement. `r22b01_cert.py` (E22-1) adds an orbit to the protected set only after its seed, both single-letter
+  tables and its vacating steps succeed; `r22b10_cert.py` (E22-1b) protects every earlier target orbit, failed ones
+  included. So the commutator seeds of 12 to 1,320 letters that E22-1 found were checked against fewer orbits than H2
+  of R22B-01 asks in the full order of 19 orbits: in its first run every seed search up to orbit 41, the first to
+  complete, protected no orbit, and later ones protected only 41, then 41 and 64. They do not form a compatible
+  family, and E22-1 and E22-1b differ in both the search time and the protected set, so the time alone does not
+  explain their different seed lengths. Section 4 is corrected accordingly.
+- The historical seed words were not replayed against the full protected set; some may still pass it.
+
+### R22B-12. When a power of a word is a seed (proved)
+
+- Objects: Δ, the current target orbit; E, the union of the earlier target orbits; q, a SAFE word.
+- Statement. Some positive power of q acts on Δ as a three-cycle and fixes E pointwise if and only if, on E ∪ Δ, q has
+  exactly one cycle whose length is divisible by 3, and that cycle has length 3 and lies in Δ. Then M, the least common
+  multiple of the lengths of the other cycles of q on E ∪ Δ (1 if there are none), is prime to 3, q^M is a seed of
+  |q|·M letters, and every admissible exponent is a multiple of M.
+- Proof. On a cycle of length λ, q^m fixes every point when λ divides m and moves every point otherwise. So q^m moves
+  exactly three points of E ∪ Δ, as a three-cycle, only when one original cycle of length 3 survives and every other
+  cycle dies; killing another cycle whose length is divisible by 3 needs 3 | m and kills the wanted one too.
+  Conversely, under the condition 3 does not divide M, q^M kills every other cycle and keeps the 3-cycle as a
+  three-cycle.
+- Bound. If q is [x, y], [x, yz] or [x, yzu] for SAFE letters x, y, z, u (4, 6 or 8 letters), the other cycle lengths
+  use at most c distinct primes, and every orbit in E ∪ Δ has at most D chambers, then every prime power dividing M is
+  at most D, so M ≤ D^c and s ≤ 8·D^c. Every hypothesis is a finite check of one word. No uniform c and no short q for
+  every target orbit is established.
+- Counterexample. If q has one 3-cycle on Δ and another on an earlier orbit, every power that kills the earlier cycle
+  kills the wanted one, so no exponent works; a larger exponent never repairs a failed criterion. A different order of
+  the orbits changes E and can change the outcome; no better order was found.
+- Instances: R22B-13.
+
+### R22B-13. Two short seeds for b00 (computed)
+
+- Statement. At Z, in the full decreasing-size order of b00's 19 target orbits, two eight-letter commutators [x, yzu]
+  have powers that are seeds, each checked by the criterion of R22B-12 on the protected union and then as a power:
+  - orbit 34: C = q⁴ with q = (118,11)(254,11)(106,7)(160,4)(118,11)(160,8)(106,6)(254,11), 32 letters, the
+    three-cycle (12773, 72831, 72678); the other cycle lengths on the orbit are 2 and 4;
+  - orbit 66: C = q⁵ with q = (254,4)(320,6)(340,9)(170,7)(254,8)(170,6)(340,3)(320,7), 40 letters, the three-cycle
+    (78293, 78304, 135764); it fixes all 7,200 chambers of orbit 34, and the other cycle lengths on the protected union
+    are 5.
+- They are witnesses, not shortest seeds. The reviewer's bounded searches (6,000 candidates per orbit, then up to
+  60,000 on five orbits, cut short on the sixth) found no short seed for the other 17 orbits; this shows nothing about
+  their absence.
+- Command: `scripts/round22/r22b13_seeds.py`; output `runs/round22/r22b13_seeds.txt`.
+
+### R22B-14. Powers of one letter cannot shrink a support (proved; computed)
+
+- Statement. At Z every one of the 6,039 SAFE letters has prime order: 1,647 have order 2 and 4,392 order 3. If x has
+  prime order p, x^m is the identity when p | m and has the same support as x otherwise. So no power of a single SAFE
+  letter isolates some of its cycles, and powers of letters supply no smaller support for H2 of R22B-08 or for a
+  single-overlap commutator (R22B-03).
+- Products and conjugates can have mixed cycle lengths, as the two seeds of R22B-13 show. Whether single-overlap pairs
+  of short conjugates exist was not searched exhaustively.
+- Command: `scripts/round22/r22b13_seeds.py` (the letter orders; the largest chamber type has 7,200 chambers).
+
+### R22B-15. A local test for Alt, and what stays open (proved; the universal claim open)
+
+- Statement. Let Δ be an orbit with d ≥ 8. If some SAFE word w acts on Δ with a p-cycle for a prime p with
+  d/2 < p ≤ d − 3, then the group G|Δ that G induces on Δ contains Alt(Δ). Nothing is asked of the other orbits.
+- Proof. The other cycles of w on Δ have at most d − p < p points, so none has length divisible by p, and the power of
+  w by the least common multiple of their lengths acts on Δ as one p-cycle. G|Δ is transitive because Δ is an orbit. A
+  block of a nontrivial block system that meets the p-cycle cannot have p distinct translates under it (their total
+  size would exceed d), so it is invariant under the cycle, contains its whole support and has more than d/2 points,
+  which no proper block has. So G|Δ is primitive, and Jordan's theorem, as used in Theorem A, gives Alt(Δ). For
+  5 ≤ d ≤ 7 an exact closure of the permutation group with a membership test for all three-cycles decides it.
+- Local and global. The global certificate of `buffer.check_jordan` asks more, because it supplies an alternating
+  factor that acts on Δ alone; local Alt gives no seed that fixes the earlier orbits (the diagonal actions of R22B-01
+  and R22B-07).
+- Open: that the SAFE geometry forces either condition at every state of 𝒞₂. No counterexample appeared at the named
+  states.
+- Without Alt a V can still exist. The exact condition is π_V⁻¹(T) ⊆ H (R22B-03), and breadth-first search over the
+  joint images of the target, with at most ∏_Δ C(|Δ|, |T ∩ Δ|) vertices, decides it: an image inside H gives V as the
+  inverse of its path word, of at most that number minus one letters, and an exhausted component shows that no V
+  exists. N1 and N2 alone do not decide it outside the hypotheses of Theorem A.
+- Counterexample (abstract, not a state of the puzzle): with r = (0 1 2 3 4 5) and letters r², r⁴, r³, the group is
+  the cyclic group of order 6, imprimitive and without A6. The holes {0, 3} cannot cover T = {0, 1} under any rotation,
+  although N2 holds, yet they cover {1, 4}; so the lack of Alt does not by itself forbid V.
+
+### R22B-16. The checker of E22-1b is sound, and the recorded numbers hold (checked in the source; computed)
+
+- Statement. `check_r22b10.py` checks every leaf of the program against the SAFE alphabet rebuilt from the state, and
+  every reference and expanded length. Every SAFE letter keeps each orbit, and so does every node, so evaluating V on
+  the target orbits gives the same occupancy of the targets as evaluating it on all chambers, collateral of earlier
+  steps included; targets in singleton orbits are holes by N1. The checker also evaluates every seed and step on all
+  earlier target orbits and replays every step on the current one. So a pass proves that the encoded SAFE word clears
+  T at the stated state, and its bound is R22B-01's 2·Σ k_i(s_i + 2e_i + 2f_i) with expanded word and path lengths.
+- Instances. The reviewer re-ran the complete check of b19's certificate (PASS: 198 targets, 15 steps) and recomputed
+  every node length and both bounds: |V| < 10^166 for b00 and < 10^141 for b19, both bounds below 10^166, seeds of
+  121 to 165 digits over the two certificates (b00 from 122), and 14,018 and 12,688 nodes. In the reviewer's sandbox
+  the command-line test of `test_r22b10.py` could not create its temporary directory; the integrator re-ran the whole
+  file in this session and all 19 tests pass.
+- Command: `scripts/round22/r22b13_seeds.py` (the audit of the node lengths and bounds).
+
+### R22B-17. The bound that short seeds would give (proved; conditional)
+
+- Statement. Assume the hypotheses of R22B-01 and Alt on each target orbit, so that R22B-05 gives the tables, and put
+  E(d) = (d − 2)(2d − 1) and F(d) = (d − 3)(2d − 3)(2d − 1). If every seed has s_i ≤ S(d_i), then
+  |V| ≤ 2·Σ_i k_i·[S(d_i) + 2E(d_i) + 2F(d_i)]. If every d_i ≤ D and S*(D) = max over 5 ≤ d ≤ D of S(d), then, since E
+  and F increase there, |V| ≤ 2t·[S*(D) + 2E(D) + 2F(D)] with t = Σ_i k_i.
+- Proof. Substitute the seed and table bounds into R22B-01; the number of targets occupied at the start is not used.
+- Instances (Z, D = 7,200, E(7,200) = 103,644,002, F(7,200) = 1,491,955,394,391; the exact orbit sizes improve the
+  constant):
+  - b00 (t = 111): |V| ≤ 222·S*(7,200) + 547,390,496,139,580;
+  - b19 (t = 198): |V| ≤ 396·S*(7,200) + 851,701,385,498,104.
+  With the fixed-c hypothesis of R22B-12 the first terms become 1,776·7,200^c and 3,168·7,200^c. These are
+  conditional bounds, not short words for either target. For b19, t is 198, not the 15 steps of its certificate: a
+  seed can permute later orbits and fill targets that were holes. New seeds also need their own tables; the e, f ≤ 22
+  of E22-1b belong to its anchors.
+- For this geometry every SAFE letter keeps the K⁺ chamber type, of at most 7,200 chambers, and t ≤ n by N1 and N2;
+  uniform seed bounds would give |V| ≤ 2n·[S*(7,200) + 2,984,118,076,786]. What is missing is the guarantee that the
+  targets and compatible bounded seeds exist throughout the state class, with the coverage obligations of the
+  catalogue (section 7).
+- Command: `scripts/round22/r22b13_seeds.py` (E(7,200), F(7,200) and the constants).
+
+### R22B-18. An extended commutator-power search (specification; not implemented)
+
+- Inputs: the SAFE alphabet, the current orbit Δ in the existing order, E as the union of every earlier target orbit
+  (failed ones included), the caller's deadline, a fixed random seed (suggested Random(221100 + least(Δ))), a limit on
+  candidates (60,000) and on the expanded seed length (20,000). The phase takes at most the least of 120 seconds, half
+  the orbit's remaining share and the deadline, and records interruptions and their reasons.
+- Search. First validate cached candidates, among them the two words of R22B-13, against the current alphabet and the
+  full E. Then sample: rank the grip pairs whose caps overlap on Δ by that overlap, then by their overlap on E, with
+  ties shuffled; trial j takes every fourth time the next of the first 256 ranked pairs (a new pair every 12 trials) and
+  otherwise a uniform overlapping pair; x is a SAFE letter at the first grip and y at the second; q = [x, yzu] when 3 |
+  j and [x, yz] otherwise, the extra letters drawn from a random chamber of the two caps' intersection on odd trials
+  and from a random SAFE grip on even ones. The search tests a bounded family; it never shows that no seed exists.
+- Acceptance. Compute q's exact cycles on Δ, then on E, and reject q unless the criterion of R22B-12 holds; compute M
+  by an exact least common multiple; reject when |q|·M exceeds the limit; keep the best by expanded length, then by the
+  word and exponent. Evaluate an improving q^M independently on Δ and all of E before accepting it, store it as
+  pow(word(q), M) with route `commutator`, take its anchors from its actual permutation, and run the existing tables and
+  vacating steps. Without a candidate the Jordan route stays the fallback, and an exhausted budget is an incomplete
+  result.
+- Checker. `check_r22b10.py` already checks the leaves, exact lengths, the seed's three-cycle, the fixing of earlier
+  orbits, the tables and V, so vacancy needs no new check. A claimed least exponent or spectrum bound would need q, M,
+  the protected union and the primes recorded and recomputed independently; otherwise they are diagnostics.
+- Controls: the two words of R22B-13 as positive controls, a duplicate 3-cycle on an earlier orbit as a negative
+  control, and a forced deadline as an incomplete control; then one complete certificate built and checked before any
+  conclusion about coverage.
+
+### Round 4 of line (b)
+
+After the decision to prove existence before building words, the senior reviewer took line (b) a fourth round
+(findings R22B-19 to R22B-23, 18 October 2026): when local Alt and separating words give independent alternating
+factors, whether Alt holds on every large orbit at every state of 𝒞₂, orbits of 2 to 7 chambers, and what the closure
+bounds give without Alt. Its computations are `scripts/round22/r22b20_separation.py`, `r22b21_regular12.py` and
+`r22b22_small_orbits.py` (section 6); the integrator re-ran them and got the outputs `runs/round22/r22b20_separation.txt`,
+`r22b21_regular12.txt` and `r22b22_small_orbits.txt`, and re-ran the global check `jordan_target.py` of b00 (R22B-04).
+
+### R22B-19. Local Alt and separating words give a product of alternating groups (proved)
+
+- Objects: G = G(Z); orbits Δ_1, ..., Δ_r of G with d_i = |Δ_i| ≥ 8; U their union; H the group G induces on U.
+- Hypotheses: H1, for each i the group G|Δ_i contains Alt(Δ_i) (R22B-15's local test or a global certificate); H2,
+  for each pair i ≠ j with d_i = d_j, some SAFE word has different cycle types on Δ_i and Δ_j (the words may differ
+  between pairs). Both are finite exact checks.
+- Statement. H contains ∏_i Alt(Δ_i).
+- Proof. Each coordinate image H_i is Alt(d_i) or Sym(d_i), so D = [H, H] lies in P = ∏_i Alt(Δ_i) and projects onto
+  every factor: D is a subdirect product of nonabelian simple groups. Such a group is a product of diagonal subgroups
+  (induct on r: the kernel of the projection onto the first r − 1 coordinates meets the last factor in the whole factor
+  or trivially; in the second case the last coordinate is a simple quotient of a product of nonabelian simple groups,
+  which factors through one of them). A diagonal between i and j needs d_i = d_j, since |Alt(d)| = d!/2 increases, and
+  for d ≥ 8 its automorphism is induced by a bijection f: Δ_i → Δ_j. D is normal in H, and the centralizer of Alt(d) in
+  Sym(d) is trivial, so h_j = f h_i f⁻¹ for every h ∈ H; then every element of H has equal cycle types on Δ_i and Δ_j,
+  against H2. So D = P.
+- Consequence for vacancy. If every orbit of size at least 2 that meets the target T has d ≥ 8 and H1 and H2 hold on
+  them, N1 and N2 suffice for a vacating V: choose k_i = |T ∩ Δ_i| holes in each Δ_i, map them onto T ∩ Δ_i by an even
+  permutation (correct the parity inside the chosen set or its complement), realize all of them at once in P and lift
+  to a SAFE word. The word may move other orbits. If T meets an orbit of 2 to 7 chambers, H1 and H2 say nothing about
+  it (R22B-22).
+- This is containment in the induced action on U; the lifted word need not fix chambers outside U.
+- Counterexample to dropping the size condition (abstract, not a state of the puzzle): the cyclic group generated by
+  (0 1 2 3), holes {0, 2}, T = {0, 1}: N1 and N2 hold, and no element maps a subset of the holes onto T.
+- Uses: R22B-15, Theorem A; the simplicity of Alt(d) and Aut(Alt(d)) = Sym(d) for d ≥ 7 (standard).
+
+### R22B-20. At b00 no letter separates two pairs; one word separates all (computed)
+
+- Statement. At Z the 6,039 SAFE letters have orders 2 (1,647 letters) and 3 (4,392). b00's 19 target orbits form 40
+  pairs of equal size. Every letter has equal cycle types on two of them, the pairs with least chambers 34 and 66 and
+  82 and 90, all four of 7,200 chambers, so single letters do not give H2 of R22B-19. The first 120-letter word of
+  Random(1) separates all 40 pairs (pair-word digest `a41fd137…`), each of the 19 orbits gets a local Jordan witness
+  within the first 80 words, and no target orbit has 2 to 7 chambers, so R22B-19 applies at b00. The global check
+  (R22B-04) also passes, so the failed letter test contradicts nothing.
+- The 10 non-target orbits of at least 8 chambers without a local witness in 200 words are failures of that search,
+  not orbits without Alt.
+- Command: `scripts/round22/r22b20_separation.py`; output `runs/round22/r22b20_separation.txt`.
+
+### R22B-21. An orbit of twelve chambers with a group of order twelve (computed; counterexample)
+
+- Statement. From the solved state, the eight menu twists (40, 12), (81, 12), (133, 12), (86, 12), (121, 12),
+  (52, 12), (215, 12), (221, 12) (grip, item), in this order, are each admissible without uncertainty. They reach a
+  state (digest `93d1dab0…`, 24,776 off pieces) whose off pieces all have left height 2, so it lies in 𝒞₂. Its SAFE
+  alphabet has 356 grips and 3,916 letters. Grip 0 is SAFE, and every other SAFE cap misses cap 0 on the home
+  chambers, so every other SAFE letter fixes cap 0. The 12 chambers 4, 8, 9, 18, 26, 35, 120, 121, 131, 132, 242, 271
+  form one G-orbit, and the group G induces on it has exactly 12 elements (exhaustive closure). It is regular, so no
+  element fixes a point; it contains no three-cycle and not Alt(12).
+- So the claim that G|Δ contains Alt(Δ) for every orbit of at least 8 chambers at every state of 𝒞₂ (the second
+  question of the round) is false, and neither the local nor the global Jordan route covers every state.
+- Limit. The orbit has no holes, so any target that meets it already fails N2. B′(2) is not refuted, and the narrower
+  claim, for target orbits with enough holes, stays open.
+- How it was found: greedy packings of single-twist blocking sets that keep cap 0 SAFE and block every cap that meets
+  it; then the word is replayed and the alphabet rebuilt at the reached state, so the conclusion does not rest on the
+  packing.
+- Command: `scripts/round22/r22b21_regular12.py`; output `runs/round22/r22b21_regular12.txt`.
+
+### R22B-22. Small orbits need a joint test; they occur at the depth 60 stop (proved; computed)
+
+- Statement. Let T meet orbits of 2 to 7 chambers and S be their union. Breadth-first search over the joint images of
+  the tuple (T ∩ Δ)_{Δ ⊆ S} under the SAFE letters, with one common word for all coordinates, decides vacancy on S: a
+  vertex whose sets all lie in the holes gives V on S as the inverse of its path word, and an exhausted component shows
+  that none exists. It has at most ∏_Δ C(d_Δ, k_Δ) ≤ 35^s vertices for s such orbits, so a word of at most that number
+  minus one letters exists when any does. Tests on each orbit alone (local Alt for 5 to 7 chambers by enumerating at
+  most 5,040 elements, R22B-15) do not replace it: a diagonal A5 on two five-point copies passes every local test,
+  and holes {1, 2′} cannot cover {1, 1′}.
+- With large orbits. If R22B-19 gives P = ∏ Alt(Δ_i) on the large target orbits, project G onto the union of the large
+  and small target orbits; the subgroup fixing S pointwise still projects onto P, since otherwise a nontrivial quotient
+  of P would be a quotient of a subgroup of ∏ Sym(d), d ≤ 7, whose composition factors have order at most 5,040 <
+  |Alt(8)| = 20,160. So clear S first with a passing word, then the large targets with that subgroup; singleton targets
+  stay with N1. Without R22B-19 the general fallback is the joint search over the whole target (R22B-15, R22B-03).
+- Counts. At the depth 40 stop no orbit has 2 to 7 chambers. At the depth 60 stop (14,610 off pieces, all of left
+  height 2) there are 12 orbits of 4 chambers, 6 of 6 and one of 7; each of 4 or 6 chambers carries a group of order
+  12 (generated by 11 letters), so the six-chamber orbits do not have Alt(6), and the one of 7 carries a group of order
+  2,520, which is Alt(7). Eight orbits of 10 to 115 chambers passed the 100,000-element cap of the enumeration, which
+  shows nothing about them.
+- Command: `scripts/round22/r22b22_small_orbits.py`; output `runs/round22/r22b22_small_orbits.txt`.
+
+### R22B-23. What the closure bounds give without Alt (proved; conditional)
+
+- Objects: a preparation state Y with holes H; a target T; B(Y, T) = ∏_{Δ meets T} C(|Δ|, |T ∩ Δ|) − 1.
+- Statement. If a SAFE vacating word for T exists at Y, one of at most B(Y, T) letters exists: breadth-first search on
+  the joint target images reaches a subset of H, a shortest path repeats no vertex, and its inverse clears T (R22B-04's
+  argument; no Alt needed). Every prefix is legal, because the SAFE alphabet depends only on the fixed off geometry.
+  Each SAFE letter keeps a K⁺ chamber type of at most 7,200 chambers, so B(Y, T) ≤ 7,200^|T| − 1 ≤ 7,200^n(Y) − 1 when
+  N1 and N2 hold; the hole-set bound C(177,120, n(Y)) − 1 also holds, and the smaller may be used.
+- Closures. For R22A-06, |V·W·V⁻¹| ≤ |W| + 2B(Z, Bad(W)): V fixes every off pose but may rearrange lattice chambers
+  of other orbits, which the proof does not use; after W the off geometry is a subset of the start's with the same
+  poses, so V⁻¹ stays SAFE. For T1′, |W·V′·W⁻¹·V′⁻¹| ≤ 2|W| + 2B(Z1, Bad(W⁻¹)) with Z1 = Z·W; the hole count there is
+  n(Z1), not n(Z), because W can create the collateral Q.
+- Under R22B-19 with no target orbit of 2 to 7 chambers, vacancy is equivalent to N1 and N2; with such orbits add the
+  passing joint test of R22B-22. Global Jordan certificates stay a sufficient alternative (Theorem A).
+- What does not follow: a theorem that every closure at a state of 𝒞₂ exists exactly when N1 and N2 hold. R22B-21
+  refutes Alt on every large orbit, and local Alt alone would not exclude diagonal coupling (a diagonal A8 on two
+  eight-point copies, holes {1, 2′}, targets {1, 1′}). B′(2) still needs, at every required preparation state, either
+  independent alternating factors or another exact certificate such as the joint search. N1 and N2 failures stay real
+  obstructions for that target and send it to other preparations (section 7); not every remaining obligation moves to
+  line (c).
+- A later state needs the chosen word's full action: existence alone does not fix the lattice arrangement.
+- Uses: R22B-04, R22B-19, R22B-22, Theorem A, R22A-06, R22C-T1′.
+
+Open after round 4 of line (b): whether a non-Alt orbit can meet a target that has holes in it (R22B-21's orbit has
+none), a target-specific theorem for orbits with enough holes, and the joint test wherever a target meets the small
+orbits of the depth 60 stop.
+
+### Round 5 of line (b)
+
+The senior reviewer took line (b) a fifth round at the fast tier (findings R22B-24 to R22B-29, 18 October 2026): a
+non-Alt orbit against a target with holes, a finite classifier of the induced actions, the small orbits at the depth 60
+home targets and at the T1′ middles of 151 and 180, what a strict′ step keeps, and a vacancy theorem without Alt. Its
+computations are `scripts/round22/r22b24_regular_hole.py`, `r22b26_small60.py` and `r22b27_small_t1prime.py`
+(section 6); the integrator re-ran them and got the outputs `runs/round22/r22b24_regular_hole.txt`,
+`r22b26_small60.txt` and `r22b27_small_t1prime.txt`.
+
+### R22B-24. A non-Alt orbit meets a catalogue target that has a hole; vacancy still holds (computed)
+
+- Statement. From the solved state, A = [(26, 45), (126, 2), (26, 12), (126, 5)]³ and then (15, 12), (100, 12),
+  (105, 12), (116, 12), (84, 12), (132, 12), (238, 12) and (6, 1) (grip, item) are each admissible without
+  uncertainty. They reach a state of 𝒞₂ (digest `3cb419d7…`, 21,790 off pieces, all of left height 2; 366 SAFE grips,
+  4,026 letters). The twelve chambers 98, 2014, 2987, 3419, 3642, 3688, 4639, 6084, 6168, 8830, 9053 and 9099 form one
+  orbit whose induced group has exactly 12 elements (exhaustive closure): it is regular and contains no Alt(12). Its
+  only hole is 3642.
+- The target. The 111 home chambers of the class-3 triangle cell {26, 99, 126} (digest `90c1dfc8…`, 63 occupied) are
+  exactly Bad(W) of the transport W = A⁻¹ = [(126, 2), (26, 45), (126, 5), (26, 12)]³, a free class-3 word that lands
+  the whole 111-piece content, keeps the other 21,679 off pieces at their exact poses and takes the 63 lattice pieces
+  of the cell off. T meets the orbit at 8830 and passes N1 and N2.
+- Vacancy. Grip 6 is the only SAFE grip whose cap meets cap 6, and its action there has 12 elements. Testing T under
+  all of them at once finds one image inside the holes, that of the self-inverse letter (6, 1). So V = (6, 1) clears T
+  and V·W·V⁻¹ is a closure.
+- So the shortcut "every target orbit with enough holes contains Alt" is false at a reachable state with a real
+  catalogue target. N1 and N2 still sufficed here: a reachable target that passes them without vacancy is not known.
+- Command: `scripts/round22/r22b24_regular_hole.py`; output `runs/round22/r22b24_regular_hole.txt`.
+
+### R22B-25. A finite classifier of the induced action, with a residual case (proved)
+
+- Statement. Restrict the SAFE generators to a target orbit Δ of d points. A complete Schreier–Sims chain gives the
+  exact order of the induced group K, and for d ≥ 8, K contains Alt(d) exactly when |K| ≥ d!/2 (every homomorphism
+  Sym(d) → C₂ is trivial or the sign, so Alt(d) is the only subgroup of index 2). Blocks: fix a ∈ Δ and, for each b ≠
+  a, close the equivalence generated by a ~ b under the generators; a partition into classes strictly between one
+  point and Δ is a block system, and if none appears K is primitive. If |K| = d, K is regular. A chain or an
+  enumeration cut off by a time limit decides nothing.
+- Exact vacancy per case. Regular: test the d elements. Imprimitive, with blocks B_1, ..., B_m, h_i = |H ∩ B_i| and
+  t_i = |T ∩ B_i|: if K contains independent Alt(B_i) factors (|B_i| ≥ 3; independent Sym(2) factors for blocks of
+  two), vacancy on Δ is equivalent to some κ of the block action with h_i ≥ t_κ(i) for every i; without those factors
+  the inequalities are only necessary. Several orbits: use their common projected group, not one element per orbit.
+- Residual case. Primitive actions without Alt cannot be excluded on group-theoretic grounds: Sym(12) on the 66 pairs
+  of 12 points is primitive, of order 479,001,600, and does not contain Alt(66). No proof excludes such an action
+  from the SAFE geometry; there only the joint test of R22B-29 decides.
+- Orbits that miss T impose nothing: the joint action on the union of the target orbits suffices, since every word
+  in the restricted generators lifts to the same SAFE word. A global Jordan certificate can fail through cycles
+  outside that union while vacancy holds; that is a failure of the stronger certificate.
+- Uses: R22B-15, R22B-19, R22B-22.
+
+### R22B-26. The depth 60 home targets miss every small orbit (computed)
+
+- Statement. At the depth 60 stop (digest `ef45a117…`, 14,610 off pieces) the SAFE alphabet has 12 orbits of 4
+  chambers, 6 of 6 and one of 7 (91 chambers), and none of them has a hole, so a target that meets one fails N2. None
+  of the 184 units' home-cell targets meets them, and none of the 2,400 triangle and 600 tetrahedron home-cell
+  targets does (480 and 120 in each of the five classes). So the joint test of R22B-22 has nothing to do at these
+  targets; their large orbits and fixed chambers are separate questions.
+- Scope: the home-cell targets of `screen.py`. A census or transport word needs its complete ghost Bad set, which can
+  be larger than its landing cell.
+- Command: `scripts/round22/r22b26_small60.py`; output `runs/round22/r22b26_small60.txt`.
+
+### R22B-27. The T1′ middles of 151 and 180 miss the small orbits too (computed)
+
+- Statement. With the alphabet rebuilt at each middle. 151: the endpoint of Theorem C's pure-cell action (R22C3-04;
+  digest `d76309e0…`, 14,651 off pieces); its 86-chamber target has no chamber in an orbit of 2 to 7 chambers. 180:
+  the recorded steps 174, 175 and 176, then (481, 1) and the 288-letter landing word of experiment D (digest
+  `534aaa7a…`, 14,545 off pieces), with Bad(W⁻¹) rebuilt by ghost replay and matched to the stored target; it has
+  none either, and N1 and N2 pass. Both middles still have 12 orbits of 4 chambers, 6 of 6 and one of 7. So the
+  small-orbit joint tests at both are empty. This is about these two middles, not every T1′ word of the two units.
+- Command: `scripts/round22/r22b27_small_t1prime.py`; output `runs/round22/r22b27_small_t1prime.txt`.
+
+### R22B-28. What a strict′ step keeps: subgroup certificates, not inventories (proved)
+
+- Statement. Let Y′ end a strict′ step from Y. By Lemma M, A(Y) ⊆ A(Y′) with the same chamber permutations for the
+  old letters (R22C3-01), so every old local-Alt witness, every separating word (R22B-19) and the whole old joint
+  target-image graph (R22B-22, R22B-29), which depend on the generators and T only, stay valid for the old subgroup.
+  A cached accepting image S stays a certificate exactly when S ⊆ H(Y′). An exhausted old component proves failure
+  only for the old subgroup, since new letters may help; if it is closed under the new generators, its acceptance test
+  against H(Y′) decides the enlarged action.
+- Merged orbits. Old local-Alt and separation hypotheses still certify the orbits that did not merge. On a merged
+  orbit Δ′, an old Jordan word with a p-cycle certifies Alt(Δ′) when p > |Δ′|/2; otherwise check again.
+- Inventories are not kept: recompute H(Y′) and the per-orbit counts. In the code, `Alphabet.holes` and
+  `Alphabet.occupied` are snapshots taken when the alphabet is built, so `condition` on an old alphabet reads the old
+  inventory.
+- These are endpoint comparisons. They do not compare T1′ middles Y·W and Y′·W, or states after a retained
+  preparation that moves off pieces; there check the off-geometry inclusion or rebuild the alphabet. A changed landing
+  word needs its own complete Bad set.
+- Uses: Lemma M, R22C3-01, R22B-19, R22B-22.
+
+### R22B-29. The vacancy theorem: a finite equivalence without Alt (proved)
+
+- Objects: a middle Y ∈ 𝒞₂ (where the vacating word acts: Z for a closure, Z1 for T1′, each T2′ premise at its own
+  middle); H its hole set; T a complete target (Bad(W), or Bad(W⁻¹) for T1′); the nontrivial target orbits Δ, those
+  of at least two chambers that meet T and are not all holes; Γ the component of the tuple (T ∩ Δ)_Δ under the SAFE
+  letters acting on all coordinates at once.
+- Statement. A SAFE-ALL word V with T ⊆ π_V(H) exists if and only if N1 holds (every fixed chamber of T is a hole), N2
+  holds, and Γ contains a tuple whose union lies in H.
+- Proof. If a path word u gives (T ∩ Δ)·u ⊆ H on every nontrivial target orbit, its inverse V = u⁻¹ maps H onto a
+  superset of T there; singleton targets are holes by N1, and an orbit of holes stays one. Conversely a vacating V
+  gives the accepting image T·V⁻¹ ⊆ H. Every prefix is admissible, because the SAFE alphabet depends only on the off
+  geometry, which SAFE letters keep (O5). Γ has at most ∏_Δ C(|Δ|, |T ∩ Δ|) vertices, so its exhaustion is a finite
+  negative certificate and a shortest accepting path gives a V of at most that number minus one letters (R22B-23).
+  No group classification and no Alt is used.
+- Reduction. Split the nontrivial target orbits into L (degree at least 8) and E, and let K be the subgroup of the
+  joint action on L ∪ E that fixes E pointwise. If K induces a group containing ∏_{Δ ∈ L} Alt(Δ), vacancy is
+  equivalent to N1, N2 and the joint test on E alone: clear E with an accepting word (hole counts on L do not
+  change), then clear L through K with E fixed; necessity follows by projection. The kernel condition is a finite
+  check (Schreier generators of the pointwise stabilizer). Global Jordan certificates give it, and so does R22B-19 when
+  E has only orbits of 2 to 7 chambers (R22B-22's composition-factor argument); for large exceptional orbits it is not
+  automatic. With L empty this is the equivalence above.
+- T2′. The second middle depends on the full action of the first vacating word, so separate successes at unrelated
+  middles do not certify one T2′ word: keep the first action's full effect, or quantify jointly over its possible
+  actions and test the resulting second middles.
+- This settles the vacancy question at a given middle, the case of a non-Alt orbit meeting a target with holes
+  included (R22B-24 is an instance): it is decided by a finite test, and a step that carries the test needs nothing
+  more. Not settled: whether N1 and N2 alone suffice at every target of 𝒞₂ (no reachable counterexample is known), and
+  coverage, that every reachable height-2 state has a unit, a word and middles where the test accepts (section 8).
+- Uses: O5, R22B-19, R22B-22, R22B-23, Theorem A.
+
+Open after round 5 of line (b): the sufficiency of N1 and N2 alone, which no step needs once it carries the joint test
+of R22B-29; the residual primitive case of R22B-25 where neither Alt nor a block system is found; and coverage of
+B′(2), which line (b) hands to section 8.
+
+### Round 6 of line (b)
+
+The owner's decision of 18 October 2026 (`docs/wiki/decisions/owner-decisions-2026-10-18-machine-tutorial.md`) counts
+a step known only by a certificate as stuck. So the senior reviewer took line (b) a sixth round at the fast tier, in
+two concurrent shards, on literal words for the nine certificate steps of E2 (section 2: the closures b14, b16, b20
+and b21, and the T1′ steps b07, b13, b19, b15 and b06 with b05). Shard A (R22B-30 to R22B-34): short seeds, the
+whole-step bounds they give, why the old orders had none, and what a literal builder must do. Shard B (R22B-40 to
+R22B-49): the nine steps one by one. Its computations are `scripts/round22/r22b30_seeds.py`, `r22b32_pairs.py`,
+`r22b33_powers.py`, `r22b33_search.py`, `r22b40_prefixes.py` and `r22b48_b15.py` (section 6); the integrator re-ran
+them and got the outputs under `runs/round22/` with the same names.
+
+### R22B-30. Twenty-nine short seeds cover the nine steps in a new orbit order (computed)
+
+- Statement. At the nine starts (the closure states of b14, b16, b20, b21; the T1′ middles of b07, b13, b19, b15 and
+  b06+b05), 499 grips are SAFE at all nine. Left-spine prefixes of the seed atlas (`assets/seed_atlas.json`), placed
+  by a K⁺ element σ (a letter at grip g with item k goes to grip σ(g) with item σkσ⁻¹; the state is not rotated and no
+  piece is relabelled), give a seed for each of the 29 target orbits that occur. σ = 2453 is the least of the 76
+  placements that make every grip the atlas uses SAFE at all nine states.
+- The order. Take the target orbits in the master order 25, 64, 67, 69, 16, 70, 17, 105, 81, 41, 31, 22, 116, 75, 82,
+  74, 33, 23, 32, 115, 108, 106, 83, 90, 34, 66, 65, 14, 12 (orbits named by their least chamber in the recomputed
+  SAFE-ALL partition; it is the atlas's cascade order), restricted to the orbits of each target. For every use the
+  script checks that every letter is SAFE, that the word acts on its orbit as the stated three-cycle, and that it
+  fixes every earlier target orbit of the order pointwise. Collateral on later orbits and frame rotations are kept.
+
+| least | letters | cycle | states |
+| --- | --- | --- | --- |
+| 25 | 10 | (11101, 33073, 27969) | b15, b06+b05 |
+| 64 | 46 | (14313, 27996, 28126) | all nine |
+| 67 | 22 | (38428, 47807, 73511) | all nine |
+| 69 | 46 | (36518, 94174, 108524) | all nine |
+| 16 | 94 | (63917, 108562, 110428) | b06+b05 |
+| 70 | 46 | (36522, 87083, 58993) | all nine |
+| 17 | 190 | (36853, 108563, 110429) | b15, b06+b05 |
+| 105 | 9,214 | (89060, 126910, 157252) | all but b15 |
+| 81 | 46 | (36528, 87084, 102451) | all nine |
+| 41 | 142 | (19023, 23142, 103135) | all nine |
+| 31 | 766 | (36854, 77114, 70655) | b15, b06+b05 |
+| 22 | 766 | (36855, 96344, 73134) | b15, b06+b05 |
+| 116 | 190 | (28286, 71786, 33260) | b07, b13, b19, b06+b05 |
+| 75 | 1,534 | (38461, 80245, 45297) | all but b15 |
+| 82 | 46 | (36542, 94175, 48322) | all nine |
+| 74 | 46 | (28272, 58225, 43935) | all nine |
+| 33 | 70 | (11093, 59130, 58975) | all nine |
+| 23 | 1,534 | (4125, 65310, 68170) | b15, b06+b05 |
+| 32 | 766 | (77196, 110504, 102645) | b15, b06+b05 |
+| 115 | 46 | (76974, 139824, 82057) | all but b15 |
+| 108 | 94 | (12434, 107027, 13961) | all but b15 |
+| 106 | 142 | (37038, 134632, 77086) | all but b15 |
+| 83 | 94 | (23999, 36548, 131517) | all but b15 |
+| 90 | 94 | (28274, 142111, 43936) | all but b15 |
+| 34 | 142 | (9271, 56203, 108579) | all nine |
+| 66 | 142 | (4149, 110393, 28138) | all nine |
+| 65 | 1,534 | (65861, 111153, 110568) | all nine |
+| 14 | 286 | (43956, 122664, 96218) | b15, b06+b05 |
+| 12 | 562 | (92598, 95103, 103102) | b06+b05 |
+
+- The words are left-associated commutators of single letters and of two four-fold powers, written out in the script
+  (cycles source to destination; lengths are literal, unreduced letter counts). The script also rediscovers every word
+  from the atlas. No claim of shortest seeds is made.
+- So the seed problem of R22B-18 is solved at these nine states, in a new order. In the old orders (decreasing size)
+  no power of a four-letter commutator is a seed (R22B-32), and a sampled search found seeds for two orbits only
+  (R22B-33).
+- Command: `scripts/round22/r22b30_seeds.py` (with R22B-31's table audit); output `runs/round22/r22b30_seeds.txt`.
+
+### R22B-31. The checked tables and the new seeds give whole steps below 10⁷ twists (proved; computed inputs)
+
+- Anchor transfer. Let a, b, c be the anchors of an orbit's checked tables (P_x fixes a and sends x to b, of at most
+  e letters; Q_z fixes a and b and sends c to z, of at most f letters), and C a new seed of s letters that cycles
+  (u, v, w) and fixes the earlier orbits. If u = a let R be empty; otherwise choose a SAFE letter l that moves a, put
+  y = a·l⁻¹ and R = P_u·P_y⁻¹·l, so u·R = a and |R| ≤ 2e + 1. With h = R·P_(v·R)·Q_(w·R·P_(v·R))⁻¹ (both lookups lie
+  in their domains by injectivity), h sends (u, v, w) to (a, b, c) and |h| ≤ 3e + f + 1. C′ = h⁻¹·C·h cycles the
+  anchors, has at most s + 6e + 2f + 2 letters, and fixes the earlier orbits, since h keeps each SAFE-ALL orbit
+  setwise.
+- Bound. R22B-01 with C′ gives |V| ≤ 2·Σ_i k_i·(s_i + 8e_i + 4f_i + 2), and the same for V′ at its middle. It includes
+  the cost of moving the seed to the old anchors.
+- Computed inputs. The script re-checks the source and target bindings, the orbit memberships and N1 and N2 at all nine
+  states, and all 2,026,322 edges of the P and Q trees (fixed anchors, complete coverage, no cycles, the exact depths:
+  at most 29 to 68 letters). The anchor conjugators actually built have at most 17 to 57 letters; the bounds use the
+  inequality, not these.
+
+| step | V or V′ bound | outer letters c | whole step 2·V + c |
+| --- | --- | --- | --- |
+| b14 | 299,200 | 60 | 598,460 |
+| b16 | 149,600 | 72 | 299,272 |
+| b20 | 149,600 | 36 | 299,236 |
+| b21 | 141,744 | 84 | 283,572 |
+| b07 | 248,200 | 96 | 496,496 |
+| b13 | 261,080 | 120 | 522,280 |
+| b19 | 273,088 | 168 | 546,344 |
+| b15 | 84,656 | 864 | 170,176 |
+| b06+b05 | 3,489,744 | 5 | 6,979,493 |
+
+- c is the core length for a closure, twice the length of W for T1′, and for the last row 3 + 2·1 (the preparation X
+  and W = (91, 14)). So each of the nine steps, at the state it starts from in E2, has a literal word of fewer than 10⁷
+  twists. This is a size result: no new word was expanded or played here. The nine bounds cannot be added into a new
+  E2 trajectory, since a new word can end at another state, so each later step has to be rebuilt at the state actually
+  reached (R22B-34).
+- Uses: R22B-01, R22B-30.
+
+### R22B-32. In the nine old orders no power of a four-letter commutator is a seed (proved reduction; computed)
+
+- Statement. In each of the nine recorded target orders, no word [x, y]^m, with x and y single SAFE menu letters and
+  m > 0, is a seed for any target orbit, for any exponent m.
+- Reduction. K⁺ is transitive on the 600 grips, and the eleven menu items at a grip are exactly the nonidentity
+  elements of its K⁺ stabilizer, so every ordered pair of letters is conjugate to one with x at grip 0; conjugation
+  keeps the cycle spectra on each K⁺ chamber type. At each state, for each required orbit, the rest of its K⁺ type
+  consists of singleton SAFE-ALL orbits, which a SAFE word fixes; so the spectrum of q = [x, y] on the target orbit is
+  its spectrum on the type. By R22B-12, in a fixed order some target passes exactly when the first target type on
+  which q has a cycle of length divisible by 3 has exactly one such cycle, of length 3 (a later target fails, since
+  that earlier cycle would have to die).
+- Computed. Only 57 caps meet cap 0; the 11·11·57 = 6,897 overlapping pairs were all tested, and the other 65,703
+  normalized pairs have disjoint caps and commute. None passes in any of the nine orders. By conjugacy this covers all
+  ordered pairs of the 6,600 menu letters. Output: `EXHAUSTIVE_XY near 57 checked 6897 omitted_disjoint 65703 valid {}`.
+- Not excluded: six-letter, eight-letter or nested bases, or other orders. A larger budget for two-letter bases cannot
+  repair the old-order seed search.
+- Command: `scripts/round22/r22b32_pairs.py`; output `runs/round22/r22b32_pairs.txt`.
+
+### R22B-33. Two reusable power seeds, and blockers that depend on the order (computed)
+
+- Statement. In the old orders, a search of 120,000 candidates [x, y], [x, yz] and [x, yzu] at b14 (fixed random seed
+  221130, cap-overlap order; every candidate tested against every target row on the full protected union; a
+  20,000-letter limit) kept two seeds:
+  - orbit 33: q = (135, 9), (228, 4), (198, 4), (135, 3), (198, 8), (228, 8); q has one cycle each of lengths 3, 5
+    and 25 on b14's protected union, so q^25 (150 letters) is a seed, cycling (30707, 39536, 45576); valid at b14, b16,
+    b20, b21, b07, b13;
+  - orbit 34: q = (401, 4), (497, 6), (541, 6), (497, 7), (401, 8), (497, 6), (541, 7), (497, 7); q^5 (40 letters)
+    cycles (82512, 120059, 133063); valid at all but b06+b05.
+- Counts. Candidates passing the power test: 46 for orbit 33, one for orbit 34, one for orbit 65 (beyond the limit),
+  none for the other orbits; the least exponent reached 29,419,775. So even a six- or eight-letter base can need a
+  huge power, and a bounded failure is no proof of absence (R22B-32 covers four-letter bases only).
+- Blockers. Among candidates that pass locally and fail on the protected union, the triples (target, earlier orbit,
+  earlier cycle length) (65, 33, 3), (66, 33, 114), (69, 33, 3), (70, 33, 3), (74, 33, 3), (82, 74, 90), (83, 33, 3),
+  (90, 83, 24), (106, 33, 3), (41, 83, 24), (67, 90, 15), (81, 83, 3), (108, 33, 3), (105, 33, 3), (115, 33, 3),
+  (64, 83, 3) and (75, 33, 3) occur. Every earlier length is divisible by 3, so killing that cycle kills the wanted
+  three-cycle. These are observations in the sampled family.
+- Counterexample to caching by orbit. R22B-13's eight-letter q for orbit 66 has SAFE letters at b14 but also cycles
+  (72853, 78286, 117434) in the earlier orbit 33 there, so no power of it is a seed at b14: a seed cannot be reused by
+  the orbit's least chamber and size alone.
+- Commands: `scripts/round22/r22b33_powers.py` (the two seeds and the counterexample; output
+  `runs/round22/r22b33_powers.txt`) and `scripts/round22/r22b33_search.py` (the search; output
+  `runs/round22/r22b33_search.txt`).
+
+### R22B-34. What a literal builder must do (specification)
+
+- Seeds. Recompute the source digest, SAFE alphabet, target, orbit partition, N1 and N2. Use the catalogue and order of
+  R22B-30 restricted to the target, checking each seed's letters, three-cycle and identity on the whole earlier union
+  when it is used. For discovery, enumerate atlas left-spine prefixes shortest first and K⁺ placements in increasing
+  index, with a 20,000-letter seed limit; an exhausted budget is a search outcome, never a proof of absence. A seed
+  record keeps the pairs, the exact length, the oriented cycle, the source digest, the orbit membership, the protected
+  union and the placement; the least chamber and the size are not a cache key.
+- Format. A versioned certificate (r22b10/2) with an explicit orbit order and a short-seed route; r22b10/1 keeps its
+  meaning. The checker verifies that the declared order is a permutation of the recomputed nontrivial target orbits.
+- Construction. Reuse the checked P and Q tables through the anchor transfer of R22B-31; rebuild the vacating steps in
+  the new order from the current inventory, applying every completed word's full action to the later orbits; do not
+  substitute seed nodes into the old steps.
+- Expansion. Compute all lengths exactly before expanding; preflight the whole step (preparation and outer words
+  included) against 10⁷; expand iteratively (cat in order; inv reversed with inverse leaves; pow by repetition); stream
+  and hash the pairs; never drop an action because its chamber permutation is the identity, since chamber-fixed pieces
+  can still rotate. The checker compares the emitted leaves with the DAG's expansion; chamber permutations alone do
+  not prove equal labelled actions.
+- Replay. `stepchk.py` must fail (nonzero exit) when strict′ fails or the output digest differs. Controls: the
+  literal b04, b03 and b18 steps as positives; wrong inverse order, reversed Q paths, non-SAFE leaves, altered
+  bindings, moved protected orbits and dropped frame rotations as negatives.
+- Stop condition. Build and check one literal step, then rebuild the next step from the state actually reached; go on
+  only while the checks pass, and report the first state where no step is found. The old pose tables of later steps
+  certify nothing about a changed trajectory.
+- It is implemented (written by Codex and reviewed by the integrator): atlas seeds in `r22b10_cert.py --seeds
+  atlas` and `check_r22b10.py` (tests `test_atlas.py`), and literal expansion in `expand_slp.py`, `slp_apply.py` and
+  `round22/replay_slp.py --seeds atlas --literal-limit N` (tests `test_literal.py`). With them the literal replay of
+  E2 went from 737 to 0 off pieces in 13 strict′ steps of 692 to 672,417 letters, 2,012,155 in all, among them the
+  closures b14, b16, b20 and b21 and the T1′ steps b07, b13, b19, b15 and b06 with b05 with certificate V (stage 12
+  README, `runs/round22/line-a/literal/`); for b06 with b05 at 71, V′ has 336,206 letters and the step 672,417
+  (R22B-31: 6,979,493).
+
+### R22B-40. The recorded failures do not show that long words are needed (read; computed)
+
+- Statement. Run 1 of E2 went straight from the closure premises to a certificate at b14, b16, b20 and b21, without a
+  peeling or greedy run. At the other five steps the records show incomplete peeling (b07 22/198, b13 60/198, b19
+  55/198, b15 55/73 movable targets, b06 0/2,382) and greedy timeouts, not an exhausted search. The literal positive
+  controls peeled completely (b04 78/78, b03 107/107, b18 107/107); their V′ have 339, 493 and 325 letters, and
+  their whole steps 1,254 = 2(288 + 339), 1,106 = 2(60 + 493) and 770 = 2(60 + 325).
+- Notation. Per target orbit Δ: k = |T ∩ Δ|, o the occupied target chambers, h = |H ∩ Δ|. N2 gives enough holes
+  outside the target exactly when h ≥ k. All fixed target chambers at the nine starts are holes.
+- The exact test. For a candidate v, v vacates T exactly when π_v⁻¹(T) ⊆ H, over the complete Bad set, with H
+  updated after every accepted move. Checking only the initially occupied target chambers is unsound: with T = {a, b},
+  H = {a, c} and the cycle a → c → b → a, b becomes a hole and a is filled. A greedy family of macros of at most six
+  letters that lowers o at every accepted move uses at most 6·o letters if it succeeds (a conditional bound, not a
+  termination theorem); a timeout means unknown.
+- Computed. Fresh searches of 60 CPU seconds at each start found seven literal vacancy prefixes (not complete steps),
+  each replayed letter by letter keeping every off pose and every lattice flag (R22B-41 to R22B-48). Every
+  certificate uses Jordan seeds; the small P and Q tables do not explain its huge length.
+- Command: `scripts/round22/r22b40_prefixes.py` (set `R22B_STEP` to a step name; `R22B_POINTS=1` prints the holes per
+  orbit); output `runs/round22/r22b40_prefixes.txt`.
+
+### R22B-41. b14: a four-letter prefix clears 28 of 60 occupants (computed)
+
+- At d3aeee99, T is the two class-3 triangle cells {201, 353, 354} and {353, 354, 383} (36 and 24 occupants; no fixed
+  target). No single letter of the 6,116 lowers the occupancy. P = (354, 4), (539, 1), (354, 8), (539, 1) takes it from
+  60 to 32 (digest `087d8a56…`).
+- T1′ with the same 60-letter W: middle `534a022e…`, 678 off pieces, 78 occupied targets; N1 and N2 pass, peeling stops
+  at 31/222 and 120 CPU seconds of greedy search find no V′.
+- The stored certificate: 60 three-cycles, e ≤ 29, f ≤ 32; orbit 65 carries the largest share (36 per cent); the
+  whole step is below 10¹⁵² twists.
+
+### R22B-42. b16: an eight-letter prefix clears 15 of 70 occupants (computed)
+
+- At de959085, T is the class-2 triangle {67, 106, 239} (111 chambers, 70 occupied, no fixed target). No single letter
+  helps. P = (65, 3), (137, 8), (65, 9), (137, 4), (118, 2), (65, 1), (118, 5), (65, 1) gives 70 → 55 (`71ed70b5…`).
+- T1′ with the same 72-letter W: middle `d3fafd94…`, 577 off pieces, all 111 targets occupied, N1 and N2 pass; peeling
+  stops at 21/111 and 90 CPU seconds give no V′.
+- The certificate: 70 three-cycles, e ≤ 29, f ≤ 32; orbit 74 carries 48 per cent; below 10¹⁵² twists.
+
+### R22B-43. b20: ten occupants, and a prefix that fills two holes of the target (computed)
+
+- At 85765a13, T is the class-2 triangle {542, 552, 593}; only ten chambers are occupied (160832, 160847, 160852,
+  163428, 163430, 163432, 163434, 163435, 163436, 163437), in orbits 82, 83, 105, 106 and 108. No single letter helps.
+- P = (539, 1), (485, 1), (556, 7), (485, 1), (556, 6), (539, 1) clears three occupants but fills the target chambers
+  160840 and 163439, which were holes: 10 → 9 (`5537c48b…`). A search that protects only the initial occupants would
+  miss this.
+- T1′ with the same 36-letter W: middle `1efbca9a…`, 457 off pieces, 60 occupied targets; N1 and N2 pass; 150 CPU
+  seconds give no V′.
+- The certificate: ten three-cycles; more than 99 per cent of its length is orbit 105's, which has one occupied target.
+  The cost lies in one seed, not in the number of targets. Below 10¹⁵¹ twists.
+
+### R22B-44. b21: T1′ shrinks the vacancy task from 111 occupants to ten (computed)
+
+- At 7fed20ae every chamber of the class-2 triangle {67, 106, 239} is occupied (b16's target cell). 566 SAFE grips,
+  6,226 letters; the best single letter clears 16. A 17-letter prefix P (in the script) gives 111 → 90 (`2445c1c5…`).
+- With the 84-letter W first, the T1′ middle (`6753571a…`, 548 off pieces) has only ten occupied targets and passes N1
+  and N2; peeling stops at 21/111 and 135 CPU seconds give no V′. A machine that switches to T1′ must use the middle's
+  own alphabet and inventory.
+- The certificate: 111 three-cycles, e ≤ 20, f ≤ 29; orbit 105 carries 85 per cent; below 10¹⁶¹ twists.
+
+### R22B-45. b07: the empty tetrahedron stays in the target, and the direct closure fails by type counts (computed; proved)
+
+- At the middle `800d3517…`, T is the class-3 triangle {201, 353, 354} (111 chambers, all occupied) and the tetrahedron
+  {201, 353, 354, 383} (87 chambers, all holes): W⁻¹ also takes the tetrahedron's lattice ghosts off, so the empty
+  tetrahedron cannot leave the vacancy test. A 17-letter prefix (in the script) gives 111 → 50 (`e70c2f75…`).
+- Obstruction. At the 324-piece start the recorded direct-closure target has K⁺-type deficits (type, holes, needed)
+  (32, 22, 33), (33, 8, 21), (34, 3, 17) and (35, 0, 1). SAFE-ALL letters keep the hole count of every type, so no
+  SAFE preparation lets this W close directly. A W with a smaller Bad set is not excluded.
+- The certificate: 111 three-cycles, e ≤ 13, f ≤ 33; orbit 90 carries over 99 per cent; below 10¹⁶³ twists.
+
+### R22B-46. b13: every own-class direct closure needs 15 type-30 holes, and there are 13 (proved; computed)
+
+- At b13's start (`77cdf4be…`, the end of b07) there are 13 type-30 holes. Each of the 2,400 home triangles of the five
+  classes has 15 type-30 chambers. By R22A-01, a free own-class word that lands a triangle content has a whole home
+  triangle in Bad(W), so it needs at least 15 type-30 holes; SAFE preparation keeps the count. So no own-class direct
+  closure exists at that state, for any grip or W. T1′ (as recorded) and mixed-class words are not excluded.
+- At the middle `8cdf22fb…` (triangle occupied except ten chambers, tetrahedron empty) a 12-letter prefix gives
+  101 → 48 (`8c5d7e67…`).
+- Order. The 324-piece state has 28 type-30 holes; the reviewer notes that b13 first would use 13 and leave 15, while
+  the recorded order (b07 first) uses 15 and leaves 13. That suggests trying b13 first; no reordered chain was checked.
+- The certificate: 101 three-cycles; orbit 106 carries 91 per cent; below 10¹⁵⁵ twists.
+- Uses: R22A-01; `scripts/round22/r22c04_vectors.py` (the type vectors of the home cells).
+
+### R22B-47. b19: no own-class direct closure, since no type-35 hole exists (proved; computed)
+
+- At b19's start (112 off pieces) there is no type-35 hole, and each of the 600 home tetrahedra has exactly one type-35
+  chamber. By R22A-01 an own-class word that lands the tetrahedron content has a whole home tetrahedron in Bad(W), so
+  no own-class direct closure exists; T1′ escapes this by making the hole at its middle.
+- At the middle `9e198c4c…` only the tetrahedron {67, 92, 106, 239} is occupied (16 pieces); 11 of them lie in
+  saturated orbits, and only orbit 82 has slack (four holes). No single letter of the 6,270 helps; a 60-second search
+  found no word.
+- The certificate: 16 three-cycles, e ≤ 37, f ≤ 61; orbit 105 carries over 99 per cent; below 10¹⁴⁷ twists.
+
+### R22B-48. b15: a 58-letter prefix ends at an exact dead end of the greedy family (computed)
+
+- At the middle `627958f3…`, T is the 86-chamber class-3 edge {217, 324}: 25 occupied, 13 fixed targets (all holes).
+  A 58-letter prefix (in the script) leaves exactly the chambers 74638 and 74641 occupied (`c2c34b5a…`), keeping every
+  off pose and lattice flag. The greedy family of `vacate2.py`, with 60 conjugator neighbours and then with all of
+  them, has no improving move there, although both orbits (23 and 34) have five spare holes: N1 and N2 do not make
+  that family complete. Other choices, neutral moves and longer words are not excluded.
+- The direct closure is blocked at the 96-piece start: the chambers 63068, 63072, 63077, 63109, 69356 and 69361 of
+  Bad(W) are occupied and fixed by the whole SAFE group, so N1 fails after every SAFE preparation (checked with the
+  actual 432-letter W).
+- The certificate: 25 three-cycles; orbit 32 carries 51 per cent; below 10¹⁶³ twists. A runner must report the
+  two-chamber remainder as stuck.
+- Command: `scripts/round22/r22b48_b15.py`; output `runs/round22/r22b48_b15.txt`.
+
+### R22B-49. b06 with b05: no smaller closure target, and every single-letter T1′ has the same peeling problem (proved; computed)
+
+- X = (178, 7), (170, 1), (75, 1) takes the hole count of cap 91 from 20 to 0 (`fa723861…`), and W = (91, 14) gives the
+  middle `33daf3f3…` with 3,097 off pieces. There, of the 29 class-3 home cells in cap 91 only the vertex cell {91}
+  (10 occupants) and the edge {26, 91} (61) are occupied; the 715 fixed target chambers are holes; and h = k in every
+  target orbit, so V′ must put the whole hole set exactly onto T. No single letter of the 6,182 helps.
+- Landing letters. Grips 35, 56, 67 and 91 hold both units whole; the single twists that land both are exactly
+  (91, j) for j = 14, 21, 23 and 43 to 51. None is in K⁺, so each has all 3,097 cap chambers in its Bad set.
+- Closure. SAFE preparation keeps the 71 holes. A single-letter closure needs 3,097; any own-class word that lands the
+  vertex unit has a whole vertex cell in Bad(W) (385 chambers), and landing both units needs 385 + 86 = 471. All exceed
+  71, so no own-class direct closure exists here.
+- T1′. With m holes in cap 91 before W, landing all 71 off pieces leaves 3,097 − m off pieces, so a 3,097-chamber
+  target needs m = 0. For two landing letters g and g0, k = g·g0⁻¹ lies in K⁺ and keeps cap 91; it carries the middle,
+  its SAFE alphabet and its target to those of g, and the menu is K⁺-covariant. So the builder's peeling family (single
+  letters and depth-two commutators) behaves the same for all twelve letters and every feasible preparation, and the
+  recorded result (no first peel among 2,382 movable targets; not re-run) holds for all of them.
+- The certificate: 71 three-cycles, e ≤ 37, f ≤ 68; orbit 14 carries over 99 per cent; below 10¹⁶⁴ twists.
+- Open: a T1′ step of several letters with a smaller Bad set, or a larger vacancy family.
+- Uses: R22A-01, R22B-28.
+
+Open after round 6 of line (b): complete literal words for the nine steps (R22B-31 bounds them below 10⁷ twists each,
+but none was expanded or played in the round), the sequential replay of E2 with every step rebuilt at the state
+reached (R22B-34), and shorter words: the prefixes of R22B-41 to R22B-48 and the type-count obstructions of R22B-45 to
+R22B-49 say which routes cannot work and where the vacancy work lies.
+
+## 4. The integrator's experiments in this round
+
+- **Zero endpoint collateral at the depth 40 stop (measured, exact replay).** With points as owners, clean-power paths
+  gave strict′ steps of 60, 84, 60, 72 and 36 letters for b00, b01, b11, b16 and b20 (1 to 3 powers), each replayed
+  exactly: the unit lands, no lattice piece goes off, every other off piece keeps its exact pose. b01 and b11 use the
+  same tetrahedron target, so only one of them can land this way (R22A-05).
+- **The census with whole cells as owners, class 3 (measured, exact replay).** With the owners of R22A-02, seven of
+  the 13 class-3 units have strict′ steps of one to three clean powers: b00 60, b01 84, b02 60, b07 48, b11 60, b13
+  60 and b14 60 letters, each replayed exactly (the unit lands, no lattice piece goes off, every other off piece
+  keeps its exact pose). b02, b07, b13 and b14 had failed with points as owners, as R22A-02 predicts. The other six
+  are glued (R22A-07). The seven share four vacant targets (three triangle home cells, one tetrahedron home cell),
+  so at most four land this way from this state (R22A-05).
+- **The census, classes 2 and 4 (measured, exact replay).** b16, b20 and b21 (class 2) have strict′ steps of 72, 36
+  and 84 letters; b16 and b21 go to one vacant triangle home cell and b20 to the other, so at most two of the three
+  land this way. b17 is moved by no clean power (its cell is its home, Theorem C), and b18 is glued. b19 (class 2,
+  tetrahedron) and b08, b09, b10 (class 4) have no vacant home cell of their kind; for each the census keeps an
+  entry transport W into an occupied home cell (84, 96, 168 and 144 letters) whose exact replay lands the unit,
+  takes exactly that cell's lattice content off (15, 20, 24 and 20 pieces) and keeps every other off piece at its
+  exact pose. b08 and b10 enter the same home cell.
+- **The closures of the four entry transports (R22A-06; measured, exact replay).** `tclose2.py` at the depth 40
+  stop with W as the transport to close. N1 and N2 hold for all four Bad(W) (the 198, 111, 111 and 87 chambers
+  that the words need). For b08, b10 and b09 the peeling certificate of Theorem B is complete (V of 63, 63 and 268
+  letters, against its bounds 1,371, 1,371 and 1,186; `closures/<u>-log.txt`), and V·W·V⁻¹ is a strict′ step of
+  222, 270 and 704 letters: an independent replay from the exported table (`stepchk.py`) lands 33, 34 and 58
+  pieces, takes no lattice piece off and leaves every other off piece at its exact pose. For b19 the peeling stops at
+  68 of 198 chambers and a 300-second greedy search leaves 13 occupied (`closures/b19-log.txt`); this rejects the
+  two searches, not V.
+- **b19's V exists (computed; Corollary A1).** b19's Bad(W) has 198 chambers, 15 of them occupied, and meets 20
+  orbits of G(Z) of sizes 120 to 7,200. N1 and N2 hold, and a seeded random search finds a Jordan certificate on
+  every one of the 20 (the orbit of 120 chambers with the prime 73), each checked on all chambers. By Corollary A1
+  of `research/jumbling/theory/buffer-transport.md` a SAFE-ALL word V clears Bad(W), so V·W·V⁻¹ is a strict′ step
+  for b19 (R22A-06), and by R22B-02 one of at most C(177,120, 1,193) − 1 letters exists (an existence bound). V has
+  not been built. Command `scripts/round22/jordan_target.py` on `runs/round22/line-a/closures/b19-target.json`
+  (section 6); output `closures/b19-jordan.txt`.
+- **b02 closes (measured, exact replay).** The greedy search, bounded at 3,600 seconds, found an 18-letter V for b02's
+  transport word; the step V·W·V⁻¹ has 48 letters and is strict′ by an independent replay from the exported table.
+- **E22-1, a vacating word built from clean powers (measured, scratch probe; no V).** For b00's target: the greedy
+  phase of `vacate2`, then, for each still occupied target t, a power σ^m of a commutator σ around t with m chosen by
+  the Chinese remainder theorem so that σ^m fixes every cycle of σ through an already vacated target and carries a
+  hole onto t; every word is checked on the full permutation. The greedy phase (16 letters) vacates 77 of the 111
+  target chambers; for chamber 3392 no commutator around it has such a power, so the construction stops with 34
+  occupied. A first probe for three-cycle seeds of the form [[x, y], z] found none. Neither result bears on R22B-04.
+- **E22-1, the certificate of R22B-01 with single-letter tables (measured, exact; incomplete).** `r22b01_cert.py`
+  (written by Codex, reviewed by the integrator) takes b00's 19 target orbits, largest first. For each it searches
+  two- and three-letter SAFE commutators, random with a fixed seed and bounded by the orbit's share of 900 seconds,
+  for a power that acts on the orbit as one three-cycle (a b c) and fixes every earlier orbit, of at most 20,000
+  letters; it builds the tables H3 and H4 as breadth-first trees over single SAFE letters (fixing a; fixing a and b),
+  and it clears the orbit's targets by the three-cycles of step 3 of the proof, each checked on the full chamber
+  permutation. One run completed orbits 41 (k = 3, s = 30, e = 5, f = 6) and 64 (k = 1, s = 12, e = f = 5): V has
+  318 letters against the bound 376. The acceptance run completed orbits 69 (k = 6, s = 30, e = f = 5) and 67
+  (k = 3, s = 120, e = f = 5): 1,008 letters against 1,440. The first run's other orbits:
+
+  | Least chamber | d | k | s | Missing |
+  |---:|---:|---:|---:|:---|
+  | 34 | 7,200 | 3 | 210 | Q: 1 chamber |
+  | 66 | 7,200 | 3 | 60 | Q: 3 |
+  | 69 | 7,200 | 6 | 30 | Q: 7 |
+  | 70 | 7,200 | 9 | 294 | Q: 19 |
+  | 74 | 7,200 | 12 | 210 | Q: 17 |
+  | 82 | 7,200 | 9 | 1,140 | Q: 1 |
+  | 83 | 7,200 | 12 | 840 | P: 11, Q: 22 |
+  | 90 | 7,200 | 15 | 294 | Q: 7,197 (all) |
+  | 106 | 7,200 | 9 | 210 | Q: 2 |
+  | 65 | 7,198 | 6 | 60 | Q: 7 |
+  | 33 | 7,197 | 3 | 150 | P: 4, Q: 7 |
+  | 67 | 3,600 | 3 | none | no seed |
+  | 81 | 3,600 | 6 | 60 | Q: 3,597 (all) |
+  | 108 | 3,600 | 3 | 1,320 | Q: 3,597 (all) |
+  | 105 | 2,400 | 4 | none | no seed |
+  | 115 | 2,400 | 1 | 120 | Q: 18 |
+  | 75 | 1,440 | 3 | 210 | Q: 1,437 (all) |
+
+  "P: m" and "Q: m" count the chambers the tree of H3 or H4 does not reach: they lie in other components of the
+  graph of the letters that fix a (P), or a and b (Q); "all" means that c is alone in its component, that is, every
+  letter moving c moves a or b. Which orbits get a seed depends on the time share, so the two runs differ. The result rejects single-letter tables with these anchors,
+  not V: H3 and H4 allow words (R22B-05), and a conjugate g⁻¹·C·g is again a seed, with anchors a·g, b·g, c·g
+  (R22B-06).
+- **E22-2, retained conjugation at the depth 100 stop (measured, exact; complete).** The complete r = 1 search of
+  R22D-01: 2,574 retained letters at the 234 clean grips, the E-B6 search at each prepared state with exact
+  classification updates, and an exact replay of every kept word r·C·r⁻¹. An exact rule prunes a letter when no
+  piece of a high unit moves and no inside or straddler set changes at a cap the search reads (1,309 letters), so
+  1,265 prepared states are searched. The 22 letters of grips 1 and 61 give no strict word (`eb6r.py`,
+  `check_eb6r.py`), and neither does the full search: eight shards, all complete, 1,265 states searched, no strict
+  word and no strict lowering word (`runs/round22/e22-2/`). So at the depth 100 stop no word r·C·r⁻¹ with one retained
+  letter r and C in the E-B6 family is a strict step; longer preparations, six-letter commutators (R22D-02) and
+  two-level steps (R22D-05) are not covered by this.
+- **E22-1b, the certificate of R22B-10 (measured, exact; complete for b00 and b19).** `r22b10_cert.py` (written by
+  Codex, reviewed by the integrator) takes the target orbits largest first. For each it tries two- and three-letter
+  SAFE commutator seeds for min(8, 0.12·share) seconds (8 seconds here) and otherwise builds the seed by the Jordan
+  route of R22B-08; the tables are Schreier trees whose edges are words (R22B-05), and every word is a node of one
+  acyclic straight-line program with its exact integer length. `check_r22b10.py` recomputes the orbits, N1 and N2 from
+  the state, checks every Jordan certificate on it, then the program, the seeds, both tables, every step as its stated
+  three-cycle fixing the earlier orbits, the bound and the occupancy after V, and replays the steps in order; it
+  passes both certificates (`runs/round22/e22-1b/`).
+
+  | Unit | Targets | Orbits | Occupied (steps) | Seeds | s (digits) | e, f | Nodes | \|V\| | Bound | Build |
+  |:---|---:|---:|---:|:---|:---|:---|---:|:---|:---|---:|
+  | b00 | 111 | 19 | 111 | all Jordan | 122 to 165 | ≤ 22 | 14,018 | < 10^166 | < 10^166 | 254 s |
+  | b19 | 198 | 20 | 15 | all Jordan | 121 to 165 | ≤ 22 | 12,688 | < 10^141 | < 10^166 | 244 s |
+
+  So the construction of R22B-09 terminates in practice, far below its bound 10^539, and b19's V, until now an
+  existence statement (R22A2-01), is built. The seeds carry the length: the tables have e, f ≤ 22 while every seed has
+  more than 120 digits. No commutator seed turned up in the 8-second commutator phase. E22-1, with longer shares,
+  found commutator seeds of 12 to 1,320 letters for at least 18 of b00's 19 orbits over its two runs, but checked
+  each only against the orbits completed before it, not all earlier orbits (R22B-11), so they are not a certificate
+  in the full order. Round 3 of line (b) (R22B-11 to R22B-18) found two seeds of 32 and 40 letters that pass in the
+  full order (R22B-13).
+
+## 5. Line (d): height 4
+
+### R22D-01. Retained conjugation (proved)
+
+- Objects: a word A of retained letters admissible at Z, Y = Z·A, a word C admissible at Y, a unit U.
+- Statement. C is a strict′ landing step at Y for the pieces of U (at their poses of Y) if and only if A·C·A⁻¹ is a
+  strict′ landing step for U at Z; in the forward direction the suffix A⁻¹ is admissible automatically. A·C·A⁻¹
+  returns every piece outside U exactly if and only if C does so at Y.
+- Proof.
+  1. A letter maps the poses inside its cap bijectively and keeps the cap, so its inverse letter undoes it pose by
+     pose; the pose map of A⁻¹ is the inverse of that of A.
+  2. Forward. After C every piece is landed (U, and possibly others), a lattice piece of Y (these are the lattice
+     pieces of Z, since retained letters keep membership) or returned to its pose of Y. Apply A⁻¹ letter by letter.
+     A returned piece retraces its trajectory under A, and A was admissible, so it does not straddle the cut of the
+     next inverse letter; lattice pieces never straddle. So A⁻¹ is admissible, returned pieces end at their poses of
+     Z, and landed pieces stay on the lattice.
+  3. Backward. A·C is a prefix of an admissible word, so C is admissible at Y. A⁻¹ keeps lattice membership, so the
+     lattice pieces after C are those at the end. By item 1 a piece ends at its pose of Z exactly when it had its pose
+     of Y before A⁻¹.
+- Caution. If C changes an off piece to another off pose, A⁻¹ need not be admissible; a lowering segment that ends at
+  height 2 needs its own replay of A⁻¹.
+- Exact update for one letter. For A = r = (c, e) with e ∈ K⁺: a piece inside cap c at Z is inside (straddles) cap x
+  at Y exactly when it is inside (straddles) cap e⁻¹(x) at Z, since e permutes the caps; every other piece keeps its
+  classification. So the tests of Lemma E6 at Y follow from the classifications at Z (`eb6r.py`, E22-2).
+- Counts (instance). At the depth 100 stop the 234 clean grips give 2,574 retained letters. A prepared state has at
+  most 600·80·59² four-letter commutators with distinct grips whose caps meet (600·81·59² with equal grips allowed), so
+  at most 430,084,512,000 (435,460,568,400) candidates in all before pruning. A setup of unrestricted length can be
+  shortened to at most 7,200^177,120 − 1 letters, since each piece stays in its K⁺ orbit (existence bound).
+- E-B6's common-final-pose filter is a property of that search, not a hypothesis of B′.
+
+### R22D-02. Six-letter commutators: the mask lemma (proved; computed)
+
+- Statement. Write [g, W] chronologically as a, b, c, a⁻¹, c⁻¹, b⁻¹ (g = a, W = b·c). A piece of pose Q whose
+  membership in the six caps, letter by letter, is m ∈ {0, 1}⁶ ends at F(m)·Q with
+  F(m) = b^(−m6)·c^(−m5)·a^(−m4)·c^(m3)·b^(m2)·a^(m1). For [W, g] = a, b, c, b⁻¹, a⁻¹, c⁻¹ (W = a·b, g = c),
+  F(m) = c^(−m6)·a^(−m5)·b^(−m4)·c^(m3)·b^(m2)·a^(m1). A vector m is feasible when at each of the six prefixes the
+  transformed piece lies inside the next cap if m_i = 1 and outside if m_i = 0 (a straddle rejects it); for a feasible
+  m the piece returns exactly when F(m) = I and lands when F(m)·Q ∈ K⁺.
+- Proof. Induction over the six letters; Q is invertible, so F·Q = Q exactly when F = I.
+- Computed classification (symbolic, letters generic). In each form 5 masks always return, 20 always move and 39 need
+  the product test. First form, returning: 000000, 001010, 010001, 011011, 100100. Second form, returning: 000000,
+  001001, 010100, 100010, 110110. Mask 111111 is not always moving: in the first form it returns exactly when a
+  commutes with c·b.
+- Pruning for exact return. The first cap is clean at Z; every straddler of the last cut belongs to U; every target
+  piece lies whole in one of the three caps. If the graph of meeting caps is disconnected, the word reduces to the
+  identity or a four-letter commutator, so new six-letter candidates have a connected cap graph: at most
+  2·3·600·81²·59³ = 4,850,969,828,400 for both forms (2·35,400³ = 88,723,728,000,000 unpruned).
+- No six-letter search was run.
+- Command: `scripts/round22/r22d02_masks.py`.
+
+### R22D-03. The endpoint contract of a lowering conjugate (proved)
+
+- Objects: a = (c, D) admissible at Z with U whole in cap c at height 4 and D lowering every piece of U to height 2;
+  Y = Z·a; C admissible at Y; T = Y·C; ε_p ∈ {0, 1} whether piece p lies inside c at T.
+- Statement. a·C·a⁻¹ is admissible and strict′ for U if and only if (1) c is clean at T; (2) D^(−ε_p)·T_p ∈ K⁺ for every
+  p in U or on the lattice at Z; (3) D^(−ε_p)·T_p is the pose of p at Z or lies in K⁺ for every other off piece of Z.
+  These are finite exact checks by replay from Z.
+- Proof. The prefix a·C is admissible by hypothesis; (1) is the admissibility of a⁻¹; a⁻¹ changes T_p to
+  D^(−ε_p)·T_p, so (2) and (3) are the definition of strict′.
+- Consequences.
+  - If C lands U, U must end C outside c: D ∉ K⁺, so D⁻¹·k ∉ K⁺ for every k ∈ K⁺.
+  - Sufficient: C lands U outside c and returns every other piece exactly to Y. Then (1) holds (returned pieces have
+    their regions of Y, where c is clean, and lattice pieces never straddle) and every other piece retraces a.
+  - Returning only the pieces that were inside c is not enough: a lattice piece from outside c can enter c during C
+    and leave the lattice under a⁻¹.
+  - For C = V·W·V⁻¹ meeting AU-03 and this contract, |a·C·a⁻¹| ≤ 2 + 2|V| + |W|; the toolkit bounds b_κ (720, 104,
+    240, 192) apply only when their hypotheses hold for the actual free grips. A protected lowering segment S1 followed
+    by a strict′ landing S2 of its height-2 target composes to a strict′ step of |S1| + |S2| letters.
+  - A single lowering item of class P lands its target in a branch Q ≠ P (R21F-12), so the middle needs a second
+    class.
+- Uses: AU-03, R21F-12.
+
+### R22D-04. Free grips after lowering at the depth 100 stop (computed)
+
+- Statement (instance, state digest `4ca44008…`). All 124 high pieces lie in clean cap 61. Each of its 12 lowering
+  items (15, 18, 22, 33, 52 to 59) takes all of them to height 2. After nine of them (all but 55, 57, 59) no piece lies
+  in a free grip of its new class. After 55, 57 or 59 the 81 pieces of the first block have exactly one free grip
+  (215, 110 or 21) and the 43 pieces of the second block none. So 93 of the 108 combinations of a unit and an item
+  cannot land over the fixed free class alphabet, whatever SAFE preparation comes first. The lowering letter also
+  splits units over class cells: 2, 1, 4, 3, 1, 2, 2, 1, 1 cells for the units 270, 391, 408, 409, 6780, 32115, 53620,
+  53629, 61683, for every item.
+- Proof of the obstruction. A piece outside every initially free grip of its class is fixed by every letter of that
+  alphabet, so it stays outside forever; a SAFE preparation fixes every off piece. This excludes the AU-03 free-class
+  construction, not words that move foreign off pieces.
+- Command: `scripts/round22/r22d04_free_grips.py`; output `runs/round22/r22d04_free_grips.txt`.
+
+### R22D-05. Nested-set vacancy for a two-level step (proved)
+
+- Objects: a = (c, D) lowering a height-4 unit U to height 2; Y = Z·a with holes H; a clean grip d whose cap holds
+  exactly U among the off pieces of Y; a jumble letter b at d that lands U; T the home chambers inside d; L ⊆ T the
+  chambers where b lands U; Ω_c the home chambers inside c.
+- Hypothesis: a SAFE-ALL word q at Y with π_q(T) ⊆ H and π_q(L) ∩ Ω_c = ∅.
+- Statement. a·q⁻¹·b·q·a⁻¹ is admissible, lands U and returns every other piece exactly to its pose of Z.
+- Proof. q⁻¹ vacates T and fixes the off pieces, so b moves exactly U and lands it on L. Then q returns every lattice
+  piece of Y exactly and carries U, now on the lattice, to π_q(L), outside c. The off pieces other than U are at their
+  poses of Y, so a⁻¹ is admissible and returns them to Z; it does not move U.
+- Bound. Per SAFE orbit Δ put n_Δ = |Δ|, t_Δ = |T ∩ Δ|, l_Δ = |L ∩ Δ|, and Q = ∏_Δ C(n_Δ, t_Δ)·C(t_Δ, l_Δ). A shortest q
+  has at most Q − 1 letters, the step at most 2Q + 1, and the search at most 6,600·Q letter tests (existence bound).
+  The joint pair (T, L) must be searched; separate witnesses per orbit are not compatible in general. Necessary:
+  |H ∩ Δ| ≥ t_Δ and |(H \ Ω_c) ∩ Δ| ≥ l_Δ for every Δ.
+- Without control of π_q(L) the construction fails: a landed chamber in Ω_c leaves the lattice again under a⁻¹.
+
+### R22D-06. Fixed occupied chambers rule out both whole-cap middles (computed; proved)
+
+- Statement (instance at the depth 100 stop). After (61, 57), cap 110 holds exactly the 81-piece block among the off
+  pieces; of its 3,097 home chambers 163 lie outside every SAFE cap and 102 of those are occupied (chamber 15142 is
+  one). After (61, 59), cap 21 likewise; 896 chambers outside every SAFE cap, 421 occupied (chamber 121). So no SAFE-ALL
+  word of any length vacates either cap, and no single-letter landing middle V·b·V⁻¹ closes at these two prepared
+  states.
+- Proof. A chamber outside every SAFE cap is fixed by every SAFE word, so an occupied one never becomes a hole. A
+  jumble letter at d takes every lattice piece inside d off, and retained letters cannot put it back, so the middle
+  needs all of Ω_d vacant.
+- Not excluded: a smaller-Bad middle of several letters, a retained preparation that moves off pieces, or a repair
+  outside AU-03.
+- Command: `scripts/round22/r22d06_fixed_chambers.py`; output `runs/round22/r22d06_fixed_chambers.txt`.
+
+### R22D-07. Unlocking (proved; Lemmas B and C conditional)
+
+- Lemma A. A word that fixes every off piece at every prefix changes neither which cuts are clean nor which caps hold
+  a given unit whole, since the off regions never change and lattice pieces never straddle. So SAFE-ALL preparation
+  alone cannot unlock any of the 186 high units of the fixture end that have no clean containing cap.
+- Lemma B. Whether some retained preparation makes a clean lowering cap for a named height-4 unit U is decided on at
+  most 7,200^n records (n off pieces): a retained word keeps the identities of the off pieces and sends each off pose
+  Q_p into {k·Q_p : k ∈ K⁺}; admissibility of the next retained letter and the goal (U whole in a clean cap of its
+  current branch) depend only on these records. If a preparation exists, one of at most 7,200^n − 1 letters does
+  (existence bound; at most 6,600·7,200^n letter tests). Conditions on holes downstream need the holes in the record.
+- Lemma C. If an own-branch cap c holds U whole with straddler set S, and strict′ steps of at most b_S letters each
+  land at least one remaining straddler and keep U exact, then c is a clean lowering cap after at most |S|·b_S
+  letters: surviving off pieces keep their poses and landed pieces stay on the lattice under later strict′ steps, so
+  no new straddler appears and S shrinks. The lowering coset (R21F-03) then gives twelve lowering items.
+- Uses: R21F-03, Proposition F (`PROOFS-U.md`).
+
+### R22D-08. A finite bound for a stated family (proved)
+
+- Objects: N = 177,120, G = 7,200^N, F = 7,200^2,640; states of 𝒞_4 with n off pieces. The family: an admissible
+  retained setup P, then a core, then P⁻¹. The core is a four-letter commutator, a six-letter commutator, or
+  a·V·W·V⁻¹·a⁻¹ with a one lowering item, V over the fixed SAFE-ALL alphabet after a, W over the fixed free alphabet of
+  the target's height-2 class meeting the off-piece and ghost checks of AU-03, and the final inverse passing R22D-03.
+  The core must land the target and be strict′.
+- Statement. Whether the family has a member at Z is a finite exact predicate; if it has one, it has one of at most
+  L4(n) = 4G + F − 3 letters, and an enumeration of at most
+  S4(n) = n·G·[6,600 + D4 + D6 + 7,200·(7,080·F + 6,600·G + F·G)] candidates and edges decides it, where
+  D4 = 600²·59² and D6 = 2·35,400³ (existence bounds).
+- Proof.
+  1. Under retained setups each piece stays in its K⁺ orbit, so there are at most G complete states; replace P by a
+     shortest path to its endpoint (at most G − 1 letters); R22D-01 keeps the inverse valid.
+  2. A free-class word is determined, as an action, by its accumulated rotation on each of the 2,640 non-outer cells,
+     so there are at most F actions and a shortest representative has at most F − 1 letters; equal actions give equal
+     endpoints, and freeness keeps every prefix admissible.
+  3. A SAFE word acts on each lattice chamber by a retained rotation; recording the pose of one ghost per chamber
+     gives at most G actions, and a record determines the action on every lattice pose, newly landed ones included.
+     So V can be replaced by a word of at most G − 1 letters with the same lattice action; after W the remaining off
+     pieces are at their original poses (AU-03), so the replaced inverse is admissible with the same endpoint.
+  4. 2(G − 1) + 2 + 2(G − 1) + (F − 1) = 4G + F − 3; the commutator cores are shorter.
+- What stays open is coverage: that every state of 𝒞_4 has a member of the family (or of a larger catalogue). The
+  computed obstructions R22D-04 and R22D-06 reject particular direct instances, not the family.
+- Uses: R22D-01, R22D-03, AU-03.
+
+### Round 2 of line (d)
+
+The owner's decision of 18 October 2026 puts height 4 before the coverage of B′(2). The senior reviewer took line (d)
+a second round at the fast tier, concurrently with round 6 of line (b) (findings R22D-09 to R22D-19): the high units
+of the five census stops with height-4 pieces, a six-letter family, source-cell occupancy, a first literal height-4
+step, height-2 landings that unlock lowering caps, a theorem on one-class middles, and a rule a machine can follow.
+Its computations are `scripts/round22/r22d09_census.py`, `r22d14_six.py`, `r22d15_source_cells.py`, `r22d16_step.py`
+and `r22d17_straddlers.py` (section 6); the integrator re-ran them and got the outputs under `runs/round22/` with the
+same names.
+
+### R22D-09. The high units of the five stops (computed; R22D-09 to R22D-13)
+
+- Method. Each stop is rebuilt from its record (the scramble, then the recorded descent), every twist checked exactly.
+  A high unit is the set of height-4 pieces with one pose and one inside vector over the 600 caps; for each unit the
+  census lists the clean caps that hold it whole, those of its own tree branch, and those that would be clean if every
+  height-2 piece were landed and the high pieces stayed (a geometric test, not a reachable state).
+
+| stop | digest | height 2 | height 4 | units | no clean cap holds it whole | no own-branch clean cap |
+| --- | --- | --- | --- | --- | --- | --- |
+| depth 100, seed 7102 | `4ca44008…` | 31,355 | 124 | 9 (branch 3) | 0 | 0 |
+| depth 100, seed 7108 | `dff31c35…` | 27,088 | 111 | 6 (branch 2) | 0 | 0 |
+| depth 200, seed 7105 | `e92ce5ce…` | 74,541 | 513 | 25 (branches 0 and 2) | 25 | 25 |
+| depth 400, seed 7109 | `7f8203dd…` | 72,396 | 607 | 23 (branches 1, 2, 4) | 3 | 5 |
+| depth 1000, seed 7103 | `acc4ee49…` | 80,919 | 390 | 30 (branches 2, 3, 4) | 23 | 23 |
+
+- The two depth 100 stops each have one clean cap that holds every unit: cap 61 at seed 7102 (3,018 pieces: 2,361 on
+  the lattice, 533 at height 2 and all 124 at height 4) and cap 415 at seed 7108 (3,049: 2,272, 666 and all 111). None
+  of the three deeper stops has this pattern: at depth 200 no unit lies whole in a clean cap; at depth 400 two units
+  (91689 and 104333) lie in clean cap 415 of another branch, so 3 units have no clean cap and 5 no own-branch one; at
+  depth 1000 23 of 30 units have none. Over the five stops 51 of the 93 units have no clean containing cap and 53 no
+  own-branch clean cap. This describes these five records, not random scrambles in general.
+- By R22D-07 Lemma A, no SAFE-ALL preparation changes these counts.
+- Command: `scripts/round22/r22d09_census.py` (about 15 CPU minutes); output `runs/round22/r22d09_census.txt`.
+
+### R22D-14. A six-letter family of 2,450,624 words is exhausted at the depth 100 stop (computed; proved prune)
+
+- The family (seed 7102). a·b·c·a⁻¹·c⁻¹·b⁻¹ with a = (61, j) for the twelve lowering items j; b = (x, k) and
+  c = (y, l), x ≠ y free grips of the target's new height-2 class at Y = Z·a that are also clean at Z, k and l over
+  all 59 items; the three caps with a connected meeting graph inside the exact enclosing ball. Every piece outside the
+  target must return exactly, as in E-B6 (stronger than strict′).
+- Count. 704 cap combinations, so 704·59² = 2,450,624 words; only 24 combinations touch a target after a (14 at
+  j = 57, 10 at j = 59), 83,544 words, and all of them fail the footprint test below. No strict, lowering or landing
+  word remains in the family.
+- Footprint lemma. Let L be the 2,361 lattice pieces in cap 61 and F(d) those of L inside cap d at Z. After a they are
+  foreign off pieces for the new class, so b and c fix them, and after a⁻¹ each is back at its pose. A piece of
+  F(x) \ F(y) has mask 100101 and ends moved by b⁻¹; a piece of F(y) \ F(x) is moved by c⁻¹, and the last letter b⁻¹,
+  which starts outside x, cannot undo that, since a twist keeps its cap and complement. So exact return needs
+  F(x) = F(y), which all 24 combinations violate. A target that b and c both miss at Y returns under a⁻¹ and is then
+  missed by both inverse cuts, so it is not moved.
+- Outside the family: middle caps blocked at Z, mixed-class middles, other first letters, the other six-letter form,
+  and words that permute lattice pieces (which strict′ allows); so strict′ six-letter steps are not excluded.
+- Command: `scripts/round22/r22d14_six.py`; output `runs/round22/r22d14_six.txt`.
+
+### R22D-15. Source-cell occupancy excludes 105 of the 108 direct vacancy cases (proved; computed)
+
+- Lemma. Let Y = Z·a and W a word over the fixed free alphabet of the lowered target's class Q. All pieces and home
+  ghosts that start in a class cell X receive one accumulated rotation A_X. If W lands an off piece that starts in X,
+  A_X is not in K⁺ (otherwise the piece would stay off), so every home ghost of X ends off: Ω_X ⊆ Bad(W), even when W
+  carries the target to another cell. If Ω_X has an occupied chamber outside every SAFE-ALL cap at Y, that chamber stays
+  occupied under every SAFE word, so no literal SAFE preparation of any length vacates Bad(W).
+- Computed (seed 7102; source cell: home chambers, occupied ones outside every SAFE cap). After (61, 55): [65, 130, 215]
+  111, 17; [65, 215] 86, 68; [84, 215] 86, 67. After (61, 57): [84, 110, 130] 111, 11; [84, 110] 86, 24; [18, 110] 86,
+  10. After (61, 59): [14, 21, 108] 111, 17; [14, 21] 86, 68; [21, 81] 86, 18. For each of the three items, unit 270 has
+  a piece in the last edge cell, unit 408 in the triangle and the other edge cell, and units 409 and 6780 in the
+  triangle. So these four units are excluded at each item: 12 cases, which with the 93 of R22D-04 make 105 of 108.
+- The three survivors are unit 391 after items 55, 57 and 59. Its source cells [65, 84, 215], [18, 84, 110] and
+  [14, 21, 81] have no home chambers, and each holds 42 high pieces at the target's label (one of unit 270, unit 391,
+  22 of unit 408 and 18 of unit 409). A class word that lands 391 lands these 42 with it, and strict′ needs all of them
+  to stay landed: one moved off again by the final inverse would end at height 2, not at its height-4 pose.
+- This rules out the free-class construction of AU-03 that needs Bad(W) vacated, not an outer word whose last letter
+  repairs a middle violation.
+- Command: `scripts/round22/r22d15_source_cells.py`; output `runs/round22/r22d15_source_cells.txt`.
+- Uses: R22A-01, R22D-04, AU-03.
+
+### R22D-16. A 28-letter strict′ step lands unit 391 and 41 other height-4 pieces (computed; replayed)
+
+- The word, at the depth 100 stop of seed 7102 (`4ca44008…`): a·V·W·V⁻¹·a⁻¹ with a = (61, 57), V = (287, 3) and
+  W = [(110, 54), (149, 3)]⁶. Letter by letter: (61, 57), (287, 3), then (110, 54), (149, 3), (110, 24), (149, 9) six
+  times, then (287, 9), (61, 57); 28 letters (the inverse items are 54 ↔ 24 at grip 110 and 3 ↔ 9 at grips 149 and
+  287; item 57 at grip 61 is its own inverse).
+- Why it works. V is a SAFE-ALL letter at Y = Z·a. Bad(W) is exactly the 111 home chambers of the class cell
+  [149, 169, 325], all occupied before V and all holes after it. The target's source cell [18, 84, 110] holds 42 high
+  pieces (R22D-15), and W lands all of them (4 → 2 → 0, not only a lowering).
+- Check (`stepchk.py`, strict′): end digest `dceb9359…`, the unit landed, collateral 0, 31,437 of the 31,478 other off
+  pieces at their exact poses and the other 41 landed; 31,479 → 31,437 off pieces. 82 height-4 pieces remain, and the
+  31,355 height-2 pieces keep their poses.
+- The search behind it tried 17,054 commutators, kept 212 landing powers with a smaller Bad set that keep the off
+  pieces, and replayed 13 outer words before this one; it stopped at the first success (about 440 CPU seconds).
+  Nothing is claimed about the candidates it did not visit.
+- Command: `scripts/round22/r22d16_step.py` (rebuilds the stop and runs `stepchk.py` in memory; writes no file);
+  output `runs/round22/r22d16_step.txt`.
+
+### R22D-17. Height-2 landings can unlock a lowering cap; a blanket height-2-first order is not supported (computed)
+
+- At the seed 7102 stop, cap 179 holds the four units of the 43-piece block whole and has exactly 20 straddlers, all at
+  height 2 (15193, 54926, 54928, 65131, 82294, 82297, 82304, 82312, 82313, 97168, 97169, 97223, 97224, 97225, 97226,
+  97241, 101126, 101131, 101174, 101176). Strict′ steps that land them and keep the high pieces exact would make cap
+  179 a clean lowering cap (R22D-07 Lemma C; at most 20·b letters if each step has at most b). No such sequence was
+  built. Cap 150 holds the first four units (80 pieces) and has straddlers 6780 (height 4), 26157, 26159 and 26170
+  (height 2): landing height-2 pieces cannot clean it.
+- After all height-2 pieces were landed with the high pieces fixed, every high unit of the five stops would have an
+  own-branch clean cap (the last column of R22D-09's census, geometry only): seed 7102 [61] and [61, 179]; seed 7108
+  [415]; seed 7105 [56] (branch 0) and [371] (branch 2); seed 7109 [252], [158], [406], [436, 460], [522, 588]; seed
+  7103 [392, 415], [298, 313], [380, 440], [171, 345], [401, 530], [71, 157], [264]. This is a chance to unlock, not
+  free landing grips after lowering: lowering can turn landed pieces into foreign off pieces, and landings use holes.
+- Order rule. First take a literal high step that the state offers (such as R22D-16). Otherwise choose a blocked
+  own-branch lowering cap, compute its straddlers, and play only strict′ words that land them while keeping the high
+  target exact; after every accepted step recompute the cap, the free grips after lowering and the holes.
+- Command: `scripts/round22/r22d17_straddlers.py`; output `runs/round22/r22d17_straddlers.txt`.
+- Uses: R22D-07.
+
+### R22D-18. A commutator with a one-class middle cannot land the lowered target (proved)
+
+- Statement. Let a be a letter of class P, not retained, that takes a target from height 4 to height 2 in branch Q ≠ P,
+  and W a word of class-Q letters only. If a·W·a⁻¹·W⁻¹ is admissible, it does not land the target, whatever the length
+  of W and whether or not the outside pieces return.
+- Proof. Let v0 be the lattice vertex of the left tree and w_P, w_Q its odd neighbours; class-Q rotations fix w_Q.
+  After a the target is at distance 1 from w_Q, so after W it is at v0 or at a height-2 vertex of branch Q. If a⁻¹
+  misses it, W⁻¹ retraces W and returns it to its height-2 pose after a. If a⁻¹ moves it, a⁻¹ sends v0 to height 2 in
+  branch P, at distance 3 from w_Q, and a height-2 vertex of branch Q to height 4 in branch P, at distance 5 (the path
+  w_P, v0, w_Q, v has no backtracking, and a⁻¹ keeps w_P while moving v0 to another neighbour of w_P). The last class-Q
+  word keeps the distance from w_Q, while v0 has distance 1. So the target is not landed.
+- So R22D-14's family can at best lower, before its footprint test. R22D-16 has the different form a·V·W·V⁻¹·a⁻¹.
+
+### R22D-19. A finite rule that reads the state only and contains R22D-16 (rule; bounded)
+
+1. Compute the high units from the exact poses and full inside vectors. Go through the units, their clean own-branch
+   containing caps and their twelve lowering items in a fixed order; play the lowering letter a on a scratch state Y.
+   Keep only targets that lie in one class-Q off content D after lowering, with D made of original off pieces.
+2. At Y compute the fixed free class-Q alphabet and the SAFE-ALL alphabet. Reject a target outside every free grip,
+   and a case with an occupied SAFE-fixed home chamber in a source cell of the target (R22D-15).
+3. Go through ordered pairs of distinct free grips that share a class cell, at least one holding the target's cell,
+   their 59 × 59 items, and powers e = 1 to 60. For W = [x, y]^e require the target point to reach label 0 in a home
+   cell, and every other class-Q off content's whole five-point fibre to be fixed (exact return, not only the same
+   label); foreign off pieces stay fixed by freeness. Compute Bad(W) over all home cells, vacant ones included, and keep
+   only |Bad(W)| < 3,097.
+4. Try V empty, then every single SAFE retained letter, and test π_V⁻¹(Bad(W)) ⊆ holes(Y) literally; N1 and N2 may
+   prune, never replace this test.
+5. Form a·V·W·V⁻¹·a⁻¹, replay every twist from the full state and apply `stepchk.py`'s strict′ contract (all lattice
+   pieces and all other off pieces, compared by exact matrices or stable pose keys). Accept only a passing replay, and
+   record the input and output digests, the pairs and the length. Otherwise continue; exhaustion means the rule is
+   stuck.
+- Length 2 + 4e + 2·|V| ≤ 244. Per lowering case at most 120·119 ordered grip pairs, 59² item pairs, 60 powers and
+  6,601 vacators: finite, not a claim of practicality or coverage. R22D-16 is the case e = 6, |V| = 1.
+- For the height order, use R22D-17's blocker rule and record the sum of the accepted word lengths; no bound is
+  claimed without those words.
+
+Open after round 2 of line (d): literal steps for the other 82 high pieces of the seed 7102 stop and for the four other
+stops (whose high units mostly lie in no clean cap), the coverage of any catalogue at height 4, and the height-2
+landings that R22D-17's order rule would need.
+
+### Round 3 of line (d)
+
+The senior reviewer took line (d) a third round at the fast tier (findings R22D-20 to R22D-30, all `minor`): the rest
+of the seed 7102 stop after R22D-16, the seed 7108 stop, the three units in no clean cap at the depth 400 stop of seed
+7109, one rule for a whole stop, and heights above 4. It found no new literal step. Its results are obstructions for
+stated finite families, a rule with a proved stopping behaviour, and the scope of the earlier lemmas above height 4.
+Its computations are `scripts/round22/r22d20_residual_cells.py`, `r22d24_cap252.py` and `r22d30_height6.py`; the
+integrator re-ran them and got the outputs under `runs/round22/` with the same names, and checked the premises of
+R22D-20 and R22D-23 with `r22d20_caps.py` and `r22d23_item59.py` (section 6).
+
+### R22D-20. R22D-19 is exhausted for the eight high units left at the seed 7102 stop (computed; proved)
+
+- The state after R22D-16 (`dceb9359…`) has 82 height-4 pieces in eight of the original units: 270 (1 piece), 408
+  (25), 409 (12), 6780 (1), 32115 (31), 53620 (5), 53629 (3) and 61683 (4), all in branch 3. Of its 234 clean caps,
+  cap 61 is still the only one that holds any of these units whole; cap 150 is still blocked by the height-4 piece
+  6780 and cap 179 by its 20 height-2 straddlers, which R22D-16 left at their poses (the integrator's check). So
+  R22D-19's direct cases are the eight units at the twelve lowering items of cap 61: 96 cases.
+- Free grips (84 cases). After items 15, 18, 22, 33, 52, 53, 54, 56 and 58 every remaining high piece lies outside
+  every free grip of its new class, and after items 55, 57 and 59 so do all pieces of units 32115, 53620, 53629 and
+  61683. A word over a fixed alphabet never moves a piece that starts outside all its grips, and a SAFE preparation
+  fixes it too, so none of these cases lands.
+- Source cells (12 cases). Units 270, 408, 409 and 6780 at items 55, 57 and 59 fail the vacancy condition of
+  R22D-15. Their source cells (home chambers, occupied ones outside every SAFE cap) are the ones R22D-15 found at the
+  stop: after (61, 55) [84, 215] 86, 67; [65, 215] 86, 68; [65, 130, 215] 111, 17; after (61, 57) [18, 110] 86, 10;
+  [84, 110] 86, 24; [84, 110, 130] 111, 11; after (61, 59) [21, 81] 86, 18; [14, 21] 86, 68; [14, 21, 108] 111, 17.
+  At each item unit 270 has its piece in the first edge cell, unit 408 pieces in the second edge cell and the
+  triangle, units 409 and 6780 pieces in the triangle. A class word that lands a piece makes every home ghost of its
+  source cell bad, and these occupied chambers are fixed by every SAFE word of any length.
+- So every candidate of R22D-19 for these units is excluded. Not excluded: mixed-class middles, a last letter that
+  repairs a middle violation (R22D-22), landing part of a unit (R22D-21) and unlocking another cap.
+- R22D-16's word was replayed with `stepchk.py` again: strict′, end digest `dceb9359…`.
+- Commands: `scripts/round22/r22d20_residual_cells.py` (with the seed 7108 part of R22D-23) and `r22d20_caps.py`;
+  outputs `runs/round22/r22d20_residual_cells.txt` and `r22d20_caps.txt`.
+- Uses: R22D-15, R22D-16, R22D-19.
+
+### R22D-21. Twelve of the remaining pieces escape the source-cell obstruction when targeted alone (computed)
+
+- After each of the items 55, 57 and 59, six pieces of unit 408 and six of unit 409 lie in a tetrahedral class cell
+  with no home chambers: [65, 84, 130, 215], [18, 84, 110, 130] and [14, 21, 81, 108] (the tables of R22D-20).
+  R22D-20's obstruction for these two units comes from their other pieces, in occupied edge and triangle cells, so it
+  does not cover a step that lands only these twelve.
+- Strict′ allows such partial progress as long as every other off piece of the start returns exactly or lands. No
+  word was built, and no common content or label for the twelve was established: a route, not a step.
+
+### R22D-22. Final-letter repair: the endpoint test reads the tags of the start (proved)
+
+- Let a = (c, D), Y = Z·a, T = Y·C, and ε_p say whether piece p is inside c at T; the end pose is
+  E_p = D^(−ε_p)·T_p. The word a·C·a⁻¹ is admissible and strict′ exactly when c is clean at T, E_p is in K⁺ for the
+  target and for every piece on the lattice at Z, and E_p is the pose at Z or in K⁺ for every other off piece of Z
+  (R22D-03). The tags are those of Z, not of Y.
+- So a prune that rejects every piece on the lattice at Y lying inside c at T is stronger than strict′: an off piece
+  of Z at pose D⁻¹·k inside c, landed by a at k, fixed by the middle and returned by a⁻¹, is allowed. A piece on the
+  lattice at Z and at Y that C leaves on the lattice must not be inside c at T, and a lattice piece of Z that a takes
+  off is checked along its whole return.
+- With V empty and W of the lowered target's class Q only, W leaves the target on the lattice or at height 2 in Q,
+  and then a⁻¹ (class P ≠ Q) misses it or raises it to height 4. So a·W·a⁻¹ cannot repair a target that W did not
+  land. A nonempty V or a mixed-class middle is not covered.
+- A finite family that uses the repair: a·V·[x, y]^e·V⁻¹·a⁻¹ with e = 1 to 60 and V empty or one SAFE letter,
+  without asking the middle to land the target: 2 + 2|V| + 4e ≤ 244 letters, and only the replay with the contract
+  above decides. Not searched; R22D-15's vacancy test does not carry over to it.
+
+### R22D-23. At the seed 7108 stop the six units share one lowering case, searched only in part (computed)
+
+- The stop (`dff31c35…`) has six height-4 units, 79373 (9 pieces), 79408 (2), 79409 (44), 91640 (7), 91641 (11)
+  and 91669 (38): 111 pieces. After each of the eleven lowering items of cap 415 other than 59, all 111 lowered
+  pieces lie outside every free grip of their new class, which excludes 66 of the 72 unit–item cases as in R22D-20.
+- After (415, 59) (`f227781b…`) the 111 pieces share one pose at height 2 in branch 1 and lie in one source cell,
+  [268, 393, 436], which has no home chambers; the reviewer reads them as one class content at label 3. Grip 268 is
+  the one free grip that holds them all (58 free class grips, 133 SAFE grips).
+  Neither prune excludes this case, so it is one search of R22D-19 for all six units: a class word that lands the
+  content lands all 111, and all of them must stay landed after the final inverse (one taken off again ends at height
+  2, not at its height-4 pose), so "all 111 outside cap 415 after V·W·V⁻¹" is a sound prune.
+- The search was cut short: one ordered grip pair, (91, 268), with 3,481 item pairs, 4,976 landing powers and 104
+  candidates past the model and small-Bad tests, none accepted under an endpoint restriction stronger than strict′
+  (it protected every lattice piece of Y; R22D-22). This is not exhaustion, not even for that pair; the item-59 case
+  stays open.
+- Commands: the seed 7108 part of `scripts/round22/r22d20_residual_cells.py`, and `r22d23_item59.py`; outputs in
+  `runs/round22/` under the same names.
+
+### R22D-24. No single strict′ letter lands a blocker of cap 252 at the depth 400 stop (computed; proved)
+
+- At the depth 400 stop of seed 7109 (`7f8203dd…`) the three units in no clean cap are 3427 (6 pieces), 3428 (3) and
+  11229 (1). Cap 252 holds their ten high pieces and has 14 straddlers, all at height 2: 920, 921, 922, 1039, 1040,
+  1041, 1043, 1068, 1069, 7691, 7692, 7693, 7694 and 7695.
+- Of the 58 clean caps only cap 158 holds all fourteen, and it also holds high pieces; no clean cap that holds a
+  straddler holds only off pieces and no high piece.
+- So no single-letter strict′ step lands any of them: a retained letter lands nothing; a non-retained letter takes
+  every lattice piece it moves off the lattice, cannot return a moved off piece exactly and cannot land a height-4
+  piece (a letter changes a left height by at most 2), so its whole cap would consist of off pieces it lands, with no
+  high piece, and there is no such cap. No retained letter cleans cap 252 while keeping the high pieces exact either:
+  it would have to move all fourteen straddlers, so it would be at cap 158, which moves high pieces.
+- The route that remains (R22D-07 Lemma C): strict′ words that land these straddlers and keep the ten target pieces
+  exact clean cap 252 after at most fourteen words, at most 14·b letters if each has at most b; no new blocker
+  appears, since surviving off pieces keep their poses and landed pieces do not straddle. No such word was built;
+  preparations that move other high pieces and undo the move later are not excluded.
+- Command: `scripts/round22/r22d24_cap252.py`; output `runs/round22/r22d24_cap252.txt`.
+- Uses: R22D-07, R22D-09.
+
+### R22D-25. One rule for a whole stop, with its stuck outcome (rule; proved safe and finite)
+
+1. Fix the limits before the start: L4 = 244 letters for a high step and L2 = 720 for a height-2 step (limits of the
+   catalogue, not coverage bounds).
+2. At each exact state compute the off pieces and their poses, the heights, the high and height-2 units, the clean
+   containing caps, the complete straddler sets, the free and SAFE alphabets and the hole set. Break ties by fixed
+   piece, grip and item keys.
+3. Try R22D-19 for each high unit, accepting only a complete strict′ replay (2 + 4e + 2|V| ≤ 244 letters).
+4. Then try a protected lowering S of at most 244 letters followed by a height-2 step T of at most 720: S lowers the
+   whole named target to height 2, keeps every lattice piece of the start on the lattice and returns or lands every
+   other off piece; T is strict′ for the lowered target; the whole S·T, at most 964 letters, is replayed at the start
+   and must be strict′ there.
+5. If no high step exists, list the blocked own-branch lowering caps whose straddlers are all at height 2. Try the
+   height-2 units that meet those straddler sets first, then the other height-2 units, by strict′ words of at most
+   720 letters that keep every high piece at its exact pose.
+6. After every accepted word recompute everything in 2, holes and Bad sets included; never reuse a vacancy witness
+   because the off set shrank. Check the input digest before a word is played and the output digest after. A word's
+   length is the number of letters it plays; no certificate or unexpanded macro is a step.
+7. Stuck means every family in 3 to 5 is exhausted; a search cut off by time is a budget stop, not stuck. On the
+   lattice the literal lattice phase follows, and the run is solved only when its checker passes.
+- Proof. There are 35,400 non-identity menu letters and the limits are fixed, so every pass is finite. Every accepted
+  word is strict′ and lands a nonempty target, so the off count falls, every surviving off pose stays exact and the
+  largest height does not grow: at most n₀ accepted words and at most 964·n₀ letters before the lattice or stuck, n₀
+  the off count at the start.
+- It does not show that any stop is solved by it. What is missing is literal protected height-2 steps for the actual
+  blockers and high steps outside the excluded families. Not implemented and not run.
+- Uses: R22D-07, R22D-17, R22D-19.
+
+### R22D-26. The runner's tail and fallback do not supply the protected unlocking steps (source)
+
+- Rule 3 of the tutorial runner (`13-tutorial-runner/README.md` section 1) gives conditional literal strict′ steps from
+  `zero_bad`, `pure`, `close` and `t1prime`, the largest unit first. Such a step helps unlock a cap only if it happens
+  to land a straddler and keep the high target exact; nothing shows these steps exist for the 20 blockers of cap 179
+  or the 14 of cap 252, and the rule has neither the blocker-first order nor R22D-19.
+- Rule 4, `fallback.py`, is weaker than a protected step: it sets `protected_off` to empty and accepts a word when the
+  off set at the end lies inside the start's off set minus the unit, so another off piece, a high one included, may
+  move to a different off pose. Its first word cannot stand in for a strict′, high-exact unlocking word without a
+  further test, and rejecting that word does not exhaust the stricter family. It runs for the first unit only, within
+  its length limit.
+- This limits the rules as stated; it does not question any checked runner record (the README separates the fallback
+  contract from strict′ and says height 4 is not in the rules).
+
+### R22D-27. The mask and endpoint lemmas hold at every height; the height-2 catalogue does not (proved)
+
+- For a lowering from H = 2h to H − 2, R22D-02's mask calculation (each piece receives the chronological product of
+  the rotations its prefix memberships select; exact return exactly when F = I, landing exactly when F·Q is in K⁺)
+  does not use H = 4, and a straddle in a prefix still rejects the word. R22D-03's endpoint contract holds for a
+  landing word a·C·a⁻¹; for a protected lowering the target's landing is replaced by its required height, with every
+  inverse prefix replayed. R22D-01 holds for strict′ landing at every height. The geometric parts of R22D-07 hold, and
+  with them R22D-17's conditional blocker argument; its blocker lists belong to their instances.
+- At height 6 one lowering letter leaves the target at height 4, outside the five-label own-content model of heights
+  0 and 2 that the class-cell toolkit uses. So R22D-19, its middle construction and R22D-08's family bound are not a
+  height-6 rule; the length identity 2 + 2|V| + |W| still holds, but the toolkit's bounds need their height-2
+  hypotheses. The counts and words of R22D-04, R22D-06 and R22D-09 to R22D-17 are not height-6 results.
+
+### R22D-28. The source-cell obstruction holds for a lowering at any height (proved)
+
+- If the target's body lies in one class cell X and a class word acts on X by one rotation A_X that lowers the
+  target's left height, A_X is not in K⁺ (a retained rotation fixes the lattice vertex and every distance from it),
+  so A_X·k is off for every home pose k of X: Ω_X ⊆ Bad(W), as in R22D-15, and an occupied home chamber of X outside
+  every SAFE cap blocks literal vacancy. This covers 6 → 4 as well as 2 → 0.
+- It needs the whole target to follow one class-cell itinerary; a higher piece is not automatically a five-label own
+  content, and one that straddles a class-cell boundary is not covered. An empty source cell does not give a pure
+  lowering word.
+- R21-03 and R21-04 give a conditional ladder at higher heights (an edge cell, its home chambers vacant, every other
+  off piece isolated from the caps needed at each level; each level a pure word of at most 720 letters plus a literal
+  SAFE preparation), with the hypotheses rechecked at every level. No such ladder was established at these stops.
+- Uses: R22D-15.
+
+### R22D-29. R22D-18 above height 4: heights 6 and 8 stay open (proved)
+
+- Let H ≥ 4, a letter a of class P lower the target from H to H − 2 in branch Q ≠ P, and W be a word of class-Q letters
+  only. After a the target is at distance H − 3 from w_Q, and W keeps that distance. If a⁻¹ misses the target, W⁻¹
+  returns it to its off pose after a. If a⁻¹ moves it and W⁻¹ then lands it, the vertex before W⁻¹ is at distance 1
+  from w_Q, so it is v0 or a height-2 vertex of branch Q, and the vertex before a⁻¹ is its image under a: a height-2
+  vertex of branch P at distance 3 from w_Q, or a height-4 vertex of branch P at distance 5. So a·W·a⁻¹·W⁻¹ can land
+  the target only when H − 3 is 3 or 5, that is H = 6 or H = 8.
+- This gives R22D-18 again at H = 4 and excludes H ≥ 10 for this pattern. At heights 6 and 8 it decides nothing, and
+  no landing word was found at either.
+- Uses: R22D-18.
+
+### R22D-30. The census does not show that the bulk phase always clears height 6 (inference; replayed)
+
+- The facts. The depth 1000 record of seed 7103 starts its descent with 123,685 off pieces at height 2, 1,484 at
+  height 4 and 135 at height 6, and ends after 625 descent twists, at its stop (`acc4ee49…`), with 80,919 at height 2
+  and 390 at height 4. The integrator's replay of every accepted step: the 135 height-6 pieces keep height 6 through
+  the first 73 steps and all go to height 4 in step 74, a `conj` step that ends at the descent's 190th twist; after it
+  no piece is above height 4, and at the stop all 135 are still at height 4, none landed. The three 3000-twist
+  scrambles of stage 11 run no descent and keep 7, 185 and 89 pieces at height 6. The census loop lowers the
+  misalignment N, not the height, and its height-4 counts rise at times.
+- The inference. The depth 1000 run clears height 6 on one trajectory, by one step that lowers rather than lands;
+  this proves nothing for every bulk run, least of all for one cut off by a step or time budget. A machine that
+  promises further progress needs a height-6 rule or a theorem that the bulk phase clears height 6; one that may stop
+  reports that the height left is outside its catalogue. Heights above 6 cannot be excluded in general, since heights
+  are unbounded over reachable states (X1).
+- Command: `scripts/round22/r22d30_height6.py`; output `runs/round22/r22d30_height6.txt`.
+
+Open after round 3 of line (d): literal steps for the 82 remaining high pieces of the seed 7102 stop (mixed-class
+middles, the repair family of R22D-22, the twelve pieces of R22D-21, other caps); the shared item-59 case of seed 7108
+with the full contract (R22D-23); strict′ words that land the blockers of caps 179 and 252 while keeping the high
+pieces exact (R22D-24); an implementation of R22D-25; and for heights above 4 either a rule (a protected 6 → 4 step
+followed by a height-4 procedure) or a proof that the bulk phase clears them.
+
+### Round 4 of line (d)
+
+The senior reviewer took line (d) a fourth round at the fast tier, as three shards run at the same time, all results
+`minor`: height 6 (R22D-31 to R22D-38), the blockers of caps 179 and 252 and the seed 7108 case (R22D-40 to R22D-43),
+and an implementation design for R22D-25 (R22D-50 to R22D-57). R22D-39 and R22D-44 to R22D-49 are not used. For the
+height-6 shard the integrator built its two start states as snapshots from the census records, every twist checked
+(`scripts/round22/r22d31_snapshots.py`). The round found two literal strict steps at height 4 (R22D-42 lands all six
+high units of the seed 7108 stop, R22D-43 the twelve pieces of R22D-21); a height-6 tier for R22D-25 that is safe and
+finite (R22D-37), with one protected 6 → 4 step at a test state (R22D-36); obstructions for its short families at the
+3000-twist stop of seed 7302 (R22D-32 to R22D-35, R22D-38); obstructions for the blockers of caps 179 and 252 over
+their fixed free alphabets (R22D-40, R22D-41); and an implementation contract for R22D-25 (R22D-50 to R22D-56). It also
+found that the tutorial runner's lattice phase checks the retained part of its word by composing permutations, not by
+playing it twist by twist (R22D-57). The computations are `scripts/round22/r22d31_height6.py`, `r22d40_blockers.py`,
+`r22d42_step7108.py` and `r22d43_twelve.py`; the integrator re-ran them and got the outputs under `runs/round22/` with
+the same names (section 6). The counts of R22D-54 are the reviewer's measurements and were not re-run.
+
+### R22D-31. Step 74 of the depth 1000 record lowers through its middle letter alone (computed; replayed)
+
+- The state before step 74 (`48ef2f68…`) has 94,981 off pieces: 94,224 at height 2, 622 at height 4 and 135 at
+  height 6. The 135 share one exact pose (tree data (6, 0, 4, −1)) and form two units, 143824 (16 pieces, inside caps
+  204, 218, 241, 278, 323 and 325) and 143825 (119 pieces, the same caps and 424). Caps 328 and 241 are both clean:
+  328 holds 405 lattice and 2,372 height-2 pieces, 241 holds 145 lattice, 1,827 height-2, 458 height-4 and all 135
+  height-6 pieces.
+- In the word (328, 1)·(241, 47)·(328, 58) only the middle letter moves the targets (membership mask 010), and it takes
+  all 135 to height 4 (tree data (4, 0, 3, −1)); both cuts stay clean throughout. The word is not a conjugate
+  x·y·x⁻¹: item 1 at grip 328 is its own inverse and the last item is 58. It does not make the middle cap clean
+  either, since 241 was clean already. The middle letter alone, (241, 47), is admissible and lowers all 135 as well.
+- Along the word, as (off pieces, N, height 2, height 4, height 6): start (94,981, 100,812, 94,224, 622, 135); after
+  (328, 1) (94,981, 100,864, 94,224, 622, 135); after (241, 47) (94,174, 100,588, 93,875, 299, 0); after (328, 58)
+  (93,527, 100,130, 93,228, 299, 0), digest `fb754d4d…`. Height transitions: 0 → 2 550, 2 → 0 2,004, 4 → 2 458,
+  6 → 4 135, and 81,589, 92,220 and 164 unchanged at 0, 2 and 4; 2,653 other off pieces change pose without landing.
+  So step 74 is not a protected lowering: it takes 550 lattice pieces off.
+- A pattern that reads the state only: a clean cap c that misses the target U, a retained non-identity item x at c, a
+  cap d of U's branch that holds U and is clean after x, one of d's lowering items y, and an item z at c, with c
+  clean after x·y and U outside c then; the three letters are replayed, and for use in the bulk phase N must fall.
+  U receives only y, so it falls by two. At most 600·599·11·12·59 cases per unit; step 74 is one of them. Protection
+  is a further test, not a consequence of the pattern.
+- Uses: R22D-30.
+
+### R22D-32. The 3000-twist stop of seed 7302 has eleven height-6 units; two lie in a clean cap (computed)
+
+- The stop (`015d839e…`) has 100,584 off pieces: 99,314 at height 2, 1,085 at height 4 and 185 at height 6. The 185
+  form eleven units (equal exact pose and equal inside vector over the 600 caps) in four pose groups: A (branch 3)
+  22706 (6 pieces), 22707 (58), 26358 (21) and 26372 (26); B (branch 3, another exact pose) 28969 (34), 45919 (10)
+  and 57975 (4); C (branch 1) 108996 (9) and 137233 (4); D (branch 0) 152672 (12) and 152673 (1). Every right height
+  is 0.
+- Of the 31 caps that contain one of them, only 64 and 70 are clean. Both are of branch 0 and hold the 13 pieces of
+  D: cap 64 with 970 lattice and 1,384 height-2 pieces, cap 70 with 969 and 1,855. Fifteen of the other 29 have a
+  height-4 or height-6 straddler (114, 118, 150, 160, 172, 183, 190, 206, 207, 221, 258, 281, 299, 326 and 338), so
+  height-2 landings alone cannot clean them while every high piece keeps its pose; the other fourteen have only
+  height-2 straddlers.
+- Cap 274, of branch 3, holds all 159 high pieces of A and B, and its only straddlers are three height-2 pieces,
+  44706, 44712 and 57467. Landing these three while every high piece keeps its exact pose would make it clean (R22D-07
+  Lemma C); a route, not a word.
+- Uses: R22D-07.
+
+### R22D-33. At the 3000-twist stop 24 single letters lower a height-6 unit, and none is protected (computed)
+
+- A letter that lowers a whole height-6 unit acts at a clean cap of the unit's branch that holds it, so by R22D-32
+  only caps 64 and 70 qualify, each acting on both units of D. Exact products of their common pose with the 59 items
+  give twelve lowering items at each: 15, 18, 22, 33 and 52 to 59 at cap 64; 12, 16, 20 and 24 to 32 at cap 70.
+- Each of the 24 letters lowers exactly those 13 pieces to height 4 and lands none; the other 172 height-6 pieces and
+  all 1,085 height-4 pieces keep their heights. Each takes every lattice piece of its cap off (970 at cap 64, 969 at
+  cap 70) and lands 349 or 604 height-2 pieces, so none is a protected lowering, even with both units of D as the
+  target.
+- N rises with every one of them, by 244 to 404: the least is (70, 24), from 130,386 to 130,630, digest
+  `d602cae0…`. The bulk phase, which needs N to fall, takes none of them as a single step at this state.
+- Uses: R22D-32.
+
+### R22D-34. A three-letter conjugate lowers the 13 pieces of D and raises N (computed; replayed)
+
+- (2, 1)·(64, 15)·(2, 1), item 1 at grip 2 being its own inverse, is admissible, has the census `conj` shape
+  (c, x)(d, y)(c, z) and lowers both units of D, 13 pieces, from 6 to 4; the other 172 height-6 pieces and the 1,085
+  height-4 pieces keep their heights. N goes 130,386 → 130,426 → 130,682 → 130,688. At the end there are 101,072 off
+  pieces (99,802 at height 2, 1,098 at height 4, 172 at height 6), digest `0edf66df…`; 864 lattice pieces have gone
+  off and 1,221 other off pieces have changed pose, so it is not protected.
+- Its middle raises N by 256 and the whole word by 302, so it fails both N tests of `seams.conj`. It shows that the
+  three-letter shape has lowering words at this stop; it does not exhaust that shape, and it does not explain by cap
+  order why the 75-minute descent took none.
+
+### R22D-35. The commutators of R22D-29 with a one-letter middle neither lower nor land a whole unit there (computed; proved)
+
+- The family: a·W·a⁻¹·W⁻¹ with a an admissible letter that lowers a whole height-6 unit and W empty or one
+  non-identity letter of the lowered target's branch Q. The nine units of A, B and C have no such a (R22D-32), and the
+  two of D share the 24 letters of R22D-33. After each of them exactly two caps of Q hold either unit whole, and both
+  are blocked: 96 unit–cap cases, none clean (the output lists a straddler of each).
+- The prune: if W = b misses a target piece after a, that piece is unchanged by b and returned by a⁻¹ to its height-6
+  pose of branch P ≠ Q; the last letter b⁻¹, of class Q, then misses it, keeps its height (when retained) or raises it
+  to 8, so it cannot end at 4 or 0. So b must hold every target piece when it is first applied, which the blocked caps
+  exclude. Empty W gives the identity. Of the 24·120·59 = 169,920 words with a one-letter middle, the 2,832 whose
+  middle holds a whole target are inadmissible there, and the others fail the motion condition.
+- Middles of two or more letters are not covered.
+- Uses: R22D-29, R22D-32, R22D-33.
+
+### R22D-36. A protected one-letter 6 → 4 step at a reachable test state (computed; proved)
+
+- Single letters, at any even height H ≥ 4: (c, g) is a protected H → H − 2 step for a unit U exactly when c is clean
+  and holds U, g takes every target pose to height H − 2, c holds no lattice piece of the start, and every other off
+  piece inside c lands under g; pieces outside c keep their poses. Necessity: a lowering rotation is not in K⁺, so it
+  takes every lattice piece it moves off, and g·Q = Q for a pose Q would force g = I, so every other off piece it moves
+  has to land. Sufficiency is the same piecewise action. These are finite exact tests of the state.
+- A test state: from the solved state play (0, 12), (74, 8), (188, 4), (74, 4), (188, 8), (188, 4), (188, 4),
+  (74, 8), (188, 8), (74, 4), (188, 8), (178, 1), (188, 4), (74, 8), (188, 4), (74, 4), (188, 8), (188, 8), (188, 4),
+  (74, 8), (188, 8), (74, 4), (178, 1), (0, 45), (14, 12), (12, 12); the first 24 are the singleton construction of
+  `scripts/round22/cov17_single_off.py` (COV-17). It has 5,800 off pieces, 5,799 at height 2 and one, piece 58388, at
+  height 6, a unit by itself; N = 2,934; digest `8733a0aa…`. Cap 12 is clean and holds 58388 and 2,702 height-2 pieces
+  and no lattice piece.
+- The letter (12, 45) takes 58388 to height 4, lands the 2,702 others in cap 12, keeps the other 3,097 off pieces at
+  their exact poses and takes no lattice piece off: 3,098 off pieces, 3,097 at height 2 and one at height 4, N = 1,574,
+  digest `d79c0367…`. A protected lowering, not a landing.
+
+### R22D-37. A height-6 tier for R22D-25, safe and finite (rule; proved safe and finite)
+
+1. For a state whose largest left height is at most 6, insert this tier before step 3 of R22D-25. Read the exact
+   poses, heights, units and cut classifications; take the height-6 units by least piece; for each, try in this order,
+   with (grip, item) tuples in lexicographic order inside each family:
+   (1) every non-identity single letter;
+   (2) every (c, x)·(d, y)·(c, z) with c ≠ d and non-identity items;
+   (3) every a·W·a⁻¹·W⁻¹ with a a whole-unit lowering letter at a clean cap and W of one or two letters of the branch
+   Q reached after a, by length and then lexicographically; inverses are expanded by reversing the word and inverting
+   each item.
+2. Replay each candidate on a fresh copy of the full state; an inadmissible or uncertain prefix rejects it. Accept it
+   only if at the end (i) every target piece is at height 4, or every target piece is on the lattice; (ii) every
+   lattice piece of the start is on the lattice; (iii) every other off piece of the start has its exact pose or is on
+   the lattice. Compare exact matrices or stable pose keys, never pose-table indices of different states. There is no
+   N test. Record the letters, the length and both digests; check the input digest before the word and the output
+   digest after it; recompute everything after an accepted word.
+3. If the tier finds nothing, run steps 3 to 5 of R22D-25 with its height-4 targets at height exactly 4 and every
+   height-6 piece kept at its exact pose, as strict′ words at the actual state; restart the tier after any accepted
+   step. Stuck means every family exhausted at the state; an interruption is a budget stop. A state above height 6 is
+   outside this version.
+
+- Finite: its words have at most six letters, at most m + 600·599·59³ + (120·12)·(q + q²) candidates per unit, with
+  m = 35,400 and q = 120·59 = 7,080 (a bound, not a claim that the search is practical).
+- Safe and terminating: the end tests are the protected-lowering and strict′ contracts. An accepted protected
+  lowering makes no new off piece, keeps every other surviving off pose exact and lowers the number n₆ of height-6
+  pieces by at least one; an accepted strict′ landing lowers the off count by at least one and makes no height-6
+  piece. So there are at most n₆ lowerings and n₀ landings, and at most 6·n₆ + 964·n₀ letters before the lattice or
+  stuck.
+- The same tests and families apply to 2h → 2h − 2 for h > 3. Enabled at every height above 4, the number of
+  protected lowerings is at most Σ_p max(0, H_p/2 − 2) over the heights at the start, and the length at most six
+  times that sum plus 964·n₀. This bounds the catalogue; it is not coverage, and no candidate is shown to exist at
+  either census state: R22D-36 is a positive instance, and R22D-33 excludes the single-letter family at the seed 7302
+  stop.
+- Uses: R22D-25, R22D-27.
+
+### R22D-38. No word of at most three letters lands a whole height-6 unit at the 3000-twist stop (proved)
+
+- A letter changes a left height by at most 2, so landing a height-6 piece in at most three letters needs exactly
+  three, each lowering it by 2. For a whole unit the first letter is one of its whole-unit lowering letters: only the
+  units of D have any, the 24 of R22D-33. The second must lower at a clean cap of the new branch that holds the whole
+  target, and R22D-35 found none of its 96 cases clean. So no word of at most three letters lands any whole height-6
+  unit at this stop, whatever its shape; three-letter lowerings exist (R22D-34).
+- In general, at height 2h, if no first lowering leaves an admissible second lowering of the whole target, no word of
+  h letters lands it. Words of four or more letters and partial landings stay open.
+- Uses: R22D-32, R22D-33, R22D-35.
+
+### R22D-40. Cap 179's blockers are two units that the fixed free alphabets cannot move (computed; proved)
+
+- At the state after R22D-16 (`dceb9359…`) the 20 height-2 straddlers of cap 179 lie in two single-frame units: unit
+  15193 (27 pieces; blocker 15193), source cell [65, 235] in branch 1, and unit 54926 (86 pieces; the other 19
+  blockers), source cell [75, 276] in branch 0. Neither cell meets a free grip of its class (there are 32 and 33 free
+  grips of those classes, and 92 SAFE grips).
+- Every word over the fixed free alphabet of the unit's class and the fixed SAFE-ALL alphabet of the start fixes
+  every blocker, at any length: each blocker starts outside every grip of these alphabets, so every letter fixes its
+  pose and it stays outside them. A free grip of another class does not hold it, since it holds no foreign off piece.
+  So no closure V·W·V⁻¹ with W over that free alphabet and V over the SAFE alphabet lands a blocker. Alphabets
+  recomputed after other progress and words with grips that are not free are not covered.
+- Unit 15193 also meets the source-cell obstruction (R22D-15, R22D-28): all 86 home chambers of [65, 235] are occupied
+  and outside every SAFE cap (one is chamber 17725). The 86 home chambers of [75, 276] are vacant; there the
+  obstruction is the missing free grip.
+- No blocker was landed, so cap 179 stays blocked and R22D-19 was not tried through it.
+- Uses: R22D-15, R22D-17, R22D-28.
+
+### R22D-41. Cap 252's fourteen blockers are one unit with no free grip and no SAFE grip (computed; proved)
+
+- At the depth 400 stop of seed 7109 (`7f8203dd…`) the 14 straddlers of cap 252 are all in unit 920 (61 pieces, one
+  frame), source cell [158, 203] in branch 2. Its 86 home chambers are vacant, but neither pole is a free grip; the
+  class has 11 free grips, and the state has no SAFE grip.
+- So every word over the fixed free alphabet of the class (11·59 = 649 non-identity letters) fixes every blocker, at
+  any length, by the argument of R22D-40, and a SAFE preparation is empty. This family gives no first unlocking step;
+  cap 252 stays blocked and R22D-19 was not tried through it. Words with grips that are not free, and alphabets after
+  other progress, stay open.
+- Uses: R22D-24, R22D-40.
+
+### R22D-42. A 50-letter strict step lands all 111 height-4 pieces of the seed 7108 stop (computed; replayed)
+
+- At the stop (`dff31c35…`) take a = (415, 59), V empty, W = [(91, 22), (268, 9)]¹², each commutator played as
+  (91, 22), (268, 9), (91, 46), (268, 3), and a⁻¹ = (415, 29): 50 letters.
+- The replay with `stepchk.py`: all 111 pieces of the six units land, the other 27,088 off pieces keep their exact
+  poses and no lattice piece leaves the lattice, so the step is strict, not only strict′; 27,199 → 27,088 off pieces,
+  end digest `79aaefe2…`. Since the 111 were the stop's only pieces above height 2 (R22D-10, R22D-23), every off piece
+  left is at height 2.
+- The search behind it is R22D-23's, with the endpoint test read from the tags of the start (R22D-22): it found the
+  word at the first ordered grip pair, (91, 268), after 1,248 item pairs and 74,832 powers, and its first full replay
+  passed. 611 pieces are on the lattice at Y and at T, inside cap 415 at T, and return under a⁻¹ to their exact off
+  poses of the start (the first is piece 30403); R22D-23's stronger prune rejected exactly such words. This closes
+  R22D-23's case.
+- Uses: R22D-03, R22D-19, R22D-22, R22D-23.
+
+### R22D-43. A 38-letter strict step lands the twelve pieces of R22D-21 (computed; replayed)
+
+- At the state after R22D-16 (`dceb9359…`), after a = (61, 57) the twelve pieces form one class content at label 1 in
+  the cell [18, 84, 110, 130]. With V empty, W = [(110, 3), (285, 58)]⁹, each commutator played as (110, 3), (285, 58),
+  (110, 9), (285, 26), and a⁻¹ = (61, 57): 38 letters.
+- The replay with `stepchk.py`: exactly the twelve land, six of unit 408 (789, 1504, 1513, 1514, 1516 and 1518) and six
+  of unit 409 (1223, 1520, 1523, 1524, 2944 and 2949); the other 31,425 off pieces keep their exact poses and no
+  lattice piece leaves the lattice, so the step is strict. 31,437 → 31,425 off pieces, end digest `f0290f93…`; 31,355
+  pieces are left at height 2 and 70 at height 4.
+- This is partial progress on units 408 and 409, which R22D-20's obstruction, stated for the whole units, does not
+  cover (R22D-21). Its target is part of two units, so R22D-19, whose cases are whole units, does not contain it.
+- Uses: R22D-16, R22D-20, R22D-21.
+
+### R22D-50. Snapshots and acceptance gates for R22D-25 (design)
+
+- Functions to write: `snapshot(state)`, `high_units`, `height2_units`, `protected_lowering(before, U, word)`,
+  `strict_step(before, U, word, high_exact)` and `refresh_after_accept(state)`. The menu, the model identity and the
+  limits are fixed before the search: direct words ≤ 244 letters, S ≤ 244, T ≤ 720, S·T ≤ 964.
+- A snapshot holds the digest, the lattice and off masks of the start, stable exact pose keys, the heights, the unit
+  memberships, the complete cap classifications and straddler sets (`State.classify` reports one straddler, which is
+  not enough for the blocker order), the branch-to-class map, the free and SAFE alphabets and the holes. Tree branches
+  map to model classes explicitly through `classes.hub`: at the seed 7108 stop after (415, 59) branch 1 is model
+  class 3. Reuse `eb6.stable_pose`, `eb6.straddler_set`, `trees.pose_tree`, `buffer.hole_set`, the high-unit census
+  of `r22d09_census.py`, and the units of `mkblocks2.py` without its optional relaxation of the free set.
+- The strict-step gate: a nonempty target inside the off set of the start; every twist admissible; every target piece
+  landed; every lattice piece of the start on the lattice; every other off piece of the start landed or at its exact
+  pose; in step 5 also every high piece of the start at its exact pose. The protected-lowering gate asks for every
+  target piece at height 2 instead of landed. Both check the input and output digests and the played length.
+  `eb6r.replay_word`'s `strict_prime` flag alone is not the gate: an empty word sets it without landing anything,
+  which would break the falling off count of R22D-25's proof.
+- After an accepted word everything that depends on the state is recomputed; pose-table indices never cross
+  snapshots. A search returns candidate, exhausted, budget, unsupported or error; only exhaustion of steps 3 to 5 is
+  stuck. The bound n₀ and 964·n₀ counts R22D-25's accepted words only, not the bulk or the lattice phase.
+- Uses: R22D-25.
+
+### R22D-51. Step 3 with a complete point model before Bad (design)
+
+- Order: high units by least piece; the clean caps of the unit's branch that hold the whole unit, ascending; their
+  twelve lowering items, ascending. After a, the target must be one class-Q content D (cell and domain) whose members
+  were all off at the start; failing either is an exclusion from this family, not an impossibility.
+- The point model: `cellpure5.Model2`'s pole permutations, coset labels and point actions (copied, not imported: the
+  module runs its command line at import), seeded with every home sign vector, vacant home cells included, and every
+  own content, then closed under every free letter. The present initialisation misses vacant home cells, which Bad
+  needs.
+- Prunes before W: a target outside every free grip (R22D-20); a source cell with an occupied chamber outside every
+  SAFE cap (R22D-15, R22D-28); another protected off content in the target's cell.
+- W: ordered distinct free-grip pairs that share a cell, one of them holding the target cell; then the items of x and
+  y and e = 1 to 60, ascending; W = (x, y, x⁻¹, y⁻¹)^e. Test the target's landing at a home label-0 point and the whole
+  five-point fibre of every other class-Q off content before Bad; foreign off pieces are fixed by freeness. Not taken
+  from `cellpure5.py`: protection of a single point, collateral counted on occupied contents only, truncation at a
+  number of exact pieces.
+- Bad from every home cell whose label-0 point ends nonzero (R22A-01), weighted by its home chambers; |Bad| < 3,097.
+  V empty, then each SAFE retained letter by grip and item; N1 and N2 may reject, but acceptance needs
+  π_V⁻¹(Bad) ⊆ holes(Y). The decision is the replay of a·V·W·V⁻¹·a⁻¹ at Z with the tags of Z (R22D-22).
+- Uses: R22A-01, R22D-15, R22D-19, R22D-20, R22D-22, R22D-50.
+
+### R22D-52. S and T need an explicit catalogue (design)
+
+- R22D-25 gives S and T as gates with length limits, not as generators. The conservative completion: every admissible
+  word of 1 to 244 letters (S) or 1 to 720 (T) that passes its gate, by length and then in (grip, item) order, with
+  identity letters and consecutive letters at one grip removed (the reduction `fallback.py` uses); a straddled prefix
+  excludes every item at its grip; an uncertain classification is an error. T is searched at Y = Z·S for the whole
+  piece set U; a failed T moves on to the next S; nothing is committed before the whole S·T passes at Z.
+- A fixed priority prefix from the tail rules (`zero_bad`, `pure`, `close` from pure, `close` from a transport,
+  `t1prime`) may come first, each word expanded, at most 720 letters and passing the gate; E-B6's words may propose S.
+  A rejection of such a proposal, a depth cutoff or a timeout does not exhaust T.
+- Step 5: the eligible blocked caps of the target's branch ascending (every straddler at height 2); the height-2 units
+  by their first eligible cap and least piece, then the other units by least piece; T with every high piece of the
+  start kept exact. The runner's largest-unit-first order and its fallback test do not do this (R22D-26).
+- This catalogue is finite and needs no new mathematics, but it cannot be exhausted naively (R22D-55). A smaller
+  practical catalogue is a separate choice, and its stuck outcome names that smaller scope.
+- Uses: R22D-25, R22D-26, R22D-50.
+
+### R22D-53. Run records with a checkable coverage ledger (design)
+
+- A record `runner-run/3` extends `runner-run/2` of the RUN-3 packet: source and model digests, catalogue version,
+  limits and enumeration parameters; for each accepted step the target, family, parameters (a, x, y, e and V for a
+  direct step; the split, both lengths, the middle digest and the lowering test for S·T; the blocker cap, target and
+  high-exact set for step 5), input and output digests, played length and recomputed counts. The checker rebuilds
+  every set from the input state instead of trusting recorded flags.
+- A stuck certificate needs the search universe and a disjoint coverage ledger (units and caps, lowering cases, pairs,
+  item pairs, powers and V choices, S and T prefix subtrees, completed and pruned ranges), first-failure counts, a
+  cursor for unfinished work, and checkable premises for every prune: two target pieces in different contents, an
+  original lattice member, complete grip sets, an occupied chamber outside every SAFE cap, fibre cycle data, Bad
+  chamber ids, the failing vacancy inclusion. A search restricted to one case keeps its restriction and certifies no
+  stuck state.
+- A checker can cheaply replay accepted words, check the S·T split and the protection, rebuild the structural prunes
+  and check the counting; it cannot confirm a large negative search from counts or hashes, and has to redo it unless a
+  compact exclusion proof exists. `check_run.py` checks stuck-state snapshots only today, and RUN-4 adds no
+  exhaustion check.
+- Uses: R22D-25, R22D-50.
+
+### R22D-54. Sizes of the direct family at the known stops (computed by the reviewer)
+
+- Seed 7102 stop: 108 lowering cases; first failures split cells 60, no free grip 42, fixed occupied chamber 3; three
+  survivors, unit 391 at items 55, 57 and 59 of cap 61, with (free grips, SAFE grips, pairs) = (34, 91, 10),
+  (33, 90, 14) and (24, 89, 10): 2,088,600, 2,924,040 and 2,088,600 W slots (pairs·3,481·60) and 1,002, 991 and 980
+  V choices, 7,101,240 W slots in all. After R22D-16 all 96 cases are excluded (R22D-20).
+- Seed 7108 stop: 72 cases, 66 excluded and six that share one search after (415, 59): 58 free grips, 14 pairs,
+  2,924,040 W slots and 1,464 V choices (133 SAFE grips). A sample of the first 200 commutators at (91, 268): 12,000
+  powers, 272 landings, 12 past the fibre and small-Bad tests, in 0.346 CPU seconds; the model took 42.67 CPU seconds.
+- Seed 7109, depth 400: 216 cases; 132 split cells, 78 no free grip, 4 fixed occupied chamber; two survivors, unit
+  97830 at items 45 and 47 of cap 406, with 417,720 and 1,253,160 W slots and V empty only (no SAFE grip). The other
+  five high units have no clean cap of their own branch.
+- The reviewer's measurements (exact headless research runs, Python 3.13 and NumPy 2.5, one thread); the integrator
+  did not re-run them.
+- Uses: R22D-15, R22D-20, R22D-23, R22D-51.
+
+### R22D-55. Exhausting R22D-25 as stated is impractical (estimate)
+
+- From the 0.346-second sample: about 205, 84 and 48 CPU seconds for the W slots of the three stops, without setup,
+  vacancy and replay (planning estimates). The W and V combinations before later filters number at most
+  7,037,328,840, 4,280,794,560 and 1,670,880, so a naive nested vacancy loop cannot finish the first two.
+- The all-words catalogue of R22D-52 has about 10¹¹¹⁰ S words, 10³²⁷⁵ T words and 10⁴³⁸⁵ pairs per target
+  (A(L) = Σ_{k ≤ L} 35,400^k; 35,341 continuations a letter after the consecutive-grip reduction): it cannot be
+  exhausted. So an unfinished step 4 is a budget stop and must not fall through to step 5 as if exhausted; a smaller
+  S and T catalogue, or an order that tries blockers first, is a recorded revision of the rule, not exhaustion of
+  R22D-25's families. The runner's tail today turns a missing candidate into stuck even after a timeout, which must
+  not be reused here.
+- Uses: R22D-52, R22D-54.
+
+### R22D-56. Packets: four standalone, three new and one integration (design)
+
+- D19, RUN-3, RUN-4 and SCH-L keep their standalone purposes and can run as written once their source identities are
+  pinned again. For integration D19 needs a callable candidate and exhaustion interface, an explicit scope for a
+  restricted search, coverage witnesses and the test after R22D-16; RUN-3's long-word fixtures stay as they are (the
+  720-letter limit belongs to the later R22D-25 adapter); RUN-4 stays the checker of `runner-run/1` and `/2`; SCH-L
+  stays a late-correction schedule, whose algebraic check is not literal play.
+- Then three independent packets: a kernel (`round22/r22d25_state.py`, `r22d25_search.py` and `test_r22d25.py`;
+  `search_step(snapshot, limits, budget)` returning candidate, exhausted, budget, unsupported or error); a checker
+  (`13-tutorial-runner/scripts/check_r22d25.py` and its test, reading only records and literal words); and a literal
+  lattice player (`13-tutorial-runner/scripts/literal_lattice.py` and its test). A last integration packet owns
+  `runner.py`, `check_run.py` and their tests, after RUN-3 and RUN-4.
+- Acceptance with outcomes known today: the R22D-16 case gives its 28 letters, passes `stepchk.py` and ends at
+  `dceb9359…`; an unrestricted seed 7102 search finds that word or an earlier passing one; after R22D-16 all 96 direct
+  cases are excluded; at seed 7108 the 66 exclusions and the shared case; at seed 7109 the two survivors of R22D-54
+  and R22D-24's single-letter result; mutations of a certificate that the checker must reject, cutoff tests, and a
+  small literal lattice run. Since R22D-42, the seed 7108 search must also find its word or an earlier passing word in
+  its order (the integrator's addition).
+- Uses: R22D-16, R22D-20, R22D-24, R22D-42, R22D-50 to R22D-55.
+
+### R22D-57. Phase handoffs, and the lattice phase is not played twist by twist (source; design)
+
+- Bulk to R22D-25: the bulk phase hands over its last committed, digest-checked state when no census rule fires or at
+  its budget, with the reason recorded (`bulk_no_rule` or `bulk_budget`), and the heights are then counted; a bulk
+  stop does not show that height 6 is gone. R22D-25 covers heights 2 and 4; a height-6 tier (R22D-37) plugs in at the
+  same dispatch point and receives the exact snapshot, a named target, the protection requirements and the limits.
+  It returns a literal candidate with digests and its own progress and length contract, or budget, exhausted or
+  unsupported; a lowering that does not land does not count as one of R22D-25's landings and does not inherit
+  964·n₀. A state outside every family reports unsupported, with its census and the catalogue's scope.
+- R22D-25 to the lattice phase: only when the off count is zero, with the exact final pose table and digest.
+- The lattice phase: `verify_late.py` evaluates the retained factors of the lattice word through their net sticker
+  permutations (lines 344 to 348) and plays only the corrections and the correction target on the simulator (lines
+  351 to 374), and `runner.py` takes solved from that report (lines 645 to 650). This checks a composed solution
+  exactly, not the literal play of the retained word from the handoff state, which the owner's acceptance test asks
+  for (`docs/wiki/decisions/owner-decisions-2026-10-18-machine-tutorial.md`). The same holds for the lattice phase
+  after E2 (stage 12 `README.md` section 11) and for the depth 20 run of the tutorial runner.
+- Needed: literal expansion and play of the retained factors and the corrections, recording played lengths, inverses
+  expanded in chronological order, input and output digests and the final solved digest; a budget stop reports its
+  state without solved; scheduled and played lengths are kept apart.
+- The integrator confirmed the reading in the source and timed the sticker-permutation model: one twist, one of the
+  1,200 primitives of `assets/primitives.npz` (4,596 to 4,600 stickers each) applied as a gather of the label array,
+  takes about 21 µs on the cloud machine, so the 166,777,936 retained twists of the depth 40 run would take about one
+  CPU hour. Not run; a research estimate, not performance evidence.
+- Uses: R22D-25, R22D-37.
+
+Open after round 4 of line (d): at the seed 7102 stop, after R22D-16 and R22D-43, 70 height-4 pieces in eight units
+(270: 1, 408: 19, 409: 6, 6780: 1, 32115: 31, 53620: 5, 53629: 3 and 61683: 4), with R22D-19 not tried again at that
+state, and steps like R22D-43, whose target is part of a unit, outside R22D-19 and R22D-25 as stated; the blockers of
+caps 179 and 252, now with grips that are not free or with alphabets after other progress (R22D-40, R22D-41); at the
+3000-twist stop the rest of R22D-37's families (three-letter words beyond R22D-34, middles of two letters) and cap
+274's three height-2 blockers (R22D-32); whether the bulk phase clears height 6 without a budget; an implementation of
+R22D-25 with R22D-37's tier and a practical S and T catalogue (R22D-50 to R22D-56); and a literal lattice player
+(R22D-57). The seed 7108 stop is at height 2 after R22D-42.
+
+### Round 5 of line (d)
+
+The senior reviewer took line (d) a fifth round at the fast tier, as two shards run at the same time, all results
+`minor`: height 4 at the seed 7102 stop after R22D-43 (R22D-60 to R22D-64) and height 6 at the 3000-twist stop of seed
+7302 (R22D-70 to R22D-77); R22D-65 to R22D-69 are not used. It found no step that lowers or lands a high unit without
+harm. At the seed 7102 stop it gave a pass for targets that are part of a unit, inside R22D-25's bounds (R22D-60), and
+found that pass and R22D-19 exhausted there (R22D-61, R22D-62), cap 150 still blocked (R22D-63) and cap 179's blockers
+fixed by every word over the clean grips of the state (R22D-64). At the 3000-twist stop every cap holds a lattice piece,
+so no single letter is protected (R22D-71); a second letter cannot repair a lowering of D, and D's commutators with
+middles of the same branch fail at any length (R22D-72, R22D-73); cap 274's blockers do not move over the fixed
+alphabets (R22D-70), C has no admissible class-1 letter (R22D-76), and a unit's representative does not certify the
+premise of the cell lemma (R22D-77). Of two rules that put height first, one takes no step there and the other plays
+seven letters and then has none, with 172 pieces left at height 6 (R22D-74, R22D-75). The computations are
+`scripts/round22/r22d61_audit.py`, `r22d70_cap274.py`, `r22d72_one_repair.py`, `r22d73_pins.py`,
+`r22d75_height_first.py` and `r22d76_class1.py`; the integrator re-ran them and got the outputs under `runs/round22/`
+with the same names, and checked R22D-75 with its own replay, `r22d75_check.py` (section 6). After the round the
+integrator ran the rule of R22D-75 at the census stops (the subsection after R22D-77).
+
+### R22D-60. Partial targets: a content pass for R22D-25 with the same bounds (rule; proved safe and finite)
+
+- Add to step 3 of R22D-25, after its whole-unit pass and before its protected-lowering and blocker passes: for each
+  height-4 piece p by piece ID, each clean cap c of p's branch that holds p, in ascending order, and each of the
+  twelve items j that lower p to height 2, in ascending order, let a = (c, j), Y = Z·a and D the complete class-Q
+  content at Y that contains p (every piece of its cell and domain, whatever its unit at Z). Require D to lie in the
+  off set O of Z, and keep the case only when p is the least height-4 piece of D. The target may be part of several
+  units of Z, as at R22D-43.
+- At Y take the fixed free class-Q and SAFE-ALL alphabets. Reject the case when D lies outside every free grip, when
+  its source cell has a home chamber that is occupied and outside every SAFE cap, or when another protected off
+  content shares that cell. Build the point model from every home-cell signature, vacant home cells included, and
+  every own content, closed under the free letters; identify Q geometrically, not by tree-branch numbers.
+- Then enumerate as R22D-19 does: ordered distinct free grips x, y sharing a class cell, one of them containing D's
+  cell; their two non-identity items; e = 1 to 60; W = (x, y, x⁻¹, y⁻¹)^e. Require D's point to reach a home point of
+  label 0, the whole five-point fibre of every other class-Q off content to be fixed, |Bad(W)| < 3,097, and, for V
+  empty or one retained SAFE letter, π_V⁻¹(Bad(W)) ⊆ holes(Y). Replay a·V·W·V⁻¹·a⁻¹ from Z and accept it when every
+  twist is admissible, D lands, every lattice piece of Z stays on the lattice and every other off piece of Z keeps its
+  exact pose (strict), or, with R22D-19's gate, keeps it or lands (strict′). Record the letters, the length and both
+  digests; recompute targets, alphabets and holes after an accepted word.
+- Safe and finite: LC-03 gives the admissibility and the common cell action of the free middle, whole-fibre fixation
+  returns the protected own contents exactly, freeness fixes foreign off pieces, and the vacancy inclusion keeps the
+  lattice in the middle; none of this uses whole-unit membership, and the replay from Z, with the tags of Z, checks
+  the endpoint contract. There are at most |H₄|·120·12 outer cases and 120·119·59²·60·6,601 middle and vacator slots
+  for each; the length stays 2 + 4e + 2|V| ≤ 244. Every accepted word lands a non-empty part of the off set and makes
+  no new off piece, so R22D-25's bounds, at most n₀ accepted steps and 964·n₀ letters, still hold, with either gate.
+  This bounds a catalogue; it is not coverage.
+- `stepchk.py --require-strict` checks the strict′ contract; a strict step also needs `others_landed` = 0 in the
+  report. The integrator's replay of R22D-16 reports `strict_prime` true with 41 other off pieces landed: strict′, as
+  its title says.
+- Uses: O8 (LC-03), R22D-19, R22D-22, R22D-25, R22D-43.
+
+### R22D-61. After R22D-43 every whole-unit case of R22D-19 is excluded (computed)
+
+- At `f0290f93…` (after R22D-16 and R22D-43) there are 145,695 lattice pieces, 31,355 at height 2 and 70 at height
+  4, and 234 clean caps. Cap 61 is the only clean cap that holds any height-4 piece, and it holds all 70, in the
+  eight original units 270 (1 piece), 408 (19), 409 (6), 6780 (1), 32115 (31), 53620 (5), 53629 (3) and 61683 (4).
+  The 70 pieces have two poses, both in branch 3 like cap 61, and the same twelve lowering items there: 15, 18, 22,
+  33 and 52 to 59.
+- The 96 unit–item cases, tested in the order split source cell, no free grip, occupied source cell: units 408, 32115
+  and 53620 have pieces in two source cells at every item (36 cases); units 53629 and 61683 meet no free grip at any
+  item (24); units 270, 409 and 6780 meet no free grip at items 15, 18, 22, 33, 52, 53, 54, 56 and 58 (27) and fail
+  the vacancy of their source cells at items 55, 57 and 59 (9). No case is left, so no W or V is enumerated. Without
+  the split test the count is 84 cases outside the free grips and 12 with occupied source cells, R22D-20's split.
+- This exhausts R22D-19 at this state, not steps 4 and 5 of R22D-25.
+- Uses: R22D-15, R22D-19, R22D-20, R22D-43.
+
+### R22D-62. R22D-60's content pass has no case at that state either (computed; proved)
+
+- Every seed of R22D-60 at `f0290f93…` is one of the 70 height-4 pieces with one of the twelve items of cap 61. At
+  each item the 70 fall into five rows by branch and source cell, of 1, 18, 8, 30 and 13 pieces; a row's obstruction
+  holds for every complete content inside it. Of the 60 rows, 51 meet no free grip (all five rows at items 15, 18,
+  22, 33, 52, 53, 54, 56 and 58, and at items 55, 57 and 59 the two rows that hold 43 of the pieces), and nine have a
+  source cell with an occupied home chamber outside every SAFE cap:
+
+  | item | source cell | high pieces | home chambers | occupied, outside SAFE | one of them |
+  |---|---|---|---|---|---|
+  | 55 | [84, 215] | 1 | 86 | 67 | 26922 |
+  | 55 | [65, 130, 215] | 18 | 111 | 17 | 19872 |
+  | 55 | [65, 215] | 8 | 86 | 68 | 21000 |
+  | 57 | [18, 110] | 1 | 86 | 10 | 16726 |
+  | 57 | [84, 110, 130] | 18 | 111 | 11 | 15207 |
+  | 57 | [84, 110] | 8 | 86 | 24 | 15164 |
+  | 59 | [21, 81] | 1 | 86 | 18 | 6393 |
+  | 59 | [14, 21, 108] | 18 | 111 | 17 | 6245 |
+  | 59 | [14, 21] | 8 | 86 | 68 | 175 |
+
+  Counted by seed and item: 759 outside the free grips, 81 with occupied source cells, none left.
+- Proof: a target outside every grip of the fixed free alphabet is fixed by every word over it, and a SAFE preparation
+  fixes it too. Otherwise a class word that lands an off piece whose source cell is X moves X by a rotation that is not
+  retained, so every home chamber of X is in Bad(W); the listed chamber is occupied and outside every SAFE cap, so it
+  stays occupied under every SAFE word and the vacancy inclusion fails. This holds for W and V of any length over the
+  same fixed alphabets.
+- So R22D-60 gives no step at this state, which stays at `f0290f93…` with 70 height-4 pieces. Open: mixed-class
+  middles, preparations that move off pieces, caps unlocked later, and last-letter repair without the vacancy
+  requirement in the middle (R22D-22).
+- Uses: R22D-15, R22D-20, R22D-60.
+
+### R22D-63. Cap 150 stays blocked by four pieces (computed)
+
+- At `f0290f93…` cap 150 has four straddlers: 6780 at height 4 and 26157, 26159 and 26170 at height 2. It holds units
+  270 (1 piece), 408 (19) and 409 (6) whole, 26 of the 70 height-4 pieces. It is not clean, so neither R22D-19 nor
+  R22D-60 can lower through it, and a step that landed 6780 alone would leave the other three straddlers in place.
+- Uses: R22D-20.
+
+### R22D-64. No word over the clean grips of that state moves cap 179's blockers (computed; proved)
+
+- At `f0290f93…` none of cap 179's 20 off straddlers (15193, 54926, 54928, 65131, 82294, 82297, 82304, 82312, 82313,
+  97168, 97169, 97223 to 97226, 97241, 101126, 101131, 101174 and 101176, all at height 2) lies inside any of the 234
+  clean caps; the state has 92 SAFE grips.
+- So every word whose letters use only these 234 grips, with any items, classes and length and every prefix
+  admissible, fixes all 20: each blocker starts outside every grip of the alphabet, so the next letter fixes it and it
+  stays outside. This is stronger than R22D-40, which fixed the free alphabet of the blocker's class and the SAFE
+  alphabet, and no such word lands either unit of R22D-40. A word that first moves other pieces to make a blocked grip
+  admissible and then uses it is not covered; such a grip is the one that first moves a blocker.
+- Uses: R22D-40.
+
+### R22D-70. Cap 274's three blockers are one unit that the fixed free and SAFE alphabets cannot move (computed; proved)
+
+- At the 3000-twist stop (`015d839e…`) the straddlers 44706, 44712 and 57467 of cap 274 all belong to unit 30989 (29
+  pieces, one frame, branch 4) and lie in the class cell [114, 124, 299], which has no home chamber. The state has 39
+  clean caps and no SAFE grip; its free grips number 10, 0, 13, 4 and 1 in branches 0 to 4, and the only free
+  branch-4 grip, 39, holds none of the three.
+- So every word over the fixed free alphabets and the SAFE alphabet fixes all three, at any length (the argument of
+  R22D-40). The runner's tail families (`zero_bad`, `pure`, `close`, `t1prime`) and R22D-19's commutator powers with
+  SAFE wrappers all need the target to move first and are excluded without replaying words. Grips that are not free
+  and alphabets recomputed after other progress are not covered. Here vacancy is not the obstruction: the source cell
+  has no home chamber, yet no free letter moves the blockers.
+- No word was played, and cap 274 stays blocked. It holds 26 lattice pieces, 2,182 at height 2, 252 at height 4 and
+  the 159 at height 6 of A and B. By exact products the same twelve items, 13, 17, 19 and 34 to 42, would lower all
+  159 to height 4 once the cap is clean; they are not admissible now.
+- Uses: R22D-32, R22D-40.
+
+### R22D-71. Every cap at the 3000-twist stop holds a lattice piece (computed)
+
+- The stop has 76,536 lattice pieces and 99,314, 1,085 and 185 at heights 2, 4 and 6. Counted from the occupied
+  chambers (`buffer.hole_set`) and checked against the inside sets of all 600 caps, no cap is free of lattice pieces.
+- So every admissible jumble letter takes a lattice piece off, and a retained letter changes no height: at this state
+  no single letter is a protected lowering or a strict′ landing, and question H2(a) has the answer zero caps. Words of
+  several letters that repair the end, and preparations that change what a cap holds, are not covered.
+- Uses: R22D-32, R22D-36.
+
+### R22D-72. No second letter repairs a lowering of D (computed; proved)
+
+- Words a·b, with a one of D's 24 whole-unit lowering letters (R22D-33) and b any non-identity letter: 24·35,400 =
+  849,600 words. Each lattice piece that a takes off must be inside b's cap, or it stays off; landing one of them makes
+  the product of b's and a's rotations retained, since its start pose is, and then every target piece that b moves is
+  back at height 6. So b must hold all of them and miss the lowered target.
+- After every lowering at cap 64 (970 lattice pieces off) and at cap 70 (969) the only cap that holds all of them is
+  the cap itself, which holds the target; two pieces certify it each time (1257 and 1587 at cap 64, 2833 and 6588 at
+  cap 70). So no such word protects D, and none needed a replay. Two-letter words that prepare first and lower second
+  are not covered.
+- Uses: R22D-33, R22D-71.
+
+### R22D-73. D's commutators fail for middles of the same branch at any length (computed; proved)
+
+- For each of the 24 lowering letters a, let Q be the branch of the lowered target. Each representative, 152672 and
+  152673, then lies in exactly two Q-caps, and each of these caps has a straddler that lies inside no Q-cap:
+
+  | a | Q | (cap, straddler inside no Q-cap) |
+  |---|---|---|
+  | (64, 15) | 1 | (94, 1587), (181, 1587) |
+  | (64, 18) | 2 | (77, 1587), (90, 1587) |
+  | (64, 22) | 4 | (29, 1587), (34, 1587) |
+  | (64, 33) | 3 | (36, 1587), (182, 1587) |
+  | (64, 52) | 4 | (34, 1587), (135, 1587) |
+  | (64, 53) | 4 | (29, 1587), (135, 1587) |
+  | (64, 54) | 3 | (89, 1587), (182, 1587) |
+  | (64, 55) | 1 | (134, 1587), (181, 1587) |
+  | (64, 56) | 2 | (4, 1587), (77, 1587) |
+  | (64, 57) | 3 | (36, 1587), (89, 1587) |
+  | (64, 58) | 1 | (94, 1587), (134, 1587) |
+  | (64, 59) | 2 | (4, 1587), (90, 1587) |
+  | (70, 12) | 1 | (24, 4972), (102, 18071) |
+  | (70, 16) | 3 | (120, 4972), (196, 68579) |
+  | (70, 20) | 2 | (77, 4972), (86, 2038) |
+  | (70, 24) | 2 | (77, 4972), (90, 16807) |
+  | (70, 25) | 4 | (82, 1677), (143, 4205) |
+  | (70, 26) | 1 | (24, 4972), (31, 35067) |
+  | (70, 27) | 3 | (120, 4972), (286, 32274) |
+  | (70, 28) | 2 | (77, 4972), (279, 7477) |
+  | (70, 29) | 4 | (22, 10327), (82, 1677) |
+  | (70, 30) | 1 | (24, 4972), (48, 7123) |
+  | (70, 31) | 4 | (82, 1677), (242, 5681) |
+  | (70, 32) | 3 | (69, 6121), (120, 4972) |
+
+- A piece inside no Q-cap never moves under a class-Q word, so it stays a straddler of its cap and these caps are
+  never admissible; the representative then never moves under W, a⁻¹ returns it to its height-6 pose in branch 0, and
+  W⁻¹, whose rotations fix the vertex w_Q at distance 7 from it, leaves it at height 6 or 8. So a·W·a⁻¹·W⁻¹ never
+  lowers or lands either unit of D, for W of any length over class Q, whether or not the word is protected. This
+  exhausts family (3) of R22D-37 for D (169,920 one-letter and 1,203,033,600 two-letter middles). Mixed-class middles
+  and the rest of the three-letter family stay open.
+- Uses: R22D-29, R22D-33, R22D-35, R22D-37.
+
+### R22D-74. A height-monotone single-letter rule stops at once (rule; proved finite; computed)
+
+- Rule: at a state of largest left height at most 6, try the 35,400 non-identity letters in (grip, item) order and
+  accept one only when no piece's height rises, every lattice piece stays on the lattice and some height falls;
+  recompute after each; hand the state to R22D-25 when its largest height is at most 4; report stuck when the
+  catalogue is exhausted and a budget stop when interrupted. Φ = Σ H(p)/2 falls on every accepted letter, so there are
+  at most Φ steps; Φ = 99,314 + 2·1,085 + 3·185 = 102,039 at the stop.
+- At the stop it takes no step: by R22D-71 every admissible jumble letter takes a lattice piece from height 0 to 2.
+  The lowering (64, 15), for one, takes 970 lattice pieces off and raises the sum of heights by 1,216. Longer words
+  whose ends are height-monotone are not covered.
+- Uses: R22D-71.
+
+### R22D-75. A height-first rule plays seven letters and then has none (rule; proved finite; computed; replayed)
+
+- Rule: at a state of largest left height at most 6, single letters in three families, first those that lower n₆,
+  then those that keep n₆ and lower n₄, then those that keep both and lower n₂, each in (grip, item) order. A letter
+  must be admissible and leave no piece above height 6; it may take lattice pieces off and change other off poses;
+  letters that keep all three counts are rejected. Recompute after each; hand the state to R22D-25 when n₆ = 0; report
+  stuck when all three families are exhausted and a budget stop when interrupted. R = n₆·B² + n₄·B + n₂ with
+  B = 177,121 falls on every accepted letter, so there are at most R steps. The height guard matters: moving height-6
+  pieces to height 8 must not count.
+- The prune is exact. For a jumble letter of class Q, let F_h count the pieces of other branches at height h inside
+  its cap, L_h the own-branch pieces at height h that it lowers, and L₀ the lattice pieces inside: the new n₈ is F₆ and
+  (n₆, n₄, n₂) change by (F₄ − L₆, F₂ + L₆ − F₄ − L₄, L₀ + L₄ − F₂ − L₂), since pieces of other branches rise by 2 and
+  own-branch pieces keep their height or fall by 2. The prediction is checked against the simulator after every
+  accepted letter.
+- From the stop ((n₂, n₄, n₆) = (99,314, 1,085, 185), 100,584 off, N = 130,386) it plays seven letters, each of
+  length 1:
+
+  | step | letter | (n₂, n₄, n₆) | off | N | end digest |
+  |---|---|---|---|---|---|
+  | 1 | (64, 15) | (99,935, 1,098, 172) | 101,205 | 130,670 | `446f4e00…` |
+  | 2 | (185, 14) | (100,797, 1,093, 172) | 102,062 | 131,082 | `cc5fa964…` |
+  | 3 | (357, 12) | (101,801, 1,026, 172) | 102,999 | 131,600 | `3a4c0a56…` |
+  | 4 | (471, 12) | (103,525, 1,019, 172) | 104,716 | 132,288 | `0251a333…` |
+  | 5 | (263, 14) | (103,304, 1,019, 172) | 104,495 | 132,304 | `fd7a61a6…` |
+  | 6 | (407, 13) | (103,146, 1,019, 172) | 104,337 | 132,504 | `4f58b063…` |
+  | 7 | (523, 12) | (103,103, 1,019, 172) | 104,294 | 132,702 | `1ff0061f…` |
+
+- Then it is stuck: 562 blocked caps (33,158 letters), 11 caps excluded by the count bound (649), 297 retained
+  letters and 1,296 letters that do not improve the counts, all 35,400. Only step 1 lowered height-6 pieces (the 13 of
+  D, to height 4); the 172 of A, B and C keep their exact start poses, and cap 274 still has the blockers of R22D-70.
+  The run took 3,710 more pieces off and raised N by 2,316. This is a stop of this rule, not a statement about
+  height 6. The integrator replayed the seven letters with its own script (`r22d75_check.py`) and found the same end
+  digest, the 172 at their exact start poses, the 13 of D at height 4, and the same three straddlers of cap 274.
+- Uses: R22D-25, R22D-33, R22D-70.
+
+### R22D-76. C has no admissible class-1 letter, and cap 290's blockers can move (computed; proved)
+
+- Unit 108996 (9 pieces) lies in caps 104, 116, 140, 183, 190, 219, 283, 290, 311 and 338, and unit 137233 (4 pieces)
+  in the same caps except 183. Their own-branch caps are 104, 290 and 311, each blocked by height-2 pieces only:
+
+  | cap | lattice | height 2 | height 4 | height 6 | straddlers |
+  |---|---|---|---|---|---|
+  | 104 | 417 | 2,662 | 16 | 13 | 30 |
+  | 290 | 1,318 | 1,262 | 16 | 13 | 70 |
+  | 311 | 875 | 1,935 | 0 | 13 | 107 |
+
+- The state has no clean class-1 cap, so no class-1 word can start. Blocker 2430 of cap 290 and blocker 97359 of cap
+  311 lie inside no class-1 cap, so no class-1 word ever makes those caps admissible. Over the fixed free and SAFE
+  alphabets all 30 blockers of cap 104 and 7 of the 107 of cap 311 cannot move (the first are 31751, branch 0, and
+  92054, branch 2). All 70 blockers of cap 290 are branch-3 pieces inside the free grip 136 or 301 (the free branch-3
+  grips are 136, 277, 301 and 363): a prerequisite for unlocking cap 290 with free branch-3 words, not a word.
+- Uses: R22D-32, R22D-40.
+
+### R22D-77. A unit's representative does not certify the premise of the cell lemma (computed)
+
+- The high units of R22D-32 group pieces by pose and inside vector, not by the whole in, out and straddle vector. D:
+  unit 152672 has 3 pieces wholly in the cell [64, 70, 172], which has no home chamber, and 9 that straddle cut 32;
+  unit 152673 straddles cut 172. C: pieces 108996, 137238, 137242 and 137244 straddle cut 267, and the other nine lie
+  wholly in [104, 290, 311], whose 111 home chambers are all vacant; unit 108996 is {108996, 137234, 137244, 137245,
+  139773, 146949, 146950, 146952, 155363} and unit 137233 is {137233, 137238, 137242, 137243}, each with two of the
+  straddlers.
+- So none of the four units meets the premise of R22D-28 that the whole target lies in one class cell, and testing only
+  the representative (152672 or 137233) would pass it wrongly. Check every target piece before using R22D-28 or a
+  cell-by-cell argument. Partial targets among the pieces that do not straddle need their own protection check.
+- Uses: R22D-28, R22D-32.
+
+### The height-first rule at the census stops (computed; the integrator's experiment)
+
+- The rule of R22D-75, with its three families, its tests and its exact prediction unchanged, run until no piece is
+  above height 2 (R22D-75 hands over at n₆ = 0), at the census stops that have height-4 pieces and none at height 6:
+  the seed 7102 stop after R22D-43 and the stops of the depth 200, 400 and 1000 records. Each state is rebuilt from
+  its record, every twist admissible and certain, and the prediction is checked against the simulator after every
+  letter (`scripts/round22/r22d75_seed7102.py` and `r22d75_census.py`, section 6).
+
+  | stop | (n₂, n₄): start → end | off: start → end | N: start → end | letters | end |
+  |---|---|---|---|---|---|
+  | seed 7102 after R22D-43 | (31,355, 70) → (33,604, 0) | 31,425 → 33,604 | 32,762 → 33,818 | (61, 15) | height 2, `c450bb2f…` |
+  | depth 200, seed 7105 | (74,541, 513) → (66,601, 118) | 75,054 → 66,719 | 65,888 → 63,466 | (237, 14), (56, 13), (311, 13), (363, 12), (486, 13) | stuck, 528 caps blocked, `44b2e7a0…` |
+  | depth 400, seed 7109 | (72,396, 607) → (76,826, 17) | 73,003 → 76,843 | 77,814 → 80,352 | (158, 13), (252, 13), (406, 14), (588, 13), (158, 14), (300, 12), (300, 13) | stuck, 545 caps blocked, `b334a2dc…` |
+  | depth 1000, seed 7103 | (80,919, 390) → (81,428, 352) | 81,309 → 81,780 | 87,820 → 88,600 | (298, 13), (345, 14), (263, 14) | stuck, 548 caps blocked, `5d99fad1…` |
+
+- At the seed 7102 stop one letter of the second family lowers all 70, the eight units that R22D-43 left, all in the
+  clean cap 61, and the stop is at height 2. The letter is not protected: cap 61 holds 2,361 lattice pieces, 533
+  own-branch pieces at height 2 and the 70; after the letter 2,782 of them are at height 2 and 182 on the lattice, so
+  2,361 lattice pieces go off, 182 pieces land and N rises by 1,056 (the integrator's count, `r22d75_cap61.py`).
+- Where the rule stops, almost every cap is blocked. Letters of the third family come between lowering letters: at
+  depth 200 the start had no letter of the first two families, and after the first letter, of the third family, the
+  second family had one.
+- Every census record here ended at phase U's time limit, not stuck (`11-scramble-census/README.md`). So the runs
+  show what the rule does at those states, not what follows phase U's end; with R22D-75 they show that blocked caps
+  are what stops the rule.
+- Uses: R22D-43, R22D-75.
+
+Open after round 5 of line (d): at the seed 7102 stop (`f0290f93…`) the 70 height-4 pieces, with R22D-19 and R22D-60
+exhausted there: mixed-class middles, preparations that move off pieces, last-letter repair without the vacancy
+requirement in the middle (R22D-22), and grips that become clean only after other progress, the only way past cap 179's
+blockers (R22D-64) and cap 150's four straddlers (R22D-63). At the 3000-twist stop: protected words of several letters
+(R22D-71), mixed-class middles for D (R22D-73), cap 274 with grips that are not free or alphabets after other progress
+(R22D-70), cap 290 through its 70 movable blockers (R22D-76), and whether the bulk phase lowers height 6 with more time.
+From round 4: the blockers of cap 252 (R22D-41), an implementation of R22D-25 with R22D-37's tier and R22D-60's pass
+(R22D-50 to R22D-56), and a literal lattice player (R22D-57). After the integrator's experiment: the stops of the
+height-first rule at the census stops, where almost every cap is blocked, and how the rule combines with phase U,
+whose time-limit stops these are.
+
+### Round 6 of line (d)
+
+The senior reviewer took line (d) a sixth round at the fast tier, as two shards run at the same time, all results
+`minor`: shard U, unlocking the blocked caps at the 3000-twist stop of seed 7302 (R22D-80 to R22D-86), and shard W
+(R22D-90 to R22D-97; see below), one rule that combines phase U of the census with the height-first families. After
+shard U a joint attack on caps 311 and 290 followed, two sealed analyses and a cross-examination at the highest effort,
+standard tier, with the integrator's pair family and deciding experiment (R22D-87 to R22D-89; see below). Shard U was
+asked, at the state after R22D-75's seven letters (`1ff0061f…`) and at the stop (`015d839e…`), for the unlock graph of
+caps 274, 104, 290 and 311, an unlock family for the rule of R22D-75 with a termination proof and a run, short unlocking
+words for cap 274 if the run stopped there, and, time permitting, the same for C's caps. It gave the unlock family U
+(not phase U of the census) and a rule of its own that tries U between a height-6 family and height-4 and height-2
+families narrower than R22D-75's; the rule is finite, which is not coverage, and has two stuck ends by design (R22D-81).
+From `1ff0061f…`, where R22D-75's rule is stuck, that rule plays five literal letters and leaves no piece above height
+4, not protected (R22D-80); with R22D-75's seven they form a twelve-letter literal word from the stop, made by two rules
+in turn. From the stop itself the rule of R22D-81 alone hands over after six letters, (64, 15) and R22D-80's five
+(R22D-80). Cap 274 opens with one retained letter at the clean grip 124, which is not free, from the stop as well
+(R22D-85), so no word of two or three letters was searched. Every cap is in the unlock closure at both states, which a
+first admissible use of a cap needs; no sufficiency is proved (R22D-82). The blockers of the four caps are recorded
+piece by piece (R22D-83, R22D-84). Towards cap 290 the unlock family stalls at 38 of its 70 blockers (R22D-86). The
+reviewer's computations are `scripts/round22/r22d80_check.py`, its replay of R22D-80, and `r22d82_unlock_graph.py`, for
+R22D-82 to R22D-84; the integrator re-ran both with the reviewer's commands and got the same outputs. The integrator
+implemented the rule of R22D-81 in its own script, `r22d81_rule.py`, which chose the same five letters with every
+digest; ran it from the stop with no prefix and, as a differential test, with the target kept absent; counted the two
+stuck ends at `1ff0061f…` with `r22d81_stuck_ends.py`; and replayed R22D-85 and R22D-86 with its own scripts,
+`r22d85_two_letters.py` and `r22d86_cap290.py`, which give every computed number and digest of the review. The outputs
+are under `runs/round22/` (section 6). Cloud lines ran at the same time as the joint attack: one searched caps 311
+and 290 (R22D-89), three took fresh 3000-twist scrambles through the census and both rules (a fourth was still
+running), and one took the height-4 layer at `bbef1c8e…` further (the last two subsections before the open items).
+
+### R22D-80. R22D-81 from where R22D-75 is stuck: five letters lower the last 172 height-6 pieces, not protected (computed; replayed)
+
+- Start: `1ff0061fc5863c8ccbc1d734b003ff49afa5b58969b0031e51fd1e5cf1a07d81`, the state after R22D-75's seven letters,
+  where R22D-75's rule is stuck, with (n₂, n₄, n₆) = (103,103, 1,019, 172), 104,294 off and N = 132,702. No piece is
+  above height 6, so R22D-81's precondition holds; its target is τ = 274, with u = 3. The rule of R22D-81 plays five
+  letters, each of length 1. In the table τ is the target in force when the letter is chosen and u its straddler
+  count after the letter; the script prints the target recomputed after an H6 letter instead (104 with u = 30 after
+  step 2, none after step 5).
+
+  | step | letter | family | τ | u | (n₂, n₄, n₆) | off | N | end digest |
+  |---|---|---|---|---|---|---|---|---|
+  | 1 | (124, 2) | U | 274 | 0 | (103,103, 1,019, 172) | 104,294 | 132,876 | `9a227291…` |
+  | 2 | (274, 13) | H6 | 274 | 0 | (102,593, 926, 13) | 103,532 | 132,572 | `c9cefc31…` |
+  | 3 | (46, 1) | U | 104 | 3 | (102,593, 926, 13) | 103,532 | 132,764 | `7465613d…` |
+  | 4 | (46, 3) | U | 104 | 0 | (102,593, 926, 13) | 103,532 | 132,710 | `198e936f…` |
+  | 5 | (104, 14) | H6 | 104 | 0 | (102,960, 936, 0) | 103,896 | 132,930 | `bbef1c8e…` |
+
+  The end digest in full is `bbef1c8ec0de78dead1473322a8c1236e48f9ccfe0017ce724461bb7f37ae299`. After step 2 the
+  target is cap 104, with 30 straddlers; after step 5 no piece is at height 6, so the largest height is 4, and the
+  rule hands the state on.
+- Every prefix is admissible and certain and leaves no piece above height 6. The three U letters are retained: they
+  change no height and keep every height-6 pose exactly; (124, 2) takes cap 274's straddlers from 3 to 0, and (46, 1)
+  and (46, 3) take cap 104's from 30 to 3 to 0. (274, 13) lowers the 159 pieces of A and B to height 4 and
+  (104, 14) the 13 of C; all 172 end at height 4.
+- Two rules in turn. R22D-75's rule plays seven letters from the stop and is stuck at `1ff0061f…`; from there the
+  rule of R22D-81 plays these five. Together they form a twelve-letter literal word that takes the stop, with
+  (99,314, 1,085, 185), 100,584 off and N = 130,386, to the counts above; it is made by two rules in turn, not by one
+  rule's run. The rule of R22D-81 run from the stop with no prefix plays (64, 15), as R22D-75's does, and then the U
+  letter (124, 2) (u from 3 to 0, `f4b58133…`), not R22D-75's (185, 14); after these two it plays the other four letters
+  of R22D-80, (274, 13), (46, 1), (46, 3) and (104, 14), in the same families and with the same targets and values of u,
+  and hands the state on after six letters, without the other six letters of R22D-75, at
+  `e108778ecb2533df175d8f7c1cf3b35396d4589f4dde86c017fc2688040fe150` with (n₂, n₄, n₆) = (99,701, 1,015, 0), 100,716 off
+  and N = 130,892. Under the owner's acceptance test, a machine that follows the rules from the current state, the
+  switch from one rule to the other has to be a test of the state. One candidate, R22D-75's letter when it has one and
+  R22D-81's otherwise, gives the twelve-letter word exactly when R22D-75's rule has no letter at `c9cefc31…` and
+  `7465613d…`, where R22D-81 played U letters; that is not checked, and that candidate is not proved finite. So at this
+  stop R22D-81's rule alone hands over and needs no switch; the switch in general stays open.
+- Not protected, the U letters included: (124, 2), (46, 1) and (46, 3) are retained and change no height, but they
+  move the off pieces in their caps to new poses without landing them; N changes by +174, +192 and −54. Over the five
+  letters, 1,052 pieces that were on the lattice at `1ff0061f…` are off at the end, 1,450 that were off are on the
+  lattice, and N rises by 228. The end still has 936 pieces at height 4. This is one run of the rule at one state;
+  R22D-81's finiteness says nothing about other states.
+- The integrator re-ran the reviewer's replay (`r22d80_check.py`: the five rows, the 172 at height 4 and the 1,052),
+  and its own implementation of the rule chose the same five letters (R22D-81).
+- Uses: R22D-75, R22D-81.
+
+### R22D-81. An unlock family for the height-first rule, with a target read from the height-6 pieces (rule; proved finite; computed; replayed)
+
+- Rule. At a state of largest left height at most 6 (R22D-75's precondition), it reads the current state only. H₆ is
+  the set of pieces at height 6, and n₆, n₄ and n₂ count the pieces at heights 6, 4 and 2.
+  - Target. For each cap c that holds a piece of H₆ whole, skip c when one of the pieces of H₆ it holds whole is of a
+    branch other than c's; otherwise let k(c) be the largest number of them that one of c's 59 non-identity items
+    lowers to height 4, by exact products (`trees.qmul`, `trees.dist`). τ is the cap with k(c) > 0 of largest k(c),
+    ties to the lower cap index, clean and blocked caps alike. With no such cap τ is absent and u = 0; otherwise u is
+    the number of straddlers of τ, every piece tested on its own (`eb6.straddler_set`; R22D-77). τ depends only on H₆
+    and the exact poses of its pieces, so it stays the same while they do; it does not change because τ becomes clean.
+  - Families, in this order, each through the 35,400 non-identity letters in (grip, item) order. Every letter must be
+    admissible and certain and leave no piece above height 6:
+    - H6: n₆ falls.
+    - U (the unlock family; not phase U of the census): n₆ is unchanged, every piece of H₆ keeps its exact pose, and
+      u falls.
+    - H4: n₆ is unchanged, every piece of H₆ keeps its exact pose, u does not rise, and n₄ falls.
+    - H2: n₆ and n₄ are unchanged, every piece of H₆ keeps its exact pose, u does not rise, and n₂ falls.
+  - Play the first letter found and recompute: τ and its table after an H6 letter, u after every letter. Every
+    accepted letter leaves every height at most 6, so the precondition holds at every state of a run. Hand the state
+    on (to R22D-25) when n₆ = 0; its largest height is then at most 4. Report stuck, with τ, u and the counts, when all
+    four families are exhausted; report a budget stop separately.
+- Finite. Let Φ = n₆·B³ + u·B² + n₄·B + n₂ with B = 177,121, one more than the number of pieces, so each coordinate
+  is at most 177,120. An H6 letter lowers n₆ by at least 1; the other coordinates, τ included, may change, but their
+  part of Φ is at most (B − 1)(B² + B + 1) = B³ − 1, so Φ falls. A U, H4 or H2 letter keeps n₆ and the exact pose of
+  every piece of H₆; with n₆ unchanged no other piece has reached height 6, so H₆, its poses and τ are unchanged and u
+  is counted for the same cap. U lowers u, and n₄·B + n₂ ≤ B² − 1; H4 lowers u, or keeps it and lowers n₄, and
+  n₂ ≤ B − 1; H2 lowers u, or keeps u and n₄ and lowers n₂. So Φ falls with every accepted letter. It is a
+  non-negative integer, so the rule plays at most Φ letters (Φ = 172·B³ + 3·B² + 1,019·B + 103,103 at `1ff0061f…`),
+  and each pass is a finite list of exact tests: at most 35,400 letters per family, and 600·59 products per piece of
+  H₆ for the target. The rule ends at a handoff, stuck, or at the budget. That it ends is not coverage: stuck is a
+  possible end, and nothing here says when the end is a handoff.
+- The guards are needed. Keeping the poses of H₆ alone does not stop a height-4 piece from rising to height 6, which
+  changes H₆ and can change τ; so U, H4 and H2 also keep n₆. R22D-75's tests for its second and third families keep n₆
+  but not the poses of H₆ (an own-branch height-6 piece that the item does not lower keeps height 6 at a new pose, and a
+  letter with F₄ = L₆, in R22D-75's notation, lowers some height-6 pieces while raising as many to height 6), and they
+  do not bound u; since u stands above n₄ and n₂ in Φ, a letter that raised u or changed τ could raise Φ. So inserting U
+  between R22D-75's families, with their tests unchanged and the potential (n₆, u, n₄, n₂), is not justified. No actual
+  cycle is claimed. The rule here is a rule of its own: H6 is R22D-75's first family, but H4 and H2 are narrower than
+  its second and third, and U comes before them, so the two rules can choose different letters at the same state.
+- Two stuck ends, by design; unlocking τ does not give a lowering through it. First, U, H4 and H2 keep every height-6
+  pose, so a height-6 piece that straddles τ never moves: u stays at least the number of such straddlers, τ stays
+  blocked, and τ, which is read from the pieces it holds whole, changes only after an H6 letter at another cap. Second,
+  at a clean τ, which holds no height-6 piece of another branch whole, a jumble item changes n₆ by F₄ − L₆ in R22D-75's
+  notation, F₄ being the number of height-4 pieces of other branches inside τ, and a retained item changes no height; so
+  an H6 letter at τ exists exactly when k(τ) > F₄. The target is ranked by k alone and U does not keep F₄, and H4 and H2
+  have no letter at τ, which holds height-6 pieces whole. So with F₄ ≥ k(τ) the rule can stop stuck with u = 0, unless
+  an H6 letter elsewhere comes first, or H4 and H2 letters elsewhere happen to lower F₄ below k(τ). At `1ff0061f…`: the
+  integrator's count confirms that cap 150 (k = 84) is of the first kind, with 27 of its 44 straddlers at height 6, and
+  that no cap is of the second (F₄ = 0 at all five caps of the table), so cap 274 is of neither kind
+  (`r22d81_stuck_ends.py`). Leaving out of the target table every cap that a height-6 piece straddles would remove the
+  first end and keep the proof of finiteness, since whether a piece straddles a cap depends only on its pose; that
+  variant was not run.
+- Computed at `1ff0061f…`. The target table, as (cap, k), is (104, 13), (150, 84), (274, 159), (290, 13) and
+  (311, 13), so τ = 274 with u = 3; cap 118 holds all 159 of A and B but is of branch 1 and is skipped. R22D-75's
+  three families have no letter there: 562 blocked caps (33,158 letters), 11 caps excluded by the count bound (649),
+  297 retained letters and 1,296 letters that do not improve the counts. For U, 33,158 letters are at blocked caps,
+  2,183 at the 37 clean caps that hold none of the three straddlers whole, and the other 59 are the items of cap 124,
+  all admissible, all keeping n₆ and every pose of H₆. u after items 1 to 59 of cap 124:
+
+      5, 0, 13, 28, 0, 2, 38, 20, 63, 10, 12, 18, 30, 84, 0, 10, 3, 33, 0, 26, 16, 25, 0, 15, 19, 1, 44, 0, 151, 0,
+      0, 11, 36, 1, 34, 0, 0, 4, 7, 12, 48, 0, 0, 27, 18, 151, 0, 7, 30, 37, 0, 0, 16, 13, 32, 10, 155, 8, 61
+
+  So (124, 2) is the first U letter. After (274, 13) the table is (104, 13), (290, 13), (311, 13), and τ = 104 with
+  u = 30. At each of the three U steps the H6 family had no letter (562 blocked caps).
+- The rule takes the first letter that lowers u, not the one that lowers it most: at `c9cefc31…` item 2 of cap 46
+  alone takes u from 30 to 0, but item 1 (u = 3) comes first, so cap 104 took two U letters.
+- The integrator's implementation, `r22d81_rule.py`, reads a snapshot or a census record, with an optional prefix of
+  letters. H6, H4 and H2 take their candidates from R22D-75's exact count prediction and count bound, checked against
+  the simulator after each letter; U and the guards of H4 and H2 apply the letter to a copy of the state. U is tried
+  only at clean caps that hold a straddler of τ whole and no piece of H₆ whole, and H4 and H2 skip caps that hold a
+  piece of H₆ whole. Both prunes are exact: a letter fixes every piece outside its cap, and a piece that straddles its
+  cut makes the cap blocked, so a clean cap that holds no straddler of τ whole moves none of them and u cannot fall; a
+  non-identity letter changes the exact pose of every piece inside its cap. A start with a piece above height 6 prints
+  NOT_APPLICABLE; otherwise a run ends with HANDOFF, STUCK or BUDGET. The budget is tested inside the target computation
+  and between the trial letters of U as well. A run that prints none of these four lines has no outcome: a failed check
+  of R22D-75's prediction stops it without one, and so does the CPU limit set as a backstop 600 seconds past the budget,
+  after the load and the prefix. Run from the stop with R22D-75's seven letters as prefix, it chose R22D-80's five
+  letters with every digest, the same target table at `1ff0061f…` and the same 59 values of u at cap 124, and handed
+  over, and it prints u after every item of cap 46 at both U steps there. As a differential test of H6, H4 and H2, with
+  the target kept absent (`--no-target`) and the prefix (64, 15), from `446f4e00…` it replayed R22D-75's six letters
+  (185, 14), (357, 12), (471, 12), (263, 14), (407, 13) and (523, 12) through H4 and H2 to `1ff0061f…` and then reported
+  stuck.
+- Uses: R22D-25, R22D-75, R22D-77.
+
+### R22D-82. Every cap is in the unlock closure, and caps 274, 104, 290 and 311 are at depth one (computed; proved)
+
+- Unlock closure. As in R22D-07, a cap is unlocked when no piece straddles its cut. At a state let L₀ be the set of
+  clean caps and L_{i+1} the set L_i together with every cap each of whose straddlers lies whole in a cap of L_i (not
+  necessarily the same cap for all of them); L is the union, and a cap's depth is the least i with the cap in L_i.
+- Computed from the complete in, out and straddle table of every piece at every cap, each piece tested on its own, as
+  R22D-77 requires (`all_labels` in the script; at the stop the table at `1ff0061f…` with the rows of the 18,730 pieces
+  whose exact pose differs recomputed): at both states L is all 600 caps, in layers of 38, 107, 130, 86, 93, 84, 15 and
+  47 caps at `1ff0061f…` and 39, 118, 125, 80, 92, 84, 15 and 47 at the stop. The straddler sets of the four caps agree
+  with `eb6.straddler_set`: 3, 30 and 70 for caps 274, 104 and 290 at both states, as at the stop in R22D-70 and
+  R22D-76, and for cap 311 182 at `1ff0061f…` and 107 at the stop (R22D-76). All four are blocked and at depth one, with
+  these covers:
+
+  | cap | blockers | clean caps that hold them whole |
+  |---|---|---|
+  | 274 | 3 | 124 (all three) |
+  | 104 | 30 | 46 (all 30) |
+  | 290 | 70 | 136 and 301: 20 in 136 only, 38 in 301 only, 12 in both |
+  | 311 | 182 at `1ff0061f…`, 107 at the stop | 185, 263 and 364; at the stop 185, 263, 364 and 407 |
+
+  So no straddler of the four caps lies whole in no cap of L.
+- Lemma (proved). At any state, a cap outside L stays blocked under every admissible word, so every admissible word
+  uses only caps of L. Proof: a cap c outside L has a straddler p that lies whole in no cap of L (otherwise c would be
+  in L). p straddles no cap of L either: clean caps have no straddler, and a cap of L_{i+1} outside L_i is there only
+  because each of its straddlers lies whole in a cap of L_i. So p lies outside every cap of L. A letter fixes every
+  piece outside its cap, so by induction every admissible word over L fixes p, and, as in R22D-07's Lemma A, a piece
+  that a word fixes keeps what it straddles: p still straddles c, and c stays blocked. Hence the first letter of an
+  admissible word at a cap outside L cannot exist. This holds whatever the letters do to other containments, which is
+  more than the packet asked (words that keep the containments used).
+- Being in L is necessary for a first admissible use of a cap, but no sufficiency is proved: cap 290 is at depth one,
+  yet no clean cap holds all 70 of its blockers, so no single letter unlocks it at either state, and depth is not word
+  length (R22D-86). Here no cap is excluded.
+- The integrator re-ran `r22d82_unlock_graph.py` and got the same output.
+- Uses: R22D-07, R22D-70, R22D-76, R22D-77.
+
+### R22D-83. The holders of the blockers of caps 274, 104 and 290 (computed)
+
+- From R22D-82's tables, the rows are the same at both states. A row is a unit (R22D-70's block and domain
+  construction, with its number of pieces), blockers of that unit, and every cap that holds those blockers whole;
+  every blocker is classified on its own. The blockers were all at height 2 at the stop (R22D-32, R22D-76).
+
+  Cap 274 (branch 3), blockers of branch 4:
+
+  | unit (pieces) | blockers | caps that hold them whole |
+  |---|---|---|
+  | 30989 (29) | 44706, 44712, 57467 | 114, 118, 124, 150, 160, 235, 258, 299 |
+
+  Cap 104 (branch 1), blockers of branch 0:
+
+  | unit (pieces) | blockers | caps that hold them whole |
+  |---|---|---|
+  | 31751 (9) | 31751 | 21, 27, 43, 46, 72, 75, 84, 122 |
+  | 31751 (9) | 42970, 118974, 118983 | 21, 27, 43, 46, 72, 75, 84, 122, 157 |
+  | 56591 (104) | 74135, 74136, 74152, 74155, 74156, 74157, 74160, 74161, 74162, 91561, 96902, 96906, 96915 | 21, 27, 43, 46, 72, 84, 122, 157, 176 |
+  | 56591 (104) | 74151 | 27, 43, 46, 72, 84, 122, 176 |
+  | 59735 (45) | 77519, 77520, 77526, 77527 | 21, 27, 46, 72, 84, 122, 157, 176 |
+  | 59735 (45) | 66124, 66190, 66191, 77511, 77514, 83025, 83031, 83036 | 27, 46, 72, 84, 122, 157, 176 |
+
+  Cap 290 (branch 1), blockers of branch 3:
+
+  | unit (pieces) | blockers | caps that hold them whole |
+  |---|---|---|
+  | 2428 (86) | 8828, 8832 | 276, 301, 302, 348, 355, 362, 375, 392 |
+  | 2428 (86) | 2448, 2452, 2458, 2470, 2476, 2478, 2479, 2494, 2495, 2496, 8801, 8802, 8812, 8814, 8823, 8824, 8831, 8836, 8837, 8838, 8852 | 301, 302, 348, 355, 362, 375, 392 |
+  | 2428 (86) | 2434 | 301, 348, 355, 362, 375, 392 |
+  | 2428 (86) | 2430, 8799, 8800 | 301, 348, 355, 375, 392 |
+  | 23194 (33) | 23194, 23196, 23198, 23199, 23202, 23203, 23204, 25273, 25274, 25279, 25280, 26886 | 99, 133, 136, 152, 183, 232, 237, 301 |
+  | 64327 (6) | 64341 | 260, 276, 301, 302, 348, 362, 375, 392, 472 |
+  | 64327 (6) | 64336 | 260, 301, 302, 348, 362, 375, 392, 472 |
+  | 64735 (10) | 161771, 161772, 166842 | 250, 283, 301, 307, 356, 405, 453, 466 |
+  | 102440 (73) | 157815, 157830, 166933, 166934, 166941, 166951, 166952, 174420 | 88, 99, 116, 136, 152, 183, 232, 237 |
+  | 102440 (73) | 157812, 157829, 166457, 166458, 166923, 166924, 166932, 166936, 166939, 166946, 166948, 166949 | 88, 99, 116, 136, 152, 183, 237 |
+  | 114423 (13) | 127665, 127674, 127675, 127676 | 276, 301, 302, 348, 355, 362, 375, 392, 472 |
+  | 114423 (13) | 127668, 134105 | 301, 302, 348, 355, 362, 375, 392, 472 |
+
+- With the holders of R22D-84, the clean ones are 46, 124, 136, 185, 263, 301 and 364 at both states, and 407 at the
+  stop, the only state where it holds a blocker; all others are blocked. Their branches:
+
+  | branch | holders |
+  |---|---|
+  | 0 | 43, 46, 75, 160, 176, 183, 219, 232, 276, 292, 307, 333, 375, 446 |
+  | 1 | 84, 99, 118, 139, 169, 235, 362, 396, 405 |
+  | 2 | 27, 88, 140, 157, 185, 197, 237, 258, 263, 283, 331, 364, 392, 407, 453, 483, 491 |
+  | 3 | 72, 116, 133, 136, 150, 209, 226, 250, 260, 301, 338, 348, 386, 401, 426, 466, 472 |
+  | 4 | 21, 114, 122, 124, 128, 152, 299, 302, 310, 317, 355, 356, 420, 480 |
+
+- Of the 172 height-6 pieces (the same poses at both states, R22D-75) these holders hold whole: 111 at cap 114, 13 at
+  116, 159 at 118, 13 at 140, 84 at 150, 111 at 160, 9 at 183, 13 at 219, 111 at 258, 13 at 283, 64 at 299 and 13 at
+  338, and none at the others. All are of another branch than the cap except the 84 at cap 150, which are of its
+  branch 3. So a non-identity letter at one of these caps changes that many height-6 poses, a jumble item there
+  raises as many to height 8 (none at cap 150), and a retained item raises none. For blocked caps this says what a
+  letter would do, not that it is admissible.
+- Cap 124 is clean but not free (O7): at `1ff0061f…` it holds 1,200 lattice pieces, 1,176 own-branch and 395
+  other-branch pieces at height 2 (the reviewer's count; no script in the repository prints it), and none at height 4
+  or 6. So R22D-70's obstruction, over the fixed free and SAFE alphabets, does not reach the letter (124, 2) of R22D-80
+  and R22D-85.
+- A unit's representative cannot stand for its blockers: blocker 31751 is not whole in cap 157, while 42970, 118974
+  and 118983 of the same unit are (R22D-77).
+- Uses: O7, R22D-32, R22D-70, R22D-75, R22D-76, R22D-77, R22D-82.
+
+### R22D-84. Cap 311 has 107 blockers at the stop and 182 after the seven letters (computed)
+
+- From R22D-82's tables. All blockers are of branch 2 (cap 311 is of branch 1). By unit, with every cap that holds
+  some of them whole and the clean caps among those; every blocker lies whole in at least one clean cap of its state,
+  and the complete rows, piece by piece, are in `runs/round22/r22d82_unlock_graph.txt`.
+
+  At the stop (`015d839e…`), 107 blockers, as in R22D-76:
+
+  | unit (pieces) | blockers | caps that hold some of them whole | clean |
+  |---|---|---|---|
+  | 422 (36) | 13 | 283, 307, 338, 364, 405, 407, 420, 426, 446, 491 | 364, 407 |
+  | 1128 (3) | 3 | 263, 317, 333, 364, 386, 396 | 263, 364 |
+  | 46248 (24) | 7 | 128, 139, 140, 185, 197, 219, 226, 292, 310 | 185 |
+  | 61240 (111) | 19 | 283, 307, 338, 364, 405, 407, 420, 426, 446 | 364, 407 |
+  | 79627 (73) | 8 | 263, 317, 333, 364, 386 | 263, 364 |
+  | 96213 (78) | 8 | 338, 364, 420, 446, 491 | 364 |
+  | 107400 (86) | 26 | 283, 307, 338, 405, 407, 420, 426, 446 | 407 |
+  | 127471 (78) | 19 | 169, 209, 263, 317, 331, 333 | 263 |
+  | 158577 (18) | 4 | 263, 317, 331, 333, 386, 396, 401, 483 | 263 |
+
+  At `1ff0061f…`, after R22D-75's seven letters, 182 blockers:
+
+  | unit (pieces) | blockers | caps that hold some of them whole | clean |
+  |---|---|---|---|
+  | 1545 (85) | 19 | 169, 209, 263, 317, 331, 333 | 263 |
+  | 19065 (23) | 7 | 128, 139, 140, 185, 197, 219, 226, 292, 310 | 185 |
+  | 38265 (385) | 99 | 169, 209, 263, 317, 333, 386 | 263 |
+  | 75665 (82) | 26 | 263, 317, 333, 364, 386, 396, 480 | 263, 364 |
+  | 81179 (78) | 23 | 139, 185, 219, 226, 292, 310, 364 | 185, 364 |
+  | 96213 (78) | 8 | 338, 364, 420, 446, 491 | 364 |
+
+- Only the 8 blockers of unit 96213 are in both lists: 99 of the stop's blockers no longer straddle cap 311 and 174 new
+  ones do, so the stop's list cannot be reused after the seven letters. Being held by a clean cap does not give an
+  unlocking word; no unlocking run was made in shard U; the joint attack unlocks cap 311 (R22D-87, R22D-89).
+- Uses: R22D-75, R22D-76, R22D-82.
+
+### R22D-85. (124, 2), (274, 13) lowers A and B at both states (computed; replayed)
+
+- The word (124, 2), (274, 13), two letters of length 1, from the stop and from `1ff0061f…`, after R22D-75's seven
+  letters. The first is retained, at the clean cap 124: it leaves cap 274 with no straddler and keeps n₆ and every
+  height-6 pose. The second lowers the 159 pieces of A and B to height 4.
+
+  | start | (n₂, n₄, n₆) | change | off | N | end digest | left at height 6 | lattice pieces off at the end |
+  |---|---|---|---|---|---|---|---|
+  | `015d839e…` | (99,314, 1,085, 185) → (98,713, 992, 26) | (−601, −93, −159) | 100,584 → 99,731 | 130,386 → 130,250 | `bd44f887…` | 26, of C and D | 346 |
+  | `1ff0061f…` | (103,103, 1,019, 172) → (102,593, 926, 13) | (−510, −93, −159) | 104,294 → 103,532 | 132,702 → 132,572 | `c9cefc31…` | 13, of C | 479 |
+
+  The end digest from the stop in full is
+  `bd44f887fa60da8b2d22ef69a8ea65a24a3c081a88c31df8c173992ed683bee4`; after its first letter from the stop N =
+  130,560, digest `4bcc39f3…`. "Lattice pieces off" counts the pieces on the lattice at the start that are off at the
+  end.
+- N falls from both starts, by 136 and 130, but lattice pieces go off, so the word is not protected.
+- R22D-70's obstruction covers the fixed free and SAFE alphabets only. Cap 124 is clean but not free (R22D-83), and
+  its retained item 2 moves the three blockers off cap 274's cut without landing them. So the packet's question U3,
+  unlocking words of two or three letters, needed no search; no exhaustion of such words is claimed.
+- The integrator's replay (`r22d85_two_letters.py`) gives every computed number above, and the first-letter digest
+  from the stop.
+- Uses: R22D-70, R22D-75, R22D-83.
+
+### R22D-86. Towards cap 290 the unlock family stalls at 38 blockers (computed; proved; replayed)
+
+- From `1ff0061f…`, with cap 290 chosen as the target by hand (R22D-81's rule chooses 274 there) and u = 70: letters
+  at the clean grips 136 and 301 (free at the stop, R22D-76) in (grip, item) order, accepted when admissible and
+  certain, keeping n₆ and every height-6 pose, leaving no piece above height 6 and lowering u. Two letters, each of
+  length 1:
+
+  | step | letter | u | (n₂, n₄, n₆) | off | N | end digest |
+  |---|---|---|---|---|---|---|
+  | 1 | (136, 2) | 48 | (103,103, 1,019, 172) | 104,294 | 132,826 | `808aeac4…` |
+  | 2 | (136, 6) | 38 | (103,103, 1,019, 172) | 104,294 | 132,760 | `9e6b991b…` |
+
+  The end digest in full is `9e6b991bf057d3f2c28c3158aed3878b55720c970601019eb819e53bd0601e94`.
+- The remaining 38 are the blockers of R22D-83 that cap 136 does not hold (proved): each lies outside cap 136, which
+  is clean at both letters, so both letters fix it and it still straddles cap 290; since u = 38, these are all the
+  blockers left, at their poses of `1ff0061f…`, and each lies whole in cap 301 (the 38 "in 301 only" of R22D-82's
+  cover). The two letters took the 32 blockers that cap 136 holds off cap 290's cut.
+- Then no single letter lowers u (proved from the computed holders). The caps that hold one of the 38 whole are 250,
+  260, 276, 283, 301, 302, 307, 348, 355, 356, 362, 375, 392, 405, 453, 466 and 472, the holders in R22D-83 of these
+  38, and only 301 is clean. At a cap that holds none of them whole a letter is either not admissible, the cap being
+  blocked, or fixes all 38, which lie outside the clean cap, so u stays at least 38; a blocked holder has no
+  admissible letter. So 34,397 letters (583 caps) cannot lower u, 944 are at the 16 blocked holders, and the 59
+  items of cap 301, each admissible and certain, leave u at
+
+      56, 56, 38, 59, 59, 56, 59, 59, 38, 59, 59, 142, 84, 95, 188, 110, 98, 180, 153, 108, 71, 108, 146, 110, 110,
+      142, 82, 82, 108, 142, 82, 108, 132, 153, 153, 84, 137, 137, 98, 84, 137, 98, 167, 71, 71, 95, 167, 167, 146,
+      95, 146, 132, 180, 180, 188, 132, 108, 188, 108
+
+  (items 1 to 59): 38 at items 3 and 9, higher at the other 57, up to 188. So the single-letter U family is
+  exhausted at `9e6b991b…`. Every remaining blocker lies whole in the clean cap 301, yet none of its letters lowers
+  u: whole containment in a clean cap does not give a monotone unlock.
+- Scope: a stall of the single-letter U family after this literal prefix, not of the rule of R22D-81. H4 and H2 letters
+  there were not tried; preparations of two or three letters that keep or raise u in between were not tried in shard U
+  (see R22D-87 and R22D-89). Shard U found no word that lowers through cap 290; C is lowered through cap 104 instead
+  (R22D-80), and through cap 290 by the cloud line's route of R22D-89.
+- The integrator's replay (`r22d86_cap290.py`) gives every computed number above, and u after each of the 59 items
+  of cap 301.
+- Uses: R22D-76, R22D-80, R22D-81, R22D-82, R22D-83.
+
+Shard W of round 6 (R22D-90 to R22D-97, all `minor`) took phase U of the census (`theory/seams.py`, the bulk phase)
+and the first two height-first families of R22D-75 as one rule. The senior reviewer gave a rule that reads the state
+only: it tries the first two families of R22D-75, and otherwise the first word of each phase U rule, kept only when at
+its end no piece is above height 6, n₆ and n₄ have not risen and N has fallen. It is finite, and its stuck end is
+weaker than an exhausted phase U. Phase U's cover rule decides sides with a floating-point test, so which words it
+offers is evidence for the recorded machine only (R22D-90). No rule of phase U guards heights or lattice pieces, and
+one word raises a height by at most 2, 4, 6 or 14, by rule (R22D-91). From the depth 200 stop, where R22D-75's rule is
+stuck, the rule plays only phase U words: twelve in the integrator's longest run, which lower N by 2,372 and the off
+count by 2,551, while n₆ stays 0 and n₄ 118; no height-first letter is found at the start or after any of the first
+eleven words, and no word is rejected (R22D-92). Without the guard, the height-first letter of the seed 7102 stop and
+phase U's first step after it cycle in two letters (R22D-93); whether the guarded phase U has a step after that letter
+is open (R22D-94). At the depth 400 stop the 17 height-4 pieces form two units whose only lowering caps, 436 and 460,
+are blocked (R22D-95), and one retained letter removes 23 of cap 436's 227 blockers but raises N (R22D-96). COV-55
+tests four of phase U's eight rules, so it does not show phase U incomplete (R22D-97). The computations are
+`scripts/round22/r22d92_guarded_k200.py`, `r22d93_cycle.py`, `r22d94_height2_probe.py`, `r22d95_unlock_graph_k400.py`
+(R22D-95 and R22D-96) and `r22d96_retained_check.py`, the reviewer's commands, and `r22d92_guarded_k200_2k.py`, a copy
+of the first with its checkpoint at 2,000 CPU seconds instead of 1,000. The integrator re-ran the five on the same
+machine as the reviewer: R22D-93 to R22D-96 gave the same outputs apart from the CPU fields, and R22D-92 the same steps
+as far as it got, 8 within its budget against the reviewer's 11; the 2,000-second copy gave the reviewer's 11 steps and
+a twelfth, and stopped at the script's cap of 12 steps. The outputs are under `runs/round22/` with the same names
+(section 6).
+
+### R22D-90. Phase U and the first two height-first families as one rule (rule; proved finite; source)
+
+- Input: a reachable state of I_a whose largest left height is at most 6; otherwise unsupported. At every committed
+  state the rule recomputes the heights, (n₂, n₄, n₆), N and the digest. When n₆ = n₄ = 0 it hands the exact state and
+  its digest on to R22D-25, or to the lattice phase when no piece is off, as R22D-57's bulk phase does; a handover, not
+  solved. The rule reads the state only: no history and no journal. Which word cover offers can still depend on the
+  machine (below).
+- Height first: the first two families of R22D-75 only, letters that lower n₆, then letters that keep n₆ and lower n₄,
+  each in (grip, item) order (grips 0 to 599, items 1 to 59), admissible and with no piece above height 6 after the
+  letter. R22D-75's exact prune may skip a cap without changing the order, and its prediction is checked against the
+  simulator after the letter; a mismatch is an error report, never a step (the scripts assert that it does not happen,
+  and no run failed the assertion). The third family (keep n₆ and n₄, lower n₂) is left out: it need not lower the
+  potential below.
+- Phase U, when neither family has a letter: a fresh `SeamRestorer`, with an empty move list, an empty journal and empty
+  caches. In the order seam, cover, close (`level1`), conj, lock (`level2`), improve, shift, reopen, each rule is called
+  once, with its default arguments and the source's own choices, so it offers only its first word. Seam and cover take
+  the cap whose best single twist lowers N_c most, close the closable cap of largest N_c, improve the largest drop, each
+  the lower cap on a tie; conj, lock and shift go through the misaligned caps in order of decreasing N_c, the lower cap
+  on a tie, and through the items in menu order. The item of a closing or lowering letter is chosen by the landing rule
+  (most inside pieces home, then the lowest item) in seam, cover, close, improve, lock and shift; conj's second and
+  third letters take the lowest N_d or N_c, then the lowest item. Item 0 of the menu is the identity. Conj's third
+  letter is item 0 when no twist of its cap lowers N_c, and shift's second letter can be item 0 here, since this rule
+  calls shift even after improve's word was rejected. Such a letter moves nothing; it is played and counted like any
+  other. None of R22D-92's words has one.
+- Test: the offered literal word is played on the full state, every prefix admissible and certain, and kept only when
+  at its end no piece is above height 6, n₆ and n₄ have not risen and N, counted exactly, has fallen. Otherwise its
+  twists are undone in reverse order with `Restorer.undo` until the move list and the journal are back at their saved
+  length, the digest of the state before is checked, and the next rule is tried, never the same one again. Only the end
+  of a word is guarded, not its prefixes. Kept words have one, two or three letters; each is played twist by twist and
+  its length recorded. Every rule of phase U returns only words that lower N (`seams.py` header); a word that did not
+  would be rejected like any other, and the scripts assert instead that it does not happen (no run failed it).
+- Stuck: no rule's first word passes. This exhausts the first offers, not phase U: a rule may have other words after
+  its first. A budget stop restores the last committed state and reports budget. Both hand the last committed state on
+  with their reason, as R22D-57 dispatches the bulk phase's stops; R22D-57's handovers run one way, so no later phase
+  returns to this rule.
+- Floating point in cover. Cover's side test, `pos[P] @ NF[d] > KAPPA` (`seams.py` line 174), compares float centroids,
+  computed with a BLAS product (line 90), with the cut depth. Where a piece's centroid lies exactly on d's cut plane the
+  exact value is a tie, and the float result is settled by BLAS rounding, which depends on the OpenBLAS kernel that the
+  CPU selects at run time. The scripts compute the home centroids in memory instead of reading the unchecked cache file
+  of `seams.home_centroids`. Every other test of the rule, and every test of a word, is exact, apart from the cap
+  neighbour table `NEAR` (`restore.py` line 57), which the rules use for the caps near a cap and to drop cached cap
+  data after a twist: a float threshold of 55.7 degrees on the angles between cap normals, the same for every state.
+  The nearest angles are 49.12 and 56.01 degrees, far from a tie (an integrator's check that is not in the
+  repository). So the proof below holds whatever
+  cover offers, but which word it offers, and with it the steps of R22D-92 and the first step of R22D-93 and R22D-94,
+  is evidence for the recorded environment only. That environment, as far as the scripts and outputs show:
+  the commands set `OPENBLAS_NUM_THREADS`, `OMP_NUM_THREADS` and `MKL_NUM_THREADS` to 1; the reviewer reported Python
+  3.13.16 and NumPy 2.5.3; the outputs print neither the versions nor the BLAS kernel. The reviewer's runs and the
+  integrator's re-runs were made on the same machine, so their agreement on R22D-92's first eleven steps does not test
+  another kernel. No recorded computation checks whether an exact tie decides one of the recorded cover offers. A rule
+  that every machine follows to the same words needs an exact tie-break for this test (for example the exact sign in
+  Q(√5) below a float margin, a tie counting as outside, as the strict `>` reads); that is open.
+- Bookmarks. Reopen (U7) takes its candidates from the solver's own earlier twists, `reversed(list(self.moves))`
+  (`seams.py` lines 285 to 289), not from the configuration; the census loop keeps one `SeamRestorer` and plays a
+  continued run's moves through it (`census_seams.py` lines 39 to 42), so its reopen reads that history, and so does
+  the bulk phase of the stage 13 runner, which also keeps one (`13-tutorial-runner/scripts/runner.py`, function
+  `bulk_child`). With an empty move list reopen offers nothing, so this rule uses the seven rules that read the state
+  only; it is not phase U with its historical U7.
+- Finite. Φ = (n₆, n₄, N), ordered lexicographically, falls on every kept step: a letter of the first family lowers n₆;
+  one of the second keeps n₆ and lowers n₄, even if N rises; a kept phase U word raises neither n₆ nor n₄ and lowers N,
+  whatever n₂ does. In integer form: n₄ ≤ 177,120, and N ≤ 600·177,121, since each counted boundary cell is incident to
+  an occupied chamber or the fixed core, each of degree at most 600 in `rim.cell_pairs` (177,120 pieces and the largest
+  degree 600 are checked by `r22d96_retained_check.py`). So Q = 106,272,601·(177,121·n₆ + n₄) + N, with
+  106,272,601 = 600·177,121 + 1, falls by at least 1 on every kept step: at most Q(start) steps and 3·Q(start) letters
+  before a handover, stuck or a budget stop. The proof uses nothing about how a word is chosen, so it holds for any
+  choice, cover's float test included. At the depth 200 stop `44b2e7a0…` (n₆ = 0, n₄ = 118, N = 63,466)
+  Q = 12,540,230,384. A termination bound, not coverage and not a running time.
+- Uses: R22D-25, R22D-57, R22D-75; phase U (`research/jumbling/theory/seams.py`, `restore.py`).
+
+### R22D-91. How far phase U's rules raise a left height, and which keep the lattice (source; proved; computed)
+
+- One letter changes a left height by at most 2 (the integrator's check before coverage round 7, section 8), with the
+  signs of T5 in `research/jumbling/theory/restoration.md`, as R22D-75's prune uses them: a retained letter keeps every
+  height and every lattice membership; a jumble letter takes each lattice piece inside its cap from height 0 to 2,
+  raises each off piece of another branch inside by 2, and keeps or lowers by 2 each off piece of its own branch inside.
+  Summed over the letters of each rule's word: seam, cover, close and improve (one letter) raise a height by at most 2,
+  shift (two letters) by at most 4, lock (two or three) and conj (three) by at most 6, and reopen with bookmarks (the
+  inverse of an earlier twist, then at most six single-letter steps) by at most 14. Whether these bounds are attained is
+  open.
+- No rule of phase U guards heights or lattice membership: none tests a height or keeps a lattice piece on the lattice;
+  the landing rule counts the pieces a letter brings home, a tie break, not a guard. All may use jumble items
+  (`restore.py`: `level1`, `level2`, `improve`, `shift`; `seams.py`: `seam`, `cover`, `conj`, `reopen`). A one-letter
+  step keeps every lattice piece on the lattice exactly when its letter is retained or its cap holds no lattice piece.
+  For a longer word, a piece on the lattice at the start is on it at the end exactly when the left action accumulated
+  on it, in chronological order, lies in K⁺, and at every prefix when this holds for every prefix. Words of retained
+  letters keep both.
+- Instances. At `c450bb2f…` cover's first word is (61, 44) and conj's is (349, 1), (61, 44), (349, 1) (R22D-94), and
+  improve's is (61, 44) (R22D-93). Cover's word is printed with its prefix record: n₄ goes from 0 to 70 with a largest
+  rise of 2, so 70 pieces go from height 2 to 4, and 182 pieces that were on the lattice end off, at `f0290f93…`.
+  Improve's and conj's words end at the same digest, so their ends are the same. So cover, improve and conj can raise
+  heights and take lattice pieces off. For seam, close, lock, shift and reopen only the bounds and the missing guard
+  are shown; protection is neither proved nor excluded for them.
+- Uses: R22D-75, R22D-93, R22D-94, the integrator's check before coverage round 7 (section 8), T5 of the tree model
+  (`research/jumbling/theory/restoration.md`); phase U (`research/jumbling/theory/seams.py`, `restore.py`).
+
+### R22D-92. At the depth 200 stop the rule lowers N with phase U words while n₄ stays 118 (computed)
+
+- Start: `44b2e7a0…`, the depth 200 stop of seed 7105 after the five letters of R22D-75's rule there (the height-first
+  rule at the census stops), where that rule is stuck: (n₂, n₄, n₆) = (66,601, 118, 0), 66,719 off, N = 63,466, 528
+  blocked caps. The script runs the rule of R22D-90 and stops after 12 kept steps or at a CPU checkpoint, whichever
+  comes first; at the checkpoint it undoes the unfinished word and reports budget.
+- Three runs, all on the same machine, print the same lines as far as each gets: the same rules tried, words,
+  (n₂, n₄, n₆), off counts, N, blocked caps and digests.
+  - The reviewer's, with the checkpoint at 1,000 CPU seconds: 11 steps, then cut by the checkpoint (report at
+    1,015.51).
+  - The integrator's re-run of the same command: 8 steps, then cut (report at 1,020.77, at `668feb8d…`). On the loaded
+    machine step 8 came at 926.37 CPU seconds, against 720.88 in the reviewer's run.
+  - The integrator's run with the checkpoint at 2,000 seconds (`r22d92_guarded_k200_2k.py`): 12 steps, ended by the
+    cap of 12 steps at 1,350.91 CPU seconds, not by the budget.
+  So the step count of a run that ends at the budget depends on how many CPU seconds each step costs on the machine,
+  more on a loaded one; the 2,000-second run reached the cap with about 650 CPU seconds to spare.
+
+  | step | rule | word | (n₂, n₄, n₆) | off | N | blocked caps | end digest |
+  |---|---|---|---|---|---|---|---|
+  | 1 | cover | (363, 1) | (66,601, 118, 0) | 66,719 | 62,910 | 527 | `e53f973d…` |
+  | 2 | cover | (486, 7) | (66,601, 118, 0) | 66,719 | 62,626 | 522 | `557ad55c…` |
+  | 3 | cover | (518, 11) | (66,601, 118, 0) | 66,719 | 62,624 | 523 | `624b0105…` |
+  | 4 | conj | (554, 5), (482, 5), (554, 2) | (66,601, 118, 0) | 66,719 | 62,610 | 523 | `a693040d…` |
+  | 5 | conj | (554, 2), (482, 2), (554, 5) | (66,601, 118, 0) | 66,719 | 62,602 | 523 | `2418d5c0…` |
+  | 6 | conj | (554, 5), (518, 11), (554, 2) | (66,601, 118, 0) | 66,719 | 62,518 | 521 | `d6b2182e…` |
+  | 7 | conj | (554, 26), (381, 5), (554, 58) | (66,424, 118, 0) | 66,542 | 62,464 | 520 | `7f59d40d…` |
+  | 8 | cover | (381, 2) | (66,424, 118, 0) | 66,542 | 62,436 | 521 | `668feb8d…` |
+  | 9 | conj | (554, 30), (518, 9), (554, 16) | (66,202, 118, 0) | 66,320 | 62,274 | 523 | `016f7d51…` |
+  | 10 | conj | (597, 1), (518, 1), (597, 42) | (64,050, 118, 0) | 64,168 | 61,236 | 514 | `4984bd53…` |
+  | 11 | cover | (448, 8) | (64,050, 118, 0) | 64,168 | 61,114 | 514 | `45e82473…` |
+  | 12 | conj | (554, 4), (381, 5), (554, 8) | (64,050, 118, 0) | 64,168 | 61,094 | 514 | `def0bdac…` |
+
+  Steps 1 to 11 are the reviewer's eleven (23 letters); step 12 is from the 2,000-second run only. All twelve are
+  phase U words, five cover and seven conj, 26 letters.
+- The height-first scans, as the outputs show them. Before each step the script scans the first two families of
+  R22D-75.
+  - Reviewer's run: the scans at the start and after steps 1 to 10 finished and found no letter; the scan after step 11
+    was cut by the checkpoint.
+  - Integrator's 1,000-second re-run: the scans at the start and after steps 1 to 8 finished and found no letter; the
+    checkpoint then cut phase U's search for step 9, in conj, and the state was restored to `668feb8d…`.
+  - 2,000-second run: the scans at the start and after steps 1 to 11 finished and found no letter; after step 12 the
+    run stopped at its cap, so no scan was made at `def0bdac…`.
+  So there is no height-first letter at the start or after any of the first eleven steps; after the twelfth none was
+  looked for.
+- No phase U word was rejected in any of the three runs, for n₄ or for any other guard, so each kept word was the
+  first word phase U offered: at every step seam offered nothing, and at the conj steps cover and close offered nothing
+  as well (the TRY lines).
+- n₆ = 0 and n₄ = 118 at every committed state. These are counts: no recorded computation checks whether they are the
+  same 118 pieces, or their poses. Over the twelve steps N fell by 2,372 (2,352 over the first eleven) and the off
+  count by 2,551, only at steps 7, 9 and 10 (by 177, 222 and 2,152); the other nine steps leave it unchanged. The
+  blocked caps went from 528 to 514.
+- So phase U has steps where the height-first rule is stuck, but none of the first eleven brings back a letter that
+  lowers n₄ (118). The longest run ends at the script's step cap, not stuck and not at height 2. Five of the twelve
+  words are cover's, and cover is tried before conj at every step, so every step depends on what cover offers (a word
+  or none) and on the state the earlier words leave; at exact ties that can depend on the BLAS kernel (R22D-90). No run
+  varied the kernel.
+- Uses: R22D-75, R22D-90, the height-first rule at the census stops.
+
+### R22D-93. Without the guard, phase U undoes the height-first letter at the seed 7102 stop (computed)
+
+- At `f0290f93…` (seed 7102 after R22D-43: (n₂, n₄, n₆) = (31,355, 70, 0), 31,425 off, N = 32,762, 366 blocked caps)
+  the first letter of the height-first families is (61, 15), by the exact pruned scan of all 600 caps (366 blocked, 233
+  count-bound prunes, 11 retained prunes, 48 item tests). It ends at `c450bb2f…` ((33,604, 0, 0), 33,604 off,
+  N = 33,818, 373 blocked caps): it takes the 2,361 lattice pieces of cap 61 off and lands 182 (the height-first rule
+  at the census stops; 31,425 + 2,361 − 182 = 33,604). Shard U's packet of this round gave 2,179 for those lattice
+  pieces; the recorded count is 2,361.
+- There phase U's first step is cover (61, 44): seam offers nothing and cover offers (61, 44) (R22D-94), and
+  `restore.py`'s improve offers the same letter. (61, 44) is the inverse of (61, 15) (both products are the identity,
+  checked exactly by `r22d96_retained_check.py`), so it returns the whole state to `f0290f93…`: the 70 are back at
+  height 4, the 182 pieces that (61, 15) landed are off again, N falls by 1,056 and the blocked caps go from 373 to
+  366.
+- So a combination that tries the height-first families after every phase U step and lets phase U run at height 2
+  without a guard on n₄ plays (61, 15), (61, 44), (61, 15), … without end: neither part's own potential bounds the
+  alternation. R22D-90 hands over at `c450bb2f…`, and its guard would reject (61, 44) there in any case (n₄ from 0 to
+  70). A computed obstruction to the unguarded combination, not a statement about coverage.
+- The integrator re-ran `r22d93_cycle.py` and got the same output apart from the CPU fields: the first height-first
+  letter with the same prune counts, improve's offer and the exact return to `f0290f93…`. That script runs neither seam
+  nor cover; cover's offer is R22D-94's computation, whose re-run gave the same lines.
+- Uses: R22D-43, R22D-75, R22D-90, R22D-94, the height-first rule at the census stops.
+
+### R22D-94. Whether phase U has a guarded word after height 2 is open (computed in part)
+
+- At `c450bb2f…` (seed 7102 after (61, 15), every off piece at height 2, 373 blocked caps), a probe with a CPU
+  checkpoint of 950 seconds asks phase U's rules for their first words, in phase U's order: seam none; cover (61, 44),
+  which ends at `f0290f93…` with n₄ = 70 and fails the n₄ guard; close none; conj (349, 1), (61, 44), (349, 1), which
+  also ends at `f0290f93…` ((31,355, 70, 0), N = 32,762, 366 blocked caps) and fails it; lock cut by the checkpoint, not
+  exhausted. Shift was not run. Improve's first word there is (61, 44) as well (`r22d93_cycle.py`), which fails the
+  guard; reopen, with an empty move list, offers nothing (source).
+- The reviewer's run and the integrator's re-run print the same lines apart from the CPU fields. Both were cut in
+  lock, after the lock search had run about 660 and 560 CPU seconds (reports at 960.55 and 962.68).
+- So it is open whether the guarded phase U has a step there: lock and shift are not finished, and a first word that
+  fails does not exhaust its rule. R22D-90 itself hands this state over (n₆ = n₄ = 0), so this probes phase U after
+  height 2; it is not a step of the rule.
+- Uses: R22D-90, the height-first rule at the census stops.
+
+### R22D-95. The unlock graph of the 17 height-4 pieces at the depth 400 stop (computed)
+
+- At `b334a2dc…` (the depth 400 stop of seed 7109 after the seven letters of R22D-75's rule there, the height-first
+  rule at the census stops: (n₂, n₄, n₆) = (76,826, 17, 0), 76,843 off, N = 80,352, 545 blocked caps), with all 600
+  caps classified exactly and every piece of each unit checked, the 17 form two units by pose and by membership in all
+  600 caps, both of branch 1:
+  - A, 16 pieces: 91689 to 91691, 104318, 104338, 108756, 108764, 108765, 108769 to 108775 and 136887; wholly in caps
+    355, 387, 415, 436, 460, 477, 522 and 543.
+  - B, piece 104333: in the same caps except 387, whose cut it straddles.
+- Of the caps that hold them, only 436 and 460 have items that lower them (to height 2), the same twelve at both: 14,
+  21, 23 and 43 to 51. Both caps are blocked. Cap 415 holds both units and is clean, but none of its items lowers
+  either.
+
+  | cap | holds | straddlers | clean |
+  |---|---|---|---|
+  | 355 | A, B | 202 | no |
+  | 387 | A | 89 | no |
+  | 415 | A, B | 0 | yes |
+  | 436 | A, B; lowers both | 227 | no |
+  | 460 | A, B; lowers both | 27 | no |
+  | 477 | A, B | 139 | no |
+  | 522 | A, B | 113 | no |
+  | 543 | A, B | 90 | no |
+
+- One level of the unlock graph: the 759 distinct straddlers of these eight caps, each with every cap that holds it
+  whole, in 128 groups (`runs/round22/r22d95_unlock_graph_k400.txt`). Caps 436 and 460 have 227 and 27 of them, none in
+  common. Of the caps that hold one of the 759 whole, exactly 290, 320, 336, 344, 397, 415, 433, 451, 493, 520 and 588
+  are clean. Read from that output: the 27 straddlers of cap 460 all lie whole in the clean caps 336 (12) and 588 (15),
+  and 109 of the 227 of cap 436 lie whole in a clean cap (320: 26, 344: 7, 433: 74, 451: 83, 520: 83, with overlaps).
+- The integrator re-ran it and got the same output apart from the CPU fields: 574.15 CPU seconds on the loaded
+  machine, against 338.84 in the reviewer's run. The script stops at 600 CPU seconds, setup included: a run about 5%
+  slower would end at the budget without R22D-96's letter, and a slightly slower one also without the whole graph.
+- Uses: R22D-75, the height-first rule at the census stops.
+
+### R22D-96. A retained letter frees 23 blockers of cap 436 and raises N (computed; proved)
+
+- The same computation then tries, for the lowering caps in order (436 first), single letters at clean caps that hold
+  one of the cap's straddlers whole, first testing exactly whether a straddler the letter moves would stop straddling
+  the cut. The first candidate, (320, 1), passes with one test and one replay: admissible and certain, it lowers cap
+  436's straddlers from 227 to 204, removes exactly 53163, 70151, 70153 to 70155, 70165 to 70168, 75878, 75884, 75886,
+  75887, 75889, 98293 to 98295, 98302, 98303, 106081, 106303, 106308 and 117572, and adds none.
+- End: `ee8a15ec…`, (76,826, 17, 0), 76,843 off, N = 80,780 (up 428), no lattice piece off. Proved from these: (320, 1)
+  is retained (K⁺ index 6668, checked exactly), so every lattice piece stays on the lattice; cap 320 holds none of the
+  17 (it is not among their caps) and the simulator changes only pieces inside the cap, so their poses are unchanged:
+  both units stay whole in cap 436 at height 4, with the same twelve lowering items. Cap 460's straddlers were not
+  recounted after the letter.
+- So one retained letter prepares cap 436 but does not unlock it: 204 blockers remain, and no continuation was tried.
+  N rises while n₆ and n₄ stay, so R22D-90 would not take the letter, and it is no phase U step: a local unblocker need
+  not lower the guarded potential.
+- The integrator re-ran both computations with the same outputs apart from the CPU fields:
+  `r22d95_unlock_graph_k400.py` for the letter and its counts, and `r22d96_retained_check.py` for the K⁺ index.
+- Uses: R22D-90, R22D-95.
+
+### R22D-97. COV-55 concerns the existing four-rule descent, not phase U (source)
+
+- COV-55's computation (`cov55_descent_cov17.py`) builds `restore.Restorer` and runs only close, lock, improve and
+  shift (`level1`, `level2`, `improve`, `shift`), as COV-55 says ("the existing descent"). Its score table at COV-17's
+  singleton has no single letter that lowers N, so seam and cover have no candidate there either, and with an empty
+  move list reopen has none; conj, phase U's three-letter rule, was not run.
+- So COV-55 shows that the four-rule descent of `restore.py` is incomplete, not that phase U (`SeamRestorer`, eight
+  rules) is; the packet of this shard cited it for phase U. Whether phase U is stuck at that singleton is open.
+  R22D-90's finiteness does not depend on it.
+- Uses: COV-17, COV-55; phase U (`research/jumbling/theory/seams.py`, `restore.py`).
+
+### R22D-87. Joint attack on caps 311 and 290: literal words unlock cap 311, single letters stall, and pair steps keep the rule finite (computed; proved; replayed)
+
+- What was asked. The senior reviewer wrote two sealed, independent analyses of one packet, analysis A and analysis B,
+  at the highest effort, standard tier (analysis A's copy of the packet added a note on its two interrupted earlier runs
+  and access to its own earlier log), and then cross-examined them against each other at the same tier. Analysis A
+  returned ten results (A-R22J-01 to A-R22J-10), analysis B seven (B-R22J-01 to B-R22J-07; overall verdict
+  `inconclusive`), and the cross-examination six (R22JX-01 to R22JX-06), all `minor`. The packet gave the facts of
+  R22D-75 and R22D-80 to R22D-86 and asked three things, a proved obstruction counting as much as a word:
+  - J1, cap 311, from `1ff0061f…` (u = 182) and from the stop `015d839e…` (u = 107; R22D-84): a literal word whose
+    letters are each admissible and certain, keep n₆ and every height-6 pose and leave no piece above height 6, after
+    which cap 311 is clean, followed by an item of cap 311 that lowers C's 13 pieces to height 4; or the first
+    obstruction, stated exactly; and why R22D-75's seven letters raised u from 107 to 182, and whether another order of
+    the same family avoids it.
+  - J2, cap 290 at `9e6b991b…` (u = 38; R22D-86): preparations (a, b) and (a, a′, b) under the same guards, u free
+    after a and a′ and strictly below 38 after b; conditions that prune the search; which of the 16 blocked holders 250,
+    260, 276, 283, 302, 307, 348, 355, 356, 362, 375, 392, 405, 453, 466 and 472 one letter at a clean cap can make
+    clean without moving a height-6 piece, and what then blocks them.
+  - J3: a sufficient condition for a monotone unlock (single letters, or pairs with a net decrease) that the state
+    alone decides, or a counterexample showing that the closure L of R22D-82 with a local condition is not enough;
+    and whether R22D-81 should allow pair steps, with termination, stuck outcome and cost.
+
+  Shortest words, protection and coverage were out of scope. A cloud line searched J1 and J2 by brute force at the
+  same time (R22D-89).
+- What analysis A established.
+  - A-R22J-01 (computed). From the stop the five letters (407, 10), (263, 11), (185, 21), (364, 1), (263, 2) take u
+    from 107 to 49, 15, 8, 8 and 0. Each is admissible and certain, keeps n₆ = 185 and every height-6 pose and leaves
+    no piece above height 6; (n₂, n₄, n₆) is (99,314, 1,085, 185) after the first two letters and (100,039, 1,080,
+    185) after the other three. The fourth letter takes all 8 remaining blockers off the cut and puts 8 others on it;
+    the fifth clears those. Cap 311 is clean at `73656d85a7d008d5d320ed5d763af2193fc29108b370e5470ee8a3b8894493b3`, and
+    (311, 14) then lowers exactly C's 13 pieces to height 4 and keeps every other height-6 pose:
+    `bf101451351a27b2f37c62200ae51ef393316b4eb83eb1709fe326171d2ac601`, (100,984, 1,393, 172). Six literal letters.
+  - A-R22J-02 (computed). From `1ff0061f…` the eleven letters (523, 45), (407, 47), (263, 14), (471, 45), (357, 45),
+    (185, 14), (407, 10), (263, 11), (185, 21), (364, 1), (263, 2) take u through 182, 182, 240, 130, 130, 130, 107,
+    49, 15, 8, 8 and 0 under the same guards, with n₆ = 172. The first six undo R22D-75's letters 7 to 2; its first
+    letter, (64, 15), stays, so D is not raised back to height 6. Cap 311 is clean at
+    `e6f779a12bf305685528ee7f60e6d7a72ec47f668f81c0e2e7762e7049785d84` with (100,660, 1,093, 172), and (311, 14) then
+    lowers C's 13 pieces and keeps the other 159 height-6 poses:
+    `efee84c98cce9790584b8dff4bc21607a53939ce999ba83d73703e7466f24490`, (101,605, 1,406, 159). Twelve literal letters.
+  - A-R22J-03 (computed; proved). Along R22D-75's seven letters the changes of cap 311's straddler set, as (removed,
+    added), are (0, 0), (7, 30), (0, 0), (0, 0), (34, 144), (58, 0) and (0, 0), so u runs 107, 107, 130, 130, 130, 240,
+    182 and 182: the rise is blockers that the letters bring in. Every piece lies in the ball whose squared radius
+    R² = 96 − 32√5 is the largest squared norm of a piece vertex, and caps c and d meet inside it exactly when
+    (NN + n_c·n_d)·R² ≥ 2·KAPPA². Of the seven caps only 185 and 263 meet each other, and only 185, 263 and 407 meet
+    cap 311. Letters at caps that do not meet move disjoint sets of pieces, keep each other admissible and commute,
+    and their changes of u add. Both orders of (185, 14) and (263, 14) are admissible from the stop and give u = 240
+    (`84b3c040…` and `f2de4d19…`), and (407, 13) changes u by −58, so all 5,040 orders of the seven letters are
+    admissible and end at u = 182 = 107 + 133 − 58; analysis A's component computation printed 182 for all 5,040.
+    Reordering the same letters does not avoid the rise; other items are another family.
+  - A-R22J-04 (computed). At `9e6b991b…` three words end below 38, with (103,103, 1,019, 172) throughout:
+    (277, 1), (301, 4), u 38 → 38 → 29, through `24802f88…` to `5b99df63…`; (277, 3), (277, 5), (301, 4), to the same
+    end, through `3108e84e…`, since g(277, 5)·g(277, 3) = g(277, 1); and (136, 2), (301, 1), u 38 → 46 → 30, through
+    `1d2ca797…` to `78f0039f…`. These are witnesses, not an enumeration.
+  - A-R22J-05 (computed). At `9e6b991b…` the 38 clean caps 2, 20, 23, 39, 46, 59, 62, 64, 66, 70, 93, 112, 124, 136,
+    167, 185, 262, 263, 277, 301, 357, 358, 363, 364, 370, 394, 407, 422, 471, 492, 523, 533, 541, 552, 553, 590, 591
+    and 593 hold no height-6 piece. A piece outside a clean cap c keeps its pose under every item of c, so one letter
+    at c can make a blocked cap d clean only if c holds every blocker of d whole. For each of the 16 blocked holders
+    some blockers lie outside every clean cap; the third row is the fewest that one clean cap leaves outside:
+
+    | holder | 250 | 260 | 276 | 283 | 302 | 307 | 348 | 355 | 356 | 362 | 375 | 392 | 405 | 453 | 466 | 472 |
+    |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+    | blockers | 67 | 114 | 153 | 168 | 224 | 259 | 89 | 114 | 99 | 144 | 101 | 164 | 175 | 94 | 220 | 142 |
+    | fewest outside | 8 | 114 | 118 | 144 | 183 | 162 | 89 | 84 | 43 | 129 | 42 | 153 | 85 | 57 | 136 | 118 |
+
+    So no first letter makes one of them clean. This does not exclude preparations that work through the clean
+    holder 301 (A-R22J-04).
+  - A-R22J-06 (proved). For a retained letter (c, g) at a clean cap with inside set I, the straddlers of any cap d
+    after it are S_d(Zg) = (S_d(Z) ∖ I) ∪ (I ∩ S_{g⁻¹d}(Z)), since a retained item permutes the 600 poles and keeps
+    every height; so Δu = |I ∩ S_{g⁻¹τ}(Z)| − |I ∩ S_τ(Z)|, read from the current classification table.
+  - A-R22J-07 (proved). A sufficient condition for a complete monotone unlock: clean caps c_i that hold no height-6
+    piece, with non-identity retained items g_i, whose caps are pairwise disjoint inside the ball, whose inside sets
+    I_i cover S_τ, and with I_i ∩ S_{g_i⁻¹τ}(Z) = ∅ for every i. Then the letters, in any order, are admissible, keep
+    every height and every height-6 pose, and each lowers u strictly, so at most |S_τ| letters clean τ; a lowering
+    item at τ still has to be checked. The weaker condition, holders that cover S_τ and items that each remove a
+    blocker and add none, is not sufficient: a holder may hold two blockers and its item remove only one (a logical
+    counterexample).
+  - A-R22J-08 (proved). Only the inside set I of the first letter (c, g) can change a cap's straddler set, so making a
+    blocked second cap d clean needs S_d(Z) ⊆ I and a check of every moved piece, lattice pieces included; at the end
+    only I and d's inside set after the first letter can change τ's straddlers, so d's inside set is recomputed after
+    the first letter. After every guarded single U letter has failed, a pair whose caps do not meet (the test of
+    A-R22J-03, equality counted as meeting) cannot lower u: such letters commute, keep each other's admissibility,
+    inside sets and guards, and their changes of u add, so one of them alone would lower u. Inside sets that are
+    disjoint as sets of pieces do not give this.
+  - A-R22J-09 (proved, apart from its target clause, which is refuted below). With the height-6 poses fixed, D_H is the
+    set of caps at which every height-6 piece lies whole outside; L_H starts from the clean caps of D_H and grows by
+    every cap of D_H each of whose straddlers has a holder already in L_H. Every cap that a non-identity letter of a
+    word keeping the height-6 poses uses lies in L_H: at the first use of a cap outside it, some blocker of the cap must
+    have moved earlier, at its starting pose, so by a cap that held it whole. (Analysis A wrote "every cap used by such
+    a word"; the identity item is the exception, see the integrator's re-checks below.) Analysis A also claimed that
+    such a word cannot make clean a target outside L_H.
+  - A-R22J-10 (proved). A family U2 of two-letter words, both prefixes admissible and certain, keeping n₆ and every
+    height-6 pose, no piece above height 6, u free in the middle and strictly lower at the end, keeps R22D-81's rule
+    finite: τ depends only on the height-6 pieces and their poses, which U2 keeps, so Φ falls at every completed step;
+    at most Φ steps and 2Φ letters. One exhaustive pass of single letters and pairs tests at most m = 600·59 = 35,400
+    letters and m² = 1,253,160,000 ordered pairs, m + 2m² = 2,506,355,400 letter applications, or m + m² = 1,253,195,400
+    when first-letter states are shared. At u = 0 a jumble item of a clean τ that holds no height-6 piece of another
+    branch changes n₆ by F₄ − L₆ and a retained item by 0 (R22D-81), so a lowering item needs L₆ > F₄ as well.
+- What analysis B established.
+  - B-R22J-01 (computed). Guarded single letters stall twice. From `1ff0061f…`, (185, 1), (263, 1), (263, 3) take u
+    from 182 to 152, 38 and 8, at `fe273a8c88d8a8fe7f030f95e6130fc76a57da6d708dea110a1cb31125276122`. The 8 blockers
+    99812, 130085, 130086, 130203, 130204, 139730, 139731 and 139732 lie whole only in caps 338, 364, 420, 446 and
+    491, which have 88, 0, 264, 159 and 182 straddlers and hold 13, 0, 0, 0 and 0 height-6 pieces; all 8 lie in the
+    clean cap 364, whose 59 items leave u at least 8 (8 only at items 3 and 9). From the stop, (185, 1), (185, 7),
+    (185, 16), (185, 3), (263, 1), (263, 3), (263, 8), (364, 1), (407, 10), (263, 2) take u from 107 to 104, 102,
+    101, 100, 97, 77, 66, 61, 31 and 23, at `efab42dab21df190c53346f34b78f87a138e34be9e0314c92d78f5e04b666f43`; the
+    holders of the 23 are 338, 364, 405, 420, 426, 446 and 491, with 96, 0, 294, 178, 86, 73 and 182 straddlers and 13
+    height-6 pieces in cap 338 only, and cap 364's minimum is 23, again at items 3 and 9. Cap 338 holds 13 height-6
+    pieces, so no guarded letter uses it. These are exact obstructions to single letters, not to preparations.
+  - B-R22J-02 (computed). The same (removed, added) rows as A-R22J-03; every blocker brought in is of branch 2, and
+    the rise is 23 + 110 − 58 = 75. Swapping the last two letters gives the same end state; the orders (64, 15),
+    (263, 14), (357, 12), (471, 12), (185, 14), (407, 13), (523, 12) and (64, 15), (407, 13), (357, 12), (471, 12),
+    (263, 14), (185, 14), (523, 12) both end at u = 182 at `50bccd546235…`. Analysis B left all orders open;
+    A-R22J-03 settles them.
+  - B-R22J-03 (computed). The same obstruction for the 16 blocked holders as A-R22J-05, with its own witnesses (for
+    example piece 141913 for holder 466, and 58363 and 74414 for holder 405).
+  - B-R22J-04 (computed; proved). Cap 301's 59-item vector at `9e6b991b…` is R22D-86's, minimum 38. The 60 items at a
+    grip form a group and a letter keeps its cap's inside set, so (c, g), (c, h) acts as (c, hg); (136, 2), (136, 6)
+    equals (136, 10), which reaches `9e6b991b…` in one letter. Consecutive letters at one grip add nothing to words
+    of two or three letters; patterns c, d, c are not excluded.
+  - B-R22J-05 (proved). R22D-82's closure L is the same before and after any admissible letter (by induction over
+    its layers; the inverse letter gives equality), so L is all 600 caps at every reachable state and certifies
+    nothing there. At `fe273a8c…` every blocker of cap 311 lies in the clean cap 364, yet no single letter lowers u: L
+    with "every blocker has a clean holder" is not sufficient for a single-letter unlock.
+  - B-R22J-06 (proved). The straddler formula for any letter, with N_τ = {p ∈ I_c : g·Q_p straddles τ}:
+    S_τ(Zg) = (S_τ(Z) ∖ I_c) ∪ N_τ. For a pair, with δ = u(Za) − u(Z) and r the straddlers at Za inside the second cap,
+    r > δ is necessary, also when a raises u; requiring the first letter to move an original blocker is unsafe. Two
+    certificates: a complete monotone unlock by helper letters with (1) pairwise disjoint inside sets, (2) each moved
+    set staying outside every other helper cap, (3) the height-6 guards, (4) each clearing its blockers and adding none,
+    and (5) the inside sets covering S_τ; and, for one next step, the averaging test Σ_{p ∈ I_c} R_p < |𝒜|·r, with R_p
+    the number of items of a safe item set 𝒜, identity included, after which p straddles τ (r − δ in place of r for the
+    second letter of a pair). A safe 𝒜 is the 12 retained items when c holds no height-6 piece, and all 60 when c also
+    holds no height-4 piece of another branch.
+  - B-R22J-07 (proved). R22D-81 with U2 ends, Φ falling at completed-word boundaries, after at most 2Φ letters;
+    retargeting after H6 is safe, arbitrary retargeting with n₆ unchanged is not; a lowering H6 item at a clean τ
+    needs k > F₄, and preparations can change F₄. At most m + m² = 1,253,195,400 tests per pass; at `9e6b991b…`, where
+    a successful pair begins or ends at cap 301, at most 37·59² + 599·59² = 2,213,916 pair endpoints.
+- What the cross-examination confirmed (R22JX-01 to R22JX-04).
+  - Every computed number, digest and word of both analyses and every prefix guard; the six inverse letters of
+    A-R22J-02 by exact products; for A-R22J-03 the geometry, the single meeting pair, the two order digests and the
+    (removed, added) rows, from which all 5,040 orders follow (not replayed one by one); the proofs of A-R22J-06,
+    A-R22J-07, A-R22J-08 and A-R22J-10 and of B-R22J-05.
+  - Analyses A and B do not disagree about cap 311: analysis B's stalls are stalls of guarded single letters, and pairs
+    get past both (R22JX-02). The first improving pairs in (c, g, d, h) order are (364, 3), (263, 6) at `fe273a8c…`,
+    u 8 → 8 → 2, ending at `be3ce23095a9bf44b546572246b1a0ad54799e7e8c913e3ce4ed0f2f2c3b45c3` with (103,103, 1,019, 172)
+    (180 eligible first prefixes, 2,086 distinct second-normal evaluations), and (185, 9), (364, 1) at `efab42da…`,
+    u 23 → 24 → 19, ending at `95d150f331140091f89c7ccc7f6f7d1b89857ba80cf04e50da01883acf8dd508` with (100,206, 1,085,
+    185) (9 prefixes, 81 distinct second-normal evaluations). As (δ, r, t), t being the blockers the second letter adds
+    (here equal to the end u), they are (0, 8, 2) and (1, 24, 19).
+  - Analysis A's helper certificate implies analysis B's, and neither holds at the three states. At `1ff0061f…` caps
+    185, 263 and 364 hold 30, 144 and 57 of cap 311's blockers, with blockers 38584, 81043 and 99812 held only by 185,
+    263 and 364 respectively, and their inside sets overlap: 346, 172 and 151 pieces in common for the pairs (185, 263),
+    (185, 364) and (263, 364), and piece 1323 in all three. At the stalls the only clean holders are cap 364 (minimum 8)
+    and cap 301 (minimum 38) (R22JX-03).
+  - At `fe273a8c…`, |D_H| = 564 and |L_H| = 434, with layers of 38, 103, 104, 69, 70, 46 and 4 caps and 92,868 off
+    pieces in the union of L_H's inside sets; the same L_H holds at `1ff0061f…` and `9e6b991b…`, and no blocker of the
+    three targets lies outside that union (R22JX-04).
+- What it refuted (R22JX-04): A-R22J-09's target clause. Caps 311 and 290 hold C's 13 height-6 pieces whole, so they
+  lie outside D_H, and so outside L_H, even when clean; yet A-R22J-02's word makes cap 311 clean at `e6f779a1…` and
+  keeps every height-6 pose. The valid necessary condition for cleaning a target is S_τ ⊆ U_H, U_H being the union
+  of the inside sets of the caps of L_H: a blocker outside U_H cannot move. For a target in D_H this is the same as
+  membership in L_H; for these targets it is not. B-R22J-05 stands as proved.
+- What it qualified (R22JX-01, R22JX-06).
+  - B-R22J-06's averaging test guarantees a non-identity item when δ ≥ 0, as after U is exhausted; for δ < 0 the
+    identity alone can pass it (𝒜 = {identity}, δ = −1). This does not affect U2.
+  - B-R22J-07's minimum Δn₆ = F₄ − k is the minimum over the jumble items; over the full menu it is min(0, F₄ − k),
+    since a retained item changes no height. The criterion k > F₄ stands.
+  - R22D-81's proof needs τ to change only after an H6 letter. Filtering the targets again by k > F₄, or moving to
+    another target after exhaustion, breaks it: with n₆ fixed, a retargeting that raises u by one while n₄ falls by
+    one raises Φ by B² − B (a counterexample to the proof, not a reachable cycle). If retargeting is wanted, R22JX-06
+    gives a finite target cursor. At each H6 letter freeze the candidate list ordered by (−k, c), optionally without
+    the caps that a height-6 piece straddles; for the current target try H6, U, U2, H4 and H2 in order, H4 and H2 also
+    at a clean target with k ≤ F₄, since they can change F₄; advance the cursor when all are exhausted, never return
+    to an earlier target, and rebuild the list only after an H6 letter. With q ≤ 600 the number of remaining targets,
+    the current one included, Ψ = n₆·B⁴ + q·B³ + u·B² + n₄·B + n₂ falls at every completed step and every advance.
+    Keeping one target until the next H6 letter is also finite but can miss a target whose F₄ preparations would make
+    favourable. Neither variant gives coverage, and neither was implemented.
+- The plan of the deciding experiment (R22JX-05). R22JX-05 checked the integrator's planned pair family, its prunes and
+  the first steps of four runs; see R22D-88 and R22D-89.
+- Dispositions. Every result of analysis A, analysis B and the cross-examination is adopted, except A-R22J-09, which is
+  answered `reject_with_evidence` in its refuted part; the results are taken in the form the cross-examination left
+  them, with two integrator corrections, to A-R22J-09 and A-R22J-10 (in the re-checks below). A-R22J-09's necessity for
+  the helper caps that the non-identity letters of a word actually use stands. Its claim that a target outside D_H
+  cannot be cleaned is false: target 311 holds C's 13 frozen height-6 pieces and is cleaned by a verified word
+  (A-R22J-01, A-R22J-02).
+- The integrator's re-checks of analysis A. Computed results, all re-run:
+  - A-R22J-01, with analysis A's own command: every count, digest and assertion; the 8 blockers after the third letter
+    and the 8 after the fourth are disjoint.
+  - A-R22J-02, letter by letter with the integrator's own script: every count and digest; after the sixth letter the
+    state is `446f4e00…`, the stop after (64, 15), with u = 107, and (311, 14) lowers 13 pieces, raises none to height
+    6 and leaves 103,170 pieces off.
+  - A-R22J-03, with analysis A's command: the geometry line, the two order digests and the (removed, added) rows;
+    eight full orders of the seven letters (three chosen, five shuffled), each letter admissible and certain, all end
+    at u = 182, at `1ff0061f…` when 185 comes before 263 and at `50bccd546235…` otherwise. The 5,040 orders themselves
+    were not replayed; they follow from the proof, which the integrator checked against the simulator source.
+  - A-R22J-04 and A-R22J-05, with analysis A's commands: every digest, list and row; the check of A-R22J-05 also
+    confirmed B-R22J-03.
+
+  Proofs, each checked twice and independently against the simulator source, with exact spot checks:
+  - A-R22J-06: the formula matched a full replay for all 418 non-identity retained letters at the 38 clean caps of
+    `1ff0061f…` and of `9e6b991b…`.
+  - A-R22J-07: a search for its certificate found none for caps 311 and 290 at the stop, at `1ff0061f…` or at
+    `9e6b991b…`.
+  - A-R22J-08: at `9e6b991b…`, 604 pairs of clean caps that do not meet, none sharing a piece, and 99 that meet, 13 of
+    them with no common piece; among those 13, (370, 1) moves 39 pieces of cap 370 into or across cap 394 and (394, 1)
+    moves 90 of cap 394 into or across cap 370, so pieces in common are not the test.
+  - A-R22J-09: |D_H| = 553 and |L_H| = 421 at the stop, 564 and 434 at `1ff0061f…` and `9e6b991b…`, every target
+    outside D_H, and every cap used by analysis A's words in L_H. The checks agree with R22JX-04 and add that the lemma
+    speaks of caps used by non-identity letters: the identity item at cap 64, which holds 13 height-6 pieces whole, is
+    admissible at the stop and changes nothing.
+  - A-R22J-10: the proof and the counts stand; its sentence that A-R22J-04's words are U2 steps and that the last two
+    letters of A-R22J-01, (364, 1), (263, 2), complete an unlock holds only for a target fixed by hand. R22D-81's own
+    target at `9e6b991b…` is cap 274, with u = 3, and A-R22J-04's words keep it at 3. At the stop it is cap 274 as well,
+    with u = 3 at every prefix of A-R22J-01's word; and at `b54bed33…`, where (364, 1), (263, 2) begins, the H6 letter
+    (64, 15) is admissible, so the rule would play H6 there and never reach U or U2.
+
+  So no computation of analysis A was left without a re-run, apart from the 5,040 orders one by one, and no proof of
+  analysis A without a check. These re-runs used scratch scripts outside the repository. The integrator then replayed
+  the literal words letter by letter with `r22d87_replay.py` (`runs/round22/r22d87_replay.txt`, section 6): A-R22J-01
+  and A-R22J-02 with (311, 14) and the products of A-R22J-02's six inverse pairs, the geometry line and the orders of
+  A-R22J-03 and B-R22J-02, the words and products of A-R22J-04 and B-R22J-04, both words of B-R22J-01 and the two pairs
+  of R22JX-02. Every letter is admissible and certain, and every u, (n₂, n₄, n₆), digest and (removed, added) row of
+  these words above is the replay's. Analysis B's ten letters from the stop keep n₆ = 185 and every height-6 pose and
+  end at `efab42da…` with 101,476 off and N = 130,814; their first eight letters are those of the cloud line's route
+  from the stop (R22D-89), digest for digest, and that route reaches `efab42da…` by another word. At the ends of
+  analysis B's two words the replay prints the blockers, their holders with the straddler and height-6 counts of
+  B-R22J-01, and cap 364's 59-item vector, with minimum 8 at `fe273a8c…` and 23 at `efab42da…`, each at items 3 and 9.
+  Run (i) of R22D-89 also repeats analysis B's first word, and the cap 301 vector at `9e6b991b…` in R22D-89 gives its
+  minimum 38. The other numbers of this subsection are printed only by the scratch scripts or in the review results: the
+  holder table and the 38 clean caps of A-R22J-05 and B-R22J-03, the eight orders, the 418 letters, the certificate
+  search, the 604, 99 and 13 pairs and the 39 and 90 pieces, |D_H| and |L_H|, R22D-81's target and its H6 letter along
+  analysis A's words, cap 64's identity item, the search counts of R22JX-02, the 30, 144 and 57 blockers, the 346, 172
+  and 151 common pieces and piece 1323 of R22JX-03, and the layers and the 92,868 pieces of R22JX-04.
+- Uses: R22D-75, R22D-80, R22D-81, R22D-82, R22D-84, R22D-86.
+
+### R22D-88. A two-letter unlock family U2 for the rule of R22D-81 (rule; proved finite; computed)
+
+- Rule (the integrator's extension of R22D-81, from A-R22J-10 and B-R22J-07, with the conditions of R22JX-05).
+  Everything in R22D-81 stays: its precondition, the target τ, u, the guards, and the ends HANDOFF, STUCK and BUDGET.
+  The families are, in this order, H6, U, U2, H4 and H2.
+  - U2: two letters (c, g), (d, h) with d ≠ c, tried in (c, g, d, h) order (grips 0 to 599, items 1 to 59), and only
+    when U has no letter. Every letter is admissible and certain. After each of the two letters every height is at
+    most 6, n₆ is unchanged and every height-6 piece keeps its exact pose. u after the second letter is strictly below
+    u before the first; u after the first letter (u_mid) may stay or rise. A step is one letter (H6, U, H4, H2) or
+    two (U2), and every step records its length.
+  - d ≠ c loses nothing: the 60 items at a grip form a group and a letter keeps its cap's inside set, so two letters
+    at one grip act as one letter of that grip or as the identity (B-R22J-04); such a letter that ended below u
+    would be a U letter.
+- Prunes, each exact (1, 2 and 4 as R22JX-05 states its first two prunes; 3 from A-R22J-08 and B-R22J-06, with
+  R22JX-05's third, the updates over every moved piece; 5 from the guard of R22D-81, A-R22J-06 and B-R22J-03):
+  1. U first. U2 is tried only after every guarded single U letter has failed at the state.
+  2. Meet test. The second cap d must meet c inside the ball: (NN + n_c·n_d)·R² ≥ 2·KAPPA², equality counted as
+     meeting, with R² = 96 − 32√5 (A-R22J-03, A-R22J-08). If c and d do not meet, the two letters move disjoint sets
+     of pieces, keep each other's admissibility, inside sets and guards (each inside set has the same poses alone and
+     in the pair) and commute, and their changes of u add; a pair ending below u would contain a letter that ends
+     below u alone, a U letter, which prune 1 has excluded. In the same way, when c does not meet τ, no piece that c
+     moves can straddle τ, so the first letter brings in no blocker.
+  3. Blockers of d. If d is blocked before the pair, every piece that straddles d must be among c's inside pieces: a
+     piece outside c keeps its pose under (c, g) and still straddles d (A-R22J-08, B-R22J-06). Every moved piece,
+     lattice pieces included, is labelled at d again, and d's inside set is recomputed after the first letter.
+  4. Count. With δ = u(Za) − u(Z), signed, r = |S_τ(Za) ∩ I_d(Za)| and t the number of pieces moved by (d, h) that
+     straddle τ after it, the end value is u + δ − r + t. Since t ≥ 0, r > δ is necessary. The script bounds r from
+     above first (the straddlers that the first letter did not move and that d held before the pair, plus those it
+     moved) and then counts it exactly.
+  5. Height-6 pieces. A first cap that holds a height-6 piece whole is skipped, since a non-identity letter changes
+     the exact pose of every piece inside its cap; a second cap that holds one at the middle state is skipped for the
+     same reason.
+- What R22JX-05 warns against, and the script follows. The first letter needs only admissibility, certainty and the
+  height and height-6 guards. Requiring it not to raise u (the guard of H4 and H2; U's own guard, a fall of u, is
+  stronger still) would reject the verified pairs 38 → 46 → 30 at cap 290 (A-R22J-04) and 23 → 24 → 19 at `efab42da…`
+  (R22JX-02). Requiring its cap to hold an original blocker of τ is unsound: (277, 1), (301, 4) lowers u from 38 to 29,
+  and cap 277 holds none of the 38 (R22D-86). So every clean cap that holds no height-6 piece is a first cap, with no
+  condition on u_mid.
+- Finite (proved). Let Φ = n₆·B³ + u·B² + n₄·B + n₂ with B = 177,121, as in R22D-81. A U2 step keeps n₆ and every
+  height-6 pose at both prefixes, so H₆, its poses and τ are the same at its end, u is counted for the same cap, and
+  u has fallen; since n₄·B + n₂ ≤ B² − 1, Φ falls at every completed step, whatever happens in the middle. The other
+  families are as in R22D-81. So the rule plays at most Φ steps and at most 2Φ letters (A-R22J-10, B-R22J-07). One
+  exhaustive pass tests at most 35,400 single letters and 1,253,160,000 ordered pairs, 1,253,195,400 letter
+  applications when first-letter states are shared; the prunes cut this, but no smaller bound is claimed. The proof
+  allows no move to another target between H6 letters; that needs R22JX-06's cursor and Ψ (R22D-87).
+- Finite is not coverage. The rule ends at a handoff, stuck or at its budget, and nothing here says when it hands
+  over. Stuck means that every family, U2 included, is exhausted at that state, not that no longer preparation
+  exists; a budget stop is not exhaustion.
+- Implementation. `scripts/round22/r22d81_pairs.py` runs U and U2 only, for a target fixed with `--target`, from a
+  snapshot and an optional prefix (`--expect` checks the digest after it), until u = 0 (UNLOCKED, which also prints, for
+  each item of τ, how many of the height-6 pieces τ holds it lowers to height 4, by exact products), STUCK or BUDGET;
+  H6, H4, H2 and R22D-81's choice of target are not in it. Candidates are evaluated on a copy that moves the inside
+  pieces with the simulator's own composition, labels the moved pieces with the simulator's own tests and predicts
+  heights from left factors; every played letter is replayed with the simulator's `apply`, and its heights, height-6
+  poses and u are checked against the prediction. Heights and height-6 poses are read per piece through exact pose keys,
+  never through pose-table indices, which `apply` compacts (R22JX-05); the copy is not compacted. The script asserts
+  R² = 96 − 32√5 from the model's vertices. `--selfcheck` compares the copy's u and guard with a full apply for every
+  item of the first cap that U tries; at `fe273a8c…` they agreed for all 59 items of cap 364 (R22D-89, run (iii)).
+  `--no-meet-prune` turns the meet test off for validation; that was not run. A fast review of the script found no
+  unsound prune and replayed the cap 290 pair (136, 1), (301, 1), every piece pose and u 38 → 61 → 37; it did not
+  complete a full pair search. Its two `minor` findings were adopted: SU2-01, the smallest end value of any evaluated
+  pair, printed at STUCK, was kept from earlier states and is now reset at each state (runs (iii) and (ii) of R22D-89
+  were made before the fix, which changes no step); SU2-02, the BUDGET line of `r22d81_rule.py` could omit an H6 letter
+  played just before it, now reported.
+- Uses: R22D-81, R22D-86, R22D-87.
+
+### R22D-89. The deciding experiment: U2 unlocks cap 311 after R22D-75's seven letters, and at cap 290 the pair order decides (computed; replayed)
+
+- Setting. The integrator's plan (cross-examination packet, X5) named four runs: (i) at `1ff0061f…` with τ = 311, (ii)
+  at `9e6b991b…` with τ = 290, (iii) at `fe273a8c…` with τ = 311, and (iv) at the stop with R22D-81's own target;
+  R22JX-05 found the plan sound with the qualifications of R22D-88 and predicted the first steps of the runs. The
+  integrator ran (i) to (iii) with `r22d81_pairs.py` (R22D-88), the target fixed by hand, U and U2 only; (iv) was not
+  run, and `r22d81_pairs.py` was not run from the stop with τ = 311 either. Each is one run from one state after the
+  literal prefix named. `fe273a8c…` lies on run (i)'s route, so run (iii) repeats the last two steps of run (i) and does
+  not confirm it from a second state. Every letter is admissible and certain, keeps n₆ and every height-6 pose and
+  leaves no piece above height 6. In the tables u_mid is u after the first letter of a U2 step and u is u after the
+  step; "—" marks a U step.
+- Run (iii), from `fe273a8c…` (R22D-75's seven letters and (185, 1), (263, 1), (263, 3)), τ = 311, u = 8,
+  N = 132,952, with the self-check. U has no letter: cap 364, the only clean cap that holds a blocker, leaves u at
+  least 8 (8 only at items 3 and 9).
+
+  | step | family | letters | u_mid | u | (n₂, n₄, n₆) | off | N | end digest |
+  |---|---|---|---|---|---|---|---|---|
+  | 1 | U2 | (364, 3), (263, 6) | 8 | 2 | (103,103, 1,019, 172) | 104,294 | 133,138 | `be3ce230…` |
+  | 2 | U | (263, 40) | — | 0 | (103,565, 1,019, 172) | 104,756 | 133,040 | `b1cdbd09…` |
+
+  For step 1 the script took 1,312 first letters (48 more failed the height guard), pruned 7,278 combinations of a
+  first letter and a second cap by the count, classified 105 second caps at a middle state and evaluated 6,142
+  pairs. At u = 2, items 40 and 59 of cap 263 give u = 0, and item 40 comes first. Unlocked: cap 311 holds 13
+  height-6 pieces whole, and each of its items 14, 21, 23 and 43 to 51 lowers all 13 to height 4.
+- Run (i), from `1ff0061f…`, τ = 311, u = 182 (R22D-84), N = 132,702:
+
+  | step | family | letters | u_mid | u | (n₂, n₄, n₆) | off | N | end digest |
+  |---|---|---|---|---|---|---|---|---|
+  | 1 | U | (185, 1) | — | 152 | (103,103, 1,019, 172) | 104,294 | 132,720 | `02bb938f…` |
+  | 2 | U | (263, 1) | — | 38 | (103,103, 1,019, 172) | 104,294 | 132,942 | `e69a2823…` |
+  | 3 | U | (263, 3) | — | 8 | (103,103, 1,019, 172) | 104,294 | 132,952 | `fe273a8c…` |
+  | 4 | U2 | (364, 3), (263, 6) | 8 | 2 | (103,103, 1,019, 172) | 104,294 | 133,138 | `be3ce230…` |
+  | 5 | U | (263, 40) | — | 0 | (103,565, 1,019, 172) | 104,756 | 133,040 | `b1cdbd09…` |
+
+  The end digest in full is `b1cdbd09ab8aca71803793c92df0034386db7abc6a7ed8e1cc537246a7478487`; the digests after steps
+  1 and 2 are `02bb938f54773e28fca8ab543dbeaed68a2c97897e77749554601a4c9ec80ece` and
+  `e69a2823df1a58ace4774e753524958bbe290c7409afce4018f230beba0d1cca`. Steps 1 to 3 are analysis B's descent (B-R22J-01),
+  and steps 4 and 5 are run (iii), with the same checks and digests. The rule takes the first letter that lowers u: at
+  step 2 item 1 of cap 263 gives 38, while items 2, 30 and 51 give 8. The unlocked list is the same as in run (iii).
+- Then (311, 14). With R22D-75's seven letters, run (i)'s six and (311, 14) as prefix, each admissible and certain,
+  `r22d81_rule.py` starts at `5296c847f5a19cb1bc6e4cc531786c833dc681adbdc367763378f9325e740138` with (104,070, 1,470,
+  159), 105,699 off and N = 133,790, and no piece above height 6. n₆ falls from 172 to 159: the 13 pieces that cap 311
+  held (run (i)'s unlocked count) go to height 4, and no piece rises to height 6. There R22D-81's own target is cap 274,
+  with u = 3, from the table (150, 84), (274, 159). Only this START line is the record of the check: the run was given
+  30 CPU seconds after the load and the prefix and stopped at that budget without a step, and what it prints after START
+  depends on the budget and the machine. So R22D-75's seven letters and these seven take C, from the stop, to height 4
+  through cap 311.
+- Predictions of the cross-examination, and agreement:
+  - R22JX-02: the first improving pair at `fe273a8c…` is (364, 3), (263, 6), u 8 → 8 → 2, ending at `be3ce230…`.
+    Runs (iii) and (i) play exactly this pair, with this end and (103,103, 1,019, 172).
+  - R22JX-05 (i): at `1ff0061f…` the first U letter is (185, 1), u 182 → 152, at `02bb938f…` with (103,103, 1,019,
+    172). Run (i)'s step 1 is this letter with this digest. The prediction's statement that H6 has no letter there, and
+    at `fe273a8c…` in (iii), is not tested, since the script does not run H6.
+  - R22JX-05 (ii): at `9e6b991b…` U is exhausted and the first U2 tuple comes no later than (136, 2, 301, 1). Run (ii)
+    finds no U letter (cap 301's vector is R22D-86's, minimum 38 at items 3 and 9) and plays (136, 1), (301, 1),
+    u 38 → 61 → 37, which comes before (136, 2, 301, 1) in (c, g, d, h) order.
+  - No prediction failed. Run (iv) was not made.
+- Cap 290 in the lexicographic order: run (ii), from `9e6b991b…` (R22D-75's seven letters and (136, 2), (136, 6);
+  R22D-86), τ = 290, u = 38, N = 132,760:
+
+  | step | family | letters | u_mid | u | (n₂, n₄, n₆) | off | N | end digest |
+  |---|---|---|---|---|---|---|---|---|
+  | 1 | U2 | (136, 1), (301, 1) | 61 | 37 | (103,103, 1,019, 172) | 104,294 | 132,926 | `83e1296b…` |
+  | 2 | U | (136, 1) | — | 23 | (103,103, 1,019, 172) | 104,294 | 132,820 | `da01346d…` |
+  | 3 | U2 | (301, 3), (136, 1) | 23 | 18 | (103,103, 1,019, 172) | 104,294 | 132,840 | `bde3de73…` |
+  | 4 | U | (136, 3) | — | 12 | (103,103, 1,019, 172) | 104,294 | 132,864 | `5b0dfc90…` |
+  | 5 | U | (136, 11) | — | 4 | (103,103, 1,019, 172) | 104,294 | 132,854 | `8ac0a1ce…` |
+
+  Then STUCK at `8ac0a1ce8f3f5af20b376421431e6d1510e5e0ce3408a0fe7a4d40bdedf18116` with u = 4: U has no letter (cap 301
+  leaves at least 4, at items 3 and 9), and U2 none either, after 2,194 first letters (48 more failed the height guard),
+  11,769 count prunes, 263 second caps classified at a middle state and 15,517 pairs evaluated at that state. The
+  smallest end value of an evaluated pair printed with STUCK is not used: run (ii) was made with the script before the
+  fix of SU2-01, so that field is not reliable (R22D-88). This is the exhaustion of U and U2 as evaluated on the copies,
+  with the meet prune, at that state, after a route that the lexicographic order chose; it is not a stall of every pair
+  order. The self-check, made in run (iii) only, covers the U path only; the played letters were replayed with `apply`,
+  but no rejected pair was compared with a full apply.
+- Cap 290 in the cloud line's order (replayed). The cloud line's record is
+  `runs/round22/cloud/unlock-cap311-cap290/RESULT.md`, with the driver
+  `scripts/round22/cloud/unlock-cap311-cap290/unlock_driver.py` and the class order of
+  `scripts/round22/cloud/unlock-cap311-cap290/prep_two_letters.py`; the class order, the first pair below, the twelve
+  lowering items of cap 290 and the counts of lattice pieces taken off are read from that record, not from the
+  integrator's replays. The driver plays the first U letter and otherwise the first accepted pair, its first letters in
+  class order: first the clean caps that hold a remaining blocker whole, or hold whole every straddler of a blocked
+  holder, in cap order, an item counting in this class when afterwards a new pair of a blocker and a clean holder exists
+  or a blocked holder is clean; then the other items in (cap, item) order. At u = 0 it plays the item of τ that lowers
+  n₆ most, ties to the lower item. At `9e6b991b…` cap 301 is the only cap of the first class, so its first pair is
+  (301, 2), (136, 7), not (136, 1), (301, 1). The integrator replayed its route letter by letter (`r22d89_replay.py`):
+  every letter is admissible and certain and leaves no piece above height 6, and letters 1 to 10 keep n₆ and every
+  height-6 pose. "prep" is the cloud's name for a letter of a pair:
+
+  | letter | cloud family | u | (n₂, n₄, n₆) | off | N | digest |
+  |---|---|---|---|---|---|---|
+  | (301, 2) | prep | 56 | (103,103, 1,019, 172) | 104,294 | 132,774 | `f0051e38…` |
+  | (136, 7) | prep | 37 | (103,103, 1,019, 172) | 104,294 | 132,848 | `fa6ad5b2…` |
+  | (301, 4) | prep | 41 | (103,103, 1,019, 172) | 104,294 | 132,896 | `ba1e0987…` |
+  | (136, 1) | prep | 26 | (103,103, 1,019, 172) | 104,294 | 132,988 | `0533c38a…` |
+  | (136, 4) | U | 9 | (103,103, 1,019, 172) | 104,294 | 132,964 | `bd31c9fb…` |
+  | (136, 19) | U | 6 | (103,642, 1,019, 172) | 104,833 | 133,296 | `176bb059…` |
+  | (301, 3) | prep | 6 | (103,642, 1,019, 172) | 104,833 | 133,264 | `3c60fd10…` |
+  | (136, 1) | prep | 3 | (103,642, 1,019, 172) | 104,833 | 133,210 | `eaf15426…` |
+  | (301, 3) | prep | 3 | (103,642, 1,019, 172) | 104,833 | 133,228 | `3aa0e238…` |
+  | (136, 5) | prep | 0 | (103,642, 1,019, 172) | 104,833 | 133,190 | `da130bb7…` |
+  | (290, 15) | H6 | 0 | (104,526, 1,391, 159) | 106,076 | 134,146 | `21db4f94…` |
+
+  The end digest in full is `21db4f944c71f020f2380e434dc1b37618c9b1437960ef87365f3345aaa34928`. Its pairs end at 37,
+  26, 3 and 0, each below u before them, so the route is a sequence of U and U2 steps in another order. (290, 15)
+  lowers 13 of the start's height-6 pieces to height 4; the cloud line found twelve items of cap 290 that do so, 15,
+  18, 22, 33 and 52 to 59. So at `9e6b991b…` cap 290 is unlocked by the class-ordered search and not by the
+  lexicographic one: there the order of the pairs decides. Neither order is a proved rule for other states, and each
+  was run once, from this one state.
+- Cap 311 in the cloud line's order. From `1ff0061f…` its route is run (i)'s six letters and (311, 14), with families
+  U, U, U, prep, prep, U and H6, and it ends at `5296c847…`, the state of the (311, 14) check. From the stop its route
+  is new, 22 letters, replayed by the integrator letter by letter with the same checks as for cap 290:
+  - (185, 1), (185, 7), (185, 16), (185, 3), (263, 1), (263, 3), (263, 8), (364, 1), (263, 2), (407, 1), (407, 3),
+    (407, 1), (407, 2), (407, 4): fourteen U letters, u 104, 102, 101, 100, 97, 77, 66, 61, 53, 40, 39, 33, 27 and 23,
+    to `efab42da…` with (100,206, 1,085, 185), 101,476 off and N = 130,814. (185, 16) takes n₂ from 99,314 to 100,206
+    and the off count from 100,584 to 101,476. This is the state where analysis B's ten letters stall (B-R22J-01),
+    reached by another word.
+  - (364, 1), (407, 2), a pair, u 40 then 19; (407, 4), (407, 10), (407, 15), U letters, u 17, 12 and 8, the last
+    taking n₂ to 99,940 and the off count to 101,210; (364, 2), (263, 2), a pair, u 23 then 0, at `352a06b1…` with
+    N = 131,158.
+  - (311, 14), which lowers 13 of the start's height-6 pieces to height 4:
+    `2f88c1e617cc22c7f09eef19d6e7c530fdcb7a49c577305f1ca79196533726b1`, (100,879, 1,372, 172), 102,423 off,
+    N = 131,998.
+
+  A-R22J-01's six letters reach C's lowering from the stop with fewer letters.
+- Not protected. N rises along every route: from 132,702 to 133,790 from `1ff0061f…` with (311, 14), from 132,760 to
+  134,146 for cap 290, and from 130,386 at the stop to 131,998. Lattice pieces go off: by the cloud line's count
+  (`RESULT.md`), 2,157 on the cap 290 route counted from `9e6b991b…`, 1,902 on the cap 311 route from `1ff0061f…`
+  counted from `fe273a8c…`, and 2,086 on the route from the stop counted from `efab42da…`.
+- Scope. Single runs at one stop, each from one state. The target was fixed by hand: R22D-81's own rule chooses cap 274
+  and then cap 104 at `1ff0061f…` and hands over (R22D-80), and it chooses cap 274 again after run (i) and (311, 14). U2
+  inside the full rule, with R22D-81's own target, was not run, nor run (iv), nor U2 with τ = 311 from the stop, nor any
+  run without the meet prune. Not coverage, not protected, and no word is claimed shortest. At this stop C is now
+  lowered by literal words through cap 104 (R22D-80), through cap 311 from the stop and from `1ff0061f…`, and through
+  cap 290 from `9e6b991b…`. The cloud line's listings of alternative pairs were still being re-run; the routes do not
+  depend on them.
+- A fast review of `r22d89_replay.py` passed with no findings; both replays reproduced all 35 output rows exactly.
+- Uses: R22D-75, R22D-80, R22D-81, R22D-84, R22D-86, R22D-87, R22D-88.
+
+### R22D-75 and R22D-81 at four more 3000-twist stops (computed; cloud lines; replayed)
+
+- Four cloud lines, run at the same time as the joint attack, each drew a fresh 3000-twist scramble of the I_a menu
+  (seeds 7304, 7305, 7306 and 7307, drawn as a census run draws its scramble), ran the census descent of stage 11 with a
+  budget of 18,900 seconds, then the rule of R22D-75 from the stop, with its three families, tests and prediction
+  unchanged (`r22d75_census_k3000.py`, a copy of `r22d75_census.py` with a larger CPU limit for the longer replay),
+  and then the rule of R22D-81 after R22D-75's letters (the draft of `r22d81_rule.py` with `--record` and
+  `--prefix`). Before that each line checked the draft's `--record` path at seed 7302: from the stop, with
+  R22D-75's seven letters as the prefix, it printed every digest, count, N, target table and U_ITEMS vector of the
+  integrator's run of R22D-81 from there (`runs/round22/r22d81_rule.txt`).
+
+  | seed | at the scramble: off, N, left heights | census twists (steps) | at the stop: off, N, left heights | R22D-75 | end: (n₂, n₄, n₆), off, N |
+  |---|---|---|---|---|---|
+  | 7304 | 121,001, 139,584, {2: 118,951, 4: 2,050} | 580 (198) | 95,569, 115,200, {2: 94,384, 4: 1,185} | (170, 12), (395, 12), (500, 12), (540, 12), (217, 15), (148, 15); stuck | (95,674, 797, 0), 96,471, 117,736, `ac127dc3…` |
+  | 7305 | 116,870, 141,328, {2: 113,826, 4: 3,044} | 103 (35) | 105,437, 131,542, {2: 103,140, 4: 2,297} | (10, 12), (10, 15), (67, 14), (134, 13), (195, 14), (233, 15), (421, 12), (421, 12), (484, 15), (122, 12), (175, 14); stuck | (108,453, 1,419, 0), 109,872, 134,346, `cc5ef7ec…` |
+  | 7306 | 123,181, 149,224, {2: 118,426, 4: 4,726, 6: 29} | 270 (92) | 108,823, 137,562, {2: 106,032, 4: 2,762, 6: 29} | (208, 12), (76, 13), (90, 12), (109, 12), (233, 15), (387, 15), (485, 13), (403, 13), (512, 15); stuck | (108,641, 2,591, 0), 111,232, 140,018, `16c4aefe…` |
+  | 7307 | 119,518, 136,918, {2: 117,245, 4: 2,263, 6: 10} | 734 (252) | 96,236, 112,776, {2: 94,691, 4: 1,535, 6: 10} | (275, 14), (516, 13), (50, 15), (474, 13), (494, 15), (147, 14); stuck | (98,984, 1,585, 0), 100,569, 115,782, `895b45de…` |
+
+- Height 6 was small at the stops of seeds 7304, 7306 and 7307, 0, 29 and 10 pieces against 185 at seed 7302's, and
+  where there was any, R22D-75's rule lowered it by itself: at seed 7306 its first letter, (208, 12), takes all 29 to
+  height 4, and at seed 7307 its first two take the 10 to 7 and then 0, the second raising n₄ from 1,538 to 1,940. So at
+  all three the rule of R22D-81 starts with no target and hands over with no letter; these runs say nothing about its
+  reach. R22D-75's rule then stops stuck on height 4 at all three, every single letter exhausted, with 797, 2,591 and
+  1,585 pieces there and almost every cap blocked (559, 574 and 562 of 600). Off and N end higher than at the stop at
+  all three, though off, and at seed 7306 N, fall at some letters; at seed 7307 n₄ ends above the stop's 1,535, since
+  the rule lowers n₆ first.
+- Seed 7305's line finished later. Its census ran in two parts: the container restarted after 17 steps, and the script's
+  `--start` option rebuilt the scramble, replayed the 49 twists and went on with the rest of the budget; no rule reads
+  the clock, so the restart moves only where the time limit falls. No piece was at height 6 at the scramble, at the stop
+  or after any letter. R22D-75's rule plays 11 letters: the first nine lower n₄ from 2,297 to 1,419, the last two keep
+  it and lower n₂ only, and (421, 12) comes twice in a row, each time the first lowering letter in the rule's order. It
+  then stops stuck, every single letter exhausted, with 578 of 600 caps blocked; off and N end higher than at the stop.
+  R22D-81's rule starts with no target and hands over with no letter. The census's last step still lowered N, so this is
+  R22D-75 at the state where the clock fell, not where the descent stalled.
+- Every census stopped on its clock (checked between steps, so the last step ends past the budget), having put back
+  21.0%, 9.8%, 11.7% and 19.5% of the off pieces (seeds 7304 to 7307), almost all of it with conj steps (191 of 198, 34
+  of 35, 89 of 92 and 241 of 252 steps; the others cover). At seeds 7306 and 7307 as many pieces were at height 6 at the
+  stop as at the scramble, 29 and 10; whether they are the same pieces was not checked.
+- The integrator's checks (section 6): `check_records.py` of stage 11 passes on the four census records; the cloud
+  lines' copies of `r22d75_census.py` print their outputs again, the `cpu` and `replay_cpu` fields aside; and the
+  committed `r22d81_rule.py`, with `--record`, the line's prefix and `--expect` at its end digest, starts at the same
+  state with no target and hands over with no letter at all four.
+- Scope. One scramble per seed and a census stopped by its clock. Not coverage and not protected.
+- Uses: R22D-75, R22D-80, R22D-81.
+
+### H4-unlock: the rule of R22D-81 two heights lower, with pair steps, from `bbef1c8e…` (rule; proved finite; computed; replayed)
+
+- A cloud line asked whether literal letters lower the 936 height-4 pieces at `bbef1c8e…`, the end of R22D-80 from
+  the seed 7302 stop, with (n₂, n₄, n₆) = (102,960, 936, 0), 103,896 off and N = 132,930. R22D-75's rule from there
+  plays one letter, (23, 14), which lowers n₂ only, and is then stuck with every single letter exhausted
+  (`0ad859c2…`).
+- The rule H4-unlock (`h4_unlock.py`, a copy of the draft of `r22d81_rule.py`). Its target τ and u are read from the
+  height-4 pieces as R22D-81 reads them from the height-6 pieces; its families L4, U and L2 are R22D-81's H6, U and H4
+  with every height two lower, under the same guards (R22D-81's H2 family has no counterpart); it hands over at
+  n₄ = 0. R22D-75's count prediction is checked against the simulator after every letter. Φ = n₄·B² + u·B + n₂ with
+  B = 177,121 falls at every accepted letter by R22D-81's argument with one coordinate fewer, so the rule is finite;
+  that is not coverage.
+- The pair step (`two_letter_u.py`), tried where H4-unlock is stuck: a first letter at a clean cap that holds no
+  height-4 piece and a second letter, both admissible and certain, no piece above height 4, n₄ and every height-4 pose
+  kept, and u strictly lower after the pair. The pair's end meets every condition of a U letter, so Φ still falls. It is
+  a pair family like U2 of R22D-88, two heights lower. First letters are tried in shards, those of class A first, then
+  the others, each in (grip, item) order; rounds 1 and 4 tried every first letter, and rounds 2 and 3 were stopped once
+  that order had fixed the pair. The pair is read off the outputs: the first success, in (grip, item) order, whose first
+  letter frees a blocked holder of a straddler of τ (makes it clean; such letters are at caps of class A, which hold
+  whole a straddler of a blocked holder), and if there is none, the first success among the other first letters in
+  (grip, item) order, the second letter also in (grip, item) order; not the lowest u. Second letters are tried only at
+  caps that hold a straddler of τ whole after the first letter, are clean then and hold no height-4 piece, since a
+  letter moves only the pieces inside its cap; and they are pruned exactly: a second cap that was clean at the state and
+  holds the same pieces in the same poses after the first letter moves them the same way at both, and since U is
+  exhausted at the state such a letter cannot lower u.
+- The run, 13 letters from `bbef1c8e…` (25 from the stop):
+
+  | phase | letters | τ, u | (n₂, n₄, n₆) | N | digest after |
+  |---|---|---|---|---|---|
+  | R22D-75 | (23, 14) | | (102,901, 936, 0) | 133,134 | `0ad859c2…` |
+  | U, four letters | (357, 1), (357, 3), (593, 3), (593, 43) | 482, 80 → 1 | (103,571, 936, 0) | 133,668 | `6999b921…` |
+  | pair | (541, 2), (593, 54) | 482, 1 → 0 | (103,282, 936, 0) | 133,834 | `391490f7…` |
+  | L4 | (482, 15) | 597, 41 | (102,750, 734, 0) | 133,558 | `c312a2fc…` |
+  | pair | (553, 5), (535, 3) | 597, 41 → 21 | (102,750, 734, 0) | 133,678 | `6c7a79d9…` |
+  | U | (535, 6) | 597, 21 → 10 | (102,750, 734, 0) | 133,700 | `b2651c24…` |
+  | pair | (363, 10), (535, 8) | 597, 10 → 8 | (102,750, 734, 0) | 133,818 | `2430f4cc…` |
+
+- The one lowering letter, (482, 15), lowers n₄ by 202, and the target moves to cap 597, which holds 205 height-4
+  pieces. Of the 936 height-4 pieces of `bbef1c8e…`, 284 end at height 2 and 652 at height 4, and 82 pieces at height 4
+  at the end were lower at `bbef1c8e…`. At `2430f4cc…` H4-unlock is stuck and no pair lowers u: all 1,947 first letters
+  were tried (1,707 of them valid), no valid one makes one of τ's four blocked holders clean (caps 578, 583, 588 and
+  595, with 1,123 straddlers of their own), and the only second cap the prune keeps, 535, leaves u at 8 or more. In the
+  second round of pairs ten first letters at cap 553 freed cap 535 and some of their pairs reach u = 0, for example
+  (553, 27), (535, 21); the stated order took the first success, (553, 5), (535, 3), with u = 21.
+- Not protected: N rises from 132,930 to 133,818, and between `bbef1c8e…` and `2430f4cc…` 2,289 lattice pieces go
+  off and 2,701 off pieces come on.
+- The integrator's replays and audit (section 6): the replay of the 25 letters from the stop prints the cloud line's
+  `end_summary.txt` byte for byte; H4-unlock from the stop with the 25 letters as prefix is stuck at `2430f4cc…` with
+  no letter, as in its run 4; and the full pair search at `2430f4cc…`, from that run's end snapshot, prints the cloud
+  line's round 4 outputs again, the `cpu` fields aside. An audit of the record against its outputs and scripts
+  reproduced every count of the four rounds of pairs and found the termination and prune arguments sound; it also
+  found statements of the record that the outputs contradict or do not support, none of which changes a letter, a
+  digest or a count of the run. They are listed in `README.md` (Files), and the record is kept as written.
+- Scope. One run from one state with one order of the pairs. Neither the lowest-u order nor R22D-25 was run at these
+  states in this line; the R22D-25 kernel with D19 ran later at `bbef1c8e…` and `2430f4cc…` and is stuck in its
+  catalogue there (next subsection). Not coverage.
+- Uses: R22D-75, R22D-80, R22D-81, R22D-88, R22D-89.
+
+### The R22D-25 kernel with D19 at six height-4 stops: stuck in r22d25-cat/1 (computed; the integrator's experiment)
+
+- The kernel of R22D-25 (`r22d25_search.py`, catalogue r22d25-cat/1: R22D-37's tier F1 to F3, R22D-19 through D19's
+  program, S·T and T1 with S and T of one letter) was run with the real D19 program at six states with no piece above
+  height 4, after D19 alone, and each record was checked by stage 13's `check_r22d25.py`. Budgets: D19 7,200 seconds,
+  the kernel 14,400 with at most three steps; no budget was reached. Each start table is rebuilt from committed files
+  by `scripts/round22/r22d25_d19_stops.py` (a census record replayed twist by twist, every twist admissible and
+  certain, then a fixed prefix of committed letters, with the stop digest, the record's off count and the end digest
+  checked, and on seed 7302's line the digests after letters 7 and 12); the rebuilt tables are byte-identical to those
+  the runs used.
+
+  | state | reached by | (n₂, n₄, n₆), off | D19: seconds, cases, first failures | kernel | checker |
+  |---|---|---|---|---|---|
+  | `bbef1c8e…` | seed 7302's stop, R22D-75's seven letters and R22D-80's five | (102,960, 936, 0), 103,896 | 947.6; 24; no free grip 24 | stuck, 0 steps | PASS |
+  | `2430f4cc…` | the same, then the cloud height-4 line's 13 letters (R22D-75's (23, 14), then 12 of H4-unlock and its pairs) | (102,750, 734, 0), 103,484 | 2,208.4; 96; no free grip 90, no landing power 4, no vacator 2 | stuck, 0 steps | PASS |
+  | `ac127dc3…` | seed 7304's stop and R22D-75's six letters | (95,674, 797, 0), 96,471 | 677.5; 60; no free grip 60 | stuck, 0 steps | PASS |
+  | `cc5ef7ec…` | seed 7305's stop and R22D-75's 11 letters | (108,453, 1,419, 0), 109,872 | 3,080.9; 240; no free grip 228, split cells 12 | stuck, 0 steps | PASS |
+  | `16c4aefe…` | seed 7306's stop and R22D-75's nine letters | (108,641, 2,591, 0), 111,232 | 1,414.2; 60; no free grip 48, split cells 12 | stuck, 0 steps | PASS |
+  | `895b45de…` | seed 7307's stop and R22D-75's six letters | (98,984, 1,585, 0), 100,569 | 3,020.8; 312; no free grip 224, split cells 84, no vacator 4 | stuck, 0 steps | PASS |
+
+  The first failures count lowering cases by their outcome. D19's seconds are elapsed from the process start (no CPU
+  time was recorded). The kernel took 902.6 to 3,251.5 seconds, its own call of D19 included.
+- D19. A lowering case needs a clean cap of the unit's own branch that holds the unit whole, and most high units have
+  none: 2 of 83, 8 of 66, 5 of 46, 20 of 134, 5 of 193 and 26 of 107 units have a case. Of the 792 cases, 674 fail
+  on no free grip and 108 on split cells. Ten reach the commutator search, at the lowering letters (482, 44) and
+  (474, 43): four find no landing power, and six find landing powers (8 and 784) whose Bad(W) the empty V does not
+  vacate; 9,979,192 and 4,988,816 powers were rejected at the two states. After both letters the SAFE-ALL alphabet
+  has no grip, so no V of one letter exists there. No word reaches the replay.
+- The kernel. Every family is `exhausted`, and none tried a letter. F1 to F3 have no unit with n₆ = 0; ST has no first
+  letter without an S letter; d19 is exhausted because the adapter's D19 run ended stuck. S and T1 are pruned at the
+  cap level for every pair of a unit and a cap: the cap holds a straddler (562, 563, 559, 578, 574 and 562 of the 600
+  caps are blocked), or it is clean and does not hold the unit whole, or it holds the unit whole and a lattice piece,
+  which a jumble letter there takes off (23, 29, 5, 20, 6 and 30 such pairs for the height-4 units). The blocked
+  counts are the ledger's `blocked` prunes divided by 59 items and by the number of units (46 to 193 height-4 units,
+  1,731 to 2,313 height-2 units).
+- The checker passes all six records with the same lines. It re-derives the start and last states from the table,
+  `stuck.F1` exactly, `stuck.S` exactly (0 protected single letters; "subsequent T exhaustion is claimed") and
+  `stuck.T1` exactly at the last state, and lists F2, F3, ST and d19 as "claimed, not re-verified". Since F2 and F3
+  have no instance at n₆ = 0 and ST none without an S letter, only d19's exhaustion rests on a program's own report
+  alone (the integrator's reading).
+- Scope. Stuck covers D19's case set (R22D-19's limits: V empty or one SAFE-ALL letter, one commutator power as the
+  middle, one off content after lowering) and the catalogue r22d25-cat/1, a revision of R22D-25 whose full families
+  cannot be exhausted (R22D-55); it does not show that no strict′ step exists at these states. Six states on five
+  scrambles, two of them on seed 7302's line. Not coverage, and no candidate word reached a replay.
+- Uses: R22D-19, R22D-25, R22D-37, R22D-52, R22D-55, R22D-75, R22D-80, R22D-81.
+
+Open after round 6 of line (d), from shard U and the joint attack: at the end of R22D-80 (`bbef1c8e…`) its 936 height-4
+pieces, where the R22D-25 kernel with D19 is stuck in r22d25-cat/1 (the integrator's experiment above); a switch from
+R22D-75's rule to R22D-81's that is a test of the state, which
+this stop does not need, since R22D-81's rule alone hands over from it, but which stays open in general (R22D-80);
+whether the rule of R22D-81 ends at a handoff at other states, since its finiteness is not coverage and it has two stuck
+ends by design (R22D-81); which order of the pairs a machine-followable rule should fix: at cap 290 after `9e6b991b…`
+the class-ordered search of the cloud line reaches u = 0 and lowers C, while the lexicographic order of R22D-88 stalls
+at 4 blockers (R22D-89); the runs of U2 with the meet prune turned off, planned as separate runs, at `fe273a8c…` for cap
+311 and at `8ac0a1ce…` for cap 290, which should repeat the recorded pair and the stall (R22D-88, R22D-89); U2 inside
+the full rule, with R22D-81's own target, from the stop (R22D-88, R22D-89); a rule that moves to another target, with
+R22JX-06's finite cursor and its potential Ψ, which was not implemented (R22D-87); coverage, since a finite rule and
+single runs at one stop say nothing about other states (R22D-88, R22D-89); and protected words at the 3000-twist stop,
+since none of the letters here is protected (R22D-71, R22D-80, R22D-85, R22D-89). Shard U's cap 311 (R22D-84) is opened
+by literal words from the stop and from `1ff0061f…` (R22D-87, R22D-89). Of round 5's items, cap 274 is opened through a
+grip that is not free (R22D-85), and single letters take cap 290's movable blockers from 70 to 38 and then stall
+(R22D-86), while pairs in one order take them to 0 (R22D-89); the other items of round 5 stay open.
+
+From shard W: the rule of R22D-90 at the depth 200 stop past the twelve steps of the 2,000-second run, from
+`def0bdac…`, where no height-first scan was made (R22D-92), and at the other census stops (depths 400 and 1000 and the
+3000-twist stop), where it has not been run; an exact tie-break for cover's float side test, so that a machine
+following R22D-90 plays the same words on any CPU and BLAS kernel (R22D-90); a variant that tries more than each
+rule's first word, so that its stuck end exhausts phase U (R22D-90); whether the guarded phase U has a step at
+`c450bb2f…`, with lock cut by the checkpoint in both runs and shift not run (R22D-94); at the depth 400 stop the two
+height-4 units through caps 436 and 460, with 227 and 27 blockers (204 at cap 436 after the retained (320, 1), which
+raises N and which R22D-90 does not take; cap 460 was not recounted after it), and preparations that raise N (R22D-95,
+R22D-96); whether R22D-91's bounds are attained, and protection for seam, close, lock, shift and reopen; and whether
+phase U, conj included, is stuck at COV-17's singleton (R22D-97). Of round 5's items, how the rule combines with phase
+U is answered in part: R22D-90 is one such rule, run at the depth 200 stop only (R22D-92), and the item stays open at
+the other stops.
+
+From the cloud lines: the height-4 layer at the three new 3000-twist stops, where R22D-75's rule is stuck (797, 2,591
+and 1,585 pieces, n₆ = 0), and at `2430f4cc…` (734 pieces), where H4-unlock and its pairs stall; the R22D-25 kernel
+with D19 is stuck in r22d25-cat/1 at all of them, and at seed 7305's end (`cc5ef7ec…`, 1,419 pieces), in the
+integrator's experiment above; at `2430f4cc…` the blocked holders 578, 583, 588 and 595 of τ = 597, which no valid first
+letter of a pair makes clean; whether the lowest-u order of the pairs, or a target cursor at height 4 like the one
+R22JX-06 proposes at height 6, gets further; and whether the rule of R22D-81 has to unlock anything at a fresh
+3000-twist stop, since at seeds 7306 and 7307 R22D-75's rule alone cleared height 6 and seed 7304's stop had none. Of
+the items above, the 936 height-4 pieces at `bbef1c8e…` are lowered in part: after R22D-75's one letter, H4-unlock
+with pairs takes n₄ from 936 to 734 and stalls.
+
+## 6. Commands
+
+From the repository root, with Python 3.13 and NumPy 2.5; `S=research/jumbling/restoration/12-low-height/scripts`.
+Each script prints the output recorded under `runs/round22/` (the timing lines aside):
+
+    python3 -I -B $S/round22/r22a08_vacancy.py          # R22A-08 and the instance of R22A-07; about 1.5 minutes
+    python3 -I -B $S/round22/r22b03_clusters.py         # R22B-03; about 4 minutes
+    python3 -I -B $S/round22/r22b04_jordan.py           # R22B-04: N1, N2 and the 19 Jordan certificates; about 1.5 minutes
+    python3 -I -B $S/round22/r22b09_bound.py            # R22B-09: the hypotheses of R22B-08 and the bound; about 1 minute
+    python3 -I -B $S/round22/r22d02_masks.py            # R22D-02: the 64 masks of both forms; under a second
+    python3 -I -B $S/round22/r22d04_free_grips.py       # R22D-04; about 1.5 minutes
+    python3 -I -B $S/round22/r22d06_fixed_chambers.py   # R22D-06; about 3 minutes
+
+The scripts are the senior reviewer's commands, kept as written apart from a header comment; the integrator re-ran
+each one and got the outputs the review reports.
+
+The integrator's census and closures of section 4, with `k40.json` the depth 40 stop as a pose table (written by
+`$S/export_table.py`, digest `7e128820…`), `A=research/jumbling/restoration/12-low-height/runs/round22/line-a`,
+`G=research/jumbling/restoration/09-general-method/scripts` and `u` one of `b19`, `b08`, `b10`, `b09`:
+
+    python3 -I -B $S/round22/transport_census.py k40.json <out> $A/units/eb5-k40-k00-b{00,01,02,03,04,05,06,07,11,12,13,14,15}.json
+                                                        # class 3; about 47 minutes
+    python3 -I -B $S/round22/transport_census.py k40.json <out> $A/units/eb5-k40-k00-b{16,17,18,19,20,21,08,09,10}.json
+                                                        # classes 2 and 4; about 66 minutes
+    python3 -I $G/gm/tclose2.py research/jumbling/theory $G/echain k40.json $A/units/eb5-k40-k00-$u.json \
+        $A/closures/$u-core.json <dir> --greedy-seconds 300                       # 4 to 10 minutes
+    python3 -I -B $S/round22/stepchk.py k40.json $A/units/eb5-k40-k00-$u.json $A/closures/$u-step.json <out>
+
+`$u-core.json` is `{"P": [], "Q": W}` with W the census's entry transport word; `$u-step.json` is the closure's
+`word-full.json`, `$u-result.json` its `result.json`, `$u-log.txt` its log (the certificate and its bound, or where
+the peeling and the greedy search stopped) and `$u-replay.json` the record of the independent replay.
+b19's target file holds `ghost.badW` of its closure (`pre.json`), with its digest; then
+
+    python3 -I -B $S/round22/jordan_target.py $A/closures/b19-target.json     # N1, N2 and 20 Jordan certificates; about 2 minutes
+
+Round 2 of line (a) (R22A2-01 to R22A2-06), the senior reviewer's computation kept as written apart from a header
+comment; it replays the fourteen middles and writes no file:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python3 -I -B $S/round22/r22a2_04_sequence.py   # about 75 CPU seconds
+
+The replay of R22A2-04 and b17 (section 2), with `k40.json` as above, `R=$A/replay`, and `<n>.json` the pose table
+with n off pieces, gunzipped from `$R/tables/<n>.json.gz` (977, 915, 823 and 737) or rebuilt by replaying the words of
+`$R/words/` in the order of `$R/seq.jsonl` with `stepchk.py`, whose records `$R/steps/` give each step's start and end
+digests:
+
+    bash $S/round22/replay_a3.sh k40.json <new dir>                                # about 2 hours
+    python3 -I -B $S/round22/jordan_target.py $R/jordan/<u>-<n>-target.json <n>.json   # each about 1 minute
+    python3 -I -B $S/round22/thmc_premises.py <n>.json research/jumbling/restoration/12-low-height/runs/screen-k40.json \
+        $A/units/eb5-k40-k00-b17.json 17                                            # n = 1,193 (k40.json) and 823; about 1 minute
+    python3 -I -B $S/cellpure4.py research/jumbling/theory 823.json $A/units/eb5-k40-k00-b17.json <out>.json --search
+                                                                                    # writes <out>-word.json; about 4 minutes
+    python3 -I -B $S/round22/stepchk.py 823.json $A/units/eb5-k40-k00-b17.json $R/words/b17.json <out> 737.json
+    python3 -I -B $S/round22/exp_b.py 737.json $A/units/eb5-k40-k00-<u>.json - - <new dir>   # u = b15, b05, b06; about 5 minutes each
+
+The run used a scratch copy of `replay_a3.sh` with fixed paths; the script here takes them as arguments, writes the
+summary line of a closure step, which the scratch copy missed through a file-name slip (`seq.jsonl` is rebuilt from the
+step records), and stops if a built closure is not strict′, which did not happen. `$R/jordan/` holds each target with
+the test's output `<u>-<n>-jordan.txt` (b21 at 823 uses b16's, the same T), `$R/closures/` the closures' results,
+`$R/b17/` the output of `thmc_premises.py` at 1,193 and 823, and `$R/t1prime-737.jsonl` the three `exp_b.py` results.
+
+Experiment E2 (section 2: the replay continued), with `E=$A/replay2` and `<n>.json` the pose table with n off pieces,
+gunzipped from `$R/tables/737.json.gz`, `$E/run1/z-b21.json.gz` (437) or `$E/run2/z-<kk>-<u>.json.gz`:
+
+    python3 -I -B $S/round22/replay_slp.py 737.json $E/plan-run1.json <new dir>   # about 40 minutes
+    python3 -I -B $S/round22/replay_slp.py 437.json $E/plan-run2.json <new dir>   # about 80 minutes
+    python3 -I -B $S/round22/e2_b06_prep1.py <n>.json <p1>                         # 1 to 2 minutes
+    python3 -I -B $S/round22/e2_b06_t1.py <n>.json <p1> <t0> 14                    # the reference middle; about 3 minutes
+    python3 -I -B $S/round22/e2_b06_prep2.py <n>.json <p1>/x-word.json <t0>/b06-14-z1-table.json \
+        <t0>/b06-14-v-target.json <p2>                                             # about 1 minute
+    python3 -I -B $S/round22/e2_b06_t1.py <n>.json <p2> <new dir> 14               # about 35 minutes
+
+`replay_slp.py` writes one line per step to `seq.jsonl` and, for step k of unit u, the files `<kk>-<u>-...` (run 1:
+`<u>-...`): the landing word's check, the middle's pose table and Q, the closure's log and result, the target with
+its Jordan test, the certificate with the builder's log and the checker's output, the program and its application
+log, and the end table `z-<kk>-<u>.json`. The b06 branches `$E/b06-324/` and `$E/b06-71/` keep the first preparation
+(`prep1/`), the X0 attempt's record with the reference middle and target of item 14 (`x0-attempt/`), the second
+preparation with the script's output (`prep2/`) and the prepared attempt (`t1/`). The branch at 324 used scratch
+copies of the three b06 scripts: `e2_b06_prep2.py` reproduces its preparation byte for byte, and `e2_b06_t1.py` adds
+the free-list filter of review finding B06R-01, a path that run did not reach (`tclose2.py` found no literal V′); its
+X0 attempt was stopped after items 14, 21, 23, 43 and 44. The branch at 71 ran the scripts as they are here.
+Programs name their files by repository paths; pose tables, middles and closure premises are kept gzipped
+(`gzip -n`).
+
+The lattice phase from E2's end (section 2), with `L=research/jumbling/restoration/09-general-method/scripts/lattice`,
+`library-merged.json` gunzipped from `research/jumbling/restoration/09-general-method/data/library-merged.json.gz`,
+`z.json` gunzipped from `$E/b06-71/t1/z-b06-14.json.gz` and `<repo>` the absolute path of the repository root:
+
+    python3 -I -B $L/scripts/restore_lattice_late.py <repo>/$L/scripts <repo> <repo>/research/jumbling \
+        library-merged.json <out> table:z.json                                                    # about 28 minutes
+    python3 -I -B $L/checker/verify_late.py <repo> <repo>/research/jumbling library-merged.json <out> \
+        <out>/report.json                                                                         # about 31 minutes
+
+`$E/lattice/` keeps the restorer's `restore-summary.json` and `solutions.json.gz` and the checker's report
+(`verify-report.json`), with scratch paths replaced by `<scratch>`.
+
+Round 3 of line (b) (R22B-13, R22B-14, R22B-16, R22B-17), the senior reviewer's computation kept as written apart
+from a header comment; it writes no file:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B $S/round22/r22b13_seeds.py   # about 2 minutes
+
+Round 4 of line (b) (R22B-20 to R22B-22), the senior reviewer's computations kept as written apart from a header
+comment; they write no file:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22b20_separation.py    # about 1 minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22b21_regular12.py     # about 5 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22b22_small_orbits.py  # about 2 minutes
+
+Round 5 of line (b) (R22B-24, R22B-26, R22B-27), the senior reviewer's computations kept as written apart from a
+header comment; they write no file:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22b24_regular_hole.py   # about 2 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22b26_small60.py        # about 4 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22b27_small_t1prime.py  # about 4 minutes
+
+Line (c) (section 7): the senior reviewer's computations and the solver's (`r22cf02_shadow.py`), each kept as written
+apart from a header comment and re-run by the integrator with the outputs the analyses report;
+`L=research/jumbling/restoration/12-low-height/runs/round22/line-c`:
+
+    python3 -I -B $S/round22/r22c02_locks.py            # R22C-02: locked occupied chambers at the depth 40 stop; about 1 minute
+    python3 -I -B $S/round22/r22c03_locks60.py          # R22C-03: the same at the depth 60 stop; about 8 minutes
+    python3 -I -B $S/round22/r22c04_vectors.py          # R22C-04: type vectors of the home cells; about 20 seconds
+    python3 -I -B $S/round22/r22c04_orbits.py           # R22C-04: K⁺ orbits of the home cells; about 15 seconds
+    python3 -I -B $S/round22/r22c04_b06.py              # R22C-04: b06's pieces and type vector; about 1 minute
+    python3 -I -B $S/round22/x22c04_s61c.py             # X22C-04: the s61c state; about 20 seconds
+    python3 -I -B $S/round22/x22c07_movers.py           # X22C-07: a mover for each blocking group, from the records
+    python3 -I -B $S/round22/r22cf02_shadow.py \
+        research/jumbling/restoration/11-scramble-census/runs/round2/ia-k40-s7101.json \
+        research/jumbling/restoration/12-low-height/runs/screen-k40.json $L/shadow/shadow.json   # R22CF-02; about 2 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python3 -I -B $S/round22/r22c2_02_blockers.py   # R22C2-02; about 20 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python3 -I -B $S/round22/r22c2_05_vertex.py     # R22C2-05; about 2 minutes
+    python3 -I -B $S/round22/x22c09_r2_ready.py <unit>  # X22C-09, experiment C, units 27, 36, 44 and 59; about 8 minutes each
+
+Experiment A continued (R22C2-04), with `k40.json` as above, `G` as above and `za.json` the state after b12's step:
+
+    python3 -I -B $S/round22/stepchk.py k40.json $L/units/eb5-k40-k00-b12.json \
+        research/jumbling/restoration/12-low-height/runs/round22/t1prime-k40/steps/u12.json <out> za.json
+    python3 -I -B $G/gm/tclose2.py research/jumbling/theory $G/echain za.json $L/units/eb5-k40-k00-b14.json \
+        $L/b14-after-b12/b14-core.json <dir> --greedy-seconds 1800                  # about 35 minutes
+    python3 -I -B $S/round22/jordan_target.py $L/b14-after-b12/b14-target.json za.json   # about 1 minute
+    python3 -I -B $S/r22b10_cert.py table za.json $L/b14-after-b12/b14-target.json <cert>.json.gz --seconds 3600   # about 2 minutes
+    python3 -I -B $S/check_r22b10.py table za.json $L/b14-after-b12/b14-target.json <cert>.json.gz                 # about 7 minutes
+
+`b14-core.json` is `{"P": [], "Q": W}` with W b14's census word (`$L/w14-census.json`); `b14-target.json` holds
+`ghost.badW` of the closure (`pre.json`) with its digest; `b14-log.txt` and `b14-result.json` are the closure's log and
+result, `b12-replay.json` the replay record of b12's step; `b14-cert.json.gz`, `b14-build-log.txt` and `b14-check.txt`
+are the certificate of V, the builder's log and the checker's output.
+
+Experiment D (R22C2-02), with `k60.json` the depth 60 stop as a pose table (`$S/export_table.py`), `E=$L/exp-d` and
+`z1.json` the pose table at Z1 that `exp_b.py` writes as `u-z1-table.json` in the work directory `<dir>/e180-481-1`:
+
+    sh $S/round22/exp_d.sh k60.json <new dir>                                      # about 2 hours
+    python3 -I -B $S/round22/jordan_target.py $E/e180-cert/e180-target.json z1.json     # about 1 minute
+    python3 -I -B $S/r22b10_cert.py table z1.json $E/e180-cert/e180-target.json <cert>.json.gz --seconds 3600   # about 5 minutes
+    python3 -I -B $S/check_r22b10.py table z1.json $E/e180-cert/e180-target.json <cert>.json.gz                 # about 20 minutes
+
+`exp_d.sh` needs a new or empty work directory and stops with a nonzero status when a producer or a check fails. It
+writes the unit files (`units/`, `units.out`), the census records and picks (`zp-<u>.json`, `picks.out`), the step
+words and their replay records (`w-<u>.json`, `s-<u>.json`), the pose tables after each step (`z1.json` to
+`z3.json`), and for 180 the outcome without a preparation and after (481, 1) (`e180-none.out`, `e180-481-1.out` and
+the work directories `e180-none/`, `e180-481-1/` of `exp_b.py`). The records in `$E` keep these files byte for byte
+under other names: `run.out` is the driver's output, `units.jsonl` and `picks.jsonl` are `units.out` and
+`picks.out`, `word-<u>.json` and `step-<u>.json` are `w-<u>.json` and `s-<u>.json`, `e180-<x>/result.jsonl` is
+`e180-<x>.out` and `e180-<x>/closure-result.json` is `e180-<x>/c2/result.json`; the pose tables, the census records
+and the closures' `pre.json` are not kept. `e180-cert/` keeps the target file (`ghost.badW` of the closure after
+(481, 1), with its digest), the Jordan check, V′ as a certificate of R22B-10, the builder's log and the checker's
+output.
+
+Round 3 of line (c) (R22C3-03, R22C3-04, R22C3-05), the senior reviewer's computations kept as written apart from a
+header comment; they read the records of experiment D and write no file:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python3 -I -B -u $S/round22/r22c3_audit_d.py   # about 6 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python3 -I -B -u $S/round22/r22c3_u151.py      # about 2 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python3 -I -B -u $S/round22/r22c3_geometry.py  # a few minutes
+
+Coverage (section 8: COV-01, COV-02, COV-04 and the experiment COV-07), the senior reviewer's computations kept as
+written apart from a header comment; they write no file. COV-07 runs once for each first unit, at most two at a time:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov01_isolated_triangle.py  # seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov02_point_orbits.py       # seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov04_middles737.py         # about 1 minute
+    for u in 3 4 12 18; do COV_FIRST=$u OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+        python3 -I -B -u $S/round22/cov07_word_order.py; done                                     # up to 20 minutes each
+
+Coverage round 2 (section 8: COV-09, COV-13 and COV-14), the senior reviewer's computations kept as written apart from
+a header comment; they write no file:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov09_resource_persistence.py  # about 3 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov13_mixed_frames.py          # about 14 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov14_isolated_wholecap.py     # under a minute
+
+Coverage round 3 (section 8: COV-17, COV-18 with the checks of COV-20, and COV-19), the senior reviewer's computations
+kept as written apart from a header comment; they write no file. Its experiment COV-22 runs once for each seed 0 to 7,
+at most two at a time:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov17_single_off.py       # seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov18_singleton_kinds.py  # under a minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov19_perfect_menu.py     # seconds
+    for k in 0 1 2 3 4 5 6 7; do OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+        python3 -I -B -u $S/round22/cov22_mixed_search.py $k; done                                 # up to 29 minutes each
+
+The integrator's checks after COV-20 (section 8, after COV-22); they write no file:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov20_all_landers.py     # about 14 minutes
+    for L in 0:12 0:25; do OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+        python3 -I -B -u $S/round22/cov20_two_level.py $L; done                                    # about 50 minutes each
+
+The integrator's depth table for coverage round 4 (section 8, at its end); the shards write no file, and the check of
+their classes reads their outputs from `runs/round22/cov_depth_grip0-<k>.txt`:
+
+    for k in 0 1; do OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+        python3 -I -B -u $S/round22/cov_depth_grip0.py $k 2; done                                  # about 10 minutes each
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov_depth_cosets.py      # seconds
+
+Coverage round 4 (section 8: COV-23 with the computations of COV-24, COV-25 and COV-27, and COV-26), the senior
+reviewer's computations kept as written apart from a header comment, and the integrator's reference check for COV-24;
+they write no file. Its experiment COV-28 runs once for each seed 0 to 7:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov23_singleton_classes.py    # about 1 minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov26_exterior_singletons.py  # seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov24_reference.py            # under a minute
+    for k in 0 1 2 3 4 5 6 7; do OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+        python3 -I -B -u $S/round22/cov28_cohort_search.py $k; done                                                      # up to 29 minutes each
+
+Coverage round 5 (section 8: COV-29, COV-30 and COV-33), the senior reviewer's computations kept as written apart from a
+header comment; they write no file. Its experiment COV-35 runs once for each seed 0 to 7:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov29_two_cap.py          # under a minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov30_validity.py         # about 1 minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov33_whole_cap_737.py    # about 2.5 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov33_singleton_caps.py   # about 1 minute
+    for k in 0 1 2 3 4 5 6 7; do OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+        python3 -I -B -u $S/round22/cov35_deep_search.py $k; done                                                    # up to 29 minutes each
+
+Coverage round 6 (section 8: COV-36, COV-37 and COV-41), the senior reviewer's computations kept as written apart from a
+header comment; they write no file. Its experiment COV-43 runs once, its 118 cases two at a time:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov36_hole_orbits.py      # about 70 seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov37_vl_737.py           # seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov41_excursions.py       # seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov41_endpoint.py         # seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov43_residual_search.py  # about 2 hours
+
+Coverage round 7 (section 8: COV-45, COV-46, COV-47 and COV-49), the senior reviewer's computations kept as written
+apart from a header comment, with the integrator's checks before the round (`letter_heights.py`) and after its
+experiment started (`descent_cost.py`, one run per case); they write no file. Its experiment COV-51 runs once, its 118
+cases two at a time; the integrator stopped it after eight cases (section 8):
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/letter_heights.py             # about 20 seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov45_singleton_vl.py         # about 35 seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov46_first_jumble_blocks.py  # seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov47_branch_change.py        # seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov49_two_letter_audit.py     # under a minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov51_forced_descent.py       # about 2 hours as designed
+    for c in "12 12 1800" "136 13 900" "446 14 900" "2149 41 1800" "3889 12 900" "2548 17 900" "1345 13 900" \
+        "1437 13 900"; do OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+        python3 -I -B -u $S/round22/descent_cost.py $c; done                                                             # 4 to 13 minutes each
+
+Coverage round 8 (section 8: COV-52 to COV-55), the senior reviewer's computations kept as written apart from a header
+comment, with COV-17's script run again; they write no file. Its experiment COV-57 ran once, its 24 jobs two at a time,
+and wrote `runs/round22/cov57_frontier_search.txt` (section 8):
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov52_outer_classes.py    # about 70 seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov53_cohort_images.py    # seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov54_rule_audit.py       # about 3 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov55_descent_cov17.py    # about 9 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov17_single_off.py       # seconds
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/cov57_frontier_search.py  # about 65 minutes
+
+Round 6 of line (b) (section 3: R22B-30 to R22B-33 and R22B-40 to R22B-48), the senior reviewer's computations kept as
+written apart from a header comment; they write no file. `r22b40_prefixes.py` runs once for each of the nine steps, and
+the recorded output puts a line `== R22B_STEP=<step>` before each step's:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22b30_seeds.py   # about 16 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22b32_pairs.py   # about 12 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22b33_powers.py  # about 6 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22b33_search.py  # about 5 minutes
+    for s in b14 b16 b20 b21 b07 b13 b19 b15 b06; do R22B_STEP=$s OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
+        MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22b40_prefixes.py; done                    # about 1 minute each
+    R22B_STEP=b15 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+        python3 -I -B -u $S/round22/r22b48_b15.py                                                  # about 2 minutes
+
+Round 2 of line (d) (section 5: R22D-09 to R22D-17), the senior reviewer's computations kept as written apart from a
+header comment; they write no file:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d09_census.py        # about 16 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d14_six.py           # about 3 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d15_source_cells.py  # about 2 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d16_step.py          # about 1 minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d17_straddlers.py    # about 1 minute
+
+Round 3 of line (d) (section 5: R22D-20 to R22D-30), the senior reviewer's computations kept as written apart from a
+header comment, and the integrator's checks of R22D-20 and R22D-23 (`r22d20_caps.py`, `r22d23_item59.py`); they
+write no file:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d20_residual_cells.py  # about 8 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d20_caps.py            # about 1 minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d23_item59.py          # about 1 minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d24_cap252.py          # about 3 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d30_height6.py         # about 9 minutes
+
+Round 4 of line (d) (section 5: R22D-31 to R22D-43), the senior reviewer's computations kept as written apart from a
+header comment (for `r22d31_height6.py` also a heading line before each part and the loader of the snapshots), and the
+integrator's snapshot builder `r22d31_snapshots.py`, which writes the two start states of R22D-31 to R22D-35 into
+`<dir>`; the others write no file apart from the cache of `theory/seams.py` under `work/jumbling-cache/`:
+
+    python3 -I -B -u $S/round22/r22d31_snapshots.py <dir>                                                       # about 30 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d31_height6.py <dir>  # about 3 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d40_blockers.py        # about 8 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d42_step7108.py        # about 1 minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d43_twelve.py          # about 1 minute
+
+Round 5 of line (d) (section 5: R22D-60 to R22D-77), the senior reviewer's computations kept as written apart from a
+header comment (for `r22d61_audit.py` also the two checks of R22D-63 and R22D-64 appended where the reviewer said),
+then the integrator's replay of R22D-75; the six computations at the 3000-twist stop read its snapshot
+`<dir>/s7302-stop.pkl` from `r22d31_snapshots.py` above. They write no file:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d61_audit.py                              # about 5 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d70_cap274.py <dir>/s7302-stop.pkl        # about 8 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d72_one_repair.py <dir>/s7302-stop.pkl    # under a minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d73_pins.py <dir>/s7302-stop.pkl          # under a minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d75_height_first.py <dir>/s7302-stop.pkl  # about 5 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d76_class1.py <dir>/s7302-stop.pkl        # under a minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d75_check.py <dir>/s7302-stop.pkl         # under a minute
+
+The integrator's experiment after round 5 (section 5, after R22D-77): the rule of R22D-75 at the seed 7102 stop after
+R22D-43, what its letter does to cap 61, and the rule at the census stops of depths 200, 400 and 1000, with
+`C=research/jumbling/restoration/11-scramble-census/runs`; the last three print `runs/round22/r22d75_census_k200.txt`,
+`r22d75_census_k400.txt` and `r22d75_census_k1000.txt`. They write no file:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d75_seed7102.py                          # about a minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d75_cap61.py                             # about a minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d75_census.py $C/round3/ia-k200-s7105.json   # about 3 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d75_census.py $C/round3/ia-k400-s7109.json   # about 5 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d75_census.py $C/round2/ia-k1000-s7103.json  # about 10 minutes
+
+Round 6 of line (d), shard U (section 5: R22D-80 to R22D-86): the senior reviewer's replay of R22D-80 and its
+unlock-graph computation for R22D-82 to R22D-84, kept as written apart from a header comment; then the integrator's
+implementation of the rule of R22D-81, run three times (for R22D-80 with R22D-75's seven letters as prefix, from the
+stop with no prefix, and, as a differential test of H6, H4 and H2, after (64, 15) with the target kept absent), its
+count of the two stuck ends of R22D-81 at `1ff0061f…`, and its replays of R22D-85 and R22D-86, which print every
+computed number of those subsections. All read the snapshot `<dir>/s7302-stop.pkl` from `r22d31_snapshots.py` above
+and print, in this order, `runs/round22/r22d80_check.txt`, `r22d81_rule.txt`, `r22d81_from_stop.txt`,
+`r22d81_no_target.txt`, `r22d81_stuck_ends.txt`, `r22d82_unlock_graph.txt`, `r22d85_two_letters.txt` and
+`r22d86_cap290.txt` (the `cpu` fields of `r22d81_rule.py` and the CPU line of `r22d81_stuck_ends.py` aside). They
+write no file apart from the cache of `theory/seams.py` under `work/jumbling-cache/` (or the file that
+`JUMBLING_HOME_CACHE` names) and the snapshot of `r22d81_rule.py --save`:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d80_check.py <dir>/s7302-stop.pkl         # under a minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d81_rule.py --snapshot <dir>/s7302-stop.pkl \
+        --prefix '[[64,15],[185,14],[357,12],[471,12],[263,14],[407,13],[523,12]]' \
+        --expect 1ff0061fc5863c8ccbc1d734b003ff49afa5b58969b0031e51fd1e5cf1a07d81                                                       # about 7 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d81_rule.py --snapshot <dir>/s7302-stop.pkl \
+        --cpu 3000                                                                                                                      # about 7 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d81_rule.py --snapshot <dir>/s7302-stop.pkl \
+        --prefix '[[64,15]]' --expect 446f4e00093ba0942e37580a21516fca2fd69ace7d1abc7c1756ad4a9bc36b87 --no-target                      # about 6 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d81_stuck_ends.py <dir>/s7302-stop.pkl    # about a minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d82_unlock_graph.py <dir>/s7302-stop.pkl  # about 5 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d85_two_letters.py <dir>/s7302-stop.pkl   # about a minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d86_cap290.py <dir>/s7302-stop.pkl        # about 2 minutes
+
+`r22d81_rule.py` prints START with the prefix, τ, u and the target table, the u value of every item of each cap the U
+family tries, and a STEP line for each letter with its length 1, family, τ, u and counts; it ends with one of HANDOFF,
+STUCK, BUDGET or NOT_APPLICABLE, and a run that prints none of them has no outcome. It stops at `--cpu` seconds after
+the load and the prefix, 1,500 by default (the run from the stop used 3,000). It also reads a census record instead of a
+snapshot (`--record <record>`, which replays its history and descent twists, every twist admissible and certain;
+`--save <snapshot>` keeps the state); that path was not run in this round.
+
+Round 6 of line (d), shard W (section 5: R22D-90 to R22D-97): the senior reviewer's five computations, kept as written
+apart from a header comment, and `r22d92_guarded_k200_2k.py`, a copy of `r22d92_guarded_k200.py` with the CPU limit
+raised from 1,190 to 2,390 seconds and its checkpoint from 1,000 to 2,000 seconds, nothing else changed. Five of them
+(four of the reviewer's scripts and the copy) rebuild their start state from the census records under
+`research/jumbling/restoration/11-scramble-census/runs/`, every twist admissible and certain: `r22d92_guarded_k200.py`
+and its copy from `round3/ia-k200-s7105.json` and the five letters of R22D-75's rule there; `r22d93_cycle.py` and
+`r22d94_height2_probe.py` from `round2/ia-k100-s7102.json` and the words of `r22d16_step.py` and `r22d43_twelve.py`,
+and, for `r22d94_height2_probe.py`, the letter (61, 15) after them (to `c450bb2f…`); and
+`r22d95_unlock_graph_k400.py` from `round3/ia-k400-s7109.json` and the seven letters of R22D-75's rule there.
+`r22d96_retained_check.py` builds no state: it prints the K⁺ index of (320, 1), checks that both products of (61, 15)
+and (61, 44) are the identity, and checks the number of pieces and the largest cell-graph degree used in R22D-90.
+Where they need cover's positions they compute the home centroids of `theory/seams.py` in memory; they write no file.
+Each sets a CPU limit of 1,190 seconds (the copy 2,390), and three stop cleanly at an earlier checkpoint that counts
+the setup too, after undoing any unfinished word: `r22d92_guarded_k200.py` at 1,000 seconds (the copy at 2,000),
+`r22d94_height2_probe.py` at 950 and `r22d95_unlock_graph_k400.py` at 600. `r22d93_cycle.py` inherits the
+1,000-second check of the height-first scan from `r22d75_height_first.py` without a handler, so past 1,000 seconds it
+would end with an uncaught exception; its recorded run took 149.2 seconds. Where a checkpoint cuts a run depends on the
+machine. They print `runs/round22/r22d92_guarded_k200.txt`, `r22d92_guarded_k200_2k.txt`, `r22d93_cycle.txt`,
+`r22d94_height2_probe.txt`, `r22d95_unlock_graph_k400.txt` and `r22d96_retained_check.txt` (the `cpu` fields aside);
+the times are those of the integrator's re-runs, research-code CPU times on a loaded machine:
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d92_guarded_k200.py                       # stops at 1,000 s; 8 steps here
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d92_guarded_k200_2k.py                    # about 23 minutes; 12 steps
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d93_cycle.py                              # about 2.5 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d94_height2_probe.py                      # stops at 950 s
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d95_unlock_graph_k400.py                  # about 10 minutes; stops at 600 s
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d96_retained_check.py                     # under a minute
+
+Evidence for shard W, run and not run:
+
+- The reviewer ran the five commands of its result once each on the shared research machine, with the three thread
+  variables set to 1 (it reported Python 3.13.16 and NumPy 2.5.3). Its run of `r22d92_guarded_k200.py` ended at the
+  checkpoint after 11 steps (report at 1,015.51 CPU seconds), and its run of `r22d94_height2_probe.py` at the
+  checkpoint in lock (960.55).
+- The integrator re-ran the five scripts on the same machine with a shell loop that is not in the repository: it fed
+  the reviewer's script text (the committed files without their header comment) on standard input to
+  `python3 -I -B -u -`, one script at a time, from the repository root, with the three thread variables set to 1 and
+  `JUMBLING_HOME_CACHE` naming a scratch file (never written, since the scripts compute the centroids in memory), and
+  recorded each exit code, all 0. `r22d92_guarded_k200.py` and `r22d94_height2_probe.py` ran in a second loop of the
+  same kind under `nice`, and `r22d92_guarded_k200_2k.py` in a third, after the probe finished. R22D-93 to R22D-96 gave
+  the reviewer's output line for line apart from the CPU fields; `r22d92_guarded_k200.py` gave the reviewer's first 8
+  steps and was then cut; the copy gave the reviewer's 11 steps and a twelfth and stopped at the 12-step cap. Two
+  earlier attempts, of R22D-93 and R22D-92, were stopped before their end and are not used; as far as they got, their
+  lines are the same.
+- Not run: any of these on another machine or with another BLAS kernel; the rule of R22D-90 from one configuration
+  with different move histories (R22D-90); per-prefix heights and lattice records of the phase U words other than
+  cover's word at `c450bb2f…` (R22D-91); the height-first scan at `def0bdac…`; lock to its end and shift at
+  `c450bb2f…`; a cross-check of R22D-95's straddler sets by a second method (the script takes them from
+  `eb6.straddler_set`); a count of cap 460's straddlers after (320, 1); conj at COV-17's singleton.
+
+Round 6 of line (d), the joint attack on caps 311 and 290 (section 5: R22D-87 to R22D-89): the integrator's
+implementation of the pair family U2 of R22D-88 with a fixed target, run three times (run (iii) from `fe273a8c…` for cap
+311 with the self-check, run (i) from `1ff0061f…` for cap 311, and run (ii) from `9e6b991b…` for cap 290); the rule of
+R22D-81 after run (i)'s letters and (311, 14), with a short budget, as the check of the lowering letter; the
+integrator's letter-by-letter replays of the cloud line's cap 290 route and of its cap 311 route from the stop; and the
+integrator's letter-by-letter replay of the literal words of analysis A, analysis B and R22JX-02 (R22D-87). All read the
+snapshot `<dir>/s7302-stop.pkl` from `r22d31_snapshots.py` above and print, in this order,
+`runs/round22/r22d81_pairs_cap311_tail.txt`, `r22d81_pairs_cap311.txt`, `r22d81_pairs_cap290.txt`,
+`r22d81_rule_311_14.txt`, `r22d89_cap290_route.txt`, `r22d89_cap311_stop_route.txt` and `r22d87_replay.txt` (the `cpu`
+fields aside; of the (311, 14) check only its LOADED and START lines, since what it prints after START depends on its
+30-second CPU budget and the machine). They write no file apart from the cache of `theory/seams.py` under
+`work/jumbling-cache/` (or the file that `JUMBLING_HOME_CACHE` names):
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d81_pairs.py --snapshot <dir>/s7302-stop.pkl \
+        --prefix '[[64,15],[185,14],[357,12],[471,12],[263,14],[407,13],[523,12],[185,1],[263,1],[263,3]]' \
+        --expect fe273a8c88d8a8fe7f030f95e6130fc76a57da6d708dea110a1cb31125276122 --target 311 --selfcheck                              # about 10 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d81_pairs.py --snapshot <dir>/s7302-stop.pkl \
+        --prefix '[[64,15],[185,14],[357,12],[471,12],[263,14],[407,13],[523,12]]' \
+        --expect 1ff0061fc5863c8ccbc1d734b003ff49afa5b58969b0031e51fd1e5cf1a07d81 --target 311                                          # about 12 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d81_pairs.py --snapshot <dir>/s7302-stop.pkl \
+        --prefix '[[64,15],[185,14],[357,12],[471,12],[263,14],[407,13],[523,12],[136,2],[136,6]]' \
+        --expect 9e6b991bf057d3f2c28c3158aed3878b55720c970601019eb819e53bd0601e94 --target 290                                          # about 31 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d81_rule.py --snapshot <dir>/s7302-stop.pkl \
+        --prefix '[[64,15],[185,14],[357,12],[471,12],[263,14],[407,13],[523,12],[185,1],[263,1],[263,3],[364,3],[263,6],[263,40],
+        [311,14]]' --expect 5296c847f5a19cb1bc6e4cc531786c833dc681adbdc367763378f9325e740138 --cpu 30                                   # about a minute
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d89_replay.py <dir>/s7302-stop.pkl \
+        '[[64,15],[185,14],[357,12],[471,12],[263,14],[407,13],[523,12],[136,2],[136,6]]' \
+        '[[301,2],[136,7],[301,4],[136,1],[136,4],[136,19],[301,3],[136,1],[301,3],[136,5],[290,15]]' 290                               # a few minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d89_replay.py <dir>/s7302-stop.pkl '[]' \
+        '[[185,1],[185,7],[185,16],[185,3],[263,1],[263,3],[263,8],[364,1],[263,2],[407,1],[407,3],[407,1],[407,2],[407,4],
+        [364,1],[407,2],[407,4],[407,10],[407,15],[364,2],[263,2],[311,14]]' 311                                                        # a few minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d87_replay.py <dir>/s7302-stop.pkl        # under ten minutes
+
+`r22d81_pairs.py` prints START with the prefix, τ, u and whether the meet prune is on; the u value of every item of
+each cap the U family tries (U_ITEMS); with `--selfcheck` one SELFCHECK line; and a STEP line for each step with its
+family, letters, length, u_mid, u, input digest, the numbers of tested and pruned candidates, and the counts, off
+count, N and digest. It ends with UNLOCKED, STUCK or BUDGET (NOT_APPLICABLE when a piece is above height 6), and a run
+that prints none of them has no outcome. Its budget is `--cpu` seconds after the load and the prefix, 3,000 by
+default; `--no-meet-prune` turns the meet test off and was not run. Runs (iii) and (ii) were made with the script
+before the fix of SU2-01 (R22D-88), which printed at STUCK the smallest end value of any pair evaluated during the run
+rather than at the last state; the fix changes no step, and run (ii) was not re-run with it. `r22d89_replay.py` takes
+the snapshot, a prefix and a word as JSON lists of [grip, item] and the target cap, and prints START and one LETTER
+line per letter: admissible and certain, the largest height, whether n₆ and every height-6 pose of the start are kept,
+how many of the start's height-6 pieces are at height 4, u, the counts, the off count, N and the digest; it stops at
+the first letter that is not admissible and certain. `r22d87_replay.py` takes the snapshot and prints GEOMETRY (R², the
+meeting pairs of R22D-75's seven caps and those that meet cap 311), PRODUCTS (the item equal to two letters at one grip,
+0 for the identity), and for each of 17 words START, one LETTER line per letter (admissible and certain, the largest
+height, the height-6 guard, u, the straddlers removed and added and the branches of the added ones, the counts, the off
+count, N and the digest) and END; at the ends of analysis B's two words also BLOCKERS, HOLDERS and ITEMS (cap 364's
+59-item vector); it stops at the first letter that is not admissible and certain.
+
+Round 6 of line (d), the cloud lines on seeds 7304 to 7307 and on the height-4 layer at `bbef1c8e…` (section 5): each
+cloud line gives its own commands in its `RESULT.md` under `runs/round22/cloud/`. The integrator's checks, with
+`C=research/jumbling/restoration/12-low-height/runs/round22/cloud` and `D=$S/round22/cloud`: the replay check of the
+four census records with stage 11's `check_records.py` (`runs/round22/cloud-k3000-check.out` for seeds 7304, 7306 and
+7307, `cloud-k3000-check-s7305.out` for seed 7305, which finished later); the four cloud copies of `r22d75_census.py`,
+which print the lines' `r22d75_census_k3000.txt` (seed 7305's `r22d75.txt`) again, the `cpu` and `replay_cpu` fields
+aside; the committed `r22d81_rule.py` after R22D-75's letters, which prints START with no target and HANDOFF with no
+letter at each line's end digest, the lines' R22D-81 outputs again apart from the `cpu` fields and the `prefix` field
+the committed script adds; and for the height-4 line the replay of its 25 letters from the stop, which prints its
+`end_summary.txt` byte for byte, H4-unlock from the stop with those letters as the prefix, which is stuck at `2430f4cc…`
+with no letter as in its run 4 and saves its end snapshot, and the full pair search at that snapshot, whose three shards
+print its round 4 outputs again, the `cpu` fields aside:
+
+    python3 -I -B -u research/jumbling/restoration/11-scramble-census/scripts/check_records.py $C/census-k3000-s7304/ia-k3000-s7304.json \
+        $C/census-k3000-s7306/ia-k3000-s7306.json $C/census-k3000-s7307/ia-k3000-s7307.json   # 87 to 101 minutes each (run as three processes at once)
+    for s in 7304 7305 7306 7307; do
+      OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $D/census-k3000-s$s/r22d75_census_k3000.py \
+          $C/census-k3000-s$s/ia-k3000-s$s.json; done                                                                 # about 35 minutes each
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d81_rule.py --record $C/census-k3000-s7304/ia-k3000-s7304.json \
+        --prefix '[[170,12],[395,12],[500,12],[540,12],[217,15],[148,15]]' \
+        --expect ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980 --cpu 7200                         # about 30 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d81_rule.py --record $C/census-k3000-s7306/ia-k3000-s7306.json \
+        --prefix '[[208,12],[76,13],[90,12],[109,12],[233,15],[387,15],[485,13],[403,13],[512,15]]' \
+        --expect 16c4aefe2f15a043693937cae1d320b8a820e2151a744cf9ad8df9d11e36d96b --cpu 7200                         # about 30 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d81_rule.py --record $C/census-k3000-s7307/ia-k3000-s7307.json \
+        --prefix '[[275,14],[516,13],[50,15],[474,13],[494,15],[147,14]]' \
+        --expect 895b45de8a9a83604ca8bf988a3c9a287e404e59bd22a5004703d0852b252507 --cpu 7200                         # about 30 minutes
+    python3 -I -B -u research/jumbling/restoration/11-scramble-census/scripts/check_records.py $C/census-k3000-s7305/ia-k3000-s7305.json   # about 80 minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/round22/r22d81_rule.py --record $C/census-k3000-s7305/ia-k3000-s7305.json \
+        --prefix '[[10,12],[10,15],[67,14],[134,13],[195,14],[233,15],[421,12],[421,12],[484,15],[122,12],[175,14]]' \
+        --expect cc5ef7ecf0510ea9a74fc52bafe324d6d8f58294c4b0e20b40b97b414dada062 --cpu 7200                         # about 25 minutes
+    W='[[64,15],[185,14],[357,12],[471,12],[263,14],[407,13],[523,12],[124,2],[274,13],[46,1],[46,3],[104,14],[23,14],[357,1],[357,3],
+        [593,3],[593,43],[541,2],[593,54],[482,15],[553,5],[535,3],[535,6],[363,10],[535,8]]'
+    H='{"12":"bbef1c8ec0de78dead1473322a8c1236e48f9ccfe0017ce724461bb7f37ae299","13":"0ad859c24e540a55de416e8a901e4da7b3ddbccc3d6e19a50629ac7b35a87e05",
+        "17":"6999b9214d6ea25486daf67e650773babff08f1a41742acfddd6eec2f88787ab","19":"391490f78b2fe76ea07cede387bf335f76d34885c47a7aa0c09ebc8ad3d27da8",
+        "20":"c312a2fcb7f2a502908f71b2d9acee8cb9868fb63930b4949483ee5061e830d1","22":"6c7a79d9aa68769261c3ba3d613bfaff5d2d539e57797664418f46e85f594744",
+        "23":"b2651c24f07172eb2cf18fa2cf5b61eba12fa2fb2271711feb7c249fb0e27b51","25":"2430f4cc99ea121a6d3476ec21b66fc401e277d13809ad5e1c979e6e0abe1472"}'
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $D/height4-descent-bbef1c8e/end_summary.py <dir>/s7302-stop.pkl "$W" "$H"   # a few minutes
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $D/height4-descent-bbef1c8e/h4_unlock.py --snapshot <dir>/s7302-stop.pkl \
+        --prefix "$W" --expect 2430f4cc99ea121a6d3476ec21b66fc401e277d13809ad5e1c979e6e0abe1472 --cpu 3000 --save-end <dir>/h4-end-4.pkl   # a few minutes
+    for i in 0 1 2; do
+      OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $D/height4-descent-bbef1c8e/two_letter_u.py --snapshot <dir>/h4-end-4.pkl \
+          --expect 2430f4cc99ea121a6d3476ec21b66fc401e277d13809ad5e1c979e6e0abe1472 --shard $i --nshards 3 --cpu 12000 & done; wait   # about 50 minutes
+
+`<dir>/s7302-stop.pkl` is the snapshot of `r22d31_snapshots.py` above; `$H` gives the digests checked after letters
+12, 13, 17, 19, 20, 22, 23 and 25, the ends of the phases. The scripts write no file apart from the cache of
+`theory/seams.py` and the snapshot named by `--save-end`.
+
+The integrator's runs of the R22D-25 kernel with D19 at six height-4 stops (section 5), with
+`K=research/jumbling/restoration/12-low-height/runs/round22/kernel-d19`, `st` one of `bbef1c8e`, `2430f4cc`,
+`ac127dc3`, `cc5ef7ec`, `16c4aefe` and `895b45de`, `<cache>` a new directory and the exports
+`OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 JUMBLING_HOME_CACHE=<cache>/home_centroids.npy`:
+
+    python3 -I -B -u $S/round22/r22d25_d19_stops.py table $st <dir>/$st-table.json                    # 22 to 31 minutes
+    python3 -I -B -u $S/round22/r22d19_rule.py --table <dir>/$st-table.json --out <dir>/$st/d19 --cache <cache> \
+        --seconds 7200                                                                                  # 11 to 51 minutes
+    python3 -I -B -u $S/round22/r22d25_search.py run --table <dir>/$st-table.json --out <dir>/$st/kernel --cache <cache> \
+        --seconds 14400 --d19 $S/round22/r22d19_rule.py --max-steps 3                                   # 15 to 54 minutes
+    python3 -I -B -u research/jumbling/restoration/13-tutorial-runner/scripts/check_r22d25.py <dir>/$st/kernel --cache <cache>   # 21 to 29 minutes
+
+`r22d25_d19_stops.py` prints LOADED and TABLE with the sha256 of the table; its output is `$K/$st/build.txt`, and the
+sha256 is also in `$K/index.txt`. D19 writes `report.json` (`$K/$st/d19/report.json`), the kernel `run.json`
+(`$K/$st/kernel/run.json`) and a copy of the table, `start-table.json`, and the checker prints `$K/$st/check.txt`. D19,
+the kernel and the checker ran once at each state; that a second run gives the same records apart from the `seconds`
+fields is expected, not shown. To check a committed record alone, copy `$K/$st/kernel` to `<dir>/$st-kernel`, rebuild
+the table into `<dir>/$st-kernel/start-table.json` with the first command, and run the checker on that folder. The times
+are elapsed times on a shared machine, two states at a time (the table rebuilds three at a time).
+
+## 7. Line (c): T2 and T3 (joint attack)
+
+Line (c) was a joint attack. The senior reviewer and the solver each wrote a sealed analysis at the highest effort
+(R22C-01 to R22C-07 and R22CF-01 to R22CF-07), the senior reviewer then cross-examined the solver's findings against
+its own (X22C-01 to X22C-09), and after that the solver stopped (owner, 18 October 2026). A second round by the senior
+reviewer alone (R22C2-01 to R22C2-06) followed the integrator's experiments. Each heading below names the findings a
+lemma comes from and its status after the cross-examination; the integrator re-ran every computation cited here
+(section 6). Lemma letters (G, T, ...) are those of the analyses.
+
+Further objects for this section:
+- **O9, blocks, locks and shadows.** A *rigid block* B is a set of off pieces that every admissible letter moves
+  together (`blocks.Blocks`; Lemma 50 of `buffer-transport.md`). I_B is the set of grips whose cap holds every piece
+  of B and S_B the set of grips whose cut a piece of B straddles; caps(x) is the set of grips whose cap contains the
+  chamber x. A home chamber x is *locked* to B when I_B ⊆ caps(x) ⊆ I_B ∪ S_B (lock lemma,
+  `buffer-transport.md` section 5), and *shadowed* by B when every cap containing x holds a piece of B or is
+  straddled by a piece of B. Locked implies shadowed. Under an admissible retained word B moves by one multiplier k_B ∈ K⁺, and the lock lemma says the content
+  (lattice piece or hole) that was in a locked chamber x is afterwards in k_B(x).
+- **O10, types.** The 36 chamber types are the K⁺ orbits of chambers (`regions.orbit_of`). A lattice piece of home
+  chamber h occupies a chamber of h's type, and SAFE-ALL words keep the number of holes of each type. off_t(Z) is the
+  number of off pieces whose home chamber has type t; it equals the number of holes of type t.
+- **O11, creators and partners.** A *creator* D for a cell C″ at Z is an admissible word that ends with every off piece
+  of Z at its exact pose and with the lattice content of C″ off the lattice; that content is the *partner*.
+
+### R22C-G. Lemma G: one rotation per cell (proved; R22CF-01, X22C-01)
+
+- Objects: Z, a class P, a word W over the free class-P letters of Z (H1 of R22A-01).
+- Statement.
+  1. For every class-P cell C there is g_C ∈ G_P such that every piece at a point (C, m) of Z is at (g_C C, g_C m)
+     after W, with pose g_C·γ, where γ is its pose at Z.
+  2. If W lands a class-P off content U at (C, ℓ), ℓ ≠ 0, then g_C sends label 0 to a nonzero label, every lattice
+     piece of Z in Ω_C is off after W, and these pieces form one class-P content at (g_C C, g_C 0). In particular
+     Bad(W) contains every occupied chamber of Ω_C, whether W lands U in its own cell or in another one.
+  3. A content in a vertex cell {v} is in {v} after every prefix of W.
+- Proof.
+  1. Induction over the letters (O8): a letter (c, g) at a free grip rotates every piece inside its cap by g, the cap
+     of a grip of P contains exactly the cells that have c as a cap, and a class-P piece never straddles a cut of P.
+  2. A pose h·k with h ∈ G_P and k ∈ K⁺ lies in K⁺ exactly when h ∈ H_P, that is, when its label is 0. U lands, so
+     g_C·ℓ = 0; the label action of g_C is a permutation, so g_C·0 ≠ 0, and a lattice piece of C with pose k ends with
+     pose g_C·k of nonzero label.
+  3. A letter at a grip c ≠ v acts only on cells that have c as a cap, and v is the only cap of {v}; a letter at v
+     fixes the pole v, so it maps {v} to itself.
+- Consequences. R22A-07 is the case of one lattice content in the unit's own cell. The census rows "glued" (stage 12
+  section 11) are instances of item 2, not search limits. A vertex content lands in place only (LC-12), so every
+  landing word of b06 turns the cell {91}, and its 375 lattice pieces go off.
+- Uses: O7, O8, LC-12.
+
+### R22C-T. Locked chambers and Lemma T (proved as scoped; R22CF-02, R22C-01, X22C-02)
+
+- Objects: Z, a rigid block B, a class-P unit U ⊆ B in the cell C, a chamber x ∈ Ω_C.
+- Hypotheses: H1, x is occupied at Z; H2, x is locked to B (O9). Both are decided by `blocks.Blocks`.
+- Statement.
+  1. (Lemma T) Let w = A1·W·A2 with A1 and A2 admissible retained words and W a word over free letters of the class
+     P′ of U after A1 that lands the pieces of U. Then the lattice piece q that occupied x at Z is off the lattice
+     after w, so w is not a strict′ step for U.
+  2. (Creators, R22C-01) The same holds when finitely many creators are inserted before W, with admissible retained
+     words between them, each creator a word over free letters of a single class that ends with every off piece of Z
+     at its exact pose.
+  3. (Persistence) The content of x relative to B (the lattice piece or hole that the lock lemma carries to k_B(x)) is
+     unchanged by every admissible retained word, every SAFE-ALL word and every word over free letters of one class
+     that returns B to its exact pose.
+- Proof.
+  1. By the lock lemma, after A1 the piece q is in k(x) with k = k_B ∈ K⁺. The element k maps the class-P cell C to
+     a class-P′ cell kC, Ω_C onto Ω_{kC}, and the pieces of U into kC; so k(x) is an occupied chamber of the home cell
+     of the moved unit. By R22C-G item 2, W takes every lattice piece of Ω_{kC} off, q among them. A2 is retained and
+     keeps lattice membership (O2).
+  2. Induction over the inserted words. A creator of U's current class gives the pieces of U and the content of the
+     locked chamber one rotation (R22C-G item 1); it keeps a piece of U at its exact pose, so that rotation is the
+     identity and the content returns. A creator of another class uses free grips of that class, whose caps hold no
+     piece of U (a free cap holds off pieces of its own class only) and hence, B being rigid and the cap admissible,
+     no piece of B; an admissible cap containing the locked chamber k(x) is not in k(S_B), hence in k(I_B), and holds
+     B; so no letter of the creator moves that content. Retained phases are covered by the lock lemma.
+  3. Retained and SAFE-ALL words: lock lemma (a SAFE-ALL letter never moves B). A one-class word that returns B
+     exactly: as in item 2.
+- Not proved (X22C-02): that the content of a locked chamber persists along an arbitrary strict′ step of another unit.
+  Such a step may move off pieces in between; strict′ fixes lattice membership at its end, not chamber occupancy.
+- Instances (computed; `r22c02_locks.py`, `r22c03_locks60.py`). At the depth 40 stop the occupied chambers of the
+  unit's own home cell locked to its block number 3 for b03, 5 for b04, 6 for b05, 7 for b06, 5 for b15 and 2 for b18;
+  b12 has none, and b17's 13 locked chambers are all vacant. At the depth 60 stop 16 units have such chambers, among
+  them 130 (6) and 180 (5), which form one blocking group of the structural order (`order-k60.json`). So no retained
+  conjugation of any length followed by one own-class landing core lands b03, b04, b05, b06, b15 or b18 at the depth
+  40 stop, or 130 or 180 at the depth 60 stop (R22C-02, R22C-03), although 130 and 180 each have a one-letter
+  readiness witness; readiness and vacancy are different conditions.
+- Uses: lock lemma, R22C-G, O2.
+
+### R22C-S. The Shadow lemma (proved; R22CF-02, X22C-02)
+
+- Objects: Z, a rigid block B, a home chamber x.
+- Statement.
+  1. If x is shadowed by B, then x lies in no SAFE-ALL cap at any state where B has its pose of Z. So N1 fails for
+     every target that contains an occupied chamber shadowed by B, at every such state.
+  2. Let E be a retained element at an admissible grip g whose cap holds B, and Y = Z·(g, E). Then E(x) is shadowed
+     by E(B) at Y exactly when x is shadowed by B at Z; and E(x) is occupied at Y exactly when x is occupied at Z (x
+     in the cap of g) or E(x) is occupied at Z (x outside it).
+  3. A retained letter at an admissible grip whose cap does not hold B does not move any chamber shadowed by B.
+- Proof.
+  1. A SAFE-ALL cap holds no off piece and no piece straddles its cut; every cap of x holds or is straddled by a piece
+     of B.
+  2. E permutes the caps, cuts and chambers, so caps(E x) = E caps(x), and E(B) is inside or straddles E(c) at Y
+     exactly when B is inside or straddles c at Z. The letter moves the content of x to E(x) when x is in the cap of g
+     and leaves the content of E(x) in place otherwise.
+  3. If the cap contains a shadowed chamber x, it is a cap of x, so it holds B or B straddles its cut. An admissible
+     cap is straddled by nothing, and a cap that holds a piece of a rigid block holds the whole block.
+- Consequence. Item 2 reads the number of occupied shadowed chambers in the target after one retained letter (r = 1)
+  from Z; item 1 says that each of them violates N1 at the prepared state.
+- Instances (computed; `r22cf02_shadow.py`). At the depth 40 stop, for the seven units whose own cell fails N1 (fixed
+  occupied, shadowed occupied, locked occupied, and the least number of shadowed occupied chambers in the target after
+  one retained letter at an admissible cap holding the block): b03 4/4/3/4, b04 5/5/5/5, b05 6/6/6/6, b06 27/27/7/27,
+  b12 5/5/0/5, b15 6/6/5/6 and b18 4/4/2/4. Every one of the 57 fixed occupied chambers is shadowed by the unit's own
+  block, so no retained letter (and, for the units with locks, no retained word of any length) makes their own cells
+  vacatable. The 600 chambers of type 0 lie in one cap each and are fixed by its 11 retained letters.
+- Uses: O5, O9.
+
+### R22C-M. Partners do not repair N1 (proved; R22CF-03, X22C-03)
+
+- Objects: Z, a target T ⊆ Ω, a word D admissible at Z.
+- Hypotheses: H1, every off piece of Z is off at Z·D with its exact pose of Z; H2, a chamber x ∈ T is fixed by G(Z)
+  and occupied at Z·D.
+- Statement. x is fixed by G(Z·D), so N1 fails for T at Z·D and no SAFE-ALL word at Z·D vacates T (Proposition N).
+- Proof. By H1, Ξ(Z) ≤ Ξ(Z·D) in the order of Lemma M, so A(Z·D) ⊆ A(Z) by (M1) and Fix(G(Z)) ⊆ Fix(G(Z·D)).
+- H2 holds for every creator of U's class that keeps U at its exact pose (R22C-G item 1: the rotation of U's cell is
+  the identity, so the lattice pieces of Ω_C return to their chambers); for a creator of another class it is one exact
+  check at Z·D. So adding partners never repairs an N1 failure at an occupied fixed chamber; partners can repair the
+  counts (R22C-V).
+- Uses: Lemma M (M1), Proposition N, R22C-G.
+
+### R22C-V. Type vectors and counts (proved; computed; R22C-04, R22CF-03, X22C-03, X22C-04)
+
+- Statement.
+  1. (Computed; `r22c04_vectors.py`, `r22c04_orbits.py`.) All home cells of one kind have the same type vector, in
+     every class: 385 chambers for a vertex cell, 86 for an edge cell, 111 for a triangle cell and 87 for a
+     tetrahedron cell, with the vectors printed by the script (types 6 and 0 to 5 occur in vertex cells only). K⁺ acts
+     transitively on the home cells of each kind (600, 3,600, 2,400 and 600 cells over the five classes).
+  2. If some class-P word lands a class-P content U of cell C, then |U_t| ≤ |Ω_C|_t for every type t.
+  3. (Creators, R22C-04.) A creator whose ghosts send exactly the lattice contents of r fully occupied home cells of
+     kind κ off, and no other ghost, adds r·e_κ to the hole vector, e_κ the type vector of item 1. For a middle W with
+     Bad vector b that lands U and partners p, u + p ≤ b and b ≤ h + r·e_κ are necessary (u the type vector of U, h
+     the holes); they do not give simultaneous vacancy.
+  4. (T1′ counts, X22C-05.) Let W be a word over free class-P letters of Z that lands U. A SAFE-ALL word that vacates
+     Bad(W⁻¹) at Z·W exists only if |U_t| ≤ off_t(Z) − |holes(Z) ∩ Bad(W)|_t for every type t. When Bad(W) = Ω_C this
+     reads |U_t| ≤ off_t(Z) − h^in_t, h^in_t the holes of type t in Ω_C, and it holds automatically when Ω_C has no
+     hole.
+- Proof.
+  2. The landed pieces occupy distinct chambers of a home cell C′ of the kind of C (class-P words keep kinds, R22A-05),
+     each of the type of its home chamber (O10); C′ and C have the same type vector by item 1.
+  3. Count the pieces taken off type by type.
+  4. A SAFE-ALL word keeps the number of holes of each type (O10), so it vacates T = Bad(W⁻¹) only if the holes of
+     type t at Z·W number at least |T|_t. At Z·W the off pieces are those of Z without U, together with the displaced
+     lattice pieces Q = the lattice pieces of Z in Bad(W) (R22C-G), so holes_t(Z·W) = off_t(Z) − |U_t| + |Bad(W)|_t −
+     |holes(Z) ∩ Bad(W)|_t. Over free class-P letters Bad(W) and Bad(W⁻¹) have equal type counts: W permutes the
+     points kind by kind, and the label-0 home points that W sends to a nonzero label are as many, in each kind, as
+     those that W⁻¹ sends to a nonzero label (R22A-01 item 1).
+- Instances (computed). b06 at the depth 40 stop (`r22c04_b06.py`, `r22c2_05_vertex.py`): u = {6: 2, 8: 1, 9: 1, 10: 1,
+  11: 1, 12: 1, 16: 1, 18: 1, 20: 1}; its cell {91} has 385 chambers, 375 lattice pieces and 10 holes, with 1,183 holes
+  outside, and item 4 fails by 2, both in type 6. The edge vector has no type 6, so no middle with Bad vector 2e
+  (M1-13) can land b06, however many edge partners are created. The s61c state (`x22c04_s61c.py`, X22C-04): the
+  carrier's class-0 cell {30, 145} has 86 chambers, 68 occupied, 18 holes inside and 43 outside, so item 4 fails by 18
+  without a partner and the necessary count 43 + 86 ≥ 61 holds with one edge partner.
+- Uses: R22A-01, R22A-05, R22C-G, O10.
+
+### R22C-T1′. Theorem T1′: land, vacate the landing chambers, unwind (proved; computed; R22CF-04, X22C-05)
+
+- Objects: Z, a class P, a class-P unit U that is the whole content of its cell C at a label ℓ ≠ 0, a word W, Z1 = Z·W,
+  T = Bad(W⁻¹) computed at Z1 (the home chambers whose lattice ghost W⁻¹ takes off; `tclose2.py`).
+- Hypotheses: H1, every letter of W is at a grip of P that is free at Z; H2, every piece of U is on the lattice at
+  Z1; H3, every off piece of Z outside U is at its exact pose at Z1; H4, a SAFE-ALL word V′ of Z1 with T ⊆
+  holes(Z1·V′).
+- Statement. w = W·V′·W⁻¹·V′⁻¹ is admissible at Z and is a strict step for U (U on the lattice, every lattice piece of
+  Z on the lattice, every other off piece of Z at its exact pose); so is W·V′·W⁻¹. |w| = 2|W| + 2|V′|.
+- Proof.
+  1. After W: by H2 and H3, the off pieces of Z1 are those of Z without U, at their poses of Z, and the displaced
+     lattice pieces Q (possibly several contents; R22C-G).
+  2. V′ is SAFE-ALL at Z1, so it is admissible at every prefix, moves lattice pieces only, by elements of K⁺, and fixes
+     every off piece (Lemma M (M2)). At Z2 = Z1·V′ the off pieces are those of Z1 at the same poses and T is vacant.
+     The pieces of U occupy chambers of T at Z1 (W⁻¹ would take them off again), so after V′ they lie outside T.
+  3. W⁻¹ at Z2. Its caps are those of W. They hold no foreign piece (H1, H3 and O8), the class-P off pieces they hold
+     are those of Z1 at the same poses, and lattice pieces never straddle a cut; so every letter is admissible and
+     every off piece of Z2 retraces, in reverse, the path W gave it: Q returns to its chambers of Z on the lattice, and
+     every other off piece returns to its pose of Z (it had that pose at Z1 by H3). A lattice piece of Z2 outside T
+     ends on the lattice by the definition of T, and T is vacant at Z2; so U and every other lattice piece of Z2 end
+     on the lattice.
+  4. V′⁻¹. The off pieces of Z3 = Z2·W⁻¹ are those of Z without U, at their poses of Z, a subset of the off pieces of
+     Z1 at the same poses; by Lemma M (M1) every letter of V′ is SAFE-ALL at Z3, so V′⁻¹ is admissible, moves lattice
+     pieces only and keeps them on the lattice.
+- Why it escapes Lemma T. W turns the cell once; the occupants of locked chambers leave with Q and come back with the
+  second turn W⁻¹. What V′ must vacate is T at Z1, not Ω_C at Z.
+- Counts: R22C-V item 4 is the necessary per-type condition for H4.
+- Bound. |w| ≤ 2·b_κ + 2|V′| with b_κ = 720, 104, 240 or 192 (Theorem C, LC-12, LC-13) when their free-grip hypotheses
+  hold, and |V′| bounded by a peeling certificate at Z1 (Theorem B) or by M1-17.
+- Instances (computed; `runs/round22/t1prime-k40/`). At the depth 40 stop the integrator's replay finds strict steps of
+  160 letters for b03, 942 for b04, 1,158 for b12 and 160 for b18, the units recomputed from the state. b03, b04 and
+  b18 have occupied locked chambers, so for them no single-turn template exists (R22C-T); b12 has none. Negative
+  instances: for b05 and b15 at the depth 40 stop, and for 130 and 180 at the depth 60 stop after one readiness letter,
+  N1 fails for T at Z1 (48 of 61, 24 of 25, 48 of 61 and 32 of 56 landing chambers occupied and fixed).
+- Uses: R22C-G, R22C-V, Lemma M (M1), (M2), O6, O8.
+
+### R22C-T2′. One partner and T1′ (proved; conditional on its certificates; R22CF-03, X22C-03)
+
+- Objects: Z, U as in R22C-T1′, a lattice-only home cell C″ of U's kind with free grips, a creator D for C″ (O11) over
+  free class-P letters, a word W over the free class-P letters of Z·D.
+- Hypotheses: H1, D passes the exact filter at Z (every off piece of Z exact, the lattice content of C″ off); H2, W·V′
+  ·W⁻¹·V′⁻¹ satisfies the hypotheses of R22C-T1′ at Z·D; H3, a SAFE-ALL word V2 at S = Z·D·W·V′·W⁻¹·V′⁻¹ vacates
+  Bad(D⁻¹) at S.
+- Statement. D·W·V′·W⁻¹·V′⁻¹·V2·D⁻¹·V2⁻¹ is a strict step for U at Z, of 2|D| + 2|W| + 2|V′| + 2|V2| letters.
+- Proof. The T1′ segment is strict at Z·D: it lands U and keeps every off piece of Z·D, the partner included, at its
+  exact pose. V2 fixes the off pieces and vacates Bad(D⁻¹), so D⁻¹, applied as the inverse of D (its caps hold the same
+  off pieces at the same poses as at the end of D), returns the partner to the lattice and every other off piece of Z
+  to its exact pose, and takes no lattice piece off. V2⁻¹ is SAFE-ALL by Lemma M (M1).
+- The abbreviated form D·T1′·D⁻¹ lacks V2 and is not covered (X22C-08).
+- Open: whether one partner suffices at b06 (its middle needs type-6 Bad chambers, R22C-V) or at s61c.
+- Uses: R22C-T1′, Lemma M.
+
+### R22C2-01. The intrinsic Q-shadow (proved)
+
+- Objects: a state Y, a class-P off content U in the cell C, Q0 ⊆ the lattice content of C, a rotation g0 ∈ G_P that
+  lands U (it need not come from a word: when U is one frame domain, the inverse of the pose of one piece of U will do).
+- Hypothesis: H1, a chamber x occupied by a piece of g0·U such that every retained letter moving x is at a grip whose
+  cap contains, or whose cut is straddled by, a piece of g0·Q0 (U and Q0 rotated by g0, all else as at Y).
+- Statement. No word W that gives U and Q0 one common rotation (R22C-G) and lands U has a T1′ closure
+  W·V′·W⁻¹·V′⁻¹ with V′ SAFE-ALL at Y·W, whatever its length.
+- Proof. Let g be W's rotation and γ the pose of a piece of U. Both g·γ and g0·γ lie in K⁺, so k = g·g0⁻¹ =
+  (g·γ)(g0·γ)⁻¹ ∈ K⁺ and (g·U, g·Q0) = k·(g0·U, g0·Q0). K⁺ permutes chambers, caps and retained letters and keeps the
+  inside and straddle relations, so the chamber k(x) is occupied by a piece of U at Y·W and every retained letter that
+  moves it is at a grip blocked by a piece of g·Q0. These pieces are off at Y·W (R22C-G), so no SAFE-ALL letter moves
+  k(x). And k(x) ∈ Bad(W⁻¹), since W⁻¹ takes its occupant from U off again. N1 fails, so V′ does not exist.
+- Extending this across retained preparations needs a persistent part of Q0 (such as chambers locked to U's block);
+  across arbitrary strict′ predecessor steps it is not justified.
+- Instances (computed; `r22c2_02_blockers.py`, `r22c2_05_vertex.py`). In the three failed T1′ closures (b15 at the
+  depth 40 stop after b12's step and b14's census word; 130 and 180 at the depth 60 stop after one readiness letter)
+  no fixed landing chamber is fixed by Q alone, and for b06 none of its twelve landing rotations has a chamber fixed by
+  Q alone. These failures are therefore not intrinsic; they depend on other off pieces (R22C2-02, below).
+
+### R22C2-03. One action for the edge-cycle family (proved for a stated family)
+
+- Objects: a prepared state Y, an edge unit U in the cell X, the pair-tool catalogue of `cellpure4.py` at Y.
+- Statement. Every word of the catalogue that passes the exact endpoint filter acts on X by the same accumulated
+  rotation. So all of them have the same off geometry at their endpoint and the same landing chambers, and an occupied
+  landing chamber fixed by every SAFE-ALL letter for one of them is one for all.
+- Proof. Every retained pair tool fixes each edge cell setwise and acts on X by a power of one permutation ρ[X] (the
+  function `expo` enforces this); inverses, powers and concatenations keep this. The stabilizer of an edge cell is
+  dihedral of order 10, so a nonidentity cyclic subgroup has order 2 or 5, and within it at most one element sends
+  U's label to 0. So the label action on X is the same, and by O8 the rotation is the same. The filter keeps every
+  other off piece at its pose and takes exactly the lattice content of X off.
+- Consequence. No candidate of this family gives a T1′ closure for 130 after (481, 5) or for 180 after (481, 1).
+  `--max-exact` only bounds the number of rejected tries; the tools stop at the first exact success.
+- Not covered: other preparations, other cyclic actions from other core families, transports, partners and words of
+  several classes.
+
+### R22C2-05. b06: the twelve landing rotations (computed; proved parts)
+
+- Computed (`r22c2_05_vertex.py`), at the depth 40 stop. Exactly twelve menu elements at grip 91 land b06 as the
+  rotation of its cell (items 14, 21, 23 and 43 to 51). With Q displaced by that rotation and every other off piece at
+  its pose, eleven leave no landing chamber fixed by every SAFE-ALL letter; item 45 leaves all ten fixed, each blocked
+  by the units b00 to b05 together (for chamber 18427 the cap of grip 17 holds no piece of Q and holds piece 83 of
+  b00). Q alone fixes none in any of the twelve.
+- Proved.
+  1. Every T1′ for b06 without a partner fails R22C-V item 4: its landing word turns the cell {91} (R22C-G item 3), so
+     Bad(W) ⊇ Ω_{91} and the type-6 deficit of 2 stays.
+  2. A commutator of two letters at distinct grips acts trivially on a vertex content, since only letters at its own
+     grip move it and such a letter is followed by its inverse; so do products and powers of such commutators. The
+     transport family of `cellpure5.py` consists of such powers, so it cannot give b06's middle.
+- Open: a one-partner T2′ for b06. The eleven passing rotations are the targets for its middle; N2, the creator and
+  middle words and the cleanup V2 remain to be checked.
+
+### R22C-FC. Theorem FC: no self-frozen set (proved; R22CF-05, X22C-07)
+
+- Objects: a state Z reachable from the solved state, a nonempty set S of off pieces of Z.
+- Statement. Some grip g has a cap that holds a piece of S, and no piece of S straddles the cut of g at Z.
+- Proof. The inverse of a history from the solved state to Z is admissible from Z (Theorem D (F2)) and ends with
+  every piece on the lattice, so it moves every piece of S. Let τ, at grip g, be its first letter that moves a piece p
+  of S. A letter moves exactly the pieces inside its cap and is applied only when no piece straddles its cut, so p is
+  inside the cap of g when τ is applied and no piece of S straddles it. No earlier letter moved a piece of S, so each
+  piece of S has its region of Z then.
+- Corollaries. No nonempty set of blocks is closed under "is frozen by". For a blocking group left by the structural
+  order, some cap holds a piece of the group and is straddled only by units outside it. This gives a mover relative to
+  S, not readiness.
+- Instance (record check, X22C-07): each of the six blocking groups at the depth 60 stop has such a cap in
+  `screen-k60.json`: units and grips (130, 481), (62, 328), (56, 364), (2, 26), (21, 98) and (65, 1).
+- Uses: Theorem D.
+
+### R22C-R1. Lemma R1: the one-letter readiness test (proved; R22CF-05, X22C-07)
+
+- Statement. Let E be a retained element at an admissible grip g and Y = Z·(g, E). A rigid block inside the cap of g
+  moves whole by E and every other block is fixed; a moved piece is inside, outside or across the cut of c at Y exactly
+  as it was for the cut of E⁻¹(c) at Z; a moved frame domain R·K⁺ becomes E·R·K⁺, of class E(P). So whether A(U) is
+  ready at Y (every needed grip admissible and holding only lattice pieces and frames of its class, and no second
+  frame domain of that class in its cell) is a function of the classifications at Z and the permutations E induces on
+  caps and classes; this is what `eb4.py` computes. The closure A·C·A⁻¹ has at most 2 + 2L_V + b_κ letters (M1-18).
+- Proof. A K⁺ element permutes the 600 cuts and moves regions rigidly; the relations used are geometric relations
+  between a region and a cut.
+
+### R22C-CH. Lemma CH: co-held cycles (conditional; R22CF-05, X22C-07)
+
+- Statement (as corrected by X22C-07). Let S be a set of units such that, at Z, every cap not straddled by a piece of S
+  holds all of S or none of it (an intrinsic condition, K⁺-equivariant), and the needed grips of the units of S are
+  blocked by units of S only. Then every retained word conjugates the configuration of S by one element of K⁺, and no
+  retained word of any length makes a unit of S ready.
+- Proof. Each admissible letter moves all of S or none, by one E; the intrinsic condition is preserved by E. The
+  original form, which checked only the admissible caps at Z, fails when an outside straddler leaves and exposes a cap
+  that splits S; no reachable instance of that gap was computed.
+
+### R22C-05. One-letter unlocking with vacancy (proved)
+
+- Objects: a whole edge-cell content U at Z.
+- Hypotheses: H1, the identity or one of the 6,600 nonidentity retained letters A is admissible; at Y = Z·A, H2, A(U)
+  is the only off domain in its class cell X = {a, b}; H3, a, b and a common neighbour c of the two are free; H4, every
+  chamber of Ω_X is a hole.
+- Statement. A·W·A⁻¹ is a strict step for U with at most 722 letters, where W is the pure word of Theorem C at a, b, c
+  (|W| ≤ 720). A direct search examines at most (6,600 + 1)·5·4 = 132,020 instances per eligible unit, so on this
+  class S(n) = 132,020·n and L(n) = 722.
+- Proof. W lands A(U), fixes every piece outside X exactly and has Bad(W) = Ω_X (Theorem C); by H4 it takes no lattice
+  piece off. The retained inverse A⁻¹ is admissible (R22D-01) and returns every other off piece to its pose of Z.
+- With a vacating word V in place of H4, M1-17 gives 2|A| + 2|V| + 720 letters. N1 and N2 alone do not replace H4.
+
+### R22C-06. A rigid two-domain cell cannot be unlocked by retained conjugation (proved)
+
+- Hypotheses: two nonempty off contents U and V of different frame domains of one class lie in one class cell and in
+  one rigid block.
+- Statement. No retained setup followed by an own-class strict′ core lands either content.
+- Proof. A retained setup gives the block one multiplier k ∈ K⁺, which keeps the two contents in one transformed cell
+  with distinct domains. The core gives both one rotation g. If both landed, g·γ_U and g·γ_V would lie in K⁺, so
+  γ_U⁻¹·γ_V ∈ K⁺, contrary to distinct domains. If one lands and the other keeps its exact pose, g = 1, which lands
+  nothing.
+- Instance: the three M1-19 pairs at the depth 60 stop, (105, 112), (109, 114) and (110, 162), lie in separate blocks,
+  so the lemma does not apply to them; they are positive controls for separation.
+
+### R22C-K. The catalogue, backward certification and coverage (conditional; R22C-07, R22CF-06, X22C-08, R22C2-06)
+
+- Supercatalogue (R22C-07 as corrected by X22C-08 and R22C2-06). Put N = 177,120, R = 7,200^N, m = 35,400 (600 grips
+  times the 59 nonidentity items), g = 6,600 (600 grips times 11 retained items), a core cap b, C_b = (m^(b+1) − 1)/
+  (m − 1) and T = (g^R − 1)/(g − 1). Enumerate, for each starting unit, the chronological words A0·C1·A1·C2·A2·C3·A3·
+  C4·A4 with native cores C_j of at most b letters and retained segments A_j of at most R − 1 letters (empty words
+  allowed), and accept an instance only after exact replay proves every prefix admissible and the strict′ endpoint,
+  with the creator checks of T2′ where it is so designated. On the states where some instance passes, L = 4b + 5(R − 1)
+  and S(n) ≤ n·C_b^4·T^5.
+  - Retained segments can be shortened to R − 1 letters: under retained letters each labelled piece keeps a pose
+    k·γ with k ∈ K⁺, so at most 7,200^N labelled pose assignments occur, and a shortest retained path between two of
+    them repeats none.
+  - The family contains T1, retained conjugation, T1′ and the complete T2′ (its four cores D, W, W⁻¹, D⁻¹ and its
+    retained segments V′, V′⁻¹ V2, V2⁻¹), once b covers the core lengths actually used; the bound b = 720 is not
+    established for every cellpure4/5 cycle word (whose source bound is 3,200).
+- Backward certification (R22C2-06). Let E be the finite set of height-2 pose tables and A_0 its lattice tables. Put
+  A_(j+1) = A_j ∪ {Z ∈ E : an exactly replayed catalogue step from Z ends in A_j}. Every strict′ step lowers n by at
+  least one, so the sets stabilize after at most N stages, and a state in A_j has a catalogue restoration of at most j
+  steps, found by following its witnessed successors. On ∪ A_j the restoration length is at most n·max_(m≤n) L(m).
+  This is the closure property that a one-step class lacks: a state's membership in a one-step class does not carry
+  over to its successor (experiment A below shows a concrete failure of that inference).
+- Open (coverage, the core of B′(2)): that every reachable height-2 state lies in ∪ A_j for some explicit catalogue,
+  for example through a finite-checkable invariant that contains 𝒞_2 and guarantees a selected successor inside it.
+  Neither count sufficiency nor the existing examples supply it.
+
+### Experiments of line (c) (computed)
+
+All exact, at exported pose tables (`stepchk.py`, `exp_a.sh`, `exp_b.py`, `tclose2.py`, `jordan_target.py`,
+`x22c09_r2_ready.py`; stage 12 section 11; commands in section 6). A step given as words is replayed letter by letter;
+a step whose V is a checked straight-line program (b14's V in A, V′ in D) is Theorem T1′ or R22A-06 applied to that
+exactly evaluated program, not a literal replay, and its end pose table is not computed (R22C3-03).
+- A, an order at the depth 40 stop (X22C-06, R22C2-04): b12's T1′ step, then b14, then b15. b14's census word,
+  computed at the stop, is admissible after b12's step but takes 17 lattice pieces off, so it is not strict′ there;
+  b15's landing word at that state leaves 25 of 25 landing chambers occupied and fixed, each with the Q-free cap 286
+  blocked by b07, b11 and b13; seven also have the Q-free cap 439, blocked by b08 and b09, and one the cap 378,
+  blocked only by the 17 collateral pieces of b14's word. Closing b14's census word at the state after b12's step
+  instead (R22C2-04; `runs/round22/line-c/b14-after-b12/`): N1 and N2 hold for its Bad(W), 222 chambers of which 17
+  are occupied; the peeling certificate stops at 36 of them and a 1,800-second greedy search leaves 5 occupied, so V
+  is not built, but all 19 orbits of the SAFE-ALL group that meet Bad(W) have verified Jordan certificates
+  (`jordan_target.py` on the state's pose table). By Corollary A1 a vacating word V exists, and V·W·V⁻¹ is a strict′
+  step for b14 after b12 (R22A-06). The builder of R22B-10 then built V there (51 steps, a 420-letter commutator seed
+  on orbit 34 and Jordan-route seeds on the other 18 orbits, |V| < 10^158), and its checker passes it
+  (`b14-cert.json.gz`, `b14-check.txt`), so the step is constructed. Whether b15 then lands is decided only at the
+  state after that step, which needs V evaluated on all chambers.
+- B, the blocking cycle {130, 180} at the depth 60 stop (R22C-03, R22C2-02): after the readiness letters (481, 5) and
+  (481, 1) the landing words (432 letters each) leave 48 of 61 and 32 of 56 landing chambers fixed, none by Q alone.
+  For 130 every fixed chamber has the Q-free cap 429, blocked by 131, 132, 133, 142, 150, 151 and 163; for 180 the
+  Q-free cap 555, blocked by 174, 175 and 176. The other preparations, (496, 1) for 130 and (481, 2) for 180, which
+  R22C2-03 does not cover, fail the same way: their landing words (432 letters each) land all 61 and 56 pieces, and
+  after W the occupied chambers of Bad(W⁻¹) (86 chambers; 61 and 56 occupied) include 61 and 22 that every SAFE
+  letter fixes, so N1 fails (`runs/round22/line-c/exp-b2.json`).
+- C, two-letter readiness at the depth 60 stop (X22C-09; `x22c09_r2_ready.py`): the first letter at a cap that holds
+  a straddler of the unit's inside caps, the second any retained letter. Unit 36 becomes ready after (255, 1) then
+  (459, 1) (34 of its 66 first letters tried before the first success); units 44 and 59 have no ready pair (66 and 33
+  first letters, exhaustive for this shape), and unit 27 has no first letter of this shape. Readiness is not vacancy:
+  the pair gives a candidate for a closure, not a step.
+- D, an order at the depth 60 stop (R22C2-02; `exp_d.sh`, `runs/round22/line-c/exp-d/`): 174, 175 and 176, which
+  block 180's cap 555, land first, each by a strict′ step without endpoint collateral that the transport census finds
+  at the current state (two clean powers each; 24, 24 and 132 letters; 14,610 to 14,515 off pieces), each replayed by
+  `stepchk.py`. At that state 180's landing word without a preparation (360 letters) has no T1′ closure: N1 and N2
+  fail for its T. After the readiness letter A = (481, 1) the landing word W (288 letters) lands all 56 pieces and
+  takes the 86 lattice pieces of the cell off; at Z1 = W(Y), T = Bad(W⁻¹) has 86 chambers, 56 occupied, and N1 and N2
+  hold. The peeling certificate stops early and a 300-second greedy search leaves 8 occupied, but all 19 orbits of
+  the SAFE-ALL group that meet T have Jordan certificates (`jordan_target.py`), so V′ exists by Corollary A1. The
+  builder of R22B-10 then built V′ (56 steps, Jordan-route seeds of 117 to 162 digits on all 19 orbits, tables with
+  e ≤ 63 and f ≤ 170, |V′| < 10^162 within its bound; about 5 minutes), and its checker passes it
+  (`e180-cert/check.txt`, about 20 minutes). So 180 has the strict step A·W·V′·W⁻¹·V′⁻¹·A⁻¹ at the state after 174,
+  175 and 176 (T1′ with R22D-01): its blocking at cap 555 came from the order of the steps, as R22C2-02 says. 130,
+  whose cap 429 seven other units block, was not tried, and the state after 180's step needs V′ on all chambers.
+
+### Round 3 of line (c)
+
+After experiment D the solver had stopped (owner, 18 October 2026), and the senior reviewer assisted the integrator
+alone at the fast tier (findings R22C3-01 to R22C3-06, 18 October 2026): whether strict′ steps keep SAFE-ALL and the
+hole inventories, a lemma for mixed orders, an audit of D, an order towards 130, the catalogue of the unresolved
+units, and a uniform core bound. Its computations are `scripts/round22/r22c3_audit_d.py`, `r22c3_u151.py` and
+`r22c3_geometry.py` (section 6); the integrator re-ran them and got the outputs `runs/round22/r22c3_audit_d.txt`,
+`r22c3_u151.txt` and `r22c3_geometry.txt`.
+
+### R22C3-01. Strict′ steps keep SAFE-ALL, not the hole inventories (proved)
+
+- Statement. Let Z′ end a strict′ step from Z. Then A(Z) ⊆ A(Z′), G(Z) ≤ G(Z′), every orbit of G(Z) lies in one of
+  G(Z′), and Fix(G(Z′)) ⊆ Fix(G(Z)). Proof: Z′ has a subset of Z's off pieces, each at its pose of Z; removing off
+  pieces puts no off occupant and no straddler into a cap that was SAFE, and landed pieces are lattice pieces, which do
+  not straddle (Lemma M). This compares endpoints, not the middle states of a macro.
+- Certificates. An old global Jordan certificate with prime p still gives an alternating factor on its old orbit. It
+  certifies a merged orbit Δ′ ⊇ Δ only if p > |Δ′|/2 (its other inequality survives); since orbits stay inside one K⁺
+  type of at most 7,200 chambers, p > 3,600 suffices. Otherwise recompute on Δ′. Counterexample (abstract): Alt(8) ×
+  Alt(8) on two blocks, with a 5-cycle certificate on each, enlarged by a swap of the blocks; the wreath product is
+  transitive on 16 points and does not contain Alt(16); with two holes in one block and a two-point target split
+  between the blocks, N1 and N2 hold and no V exists. Merging and counts do not replace a certificate.
+- Inventory identity. With L the occupied chambers at Z, φ the step's good-ghost map on L, and D the chambers of all
+  newly landed pieces (beneficial landings outside the named unit included): L′ = φ(L) ⊔ D, and for every chamber set Δ,
+  h′_Δ = h_Δ + |L ∩ Δ| − |φ(L) ∩ Δ| − |D ∩ Δ|. Only when φ keeps Δ can the landings simply be subtracted; total holes
+  fall, but the cores can move holes between old orbits.
+- Finite tests for a later step: keep the old group and check its fixed target chambers and per-orbit holes at Z′, or
+  recompute G(Z′), the counts and the certificates. Bad(W) of a fixed word does not depend on the state, its occupancy
+  does; a newly chosen word needs its own ghost computation. For T1′ the tests belong at Z′·A·W.
+- Uses: Lemma M, R22A-06, Theorem A.
+
+### R22C3-02. Mixed orders need resource contracts as well as a blocker order (proved)
+
+- Statement (resource-certified order). Name the units by their original piece sets, choose an order, and skip a unit
+  that has already landed. At each stage choose a census word, a closure V·W·V⁻¹, a prepared T1′ word
+  A·W·V·W⁻¹·V⁻¹·A⁻¹ or the complete T2′ word, and require: (i) the preparation is retained and admissible and the
+  free-class hypotheses hold; (ii) the core keeps its whole-content and exact off-pose contracts; (iii) the Bad sets
+  are complete ghost sets; (iv) vacancy holds at the right state, by N1, N2 and independent global Jordan factors or
+  by an exact joint search; (v) the hole resources that later stages need are propagated. Then the whole order exists
+  and is strict′, and every stage lowers n. All are finite checks, at the successive pose tables or uniformly over a
+  stated finite family of predecessor endpoints. Proof: the local theorem of each stage, R22D-01 for the retained
+  conjugation, the resource contract, induction.
+- T1′ before V. At Y with B = Bad(W), T = Bad(W⁻¹), f: Ω∖B → Ω∖T the good-ghost bijection of W and D_U ⊆ T the landing
+  chambers of U: H(Y·W) = (T∖D_U) ⊔ f(H(Y)∖B), so for every orbit Δ at Y·W,
+  |H(Y·W) ∩ Δ| = |T ∩ Δ| − |D_U ∩ Δ| + |H(Y) ∩ f⁻¹(Δ)|, and N2 holds exactly when |H(Y) ∩ f⁻¹(Δ)| ≥ |D_U ∩ Δ|;
+  singletons give the fixed-chamber obstruction. With a retained preparation A the resource set at Z is
+  π_A⁻¹(f⁻¹(Δ)). This refines the type inequality of R22C-V to orbits.
+- Static budget. If every allowed earlier step keeps each later resource set R under its good-ghost map and adds at
+  most δ_{j,R} landed occupants to it, then h_initial(R) − Σ_j δ_{j,R} bounds the holes of R later; certify the SAFE
+  subgroup needed there as well. R22A2-04 is the case where the resources are old SAFE orbits. Without these
+  conditions use the identity of R22C3-01 or the actual endpoint.
+- A blocker graph is only the schedule: all blockers of one cap are needed together, alternative caps are choices,
+  and deficient orbits are shared resources. Acyclicity proves neither the predecessors' steps nor the budgets.
+- Bounds, with F = ∏ C(d_i, k_i) − 1 for the vacancy target: |W| for a checked census word, |W| + 2F for a closure,
+  2|A| + 2|W| + 2F for a prepared T1′. T2′ needs both its vacancy premises; replacing its first V by another vacating
+  word does not keep the state of the second certificate.
+- Counterexample to reusing independent successes (recorded, experiment A): after b12's step the census word of b14
+  computed at the stop takes 17 lattice pieces off.
+- Uses: R22C-T1′, R22C-T2′, R22D-01, R22A2-04, R22C3-01.
+
+### R22C3-03. Experiment D passes an independent exact audit (computed)
+
+- Statement. The reviewer replayed D: 174 (24 letters, 14,610 → 14,564, digest `d6653e1e…`), 175 (24 letters,
+  → 14,532, `a4987caa…`) and 176 (132 letters, → 14,515, `9f24aa3e…`), each landing its whole piece set, taking no
+  lattice piece off and keeping every other off pose. For 180 without a preparation the 360-letter W lands 56 pieces,
+  keeps the other 14,459 off poses, displaces 86 lattice pieces, and N1 and N2 fail. With A = (481, 1), retained and
+  admissible, U is the whole 56-piece content of its class cell and every grip of W is free in that class (H1); the
+  288 letters give H2 and H3 (Q of 86 pieces; Z1 with 14,545 off pieces, digest `534aaa7a…`); a ghost replay rebuilds
+  the stored 86-chamber T (56 occupied), and N1 and N2 pass. For H4 the reviewer checked the program's leaves against
+  the SAFE alphabet, its references and lengths and the 19 Jordan certificates, and evaluated the actual V′ node on
+  every nontrivial target orbit: every target is vacated; the 13 singleton targets were holes. So T1′ applies, and by
+  R22D-01 A·W·V′·W⁻¹·V′⁻¹·A⁻¹ is a strict step at the state after 174, 175 and 176, of 578 + 2|V′| letters, ending
+  with 14,459 off pieces.
+- Evidence kind. This is a theorem applied to an exactly evaluated straight-line program, not a literal replay of
+  about 10^162 letters, and the end pose table was not exported; the experiments paragraph of this section now says so.
+- Command: `scripts/round22/r22c3_audit_d.py` (about 6 minutes).
+
+### R22C3-04. 142, then 151: a proved prefix of 130's predecessors (proved from computed hypotheses)
+
+- 142. At the depth 60 stop, 142 is the whole 41-piece class-0 content of the edge cell {412, 429}; its 86 home
+  chambers are vacant, both poles and the common neighbours 224, 305, 394 and 515 are free, and one landing rotation
+  fixes the edge (menu item 24 at 412). Theorem C gives a pure-cell strict step of at most 720 letters that fixes every
+  original lattice piece.
+- 151. 151 is the whole 45-piece class-1 content of {443, 481}; the poles and the common neighbour 286 are free; its
+  cell holds 86 lattice pieces Q; the unique landing rotation is item 54 at 443. Theorem C gives a pure-cell W of at
+  most 720 letters with that accumulated cell rotation, fixing everything outside the cell, so H1 to H3 of T1′ hold and
+  Bad(W) = Bad(W⁻¹) is the cell's 86 home chambers. The reviewer computed W's exact endpoint without building W
+  (digest `d76309e0…`, 14,651 off pieces: U landed, the 86 pieces of Q off): N1 and N2 pass, 11 target chambers are
+  fixed holes, and the other 75 lie in 18 nontrivial orbits, each with a checked global Jordan certificate. So V′
+  exists and T1′ lands 151, in at most 1,440 + 2·F151 letters with F151 ≤ 7,200^75 − 1.
+- The order 142 then 151, without building V′. The two home cells are disjoint (the first all vacant, the second all
+  occupied). The pure step of 142 changes only U142, so at 151's middle Q151 is unchanged and the off geometry has only
+  lost U142. Keep the old SAFE subgroup and its 18 certificates (R22C3-01): the least slack on a nontrivial target orbit
+  was 29, U142 has at most five pieces of any K⁺ type, and each old orbit lies in one type, so landing 142 uses at most
+  five holes of any orbit; the singleton target holes are untouched. Every inequality keeps a slack of at least 24.
+  The order lowers n from 14,610 to 14,524 in at most 2,160 + 2(7,200^75 − 1) letters. A proof from computed finite
+  hypotheses, not a replayed word.
+- Still open for 130: 131 and 163 (ready triangle contents) and 132 (a ready tetrahedron content) need a census
+  transport or a fresh closure; 133 is a glued triangle content (a transport middle and T1′); 150 is a vertex content
+  that needs a genuine vertex isolation middle (LC-12's all-free hypothesis fails at the stop). No order for these
+  five is proved, so no step for 130 yet.
+- Commands: `scripts/round22/r22c3_u151.py`, `scripts/round22/r22c3_geometry.py`.
+- Uses: Theorem C, R22C-T1′, R22C3-01, Corollary A1.
+
+### R22C3-05. The catalogue of unresolved units stays conditional (inventory)
+
+- Depth 40. b05: an order followed by a fresh T1′ (48 occupied fixed landing chambers in the recorded middle; deleting
+  b00 to b03 leaves 31; b04 and b06 are needed for the Q-free route); recompute H1 to H4 after a certified order.
+  b06: a partner that supplies type 6, a genuine vertex middle and the complete T2′ cleanup (every own-class T1′
+  without a partner is two type-6 pieces short at the stop, and edge partners cannot supply that type). b15: b12, then
+  the built b14 closure, then b15's middle recomputed; the earlier diagnosis was at the end of b14's non-strict census
+  word. b17: its home cell {542, 593} is vacant but pole 542 holds pieces of b08, b09 and b10, so Theorem C does not
+  apply at the stop; after those three land, a vacant cell with free poles gives a step of at most 720 letters (done
+  in the replay of section 2).
+- Depth 60, the 32 E-B4 leftovers: 18 lack one-letter readiness (edge units 4, 36, 39, 44, 45, 59, 72, 74, 101, 115,
+  121, 127, 144, 155, 167; vertex units 27 and 120; triangle unit 47); 11 fail N1 for their first preparation (50, 52,
+  56, 60, 107, 112, 130, 138, 146, 162, 180), of which 56, 130, 138, 146 and 180 have occupied own locks; 3 triangle
+  units become ready (102, 109, 114) but need actual transport words, Bad sets and certificates. D proves 180 after
+  174, 175 and 176, not at the stop.
+- Run 2 is not a strict′ order: two of its steps (0 and 2) move other off blocks (`moved_blocks` in its record), so
+  Lemma M does not carry certificates through them, and its remaining units cannot be found by subtracting unit names
+  from the census at the stop. The root-state E-B4 successes are independent instances, not a chain.
+- The routes above are proposals, not results, except where R22C3-03, R22C3-04 or section 2 proves them.
+
+### R22C3-06. A uniform core bound; coverage stays open (proved; conditional)
+
+- Statement. Fix a state and its free class-P alphabet. Every letter permutes the complete five-label cell model of
+  13,205 points; let H be the group generated. A realizable model action has a word of at most |H| − 1 ≤ 13,205! − 1
+  letters (a shortest path in H repeats no element). Every word over a fixed free alphabet is admissible (freeness
+  persists); equal action on all five labels of every nonempty cell gives the same accumulated rotation (O8), outer
+  cells and foreign pieces stay fixed, so the shorter word has the same exact action and the same Bad set (free class
+  words have no straddling ghost). Tracking only the occupied content points would not justify this.
+- So b = 13,205! − 1 bounds every native core that satisfies the free-class hypotheses, those of T1′ and T2′
+  included. It does not give such a core for any unresolved unit, nor cover mixed-class cores.
+- With this b the supercatalogue of R22C-K (four cores, five retained segments) has explicit bounds without the open
+  question whether b = 720 covers every cycle word: with N = 177,120, R = 7,200^N, m = 35,400, g = 6,600,
+  C_b = (m^(b+1) − 1)/(m − 1) and T_R = (g^R − 1)/(g − 1), L = 4b + 5(R − 1) letters per step and S(n) ≤ n·C_b⁴·T_R⁵
+  candidates. Shortening a retained segment must keep its complete labelled endpoint.
+- Coverage. The strongest statement available is conditional backward certification (R22C2-06): A_0 the lattice
+  tables of the finite height-2 universe, A_{j+1} adds the tables with a certified strict′ catalogue successor in A_j;
+  the sets stabilize within N stages, and every state of their union has a restoration of at most n steps and n·L
+  letters. Still needed: finite certificates for readiness and routing (legal vertex middles and partners included),
+  for simultaneous vacancy at every middle (independent factors or joint subset reachability) and for the full T2′
+  cleanup, and a successor invariant or backward-coverage certificate that contains all of 𝒞₂. A finite superset of
+  𝒞₂ needs its own containment proof, and exploring histories of height at most 2 does not cover every reachable
+  height-2 state.
+- D and 142 → 151 support the order and resource lemmas; the occupied locks, b06's type deficit, the old b14 word after
+  b12 and 180 without a preparation refute weaker criteria (readiness, total holes, deleting blockers, independent
+  root-state successes). None is a counterexample to B′(2).
+- Uses: O8, Theorem C, R22C-K, R22C2-06.
+
+Open after round 3 of line (c): orders for 131, 132, 133, 150 and 163 with resource contracts, then 130; b05, b06 and
+b15 after certified orders (section 2 gives the state after the replay); and coverage of 𝒞₂.
+
+## 8. Coverage of B′(2)
+
+The question left by lines (b) and (c): does every reachable height-2 state Z with n ≥ 1 off pieces have a catalogue
+step, that is a unit, a word and middles at which the vacancy test of R22B-29 accepts? The coverage shard (the senior
+reviewer, fast tier, 18 October 2026; findings COV-01 to COV-07, all `minor`, all adopted) attempted the proof and
+designed the deadlock experiments. Its computations are `scripts/round22/cov01_isolated_triangle.py`,
+`cov02_point_orbits.py` and `cov04_middles737.py`; the integrator re-ran them with the outputs
+`runs/round22/cov01_isolated_triangle.txt`, `cov02_point_orbits.txt` and `cov04_middles737.txt`, and ran its proposed
+experiment as `cov07_word_order.py` (output `cov07_word_order.txt`). Experiment E2 of this section is the replay of
+section 2 continued with every step built at the state in front of it; it reached the lattice (the subsection after
+COV-07). Round 2 (COV-08 to COV-16, after E2) refutes two shortcuts and reduces coverage to one finite per-state
+predicate, Cover(Z) (COV-15). Round 3 (COV-17 to COV-22) constructs reachable states with one off piece in every kind of
+cell and shows that the catalogue covers them; whether COV-01's state is reachable stays open: its experiment COV-22
+found no reaching word, and the integrator's checks after it exclude every one-letter SAFE sandwich. The integrator's
+depth table after them is the input to round 4 (COV-23 to COV-28). Round 4 classifies the height-2 off placements up to
+K⁺, gives an exact criterion for the SAFE-prepared whole-cap step at a singleton (it covers every rim placement except
+24 exceptional holes) and excludes every retained middle that returns X's locking block; its experiment COV-28 found no
+reaching word, which decides nothing. Round 5 (COV-29 to COV-35) covers the 24 exceptional holes through the cap
+antipodal to cap 0, so every valid singleton with a rim placement has a step, cuts the other singletons by validity to
+457,200 class–hole pairs in 67 deep and two outer classes, and gives an exact test for a whole-cap step with several off
+pieces and a lemma that lifts a certified step past separated contents; its experiment COV-35 found no reaching word for
+eight deep classes. Round 6 (COV-36 to COV-43) reduces the singleton residual exactly to 118 cases, shows that the
+vacant-lock condition is no invariant of reachable states, proves that R2, restoration inside height 2, gives B′(2) with
+an explicit exhaustive catalogue, and classifies the two-letter excursions above height 2; its experiment COV-43 found
+no restoring word at any of the 118 cases, which decides nothing. Round 7 (COV-44 to COV-51) shows that B′(2) holds with
+explicit bounds exactly when restoration stays inside an explicit height, that the vacant-lock condition fails even at a
+reachable singleton and that every restoring word for a residual case needs at least three jumble letters, and finds no
+replacement of at most two letters for the different-cap peaks of COV-41; its experiment COV-51 was stopped after eight
+cases, since the existing descent is stuck at the residual tables (the integrator's check after it). Round 8 (COV-52 to
+COV-57) proves the outer classes 1345 and 1437 unreachable, which leaves 112 deep cases, keeps every three-jumble path
+from a lattice table to a singleton inside height 2, and shows that the existing descent is incomplete: it is stuck even
+at COV-17's reachable singleton; its experiment COV-57 enumerates one three-jumble family exactly at two cases. Coverage
+stays open: no reachable state without a step was found, and nothing here proves that every state has one.
+
+### COV-01. An isolated triangle with an intrinsic Q-shadow (computed; proved; reachability open)
+
+- The state X. Every piece is at the identity except piece 1474, at the pose R = element(I_a, 0, 25) (digest
+  `6580ef02…`). Its one off piece is of type 18 and height 2, in the class-0 triangle cell C = {0, 2, 23}, and the only
+  hole is 1474. Body facet 3 separates its rotated region from the interiors of the lattice pieces, so X passes the
+  exact non-overlap, type and own-class freeness checks. Whether X is reachable is not established.
+- The certificate. With g0 = R⁻¹, the chambers 404 and 762 are of type 24 and lie in Ω_C. Every retained letter that
+  moves the landed chamber 1474 is blocked by g0(404) or g0(762): the moving grips are 0, 1, 2, 3, 7, 15, 18, 19 and
+  23, and both witnesses are inside each of them, except that 762 straddles grip 18 and 404 straddles grip 19. This is
+  an intrinsic Q-shadow in the sense of R22C2-01.
+- What it defeats. (1) T1: landing a triangle content by a free-class word needs a whole triangle home-cell Bad set
+  of 111 chambers, and X has one hole; R22C-05 is an edge template. (2) T1′ fails N1 for every own-class landing word,
+  not only for one middle, since R22C2-01 identifies all landing rotations up to left multiplication by K⁺. (3) A
+  retained preparation cannot remove the certificate: X has no type-24 hole, so every type-24 chamber stays occupied,
+  and if the preparation gives U a multiplier k ∈ K⁺, the occupied chambers k(404) and k(762) give the same
+  certificate in the moved cell (their occupants need not keep their identities). (4) T2′ cannot repair it: its
+  creator must use U's free class and return U to its exact pose, so by Lemma G its accumulated rotation on U's cell
+  is the identity, and the witness chambers are occupied again before W. (5) There is no other off unit to order
+  first. The same holds for every otherwise-lattice assignment with this off geometry and its one type-18 hole,
+  wherever the hole is.
+- So a lemma that covers isolated units by non-overlap, the class-cell model, type conservation and the absence of
+  other off pieces is false. X is not a counterexample to B′(2) without a reaching history, nor to the unrestricted
+  supercatalogue, whose mixed-class native cores it does not obstruct. Open: a legal reaching history of X or of its
+  family, or a reachability invariant that excludes it. A bounded reaching search that fails would prove nothing.
+- Command: `scripts/round22/cov01_isolated_triangle.py`; output `runs/round22/cov01_isolated_triangle.txt`.
+- Uses: R22C2-01, Lemma G, R22C-05.
+
+### COV-02. Seven geometric off-point cases (computed)
+
+- Fix class 0 and divide its off-point slots by H = K⁺ ∩ Sym⁺(class 0), of order 1,440 (generated by the K⁺ indices
+  1, 2 and 45, found by exact closure; the frames are menu items 0, 12, 24, 25 and 27). Since K⁺ is transitive on the
+  classes, these are all the cases. There are seven, with 5,764 slots in the class (slots, points in the class,
+  stabilizer order): outer (5,280, 4, 360); vertex (385, 480, 3); edge I, in its home cell (86, 1,440, 1); edge II,
+  the cell {0, 2} from the home cell {0, 54} (86, 1,440, 1); a triangle without home chambers (111, 1,440, 1); a
+  tetrahedron without home chambers (87, 480, 3); a triangle with home chambers (111, 480, 3). COV-01 is in the last
+  case.
+- This enumerates geometric points, not contents, hole sets or reachable states: an edge case with a trivial
+  stabilizer already has 2^86 − 1 nonempty masks, so an exhaustive classification needs proved restrictions or a
+  symbolic reduction (COV-03). An outer content cannot move under its own-class words, and a retained conjugation
+  keeps it outer.
+- Command: `scripts/round22/cov02_point_orbits.py`; output `runs/round22/cov02_point_orbits.txt`.
+
+### COV-03. A local certificate, and what coverage still needs (proved; conditional)
+
+- A local certificate is a named unit, a retained preparation, the whole-content and free-class core checks, complete
+  Bad sets, and an exact vacancy certificate at every middle it needs, the T2′ cleanup included. Off pieces outside
+  the neighbourhood of its grips (inside or straddling one of their caps or cuts) cannot invalidate its letters; the
+  hole resources are separate data.
+- Isolated contents. Let U, with type vector u, be the only off content, in a cell of kind κ. If |U| is less than the
+  home-cell size e_κ, no T1 closure works: a landing uses a label-0 point of that kind, so Bad(W⁻¹) contains a whole
+  home cell, while the forward and inverse Bad sets have equal type counts and only |U| holes exist; a retained
+  preparation keeps this. For T1′, R22C-V becomes u ≤ u − |H ∩ Bad(W)| type by type, so H ∩ Bad(W) = ∅ is necessary,
+  and then the middle has exactly |Bad(W⁻¹)| holes: vacancy must carry the whole hole set of the middle onto that
+  target.
+- A symbolic Q-test. Fix a content and a reference landing rotation g0. For a landed chamber x let M(x) be the grips
+  with a retained letter that moves x, and for c ∈ M(x) let B_c be the chambers q of the source cell whose regions
+  g0(q) lie inside or straddle cap c. The intrinsic Q obstruction is that every B_c contains an occupied chamber. So the
+  hole bits enter through finite Boolean clauses, and if for each c some type t has |B_{c,t}| > u_t, every
+  type-compatible hole set leaves c blocked (COV-01 is the case u_24 = 0). The hole quantifier must keep
+  non-overlap, all type counts and every proved reachability restriction. H ∩ Bad(W) fixes Q and with it the SAFE
+  geometry of the middle; with that geometry fixed and independent alternating factors, vacancy reduces to the
+  occupancy of fixed targets and the per-orbit inventories, and otherwise to the joint action (R22B-29).
+- The global obligation is that every reachable Z has a passing local certificate. 𝒞₂ is closed under strict′
+  endpoints and n decreases, so once this per-state statement is proved no new successor invariant is needed: what is
+  missing is coverage, not closure. A proposed order needs a certified first step; blockers form AND/OR choices with
+  shared hole resources; intrinsic middle shadows are self-obstructions; Theorem FC gives a mover, not a ready or
+  strict′ unit (COV-01 has free own-class grips). No reachable state where every template fails was found.
+- With the free-class cores, b = 13,205! − 1 and R = 7,200^177,120 keep L = 4b + 5(R − 1) and S(n) ≤ n·C_b⁴·T_R⁵
+  (R22C3-06). The recorded reaching histories of the test states are much shorter than b, so their inverses already
+  give a step in the unrestricted native-core supercatalogue, and failures of the four geometric templates at those
+  states cannot refute it.
+- Uses: R22C2-01, R22C-V, R22C-FC, R22C3-06, R22B-29.
+
+### COV-04. At 737, b05 and b15 are blocked by other units, b06 by two types (computed)
+
+- At the replay state of 737 (digest `2e3b8f99…`) the reviewer built the T1′ middles of b05 and b15 from the
+  pure-cell accumulated rotations, without expanding the words, and checked the fixed-chamber lists against
+  `buffer.condition`.
+- b05: class-3 cell {12, 91}, U = 61, Q = 86, landing rotation item 17 at grip 12; middle `a4c50c4c…` with 762 off
+  pieces. 48 landing chambers are fixed and occupied, none of them by Q alone. With Q's geometry fixed, the minimal
+  blocker sets are {b03} for 17 chambers and {b03, b04, b06} for 31; grip 17 is Q-free, moves all 48 and is blocked by
+  b03, b04 and b06.
+- b15: class-3 cell {217, 324}, U = 25, Q = 86, item 58 at grip 217; middle `a5fb0b10…` with 798 off pieces. 17 fixed
+  occupied landing chambers, none fixed by Q alone; the minimal blocker set is {b07, b12, b13, b14}, and grips 286 and
+  371 are Q-free and move all 17. So landing b12 and b14 does not open these routes; b07 and b13 block them too.
+  Earlier steps can change Q and open other routes, so this does not say that these four units must land first.
+- b06: Ω_91 has 10 holes and 727 are elsewhere; the type-6 triple (pieces of U, holes, holes inside) is (2, 2, 2) and
+  the type-9 triple (1, 1, 1). R22C-V fails by two type-6 pieces and one type-9 piece, and since every own-class
+  vertex landing has Ω_91 ⊆ Bad(W), this excludes every unprepared own-class T1′ at 737, not only the pure-edge family
+  of `exp_b.py`. Edge partners cannot supply type 6. The deficit depends on where the holes are, so after other steps
+  the inventory needs a new check.
+- So the recorded failures of b05 and b15 are interactions, not intrinsic Q obstructions; a certified order that
+  removes the blockers, followed by fresh vacancy checks, is a route, not a result.
+- Command: `scripts/round22/cov04_middles737.py`; output `runs/round22/cov04_middles737.txt`.
+
+### COV-05. Unit 130 at depth 60 is blocked by seven units (from the record)
+
+- From the stored record, which the reviewer did not re-run: after the preparation (481, 5) the middle `3747dce8…` has
+  Q = 86, U = 61 and 48 fixed occupied landing chambers, none fixed by Q alone. The minimal Q-free blocker sets are
+  {131, 132, 133, 163} for 17 chambers, that set with 150 and 151 for 15, and with 142 as well for 16; grip 429 is a
+  Q-free route for all 48, blocked by {131, 132, 133, 142, 150, 151, 163}.
+- R22C3-04 proves 142 then 151; the steps of 131, 132, 133, 150 and 163 are not proved, and 150 also needs a genuine
+  vertex middle. So neither a strict′ step for 130 at the stop nor an order of its predecessors is established.
+
+### COV-06. Coverage needs the holes and the off poses, not the lattice orientations (proved)
+
+- Statement. At a strict′ boundary keep the identities and exact poses of the off pieces and the hole set H. Two
+  valid states with the same such data have the same admissibility and strict′ outcome for every fixed word, although
+  their labelled lattice endpoints may differ. Proof: match their lattice pieces by chamber. A matched pair has the
+  same region and poses k1, k2 ∈ K⁺, and receives the same accumulated left multiplier a along a common trajectory;
+  a·k1 ∈ K⁺ iff a ∈ K⁺ iff a·k2 ∈ K⁺. Regions and cut classifications agree at every prefix, and the off pieces follow
+  the same exact trajectories.
+- Successor formulas. Let a free-class W land exactly U and fix the other off pieces; B = Bad(W), T = Bad(W⁻¹),
+  f: Ω∖B → Ω∖T its good-ghost bijection, and D ⊆ T the landing chambers of U. For T1, with π the chamber permutation of
+  V and B ⊆ π(H): H_out = π⁻¹((T∖D) ⊔ f(π(H)∖B)). For T1′, with π the chamber permutation of its V′:
+  H1 = (T∖D) ⊔ f(H∖B); H2 = π(H1) ⊇ T; H3 = (H ∩ B) ⊔ f⁻¹(H2∖T); H_out = π⁻¹(H3). The term H ∩ B records the source
+  holes that are left when Q returns. Retained conjugations add their known chamber permutations before and after.
+- So a coverage order can be continued without the accumulated rotations of the lattice pieces, but it needs V's
+  action on all chambers, not only on the target orbits; the evaluator can compute it on all of Ω, or on each of the
+  36 K⁺ types, with cycle powers. A labelled end pose table needs the rotations as well; `slp_apply.py` computes them
+  (E2 below).
+- Uses: Lemma M, R22C-T1′.
+
+### COV-07. The stored T1′ words form no order at 737 (computed)
+
+- The question: does some order of the four stored T1′ words of b03, b04, b12 and b18
+  (`runs/round22/t1prime-k40/steps/u<n>.json`, of 160, 942, 1,158 and 160 letters, built at the depth 40 stop) give
+  successive strict′ steps at 737, a unit that has landed being skipped? Each word is applied literally and checked
+  against the strict′ contract; a CPU cutoff or an uncertain classification would be inconclusive.
+- The integrator ran the four branches (by first unit, two at a time). b12's word is strict′ at 737; the words of b03,
+  b04 and b18 are not, either at 737 or after b12. All four branches end without an order. So this unchanged-word
+  hypothesis is refuted: the words must be rebuilt at the current state. This is not a deadlock: E2 rebuilds them.
+- Command: `COV_FIRST=<3|4|12|18> scripts/round22/cov07_word_order.py`; output `runs/round22/cov07_word_order.txt`.
+
+### E2 and coverage (computed; the integrator's replay)
+
+- What E2 shows. With every step rebuilt at the state in front of it (COV-07), the replay of section 2 takes the
+  depth 40 stop to the lattice: 1,193 → 0 off pieces in 21 strict′ steps (eight in round 3, thirteen in E2), each
+  applied exactly. At every state it reached, a step of the catalogue {census word, closure V·W·V⁻¹, T1′ with a
+  literal or certificate V′, Theorem C, T1′ after a SAFE-ALL preparation} was found for some unit; no state of the
+  replay was a dead end.
+- COV-04's blockers, both ways. b15 passes once b07, b12, b13 and b14 have landed; b05 alone still fails N1 at 71,
+  where b06 is the only other off content of its middle. b06's type deficit goes once a SAFE-ALL preparation has moved
+  the holes, as COV-04's remark that the deficit depends on where the holes are allows.
+- COV-03's isolated contents. At 71 b05 and b06 are the only off contents, so H ∩ Bad(W) = ∅ is necessary for the
+  whole-cap T1′, and then the middle has exactly |T| = 3,097 holes and V′ must carry the whole hole set onto T. The
+  preparation moves all 71 holes out of cap 91, and N2 holds with equality on each of the 29 nontrivial target orbits.
+- Resources (R22C3-02). Closures that round 3 proved at 977 and 915 fail at 437 for lack of holes, while T1′ steps
+  for the same units pass: a closure needs a hole outside Bad(W) for each lattice piece that W takes off, a T1′ step
+  one outside its target for each landing piece.
+- What it does not show. E2 is one trajectory from one stop, along a fixed plan rather than a search; it says
+  nothing about other states of 𝒞₂, and COV-01's state is untouched. Coverage stays open; round 2 (below) starts
+  from these results.
+- Uses: COV-03, COV-04, COV-06, COV-07, R22C3-02, section 2 (E2).
+
+### Round 2 of coverage
+
+After E2 the senior reviewer took up coverage again at the fast tier (findings COV-08 to COV-16, all `minor`, all
+adopted, 18 October 2026): whether a step's hole resources survive the steps before it, whether every reachable state
+has a cap whose whole off content lands, an exact preparation test, and the strongest coverage theorem the record
+supports. Its computations are `scripts/round22/cov09_resource_persistence.py`, `cov13_mixed_frames.py` and
+`cov14_isolated_wholecap.py`; the integrator re-ran them and got the same digests and verdicts, with the outputs
+`runs/round22/cov09_resource_persistence.txt`, `cov13_mixed_frames.txt` and `cov14_isolated_wholecap.txt`. Two
+proposed shortcuts are false (COV-09, COV-13), coverage reduces to one finite per-state predicate (COV-15), and
+neither a proof of B′(2) nor a reachable deadlock is established.
+
+### COV-08. T1′ resources pull back through the good-ghost map (proved)
+
+- Statement. Let a free-class core W land a nonempty set U exactly and keep every other off piece at its pose; let
+  B = Bad(W), T = Bad(W⁻¹), f: Ω∖B → Ω∖T its good-ghost bijection, H the holes of Z and D ⊆ T the landing chambers.
+  The middle holes are H1 = (T∖D) ⊔ f(H∖B) (COV-06). For each orbit Δ of the actual middle group G1 = G(Z·W) put
+  R_Δ = f⁻¹(Δ∖T). Then N1 is exactly D ∩ Fix(G1) = ∅, and N2 is exactly |H ∩ R_Δ| ≥ |D ∩ Δ| for every Δ: finite checks
+  from Z, W and the middle geometry. Counting the holes of Z outside T is wrong in general, since the source sets R_Δ
+  lie outside B. For a whole-cap letter B = T is the cap and f is the identity outside it.
+- The resource contract. For a strict′ predecessor P with occupied chambers E before it, good-ghost map φ on E and
+  landing chambers D_P of all the pieces it lands, every fixed chamber set R has h_after(R) = h_before(R) + |E ∩ R| −
+  |φ(E) ∩ R| − |D_P ∩ R| (the identity of R22C3-01, applied to R = R_Δ). Keeping off poses or an orbit partition gives
+  no bound on this. Sufficient for an old vacancy certificate to survive: the target off pieces and W's contract
+  survive, the old middle SAFE alphabet stays available, and the old per-orbit inequalities hold with the new H. A
+  stronger and simpler condition is that φ keeps each R_Δ and D_P avoids it.
+- Middles are not monotone. Endpoint SAFE alphabets grow under strict′ steps (R22C3-01), but middles need not: moving
+  holes out of B adds displaced lattice geometry Q, which can remove SAFE letters, split orbits or fix landing
+  chambers; moving holes into B removes some Q but spends outside holes; landing other off pieces can merge orbits.
+  Detection: recompute the middle off geometry, its SAFE alphabet and orbits, D ∩ Fix(G1) and the inequalities, with
+  the joint test of R22B-29 where independent alternating factors are not certified. Merged-orbit counts alone certify
+  nothing.
+- Uses: COV-06, R22C3-01, R22B-29.
+
+### COV-09. A strict′ predecessor turns N2 at a whole-cap middle from true to false (computed)
+
+- The run. Start from the recorded 96 state of run 2 (`runs/round22/line-a/replay2/run2/z-05-b19.json.gz`) and prepare
+  it by X = (178,7)(170,1)(75,1), the preparation that E2 later used for b06 at 71 (`replay2/b06-71/prep2/x-word.json`);
+  every letter is in the SAFE alphabet and the off fingerprint is kept. Then apply X⁻¹ and the stored b15 program as
+  an SLP. This predecessor is strict′: 96 → 71, b15's 25 pieces land, collateral 0, the other 71 off pieces exact; it
+  ends at the recorded 71 state (`291ae718…`).
+- The letter is W = (91,14), b06's whole-cap letter, whose landing set D is the 71 chambers of b05 and b06 at both
+  states. Before the predecessor (source `5e077fb6…`, the prepared 96 state) cap 91 holds 3 holes and the middle 3,119
+  off pieces; N1 and N2 hold. After it the cap holds 20 holes and the middle 3,077 off pieces; N1 holds and N2 fails,
+  with the deficits (orbit, deficit) (6, 2), (8, 2), (9, 1), (10, 3), (11, 3), (12, 2), (14, 2), (15, 5), 20 in all.
+  The holes outside the cap fell from 93 to 51. The old middle SAFE alphabet is a subset of the new one; the orbit
+  partitions differ.
+- So keeping the target off poses and the old middle alphabet does not keep the T1′ resources; COV-08's inventory
+  contract is the missing hypothesis. E2 restored the resource at 71 by applying the same X again before b06's T1′
+  (section 2).
+- Command: `scripts/round22/cov09_resource_persistence.py`; output `runs/round22/cov09_resource_persistence.txt`
+  (159 s of CPU in the integrator's run, 167 s in the reviewer's).
+- Uses: COV-06, COV-08, section 2 (E2).
+
+### COV-10. SAFE preparation: an exact finite test and a flow criterion (proved)
+
+- Exact test. Fix Z and a core W with the contract of COV-08, put G0 = G(Z), and let Γ0 be the joint orbit of the
+  hole set H under G0. A SAFE preparation exists exactly when some J ∈ Γ0 gives a middle at which the exact vacancy
+  test of R22B-29 accepts T. For each J the middle holes are (T∖D) ⊔ f(J∖B), and the middle off geometry, hence its
+  SAFE group, is fixed by the original off geometry and J ∩ B (the displaced lattice regions are W applied to B∖J).
+  Every J ∈ Γ0 is reached by a legal SAFE word, on a shortest path of at most ∏_i binom(|A_i|, |H ∩ A_i|) − 1 letters,
+  A_i the starting SAFE orbits; conversely every SAFE preparation gives such a J. No Alt hypothesis and no
+  identification of starting with middle orbits is assumed.
+- Flow criterion (sufficient). Choose an inside mask I ⊆ B; it fixes the middle geometry and G1. With A_i the G0
+  orbits, h_i = |H ∩ A_i|, b_i = |I ∩ A_i|, Δ_j the G1 orbits, d_j = |D ∩ Δ_j| and R_j = f⁻¹(Δ_j∖T), find integers
+  0 ≤ x_ij ≤ |A_i ∩ R_j| with Σ_j x_ij = h_i − b_i and Σ_i x_ij ≥ d_j; require also that I respects the fixed hole
+  bits of Z and that D ∩ Fix(G1) = ∅. If the partially filled starting orbits have degree at least 8 and their joint
+  action contains the product of their alternating groups (global Jordan words or R22B-19), one SAFE word X realizes
+  the chosen J; if the nontrivial target orbits of the middle carry independent alternating actions, Corollary A1
+  gives V′. Partially filled small or exceptional orbits need the joint-action test (with its kernel condition when
+  they are combined with large alternating factors); separate local tests do not suffice.
+- This is a finite sufficient condition, not a claim that its group hypotheses hold at every reachable state. It keeps
+  each starting orbit's hole count, which is stronger than type conservation; the capacities |A_i ∩ R_j| record how
+  starting and middle orbits meet, so no bijection between them is needed.
+- The integrator's count. In the six certificate checks of V′ recorded for E2 (`*-v-check.txt` under
+  `runs/round22/line-a/replay2/`) every target orbit had at least 120 chambers and passed by a Jordan certificate; no
+  orbit of 2 to 7 chambers met a target there.
+- Uses: COV-06, COV-08, R22B-19, R22B-29, Corollary A1.
+
+### COV-11. prep2 is a heuristic, not a preparation test (audit)
+
+- `scripts/round22/e2_b06_prep2.py` accepts only a single letter that strictly lowers its deficit and stops after 60
+  added letters, so even the flow hypotheses of COV-10 do not make it complete. Abstract counterexample: Sym(8)
+  generated by adjacent transpositions, one hole at point 1, and the requirement that the hole reach point 8. The
+  group contains Alt(8) and the one-unit flow is feasible, but every one-letter move from {1} leaves deficit 1, so
+  strict descent stops, while the sequence (1 2), (2 3), …, (7 8) succeeds.
+- Its second phase scores against the stored middle partition and has no inside-mask constraint, so it can move holes
+  into or out of T and change Q and the actual middle alphabet; a zero reference deficit certifies nothing about the
+  resulting middle. The E2 driver rebuilt and checked the actual middle and applied the whole program, so the recorded
+  steps stand. A greedy failure or timeout never shows that no preparation exists; the exact test is COV-10's.
+- Uses: COV-10, section 2 (E2).
+
+### COV-12. Whole-cap cores: exact eligibility and a three-segment form (proved)
+
+- Eligibility. Let C be the chamber set of an unstraddled cap c and W = (c, i) with element g ∉ K⁺. Then B = T = C and
+  the good-ghost map is the identity outside C. If W must land some off pieces and keep every other off piece at its
+  exact pose, every off piece inside c must land, since a nonidentity left multiplication changes every pose. So W is
+  eligible exactly when the cap holds a nonempty off set U_c and g·γ_p ∈ K⁺ for every p ∈ U_c: all these poses lie in
+  the one right coset g⁻¹K⁺. Two frame domains in the cap rule it out; one domain still needs a matching menu element.
+  A SAFE preparation fixes all off poses and cannot change eligibility.
+- Vacancy. For a prepared hole set J and landing chambers D the middle holes are (C∖D) ⊔ (J∖C); N1 is
+  D ∩ Fix(G1) = ∅, N2 is |(J∖C) ∩ Δ| ≥ |D ∩ Δ| for every actual middle orbit Δ, and R22B-29 decides vacancy exactly.
+  With COV-10's preparation test this characterizes the whole-cap T1′ route that keeps H3.
+- Three-segment form. Allow other off pieces inside c to move to other off poses under W, and require only that a
+  nonempty set U lands. If a SAFE V′ at Z·X·W vacates C, then X·W·V′·W⁻¹ is strict for U. V′ fixes every middle off
+  piece, the moved ones and Q included. W⁻¹ is admissible, since those pieces stay on their side of the cap and lattice
+  pieces never straddle. C is vacant, so W⁻¹ moves no lattice piece: it returns Q to the lattice and the moved pieces to
+  their poses, and U, which V′ took out of C, stays landed. X was SAFE and needs no undoing. The same hole formula and
+  vacancy test apply. Appending V′⁻¹ then needs its own admissibility check, since after the unwinding the surviving
+  off pieces need not have their middle poses. So a cap whose content does not all land does not rule out every
+  whole-cap step.
+- Uses: COV-06, COV-10, R22B-29, Lemma M.
+
+### COV-13. A reachable height-2 state with no all-content-landing cap (computed)
+
+- The state. From the solved state apply menu item 12 at every class-0 grip in increasing order: 120 legal letters,
+  digest `afc43efd…`. It has 147,904 off pieces, all of left height 2, in four off frame domains.
+- The audit. Of the 600 grips, 480 have straddled cuts and the other 120 are unstraddled caps holding at least two off
+  frame domains; there are no other cases. Two domains γ1K⁺ ≠ γ2K⁺ cannot both land under one g, since g·γ1 and g·γ2 in
+  K⁺ would give γ1⁻¹γ2 ∈ K⁺. So no admissible letter lands the whole off content of its cap, and SAFE preparations
+  leave this unchanged.
+- This answers the packet's question Q3 negatively inside 𝒞₂: the universal all-content-landing lemma is false.
+  Theorem FC holds (the 120 unstraddled grips are movers), and by FC no reachable state with off pieces has every cut
+  straddled. The state is no counterexample to coverage: its inverse history of 120 letters restores the solved state
+  with one free class, a direct strict′ core (a closure with empty V whose Bad set is already vacant).
+- Command: `scripts/round22/cov13_mixed_frames.py`; output `runs/round22/cov13_mixed_frames.txt`.
+- Uses: R22C-FC, COV-12.
+
+### COV-14. The isolated triangle has whole-cap landers but no prepared whole-cap vacancy (computed; proved)
+
+- The state is COV-01's X (digest `6580ef02…`, reconstructed). The unstraddled caps that contain piece 1474 are those
+  of grips 0, 1, 2, 3, 7, 13, 15, 19 and 23, and 36 whole-cap letters land it: grip 0 with items 12, 16, 20 and 24 to
+  32; grip 2 with items 14, 21, 23 and 43 to 51; grip 23 with the items of grip 0.
+- At W = (0, 12) the middle (digest `dad66d60…`) has 3,096 off pieces and a target of 3,097 chambers; 1474 lands in
+  chamber 2149. N1 fails, since 2149 is SAFE-fixed and occupied, and N2 has the deficit orbit 564 (0 holes, 1 needed).
+  The one source hole, 1474, is inside the cap.
+- Every preparation fails (proved). All 36 landers use grips 0, 2 and 23, each containing the triangle cell, so the
+  type-24 witness chambers 404 and 762 receive the same landing rotation as the piece. There is no type-24 hole and a
+  SAFE preparation keeps the piece exact, so both witnesses stay occupied. Every landing rotation differs from the
+  reference R⁻¹ by a left multiplication in K⁺, and the intrinsic Q-shadow certificate (R22C2-01) moves with it and
+  fixes the occupied landing chamber under every SAFE letter of the middle. So N1 fails for every preparation and all
+  36 letters; moving the type-18 hole out of the cap does not help.
+- Reachability of X is still open, so this is no counterexample to B′(2). If X is reachable, the geometric templates
+  of COV-01 and the whole-cap route all fail there, and only a native core, such as the inverse of a reaching
+  history, is left.
+- Command: `scripts/round22/cov14_isolated_wholecap.py`; output `runs/round22/cov14_isolated_wholecap.txt`.
+- Uses: COV-01, COV-12, R22C2-01.
+
+### COV-15. Coverage reduces to one finite per-state predicate (proved; conditional)
+
+- The catalogue. Free-class cores with their complete off-pose contracts and complete ghost Bad sets; closures
+  V·W·V⁻¹; T1′ steps with vacancy at their actual middles; SAFE-prepared T1′ steps; the single-letter whole-cap
+  three-segment form of COV-12; Theorem C instances. Units that land on the way count in the landing set. Each
+  instance checks its whole-content and free-class hypotheses where needed, the admissibility of every required
+  prefix, the joint preparation and vacancy conditions and the strict′ endpoint; a final V′⁻¹ is included only when
+  justified or checked. N1 and N2 alone are the acceptance test only where the simultaneous group-action hypotheses
+  are certified.
+- Cover(Z) means that some instance passes at Z. It is finite: enumerate the bounded cores, the joint SAFE hole images
+  and preparations, and the exact joint vacancy components at the resulting middles (COV-10 gives the exact
+  preparation test, its flow criterion a shortcut).
+- Theorem (conditional). If every Z ∈ 𝒞₂ with n(Z) > 0 satisfies Cover(Z), then every such Z is restored in at most
+  n(Z) strict′ steps: each accepted step lowers n by at least one, keeps the surviving off poses and ends in 𝒞₂, so no
+  further successor invariant is needed. The bounds stay those of R22C3-06: b = 13,205! − 1, N = 177,120,
+  R = 7,200^N, m = 35,400, g = 6,600, C_b = (m^(b+1) − 1)/(m − 1), T_R = (g^R − 1)/(g − 1), L = 4b + 5(R − 1) and
+  S(n) ≤ n·C_b⁴·T_R⁵. The templates fit the envelope of four cores and five retained segments (a preparation uses a
+  retained slot, and a whole-cap core has length one); shortening a core must keep its complete five-label action, and
+  shortening a retained segment its complete labelled endpoint.
+- What is established. E2 gives passing instances along one trajectory, not the lemma; the reviewer independently
+  evaluated only the b15 predecessor of COV-09, not all 21 steps. FC gives a mover, not a core or the resources;
+  COV-13 refutes the all-content shortcut but has an inverse-history step; COV-14's state is not known to be
+  reachable. Neither a proof of B′(2) nor a reachable deadlock of the full catalogue is established. The open lemma
+  is Cover(Z) on 𝒞₂.
+- Uses: COV-03, COV-10, COV-12, R22C3-06, R22C-K, R22C-FC.
+
+### COV-16. The adjudicating experiments are done; E5's inputs were wrong (experiment design)
+
+- The two bridge lemmas of the packet are decided by COV-09 (resources) and COV-13 (mixed frames), both run to the end
+  (167 s and 826 s of CPU on one thread each, in the reviewer's runs). The universal lemma Cover(Z) is not decided by a
+  bounded replay survey: an E5 success adds a trajectory, an E6 success gives step counts (lower bounds when the search
+  is incomplete), and a stall, a failed greedy preparation, a failed certificate builder or a timeout shows no
+  deadlock. A negative certificate must exhaust the stated cores and joint-action alternatives, or prove an
+  obstruction that covers them all.
+- Input correction (the integrator's error). The round 2 packet named the census round 3 records as depth 40 stops of
+  𝒞₂. Their recorded end heights are {2: 74,541, 4: 513} (`ia-k200-s7105`), {2: 27,088, 4: 111} (`ia-k100-s7108`) and
+  {2: 72,396, 4: 607} (`ia-k400-s7109`): deeper scrambles with height-4 pieces, outside 𝒞₂. The integrator confirmed
+  this from the records (`11-scramble-census/runs/round3/`, field `heights_end`). The 𝒞₂ census stops on record are
+  `round2/ia-k40-s7101` (E2's input) and `round2/ia-k60-s7104` (heights {2: 14,610}).
+- Next. Decide the reachability of COV-01's state (a reaching history or an invariant that excludes it), and attack
+  the Cover(Z) lemma itself.
+- Uses: COV-09, COV-13, COV-15.
+
+### Round 3 of coverage
+
+The senior reviewer took up the two items round 2 left open (findings COV-17 to COV-22, all `minor`, all adopted,
+fast tier, 18 October 2026): whether COV-01's isolated triangle X is reachable, and what the answer does to Cover(Z).
+Its computations are `scripts/round22/cov17_single_off.py`, `cov18_singleton_kinds.py` and `cov19_perfect_menu.py`;
+the integrator re-ran them and got the same digests, certificates and counts, with the outputs
+`runs/round22/cov17_single_off.txt`, `cov18_singleton_kinds.txt` and `cov19_perfect_menu.txt`. Its experiment is
+`scripts/round22/cov22_mixed_search.py`. Reachable states with exactly one off piece exist in every kind of cell, and
+the catalogue as it stands covers them (COV-17, COV-18, COV-21); no abelian invariant can exclude X (COV-19); one
+family of words provably misses X (COV-20); X's reachability stays open. COV-22 found no reaching word, and the
+integrator's checks after COV-20 (at the end of this section) extend it to every landing letter and, for two of
+them, to a second level.
+
+### COV-17. A legal 24-letter word reaches exactly one off piece (computed)
+
+- The word. With chronological commutators [A, B] = A·B·A⁻¹·B⁻¹, A = (74, 8), B = (188, 4), D = (178, 1) and
+  J = (0, 12), the word J·[[[A, B], B], D]·J⁻¹ has 24 letters. Its 22 middle letters are SAFE at solved·J, every prefix
+  is applied exactly, and the middle keeps the off fingerprint of solved·J.
+- The endpoint (digest `16d61ac2…`) has exactly one off piece, 58388, of type 17 and left height 2, in the class-0
+  triangle cell {0, 32, 45}; its only hole is 58388. Of the 2,976 pieces with nonidentity poses, all but 58388 are on
+  the lattice. The inverse word, applied exactly, returns the solved digest.
+- So the smallest positive off count at a reachable state is 1, inside 𝒞₂; the smallest the integrator had found in
+  the stored records was 3, at stage 01's E2 (one block of three pieces; [stage 01](../01-closure-x-to-e3/README.md)).
+  The witness does not settle X: its piece is of type 17, X's of type 18. It also shows that one member of a home-cell
+  cohort can carry a nonzero frame label while every other member is on the lattice, so no unrestricted form of
+  Lemma G forbids a singleton; Lemma G (R22C-G) holds in its free-class scope.
+- Command: `scripts/round22/cov17_single_off.py`; output `runs/round22/cov17_single_off.txt` (9 s of CPU).
+- Uses: R22C-G.
+
+### COV-18. Singleton off contents exist in all four kinds of cell (proved from computed certificates)
+
+- The construction. Let J = (0, 12), C the 3,097 chambers of cap 0 and Y = solved·J. At Y every piece of C is off,
+  every other piece is on the lattice and the hole set is C; the SAFE group has 562 grips, 6,182 letters and 1,816
+  chamber orbits, 1,781 of them singletons. Suppose G(Y) contains a three-cycle (h a b) that fixes every other chamber,
+  with h ∈ C and a, b ∉ C, and let V be a SAFE word that realizes it. Then the holes of Y·V are (C∖{h}) ∪ {a}, so one
+  lattice piece is inside cap 0, in chamber h. J⁻¹ lands all 3,097 original off pieces and takes that piece off:
+  solved·J·V·J⁻¹ has one off piece, in the region J⁻¹(h), of left height 2, and one hole, a. Every prefix is legal: V
+  uses Y's SAFE alphabet, which keeps the original off pieces, and J⁻¹ meets only those pieces, still inside cap 0, and
+  lattice pieces.
+- The certificates. For each row a global Jordan certificate (O5) was checked: its prime p satisfies d/2 < p ≤ d − 3
+  and divides exactly one cycle length on all 177,120 chambers, so a power of the word isolates a p-cycle on that
+  orbit. The orbit action is primitive and contains Alt(d), and the normal closure of the isolated p-cycle contains
+  Alt(d) on that orbit alone, which gives the three-cycle.
+  - Vertex: h = 2335, a, b = 809, 813; an orbit of 3,555 chambers with 6 holes; type 9; the cell {0}, which has home
+    chambers; p = 3,083; a certificate word of 400 letters.
+  - Edge: h = 25, a, b = 561, 571; 1,434 chambers, 18 holes; type 13; the cell {0, 54}, with home chambers; p = 797;
+    120 letters.
+  - Triangle: h = 75, a, b = 607, 623; 1,440 chambers, 36 holes; type 26; the cell {0, 45, 54}, without home
+    chambers; p = 863; 120 letters.
+  - Tetrahedron: h = 116, a, b = 644, 909; 120 chambers, 4 holes; type 35; the cell {0, 32, 45, 54}, without home
+    chambers; p = 79; 120 letters.
+- So each kind of cell has a reachable state whose one off content is one piece. X's case, a type-18 piece in a
+  triangle cell with home chambers, is not among them. Bound: |V| ≤ 7,200^174,023 − 1, since the 3,097 off poses stay
+  fixed through V and each of the other 174,023 pieces has at most 7,200 lattice poses; the reaching word has at most
+  7,200^174,023 + 1 letters.
+- Command: `scripts/round22/cov18_singleton_kinds.py`; output `runs/round22/cov18_singleton_kinds.txt` (35 s of CPU;
+  it also prints the checks of COV-20).
+- Uses: O5 (SAFE-ALL and Jordan certificates).
+
+### COV-19. No homomorphism to an abelian group tells X apart (computed; proved)
+
+- The check. The 60 I_a elements at grip 0 form a group that acts faithfully on the 120 class-0 poles (the poles 0, 2,
+  9 and 20 span R⁴) and is perfect: all 60 elements are commutators. Every other grip's menu is its conjugate by the
+  grip's frame, and all 600 frames lie in K⁺.
+- So every homomorphism χ from the group Γ that the menus generate to an abelian group vanishes on each grip's menu,
+  hence on every generator, hence on Γ. Lead (i) of the packet, an orientation sum of χ over the pieces weighted by
+  type or class, cannot tell X from a reachable state, whatever the cap populations are; this is stronger than χ
+  vanishing on K⁺. A position-dependent frame cocycle, an invariant built from stabilizers or a nonabelian invariant
+  is not excluded; each needs its own definition and a proof across all legal mixed-class moves.
+- Command: `scripts/round22/cov19_perfect_menu.py`; output `runs/round22/cov19_perfect_menu.txt` (9 s of CPU; it
+  rebuilds X first).
+- Uses: COV-01.
+
+### COV-20. X is outside the SAFE sandwich family of J = (0, 12); its reachability stays open (computed)
+
+- The obstruction. With J, Y and C as in COV-18, J·R lies in K⁺ and maps chamber 1474 to chamber 2149. A state of X's
+  family at the end of J·V·J⁻¹ would need a lattice piece in chamber 2149 just before J⁻¹. At Y, 2149 is a hole in a
+  singleton orbit of G(Y), so every SAFE V leaves it vacant: no word of this form reaches X's family, whatever V's
+  length or the final hole.
+- The type-18 holes of cap 0 at Y, by the cell of J⁻¹(h) and by whether h's SAFE orbit also holds occupied chambers
+  (wholly vacant, mixed): vertex cells with home chambers 18 and 6; edge cells with home chambers 15 and 33; triangle
+  cells without home chambers 3 and 24; triangle cells with home chambers 9 and 0. So the nine sources in X's case all
+  lie in wholly vacant orbits and none can take a lattice piece in. These are finite checks at this Y, not a
+  classification of reachability.
+- What stays open. No invariant that excludes X's family under every legal history was found, and no reaching word.
+  The orbit obstruction does not extend to an invariant, since further jumble letters change the off geometry and its
+  SAFE group. COV-17 shows that the unrestricted singleton prohibition of the packet's lead (ii) is false; Lemma G
+  constrains free words of one class and gives no law for mixed-class moves. An invariant special to type-18 pieces
+  in triangle cells with home chambers is still possible and unproved.
+- Command: the X lines of `scripts/round22/cov18_singleton_kinds.py` (`X_TARGET_FIXED`, `TYPE18_SINGLE_J`); output
+  in `runs/round22/cov18_singleton_kinds.txt`.
+- Uses: COV-01, COV-14, COV-17, COV-18, R22C-G.
+
+### COV-21. The constructed singletons are covered by the catalogue as it stands (proved)
+
+- The subclass. L_J is the set of states Z = solved·J·V·J⁻¹ with J = (0, 12), V SAFE at Y = solved·J and n(Z) > 0.
+  It is defined by a history; it is not proposed as an invariant of reachable states.
+- Every Z ∈ L_J satisfies Cover(Z) (COV-15). Apply J, then V⁻¹, then J⁻¹. J returns to Y·V and lands every off piece
+  of Z; at that middle the off geometry is exactly Y's, so V⁻¹ is SAFE there and restores the hole set C, which
+  vacates cap 0; J⁻¹ then returns to the solved state. This is COV-12's three-segment whole-cap form with an empty
+  preparation, and a strict′ step, since its endpoint is solved. It covers the four singletons of COV-18, and COV-17's
+  witness, whose 24-letter inverse word is the step.
+- Bounds. Shortening V to its complete labelled endpoint gives |V| ≤ 7,200^174,023 − 1 ≤ R − 1. The step uses two
+  one-letter cores and one retained segment, so it fits L = 4b + 5(R − 1) and the S(n) of R22C3-06; no native
+  mixed-class core is needed.
+- What it does not prove: Cover(Z) for every singleton state, the lemma on 𝒞₂, or X's case. If a reaching word H for
+  X's family is found, the geometric catalogue fails there (COV-01, COV-14), and adjoining the one native core H⁻¹
+  covers that instance; with |H| ≤ b the counting bound needs no change, otherwise b becomes max(b, |H|) for it. Neither
+  gives a uniform bound over arbitrary mixed-class histories.
+- Uses: COV-01, COV-12, COV-14, COV-15, COV-18, R22C3-06.
+
+### COV-22. One bounded mixed-class experiment for X's family (experiment design)
+
+- Design. COV-20 rules out a SAFE middle after one jumble letter, so the experiment samples 24-letter words
+  J·[[[a, b], c], d]·J⁻¹ whose middle has an own-class jumble letter a and a foreign-class jumble letter c, with b and
+  d retained letters, all at grips local to chambers 1474, 404 and 762. Every prefix is applied with the exact
+  simulator, and only an endpoint whose sole off piece is 1474 at exactly R is accepted: a member of X's family,
+  whatever its other lattice poses. Eight seeds, at most two at a time, each with a 1,700-second CPU cutoff (about 3.8
+  CPU hours in all).
+- What it decides. FOUND gives a legal reaching word and settles X's reachability positively; covering that state
+  then needs the 24-letter inverse as a native core, within the present b. NO_HIT or CUT_SHORT decides nothing: the
+  family is sampled, not exhausted, and no finite exhaustive reduction of unrestricted reachability is proved.
+- Command: `scripts/round22/cov22_mixed_search.py <seed>` for the seeds 0 to 7. The integrator ran the eight seeds on
+  18 October, two at a time: each ended NO_HIT after its 20,000 words, none cut short (1,500 to 1,541 s of CPU each,
+  3.4 CPU hours in all), so the experiment decides nothing; outputs `runs/round22/cov22/seed0.txt` to `seed7.txt`.
+- Uses: COV-01, COV-17, COV-20.
+
+### The integrator's checks after COV-20: no one-letter SAFE sandwich, and the second level (computed)
+
+- The claim. For no letter L and no word V over the SAFE alphabet of solved·L is solved·L·V·L⁻¹ a state of COV-01's
+  family. COV-20 shows it for L = (0, 12); COV-22's design assumes it for every L.
+- The proof. A SAFE word keeps every off piece and maps the lattice to the lattice, so at W = solved·L·V the off pieces
+  are the pieces of L's cap, in their poses after L, and L⁻¹ lands them all; the off pieces of the endpoint are the
+  lattice pieces that W has in the chambers of L's cap, turned by L⁻¹ (if L lies in K⁺ the endpoint is on the
+  lattice). A state of the family has one off piece, in X's off region, so W has one lattice piece in L's cap, in a
+  chamber x that L⁻¹ takes to that region: L lands X's piece. L is legal at the endpoint, whose only off piece is X's
+  (lattice pieces straddle no cut), so its cap is unstraddled at X too, and L is one of the 36 whole-cap letters of
+  COV-14, at grips 0, 2 and 23, with x = (L·R)(1474). At solved·L every one of these chambers x is a hole in an orbit
+  of one chamber of the SAFE group, so every SAFE word leaves it vacant.
+- The computation. For each of the 36 letters, solved·L has 3,097 off pieces and 3,097 holes (the chambers of L's
+  cap), 562 SAFE grips with 6,182 letters and 1,816 orbits, and its x is a type-18 hole in a singleton orbit (33
+  distinct chambers; x = 2149 at (0, 12), as in COV-20). It agrees with COV-14: N1 fails at the middle X·L of every
+  one of the 36 letters, and the SAFE alphabet of solved·L is contained in that of X·L, whose off pieces are those of
+  solved·L but one, so x is fixed at solved·L as well. Command: `scripts/round22/cov20_all_landers.py`; output
+  `runs/round22/cov20_all_landers.txt` (814 s of CPU).
+- The second level, for L = (0, 12) and (0, 25) (computed). At solved·L the unstraddled caps that hold off pieces are
+  L's own cap, with all 3,097, and twelve others, at grips 2, 9, 20, 23, 30, 32, 43, 45, 46, 54, 56 and 75, with 395
+  each; x lies in two of the twelve, at grips 2 and 32 for (0, 12) and 2 and 23 for (0, 25). A lattice letter at L's
+  own cap composes with L into one letter at that grip, so it gives a one-letter word, settled above. For each of the
+  132 lattice letters g at the twelve other caps (eleven at each), solved·L·g keeps its 3,097 off pieces, and the
+  chamber x′ = g(x) (x itself when g's cap does not contain x), from which g⁻¹ brings content to x, is a hole in an
+  orbit of one chamber of the SAFE group of solved·L·g (6,061 to 6,171 SAFE letters, 1,839 to 3,107 orbits). So every
+  SAFE letter of solved·L·g fixes x′, and every conjugate g·v·g⁻¹ fixes x. Each of these generators keeps the off
+  geometry of solved·L (a SAFE letter moves no off piece, and g⁻¹ returns the off pieces that g moved), and the SAFE
+  alphabet and the legality of a lattice letter depend on the off geometry alone, so at every state with that off
+  geometry the same generators apply and fix x. The group G₂ that they generate with the SAFE group of solved·L
+  therefore keeps x vacant, and for these two letters no word L·w·L⁻¹ with w in G₂ reaches COV-01's family. Command:
+  `scripts/round22/cov20_two_level.py` with the argument `0:12` or `0:25`; outputs
+  `runs/round22/cov20_two_level-0-12.txt` and `cov20_two_level-0-25.txt` (3,027 and 3,021 s of CPU).
+- What it does not decide: the second level at the other 34 landing letters; middles with a jumble letter at one of the
+  twelve caps, which can land some of its 395 off pieces and so change the off geometry; nested conjugates through
+  states with another off geometry; and histories whose last move of X's piece is not the inverse of a landing letter (a
+  lattice letter at a cap that contains the piece, or a jumble letter of another region). X's reachability stays open.
+  Round 4 removes the first and the third limit for every retained middle that returns X's locking block exactly
+  (COV-25).
+- Uses: COV-01, COV-14, COV-20.
+
+### The integrator's depth table for coverage round 4 (computed; proved)
+
+- What it gives. For each of the 48 jumble letters L at grip 0, the holes of solved·L are the 3,097 chambers of cap 0,
+  and `scripts/round22/cov_depth_grip0.py` gives each of them its orbit under the SAFE group of solved·L: deep if the
+  orbit holds no occupied chamber, rim otherwise. A word L·V·L⁻¹ with V SAFE leaves one off piece only by bringing one
+  lattice piece into a rim chamber of cap 0, so a singleton geometry whose landing chambers are all deep is reached by
+  no such word, as COV-01's state is not (the check above).
+- The numbers. At every one of the 48 letters, 2,382 chambers are rim and 715 deep, every deep chamber is an orbit of
+  one chamber, and the SAFE alphabet has 6,182 letters and 1,816 orbits; the counts by piece type are the same at
+  every letter. Cap 0 holds 108 chambers of type 18, 45 of them deep, among them the chamber x of each of the twelve
+  letters that land X's piece; types 0 to 5 and 7 are deep in every chamber and types 26 and 29 to 35 in none. Outputs
+  `runs/round22/cov_depth_grip0-0.txt` and `cov_depth_grip0-1.txt` (two shards, 569 and 564 s of CPU); each lists the
+  deep chambers with the sizes of their orbits and counts both kinds by type.
+- Four classes, one geometry (proved; the group facts and the classes checked exactly by
+  `scripts/round22/cov_depth_cosets.py`, output `runs/round22/cov_depth_cosets.txt`). The deep sets take four values,
+  each on twelve letters (385 chambers deep in all four, 1,225 in at least one), and each class is one left coset L·T
+  of the twelve lattice items T of grip 0: L⁻¹·L′ lies in K⁺ within a class and never across. The menu at grip 0 is a
+  group of 60 elements and T is the stabilizer of pole 0 in K⁺. For t in T the letter L·t takes the lattice positions
+  of cap 0 to the same set of positions as L does, since t permutes them, so solved·L and solved·(L·t) have the same
+  off geometry, and with it the same SAFE group, holes and orbits. T permutes the four cosets off T transitively, each
+  with a stabilizer of order 3, and the letter t·L·t⁻¹, in the coset t·L·T, gives the off geometry of solved·L moved
+  by t; so the four geometries are images of one another under K⁺, which is why their counts agree. A symmetry in K⁺
+  of the geometry of solved·L maps cap 0 to itself, so it lies in T and fixes L's coset (a letter off T moves every
+  piece of cap 0 off the lattice): the geometry has exactly three symmetries in K⁺. With COV-19, every one-letter
+  state solved·L is, in its off geometry, the image under K⁺ of solved·(0, 12).
+- What it does not give: the classification of singleton geometries up to K⁺. By the above it is enough to take L =
+  (0, 12) and its 3,097 landing pairs (L, y), y a chamber of cap 0, up to the three symmetries; what remains is to
+  identify the pairs whose pieces, landed by L⁻¹, give the same singleton geometry, and to read off the depth of each
+  class (coverage round 4).
+- Uses: COV-14, COV-19.
+
+### Round 4 of coverage
+
+The senior reviewer took up the questions of the depth table (findings COV-23 to COV-28, all `minor`, all adopted, fast
+tier, 18 October 2026): the classification of singleton geometries up to K⁺, an invariant from depth or a reaching word
+for X, and what either does to Cover(Z) and its bounds. Its computations are
+`scripts/round22/cov23_singleton_classes.py`, which also gives the results that COV-24, COV-25 and COV-27 use, and
+`cov26_exterior_singletons.py`; the integrator re-ran both and got the same classes, counts, exceptional holes, blocks
+and landing chambers, with the outputs `runs/round22/cov23_singleton_classes.txt` and `cov26_exterior_singletons.txt`,
+and repeated the reviewer's reference check for COV-24 (`scripts/round22/cov24_reference.py`, output
+`runs/round22/cov24_reference.txt`). Its experiment, `scripts/round22/cov28_cohort_search.py`, found no reaching word
+(outputs `runs/round22/cov28/seed0.txt` to `seed7.txt`). The height-2 off placements fall into 500 classes up to K⁺
+(COV-23); a singleton whose placement is in a rim class has a SAFE-prepared whole-cap step unless its hole is one of 24
+exceptional placements (COV-24); no retained middle that returns X's locking block exactly reaches X's family, at any of
+its 36 landing letters (COV-25); X is not the only deep singleton, and outer placements need their own treatment
+(COV-26); and the last move of X's piece leaves two branches that nothing here excludes (COV-27). X's reachability and
+Cover(Z) on 𝒞₂ stay open.
+
+### COV-23. 500 classes of height-2 off placements: 353 rim, 131 deep, 16 without a landing letter (computed)
+
+- The reduction. Let J = (0, 12), R = J⁻¹ = element(I_a, 0, 45), Y = solved·J and C the 3,097 chambers of cap 0, and
+  write λ_y for the region of the chamber y. The group H = {h ∈ K⁺ : R·h·R⁻¹ ∈ K⁺} has order 360, and h ∈ H takes the
+  placement R·λ_y to R·λ_{h(y)} by the rotation R·h·R⁻¹ ∈ K⁺. The 177,120 chambers form 500 orbits of H, and a
+  comparison of exact vertex sets under all 7,200 rotations of K⁺ (exact vertex centroids serve only as a filter for
+  candidates) identifies no two of them: the placements R·λ_y fall into exactly 500 classes up to K⁺. The model has 20
+  nonlattice domains of left height 2 (`classes.frames`: five classes with four each, none shared), and K⁺ takes each to
+  the domain of R, so these are all the height-2 off placements. They are classes of placements, not of states: their
+  reachability, and whether a placement and a given hole form a valid state without overlap, are separate questions.
+- The counts. 484 classes meet C, so they have landing pairs (J, y) with y ∈ C; the other 16 are outer placements
+  without a landing letter (COV-26). A class is deep when all its landing pairs are deep chambers of Y (the depth
+  table), rim otherwise. By the class-0 cell of the placement, as (rim, deep): vertex (20, 111); edge (154, 18);
+  triangle without home chambers (111, 0); triangle with home chambers (37, 2); tetrahedron (31, 0); 353 rim and 131
+  deep classes in all.
+- The depth of one pair does not classify. Of the 715 deep chambers of Y, 445 lie in the 131 deep classes and 270 in 89
+  rim classes that also have rim pairs. Nor do the point case of COV-02 and the piece type together: R·λ_41 and R·λ_3982
+  are type-18 vertex placements, the first deep and the second rim, and of the eight type-18 vertex classes six are deep
+  and two rim. X's class is one of the two deep classes of triangles with home chambers; the other is COV-26's.
+- Command: `scripts/round22/cov23_singleton_classes.py`; output `runs/round22/cov23_singleton_classes.txt` (the
+  CLASSIFICATION line, and for the findings below the lines JORDAN, COVERAGE, LOCKS, LAST_MOVE and OUTER; about a minute
+  of CPU).
+- Uses: COV-02, COV-14, the depth table.
+
+### COV-24. Whole-cap coverage of singletons: an exact hole-access criterion (proved from computed certificates)
+
+- Every rim class has a reachable singleton. At Y each of the 29 SAFE orbits that contain rim chambers passes a global
+  Jordan certificate (JORDAN 29), which isolates an odd prime cycle on that orbit and fixes every other chamber, so by
+  the normal-closure argument of COV-18 the SAFE group acts as Alt on that orbit alone. For a rim class, take a rim
+  chamber y and two occupied chambers outside C in its orbit; a SAFE word V that realizes the isolated three-cycle on
+  them gives the reachable singleton solved·J·V·J⁻¹, whose off piece has the placement R·λ_y. This is an existence
+  proof: the words are not expanded, and |V| ≤ 7,200^174,023 − 1 as in COV-18.
+- The criterion. Let Z be a valid singleton with the hole h. For each legal landing letter L of its off piece, at the
+  cap C_L, let x_L be the landed chamber and Δ_L its orbit under the SAFE group of solved·L. A SAFE-prepared whole-cap
+  route (COV-10, COV-12) exists exactly when G(Z)·h meets Δ_L outside C_L for at least one L. Necessity: a preparation
+  that leaves the hole inside C_L leaves the middle |C_L| − 1 holes, too few to vacate C_L; otherwise the middle has the
+  off geometry of solved·L and the holes (C_L ∖ {x_L}) ∪ {h′}, and the orbit inventories force h′ ∈ Δ_L. Sufficiency:
+  the isolated alternating action on Δ_L carries that hole set to C_L and fixes every other orbit, and COV-12 gives the
+  strict step Z·L·V·L⁻¹ after the preparation. The orbit of the hole is taken in G(Z) and Δ_L in the middle's group;
+  they are different groups, and both are checked.
+- The computation. It uses the two retained generators of each SAFE grip, which generate the same A4 cap group as its
+  eleven retained letters, and for the other landing letters the exact normalizations E_i = t·J·u with t, u ∈ T,
+  transporting the reference orbits by the grip's frame and t, so the actual middle, its cap included, is used. In 337
+  of the 353 rim classes one landing pair serves every hole of the piece's type. In the other 16, after all landing
+  letters, exactly 24 hole placements fail, here as class: holes, in coordinates where the off geometry is R·λ_y (a hole
+  is transported by the same symmetry as the geometry): 1529: 2548; 2136: 3247; 2328: 3238, 3730, 3887; 2335: 3239;
+  2648: 2352; 2651: 2336; 2656: 2350; 2878: 2328, 4675, 4772; 2890: 2335; 2891: 2336; 2905: 2329, 4685, 4780; 2953:
+  2343; 3730: 3904; 3732: 3798; 3805: 541, 669, 1464; 3807: 543. Every other hole of these classes passes; the
+  integrator's re-run gives the same 16 classes and 24 holes. A reference check with the full `buffer.Alphabet` (the
+  reviewer's, repeated by the integrator): the geometry R·λ_2335 has 593 SAFE grips and chamber 3239 is an orbit of one
+  chamber, and so is chamber 541 at R·λ_3805.
+- The statement. Cover(Z) (COV-15) holds for every valid singleton Z whose off placement is in a rim class and whose
+  hole is not one of the 24. Bounds: the preparation routes one hole within a K⁺ type of at most 7,200 chambers, so it
+  needs at most 7,199 letters; at the middle the 3,097 off poses stay fixed, so V shortens to at most 7,200^174,023 − 1
+  letters with its complete labelled endpoint; the step has at most 7,200^174,023 + 7,200 letters, two one-letter cores
+  and two retained segments, inside the L and S(n) of R22C3-06 unchanged.
+- What it does not prove: that the 24 exceptions are unreachable, or that every other template of the catalogue fails at
+  them; anything for several off pieces, where neither the separation by kind of cell nor this classification supplies
+  the legality and hole-resource contracts.
+- Command: the JORDAN and COVERAGE lines of `scripts/round22/cov23_singleton_classes.py`; the reference check
+  `scripts/round22/cov24_reference.py`, output `runs/round22/cov24_reference.txt` (40 s of CPU).
+- Uses: COV-10, COV-12, COV-15, COV-18, COV-23, R22C3-06.
+
+### COV-25. No retained middle that returns X's locking block reaches X's family (proved from computed certificates)
+
+- The blocks. At Y the exact piece and cut classifications give 29 rigid blocks (O9). The union of their locked chambers
+  in cap 0 has 445 chambers, exactly the landing pairs of the 131 deep classes of COV-23, so the other 270 deep pairs
+  lie in rim classes. For x = 2149 the locking block is the 111-piece block whose first piece is 404, with I_B = {0, 2,
+  4, 5, 8, 13, 32} and S_B = {7, 10, 29}; its locked chambers in cap 0 are 2149, 2173, 2247 and 2249. The computation
+  checks the inclusions I_B ⊆ caps(x) ⊆ I_B ∪ S_B and the block's exact rigidity certificate.
+- The argument. Under a legal retained word w the block B moves by one multiplier k_B ∈ K⁺, and the content that was in
+  a locked chamber x is afterwards in k_B(x) (the lock lemma, O9). If w returns B to its exact poses, k_B is the
+  identity and x stays vacant. This allows any length of w and any retained motion of the off pieces along it, and needs
+  no fixed SAFE alphabet along w.
+- All 36 landing letters of X. Normalized to Y, the landing chamber of each is one of 2149, 2173, 2247, 6134, 6146,
+  6190, 12591, 12594 and 12599, all locked holes. So no word solved·L·w·L⁻¹ with w retained and returning the
+  corresponding locking block exactly reaches X's family. This includes every retained middle that returns all off
+  poses, every finite product of the lattice conjugates of the second level, and nested retained conjugations with SAFE
+  interiors to any depth: the two letters and the one level of the integrator's checks after COV-20 are no longer the
+  limit.
+- What it does not prove: an invariant of reachable states. A jumble middle can change lattice membership and the
+  blocks, and retained middles that do not return the locking block exactly, and other histories, are outside the proof.
+- Command: the LOCKS and LAST_MOVE lines of `scripts/round22/cov23_singleton_classes.py`.
+- Uses: O9, COV-14, COV-23, the integrator's checks after COV-20.
+
+### COV-26. X is not the only deep singleton, and outer placements need their own treatment (computed)
+
+- A second deep triangle. With every other piece at identity, piece 2249 at R has type 19 and left height 2, its class-0
+  cell is the triangle {0, 2, 23}, and its hole is 2249. Every vertex of its off region lies on or beyond body facet 3,
+  so the piece meets no lattice piece's interior: a valid singleton configuration, whose reachability is not proved. At
+  all 36 of its landing letters the normalized landing chambers are 2249, 6192 and 12601, all locked deep holes
+  (LAST_MOVE). So the type-19 triangle with home chambers is a second deep class of that kind besides X's type-18 class.
+- Outer placements. Pieces 1345 and 1437, each at R with every other piece at identity, give two distinct type-7 outer
+  placements, each separated from the lattice interiors by body facet 7. Neither has a landing letter; their mover caps
+  are {3, 7} and {3, 7, 13}, so Theorem FC (R22C-FC) does not exclude them, and their reachability stays open. Of the 16
+  outer classes of COV-23, nine have no cap that contains their off region and are excluded from reachable states by
+  Theorem FC (representatives 433, 434, 439, 440, 544, 545, 1225, 1226 and 1339), and seven have movers (1228, 1229,
+  1338, 1341, 1343, 1345 and 1437). These are placements; that each passes singleton non-overlap is not claimed.
+- Command: `scripts/round22/cov26_exterior_singletons.py`; output `runs/round22/cov26_exterior_singletons.txt` (seconds
+  of CPU; it rebuilds X first, with the same digest); the OUTER and LAST_MOVE lines of `cov23_singleton_classes.py`.
+- Uses: COV-01, COV-23, R22C-FC.
+
+### COV-27. The last move of X's piece: two branches, neither excluded for unrestricted histories (computed)
+
+- The reduction. Write a reaching history as A·τ·B, with τ the last letter that moves X's piece; the letters of B avoid
+  that piece but may move, create and land other off pieces.
+- Branch 1: the piece is on the lattice just before τ. Then τ = L⁻¹ for one of the 36 landing letters, and just before τ
+  the piece is in x_L = (L·R_X)(1474), with R_X = element(I_a, 0, 25): the history is A·L⁻¹·B. The off geometry at the
+  end of A is arbitrary, not that of solved·L, so the depth at solved·L does not exclude this branch in general; COV-25
+  excludes its retained-return subfamily only.
+- Branch 2: the piece is already off before τ, and τ has a multiplier g with g⁻¹·R_X outside K⁺. The inverse letter is
+  legal at the final singleton, since the piece lies wholly inside its cap and every other piece is on the lattice. The
+  nine caps that contain the piece, with their 59 nonidentity items, give 531 inverse-letter cases: 36 landing letters,
+  99 retained off-to-off cases and 396 jumble off-to-off cases (LAST_MOVE). The depth table supplies no transition
+  invariant for the 495 off-to-off cases or for the suffix B.
+- Where it stands. No reaching word for a deep class, and no invariant that excludes X under every legal history, was
+  found. The classification confines the singleton whole-cap problem to the 131 deep classes, the outer classes without
+  a landing letter and the 24 exceptional holes of COV-24, subject to validity and reachability; excluding every deep
+  class would still not give coverage of every singleton.
+- Bounds. They hold on the subclass that COV-24 covers. If a word H reaches a deep singleton, H⁻¹ is a native restoring
+  core for that state (its least length is not known): if |H| ≤ b the search envelope contains it without a larger b,
+  and otherwise b becomes max(b, |H|) for that instance. This gives no uniform bound over unrestricted mixed-class
+  histories.
+- Command: the LAST_MOVE lines of `scripts/round22/cov23_singleton_classes.py`.
+- Uses: COV-01, COV-14, COV-21, COV-24, COV-25, the depth table.
+
+### COV-28. A mixed-class experiment that changes X's cohort (experiment design)
+
+- Design. By COV-25, more retained nesting with exact return cannot reach X, so the experiment enlarges COV-22's
+  commutator inputs to words: L·[[[A, B], C], D]·L⁻¹ of 36 to 48 letters, with L one of X's 36 landing letters, A an
+  own-class and C a foreign-class jumble word of two or three letters at grips local to chambers 1474, 404 and 762, and
+  B and D retained letters there. The foreign segment C must change the pose of at least one piece of X's 111-piece
+  home-cell cohort, or the trial is dropped; every prefix is applied exactly, and a blocked prefix drops the trial too.
+  FOUND requires 1474 at exactly R_X as the only off piece, records the word and the endpoint digest, and checks that
+  the inverse word returns the solved digest.
+- What it decides. FOUND settles X's reachability positively and gives a native core well within b. NO_HIT or CUT_SHORT
+  decides nothing: the family is sampled, its acceptance condition is stricter than matching an unlabelled off region,
+  and neither a failure nor the cohort filter exhausts unrestricted histories.
+- Command: `scripts/round22/cov28_cohort_search.py <seed>` for the seeds 0 to 7, each with a 1,700-second CPU cutoff (at
+  most about 3.8 CPU hours in all). The integrator ran the eight seeds on 18 October, four at a time (the design said at
+  most two; the cutoff per seed is the same). Every seed ended CUT_SHORT at its cutoff after 9,690 to 10,446 trials
+  (80,581 in all, dropped trials included), and none found a word, so it decides nothing. Outputs
+  `runs/round22/cov28/seed0.txt` to `seed7.txt`.
+- Uses: COV-01, COV-22, COV-25.
+
+### Round 5 of coverage
+
+The senior reviewer took up the questions left by round 4 (findings COV-29 to COV-35, all `minor`, all adopted, fast
+tier, 18 October 2026): the deep and outer singletons, the 24 exceptional holes of COV-24, several off pieces, what
+B′(2) still needs, and one more experiment. Its computations are `scripts/round22/cov29_two_cap.py`,
+`cov30_validity.py`, `cov33_whole_cap_737.py` and `cov33_singleton_caps.py`; the integrator re-ran them and got the same
+pairs, resource chambers, classes, verdicts and cap counts, with the outputs `runs/round22/cov29_two_cap.txt`,
+`cov30_validity.txt`, `cov33_whole_cap_737.txt` and `cov33_singleton_caps.txt`. For COV-13's state the reviewer re-ran
+`cov13_mixed_frames.py` and got the recorded output `runs/round22/cov13_mixed_frames.txt`. Its experiment,
+`scripts/round22/cov35_deep_search.py`, found no reaching word (outputs `runs/round22/cov35/seed0.txt` to `seed7.txt`).
+Every exceptional pair of COV-24 has a four-core restoration through the cap antipodal to cap 0, so every valid
+singleton with a rim placement has a step (COV-29); validity leaves 67 deep and two outer classes, 457,200 class–hole
+pairs (COV-30); vacancy of every block lock survives retained words, which removes COV-25's exact-return condition
+(COV-31); a whole-cap step with several off pieces has an exact joint test, and a certified step lifts past contents
+that stay outside its caps (COV-32); the exact counts of whole-cap steps at three states (COV-33); the three obligations
+left for B′(2), with the bounds (COV-34); and an experiment on eight deep classes (COV-35). B′(2), the reachability of
+the deep and outer classes and coverage with several off pieces stay open.
+
+### COV-29. The 24 exceptional holes: four cores through the antipodal cap (proved from computed certificates)
+
+- The word. Let K = 7,200, J = (0, 12), R = J⁻¹, C = cap(0), D = (596, 12) and E = cap(596); grip 596 is antipodal to
+  grip 0, so C and E are disjoint (CREATOR_CAP 596). Take one of the 24 exceptional singletons of COV-24, with its off
+  piece at R·λ_y and its hole h. Every listed h lies in C, the off piece lies outside E, and the pieces that D displaces
+  stay outside C. The restoring word is D·J·V·J⁻¹·V₂·D⁻¹, whose four native cores D, J, J⁻¹ and D⁻¹ are single
+  free-class letters and whose V and V₂ are retained segments. This uses the four-core supercatalogue of R22C-K; it does
+  not claim that the SAFE-prepared whole-cap test of COV-24 succeeds at these pairs.
+- After D·J. The singleton's piece has landed in y, the off geometry is J(C ∖ {h}) together with D(E), 6,193 off pieces,
+  and the holes are (C ∖ {y}) ⊔ E. The computation applies D·J exactly at every pair and checks the holes and the count.
+- The middles. It finds a chamber a ∈ E that lies both in the orbit of y under the actual SAFE group of the first middle
+  and in the orbit of h under G(solved·D), and global Jordan certificates isolate alternating actions on both orbits. V
+  changes the hole set to C ⊔ (E ∖ {a}). Then J⁻¹ is admissible: C holds no lattice piece, its displaced pieces return
+  to the lattice and D(E) is unchanged. The off geometry left is exactly D(E), with the holes {h} ⊔ (E ∖ {a}); V₂
+  changes them to E, and D⁻¹ lands every remaining off piece and takes no lattice piece off. The whole word is strict′
+  and ends on the lattice; no inverse of V or V₂ is needed.
+- The results. All 24 pairs pass, at one first-middle geometry, with twelve global certificates each checked again. The
+  resource chamber depends only on the piece type: type 6 → 166717, 8 → 166718, 9 → 166720, 10 → 166721, 14 → 166644, 15
+  → 166655. The two orbit sizes and the two certified primes, by type: 6: 6,966, 7,083; 5,303, 3,919. 8: 6,996, 7,098;
+  5,011, 5,783. 9: 3,510, 3,555; 1,801, 2,351. 10: 7,044, 7,122; 4,751, 3,643. 14: 3,534, 3,567; 1,889, 2,081. 15:
+  7,098, 7,149; 4,517, 4,027. The words V and V₂ exist by the certificates; they are not expanded or replayed.
+- The statement. With COV-24, every valid singleton whose placement is in a rim class has Cover(Z). Bound: V fixes 6,193
+  off poses and V₂ fixes 3,097, so the word has at most K^170,927 + K^174,023 + 2 letters, inside the four-core,
+  five-segment envelope of R22C3-06 without a larger b. Read backward from the lattice, the restoring word also shows
+  that every exceptional class–hole pair has a reachable representative; it does not show that every prescribed labelled
+  pose table is reachable.
+- Command: `scripts/round22/cov29_two_cap.py`; output `runs/round22/cov29_two_cap.txt` (under a minute of CPU).
+- Uses: COV-12, COV-15, COV-18, COV-24, R22C-K, R22C3-06.
+
+### COV-30. Validity leaves 67 deep and two outer classes: 457,200 class–hole pairs (computed)
+
+- The test. Let P be the lattice body, A = R·λ_y and R = element(I_a, 0, 45). The one hole of a singleton has the type
+  of y. If the interior of A meets the interior of a chamber of another type, that chamber cannot be the hole; if it
+  meets the interiors of two chambers, one hole cannot remove both overlaps. Either certificate excludes every singleton
+  with that placement, whatever its labels and history.
+- The computation. Each home region is rebuilt from its active exact cut and body constraints (its vertices checked
+  against `regions.vertices`), rotated by R and intersected with P by exact double description. An empty or
+  lower-dimensional intersection makes every hole of the matching type valid; for a full-dimensional one, exact positive
+  barycentres and interior perturbations name the overlapped chambers. Every decision is exact in Q(√5), without
+  floating point.
+- Deep classes. Of the 131, exactly 67 are valid for every matching hole; the other 64 have an overlap certificate (52 a
+  chamber of another type, 12 two chambers). The 67 representatives, in coordinates where the off region is R·λ_y: 12,
+  13, 14, 16, 17, 21, 22, 31, 32, 41, 64, 136, 137, 140, 143, 144, 147, 148, 151, 152, 156, 162, 164, 166, 171, 172,
+  173, 175, 176, 178, 180, 183, 184, 185, 187, 190, 194, 202, 446, 449, 459, 467, 477, 482, 2172, 2148, 2150, 2244,
+  2245, 2149, 2249, 3889, 3911, 3922, 3899, 3900, 2548, 3739, 3740, 2549, 3894, 3935, 2551, 3746, 3736, 3747 and 1470.
+  They include X's class (2149 is one of its landing chambers, COV-25) and COV-26's type-19 triangle (2249).
+- Outer classes with movers. 1228 is invalid (it meets chamber 2716, of type 1), 1229 (4018, type 2), 1338 (2714, type
+  1), 1341 (2800, type 2) and 1343 (1436, type 3) too; 1345 and 1437 do not meet P and are valid for every type-7 hole.
+  A mover cap does not make a placement valid: 1228 has one. The reachability of 1345 and 1437 stays open: their
+  own-class cores cannot move them, retained conjugation keeps them outer, and neither has a landing letter, so the
+  elementary own-class and whole-cap templates give no restoration for them; unrestricted native cores are untested.
+- The checklist. With COV-29, and Theorem FC's exclusion of the nine outer classes without movers, the singletons left
+  are exactly the finite set of pairs (y, h) with y one of the 67 or 1345 or 1437 and h a chamber of the type of y:
+  457,200 pairs, possibly redundant under symmetry, each a valid geometric singleton. This reduces the obligation; it
+  does not show that any pair is reachable or needs a particular kind of core.
+- Command: `scripts/round22/cov30_validity.py` (it runs `cov23_singleton_classes.py` first); output
+  `runs/round22/cov30_validity.txt` (about a minute of CPU).
+- Uses: COV-23, COV-25, COV-26, COV-29, R22C-FC.
+
+### COV-31. Vacant locks: a retained-word invariant without COV-25's exact return (proved from computed certificates)
+
+- The invariant. VL(Z): every home chamber locked to an intrinsic rigid off block is vacant. Every admissible retained
+  word preserves VL. Each block receives one multiplier k ∈ K⁺, its whole lock set moves by k, and the lock lemma (O9)
+  carries each locked hole to its moved chamber. Intrinsic rigid components cannot split under such a word, and distinct
+  components cannot merge: the inverse word would give the merged component one multiplier and keep its intrinsic
+  nonseparation, against the original split. So the moved components account for every block and every lock at the
+  endpoint.
+- It holds at solved·L. Every off block lies in L's cap, the condition I_B ⊆ caps(x) puts every locked chamber in that
+  cap, and every chamber of the cap is a hole.
+- The consequence. No word solved·L₀·w·L₁⁻¹ with w retained reaches a deep singleton whose one off piece was on the
+  lattice just before L₁⁻¹ (branch 1 of COV-27), whatever the block multipliers. The word w keeps the 3,097 original off
+  pieces off; in this branch all of them land under the last letter, so just before it they fill the full off geometry
+  of solved·L₁. The newly off piece must then occupy its deep landing chamber x, which COV-23 and COV-25 certify as
+  locked in that geometry, and VL requires x vacant. COV-25 needed w to return the locking block exactly; this does not.
+- What it does not prove. Jumble letters can change lattice membership and the blocks, and VL is not shown to survive
+  them; at an arbitrary prefix nothing makes the relevant locked chamber vacant; SAFE orbits depend on the state, and
+  the depth table describes solved·L only. The valid configuration X·L has the occupied landing chamber, so validity and
+  local locks alone cannot exclude it. The whole-cap predecessor conditions describe the immediate predecessor of the
+  final singleton; if a suffix B follows the last move τ of X's piece, they cannot be imposed before τ without an
+  argument about B. The 99 retained and 396 jumble off-to-off cases of COV-27, and such suffixes, stay outside the
+  obstruction. No deep or outer reaching history was found.
+- Command: the LOCKS and LAST_MOVE lines of `scripts/round22/cov23_singleton_classes.py`.
+- Uses: O9, COV-23, COV-25, COV-27.
+
+### COV-32. Several off pieces: an exact joint test for a whole-cap step, and lifting past separated contents (proved)
+
+- The setting. An unstraddled cap C holds a nonempty off set U, and W = (c, i), with a multiplier g ∉ K⁺, lands every
+  piece of U. Every other off piece (the set E) lies outside C and keeps its exact pose. Write H = holes(Z), G₀ = G(Z),
+  and D ⊆ C for the landing chambers of U.
+- The test. For each J in the joint orbit G₀·H, the actual middle has the off geometry E ⊔ {g·λ_q : q ∈ C ∖ J}; let
+  G₁(J) be its SAFE group and H₁(J) = (C ∖ D) ⊔ (J ∖ C). A SAFE-prepared whole-cap step exists exactly when some J ∈
+  G₀·H and π ∈ G₁(J) give C ⊆ π(H₁(J)). Both are joint actions on the complete hole set. The other contents affect G₀
+  and G₁ through every cap they occupy or straddle, so leaving them out is unsound. Here Bad(W) = Bad(W⁻¹) = C and the
+  good-ghost map is the identity outside C; an unchanged off content contributes its exact geometry and the holes
+  already in H, and no further Bad set.
+- Proof. Necessity: read the two retained segments of an accepted step. Sufficiency: realize J by a SAFE word X and π by
+  a SAFE word V at the actual middle. Then X·W·V·W⁻¹ is admissible and strict: V vacates C while it fixes E and every
+  displaced lattice piece, and W⁻¹ returns those pieces, fixes E and takes no lattice piece off, since C is vacant. This
+  also proves the endpoint contract when U holds several units.
+- The inequalities. For each orbit Δ of the actual middle, |J ∩ (Δ ∖ C)| ≥ |D ∩ Δ|, with D avoiding fixed chambers, is
+  necessary. The inequalities are sufficient when independent alternating actions on the required nontrivial orbits are
+  certified; otherwise the exact joint subset action stays necessary. For a fixed inside mask I = J ∩ C, the flow from
+  source orbits to middle orbits of COV-10 applies unchanged, with all of E in the middle geometry.
+- Separation. Let w be a certified strict′ word at a valid state with off set U and holes H_U, and add off pieces E to
+  get another valid state whose holes contain H_U. If every piece of E lies wholly outside every cap that w uses, then w
+  is strict′ for U in the enlarged state: E stays fixed and straddles no cut that w uses, and every remaining lattice
+  trajectory is one of the original certificate's, since more holes only remove lattice trajectories, so the original
+  off trajectories and every conclusion about lattice membership at the endpoint survive. The inclusion of the holes is
+  essential.
+- What it does not prove. This is a conditional reduction under a finite separation check, not coverage. Theorem FC does
+  not supply its hypotheses, and COV-13 refutes the reduction to caps where every content lands: its reachable state has
+  120 unstraddled mover caps, each with several off domains, and none where every content lands, yet its 120-letter
+  free-class inverse history restores it, so it is no deadlock of the full catalogue. No valid state with two contents
+  where the full catalogue provably fails was found; a reachable example built by a history H of at most b letters
+  cannot be one, since H⁻¹ is already an accepted single native core.
+- Uses: COV-10, COV-12, COV-13, R22C-FC.
+
+### COV-33. Exact whole-cap counts: five caps at 737, none at COV-13's state, two at COV-17's (computed)
+
+- What is counted: the route in which every content of a cap lands, with any SAFE preparation; not every template of the
+  catalogue.
+- At the 737 state of the line (a) replay (digest `2e3b8f99…`). The 600 caps are 555 empty, 16 straddled, 14 with one
+  off domain but no landing item, and 15 eligible. Exactly five eligible caps pass: 26, 91, 513, 570 and 593, with 63,
+  179, 137, 60 and 60 pieces to land. Caps 26, 513, 570 and 593 pass without preparation, at the items 14, 13, 15 and
+  13, with 17, 19, 17 and 17 global Jordan certificates, each checked again. Cap 91 fails the unprepared inventory by 23
+  but passes after a preparation with the inside mask ∅: an exact integer flow of 179 supplies every landing vacancy
+  from the 737 holes, and all 28 source orbits and all 28 middle demand orbits have verified global Jordan certificates,
+  so the preparation and the middle vacancy exist together.
+- The other ten eligible caps fail under every preparation. A source SAFE orbit with no hole keeps every chamber
+  occupied under every preparation. Keeping only these mandatory displaced regions and the unchanged other contents
+  gives an optimistic middle SAFE group that contains every actual middle group, and even this group fixes occupied
+  landing chambers at all twelve landing items of each failed cap. The least numbers of fixed occupied chambers over the
+  items, by cap: 12: 44; 99: 3; 148: 5; 217: 5; 303: 2; 324: 22; 353: 7; 416: 7; 458: 2; 542: 7. This is an obstruction
+  over all preparations, not a failed search.
+- At COV-13's state (digest `afc43efd…`, 147,904 off pieces, height 2, four domains): 120 caps are mixed and 480
+  straddled, so no cap qualifies under any preparation.
+- At COV-17's singleton (digest `16d61ac2…`, off piece 58388, a hole orbit of 7,200 chambers): three caps are eligible
+  and two pass. All twelve landing items at caps 0 and 32 pass, and all twelve at cap 45 fail: eligibility is not
+  coverage.
+- Command: `scripts/round22/cov33_whole_cap_737.py` (it reads `runs/round22/line-a/replay/tables/737.json.gz`) and
+  `cov33_singleton_caps.py` (it replays COV-17's word through `cov17_single_off.py`); outputs
+  `runs/round22/cov33_whole_cap_737.txt` and `cov33_singleton_caps.txt` (about two and a half minutes and a little over
+  a minute of CPU); for COV-13's state `runs/round22/cov13_mixed_frames.txt`.
+- Uses: COV-04, COV-10, COV-13, COV-17, COV-32.
+
+### COV-34. What B′(2) still needs, and the bounds (proved)
+
+- Singletons. Every valid singleton whose placement is in one of the 353 rim classes has Cover(Z), within 7,200^170,927
+  + 7,200^174,023 + 2 letters; outside the 24 exceptions the smaller bound of COV-24 holds. The statement covers every
+  valid lattice assignment with that off placement and hole, and relabels no mechanical state.
+- Several off pieces. The covered subclass contains every state that passes COV-32's exact test, the separated
+  extensions of certified words, the certified catalogue families and their certified backward closure. The five caps at
+  737 are five certificates for a first step, not a new universal order of restoration; COV-13's state has its
+  free-class inverse history although no cap of it is eligible. E2 stays evidence for its recorded trajectory; the
+  reviewer did not replay its 21 steps again.
+- The obligations left. (1) SingletonResidual: for each of COV-30's 457,200 pairs, exclude every reachable
+  representative or give a passing certificate from the current catalogue. It is a finite checklist; a bounded reaching
+  search does not decide that a failed pair is unreachable. (2) MultiCover: every reachable height-2 state with at least
+  two off pieces has a passing catalogue instance. COV-32 gives an exact finite test for one route, but neither Theorem
+  FC nor the measured cap counts proves the lemma, and no counterexample with two contents to the full catalogue was
+  found. (3) MixedCoreBound: if the coverage proof needs further unrestricted native cores, an explicit uniform bound
+  for them; the 13,205-point free-class argument does not give one.
+- The bounds. For everything proved here, b = 13,205! − 1, L = 4b + 5(R − 1) and S(n) ≤ n·C_b⁴·T_R⁵ are unchanged;
+  COV-29 uses four cores of length one and two retained segments. If further certified native cores have the maximum
+  length M, then b′ = max(b, M), L grows by exactly 4·max(0, M − b), and C_b becomes C_b′ in S. No numerical M is known
+  for all the remaining mixed-class cases.
+- A conditional bound. There are at most (21·7,200)^177,120 labelled pose tables with every pose of height at most 2, so
+  a shortest path wholly inside that finite set has at most 151,200^177,120 − 1 letters. This bounds inverse histories
+  in that restricted component only; it covers all of 𝒞₂ only with a further lemma that every reachable height-2 state
+  has a history whose states all have height at most 2.
+- Uses: COV-15, COV-24, COV-29, COV-30, COV-32, COV-33, R22C3-06, R22C-FC.
+
+### COV-35. An experiment on eight valid deep classes (experiment design)
+
+- Design. COV-28's exact-prefix commutator search, adapted to eight valid deep representatives of COV-30, 12, 41, 64,
+  446, 449, 2172, 2149 and 2249, which span the vertex, edge and both deep triangle cases. Each run uses its target's
+  own cell, home-cell cohort and local grips and every landing letter of the cell, and accepts the target at exactly R =
+  element(I_a, 0, 45) as the only off piece, with the inverse-replay check; seed k takes the target at index k mod 8.
+- What it decides. FOUND proves that a valid deep singleton is reachable and gives a native restoring core of the
+  recorded length, within the present b; it decides whether some deep class is reachable, not the 457,200 pairs. NO_HIT,
+  CUT_SHORT or a failure of the cohort filter decides neither unreachability nor a failure of Cover(Z). The reviewer
+  proposes no bounded deadlock search: a short reaching history already gives a native inverse core, and a failure of
+  chosen geometric templates would not show that the full catalogue fails.
+- Command: `scripts/round22/cov35_deep_search.py <seed>` for the seeds 0 to 7, each with a 1,700-second CPU cutoff
+  (about 3.8 CPU hours in all). The script is the source that the reviewer's generator builds from
+  `cov28_cohort_search.py` (4,518 characters, as the reviewer compiled it), with its own header. The integrator ran the
+  eight seeds on 18 October, four at a time (the design said at most two; the cutoff per seed is the same). Every seed
+  ended CUT_SHORT at its cutoff, after 97,287, 97,341 and 97,278 trials for the targets 12, 41 and 64 and 9,647 to
+  11,052 for the other five (343,764 in all, dropped trials included), and none found a word, so it decides nothing.
+  Outputs `runs/round22/cov35/seed0.txt` to `seed7.txt`.
+- Uses: COV-28, COV-30.
+
+### Round 6 of coverage
+
+The senior reviewer took up the obligations of COV-34 (findings COV-36 to COV-43, all `minor`, all adopted, fast tier,
+18 October 2026): the singleton residual, several off pieces and existence within height 2. Its computations are
+`scripts/round22/cov36_hole_orbits.py`, `cov37_vl_737.py`, `cov41_excursions.py` and `cov41_endpoint.py`; the integrator
+re-ran them and got the same cases, lock violations, returning caps, witnesses, endpoint multipliers and counts, with
+the outputs `runs/round22/cov36_hole_orbits.txt`, `cov37_vl_737.txt`, `cov41_excursions.txt` and `cov41_endpoint.txt`.
+Its experiment, `scripts/round22/cov43_residual_search.py`, found no restoring word at any of the 118 cases, every case
+cut short at its CPU cutoff (output `runs/round22/cov43_residual_search.txt`). The 457,200 pairs of COV-30 reduce
+exactly to 118 coverage cases (COV-36); the vacant-lock condition of COV-31 fails at the reachable 737 state, so it is
+no invariant of reachable states (COV-37); separated contents restore one at a time while the hole resources of each
+step survive the earlier steps (COV-38); R2, restoration inside height 2, gives B′(2) with an explicit exhaustive
+catalogue (COV-39); HRH is R2 together with a lattice bridge (COV-40); the two-letter excursions above height 2 are
+classified, and those at one cap collapse to one letter (COV-41); the covered subclass and the obligations left
+(COV-42); and an experiment on all 118 cases (COV-43). SingletonResidual, MultiCover, R2 and HRH stay open.
+
+### COV-36. The singleton residual is 118 coverage cases (computed; the reduction proved)
+
+- The reduction. Let y be one of the 69 valid classes of COV-30, with its off piece at R·λ_y, and h a hole of y's type.
+  A path in the orbit of h under G(Z), the group of the retained letters at the caps that leave y's placement wholly
+  outside, gives a SAFE word of at most 7,199 letters that fixes the off pose and moves the hole along the path. Its
+  endpoint has the new hole, though its labelled lattice assignment need not be a prescribed one: COV-06 carries every
+  admissibility and restoration certificate between tables with the same off data and holes, and the SAFE word fits the
+  first retained segment of the supercatalogue, whose shortening keeps its labelled endpoint. So coverage is constant on
+  each hole orbit, and on each orbit of the K⁺ stabilizer of the placement on the hole orbits. This does not make every
+  labelled table of a case reachable.
+- Not the labelled tables. Two valid tables that differ by exchanging two type-0 lattice pieces have the same off data
+  and holes, but retained letters fix every type-0 chamber, so no SAFE word exchanges them. The reduction identifies
+  coverage data, not labelled tables; the packet's wording, that two such singletons differ by a SAFE word, holds only
+  in that sense.
+- The cases. In every class the hole chambers of y's type form one large orbit and a set F_y of fixed chambers (49 in
+  all). The stabilizer is trivial except at 64 and 2249, where it has order 3, and it merges no orbit. That leaves 112
+  deep and six outer cases, 118 in all: one case for 42 classes, two for 12, three for eight and four for seven. Each
+  class gives one case for the complement of F_y in its type and one for each chamber of F_y. The nonempty F_y: 12:
+  3889; 13: 3739; 136: 676, 1343, 1437; 137: 683, 689, 1470; 140: 4321, 4342, 9341; 143: 4329; 144, 147 and 151: 4344;
+  446: 9347, 9349; 459: 4343, 4537, 9347; 2172: 691; 2244: 1471; 2149: 1474, 1479, 1481; 2249: 1483; 3889: 541, 1464;
+  3911: 555, 676, 1343; 3922: 683, 689, 1470; 3899: 676, 1343; 3900: 689, 1470; 2548: 2336, 2343; 3739: 3888; 3746:
+  3889, 3904; 3736: 3911; 1470: 1470; 1345 and 1437: 1437, 2900.
+- Status. All 118 cases are open: no restoring certificate and no proof of unreachability is given for any of them.
+- Command: `scripts/round22/cov36_hole_orbits.py` (it runs `cov30_validity.py`, and with it
+  `cov23_singleton_classes.py`, first); output `runs/round22/cov36_hole_orbits.txt` (about 70 seconds of CPU).
+- Uses: COV-06, COV-23, COV-30, R22C3-06.
+
+### COV-37. The vacant-lock condition fails at the reachable 737 state (computed)
+
+- The computation. At the 737 table of the line (a) replay (digest `2e3b8f99…`), six intrinsic rigid off blocks have
+  occupied locked chambers, 28 block–chamber violations in all (block, size and first piece: the chambers): 0, 63, 2364:
+  18578, 18637, 18639; 1, 45, 3265: 18441, 18442, 18461, 18467, 21590; 2, 61, 9013: 18576, 18577, 18633, 18635, 21776,
+  21781; 3, 10, 16314: 18563, 18564, 21667, 21750, 21754, 21764, 21765; 8, 25, 112734: 63072, 63077, 63109, 69356,
+  69361; 10, 5, 161408: 137560, 137562. For block 0, I_B = {12, 17, 26, 35, 56, 60, 67, 91} and S_B = {6, 74}, and
+  chamber 18578 satisfies both lock inclusions and is occupied. This agrees with the occupied locks already found in
+  R22C-T.
+- The consequence. VL holds at the solved state, which has no off pieces, and survives retained words (COV-31); the 737
+  table is reachable by its recorded trajectory, and every off pose of it has height 2. So along that trajectory some
+  jumble letter first breaks VL: VL is no invariant of reachable states, not even of those of height 2. A richer
+  invariant, one conditional on a singleton, or one that carries history is not excluded, and none of the 118 cases is
+  excluded. The reviewer did not replay the whole history of the 737 table; its sampled probe of short reaching prefixes
+  was interrupted and supports no claim.
+- Command: `scripts/round22/cov37_vl_737.py` (it runs the setup of `cov33_whole_cap_737.py`, which reads
+  `runs/round22/line-a/replay/tables/737.json.gz`); output `runs/round22/cov37_vl_737.txt` (about 15 seconds of CPU).
+- Uses: O9, COV-31, COV-33, R22C-T.
+
+### COV-38. Separated contents restore one at a time while their hole resources survive (proved)
+
+- The theorem. Partition the off contents of Z into U₁, …, U_r, and suppose the isolated valid state with off set U_i
+  and holes H_i has a certified restoring word w_i. If, when w_i is used, H_i lies in the actual holes and every other
+  off piece left lies wholly outside every cap that w_i uses, COV-32 lifts w_i to the actual state. Checking both
+  conditions again after each step gives a restoration in at most r steps and Σ|w_i| letters.
+- A static version. It suffices that the H_i are disjoint, that each U_j with j ≠ i lies outside every cap that w_i
+  uses, and that every chamber of H_j with j ≠ i lies outside those caps too, which keeps the later hole resources
+  vacant. Induction applies COV-32 at every stage; pieces already landed are ordinary lattice trajectories for the later
+  certificates. If every word fits the catalogue bound L, this gives at most rL ≤ nL letters, with b unchanged.
+- What separation alone gives. Separation of the off contents supplies the geometric half of the induction, but not that
+  H_j lies in the holes left by the earlier steps; the exact alternative is to carry the complete hole set by COV-06 and
+  check the next certificate again. The stronger claim, from pairwise separation of the contents alone, is not
+  established.
+- At the named states. The five passing caps at 737 certify first steps in the whole geometry, not an order of
+  independent contents. At COV-13's state the recorded 120-letter inverse history restores inside one class although no
+  cap lands all its contents. At E2's 71 state b05 and b06 both lie in cap 91 and the step that works lands them
+  together, so it does not separate them. The old resources that no longer sufficed by 437 in E2 (COV-09) are why
+  resource contracts must be refreshed. These use the recorded certificates; the reviewer did not replay the 21 steps of
+  E2.
+- A finite programme for MultiCover. Enumerate the valid height-2 coverage data, discard the data that fail FC for some
+  nonempty off subset, and check the full bounded catalogue on every remaining datum with n ≥ 2. Every check is finite
+  and a complete pass proves MultiCover; a failed datum still needs a reaching history or a proof of unreachability, so
+  the programme does not decide reachability. MultiCover stays open.
+- Uses: COV-06, COV-09, COV-13, COV-32, COV-33, R22C-FC.
+
+### COV-39. R2 gives B′(2) with an explicit exhaustive catalogue (proved)
+
+- The universe. U₂ is the set of labelled pose tables of the I_a pose group, with its fixed right-tree vertex, whose
+  poses all have left height at most 2; arbitrary rotations over Q(√5) bounded only in left height are not meant. There
+  are 1 + 5·4 = 21 left-tree vertices at even distance at most 2 and at most 7,200 poses over each, so with N = 177,120
+  pieces, |U₂| ≤ Q = 151,200^N.
+- R2: every state of 𝒞₂ has a restoring word, to some lattice table, whose states all lie in U₂.
+- The proof. Assume R2. For Z ∈ 𝒞₂ take a shortest admissible path inside U₂ from Z to a lattice table. It repeats no
+  labelled table, since cutting out a loop keeps the exact state at the splice and with it every later admissibility
+  test; so it has at most |U₂| − 1 ≤ D = Q − 1 letters. Its endpoint has every piece on the lattice, so it is a strict′
+  step for every nonempty unit.
+- The catalogue. All words over the m = 35,400 nonidentity letters of lengths 0 to D, each replayed exactly, with
+  blocked prefixes rejected and lattice endpoints accepted: a finite catalogue as section 1 of the README requires, with
+  L₂(n) = D and S₂(n) = (m^(D+1) − 1)/(m − 1), independent of n, that restores in one accepted step. So R2 implies B′(2)
+  as written.
+- What it does not give. That the four-core catalogue with b = 13,205! − 1 already contains these words. To keep that
+  envelope with this bound alone, b_new = max(b, D) = D suffices, with L_new = 4D + 5(R − 1) and S_new(n) ≤ n·C_D⁴·T_R⁵.
+  Nothing shows that b must grow: a better compression theorem might keep it.
+- Uses: COV-34, R22C3-06.
+
+### COV-40. HRH is R2 together with a lattice bridge (proved; the puzzle lemmas open)
+
+- The objects. Γ₂ is the admissible state graph induced on U₂, with the exact labelled pose tables as vertices. HRH:
+  every state of 𝒞₂ has a history from the solved state inside U₂. LRH: every reachable lattice table lies in the
+  component of the solved table in Γ₂.
+- The equivalence. HRH holds exactly when R2 and LRH hold. HRH gives R2 by reversing a history of height at most 2, and
+  LRH as a special case. Conversely, R2 takes a reachable Z to a reachable lattice table L inside Γ₂, LRH joins L to
+  solved inside Γ₂, and the reversed concatenation is a history inside U₂. So the bound of COV-39 needs R2 alone, not
+  the stronger HRH of COV-34's statement.
+- The lattice phase. Its present result does not give LRH as stated: `09-general-method/METHOD.md` promises solved
+  sticker labels, while LRH asks for the exact labelled pose table, and the jumble correction words would also need a
+  height audit. Whether every reachable lattice table joins solved inside U₂ is not decided.
+- B′(2) and the hypotheses. B′(2) has a strict′ endpoint contract and no height bound on the states between, so by its
+  definition it implies neither R2 nor HRH. Abstract reversible graphs show the gaps; they are not counterexamples in
+  this puzzle. R2 without HRH: s—x—t—z, with s and t lattice tables, z a low-height state with off pieces and x outside
+  U₂. A bounded restoration without R2: s—x—z, with s a lattice table, z low-height with off pieces and x outside U₂.
+  The corresponding implications for Magic 600 Cell stay unproved.
+- Excursions. Replacing every excursion between reachable endpoints in U₂ by a path inside U₂ is equivalent to HRH: in
+  any reaching history replace the finitely many maximal excursions; conversely HRH joins either endpoint to solved
+  inside U₂. Excursions of lengths two and three alone are not enough: a reversible graph can have its first nontrivial
+  excursion at length four while every shorter one only backtracks.
+- Uses: COV-34, COV-39, `09-general-method/METHOD.md`.
+
+### COV-41. Two-letter excursions above height 2: classified, and collapsed at one cap (proved; computed)
+
+- The classification. Let A ∈ U₂, and let legal letters g at c and h at d form an excursion A → A·g → A·g·h whose middle
+  leaves U₂; let P be the class of c. Then both letters are jumble letters of class P, h·g ∈ K⁺, and they move exactly
+  the same nonempty set of off pieces foreign to P; subject to legality these conditions are also sufficient. Lattice
+  pieces and P's own frames stay within height 2 throughout; the foreign off pieces that g moves reach height 4, h must
+  move every one of them, and h moves no foreign off piece that g left in place.
+- Proof. A class-P jumble fixes the adjacent tree vertex w_P and sends a height-2 vertex on another branch to height 4
+  on branch P. So the lowering letter is a jumble of class P: a retained letter keeps heights, and a jumble of another
+  class would raise them to 6. The product h·g fixes w_P. The original foreign vertex is at distance 3 from w_P; for its
+  image to be within distance 2 of the root, the first edge of that path must again point to the root, so h·g fixes the
+  root, and since its right factor already fixes the right root, h·g ∈ K⁺.
+- One cap. If c = d, neither twist changes the inside set, and the product is one retained menu item or the identity,
+  which replaces the excursion exactly on every labelled piece. A cap has 48·12 = 576 ordered two-letter excursions and
+  48·47·12 = 27,072 three-letter ones (after a jumble first letter, 47 nonidentity second letters leave the product a
+  jumble, and twelve final letters make it retained); every one collapses to at most one retained letter. A three-letter
+  excursion that comes back to U₂, at one cap or several, stays at height at most 4, since height 6 cannot fall to 2 in
+  one letter. Three-letter excursions at different caps are not decided.
+- At COV-17's singleton A (digest `16d61ac2…`). The caps of other classes that contain its off piece 58388 are 8 (class
+  3), 10 (class 2), 14 (class 4), 38 (class 1) and 39 (class 4). After the item 12 at each, the caps whose letters bring
+  the piece back are [8], [10], [14, 35], [38] and [29, 39], with twelve lowering items each: 14, 21, 23 and 43 to 51 at
+  the same cap, and 13, 17, 19 and 34 to 42 at 35 and at 29. The tree argument excludes every other grip class and every
+  retained second letter.
+- Different caps. [(14, 12), (35, 13)] and [(39, 12), (29, 13)] both go 2 → 4 → 2 in height and end with 5,405 off
+  pieces (digests `11f99379…` and `fb6f759e…`). At the first endpoint the left multipliers are the identity on 171,320
+  pieces, the K⁺ element 2054 on 396 and two different matrices outside K⁺ on 2,702 pieces each, so no word of zero or
+  one letter has that endpoint: not every excursion collapses to one letter. This is no obstruction to a longer path
+  inside U₂.
+- Three letters at one cap. [(8, 12), (8, 1), (8, 54)] has the largest heights 4, 4 and 2 and returns exactly to A.
+- Open. Elimination at different caps, even for the two examples. No counterexample to R2, HRH or the elimination of
+  excursions was found.
+- Command: `scripts/round22/cov41_excursions.py` and `cov41_endpoint.py` (both replay COV-17's word through
+  `cov17_single_off.py`); outputs `runs/round22/cov41_excursions.txt` and `cov41_endpoint.txt` (under 20 seconds of CPU
+  each).
+- Uses: COV-17, COV-40, the tree model (`research/jumbling/theory/trees.py`).
+
+### COV-42. The covered subclass and the obligations left (proved)
+
+- Covered. As in COV-34: every valid rim singleton, within 7,200^170,927 + 7,200^174,023 + 2 letters; every state that
+  passes the joint test of COV-32; the separated constructions of COV-38 whose resources survive; and the certified
+  backward closure of catalogue steps. The bounds stay b = 13,205! − 1, L = 4b + 5(R − 1) and S(n) ≤ n·C_b⁴·T_R⁵, with
+  at most nL letters for a certified chain of restorations. This round adds no residual singleton.
+- Height. Every prefix of a certificate built only from free-class cores and retained segments stays in U₂: own-class
+  poses stay in the five class domains, foreign pieces stay fixed during a free-class core, and retained letters keep
+  heights. So the recorded E2 certificates, under their recorded free-class and SAFE checks, support R2 along that
+  trajectory, and COV-13's one-class history supports HRH for its table. Neither covers other states, and the reviewer
+  did not replay E2's 21 steps.
+- The obligations. (1) SingletonResidual: the 118 cases of COV-36, each needing a passing certificate or a proof of
+  unreachability; all open. (2) MultiCover: the joint test and the separation theorem are sufficient routes, not
+  coverage. (3) MixedCoreBound: a uniform bound if further mixed-class cores are needed; the free-class factorial
+  argument does not give one. (4) R2, an alternative route: if proved, COV-39 gives B′(2) with D = 151,200^177,120 − 1
+  and makes settling (1) to (3) one by one unnecessary, without showing that the old catalogue covers them. (5) LRH,
+  needed only for the stronger HRH: eliminating every reachable excursion would prove HRH, while same-cap reductions and
+  short excursions alone do not.
+- The bounds. No growth of b is shown to be necessary. With R2 alone, b_new = D replaces the present envelope; otherwise
+  a largest certified mixed-core length M gives b_new = max(b, M), as in COV-34. No uniform M is known.
+- Uses: COV-13, COV-32, COV-34, COV-36, COV-38, COV-39, COV-40, COV-41.
+
+### COV-43. An experiment on all 118 cases (experiment design)
+
+- Design. For each case (y, h) of COV-36, one valid table whose only off piece is y at R = element(I_a, 0, 45), with the
+  hole h, and a search for a restoring word from that table, not for a reaching word to a prescribed labelled table:
+  random words of at most 48 letters, 80% of them at grips local to y and h, a restart when more than 12,000 pieces are
+  off, and at a lattice endpoint an exact replay with the largest height on the way and the inverse-replay check. Each
+  case runs in a fresh process with a 120-second CPU cutoff, two at a time: at most about 4.1 CPU hours, about two hours
+  on two cores.
+- What it decides. ALL_PASS, a FOUND for every case, settles SingletonResidual: each word has at most 48 letters, a SAFE
+  route to another hole of the orbit makes at most 7,247, inside the present supercatalogue, and COV-06 carries the
+  certificate to every valid labelled table of the case. Read backward from the solved table, a restoring word also
+  gives a reachable state of its case, without making every prescribed labelled table reachable. A FOUND settles its
+  case only; MISSING, NO_HIT, CUT_SHORT or an error decides neither unreachability nor a failure of the catalogue, even
+  at length 48, since the search samples a restricted family. ALL_PASS would settle neither MultiCover nor R2; the
+  recorded heights show which words stay inside U₂.
+- Command: `scripts/round22/cov43_residual_search.py` (COV-36's computation followed by the experiment's lines, as the
+  design says); output `runs/round22/cov43_residual_search.txt`. The integrator ran it on 18 October, two cases at a
+  time as designed: each of the 118 cases ended CUT_SHORT at its 120-second CPU cutoff after 387 to 558 trials (52,409
+  in all, dropped trials included), none found a restoring word, and the run ended with MISSING and all 118 cases, which
+  decides nothing.
+- Uses: COV-06, COV-30, COV-36.
+
+### The integrator's check before coverage round 7: one letter changes a left height by at most 2 (computed; proved)
+
+- The computation. For each of the 600 caps and each of the 60 items of the I_a menu, the exact multiplier
+  `restore.element(M, c, i)` is factored into its left and right quaternions (`trees.factors`) and their tree distances
+  are taken (`trees.dist`): all 28,800 jumble letters have left distance 2 and right distance 0, and all 7,200 retained
+  items, the identity included, have 0 and 0.
+- The consequence. A letter with multiplier g takes a pose p to g·p, whose left factor is g_L·p_L up to a scalar. Since
+  g_L acts on the left tree by an isometry, d(v₀, g_L·p_L·v₀) ≤ d(v₀, g_L·v₀) + d(v₀, p_L·v₀), and the same holds for
+  g⁻¹, whose left distance is the same. So one letter changes a piece's left height by at most 2, a word of k letters
+  from a state of left heights at most h stays at left heights at most h + 2k, and, since the solved state has right
+  heights 0, every reachable pose has right height 0, as COV-39's universe assumes.
+- Command: `scripts/round22/letter_heights.py`; output `runs/round22/letter_heights.txt` (22 seconds of CPU).
+- Uses: COV-39, the tree model (`research/jumbling/theory/trees.py`).
+
+### Round 7 of coverage
+
+The senior reviewer took up the open cases, restoration within a fixed height and peak reduction (findings COV-44 to
+COV-51, all `minor`, all adopted, fast tier, 18 October 2026). Its computations are
+`scripts/round22/cov45_singleton_vl.py`, `cov46_first_jumble_blocks.py`, `cov47_branch_change.py` and
+`cov49_two_letter_audit.py`, and it re-ran `letter_heights.py` with the same counts; the integrator re-ran the four and
+got the same locks, blocks, heights, multipliers, candidates and digests, with the outputs
+`runs/round22/cov45_singleton_vl.txt`, `cov46_first_jumble_blocks.txt`, `cov47_branch_change.txt` and
+`cov49_two_letter_audit.txt`. Its experiment, `scripts/round22/cov51_forced_descent.py`, was stopped after eight of the
+118 cases, each cut short inside its first descent (output `runs/round22/cov51_forced_descent.txt`); the integrator's
+check after it shows that the existing descent is stuck at the residual tables. B′(2) holds with explicit bounds exactly
+when R_h, restoration inside height h, holds for an explicit even h (COV-44); VL fails even at a reachable singleton
+whose history stays inside U₂ (COV-45); every restoring word for a residual case uses at least three jumble letters
+(COV-46); a residual piece can change its tree branch inside U₄ without changing its placement orbit (COV-47); the
+two-letter peak classification of COV-41 holds at every even boundary height (COV-48); neither different-cap peak of
+COV-41 has a replacement of at most two letters (COV-49); the covered subclass is unchanged and the obligations are
+explicit (COV-50); and an experiment forces up to four jumble letters before the existing descent (COV-51).
+SingletonResidual, MultiCover, R2, R4, R6, general peak reduction and HRH stay open.
+
+### COV-44. B′(2) holds with explicit bounds exactly when R_h holds for an explicit h (proved)
+
+- The universe. For even h ≥ 2, U_h is the set of labelled pose tables of the I_a pose group, with its fixed right-tree
+  vertex, whose poses all have left height at most h, as in COV-39; bounding only the left height of arbitrary rotations
+  over Q(√5) would give no finite set. There are v_h = 1 + Σ_{j=1}^{h/2} 5·4^(2j−1) = (4^(h+1) − 1)/3 left-tree vertices
+  at even distance at most h, and at most 7,200 poses over each: two poses with the same left vertex that fix the right
+  root differ by an element fixing both roots, that is by an element of K⁺. So |U_h| ≤ Q_h = (7,200·v_h)^N with N =
+  177,120; the bases 7,200·v_h are 151,200, 2,455,200 and 39,319,200 for h = 2, 4 and 6.
+- From R_h to B′(2). R_h: every state of 𝒞₂ has a restoring word, to some lattice table, whose states all lie in U_h.
+  Assume it. A shortest admissible path inside U_h from Z ∈ 𝒞₂ to a lattice table repeats no labelled table, since
+  cutting out a loop keeps every later admissibility test, so it has at most D_h = Q_h − 1 letters. The catalogue of all
+  words over the m = 35,400 nonidentity letters of lengths 0 to D_h, each replayed exactly, with blocked prefixes
+  rejected and lattice endpoints accepted, proves B′(2) with L₂(n) = D_h and S₂(n) = (m^(D_h+1) − 1)/(m − 1), in one
+  strict′ step. COV-39 is the case h = 2.
+- From B′(2) to R_h. Suppose B′(2) gives explicit bounds L₂(n), and let M be their largest value for 1 ≤ n ≤ N. Each
+  accepted step lowers the off count, so a chain of steps ends on the lattice; each step starts in 𝒞₂, since strict′
+  steps keep 𝒞₂ closed, and by the integrator's check before this round every prefix of a step has left heights at most
+  2 + 2M. So R_h holds for h = 2 + 2M; the height bound starts again at each step boundary and carries no factor N.
+- What it gives. A quantitative equivalence: an explicit h with a proof of R_h gives explicit bounds for B′(2), and
+  explicit bounds give such an h. The finiteness of 𝒞₂ (T9-05), with one reversed reaching history for each state,
+  already gives some finite h, but no stated number, so it does not prove B′(2).
+- Command: the reviewer re-ran `scripts/round22/letter_heights.py` and got the same counts (output
+  `runs/round22/letter_heights.txt`).
+- Uses: COV-39, T9-05 (stage 09 `SENIOR-REVIEW.md` section 14), the integrator's check before coverage round 7, the tree
+  model (`research/jumbling/theory/trees.py`).
+
+### COV-45. VL fails even at a reachable singleton whose history stays inside U₂ (computed from certificates; proved)
+
+- The state. COV-18's vertex example: J = (0, 12), R = J⁻¹ = (0, 45), C = cap 0 and Y = solved·J. The SAFE orbit of
+  chamber 2335 at Y has 3,555 chambers, and its global Jordan certificate (prime 3,083, a 400-letter word) checks again;
+  chambers 809 and 813 lie in that orbit outside C and are occupied, so the SAFE group contains a word V that induces
+  the three-cycle (2335 809 813) and fixes every other chamber. After V the holes are (C ∖ {2335}) ∪ {809}, and J⁻¹
+  lands every original off piece and leaves one off piece, at R·λ_2335, whose only hole is 809. So the singleton is
+  reachable, by a word of at most 7,200^174,023 + 1 letters every prefix of which stays inside U₂; V is certified to
+  exist, not expanded or replayed, and the labels of the lattice table and the orientation of the off piece are not
+  prescribed.
+- The locks. The caps that contain the placement are I = {0, 8, 10}, those it straddles are S = {5, 14, 38, 39}, and the
+  chambers locked to it are 3237, 3238, 3239, 3726, 3729, 3730, 3736, 3804 and 3887, of types 3, 6, 9, 2, 5, 6, 7, 5 and
+  6. All nine are occupied, since the only hole is 809. Chamber 3237 has type 3, so it is never the hole of a singleton
+  whose off piece has type 9: VL fails at this placement whatever the hole.
+- The consequence. Neither "VL whenever n = 1" nor "VL whenever 1 ≤ n ≤ k", for any k ≥ 1, is an invariant of reachable
+  states, and restricting the reaching history to U₂ rescues neither. This removes those candidate invariants, not any
+  of the 118 cases.
+- Command: `scripts/round22/cov45_singleton_vl.py` (it runs `cov18_singleton_kinds.py` first); output
+  `runs/round22/cov45_singleton_vl.txt` (about 35 seconds of CPU).
+- Uses: COV-18, COV-31, COV-37.
+
+### COV-46. Every restoring word for a residual case uses at least three jumble letters (proved; computed)
+
+- The theorem. Every admissible path from a lattice table to a singleton that uses at most two jumble letters ends in a
+  rim placement class. So no restoring word for any of the 118 cases of COV-36 uses at most two jumble letters, however
+  many retained letters it has.
+- Proof. Retained prefixes keep the full lattice geometry. After the first jumble letter the off geometry is a K⁺ image
+  of that of solved·(0, 12), by the conjugacy reduction of the integrator's depth table for coverage round 4, and its
+  3,097 off pieces form 29 intrinsic rigid blocks, of sizes 86 (twelve), 87 (four), 111 (twelve) and 385 (one), so every
+  block has at least 86 pieces. During the retained middle each block takes one common K⁺ multiplier, stays
+  intrinsically rigid and keeps all its pieces in one pose domain, so the second jumble letter moves a whole block or
+  none of it: its pieces all land or all stay off, and no original off piece can be the only one left. A singleton
+  endpoint is therefore one newly displaced lattice piece, with all 3,097 original off pieces landing. Just before that
+  last jumble letter those pieces fill the whole off geometry of the inverse letter applied to its cap; VL holds after
+  the first jumble letter and survives the retained middle, so if the new singleton were deep, COV-23 and COV-25 would
+  make its occupied preimage chamber locked in that full off geometry, against VL. An outer placement without a landing
+  letter is impossible as well, since the inverse of the last jumble letter lands the new off piece. A retained suffix
+  keeps the K⁺ placement class, and zero or one jumble letter gives no singleton.
+- Scope. The argument uses only the full geometry of the starting lattice table, so it holds when that table's labels
+  are not solved, and reversing a proposed restoration gives the lower bound for every valid table of a residual case.
+  It excludes no history with three or more jumble letters and proves no case unreachable.
+- Command: `scripts/round22/cov46_first_jumble_blocks.py` (through the setup of `cov29_two_cap.py`); output
+  `runs/round22/cov46_first_jumble_blocks.txt` (about 10 seconds of CPU). The reviewer's re-run of
+  `cov36_hole_orbits.py` gave TOTAL 457200 118 118 again, with COV-23's assertion that the locked landing pairs are the
+  deep-class landing pairs.
+- Uses: COV-23, COV-25, COV-31, COV-36, the integrator's depth table for coverage round 4.
+
+### COV-47. A residual piece can change its tree branch inside U₄ without changing its placement orbit (computed)
+
+- The replay. At the case (y, h) = (2149, 41) of COV-36, the table whose only off piece is 2149 at R = element(I_a, 0,
+  45), with lattice piece 41 moved into chamber 2149 by the K⁺ transport and hole 41 (digest `a9c35fd8…`). The word [(1,
+  12), (41, 16)] is admissible, and the largest left heights over the whole table are 2, 4 and 2 along it. The tree data
+  (d_L, d_R, branch_L, branch_R) of piece 2149 change from (2, 0, 0, −1) to (2, 0, 1, −1), its accumulated multiplier is
+  the K⁺ element 1365, the endpoint (digest `4c7c6590…`) has 5,405 off pieces, and the inverse word returns the start
+  digest.
+- What it shows. A piece of a residual case can change its branch inside U₄, as Q2 asked. This is no restoration, and
+  the starting table is not shown to be reachable. Branch or frame classes and the 500 placement classes are different
+  notions, the latter already taken modulo K⁺; COV-41 puts the multiplier of every raised and returned foreign piece of
+  a two-letter excursion in K⁺, so such an excursion never changes that piece's placement orbit, and its collateral off
+  pieces keep its endpoint from being another singleton case. No case is settled.
+- Command: `scripts/round22/cov47_branch_change.py`; output `runs/round22/cov47_branch_change.txt` (about 7 seconds of
+  CPU).
+- Uses: COV-23, COV-36, COV-41, the tree model (`research/jumbling/theory/trees.py`).
+
+### COV-48. The two-letter peak classification holds at every even boundary height (proved)
+
+- The theorem. Let A ∈ U_h with h ≥ 2 even, and let legal letters g at c and f at d form an excursion A → A·g → A·g·f
+  whose middle leaves U_h and whose end is in U_h; let P be the class of c. Then both letters are jumble letters of
+  class P, f·g ∈ K⁺, and they move exactly the same nonempty set of pieces of height h whose branch is foreign to P;
+  subject to legality these conditions are sufficient. For h > 2 the equality concerns those height-h foreign pieces
+  only, not every foreign off piece. COV-41 is the case h = 2.
+- Proof. A class-P jumble letter fixes the adjacent vertex w_P, raises a vertex on a foreign branch by exactly 2 and
+  cannot raise a vertex already on branch P, so the offending pieces start at height h and reach h + 2 on branch P. A
+  retained second letter cannot lower them and a jumble letter of another class raises them again, so f has class P and
+  moves every offending piece. The product f·g fixes w_P; the original foreign vertex is at distance h + 1 from w_P, and
+  bringing it back within distance h of the root forces the first edge of that geodesic to point to the root again, so
+  f·g fixes the root, and since its right factor fixes the right root, f·g ∈ K⁺. A height-h foreign piece that g left in
+  place and f moved would become a new offender at height h + 2. Lower pieces do not spoil sufficiency: after g they
+  stay below h or lie on branch P at height at most h, which f cannot raise.
+- For Q2. The first possible boundary excursion above U₄ goes 4 → 6 → 4; every three-letter excursion from U₄ back to U₄
+  peaks at most at 6; a path from U₂ back to U₂ that visits height 6 needs at least four letters, and with exactly four
+  its offending piece goes 2 → 4 → 6 → 4 → 2. These are necessary profiles; no legal height-6 witness was built. The
+  same boundary family appears above U₆, at height 8.
+- Exact relations. Same-cap multiplication, (c, g)(c, f) = (c, f·g), and the cancellation of inverses hold on every
+  labelled piece, since a twist at c does not change the inside set of c, so an excursion at one cap collapses to one
+  retained letter or the identity at any boundary height. COV-41's replay of [(8, 12), (8, 1), (8, 54)] at COV-17's
+  singleton, the identity with heights 4, 4 and 2, was run again through `cov41_excursions.py`. Twists at antipodal caps
+  commute: their cap halfspaces are disjoint and each twist keeps both.
+- What is missing. General peak reduction needs a simultaneous admissible replacement on the whole table: reducing the
+  rotation word of one peak piece controls neither the other pieces' supports nor their straddling. A theorem that
+  lowers the measure (largest height, number of states at it), compared lexicographically, while keeping the first state
+  and a lattice endpoint, would prove R_h by well-founded descent; keeping both endpoints would give the stronger
+  elimination of excursions. Neither such a theorem nor a peak that resists every longer admissible replacement was
+  found.
+- R4 and R2. R4 admits COV-41's height-4 witnesses without rewriting them, but that does not prove R4, since the same
+  boundary problem returns at height 6; R2 is not refuted, so no smallest successful choice among 2, 4 and 6 is
+  justified yet.
+- Uses: COV-17, COV-40, COV-41, the tree model (`research/jumbling/theory/trees.py`).
+
+### COV-49. Neither different-cap peak of COV-41 has a replacement of at most two letters (computed)
+
+- The audit. At COV-17's reachable singleton A, each of [(14, 12), (35, 13)] and [(39, 12), (29, 13)] is the only word
+  of at most two letters with its exact labelled endpoint (digests `11f99379…` and `fb6f759e…`), and both peak at 4. So
+  neither peak is lowered by any replacement of at most two letters over the whole alphabet of 35,400 letters.
+- Why it is complete. Two letters with multipliers E and F give a piece only the multipliers I, E, F and F·E. Each
+  endpoint shows exactly three distinct nonidentity multipliers, two outside K⁺ on 2,702 pieces each and one in K⁺ on
+  396 pieces (the K⁺ elements 2054 and 1260; 171,320 pieces unmoved), so {E, F, F·E} must be that triple. For each
+  target the K⁺ multiplier is the multiplier of no letter, each of the other two is that of ten letters, and 100 ordered
+  letter pairs pass the matrix test; exact replay leaves only the original pair. Zero or one letter cannot give three
+  distinct nonidentity effects.
+- What it does not decide. Peaks of height 4, the lowest above U₂, already resist the complete system of replacements of
+  two letters by at most two. That does not exclude a longer path inside U₂; the endpoints are not lattice tables, and
+  this local obstruction refutes neither R2 nor HRH.
+- Command: `scripts/round22/cov49_two_letter_audit.py` (through `cov41_excursions.py`; it combines the reviewer's two
+  separate audits, which gave the same effects, candidates and words); output `runs/round22/cov49_two_letter_audit.txt`
+  (under a minute of CPU).
+- Uses: COV-17, COV-41.
+
+### COV-50. The covered subclass is unchanged, and the obligations are explicit (proved)
+
+- Covered. As in COV-42: every valid rim singleton, within 7,200^170,927 + 7,200^174,023 + 2 letters; every state that
+  passes the joint test of COV-32; the separated constructions of COV-38 whose hole resources survive; and the certified
+  backward closure of catalogue steps. The bounds stay b = 13,205! − 1, R = 7,200^177,120, L = 4b + 5(R − 1) and S(n) ≤
+  n·C_b⁴·T_R⁵, with at most nL letters for a certified chain of restorations. Certificates built only from free-class
+  cores and retained segments stay inside U₂; arbitrary native cores need their own height audit. This round adds no
+  residual singleton and no proof of unreachability; all 118 cases stay open.
+- The obligations. (1) SingletonResidual: for each of the 118 cases, a verified restoring certificate with a bound, or a
+  proof that excludes every reachable representative; COV-45 removes singleton VL as a route, and COV-46 excludes only
+  words with at most two jumble letters. (2) MultiCover: catalogue coverage of every reachable height-2 state with at
+  least two off pieces; the joint test and the separation theorem stay sufficient conditions, not a universal reduction.
+  (3) MixedCoreBound: an explicit uniform bound if further mixed-class cores are needed. (4) The height route: R_h for
+  one stated even h, which gives B′(2) directly by COV-44. For a fixed h the exhaustive exploration of Γ_h is finite,
+  but deciding which failed low-height components contain reachable states still needs a reaching witness or an
+  unreachability lemma; histories confined to Γ_h do not show that it contains 𝒞₂. (5) LRH, or its U_h version, for the
+  stronger history statement: restoration to some lattice table gives no bridge to the exact solved pose table.
+- The bounds. A uniform peak-reduction lemma would discharge (4); the same-cap identities and the finite two-letter
+  audit do not. No growth of b is shown to be necessary; with R_h alone, b_new = max(b, D_h) replaces the old envelope,
+  without showing that the old envelope already covers the resulting words.
+- Which route is closer (an assessment, not a theorem). Coverage is closer to a decisive bounded experiment, since its
+  singleton frontier has 118 concrete inputs and an exact checker. Neither route is close to a universal proof:
+  MultiCover stays global, and the height route lacks simultaneous admissible peak reduction.
+- Uses: COV-32, COV-34, COV-38, COV-39, COV-40, COV-42, COV-44, COV-45, COV-46, COV-48, COV-49.
+
+### COV-51. Forced excursions followed by the existing descent on all 118 cases (experiment design)
+
+- Design. COV-43's table for each case, its 118 cases, its two-worker scheduler, its 120-second CPU cutoff per case and
+  its endpoint and inverse checks, with the unguided 48-letter walks replaced: trial 0 runs the existing descent of
+  `research/jumbling/theory/restore.py` (close, lock, improve, shift) from the table, and each later trial first applies
+  one to four legal jumble letters, 80% of them at grips local to y and h, and then the same descent, capped at 48
+  descent letters. A descent step adds at most three letters, so the descent passes its cap by at most two and a
+  candidate has at most 54 letters. Every lattice endpoint is replayed exactly from the original table, with every
+  prefix checked, the largest height over every piece recorded and the inverse word required to return the start digest.
+  It tests whether such excursions open a route that the existing descent can finish, and builds no new vacancy
+  machinery; about 4.1 CPU hours with the case reduction, about two hours on two cores.
+- What it decides. A FOUND settles its case. ALL_PASS settles SingletonResidual: SAFE routing of the hole inside its
+  COV-36 orbit adds at most 7,199 retained letters, so every residual singleton has a certificate of at most 7,253
+  letters, inside the present envelope, and COV-06 carries it to every valid labelled table of its case; the recorded
+  heights show whether the certificates stay inside U₂, U₄ or U₆. Even ALL_PASS settles neither MultiCover nor R_h.
+  MISSING, NO_HIT, CUT_SHORT, a descent stall or an error decides neither unreachability nor the absence of a restoring
+  word, not even of one with 54 letters, since the candidates are sampled and the descent is incomplete.
+- Command: `scripts/round22/cov51_forced_descent.py` (it runs `cov43_residual_search.py` with the worker replaced in
+  memory, as the design says); output `runs/round22/cov51_forced_descent.txt`. The integrator started it on 18 October,
+  two cases at a time as designed, and stopped it after the first eight cases, those of the classes 12, 13, 14, 16, 17
+  and 21: each had ended CUT_SHORT at its 120-second cutoff still inside trial 0, the first descent, and the
+  integrator's check below shows why. Its COV-36 part reproduced the 118 cases; the output ends after the eighth case,
+  without a final line. The partial run decides nothing.
+- Uses: COV-06, COV-36, COV-43.
+
+### The integrator's check after COV-51 started: the existing descent is stuck at the residual tables (computed)
+
+- Why. The first eight cases of COV-51 ended CUT_SHORT with no finished trial: each was still in trial 0, the existing
+  descent from the table, when its 120 seconds ran out.
+- The computation. At eight cases, (12, 12), (136, 13), (446, 14), (2149, 41), (3889, 12) and (2548, 17) in deep classes
+  and (1345, 13) and (1437, 13) in the two outer classes, the table of COV-43 and COV-51 and one run of the existing
+  descent (`Restorer.run` with at most 48 letters, as trial 0 of COV-51), under a cutoff of 1,800 seconds for the first
+  and the fourth and 900 for the others.
+- The result. At all eight the descent stops as stuck before its first step: none of its four rules (close, lock,
+  improve, shift) finds a move at the table, whose misalignment N is 8 at six of the cases, 10 at (446, 14) and 12 at
+  (2548, 17). Reaching that verdict takes 207 to 741 seconds of CPU, after about 7 seconds of setup.
+- The consequence. At these cases trial 0 of COV-51 finds nothing, and within 120 seconds no forced trial ever starts,
+  so the design cannot decide anything at its budget. A forced trial starts after a jumble letter, which moves a whole
+  cap of pieces off the lattice; these runs do not time the descent from there. The check settles no case and says
+  nothing about restoring words outside the descent.
+- Command: `scripts/round22/descent_cost.py <y> <h> <CPU seconds>`; output `runs/round22/descent_cost.txt` (the eight
+  runs, each after a line with its case, cutoff and exit code).
+- Uses: COV-36, COV-43, COV-51, the descent of `research/jumbling/theory/restore.py`.
+
+### Round 8 of coverage
+
+The senior reviewer took up the three-jumble-letter frontier, the stall of the existing descent at the residual tables
+and constructive restorations (findings COV-52 to COV-57, all `minor`, all adopted, fast tier, 18 October 2026). Its
+computations are `scripts/round22/cov52_outer_classes.py`, `cov53_cohort_images.py`, `cov54_rule_audit.py` and
+`cov55_descent_cov17.py`, and it re-ran `cov17_single_off.py`; the integrator re-ran all five and got the same classes,
+totals, cosets, blocks, faces, scores, openings, net changes, rule results and digests, with the outputs
+`runs/round22/cov52_outer_classes.txt`, `cov53_cohort_images.txt`, `cov54_rule_audit.txt` and `cov55_descent_cov17.txt`.
+Its experiment, `scripts/round22/cov57_frontier_search.py`, ran after the round was recorded, and every one of its 24
+jobs exhausted the family (`runs/round22/cov57_frontier_search.txt`). The outer classes 1345 and 1437 occur in no
+reachable table, which removes six of the 118 cases and leaves 112 deep cases in 67 classes, 442,800 class–hole pairs
+(COV-52); every path from a lattice table to a singleton with exactly three jumble letters stays inside U₂, and the
+first jumble letter's 29 cohorts stay whole under the four nonlattice cosets, but the deep three-jumble frontier stays
+undecided (COV-53); at the case (12, 12) the descent has no closing move and no strictly improving shift (COV-54); the
+descent is stuck at COV-17's reachable singleton, so it is incomplete (COV-55); the bounds are unchanged and the
+obligations are restated for the 112 deep cases (COV-56); and an exact enumeration finds no restoring word in one
+three-jumble family at two cases, which excludes only that family (COV-57). SingletonResidual (the 112 deep cases),
+MultiCover, R_h, general peak reduction and HRH stay open.
+
+### COV-52. The outer classes 1345 and 1437 occur in no reachable table, which removes six cases (proved; computed)
+
+- The theorem. In every reachable table a piece of left height 2 lies inside at least one cap of its own class. The
+  outer placement classes have empty own-class cells, so the classes 1345 and 1437 occur in no reachable table, whatever
+  the hole, the lattice labels, the other pieces and the largest height of the history. Their six cases, (1345, 13),
+  (1345, 1437), (1345, 2900), (1437, 13), (1437, 1437) and (1437, 2900), have no reachable representative and need no
+  restoring word.
+- Proof. Follow one piece and drop the letters that do not move it; as an overapproximation, used only for an
+  obstruction, allow arbitrary global K⁺ rotations. Take a highest plateau, at height H ≥ 4, entered from and left to
+  height H − 2. Its entering jumble letter has a class P foreign to the entering vertex and raises the piece onto branch
+  P. Move the intervening K⁺ factors to one end, conjugating the other letters and their caps; then every nonretained
+  letter of the plateau, the exit letter included, has class P, since a letter of another class would raise the height
+  above H, and their product F lies in G_P and fixes the adjacent vertex w_P. The entering vertex is at distance H − 1
+  from w_P, and its geodesic from w_P begins through the root; the exiting vertex has the same distance from w_P and
+  root distance H − 2, so its geodesic begins through the root too. So F fixes the root and, fixing the right-tree
+  vertex as well, lies in K⁺; putting the moved factors back still gives a K⁺ multiplier. Replacing the plateau by that
+  multiplier keeps the tracked piece's endpoint and its remaining cap-membership tests and lowers the number of highest
+  vertices, so repetition removes every height above 2. In the resulting one-piece history each departure from the
+  lattice happens inside the cap of its jumble letter, so the new height-2 placement has a nonempty own-class cell;
+  while the piece stays at height 2, a jumble letter that moves it has its own class, whose rotations permute that
+  class's 120 caps and keep the cell nonempty, and K⁺ rotations keep the property while transporting the class. So an
+  outer height-2 endpoint is impossible.
+- Scope. The replacements act on the tracked piece alone and need not be admissible for the others, so this is an
+  obstruction to reachability, valid for histories with any number of jumble letters, and not a restoration; it does not
+  prove R₂.
+- The computation. Through `cov36_hole_orbits.py`: the 16 outer placement classes of COV-23 (433, 434, 439, 440, 544,
+  545, 1225, 1226, 1228, 1229, 1338, 1339, 1341, 1343, 1345 and 1437) all have empty own-class cells; COV-36's rows
+  total 457,200 class–hole pairs, 118 hole orbits and 118 cases; the classes 1345 and 1437, of type 7, have 7,200 pairs
+  and three cases each, with hole orbits of 7,198, 1 and 1 chambers (holes 13, 1437 and 2900); without them 112 cases
+  remain, in 67 deep classes with 442,800 class–hole pairs. COV-53's audit adds that at R = element(I_a, 0, 45) piece
+  1345 lies inside the caps 3 and 7 only and piece 1437 inside 3, 7 and 13 only, none of its own class, both with tree
+  data (2, 0, 0, −1).
+- Command: `scripts/round22/cov52_outer_classes.py` (it runs `cov36_hole_orbits.py` first); output
+  `runs/round22/cov52_outer_classes.txt` (about 70 seconds of CPU).
+- Uses: COV-23, COV-30, COV-36, the tree model (`research/jumbling/theory/trees.py`), the classes
+  (`research/jumbling/theory/classes.py`).
+
+### COV-53. Three-jumble paths to a singleton stay inside U₂; the deep frontier stays open (proved; computed)
+
+- Heights. Every admissible path from a lattice table to a height-2 singleton with exactly three jumble letters stays
+  inside U₂, however long its retained segments. Before the second jumble letter the 3,097 off pieces of the first still
+  form 29 transported intrinsic cohorts of at least 86 pieces each (COV-46). A second jumble letter that moves a cohort
+  of a foreign class raises all its pieces to height 4, and the one remaining jumble letter cannot land a height-4
+  piece, so at least 86 pieces would stay off; a singleton endpoint therefore forbids every such raising letter, and the
+  third letter cannot leave a piece at height 4 either.
+- Cohorts. For a cohort that a second jumble letter of its own class moves, undo its preceding K⁺ multiplier; its
+  accumulated rotation lies in G_P, which has five left cosets of K⁺ ∩ G_P, the lattice coset and four others,
+  represented at grip 0 by the items 12, 13, 14 and 15. Under each of the four, each of the 29 cohorts of solved·(0, 12)
+  stays one intrinsic rigid component of its own size. So a cohort still off after the second jumble letter stays
+  co-held and in one pose domain through the next retained segment, and the third jumble letter lands all of it or none:
+  no original cohort supplies the sole surviving off piece. A piece that lands at the second letter and leaves again at
+  the third belongs to the third letter's newly displaced branch, which this argument does not exclude.
+- The last-letter frontier. Let L = (c, g) be the last jumble letter, C its 3,097 home chambers, and let the singleton
+  just after L have region A and hole h. Applying L⁻¹ gives the off geometry {g⁻¹λ_x : x ∈ C ∖ {h}} ⊔ E, where E is
+  empty if L⁻¹ lands the singleton, {g⁻¹A} if it moves it from off to off, and {A} if the singleton lies outside C; so
+  the state before L has 3,096, 3,097 or 3,098 off pieces. A frontier restricted to a newly displaced singleton of the
+  last letter would miss the branch in which a survivor of the second letter remains.
+- After two jumble letters. Normalize the first to J = (0, 12). Just before the second letter E at cap C, record the 29
+  cohort multipliers k_B and the hole set H, within their joint retained orbit. E keeps the old off regions outside C,
+  transforms the old cohorts inside C and drops those that land, and adds Eλ_x for every x ∈ C ∖ H; with D the set of
+  landed chambers, the new holes are (H ∖ C) ∪ (C ∖ D). Taken modulo simultaneous K⁺, with intrinsic components and
+  their pose-domain multiplicities, this parametrizes the states after two jumble letters; retained suffixes keep those
+  multiplicities, but the multipliers and holes cannot be chosen independently, and their joint retained orbits were not
+  enumerated. For a third letter every component but at most one must land whole, so must be pure in pose domain, and
+  the exceptional one can leave one survivor only if it is a singleton or has exactly one piece outside the domain that
+  lands. This is a necessary block test, not a classification of the realizable joint arrangements; that joint problem
+  of cohort and hole transport is the named obstruction to deciding the deep three-jumble frontier.
+- Four jumble letters. The cohort argument no longer excludes the itinerary 2 → 4 → 2 → 0, but every path with four
+  jumble letters from a lattice table to height 2 stays inside U₄, since after j jumble letters each piece's height is
+  at most min(2j, 2 + 2(4 − j)); COV-52 still applies. No deep three- or four-jumble witness was built.
+- Bounds. The retained segments of a three-jumble restoration can be shortened to at most R − 1 letters each, R =
+  7,200^177,120, so it has at most 3 + 4(R − 1) letters, and one with four jumble letters at most 4 + 5(R − 1). Both fit
+  the present envelope without increasing b, so the unrestricted three-jumble question is a finite check, far too large
+  to run.
+- Command: `scripts/round22/cov53_cohort_images.py` (through the setup of `cov29_two_cap.py`); output
+  `runs/round22/cov53_cohort_images.txt` (about 12 seconds of CPU).
+- Uses: COV-23, COV-46, COV-52, the blocks (`research/jumbling/theory/blocks.py`).
+
+### COV-54. At the case (12, 12) the descent has no closing move and no strictly improving shift (computed)
+
+- What N counts. The misalignment N counts unmatched incidences between pose domains and cut cells, not off pieces. For
+  a singleton of chamber type t, with f_t the number of cut cells incident to one chamber of that type, the lattice
+  domain misses one chamber and contributes f_t and the singleton's own domain another f_t, so N = 2f_t; retained motion
+  of the singleton and of its hole, of the same type, keeps this value. At (12, 12), f_t = 4 and N = 8.
+- The survey. The hole chamber 12 has the cut faces 8, 13, 35 and 38; the off piece straddles the cuts 8 and 38, so
+  those grips are not admissible, and none of its four rotated cut normals is a grip pole. So the descent's survey has
+  only the grips 13 and 35, each with score 1 (grip misalignment 2 of N = 8). At both, all 12 retained items, the
+  identity included, leave the score 1 and all 48 jumble items give 1,565, so close and improve have no move.
+- Lock and shift. Copies of the two rules made in memory count every opening and every scored continuation. Lock tries
+  22 nonidentity retained openings with opening cost 0 and 96 jumble openings with cost 1,564, and none gives an
+  eligible closing neighbour under its rules, so it has no two- or three-letter candidate. Shift tries the same
+  openings; its 139 scored continuations have net change 0 in 43 cases and +1,564 in 96, and it accepts only a strict
+  decrease, so it accepts none. Both rules return None and leave the digest unchanged; the reviewer's first,
+  uninstrumented audit of the four rules took 209.31 seconds of CPU.
+- What it shows. A local-search obstruction at one table: it excludes neither longer words nor preparations at grips of
+  score zero, and it does not show that the descent stalls at all 118 cases; neither the locked-landing theorem nor the
+  SAFE reduction of coverage makes the descent's choices invariant, and the descent breaks ties by home counts, which
+  depend on the labels.
+- Command: `scripts/round22/cov54_rule_audit.py` (through the setup of `descent_cost.py`; `restore.py` is not changed);
+  output `runs/round22/cov54_rule_audit.txt` (about 3 minutes of CPU).
+- Uses: COV-36, COV-43, the descent and the rim model (`research/jumbling/theory/restore.py`,
+  `research/jumbling/theory/rim.py`).
+
+### COV-55. The existing descent is stuck at COV-17's reachable singleton, so it is incomplete (computed)
+
+- The state. COV-17's singleton: only piece 58388 off, hole 58388, digest `16d61ac2…`, reached from solved by the
+  24-letter word J·[[[A, B], B], D]·J⁻¹ (chronological commutators; J = (0, 12), A = (74, 8), B = (188, 4), D = (178,
+  1)), whose inverse returns it exactly to solved (`cov17_single_off.py`, run again by the reviewer and by the
+  integrator).
+- The descent. N = 8 and the grip misalignment is 5: the survey has the grips 0, 212, 228, 376 and 393, each with score
+  1. At grip 0 the score after one letter is 1 for 12 items, 1,565 for 12 and 1,567 for 36; at the other four it is 1
+  for 12 and 1,565 for 48. So close and improve have no move, and the complete lock and shift searches return None as
+  well; the table is unchanged, and `Restorer.run` returns `stuck` before its first step (516.53 seconds of CPU for the
+  four rules in the reviewer's run).
+- The consequence. A reachable singleton with a rim placement and a verified 24-letter restoration defeats every rule of
+  the existing descent (close, lock, improve, shift), so the descent is not complete. A stall of the descent at a table
+  is therefore no evidence against restorability, and the descent is no cheap oracle for coverage experiments.
+- Command: `scripts/round22/cov55_descent_cov17.py` (through `cov17_single_off.py`); output
+  `runs/round22/cov55_descent_cov17.txt` (about 9 minutes of CPU).
+- Uses: COV-17, the descent of `research/jumbling/theory/restore.py`.
+
+### COV-56. The bounds are unchanged; 112 deep cases and the global obligations remain (proved)
+
+- Covered. As in COV-50: every valid rim singleton, within 7,200^170,927 + 7,200^174,023 + 2 letters; every state that
+  passes the joint test of COV-32; the separated constructions of COV-38 whose hole resources survive; and the certified
+  backward closure of catalogue steps. With N = 177,120, R = 7,200^N, b = 13,205! − 1, m = 35,400, g = 6,600, C_b =
+  (m^(b+1) − 1)/(m − 1) and T_R = (g^R − 1)/(g − 1), the bounds stay L = 4b + 5(R − 1) and S(n) ≤ n·C_b⁴·T_R⁵, with at
+  most nL letters for a certified chain. COV-52 adds a proved necessary condition for reachability, not a restored
+  state, and no deep case has a restoring word.
+- The obligations, changed from COV-50. (1) SingletonResidual: the 112 deep cases, in 67 classes with 442,800 class–hole
+  pairs, each needing a bounded restoring certificate or a proof that excludes every reachable representative; the
+  three-jumble frontier lies inside U₂, and its joint check of cohort and hole transport is open. (2) MultiCover: open;
+  the finite universe may now leave out every datum with an outer height-2 piece; the joint vacancy tests and separation
+  stay sufficient conditions, and a failed bounded catalogue check still needs a reaching witness or an unreachability
+  lemma. (3) MixedCoreBound: needed only if the construction needs further unrestricted cores; a restoration with three
+  or four jumble letters fits the present envelope by COV-53. (4) The height route: R_h for one stated even h gives
+  B′(2) within D_h = (7,200·(4^(h+1) − 1)/3)^N − 1 letters (COV-44); exploring Γ_h is finite, but that it contains every
+  reachable low-height state is still an obligation, and COV-52's one-piece peak reduction gives no simultaneous
+  admissible replacement on the table, so it does not prove R_h. (5) LRH, or its U_h version, for the stronger history
+  statement: restoration to some lattice table gives no bridge to the exact solved table.
+- Transfer. COV-06 carries a future certificate between valid labelled tables with the same off data and holes, and
+  COV-36 carries it through its case's SAFE hole orbit with at most 7,199 retained letters, which do not raise heights;
+  one certificate does not cover the other cases of its placement class, whose hole orbits differ.
+- Which route is closer (an assessment, not a theorem). Singleton coverage stays closer to a decisive computation: it
+  has 112 concrete inputs and a restricted three-jumble frontier. The descent is no cheap oracle: it stalls at a
+  certified reachable rim singleton and takes minutes to show it. Neither coverage nor the height route is close to a
+  universal proof.
+- Uses: COV-06, COV-32, COV-36, COV-38, COV-44, COV-50, COV-52, COV-53, COV-55.
+
+### COV-57. One three-jumble family at two cases, by exact enumeration (experiment design)
+
+- Design. At the cases (12, 12) and (2149, 41), COV-43's table (through the head of its worker, with the CPU cutoff
+  raised to 900 seconds) and every word (0, 12)·A·E·B·F, without the descent: A one of the 12 retained elements of grip
+  2 (the identity included), E every jumble letter at a cap with no straddler, B one of the 12 retained elements of grip
+  32 for the first case and of grip 23 for the second, and F every final jumble letter at a cap whose inside pieces are
+  exactly the off pieces, that contains every hole and that lands every off pose. Before a jumble letter that restores
+  the whole table there must be exactly 3,097 off pieces, the holes must be exactly the home chambers of its cap, every
+  off piece must lie inside that cap and every off pose must land; otherwise a lattice piece is displaced or an off
+  piece survives. The search tests exactly this, keeping only the E after which 3,097 pieces are off. Retained words of
+  any length at one grip are represented by that grip's 12 elements, so this is a finite family, not arbitrary retained
+  middles. A FOUND word is replayed exactly from the table, with its largest left height, a lattice endpoint and the
+  inverse word back to the start digest. 24 jobs (two cases, twelve choices of A), each capped at 900 seconds of CPU,
+  two at a time: at most six CPU hours, about three hours on two cores.
+- What it decides. A FOUND settles its case and shows that three jumble letters suffice for at least one deep case.
+  EXHAUSTED_FAMILY from all 24 jobs excludes only this family; CUT_SHORT or an error decides nothing. No negative
+  outcome proves unreachability or excludes three jumble letters with general retained segments.
+- Command: `scripts/round22/cov57_frontier_search.py` (it runs the head of `cov43_residual_search.py`'s worker with the
+  search replaced, as the design says). The integrator ran it on 18 October, two jobs at a time as designed, in about 65
+  minutes; output `runs/round22/cov57_frontier_search.txt`.
+- Result (18 October 2026). All 24 jobs exited 0 with EXHAUSTED_FAMILY, none cut short: each job tried 27,264 to 27,600
+  second jumble letters E, at both cases. No word (0, 12)·A·E·B·F of the family restores either case. This excludes only
+  the family: it proves neither that the cases are unreachable nor that three jumble letters with general retained
+  segments fail.
+- Uses: COV-36, COV-43, COV-46, COV-53.

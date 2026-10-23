@@ -1,0 +1,6 @@
+{"safe_all_grips": 366, "letters": 4026, "off_lattice": 21790, "sec": 83}
+{"orbits": 26551, "singletons": 26250, "sec": 84}
+COUNTEREXAMPLE_TO_UNIVERSAL_ALT 3cb419d7d60c999658a3c52b2382ed4e6bfb4e4407e3dffb27919d6bab610f35 off 21790 heights [2] safe 366 letters 4026 D [98, 2014, 2987, 3419, 3642, 3688, 4639, 6084, 6168, 8830, 9053, 9099] order 12 holes [3642]
+TARGET class 3 cell [26, 99, 126] size 111 occupied 63 digest 90c1dfc8ab49f0e409d3a73ae94ecd7f917817c452b34308055f9aa67f4c7824 N1_N2 True joint_actions 12 passing [[[6, 1]]]
+CATALOGUE_CORE word [[126, 2], [26, 45], [126, 5], [26, 12], [126, 2], [26, 45], [126, 5], [26, 12], [126, 2], [26, 45], [126, 5], [26, 12]] whole_content 111 landed 111 other_off_exact 21679 collateral 63 Bad_equals_target True free_class 3
+COMPLETED_CPU 93.6

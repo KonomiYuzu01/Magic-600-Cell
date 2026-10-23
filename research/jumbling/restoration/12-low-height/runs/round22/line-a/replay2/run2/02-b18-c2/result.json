@@ -1,0 +1,69 @@
+{
+ "input_digest": "cdbc915da5c34faddfbfe899513453f439f03e85a1d3b2501f7280f5855900b9",
+ "V_source": "certificate",
+ "after_V": {
+  "occupied_badW": 0,
+  "off_set_unchanged": true,
+  "off_exact_poses_unchanged": true
+ },
+ "parts": [
+  {
+   "part": "V",
+   "twists": 325,
+   "input_digest": "cdbc915da5c34faddfbfe899513453f439f03e85a1d3b2501f7280f5855900b9",
+   "output_digest": "f3f95a4b3ce9ad3e7db5c4c2d33ba5e3b386a0c99f4a51092d0af50f0eac3929",
+   "off_end": 435
+  },
+  {
+   "part": "P",
+   "twists": 0,
+   "input_digest": "f3f95a4b3ce9ad3e7db5c4c2d33ba5e3b386a0c99f4a51092d0af50f0eac3929",
+   "output_digest": "f3f95a4b3ce9ad3e7db5c4c2d33ba5e3b386a0c99f4a51092d0af50f0eac3929",
+   "off_end": 435
+  },
+  {
+   "part": "Q",
+   "twists": 60,
+   "input_digest": "f3f95a4b3ce9ad3e7db5c4c2d33ba5e3b386a0c99f4a51092d0af50f0eac3929",
+   "output_digest": "be21cdf6f42bba31413d9e1ab3cffc440e12216f73bb02ecf0558ed4c8a4bf33",
+   "off_end": 324
+  },
+  {
+   "part": "Pinv",
+   "twists": 0,
+   "input_digest": "be21cdf6f42bba31413d9e1ab3cffc440e12216f73bb02ecf0558ed4c8a4bf33",
+   "output_digest": "be21cdf6f42bba31413d9e1ab3cffc440e12216f73bb02ecf0558ed4c8a4bf33",
+   "off_end": 324
+  },
+  {
+   "part": "Vinv",
+   "twists": 325,
+   "input_digest": "be21cdf6f42bba31413d9e1ab3cffc440e12216f73bb02ecf0558ed4c8a4bf33",
+   "output_digest": "35f97e904a0fda3dbea2065f40fdbb4f12db7feedac8f2862327148f45d72940",
+   "off_end": 324
+  }
+ ],
+ "end": {
+  "digest": "35f97e904a0fda3dbea2065f40fdbb4f12db7feedac8f2862327148f45d72940",
+  "off": 324,
+  "T_restored": 111,
+  "collateral": 0,
+  "protected_still_off": 324,
+  "protected_exact_pose_changed": 0,
+  "free_on_K": 0,
+  "free_still_off": 0,
+  "free_pose_changed": 0,
+  "lattice_of_S_on_K_at_end": 176685,
+  "lattice_of_S": 176685,
+  "lattice_of_S_same_exact_pose": 176685
+ },
+ "length": 710,
+ "times": {
+  "ghost_premises": 8.7,
+  "menu_and_condition": 17.0,
+  "certificate": 78.1,
+  "prepare": 10.1,
+  "replay": 31.5
+ },
+ "seconds": 145.4
+}

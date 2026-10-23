@@ -1,0 +1,8 @@
+{
+ "result": "no V",
+ "times": {
+  "ghost_premises": 23.4,
+  "menu_and_condition": 26.9,
+  "greedy": 60.0
+ }
+}

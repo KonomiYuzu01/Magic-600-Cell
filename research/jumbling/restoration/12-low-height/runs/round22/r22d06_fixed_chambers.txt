@@ -1,0 +1,4 @@
+digest 4ca440085d743d680163a35d735ff6a7c35796a57cba720ab4037a49887734db
+{"item": 57, "cap": 110, "off_in_cap": 81, "SAFE_caps": 90, "target": 3097, "fixed": 163, "fixed_occupied": 102, "witness_chambers": [15142, 15144, 15164, 15165, 15166, 15168, 15169, 15170, 15173, 15174], "cpu": 77.44}
+{"item": 59, "cap": 21, "off_in_cap": 81, "SAFE_caps": 89, "target": 3097, "fixed": 896, "fixed_occupied": 421, "witness_chambers": [121, 122, 125, 126, 129, 145, 146, 147, 148, 150], "cpu": 93.13}
+DONE cpu 93.19

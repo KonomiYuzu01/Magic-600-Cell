@@ -2,8 +2,9 @@
 # - <run>-steps.jsonl (findability.py): every step, the cost of a face match search from the facts the program
 #   shows; single-twist steps, the candidates; repair steps, the openings and pairs that the rule's order tries
 #   before the one that works;
-# - <run>-density.jsonl.gz (density.py): at the chosen cap of a repair step, how many (opening, neighbour) pairs make
-#   a repair that lowers N;
+# - <run>-density.jsonl.gz and <run>-density-rest.jsonl.gz (density.py): at the chosen cap of a repair step, how many
+#   (opening, neighbour) pairs make a repair that lowers N, at 15 tail steps and at the other repair steps; these are
+#   the pairs the repair list shows (owner decision of 17 October 2026);
 # - <run>-single.jsonl (single_twist.py): whether a single twist that lowers N existed at a repair step, and the caps
 #   above their floor without one;
 # - repair-items.jsonl (repair_items.py): what the repairs of the census records are made of.
@@ -57,6 +58,10 @@ print(f"  from step 44 on, {len(T)} steps: openings median {statistics.median(r[
       f"pairs median {statistics.median(r['pairs_before'] for r in T)}, at least 59 openings at "
       f"{sum(r['openings_before'] >= 59 for r in T)}")
 print(f"  chosen cap by decreasing N_c: {dict(sorted(Counter(r['rank_c'] for r in C).items()))}")
+for label, R in (('before step 44', [r for r in C if r['step'] < 44]), ('from step 44 on', T)):
+    print(f"    {label}, {len(R)} steps: {dict(sorted(Counter(r['rank_c'] for r in R).items()))}, median "
+          f"{statistics.median(r['rank_c'] for r in R)}; misaligned caps median "
+          f"{statistics.median(r['misaligned_caps'] for r in R)}")
 print(f"  opening retained (items 1 to 11): {sum(r['x'] < 12 for r in C)}; z undoes x: "
       f"{sum(r['z_inverse_of_x'] for r in C)}; c covers d: {sum(r['c_covers_d'] for r in C)}; d covers c: "
       f"{sum(r['d_covers_c'] for r in C)}")
@@ -66,23 +71,64 @@ print(f"  scramble labels: x undoes the last scramble twist of c {sum(r['x_undoe
       f", y undoes that of d {sum(r['y_undoes_last_scramble_twist_of_d'] for r in C)}")
 print(f"  search seconds: median {statistics.median(r['search_sec'] for r in C)}, max {max(r['search_sec'] for r in C)}")
 
-dens = defaultdict(list)
-drows = lines(D / f'{RUN}-density.jsonl.gz')
-assert drows[-1] == {'done': True}
-for r in drows[:-1]:
-    dens[r['step']].append(r)
-print('\n| Step | N | Cap c | Its place | N_c | Neighbours | Pairs | Lowering N | Share | Of them retained openings |')
-print('| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |')
+dens, table_steps = defaultdict(list), None
+for name in ('density', 'density-rest'):
+    drows = lines(D / f'{RUN}-{name}.jsonl.gz')
+    assert drows[-1] == {'done': True}
+    got = {r['step'] for r in drows[:-1]}
+    assert not got & set(dens), 'a step is in both density files'
+    for r in drows[:-1]:
+        dens[r['step']].append(r)
+    table_steps = table_steps or sorted(got)
+ids = [r['step'] for r in C]
+assert len(set(ids)) == len(ids), 'a repair step is in the steps file twice'
 byst = {r['step']: r for r in C}
-for s in sorted(dens):
+assert sorted(dens) == sorted(byst), 'the density files do not cover every repair step'
+low = {}
+for s, R in dens.items():
+    rc = byst[s]
+    xs, ds = {r['x'] for r in R}, {r['d'] for r in R}
+    # one row per (opening, neighbour): 59 openings times the misaligned neighbours of c that the steps file counts
+    assert len({(r['x'], r['d']) for r in R}) == len(R) == len(xs) * len(ds), f'step {s}: not one row per pair'
+    assert len(xs) == 59 and len(ds) == rc['neighbours_of_c'], f'step {s}: openings or neighbours missing'
+    assert all(r['c'] == rc['c'] and r['N_c'] == rc['N_c'] for r in R), f'step {s}: another cap'
+    low[s] = [r for r in R if r['delta'] is not None and r['delta'] < 0]
+    ch = [r for r in R if r['chosen']]
+    assert len(ch) == 1 and (ch[0]['x'], ch[0]['d']) == (rc['x'], rc['d']) and ch[0] in low[s], f'step {s}: chosen'
+
+
+def share(s):
+    return 100 * len(low[s]) / len(dens[s])
+
+
+print(f'\nThe {len(table_steps)} steps of {RUN}-density.jsonl.gz')
+print('| Step | N | Cap c | Its place | N_c | Neighbours | Pairs | Lowering N | Share | Of them retained openings |')
+print('| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |')
+for s in table_steps:
     R, rc = dens[s], byst[s]
-    low = [r for r in R if r['delta'] is not None and r['delta'] < 0]
-    assert sum(r['chosen'] for r in R) == 1 and any(r['chosen'] for r in low) and len({r['x'] for r in R}) == 59
     print(f"| {s} | {rc['N_before']:,} | {rc['c']} | {rc['rank_c']} | {rc['N_c']} | {len({r['d'] for r in R})} | "
-          f"{len(R):,} | {len(low)} | {100 * len(low) / len(R):.2f}% | {sum(r['x'] < 12 for r in low)} |")
+          f"{len(R):,} | {len(low[s])} | {share(s):.2f}% | {sum(r['x'] < 12 for r in low[s])} |")
+print(f'\nAll {len(dens)} repair steps (both density files)')
+print('| Step | N | Its place | Pairs | Lowering N | Share |')
+print('| ---: | ---: | ---: | ---: | ---: | ---: |')
+for s in sorted(dens):
+    print(f"| {s} | {byst[s]['N_before']:,} | {byst[s]['rank_c']} | {len(dens[s]):,} | {len(low[s])} | {share(s):.2f}% |")
+print('\nRepair list at the chosen cap (the pairs whose repair, with the rule\'s y and z, lowers N), at every repair step')
+for label, S in (('all', sorted(dens)), ('before step 44', [s for s in sorted(dens) if s < 44]),
+                 ('from step 44 on', [s for s in sorted(dens) if s >= 44])):
+    k = [len(low[s]) for s in S]
+    print(f"  {label}, {len(S)} steps: N from {max(byst[s]['N_before'] for s in S):,} down to "
+          f"{min(byst[s]['N_before'] for s in S):,}; place of the cap {dict(sorted(Counter(byst[s]['rank_c'] for s in S).items()))}")
+    print(f"    pairs median {statistics.median(k)}, min {min(k)}, max {max(k)}; exactly one at {sum(x == 1 for x in k)}; "
+          f"pairs tried at the cap median {statistics.median(len(dens[s]) for s in S)}, {min(len(dens[s]) for s in S):,} to "
+          f"{max(len(dens[s]) for s in S):,}; share of the pairs "
+          f"{min(share(s) for s in S):.2f}% to {max(share(s) for s in S):.2f}%")
+    print(f"    list sizes: {dict(sorted(Counter(k).items()))}")
 
 single = [r for r in lines(D / f'{RUN}-single.jsonl') if 'step' in r]
 assert lines(D / f'{RUN}-single.jsonl')[-1] == {'done': True}
+sids = [r['step'] for r in single]
+assert len(set(sids)) == len(sids) and set(sids) == set(byst), 'the single-twist file differs from the repair steps'
 print('\nCaps with a single twist that lowers N, before step 40:',
       {r['step']: r['caps_with_single_drop'] for r in single if r['step'] < 40})
 af = [r['above_floor_without_drop'] for r in single]

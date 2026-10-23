@@ -1,0 +1,990 @@
+{
+ "format": "runner-run/3",
+ "menu": "I_a",
+ "start": {
+  "kind": "table",
+  "file": "start-table.json",
+  "digest": "273eab69dee9e3a2f4a3997a75f6b8d9ad16814fa26b941bf7a219247f9bab6d",
+  "off": 105437,
+  "heights": {
+   "2": 103140,
+   "4": 2297
+  }
+ },
+ "config": {
+  "literal_only": true,
+  "mode": "development",
+  "component": "bulk_budget",
+  "bulk_order": [
+   "seam",
+   "cover",
+   "close",
+   "conj",
+   "lock",
+   "improve",
+   "shift"
+  ],
+  "phase_order": [
+   "bulk",
+   "height",
+   "high",
+   "tail",
+   "lattice"
+  ],
+  "subphase_order": {
+   "height": [
+    "r22d75",
+    "r22d81",
+    "h4"
+   ]
+  },
+  "tail_rules": [
+   "zero_bad",
+   "pure",
+   "close",
+   "t1prime"
+  ],
+  "budgets": {
+   "bulk_steps": 0,
+   "bulk_step_seconds": 3600,
+   "bulk_seconds": null,
+   "tail_steps": null,
+   "high_steps": null,
+   "rule_seconds": 3600,
+   "greedy_seconds": 60,
+   "cert_seconds": 3600,
+   "height_seconds": 12000.0,
+   "height_cpu": 12000.0,
+   "kernel_seconds": 3600.0,
+   "pair_shards": 3,
+   "fallback_max_length": 1,
+   "par": 1
+  },
+  "clock_sentinel": null,
+  "kernel": {
+   "seconds": 3600.0,
+   "wall_margin": 600,
+   "d19": {
+    "file": "research/jumbling/restoration/12-low-height/scripts/round22/r22d19_rule.py",
+    "sha256": "587bfc4bc241e78b00d4539a5ff238b00a2741900ffb44a02fb36b7499f044da"
+   },
+   "max_steps": 1
+  },
+  "lattice": {
+   "restorer": "schedule11"
+  },
+  "literal_limit": 10000000,
+  "seeds": "atlas",
+  "acceptance_config": null,
+  "source": {
+   "commit": "35c3d4f6ef1693fa19f3d0f155cd1cba8c43870b",
+   "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "dirty": false
+  },
+  "scripts": {
+   "research/jumbling/restoration/13-tutorial-runner/scripts/runner.py": "cd576897291482030aab89c709f7dcea136183b46c5c3a9509fdf4b3fe4f8ce4",
+   "research/jumbling/restoration/13-tutorial-runner/scripts/runner_api.py": "b92e73d33345da33ee3e6e7974d9ab8db1d35193dc69371b0e13d55bade08459",
+   "research/jumbling/theory/seams.py": "e42dac099632ec063f63b3880cd4957cc49b1193b732e4fa2bf87eeb7882204b",
+   "research/jumbling/theory/restore.py": "2a7bfd448f24ecafd544aa54bae914dec817b801fb044dcee660c2ce46893861",
+   "research/jumbling/theory/orient.py": "922c51544e296ef27ddc187f28cf321a155ff1dec41629b13f9d70c670869eed",
+   "research/jumbling/theory/buffer.py": "219509d954fe966f9ea9ad12b638736146672a030b13135e1e1cf2327c330076",
+   "research/jumbling/theory/trees.py": "8431eedfb778a68b04e5938f3bcfee92feac8e54e718471ea33d6ccedb55a642",
+   "research/jumbling/sim/state.py": "7b92119080a1a7bb3155a0d91a2ac83f20b7f3d4e2c07fb976c17ff447e44259",
+   "research/jumbling/restoration/09-general-method/scripts/gm/mkblocks2.py": "f7ac57a543cc7e3626a4baff13e6460c31e0c2fa563009125fb28e255b21ffac",
+   "research/jumbling/restoration/09-general-method/scripts/gm/tclose2.py": "ba1fd9bf32117ce405e49f81a499425646d4aee7c5e23a22e53d5ab1490b9584",
+   "research/jumbling/restoration/09-general-method/scripts/gm/fallback.py": "56f2ac790b71056798ce0407572927c2514b20df9e03c0edfb985fc324d62946",
+   "research/jumbling/restoration/12-low-height/scripts/cellpure5.py": "6eb1a497fa7fba9a3f7d4ccbc5e6581e9a1cf4d294fca855dd5863fe22017061",
+   "research/jumbling/restoration/12-low-height/scripts/round22/transport_census.py": "3cf13dc1a9103e0f220ea9182def1d19233ad89d5146585a84adbfd308e7cbc7",
+   "research/jumbling/restoration/12-low-height/scripts/round22/stepchk.py": "beb3f2dfa07868be973706bc2540de2f68d613ba6fb6e85cca0678d7477896a1",
+   "research/jumbling/restoration/12-low-height/scripts/round22/prep_t1prime.py": "a9d7c252d18248e36e8f0a94bec6712a5743a270a772ea54adf6d0416695cc94",
+   "research/jumbling/restoration/12-low-height/scripts/round22/jordan_target.py": "6273bcffa56893d5b11bcc101e7239e6a68ad811c141b51cd71c77f92e5be2a1",
+   "research/jumbling/restoration/12-low-height/scripts/r22b10_cert.py": "1c59ab5bfec0964963dbff2d97e3ddecb7a02d0304eb42f4792c0abb8c70238e",
+   "research/jumbling/restoration/12-low-height/scripts/check_r22b10.py": "e0405f8144cd66ff17dee4b93191f9b4c2ac97bb4faf285a8c554c3a1ffe596b",
+   "research/jumbling/restoration/12-low-height/scripts/expand_slp.py": "757d497d220c4b963485cf00f67e6ba7fb1db285d46bd56b9f8644d6b95448be",
+   "research/jumbling/restoration/12-low-height/scripts/slp_apply.py": "0485e23561ce43f6af86f9a7548b96e5a9e7653a39bc6a75ad71109e391a0cbe",
+   "research/jumbling/restoration/09-general-method/scripts/lattice/scripts/restore_lattice_late.py": "0c36b264ed28b65cc949a67a101ab7c225ec5c7d449dca1bf89f4b3a26c83989",
+   "research/jumbling/restoration/09-general-method/scripts/lattice/checker/verify_late.py": "0b954399a776c40f7ef32581ebac6fa9ec070f9571d115bf4f980a1fd0175b57",
+   "research/jumbling/restoration/13-tutorial-runner/scripts/rules_height.py": "711c94495e589a7839c0169aa2bf2025c672132319f9a8d3d16f5a523def913a",
+   "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/r22d75_from_snapshot.py": "15a6b764b12c493f5f90dd3fb643e79182ddf1775d50f76d53dfa75540584aac",
+   "research/jumbling/restoration/12-low-height/scripts/round22/r22d81_rule.py": "0ef504d1484e9f3328592057f3be46cf60cce6bebd44619cd48f2a5f43ce48c5",
+   "research/jumbling/restoration/12-low-height/scripts/round22/r22d81_pairs.py": "2a0cfb8c28f35f65dee06a7258c12767fbe439dd4a9308535cf0385bc53ed2f8",
+   "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/h4_unlock.py": "12078831f1b41c46b9a9f50a1fa88ddabdcafdbb9b766c1a278a662c0ffc44a7",
+   "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/two_letter_u.py": "ce5fb13584630e8c87d08273eaf41b74b68798a30ae606b1f55dd3da07fd93c9",
+   "research/jumbling/restoration/12-low-height/scripts/round22/r22d31_snapshots.py": "1e18b548b181dff29a1fee4c914acc785706887773b7cc75cbb62f8c25fb6256",
+   "research/jumbling/restoration/12-low-height/scripts/eb6.py": "f0b37865f1c8b237b27089af5d0eded3dc188988304c2d3ef6289ea62f4b469a",
+   "research/jumbling/restoration/13-tutorial-runner/scripts/rules_kernel.py": "da3c855a2176bc1cf7c93a547929a6a65c20ab2bd0d4cfd6da681a63c2c70eae",
+   "research/jumbling/restoration/12-low-height/scripts/round22/r22d25_search.py": "b2e2fa4ed1c34579589a68c2d7151e8209b60233b2665d2670d6ff7cd07f6c4b",
+   "research/jumbling/restoration/12-low-height/scripts/round22/r22d25_state.py": "ca45c9ba5ba14b10d48d1d2946c1265acdc8f6e609a5ef83737f79fde8201316",
+   "research/jumbling/restoration/12-low-height/scripts/round22/r22d19_rule.py": "587bfc4bc241e78b00d4539a5ff238b00a2741900ffb44a02fb36b7499f044da",
+   "research/jumbling/restoration/12-low-height/scripts/screen.py": "55acf5d2aba9f1ec57acfb7420e4e897548ed033b5a0c65cd7f32aee2332e48b",
+   "research/jumbling/theory/blocks.py": "7143a86f90f58688587f9b7ac493f3bf52b7f38202fbd702e08769624163a413",
+   "research/jumbling/theory/classes.py": "88357545e2513f76b9809742b7d77e234167cb88dc8f433f9de85c95c42f77cd",
+   "research/jumbling/theory/e3_class.py": "452d9a043ab01174bf62323e8f9a2b110d835dd87ac58922574b458fcfff9afd",
+   "research/jumbling/theory/rim.py": "a53626a88584dcea44646a4a4473a177a3697ed5ac26b061b639a4576debc750",
+   "research/jumbling/restoration/13-tutorial-runner/scripts/lattice_phase.py": "4f342f7b098d27083251ba5944c606a589883c8f2728add9c0ea13ea710c46e0",
+   "research/jumbling/restoration/13-tutorial-runner/scripts/literal_lattice.py": "164904b0e2881322454a32adf63ec8293f285531c0405249d43ee85d514937f0",
+   "research/jumbling/restoration/09-general-method/scripts/schedule11/restore_schedule11_late.py": "812695ed76ea8f724722366cee0d9229a9d26feda1e44ca49a2160c25674f73b",
+   "research/jumbling/restoration/09-general-method/scripts/lattice/scripts/rlib.py": "fb1a42be38d2df3c7fcefe51fa0d6ca2c62d520125386914ead5a87d1fe90f9d",
+   "research/jumbling/restoration/09-general-method/scripts/lattice/scripts/kit.py": "8127e7837efd464fd8214cb525a6de7d655154629a017022dd94f63a0582943f",
+   "research/jumbling/restoration/09-general-method/scripts/lattice/scripts/nucoords.py": "43d2e0fd6c76f553a8cf7da3f02edde8c76c79a6f7a62eed96ec28a4308ebbc6",
+   "research/jumbling/restoration/09-general-method/scripts/schedule11/sched11.py": "d1e051d8de9162c4334b7c119a069f5fb3bb091087847aad71ef0a9392ff96c5",
+   "research/jumbling/restoration/03-retained-group-and-lattice-restorer/scripts/rlib.py": "fb1a42be38d2df3c7fcefe51fa0d6ca2c62d520125386914ead5a87d1fe90f9d",
+   "research/jumbling/restoration/03-retained-group-and-lattice-restorer/scripts/kit.py": "8127e7837efd464fd8214cb525a6de7d655154629a017022dd94f63a0582943f",
+   "research/jumbling/restoration/03-retained-group-and-lattice-restorer/scripts/nucoords.py": "43d2e0fd6c76f553a8cf7da3f02edde8c76c79a6f7a62eed96ec28a4308ebbc6"
+  }
+ },
+ "phases": {
+  "bulk": {
+   "result": "budget",
+   "steps": 0,
+   "twists": 0,
+   "end": {
+    "digest": "273eab69dee9e3a2f4a3997a75f6b8d9ad16814fa26b941bf7a219247f9bab6d",
+    "off": 105437,
+    "heights": {
+     "2": 103140,
+     "4": 2297
+    },
+    "table": "tables/bulk-end.json"
+   }
+  },
+  "height": {
+   "result": "stuck",
+   "steps": 11,
+   "twists": 11,
+   "start": {
+    "digest": "273eab69dee9e3a2f4a3997a75f6b8d9ad16814fa26b941bf7a219247f9bab6d",
+    "off": 105437,
+    "heights": {
+     "2": 103140,
+     "4": 2297
+    }
+   },
+   "end": {
+    "digest": "cc5ef7ecf0510ea9a74fc52bafe324d6d8f58294c4b0e20b40b97b414dada062",
+    "off": 109872,
+    "heights": {
+     "2": 108453,
+     "4": 1419
+    }
+   },
+   "sub": {
+    "r22d75": {
+     "result": "stuck",
+     "steps": 11,
+     "start": {
+      "digest": "273eab69dee9e3a2f4a3997a75f6b8d9ad16814fa26b941bf7a219247f9bab6d",
+      "off": 105437,
+      "heights": {
+       "2": 103140,
+       "4": 2297
+      }
+     },
+     "end": {
+      "digest": "cc5ef7ecf0510ea9a74fc52bafe324d6d8f58294c4b0e20b40b97b414dada062",
+      "off": 109872,
+      "heights": {
+       "2": 108453,
+       "4": 1419
+      }
+     },
+     "reason": "no_step",
+     "details": {
+      "steps": 0,
+      "digest": "cc5ef7ecf0510ea9a74fc52bafe324d6d8f58294c4b0e20b40b97b414dada062",
+      "n6_n4_n2": [
+       0,
+       1419,
+       108453
+      ]
+     },
+     "attempts": [
+      {
+       "script": "r22d75",
+       "tag": "00011-r22d75-r22d75",
+       "shard": null,
+       "outcome": "stuck",
+       "reason": "no_step",
+       "rc": 0,
+       "seconds": 55.474530933000096,
+       "stopped": false,
+       "timed_out": false
+      }
+     ]
+    },
+    "r22d81": {
+     "result": "not_applicable",
+     "steps": 0,
+     "start": {
+      "digest": "cc5ef7ecf0510ea9a74fc52bafe324d6d8f58294c4b0e20b40b97b414dada062",
+      "off": 109872,
+      "heights": {
+       "2": 108453,
+       "4": 1419
+      }
+     },
+     "end": {
+      "digest": "cc5ef7ecf0510ea9a74fc52bafe324d6d8f58294c4b0e20b40b97b414dada062",
+      "off": 109872,
+      "heights": {
+       "2": 108453,
+       "4": 1419
+      }
+     }
+    },
+    "h4": {
+     "result": "stuck",
+     "steps": 0,
+     "start": {
+      "digest": "cc5ef7ecf0510ea9a74fc52bafe324d6d8f58294c4b0e20b40b97b414dada062",
+      "off": 109872,
+      "heights": {
+       "2": 108453,
+       "4": 1419
+      }
+     },
+     "end": {
+      "digest": "cc5ef7ecf0510ea9a74fc52bafe324d6d8f58294c4b0e20b40b97b414dada062",
+      "off": 109872,
+      "heights": {
+       "2": 108453,
+       "4": 1419
+      }
+     },
+     "reason": "pair_exhausted",
+     "details": {},
+     "attempts": [
+      {
+       "script": "h4",
+       "tag": "00011-h4-h4",
+       "shard": null,
+       "outcome": "stuck",
+       "reason": "no_step",
+       "rc": 0,
+       "seconds": 67.60933103600019,
+       "stopped": false,
+       "timed_out": false
+      },
+      {
+       "script": "two_letter_u",
+       "tag": "00011-h4-two_letter_u-shard0",
+       "shard": 0,
+       "outcome": "done",
+       "reason": "done",
+       "rc": 0,
+       "seconds": 669.8322466009995,
+       "stopped": false,
+       "timed_out": false
+      },
+      {
+       "script": "two_letter_u",
+       "tag": "00011-h4-two_letter_u-shard1",
+       "shard": 1,
+       "outcome": "done",
+       "reason": "done",
+       "rc": 0,
+       "seconds": 668.4220444319999,
+       "stopped": false,
+       "timed_out": false
+      },
+      {
+       "script": "two_letter_u",
+       "tag": "00011-h4-two_letter_u-shard2",
+       "shard": 2,
+       "outcome": "done",
+       "reason": "done",
+       "rc": 0,
+       "seconds": 637.848950003,
+       "stopped": false,
+       "timed_out": false
+      }
+     ]
+    }
+   }
+  },
+  "high": {
+   "result": "stuck",
+   "steps": 0,
+   "twists": 0,
+   "start": {
+    "digest": "cc5ef7ecf0510ea9a74fc52bafe324d6d8f58294c4b0e20b40b97b414dada062",
+    "off": 109872,
+    "heights": {
+     "2": 108453,
+     "4": 1419
+    }
+   },
+   "end": {
+    "digest": "cc5ef7ecf0510ea9a74fc52bafe324d6d8f58294c4b0e20b40b97b414dada062",
+    "off": 109872,
+    "heights": {
+     "2": 108453,
+     "4": 1419
+    }
+   },
+   "reason": "kernel_exhausted",
+   "details": {
+    "kernel_result": "stuck",
+    "kernel_reason": null,
+    "ledger_status": {
+     "F1": "exhausted",
+     "F2": "exhausted",
+     "F3": "exhausted",
+     "d19": "exhausted",
+     "S": "exhausted",
+     "ST": "exhausted",
+     "T1": "exhausted"
+    },
+    "record_sha256": "6707df8314641f83da1d3d2006ed04e06b8e2dcf0dfaa87374d7a2ba04856679",
+    "dir": "attempts/00011-high/kernel",
+    "catalogue": "r22d25-cat/1"
+   },
+   "attempts": [
+    {
+     "rule": "r22d25",
+     "catalogue": "r22d25-cat/1",
+     "outcome": "stuck",
+     "reason": "kernel_exhausted",
+     "timed_out": false,
+     "seconds": 3136.874425940001,
+     "kernel_seconds": 3129.624747279,
+     "ledger_status": {
+      "F1": "exhausted",
+      "F2": "exhausted",
+      "F3": "exhausted",
+      "d19": "exhausted",
+      "S": "exhausted",
+      "ST": "exhausted",
+      "T1": "exhausted"
+     },
+     "stop_family": null
+    }
+   ]
+  },
+  "tail": {
+   "result": null,
+   "steps": 0
+  },
+  "lattice": {
+   "result": null,
+   "steps": 0,
+   "twists": null
+  }
+ },
+ "steps": [
+  {
+   "index": 0,
+   "phase": "height",
+   "subphase": "r22d75",
+   "rule": "r22d75/T1",
+   "word": "words/00000.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "73224a599b1441670b64f5606d4cbadec46ae758ca799ea89a6afcbc6b745cb9",
+   "tree": {
+    "file": "step-trees/00000.json.gz",
+    "sha256": "64c27c4451fb4f9b477a1522cc65ab76b7824ebaa41d0fbf1070f0b118c4336f",
+    "size": 1
+   },
+   "contract": "r22d75/T1",
+   "gate": "r22d75_from_snapshot",
+   "standing": "rule",
+   "before": {
+    "digest": "273eab69dee9e3a2f4a3997a75f6b8d9ad16814fa26b941bf7a219247f9bab6d",
+    "off": 105437,
+    "heights": {
+     "2": 103140,
+     "4": 2297
+    }
+   },
+   "after": {
+    "digest": "2e48ac8a43a2f1e8881a43f15c066a78ef89931c427b2693e486e9de3f0917be",
+    "off": 106061,
+    "heights": {
+     "2": 103776,
+     "4": 2285
+    }
+   },
+   "table": "tables/00000.json",
+   "attempts": [
+    {
+     "script": "r22d75",
+     "tag": "00000-r22d75-r22d75",
+     "shard": null,
+     "outcome": "step",
+     "reason": "step",
+     "rc": -9,
+     "seconds": 57.831259205000606,
+     "stopped": true,
+     "timed_out": false
+    }
+   ],
+   "seconds": 2.073859,
+   "tau_before": null,
+   "tau_after": null,
+   "u_before": null,
+   "u_after": null,
+   "rule_script": "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/r22d75_from_snapshot.py"
+  },
+  {
+   "index": 1,
+   "phase": "height",
+   "subphase": "r22d75",
+   "rule": "r22d75/T1",
+   "word": "words/00001.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "085ac9a917b634649fb01d94fd2c7e314580c25c87e5f10f20372190d0ab7ca9",
+   "tree": {
+    "file": "step-trees/00001.json.gz",
+    "sha256": "64c27c4451fb4f9b477a1522cc65ab76b7824ebaa41d0fbf1070f0b118c4336f",
+    "size": 1
+   },
+   "contract": "r22d75/T1",
+   "gate": "r22d75_from_snapshot",
+   "standing": "rule",
+   "before": {
+    "digest": "2e48ac8a43a2f1e8881a43f15c066a78ef89931c427b2693e486e9de3f0917be",
+    "off": 106061,
+    "heights": {
+     "2": 103776,
+     "4": 2285
+    }
+   },
+   "after": {
+    "digest": "b5a4000406f84f86ef150cdd6b3eac99e807fbdff4879f287ce47a58648b1202",
+    "off": 106187,
+    "heights": {
+     "2": 104001,
+     "4": 2186
+    }
+   },
+   "table": "tables/00001.json",
+   "attempts": [
+    {
+     "script": "r22d75",
+     "tag": "00001-r22d75-r22d75",
+     "shard": null,
+     "outcome": "step",
+     "reason": "step",
+     "rc": -9,
+     "seconds": 58.1377521710001,
+     "stopped": true,
+     "timed_out": false
+    }
+   ],
+   "seconds": 1.852544,
+   "tau_before": null,
+   "tau_after": null,
+   "u_before": null,
+   "u_after": null,
+   "rule_script": "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/r22d75_from_snapshot.py"
+  },
+  {
+   "index": 2,
+   "phase": "height",
+   "subphase": "r22d75",
+   "rule": "r22d75/T1",
+   "word": "words/00002.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "6209cd1fec82dc3db97d6bb8e225a6918f5b7b31553d5f2ef496dd9a51991fd3",
+   "tree": {
+    "file": "step-trees/00002.json.gz",
+    "sha256": "64c27c4451fb4f9b477a1522cc65ab76b7824ebaa41d0fbf1070f0b118c4336f",
+    "size": 1
+   },
+   "contract": "r22d75/T1",
+   "gate": "r22d75_from_snapshot",
+   "standing": "rule",
+   "before": {
+    "digest": "b5a4000406f84f86ef150cdd6b3eac99e807fbdff4879f287ce47a58648b1202",
+    "off": 106187,
+    "heights": {
+     "2": 104001,
+     "4": 2186
+    }
+   },
+   "after": {
+    "digest": "b55863d1a1d3b0aafe0c6306c35f7151c8398a04be8b93fbef82ee6b725b7734",
+    "off": 106839,
+    "heights": {
+     "2": 104709,
+     "4": 2130
+    }
+   },
+   "table": "tables/00002.json",
+   "attempts": [
+    {
+     "script": "r22d75",
+     "tag": "00002-r22d75-r22d75",
+     "shard": null,
+     "outcome": "step",
+     "reason": "step",
+     "rc": -9,
+     "seconds": 57.34206623800037,
+     "stopped": true,
+     "timed_out": false
+    }
+   ],
+   "seconds": 1.939556,
+   "tau_before": null,
+   "tau_after": null,
+   "u_before": null,
+   "u_after": null,
+   "rule_script": "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/r22d75_from_snapshot.py"
+  },
+  {
+   "index": 3,
+   "phase": "height",
+   "subphase": "r22d75",
+   "rule": "r22d75/T1",
+   "word": "words/00003.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "8c9a94f4cd7dc875eb3fea5afac5c2a89f9ce55e60ebd6014081d64b99e23279",
+   "tree": {
+    "file": "step-trees/00003.json.gz",
+    "sha256": "64c27c4451fb4f9b477a1522cc65ab76b7824ebaa41d0fbf1070f0b118c4336f",
+    "size": 1
+   },
+   "contract": "r22d75/T1",
+   "gate": "r22d75_from_snapshot",
+   "standing": "rule",
+   "before": {
+    "digest": "b55863d1a1d3b0aafe0c6306c35f7151c8398a04be8b93fbef82ee6b725b7734",
+    "off": 106839,
+    "heights": {
+     "2": 104709,
+     "4": 2130
+    }
+   },
+   "after": {
+    "digest": "ae2a01095cc8cdba218497d282698aac1c64e5162239914a2cd419f92018adc7",
+    "off": 107579,
+    "heights": {
+     "2": 105613,
+     "4": 1966
+    }
+   },
+   "table": "tables/00003.json",
+   "attempts": [
+    {
+     "script": "r22d75",
+     "tag": "00003-r22d75-r22d75",
+     "shard": null,
+     "outcome": "step",
+     "reason": "step",
+     "rc": -9,
+     "seconds": 56.34972694499993,
+     "stopped": true,
+     "timed_out": false
+    }
+   ],
+   "seconds": 2.136178,
+   "tau_before": null,
+   "tau_after": null,
+   "u_before": null,
+   "u_after": null,
+   "rule_script": "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/r22d75_from_snapshot.py"
+  },
+  {
+   "index": 4,
+   "phase": "height",
+   "subphase": "r22d75",
+   "rule": "r22d75/T1",
+   "word": "words/00004.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "ddac3c4d09a22217a21dcec47b32b1bce3e53d5af5489971b30d9312e660a214",
+   "tree": {
+    "file": "step-trees/00004.json.gz",
+    "sha256": "64c27c4451fb4f9b477a1522cc65ab76b7824ebaa41d0fbf1070f0b118c4336f",
+    "size": 1
+   },
+   "contract": "r22d75/T1",
+   "gate": "r22d75_from_snapshot",
+   "standing": "rule",
+   "before": {
+    "digest": "ae2a01095cc8cdba218497d282698aac1c64e5162239914a2cd419f92018adc7",
+    "off": 107579,
+    "heights": {
+     "2": 105613,
+     "4": 1966
+    }
+   },
+   "after": {
+    "digest": "b2b54ca184a2d2c5646700a8b08eb747d555b8735247d33569e28eb1b56dd305",
+    "off": 108181,
+    "heights": {
+     "2": 106326,
+     "4": 1855
+    }
+   },
+   "table": "tables/00004.json",
+   "attempts": [
+    {
+     "script": "r22d75",
+     "tag": "00004-r22d75-r22d75",
+     "shard": null,
+     "outcome": "step",
+     "reason": "step",
+     "rc": -9,
+     "seconds": 56.05003683599989,
+     "stopped": true,
+     "timed_out": false
+    }
+   ],
+   "seconds": 1.904912,
+   "tau_before": null,
+   "tau_after": null,
+   "u_before": null,
+   "u_after": null,
+   "rule_script": "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/r22d75_from_snapshot.py"
+  },
+  {
+   "index": 5,
+   "phase": "height",
+   "subphase": "r22d75",
+   "rule": "r22d75/T1",
+   "word": "words/00005.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "597cf87e5ebe21a4e94bebd61a7954a8ff9e76fb674de206649d70a47c7c25ff",
+   "tree": {
+    "file": "step-trees/00005.json.gz",
+    "sha256": "64c27c4451fb4f9b477a1522cc65ab76b7824ebaa41d0fbf1070f0b118c4336f",
+    "size": 1
+   },
+   "contract": "r22d75/T1",
+   "gate": "r22d75_from_snapshot",
+   "standing": "rule",
+   "before": {
+    "digest": "b2b54ca184a2d2c5646700a8b08eb747d555b8735247d33569e28eb1b56dd305",
+    "off": 108181,
+    "heights": {
+     "2": 106326,
+     "4": 1855
+    }
+   },
+   "after": {
+    "digest": "d8a9f6da77d3d38737f507c422d65f467bdba58b5abcfcb7296ed19708d8e8e4",
+    "off": 108607,
+    "heights": {
+     "2": 107004,
+     "4": 1603
+    }
+   },
+   "table": "tables/00005.json",
+   "attempts": [
+    {
+     "script": "r22d75",
+     "tag": "00005-r22d75-r22d75",
+     "shard": null,
+     "outcome": "step",
+     "reason": "step",
+     "rc": -9,
+     "seconds": 56.53575024100064,
+     "stopped": true,
+     "timed_out": false
+    }
+   ],
+   "seconds": 1.887513,
+   "tau_before": null,
+   "tau_after": null,
+   "u_before": null,
+   "u_after": null,
+   "rule_script": "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/r22d75_from_snapshot.py"
+  },
+  {
+   "index": 6,
+   "phase": "height",
+   "subphase": "r22d75",
+   "rule": "r22d75/T1",
+   "word": "words/00006.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "64da853600a728e134a797810d6441e2cb0ed817d9fb923f60e6d4fae4afeb8f",
+   "tree": {
+    "file": "step-trees/00006.json.gz",
+    "sha256": "64c27c4451fb4f9b477a1522cc65ab76b7824ebaa41d0fbf1070f0b118c4336f",
+    "size": 1
+   },
+   "contract": "r22d75/T1",
+   "gate": "r22d75_from_snapshot",
+   "standing": "rule",
+   "before": {
+    "digest": "d8a9f6da77d3d38737f507c422d65f467bdba58b5abcfcb7296ed19708d8e8e4",
+    "off": 108607,
+    "heights": {
+     "2": 107004,
+     "4": 1603
+    }
+   },
+   "after": {
+    "digest": "7c44c0d8a88f64e2af43dc5db28b625da90f31835a5837ce2c14c0bd575e9a12",
+    "off": 108669,
+    "heights": {
+     "2": 107080,
+     "4": 1589
+    }
+   },
+   "table": "tables/00006.json",
+   "attempts": [
+    {
+     "script": "r22d75",
+     "tag": "00006-r22d75-r22d75",
+     "shard": null,
+     "outcome": "step",
+     "reason": "step",
+     "rc": -9,
+     "seconds": 57.40223761699963,
+     "stopped": true,
+     "timed_out": false
+    }
+   ],
+   "seconds": 2.167891,
+   "tau_before": null,
+   "tau_after": null,
+   "u_before": null,
+   "u_after": null,
+   "rule_script": "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/r22d75_from_snapshot.py"
+  },
+  {
+   "index": 7,
+   "phase": "height",
+   "subphase": "r22d75",
+   "rule": "r22d75/T1",
+   "word": "words/00007.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "64da853600a728e134a797810d6441e2cb0ed817d9fb923f60e6d4fae4afeb8f",
+   "tree": {
+    "file": "step-trees/00007.json.gz",
+    "sha256": "64c27c4451fb4f9b477a1522cc65ab76b7824ebaa41d0fbf1070f0b118c4336f",
+    "size": 1
+   },
+   "contract": "r22d75/T1",
+   "gate": "r22d75_from_snapshot",
+   "standing": "rule",
+   "before": {
+    "digest": "7c44c0d8a88f64e2af43dc5db28b625da90f31835a5837ce2c14c0bd575e9a12",
+    "off": 108669,
+    "heights": {
+     "2": 107080,
+     "4": 1589
+    }
+   },
+   "after": {
+    "digest": "662d793ee659eaa698f4d84e2aa61575a8600a8882de4b21a57784f34bcc4cfc",
+    "off": 109267,
+    "heights": {
+     "2": 107815,
+     "4": 1452
+    }
+   },
+   "table": "tables/00007.json",
+   "attempts": [
+    {
+     "script": "r22d75",
+     "tag": "00007-r22d75-r22d75",
+     "shard": null,
+     "outcome": "step",
+     "reason": "step",
+     "rc": -9,
+     "seconds": 56.226574472999346,
+     "stopped": true,
+     "timed_out": false
+    }
+   ],
+   "seconds": 1.7518,
+   "tau_before": null,
+   "tau_after": null,
+   "u_before": null,
+   "u_after": null,
+   "rule_script": "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/r22d75_from_snapshot.py"
+  },
+  {
+   "index": 8,
+   "phase": "height",
+   "subphase": "r22d75",
+   "rule": "r22d75/T1",
+   "word": "words/00008.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "bdf9491509c22387f496349dc994bd8207597cb9f2fa500fca212be43a17e940",
+   "tree": {
+    "file": "step-trees/00008.json.gz",
+    "sha256": "64c27c4451fb4f9b477a1522cc65ab76b7824ebaa41d0fbf1070f0b118c4336f",
+    "size": 1
+   },
+   "contract": "r22d75/T1",
+   "gate": "r22d75_from_snapshot",
+   "standing": "rule",
+   "before": {
+    "digest": "662d793ee659eaa698f4d84e2aa61575a8600a8882de4b21a57784f34bcc4cfc",
+    "off": 109267,
+    "heights": {
+     "2": 107815,
+     "4": 1452
+    }
+   },
+   "after": {
+    "digest": "5c7f89ecd059d55b581c2364ba5c5ad4770ec78ea9573d023e2506a956ec232b",
+    "off": 110259,
+    "heights": {
+     "2": 108840,
+     "4": 1419
+    }
+   },
+   "table": "tables/00008.json",
+   "attempts": [
+    {
+     "script": "r22d75",
+     "tag": "00008-r22d75-r22d75",
+     "shard": null,
+     "outcome": "step",
+     "reason": "step",
+     "rc": -9,
+     "seconds": 54.90513424099936,
+     "stopped": true,
+     "timed_out": false
+    }
+   ],
+   "seconds": 1.932401,
+   "tau_before": null,
+   "tau_after": null,
+   "u_before": null,
+   "u_after": null,
+   "rule_script": "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/r22d75_from_snapshot.py"
+  },
+  {
+   "index": 9,
+   "phase": "height",
+   "subphase": "r22d75",
+   "rule": "r22d75/T2",
+   "word": "words/00009.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "b6b456b9cb71c9b980427ed8695abc16783629467a43c585c256c7b1f32d5162",
+   "tree": {
+    "file": "step-trees/00009.json.gz",
+    "sha256": "98138e9e5159fec532683647a68ee40ca2dbb19250deb09d7677bdc23ea245e1",
+    "size": 1
+   },
+   "contract": "r22d75/T2",
+   "gate": "r22d75_from_snapshot",
+   "standing": "rule",
+   "before": {
+    "digest": "5c7f89ecd059d55b581c2364ba5c5ad4770ec78ea9573d023e2506a956ec232b",
+    "off": 110259,
+    "heights": {
+     "2": 108840,
+     "4": 1419
+    }
+   },
+   "after": {
+    "digest": "491b45c8720083a97b7b8b53225ce17757208130a5866172de70a5a9a6328868",
+    "off": 109881,
+    "heights": {
+     "2": 108462,
+     "4": 1419
+    }
+   },
+   "table": "tables/00009.json",
+   "attempts": [
+    {
+     "script": "r22d75",
+     "tag": "00009-r22d75-r22d75",
+     "shard": null,
+     "outcome": "step",
+     "reason": "step",
+     "rc": -9,
+     "seconds": 56.55288715500046,
+     "stopped": true,
+     "timed_out": false
+    }
+   ],
+   "seconds": 1.899512,
+   "tau_before": null,
+   "tau_after": null,
+   "u_before": null,
+   "u_after": null,
+   "rule_script": "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/r22d75_from_snapshot.py"
+  },
+  {
+   "index": 10,
+   "phase": "height",
+   "subphase": "r22d75",
+   "rule": "r22d75/T2",
+   "word": "words/00010.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "75693fea3601b320b3562f31ad670a4d1bb871b3c2609a9e8772f97e472dd290",
+   "tree": {
+    "file": "step-trees/00010.json.gz",
+    "sha256": "98138e9e5159fec532683647a68ee40ca2dbb19250deb09d7677bdc23ea245e1",
+    "size": 1
+   },
+   "contract": "r22d75/T2",
+   "gate": "r22d75_from_snapshot",
+   "standing": "rule",
+   "before": {
+    "digest": "491b45c8720083a97b7b8b53225ce17757208130a5866172de70a5a9a6328868",
+    "off": 109881,
+    "heights": {
+     "2": 108462,
+     "4": 1419
+    }
+   },
+   "after": {
+    "digest": "cc5ef7ecf0510ea9a74fc52bafe324d6d8f58294c4b0e20b40b97b414dada062",
+    "off": 109872,
+    "heights": {
+     "2": 108453,
+     "4": 1419
+    }
+   },
+   "table": "tables/00010.json",
+   "attempts": [
+    {
+     "script": "r22d75",
+     "tag": "00010-r22d75-r22d75",
+     "shard": null,
+     "outcome": "step",
+     "reason": "step",
+     "rc": -9,
+     "seconds": 55.12021636500049,
+     "stopped": true,
+     "timed_out": false
+    }
+   ],
+   "seconds": 1.915167,
+   "tau_before": null,
+   "tau_after": null,
+   "u_before": null,
+   "u_after": null,
+   "rule_script": "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/r22d75_from_snapshot.py"
+  }
+ ],
+ "stuck": null,
+ "lattice": null,
+ "result": "error",
+ "error": "rule subprocess exceeded rule_seconds",
+ "acceptance": {
+  "verdict": "error",
+  "certificate_steps": 0,
+  "fallback_steps": 0,
+  "probe": null,
+  "timed_out_attempts": 0
+ },
+ "totals": {
+  "bulk_twists": 0,
+  "height_twists": 11,
+  "high_twists": 0,
+  "tail_twists": 0,
+  "fallback_twists": 0,
+  "lattice_twists": null,
+  "seconds": 8206.801844
+ }
+}

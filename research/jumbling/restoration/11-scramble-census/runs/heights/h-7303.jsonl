@@ -1,0 +1,12 @@
+{"k": 250, "seed": 7303, "off": 120339, "max_height": 2, "peak_at_checkpoints": 2, "heights": {"2": 120339}, "seconds": 172.1}
+{"k": 500, "seed": 7303, "off": 120259, "max_height": 6, "peak_at_checkpoints": 6, "heights": {"2": 119983, "4": 189, "6": 87}, "seconds": 429.1}
+{"k": 750, "seed": 7303, "off": 117098, "max_height": 6, "peak_at_checkpoints": 6, "heights": {"2": 116480, "4": 333, "6": 285}, "seconds": 916.0}
+{"k": 1000, "seed": 7303, "off": 116691, "max_height": 4, "peak_at_checkpoints": 6, "heights": {"2": 115985, "4": 706}, "seconds": 1517.1}
+{"k": 1250, "seed": 7303, "off": 118450, "max_height": 6, "peak_at_checkpoints": 6, "heights": {"2": 117670, "4": 495, "6": 285}, "seconds": 2152.6}
+{"k": 1500, "seed": 7303, "off": 117921, "max_height": 6, "peak_at_checkpoints": 6, "heights": {"2": 117090, "4": 544, "6": 287}, "seconds": 2695.6}
+{"k": 1750, "seed": 7303, "off": 116234, "max_height": 6, "peak_at_checkpoints": 6, "heights": {"2": 115091, "4": 943, "6": 200}, "seconds": 3393.3}
+{"k": 2000, "seed": 7303, "off": 116128, "max_height": 6, "peak_at_checkpoints": 6, "heights": {"2": 114898, "4": 1141, "6": 89}, "seconds": 4215.7}
+{"k": 2250, "seed": 7303, "off": 120374, "max_height": 6, "peak_at_checkpoints": 6, "heights": {"2": 118646, "4": 1528, "6": 200}, "seconds": 4751.4}
+{"k": 2500, "seed": 7303, "off": 117805, "max_height": 6, "peak_at_checkpoints": 6, "heights": {"2": 116307, "4": 1211, "6": 287}, "seconds": 5428.2}
+{"k": 2750, "seed": 7303, "off": 116436, "max_height": 6, "peak_at_checkpoints": 6, "heights": {"2": 114444, "4": 1792, "6": 200}, "seconds": 6300.4}
+{"k": 3000, "seed": 7303, "off": 116111, "max_height": 6, "peak_at_checkpoints": 6, "heights": {"2": 114470, "4": 1552, "6": 89}, "seconds": 6793.0}

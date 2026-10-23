@@ -1,0 +1,32 @@
+CASE (12, 12) CUTOFF 1800 EXIT 0
+SETUP {"y": 12, "h": 12, "cpu": 6.8}
+N0 {"N": 8, "cpu": 0.6}
+DESCENT {"y": 12, "h": 12, "outcome": "stuck", "steps": 0, "letters": 0, "lattice": false, "off": 1, "cpu": 207.4}
+CASE (136, 13) CUTOFF 900 EXIT 0
+SETUP {"y": 136, "h": 13, "cpu": 7.2}
+N0 {"N": 8, "cpu": 0.6}
+DESCENT {"y": 136, "h": 13, "outcome": "stuck", "steps": 0, "letters": 0, "lattice": false, "off": 1, "cpu": 306.0}
+CASE (446, 14) CUTOFF 900 EXIT 0
+SETUP {"y": 446, "h": 14, "cpu": 7.1}
+N0 {"N": 10, "cpu": 0.6}
+DESCENT {"y": 446, "h": 14, "outcome": "stuck", "steps": 0, "letters": 0, "lattice": false, "off": 1, "cpu": 740.6}
+CASE (2149, 41) CUTOFF 1800 EXIT 0
+SETUP {"y": 2149, "h": 41, "cpu": 7.1}
+N0 {"N": 8, "cpu": 0.6}
+DESCENT {"y": 2149, "h": 41, "outcome": "stuck", "steps": 0, "letters": 0, "lattice": false, "off": 1, "cpu": 654.1}
+CASE (3889, 12) CUTOFF 900 EXIT 0
+SETUP {"y": 3889, "h": 12, "cpu": 6.2}
+N0 {"N": 8, "cpu": 0.6}
+DESCENT {"y": 3889, "h": 12, "outcome": "stuck", "steps": 0, "letters": 0, "lattice": false, "off": 1, "cpu": 388.5}
+CASE (2548, 17) CUTOFF 900 EXIT 0
+SETUP {"y": 2548, "h": 17, "cpu": 7.2}
+N0 {"N": 12, "cpu": 0.5}
+DESCENT {"y": 2548, "h": 17, "outcome": "stuck", "steps": 0, "letters": 0, "lattice": false, "off": 1, "cpu": 628.1}
+CASE (1345, 13) CUTOFF 900 EXIT 0
+SETUP {"y": 1345, "h": 13, "cpu": 6.9}
+N0 {"N": 8, "cpu": 0.5}
+DESCENT {"y": 1345, "h": 13, "outcome": "stuck", "steps": 0, "letters": 0, "lattice": false, "off": 1, "cpu": 502.1}
+CASE (1437, 13) CUTOFF 900 EXIT 0
+SETUP {"y": 1437, "h": 13, "cpu": 6.3}
+N0 {"N": 8, "cpu": 0.5}
+DESCENT {"y": 1437, "h": 13, "outcome": "stuck", "steps": 0, "letters": 0, "lattice": false, "off": 1, "cpu": 600.8}

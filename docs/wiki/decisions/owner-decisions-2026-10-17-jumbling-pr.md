@@ -35,4 +35,7 @@ The owner gave this decision in a chat message in Chinese; this page records it 
 - Until #112 merges, its pages, including the [repair-list decision](owner-decisions-2026-10-17-repair-pairs.md) and
   the briefing's jumbling line, are on that branch only and not on `main`. Changed on 22 October 2026: the owner
   brought these pages to `main` ahead of #112, which stays a draft with the merge conditions above
-  ([owner-decisions-2026-10-22](owner-decisions-2026-10-22.md), Q1).
+  ([owner-decisions-2026-10-22](owner-decisions-2026-10-22.md), Q1). Changed again on 22 October 2026: the integrator
+  merges #112 itself once the tutorial and its acceptance are written; the A and B theory and the Archon verification
+  no longer hold it back ([owner-decisions-2026-10-22-figures-and-merge](owner-decisions-2026-10-22-figures-and-merge.md),
+  readings 2 and 3).

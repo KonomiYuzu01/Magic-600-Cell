@@ -1,0 +1,5 @@
+SETUP {"y": 12, "h": 12, "cpu": 6.3}
+FACES [8, 13, 35, 38] rotated_poles [-1, -1, -1, -1] blocked_hole_faces [8, 38]
+SURVEY {13: (1, 1, 1565), 35: (1, 1, 1565)}
+AUDIT level2 result None openings [((False, 1564), 96), ((True, 0), 22)] candidate_count 0 min_net_change None net_changes [] unchanged True cpu 12.67
+AUDIT shift result None openings [((False, 1564), 96), ((True, 0), 22)] candidate_count 139 min_net_change 0 net_changes [(0, 43), (1564, 96)] unchanged True cpu 178.3

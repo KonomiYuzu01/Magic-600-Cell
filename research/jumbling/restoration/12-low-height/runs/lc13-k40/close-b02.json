@@ -1,0 +1,68 @@
+{
+ "input_digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+ "V_source": "greedy",
+ "after_V": {
+  "occupied_badW": 0,
+  "off_set_unchanged": true,
+  "off_exact_poses_unchanged": true
+ },
+ "parts": [
+  {
+   "part": "V",
+   "twists": 18,
+   "input_digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+   "output_digest": "475edca1d2b0a9034207920770f37a3e2cfb0069822b9d2138ae7e293a671d34",
+   "off_end": 1193
+  },
+  {
+   "part": "P",
+   "twists": 0,
+   "input_digest": "475edca1d2b0a9034207920770f37a3e2cfb0069822b9d2138ae7e293a671d34",
+   "output_digest": "475edca1d2b0a9034207920770f37a3e2cfb0069822b9d2138ae7e293a671d34",
+   "off_end": 1193
+  },
+  {
+   "part": "Q",
+   "twists": 12,
+   "input_digest": "475edca1d2b0a9034207920770f37a3e2cfb0069822b9d2138ae7e293a671d34",
+   "output_digest": "dec34edf3c56aa96503aab4519c6155d134e09a062886744dca9353f43d0c4bc",
+   "off_end": 1082
+  },
+  {
+   "part": "Pinv",
+   "twists": 0,
+   "input_digest": "dec34edf3c56aa96503aab4519c6155d134e09a062886744dca9353f43d0c4bc",
+   "output_digest": "dec34edf3c56aa96503aab4519c6155d134e09a062886744dca9353f43d0c4bc",
+   "off_end": 1082
+  },
+  {
+   "part": "Vinv",
+   "twists": 18,
+   "input_digest": "dec34edf3c56aa96503aab4519c6155d134e09a062886744dca9353f43d0c4bc",
+   "output_digest": "32de0e4138339e67277838b084ad712338048053e7ee48053773567a016e5d70",
+   "off_end": 1082
+  }
+ ],
+ "end": {
+  "digest": "32de0e4138339e67277838b084ad712338048053e7ee48053773567a016e5d70",
+  "off": 1082,
+  "T_restored": 111,
+  "collateral": 0,
+  "protected_still_off": 1082,
+  "protected_exact_pose_changed": 0,
+  "free_on_K": 0,
+  "free_still_off": 0,
+  "free_pose_changed": 0,
+  "lattice_of_S_on_K_at_end": 175927,
+  "lattice_of_S": 175927,
+  "lattice_of_S_same_exact_pose": 175716
+ },
+ "length": 48,
+ "times": {
+  "ghost_premises": 10.7,
+  "menu_and_condition": 16.3,
+  "greedy": 503.9,
+  "replay": 1.1
+ },
+ "seconds": 596.0
+}

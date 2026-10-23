@@ -1,0 +1,1943 @@
+{
+  "format": "r22d19-run/1",
+  "rule": "R22D-19",
+  "input": {
+    "kind": "table",
+    "name": "16c4aefe-table.json",
+    "digest": "16c4aefe2f15a043693937cae1d320b8a820e2151a744cf9ad8df9d11e36d96b",
+    "off": 111232,
+    "heights": {
+      "2": 108641,
+      "4": 2591
+    }
+  },
+  "result": "stuck",
+  "units": [
+    {
+      "unit": 396,
+      "pieces": 81,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 404,
+      "pieces": 37,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 432,
+      "pieces": 44,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 750,
+      "pieces": 24,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 1058,
+      "pieces": 8,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 1060,
+      "pieces": 5,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 1160,
+      "pieces": 8,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 1176,
+      "pieces": 11,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 1186,
+      "pieces": 17,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 1441,
+      "pieces": 4,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 1442,
+      "pieces": 6,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 1932,
+      "pieces": 15,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 3500,
+      "pieces": 28,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 3540,
+      "pieces": 28,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 3546,
+      "pieces": 8,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 4001,
+      "pieces": 4,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 4002,
+      "pieces": 7,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 5452,
+      "pieces": 3,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 5527,
+      "pieces": 1,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 6697,
+      "pieces": 4,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 6721,
+      "pieces": 7,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 12140,
+      "pieces": 1,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 12155,
+      "pieces": 2,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 13065,
+      "pieces": 15,
+      "branch": 3,
+      "caps": [
+        208
+      ]
+    },
+    {
+      "unit": 13259,
+      "pieces": 11,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 13280,
+      "pieces": 3,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 13306,
+      "pieces": 1,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 13358,
+      "pieces": 44,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 13380,
+      "pieces": 67,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 14618,
+      "pieces": 7,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 16197,
+      "pieces": 2,
+      "branch": 3,
+      "caps": [
+        208
+      ]
+    },
+    {
+      "unit": 16463,
+      "pieces": 5,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 16480,
+      "pieces": 1,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 16484,
+      "pieces": 2,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 25877,
+      "pieces": 2,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 25880,
+      "pieces": 6,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 32322,
+      "pieces": 15,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 32335,
+      "pieces": 2,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 34076,
+      "pieces": 2,
+      "branch": 3,
+      "caps": [
+        208
+      ]
+    },
+    {
+      "unit": 37733,
+      "pieces": 144,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 37752,
+      "pieces": 54,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 40745,
+      "pieces": 4,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 40746,
+      "pieces": 4,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 42595,
+      "pieces": 1,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 42604,
+      "pieces": 49,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 44600,
+      "pieces": 2,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 44892,
+      "pieces": 7,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 51575,
+      "pieces": 6,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 51581,
+      "pieces": 19,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 51588,
+      "pieces": 14,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 51589,
+      "pieces": 82,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 51625,
+      "pieces": 24,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 52170,
+      "pieces": 98,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 56575,
+      "pieces": 29,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 60878,
+      "pieces": 6,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 64911,
+      "pieces": 3,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 64912,
+      "pieces": 15,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 66165,
+      "pieces": 1,
+      "branch": 3,
+      "caps": [
+        208
+      ]
+    },
+    {
+      "unit": 67998,
+      "pieces": 6,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 68672,
+      "pieces": 1,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 68673,
+      "pieces": 1,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 68776,
+      "pieces": 5,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 68777,
+      "pieces": 1,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 68792,
+      "pieces": 7,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 68793,
+      "pieces": 5,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 68794,
+      "pieces": 3,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 68795,
+      "pieces": 27,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 68796,
+      "pieces": 13,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 68808,
+      "pieces": 4,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 68892,
+      "pieces": 10,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 68893,
+      "pieces": 7,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 70181,
+      "pieces": 1,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 70192,
+      "pieces": 3,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 70194,
+      "pieces": 26,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 70824,
+      "pieces": 2,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 71101,
+      "pieces": 5,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 71125,
+      "pieces": 6,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 75549,
+      "pieces": 4,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 76784,
+      "pieces": 1,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 76809,
+      "pieces": 1,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 89265,
+      "pieces": 14,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 89295,
+      "pieces": 14,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 89301,
+      "pieces": 8,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 89303,
+      "pieces": 12,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 89348,
+      "pieces": 15,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 89361,
+      "pieces": 8,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 90301,
+      "pieces": 1,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 90304,
+      "pieces": 3,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 90316,
+      "pieces": 12,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 90321,
+      "pieces": 3,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 90322,
+      "pieces": 6,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 90327,
+      "pieces": 11,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 94309,
+      "pieces": 5,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 94326,
+      "pieces": 1,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 94327,
+      "pieces": 11,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 94356,
+      "pieces": 4,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 94361,
+      "pieces": 21,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 94613,
+      "pieces": 2,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 94624,
+      "pieces": 2,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 94632,
+      "pieces": 7,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 94639,
+      "pieces": 6,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 94640,
+      "pieces": 9,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 94641,
+      "pieces": 1,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 94741,
+      "pieces": 11,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 94751,
+      "pieces": 1,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 97766,
+      "pieces": 39,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 98634,
+      "pieces": 1,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 98716,
+      "pieces": 13,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 98718,
+      "pieces": 108,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 98749,
+      "pieces": 3,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 98773,
+      "pieces": 24,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 98829,
+      "pieces": 1,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 100302,
+      "pieces": 4,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 101072,
+      "pieces": 35,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 102252,
+      "pieces": 3,
+      "branch": 4,
+      "caps": []
+    },
+    {
+      "unit": 102534,
+      "pieces": 10,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 102547,
+      "pieces": 2,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 102975,
+      "pieces": 49,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 104021,
+      "pieces": 1,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 104022,
+      "pieces": 2,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 104024,
+      "pieces": 11,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 104025,
+      "pieces": 1,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 105301,
+      "pieces": 3,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 105302,
+      "pieces": 2,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 105325,
+      "pieces": 3,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 105594,
+      "pieces": 1,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 105595,
+      "pieces": 2,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 106000,
+      "pieces": 8,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 109815,
+      "pieces": 1,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 111140,
+      "pieces": 1,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 111146,
+      "pieces": 4,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 112291,
+      "pieces": 1,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 113070,
+      "pieces": 4,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 113071,
+      "pieces": 3,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 116247,
+      "pieces": 8,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 116248,
+      "pieces": 8,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 116254,
+      "pieces": 14,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 117924,
+      "pieces": 8,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 117932,
+      "pieces": 6,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 119046,
+      "pieces": 1,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 122885,
+      "pieces": 19,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 123904,
+      "pieces": 1,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 123999,
+      "pieces": 3,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 124001,
+      "pieces": 3,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 126684,
+      "pieces": 17,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 126972,
+      "pieces": 3,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 131433,
+      "pieces": 2,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 131434,
+      "pieces": 23,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 131440,
+      "pieces": 2,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 131444,
+      "pieces": 1,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 131446,
+      "pieces": 2,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 133173,
+      "pieces": 11,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 137143,
+      "pieces": 15,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 137144,
+      "pieces": 91,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 137150,
+      "pieces": 108,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 137329,
+      "pieces": 17,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 137361,
+      "pieces": 27,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 137730,
+      "pieces": 16,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 137747,
+      "pieces": 55,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 137755,
+      "pieces": 9,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 137760,
+      "pieces": 6,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 137774,
+      "pieces": 20,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 138283,
+      "pieces": 23,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 138287,
+      "pieces": 10,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 138305,
+      "pieces": 3,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 138322,
+      "pieces": 17,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 140610,
+      "pieces": 8,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 140640,
+      "pieces": 2,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 141654,
+      "pieces": 2,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 141655,
+      "pieces": 6,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 142105,
+      "pieces": 7,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 142154,
+      "pieces": 24,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 142894,
+      "pieces": 4,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 142895,
+      "pieces": 1,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 142898,
+      "pieces": 1,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 143383,
+      "pieces": 2,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 145690,
+      "pieces": 128,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 146017,
+      "pieces": 4,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 146041,
+      "pieces": 7,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 149138,
+      "pieces": 18,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 151157,
+      "pieces": 5,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 151455,
+      "pieces": 6,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 151746,
+      "pieces": 6,
+      "branch": 2,
+      "caps": []
+    },
+    {
+      "unit": 153908,
+      "pieces": 5,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 153919,
+      "pieces": 9,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 157487,
+      "pieces": 7,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 157503,
+      "pieces": 1,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 159850,
+      "pieces": 4,
+      "branch": 3,
+      "caps": [
+        208
+      ]
+    },
+    {
+      "unit": 163584,
+      "pieces": 1,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 163585,
+      "pieces": 5,
+      "branch": 0,
+      "caps": []
+    },
+    {
+      "unit": 166685,
+      "pieces": 10,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 167038,
+      "pieces": 1,
+      "branch": 1,
+      "caps": []
+    },
+    {
+      "unit": 170855,
+      "pieces": 1,
+      "branch": 0,
+      "caps": []
+    }
+  ],
+  "cases": [
+    {
+      "unit": 13065,
+      "cap": 208,
+      "item": 12,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 51.878034
+    },
+    {
+      "unit": 13065,
+      "cap": 208,
+      "item": 16,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 50.636881
+    },
+    {
+      "unit": 13065,
+      "cap": 208,
+      "item": 20,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 52.997522
+    },
+    {
+      "unit": 13065,
+      "cap": 208,
+      "item": 24,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 55.438164
+    },
+    {
+      "unit": 13065,
+      "cap": 208,
+      "item": 25,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 53.471502
+    },
+    {
+      "unit": 13065,
+      "cap": 208,
+      "item": 26,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 52.758783
+    },
+    {
+      "unit": 13065,
+      "cap": 208,
+      "item": 27,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 54.442699
+    },
+    {
+      "unit": 13065,
+      "cap": 208,
+      "item": 28,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 53.939309
+    },
+    {
+      "unit": 13065,
+      "cap": 208,
+      "item": 29,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 55.62213
+    },
+    {
+      "unit": 13065,
+      "cap": 208,
+      "item": 30,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 53.692844
+    },
+    {
+      "unit": 13065,
+      "cap": 208,
+      "item": 31,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 53.77267
+    },
+    {
+      "unit": 13065,
+      "cap": 208,
+      "item": 32,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 54.664155
+    },
+    {
+      "unit": 16197,
+      "cap": 208,
+      "item": 12,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.084916
+    },
+    {
+      "unit": 16197,
+      "cap": 208,
+      "item": 16,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.314849
+    },
+    {
+      "unit": 16197,
+      "cap": 208,
+      "item": 20,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.23616
+    },
+    {
+      "unit": 16197,
+      "cap": 208,
+      "item": 24,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.151377
+    },
+    {
+      "unit": 16197,
+      "cap": 208,
+      "item": 25,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.171113
+    },
+    {
+      "unit": 16197,
+      "cap": 208,
+      "item": 26,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.251842
+    },
+    {
+      "unit": 16197,
+      "cap": 208,
+      "item": 27,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.146429
+    },
+    {
+      "unit": 16197,
+      "cap": 208,
+      "item": 28,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.04703
+    },
+    {
+      "unit": 16197,
+      "cap": 208,
+      "item": 29,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.201721
+    },
+    {
+      "unit": 16197,
+      "cap": 208,
+      "item": 30,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.237541
+    },
+    {
+      "unit": 16197,
+      "cap": 208,
+      "item": 31,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.326283
+    },
+    {
+      "unit": 16197,
+      "cap": 208,
+      "item": 32,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.132717
+    },
+    {
+      "unit": 34076,
+      "cap": 208,
+      "item": 14,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 56.103683
+    },
+    {
+      "unit": 34076,
+      "cap": 208,
+      "item": 21,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 54.322943
+    },
+    {
+      "unit": 34076,
+      "cap": 208,
+      "item": 23,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 57.463698
+    },
+    {
+      "unit": 34076,
+      "cap": 208,
+      "item": 43,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 56.23624
+    },
+    {
+      "unit": 34076,
+      "cap": 208,
+      "item": 44,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 57.267668
+    },
+    {
+      "unit": 34076,
+      "cap": 208,
+      "item": 45,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 58.087593
+    },
+    {
+      "unit": 34076,
+      "cap": 208,
+      "item": 46,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 55.693038
+    },
+    {
+      "unit": 34076,
+      "cap": 208,
+      "item": 47,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 57.74591
+    },
+    {
+      "unit": 34076,
+      "cap": 208,
+      "item": 48,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 62.033629
+    },
+    {
+      "unit": 34076,
+      "cap": 208,
+      "item": 49,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 58.27203
+    },
+    {
+      "unit": 34076,
+      "cap": 208,
+      "item": 50,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 55.664214
+    },
+    {
+      "unit": 34076,
+      "cap": 208,
+      "item": 51,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 59.297538
+    },
+    {
+      "unit": 66165,
+      "cap": 208,
+      "item": 12,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.462408
+    },
+    {
+      "unit": 66165,
+      "cap": 208,
+      "item": 16,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.153769
+    },
+    {
+      "unit": 66165,
+      "cap": 208,
+      "item": 20,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.215459
+    },
+    {
+      "unit": 66165,
+      "cap": 208,
+      "item": 24,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.20173
+    },
+    {
+      "unit": 66165,
+      "cap": 208,
+      "item": 25,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.128587
+    },
+    {
+      "unit": 66165,
+      "cap": 208,
+      "item": 26,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.709287
+    },
+    {
+      "unit": 66165,
+      "cap": 208,
+      "item": 27,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.311041
+    },
+    {
+      "unit": 66165,
+      "cap": 208,
+      "item": 28,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.162578
+    },
+    {
+      "unit": 66165,
+      "cap": 208,
+      "item": 29,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.10867
+    },
+    {
+      "unit": 66165,
+      "cap": 208,
+      "item": 30,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.123227
+    },
+    {
+      "unit": 66165,
+      "cap": 208,
+      "item": 31,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.153369
+    },
+    {
+      "unit": 66165,
+      "cap": 208,
+      "item": 32,
+      "outcome": "no_free_grip",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.196114
+    },
+    {
+      "unit": 159850,
+      "cap": 208,
+      "item": 12,
+      "outcome": "split_cells",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.094779
+    },
+    {
+      "unit": 159850,
+      "cap": 208,
+      "item": 16,
+      "outcome": "split_cells",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.134853
+    },
+    {
+      "unit": 159850,
+      "cap": 208,
+      "item": 20,
+      "outcome": "split_cells",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.10623
+    },
+    {
+      "unit": 159850,
+      "cap": 208,
+      "item": 24,
+      "outcome": "split_cells",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.100342
+    },
+    {
+      "unit": 159850,
+      "cap": 208,
+      "item": 25,
+      "outcome": "split_cells",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.114115
+    },
+    {
+      "unit": 159850,
+      "cap": 208,
+      "item": 26,
+      "outcome": "split_cells",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.122769
+    },
+    {
+      "unit": 159850,
+      "cap": 208,
+      "item": 27,
+      "outcome": "split_cells",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.152309
+    },
+    {
+      "unit": 159850,
+      "cap": 208,
+      "item": 28,
+      "outcome": "split_cells",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.185531
+    },
+    {
+      "unit": 159850,
+      "cap": 208,
+      "item": 29,
+      "outcome": "split_cells",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.153061
+    },
+    {
+      "unit": 159850,
+      "cap": 208,
+      "item": 30,
+      "outcome": "split_cells",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.076177
+    },
+    {
+      "unit": 159850,
+      "cap": 208,
+      "item": 31,
+      "outcome": "split_cells",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.513215
+    },
+    {
+      "unit": 159850,
+      "cap": 208,
+      "item": 32,
+      "outcome": "split_cells",
+      "pairs": 0,
+      "commutators": 0,
+      "landing_powers": 0,
+      "vacated": 0,
+      "replays": 0,
+      "seconds": 1.12181
+    }
+  ],
+  "rejected": {
+    "split_cells": 12,
+    "not_original_off": 0,
+    "no_free_grip": 48,
+    "fixed_occupied": 0,
+    "no_landing_power": 0,
+    "no_vacator": 0,
+    "replay_failed": 0
+  },
+  "step": null,
+  "reached": null,
+  "seconds": 1414.238451,
+  "scripts": {
+    "research/jumbling/restoration/12-low-height/scripts/round22/r22d19_rule.py": "587bfc4bc241e78b00d4539a5ff238b00a2741900ffb44a02fb36b7499f044da",
+    "research/jumbling/restoration/12-low-height/scripts/screen.py": "55acf5d2aba9f1ec57acfb7420e4e897548ed033b5a0c65cd7f32aee2332e48b",
+    "research/jumbling/restoration/12-low-height/scripts/eb6.py": "f0b37865f1c8b237b27089af5d0eded3dc188988304c2d3ef6289ea62f4b469a",
+    "research/jumbling/restoration/12-low-height/scripts/cellpure5.py": "6eb1a497fa7fba9a3f7d4ccbc5e6581e9a1cf4d294fca855dd5863fe22017061",
+    "research/jumbling/restoration/12-low-height/scripts/round22/stepchk.py": "beb3f2dfa07868be973706bc2540de2f68d613ba6fb6e85cca0678d7477896a1",
+    "research/jumbling/theory/e3_class.py": "452d9a043ab01174bf62323e8f9a2b110d835dd87ac58922574b458fcfff9afd",
+    "research/jumbling/theory/buffer.py": "219509d954fe966f9ea9ad12b638736146672a030b13135e1e1cf2327c330076",
+    "research/jumbling/theory/restore.py": "2a7bfd448f24ecafd544aa54bae914dec817b801fb044dcee660c2ce46893861",
+    "research/jumbling/theory/trees.py": "8431eedfb778a68b04e5938f3bcfee92feac8e54e718471ea33d6ccedb55a642",
+    "research/jumbling/theory/classes.py": "88357545e2513f76b9809742b7d77e234167cb88dc8f433f9de85c95c42f77cd",
+    "research/jumbling/theory/rim.py": "a53626a88584dcea44646a4a4473a177a3697ed5ac26b061b639a4576debc750",
+    "research/jumbling/theory/seams.py": "e42dac099632ec063f63b3880cd4957cc49b1193b732e4fa2bf87eeb7882204b",
+    "research/jumbling/theory/orient.py": "922c51544e296ef27ddc187f28cf321a155ff1dec41629b13f9d70c670869eed",
+    "research/jumbling/exact.py": "763dc7803c82971d76520c53cfb2a492e230e901dcf9cfa6a8fbdf34308bc7a6",
+    "research/jumbling/sim/__init__.py": "ee479dbd6ef7d7cbc9ecdf9f9b316584b7e8efa8e2ce711cb698324c6e6d10e9",
+    "research/jumbling/sim/accept.py": "5ffb4858d2b65eab012199e74837ece1343296df87d8467fe62bb0b08890c847",
+    "research/jumbling/sim/kernel.py": "97076ffce3bdf9f10f69d221234750898fc43848a6fafc24a1c23d1b681e143c",
+    "research/jumbling/sim/kplus.py": "122b4b65e6508fb02be195759635b2c94d4ca86a30b240c069c00e7eb60e8a5d",
+    "research/jumbling/sim/model.py": "635b32f724d0d0ff822fe8cd52b62a853f922f7b581aed931bf626513cf5b4df",
+    "research/jumbling/sim/regions.py": "54ffdfff32310b88a03dbc1dbe335c2780312aa83b2e20026a3935fbdf68b709",
+    "research/jumbling/sim/state.py": "7b92119080a1a7bb3155a0d91a2ac83f20b7f3d4e2c07fb976c17ff447e44259",
+    "research/jumbling/sim/twists.py": "d55f00f366a26f05c584cbc7e5f9e4dac7bd6ae5ea6058d21b74f4e61b68e4cb"
+  }
+}

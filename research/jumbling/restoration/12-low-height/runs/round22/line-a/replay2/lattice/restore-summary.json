@@ -1,0 +1,281 @@
+{
+ "cascade_order": [
+  6,
+  0,
+  17,
+  15,
+  2,
+  22,
+  21,
+  8,
+  23,
+  9,
+  29,
+  25,
+  13,
+  11,
+  10,
+  34,
+  28,
+  26,
+  24,
+  16,
+  14,
+  12,
+  3,
+  33,
+  32,
+  31,
+  30,
+  27,
+  20,
+  19,
+  18,
+  7,
+  5,
+  4,
+  1
+ ],
+ "nu_w9": {
+  "8": [
+   1,
+   0
+  ],
+  "25": [
+   1,
+   0
+  ]
+ },
+ "library": {
+  "sha256": "8a13eb6c4f4359ce4dd58a0018cf86eed3089111e11f20b7c00476f6393a661a",
+  "macros": 36,
+  "rank2": 34,
+  "rank5": 2
+ },
+ "runs": [
+  {
+   "input": "table:<scratch>/z-b06-14.json",
+   "input_digest": "3f84154fe4181cd6ac24d0a19d9d0bfac49ea4722d8783ac4117a71ec7cb64ec",
+   "input_labels_sha256": "d2732919c5776749c2833b60bd8a6480a935d82c98cc5c6024ed143368bf7684",
+   "nu_input": {
+    "8": [
+     1,
+     1
+    ],
+    "10": [
+     1,
+     0
+    ],
+    "11": [
+     1,
+     1
+    ],
+    "15": [
+     1,
+     0
+    ],
+    "17": [
+     0,
+     3
+    ],
+    "18": [
+     1,
+     0
+    ],
+    "19": [
+     1,
+     0
+    ],
+    "22": [
+     1,
+     1
+    ],
+    "24": [
+     1,
+     0
+    ],
+    "26": [
+     1,
+     0
+    ],
+    "27": [
+     1,
+     0
+    ],
+    "28": [
+     1,
+     2
+    ],
+    "30": [
+     1,
+     0
+    ],
+    "31": [
+     1,
+     0
+    ],
+    "32": [
+     0,
+     1
+    ]
+   },
+   "moved_pieces_input": 60029,
+   "corrections": [
+    {
+     "macro": 0,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 1,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 2,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 3,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 4,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 7,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 8,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 10,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 14,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 15,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 18,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 20,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 24,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 25,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 26,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 27,
+     "times": 2,
+     "inverse": true
+    },
+    {
+     "macro": 28,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 30,
+     "times": 2,
+     "inverse": true
+    },
+    {
+     "macro": 33,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 34,
+     "times": 1,
+     "inverse": false
+    },
+    {
+     "macro": 35,
+     "times": 1,
+     "inverse": false
+    }
+   ],
+   "order": "retained-first",
+   "correction_twists": 18055,
+   "T_digest": "9dc062e248e09db18b27d619804d64903a6067cac23e7b5f240b65fa0f215944",
+   "T_seconds": 799.7,
+   "w9": true,
+   "C_seconds": 885.8,
+   "final_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "status": "restored",
+   "factors": 143641,
+   "factors_per_orbit": {
+    "6": 836,
+    "0": 500,
+    "17": 2075,
+    "15": 1957,
+    "2": 1461,
+    "22": 4848,
+    "21": 6221,
+    "8": 3327,
+    "23": 6699,
+    "9": 4618,
+    "29": 2245,
+    "25": 5108,
+    "13": 5665,
+    "11": 3895,
+    "10": 3130,
+    "34": 219,
+    "28": 2445,
+    "26": 6899,
+    "24": 6737,
+    "16": 5059,
+    "14": 3315,
+    "12": 4406,
+    "3": 2912,
+    "33": 2343,
+    "32": 5257,
+    "31": 6923,
+    "30": 6981,
+    "27": 6863,
+    "20": 6015,
+    "19": 6305,
+    "18": 6101,
+    "7": 3133,
+    "5": 3763,
+    "4": 3767,
+    "1": 1613
+   },
+   "retained_length": 162976586,
+   "new_nodes": 273122,
+   "seconds": 1706.5
+  }
+ ]
+}

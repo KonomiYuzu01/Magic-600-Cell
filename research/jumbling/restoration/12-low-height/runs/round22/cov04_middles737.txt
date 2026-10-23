@@ -1,0 +1,10 @@
+{"off": 762, "blocks": [63, 45, 86, 10, 111, 41, 101, 78, 25, 111, 5, 16, 60, 10], "straddling": 22, "status_3": 0, "sec": 10}
+{"safe_all_grips": 550, "letters": 6050, "off_lattice": 762, "sec": 32}
+{"orbits": 1296, "singletons": 1261, "sec": 33}
+MIDDLE {"unit": 5, "digest": "a4c50c4c7013214050c7816bf84173b06442e48079f2ca859f4adb4533ed9ea1", "U": 61, "Q": 86, "off": 762, "fixed": 48, "Q_only_fixed": 0, "minimal_blockers": [[["b03"], 17], [["b03", "b04", "b06"], 31]], "common_caps": [[17, ["b03", "b04", "b06"]]]}
+{"off": 798, "blocks": [63, 45, 61, 10, 111, 86, 41, 101, 78, 111, 5, 16, 60, 10], "straddling": 21, "status_3": 0, "sec": 41}
+{"safe_all_grips": 550, "letters": 6050, "off_lattice": 798, "sec": 63}
+{"orbits": 1293, "singletons": 1258, "sec": 63}
+MIDDLE {"unit": 15, "digest": "a5fb0b10de79ea644da70908579800429f1725aebea8ecf69351d659b848d23d", "U": 25, "Q": 86, "off": 798, "fixed": 17, "Q_only_fixed": 0, "minimal_blockers": [[["b07", "b12", "b13", "b14"], 17]], "common_caps": [[286, ["b07", "b12", "b13", "b14"]], [371, ["b07", "b12", "b13", "b14"]]]}
+B06 {"holes": 737, "inside": 10, "outside": 727, "deficits": {"6": 2, "9": 1}, "type6": [2, 2, 2], "type9": [1, 1, 1]}
+COMPLETED_CPU 55.8

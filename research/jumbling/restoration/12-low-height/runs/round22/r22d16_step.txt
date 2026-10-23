@@ -1,0 +1,17 @@
+{
+ "start_digest": "4ca440085d743d680163a35d735ff6a7c35796a57cba720ab4037a49887734db",
+ "end_digest": "dceb9359b1b549c32afa36c2f88f6cd2cb6ef75feacef1b675f5c99e6b20a17b",
+ "letters": 28,
+ "unit_size": 1,
+ "unit_on_lattice": 1,
+ "collateral": 0,
+ "others": 31478,
+ "others_exact": 31437,
+ "others_landed": 41,
+ "off_before": 31479,
+ "off_after": 31437,
+ "strict_prime": true,
+ "output_digest_matches": true
+}
+
+{"start_digest": "4ca440085d743d680163a35d735ff6a7c35796a57cba720ab4037a49887734db", "end_digest": "dceb9359b1b549c32afa36c2f88f6cd2cb6ef75feacef1b675f5c99e6b20a17b", "letters": 28, "unit_size": 1, "unit_on_lattice": 1, "collateral": 0, "others": 31478, "others_exact": 31437, "others_landed": 41, "off_before": 31479, "off_after": 31437, "strict_prime": true, "output_digest_matches": true}

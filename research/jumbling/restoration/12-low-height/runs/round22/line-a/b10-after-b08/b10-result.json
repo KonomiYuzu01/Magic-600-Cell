@@ -1,0 +1,69 @@
+{
+ "input_digest": "119651e7ef3b35cf054e70e528e0f51b3656c47cd893e80cd1752dae52137039",
+ "V_source": "certificate",
+ "after_V": {
+  "occupied_badW": 0,
+  "off_set_unchanged": true,
+  "off_exact_poses_unchanged": true
+ },
+ "parts": [
+  {
+   "part": "V",
+   "twists": 396,
+   "input_digest": "119651e7ef3b35cf054e70e528e0f51b3656c47cd893e80cd1752dae52137039",
+   "output_digest": "09228bad1c9d84d0dbdb8d8c47e1d2217599f72d79ebcb5e4fdf4f9bae9c40f1",
+   "off_end": 1160
+  },
+  {
+   "part": "P",
+   "twists": 0,
+   "input_digest": "09228bad1c9d84d0dbdb8d8c47e1d2217599f72d79ebcb5e4fdf4f9bae9c40f1",
+   "output_digest": "09228bad1c9d84d0dbdb8d8c47e1d2217599f72d79ebcb5e4fdf4f9bae9c40f1",
+   "off_end": 1160
+  },
+  {
+   "part": "Q",
+   "twists": 144,
+   "input_digest": "09228bad1c9d84d0dbdb8d8c47e1d2217599f72d79ebcb5e4fdf4f9bae9c40f1",
+   "output_digest": "b1d51d61aabf56e926d594214ac583fff7f6ad64ddc31b9866cc9d12f45cd2da",
+   "off_end": 1126
+  },
+  {
+   "part": "Pinv",
+   "twists": 0,
+   "input_digest": "b1d51d61aabf56e926d594214ac583fff7f6ad64ddc31b9866cc9d12f45cd2da",
+   "output_digest": "b1d51d61aabf56e926d594214ac583fff7f6ad64ddc31b9866cc9d12f45cd2da",
+   "off_end": 1126
+  },
+  {
+   "part": "Vinv",
+   "twists": 396,
+   "input_digest": "b1d51d61aabf56e926d594214ac583fff7f6ad64ddc31b9866cc9d12f45cd2da",
+   "output_digest": "411e0ce3029059b8370581741d94ee8e48673e54b89797677e6338a5283c6054",
+   "off_end": 1126
+  }
+ ],
+ "end": {
+  "digest": "411e0ce3029059b8370581741d94ee8e48673e54b89797677e6338a5283c6054",
+  "off": 1126,
+  "T_restored": 34,
+  "collateral": 0,
+  "protected_still_off": 1126,
+  "protected_exact_pose_changed": 0,
+  "free_on_K": 0,
+  "free_still_off": 0,
+  "free_pose_changed": 0,
+  "lattice_of_S_on_K_at_end": 175960,
+  "lattice_of_S": 175960,
+  "lattice_of_S_same_exact_pose": 175960
+ },
+ "length": 936,
+ "times": {
+  "ghost_premises": 16.8,
+  "menu_and_condition": 24.7,
+  "certificate": 196.2,
+  "prepare": 18.4,
+  "replay": 60.4
+ },
+ "seconds": 316.4
+}

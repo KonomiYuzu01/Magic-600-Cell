@@ -1,0 +1,25 @@
+CAP274_PRODUCTS {"22706": [13, 17, 19, 34, 35, 36, 37, 38, 39, 40, 41, 42], "28969": [13, 17, 19, 34, 35, 36, 37, 38, 39, 40, 41, 42]}
+ONE_REPAIR {"a": [64, 15], "collateral": 970, "common_caps": [64], "target_miss_caps": [], "intersection_witness": [[1257, [24, 29, 32, 64, 68, 70, 77, 94]], [1587, [64]]]}
+ONE_REPAIR {"a": [64, 18], "collateral": 970, "common_caps": [64], "target_miss_caps": [], "intersection_witness": [[1257, [29, 32, 64, 68, 77, 86, 94, 172]], [1587, [64]]]}
+ONE_REPAIR {"a": [64, 22], "collateral": 970, "common_caps": [64], "target_miss_caps": [], "intersection_witness": [[1257, [29, 64, 68, 70, 77, 94, 155, 172]], [1587, [64]]]}
+ONE_REPAIR {"a": [64, 33], "collateral": 970, "common_caps": [64], "target_miss_caps": [], "intersection_witness": [[1257, [2, 4, 5, 30, 31, 34, 36, 64]], [1587, [64]]]}
+ONE_REPAIR {"a": [64, 52], "collateral": 970, "common_caps": [64], "target_miss_caps": [], "intersection_witness": [[1257, [2, 4, 22, 31, 34, 36, 59, 64]], [1587, [64]]]}
+ONE_REPAIR {"a": [64, 53], "collateral": 970, "common_caps": [64], "target_miss_caps": [], "intersection_witness": [[1257, [64, 89, 96, 135, 145, 181, 191, 243]], [1587, [64]]]}
+ONE_REPAIR {"a": [64, 54], "collateral": 970, "common_caps": [64], "target_miss_caps": [], "intersection_witness": [[1257, [64, 90, 93, 101, 111, 134, 182, 230]], [1587, [64]]]}
+ONE_REPAIR {"a": [64, 55], "collateral": 970, "common_caps": [64], "target_miss_caps": [], "intersection_witness": [[1257, [64, 89, 96, 100, 125, 135, 145, 181]], [1587, [64]]]}
+ONE_REPAIR {"a": [64, 56], "collateral": 970, "common_caps": [64], "target_miss_caps": [], "intersection_witness": [[1257, [4, 30, 31, 34, 36, 59, 64, 73]], [1587, [64]]]}
+ONE_REPAIR {"a": [64, 57], "collateral": 970, "common_caps": [64], "target_miss_caps": [], "intersection_witness": [[1257, [64, 89, 96, 125, 135, 181, 231, 243]], [1587, [64]]]}
+ONE_REPAIR {"a": [64, 58], "collateral": 970, "common_caps": [64], "target_miss_caps": [], "intersection_witness": [[1257, [64, 90, 93, 101, 134, 146, 182, 199]], [1587, [64]]]}
+ONE_REPAIR {"a": [64, 59], "collateral": 970, "common_caps": [64], "target_miss_caps": [], "intersection_witness": [[1257, [64, 90, 101, 134, 182, 199, 230, 240]], [1587, [64]]]}
+ONE_REPAIR {"a": [70, 12], "collateral": 969, "common_caps": [70], "target_miss_caps": [], "intersection_witness": [[2833, [70, 77, 134, 155, 168, 172, 222, 230]], [6588, [70]]]}
+ONE_REPAIR {"a": [70, 16], "collateral": 969, "common_caps": [70], "target_miss_caps": [], "intersection_witness": [[2833, [2, 4, 19, 24, 29, 32, 68, 70]], [6588, [70]]]}
+ONE_REPAIR {"a": [70, 20], "collateral": 969, "common_caps": [70], "target_miss_caps": [], "intersection_witness": [[2833, [57, 70, 119, 120, 127, 138, 167, 174]], [6588, [70]]]}
+ONE_REPAIR {"a": [70, 24], "collateral": 969, "common_caps": [70], "target_miss_caps": [], "intersection_witness": [[2833, [2, 15, 19, 23, 24, 52, 57, 70]], [6588, [70]]]}
+ONE_REPAIR {"a": [70, 25], "collateral": 969, "common_caps": [70], "target_miss_caps": [], "intersection_witness": [[2833, [23, 24, 29, 32, 41, 57, 70, 127]], [6588, [70]]]}
+ONE_REPAIR {"a": [70, 26], "collateral": 969, "common_caps": [70], "target_miss_caps": [], "intersection_witness": [[2833, [70, 82, 93, 111, 134, 148, 203, 224]], [6588, [70]]]}
+ONE_REPAIR {"a": [70, 27], "collateral": 969, "common_caps": [70], "target_miss_caps": [], "intersection_witness": [[2833, [64, 68, 70, 77, 101, 111, 134, 230]], [6588, [70]]]}
+ONE_REPAIR {"a": [70, 28], "collateral": 969, "common_caps": [70], "target_miss_caps": [], "intersection_witness": [[2833, [52, 62, 70, 82, 131, 148, 174, 224]], [6588, [70]]]}
+ONE_REPAIR {"a": [70, 29], "collateral": 969, "common_caps": [70], "target_miss_caps": [], "intersection_witness": [[2833, [29, 64, 68, 70, 77, 94, 155, 172]], [6588, [70]]]}
+ONE_REPAIR {"a": [70, 30], "collateral": 969, "common_caps": [70], "target_miss_caps": [], "intersection_witness": [[2833, [70, 120, 148, 167, 168, 174, 262, 265]], [6588, [70]]]}
+ONE_REPAIR {"a": [70, 31], "collateral": 969, "common_caps": [70], "target_miss_caps": [], "intersection_witness": [[2833, [70, 120, 127, 138, 155, 168, 211, 262]], [6588, [70]]]}
+ONE_REPAIR {"a": [70, 32], "collateral": 969, "common_caps": [70], "target_miss_caps": [], "intersection_witness": [[2833, [19, 47, 52, 62, 70, 82, 93, 111]], [6588, [70]]]}

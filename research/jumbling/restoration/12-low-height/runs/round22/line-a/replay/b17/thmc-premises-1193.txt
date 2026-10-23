@@ -1,0 +1,5 @@
+STATE 7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818 off 1193 unit 17 class 2 cell [542, 593] unit_pieces 86 unit_all_off True
+CELL_OWN_CONTENT 86 equals_unit True
+GEOMETRY home_chambers 86 occupied_by_lattice 0 poles_free [False, True] pole_blockers [([3], False), ([], False)] common [495, 496, 552, 570, 590] free_common [495, 552, 570, 590]
+LANDING_ROTATIONS [26]
+THEOREM_C_PREMISES False

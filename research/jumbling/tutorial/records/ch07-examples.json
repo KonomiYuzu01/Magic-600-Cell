@@ -1,0 +1,2135 @@
+{
+ "format": "tutorial-ch07-examples/1",
+ "versions": {
+  "python": "3.13.16",
+  "numpy": "2.5.3"
+ },
+ "sources": {
+  "runner.py": "cd576897291482030aab89c709f7dcea136183b46c5c3a9509fdf4b3fe4f8ce4",
+  "runner_api.py": "b92e73d33345da33ee3e6e7974d9ab8db1d35193dc69371b0e13d55bade08459",
+  "check_run.py": "34fc0cba4ab92b315204d41775686c1dac7f6507205c7eaec540586ff09d5c54",
+  "check_contracts.py": "6479d47e3a9a28251257bc5e451e5f5acaf0d9ed95d109dc7ec41ee0d7c8b88a",
+  "check_lattice.py": "d7ea09a8d55e3256369de89f921b82b22e9db371e3de6847269a6d83ddfe42f3",
+  "acceptance-config.json": "3e042b0b510dbe326a4195460173339e84dc66f615265bb5bee350bd90bf7d34",
+  "d0-s7001/run/run.json": "c3baf34c43a7207ac4c94b15d9d851a367d586a965e30f1f69975a4465e19452",
+  "d0-s7001/check.jsonl": "ac3bd5a45e4e421c87b7bcb921339a2deb569612ef06e6fb48c7aec1114e4efb"
+ },
+ "status_before": {
+  "sha256": "b55b4e633ad169025ee5614fed4f87385a5eaf11ad267426a72578aababed4e6",
+  "lines": 113
+ },
+ "A_d0": {
+  "format": "runner-run/3",
+  "menu": "I_a",
+  "start": {
+   "kind": "scramble",
+   "k": 10,
+   "seed": 7001,
+   "digest": "1438ebed339490d2875e343063e7e79fd51b6a7621f2bf1a054beb5ef7c6d6b1",
+   "off": 26519,
+   "heights": {
+    "2": 26519
+   }
+  },
+  "config": {
+   "literal_only": true,
+   "mode": "acceptance",
+   "component": null,
+   "bulk_order": [
+    "seam",
+    "cover",
+    "close",
+    "conj",
+    "lock",
+    "improve",
+    "shift"
+   ],
+   "phase_order": [
+    "bulk",
+    "height",
+    "high",
+    "tail",
+    "lattice"
+   ],
+   "subphase_order": {
+    "height": [
+     "r22d75",
+     "r22d81",
+     "h4"
+    ]
+   },
+   "tail_rules": [
+    "zero_bad",
+    "pure",
+    "close",
+    "t1prime"
+   ],
+   "budgets": {
+    "bulk_steps": null,
+    "bulk_step_seconds": null,
+    "bulk_seconds": null,
+    "tail_steps": null,
+    "high_steps": null,
+    "rule_seconds": null,
+    "greedy_seconds": null,
+    "cert_seconds": null,
+    "height_seconds": null,
+    "height_cpu": null,
+    "kernel_seconds": null,
+    "pair_shards": 4,
+    "fallback_max_length": 1,
+    "par": 1
+   },
+   "clock_sentinel": 1000000000.0,
+   "kernel": {
+    "seconds": null,
+    "wall_margin": 600,
+    "d19": {
+     "file": "research/jumbling/restoration/12-low-height/scripts/round22/r22d19_rule.py",
+     "sha256": "587bfc4bc241e78b00d4539a5ff238b00a2741900ffb44a02fb36b7499f044da"
+    },
+    "max_steps": 1
+   },
+   "lattice": {
+    "restorer": "schedule11"
+   },
+   "literal_limit": 10000000,
+   "seeds": "atlas",
+   "acceptance_config": {
+    "file": "research/jumbling/restoration/13-tutorial-runner/acceptance-config.json",
+    "sha256": "3e042b0b510dbe326a4195460173339e84dc66f615265bb5bee350bd90bf7d34",
+    "options": {
+     "literal_limit": 10000000,
+     "seeds": "atlas",
+     "tail_rules": [
+      "zero_bad",
+      "pure",
+      "close",
+      "t1prime"
+     ],
+     "lattice_restorer": "schedule11",
+     "fallback_max_length": 1,
+     "par": 1,
+     "pair_shards": 4,
+     "bulk_steps": null,
+     "tail_steps": 0,
+     "high_steps": null,
+     "no_lattice": false
+    }
+   },
+   "source": {
+    "commit": "cd5e6e8c81c078f042fa4544cbf8f3c11d6b445e",
+    "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "dirty": false
+   }
+  },
+  "acceptance_config_file_sha256_now": "3e042b0b510dbe326a4195460173339e84dc66f615265bb5bee350bd90bf7d34",
+  "acceptance_config_matches_file": true,
+  "scripts": {
+   "recorded": 49,
+   "runner_list": 22,
+   "plugin_lists": {
+    "rules_height": 8,
+    "rules_kernel": 10,
+    "lattice_phase": 12
+   },
+   "merged": 49,
+   "added_by_plugins": 27,
+   "named_twice": [
+    "research/jumbling/restoration/09-general-method/scripts/lattice/scripts/restore_lattice_late.py",
+    "research/jumbling/restoration/12-low-height/scripts/eb6.py",
+    "research/jumbling/restoration/13-tutorial-runner/scripts/runner_api.py"
+   ],
+   "recorded_equals_merged": true,
+   "repository_relative": true,
+   "sha256_equal_to_checkout": true
+  },
+  "phases": {
+   "bulk": {
+    "result": "lattice",
+    "steps": 9,
+    "twists": 9,
+    "end": {
+     "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "off": 0,
+     "heights": {},
+     "table": "tables/bulk-end.json"
+    }
+   },
+   "height": {
+    "result": "not_applicable",
+    "steps": 0,
+    "twists": 0,
+    "start": {
+     "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "off": 0,
+     "heights": {}
+    },
+    "end": {
+     "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "off": 0,
+     "heights": {}
+    },
+    "sub": {
+     "r22d75": {
+      "result": "not_applicable",
+      "steps": 0,
+      "start": {
+       "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "off": 0,
+       "heights": {}
+      },
+      "end": {
+       "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "off": 0,
+       "heights": {}
+      }
+     },
+     "r22d81": {
+      "result": "not_applicable",
+      "steps": 0,
+      "start": {
+       "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "off": 0,
+       "heights": {}
+      },
+      "end": {
+       "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "off": 0,
+       "heights": {}
+      }
+     },
+     "h4": {
+      "result": "not_applicable",
+      "steps": 0,
+      "start": {
+       "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "off": 0,
+       "heights": {}
+      },
+      "end": {
+       "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "off": 0,
+       "heights": {}
+      }
+     }
+    }
+   },
+   "high": {
+    "result": "not_applicable",
+    "steps": 0,
+    "twists": 0,
+    "start": {
+     "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "off": 0,
+     "heights": {}
+    },
+    "end": {
+     "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "off": 0,
+     "heights": {}
+    }
+   },
+   "tail": {
+    "result": "not_applicable",
+    "steps": 0
+   },
+   "lattice": {
+    "result": null,
+    "steps": 0,
+    "twists": null
+   }
+  },
+  "stuck": null,
+  "lattice": null,
+  "result": "solved",
+  "error": null,
+  "acceptance": {
+   "verdict": "solved",
+   "certificate_steps": 0,
+   "fallback_steps": 0,
+   "probe": null,
+   "timed_out_attempts": 0
+  },
+  "totals": {
+   "bulk_twists": 9,
+   "height_twists": 0,
+   "high_twists": 0,
+   "tail_twists": 0,
+   "fallback_twists": 0,
+   "lattice_twists": null,
+   "seconds": 41.922841
+  },
+  "runner_out": {
+   "result": "solved",
+   "steps": 9,
+   "totals": {
+    "bulk_twists": 9,
+    "height_twists": 0,
+    "high_twists": 0,
+    "tail_twists": 0,
+    "fallback_twists": 0,
+    "lattice_twists": null,
+    "seconds": 41.922841
+   }
+  },
+  "steps": [
+   {
+    "index": 0,
+    "phase": "bulk",
+    "subphase": null,
+    "rule": "seam",
+    "letters": 1,
+    "word": [
+     [
+      72,
+      18
+     ]
+    ],
+    "word_sha256": "29f68591e0449ffcaa85682de50e992a4f2d8a8439335e3835a21c54ca9e6e9e",
+    "word_sha256_recomputed": "29f68591e0449ffcaa85682de50e992a4f2d8a8439335e3835a21c54ca9e6e9e",
+    "word_input_digest_is_before": true,
+    "word_output_digest_is_after": true,
+    "tree": {
+     "file": "step-trees/00000.json.gz",
+     "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+     "size": 1
+    },
+    "tree_mtime_zero": true,
+    "tree_sha256_recomputed": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "tree_root": {
+     "name": "seam",
+     "letters": 1,
+     "span": [
+      0,
+      1
+     ]
+    },
+    "before": {
+     "digest": "1438ebed339490d2875e343063e7e79fd51b6a7621f2bf1a054beb5ef7c6d6b1",
+     "off": 26519,
+     "N": 13270
+    },
+    "after": {
+     "digest": "ab254e2af1775b8161092aed06d35252e81e63fa427fd75dc2d7f9aeb5b1c7f9",
+     "off": 23422,
+     "N": 11704
+    }
+   },
+   {
+    "index": 1,
+    "phase": "bulk",
+    "subphase": null,
+    "rule": "seam",
+    "letters": 1,
+    "word": [
+     [
+      380,
+      38
+     ]
+    ],
+    "word_sha256": "c630aa18679172278bc9b69b5d8bc1d3108b95756ceb1c7d78fa4815bb11b2ce",
+    "word_sha256_recomputed": "c630aa18679172278bc9b69b5d8bc1d3108b95756ceb1c7d78fa4815bb11b2ce",
+    "word_input_digest_is_before": true,
+    "word_output_digest_is_after": true,
+    "tree": {
+     "file": "step-trees/00001.json.gz",
+     "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+     "size": 1
+    },
+    "tree_mtime_zero": true,
+    "tree_sha256_recomputed": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "tree_root": {
+     "name": "seam",
+     "letters": 1,
+     "span": [
+      0,
+      1
+     ]
+    },
+    "before": {
+     "digest": "ab254e2af1775b8161092aed06d35252e81e63fa427fd75dc2d7f9aeb5b1c7f9",
+     "off": 23422,
+     "N": 11704
+    },
+    "after": {
+     "digest": "908f050bc7e43e0273e99a509b0d19f41fe49619094834b0067290775239ed22",
+     "off": 20325,
+     "N": 10138
+    }
+   },
+   {
+    "index": 2,
+    "phase": "bulk",
+    "subphase": null,
+    "rule": "seam",
+    "letters": 1,
+    "word": [
+     [
+      519,
+      26
+     ]
+    ],
+    "word_sha256": "f8462c3737441f983cd87502604db124894dd02e86dc990a22971fe1e3729f4d",
+    "word_sha256_recomputed": "f8462c3737441f983cd87502604db124894dd02e86dc990a22971fe1e3729f4d",
+    "word_input_digest_is_before": true,
+    "word_output_digest_is_after": true,
+    "tree": {
+     "file": "step-trees/00002.json.gz",
+     "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+     "size": 1
+    },
+    "tree_mtime_zero": true,
+    "tree_sha256_recomputed": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "tree_root": {
+     "name": "seam",
+     "letters": 1,
+     "span": [
+      0,
+      1
+     ]
+    },
+    "before": {
+     "digest": "908f050bc7e43e0273e99a509b0d19f41fe49619094834b0067290775239ed22",
+     "off": 20325,
+     "N": 10138
+    },
+    "after": {
+     "digest": "5b8a06998e9bb6624595bc8b7933bdec462cff8c73b4337bf73a24dfa4df7d36",
+     "off": 17228,
+     "N": 8572
+    }
+   },
+   {
+    "index": 3,
+    "phase": "bulk",
+    "subphase": null,
+    "rule": "seam",
+    "letters": 1,
+    "word": [
+     [
+      11,
+      18
+     ]
+    ],
+    "word_sha256": "35cde19e6568e519597d3f2e062cc60c4cb5132cf924928ed954ff3acabc7a53",
+    "word_sha256_recomputed": "35cde19e6568e519597d3f2e062cc60c4cb5132cf924928ed954ff3acabc7a53",
+    "word_input_digest_is_before": true,
+    "word_output_digest_is_after": true,
+    "tree": {
+     "file": "step-trees/00003.json.gz",
+     "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+     "size": 1
+    },
+    "tree_mtime_zero": true,
+    "tree_sha256_recomputed": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "tree_root": {
+     "name": "seam",
+     "letters": 1,
+     "span": [
+      0,
+      1
+     ]
+    },
+    "before": {
+     "digest": "5b8a06998e9bb6624595bc8b7933bdec462cff8c73b4337bf73a24dfa4df7d36",
+     "off": 17228,
+     "N": 8572
+    },
+    "after": {
+     "digest": "48256dda6acffd017fbe7b560b85d1a70653b3890a6d172d7b769d1eec809af9",
+     "off": 14466,
+     "N": 7212
+    }
+   },
+   {
+    "index": 4,
+    "phase": "bulk",
+    "subphase": null,
+    "rule": "seam",
+    "letters": 1,
+    "word": [
+     [
+      279,
+      12
+     ]
+    ],
+    "word_sha256": "c5edc47302dc0a2ca72a02c41c6fdd6598b44b63598fded9004403c66dfcbc95",
+    "word_sha256_recomputed": "c5edc47302dc0a2ca72a02c41c6fdd6598b44b63598fded9004403c66dfcbc95",
+    "word_input_digest_is_before": true,
+    "word_output_digest_is_after": true,
+    "tree": {
+     "file": "step-trees/00004.json.gz",
+     "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+     "size": 1
+    },
+    "tree_mtime_zero": true,
+    "tree_sha256_recomputed": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "tree_root": {
+     "name": "seam",
+     "letters": 1,
+     "span": [
+      0,
+      1
+     ]
+    },
+    "before": {
+     "digest": "48256dda6acffd017fbe7b560b85d1a70653b3890a6d172d7b769d1eec809af9",
+     "off": 14466,
+     "N": 7212
+    },
+    "after": {
+     "digest": "7266d536a60125ae21c0a62320235b9f13da256b784d792b2fa0e092bf253549",
+     "off": 11764,
+     "N": 5852
+    }
+   },
+   {
+    "index": 5,
+    "phase": "bulk",
+    "subphase": null,
+    "rule": "seam",
+    "letters": 1,
+    "word": [
+     [
+      120,
+      24
+     ]
+    ],
+    "word_sha256": "4d19e070449654386c3bb174088a41457aaf34c6181575b8098cdd0cc6dfa6f0",
+    "word_sha256_recomputed": "4d19e070449654386c3bb174088a41457aaf34c6181575b8098cdd0cc6dfa6f0",
+    "word_input_digest_is_before": true,
+    "word_output_digest_is_after": true,
+    "tree": {
+     "file": "step-trees/00005.json.gz",
+     "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+     "size": 1
+    },
+    "tree_mtime_zero": true,
+    "tree_sha256_recomputed": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "tree_root": {
+     "name": "seam",
+     "letters": 1,
+     "span": [
+      0,
+      1
+     ]
+    },
+    "before": {
+     "digest": "7266d536a60125ae21c0a62320235b9f13da256b784d792b2fa0e092bf253549",
+     "off": 11764,
+     "N": 5852
+    },
+    "after": {
+     "digest": "e024fd075eeb5b64deb9a4f4cf5096f81d41aaa2d8785e39ae76ca1d334cb172",
+     "off": 8667,
+     "N": 4286
+    }
+   },
+   {
+    "index": 6,
+    "phase": "bulk",
+    "subphase": null,
+    "rule": "seam",
+    "letters": 1,
+    "word": [
+     [
+      310,
+      57
+     ]
+    ],
+    "word_sha256": "b4b1eb3c272ebd3f12a3aaf3b6831c0436cb81f98e62d2d7fdd9d00ee18f5797",
+    "word_sha256_recomputed": "b4b1eb3c272ebd3f12a3aaf3b6831c0436cb81f98e62d2d7fdd9d00ee18f5797",
+    "word_input_digest_is_before": true,
+    "word_output_digest_is_after": true,
+    "tree": {
+     "file": "step-trees/00006.json.gz",
+     "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+     "size": 1
+    },
+    "tree_mtime_zero": true,
+    "tree_sha256_recomputed": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "tree_root": {
+     "name": "seam",
+     "letters": 1,
+     "span": [
+      0,
+      1
+     ]
+    },
+    "before": {
+     "digest": "e024fd075eeb5b64deb9a4f4cf5096f81d41aaa2d8785e39ae76ca1d334cb172",
+     "off": 8667,
+     "N": 4286
+    },
+    "after": {
+     "digest": "6dd3be75ac435c0ceeab5fc3952c69e67176724ce55e2ea53ff255364bfdbede",
+     "off": 5859,
+     "N": 2926
+    }
+   },
+   {
+    "index": 7,
+    "phase": "bulk",
+    "subphase": null,
+    "rule": "seam",
+    "letters": 1,
+    "word": [
+     [
+      151,
+      35
+     ]
+    ],
+    "word_sha256": "9ad77f54b141dd71b744d95749632ac4880ce0cda75887f6c750c6e2b6e95b0b",
+    "word_sha256_recomputed": "9ad77f54b141dd71b744d95749632ac4880ce0cda75887f6c750c6e2b6e95b0b",
+    "word_input_digest_is_before": true,
+    "word_output_digest_is_after": true,
+    "tree": {
+     "file": "step-trees/00007.json.gz",
+     "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+     "size": 1
+    },
+    "tree_mtime_zero": true,
+    "tree_sha256_recomputed": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "tree_root": {
+     "name": "seam",
+     "letters": 1,
+     "span": [
+      0,
+      1
+     ]
+    },
+    "before": {
+     "digest": "6dd3be75ac435c0ceeab5fc3952c69e67176724ce55e2ea53ff255364bfdbede",
+     "off": 5859,
+     "N": 2926
+    },
+    "after": {
+     "digest": "3420321c8ad49126036742faab368caa2203e83c64c8a0dddae0edd67fc96f46",
+     "off": 3097,
+     "N": 1566
+    }
+   },
+   {
+    "index": 8,
+    "phase": "bulk",
+    "subphase": null,
+    "rule": "seam",
+    "letters": 1,
+    "word": [
+     [
+      194,
+      58
+     ]
+    ],
+    "word_sha256": "e6725ab350a7dafb9282a2e0a507b2ff22fac9cbea53a5eef6b455d91ac3f84c",
+    "word_sha256_recomputed": "e6725ab350a7dafb9282a2e0a507b2ff22fac9cbea53a5eef6b455d91ac3f84c",
+    "word_input_digest_is_before": true,
+    "word_output_digest_is_after": true,
+    "tree": {
+     "file": "step-trees/00008.json.gz",
+     "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+     "size": 1
+    },
+    "tree_mtime_zero": true,
+    "tree_sha256_recomputed": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "tree_root": {
+     "name": "seam",
+     "letters": 1,
+     "span": [
+      0,
+      1
+     ]
+    },
+    "before": {
+     "digest": "3420321c8ad49126036742faab368caa2203e83c64c8a0dddae0edd67fc96f46",
+     "off": 3097,
+     "N": 1566
+    },
+    "after": {
+     "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "off": 0,
+     "N": 0
+    }
+   }
+  ],
+  "step0_tree_bytes_are_compact_json_and_newline": true,
+  "step0_word_sha256_of_string": "29f68591e0449ffcaa85682de50e992a4f2d8a8439335e3835a21c54ca9e6e9e",
+  "format1_record": {
+   "format": "runner-run/1",
+   "bulk_order": [
+    "seam",
+    "cover",
+    "close",
+    "conj",
+    "lock",
+    "improve",
+    "shift",
+    "reopen"
+   ],
+   "same_rules_words_and_digests": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "steps": 9
+  },
+  "check": {
+   "rc": 0,
+   "seconds": 9.2,
+   "steps": [
+    {
+     "index": 0,
+     "rule": "seam",
+     "pass": true,
+     "fails": [],
+     "unchecked": false
+    },
+    {
+     "index": 1,
+     "rule": "seam",
+     "pass": true,
+     "fails": [],
+     "unchecked": false
+    },
+    {
+     "index": 2,
+     "rule": "seam",
+     "pass": true,
+     "fails": [],
+     "unchecked": false
+    },
+    {
+     "index": 3,
+     "rule": "seam",
+     "pass": true,
+     "fails": [],
+     "unchecked": false
+    },
+    {
+     "index": 4,
+     "rule": "seam",
+     "pass": true,
+     "fails": [],
+     "unchecked": false
+    },
+    {
+     "index": 5,
+     "rule": "seam",
+     "pass": true,
+     "fails": [],
+     "unchecked": false
+    },
+    {
+     "index": 6,
+     "rule": "seam",
+     "pass": true,
+     "fails": [],
+     "unchecked": false
+    },
+    {
+     "index": 7,
+     "rule": "seam",
+     "pass": true,
+     "fails": [],
+     "unchecked": false
+    },
+    {
+     "index": 8,
+     "rule": "seam",
+     "pass": true,
+     "fails": [],
+     "unchecked": false
+    }
+   ],
+   "final": {
+    "bulk_twists": 9,
+    "end_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "fails": [],
+    "fallback_twists": 0,
+    "height_twists": 0,
+    "high_twists": 0,
+    "lattice_checked": false,
+    "lattice_twists": null,
+    "pass": true,
+    "result": "solved",
+    "steps": 9,
+    "tail_twists": 0,
+    "unchecked_contracts": 0,
+    "verdict": "solved"
+   }
+  },
+  "check_rows_equal_committed": true
+ },
+ "B_tampered": {
+  "a": {
+   "rc": 1,
+   "seconds": 6.4,
+   "steps": [
+    {
+     "index": 0,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "record"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 1,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "record"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 2,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "record"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 3,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "word_sha256"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 4,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "record"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 5,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "record"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 6,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "record"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 7,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "record"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 8,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "record"
+     ],
+     "unchecked": false
+    }
+   ],
+   "final": {
+    "bulk_twists": 0,
+    "end_digest": null,
+    "fails": [
+     "word_sha256"
+    ],
+    "fallback_twists": 0,
+    "height_twists": 0,
+    "high_twists": 0,
+    "lattice_checked": false,
+    "lattice_twists": null,
+    "pass": false,
+    "result": "solved",
+    "steps": 9,
+    "tail_twists": 0,
+    "unchecked_contracts": 0,
+    "verdict": null
+   },
+   "change": {
+    "step": 3,
+    "letter_before": [
+     11,
+     18
+    ],
+    "letter_after": [
+     11,
+     19
+    ],
+    "row_sha256_updated": false
+   }
+  },
+  "b": {
+   "rc": 1,
+   "seconds": 7.3,
+   "steps": [
+    {
+     "index": 0,
+     "rule": "seam",
+     "pass": true,
+     "fails": [],
+     "unchecked": false
+    },
+    {
+     "index": 1,
+     "rule": "seam",
+     "pass": true,
+     "fails": [],
+     "unchecked": false
+    },
+    {
+     "index": 2,
+     "rule": "seam",
+     "pass": true,
+     "fails": [],
+     "unchecked": false
+    },
+    {
+     "index": 3,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "after_digest",
+      "after_off",
+      "after_N",
+      "output_digest",
+      "N_decrease"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 4,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "before_digest",
+      "before_off",
+      "before_N",
+      "input_digest",
+      "after_digest",
+      "after_off",
+      "after_N",
+      "output_digest"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 5,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "before_digest",
+      "before_off",
+      "before_N",
+      "input_digest",
+      "after_digest",
+      "after_off",
+      "after_N",
+      "output_digest"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 6,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "before_digest",
+      "before_off",
+      "before_N",
+      "input_digest",
+      "after_digest",
+      "after_off",
+      "after_N",
+      "output_digest"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 7,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "before_digest",
+      "before_off",
+      "before_N",
+      "input_digest",
+      "after_digest",
+      "after_off",
+      "after_N",
+      "output_digest"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 8,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "before_digest",
+      "before_off",
+      "before_N",
+      "input_digest",
+      "after_digest",
+      "after_off",
+      "after_N",
+      "output_digest"
+     ],
+     "unchecked": false
+    }
+   ],
+   "final": {
+    "bulk_twists": 9,
+    "end_digest": "16c4a6fa1eb9490a075ab2f50122b339945cb5ed774dc11b4273ef935c8efcba",
+    "fails": [
+     "after_digest",
+     "after_off",
+     "after_N",
+     "output_digest",
+     "N_decrease",
+     "before_digest",
+     "before_off",
+     "before_N",
+     "input_digest",
+     "bulk_end_digest",
+     "bulk_end_off",
+     "bulk_end_heights",
+     "bulk_table_digest",
+     "phase_result",
+     "r22d75_start_digest",
+     "r22d75_start_off",
+     "r22d75_start_heights",
+     "r22d75_end_digest",
+     "r22d75_end_off",
+     "r22d75_end_heights",
+     "r22d81_start_digest",
+     "r22d81_start_off",
+     "r22d81_start_heights",
+     "r22d81_end_digest",
+     "r22d81_end_off",
+     "r22d81_end_heights",
+     "h4_start_digest",
+     "h4_start_off",
+     "h4_start_heights",
+     "h4_end_digest",
+     "h4_end_off",
+     "h4_end_heights",
+     "high_start_digest",
+     "high_start_off",
+     "high_start_heights",
+     "high_end_digest",
+     "high_end_off",
+     "high_end_heights",
+     "height_start_digest",
+     "height_start_off",
+     "height_start_heights",
+     "height_end_digest",
+     "height_end_off",
+     "height_end_heights",
+     "entry_test",
+     "solved_digest"
+    ],
+    "fallback_twists": 0,
+    "height_twists": 0,
+    "high_twists": 0,
+    "lattice_checked": false,
+    "lattice_twists": null,
+    "pass": false,
+    "result": "solved",
+    "steps": 9,
+    "tail_twists": 0,
+    "unchecked_contracts": 0,
+    "verdict": "solved"
+   },
+   "change": {
+    "step": 3,
+    "letter_before": [
+     11,
+     18
+    ],
+    "letter_after": [
+     11,
+     19
+    ],
+    "row_sha256_updated": true
+   }
+  },
+  "c": {
+   "rc": 1,
+   "seconds": 6.3,
+   "steps": [
+    {
+     "index": 0,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "record"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 1,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "record"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 2,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "tree_expansion"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 3,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "record"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 4,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "record"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 5,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "record"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 6,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "record"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 7,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "record"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 8,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "record"
+     ],
+     "unchecked": false
+    }
+   ],
+   "final": {
+    "bulk_twists": 0,
+    "end_digest": null,
+    "fails": [
+     "tree_expansion"
+    ],
+    "fallback_twists": 0,
+    "height_twists": 0,
+    "high_twists": 0,
+    "lattice_checked": false,
+    "lattice_twists": null,
+    "pass": false,
+    "result": "solved",
+    "steps": 9,
+    "tail_twists": 0,
+    "unchecked_contracts": 0,
+    "verdict": null
+   },
+   "change": {
+    "step": 2,
+    "tree": {
+     "name": "seam",
+     "letters": 1,
+     "span": [
+      1,
+      2
+     ]
+    }
+   }
+  },
+  "d": {
+   "rc": 1,
+   "seconds": 5.2,
+   "steps": [
+    {
+     "index": 0,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "acceptance_config"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 1,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "acceptance_config"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 2,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "acceptance_config"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 3,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "acceptance_config"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 4,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "acceptance_config"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 5,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "acceptance_config"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 6,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "acceptance_config"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 7,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "acceptance_config"
+     ],
+     "unchecked": false
+    },
+    {
+     "index": 8,
+     "rule": "seam",
+     "pass": false,
+     "fails": [
+      "acceptance_config"
+     ],
+     "unchecked": false
+    }
+   ],
+   "final": {
+    "bulk_twists": 0,
+    "end_digest": null,
+    "fails": [
+     "acceptance_config"
+    ],
+    "fallback_twists": 0,
+    "height_twists": 0,
+    "high_twists": 0,
+    "lattice_checked": false,
+    "lattice_twists": null,
+    "pass": false,
+    "result": "solved",
+    "steps": 9,
+    "tail_twists": 0,
+    "unchecked_contracts": 0,
+    "verdict": null
+   },
+   "change": {
+    "restorer": "late",
+    "acceptance_config_sha256": "987b82a2baba8345a38335bb31a2f035d99eef1dc56134f61cf2a45f9f66028c"
+   }
+  }
+ },
+ "C_dev7001": {
+  "rc": 0,
+  "seconds": 46.7,
+  "runner_line": {
+   "result": "solved",
+   "steps": 9,
+   "totals": {
+    "bulk_twists": 9,
+    "height_twists": 0,
+    "high_twists": 0,
+    "tail_twists": 0,
+    "fallback_twists": 0,
+    "lattice_twists": null,
+    "seconds": 46.540394
+   }
+  },
+  "mode": "development",
+  "result": "solved",
+  "acceptance": {
+   "verdict": "solved",
+   "certificate_steps": 0,
+   "fallback_steps": 0,
+   "probe": null,
+   "timed_out_attempts": 0
+  },
+  "totals_bulk_twists": 9,
+  "source": {
+   "commit": "41cc08daddd96c7051a17b7f00bc89ce907330ef",
+   "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "dirty": false
+  },
+  "steps": 9,
+  "same_rule_word_before_after_as_d0": [
+   true,
+   true,
+   true,
+   true,
+   true,
+   true,
+   true,
+   true,
+   true
+  ],
+  "config_keys_that_differ": {
+   "acceptance_config": {
+    "acceptance": {
+     "file": "research/jumbling/restoration/13-tutorial-runner/acceptance-config.json",
+     "sha256": "3e042b0b510dbe326a4195460173339e84dc66f615265bb5bee350bd90bf7d34",
+     "options": {
+      "literal_limit": 10000000,
+      "seeds": "atlas",
+      "tail_rules": [
+       "zero_bad",
+       "pure",
+       "close",
+       "t1prime"
+      ],
+      "lattice_restorer": "schedule11",
+      "fallback_max_length": 1,
+      "par": 1,
+      "pair_shards": 4,
+      "bulk_steps": null,
+      "tail_steps": 0,
+      "high_steps": null,
+      "no_lattice": false
+     }
+    },
+    "development": null
+   },
+   "budgets": {
+    "acceptance": {
+     "bulk_steps": null,
+     "bulk_step_seconds": null,
+     "bulk_seconds": null,
+     "tail_steps": null,
+     "high_steps": null,
+     "rule_seconds": null,
+     "greedy_seconds": null,
+     "cert_seconds": null,
+     "height_seconds": null,
+     "height_cpu": null,
+     "kernel_seconds": null,
+     "pair_shards": 4,
+     "fallback_max_length": 1,
+     "par": 1
+    },
+    "development": {
+     "bulk_steps": null,
+     "bulk_step_seconds": 3600,
+     "bulk_seconds": null,
+     "tail_steps": null,
+     "high_steps": null,
+     "rule_seconds": 3600,
+     "greedy_seconds": 60,
+     "cert_seconds": 3600,
+     "height_seconds": 3600,
+     "height_cpu": 3600,
+     "kernel_seconds": 3600,
+     "pair_shards": 4,
+     "fallback_max_length": 1,
+     "par": 1
+    }
+   },
+   "clock_sentinel": {
+    "acceptance": 1000000000.0,
+    "development": null
+   },
+   "kernel": {
+    "acceptance": {
+     "seconds": null,
+     "wall_margin": 600,
+     "d19": {
+      "file": "research/jumbling/restoration/12-low-height/scripts/round22/r22d19_rule.py",
+      "sha256": "587bfc4bc241e78b00d4539a5ff238b00a2741900ffb44a02fb36b7499f044da"
+     },
+     "max_steps": 1
+    },
+    "development": {
+     "seconds": 3600,
+     "wall_margin": 600,
+     "d19": {
+      "file": "research/jumbling/restoration/12-low-height/scripts/round22/r22d19_rule.py",
+      "sha256": "587bfc4bc241e78b00d4539a5ff238b00a2741900ffb44a02fb36b7499f044da"
+     },
+     "max_steps": 1
+    }
+   },
+   "mode": {
+    "acceptance": "acceptance",
+    "development": "development"
+   },
+   "source": {
+    "acceptance": {
+     "commit": "cd5e6e8c81c078f042fa4544cbf8f3c11d6b445e",
+     "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "dirty": false
+    },
+    "development": {
+     "commit": "41cc08daddd96c7051a17b7f00bc89ce907330ef",
+     "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "dirty": false
+    }
+   }
+  },
+  "scripts_equal_to_d0": true,
+  "check": {
+   "rc": 0,
+   "seconds": 7.8,
+   "steps": [
+    {
+     "index": 0,
+     "rule": "seam",
+     "pass": true,
+     "fails": [],
+     "unchecked": false
+    },
+    {
+     "index": 1,
+     "rule": "seam",
+     "pass": true,
+     "fails": [],
+     "unchecked": false
+    },
+    {
+     "index": 2,
+     "rule": "seam",
+     "pass": true,
+     "fails": [],
+     "unchecked": false
+    },
+    {
+     "index": 3,
+     "rule": "seam",
+     "pass": true,
+     "fails": [],
+     "unchecked": false
+    },
+    {
+     "index": 4,
+     "rule": "seam",
+     "pass": true,
+     "fails": [],
+     "unchecked": false
+    },
+    {
+     "index": 5,
+     "rule": "seam",
+     "pass": true,
+     "fails": [],
+     "unchecked": false
+    },
+    {
+     "index": 6,
+     "rule": "seam",
+     "pass": true,
+     "fails": [],
+     "unchecked": false
+    },
+    {
+     "index": 7,
+     "rule": "seam",
+     "pass": true,
+     "fails": [],
+     "unchecked": false
+    },
+    {
+     "index": 8,
+     "rule": "seam",
+     "pass": true,
+     "fails": [],
+     "unchecked": false
+    }
+   ],
+   "final": {
+    "bulk_twists": 9,
+    "end_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "fails": [],
+    "fallback_twists": 0,
+    "height_twists": 0,
+    "high_twists": 0,
+    "lattice_checked": false,
+    "lattice_twists": null,
+    "pass": true,
+    "result": "solved",
+    "steps": 9,
+    "tail_twists": 0,
+    "unchecked_contracts": 0,
+    "verdict": "solved"
+   }
+  }
+ },
+ "D_z36": {
+  "rc": 0,
+  "seconds": 69.2,
+  "runner_line": {
+   "result": "stuck",
+   "steps": 2,
+   "totals": {
+    "bulk_twists": 0,
+    "height_twists": 2,
+    "high_twists": 0,
+    "tail_twists": 0,
+    "fallback_twists": 0,
+    "lattice_twists": null,
+    "seconds": 69.014727
+   }
+  },
+  "start": {
+   "kind": "table",
+   "file": "start-table.json",
+   "digest": "8733a0aafd8e24ea1da990ebab0347074c20b11cf61d9ed04d34d25ef6f67261",
+   "off": 5800,
+   "heights": {
+    "2": 5799,
+    "6": 1
+   }
+  },
+  "mode": "development",
+  "component": "bulk_budget",
+  "result": "stuck",
+  "error": null,
+  "acceptance": {
+   "verdict": "component",
+   "certificate_steps": 0,
+   "fallback_steps": 0,
+   "probe": null,
+   "timed_out_attempts": 0
+  },
+  "totals": {
+   "bulk_twists": 0,
+   "height_twists": 2,
+   "high_twists": 0,
+   "tail_twists": 0,
+   "fallback_twists": 0,
+   "lattice_twists": null,
+   "seconds": 69.014727
+  },
+  "kernel_d19": {
+   "file": "research/jumbling/restoration/12-low-height/scripts/round22/r22d19_rule.py",
+   "sha256": "587bfc4bc241e78b00d4539a5ff238b00a2741900ffb44a02fb36b7499f044da"
+  },
+  "budgets": {
+   "bulk_steps": 0,
+   "bulk_step_seconds": 3600,
+   "bulk_seconds": null,
+   "tail_steps": null,
+   "high_steps": null,
+   "rule_seconds": 3600,
+   "greedy_seconds": 60,
+   "cert_seconds": 3600,
+   "height_seconds": 3600,
+   "height_cpu": 3600,
+   "kernel_seconds": 3600,
+   "pair_shards": 4,
+   "fallback_max_length": 0,
+   "par": 1
+  },
+  "phases": {
+   "bulk": {
+    "result": "budget",
+    "steps": 0,
+    "twists": 0,
+    "end": {
+     "digest": "8733a0aafd8e24ea1da990ebab0347074c20b11cf61d9ed04d34d25ef6f67261",
+     "off": 5800,
+     "heights": {
+      "2": 5799,
+      "6": 1
+     },
+     "table": "tables/bulk-end.json"
+    }
+   },
+   "height": {
+    "result": "handoff",
+    "steps": 2,
+    "twists": 2,
+    "start": {
+     "digest": "8733a0aafd8e24ea1da990ebab0347074c20b11cf61d9ed04d34d25ef6f67261",
+     "off": 5800,
+     "heights": {
+      "2": 5799,
+      "6": 1
+     }
+    },
+    "end": {
+     "digest": "3ab25d214b6c4ad759ac7158a0fc1cabae1584aa711d3f757af7b91c43971837",
+     "off": 5405,
+     "heights": {
+      "2": 5405
+     }
+    },
+    "sub": {
+     "r22d75": {
+      "result": "handoff",
+      "steps": 2,
+      "start": {
+       "digest": "8733a0aafd8e24ea1da990ebab0347074c20b11cf61d9ed04d34d25ef6f67261",
+       "off": 5800,
+       "heights": {
+        "2": 5799,
+        "6": 1
+       }
+      },
+      "end": {
+       "digest": "3ab25d214b6c4ad759ac7158a0fc1cabae1584aa711d3f757af7b91c43971837",
+       "off": 5405,
+       "heights": {
+        "2": 5405
+       }
+      }
+     },
+     "r22d81": {
+      "result": "not_applicable",
+      "steps": 0,
+      "start": {
+       "digest": "3ab25d214b6c4ad759ac7158a0fc1cabae1584aa711d3f757af7b91c43971837",
+       "off": 5405,
+       "heights": {
+        "2": 5405
+       }
+      },
+      "end": {
+       "digest": "3ab25d214b6c4ad759ac7158a0fc1cabae1584aa711d3f757af7b91c43971837",
+       "off": 5405,
+       "heights": {
+        "2": 5405
+       }
+      }
+     },
+     "h4": {
+      "result": "not_applicable",
+      "steps": 0,
+      "start": {
+       "digest": "3ab25d214b6c4ad759ac7158a0fc1cabae1584aa711d3f757af7b91c43971837",
+       "off": 5405,
+       "heights": {
+        "2": 5405
+       }
+      },
+      "end": {
+       "digest": "3ab25d214b6c4ad759ac7158a0fc1cabae1584aa711d3f757af7b91c43971837",
+       "off": 5405,
+       "heights": {
+        "2": 5405
+       }
+      }
+     }
+    }
+   },
+   "high": {
+    "result": "not_applicable",
+    "steps": 0,
+    "twists": 0,
+    "start": {
+     "digest": "3ab25d214b6c4ad759ac7158a0fc1cabae1584aa711d3f757af7b91c43971837",
+     "off": 5405,
+     "heights": {
+      "2": 5405
+     }
+    },
+    "end": {
+     "digest": "3ab25d214b6c4ad759ac7158a0fc1cabae1584aa711d3f757af7b91c43971837",
+     "off": 5405,
+     "heights": {
+      "2": 5405
+     }
+    }
+   },
+   "tail": {
+    "result": "stuck",
+    "steps": 0
+   },
+   "lattice": {
+    "result": null,
+    "steps": 0,
+    "twists": null
+   }
+  },
+  "steps": [
+   {
+    "index": 0,
+    "phase": "height",
+    "subphase": "r22d75",
+    "rule": "r22d75/T0",
+    "letters": 1,
+    "encoding": "json",
+    "word_sha256": "15538b29387c035fc1fb7effef0ef8fa69cbe1d8b94f102e1b4f4a2569e4d59c",
+    "contract": "r22d75/T0",
+    "gate": "r22d75_from_snapshot",
+    "standing": "rule",
+    "before": {
+     "digest": "8733a0aafd8e24ea1da990ebab0347074c20b11cf61d9ed04d34d25ef6f67261",
+     "off": 5800,
+     "heights": {
+      "2": 5799,
+      "6": 1
+     }
+    },
+    "after": {
+     "digest": "7cd868f6466953eb6ea1e0d466ed66857d34edaea7dd7c554c1e74975005541b",
+     "off": 3098,
+     "heights": {
+      "2": 3097,
+      "4": 1
+     }
+    },
+    "table": "tables/00000.json",
+    "attempts": [
+     {
+      "script": "r22d75",
+      "tag": "00000-r22d75-r22d75",
+      "shard": null,
+      "outcome": "step",
+      "reason": "step",
+      "rc": -9,
+      "seconds": 10.417753764999361,
+      "stopped": true,
+      "timed_out": false
+     }
+    ],
+    "seconds": 0.036729,
+    "tau_before": null,
+    "tau_after": null,
+    "u_before": null,
+    "u_after": null,
+    "rule_script": "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/r22d75_from_snapshot.py",
+    "word": {
+     "word": [
+      [
+       12,
+       14
+      ]
+     ],
+     "input_digest": "8733a0aafd8e24ea1da990ebab0347074c20b11cf61d9ed04d34d25ef6f67261",
+     "output_digest": "7cd868f6466953eb6ea1e0d466ed66857d34edaea7dd7c554c1e74975005541b"
+    },
+    "tree_root": {
+     "name": "r22d75/T0",
+     "letters": 1,
+     "span": [
+      0,
+      1
+     ]
+    },
+    "tree": {
+     "file": "step-trees/00000.json.gz",
+     "sha256": "cfc3acd2cfaf5eceb2cf4c25106640baf29df855a6f2fcc6379d043e1f00450b",
+     "size": 1
+    },
+    "word_file": "words/00000.json"
+   },
+   {
+    "index": 1,
+    "phase": "height",
+    "subphase": "r22d75",
+    "rule": "r22d75/T1",
+    "letters": 1,
+    "encoding": "json",
+    "word_sha256": "82c6f87f81b6db4604aecf3dd588ea9f405e73eb65e5f4110866672795a56950",
+    "contract": "r22d75/T1",
+    "gate": "r22d75_from_snapshot",
+    "standing": "rule",
+    "before": {
+     "digest": "7cd868f6466953eb6ea1e0d466ed66857d34edaea7dd7c554c1e74975005541b",
+     "off": 3098,
+     "heights": {
+      "2": 3097,
+      "4": 1
+     }
+    },
+    "after": {
+     "digest": "3ab25d214b6c4ad759ac7158a0fc1cabae1584aa711d3f757af7b91c43971837",
+     "off": 5405,
+     "heights": {
+      "2": 5405
+     }
+    },
+    "table": "tables/00001.json",
+    "attempts": [
+     {
+      "script": "r22d75",
+      "tag": "00001-r22d75-r22d75",
+      "shard": null,
+      "outcome": "step",
+      "reason": "step",
+      "rc": -9,
+      "seconds": 12.159104073998606,
+      "stopped": true,
+      "timed_out": false
+     }
+    ],
+    "seconds": 0.139257,
+    "tau_before": null,
+    "tau_after": null,
+    "u_before": null,
+    "u_after": null,
+    "rule_script": "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/r22d75_from_snapshot.py",
+    "word": {
+     "word": [
+      [
+       35,
+       13
+      ]
+     ],
+     "input_digest": "7cd868f6466953eb6ea1e0d466ed66857d34edaea7dd7c554c1e74975005541b",
+     "output_digest": "3ab25d214b6c4ad759ac7158a0fc1cabae1584aa711d3f757af7b91c43971837"
+    },
+    "tree_root": {
+     "name": "r22d75/T1",
+     "letters": 1,
+     "span": [
+      0,
+      1
+     ]
+    },
+    "tree": {
+     "file": "step-trees/00001.json.gz",
+     "sha256": "64c27c4451fb4f9b477a1522cc65ab76b7824ebaa41d0fbf1070f0b118c4336f",
+     "size": 1
+    },
+    "word_file": "words/00001.json"
+   }
+  ],
+  "stuck": {
+   "phase": "tail",
+   "reason": "no_rule",
+   "digest": "3ab25d214b6c4ad759ac7158a0fc1cabae1584aa711d3f757af7b91c43971837",
+   "off": 5405,
+   "heights": {
+    "2": 5405
+   },
+   "units": 54,
+   "attempts": 0,
+   "unit_sizes": [
+    1,
+    15,
+    25,
+    48,
+    61,
+    63,
+    72,
+    86,
+    87,
+    111,
+    385
+   ],
+   "first_unit": {
+    "unit_key": 9,
+    "size": 385,
+    "attempts": []
+   }
+  },
+  "check": {
+   "rc": 0,
+   "seconds": 7.2,
+   "steps": [
+    {
+     "index": 0,
+     "rule": "r22d75/T0",
+     "pass": true,
+     "fails": [],
+     "unchecked": false
+    },
+    {
+     "index": 1,
+     "rule": "r22d75/T1",
+     "pass": true,
+     "fails": [],
+     "unchecked": false
+    }
+   ],
+   "final": {
+    "bulk_twists": 0,
+    "end_digest": "3ab25d214b6c4ad759ac7158a0fc1cabae1584aa711d3f757af7b91c43971837",
+    "fails": [],
+    "fallback_twists": 0,
+    "height_twists": 2,
+    "high_twists": 0,
+    "lattice_checked": false,
+    "lattice_twists": null,
+    "pass": true,
+    "result": "stuck",
+    "steps": 2,
+    "tail_twists": 0,
+    "unchecked_contracts": 0,
+    "verdict": "component"
+   }
+  }
+ },
+ "E_trees": {
+  "b04": {
+   "rule": "t1prime",
+   "parts": [
+    [
+     "W",
+     288
+    ],
+    [
+     "V",
+     339
+    ],
+    [
+     "middle",
+     288
+    ],
+    [
+     "V_inverse",
+     339
+    ]
+   ],
+   "letters": 1254,
+   "tree": {
+    "name": "t1prime",
+    "letters": 1254,
+    "parts": [
+     {
+      "name": "W",
+      "letters": 288,
+      "span": [
+       0,
+       288
+      ]
+     },
+     {
+      "name": "V",
+      "letters": 339,
+      "span": [
+       288,
+       627
+      ]
+     },
+     {
+      "name": "middle",
+      "letters": 288,
+      "span": [
+       627,
+       915
+      ],
+      "inverse_of": [
+       0
+      ]
+     },
+     {
+      "name": "V⁻¹",
+      "letters": 339,
+      "span": [
+       915,
+       1254
+      ],
+      "inverse_of": [
+       1
+      ]
+     }
+    ]
+   },
+   "size": 5,
+   "sha256": "24f8659857bb9938de44c7d07e1a4f62be7f7309050e2735f9b708b241350304"
+  },
+  "b20": {
+   "rule": "close",
+   "parts": [
+    [
+     "V",
+     20232
+    ],
+    [
+     "middle",
+     36
+    ],
+    [
+     "V_inverse",
+     20232
+    ]
+   ],
+   "letters": 40500,
+   "tree": {
+    "name": "close",
+    "letters": 40500,
+    "parts": [
+     {
+      "name": "V",
+      "letters": 20232,
+      "span": [
+       0,
+       20232
+      ]
+     },
+     {
+      "name": "middle",
+      "letters": 36,
+      "span": [
+       20232,
+       20268
+      ]
+     },
+     {
+      "name": "V⁻¹",
+      "letters": 20232,
+      "span": [
+       20268,
+       40500
+      ],
+      "inverse_of": [
+       0
+      ]
+     }
+    ]
+   },
+   "size": 4,
+   "sha256": "d8c15bdfd26794501667cecdb064d1769cf251772191619db825a60aaa085985"
+  },
+  "b07": {
+   "rule": "t1prime",
+   "parts": [
+    [
+     "W",
+     48
+    ],
+    [
+     "V",
+     139774
+    ],
+    [
+     "middle",
+     48
+    ],
+    [
+     "V_inverse",
+     139774
+    ]
+   ],
+   "letters": 279644,
+   "tree": {
+    "name": "t1prime",
+    "letters": 279644,
+    "parts": [
+     {
+      "name": "W",
+      "letters": 48,
+      "span": [
+       0,
+       48
+      ]
+     },
+     {
+      "name": "V",
+      "letters": 139774,
+      "span": [
+       48,
+       139822
+      ]
+     },
+     {
+      "name": "middle",
+      "letters": 48,
+      "span": [
+       139822,
+       139870
+      ],
+      "inverse_of": [
+       0
+      ]
+     },
+     {
+      "name": "V⁻¹",
+      "letters": 139774,
+      "span": [
+       139870,
+       279644
+      ],
+      "inverse_of": [
+       1
+      ]
+     }
+    ]
+   },
+   "size": 5,
+   "sha256": "1e4eb4dc5e4cb138211d162920379135f2320c9c168991133817264b327b1e43"
+  }
+ },
+ "status_after": {
+  "sha256": "b55b4e633ad169025ee5614fed4f87385a5eaf11ad267426a72578aababed4e6",
+  "lines": 113
+ },
+ "status_unchanged": true,
+ "seconds": 119.3
+}

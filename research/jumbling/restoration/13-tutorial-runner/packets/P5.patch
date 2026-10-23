@@ -1,0 +1,1235 @@
+diff --git a/research/jumbling/restoration/13-tutorial-runner/scripts/check_lattice.py b/research/jumbling/restoration/13-tutorial-runner/scripts/check_lattice.py
+index c6d8540..14e9ece 100644
+--- a/research/jumbling/restoration/13-tutorial-runner/scripts/check_lattice.py
++++ b/research/jumbling/restoration/13-tutorial-runner/scripts/check_lattice.py
+@@ -1,30 +1,19 @@
+-"""Literal lattice steps of runner-run/3 records, checker side (headless research).
+-
+-Stub until packet P5 is integrated. ``read_ia16`` is complete: check_run.py reads
+-every ``ia16`` word through it. ``replay_lattice_step`` plays a lattice step's word
+-on the exact simulator twist by twist (correct, but far too slow for a real lattice
+-word) and reports ``unchecked_contract``: the step's ``lattice_literal`` contract and
+-its ``labels_identity`` claim are not checked until P5 (plan runner-run/3, packet P5).
+-
+-Interface used by check_run.py:
+-- ``read_ia16(path, sha256=None)`` returns the letters ``[[grip, item], ...]`` of an
+-  ia16 word: gzip with mtime 0 of little-endian uint16 codes ``60 * grip + item``, all
+-  below 36,000. It raises ``ValueError`` for a malformed file and ``Sha256Mismatch``
+-  when ``sha256`` is given and differs from the sha256 of the uncompressed bytes.
+-- ``replay_lattice_step(state, row, path, menu)`` plays the lattice step ``row`` whose
+-  word is the file ``path`` on ``state``, in place, and returns its failures, a list of
+-  names. check_run.py then checks the state's digest and off count against the row's
+-  ``after``. A step whose ``labels_identity`` it does not confirm fails as
+-  ``labels_identity``; until P5 that claim is ``unchecked_contract``.
+-
+-Like check_run.py, this module shares only the definition of the puzzle: the simulator
+-and the I_a menu, no runner, rule, gate or player code (plan section 0).
++"""Independent literal lattice replay for runner-run/3 (headless research).
++
++Only puzzle definitions are shared: the exact simulator, model assets and I_a
++menu. Retained letters on the lattice gather sticker labels and move exact K+
++poses by occupied place. Every other letter uses State.apply. No net word
++permutation advances either representation.
+ """
+ 
++from functools import lru_cache
+ import gzip
+ import hashlib
+-from pathlib import Path
++import json
++from pathlib import Path, PurePosixPath, PureWindowsPath
++import re
+ import sys
++import time
+ import zlib
+ 
+ sys.dont_write_bytecode = True
+@@ -38,50 +27,460 @@ import restore  # noqa: E402
+ import sim  # noqa: E402
+ 
+ GRIPS, ITEMS = 600, 60
+-UNCHECKED = 'unchecked_contract'
++CHUNK_BYTES = 1 << 20
++TREE_MAX_DEPTH = 64
+ 
+ 
+ class Sha256Mismatch(ValueError):
+     pass
+ 
+ 
+-def read_ia16(path, sha256=None):
+-    raw = Path(path).read_bytes()
+-    # A fixed header (mtime 0) keeps equal words byte-identical.
+-    if raw[:2] != b'\x1f\x8b' or raw[4:8] != bytes(4):
+-        raise ValueError('an ia16 word is gzip with mtime 0')
+-    data = gzip.decompress(raw)
+-    if len(data) % 2:
+-        raise ValueError('an ia16 word has whole uint16 codes')
+-    if sha256 is not None and hashlib.sha256(data).hexdigest() != sha256:
+-        raise Sha256Mismatch('ia16 word sha256 mismatch')
+-    codes = np.frombuffer(data, '<u2').astype(np.int64)
+-    if codes.size and int(codes.max()) >= GRIPS * ITEMS:
+-        raise ValueError('ia16 code out of range')
+-    grips, items = np.divmod(codes, ITEMS)
+-    return [[g, i] for g, i in zip(grips.tolist(), items.tolist())]
+-
+-
+-def replay_lattice_step(state, row, path, menu):
+-    if not isinstance(row.get('word_sha256'), str):
+-        return ['word_sha256']
++class Ia16Error(ValueError):
++    """A sanitized literal-file failure, independent of exception/path text."""
++    def __init__(self, name):
++        self.name = name
++        super().__init__(name)
++
++
++def ia16_chunks(path, *, sha=None):
++    """Yield little-endian uint16 chunks, carrying a split code across reads.
++
++    Each gzip read is bounded by CHUNK_BYTES, looked up on entry. Exhausting the
++    iterator validates the trailer, byte count and every code, including suffixes
++    that a range reader does not retain.
++    """
++    chunk_bytes = CHUNK_BYTES
++    if type(chunk_bytes) is not int or chunk_bytes < 1:
++        raise Ia16Error('word_file')
+     try:
+-        word = read_ia16(path, row['word_sha256'])
+-    except Sha256Mismatch:
+-        return ['word_sha256']
++        with Path(path).open('rb') as raw:
++            header = raw.read(8)
++            if len(header) != 8 or header[:2] != b'\x1f\x8b' or header[4:8] != bytes(4):
++                raise Ia16Error('word_file')
++            raw.seek(0)
++            with gzip.GzipFile(fileobj=raw, mode='rb') as stream:
++                carry = b''
++                while data := stream.read(chunk_bytes):
++                    if sha is not None:
++                        sha.update(data)
++                    data = carry + data
++                    end = len(data) - len(data) % 2
++                    carry = data[end:]
++                    codes = np.frombuffer(data[:end], dtype='<u2')
++                    if codes.size and int(codes.max()) >= GRIPS * ITEMS:
++                        raise Ia16Error('word_literal')
++                    if codes.size:
++                        yield codes
++                if carry:
++                    raise Ia16Error('word_file')
++    except Ia16Error:
++        raise
+     except (OSError, EOFError, ValueError, zlib.error):
+-        return ['word_file']
+-    fails = []
+-    if type(row.get('letters')) is not int or row['letters'] != len(word):
+-        fails.append('letters')
+-    for cap, item in word:
++        raise Ia16Error('word_file') from None
++
++
++def ia16_info(path):
++    sha, letters = hashlib.sha256(), 0
++    for codes in ia16_chunks(path, sha=sha):
++        letters += len(codes)
++    return {'letters': letters, 'sha256': sha.hexdigest()}
++
++
++def read_ia16(path, sha256=None):
++    """Compatibility reader for non-lattice steps: return [[grip, item], ...]."""
++    word, sha = [], hashlib.sha256()
++    for codes in ia16_chunks(path, sha=sha):
++        word.extend([code // ITEMS, code % ITEMS] for code in codes.tolist())
++    if sha256 is not None and sha.hexdigest() != sha256:
++        raise Sha256Mismatch('word_sha256')
++    return word
++
++
++def ia16_ranges(path, ranges):
++    """Read ranges in one separate pass, sharing storage for overlaps.
++
++    A bytearray retains at most the prefix through the furthest requested end;
++    all returned arrays are uint16 views of that one buffer. It grows only from
++    bytes actually read, so an invalid large end cannot allocate a large array.
++    """
++    if (not isinstance(ranges, list) or any(
++            not isinstance(r, (tuple, list)) or len(r) != 2
++            or any(type(v) is not int or v < 0 for v in r) or r[1] < r[0]
++            for r in ranges)):
++        raise Ia16Error('word_file')
++    end = max((r[1] for r in ranges), default=0)
++    data, at = bytearray(), 0
++    for codes in ia16_chunks(path):
++        if at < end:
++            data.extend(codes[:end - at].tobytes())
++        at += len(codes)
++    if end > at:
++        raise Ia16Error('word_file')
++    codes = np.frombuffer(data, dtype='<u2')
++    return [codes[lo:hi] for lo, hi in ranges]
++
++
++def _add(fails, name):
++    if name not in fails:
++        fails.append(name)
++
++
++def check_tree_ranges(path, root, menu):
++    """Validate ranges iteratively, then compare all backward references."""
++    try:
++        seen, references, at = {}, [], 0
++        stack = [(root, (), 1)]
++        while stack:
++            part, index, depth = stack.pop()
++            if (not isinstance(part, dict) or depth > TREE_MAX_DEPTH
++                    or not isinstance(part.get('name'), str) or not part['name']
++                    or type(part.get('letters')) is not int or part['letters'] < 0
++                    or ('span' in part) == ('parts' in part)
++                    or ('inverse_of' in part and 'same_as' in part)):
++                return ['tree_malformed']
++            lo, hi = at, at + part['letters']
++            if 'span' in part:
++                span = part['span']
++                if (not isinstance(span, list) or len(span) != 2
++                        or any(type(v) is not int or v < 0 for v in span)
++                        or span != [lo, hi]):
++                    return ['tree_malformed']
++                at = hi
++            else:
++                children = part['parts']
++                if (not isinstance(children, list) or not children
++                        or any(not isinstance(c, dict) or type(c.get('letters')) is not int
++                               or c['letters'] < 0 for c in children)
++                        or sum(c['letters'] for c in children) != part['letters']):
++                    return ['tree_malformed']
++                stack.extend((children[i], index + (i,), depth + 1)
++                             for i in reversed(range(len(children))))
++            for key in ('inverse_of', 'same_as'):
++                if key not in part:
++                    continue
++                ref = part[key]
++                if not isinstance(ref, list) or any(type(i) is not int or i < 0 for i in ref):
++                    return ['tree_malformed']
++                other = seen.get(tuple(ref))
++                if (other is None or other[1] > lo or other[1] - other[0] != hi - lo
++                        or (key == 'same_as' and other[2] != part['name'])):
++                    return ['tree_malformed']
++                references.append((key, (lo, hi), other[:2]))
++            seen[index] = (lo, hi, part['name'])
++        if at != root['letters'] or ia16_info(path)['letters'] != root['letters']:
++            return ['tree_malformed']
++        # Deduplicate ranges; nested references can cover the same word many times.
++        ranges = list(dict.fromkeys(r for _, mine, theirs in references for r in (mine, theirs)))
++        values = dict(zip(ranges, ia16_ranges(path, ranges))) if ranges else {}
++        lookup = {restore.to_tuple(m): i for i, (_, m) in enumerate(menu.items)}
++        inverse = np.array([lookup[restore.to_tuple(restore.transpose(m))]
++                            for _, m in menu.items], dtype=np.uint16)
++        fails = []
++        for key, mine, theirs in references:
++            actual, expected = values[mine], values[theirs]
++            # Bound temporary inverse arrays too, including for one enormous range.
++            width = max(1, CHUNK_BYTES // 2)
++            for start in range(0, len(actual), width):
++                end = min(start + width, len(actual))
++                if key == 'inverse_of':
++                    source = expected[len(actual) - end:len(actual) - start][::-1]
++                    comparison = ITEMS * (source // ITEMS) + inverse[source % ITEMS]
++                else:
++                    comparison = expected[start:end]
++                if not np.array_equal(actual[start:end], comparison):
++                    _add(fails, 'tree_expansion')
++                    break
++        return fails
++    except Ia16Error as exc:
++        return [exc.name]
++
++
++class FastPathError(ValueError):
++    pass
++
++
++class ModelLabelsError(ValueError):
++    pass
++
++
++@lru_cache(maxsize=1)
++def _fast_items():
++    menu = restore.menu('I_a')
++    return frozenset(i for i, (_, matrix) in enumerate(menu.items)
++                     if restore.ctx.kplus.index_of_matrix(matrix) >= 0)
++
++
++def fast_letter(code, on_lattice):
++    """Dispatcher predicate; the model independently guards its own menu table."""
++    return (on_lattice and 0 <= code < GRIPS * ITEMS and code % ITEMS in _fast_items())
++
++
++class _Moves:
++    """Lazy primitive moves and exact left-composition tables from the simulator."""
++    def __init__(self, ctx):
++        self.ctx = ctx
++        self.src, self.dst, self.offsets = ctx.data.primitives()
++        self.instructions, self.words = {}, {}
++
++    def instruction(self, mid):
++        cached = self.instructions.get(mid)
++        if cached is None:
++            data, kp = self.ctx.data, self.ctx.kplus
++            j = abs(mid) - 1
++            a, b = self.offsets[j:j + 2]
++            src, dst = self.src[a:b], self.dst[a:b]
++            ps, pd = data.move_src[j], data.move_dst[j]
++            r = int(kp.gen_idx[j])
++            if mid < 0:
++                src, dst, ps, pd = dst, src, pd, ps
++                r = int(kp.inv[r])
++            k = np.arange(len(kp.perms), dtype=np.int64)
++            left = kp.compose_vec(np.full(len(k), r), k).astype(np.int16)
++            cached = self.instructions[mid] = src, dst, ps, pd, left
++        return cached
++
++    def word(self, grip, base):
++        key = (grip, base)
++        if key not in self.words:
++            kp = self.ctx.kplus
++            # Exact index of F_c * item * F_c^-1, the menu's element at c.
++            f = int(kp.frame_idx[grip])
++            g = kp.compose(f, kp.compose(base, int(kp.inv[f])))
++            self.words[key] = tuple(self.instruction(mid) for mid in kp.a4_word(grip, g))
++        return self.words[key]
++
++
++@lru_cache(maxsize=1)
++def _moves(ctx):
++    return _Moves(ctx)
++
++
++class LatticeModel:
++    """Labels plus K+ poses held at occupied places, including invisible rotations."""
++    @classmethod
++    def from_state(cls, state, menu):
++        if not state.is_lattice():
++            raise FastPathError('off lattice')
++        self = cls()
++        self.ctx, self.menu = state.ctx, menu
++        stickers = state.lattice_stickers()
++        if not np.all(stickers['frame_agrees']):
++            raise ModelLabelsError('model_labels')
++        self.labels = stickers['labels'].copy()
++        kp, reg = self.ctx.kplus, self.ctx.regions
++        k = state._kpose()[state.pose_id]
++        place = reg.piece_of[reg.orbit_of, kp.compose_vec(k, reg.transport)]
++        if not np.array_equal(np.sort(place), np.arange(len(k))):
++            raise ModelLabelsError('model_labels')
++        self.place_pose = np.empty(len(k), dtype=np.int16)
++        self.place_pose[place] = k
++        # This table is built from the supplied menu, never from fast_letter.
++        self._base = tuple(kp.index_of_matrix(matrix) for _, matrix in menu.items)
++        self._moves = _moves(self.ctx)
++        return self
++
++    def play(self, code):
++        if (not isinstance(code, (int, np.integer)) or isinstance(code, (bool, np.bool_))
++                or not 0 <= code < GRIPS * ITEMS):
++            raise FastPathError('invalid code')
++        grip, item = divmod(int(code), ITEMS)
++        if item >= len(self._base) or self._base[item] < 0:
++            raise FastPathError('non-retained item')
++        for src, dst, ps, pd, left in self._moves.word(grip, self._base[item]):
++            self.labels[dst] = self.labels[src]
++            self.place_pose[pd] = left[self.place_pose[ps]]
++
++    def to_state(self):
++        data = self.ctx.data
++        if (not np.array_equal(np.sort(self.labels), np.arange(len(data.slot_piece)))
++                or self.place_pose.shape != (len(data.mask_offsets) - 1,)
++                or np.any(self.place_pose < 0) or np.any(self.place_pose >= len(self.ctx.kplus.perms))):
++            raise ModelLabelsError('model_labels')
++        home = data.slot_piece[self.labels]
++        pose_at_slot = self.place_pose[data.slot_piece]
++        home_pose = np.empty(len(self.place_pose), dtype=np.int16)
++        home_pose[home] = pose_at_slot
++        if not np.array_equal(home_pose[home], pose_at_slot):
++            raise ModelLabelsError('model_labels')
++        state = sim.State(self.ctx, menu=self.menu)
++        unique, inverse = np.unique(home_pose, return_inverse=True)
++        remap = np.array([state._intern_k(int(k)) for k in unique], dtype=np.int32)
++        state.pose_id = remap[inverse]
++        state._compact()
++        try:
++            stickers = state.lattice_stickers()
++            if (not np.all(stickers['frame_agrees'])
++                    or not np.array_equal(stickers['labels'], self.labels)):
++                raise ModelLabelsError('model_labels')
++        except (ValueError, AssertionError, KeyError):
++            raise ModelLabelsError('model_labels') from None
++        return state
++
++
++def _inside(base, name):
++    if (not isinstance(name, str) or not name or '\\' in name or '\x00' in name
++            or PurePosixPath(name).is_absolute() or PureWindowsPath(name).drive
++            or '..' in name.split('/')):
++        raise ValueError('path')
++    path = (base / name).resolve()
++    if not path.is_relative_to(base):
++        raise ValueError('path')
++    return path
++
++
++def _no_duplicates(pairs):
++    result = {}
++    for key, value in pairs:
++        if key in result:
++            raise ValueError('duplicate key')
++        result[key] = value
++    return result
++
++
++def _step_tree(path, row):
++    """Recover the run root from the word's relative path; never import a player."""
++    try:
++        word = row.get('word')
++        if not isinstance(word, str):
++            return None, ['path']
++        n = len(PurePosixPath(word).parts)
++        base = Path(path).parents[n - 1].resolve() if n else None
++        if base is None or _inside(base, word) != Path(path).resolve():
++            return None, ['path']
++    except (ValueError, IndexError, OSError, RuntimeError):
++        return None, ['path']
++    tree = row.get('tree')
++    if not isinstance(tree, dict) or set(tree) != {'file', 'sha256', 'size'}:
++        return None, ['tree_missing']
++    try:
++        tree_path = _inside(base, tree['file'])
++    except (ValueError, OSError, RuntimeError):
++        return None, ['path']
++    try:
++        raw = tree_path.read_bytes()
++    except OSError:
++        return None, ['tree_missing']
++    try:
++        if len(raw) < 8 or raw[:2] != b'\x1f\x8b' or raw[4:8] != bytes(4):
++            raise ValueError('gzip header')
++        data = gzip.decompress(raw)
++    except (ValueError, OSError, EOFError, zlib.error):
++        return None, ['tree_malformed']
++    if hashlib.sha256(data).hexdigest() != tree.get('sha256'):
++        return None, ['tree_sha256']
++    try:
++        return json.loads(data, object_pairs_hook=_no_duplicates), []
++    except (ValueError, RecursionError):
++        return None, ['tree_malformed']
++
++
++def _replace_state(target, source):
++    target.pose_id, target._poses, target._lookup = source.pose_id, source._poses, source._lookup
++    target.journal, target._anchor_cache = [], {}
++
++
++def replay_lattice_step(state, row, path, menu, *, stats=None):
++    """Verify files before play, replay literally, and leave the exact state in place.
++
++    Counts in stats describe successfully played letters. Switches count each
++    conversion into or out of the model, including the final write-back. The
++    timer is diagnostic only; it never limits replay.
++    """
++    started = time.perf_counter()
++    counts = {'letters': 0, 'fast': 0, 'simulated': 0, 'switches': 0,
++              'labels_identity': None, 'digest': None, 'seconds': 0.0}
++    fails, model = [], None
++
++    def flush():
++        nonlocal model
++        if model is not None:
++            current, model = model, None
++            _replace_state(state, current.to_state())
++            counts['switches'] += 1
++
++    try:
++        if row.get('encoding') != 'ia16':
++            _add(fails, 'encoding')
++        if type(row.get('letters')) is not int or row['letters'] < 0:
++            _add(fails, 'letters')
++        if (not isinstance(row.get('word_sha256'), str)
++                or re.fullmatch('[0-9a-f]{64}', row['word_sha256']) is None):
++            _add(fails, 'word_sha256')
++        if fails:
++            return fails
++        info = ia16_info(path)
++        if info['letters'] != row['letters']:
++            _add(fails, 'letters')
++        if info['sha256'] != row['word_sha256']:
++            _add(fails, 'word_sha256')
++        if fails:
++            return fails
++        root, tree_fails = _step_tree(path, row)
++        if not tree_fails:
++            tree_fails = check_tree_ranges(path, root, menu)
++        for name in tree_fails:
++            _add(fails, name)
++
++        on_lattice = state.is_lattice()
++        for codes in ia16_chunks(path):
++            for code in codes.tolist():
++                if fast_letter(code, on_lattice):
++                    if model is None:
++                        model = LatticeModel.from_state(state, menu)
++                        counts['switches'] += 1
++                    model.play(code)
++                    counts['fast'] += 1
++                else:
++                    flush()
++                    cap, item = divmod(code, ITEMS)
++                    try:
++                        twist = sim.Twist(state.ctx, cap, restore.element(menu, cap, item),
++                                          'menu', {'menu': menu.name})
++                        outcome = state.apply(twist, journal=False)
++                        admitted = outcome.applied and not outcome.uncertain
++                    except Exception:
++                        admitted = False
++                    if not admitted:
++                        _add(fails, 'admissible')
++                        return fails
++                    counts['simulated'] += 1
++                    on_lattice = state.is_lattice()
++                counts['letters'] += 1
++        flush()
++        off, end_digest = state.off_lattice_count(), state.digest()
++        after = row.get('after')
++        after = after if isinstance(after, dict) else {}
++        if type(after.get('off')) is not int or after['off'] != 0 or after['off'] != off:
++            _add(fails, 'after_off')
++        if after.get('digest') != end_digest:
++            _add(fails, 'after_digest')
++        identity = False
++        if not off:
++            stickers = state.lattice_stickers()
++            frames = bool(np.all(stickers['frame_agrees']))
++            if not frames:
++                _add(fails, 'model_labels')
++            identity = frames and np.array_equal(stickers['labels'], np.arange(len(stickers['labels'])))
++        counts['labels_identity'], counts['digest'] = bool(identity), end_digest
++        if 'labels_identity' in row and (type(row['labels_identity']) is not bool
++                                          or row['labels_identity'] != identity):
++            _add(fails, 'labels_identity')
++    except Ia16Error as exc:
++        _add(fails, exc.name)
++    except FastPathError:
++        _add(fails, 'fast_path')
++    except ModelLabelsError:
++        _add(fails, 'model_labels')
++    except Exception:
++        _add(fails, 'lattice_step')
++    finally:
+         try:
+-            outcome = state.apply(sim.Twist(restore.ctx, cap, restore.element(menu, cap, item),
+-                                            'menu', {'menu': menu.name}), journal=False)
+-            admitted = outcome.applied and not outcome.uncertain
+-        except Exception:  # a simulator error cannot certify a letter
+-            admitted = False
+-        if not admitted:
+-            fails.append('admissible')
+-            break
+-    return fails + [UNCHECKED]
++            flush()
++        except ModelLabelsError:
++            _add(fails, 'model_labels')
++        except Exception:
++            _add(fails, 'lattice_step')
++        counts['seconds'] = time.perf_counter() - started
++        if isinstance(stats, dict):
++            stats.update(counts)
++    return fails
+diff --git a/research/jumbling/restoration/13-tutorial-runner/scripts/test_check_lattice.py b/research/jumbling/restoration/13-tutorial-runner/scripts/test_check_lattice.py
+new file mode 100644
+index 0000000..77efc30
+--- /dev/null
++++ b/research/jumbling/restoration/13-tutorial-runner/scripts/test_check_lattice.py
+@@ -0,0 +1,684 @@
++"""P5 acceptance: independent literal lattice replay, exact headless evidence only.
++
++Run from the repository root with python3 -I -B. Format writers are oracles;
++all reference configurations are built with State.apply, never the fast model.
++All outputs and caches live in one temporary tree. Git is used only for the
++required read-only worktree inventory; no simulation runs in a child process.
++"""
++
++import ast
++import atexit
++import copy
++import gzip
++import hashlib
++import json
++import os
++from pathlib import Path
++import random
++import shutil
++import subprocess
++import sys
++import tempfile
++import time
++import unittest
++from unittest.mock import patch
++
++sys.dont_write_bytecode = True
++for _variable in ('OPENBLAS_NUM_THREADS', 'OMP_NUM_THREADS', 'MKL_NUM_THREADS'):
++    os.environ[_variable] = '1'
++TEMP = Path(tempfile.mkdtemp(prefix='check-lattice-'))
++atexit.register(shutil.rmtree, TEMP, ignore_errors=True)
++os.environ['JUMBLING_HOME_CACHE'] = str(TEMP / 'home-cache')
++HERE = Path(__file__).resolve().parent
++ROOT = HERE.parents[4]
++J = ROOT / 'research/jumbling'
++sys.path[:0] = [str(HERE), str(J / 'theory'), str(J), str(J / 'fixtures')]
++
++# Match test_runner's private exclusions, without importing its player code.
++SKIP = ('.git', 'work/codex-sandbox-home', 'work/loop-memory', 'work/reviews', 'work/worktrees')
++
++
++def inventory():
++    result = {}
++    for directory, dirs, files in os.walk(ROOT):
++        here = Path(directory).relative_to(ROOT)
++        dirs[:] = sorted(d for d in dirs if (here / d).as_posix() not in SKIP)
++        for name in sorted(files):
++            path = Path(directory) / name
++            if path == ROOT / '.git':
++                continue
++            try:
++                value = os.readlink(path) if path.is_symlink() else hashlib.sha256(path.read_bytes()).hexdigest()
++            except FileNotFoundError:
++                continue
++            result[path.relative_to(ROOT).as_posix()] = value
++    return result
++
++
++def status():
++    return subprocess.check_output(['git', '--no-optional-locks', 'status', '--porcelain', '--ignored',
++        '--untracked-files=all', '--', '.'] + [':(exclude)' + p for p in SKIP[1:]], cwd=ROOT)
++
++
++# Include third-party imports in both the elapsed time and the no-write proof.
++STARTED = time.monotonic()
++BASELINE = (status(), inventory()) if __name__ == '__main__' else None
++
++import check_lattice as C  # noqa: E402
++import numpy as np  # noqa: E402
++import restore  # noqa: E402
++import sim  # noqa: E402
++import runner_api as formats  # noqa: E402 -- file-format oracles only
++import test_check_run as scan_oracle  # noqa: E402 -- do not collect its test classes
++
++SOLVED = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
++W9 = [(0, 12), (2, 12), (161, 58), (139, 26), (16, 1),
++      (139, 58), (161, 26), (2, 45), (0, 45)]
++OFF_COUNTS = [3097, 5404, 8501, 10808, 10808, 8501, 5404, 3097, 0]
++
++
++def clone(state):
++    other = sim.State(state.ctx, menu=state.menu)
++    other.pose_id = state.pose_id.copy()
++    other._poses, other._lookup = list(state._poses), dict(state._lookup)
++    return other
++
++
++def code_word(word):
++    return [60 * grip + item for grip, item in word]
++
++
++def write_word(path, word):
++    writer = formats.Ia16Writer(path)
++    writer.write_letters(word)
++    return writer.close()
++
++
++def write_raw_tree(path, root):
++    data = (json.dumps(root, separators=(',', ':'), allow_nan=False) + '\n').encode('utf-8')
++    path.write_bytes(gzip.compress(data, mtime=0))
++    size, stack = 0, [root]
++    while stack:
++        part = stack.pop()
++        size += 1
++        stack.extend(part.get('parts', []))
++    return {'sha256': hashlib.sha256(data).hexdigest(), 'size': size}
++
++
++def snapshot(state):
++    return {'digest': state.digest(), 'off': state.off_lattice_count(), 'heights': {}}
++
++
++def make_row(directory, index, word, root, before, after, *, identity=None):
++    word_name = f'words/{index:05d}.ia16.gz'
++    tree_name = f'step-trees/{index:05d}.json.gz'
++    info = write_word(directory / word_name, word)
++    tree = formats.write_tree(directory / tree_name, root, len(word))
++    row = {'index': index, 'phase': 'lattice', 'subphase': None,
++           'rule': 'lattice/orbit-0' if index == 0 else 'lattice/correction-0-0',
++           'word': word_name, 'letters': info['letters'], 'encoding': 'ia16',
++           'word_sha256': info['sha256'], 'tree': {'file': tree_name, **tree},
++           'contract': 'lattice_literal', 'gate': 'player', 'standing': 'rule',
++           'before': before, 'after': after, 'seconds': 0.0, 'attempts': []}
++    if identity is not None:
++        row['labels_identity'] = identity
++    return row
++
++
++class AIndependenceTests(unittest.TestCase):
++    def scan(self, source):
++        problems = scan_oracle.IndependenceTests().scan(source)
++        for node in ast.walk(ast.parse(source)):
++            if isinstance(node, ast.Import):
++                names = [alias.name for alias in node.names]
++            elif isinstance(node, ast.ImportFrom):
++                names = [node.module or '']
++            else:
++                names = []
++            problems.extend('process import' for name in names
++                            if name.split('.')[0] in ('subprocess', 'multiprocessing'))
++            if isinstance(node, (ast.Assign, ast.AnnAssign)):
++                targets = node.targets if isinstance(node, ast.Assign) else [node.target]
++                if any(isinstance(n, ast.Name) and n.id == 'STUB'
++                       for target in targets for n in ast.walk(target)):
++                    problems.append('stub assignment')
++        if 'unchecked_contract' in source:
++            problems.append('unchecked contract')
++        return problems
++
++    def test_a_source_and_scan(self):
++        self.assertEqual(self.scan((HERE / 'check_lattice.py').read_text()), [])
++        for source in ('import literal_lattice', 'from runner_api import Ia16Writer', 'import exact',
++                       'restore.jumble_items(m)', "__import__('seams')", 'import subprocess',
++                       'import multiprocessing', 'STUB = False'):
++            with self.subTest(source=source):
++                self.assertTrue(self.scan(source))
++        self.assertEqual(C._moves.cache_info().currsize, 0, 'primitive moves loaded at import')
++
++
++class BReaderTests(unittest.TestCase):
++    @classmethod
++    def setUpClass(cls):
++        cls.directory = Path(tempfile.mkdtemp(dir=TEMP, prefix='readers-'))
++        cls.fixtures = []
++        for length in (0, 1, 1000, 200000):
++            codes = ((np.arange(length, dtype=np.int64) * 7919 + 35999) % 36000).astype('<u2')
++            path = cls.directory / f'{length}.ia16.gz'
++            writer = formats.Ia16Writer(path)
++            writer.write_codes(codes.tolist())
++            cls.fixtures.append((path, codes, writer.close()))
++
++    def test_b_decoders_and_overlapping_ranges(self):
++        # 257 is odd and smaller than even the 1,000-letter file (2,000 bytes).
++        for path, codes, expected in self.fixtures:
++            self.assertEqual(formats.ia16_digest(path), expected)
++            word = [[int(c) // 60, int(c) % 60] for c in codes]
++            for chunk_bytes in (C.CHUNK_BYTES, 257):
++                with self.subTest(letters=len(codes), chunk_bytes=chunk_bytes), patch.object(C, 'CHUNK_BYTES', chunk_bytes):
++                    self.assertEqual(C.ia16_info(path), expected)
++                    self.assertEqual(C.read_ia16(path, expected['sha256']), word)
++                    with self.assertRaises(C.Sha256Mismatch):
++                        C.read_ia16(path, '0' * 64)
++                    n = len(codes)
++                    ranges = [(n // 2, n), (0, min(n, 17)),
++                              (max(0, n // 2 - 3), min(n, n // 2 + 13)), (n, n), (0, n)]
++                    actual = C.ia16_ranges(path, ranges)
++                    for found, (lo, hi) in zip(actual, ranges):
++                        self.assertEqual(found.dtype, np.dtype('<u2'))
++                        np.testing.assert_array_equal(found, codes[lo:hi])
++                    if n:
++                        self.assertTrue(np.shares_memory(actual[0], actual[-1]))
++        # The smallest possible odd read also has to carry a code correctly.
++        with patch.object(C, 'CHUNK_BYTES', 1):
++            self.assertEqual(C.ia16_info(self.fixtures[1][0]), self.fixtures[1][2])
++
++    def test_b_bad_files_and_range_past_end(self):
++        good = self.fixtures[2][0].read_bytes()
++        cases = {'truncated': (good[:len(good) // 2], 'word_file'),
++                 'plain': (b'not gzip', 'word_file'),
++                 'mtime': (gzip.compress(b'\x00\x00', mtime=1), 'word_file'),
++                 'odd': (gzip.compress(b'\x00', mtime=0), 'word_file'),
++                 'invalid': (gzip.compress((36000).to_bytes(2, 'little'), mtime=0), 'word_literal'),
++                 'corrupt': (good[:-8] + bytes([good[-8] ^ 1]) + good[-7:], 'word_file'),
++                 'missing': (None, 'word_file')}
++        for name, (data, failure) in cases.items():
++            path = self.directory / f'bad-{name}.gz'
++            if data is not None:
++                path.write_bytes(data)
++            with self.subTest(case=name):
++                for reader in (C.ia16_info, lambda p: C.ia16_ranges(p, [])):
++                    with self.assertRaises(C.Ia16Error) as caught:
++                        reader(path)
++                    self.assertEqual(caught.exception.name, failure)
++                    self.assertEqual(str(caught.exception), failure)
++                with self.assertRaises(ValueError):
++                    C.read_ia16(path)
++        for ranges in ([(0, 1001)], [(1001, 1001)], [(0, 10**30)], [(-1, 0)], [(2, 1)], [(False, 1)]):
++            with self.subTest(ranges=ranges), self.assertRaises(C.Ia16Error) as caught:
++                C.ia16_ranges(self.fixtures[2][0], ranges)
++            self.assertEqual(caught.exception.name, 'word_file')
++
++
++class CLatticeTests(unittest.TestCase):
++    @classmethod
++    def setUpClass(cls):
++        started = time.perf_counter()
++        cls.menu = restore.menu('I_a')
++        cls.ctx = restore.ctx
++        cls.retained = [i for i, (_, m) in enumerate(cls.menu.items)
++                        if cls.ctx.kplus.index_of_matrix(m) >= 0]
++        assert len(cls.menu.items) == 60 and cls.retained == list(range(12)), cls.retained
++        cls.inverse = {i: next(j for j, (_, n) in enumerate(cls.menu.items)
++                              if restore.to_tuple(restore.transpose(m)) == restore.to_tuple(n))
++                       for i, (_, m) in enumerate(cls.menu.items)}
++        cls.twists = {}
++        library = json.loads(gzip.decompress((J / 'restoration/09-general-method/data/library-merged.json.gz').read_bytes()))
++        macro = library['macros'][0]
++        assert len(library['macros']) == 36 and macro['family'] == 'w9' and len(macro['records']) == 9
++        cls.C = []
++        for record in macro['records']:
++            twist = sim.Twist.from_record(cls.ctx, record)
++            items = [i for i in range(60) if restore.element(cls.menu, twist.grip, i) == twist.matrix]
++            assert len(items) == 1, items
++            letter = (twist.grip, items[0])
++            cls.C.append(letter)
++            cls.twists[letter] = twist
++        assert cls.C == W9, cls.C
++        assert [p for p in cls.C if p[1] in cls.retained] == [(16, 1)]
++        rng = random.Random(5005)
++        A = [(rng.randrange(600), rng.choice(cls.retained)) for _ in range(250)]
++        B = [(rng.randrange(600), rng.choice(cls.retained)) for _ in range(250)]
++        cls.W = A + B + cls.inverted(A) + B
++        assert {i for _, i in A + B} == set(cls.retained)
++        cls.solved = sim.State(cls.ctx, menu=cls.menu)
++        assert cls.solved.digest() == SOLVED
++        from_solved, observed = clone(cls.solved), []
++        for letter in cls.C:
++            cls.apply_one(from_solved, letter)
++            observed.append(from_solved.off_lattice_count())
++        assert observed == OFF_COUNTS, observed
++        cls.T = clone(cls.solved)
++        cls.apply_word(cls.T, cls.inverted(cls.C))
++        assert cls.T.is_lattice()
++        target_stickers = cls.T.lattice_stickers()
++        assert target_stickers['frame_agrees'].all()
++        assert not np.array_equal(target_stickers['labels'], np.arange(len(target_stickers['labels'])))
++        cls.Y = clone(cls.T)
++        cls.apply_word(cls.Y, cls.inverted(cls.W))
++        assert cls.Y.is_lattice()
++        reference, cls.prefixes = clone(cls.Y), {}
++        for n, letter in enumerate(cls.W, 1):
++            cls.apply_one(reference, letter)
++            if n in (1, 333, 1000):
++                cls.prefixes[n] = (reference.digest(), reference.lattice_stickers()['labels'].copy())
++        assert reference.digest() == cls.T.digest(), (reference.digest(), cls.T.digest())
++        observed = []
++        for letter in cls.C:
++            cls.apply_one(reference, letter)
++            observed.append(reference.off_lattice_count())
++        assert observed == OFF_COUNTS, observed
++        assert reference.digest() == SOLVED, reference.digest()
++        cls.S = cls.invisible_rotation(cls.T, target_stickers['labels'])
++        invisible_end = clone(cls.S)
++        cls.apply_word(invisible_end, cls.C)
++        labels = invisible_end.lattice_stickers()
++        assert labels['frame_agrees'].all() and np.array_equal(labels['labels'], np.arange(len(labels['labels'])))
++        cls.invisible_digest = invisible_end.digest()
++        assert cls.invisible_digest != SOLVED, cls.invisible_digest
++        # Independent reference for the required mid-correction stop.
++        changed = cls.C.copy()
++        changed[3] = (139, 12)
++        partial = clone(cls.T)
++        cls.apply_word(partial, changed[:4])
++        cls.partial_digest = partial.digest()
++        refused = partial.apply(cls.twist(changed[4]), journal=False)
++        assert not refused.applied and partial.digest() == cls.partial_digest
++        cls.template = Path(tempfile.mkdtemp(dir=TEMP, prefix='fixture-'))
++        ai = formats.span('A inverse', 500, 750)
++        ai['inverse_of'] = [0, 0]
++        bs = formats.span('B', 750, 1000)
++        bs['same_as'] = [0, 1]
++        cls.roots = [formats.group('orbit 0', [
++            formats.group('factor 0', [formats.span('A', 0, 250), formats.span('B', 250, 500)]),
++            formats.group('factor 1', [ai, bs])]),
++            formats.group('correction 0', [formats.span('macro 0 w9', 0, 9)])]
++        cls.rows = [make_row(cls.template, 0, cls.W, cls.roots[0], snapshot(cls.Y), snapshot(cls.T)),
++                    make_row(cls.template, 1, cls.C, cls.roots[1], snapshot(cls.T), snapshot(cls.solved), identity=True)]
++        print(f'Fixture (State.apply references, Y/T/S): {time.perf_counter() - started:.3f}s', flush=True)
++
++    @classmethod
++    def inverted(cls, word):
++        return [(c, cls.inverse[i]) for c, i in reversed(word)]
++
++    @classmethod
++    def twist(cls, letter):
++        if letter not in cls.twists:
++            c, i = letter
++            cls.twists[letter] = sim.Twist(cls.ctx, c, restore.element(cls.menu, c, i),
++                                           'menu', {'menu': cls.menu.name})
++        return cls.twists[letter]
++
++    @classmethod
++    def apply_one(cls, state, letter):
++        outcome = state.apply(cls.twist(letter), journal=False)
++        assert outcome.applied and not outcome.uncertain, (letter, outcome)
++
++    @classmethod
++    def apply_word(cls, state, word):
++        for letter in word:
++            cls.apply_one(state, letter)
++
++    @classmethod
++    def invisible_rotation(cls, target, labels):
++        kp, reg = cls.ctx.kplus, cls.ctx.regions
++        rotations = np.arange(len(kp.perms))
++        # Search exact stabilizers of unmoved pieces; accept only unchanged labels
++        # with frame agreement and a changed exact digest.
++        for piece in np.flatnonzero(target.pose_id == 0)[-60:][::-1]:
++            transport = kp.compose_vec(rotations, np.full(len(rotations), reg.transport[piece]))
++            dest = reg.piece_of[reg.orbit_of[piece], transport]
++            for h in rotations[(dest == piece) & (rotations != 0)][:4]:
++                state = clone(target)
++                state.pose_id[piece] = state._intern_k(int(h))
++                state._compact()
++                stickers = state.lattice_stickers()
++                if stickers['frame_agrees'].all() and np.array_equal(stickers['labels'], labels):
++                    assert state.digest() != target.digest()
++                    return state
++        raise AssertionError('no invisible rotation found in the recorded candidate set')
++
++    def case(self, index=0):
++        directory = Path(tempfile.mkdtemp(dir=TEMP, prefix='case-'))
++        self.addCleanup(shutil.rmtree, directory)
++        shutil.copytree(self.template, directory, dirs_exist_ok=True)
++        row = copy.deepcopy(self.rows[index])
++        return directory, row, (directory / row['word']).resolve(), clone(self.Y if index == 0 else self.T)
++
++    def replay(self, state, row, path, expected):
++        stats = {}
++        result = C.replay_lattice_step(state, row, path, self.menu, stats=stats)
++        self.assertEqual(len(result), len(set(result)), result)
++        self.assertEqual(set(result), set(expected), (result, stats))
++        self.assertTrue(all(isinstance(n, str) and n for n in result))
++        self.assertEqual(stats['letters'], stats['fast'] + stats['simulated'])
++        self.assertGreaterEqual(stats['seconds'], 0)
++        return stats
++
++    def update_tree(self, directory, row, root):
++        row['tree'].update(write_raw_tree(directory / row['tree']['file'], root))
++
++    def changed_word(self, word):
++        return [(c, self.retained[(self.retained.index(i) + 1) % len(self.retained)]) for c, i in word]
++
++    def test_c_model_three_prefixes(self):
++        started = time.perf_counter()
++        model = C.LatticeModel.from_state(clone(self.Y), self.menu)
++        into = time.perf_counter() - started
++        out = []
++        for n, code in enumerate(code_word(self.W), 1):
++            model.play(code)
++            if n in self.prefixes:
++                started = time.perf_counter()
++                state = model.to_state()
++                out.append(time.perf_counter() - started)
++                self.assertEqual(state.digest(), self.prefixes[n][0])
++                np.testing.assert_array_equal(model.labels, self.prefixes[n][1])
++        print(f'Conversions: State -> model {into:.6f}s; model -> State {sum(out) / len(out):.6f}s (mean of 3).', flush=True)
++
++    def test_c_invisible_rotation_retained_word(self):
++        ends = []
++        for start in (self.S, self.T):
++            reference = clone(start)
++            model = C.LatticeModel.from_state(clone(start), self.menu)
++            for letter in self.W[:50]:
++                model.play(60 * letter[0] + letter[1])
++                self.apply_one(reference, letter)
++            rebuilt = model.to_state()
++            self.assertEqual(rebuilt.digest(), reference.digest())
++            np.testing.assert_array_equal(model.labels, reference.lattice_stickers()['labels'])
++            ends.append(rebuilt.digest())
++        self.assertNotEqual(*ends)
++
++    def test_c_guard_and_off_lattice_refusal(self):
++        model = C.LatticeModel.from_state(clone(self.T), self.menu)
++        labels, poses = model.labels.copy(), model.place_pose.copy()
++        with self.assertRaises(C.FastPathError):
++            model.play(12)
++        np.testing.assert_array_equal(model.labels, labels)
++        np.testing.assert_array_equal(model.place_pose, poses)
++        state = clone(self.solved)
++        self.apply_one(state, self.C[0])
++        self.assertEqual(state.off_lattice_count(), 3097)
++        with self.assertRaises(ValueError):
++            C.LatticeModel.from_state(state, self.menu)
++
++    def test_d_two_positive_steps_in_place(self):
++        directory, first, path, state = self.case()
++        self.assertEqual(C.check_tree_ranges(path, self.roots[0], self.menu), [])
++        stats = self.replay(state, first, path, set())
++        self.assertEqual((stats['letters'], stats['fast'], stats['simulated'], stats['switches']), (1000, 1000, 0, 2))
++        self.assertEqual(state.digest(), self.T.digest())
++        self.assertEqual(stats['digest'], self.T.digest())
++        print(f'Test D retained replay: {1000 / stats["seconds"]:.1f} letters/s (includes files, conversions and end checks).', flush=True)
++        second = copy.deepcopy(self.rows[1])
++        path = (directory / second['word']).resolve()
++        self.assertEqual(C.check_tree_ranges(path, self.roots[1], self.menu), [])
++        stats = self.replay(state, second, path, set())
++        self.assertEqual((stats['fast'], stats['simulated'], stats['letters'], stats['switches']), (0, 9, 9, 0))
++        self.assertIs(stats['labels_identity'], True)
++        self.assertEqual(stats['digest'], SOLVED)
++        self.assertEqual(state.digest(), SOLVED)
++        self.assertEqual(state.journal, [])
++
++    def test_e_w9_identity_labels_with_non_solved_digest(self):
++        for variant, failures in (('valid', set()), ('digest', {'after_digest'}), ('labels', {'labels_identity'})):
++            with self.subTest(variant=variant):
++                _, row, path, _ = self.case(1)
++                state = clone(self.S)
++                row['before'] = snapshot(self.S)
++                row['after']['digest'] = SOLVED if variant == 'digest' else self.invisible_digest
++                if variant == 'labels':
++                    row['labels_identity'] = False
++                stats = self.replay(state, row, path, failures)
++                self.assertIs(stats['labels_identity'], True)
++                self.assertEqual(state.digest(), self.invisible_digest)
++                self.assertEqual(stats['digest'], self.invisible_digest)
++                self.assertNotEqual(state.digest(), SOLVED)
++
++    def test_f_changed_retained_letter_and_same_as_word(self):
++        for variant, expected in (('stale-sha', {'word_sha256'}),
++                                  ('fresh-sha', {'tree_expansion', 'after_digest'}),
++                                  ('same-as', {'tree_expansion', 'after_digest'})):
++            with self.subTest(variant=variant):
++                _, row, path, state = self.case()
++                word = self.W.copy()
++                if variant == 'same-as':
++                    word[750:] = self.changed_word(word[750:])
++                else:
++                    word[:1] = self.changed_word(word[:1])
++                info = write_word(path, word)
++                if variant != 'stale-sha':
++                    row['word_sha256'] = info['sha256']
++                stats = self.replay(state, row, path, expected)
++                if variant == 'stale-sha':
++                    self.assertEqual(state.digest(), self.Y.digest())
++                    self.assertEqual(stats['letters'], 0)
++                    self.assertIsNone(stats['digest'])
++                else:
++                    self.assertEqual(stats['letters'], 1000)
++
++    def test_f_changed_correction_and_partial_state(self):
++        for index, letter, failures in ((3, (139, 12), {'admissible'}),
++                                         (8, (0, 14), {'after_digest', 'labels_identity'})):
++            with self.subTest(index=index):
++                _, row, path, state = self.case(1)
++                word = self.C.copy()
++                word[index] = letter
++                row['word_sha256'] = write_word(path, word)['sha256']
++                stats = self.replay(state, row, path, failures)
++                self.assertEqual(stats['fast'], 0)
++                if index == 3:
++                    self.assertEqual(state.digest(), self.partial_digest)
++                    self.assertEqual(stats['simulated'], 4)
++                    self.assertIsNone(stats['labels_identity'])
++                    self.assertIsNone(stats['digest'])
++                else:
++                    reference = clone(self.T)
++                    self.apply_word(reference, word)
++                    self.assertTrue(reference.is_lattice())
++                    self.assertEqual(state.digest(), reference.digest())
++                    self.assertIs(stats['labels_identity'], False)
++
++    def test_f_file_truncation_count_and_sha(self):
++        for variant, failures in (('truncated', {'word_file'}), ('short', {'letters', 'word_sha256'}),
++                                  ('sha', {'word_sha256'})):
++            with self.subTest(variant=variant):
++                _, row, path, state = self.case()
++                if variant == 'truncated':
++                    raw = path.read_bytes()
++                    path.write_bytes(raw[:len(raw) // 2])
++                elif variant == 'short':
++                    write_word(path, self.W[:-1])
++                else:
++                    row['word_sha256'] = 'f' * 64
++                with patch.object(C, 'check_tree_ranges', side_effect=AssertionError('must not check tree')):
++                    stats = self.replay(state, row, path, failures)
++                self.assertEqual(state.digest(), self.Y.digest())
++                self.assertEqual(stats['letters'], 0)
++
++    def test_f_row_guards_and_end_claims(self):
++        guards = [('encoding', 'json'), ('letters', -1), ('letters', True), ('letters', 1.0),
++                  ('word_sha256', 'A' * 64), ('word_sha256', None)]
++        for field, value in guards:
++            with self.subTest(field=field, value=value):
++                _, row, path, state = self.case()
++                row[field] = value
++                with patch.object(C, 'ia16_info', side_effect=AssertionError('must not read file')):
++                    stats = self.replay(state, row, path, {field})
++                self.assertEqual(state.digest(), self.Y.digest())
++                self.assertEqual(stats['letters'], 0)
++        for field in ('digest', 'off', 'labels_identity'):
++            with self.subTest(claim=field):
++                _, row, path, state = self.case()
++                if field == 'labels_identity':
++                    row[field] = True
++                else:
++                    row['after'][field] = '0' * 64 if field == 'digest' else 1
++                self.replay(state, row, path, {'labels_identity' if field == 'labels_identity' else 'after_' + field})
++                self.assertEqual(state.digest(), self.T.digest())
++
++    def test_f_forced_fast_path_refuses_jumble(self):
++        _, row, path, state = self.case(1)
++        with patch.object(C, 'fast_letter', return_value=True):
++            stats = self.replay(state, row, path, {'fast_path'})
++        self.assertEqual(state.digest(), self.T.digest())
++        self.assertEqual((stats['fast'], stats['simulated'], stats['letters']), (0, 0, 0))
++        self.assertIsNone(stats['labels_identity'])
++
++    def test_f_tree_reference_mutations(self):
++        for variant, failure in (('wrong-inverse', 'tree_expansion'), ('forward', 'tree_malformed'),
++                                  ('same-name', 'tree_malformed'), ('both', 'tree_malformed')):
++            with self.subTest(variant=variant):
++                directory, row, path, state = self.case()
++                root = copy.deepcopy(self.roots[0])
++                first, second = root['parts'][0]['parts'], root['parts'][1]['parts']
++                if variant == 'wrong-inverse':
++                    second[0]['inverse_of'] = [0, 1]
++                elif variant == 'forward':
++                    first[0]['inverse_of'] = [1, 0]
++                elif variant == 'same-name':
++                    second[1]['same_as'] = [0, 0]
++                else:
++                    second[1]['inverse_of'] = [0, 1]
++                self.update_tree(directory, row, root)
++                self.assertEqual(C.check_tree_ranges(path, root, self.menu), [failure])
++                self.replay(state, row, path, {failure})
++                self.assertEqual(state.digest(), self.T.digest(), 'tree failure must not stop verified word replay')
++
++    def test_g_tree_structure_and_depth(self):
++        _, _, path, _ = self.case()
++        invalid = [None, {}, {'name': '', 'letters': 1000, 'span': [0, 1000]},
++                   {'name': 'x', 'letters': 1000, 'parts': []},
++                   {'name': 'x', 'letters': True, 'span': [0, 1]},
++                   {'name': 'x', 'letters': 1000, 'span': [0, 1000], 'parts': []},
++                   {'name': 'x', 'letters': 999, 'span': [0, 1000]},
++                   {'name': 'x', 'letters': 999, 'span': [0, 999]},
++                   {'name': 'x', 'letters': 1000, 'span': [1, 1001]},
++                   {'name': 'x', 'letters': 1000, 'parts': [formats.span('a', 0, 500)]}]
++        for root in invalid:
++            with self.subTest(root=root):
++                self.assertEqual(C.check_tree_ranges(path, root, self.menu), ['tree_malformed'])
++        deep = formats.span('leaf', 0, 1000)
++        for _ in range(63):
++            deep = formats.group('level', [deep])
++        self.assertEqual(C.check_tree_ranges(path, deep, self.menu), [])
++        deep = formats.group('too deep', [deep])
++        self.assertEqual(C.check_tree_ranges(path, deep, self.menu), ['tree_malformed'])
++        # A non-empty ancestor exists in pre-order, but its end is too late.
++        ancestor = copy.deepcopy(self.roots[0])
++        ancestor['parts'][0]['parts'][0]['inverse_of'] = []
++        self.assertEqual(C.check_tree_ranges(path, ancestor, self.menu), ['tree_malformed'])
++
++    def test_g_tree_location_and_read_errors(self):
++        variants = [('word', 'elsewhere/00000.ia16.gz', 'path'),
++                    ('word', '../words/00000.ia16.gz', 'path'),
++                    ('file', '../escape.json.gz', 'path'), ('file', 'C:/escape', 'path'),
++                    ('file', 'missing.gz', 'tree_missing'), ('sha256', '0' * 64, 'tree_sha256'),
++                    ('raw', b'not gzip', 'tree_malformed'),
++                    ('raw', gzip.compress(b'{}', mtime=1), 'tree_malformed'),
++                    ('json', b'{', 'tree_malformed'),
++                    ('json', b'{"name":"a","name":"b"}', 'tree_malformed')]
++        for field, value, failure in variants:
++            with self.subTest(field=field, value=value):
++                directory, row, path, state = self.case()
++                if field == 'word':
++                    row['word'] = value
++                elif field in ('file', 'sha256'):
++                    row['tree'][field] = value
++                elif field == 'raw':
++                    (directory / row['tree']['file']).write_bytes(value)
++                else:
++                    (directory / row['tree']['file']).write_bytes(gzip.compress(value, mtime=0))
++                    row['tree']['sha256'] = hashlib.sha256(value).hexdigest()
++                self.replay(state, row, path, {failure})
++                self.assertEqual(state.digest(), self.T.digest())
++        # A deeper word path still derives the same run root by its part count.
++        directory, row, path, state = self.case()
++        row['word'] = 'words/nested/deeper/00000.ia16.gz'
++        nested = directory / row['word']
++        nested.parent.mkdir(parents=True)
++        shutil.copyfile(path, nested)
++        self.replay(state, row, nested.resolve(), set())
++
++    def test_g_switching_between_representations(self):
++        directory, _, _, _ = self.case()
++        word = [(5, 2), (0, 12), (0, self.inverse[12]), (5, self.inverse[2])]
++        reference = clone(self.solved)
++        self.apply_word(reference, word)
++        self.assertEqual(reference.digest(), SOLVED)
++        row = make_row(directory, 2, word, formats.span('mixed', 0, 4),
++                       snapshot(self.solved), snapshot(reference), identity=True)
++        state = clone(self.solved)
++        stats = self.replay(state, row, (directory / row['word']).resolve(), set())
++        self.assertEqual((stats['fast'], stats['simulated'], stats['switches']), (2, 2, 4))
++        self.assertEqual(state.digest(), SOLVED)
++
++    def test_g_failures_are_sanitized_and_end_frames_checked(self):
++        _, row, path, state = self.case(1)
++        with patch.object(state, 'apply', side_effect=RuntimeError('private exception text')):
++            self.replay(state, row, path, {'admissible'})
++        self.assertEqual(state.digest(), self.T.digest())
++        _, row, path, state = self.case(1)
++        with patch.object(state, 'apply', return_value=type('Outcome', (), {'applied': True, 'uncertain': [1]})()):
++            self.replay(state, row, path, {'admissible'})
++        self.assertEqual(state.digest(), self.T.digest())
++        _, row, path, state = self.case()
++        with patch.object(C, 'fast_letter', side_effect=RuntimeError('private exception text')):
++            self.replay(state, row, path, {'lattice_step'})
++        self.assertEqual(state.digest(), self.Y.digest())
++        _, row, path, state = self.case(1)
++        real_stickers = state.lattice_stickers
++
++        def bad_frames():
++            stickers = real_stickers()
++            stickers['frame_agrees'][:] = False
++            return stickers
++
++        with patch.object(state, 'lattice_stickers', side_effect=bad_frames):
++            self.replay(state, row, path, {'model_labels', 'labels_identity'})
++        self.assertEqual(state.digest(), SOLVED)
++        model = C.LatticeModel.from_state(clone(self.Y), self.menu)
++        model.labels[0], model.labels[1] = model.labels[1], model.labels[0]
++        with self.assertRaises(C.ModelLabelsError):
++            model.to_state()
++
++
++class TimedResult(unittest.TextTestResult):
++    def startTest(self, test):
++        self.started = time.monotonic()
++        super().startTest(test)
++
++    def stopTest(self, test):
++        super().stopTest(test)
++        self.stream.writeln(f'  {test.id()}: {time.monotonic() - self.started:.3f}s')
++
++
++def main(names=()):
++    before_status, before_files = BASELINE if BASELINE is not None else (status(), inventory())
++    loader, module = unittest.defaultTestLoader, sys.modules[__name__]
++    suite = loader.loadTestsFromNames(names, module) if names else loader.loadTestsFromModule(module)
++    result = unittest.TextTestRunner(verbosity=2, resultclass=TimedResult).run(suite)
++    after_status, after_files = status(), inventory()
++    unchanged = before_status == after_status and before_files == after_files
++    if unchanged:
++        print('Worktree unchanged, including ignored files.', file=sys.stderr)
++    else:
++        changed = sorted(p for p in before_files.keys() | after_files.keys()
++                         if before_files.get(p) != after_files.get(p))
++        print('FAIL: acceptance changed the worktree (including ignored files):', changed, file=sys.stderr)
++    print(f'Acceptance elapsed: {time.monotonic() - STARTED:.3f}s.', file=sys.stderr)
++    return 0 if result.wasSuccessful() and unchanged else 1
++
++
++if __name__ == '__main__':
++    sys.exit(main(sys.argv[1:]))

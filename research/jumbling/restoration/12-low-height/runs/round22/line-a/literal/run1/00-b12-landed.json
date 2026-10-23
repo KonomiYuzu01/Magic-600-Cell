@@ -1,0 +1,14 @@
+{
+ "start_digest": "2e3b8f990229799fc88198b2fe4f2062ab4f9d73c78347ee67b252d412b0a086",
+ "end_digest": "2e3b8f990229799fc88198b2fe4f2062ab4f9d73c78347ee67b252d412b0a086",
+ "letters": 0,
+ "unit_size": 41,
+ "unit_on_lattice": 0,
+ "collateral": 0,
+ "others": 696,
+ "others_exact": 696,
+ "others_landed": 0,
+ "off_before": 737,
+ "off_after": 737,
+ "strict_prime": false
+}

@@ -1,0 +1,51 @@
+{
+ "steps": [
+  {
+   "unit": "b12",
+   "unit_file": "research/jumbling/restoration/12-low-height/runs/round22/line-a/units/eb5-k40-k00-b12.json",
+   "word": "research/jumbling/restoration/12-low-height/runs/round22/t1prime-k40/steps/u12.json"
+  },
+  {
+   "unit": "b14",
+   "unit_file": "research/jumbling/restoration/12-low-height/runs/round22/line-a/units/eb5-k40-k00-b14.json",
+   "core": "research/jumbling/restoration/12-low-height/runs/round22/line-a/replay2/inputs/cores/b14-core.json",
+   "target": "research/jumbling/restoration/12-low-height/runs/round22/line-a/replay/jordan/b14-737-target.json"
+  },
+  {
+   "unit": "b16",
+   "unit_file": "research/jumbling/restoration/12-low-height/runs/round22/line-a/units/eb5-k40-k00-b16.json",
+   "core": "research/jumbling/restoration/12-low-height/runs/round22/line-a/replay2/inputs/cores/b16-core.json",
+   "target": "research/jumbling/restoration/12-low-height/runs/round22/line-a/replay/jordan/b16-737-target.json"
+  },
+  {
+   "unit": "b20",
+   "unit_file": "research/jumbling/restoration/12-low-height/runs/round22/line-a/units/eb5-k40-k00-b20.json",
+   "core": "research/jumbling/restoration/12-low-height/runs/round22/line-a/replay2/inputs/cores/b20-core.json",
+   "target": "research/jumbling/restoration/12-low-height/runs/round22/line-a/replay/jordan/b20-737-target.json"
+  },
+  {
+   "unit": "b21",
+   "unit_file": "research/jumbling/restoration/12-low-height/runs/round22/line-a/units/eb5-k40-k00-b21.json",
+   "core": "research/jumbling/restoration/12-low-height/runs/round22/line-a/replay2/inputs/cores/b21-core.json",
+   "target": "research/jumbling/restoration/12-low-height/runs/round22/line-a/replay/jordan/b16-737-target.json"
+  },
+  {
+   "unit": "b07",
+   "unit_file": "research/jumbling/restoration/12-low-height/runs/round22/line-a/units/eb5-k40-k00-b07.json",
+   "core": "research/jumbling/restoration/12-low-height/runs/round22/line-a/replay2/inputs/cores/b07-core.json",
+   "target": "research/jumbling/restoration/12-low-height/runs/round22/line-a/replay/jordan/b07-977-target.json"
+  },
+  {
+   "unit": "b13",
+   "unit_file": "research/jumbling/restoration/12-low-height/runs/round22/line-a/units/eb5-k40-k00-b13.json",
+   "core": "research/jumbling/restoration/12-low-height/runs/round22/line-a/replay2/inputs/cores/b13-core.json",
+   "target": "research/jumbling/restoration/12-low-height/runs/round22/line-a/replay/jordan/b13-915-target.json"
+  },
+  {
+   "unit": "b19",
+   "unit_file": "research/jumbling/restoration/12-low-height/runs/round22/line-a/units/eb5-k40-k00-b19.json",
+   "core": "research/jumbling/restoration/12-low-height/runs/round22/line-a/replay2/inputs/cores/b19-core.json",
+   "target": "research/jumbling/restoration/12-low-height/runs/round22/line-a/replay/jordan/b19-915-target.json"
+  }
+ ]
+}

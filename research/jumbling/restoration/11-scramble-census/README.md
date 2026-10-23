@@ -19,10 +19,16 @@ Labels: **certificate** (an exact computation with a replayable record), **measu
   (`theory/restore.py`, `scramble`, with no retained twists). One seed per depth at first, then two at depths 40 and 100.
   Nothing restricts the scramble.
 - **Descent.** Phase U of the earlier theory (`theory/seams.py`, `SeamRestorer`, default rule order seam, cover,
-  close, conj, lock, improve, shift, reopen; [restoration](../../theory/restoration.md) section 3). Its rules read only
-  the configuration; the run keeps the scramble's history only to label its record. Every kept step lowers the total
-  misalignment N, the number of cut cells covered on one side of a cut and not on the other by the same domain, and
-  N = 0 exactly on the lattice (M3). The three rules that did all the work here:
+  close, conj, lock, improve, shift, reopen; [restoration](../../theory/restoration.md) section 3). Its rules read the
+  configuration. Reopen (U7) also reads the solver's own earlier twists: it applies the inverse of one of them, most
+  recent first, and then looks for a lowering step (`theory/seams.py:285-308`; the twists are `Restorer.moves`,
+  `theory/restore.py:104`, :135). Reopen never found the next step first in any census run (item 2 of "What the runs
+  show" below), and the tutorial runner's bulk phase leaves it out from record format `runner-run/3` on (stage 13,
+  `scripts/runner.py:45-46`; the owner's
+  [decision](../../../../docs/wiki/decisions/owner-decisions-2026-10-20-tutorial-acceptance.md), lines 82 to 85). The
+  run keeps the scramble's history only to label its record. Every kept step lowers the total misalignment N, the
+  number of cut cells covered on one side of a cut and not on the other by the same domain, and N = 0 exactly on the
+  lattice (M3). The three rules that did all the work here:
   - **seam** (face match): one twist of a cap that aligns it on every misaligned cut cell inside it;
   - **cover**: one twist of a cap that covers a misaligned cap and is covered by none;
   - **conj** (three-twist repair): open a cap c by any twist, make the best single twist of a misaligned cap d that
@@ -86,6 +92,67 @@ session, not by its own budget; a second round continued it from its record, whi
 **Certificate**: the same replay check passes on the three records (`runs/round3/check.out`); for the depth 200
 record it also checks the off count, N, the heights and the off poses at that boundary.
 
+### Deeper scrambles: left heights only (18 to 19 October 2026)
+
+Three scrambles of 3000 twists (seeds 7301 to 7303), drawn exactly as a census run draws its scramble
+(`scripts/heights_k.py`), so the state after j twists is the start state of a census run of depth j with that seed.
+Every 250 twists the script records the off count and the left heights of the off pieces; no descent runs. At depths
+10 and 20 it gives the round 1 rows of seeds 7001 and 7106 (26,519 and 51,828 off pieces, all at height 2).
+
+| Seed | Off at 3000 twists | Left heights at 3000 twists | Highest at any checkpoint | First checkpoint with height 6 | Pieces at height 6, checkpoint by checkpoint | Time |
+| ---: | ---: | --- | ---: | ---: | --- | ---: |
+| 7301 | 119,237 | 2: 115,487; 4: 3,743; 6: 7 | 6 | 1,000 | 0, 0, 0, 7, 7, 0, 7, 7, 7, 7, 7, 7 | 1.7 h |
+| 7302 | 118,821 | 2: 116,665; 4: 1,971; 6: 185 | 6 | 2,000 | 0, 0, 0, 0, 0, 0, 0, 13, 172, 172, 172, 185 | 1.8 h |
+| 7303 | 116,111 | 2: 114,470; 4: 1,552; 6: 89 | 6 | 500 | 0, 87, 285, 0, 285, 287, 200, 89, 200, 287, 200, 89 | 1.9 h |
+
+At no checkpoint is a piece above left height 6. From 250 twists on the off count stays between 115,610 and
+124,344. The pieces at height 6 are few and come and go; a checkpoint every 250 twists does not see the states between.
+Times are cloud timings of research code with other jobs on the machine, not performance evidence.
+
+### A descent from 3000 twists (19 October 2026)
+
+One census round of 75 minutes from the 3000-twist state of seed 7302, the scramble of the previous section with the
+most pieces at height 6 (`runs/heights/ia-k3000-s7302.json`). Its start agrees with that section's row for seed 7302
+at 3000 twists, which the other script computed.
+
+| Depth k | Seed | Off after the scramble | Left heights at the scramble | Descent time | Twists | Steps: seam / cover / conj | Off at the end | N: start → end | Left heights at the end |
+| ---: | ---: | ---: | --- | --- | ---: | --- | ---: | --- | --- |
+| 3000 | 7302 | 118,821 | 2: 116,665; 4: 1,971; 6: 185 | 75 minutes | 313 | 0 / 7 / 102 | 100,584 | 145,574 → 130,386 | 2: 99,314; 4: 1,085; 6: 185 |
+
+It ended at the time limit, having put back 15.3% of the off pieces, against 38.4% and 30.5% in the first 75 minutes
+at depths 400 and 1000. Its second step was already a conj step, and the median conj step lowered N by 67 after a
+search of 31 seconds. **The pieces at height 6 stayed there.** Replayed step by step, 185 pieces were at height 6 or
+more after every one of the 109 steps, and the 185 at height 6 at the end are those of the start
+(`runs/heights/ia-k3000-s7302-heights.txt`). In the depth 1000 descent of seed 7103 one conj step lowered all 135 of
+its height-6 pieces to height 4 by the descent's 190th twist (stage 12, R22D-30); this descent made 313 twists and
+lowered none of them. **Certificate**: the replay check passes on the record (`runs/heights/check.out`); the
+step-by-step replay also applies every twist on the exact simulator and checks the off count after every step.
+
+### Four longer descents from 3000 twists (20 October 2026)
+
+Four cloud sessions of round 6 of stage 12's line (d) drew fresh 3000-twist scrambles (seeds 7304, 7305, 7306 and 7307)
+and ran one census round from each with `census_seams.py` unchanged and a budget of 18,900 seconds (5.25 hours) instead
+of 75 minutes. Seed 7305's ran in two parts: its container restarted after 17 steps, and a second run of the script with
+`--start` rebuilt the scramble, replayed the first part's 49 twists and went on with the rest of the budget. The rules
+read no clock, so the restart moves only where the time limit falls. The records and the cloud sessions' accounts are in
+stage 12, under `runs/round22/cloud/census-k3000-s7304/` and the three like it.
+
+| Depth k | Seed | Off after the scramble | Left heights at the scramble | Descent time | Twists | Steps: seam / cover / conj | Off at the end | N: start → end | Left heights at the end |
+| ---: | ---: | ---: | --- | --- | ---: | --- | ---: | --- | --- |
+| 3000 | 7304 | 121,001 | 2: 118,951; 4: 2,050 | 5.25 hours | 580 | 0 / 7 / 191 | 95,569 | 139,584 → 115,200 | 2: 94,384; 4: 1,185 |
+| 3000 | 7305 | 116,870 | 2: 113,826; 4: 3,044 | 5.25 hours | 103 | 0 / 1 / 34 | 105,437 | 141,328 → 131,542 | 2: 103,140; 4: 2,297 |
+| 3000 | 7306 | 123,181 | 2: 118,426; 4: 4,726; 6: 29 | 5.25 hours | 270 | 0 / 3 / 89 | 108,823 | 149,224 → 137,562 | 2: 106,032; 4: 2,762; 6: 29 |
+| 3000 | 7307 | 119,518 | 2: 117,245; 4: 2,263; 6: 10 | 5.25 hours | 734 | 0 / 11 / 241 | 96,236 | 136,918 → 112,776 | 2: 94,691; 4: 1,535; 6: 10 |
+
+All four ended at the time limit, having put back 21.0%, 9.8%, 11.7% and 19.5% of the off pieces (seeds 7304 to 7307 in
+order); the clock is checked between steps, so each last step ended past it (at 5.33, 5.32, 5.29 and 5.55 hours, seed
+7305's the sum of its two parts' descent). Seed 7305's last step still lowered N, so its stop is where the clock fell,
+not where the descent stalled. The scrambles of seeds 7304 and 7305 had no piece at height 6. At seeds 7306 and 7307 as
+many pieces were at height 6 at the end as after the scramble, 29 and 10; whether they are the same pieces was not
+checked. Stage 12 takes the four ends on with its height-first rule, which lowers those height-6 pieces and then stops
+on height 4 (`PROOFS-B.md`, round 6 of line (d)). **Certificate**: `check_records.py` passes on the four records (stage
+12, `runs/round22/cloud-k3000-check.out` and `cloud-k3000-check-s7305.out`).
+
 ### What the runs show (measured)
 
 1. **No run got stuck.** Every run that did not reach the lattice was stopped by the clock; every step it took
@@ -97,8 +164,8 @@ record it also checks the off count, N, the heights and the off poses at that bo
      1,566; at depth 100 by about 550 and 966 (the two seeds), at 200 by 455, at 400 and 1000 by about 55.
    - Broadly, the deeper the scramble, the sooner the single-twist steps run out: the first conj step came after 29
      steps (when 25,783 pieces were off) for depth 40, after 27 (53,647) for 60, after 9 (101,481) and 19 (89,121)
-     for the two seeds at 100, after 10 (106,075) for 200, after 11 (109,266) for 400 and after 3 (121,636) for
-     1000.
+     for the two seeds at 100, after 10 (106,075) for 200, after 11 (109,266) for 400, after 3 (121,636) for
+     1000 and after 1 (118,435) for 3000.
    - In the tail almost every step is a conj step. In round 1 the median conj step lowered N by 50 to 146 after a
      search of 20 to 52 seconds; in round 2 by 2 to 50 after 91 to 269 seconds. Round 3 fits this: 80 and 67 after 36
      and 29 seconds in the first rounds at depths 100 and 400, and 41 after 195 seconds in the second round at 200.
@@ -110,12 +177,18 @@ record it also checks the off count, N, the heights and the off poses at that bo
 4. **One seed per depth is not enough.** The two 40-twist scrambles have about the same number of off pieces, but
    seed 7107 is solved by face matches in under three minutes while seed 7101 runs into the tail. At depth 100 the
    second seed put back 76.9% in its first 75 minutes, the first seed 70.4%.
-5. **Heights stay low.** After 1000 random twists no piece is above left height 6. The descent cleared all pieces at
-   height 6, but heights do not only fall: in round 2 the pieces at height 4 rose from 81 to 124 (depth 100) and from
-   264 to 390 (depth 1000), and in round 3 from 0 to 111 (depth 100, second seed) and from 410 to 607 (depth 400).
-   N is the potential, not the height.
-6. **From about 200 twists on, depth matters little.** The scrambles of 200, 400 and 1000 twists left 118,493 to
-   125,304 pieces off, and the descent put back 30.5% to 38.4% of them in its first 75 to 104 minutes.
+5. **Heights stay low.** After 1000 random twists no piece is above left height 6, and in three scrambles of 3000
+   twists none is above height 6 at any checkpoint. The depth 1000 descent cleared its 135 pieces at height 6, but the
+   descent from 3000 twists lowered none of its 185 in 75 minutes, three more descents from 3000 twists ended after
+   budgets of 5.25 hours with as many pieces at height 6 as they started with (0, 29 and 10; the sections above), and
+   heights do not only fall: in round 2 the pieces at height 4 rose from 81 to 124 (depth 100) and from 264 to 390
+   (depth 1000), and in round 3 from 0 to 111 (depth 100, second seed) and from 410 to 607 (depth 400). N is the
+   potential, not the height.
+6. **From about 200 twists on, the off count hardly grows; N does.** The scrambles of 200, 400, 1000 and 3000 twists
+   left 118,493 to 125,304 pieces off, but N at the start grew from 86,358 to 100,632, 123,654 and 145,574. The
+   descent put back 30.5% to 38.4% of the off pieces in its first 75 to 104 minutes at depths 200 to 1000, and 15.3%
+   in 75 minutes at 3000; three more scrambles of 3000 twists left 119,518 to 123,181 pieces off with N from 136,918
+   to 149,224, and their descents put back 11.7% to 21.0% in 5.25 hours.
 
 ## The residue at the end of round 2
 
@@ -200,9 +273,10 @@ simulator with N and the off count checked after every step (measured; scripts a
   the cap with the largest N_c; at the other 48 it made at least 59. From step 44 on, the medians are about 110
   openings and about 800 pairs. A person would also have to find y and z for each pair with checks, since the
   program shows no best twist.
-- **At the cap where the repair was found, few pairs work.** At 15 tail steps from step 44 on, 1 to 11 of the 472 to
-  1,298 pairs (opening x, neighbour d) at that cap lowered N, 0.08% to 1.86% (table); at 9 of the 15 the pair the
-  rule found was the only one. At the caps the rule tried before, none did.
+- **At the cap where the repair was found, few pairs work.** At all 63 repair steps, 1 to 61 of the pairs (opening
+  x, neighbour d) at that cap lowered N, median 5. At the 11 steps before step 44 it was 15 to 61 (median 27); from
+  step 44 on, 1 to 59 (median 3), 0.08% to 6.67% of the 118 to 1,593 pairs at the cap, and at 15 of those 52 steps
+  the pair the rule found was the only one. At the caps the rule tried before, none did.
 - **Nothing visible marks the pair.** After the opening, d passes the face match at 6 of the 63 steps, and c after
   y at 2. c covers d at 30 steps and d covers c at 26, so the cover relation does not single out the pair. The
   scramble's own twists are not undone either: x undoes c's last scramble twist at no step, y undoes d's at 2.
@@ -216,7 +290,8 @@ simulator with N and the off count checked after every step (measured; scripts a
   only, and in 236 (40%) the last twist undoes the opening (z = x⁻¹). Since the rule tries retained openings first,
   this counts what was found first, not what exists.
 
-The repair density at the 15 tail steps measured (`runs/findability/ia-k40-s7101-density.jsonl.gz`). N: before the
+The repair density at 15 tail steps (`runs/findability/ia-k40-s7101-density.jsonl.gz`; the other 48 repair steps are
+in `ia-k40-s7101-density-rest.jsonl.gz`, and `scripts/findability_table.py` prints the list at all 63). N: before the
 step. Cap c: the cap where the rule found the repair, with its place among the misaligned caps by decreasing N_c.
 Neighbours: the misaligned caps that meet c. Pairs: the 59 openings of c times its neighbours. Lowering N: the
 pairs whose repair, with the rule's y and z, lowers N; the last column counts those whose opening is a retained
@@ -245,6 +320,17 @@ order, a face match took a median of 71 checks and ruling one out a median of 53
 about 110 openings and 800 pairs, each pair with its own checks for y and z (the medians from step 44 on). The
 records have 42 to 197 repair steps each. Whether reading the domains brings the face match down to a few checks was
 not measured. This is one record at one depth; the other records were not measured this way.
+
+**With the repair list.** The owner then allowed one aid
+([decision](../../../../docs/wiki/decisions/owner-decisions-2026-10-17-repair-pairs.md), 17 October 2026): for a cap
+the solver names, the program lists the pairs (x, d) whose repair lowers N, each with its y and z, and the person
+picks one. A person who names the caps by decreasing N_c then gets an empty list at every cap before the one where
+the rule found its repair, since the rule took the first repair that worked in the same order, and a list at that
+cap. That cap was the first named at 15 of the 63 repair steps, the second at 26, the third at 13, and at most the
+28th (the rule's place of the chosen cap; the table above shows it for 15 steps). Its list held 1 to 61 pairs, median
+5. At the 11 steps before step 44 (N from 15,226 down to 5,356, the cap always the first named) it held 15 to 61,
+median 27. From step 44 on it held 1 to 59, median 3: one pair at 15 of the 52 steps, at most 12 at 48 of them, and
+more at four (20, 18 and 19 at steps 45, 51 and 53; 59 at step 90).
 
 ## Assessment and the owner's choice
 
@@ -281,8 +367,9 @@ templates can address hold 27% (depth 60) and 5% (depth 100).
      lattice phase) drafted and chapter 3 as an outline.
   4. What a person would have to try (section above): with the facts the program shows, a face match took a median
      of 71 checks in a simple order, and a repair in the tail a search of about 110 openings and 800 pairs of
-     opening and neighbour (medians). What help the program may give for these searches is an owner decision under
-     the human-solve boundary.
+     opening and neighbour (medians). The owner then allowed a repair list at a cap the solver names; at all 63 repair
+     steps of this record it held 1 to 61 pairs, a median of 5 (from step 44 on, a median of 3). Other records were
+     not measured this way.
 - **B.** A statement: at every reachable state whose off pieces lie at left heights 2 and 4, a clean step V·W·V⁻¹
   exists whose W comes from a finite catalogue and whose vacating word V has an explicit length bound, or an
   unlocking step of explicit length; that is, gap M1 restricted to low heights. The template test puts the weight
@@ -314,20 +401,48 @@ From the repository root, with Python 3 and NumPy, `S=research/jumbling/restorat
     python3 -I -B $S/check_steps.py research/jumbling/restoration/11-scramble-census/runs/round2/ia-k60-s7104.json \
         research/jumbling/restoration/11-scramble-census/templates/k60-step0*-word.json
     # what a person would have to try, at seed 7101: the choices offered at every step (about 7 minutes), the repair
-    # density at 15 tail steps (about 50 minutes), single twists at the repair steps (about 5 minutes), what the
-    # repairs of the seven records with repairs are made of (about 2 minutes), and the numbers of the section
+    # density at 15 tail steps (about 50 minutes) and at the other 48 repair steps (about 4 hours), single twists at
+    # the repair steps (about 5 minutes), what the repairs of the seven records with repairs are made of (about 2
+    # minutes), and the numbers of the section
     R=research/jumbling/restoration/11-scramble-census/runs; F=$R/findability
     python3 -I -B $S/findability.py $R/round2/ia-k40-s7101.json > $F/ia-k40-s7101-steps.jsonl
     python3 -I -B $S/density.py $R/round2/ia-k40-s7101.json 44 47 48 54 59 64 69 74 75 79 83 87 91 96 97 \
         | gzip -n > $F/ia-k40-s7101-density.jsonl.gz
+    python3 -I -B $S/density.py $R/round2/ia-k40-s7101.json 30 32 33 35 37 38 39 40 41 42 43 45 46 49 50 51 53 55 \
+        56 57 60 61 62 63 65 66 67 68 70 71 72 73 76 77 78 80 81 82 84 85 86 88 89 90 92 93 94 95 \
+        | gzip -n > $F/ia-k40-s7101-density-rest.jsonl.gz
     python3 -I -B $S/single_twist.py $R/round2/ia-k40-s7101.json > $F/ia-k40-s7101-single.jsonl
     python3 -I -B $S/repair_items.py $R/round2/ia-k*.json $R/round3/ia-k*.json > $F/repair-items.jsonl
     python3 -I -B $S/findability_table.py $F ia-k40-s7101
+    # left heights every 250 twists without descent (about 1.7 to 1.9 hours each, three at a time on four shared
+    # cores), and the checks against round 1 (seeds 7001 and 7106 at depths 10 and 20; seconds)
+    for s in 7301 7302 7303; do python3 -I -B $S/heights_k.py 3000 $s 250 <out>/h-$s.jsonl; done
+    python3 -I -B $S/heights_k.py 10 7001 10 <out>/chk-7001.jsonl
+    python3 -I -B $S/heights_k.py 20 7106 10 <out>/chk-7106.jsonl
+    # one 75-minute descent round from the 3000-twist state of seed 7302 (about an hour to build the scramble
+    # first), its replay check (about 75 minutes), and its heights after every step: the senior reviewer's
+    # r22d30_height6.py (stage 12) with this record's path and a larger CPU limit (about 28 minutes)
+    python3 -I -B $S/census_seams.py 3000 7302 4500 <out>
+    python3 -I -B $S/check_records.py research/jumbling/restoration/11-scramble-census/runs/heights/ia-k3000-s7302.json
+    sed -e 's#runs/round2/ia-k1000-s7103.json#runs/heights/ia-k3000-s7302.json#' -e 's#(1190,1200)#(7190,7200)#' \
+        research/jumbling/restoration/12-low-height/scripts/round22/r22d30_height6.py > <tmp>/heights6.py
+    python3 -I -B -u <tmp>/heights6.py
+    # three 5.25-hour descents from 3000 twists (run in cloud sessions; records in stage 12) and their replay check
+    # (87 to 101 minutes each, the three run at the same time as separate processes)
+    for s in 7304 7306 7307; do python3 -I -B $S/census_seams.py 3000 $s 18900 <out>; done
+    C=research/jumbling/restoration/12-low-height/runs/round22/cloud
+    python3 -I -B $S/check_records.py $C/census-k3000-s7304/ia-k3000-s7304.json $C/census-k3000-s7306/ia-k3000-s7306.json \
+        $C/census-k3000-s7307/ia-k3000-s7307.json
 
-A rerun stops wherever its clock runs out, so its record can differ from the stored one; `check_records.py` checks
-the stored records exactly. Every script reads `research/jumbling` (the simulator `sim/`, the theory modules and the
+A rerun stops wherever its clock runs out, so its record can differ from the stored one; `check_records.py` checks the
+stored records exactly. Every script reads `research/jumbling` (the simulator `sim/`, the theory modules and the
 scripts and data of stages 05, 06 and 09) without writing to it. The runs used that code as it is on main at commit
-`5eed80e`, where it last changed on 15 October; this stage changes no file outside its own directory.
+`5eed80e`, where it last changed on 15 October (the height runs of 18 to 19 October used commit `0347816` and the
+descent from 3000 twists commit `8d0c338`; up to those commits that code changed only in an option of the stage 09
+driver `gm/gdrive.py`, which no script here imports, and in an optional cache location in `theory/seams.py`, not set
+in these runs); the three longer descents of 20 October ran `census_seams.py` unchanged in cloud sessions (its sha256
+is in their accounts, `RESULT.md`; they set the optional cache location of `theory/seams.py` to a file outside the
+repository). This stage changes no file outside its own directory.
 
 ## Files
 
@@ -348,6 +463,8 @@ scripts and data of stages 05, 06 and 09) without writing to it. The runs used t
 | `scripts/findability.py`, `scripts/density.py`, `scripts/single_twist.py`, `scripts/repair_items.py` | What a person would have to try: the choices offered at every step of a record, the repair density at the cap the rule chose, single twists at the repair steps, and what the repairs are made of |
 | `scripts/findability_table.py` | The numbers and the table of that section from the outputs |
 | `runs/findability/` | The outputs for seed 7101 at depth 40 (`ia-k40-s7101-*`) and, from `repair_items.py`, for the seven records with repairs (`repair-items.jsonl`) |
+| `scripts/heights_k.py` | The left heights of the off pieces of a census scramble every given number of twists, without descent |
+| `runs/heights/` | Its outputs: three scrambles of 3000 twists (`h-7301.jsonl`, `h-7302.jsonl`, `h-7303.jsonl`) and the checks against round 1 (`chk-7001.jsonl`, `chk-7106.jsonl`); the census record of the descent from 3000 twists (`ia-k3000-s7302.json`), its replay check (`check.out`) and its heights after every step (`ia-k3000-s7302-heights.txt`) |
 
 ## Limits
 
@@ -357,6 +474,8 @@ scripts and data of stages 05, 06 and 09) without writing to it. The runs used t
 - What a person would have to try is measured on one record (seed 7101, depth 40): repairs in the rule's own order,
   face matches in one simple order (caps by decreasing N_c, twists in menu order). A person need not follow either
   order, reading the domains may narrow the twists, and no other order was measured.
+- The heights of deeper scrambles are measured on three seeds at checkpoints every 250 twists; between checkpoints
+  and on other seeds they are not measured. Only one of them had a descent, one round of 75 minutes.
 - The scramble has no retained twists. A product scramble may mix them in; they move pieces but do not change the
   heights.
 - The block notions (rigid blocks, Mov groups) and the shape classes are those of stages 05, 06 and 09; the shares

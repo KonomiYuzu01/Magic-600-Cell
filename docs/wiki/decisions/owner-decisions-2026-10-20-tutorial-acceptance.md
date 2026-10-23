@@ -27,7 +27,7 @@ takes a scramble to the solved state.
 The owner asked whether height 4 to height 2 is the only link left, and how the acceptance would be done. The
 integrator's answer:
 - Height 4 to height 2 is the front of the theory, not the only gap. The tutorial runner
-  (stage 13: `research/jumbling/restoration/13-tutorial-runner/README.md`, on #112's branch only) has taken two scrambles to the
+  ([stage 13](../../../research/jumbling/restoration/13-tutorial-runner/README.md)) has taken two scrambles to the
   solved state, depth 10 (seed 7001) and depth 20 (seed 7106), with the lattice phase checked by composition rather
   than played. The depth 40 scramble of seed 7101 reached the solved state by literal words, but with the units and
   the kinds of step chosen by hand (stage 12, R22B-34).

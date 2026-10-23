@@ -1,0 +1,20 @@
+{
+ "start_digest": "4ca440085d743d680163a35d735ff6a7c35796a57cba720ab4037a49887734db",
+ "end_digest": "dceb9359b1b549c32afa36c2f88f6cd2cb6ef75feacef1b675f5c99e6b20a17b",
+ "letters": 28,
+ "unit_size": 1,
+ "unit_on_lattice": 1,
+ "collateral": 0,
+ "others": 31478,
+ "others_exact": 31437,
+ "others_landed": 41,
+ "off_before": 31479,
+ "off_after": 31437,
+ "strict_prime": true,
+ "output_digest_matches": true
+}
+
+{"start_digest": "4ca440085d743d680163a35d735ff6a7c35796a57cba720ab4037a49887734db", "end_digest": "dceb9359b1b549c32afa36c2f88f6cd2cb6ef75feacef1b675f5c99e6b20a17b", "letters": 28, "unit_size": 1, "unit_on_lattice": 1, "collateral": 0, "others": 31478, "others_exact": 31437, "others_landed": 41, "off_before": 31479, "off_after": 31437, "strict_prime": true, "output_digest_matches": true}
+{"start_digest": "dceb9359b1b549c32afa36c2f88f6cd2cb6ef75feacef1b675f5c99e6b20a17b", "end_digest": "f0290f93bea0295ecc00c2a42f725abfd59d3c37732834bb82f5da41c38fa793", "letters": 38, "unit_size": 12, "unit_on_lattice": 12, "collateral": 0, "others": 31425, "others_exact": 31425, "others_landed": 0, "off_before": 31437, "off_after": 31425, "strict_prime": true, "output_digest_matches": true}
+ORIGINAL_UNITS {"408": [789, 1504, 1513, 1514, 1516, 1518], "409": [1223, 1520, 1523, 1524, 2944, 2949]}
+END_HEIGHTS {"0": 145695, "2": 31355, "4": 70}

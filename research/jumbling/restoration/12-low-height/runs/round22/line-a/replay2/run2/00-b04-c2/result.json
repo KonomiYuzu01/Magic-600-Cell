@@ -1,0 +1,69 @@
+{
+ "input_digest": "957d0411748330b832f04f0c149dc1fc411d292c2bca1d287c99a80672d1a061",
+ "V_source": "certificate",
+ "after_V": {
+  "occupied_badW": 0,
+  "off_set_unchanged": true,
+  "off_exact_poses_unchanged": true
+ },
+ "parts": [
+  {
+   "part": "V",
+   "twists": 339,
+   "input_digest": "957d0411748330b832f04f0c149dc1fc411d292c2bca1d287c99a80672d1a061",
+   "output_digest": "8746aa45e6a1ee386515a6c1f801eb4e73d152d1cf31ad9b51ec9491eac03004",
+   "off_end": 478
+  },
+  {
+   "part": "P",
+   "twists": 0,
+   "input_digest": "8746aa45e6a1ee386515a6c1f801eb4e73d152d1cf31ad9b51ec9491eac03004",
+   "output_digest": "8746aa45e6a1ee386515a6c1f801eb4e73d152d1cf31ad9b51ec9491eac03004",
+   "off_end": 478
+  },
+  {
+   "part": "Q",
+   "twists": 288,
+   "input_digest": "8746aa45e6a1ee386515a6c1f801eb4e73d152d1cf31ad9b51ec9491eac03004",
+   "output_digest": "fffff5b8eda04ddec2be7429a298d779e32f5e135374c9d256ee8cce47e2a07a",
+   "off_end": 392
+  },
+  {
+   "part": "Pinv",
+   "twists": 0,
+   "input_digest": "fffff5b8eda04ddec2be7429a298d779e32f5e135374c9d256ee8cce47e2a07a",
+   "output_digest": "fffff5b8eda04ddec2be7429a298d779e32f5e135374c9d256ee8cce47e2a07a",
+   "off_end": 392
+  },
+  {
+   "part": "Vinv",
+   "twists": 339,
+   "input_digest": "fffff5b8eda04ddec2be7429a298d779e32f5e135374c9d256ee8cce47e2a07a",
+   "output_digest": "fee07e63a8cf8672ae81cbdf3c1d13b9ed83e61de758a7f2e94b13d28dfe7167",
+   "off_end": 392
+  }
+ ],
+ "end": {
+  "digest": "fee07e63a8cf8672ae81cbdf3c1d13b9ed83e61de758a7f2e94b13d28dfe7167",
+  "off": 392,
+  "T_restored": 86,
+  "collateral": 0,
+  "protected_still_off": 392,
+  "protected_exact_pose_changed": 0,
+  "free_on_K": 0,
+  "free_still_off": 0,
+  "free_pose_changed": 0,
+  "lattice_of_S_on_K_at_end": 176642,
+  "lattice_of_S": 176642,
+  "lattice_of_S_same_exact_pose": 176382
+ },
+ "length": 966,
+ "times": {
+  "ghost_premises": 9.2,
+  "menu_and_condition": 16.3,
+  "certificate": 41.6,
+  "prepare": 10.6,
+  "replay": 83.8
+ },
+ "seconds": 161.4
+}

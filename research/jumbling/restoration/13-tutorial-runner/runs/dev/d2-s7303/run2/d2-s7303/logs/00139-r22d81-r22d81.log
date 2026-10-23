@@ -1,0 +1,3 @@
+LOADED {"digest": "d01dc91edd1c73da399b8acb13a57b9f526da64a5d754993f42ae02856d51889", "off": 100650, "cpu": 10.5}
+START {"prefix": [], "tau": 214, "u": 89, "targets": [[214, 87], [236, 87]], "digest": "d01dc91edd1c73da399b8acb13a57b9f526da64a5d754993f42ae02856d51889", "n2_n4_n6": [99634, 929, 87], "off": 100650, "N": 115698, "cpu": 18.2}
+STUCK {"steps": 0, "tau": 214, "u": 89, "checks": {"blocked_caps": 574, "cap_bound_prunes": 16}, "digest": "d01dc91edd1c73da399b8acb13a57b9f526da64a5d754993f42ae02856d51889", "n2_n4_n6": [99634, 929, 87], "off": 100650, "N": 115698, "cpu": 64.0}

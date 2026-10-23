@@ -1,0 +1,23 @@
+{"safe_all_grips": 566, "letters": 6226, "off_lattice": 447, "sec": 18}
+{"orbits": 1008, "singletons": 973, "sec": 19}
+{"safe_all_grips": 600, "letters": 6600, "off_lattice": 0, "sec": 34}
+{"least": 64, "route": "atlas", "size": 2397, "s": 46, "e": 5, "f": 17, "steps": 1, "sec": 40.507}
+{"least": 67, "route": "atlas", "size": 3600, "s": 22, "e": 11, "f": 18, "steps": 3, "sec": 41.213}
+{"least": 69, "route": "atlas", "size": 7200, "s": 46, "e": 5, "f": 5, "steps": 6, "sec": 42.197}
+{"least": 70, "route": "atlas", "size": 7200, "s": 46, "e": 5, "f": 34, "steps": 8, "sec": 43.565}
+{"least": 105, "route": "atlas", "size": 2400, "s": 9214, "e": 5, "f": 18, "steps": 4, "sec": 45.114}
+{"least": 81, "route": "atlas", "size": 3600, "s": 46, "e": 5, "f": 5, "steps": 5, "sec": 46.147}
+{"least": 41, "route": "atlas", "size": 7191, "s": 142, "e": 5, "f": 5, "steps": 3, "sec": 47.791}
+{"least": 75, "route": "atlas", "size": 1440, "s": 1534, "e": 5, "f": 5, "steps": 3, "sec": 48.448}
+{"least": 82, "route": "atlas", "size": 7200, "s": 46, "e": 5, "f": 5, "steps": 7, "sec": 49.656}
+{"least": 74, "route": "atlas", "size": 7200, "s": 46, "e": 9, "f": 24, "steps": 12, "sec": 51.156}
+{"least": 33, "route": "atlas", "size": 7200, "s": 70, "e": 10, "f": 32, "steps": 1, "sec": 52.417}
+{"least": 115, "route": "atlas", "size": 2400, "s": 46, "e": 5, "f": 5, "steps": 1, "sec": 52.954}
+{"least": 108, "route": "atlas", "size": 3600, "s": 94, "e": 5, "f": 5, "steps": 3, "sec": 53.662}
+{"least": 106, "route": "atlas", "size": 7200, "s": 142, "e": 5, "f": 19, "steps": 8, "sec": 55.036}
+{"least": 83, "route": "atlas", "size": 7200, "s": 94, "e": 5, "f": 17, "steps": 9, "sec": 56.291}
+{"least": 90, "route": "atlas", "size": 7200, "s": 94, "e": 5, "f": 5, "steps": 11, "sec": 57.601}
+{"least": 34, "route": "atlas", "size": 7200, "s": 142, "e": 10, "f": 16, "steps": 2, "sec": 58.905}
+{"least": 66, "route": "atlas", "size": 7200, "s": 142, "e": 11, "f": 17, "steps": 3, "sec": 60.057}
+{"least": 65, "route": "atlas", "size": 7200, "s": 1534, "e": 5, "f": 16, "steps": 6, "sec": 61.686}
+{"complete": true, "missing": [], "V_length": 116668, "bound": 125884, "seconds": 63.061367, "sec": 63.061}

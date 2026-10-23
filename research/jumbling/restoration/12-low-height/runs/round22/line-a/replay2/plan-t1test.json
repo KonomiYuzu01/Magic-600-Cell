@@ -1,0 +1,16 @@
+{
+ "steps": [
+  {
+   "unit": "b03",
+   "unit_file": "research/jumbling/restoration/12-low-height/runs/round22/line-a/units/eb5-k40-k00-b03.json",
+   "t1prime": "research/jumbling/restoration/12-low-height/runs/round22/line-a/replay2/inputs/b03-W.json",
+   "greedy_seconds": 60
+  },
+  {
+   "unit": "b18",
+   "unit_file": "research/jumbling/restoration/12-low-height/runs/round22/line-a/units/eb5-k40-k00-b18.json",
+   "t1prime": "research/jumbling/restoration/12-low-height/runs/round22/line-a/replay2/inputs/b18-W.json",
+   "greedy_seconds": 60
+  }
+ ]
+}

@@ -1,0 +1,8 @@
+OUTER_AUDIT 1345 type 7 own_class_inside [] inside [3, 7] tree (2, 0, 0, -1)
+OUTER_AUDIT 1437 type 7 own_class_inside [] inside [3, 7, 13] tree (2, 0, 0, -1)
+LEFT_COSET_REPS [12, 13, 14, 15]
+BLOCK_IMAGES 12 split [] min 86 components 29 CPU 10.49
+BLOCK_IMAGES 13 split [] min 86 components 29 CPU 11.1
+BLOCK_IMAGES 14 split [] min 86 components 29 CPU 11.68
+BLOCK_IMAGES 15 split [] min 86 components 29 CPU 12.31
+COMPLETE 12.31

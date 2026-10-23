@@ -1,0 +1,9 @@
+START {"n2_n4_n6": [33604, 0, 0], "max_height": 2, "off": 33604, "N": 33818, "blocked": 373, "digest": "c450bb2f41b5fb4cde5beefe76c48926577f3fc2f216f28976fa8a11981fdf5f", "cpu": 69.0}
+TRY {"step": 1, "rule": "seam", "cpu": 69.3}
+TRY {"step": 1, "rule": "cover", "cpu": 109.33}
+STEP {"step": 1, "source": "cover", "word": [[61, 44]], "before": "c450bb2f41b5fb4cde5beefe76c48926577f3fc2f216f28976fa8a11981fdf5f", "prefixes": [{"letter": [61, 44], "n2_n4_n6": [31355, 70, 0], "max_height": 4, "initial_lattice_now_off": 182, "max_rise": 2}], "n2_n4_n6": [31355, 70, 0], "max_height": 4, "off": 31425, "N": 32762, "blocked": 366, "digest": "f0290f93bea0295ecc00c2a42f725abfd59d3c37732834bb82f5da41c38fa793", "cpu": 167.81}
+GUARD_TRY {"rule": "close", "cpu": 167.89}
+GUARD_TRY {"rule": "conj", "cpu": 207.23}
+GUARD_REJECT {"source": "conj", "word": [[349, 1], [61, 44], [349, 1]], "before": "c450bb2f41b5fb4cde5beefe76c48926577f3fc2f216f28976fa8a11981fdf5f", "n2_n4_n6": [31355, 70, 0], "max_height": 4, "off": 31425, "N": 32762, "blocked": 366, "digest": "f0290f93bea0295ecc00c2a42f725abfd59d3c37732834bb82f5da41c38fa793", "cpu": 388.2}
+GUARD_TRY {"rule": "lock", "cpu": 388.46}
+END {"reason": "cpu-budget", "steps": 1, "guard_tested": true, "n2_n4_n6": [31355, 70, 0], "max_height": 4, "off": 31425, "N": 32762, "blocked": 366, "digest": "f0290f93bea0295ecc00c2a42f725abfd59d3c37732834bb82f5da41c38fa793", "cpu": 962.68}

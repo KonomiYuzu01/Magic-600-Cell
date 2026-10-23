@@ -1,0 +1,2144 @@
+{
+ "start": "after75",
+ "prefix": [
+  [
+   185,
+   1
+  ],
+  [
+   263,
+   1
+  ],
+  [
+   263,
+   3
+  ]
+ ],
+ "digest": "fe273a8c88d8a8fe7f030f95e6130fc76a57da6d708dea110a1cb31125276122",
+ "tau": 311,
+ "u0": 8,
+ "shard": "0/3",
+ "budget": 10800.0,
+ "three": false,
+ "class_i_caps": [
+  364
+ ],
+ "firsts": [
+  {
+   "a": [
+    364,
+    1
+   ],
+   "cls": "i",
+   "u_after_a": 16,
+   "min_u_after_b": 8,
+   "new_pairs": 24,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    263,
+    364
+   ],
+   "accepted": [],
+   "cpu": 277.2
+  },
+  {
+   "a": [
+    364,
+    2
+   ],
+   "cls": "i",
+   "u_after_a": 16,
+   "min_u_after_b": 8,
+   "new_pairs": 24,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    263,
+    364
+   ],
+   "accepted": [],
+   "cpu": 321.2
+  },
+  {
+   "a": [
+    364,
+    3
+   ],
+   "cls": "i",
+   "u_after_a": 8,
+   "min_u_after_b": 0,
+   "new_pairs": 8,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    263,
+    364
+   ],
+   "accepted": [
+    {
+     "letter": [
+      263,
+      6
+     ],
+     "u": 2,
+     "n2_n4_n6": [
+      103103,
+      1019,
+      172
+     ],
+     "off": 104294,
+     "max_height": 6,
+     "N": 133138,
+     "digest": "be3ce23095a9bf44b546572246b1a0ad54799e7e8c913e3ce4ed0f2f2c3b45c3"
+    },
+    {
+     "letter": [
+      263,
+      32
+     ],
+     "u": 0,
+     "n2_n4_n6": [
+      103565,
+      1019,
+      172
+     ],
+     "off": 104756,
+     "max_height": 6,
+     "N": 133040,
+     "digest": "b1cdbd09ab8aca71803793c92df0034386db7abc6a7ed8e1cc537246a7478487"
+    },
+    {
+     "letter": [
+      263,
+      42
+     ],
+     "u": 0,
+     "n2_n4_n6": [
+      103944,
+      1019,
+      172
+     ],
+     "off": 105135,
+     "max_height": 6,
+     "N": 133176,
+     "digest": "186de3b465992192cfcdc16003a1651c5e13fa69778a7469fb980142699c56a2"
+    }
+   ],
+   "cpu": 421.7
+  },
+  {
+   "a": [
+    364,
+    4
+   ],
+   "cls": "i",
+   "u_after_a": 38,
+   "min_u_after_b": 8,
+   "new_pairs": 53,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 466.9
+  },
+  {
+   "a": [
+    364,
+    5
+   ],
+   "cls": "i",
+   "u_after_a": 38,
+   "min_u_after_b": 8,
+   "new_pairs": 53,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    263,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 511.5
+  },
+  {
+   "a": [
+    364,
+    6
+   ],
+   "cls": "i",
+   "u_after_a": 16,
+   "min_u_after_b": 8,
+   "new_pairs": 16,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    364
+   ],
+   "accepted": [],
+   "cpu": 553.9
+  },
+  {
+   "a": [
+    364,
+    7
+   ],
+   "cls": "i",
+   "u_after_a": 69,
+   "min_u_after_b": 8,
+   "new_pairs": 107,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    263,
+    364
+   ],
+   "accepted": [],
+   "cpu": 597.6
+  },
+  {
+   "a": [
+    364,
+    8
+   ],
+   "cls": "i",
+   "u_after_a": 69,
+   "min_u_after_b": 8,
+   "new_pairs": 86,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    364
+   ],
+   "accepted": [],
+   "cpu": 641.9
+  },
+  {
+   "a": [
+    364,
+    10
+   ],
+   "cls": "i",
+   "u_after_a": 38,
+   "min_u_after_b": 6,
+   "new_pairs": 76,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    263,
+    364
+   ],
+   "accepted": [
+    {
+     "letter": [
+      263,
+      32
+     ],
+     "u": 6,
+     "n2_n4_n6": [
+      103552,
+      1019,
+      172
+     ],
+     "off": 104743,
+     "max_height": 6,
+     "N": 132850,
+     "digest": "a76c7ec0a3ff51ab835e5036da4e22f5fd87b67bcb8ec4dc1f38165ca889c61f"
+    },
+    {
+     "letter": [
+      263,
+      42
+     ],
+     "u": 6,
+     "n2_n4_n6": [
+      103932,
+      1019,
+      172
+     ],
+     "off": 105123,
+     "max_height": 6,
+     "N": 133058,
+     "digest": "6e8359f3086241cc8acf41261a315b9ed745e164d29b487ce7ef46cc38df2ee5"
+    }
+   ],
+   "cpu": 736.7
+  },
+  {
+   "a": [
+    364,
+    11
+   ],
+   "cls": "i",
+   "u_after_a": 69,
+   "min_u_after_b": 8,
+   "new_pairs": 112,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    263,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 785.0
+  },
+  {
+   "a": [
+    364,
+    12
+   ],
+   "cls": "i",
+   "u_after_a": 153,
+   "min_u_after_b": 8,
+   "new_pairs": 214,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    263,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 832.6
+  },
+  {
+   "a": [
+    364,
+    13
+   ],
+   "cls": "i",
+   "u_after_a": 201,
+   "min_u_after_b": 8,
+   "new_pairs": 280,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    263,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 880.0
+  },
+  {
+   "a": [
+    364,
+    14
+   ],
+   "cls": "i",
+   "u_after_a": 154,
+   "min_u_after_b": 8,
+   "new_pairs": 242,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    263,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 926.5
+  },
+  {
+   "a": [
+    364,
+    15
+   ],
+   "cls": "i",
+   "u_after_a": 82,
+   "min_u_after_b": 8,
+   "new_pairs": 98,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    263,
+    364
+   ],
+   "accepted": [],
+   "cpu": 972.6
+  },
+  {
+   "a": [
+    364,
+    16
+   ],
+   "cls": "i",
+   "u_after_a": 105,
+   "min_u_after_b": 8,
+   "new_pairs": 133,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    263,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 1017.4
+  },
+  {
+   "a": [
+    364,
+    17
+   ],
+   "cls": "i",
+   "u_after_a": 116,
+   "min_u_after_b": 8,
+   "new_pairs": 166,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    263,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 1063.6
+  },
+  {
+   "a": [
+    364,
+    18
+   ],
+   "cls": "i",
+   "u_after_a": 175,
+   "min_u_after_b": 8,
+   "new_pairs": 245,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    263,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 1110.8
+  },
+  {
+   "a": [
+    364,
+    19
+   ],
+   "cls": "i",
+   "u_after_a": 146,
+   "min_u_after_b": 8,
+   "new_pairs": 218,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 1155.5
+  },
+  {
+   "a": [
+    364,
+    20
+   ],
+   "cls": "i",
+   "u_after_a": 132,
+   "min_u_after_b": 8,
+   "new_pairs": 172,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    263,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 1198.9
+  },
+  {
+   "a": [
+    364,
+    21
+   ],
+   "cls": "i",
+   "u_after_a": 184,
+   "min_u_after_b": 8,
+   "new_pairs": 273,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 1243.0
+  },
+  {
+   "a": [
+    364,
+    22
+   ],
+   "cls": "i",
+   "u_after_a": 137,
+   "min_u_after_b": 8,
+   "new_pairs": 208,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 1287.0
+  },
+  {
+   "a": [
+    364,
+    23
+   ],
+   "cls": "i",
+   "u_after_a": 93,
+   "min_u_after_b": 8,
+   "new_pairs": 120,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    263,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 1329.9
+  },
+  {
+   "a": [
+    364,
+    24
+   ],
+   "cls": "i",
+   "u_after_a": 105,
+   "min_u_after_b": 8,
+   "new_pairs": 109,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    263,
+    364
+   ],
+   "accepted": [],
+   "cpu": 1374.8
+  },
+  {
+   "a": [
+    364,
+    25
+   ],
+   "cls": "i",
+   "u_after_a": 105,
+   "min_u_after_b": 8,
+   "new_pairs": 140,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    263,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 1418.9
+  },
+  {
+   "a": [
+    364,
+    26
+   ],
+   "cls": "i",
+   "u_after_a": 153,
+   "min_u_after_b": 8,
+   "new_pairs": 215,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    263,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 1462.2
+  },
+  {
+   "a": [
+    364,
+    27
+   ],
+   "cls": "i",
+   "u_after_a": 105,
+   "min_u_after_b": 8,
+   "new_pairs": 173,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    263,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 1506.7
+  },
+  {
+   "a": [
+    364,
+    28
+   ],
+   "cls": "i",
+   "u_after_a": 105,
+   "min_u_after_b": 8,
+   "new_pairs": 152,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 1549.7
+  },
+  {
+   "a": [
+    364,
+    29
+   ],
+   "cls": "i",
+   "u_after_a": 132,
+   "min_u_after_b": 8,
+   "new_pairs": 172,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    263,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 1592.2
+  },
+  {
+   "a": [
+    364,
+    30
+   ],
+   "cls": "i",
+   "u_after_a": 153,
+   "min_u_after_b": 8,
+   "new_pairs": 194,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    263,
+    364
+   ],
+   "accepted": [],
+   "cpu": 1635.2
+  },
+  {
+   "a": [
+    364,
+    31
+   ],
+   "cls": "i",
+   "u_after_a": 105,
+   "min_u_after_b": 8,
+   "new_pairs": 144,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 1679.3
+  },
+  {
+   "a": [
+    364,
+    32
+   ],
+   "cls": "i",
+   "u_after_a": 132,
+   "min_u_after_b": 8,
+   "new_pairs": 145,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    364
+   ],
+   "accepted": [],
+   "cpu": 1723.2
+  },
+  {
+   "a": [
+    364,
+    33
+   ],
+   "cls": "i",
+   "u_after_a": 111,
+   "min_u_after_b": 8,
+   "new_pairs": 180,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    263,
+    364
+   ],
+   "accepted": [],
+   "cpu": 1767.6
+  },
+  {
+   "a": [
+    364,
+    34
+   ],
+   "cls": "i",
+   "u_after_a": 146,
+   "min_u_after_b": 8,
+   "new_pairs": 175,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 1811.7
+  },
+  {
+   "a": [
+    364,
+    35
+   ],
+   "cls": "i",
+   "u_after_a": 146,
+   "min_u_after_b": 8,
+   "new_pairs": 207,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    263,
+    364
+   ],
+   "accepted": [],
+   "cpu": 1856.5
+  },
+  {
+   "a": [
+    364,
+    36
+   ],
+   "cls": "i",
+   "u_after_a": 201,
+   "min_u_after_b": 8,
+   "new_pairs": 292,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    263,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 1902.1
+  },
+  {
+   "a": [
+    364,
+    37
+   ],
+   "cls": "i",
+   "u_after_a": 112,
+   "min_u_after_b": 8,
+   "new_pairs": 193,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    263,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 1946.2
+  },
+  {
+   "a": [
+    364,
+    38
+   ],
+   "cls": "i",
+   "u_after_a": 112,
+   "min_u_after_b": 8,
+   "new_pairs": 158,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    263,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 1993.4
+  },
+  {
+   "a": [
+    364,
+    39
+   ],
+   "cls": "i",
+   "u_after_a": 116,
+   "min_u_after_b": 8,
+   "new_pairs": 166,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    263,
+    364
+   ],
+   "accepted": [],
+   "cpu": 2040.6
+  },
+  {
+   "a": [
+    364,
+    40
+   ],
+   "cls": "i",
+   "u_after_a": 201,
+   "min_u_after_b": 8,
+   "new_pairs": 281,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    263,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 2085.2
+  },
+  {
+   "a": [
+    364,
+    41
+   ],
+   "cls": "i",
+   "u_after_a": 112,
+   "min_u_after_b": 8,
+   "new_pairs": 158,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    263,
+    364
+   ],
+   "accepted": [],
+   "cpu": 2127.6
+  },
+  {
+   "a": [
+    364,
+    42
+   ],
+   "cls": "i",
+   "u_after_a": 116,
+   "min_u_after_b": 8,
+   "new_pairs": 166,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 2173.6
+  },
+  {
+   "a": [
+    364,
+    43
+   ],
+   "cls": "i",
+   "u_after_a": 98,
+   "min_u_after_b": 8,
+   "new_pairs": 131,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    263,
+    364
+   ],
+   "accepted": [],
+   "cpu": 2216.8
+  },
+  {
+   "a": [
+    364,
+    44
+   ],
+   "cls": "i",
+   "u_after_a": 184,
+   "min_u_after_b": 8,
+   "new_pairs": 296,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    263,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 2260.8
+  },
+  {
+   "a": [
+    364,
+    45
+   ],
+   "cls": "i",
+   "u_after_a": 184,
+   "min_u_after_b": 8,
+   "new_pairs": 254,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    263,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 2302.8
+  },
+  {
+   "a": [
+    364,
+    46
+   ],
+   "cls": "i",
+   "u_after_a": 154,
+   "min_u_after_b": 8,
+   "new_pairs": 203,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    263,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 2346.5
+  },
+  {
+   "a": [
+    364,
+    47
+   ],
+   "cls": "i",
+   "u_after_a": 98,
+   "min_u_after_b": 8,
+   "new_pairs": 113,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    263,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 2388.7
+  },
+  {
+   "a": [
+    364,
+    48
+   ],
+   "cls": "i",
+   "u_after_a": 98,
+   "min_u_after_b": 8,
+   "new_pairs": 131,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    263,
+    364
+   ],
+   "accepted": [],
+   "cpu": 2430.6
+  },
+  {
+   "a": [
+    364,
+    49
+   ],
+   "cls": "i",
+   "u_after_a": 93,
+   "min_u_after_b": 8,
+   "new_pairs": 93,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    364
+   ],
+   "accepted": [],
+   "cpu": 2473.2
+  },
+  {
+   "a": [
+    364,
+    50
+   ],
+   "cls": "i",
+   "u_after_a": 154,
+   "min_u_after_b": 8,
+   "new_pairs": 207,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    364
+   ],
+   "accepted": [],
+   "cpu": 2515.2
+  },
+  {
+   "a": [
+    364,
+    51
+   ],
+   "cls": "i",
+   "u_after_a": 93,
+   "min_u_after_b": 8,
+   "new_pairs": 112,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    364
+   ],
+   "accepted": [],
+   "cpu": 2557.2
+  },
+  {
+   "a": [
+    364,
+    52
+   ],
+   "cls": "i",
+   "u_after_a": 111,
+   "min_u_after_b": 8,
+   "new_pairs": 165,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    263,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 2600.9
+  },
+  {
+   "a": [
+    364,
+    53
+   ],
+   "cls": "i",
+   "u_after_a": 175,
+   "min_u_after_b": 8,
+   "new_pairs": 276,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    263,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 2644.2
+  },
+  {
+   "a": [
+    364,
+    54
+   ],
+   "cls": "i",
+   "u_after_a": 175,
+   "min_u_after_b": 8,
+   "new_pairs": 264,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    263,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 2687.5
+  },
+  {
+   "a": [
+    364,
+    55
+   ],
+   "cls": "i",
+   "u_after_a": 82,
+   "min_u_after_b": 8,
+   "new_pairs": 90,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 2730.5
+  },
+  {
+   "a": [
+    364,
+    56
+   ],
+   "cls": "i",
+   "u_after_a": 111,
+   "min_u_after_b": 8,
+   "new_pairs": 165,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    364,
+    407
+   ],
+   "accepted": [],
+   "cpu": 2775.1
+  },
+  {
+   "a": [
+    364,
+    57
+   ],
+   "cls": "i",
+   "u_after_a": 137,
+   "min_u_after_b": 8,
+   "new_pairs": 181,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    263,
+    364
+   ],
+   "accepted": [],
+   "cpu": 2818.3
+  },
+  {
+   "a": [
+    364,
+    58
+   ],
+   "cls": "i",
+   "u_after_a": 82,
+   "min_u_after_b": 8,
+   "new_pairs": 82,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    364
+   ],
+   "accepted": [],
+   "cpu": 2862.0
+  },
+  {
+   "a": [
+    364,
+    59
+   ],
+   "cls": "i",
+   "u_after_a": 137,
+   "min_u_after_b": 8,
+   "new_pairs": 208,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    185,
+    364
+   ],
+   "accepted": [],
+   "cpu": 2906.1
+  },
+  {
+   "a": [
+    364,
+    9
+   ],
+   "cls": "ii",
+   "u_after_a": 8,
+   "min_u_after_b": 8,
+   "new_pairs": 0,
+   "newly_clean": [],
+   "clean_holders_after_a": [
+    364
+   ],
+   "accepted": [],
+   "cpu": 3022.6
+  }
+ ],
+ "pairs": [
+  {
+   "a": [
+    364,
+    3
+   ],
+   "b": [
+    263,
+    6
+   ],
+   "u": 2,
+   "n2_n4_n6": [
+    103103,
+    1019,
+    172
+   ],
+   "off": 104294,
+   "max_height": 6,
+   "N": 133138,
+   "digest": "be3ce23095a9bf44b546572246b1a0ad54799e7e8c913e3ce4ed0f2f2c3b45c3"
+  },
+  {
+   "a": [
+    364,
+    3
+   ],
+   "b": [
+    263,
+    32
+   ],
+   "u": 0,
+   "n2_n4_n6": [
+    103565,
+    1019,
+    172
+   ],
+   "off": 104756,
+   "max_height": 6,
+   "N": 133040,
+   "digest": "b1cdbd09ab8aca71803793c92df0034386db7abc6a7ed8e1cc537246a7478487"
+  },
+  {
+   "a": [
+    364,
+    3
+   ],
+   "b": [
+    263,
+    42
+   ],
+   "u": 0,
+   "n2_n4_n6": [
+    103944,
+    1019,
+    172
+   ],
+   "off": 105135,
+   "max_height": 6,
+   "N": 133176,
+   "digest": "186de3b465992192cfcdc16003a1651c5e13fa69778a7469fb980142699c56a2"
+  },
+  {
+   "a": [
+    364,
+    10
+   ],
+   "b": [
+    263,
+    32
+   ],
+   "u": 6,
+   "n2_n4_n6": [
+    103552,
+    1019,
+    172
+   ],
+   "off": 104743,
+   "max_height": 6,
+   "N": 132850,
+   "digest": "a76c7ec0a3ff51ab835e5036da4e22f5fd87b67bcb8ec4dc1f38165ca889c61f"
+  },
+  {
+   "a": [
+    364,
+    10
+   ],
+   "b": [
+    263,
+    42
+   ],
+   "u": 6,
+   "n2_n4_n6": [
+    103932,
+    1019,
+    172
+   ],
+   "off": 105123,
+   "max_height": 6,
+   "N": 133058,
+   "digest": "6e8359f3086241cc8acf41261a315b9ed745e164d29b487ce7ef46cc38df2ee5"
+  }
+ ],
+ "triples": [],
+ "outcomes": {
+  "364:1": "tested",
+  "364:2": "tested",
+  "364:3": "tested",
+  "364:4": "tested",
+  "364:5": "tested",
+  "364:6": "tested",
+  "364:7": "tested",
+  "364:8": "tested",
+  "364:9": "ii tested",
+  "364:10": "tested",
+  "364:11": "tested",
+  "364:12": "tested",
+  "364:13": "tested",
+  "364:14": "tested",
+  "364:15": "tested",
+  "364:16": "tested",
+  "364:17": "tested",
+  "364:18": "tested",
+  "364:19": "tested",
+  "364:20": "tested",
+  "364:21": "tested",
+  "364:22": "tested",
+  "364:23": "tested",
+  "364:24": "tested",
+  "364:25": "tested",
+  "364:26": "tested",
+  "364:27": "tested",
+  "364:28": "tested",
+  "364:29": "tested",
+  "364:30": "tested",
+  "364:31": "tested",
+  "364:32": "tested",
+  "364:33": "tested",
+  "364:34": "tested",
+  "364:35": "tested",
+  "364:36": "tested",
+  "364:37": "tested",
+  "364:38": "tested",
+  "364:39": "tested",
+  "364:40": "tested",
+  "364:41": "tested",
+  "364:42": "tested",
+  "364:43": "tested",
+  "364:44": "tested",
+  "364:45": "tested",
+  "364:46": "tested",
+  "364:47": "tested",
+  "364:48": "tested",
+  "364:49": "tested",
+  "364:50": "tested",
+  "364:51": "tested",
+  "364:52": "tested",
+  "364:53": "tested",
+  "364:54": "tested",
+  "364:55": "tested",
+  "364:56": "tested",
+  "364:57": "tested",
+  "364:58": "tested",
+  "364:59": "tested",
+  "2:1": "ii pruned (bound 8)",
+  "2:2": "ii pruned (bound 8)",
+  "2:3": "ii pruned (bound 8)",
+  "2:4": "ii pruned (bound 8)",
+  "2:5": "ii pruned (bound 8)",
+  "2:6": "ii pruned (bound 8)",
+  "2:7": "ii pruned (bound 8)",
+  "2:8": "ii pruned (bound 8)",
+  "2:9": "ii pruned (bound 8)",
+  "2:10": "ii pruned (bound 8)",
+  "2:11": "ii pruned (bound 8)",
+  "2:12": "ii pruned (bound 8)",
+  "2:13": "ii pruned (bound 8)",
+  "2:14": "ii pruned (bound 8)",
+  "2:15": "ii pruned (bound 8)",
+  "2:16": "ii pruned (bound 8)",
+  "2:17": "ii pruned (bound 8)",
+  "2:18": "ii pruned (bound 8)",
+  "2:19": "ii pruned (bound 8)",
+  "2:20": "ii pruned (bound 8)",
+  "2:21": "ii pruned (bound 8)",
+  "2:22": "ii pruned (bound 8)",
+  "2:23": "ii pruned (bound 8)",
+  "2:24": "ii pruned (bound 8)",
+  "2:25": "ii pruned (bound 8)",
+  "2:26": "ii pruned (bound 8)",
+  "2:27": "ii pruned (bound 8)",
+  "2:28": "ii pruned (bound 8)",
+  "2:29": "ii pruned (bound 8)",
+  "2:30": "ii pruned (bound 8)",
+  "2:31": "ii pruned (bound 8)",
+  "2:32": "ii pruned (bound 8)",
+  "2:33": "ii pruned (bound 8)",
+  "2:34": "ii pruned (bound 8)",
+  "2:35": "ii pruned (bound 8)",
+  "2:36": "ii pruned (bound 8)",
+  "2:37": "ii pruned (bound 8)",
+  "2:38": "ii pruned (bound 8)",
+  "2:39": "ii pruned (bound 8)",
+  "2:40": "ii pruned (bound 8)",
+  "2:41": "ii pruned (bound 8)",
+  "2:42": "ii pruned (bound 8)",
+  "2:43": "ii pruned (bound 8)",
+  "2:44": "ii pruned (bound 8)",
+  "2:45": "ii pruned (bound 8)",
+  "2:46": "ii pruned (bound 8)",
+  "2:47": "ii pruned (bound 8)",
+  "2:48": "ii pruned (bound 8)",
+  "2:49": "ii pruned (bound 8)",
+  "2:50": "ii pruned (bound 8)",
+  "2:51": "ii pruned (bound 8)",
+  "2:52": "ii pruned (bound 8)",
+  "2:53": "ii pruned (bound 8)",
+  "2:54": "ii pruned (bound 8)",
+  "2:55": "ii pruned (bound 8)",
+  "2:56": "ii pruned (bound 8)",
+  "2:57": "ii pruned (bound 8)",
+  "2:58": "ii pruned (bound 8)",
+  "2:59": "ii pruned (bound 8)",
+  "39:1": "ii pruned (bound 8)",
+  "39:2": "ii pruned (bound 8)",
+  "39:3": "ii pruned (bound 8)",
+  "39:4": "ii pruned (bound 8)",
+  "39:5": "ii pruned (bound 8)",
+  "39:6": "ii pruned (bound 8)",
+  "39:7": "ii pruned (bound 8)",
+  "39:8": "ii pruned (bound 8)",
+  "39:9": "ii pruned (bound 8)",
+  "39:10": "ii pruned (bound 8)",
+  "39:11": "ii pruned (bound 8)",
+  "39:12": "ii pruned (bound 8)",
+  "39:13": "ii pruned (bound 8)",
+  "39:14": "ii pruned (bound 8)",
+  "39:15": "ii pruned (bound 8)",
+  "39:16": "ii pruned (bound 8)",
+  "39:17": "ii pruned (bound 8)",
+  "39:18": "ii pruned (bound 8)",
+  "39:19": "ii pruned (bound 8)",
+  "39:20": "ii pruned (bound 8)",
+  "39:21": "ii pruned (bound 8)",
+  "39:22": "ii pruned (bound 8)",
+  "39:23": "ii pruned (bound 8)",
+  "39:24": "ii pruned (bound 8)",
+  "39:25": "ii pruned (bound 8)",
+  "39:26": "ii pruned (bound 8)",
+  "39:27": "ii pruned (bound 8)",
+  "39:28": "ii pruned (bound 8)",
+  "39:29": "ii pruned (bound 8)",
+  "39:30": "ii pruned (bound 8)",
+  "39:31": "ii pruned (bound 8)",
+  "39:32": "ii pruned (bound 8)",
+  "39:33": "ii pruned (bound 8)",
+  "39:34": "ii pruned (bound 8)",
+  "39:35": "ii pruned (bound 8)",
+  "39:36": "ii pruned (bound 8)",
+  "39:37": "ii pruned (bound 8)",
+  "39:38": "ii pruned (bound 8)",
+  "39:39": "ii pruned (bound 8)",
+  "39:40": "ii pruned (bound 8)",
+  "39:41": "ii pruned (bound 8)",
+  "39:42": "ii pruned (bound 8)",
+  "39:43": "ii pruned (bound 8)",
+  "39:44": "ii pruned (bound 8)",
+  "39:45": "ii pruned (bound 8)",
+  "39:46": "ii pruned (bound 8)",
+  "39:47": "ii pruned (bound 8)",
+  "39:48": "ii pruned (bound 8)",
+  "39:49": "ii pruned (bound 8)",
+  "39:50": "ii pruned (bound 8)",
+  "39:51": "ii pruned (bound 8)",
+  "39:52": "ii pruned (bound 8)",
+  "39:53": "ii pruned (bound 8)",
+  "39:54": "ii pruned (bound 8)",
+  "39:55": "ii pruned (bound 8)",
+  "39:56": "ii pruned (bound 8)",
+  "39:57": "ii pruned (bound 8)",
+  "39:58": "ii pruned (bound 8)",
+  "39:59": "ii pruned (bound 8)",
+  "62:1": "ii pruned (bound 8)",
+  "62:2": "ii pruned (bound 8)",
+  "62:3": "ii pruned (bound 8)",
+  "62:4": "ii pruned (bound 8)",
+  "62:5": "ii pruned (bound 8)",
+  "62:6": "ii pruned (bound 8)",
+  "62:7": "ii pruned (bound 8)",
+  "62:8": "ii pruned (bound 8)",
+  "62:9": "ii pruned (bound 8)",
+  "62:10": "ii pruned (bound 8)",
+  "62:11": "ii pruned (bound 8)",
+  "62:12": "ii pruned (bound 8)",
+  "62:13": "ii pruned (bound 8)",
+  "62:14": "ii pruned (bound 8)",
+  "62:15": "ii pruned (bound 8)",
+  "62:16": "ii pruned (bound 8)",
+  "62:17": "ii pruned (bound 8)",
+  "62:18": "ii pruned (bound 8)",
+  "62:19": "ii pruned (bound 8)",
+  "62:20": "ii pruned (bound 8)",
+  "62:21": "ii pruned (bound 8)",
+  "62:22": "ii pruned (bound 8)",
+  "62:23": "ii pruned (bound 8)",
+  "62:24": "ii pruned (bound 8)",
+  "62:25": "ii pruned (bound 8)",
+  "62:26": "ii pruned (bound 8)",
+  "62:27": "ii pruned (bound 8)",
+  "62:28": "ii pruned (bound 8)",
+  "62:29": "ii pruned (bound 8)",
+  "62:30": "ii pruned (bound 8)",
+  "62:31": "ii pruned (bound 8)",
+  "62:32": "ii pruned (bound 8)",
+  "62:33": "ii pruned (bound 8)",
+  "62:34": "ii pruned (bound 8)",
+  "62:35": "ii pruned (bound 8)",
+  "62:36": "ii pruned (bound 8)",
+  "62:37": "ii pruned (bound 8)",
+  "62:38": "ii pruned (bound 8)",
+  "62:39": "ii pruned (bound 8)",
+  "62:40": "ii pruned (bound 8)",
+  "62:41": "ii pruned (bound 8)",
+  "62:42": "ii pruned (bound 8)",
+  "62:43": "ii pruned (bound 8)",
+  "62:44": "ii pruned (bound 8)",
+  "62:45": "ii pruned (bound 8)",
+  "62:46": "ii pruned (bound 8)",
+  "62:47": "ii pruned (bound 8)",
+  "62:48": "ii pruned (bound 8)",
+  "62:49": "ii pruned (bound 8)",
+  "62:50": "ii pruned (bound 8)",
+  "62:51": "ii pruned (bound 8)",
+  "62:52": "ii pruned (bound 8)",
+  "62:53": "ii pruned (bound 8)",
+  "62:54": "ii pruned (bound 8)",
+  "62:55": "ii pruned (bound 8)",
+  "62:56": "ii pruned (bound 8)",
+  "62:57": "ii pruned (bound 8)",
+  "62:58": "ii pruned (bound 8)",
+  "62:59": "ii pruned (bound 8)",
+  "70:1": "ii pruned (bound 8)",
+  "70:2": "ii pruned (bound 8)",
+  "70:3": "ii pruned (bound 8)",
+  "70:4": "ii pruned (bound 8)",
+  "70:5": "ii pruned (bound 8)",
+  "70:6": "ii pruned (bound 8)",
+  "70:7": "ii pruned (bound 8)",
+  "70:8": "ii pruned (bound 8)",
+  "70:9": "ii pruned (bound 8)",
+  "70:10": "ii pruned (bound 8)",
+  "70:11": "ii pruned (bound 8)",
+  "70:12": "ii pruned (bound 8)",
+  "70:13": "ii pruned (bound 8)",
+  "70:14": "ii pruned (bound 8)",
+  "70:15": "ii pruned (bound 8)",
+  "70:16": "ii pruned (bound 8)",
+  "70:17": "ii pruned (bound 8)",
+  "70:18": "ii pruned (bound 8)",
+  "70:19": "ii pruned (bound 8)",
+  "70:20": "ii pruned (bound 8)",
+  "70:21": "ii pruned (bound 8)",
+  "70:22": "ii pruned (bound 8)",
+  "70:23": "ii pruned (bound 8)",
+  "70:24": "ii pruned (bound 8)",
+  "70:25": "ii pruned (bound 8)",
+  "70:26": "ii pruned (bound 8)",
+  "70:27": "ii pruned (bound 8)",
+  "70:28": "ii pruned (bound 8)",
+  "70:29": "ii pruned (bound 8)",
+  "70:30": "ii pruned (bound 8)",
+  "70:31": "ii pruned (bound 8)",
+  "70:32": "ii pruned (bound 8)",
+  "70:33": "ii pruned (bound 8)",
+  "70:34": "ii pruned (bound 8)",
+  "70:35": "ii pruned (bound 8)",
+  "70:36": "ii pruned (bound 8)",
+  "70:37": "ii pruned (bound 8)",
+  "70:38": "ii pruned (bound 8)",
+  "70:39": "ii pruned (bound 8)",
+  "70:40": "ii pruned (bound 8)",
+  "70:41": "ii pruned (bound 8)",
+  "70:42": "ii pruned (bound 8)",
+  "70:43": "ii pruned (bound 8)",
+  "70:44": "ii pruned (bound 8)",
+  "70:45": "ii pruned (bound 8)",
+  "70:46": "ii pruned (bound 8)",
+  "70:47": "ii pruned (bound 8)",
+  "70:48": "ii pruned (bound 8)",
+  "70:49": "ii pruned (bound 8)",
+  "70:50": "ii pruned (bound 8)",
+  "70:51": "ii pruned (bound 8)",
+  "70:52": "ii pruned (bound 8)",
+  "70:53": "ii pruned (bound 8)",
+  "70:54": "ii pruned (bound 8)",
+  "70:55": "ii pruned (bound 8)",
+  "70:56": "ii pruned (bound 8)",
+  "70:57": "ii pruned (bound 8)",
+  "70:58": "ii pruned (bound 8)",
+  "70:59": "ii pruned (bound 8)",
+  "124:1": "ii pruned (bound 8)",
+  "124:2": "ii pruned (bound 8)",
+  "124:3": "ii pruned (bound 8)",
+  "124:4": "ii pruned (bound 8)",
+  "124:5": "ii pruned (bound 8)",
+  "124:6": "ii pruned (bound 8)",
+  "124:7": "ii pruned (bound 8)",
+  "124:8": "ii pruned (bound 8)",
+  "124:9": "ii pruned (bound 8)",
+  "124:10": "ii pruned (bound 8)",
+  "124:11": "ii pruned (bound 8)",
+  "124:12": "ii pruned (bound 8)",
+  "124:13": "ii pruned (bound 8)",
+  "124:14": "ii pruned (bound 8)",
+  "124:15": "ii pruned (bound 8)",
+  "124:16": "ii pruned (bound 8)",
+  "124:17": "ii pruned (bound 8)",
+  "124:18": "ii pruned (bound 8)",
+  "124:19": "ii pruned (bound 8)",
+  "124:20": "ii pruned (bound 8)",
+  "124:21": "ii pruned (bound 8)",
+  "124:22": "ii pruned (bound 8)",
+  "124:23": "ii pruned (bound 8)",
+  "124:24": "ii pruned (bound 8)",
+  "124:25": "ii pruned (bound 8)",
+  "124:26": "ii pruned (bound 8)",
+  "124:27": "ii pruned (bound 8)",
+  "124:28": "ii pruned (bound 8)",
+  "124:29": "ii pruned (bound 8)",
+  "124:30": "ii pruned (bound 8)",
+  "124:31": "ii pruned (bound 8)",
+  "124:32": "ii pruned (bound 8)",
+  "124:33": "ii pruned (bound 8)",
+  "124:34": "ii pruned (bound 8)",
+  "124:35": "ii pruned (bound 8)",
+  "124:36": "ii pruned (bound 8)",
+  "124:37": "ii pruned (bound 8)",
+  "124:38": "ii pruned (bound 8)",
+  "124:39": "ii pruned (bound 8)",
+  "124:40": "ii pruned (bound 8)",
+  "124:41": "ii pruned (bound 8)",
+  "124:42": "ii pruned (bound 8)",
+  "124:43": "ii pruned (bound 8)",
+  "124:44": "ii pruned (bound 8)",
+  "124:45": "ii pruned (bound 8)",
+  "124:46": "ii pruned (bound 8)",
+  "124:47": "ii pruned (bound 8)",
+  "124:48": "ii pruned (bound 8)",
+  "124:49": "ii pruned (bound 8)",
+  "124:50": "ii pruned (bound 8)",
+  "124:51": "ii pruned (bound 8)",
+  "124:52": "ii pruned (bound 8)",
+  "124:53": "ii pruned (bound 8)",
+  "124:54": "ii pruned (bound 8)",
+  "124:55": "ii pruned (bound 8)",
+  "124:56": "ii pruned (bound 8)",
+  "124:57": "ii pruned (bound 8)",
+  "124:58": "ii pruned (bound 8)",
+  "124:59": "ii pruned (bound 8)",
+  "185:1": "ii pruned (bound 8)",
+  "185:2": "ii pruned (bound 8)",
+  "185:3": "ii pruned (bound 8)",
+  "185:4": "ii pruned (bound 8)",
+  "185:5": "ii pruned (bound 8)",
+  "185:6": "ii pruned (bound 8)",
+  "185:7": "ii pruned (bound 8)",
+  "185:8": "ii pruned (bound 8)",
+  "185:9": "ii pruned (bound 8)",
+  "185:10": "ii pruned (bound 8)",
+  "185:11": "ii pruned (bound 8)",
+  "185:12": "ii pruned (bound 8)",
+  "185:13": "ii pruned (bound 8)",
+  "185:14": "ii pruned (bound 8)",
+  "185:15": "ii pruned (bound 8)",
+  "185:16": "ii pruned (bound 8)",
+  "185:17": "ii pruned (bound 8)",
+  "185:18": "ii pruned (bound 8)",
+  "185:19": "ii pruned (bound 8)",
+  "185:20": "ii pruned (bound 8)",
+  "185:21": "ii pruned (bound 8)",
+  "185:22": "ii pruned (bound 8)",
+  "185:23": "ii pruned (bound 8)",
+  "185:24": "ii pruned (bound 8)",
+  "185:25": "ii pruned (bound 8)",
+  "185:26": "ii pruned (bound 8)",
+  "185:27": "ii pruned (bound 8)",
+  "185:28": "ii pruned (bound 8)",
+  "185:29": "ii pruned (bound 8)",
+  "185:30": "ii pruned (bound 8)",
+  "185:31": "ii pruned (bound 8)",
+  "185:32": "ii pruned (bound 8)",
+  "185:33": "ii pruned (bound 8)",
+  "185:34": "ii pruned (bound 8)",
+  "185:35": "ii pruned (bound 8)",
+  "185:36": "ii pruned (bound 8)",
+  "185:37": "ii pruned (bound 8)",
+  "185:38": "ii pruned (bound 8)",
+  "185:39": "ii pruned (bound 8)",
+  "185:40": "ii pruned (bound 8)",
+  "185:41": "ii pruned (bound 8)",
+  "185:42": "ii pruned (bound 8)",
+  "185:43": "ii pruned (bound 8)",
+  "185:44": "ii pruned (bound 8)",
+  "185:45": "ii pruned (bound 8)",
+  "185:46": "ii pruned (bound 8)",
+  "185:47": "ii pruned (bound 8)",
+  "185:48": "ii pruned (bound 8)",
+  "185:49": "ii pruned (bound 8)",
+  "185:50": "ii pruned (bound 8)",
+  "185:51": "ii pruned (bound 8)",
+  "185:52": "ii pruned (bound 8)",
+  "185:53": "ii pruned (bound 8)",
+  "185:54": "ii pruned (bound 8)",
+  "185:55": "ii pruned (bound 8)",
+  "185:56": "ii pruned (bound 8)",
+  "185:57": "ii pruned (bound 8)",
+  "185:58": "ii pruned (bound 8)",
+  "185:59": "ii pruned (bound 8)",
+  "277:1": "ii pruned (bound 8)",
+  "277:2": "ii pruned (bound 8)",
+  "277:3": "ii pruned (bound 8)",
+  "277:4": "ii pruned (bound 8)",
+  "277:5": "ii pruned (bound 8)",
+  "277:6": "ii pruned (bound 8)",
+  "277:7": "ii pruned (bound 8)",
+  "277:8": "ii pruned (bound 8)",
+  "277:9": "ii pruned (bound 8)",
+  "277:10": "ii pruned (bound 8)",
+  "277:11": "ii pruned (bound 8)",
+  "277:12": "ii pruned (bound 8)",
+  "277:13": "ii pruned (bound 8)",
+  "277:14": "ii pruned (bound 8)",
+  "277:15": "ii pruned (bound 8)",
+  "277:16": "ii pruned (bound 8)",
+  "277:17": "ii pruned (bound 8)",
+  "277:18": "ii pruned (bound 8)",
+  "277:19": "ii pruned (bound 8)",
+  "277:20": "ii pruned (bound 8)",
+  "277:21": "ii pruned (bound 8)",
+  "277:22": "ii pruned (bound 8)",
+  "277:23": "ii pruned (bound 8)",
+  "277:24": "ii pruned (bound 8)",
+  "277:25": "ii pruned (bound 8)",
+  "277:26": "ii pruned (bound 8)",
+  "277:27": "ii pruned (bound 8)",
+  "277:28": "ii pruned (bound 8)",
+  "277:29": "ii pruned (bound 8)",
+  "277:30": "ii pruned (bound 8)",
+  "277:31": "ii pruned (bound 8)",
+  "277:32": "ii pruned (bound 8)",
+  "277:33": "ii pruned (bound 8)",
+  "277:34": "ii pruned (bound 8)",
+  "277:35": "ii pruned (bound 8)",
+  "277:36": "ii pruned (bound 8)",
+  "277:37": "ii pruned (bound 8)",
+  "277:38": "ii pruned (bound 8)",
+  "277:39": "ii pruned (bound 8)",
+  "277:40": "ii pruned (bound 8)",
+  "277:41": "ii pruned (bound 8)",
+  "277:42": "ii pruned (bound 8)",
+  "277:43": "ii pruned (bound 8)",
+  "277:44": "ii pruned (bound 8)",
+  "277:45": "ii pruned (bound 8)",
+  "277:46": "ii pruned (bound 8)",
+  "277:47": "ii pruned (bound 8)",
+  "277:48": "ii pruned (bound 8)",
+  "277:49": "ii pruned (bound 8)",
+  "277:50": "ii pruned (bound 8)",
+  "277:51": "ii pruned (bound 8)",
+  "277:52": "ii pruned (bound 8)",
+  "277:53": "ii pruned (bound 8)",
+  "277:54": "ii pruned (bound 8)",
+  "277:55": "ii pruned (bound 8)",
+  "277:56": "ii pruned (bound 8)",
+  "277:57": "ii pruned (bound 8)",
+  "277:58": "ii pruned (bound 8)",
+  "277:59": "ii pruned (bound 8)",
+  "358:1": "ii pruned (bound 8)",
+  "358:2": "ii pruned (bound 8)",
+  "358:3": "ii pruned (bound 8)",
+  "358:4": "ii pruned (bound 8)",
+  "358:5": "ii pruned (bound 8)",
+  "358:6": "ii pruned (bound 8)",
+  "358:7": "ii pruned (bound 8)",
+  "358:8": "ii pruned (bound 8)",
+  "358:9": "ii pruned (bound 8)",
+  "358:10": "ii pruned (bound 8)",
+  "358:11": "ii pruned (bound 8)",
+  "358:12": "ii pruned (bound 8)",
+  "358:13": "ii pruned (bound 8)",
+  "358:14": "ii pruned (bound 8)",
+  "358:15": "ii pruned (bound 8)",
+  "358:16": "ii pruned (bound 8)",
+  "358:17": "ii pruned (bound 8)",
+  "358:18": "ii pruned (bound 8)",
+  "358:19": "ii pruned (bound 8)",
+  "358:20": "ii pruned (bound 8)",
+  "358:21": "ii pruned (bound 8)",
+  "358:22": "ii pruned (bound 8)",
+  "358:23": "ii pruned (bound 8)",
+  "358:24": "ii pruned (bound 8)",
+  "358:25": "ii pruned (bound 8)",
+  "358:26": "ii pruned (bound 8)",
+  "358:27": "ii pruned (bound 8)",
+  "358:28": "ii pruned (bound 8)",
+  "358:29": "ii pruned (bound 8)",
+  "358:30": "ii pruned (bound 8)",
+  "358:31": "ii pruned (bound 8)",
+  "358:32": "ii pruned (bound 8)",
+  "358:33": "ii pruned (bound 8)",
+  "358:34": "ii pruned (bound 8)",
+  "358:35": "ii pruned (bound 8)",
+  "358:36": "ii pruned (bound 8)",
+  "358:37": "ii pruned (bound 8)",
+  "358:38": "ii pruned (bound 8)",
+  "358:39": "ii pruned (bound 8)",
+  "358:40": "ii pruned (bound 8)",
+  "358:41": "ii pruned (bound 8)",
+  "358:42": "ii pruned (bound 8)",
+  "358:43": "ii pruned (bound 8)",
+  "358:44": "ii pruned (bound 8)",
+  "358:45": "ii pruned (bound 8)",
+  "358:46": "ii pruned (bound 8)",
+  "358:47": "ii pruned (bound 8)",
+  "358:48": "ii pruned (bound 8)",
+  "358:49": "ii pruned (bound 8)",
+  "358:50": "ii pruned (bound 8)",
+  "358:51": "ii pruned (bound 8)",
+  "358:52": "ii pruned (bound 8)",
+  "358:53": "ii pruned (bound 8)",
+  "358:54": "ii pruned (bound 8)",
+  "358:55": "ii pruned (bound 8)",
+  "358:56": "ii pruned (bound 8)",
+  "358:57": "ii pruned (bound 8)",
+  "358:58": "ii pruned (bound 8)",
+  "358:59": "ii pruned (bound 8)",
+  "394:1": "ii pruned (bound 8)",
+  "394:2": "ii pruned (bound 8)",
+  "394:3": "ii pruned (bound 8)",
+  "394:4": "ii pruned (bound 8)",
+  "394:5": "ii pruned (bound 8)",
+  "394:6": "ii pruned (bound 8)",
+  "394:7": "ii pruned (bound 8)",
+  "394:8": "ii pruned (bound 8)",
+  "394:9": "ii pruned (bound 8)",
+  "394:10": "ii pruned (bound 8)",
+  "394:11": "ii pruned (bound 8)",
+  "394:12": "ii pruned (bound 8)",
+  "394:13": "ii pruned (bound 8)",
+  "394:14": "ii pruned (bound 8)",
+  "394:15": "ii pruned (bound 8)",
+  "394:16": "ii pruned (bound 8)",
+  "394:17": "ii pruned (bound 8)",
+  "394:18": "ii pruned (bound 8)",
+  "394:19": "ii pruned (bound 8)",
+  "394:20": "ii pruned (bound 8)",
+  "394:21": "ii pruned (bound 8)",
+  "394:22": "ii pruned (bound 8)",
+  "394:23": "ii pruned (bound 8)",
+  "394:24": "ii pruned (bound 8)",
+  "394:25": "ii pruned (bound 8)",
+  "394:26": "ii pruned (bound 8)",
+  "394:27": "ii pruned (bound 8)",
+  "394:28": "ii pruned (bound 8)",
+  "394:29": "ii pruned (bound 8)",
+  "394:30": "ii pruned (bound 8)",
+  "394:31": "ii pruned (bound 8)",
+  "394:32": "ii pruned (bound 8)",
+  "394:33": "ii pruned (bound 8)",
+  "394:34": "ii pruned (bound 8)",
+  "394:35": "ii pruned (bound 8)",
+  "394:36": "ii pruned (bound 8)",
+  "394:37": "ii pruned (bound 8)",
+  "394:38": "ii pruned (bound 8)",
+  "394:39": "ii pruned (bound 8)",
+  "394:40": "ii pruned (bound 8)",
+  "394:41": "ii pruned (bound 8)",
+  "394:42": "ii pruned (bound 8)",
+  "394:43": "ii pruned (bound 8)",
+  "394:44": "ii pruned (bound 8)",
+  "394:45": "ii pruned (bound 8)",
+  "394:46": "ii pruned (bound 8)",
+  "394:47": "ii pruned (bound 8)",
+  "394:48": "ii pruned (bound 8)",
+  "394:49": "ii pruned (bound 8)",
+  "394:50": "ii pruned (bound 8)",
+  "394:51": "ii pruned (bound 8)",
+  "394:52": "ii pruned (bound 8)",
+  "394:53": "ii pruned (bound 8)",
+  "394:54": "ii pruned (bound 8)",
+  "394:55": "ii pruned (bound 8)",
+  "394:56": "ii pruned (bound 8)",
+  "394:57": "ii pruned (bound 8)",
+  "394:58": "ii pruned (bound 8)",
+  "394:59": "ii pruned (bound 8)",
+  "471:1": "ii pruned (bound 8)",
+  "471:2": "ii pruned (bound 8)",
+  "471:3": "ii pruned (bound 8)",
+  "471:4": "ii pruned (bound 8)",
+  "471:5": "ii pruned (bound 8)",
+  "471:6": "ii pruned (bound 8)",
+  "471:7": "ii pruned (bound 8)",
+  "471:8": "ii pruned (bound 8)",
+  "471:9": "ii pruned (bound 8)",
+  "471:10": "ii pruned (bound 8)",
+  "471:11": "ii pruned (bound 8)",
+  "471:12": "ii pruned (bound 8)",
+  "471:13": "ii pruned (bound 8)",
+  "471:14": "ii pruned (bound 8)",
+  "471:15": "ii pruned (bound 8)",
+  "471:16": "ii pruned (bound 8)",
+  "471:17": "ii pruned (bound 8)",
+  "471:18": "ii pruned (bound 8)",
+  "471:19": "ii pruned (bound 8)",
+  "471:20": "ii pruned (bound 8)",
+  "471:21": "ii pruned (bound 8)",
+  "471:22": "ii pruned (bound 8)",
+  "471:23": "ii pruned (bound 8)",
+  "471:24": "ii pruned (bound 8)",
+  "471:25": "ii pruned (bound 8)",
+  "471:26": "ii pruned (bound 8)",
+  "471:27": "ii pruned (bound 8)",
+  "471:28": "ii pruned (bound 8)",
+  "471:29": "ii pruned (bound 8)",
+  "471:30": "ii pruned (bound 8)",
+  "471:31": "ii pruned (bound 8)",
+  "471:32": "ii pruned (bound 8)",
+  "471:33": "ii pruned (bound 8)",
+  "471:34": "ii pruned (bound 8)",
+  "471:35": "ii pruned (bound 8)",
+  "471:36": "ii pruned (bound 8)",
+  "471:37": "ii pruned (bound 8)",
+  "471:38": "ii pruned (bound 8)",
+  "471:39": "ii pruned (bound 8)",
+  "471:40": "ii pruned (bound 8)",
+  "471:41": "ii pruned (bound 8)",
+  "471:42": "ii pruned (bound 8)",
+  "471:43": "ii pruned (bound 8)",
+  "471:44": "ii pruned (bound 8)",
+  "471:45": "ii pruned (bound 8)",
+  "471:46": "ii pruned (bound 8)",
+  "471:47": "ii pruned (bound 8)",
+  "471:48": "ii pruned (bound 8)",
+  "471:49": "ii pruned (bound 8)",
+  "471:50": "ii pruned (bound 8)",
+  "471:51": "ii pruned (bound 8)",
+  "471:52": "ii pruned (bound 8)",
+  "471:53": "ii pruned (bound 8)",
+  "471:54": "ii pruned (bound 8)",
+  "471:55": "ii pruned (bound 8)",
+  "471:56": "ii pruned (bound 8)",
+  "471:57": "ii pruned (bound 8)",
+  "471:58": "ii pruned (bound 8)",
+  "471:59": "ii pruned (bound 8)",
+  "533:1": "ii pruned (bound 8)",
+  "533:2": "ii pruned (bound 8)",
+  "533:3": "ii pruned (bound 8)",
+  "533:4": "ii pruned (bound 8)",
+  "533:5": "ii pruned (bound 8)",
+  "533:6": "ii pruned (bound 8)",
+  "533:7": "ii pruned (bound 8)",
+  "533:8": "ii pruned (bound 8)",
+  "533:9": "ii pruned (bound 8)",
+  "533:10": "ii pruned (bound 8)",
+  "533:11": "ii pruned (bound 8)",
+  "533:12": "ii pruned (bound 8)",
+  "533:13": "ii pruned (bound 8)",
+  "533:14": "ii pruned (bound 8)",
+  "533:15": "ii pruned (bound 8)",
+  "533:16": "ii pruned (bound 8)",
+  "533:17": "ii pruned (bound 8)",
+  "533:18": "ii pruned (bound 8)",
+  "533:19": "ii pruned (bound 8)",
+  "533:20": "ii pruned (bound 8)",
+  "533:21": "ii pruned (bound 8)",
+  "533:22": "ii pruned (bound 8)",
+  "533:23": "ii pruned (bound 8)",
+  "533:24": "ii pruned (bound 8)",
+  "533:25": "ii pruned (bound 8)",
+  "533:26": "ii pruned (bound 8)",
+  "533:27": "ii pruned (bound 8)",
+  "533:28": "ii pruned (bound 8)",
+  "533:29": "ii pruned (bound 8)",
+  "533:30": "ii pruned (bound 8)",
+  "533:31": "ii pruned (bound 8)",
+  "533:32": "ii pruned (bound 8)",
+  "533:33": "ii pruned (bound 8)",
+  "533:34": "ii pruned (bound 8)",
+  "533:35": "ii pruned (bound 8)",
+  "533:36": "ii pruned (bound 8)",
+  "533:37": "ii pruned (bound 8)",
+  "533:38": "ii pruned (bound 8)",
+  "533:39": "ii pruned (bound 8)",
+  "533:40": "ii pruned (bound 8)",
+  "533:41": "ii pruned (bound 8)",
+  "533:42": "ii pruned (bound 8)",
+  "533:43": "ii pruned (bound 8)",
+  "533:44": "ii pruned (bound 8)",
+  "533:45": "ii pruned (bound 8)",
+  "533:46": "ii pruned (bound 8)",
+  "533:47": "ii pruned (bound 8)",
+  "533:48": "ii pruned (bound 8)",
+  "533:49": "ii pruned (bound 8)",
+  "533:50": "ii pruned (bound 8)",
+  "533:51": "ii pruned (bound 8)",
+  "533:52": "ii pruned (bound 8)",
+  "533:53": "ii pruned (bound 8)",
+  "533:54": "ii pruned (bound 8)",
+  "533:55": "ii pruned (bound 8)",
+  "533:56": "ii pruned (bound 8)",
+  "533:57": "ii pruned (bound 8)",
+  "533:58": "ii pruned (bound 8)",
+  "533:59": "ii pruned (bound 8)",
+  "553:1": "ii pruned (bound 8)",
+  "553:2": "ii pruned (bound 8)",
+  "553:3": "ii pruned (bound 8)",
+  "553:4": "ii pruned (bound 8)",
+  "553:5": "ii pruned (bound 8)",
+  "553:6": "ii pruned (bound 8)",
+  "553:7": "ii pruned (bound 8)",
+  "553:8": "ii pruned (bound 8)",
+  "553:9": "ii pruned (bound 8)",
+  "553:10": "ii pruned (bound 8)",
+  "553:11": "ii pruned (bound 8)",
+  "553:12": "ii pruned (bound 8)",
+  "553:13": "ii pruned (bound 8)",
+  "553:14": "ii pruned (bound 8)",
+  "553:15": "ii pruned (bound 8)",
+  "553:16": "ii pruned (bound 8)",
+  "553:17": "ii pruned (bound 8)",
+  "553:18": "ii pruned (bound 8)",
+  "553:19": "ii pruned (bound 8)",
+  "553:20": "ii pruned (bound 8)",
+  "553:21": "ii pruned (bound 8)",
+  "553:22": "ii pruned (bound 8)",
+  "553:23": "ii pruned (bound 8)",
+  "553:24": "ii pruned (bound 8)",
+  "553:25": "ii pruned (bound 8)",
+  "553:26": "ii pruned (bound 8)",
+  "553:27": "ii pruned (bound 8)",
+  "553:28": "ii pruned (bound 8)",
+  "553:29": "ii pruned (bound 8)",
+  "553:30": "ii pruned (bound 8)",
+  "553:31": "ii pruned (bound 8)",
+  "553:32": "ii pruned (bound 8)",
+  "553:33": "ii pruned (bound 8)",
+  "553:34": "ii pruned (bound 8)",
+  "553:35": "ii pruned (bound 8)",
+  "553:36": "ii pruned (bound 8)",
+  "553:37": "ii pruned (bound 8)",
+  "553:38": "ii pruned (bound 8)",
+  "553:39": "ii pruned (bound 8)",
+  "553:40": "ii pruned (bound 8)",
+  "553:41": "ii pruned (bound 8)",
+  "553:42": "ii pruned (bound 8)",
+  "553:43": "ii pruned (bound 8)",
+  "553:44": "ii pruned (bound 8)",
+  "553:45": "ii pruned (bound 8)",
+  "553:46": "ii pruned (bound 8)",
+  "553:47": "ii pruned (bound 8)",
+  "553:48": "ii pruned (bound 8)",
+  "553:49": "ii pruned (bound 8)",
+  "553:50": "ii pruned (bound 8)",
+  "553:51": "ii pruned (bound 8)",
+  "553:52": "ii pruned (bound 8)",
+  "553:53": "ii pruned (bound 8)",
+  "553:54": "ii pruned (bound 8)",
+  "553:55": "ii pruned (bound 8)",
+  "553:56": "ii pruned (bound 8)",
+  "553:57": "ii pruned (bound 8)",
+  "553:58": "ii pruned (bound 8)",
+  "553:59": "ii pruned (bound 8)",
+  "593:1": "ii pruned (bound 8)",
+  "593:2": "ii pruned (bound 8)",
+  "593:3": "ii pruned (bound 8)",
+  "593:4": "ii pruned (bound 8)",
+  "593:5": "ii pruned (bound 8)",
+  "593:6": "ii pruned (bound 8)",
+  "593:7": "ii pruned (bound 8)",
+  "593:8": "ii pruned (bound 8)",
+  "593:9": "ii pruned (bound 8)",
+  "593:10": "ii pruned (bound 8)",
+  "593:11": "ii pruned (bound 8)",
+  "593:12": "ii pruned (bound 8)",
+  "593:13": "ii pruned (bound 8)",
+  "593:14": "ii pruned (bound 8)",
+  "593:15": "ii pruned (bound 8)",
+  "593:16": "ii pruned (bound 8)",
+  "593:17": "ii pruned (bound 8)",
+  "593:18": "ii pruned (bound 8)",
+  "593:19": "ii pruned (bound 8)",
+  "593:20": "ii pruned (bound 8)",
+  "593:21": "ii pruned (bound 8)",
+  "593:22": "ii pruned (bound 8)",
+  "593:23": "ii pruned (bound 8)",
+  "593:24": "ii pruned (bound 8)",
+  "593:25": "ii pruned (bound 8)",
+  "593:26": "ii pruned (bound 8)",
+  "593:27": "ii pruned (bound 8)",
+  "593:28": "ii pruned (bound 8)",
+  "593:29": "ii pruned (bound 8)",
+  "593:30": "ii pruned (bound 8)",
+  "593:31": "ii pruned (bound 8)",
+  "593:32": "ii pruned (bound 8)",
+  "593:33": "ii pruned (bound 8)",
+  "593:34": "ii pruned (bound 8)",
+  "593:35": "ii pruned (bound 8)",
+  "593:36": "ii pruned (bound 8)",
+  "593:37": "ii pruned (bound 8)",
+  "593:38": "ii pruned (bound 8)",
+  "593:39": "ii pruned (bound 8)",
+  "593:40": "ii pruned (bound 8)",
+  "593:41": "ii pruned (bound 8)",
+  "593:42": "ii pruned (bound 8)",
+  "593:43": "ii pruned (bound 8)",
+  "593:44": "ii pruned (bound 8)",
+  "593:45": "ii pruned (bound 8)",
+  "593:46": "ii pruned (bound 8)",
+  "593:47": "ii pruned (bound 8)",
+  "593:48": "ii pruned (bound 8)",
+  "593:49": "ii pruned (bound 8)",
+  "593:50": "ii pruned (bound 8)",
+  "593:51": "ii pruned (bound 8)",
+  "593:52": "ii pruned (bound 8)",
+  "593:53": "ii pruned (bound 8)",
+  "593:54": "ii pruned (bound 8)",
+  "593:55": "ii pruned (bound 8)",
+  "593:56": "ii pruned (bound 8)",
+  "593:57": "ii pruned (bound 8)",
+  "593:58": "ii pruned (bound 8)",
+  "593:59": "ii pruned (bound 8)"
+ },
+ "class_i_cpu": 2906.1,
+ "class_ii_bounds": {
+  "2": 8,
+  "39": 8,
+  "62": 8,
+  "70": 8,
+  "124": 8,
+  "185": 8,
+  "277": 8,
+  "358": 8,
+  "394": 8,
+  "471": 8,
+  "533": 8,
+  "553": 8,
+  "593": 8
+ },
+ "class_ii_pruned_caps": [
+  2,
+  39,
+  62,
+  70,
+  124,
+  185,
+  277,
+  358,
+  394,
+  471,
+  533,
+  553,
+  593
+ ],
+ "class_ii": {
+  "listed": 1,
+  "done": 1,
+  "last": [
+   364,
+   9
+  ],
+  "complete": true
+ },
+ "stats": {
+  "first_letters_tried": 60,
+  "first_letters_tested": 59,
+  "pairs_tried": 3599,
+  "b_caps_skipped": 108,
+  "triples_first_two": 0,
+  "first_letters_pruned": 767
+ },
+ "cpu": 3022.6
+}

@@ -1,0 +1,1795 @@
+diff --git a/research/jumbling/restoration/13-tutorial-runner/scripts/lattice_phase.py b/research/jumbling/restoration/13-tutorial-runner/scripts/lattice_phase.py
+index 3fed164..61e7439 100644
+--- a/research/jumbling/restoration/13-tutorial-runner/scripts/lattice_phase.py
++++ b/research/jumbling/restoration/13-tutorial-runner/scripts/lattice_phase.py
+@@ -1,16 +1,596 @@
+-"""Literal lattice phase of the tutorial runner (headless research).
++"""Play the tutorial's lattice chapter literally in an isolated child.
+ 
+-Stub until packet P3 is integrated. Its not_applicable keeps the verify_late
+-path, which checks the retained part by composing its program (R22D-57); the
+-runner labels such a run a component (lattice_composition).
++Headless exact research code. Importing the plugin needs no geometry; only the
++--_play child imports the literal player and the pose-table exporter.
+ """
+-from pathlib import Path
++import argparse
++import gzip
++import hashlib
++import json
++import math
++from pathlib import Path, PurePosixPath, PureWindowsPath
++import re
++import shutil
++import sys
++import time
++import zlib
+ 
+-import runner_api as api
++HERE = Path(__file__).resolve().parent
++ROOT = Path(__file__).resolve().parents[5]
++if str(HERE) not in sys.path:
++    sys.path.insert(0, str(HERE))
++import runner_api as api  # noqa: E402
+ 
+-STUB = True
+-SCRIPTS = [Path(__file__).resolve().relative_to(Path(__file__).resolve().parents[5])]
++G9 = Path('research/jumbling/restoration/09-general-method')
++LAT = G9 / 'scripts/lattice/scripts'
++SCH = G9 / 'scripts/schedule11'
++S03 = Path('research/jumbling/restoration/03-retained-group-and-lattice-restorer/scripts')
++RESTORERS = {'late': LAT / 'restore_lattice_late.py',
++             'schedule11': SCH / 'restore_schedule11_late.py'}
++REALIGN = G9 / 'data/realign.json.gz'
++LIBRARY = G9 / 'data/library-merged.json.gz'
++PLAY_SECONDS = None
++TREE_PART_LIMIT = 10**6
++SCRIPTS = [Path(__file__).resolve().relative_to(ROOT),
++           HERE.relative_to(ROOT) / 'literal_lattice.py',
++           HERE.relative_to(ROOT) / 'runner_api.py', *RESTORERS.values(),
++           *(LAT / name for name in ('rlib.py', 'kit.py', 'nucoords.py')), SCH / 'sched11.py',
++           *(S03 / name for name in ('rlib.py', 'kit.py', 'nucoords.py'))]
++
++ROW_KEYS = frozenset(('index', 'phase', 'subphase', 'rule', 'word', 'letters', 'encoding',
++    'word_sha256', 'tree', 'contract', 'gate', 'standing', 'before', 'after', 'table', 'seconds', 'attempts'))
++FIELD_FORBIDDEN = ROW_KEYS | api.FORBIDDEN_KEYS | {
++    'file', 'unit', 'library', 'out', 'parts', 'V_source', 'V_letters', 'V_sha256',
++    'construction', 'certificate_sha256'}
++TREE_KEYS = {'name', 'letters', 'parts', 'span', 'inverse_of', 'same_as'}
++STEP_KEYS = {'rule', 'word_file', 'word_sha256', 'letters', 'tree_file', 'tree_sha256',
++             'tree_size', 'before', 'after', 'fields', 'seconds'}
++DEFAULTS = {'contract': 'lattice_literal', 'gate': 'player', 'standing': 'rule', 'encoding': 'ia16'}
++
++
++class Invalid(ValueError):
++    """A public check name, never a raw path or exception message."""
++
++
++def require(condition, check):
++    if not condition:
++        raise Invalid(check)
++
++
++def integer(value, minimum=0):
++    return type(value) is int and value >= minimum
++
++
++def digest(value):
++    return isinstance(value, str) and re.fullmatch('[0-9a-f]{64}', value) is not None
++
++
++def duration(value):
++    try:
++        return type(value) in (int, float) and math.isfinite(value) and value >= 0
++    except OverflowError:
++        return False
++
++
++def snapshot(value):
++    return (isinstance(value, dict) and set(value) == {'digest', 'off', 'heights'}
++            and type(value['off']) is int and value['off'] == 0 and value['heights'] == {}
++            and digest(value['digest']))
++
++
++def private_path(value):
++    return ('\\' in value or re.search(r'(^|[\s:=])[/~]', value) is not None
++            or re.match(r'[A-Za-z]:[\\/]', value) is not None or '..' in value.split('/'))
++
++
++def safe_record(value):
++    if isinstance(value, str):
++        return not private_path(value)
++    if isinstance(value, dict):
++        return all(isinstance(k, str) and k not in api.FORBIDDEN_KEYS and safe_record(k)
++                   and safe_record(v) for k, v in value.items())
++    if isinstance(value, list):
++        return all(safe_record(v) for v in value)
++    return value is None or type(value) in (bool, int) or type(value) is float and math.isfinite(value)
++
++
++def no_constant(value):
++    raise ValueError('nonfinite JSON number')
++
++
++def read_json(path):
++    return json.loads(Path(path).read_bytes(), parse_constant=no_constant)
++
++
++def sha(path):
++    with Path(path).open('rb') as stream:
++        return hashlib.file_digest(stream, 'sha256').hexdigest()
++
++
++def atomic_json(path, value):
++    api.atomic_bytes(Path(path), (json.dumps(value, allow_nan=False, separators=(',', ':')) + '\n').encode())
++
++
++def orbit_partition(summary):
++    """Validate the restorer's chronological partition without loading geometry."""
++    order = summary.get('cascade_order')
++    require(isinstance(order, list) and all(type(o) is int for o in order)
++            and len(set(order)) == len(order), 'cascade_order')
++    run = summary['runs'][0]
++    count = run.get('factors')
++    require(integer(count), 'orbit_partition')
++    per = run.get('factors_per_orbit')
++    if count == 0 and per is None:
++        return [(o, 0, 0) for o in order]
++    require(isinstance(per, dict) and list(per) == [str(o) for o in order]
++            and all(integer(n) for n in per.values()) and sum(per.values()) == count,
++            'orbit_partition')
++    first, result = 0, []
++    for orbit in order:
++        n = per[str(orbit)]
++        result.append((orbit, first, n))
++        first += n
++    return result
++
++
++def orbit_tree(program, factors, orbit):
++    """A bounded tree in played order, with backward references local to this step.
++
++    committed includes pending parts, so expansion can never consume space
++    already promised to a later sibling. Node recursion stops at depth 64.
++    """
++    total = sum(program.lengths[j] for j, _ in factors)
++    committed = 1 + 2 * len(factors)  # root, factor groups, their node parts
++    if committed > TREE_PART_LIMIT:
++        return api.single(f'orbit {orbit}', total), 1, 0
++    first, at, folded, folded_depth = {}, 0, 0, 0
++
++    def name(j, sign):
++        return f'{program.nodes[j]["op"]} {j}' + ('⁻¹' if sign < 0 else '')
++
++    def span(j, sign, path, reference=None):
++        nonlocal at
++        result = api.span(name(j, sign), at, at + program.lengths[j])
++        if reference is not None:
++            key, earlier = reference
++            result[key] = list(earlier)
++        first.setdefault((j, sign), path)
++        at += program.lengths[j]
++        return result
++
++    def node(j, sign, path, depth):
++        nonlocal committed, folded, folded_depth
++        previous = first.get((j, sign))
++        if previous is not None:
++            return span(j, sign, path, ('same_as', previous))
++        nd = program.nodes[j]
++        if j in program.words or program.lengths[j] == 0:
++            return span(j, sign, path)
++        if depth == api.TREE_MAX_DEPTH:
++            folded_depth += 1
++            return span(j, sign, path)
++        if nd['op'] == 'conj':
++            children = [(nd['u'], -nd['us']), (nd['x'], sign), (nd['u'], nd['us'])]
++        else:
++            children = nd['f'] if sign > 0 else [(j, -s) for j, s in reversed(nd['f'])]
++        if committed + len(children) > TREE_PART_LIMIT:
++            folded += 1
++            return span(j, sign, path)
++        committed += len(children)
++        first[(j, sign)] = path
++        parts = []
++        for k, (child, sg) in enumerate(children):
++            child_path = path + (k,)
++            if nd['op'] == 'conj' and k == 2:
++                parts.append(span(child, sg, child_path, ('inverse_of', path + (0,))))
++            else:
++                parts.append(node(child, sg, child_path, depth + 1))
++        return api.group(name(j, sign), parts)
++
++    parts = [api.group(f'factor {i}', [node(j, sign, (i, 0), 3)])
++             for i, (j, sign) in enumerate(factors)]
++    root = api.group(f'orbit {orbit}', parts)
++    api.check_tree(root, total)
++    return root, folded, folded_depth
++
++
++def correction_tree(index, correction, macro):
++    length = len(macro['records'])
++    name = f'macro {correction["macro"]} {macro["family"]}' + ('⁻¹' if correction['inverse'] else '')
++    return api.flat(f'correction {index}', [(name, length)] * correction['times'],
++                    same={i: 0 for i in range(1, correction['times'])})
++
++
++class PlayerObserver:
++    """Stream only letters delivered by the literal player; hash exact boundaries."""
++
++    def __init__(self, output, before, summary, library):
++        self.output, self.before = Path(output), dict(before)
++        self.summary, self.library = summary, library
++        self.steps, self.current, self.final_state = [], None, None
++        self.factor_index = self.orbit_index = self.correction_index = 0
++
++    def begin(self, program, factors, corrections, order):
++        self.program, self.factors, self.corrections = program, factors, corrections
++        self.orbits = [entry for entry in orbit_partition(self.summary) if entry[2]]
++        require(sum(n for _, _, n in self.orbits) == len(factors), 'orbit_partition')
++
++    def _open(self, rule):
++        require(self.current is None, 'step_boundary')
++        k = len(self.steps)
++        word = f'words/{k:05d}.ia16.gz'
++        self.current = {'rule': rule, 'word_file': word, 'before': dict(self.before)}
++        self.writer = api.Ia16Writer(self.output / word)
++        self.started = time.monotonic()
++
++    def _orbit(self):
++        orbit, first, count = self.orbits[self.orbit_index]
++        if self.current is None:
++            self._open(f'lattice/orbit-{orbit}')
++        return orbit, first, count
++
++    def leaf(self, node, sign, codes):
++        self._orbit()
++        self.writer.write_codes(codes)
++
++    def _close(self, state, tree, fields):
++        live = state()
++        require(live.is_lattice(), 'step_lattice')
++        after = {'digest': live.digest(), 'off': 0, 'heights': {}}
++        word = self.writer.close()
++        tree_name = f'step-trees/{len(self.steps):05d}.json.gz'
++        info = api.write_tree(self.output / tree_name, tree, word['letters'])
++        self.steps.append({**self.current, 'word_sha256': word['sha256'], 'letters': word['letters'],
++            'tree_file': tree_name, 'tree_sha256': info['sha256'], 'tree_size': info['size'],
++            'after': after, 'fields': fields, 'seconds': time.monotonic() - self.started})
++        self.before, self.current = after, None
++
++    def factor_end(self, index, state):
++        require(index == self.factor_index, 'factor_boundary')
++        orbit, first, count = self._orbit()
++        if index + 1 == first + count:
++            tree, folded, depth = orbit_tree(self.program, self.factors[first:first + count], orbit)
++            self._close(state, tree, {'orbit': orbit, 'factor_first': first, 'factor_count': count,
++                                     'tree_folded': folded, 'tree_folded_depth': depth})
++            self.orbit_index += 1
++        self.factor_index += 1
++
++    def correction_twist(self, code):
++        correction = self.corrections[self.correction_index]
++        if self.current is None:
++            self._open(f'lattice/correction-{self.correction_index}-{correction["macro"]}')
++        self.writer.write_codes([code])
++
++    def correction_end(self, index, state):
++        require(index == self.correction_index, 'correction_boundary')
++        correction = self.corrections[index]
++        macro = self.library['macros'][correction['macro']]
++        if self.current is None:
++            self._open(f'lattice/correction-{index}-{correction["macro"]}')
++        self._close(state, correction_tree(index, correction, macro),
++                    {'correction': index, 'macro': correction['macro'], 'family': macro['family'],
++                     'times': correction['times'], 'inverse': correction['inverse'],
++                     'macro_letters': len(macro['records'])})
++        self.correction_index += 1
++
++    def final(self, state):
++        require(self.current is None and self.factor_index == len(self.factors)
++                and self.correction_index == len(self.corrections), 'final_boundary')
++        self.final_state = state
++
++    def discard(self):
++        if self.current is not None:
++            self.writer.file.close()
++            self.writer.raw.close()
++            self.current = None
++        discard_play(self.output)
++        self.steps = []
++
++
++def discard_play(output):
++    for name in ('words', 'step-trees'):
++        shutil.rmtree(Path(output) / name, ignore_errors=True)
++    (Path(output) / 'end-table.json').unlink(missing_ok=True)
++
++
++def play_child(restore, table, library, output, seconds=None):
++    # The player sets thread limits before importing NumPy. No geometry is
++    # imported when the runner merely discovers the plugin.
++    import literal_lattice
++    output = Path(output)
++    output.mkdir(parents=True, exist_ok=True)
++    before = {'digest': read_json(table)['digest'], 'off': 0, 'heights': {}}
++    observer = PlayerObserver(output, before, read_json(Path(restore) / 'restore-summary.json'), read_json(library))
++    report = literal_lattice.play(restore, table, 0, library, seconds, observer=observer)
++    if report['result'] == 'solved':
++        require(observer.final_state is not None, 'final_boundary')
++        import buffer
++        buffer.export_pose_table(observer.final_state, output / 'end-table.json')
++        if observer.steps:
++            observer.steps[-1]['fields']['labels_identity'] = report['final']['labels_identity']
++    else:
++        observer.discard()
++    atomic_json(output / 'play-result.json', {'format': 'lattice-phase-play/1', 'report': report,
++                'steps': observer.steps, 'end_table': 'end-table.json'})
++    print(json.dumps({'result': report['result'], 'failure': report['failure'],
++                      'steps': len(observer.steps), 'played': report['played']}), flush=True)
++
++
++def inside(output, name):
++    require(isinstance(name, str) and name and '\\' not in name and '\x00' not in name,
++            'manifest')
++    path = PurePosixPath(name)
++    require(not path.is_absolute() and not PureWindowsPath(name).drive and '..' not in path.parts,
++            'manifest')
++    result = (output / path).resolve()
++    require(result.is_relative_to(output.resolve()), 'manifest')
++    return result
++
++
++def manifest_schema(output):
++    doc = read_json(output / 'play-result.json')
++    require(isinstance(doc, dict) and set(doc) == {'format', 'report', 'steps', 'end_table'}
++            and doc['format'] == 'lattice-phase-play/1' and isinstance(doc['steps'], list), 'manifest')
++    inside(output, doc['end_table'])
++    report = doc['report']
++    report_keys = {'format', 'restore_dir', 'run', 'input', 'order', 'scheduled', 'played', 'junction',
++                   'final', 'result', 'failure', 'position', 'seconds', 'model_files_checked', 'scripts'}
++    require(isinstance(report, dict) and set(report) == report_keys and report.get('format') == 'literal-lattice/1'
++            and report.get('result') in ('solved', 'failed', 'budget') and safe_record(report), 'manifest')
++    require(isinstance(report['restore_dir'], str) and integer(report['run'])
++            and report['order'] in ('retained-first', 'corrections-first')
++            and isinstance(report['input'], dict) and set(report['input']) == {'table', 'digest', 'labels_sha256'}
++            and report['input']['table'] == 'start-table.json'
++            and all(v is None or digest(v) for k, v in report['input'].items() if k != 'table')
++            and isinstance(report['junction'], dict) and set(report['junction']) == {'T_digest', 'labels_equal'}
++            and (report['junction']['T_digest'] is None or digest(report['junction']['T_digest']))
++            and (report['junction']['labels_equal'] is None or type(report['junction']['labels_equal']) is bool)
++            and isinstance(report['seconds'], dict) and set(report['seconds']) == {'retained', 'corrections', 'total'}
++            and all(duration(v) for v in report['seconds'].values())
++            and type(report['model_files_checked']) is bool and isinstance(report['scripts'], dict)
++            and all(digest(v) for v in report['scripts'].values()), 'manifest')
++    require(isinstance(report.get('played'), dict) and set(report['played']) == {'retained', 'corrections', 'total'}
++            and all(integer(n) for n in report['played'].values())
++            and report['played']['total'] == report['played']['retained'] + report['played']['corrections']
++            and isinstance(report.get('scheduled'), dict) and set(report['scheduled']) == {'retained', 'corrections'}
++            and all(integer(n) for n in report['scheduled'].values())
++            and isinstance(report.get('final'), dict) and set(report['final']) == {'digest', 'labels_identity'}
++            and (report['final']['digest'] is None or digest(report['final']['digest']))
++            and type(report['final']['labels_identity']) is bool
++            and 'failure' in report and (report['failure'] is None or isinstance(report['failure'], str))
++            and 'position' in report and (report['position'] is None or isinstance(report['position'], dict)), 'manifest')
++    for step in doc['steps']:
++        require(isinstance(step, dict) and STEP_KEYS <= set(step) and not set(step) - STEP_KEYS - DEFAULTS.keys(),
++                'manifest')
++        require(isinstance(step['rule'], str) and digest(step['word_sha256']) and integer(step['letters'])
++                and digest(step['tree_sha256']) and integer(step['tree_size'], 1)
++                and isinstance(step['before'], dict) and isinstance(step['after'], dict)
++                and isinstance(step['fields'], dict) and type(step['seconds']) in (int, float), 'manifest')
++        inside(output, step['word_file'])
++        inside(output, step['tree_file'])
++    return doc
++
++
++def expected_steps(summary, library):
++    orbits = [(f'lattice/orbit-{o}', {'orbit': o, 'factor_first': first, 'factor_count': n})
++              for o, first, n in orbit_partition(summary) if n]
++    run = summary['runs'][0]
++    corrections = []
++    require(isinstance(run.get('corrections'), list), 'fields')
++    for k, c in enumerate(run['corrections']):
++        require(isinstance(c, dict) and integer(c.get('macro')) and c['macro'] < len(library['macros'])
++                and integer(c.get('times'), 1) and type(c.get('inverse')) is bool, 'fields')
++        macro = library['macros'][c['macro']]
++        corrections.append((f'lattice/correction-{k}-{c["macro"]}',
++            {'correction': k, 'macro': c['macro'], 'family': macro['family'], 'times': c['times'],
++             'inverse': c['inverse'], 'macro_letters': len(macro['records'])}))
++    order = run.get('order', 'corrections-first')
++    require(order in ('corrections-first', 'retained-first'), 'fields')
++    return orbits + corrections if order == 'retained-first' else corrections + orbits
++
++
++def checked_steps(doc, output, before, summary, library):
++    report, steps, expected = doc['report'], [], before
++    require(report['result'] == 'solved' and report['failure'] is None
++            and report['position'] is None and report['model_files_checked'] is True
++            and report['input']['digest'] == before['digest']
++            and report['order'] == summary['runs'][0].get('order', 'corrections-first')
++            and report['played']['retained'] == report['scheduled']['retained']
++            and report['played']['corrections'] == report['scheduled']['corrections']
++            and report['final']['labels_identity'] is True, 'report')
++    plan = expected_steps(summary, library)
++    require(len(doc['steps']) == len(plan), 'steps')
++    for k, (s, (rule, metadata)) in enumerate(zip(doc['steps'], plan)):
++        require(s['rule'] == rule and s['rule'].startswith('lattice/') and
++                all(s.get(key, value) == value for key, value in DEFAULTS.items()), 'step')
++        require(snapshot(s['before']) and snapshot(s['after']) and s['before'] == expected, 'snapshots')
++        require(duration(s['seconds']), 'seconds')
++        fields = s['fields']
++        extra = {'tree_folded', 'tree_folded_depth'} if 'orbit' in metadata else set()
++        last = {'labels_identity'} if k + 1 == len(plan) else set()
++        require(set(fields) == set(metadata) | extra | last and not FIELD_FORBIDDEN.intersection(fields)
++                and safe_record(fields) and all(fields[key] == value and type(fields[key]) is type(value)
++                                               for key, value in metadata.items())
++                and all(integer(fields[key]) for key in extra)
++                and (not last or fields['labels_identity'] is True), 'fields')
++        word, tree = inside(output, s['word_file']), inside(output, s['tree_file'])
++        try:
++            require(api.ia16_digest(word) == {'sha256': s['word_sha256'], 'letters': s['letters']}, 'word_sha256')
++        except (OSError, EOFError, ValueError, zlib.error):
++            raise Invalid('word_sha256') from None
++        try:
++            root, tree_sha = api.read_tree(tree)
++            require(tree_sha == s['tree_sha256'] and api.check_tree(root, s['letters']) == s['tree_size'], 'tree')
++            for part, _, _ in api.walk(root):
++                require(not set(part) - TREE_KEYS and integer(part.get('letters'))
++                        and isinstance(part.get('name'), str) and not private_path(part['name']), 'tree')
++                if 'parts' in part:
++                    require(isinstance(part['parts'], list) and bool(part['parts']), 'tree')
++                for key in ('span', 'inverse_of', 'same_as'):
++                    if key in part:
++                        require(isinstance(part[key], list) and all(integer(n) for n in part[key]), 'tree')
++        except (OSError, EOFError, ValueError, KeyError, TypeError, IndexError, AttributeError, RecursionError, zlib.error):
++            raise Invalid('tree') from None
++        steps.append(api.LatticeStep(rule, word, s['word_sha256'], s['letters'], tree,
++            s['tree_sha256'], s['tree_size'], s['before'], s['after'], fields, s['seconds']))
++        expected = s['after']
++    require(sum(s.letters for s in steps) == report['played']['total'], 'letters')
++    try:
++        end_table = inside(output, doc['end_table'])
++        end = read_json(end_table)
++        require(isinstance(end, dict) and end.get('digest') == report['final']['digest'] == expected['digest'],
++                'end_table')
++    except (OSError, EOFError, ValueError):
++        raise Invalid('end_table') from None
++    return steps, end_table
++
++
++def script_name(path):
++    # Test stubs may live in a temporary directory; never publish that directory.
++    path = Path(path)
++    if path.is_absolute():
++        return path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else path.name
++    return path.as_posix()
+ 
+ 
+ def play(ctx):
+-    return api.End('not_applicable', 'stub')
++    output = ctx.work_dir / 'play'
++    restorer, elapsed = None, 0.0
++
++    def end(result, reason, details=None, attempt=False):
++        discard_play(output)
++        attempts = []
++        if attempt:
++            attempts.append({'rule': 'lattice/' + restorer, 'outcome': result, 'reason': reason,
++                             'timed_out': result in ('budget', 'timeout'), 'seconds': elapsed})
++        return api.End(result, reason, details or {}, attempts)
++
++    def child_end(child, stage):
++        if child.cancelled:
++            return end('error', 'cancelled')
++        if child.timeout:
++            return end('timeout', 'lattice_wall_clock', attempt=True)
++        if child.rc != 0:
++            return end('error', 'restorer_exit' if stage == 'restore' else 'player_exit')
++        return None
++
++    before = ctx.snapshot()
++    if before.get('off') != 0:
++        return end('error', 'not_on_lattice')
++    try:
++        table_bytes = Path(ctx.table).read_bytes()
++        if json.loads(table_bytes).get('digest') != before.get('digest'):
++            return end('error', 'table_digest')
++    except (OSError, ValueError, AttributeError):
++        return end('error', 'table_digest')
++    restorer = ctx.budgets.get('lattice_restorer')
++    if not isinstance(restorer, str) or restorer not in RESTORERS:
++        return end('error', 'restorer_unknown')
++    try:
++        ctx.work_dir.mkdir(parents=True, exist_ok=True)
++        (ctx.work_dir / 'start-table.json').write_bytes(table_bytes)
++        raw = (ROOT / LIBRARY).read_bytes()
++        library_bytes = gzip.decompress(raw) if raw[:2] == b'\x1f\x8b' else raw
++        (ctx.work_dir / 'library-merged.json').write_bytes(library_bytes)
++        library = json.loads(library_bytes)
++        (ctx.work_dir / 'restore').mkdir()
++        output.mkdir()
++    except (OSError, EOFError, ValueError, zlib.error):
++        return end('error', 'restorer_output_missing')
++    library_sha = hashlib.sha256(library_bytes).hexdigest()
++    script = ROOT / RESTORERS[restorer]
++    argv = [sys.executable, '-I', '-B', script]
++    if restorer == 'late':
++        argv += [script.parent, ROOT, ROOT / 'research/jumbling']
++    else:
++        argv += [ROOT, ROOT / 'research/jumbling', ROOT / REALIGN]
++    argv += ['library-merged.json', 'restore', 'table:start-table.json']
++    try:
++        child = ctx.execute(argv, 'lattice-restore-' + ctx.work_dir.name, None, cwd=ctx.work_dir)
++    except OSError:
++        return end('error', 'restorer_exit')
++    elapsed = restore_seconds = child.seconds
++    failure = child_end(child, 'restore')
++    if failure is not None:
++        return failure
++    summary_path, solutions = ctx.work_dir / 'restore/restore-summary.json', ctx.work_dir / 'restore/solutions.json'
++    try:
++        summary = read_json(summary_path)
++        read_json(solutions)
++    except (OSError, EOFError, ValueError):
++        return end('error', 'restorer_output_missing')
++    try:
++        require(isinstance(summary, dict) and isinstance(summary.get('runs'), list)
++                and len(summary['runs']) == 1 and isinstance(summary['runs'][0], dict), 'runs')
++        run = summary['runs'][0]
++        status = run.get('status')
++        if isinstance(status, str) and status.startswith('failure certificate:'):
++            require(safe_record(status), 'status')
++            return end('stuck', 'restorer_no_solution', {'status': status}, attempt=True)
++        if status != 'restored':
++            return end('error', 'restorer_status', {'status': status if isinstance(status, str)
++                                                 and safe_record(status) else 'invalid'})
++        require(run.get('input') == 'table:start-table.json', 'input')
++        require(run.get('input_digest') == before['digest'], 'input_digest')
++        require(isinstance(summary.get('library'), dict) and summary['library'].get('sha256') == library_sha,
++                'library_sha256')
++        partition = orbit_partition(summary)
++        if restorer == 'schedule11':
++            require(summary.get('realign_sha256') == sha(ROOT / REALIGN), 'realign_sha256')
++    except (Invalid, KeyError, TypeError, OSError) as exc:
++        return end('error', 'restorer_output_invalid', {'check': str(exc) if isinstance(exc, Invalid) else 'summary'})
++    argv = [sys.executable, '-I', '-B', Path(__file__).resolve(), '--_play',
++            'restore', 'start-table.json', 'library-merged.json', 'play']
++    if PLAY_SECONDS is not None:
++        argv += ['--seconds', str(PLAY_SECONDS)]
++    try:
++        child = ctx.execute(argv, 'lattice-play-' + ctx.work_dir.name, None, cwd=ctx.work_dir)
++    except OSError:
++        return end('error', 'player_exit')
++    elapsed += child.seconds
++    failure = child_end(child, 'play')
++    if failure is not None:
++        return failure
++    if not (output / 'play-result.json').is_file():
++        return end('error', 'player_exit')
++    try:
++        doc = manifest_schema(output)
++    except (OSError, EOFError, ValueError, TypeError, KeyError, RecursionError):
++        return end('error', 'play_output_invalid', {'check': 'manifest'})
++    player = doc['report']
++    if player['result'] == 'failed':
++        return end('error', 'player_failed', {'failure': player['failure']})
++    if player['result'] == 'budget':
++        return end('budget', 'player_clock', {'position': player['position'], 'played': player['played']}, attempt=True)
++    try:
++        steps, end_table = checked_steps(doc, output, before, summary, library)
++    except (Invalid, OSError, EOFError, ValueError, TypeError, KeyError, IndexError) as exc:
++        return end('error', 'play_output_invalid', {'check': str(exc) if isinstance(exc, Invalid) else 'manifest'})
++    report = {'restorer': restorer, 'restorer_script': script_name(RESTORERS[restorer]),
++        'restore_seconds': restore_seconds, 'play_seconds': child.seconds,
++        'restore_summary_sha256': sha(summary_path), 'solutions_sha256': sha(solutions),
++        'library_sha256': library_sha, 'realign_sha256': summary.get('realign_sha256') if restorer == 'schedule11' else None,
++        'cascade_order': summary['cascade_order'], 'skipped_orbits': [o for o, _, n in partition if not n],
++        'step_counts': {'orbit': sum(n > 0 for _, _, n in partition), 'correction': len(run['corrections'])},
++        'tree_folded': sum(s.fields.get('tree_folded', 0) for s in steps),
++        'tree_folded_depth': sum(s.fields.get('tree_folded_depth', 0) for s in steps), 'player': player}
++    if not safe_record(report):
++        return end('error', 'play_output_invalid', {'check': 'report'})
++    return api.LatticeResult(steps, end_table, report)
++
++
++def main(argv=None):
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--_play', action='store_true', required=True)
++    parser.add_argument('restore', type=Path)
++    parser.add_argument('table', type=Path)
++    parser.add_argument('library', type=Path)
++    parser.add_argument('output', type=Path)
++    parser.add_argument('--seconds', type=float)
++    args = parser.parse_args(argv)
++    play_child(args.restore, args.table, args.library, args.output, args.seconds)
++    return 0
++
++
++if __name__ == '__main__':
++    raise SystemExit(main())
+diff --git a/research/jumbling/restoration/13-tutorial-runner/scripts/literal_lattice.py b/research/jumbling/restoration/13-tutorial-runner/scripts/literal_lattice.py
+index a944a9f..1aaf17b 100644
+--- a/research/jumbling/restoration/13-tutorial-runner/scripts/literal_lattice.py
++++ b/research/jumbling/restoration/13-tutorial-runner/scripts/literal_lattice.py
+@@ -221,6 +221,39 @@ def state_labels(state):
+     return labels
+ 
+ 
++class ObserverLetters:
++    """Exact I_a encodings from this player's menu, used only by observed play."""
++
++    def __init__(self, sim, ctx, menu):
++        from exact import matmul, transpose
++        from sim.kplus import to_tuple
++        self.menu, self.matmul, self.transpose, self.key = menu, matmul, transpose, to_tuple
++        self.items = {}
++        for i, (_, matrix) in enumerate(menu.items):
++            self.items.setdefault(to_tuple(matrix), []).append(i)
++        self.frames = {}
++        self.primitives = {m: self.code(sim.primitive(ctx, m), 'primitive_letter')
++                           for m in itertools.chain(range(1, 1201), range(-1200, 0))}
++        self.corrections = {}
++
++    def code(self, twist, check):
++        grip = twist.grip
++        if grip not in self.frames:
++            frame = self.menu.frame(grip)
++            self.frames[grip] = frame, self.transpose(frame)
++        frame, inverse = self.frames[grip]
++        base = self.key(self.matmul(self.matmul(inverse, twist.matrix), frame))
++        matches = self.items.get(base, ())
++        require(len(matches) == 1 and 0 <= grip < 600, check)
++        return int(60 * grip + matches[0])
++
++    def correction(self, twist):
++        key = twist.grip, self.key(twist.matrix)
++        if key not in self.corrections:
++            self.corrections[key] = self.code(twist, 'correction_letter')
++        return self.corrections[key]
++
++
+ class LatticePlay:
+     """One sticker gather per primitive, with exact auxiliary pose accounting.
+ 
+@@ -347,7 +380,7 @@ def script_digests():
+     return {p.relative_to(ROOT).as_posix(): sha(p) for p in sorted(paths)}
+ 
+ 
+-def play(restore_dir, start_table, run_index=0, library=None, seconds=None):
++def play(restore_dir, start_table, run_index=0, library=None, seconds=None, observer=None):
+     """Return a report even for failed checks; no output is written by this API."""
+     started = time.monotonic()
+     directory, table = Path(restore_dir), Path(start_table)
+@@ -387,12 +420,18 @@ def play(restore_dir, start_table, run_index=0, library=None, seconds=None):
+                               'correction_index': index, 'repetition': repetition,
+                               'twist_within_macro': twist_index})
+                         require(menu.contains(twist), 'correction_menu')
++                        if observer is not None and not target:
++                            code = observer_letters.correction(twist)
+                         outcome = state.apply(twist, journal=False)
+                         require(outcome.applied and not outcome.uncertain, 'correction_admissible')
+                         if not target:
+                             report['played']['corrections'] += 1
+                             report['played']['total'] += 1
++                            if observer is not None:
++                                observer.correction_twist(code)
+                     require(state.is_lattice(), 'correction_lattice')
++                if observer is not None and not target:
++                    observer.correction_end(index, lambda: state)
+         finally:
+             # Target construction is verification work, never played length.
+             if not target:
+@@ -477,7 +516,11 @@ def play(restore_dir, start_table, run_index=0, library=None, seconds=None):
+         # Older corrections-first outputs hash the labels before correcting,
+         # although their start-labels file contains the corrected labels.
+         require(report['input']['labels_sha256'] == run['input_labels_sha256'], 'input_labels_sha256')
++        if observer is not None:
++            observer_letters = ObserverLetters(sim, ctx, menu)
+         deadline = None if seconds is None else time.monotonic() + seconds
++        if observer is not None:
++            observer.begin(program, factors, sequence, order)
+         if order == 'corrections-first':
+             corrections(current, sequence)
+             if sequence:
+@@ -495,6 +538,9 @@ def play(restore_dir, start_table, run_index=0, library=None, seconds=None):
+                     # twists are all played; their auxiliary pose fields can
+                     # be reused. Tree paths keep primitive pose accounting.
+                     lattice.defer_poses = program.nodes[leaf]['op'] == 'word'
++                    if observer is not None:
++                        lattice.defer_poses = False
++                        codes = []
+                     leaf_count = 0
+                     try:
+                         for move in letters:
+@@ -506,11 +552,17 @@ def play(restore_dir, start_table, run_index=0, library=None, seconds=None):
+                             count += 1
+                             report['played']['retained'] += 1
+                             report['played']['total'] += 1
++                            if observer is not None:
++                                codes.append(observer_letters.primitives[move])
+                     finally:
+                         if lattice.defer_poses:
+                             lattice.transport_word(word, sg, leaf_count)
+                         lattice.defer_poses = False
++                        if observer is not None:
++                            observer.leaf(leaf, sg, codes)
+                 require(count == program.lengths[node], 'factor_played_length')
++                if observer is not None:
++                    observer.factor_end(factor_index, lattice.state)
+         finally:
+             report['seconds']['retained'] += time.monotonic() - t0
+         require(report['played']['retained'] == retained_length, 'retained_played_length')
+@@ -531,6 +583,8 @@ def play(restore_dir, start_table, run_index=0, library=None, seconds=None):
+             lattice = None
+         report['final'] = {'digest': current.digest(),
+                            'labels_identity': bool(np.array_equal(state_labels(current), np.arange(NS)))}
++        if observer is not None:
++            observer.final(current)
+         require(report['final']['labels_identity'], 'final_labels_identity')
+         require(report['played']['corrections'] == correction_length, 'correction_played_length')
+         tick({'phase': 'complete', 'factor_index': len(factors), 'twist_within_factor': 0})
+diff --git a/research/jumbling/restoration/13-tutorial-runner/scripts/test_lattice_phase.py b/research/jumbling/restoration/13-tutorial-runner/scripts/test_lattice_phase.py
+new file mode 100644
+index 0000000..fa8a42e
+--- /dev/null
++++ b/research/jumbling/restoration/13-tutorial-runner/scripts/test_lattice_phase.py
+@@ -0,0 +1,1058 @@
++"""Packet P3 acceptance: exact synthetic geometry, headless research only.
++
++python3 -I -B research/jumbling/restoration/13-tutorial-runner/scripts/test_lattice_phase.py
++All generated data, caches and child output stay in a temporary directory.
++LATTICE_PHASE_SLOW=1 additionally rebuilds the development seed 7106 handoff.
++"""
++import array
++import functools
++import gzip
++import hashlib
++import importlib.util
++import itertools
++import json
++import os
++from pathlib import Path
++import shutil
++import subprocess
++import sys
++import tempfile
++import time
++import types
++import unittest
++from unittest.mock import patch
++
++sys.dont_write_bytecode = True
++for _variable in ('OPENBLAS_NUM_THREADS', 'OMP_NUM_THREADS', 'MKL_NUM_THREADS'):
++    os.environ[_variable] = '1'
++TEMPORARY = Path(tempfile.mkdtemp(prefix='lattice-phase-tests-'))
++os.environ['JUMBLING_HOME_CACHE'] = str(TEMPORARY / 'cache/home_centroids.npy')
++HERE = Path(__file__).resolve().parent
++ROOT = HERE.parents[4]
++J = ROOT / 'research/jumbling'
++sys.path.insert(0, str(HERE))
++
++import lattice_phase as L  # noqa: E402
++import runner_api as api  # noqa: E402
++import literal_lattice as P  # noqa: E402
++import test_literal_lattice as tll  # noqa: E402
++
++_spec = importlib.util.spec_from_file_location('lattice_test_runner', HERE / 'runner.py')
++R = importlib.util.module_from_spec(_spec)
++sys.modules[_spec.name] = R
++_spec.loader.exec_module(R)
++SOLVED = hashlib.sha256(b'').hexdigest()
++PLAY_CHILDREN = 0
++
++
++def read(path):
++    return P.read_json(path)
++
++
++def write(path, value):
++    path = Path(path)
++    path.parent.mkdir(parents=True, exist_ok=True)
++    path.write_text(json.dumps(value, allow_nan=False) + '\n')
++
++
++def signed(word, sign):
++    return list(word) if sign > 0 else [-m for m in reversed(word)]
++
++
++def independent_expansions(nodes, trees):
++    """Small fixture oracle; deliberately does not call Program's iterators."""
++    words = []
++    for nd in nodes:
++        if nd['op'] == 'word':
++            word = list(nd['w'])
++        elif nd['op'] == 'path':
++            tree, j, word = trees[nd['orbit']], nd['node'], []
++            while tree['parent'][j] >= 0:
++                word.insert(0, tree['move'][j])
++                j = tree['parent'][j]
++        elif nd['op'] == 'conj':
++            u = signed(words[nd['u']], nd['us'])
++            word = signed(u, -1) + words[nd['x']] + u
++        else:
++            word = list(itertools.chain.from_iterable(signed(words[j], sign) for j, sign in nd['f']))
++        words.append(word)
++    return words
++
++
++@functools.cache
++def shared():
++    s = types.SimpleNamespace()
++    started = time.monotonic()
++    s.sim, s.load, s.ctx, s.menu = P.simulator()
++    import buffer
++    import restore
++    s.export, s.restore = buffer.export_pose_table, restore
++    s.mechanics = R.Mechanics(TEMPORARY / 'cache')
++    s.trees = read(ROOT / 'assets/execution_trees.json.gz')
++    s.model_files = {name: P.sha(ROOT / name) for name in P.MODEL_FILES}
++    full = read(P.DEFAULT_LIBRARY)
++    s.lib = {**full, 'macros': full['macros'][:1], 'rank2': 1, 'rank5': 0}
++    s.library = TEMPORARY / 'library-w9.json'
++    write(s.library, s.lib)
++    # Build the oracle through restore.element, rather than the player's
++    # conjugation-to-base correspondence. Only A4 entries can be primitives.
++    retained = [i for i, (_, matrix) in enumerate(s.menu.items) if s.ctx.kplus.index_of_matrix(matrix) >= 0]
++    by_grip = {}
++    for grip in range(600):
++        items = {restore.element(s.menu, grip, i): i for i in retained}
++        assert len(items) == len(retained)
++        by_grip[grip] = items
++    s.primitive_codes = {}
++    for m in itertools.chain(range(1, 1201), range(-1200, 0)):
++        twist = s.sim.primitive(s.ctx, m)
++        s.primitive_codes[m] = 60 * twist.grip + by_grip[twist.grip][twist.matrix]
++    lookup = {restore.to_tuple(matrix): i for i, (_, matrix) in enumerate(s.menu.items)}
++    s.inverse_items = [lookup[restore.to_tuple(restore.transpose(matrix))] for _, matrix in s.menu.items]
++    s.correction_codes = {}
++    s.fixtures, s.cached = {}, None
++    print(f'Shared exact fixture setup: {time.monotonic() - started:.3f}s', flush=True)
++    return s
++
++
++def code_for_twist(twist):
++    s = shared()
++    key = twist.grip, twist.matrix
++    if key not in s.correction_codes:
++        matches = [i for i in range(len(s.menu.items))
++                   if s.restore.element(s.menu, twist.grip, i) == twist.matrix]
++        assert len(matches) == 1
++        s.correction_codes[key] = 60 * twist.grip + matches[0]
++    return s.correction_codes[key]
++
++
++def correction_word(sequence):
++    s, word = shared(), []
++    for c in sequence:
++        twists = [s.sim.Twist.from_record(s.ctx, r) for r in s.lib['macros'][c['macro']]['records']]
++        if c['inverse']:
++            twists = [t.inverse() for t in reversed(twists)]
++        word.extend(twists * c['times'])
++    return word
++
++
++def synthetic_nodes():
++    s = shared()
++    tree = s.trees[23]
++    near = next(i for i, parent in enumerate(tree['parent'])
++                if parent >= 0 and tree['parent'][parent] >= 0
++                and tree['parent'][tree['parent'][parent]] < 0)
++    return [{'op': 'word', 'w': [2, 4, -38]},
++            {'op': 'path', 'orbit': 23, 'node': near},
++            {'op': 'word', 'w': [1, -2]},
++            {'op': 'conj', 'x': 0, 'u': 1, 'us': 1},
++            {'op': 'conj', 'x': 2, 'u': 1, 'us': -1},
++            {'op': 'prod', 'f': [[3, 1], [4, -1], [0, 1], [0, 1]]},
++            {'op': 'word', 'w': []}, {'op': 'prod', 'f': []},
++            {'op': 'prod', 'f': [[5, 1], [6, 1], [7, -1]]}]
++
++
++def fixture(name='plain', *, nodes=None, factors=None, order='corrections-first', sequence=None,
++            cascade=None, counts=None, invisible=False):
++    s = shared()
++    if name in s.fixtures:
++        return s.fixtures[name]
++    base = Path(tempfile.mkdtemp(prefix=name + '-', dir=TEMPORARY))
++    nodes = synthetic_nodes() if nodes is None else nodes
++    factors = [[8, 1], [2, -1], [0, 1]] if factors is None else factors
++    sequence = [] if sequence is None else sequence
++    cascade = [23, 17, 34] if cascade is None else cascade
++    counts = [1, 0, len(factors) - 1] if counts is None else counts
++    words = independent_expansions(nodes, s.trees)
++    expansion = list(itertools.chain.from_iterable(signed(words[j], sign) for j, sign in factors))
++    twists = correction_word(sequence)
++    target = s.sim.State(s.ctx, menu=s.menu)
++    for twist in reversed(twists):
++        assert target.apply(twist.inverse(), journal=False).applied
++    state = s.sim.State(s.ctx, menu=s.menu)
++    if order == 'retained-first':
++        s.load(state, table_doc(target))
++    for m in signed(expansion, -1):
++        assert state.apply(s.sim.primitive(s.ctx, m), journal=False).applied
++    post_correction_digest = state.digest()
++    if order == 'corrections-first':
++        for twist in reversed(twists):
++            assert state.apply(twist.inverse(), journal=False).applied
++    if invisible:
++        state = add_invisible_rotation(state)
++    table = base / 'start-table.json'
++    s.export(state, table)
++    assert state.is_lattice()
++    spec = 'table:start-table.json'
++    run = {'input': spec, 'status': 'restored', 'input_digest': state.digest(),
++        'input_labels_sha256': P.labels_sha(P.state_labels(state)), 'factors': len(factors),
++        'factors_per_orbit': dict(zip(map(str, cascade), counts)), 'retained_length': len(expansion),
++        'corrections': sequence, 'correction_twists': len(twists)}
++    if order == 'retained-first':
++        run.update(order=order, T_digest=target.digest())
++    elif sequence:
++        run['post_correction_digest'] = post_correction_digest
++    summary = {'cascade_order': cascade, 'library': {'sha256': P.sha(s.library)}, 'runs': [run]}
++    solution = {'format': 'lattice-restoration-v1', 'model_files': s.model_files,
++                'nodes': nodes, 'solutions': {spec.replace(':', '_'): factors}}
++    template = base / 'template'
++    write(template / 'restore-summary.json', summary)
++    write(template / 'solutions.json', solution)
++    result = types.SimpleNamespace(base=base, template=template, table=table, summary=summary,
++        solution=solution, nodes=nodes, factors=factors, sequence=sequence, expansion=expansion,
++        before={'digest': state.digest(), 'off': 0, 'heights': {}})
++    result.stub = make_stub(template)
++    s.fixtures[name] = result
++    return result
++
++
++def table_doc(state):
++    from sim.kplus import matrix_json
++    return {'poses': [matrix_json(state._pose_matrix(i)) for i in range(len(state._poses))],
++            'pose_id': state.pose_id.tolist(), 'digest': state.digest(), 'journal': []}
++
++
++def add_invisible_rotation(target):
++    """The LLP w9 fixture's exact search for a pose invisible to sticker labels."""
++    s = shared()
++    np, kp, reg = s.mechanics.np, s.ctx.kplus, s.ctx.regions
++    labels = P.state_labels(target)
++    counts = np.bincount(s.ctx.data.slot_piece, minlength=len(target.pose_id))
++    k = np.arange(len(kp.perms))
++    for piece in np.flatnonzero((target.pose_id == 0) & (counts > 0))[::-1][:60]:
++        piece = int(piece)
++        destination = reg.piece_of[np.full(len(k), reg.orbit_of[piece]),
++                                  kp.compose_vec(k, np.full(len(k), reg.transport[piece]))]
++        for h in k[(destination == piece) & (k != 0)][:4]:
++            state = s.sim.State(s.ctx, menu=s.menu)
++            state.pose_id = target.pose_id.copy()
++            state._poses, state._lookup = list(target._poses), dict(target._lookup)
++            state.pose_id[piece] = state._intern_k(int(h))
++            state._compact()
++            try:
++                if state.is_lattice() and np.array_equal(P.state_labels(state), labels):
++                    assert state.digest() != target.digest()
++                    return state
++            except P.Failed:
++                pass
++    raise AssertionError('no rotation invisible to labels found')
++
++
++def make_stub(template, mode='copy', status=None):
++    directory = Path(tempfile.mkdtemp(prefix='restorer-stub-', dir=TEMPORARY))
++    script = directory / 'restorer-stub.py'
++    script.write_text('''import hashlib, json, shutil, sys
++from pathlib import Path
++MODE, TEMPLATE, STATUS = ''' + repr((mode, str(template), status)) + '''
++if MODE == 'exit':
++    raise SystemExit(1)
++if MODE == 'missing':
++    raise SystemExit(0)
++library, out, spec = sys.argv[-3:]
++out = Path(out)
++shutil.copytree(TEMPLATE, out, dirs_exist_ok=True)
++summary_path = out / 'restore-summary.json'
++summary = json.loads(summary_path.read_text())
++run = summary['runs'][0]
++run['input'] = spec
++summary['library']['sha256'] = hashlib.sha256(Path(library).read_bytes()).hexdigest()
++if STATUS is not None:
++    run['status'] = STATUS
++summary_path.write_text(json.dumps(summary))
++solution_path = out / 'solutions.json'
++solution = json.loads(solution_path.read_text())
++factors = next(iter(solution['solutions'].values()))
++solution['solutions'] = {spec.replace(':', '_').replace('/', '_')[-60:]: factors}
++solution_path.write_text(json.dumps(solution))
++''')
++    return script
++
++
++def new_context(f, *, initialized=False, restorer='late', wrapper=None, mode='development'):
++    s = shared()
++    base = Path(tempfile.mkdtemp(prefix='context-', dir=TEMPORARY))
++    r = R.Runner(R.parse_args(['--table', str(f.table), '--out', str(base / 'run'),
++        '--cache', str(TEMPORARY / 'cache'), '--mode', mode]), s.mechanics)
++    if initialized:
++        r.initialize()
++        ctx = r.context('lattice', None)
++    else:
++        work = Path(tempfile.mkdtemp(prefix='lattice-', dir=r.out / 'attempts'))
++        ctx = api.Ctx(f.table, object(), lambda: dict(f.before), s.mechanics, work,
++                      r.cache, r.execute, {'lattice_restorer': restorer}, mode=mode)
++    ctx.budgets['lattice_restorer'] = restorer
++    execute = r.execute
++
++    def counted(argv, tag, seconds, **kwargs):
++        global PLAY_CHILDREN
++        stage = 'play' if '--_play' in argv else 'restore'
++        assert tag == f'lattice-{stage}-' + ctx.work_dir.name
++        assert seconds is None and kwargs['cwd'] == ctx.work_dir
++        if stage == 'play':
++            PLAY_CHILDREN += 1
++        return execute(argv, tag, seconds, **kwargs)
++
++    ctx.execute = counted if wrapper is None else wrapper(counted, ctx)
++    return ctx, r
++
++
++def invoke(f, *, wrapper=None, seconds=None, initialized=False, stub=None, mode='development'):
++    ctx, r = new_context(f, initialized=initialized, wrapper=wrapper, mode=mode)
++    original_state = r.state.digest() if initialized else ctx.state
++    with patch.object(L, 'LIBRARY', shared().library), patch.dict(L.RESTORERS, {'late': stub or f.stub}), \
++            patch.object(L, 'PLAY_SECONDS', seconds):
++        result = L.play(ctx)
++    assert (r.state.digest() == original_state) if initialized else ctx.state is original_state
++    return result, ctx, r
++
++
++def read_codes(path):
++    raw = gzip.decompress(Path(path).read_bytes())
++    values = array.array('H', raw)
++    if sys.byteorder != 'little':
++        values.byteswap()
++    return list(values)
++
++
++def code_bytes(codes):
++    values = array.array('H', codes)
++    if sys.byteorder != 'little':
++        values.byteswap()
++    return values.tobytes()
++
++
++def inverse_codes(codes):
++    inverse = shared().inverse_items
++    return [60 * (code // 60) + inverse[code % 60] for code in reversed(codes)]
++
++
++def expected_words(f):
++    s = shared()
++    expanded = independent_expansions(f.nodes, s.trees)
++    words = []
++    for orbit, first, n in L.orbit_partition(f.summary):
++        if n:
++            word = itertools.chain.from_iterable(signed(expanded[j], sg) for j, sg in f.factors[first:first+n])
++            words.append((f'lattice/orbit-{orbit}', [s.primitive_codes[m] for m in word]))
++    corrections = [(f'lattice/correction-{i}-{c["macro"]}', [code_for_twist(t) for t in correction_word([c])])
++                   for i, c in enumerate(f.sequence)]
++    return words + corrections if f.summary['runs'][0].get('order') == 'retained-first' else corrections + words
++
++
++def verify_tree(test, tree, codes, program=None):
++    """Independent ranges and reference oracle, including each named DAG part."""
++    seen, at, count = {}, 0, 0
++    expanded = independent_expansions(program.nodes, shared().trees) if program is not None else None
++
++    def visit(part, path, depth):
++        nonlocal at, count
++        count += 1
++        test.assertLessEqual(depth, 64)
++        test.assertFalse(set(part) - L.TREE_KEYS)
++        test.assertFalse(L.private_path(part['name']))
++        start = at
++        if 'span' in part:
++            test.assertEqual(part['span'], [at, at + part['letters']])
++            at += part['letters']
++        else:
++            test.assertTrue(part['parts'])
++            for i, child in enumerate(part['parts']):
++                visit(child, path + (i,), depth + 1)
++            test.assertEqual(at - start, part['letters'])
++        for key in ('same_as', 'inverse_of'):
++            if key in part:
++                previous, lo, hi = seen[tuple(part[key])]
++                test.assertLessEqual(hi, start)
++                expected = codes[lo:hi]
++                if key == 'inverse_of':
++                    expected = inverse_codes(expected)
++                else:
++                    test.assertEqual(part['name'], previous['name'])
++                test.assertEqual(codes[start:at], expected)
++        if expanded is not None and part['name'].split(' ')[0] in ('word', 'path', 'conj', 'prod'):
++            _, number = part['name'].split(' ')
++            sign = -1 if number.endswith('⁻¹') else 1
++            j = int(number.removesuffix('⁻¹'))
++            test.assertEqual(codes[start:at], [shared().primitive_codes[m] for m in signed(expanded[j], sign)])
++        seen[path] = part, start, at
++
++    visit(tree, (), 1)
++    test.assertEqual(at, len(codes))
++    test.assertEqual(api.check_tree(tree, len(codes)), count)
++    return count
++
++
++class A_ModuleTests(unittest.TestCase):
++    def test_01_module_contract_and_child_start(self):
++        self.assertFalse(getattr(L, 'STUB', False))
++        self.assertNotIn('LatticeStep', vars(L))
++        self.assertNotIn('LatticeResult', vars(L))
++        for path in L.SCRIPTS:
++            self.assertFalse(Path(path).is_absolute())
++            self.assertTrue((ROOT / path).is_file())
++            self.assertRegex(P.sha(ROOT / path), '^[a-f0-9]{64}$')
++        source = '''import sys, time
++sys.path.insert(0, ''' + repr(str(HERE)) + ''')
++import lattice_phase
++assert not {'numpy', 'sim', 'literal_lattice'}.intersection(sys.modules)
++t0 = time.monotonic()
++import literal_lattice
++literal_lattice.simulator()
++print('Child simulator start (cloud research): %.3fs' % (time.monotonic() - t0), flush=True)
++'''
++        proc = subprocess.run([sys.executable, '-I', '-B', '-c', source], cwd=ROOT,
++                              capture_output=True, text=True, timeout=120)
++        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
++        print(proc.stdout.strip(), flush=True)
++
++
++class Capture:
++    def __init__(self):
++        self.events, self.codes = [], []
++
++    def begin(self, program, factors, corrections, order):
++        self.events.append(('begin', order))
++
++    def leaf(self, node, sign, codes):
++        self.events.append(('leaf', node, sign, len(codes)))
++        self.codes.extend(codes)
++
++    def factor_end(self, index, state):
++        self.events.append(('factor_end', index))
++        assert callable(state)
++
++    def correction_twist(self, code):
++        self.events.append(('correction_twist',))
++        self.codes.append(code)
++
++    def correction_end(self, index, state):
++        self.events.append(('correction_end', index))
++        assert state().is_lattice()
++
++    def final(self, state):
++        self.events.append(('final', state.digest()))
++
++
++class B_ObserverTests(unittest.TestCase):
++    def test_01_literal_codes_reports_and_both_orders(self):
++        corrected = [{'macro': 0, 'times': 1, 'inverse': False}]
++        first = [{'macro': 0, 'times': 2, 'inverse': True}, {'macro': 0, 'times': 1, 'inverse': False}]
++        fixtures = [fixture(), fixture('corrected', order='retained-first', sequence=corrected),
++                    fixture('corrections-first', sequence=first)]
++        for f in fixtures:
++            with self.subTest(f=f.base.name):
++                capture = Capture()
++                baseline = P.play(f.template, f.table, library=shared().library)
++                with patch.object(P.LatticePlay, 'transport_word', side_effect=AssertionError('deferred observed play')):
++                    report = P.play(f.template, f.table, library=shared().library, observer=capture)
++                self.assertEqual(report['result'], 'solved', report)
++                self.assertEqual({k: v for k, v in report.items() if k not in ('seconds', 'scripts')},
++                                 {k: v for k, v in baseline.items() if k not in ('seconds', 'scripts')})
++                expected = list(itertools.chain.from_iterable(word for _, word in expected_words(f)))
++                self.assertEqual(capture.codes, expected)
++                self.assertEqual(hashlib.sha256(code_bytes(capture.codes)).hexdigest(),
++                                 hashlib.sha256(code_bytes(expected)).hexdigest())
++                self.assertEqual(len(capture.codes), report['played']['total'])
++                events = capture.events
++                self.assertEqual(sum(e[0] == 'begin' for e in events), 1)
++                self.assertEqual(sum(e[0] == 'final' for e in events), 1)
++                self.assertEqual(events[0], ('begin', report['order']))
++                self.assertEqual(events[-1], ('final', SOLVED))
++                boundaries = [e for e in events if e[0] in ('factor_end', 'correction_end')]
++                factors = [('factor_end', i) for i in range(len(f.factors))]
++                corrections = [('correction_end', i) for i in range(len(f.sequence))]
++                self.assertEqual(boundaries, factors + corrections if report['order'] == 'retained-first'
++                                 else corrections + factors)
++                if f is fixtures[0]:
++                    seconds = report['seconds']['retained']
++                    print(f'Observer synthetic play (cloud research): {len(f.expansion)} twists, '
++                          f'{seconds:.6f}s, {len(f.expansion)/seconds:.1f} twists/s', flush=True)
++
++    def test_02_budget_prefix_and_observer_exception(self):
++        f, capture = fixture(), Capture()
++        original, ticks = P.LatticePlay.play, [0]
++        def played(lattice, letter):
++            original(lattice, letter)
++            ticks[0] += 1
++        with patch.object(P.LatticePlay, 'play', played), \
++                patch.object(P.time, 'monotonic', lambda: 2 if ticks[0] >= 5 else 0):
++            report = P.play(f.template, f.table, library=shared().library, seconds=1, observer=capture)
++        self.assertEqual(report['result'], 'budget', report)
++        self.assertEqual(report['played']['retained'], 5)
++        self.assertEqual(capture.codes, [shared().primitive_codes[m] for m in f.expansion[:5]])
++        state = shared().mechanics.load(f.table)
++        for m in f.expansion[:5]:
++            self.assertTrue(state.apply(shared().sim.primitive(shared().ctx, m), journal=False).applied)
++        self.assertEqual(report['final']['digest'], state.digest())
++        capture = Capture()
++        def failed(state):
++            raise ValueError('observer failure')
++        capture.final = failed
++        report = P.play(f.template, f.table, library=shared().library, observer=capture)
++        self.assertEqual(report['result'], 'failed')
++
++    def test_03_all_signed_primitive_encodings(self):
++        s = shared()
++        table = P.ObserverLetters(s.sim, s.ctx, s.menu).primitives
++        self.assertEqual(len(table), 2400)
++        self.assertEqual(table, s.primitive_codes)
++        for move, code in table.items():
++            twist = s.sim.primitive(s.ctx, move)
++            self.assertEqual(code // 60, twist.grip)
++            self.assertEqual(s.restore.element(s.menu, code // 60, code % 60), twist.matrix)
++            self.assertEqual(table[-move], 60 * (code // 60) + s.inverse_items[code % 60])
++
++
++class C_TreeTests(unittest.TestCase):
++    def tree(self, nodes, factors, **patches):
++        program = P.Program(nodes, shared().trees)
++        with patch.dict(vars(L), patches):
++            tree, folded, depth = L.orbit_tree(program, factors, 23)
++        word = list(itertools.chain.from_iterable(program.expand(j, s) for j, s in factors))
++        codes = [shared().primitive_codes[m] for m in word]
++        verify_tree(self, tree, codes, program)
++        return tree, folded, depth
++
++    def test_01_four_conjugations(self):
++        for us, sign in itertools.product((1, -1), repeat=2):
++            with self.subTest(us=us, sign=sign):
++                nodes = [{'op': 'word', 'w': [1]}, {'op': 'word', 'w': [2]},
++                         {'op': 'conj', 'x': 0, 'u': 1, 'us': us}]
++                tree, folded, depth = self.tree(nodes, [[2, sign]])
++                trailing = tree['parts'][0]['parts'][0]['parts'][2]
++                self.assertEqual(trailing['inverse_of'], [0, 0, 0])
++                self.assertEqual((folded, depth), (0, 0))
++
++    def test_02_repetition_including_trailing_conjugator(self):
++        nodes = [{'op': 'word', 'w': [1]}, {'op': 'word', 'w': [2]},
++                 {'op': 'conj', 'x': 0, 'u': 1, 'us': 1}]
++        tree, _, _ = self.tree(nodes, [[2, 1], [1, 1], [2, 1]])
++        self.assertEqual(tree['parts'][1]['parts'][0]['same_as'], [0, 0, 2])
++        self.assertEqual(tree['parts'][2]['parts'][0]['same_as'], [0, 0])
++
++    def test_03_empty_depth_and_size_folding(self):
++        tree, folded, depth = self.tree([{'op': 'word', 'w': []}, {'op': 'prod', 'f': []}], [[0, 1], [1, -1]])
++        self.assertTrue(all('span' in p['parts'][0] for p in tree['parts']))
++        self.assertEqual((folded, depth), (0, 0))
++        nodes = [{'op': 'word', 'w': [2]}]
++        for i in range(70):
++            nodes.append({'op': 'prod', 'f': [[i, 1]]})
++        tree, folded, depth = self.tree(nodes, [[70, 1]])
++        self.assertEqual((folded, depth), (0, 1))
++        self.assertEqual(max(d for _, _, d in api.walk(tree)), 64)
++        nodes = [{'op': 'word', 'w': [2]}, {'op': 'prod', 'f': [[0, 1], [0, -1]]},
++                 {'op': 'prod', 'f': [[1, 1], [1, -1], [0, 1]]}]
++        tree, folded, depth = self.tree(nodes, [[2, 1]], TREE_PART_LIMIT=6)
++        self.assertEqual(folded, 2)
++        self.assertEqual(depth, 0)
++        self.assertLessEqual(api.tree_size(tree), 6)
++        tree, folded, depth = self.tree(nodes, [[2, 1], [2, -1]], TREE_PART_LIMIT=4)
++        self.assertEqual(tree['name'], 'orbit 23')
++        self.assertIn('span', tree)
++        self.assertEqual((folded, depth), (1, 0))
++        self.assertLessEqual(api.tree_size(tree), 4)
++
++    def test_04_correction_repetitions(self):
++        correction = {'macro': 0, 'times': 3, 'inverse': True}
++        tree = L.correction_tree(0, correction, shared().lib['macros'][0])
++        codes = [code_for_twist(t) for t in correction_word([correction])]
++        verify_tree(self, tree, codes)
++        self.assertEqual(tree['parts'][1]['same_as'], [0])
++        self.assertEqual(tree['parts'][2]['same_as'], [0])
++
++
++class ResultChecks:
++    def check_result(self, result, f, *, expected_digest=SOLVED):
++        self.assertIsInstance(result, api.LatticeResult, result)
++        s, expected = shared(), expected_words(f)
++        self.assertEqual(len(result.steps), len(expected))
++        state = s.mechanics.load(f.table)
++        before = dict(f.before)
++        program = P.Program(f.nodes, s.trees)
++        for step, (rule, codes) in zip(result.steps, expected):
++            self.assertIsInstance(step, api.LatticeStep)
++            self.assertEqual(step.rule, rule)
++            self.assertEqual((step.contract, step.gate, step.standing, step.encoding),
++                             ('lattice_literal', 'player', 'rule', 'ia16'))
++            self.assertEqual(step.before, before)
++            self.assertTrue(step.word_file.is_absolute() and step.tree_file.is_absolute())
++            self.assertEqual(read_codes(step.word_file), codes)
++            expected_sha = hashlib.sha256(code_bytes(codes)).hexdigest()
++            self.assertEqual(step.word_sha256, expected_sha)
++            self.assertEqual(api.ia16_digest(step.word_file), {'sha256': expected_sha, 'letters': len(codes)})
++            tree, tree_sha = api.read_tree(step.tree_file)
++            self.assertEqual(tree_sha, step.tree_sha256)
++            self.assertEqual(verify_tree(self, tree, codes, program if '/orbit-' in rule else None), step.tree_size)
++            for code in codes:
++                twist = s.sim.Twist(s.ctx, code // 60, s.restore.element(s.menu, code // 60, code % 60),
++                                    'menu', {'menu': s.menu.name})
++                outcome = state.apply(twist, journal=False)
++                self.assertTrue(outcome.applied and not outcome.uncertain)
++            before = {'digest': state.digest(), 'off': 0, 'heights': {}}
++            self.assertEqual(step.after, before)
++            self.assertTrue(state.is_lattice())
++            self.assertTrue(L.safe_record(step.fields))
++            self.assertFalse(L.FIELD_FORBIDDEN.intersection(step.fields))
++        self.assertEqual(before['digest'], expected_digest)
++        self.assertEqual(read(result.end_table)['digest'], expected_digest)
++        self.assertEqual(result.report['player']['final'], {'digest': expected_digest, 'labels_identity': True})
++        self.assertTrue(L.safe_record(result.report))
++        self.assertEqual(result.report['skipped_orbits'], [o for o, _, n in L.orbit_partition(f.summary) if n == 0])
++        self.assertEqual(result.report['step_counts'], {'orbit': sum(n > 0 for _, _, n in L.orbit_partition(f.summary)),
++                                                       'correction': len(f.sequence)})
++        self.assertEqual(sum('labels_identity' in step.fields for step in result.steps), bool(result.steps))
++        if result.steps:
++            self.assertIs(result.steps[-1].fields['labels_identity'], True)
++        self.assertTrue(result.end_table.is_absolute())
++        baseline = P.play(f.template, f.table, library=s.library)
++        self.assertEqual(baseline['final']['digest'], expected_digest)
++        return state
++
++    def check_runner(self, r, result):
++        end = result.steps[-1].after['digest']
++        letters, count = sum(s.letters for s in result.steps), len(result.steps)
++        r.played_lattice(result)
++        self.assertEqual(r.record['result'], 'solved')
++        self.assertEqual(r.record['phases']['lattice'], {'result': 'solved', 'steps': count, 'twists': letters})
++        self.assertEqual(r.record['totals']['lattice_twists'], letters)
++        self.assertIsNone(r.record['lattice'])
++        self.assertIsNone(r.record['config']['component'])
++        self.assertEqual(len(r.record['steps']), count)
++        self.assertTrue(all(row['encoding'] == 'ia16' for row in r.record['steps']))
++        self.assertEqual(r.state.digest(), end)
++
++
++class D_PluginTests(ResultChecks, unittest.TestCase):
++    def test_01_synthetic_program(self):
++        f = fixture()
++        result, ctx, _ = invoke(f)
++        self.check_result(result, f)
++        self.assertEqual([step.rule for step in result.steps], ['lattice/orbit-23', 'lattice/orbit-34'])
++        self.assertEqual(result.steps[0].fields, {'orbit': 23, 'factor_first': 0, 'factor_count': 1,
++                                                'tree_folded': 0, 'tree_folded_depth': 0})
++        cache = TEMPORARY / 'cached-success'
++        shutil.copytree(ctx.work_dir, cache)
++        shared().cached = cache
++        player = result.report['player']
++        startup = result.report['play_seconds'] - player['seconds']['retained'] - player['seconds']['corrections']
++        print(f'First --_play child: {result.report["play_seconds"]:.3f}s total; '
++              f'{startup:.3f}s startup, validation and finalization overhead (cloud research)', flush=True)
++
++    def test_02_corrected_and_runner(self):
++        f = fixture('corrected', order='retained-first', sequence=[{'macro': 0, 'times': 1, 'inverse': False}])
++        result, _, r = invoke(f, initialized=True, mode='acceptance')
++        self.check_result(result, f)
++        self.assertEqual([step.rule for step in result.steps],
++                         ['lattice/orbit-23', 'lattice/orbit-34', 'lattice/correction-0-0'])
++        self.assertEqual(result.steps[-1].fields, {'correction': 0, 'macro': 0, 'family': 'w9',
++            'times': 1, 'inverse': False, 'macro_letters': 9, 'labels_identity': True})
++        self.check_runner(r, result)
++
++    def test_03_zero_steps(self):
++        f = fixture('zero', nodes=[], factors=[], cascade=[0], counts=[0])
++        # The real player and parent both accept the missing partition at zero factors.
++        f.summary['runs'][0].pop('factors_per_orbit', None)
++        write(f.template / 'restore-summary.json', f.summary)
++        result, _, _ = invoke(f)
++        self.check_result(result, f)
++        self.assertEqual(result.steps, [])
++        self.assertEqual(result.report['player']['played']['total'], 0)
++        # I0 deliberately refuses a zero-step result; do not pass it to the runner.
++
++
++class E_ConjugationPluginTests(ResultChecks, unittest.TestCase):
++    def test_four_cases_in_ia16_and_json_letters(self):
++        for us, sign in itertools.product((1, -1), repeat=2):
++            with self.subTest(us=us, sign=sign):
++                nodes = [{'op': 'word', 'w': [1]}, {'op': 'word', 'w': [2]},
++                         {'op': 'conj', 'x': 0, 'u': 1, 'us': us}]
++                f = fixture(f'conj-{us}-{sign}', nodes=nodes, factors=[[2, sign]], cascade=[0], counts=[1])
++                result, _, _ = invoke(f)
++                self.check_result(result, f)
++                step = result.steps[0]
++                program = P.Program(nodes, shared().trees)
++                expected = [shared().primitive_codes[m] for m in program.expand(2, sign)]
++                json_letters = json.loads(json.dumps([[c // 60, c % 60] for c in expected]))
++                codes = read_codes(step.word_file)
++                self.assertEqual(codes, [api.ia16_code(g, i) for g, i in json_letters])
++                tree, _ = api.read_tree(step.tree_file)
++                verify_tree(self, tree, expected, program)
++                self.assertEqual(tree['parts'][0]['parts'][0]['parts'][2]['inverse_of'], [0, 0, 0])
++
++
++class F_InvisibleRotationTests(ResultChecks, unittest.TestCase):
++    def test_w9_played_digest_and_runner_round_trip(self):
++        f = fixture('invisible', nodes=[], factors=[], order='retained-first',
++            sequence=[{'macro': 0, 'times': 1, 'inverse': False}], cascade=[0], counts=[0], invisible=True)
++        f.summary['runs'][0].pop('factors_per_orbit', None)
++        write(f.template / 'restore-summary.json', f.summary)
++        state = shared().mechanics.load(f.table)
++        for twist in correction_word(f.sequence):
++            self.assertTrue(state.apply(twist, journal=False).applied)
++        expected = state.digest()
++        self.assertNotEqual(expected, SOLVED)
++        result, _, r = invoke(f, initialized=True)
++        self.check_result(result, f, expected_digest=expected)
++        self.assertEqual(len(result.steps), 1)
++        self.assertEqual(result.steps[0].rule, 'lattice/correction-0-0')
++        self.assertEqual(result.steps[0].letters, 9)
++        self.check_runner(r, result)
++
++
++class EndChecks:
++    def check_end(self, result, outcome, reason, check=None, timed_out=None):
++        self.assertIsInstance(result, api.End, result)
++        self.assertEqual((result.result, result.reason), (outcome, reason))
++        if check is not None:
++            self.assertEqual(result.details['check'], check)
++        for attempt in result.attempts:
++            self.assertIs(type(attempt['timed_out']), bool)
++            self.assertEqual(set(attempt), {'rule', 'outcome', 'reason', 'timed_out', 'seconds'})
++            self.assertTrue(L.safe_record(attempt))
++            self.assertFalse({'file', 'word', 'unit', 'table', 'library', 'out'}.intersection(attempt))
++        self.assertTrue(L.safe_record(result.details))
++        if timed_out is not None:
++            self.assertEqual(len(result.attempts), 1)
++            self.assertIs(result.attempts[0]['timed_out'], timed_out)
++        return result
++
++
++class G_FailureTests(EndChecks, unittest.TestCase):
++    def test_01_player_budget(self):
++        result, ctx, _ = invoke(fixture(), seconds=0)
++        self.check_end(result, 'budget', 'player_clock', timed_out=True)
++        self.assertIsInstance(result.details['position'], dict)
++        self.assertEqual(result.details['played']['total'], 0)
++        self.assertFalse((ctx.work_dir / 'play/words').exists())
++
++    def test_02_bad_word_and_model_hash(self):
++        f = fixture()
++        for field, failure in (('word', 'final_labels_identity'), ('model', 'model_file_sha256')):
++            with self.subTest(field=field):
++                template = Path(tempfile.mkdtemp(prefix='tampered-', dir=TEMPORARY))
++                shutil.copytree(f.template, template, dirs_exist_ok=True)
++                solution = read(template / 'solutions.json')
++                if field == 'word':
++                    self.assertEqual(solution['nodes'][0]['w'][0], 2)
++                    solution['nodes'][0]['w'][0] = -2
++                else:
++                    solution['model_files'][P.MODEL_FILES[0]] = '0' * 64
++                write(template / 'solutions.json', solution)
++                result, ctx, _ = invoke(f, stub=make_stub(template))
++                self.check_end(result, 'error', 'player_failed')
++                self.assertEqual(result.details['failure'], failure)
++                self.assertFalse((ctx.work_dir / 'play/words').exists())
++
++    def test_03_restorer_output_checks(self):
++        def mutate(check):
++            def wrapper(execute, ctx):
++                def call(argv, tag, seconds, **kwargs):
++                    child = execute(argv, tag, seconds, **kwargs)
++                    self.assertTrue(tag.startswith('lattice-restore-'))
++                    path = ctx.work_dir / 'restore/restore-summary.json'
++                    summary = read(path)
++                    run = summary['runs'][0]
++                    if check == 'input_digest':
++                        run['input_digest'] = '0' * 64
++                    elif check == 'runs':
++                        summary['runs'].append(dict(run))
++                    elif check == 'input':
++                        run['input'] = 'table:another.json'
++                    elif check == 'orbit_partition':
++                        run['factors_per_orbit']['23'] += 1
++                    else:
++                        summary['library']['sha256'] = '0' * 64
++                    write(path, summary)
++                    return child
++                return call
++            return wrapper
++        for check in ('input_digest', 'runs', 'input', 'orbit_partition', 'library_sha256'):
++            with self.subTest(check=check):
++                result, _, _ = invoke(fixture(), wrapper=mutate(check))
++                self.check_end(result, 'error', 'restorer_output_invalid', check=check)
++
++    def test_04_restorer_outcomes_and_entry(self):
++        f = fixture()
++        for mode, status, outcome, reason in (
++            ('exit', None, 'error', 'restorer_exit'), ('missing', None, 'error', 'restorer_output_missing'),
++            ('copy', 'failure certificate: nu outside the span of the correction library', 'stuck', 'restorer_no_solution'),
++            ('copy', 'not a lattice configuration', 'error', 'restorer_status')):
++            with self.subTest(mode=mode, status=status):
++                result, _, _ = invoke(f, stub=make_stub(f.template, mode, status))
++                self.check_end(result, outcome, reason, timed_out=False if outcome == 'stuck' else None)
++                if status is not None:
++                    self.assertEqual(result.details['status'], status)
++        for check in ('not_on_lattice', 'table_digest', 'restorer_unknown'):
++            ctx, _ = new_context(f)
++            if check == 'not_on_lattice':
++                ctx.snapshot = lambda: {**f.before, 'off': 1}
++            elif check == 'table_digest':
++                ctx.snapshot = lambda: {**f.before, 'digest': '0' * 64}
++            else:
++                ctx.budgets.clear()
++            self.check_end(L.play(ctx), 'error', check)
++
++    def test_05_child_outcomes(self):
++        for stage in ('restore', 'play'):
++            for kind, outcome, reason in (('timeout', 'timeout', 'lattice_wall_clock'),
++                ('cancelled', 'error', 'cancelled'), ('exit', 'error', 'restorer_exit' if stage == 'restore' else 'player_exit')):
++                with self.subTest(stage=stage, kind=kind):
++                    def wrapper(execute, ctx):
++                        def call(argv, tag, seconds, **kwargs):
++                            if tag == f'lattice-{stage}-' + ctx.work_dir.name:
++                                self.assertIsNone(seconds)
++                                self.assertEqual(kwargs['cwd'], ctx.work_dir)
++                                return R.Child(1, 0.125, ctx.work_dir / 'child.log',
++                                               timeout=kind == 'timeout', cancelled=kind == 'cancelled')
++                            return execute(argv, tag, seconds, **kwargs)
++                        return call
++                    result, _, _ = invoke(fixture(), wrapper=wrapper)
++                    self.check_end(result, outcome, reason, timed_out=True if outcome == 'timeout' else None)
++
++    def test_06_play_output_tampering(self):
++        s, f = shared(), fixture()
++        if s.cached is None:
++            result, ctx, _ = invoke(f)
++            self.assertIsInstance(result, api.LatticeResult)
++            s.cached = TEMPORARY / 'cached-success'
++            shutil.copytree(ctx.work_dir, s.cached)
++        for mutation, check in (('word', 'word_sha256'), ('word-gzip', 'word_sha256'),
++                                ('tree', 'tree'), ('tree-format', 'tree'), ('end', 'end_table'),
++                                ('json', 'manifest'), ('format', 'manifest'), ('path', 'manifest'),
++                                ('report', 'manifest'), ('seconds', 'manifest'), ('fields', 'fields')):
++            with self.subTest(mutation=mutation):
++                def wrapper(execute, ctx):
++                    def call(argv, tag, seconds, **kwargs):
++                        self.assertIsNone(seconds)
++                        self.assertEqual(kwargs['cwd'], ctx.work_dir)
++                        if tag == 'lattice-restore-' + ctx.work_dir.name:
++                            shutil.copytree(s.cached / 'restore', ctx.work_dir / 'restore', dirs_exist_ok=True)
++                        else:
++                            self.assertEqual(tag, 'lattice-play-' + ctx.work_dir.name)
++                            output = ctx.work_dir / 'play'
++                            shutil.copytree(s.cached / 'play', output, dirs_exist_ok=True)
++                            path = output / 'play-result.json'
++                            manifest = read(path)
++                            if mutation == 'word':
++                                word = output / manifest['steps'][0]['word_file']
++                                codes = read_codes(word)
++                                codes[0] = (codes[0] + 1) % 36000
++                                word.write_bytes(gzip.compress(code_bytes(codes), mtime=0))
++                            elif mutation == 'word-gzip':
++                                word = output / manifest['steps'][0]['word_file']
++                                raw = bytearray(word.read_bytes())
++                                raw[10] ^= 0xff
++                                word.write_bytes(raw)
++                            elif mutation == 'tree':
++                                tree_path = output / manifest['steps'][0]['tree_file']
++                                tree, _ = api.read_tree(tree_path)
++                                leaf = next(part for part, _, _ in api.walk(tree) if 'span' in part)
++                                leaf['span'][1] += 1
++                                tree_path.write_bytes(gzip.compress(json.dumps(tree).encode(), mtime=0))
++                            elif mutation == 'tree-format':
++                                tree_path = output / manifest['steps'][0]['tree_file']
++                                raw = b'[]\n'
++                                tree_path.write_bytes(gzip.compress(raw, mtime=0))
++                                manifest['steps'][0]['tree_sha256'] = hashlib.sha256(raw).hexdigest()
++                                write(path, manifest)
++                            elif mutation == 'end':
++                                end = read(output / manifest['end_table'])
++                                end['digest'] = '0' * 64
++                                write(output / manifest['end_table'], end)
++                            elif mutation == 'json':
++                                path.write_text('{')
++                            elif mutation == 'format':
++                                manifest['format'] = 'lattice-phase-play/0'
++                                write(path, manifest)
++                            elif mutation == 'report':
++                                del manifest['report']['input']
++                                write(path, manifest)
++                            elif mutation == 'seconds':
++                                manifest['steps'][0]['seconds'] = True
++                                write(path, manifest)
++                            elif mutation == 'fields':
++                                manifest['steps'][0]['fields']['parts'] = []
++                                write(path, manifest)
++                            else:
++                                manifest['steps'][0]['word_file'] = '../escape.gz'
++                                write(path, manifest)
++                        return R.Child(0, 0.01, ctx.work_dir / 'child.log')
++                    return call
++                result, ctx, _ = invoke(f, wrapper=wrapper)
++                self.check_end(result, 'error', 'play_output_invalid', check=check)
++                self.assertFalse((ctx.work_dir / 'play/words').exists())
++
++
++class H_RealLateRestorerTests(EndChecks, unittest.TestCase):
++    def test_real_late_restorer_budget(self):
++        s = shared()
++        state = s.sim.State(s.ctx, menu=s.menu)
++        retained = [i for i in range(len(s.menu.items)) if i not in s.restore.jumble_items(s.menu)
++                    and s.restore.element(s.menu, 0, i) != s.restore.I4]
++        for cap, item in ((0, retained[0]), (17, retained[1]), (379, retained[0])):
++            twist = s.sim.Twist(s.ctx, cap, s.restore.element(s.menu, cap, item), 'menu', {'menu': s.menu.name})
++            self.assertTrue(state.apply(twist, journal=False).applied)
++        base = Path(tempfile.mkdtemp(prefix='real-late-', dir=TEMPORARY))
++        table = base / 'start-table.json'
++        s.export(state, table)
++        f = types.SimpleNamespace(table=table, before={'digest': state.digest(), 'off': 0, 'heights': {}})
++        ctx, _ = new_context(f)
++        times = []
++        execute = ctx.execute
++        def timed(argv, tag, seconds, **kwargs):
++            child = execute(argv, tag, seconds, **kwargs)
++            if tag.startswith('lattice-restore-'):
++                times.append(child.seconds)
++                print(f'Real late restorer (cloud research): {child.seconds:.3f}s', flush=True)
++            return child
++        ctx.execute = timed
++        with patch.object(L, 'LIBRARY', s.library), patch.object(L, 'PLAY_SECONDS', 0):
++            result = L.play(ctx)
++        self.check_end(result, 'budget', 'player_clock', timed_out=True)
++        summary = read(ctx.work_dir / 'restore/restore-summary.json')
++        self.assertEqual(len(summary['runs']), 1)
++        run = summary['runs'][0]
++        self.assertEqual(run['status'], 'restored')
++        self.assertEqual(run['input'], 'table:start-table.json')
++        self.assertEqual(run['input_digest'], state.digest())
++        self.assertEqual(list(run['factors_per_orbit']), list(map(str, summary['cascade_order'])))
++        self.assertEqual(sum(run['factors_per_orbit'].values()), run['factors'])
++        self.assertEqual(summary['library']['sha256'], P.sha(ctx.work_dir / 'library-merged.json'))
++        self.assertEqual(run['retained_length'], 16184022)
++        self.assertEqual(len(times), 1)
++
++
++
++class I_ArgvTests(unittest.TestCase):
++    def test_both_restorer_commands(self):
++        f = fixture()
++        for name in ('late', 'schedule11'):
++            with self.subTest(restorer=name):
++                calls = []
++                def wrapper(execute, ctx):
++                    def call(argv, tag, seconds, **kwargs):
++                        calls.append((argv, tag, seconds, kwargs))
++                        return R.Child(1, 0.0, ctx.work_dir / 'child.log')
++                    return call
++                ctx, _ = new_context(f, restorer=name, wrapper=wrapper)
++                with patch.object(L, 'LIBRARY', shared().library):
++                    result = L.play(ctx)
++                self.assertEqual((result.result, result.reason), ('error', 'restorer_exit'))
++                self.assertEqual(len(calls), 1)
++                argv, tag, seconds, kwargs = calls[0]
++                script = ROOT / L.RESTORERS[name]
++                prefix = [sys.executable, '-I', '-B', script]
++                prefix += [script.parent, ROOT, J] if name == 'late' else [ROOT, J, ROOT / L.REALIGN]
++                self.assertEqual(argv, prefix + ['library-merged.json', 'restore', 'table:start-table.json'])
++                self.assertEqual(tag, 'lattice-restore-' + ctx.work_dir.name)
++                self.assertIsNone(seconds)
++                self.assertEqual(kwargs, {'cwd': ctx.work_dir})
++
++
++class J_LiteralSubsetTests(unittest.TestCase):
++    def test_explicit_fast_subset(self):
++        names = ['ExpansionTests.test_all_nodes_signs_and_lengths',
++            'ExpansionTests.test_lazy_deep_word_and_reject_forward_reference',
++            'PoseTransportTests.test_deferred_leaf_poses_and_prefix_match_simulator',
++            'InvisibleRotationTests.test_retained_first_final_digest_is_the_played_state']
++        if hasattr(tll, 'ObserverTests'):
++            names.append('ObserverTests')
++        loader = unittest.TestLoader()
++        suite = unittest.TestSuite(loader.loadTestsFromName(name, tll) for name in names)
++        def tests(suite):
++            for test in suite:
++                if isinstance(test, unittest.TestSuite):
++                    yield from tests(test)
++                else:
++                    yield test
++        self.assertTrue(all('PlayerTests' not in test.id() for test in tests(suite)))
++        result = unittest.TextTestRunner(verbosity=2, resultclass=TimedResult).run(suite)
++        self.assertTrue(result.wasSuccessful())
++
++
++class K_SlowTests(unittest.TestCase):
++    @unittest.skipUnless(os.environ.get('LATTICE_PHASE_SLOW') == '1', 'set LATTICE_PHASE_SLOW=1 for schedule11')
++    def test_schedule11_development_handoff(self):
++        s = shared()
++        base = Path(tempfile.mkdtemp(prefix='schedule11-', dir=TEMPORARY))
++        out = base / 'handoff'
++        proc = subprocess.run([sys.executable, '-I', '-B', str(HERE / 'runner.py'), '--scramble', '20', '7106',
++            '--no-lattice', '--out', str(out), '--cache', str(base / 'cache')], cwd=ROOT,
++            stdout=(base / 'handoff.log').open('w'), stderr=subprocess.STDOUT)
++        self.assertEqual(proc.returncode, 0)
++        record = read(out / 'run.json')
++        table = next((out / row['table'] for row in reversed(record['steps']) if 'table' in row),
++                     out / 'tables/bulk-end.json')
++        state = s.mechanics.load(table)
++        self.assertTrue(state.is_lattice(), f'{record["result"]}: {record["phases"]}')
++        old = '1b263d3e9e0b9dcd2feece889acf0d20c8c96492e2a5e895034be3dd9c46578e'
++        print(f'Rebuilt handoff {state.digest()}; committed handoff {old}', flush=True)
++        f = types.SimpleNamespace(table=table, before={'digest': state.digest(), 'off': 0, 'heights': {}})
++        ctx, _ = new_context(f, restorer='schedule11')
++        result = L.play(ctx)
++        self.assertIsInstance(result, api.LatticeResult, result)
++        self.assertLessEqual(result.report['player']['played']['retained'], 20866844)
++        self.assertTrue(result.report['player']['final']['labels_identity'])
++        print(f'Schedule11: {len(result.steps)} steps; {sum(s.letters for s in result.steps)} twists; '
++              f'restore {result.report["restore_seconds"]:.3f}s; play {result.report["play_seconds"]:.3f}s', flush=True)
++
++
++class TimedResult(unittest.TextTestResult):
++    def startTest(self, test):
++        self.started = time.monotonic()
++        super().startTest(test)
++
++    def stopTest(self, test):
++        super().stopTest(test)
++        self.stream.writeln(f'  {test.id()}: {time.monotonic() - self.started:.3f}s')
++
++
++SKIP = ('.git', 'work/codex-sandbox-home', 'work/loop-memory', 'work/reviews', 'work/worktrees')
++
++
++def inventory():
++    result = {}
++    for directory, dirs, files in os.walk(ROOT):
++        here = Path(directory).relative_to(ROOT)
++        dirs[:] = [d for d in dirs if (here / d).as_posix() not in SKIP]
++        for name in dirs + files:
++            path = Path(directory) / name
++            if path == ROOT / '.git':
++                continue
++            try:
++                if path.is_symlink():
++                    result[path.relative_to(ROOT).as_posix()] = ('link', os.readlink(path))
++                elif path.is_file():
++                    result[path.relative_to(ROOT).as_posix()] = P.sha(path)
++            except FileNotFoundError:
++                continue
++    return result
++
++
++def status():
++    return subprocess.check_output(['git', '--no-optional-locks', 'status', '--porcelain', '--ignored',
++        '--untracked-files=all', '--', '.'] + [':(exclude)' + p for p in SKIP[1:]], cwd=ROOT)
++
++
++def main(names=()):
++    started = time.monotonic()
++    before_status, before_files = status(), inventory()
++    loader = unittest.TestLoader()
++    suite = loader.loadTestsFromNames(names, sys.modules[__name__]) if names else loader.loadTestsFromModule(sys.modules[__name__])
++    try:
++        result = unittest.TextTestRunner(verbosity=2, resultclass=TimedResult).run(suite)
++    finally:
++        after_status, after_files = status(), inventory()
++    unchanged = before_status == after_status and before_files == after_files
++    if unchanged:
++        print('Worktree unchanged, including ignored files.', file=sys.stderr)
++    else:
++        changed = sorted(p for p in before_files.keys() | after_files.keys() if before_files.get(p) != after_files.get(p))
++        print('FAIL: acceptance changed the worktree, including ignored files:', changed, file=sys.stderr)
++    print(f'--_play children: {PLAY_CHILDREN}; test E kept in children; test H kept in default suite.', file=sys.stderr)
++    print(f'Acceptance elapsed: {time.monotonic() - started:.3f}s.', file=sys.stderr)
++    shutil.rmtree(TEMPORARY)
++    return 0 if result.wasSuccessful() and unchanged else 1
++
++
++if __name__ == '__main__':
++    raise SystemExit(main(sys.argv[1:]))

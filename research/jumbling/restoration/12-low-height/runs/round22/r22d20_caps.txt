@@ -1,0 +1,29 @@
+{
+ "start_digest": "4ca440085d743d680163a35d735ff6a7c35796a57cba720ab4037a49887734db",
+ "end_digest": "dceb9359b1b549c32afa36c2f88f6cd2cb6ef75feacef1b675f5c99e6b20a17b",
+ "letters": 28,
+ "unit_size": 1,
+ "unit_on_lattice": 1,
+ "collateral": 0,
+ "others": 31478,
+ "others_exact": 31437,
+ "others_landed": 41,
+ "off_before": 31479,
+ "off_after": 31437,
+ "strict_prime": true,
+ "output_digest_matches": true
+}
+
+{"start_digest": "4ca440085d743d680163a35d735ff6a7c35796a57cba720ab4037a49887734db", "end_digest": "dceb9359b1b549c32afa36c2f88f6cd2cb6ef75feacef1b675f5c99e6b20a17b", "letters": 28, "unit_size": 1, "unit_on_lattice": 1, "collateral": 0, "others": 31478, "others_exact": 31437, "others_landed": 41, "off_before": 31479, "off_after": 31437, "strict_prime": true, "output_digest_matches": true}
+digest dceb9359b1b549c32afa36c2f88f6cd2cb6ef75feacef1b675f5c99e6b20a17b
+clean caps 234
+unit 270 1 height/branch [(4, 3)] clean_containing [61] own_branch [61]
+unit 408 25 height/branch [(4, 3)] clean_containing [61] own_branch [61]
+unit 409 12 height/branch [(4, 3)] clean_containing [61] own_branch [61]
+unit 6780 1 height/branch [(4, 3)] clean_containing [61] own_branch [61]
+unit 32115 31 height/branch [(4, 3)] clean_containing [61] own_branch [61]
+unit 53620 5 height/branch [(4, 3)] clean_containing [61] own_branch [61]
+unit 53629 3 height/branch [(4, 3)] clean_containing [61] own_branch [61]
+unit 61683 4 height/branch [(4, 3)] clean_containing [61] own_branch [61]
+cap 150 straddlers [6780, 26157, 26159, 26170] heights [4, 2, 2, 2]
+cap 179 straddlers [15193, 54926, 54928, 65131, 82294, 82297, 82304, 82312, 82313, 97168, 97169, 97223, 97224, 97225, 97226, 97241, 101126, 101131, 101174, 101176] heights [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
