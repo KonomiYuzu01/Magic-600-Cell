@@ -105,3 +105,9 @@ background waiter on the runner process.
   07:46:27), the checkpoint `7f6b467` held 152. I resumed `out/` directly (accepted, `resumes` [..., 153]) and started
   the checkpoint helper and a new waiter. State after index 152: N 30,092, 28,498 off, 27,527 s of runner time, still
   in the bulk phase.
+- 10:06 UTC progress: runner alive at 164 steps (N 29,620, 27,830 off). The waiter stopped at its two-hour limit
+  soon after.
+- 12:13 UTC (twelfth restart; last save at 10:10, a few minutes after the waiter stopped): the local `out/` and
+  checkpoint `1459963` both held 168 steps. Restored (exit 0), resumed (accepted, `resumes` [..., 168]), checkpoint
+  helper and a new waiter started. State: N 29,608, 27,830 off, 34,874 s of runner time, still in the bulk phase. The
+  last steps change N by only a few each (164 to 168: 29,620 to 29,608) and leave off unchanged.
