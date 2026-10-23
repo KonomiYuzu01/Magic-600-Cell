@@ -118,3 +118,5 @@ background waiter on the runner process.
   started. State: N 27,598, 24,789 off, 48,091 s of runner time, still in the bulk phase.
 - 18:20 UTC (fourteenth restart, about 18:15, with a waiter running): the local `out/` and checkpoint `f56ffa9` both
   held 205 steps. Restored (exit 0), resumed (accepted, `resumes` [..., 205]), checkpoint helper and waiter started.
+- 20:06 UTC progress: runner alive at 209 bulk steps, N 27,258, 24,603 off, 59,278 s of runner time. The bulk phase
+  is slowing: 205 to 209 took about 4,800 s of runner time and left off unchanged.
