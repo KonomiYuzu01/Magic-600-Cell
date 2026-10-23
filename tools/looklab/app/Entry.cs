@@ -19,13 +19,15 @@ public partial class Entry : Node
                 GetTree().Quit();
                 return;
             }
-            if (mode is not ("stage0-gpu" or "geometry"))
+            if (mode is not ("stage0-gpu" or "geometry" or "stills" or "shot" or "ll8-capture"))
             {
                 if (args.Length < 2) throw new Exception("expected checkout root and scratch folder from harness");
                 var app = new LabApp(args[0]); AddChild(app);
                 if (mode == "smoke") { AppSmoke.Run(app, args[1], fault); GetTree().Quit(); }
                 else if (LL4.LL4Checks.Handles(mode)) { LL4.LL4Checks.Run(app, args[0], mode, fault); GetTree().Quit(); }
                 else if (LL6.LL6Checks.Handles(mode)) { LL6.LL6Checks.Run(app, mode, fault); GetTree().Quit(); }
+                else if (LL7.LL7Checks.Handles(mode)) { LL7.LL7Checks.Run(app, args[0], mode, fault); GetTree().Quit(); }
+                else if (LL8.LL8Checks.Handles(mode)) { await LL8.LL8Checks.Run(this, args[0], args[1], mode, fault); GetTree().Quit(); }
                 else if (await LL3.ModeChecks.Dispatch(this, app, args[0], args[1], mode, fault)) return;
                 if (LL5.CheckModes.Handles(mode)) { await LL5.CheckModes.Run(this, app, mode, fault); }
                 return;
@@ -47,6 +49,9 @@ public partial class Entry : Node
                 throw new Exception("graphics-environment: the check window must remain visible");
             await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
             if (mode == "stage0-gpu") { FloatProbe.Check(fault == "float-offset"); GetTree().Quit(); }
+            else if (mode == "stills") { await LL7.Stills.Run(this, args[0]); }
+            else if (mode == "shot") { await LL8.ShotRender.Run(this, args[0], args[3..]); }
+            else if (mode == "ll8-capture") { await LL8.CaptureProbe.Run(this, args[0], fault); GetTree().Quit(); }
             else { await ShaderGeometryCheck.Run(this, args[0], fault); }
         }
         catch (Exception ex)

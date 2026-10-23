@@ -12,6 +12,7 @@ internal sealed partial class CompareStage : HBoxContainer
     public List<LookState> States { get; } = new();
     public List<LookViewport> Views { get; } = new();
     public List<SubViewport> Viewports { get; } = new();
+    internal bool CopySpin { get; set; } = true;
     private readonly List<Label> captions = new();
     private readonly List<TurnClock> clocks = new();
     private readonly bool sharedTiming;
@@ -70,6 +71,11 @@ internal sealed partial class CompareStage : HBoxContainer
             Views[i].Bind(sharedTiming ? Session.Panes[i].Frame : clocks[i].Frame());
             Array.Copy(Session.Camera.Q, Views[i].Q, 16);
             Views[i].Material.SetShaderParameter("q", LookViewport.Matrix(Session.Camera.Q));
+            if (CopySpin)
+            {
+                Array.Copy(Session.Camera.Spin, Views[i].Spin, 16);
+                Views[i].Material.SetShaderParameter("spin", LookViewport.Matrix(Session.Camera.Spin));
+            }
             Vector2I size = Viewports[i].Size;
             Views[i].Material.SetShaderParameter("aspect", size.Y > 0 ? (float)size.X / size.Y : 1);
         }

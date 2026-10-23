@@ -15,6 +15,7 @@ internal sealed class LinkedViews
     private readonly FrameFollower follower = new();
     private double cachedGap = double.NaN;
     private double[] anchors = Array.Empty<double>();
+    private readonly int[] cells;
     public LayoutSpec[] Layouts { get; }
     public LayoutSpec Layout => Layouts.Single(l => l.Id == app.State.Preset.Params.Choice("layoutId"));
     // A paired layout keeps both views clear of the parameter panel in either placement.
@@ -29,11 +30,13 @@ internal sealed class LinkedViews
     internal bool LocalDragEnabled { get; set; } = true;
     internal bool LocalClockEnabled { get; set; }
     internal bool FramingEnabled { get; set; } = true;
+    internal bool FramingUsesSpin { get; set; } = true;
     internal bool ReservePanel { get; set; } = true;
 
     public LinkedViews(LabApp app, string root, CvdPreview preview)
     {
         this.app = app; this.root = root; this.preview = preview;
+        cells = ViewFraming.MovingRestCells(app.View.Turn);
         var catalogue = CommandCatalogue.Load(Path.Combine(root, "docs/progress/1.0/command-table.json"));
         Layouts = Directory.GetFiles(Path.Combine(root, "tools/looklab/data/layouts"), "*.json")
             .OrderBy(p => p, StringComparer.Ordinal).Select(p => LayoutSpec.Load(p, catalogue)).ToArray();
@@ -63,6 +66,7 @@ internal sealed class LinkedViews
         Local = new LookViewport(root, app.State, animate: false);
         LocalViewport.AddChild(Local); Local.SetProcess(false); Local.SetProcessUnhandledInput(false);
         Array.Copy(app.View.Q, Local.Q, 16); Local.Bind(app.View.BoundFrame);
+        Array.Copy(app.View.Spin, Local.Spin, 16);
         LocalStage.GuiInput += LocalInput;
         preview.AddView(Local);
     }
@@ -100,16 +104,19 @@ internal sealed class LinkedViews
         }
         Vector2I size = LocalViewport!.Size;
         double aspect = size.Y > 0 ? (float)size.X / size.Y : 1;
-        return ViewFraming.Target(anchors, app.View.Q, app.State.Preset.Params.Structure(aspect));
+        return ViewFraming.Target(anchors, cells, app.View.Q, FramingUsesSpin ? app.View.Spin : Geometry.Identity(),
+            app.State.Preset.Params.Structure(aspect), app.View.Layout);
     }
 
     private void Step(double dt)
     {
         if (LocalStage?.Visible != true) return;
         Array.Copy(app.View.Q, Local!.Q, 16);
+        Array.Copy(app.View.Spin, Local.Spin, 16);
         if (LocalClockEnabled) { Local.Animate = true; Local._Process(dt); }
         else Local.Bind(app.View.BoundFrame);
         Local.Material.SetShaderParameter("q", LookViewport.Matrix(Local.Q));
+        Local.Material.SetShaderParameter("spin", LookViewport.Matrix(Local.Spin));
         Vector2I size = LocalViewport!.Size;
         Local.Material.SetShaderParameter("aspect", size.Y > 0 ? (float)size.X / size.Y : 1);
         if (FramingEnabled) Local.SetViewFrame(follower.Step(Target(), dt));

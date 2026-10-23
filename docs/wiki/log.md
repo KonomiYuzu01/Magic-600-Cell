@@ -2,6 +2,36 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-22] decision | EN2A-002-R2 merges under an owner exception
+The owner chose option (a) for finding EN2A-002-R2 of pull request #124 (EN2 slice 3): its fix, which keeps the centroid cache's checked `.npy` name, merges without a third Codex verification round, with its regression test as the adjudicating experiment ([decision](decisions/owner-decisions-2026-10-22.md)). The exception covers that finding only; the review rules are unchanged.
+
+## [2026-10-22] update | EN2 reference values in J1: ν, corrections, observations, height-4 states and word checks
+The reference runs of ENG-0J revision 2 (acceptance items 3 and 8, with amendment A5) ran headless in the cloud session ([results](../../research/jumbling/differential/references/results/summary.md)): ν on E3, I1 and I2, the 40 CERT-LB-V2 words, the 36 corrections, 20 observed states, stage 12's six height-4 states and five recorded words (b06-14 has 672,417 letters) all give the recorded or expected values, while one prose count, "the 20 caps that hold off-grip seams" at the I_a@40 stop, matches no count of the reference reading (39 caps hold an off-grip cell, 25 a whole group). They are runs of research code against research records; the candidate engine's comparisons wait for EN3 and EN4.
+
+## [2026-10-22] update | EN2 cost leads in J1: X1 to X5, XM1, heights, classification and meshes
+The cost leads of ENG-0J revision 2 (acceptance item 5) ran headless in the cloud session ([results](../../research/jumbling/differential/leads/results/summary.md)): in J1 a repair list takes 3.5 s to about 3 minutes, entry heights under the I_a menu are unbounded (3,018 bits at the X1 witness H6030), the exact covers differ from the research float test only where d is blocked, and a full-detail mesh of every exposed face has 5,760,000 triangles. They are cloud timings of research code; EN3 and EN4 confirm or overturn them with a product engine.
+
+## [2026-10-22] decision | G1 keeps every structure mode and layout
+The owner kept all seven G1 structure modes and all four greybox layouts in the Look Lab and chose no single layout, so the G1 exit's first layout specification (H-04) and visual feature list (H-01) stay open; Look Lab work continues ([decision](decisions/owner-decisions-2026-10-22-g1.md)).
+
+## [2026-10-22] update | W-J: the height-4 state bbef1c8e in the render format
+The export tool now also replays a census record's descent and a committed list of letters, checked against known digests, and it exported the jumbling line's height-4 state `bbef1c8e…` (3000 twists of seed 7302, 313 descent moves, 12 letters): 2,798 pose-table entries, 936 pieces at height 4 ([w-j-probe-results](evidence/w-j-probe-results.md)). With the 3000-twist scramble this gives both states that re-plan item R3 asks for; no W-J run on either has been made.
+
+## [2026-10-22] update | W-J: a deep I_a state in the render format
+The renderer line rebuilt the I_a census scramble of seed 7302 at 3000 twists, matched it against its census record and exported it in the render format: 2,684 pose-table entries, against at most 1,591 in the W-J fixtures ([w-j-probe-results](evidence/w-j-probe-results.md)). No W-J run on a deep state has been made; the probe's README and protocol now also record that the GPU lattice check passed (handoff RO-15).
+
+## [2026-10-22] decision | The DT-M1 batch and a hold on design
+The owner chose every recommended option of DT-M1, for now, keeping each question's other options on record as alternatives, and put the design line and the round table on hold after their current stage ([decision](decisions/owner-decisions-2026-10-22-dt-m1.md)); no further design-table topic opens until the owner resumes it.
+
+## [2026-10-22] decision | NumPy for EN2's J1 tests in the cloud session
+The owner allowed a one-off install of NumPy 2.3.5 from the hash-pinned `tools/python/engine.txt` into a virtual environment outside the repository, so that EN2's J1 tests run in the cloud session ([decision](decisions/owner-decisions-2026-10-22.md)); the allowlist, the lockfile and the installer are unchanged.
+
+## [2026-10-22] decision | Jumbling records from draft #112 on main
+Under Q1 of the 22 October answers, six decision records came to `main` from #112's branch ([#112 merge rule](decisions/owner-decisions-2026-10-17-jumbling-pr.md), [repair list](decisions/owner-decisions-2026-10-17-repair-pairs.md), [B′(h) goal](decisions/owner-decisions-2026-10-18-bprime-goal.md), [machine tutorial](decisions/owner-decisions-2026-10-18-machine-tutorial.md), [tutorial acceptance](decisions/owner-decisions-2026-10-20-tutorial-acceptance.md), [research stop](decisions/owner-decisions-2026-10-20-research-stop.md)), with the handoff pages, the requirements draft's repair-list exception and the briefing's jumbling line; #112 stays a draft. The pages are unchanged except two links to a branch-only research page and a dated note on the #112 merge rule.
+
+## [2026-10-22] decision | Re-plan answers and the DT-J1 batch
+The owner accepted every recommended option for now: schedule option B with the 2.5 freeze at about stage day 34, the branch-only jumbling records to main, ENG-0J started, W-J in the renderer selection, the eleven DT-J1 answers and design-table card limits ([decision](decisions/owner-decisions-2026-10-22.md)).
+
 ## [2026-10-22] decision | Jumbling: smaller cells and stickers in the tutorial's pictures
 Shown three settings of the page's shrink controls, the owner chose cell shrink 0.50 and sticker shrink 0.62 for every puzzle picture of the tutorial ([decision page](decisions/owner-decisions-2026-10-22-figures-and-merge.md), decision 4).
 

@@ -1,0 +1,1168 @@
+{
+  "cpu_count": 4,
+  "python": "3.11.15",
+  "numpy": "2.3.5",
+  "commit": "52e2dd84bd524d3866c221e3d85d48bc41a16cc3",
+  "evidence_kind": "source and fixture replay with the J1 reference engine; cloud research timings, not product performance evidence",
+  "production_command": [
+    "python",
+    "-B",
+    "research/jumbling/differential/leads/heights.py",
+    "--out",
+    "OUT/heights-main"
+  ],
+  "inputs": [
+    {
+      "label": "wj-I_a",
+      "steps": 841,
+      "attempted_steps": 841,
+      "status": "complete",
+      "refused": null,
+      "start_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "end_digest": "6904a731ad8caa887544d4849c4f468e81465ff0055ff8acff136ae3073ed8d9",
+      "maxima": {
+        "height": {
+          "value": 16,
+          "step": 116,
+          "bits": 5
+        },
+        "denominator": {
+          "value": 16,
+          "step": 116,
+          "bits": 5
+        }
+      },
+      "crossings": {
+        "31": null,
+        "53": null,
+        "63": null,
+        "64": null
+      },
+      "denominator_crossings": {
+        "31": null,
+        "53": null,
+        "63": null,
+        "64": null
+      },
+      "stage_checks": [
+        {
+          "stage": "start",
+          "step": 0,
+          "passed": true,
+          "fields": {
+            "digest": {
+              "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "passed": true
+            },
+            "max_entry_height": {
+              "expected": 0,
+              "actual": 0,
+              "passed": true
+            },
+            "max_denominator": {
+              "expected": 0,
+              "actual": 0,
+              "passed": true
+            },
+            "off_lattice": {
+              "expected": 0,
+              "actual": 0,
+              "passed": true
+            },
+            "poses": {
+              "expected": 1,
+              "actual": 1,
+              "passed": true
+            }
+          }
+        },
+        {
+          "stage": "mid",
+          "step": 420,
+          "passed": true,
+          "fields": {
+            "digest": {
+              "expected": "940367a8b97ca19959d7efebf602e72756faf853fd59c0dfcfbac87f0c769767",
+              "actual": "940367a8b97ca19959d7efebf602e72756faf853fd59c0dfcfbac87f0c769767",
+              "passed": true
+            },
+            "max_entry_height": {
+              "expected": 16,
+              "actual": 16,
+              "passed": true
+            },
+            "max_denominator": {
+              "expected": 16,
+              "actual": 16,
+              "passed": true
+            },
+            "off_lattice": {
+              "expected": 114930,
+              "actual": 114930,
+              "passed": true
+            },
+            "poses": {
+              "expected": 719,
+              "actual": 719,
+              "passed": true
+            }
+          }
+        },
+        {
+          "stage": "end",
+          "step": 841,
+          "passed": true,
+          "fields": {
+            "digest": {
+              "expected": "6904a731ad8caa887544d4849c4f468e81465ff0055ff8acff136ae3073ed8d9",
+              "actual": "6904a731ad8caa887544d4849c4f468e81465ff0055ff8acff136ae3073ed8d9",
+              "passed": true
+            },
+            "max_entry_height": {
+              "expected": 16,
+              "actual": 16,
+              "passed": true
+            },
+            "max_denominator": {
+              "expected": 16,
+              "actual": 16,
+              "passed": true
+            },
+            "off_lattice": {
+              "expected": 121184,
+              "actual": 121184,
+              "passed": true
+            },
+            "poses": {
+              "expected": 1333,
+              "actual": 1333,
+              "passed": true
+            }
+          }
+        }
+      ],
+      "digest_checks": [],
+      "cap0_height_checks": [],
+      "checks_passed": true,
+      "operand_widths": null,
+      "max_sign_operand_bits": null,
+      "seconds": {
+        "replay": 154.9892281790144,
+        "bookkeeping": 2.356969794975157,
+        "total": 157.53292690099988
+      },
+      "sources": [
+        {
+          "file": "research/jumbling/fixtures/wj-I_a.json",
+          "sha256": "86c6c15de125c5073f7ec433e302e926e54f1839000f3cedf6a6804215bd7334"
+        }
+      ]
+    },
+    {
+      "label": "wj-S4",
+      "steps": 640,
+      "attempted_steps": 640,
+      "status": "complete",
+      "refused": null,
+      "start_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "end_digest": "68f2042b9baa66c420c921843e4bab4f7acfb0433d3450dd68844b86c19e7b64",
+      "maxima": {
+        "height": {
+          "value": 32,
+          "step": 210,
+          "bits": 6
+        },
+        "denominator": {
+          "value": 32,
+          "step": 210,
+          "bits": 6
+        }
+      },
+      "crossings": {
+        "31": null,
+        "53": null,
+        "63": null,
+        "64": null
+      },
+      "denominator_crossings": {
+        "31": null,
+        "53": null,
+        "63": null,
+        "64": null
+      },
+      "stage_checks": [
+        {
+          "stage": "start",
+          "step": 0,
+          "passed": true,
+          "fields": {
+            "digest": {
+              "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "passed": true
+            },
+            "max_entry_height": {
+              "expected": 0,
+              "actual": 0,
+              "passed": true
+            },
+            "max_denominator": {
+              "expected": 0,
+              "actual": 0,
+              "passed": true
+            },
+            "off_lattice": {
+              "expected": 0,
+              "actual": 0,
+              "passed": true
+            },
+            "poses": {
+              "expected": 1,
+              "actual": 1,
+              "passed": true
+            }
+          }
+        },
+        {
+          "stage": "mid",
+          "step": 320,
+          "passed": true,
+          "fields": {
+            "digest": {
+              "expected": "eb7d37c05bed54d84b95deb3acdb380b1a93bcc045862004905b554faeb6d150",
+              "actual": "eb7d37c05bed54d84b95deb3acdb380b1a93bcc045862004905b554faeb6d150",
+              "passed": true
+            },
+            "max_entry_height": {
+              "expected": 16,
+              "actual": 16,
+              "passed": true
+            },
+            "max_denominator": {
+              "expected": 16,
+              "actual": 16,
+              "passed": true
+            },
+            "off_lattice": {
+              "expected": 116783,
+              "actual": 116783,
+              "passed": true
+            },
+            "poses": {
+              "expected": 1065,
+              "actual": 1065,
+              "passed": true
+            }
+          }
+        },
+        {
+          "stage": "end",
+          "step": 640,
+          "passed": true,
+          "fields": {
+            "digest": {
+              "expected": "68f2042b9baa66c420c921843e4bab4f7acfb0433d3450dd68844b86c19e7b64",
+              "actual": "68f2042b9baa66c420c921843e4bab4f7acfb0433d3450dd68844b86c19e7b64",
+              "passed": true
+            },
+            "max_entry_height": {
+              "expected": 32,
+              "actual": 32,
+              "passed": true
+            },
+            "max_denominator": {
+              "expected": 32,
+              "actual": 32,
+              "passed": true
+            },
+            "off_lattice": {
+              "expected": 117498,
+              "actual": 117498,
+              "passed": true
+            },
+            "poses": {
+              "expected": 1591,
+              "actual": 1591,
+              "passed": true
+            }
+          }
+        }
+      ],
+      "digest_checks": [],
+      "cap0_height_checks": [],
+      "checks_passed": true,
+      "operand_widths": null,
+      "max_sign_operand_bits": null,
+      "seconds": {
+        "replay": 143.73311001899765,
+        "bookkeeping": 2.2728775029881945,
+        "total": 146.1582296659999
+      },
+      "sources": [
+        {
+          "file": "research/jumbling/fixtures/wj-S4.json",
+          "sha256": "4a9ca4062df3c1efa60d5aac1f3f52e4f86aba50d639f7ecf6601265a4ff0da5"
+        }
+      ]
+    },
+    {
+      "label": "wj-I_b",
+      "steps": 885,
+      "attempted_steps": 885,
+      "status": "complete",
+      "refused": null,
+      "start_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "end_digest": "65173141e2eef3ff8e9bf95f3d4a00967e3bccdfcf0649ddaec6f4bee52a6123",
+      "maxima": {
+        "height": {
+          "value": 32,
+          "step": 851,
+          "bits": 6
+        },
+        "denominator": {
+          "value": 32,
+          "step": 851,
+          "bits": 6
+        }
+      },
+      "crossings": {
+        "31": null,
+        "53": null,
+        "63": null,
+        "64": null
+      },
+      "denominator_crossings": {
+        "31": null,
+        "53": null,
+        "63": null,
+        "64": null
+      },
+      "stage_checks": [
+        {
+          "stage": "start",
+          "step": 0,
+          "passed": true,
+          "fields": {
+            "digest": {
+              "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "passed": true
+            },
+            "max_entry_height": {
+              "expected": 0,
+              "actual": 0,
+              "passed": true
+            },
+            "max_denominator": {
+              "expected": 0,
+              "actual": 0,
+              "passed": true
+            },
+            "off_lattice": {
+              "expected": 0,
+              "actual": 0,
+              "passed": true
+            },
+            "poses": {
+              "expected": 1,
+              "actual": 1,
+              "passed": true
+            }
+          }
+        },
+        {
+          "stage": "mid",
+          "step": 442,
+          "passed": true,
+          "fields": {
+            "digest": {
+              "expected": "9dcd15df696fd8b0ab7b2e6f10dbb5adbf7e36ff127c584fd84461b1a4bf9dba",
+              "actual": "9dcd15df696fd8b0ab7b2e6f10dbb5adbf7e36ff127c584fd84461b1a4bf9dba",
+              "passed": true
+            },
+            "max_entry_height": {
+              "expected": 16,
+              "actual": 16,
+              "passed": true
+            },
+            "max_denominator": {
+              "expected": 16,
+              "actual": 16,
+              "passed": true
+            },
+            "off_lattice": {
+              "expected": 121778,
+              "actual": 121778,
+              "passed": true
+            },
+            "poses": {
+              "expected": 911,
+              "actual": 911,
+              "passed": true
+            }
+          }
+        },
+        {
+          "stage": "end",
+          "step": 885,
+          "passed": true,
+          "fields": {
+            "digest": {
+              "expected": "65173141e2eef3ff8e9bf95f3d4a00967e3bccdfcf0649ddaec6f4bee52a6123",
+              "actual": "65173141e2eef3ff8e9bf95f3d4a00967e3bccdfcf0649ddaec6f4bee52a6123",
+              "passed": true
+            },
+            "max_entry_height": {
+              "expected": 16,
+              "actual": 16,
+              "passed": true
+            },
+            "max_denominator": {
+              "expected": 16,
+              "actual": 16,
+              "passed": true
+            },
+            "off_lattice": {
+              "expected": 128013,
+              "actual": 128013,
+              "passed": true
+            },
+            "poses": {
+              "expected": 1248,
+              "actual": 1248,
+              "passed": true
+            }
+          }
+        }
+      ],
+      "digest_checks": [],
+      "cap0_height_checks": [],
+      "checks_passed": true,
+      "operand_widths": null,
+      "max_sign_operand_bits": null,
+      "seconds": {
+        "replay": 214.2530906370066,
+        "bookkeeping": 3.6403561069882926,
+        "total": 218.10077677499976
+      },
+      "sources": [
+        {
+          "file": "research/jumbling/fixtures/wj-I_b.json",
+          "sha256": "1e6e236f51d0a316534c1bee0ec17d6df0a4f1fbdf6c2d3f44336fa13f2b5659"
+        }
+      ]
+    },
+    {
+      "label": "E2",
+      "steps": 1,
+      "attempted_steps": 1,
+      "status": "complete",
+      "refused": null,
+      "start_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "end_digest": "65cc8ddc724440da6165fd8ece78bbe5f45743470d2afd6cf209e145af334ef5",
+      "maxima": {
+        "height": {
+          "value": 860378847541,
+          "step": 1,
+          "bits": 40
+        },
+        "denominator": {
+          "value": 860378847541,
+          "step": 1,
+          "bits": 40
+        }
+      },
+      "crossings": {
+        "31": {
+          "step": 1,
+          "bits": 40
+        },
+        "53": null,
+        "63": null,
+        "64": null
+      },
+      "denominator_crossings": {
+        "31": {
+          "step": 1,
+          "bits": 40
+        },
+        "53": null,
+        "63": null,
+        "64": null
+      },
+      "stage_checks": [],
+      "digest_checks": [],
+      "cap0_height_checks": [],
+      "checks_passed": true,
+      "operand_widths": null,
+      "max_sign_operand_bits": null,
+      "seconds": {
+        "replay": 0.005071718999715813,
+        "bookkeeping": 0.0017389800004821154,
+        "total": 0.007888572999945609
+      },
+      "sources": [
+        {
+          "file": "research/jumbling/sim/acceptance.json",
+          "sha256": "63eeb4b497affd6ddd7489ed14f1a074102eb1fcebfab1cb94a04a54b1e24ee8"
+        }
+      ]
+    },
+    {
+      "label": "E3",
+      "steps": 2,
+      "attempted_steps": 2,
+      "status": "complete",
+      "refused": null,
+      "start_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "end_digest": "ac1bdcdc28f43ce0d69f5e66cb30b706a8baa5911f4dc0a702a139533da51b10",
+      "maxima": {
+        "height": {
+          "value": 3441515390164,
+          "step": 2,
+          "bits": 42
+        },
+        "denominator": {
+          "value": 3441515390164,
+          "step": 2,
+          "bits": 42
+        }
+      },
+      "crossings": {
+        "31": {
+          "step": 1,
+          "bits": 40
+        },
+        "53": null,
+        "63": null,
+        "64": null
+      },
+      "denominator_crossings": {
+        "31": {
+          "step": 1,
+          "bits": 40
+        },
+        "53": null,
+        "63": null,
+        "64": null
+      },
+      "stage_checks": [],
+      "digest_checks": [],
+      "cap0_height_checks": [],
+      "checks_passed": true,
+      "operand_widths": null,
+      "max_sign_operand_bits": null,
+      "seconds": {
+        "replay": 0.06010917799994786,
+        "bookkeeping": 0.00219247000040923,
+        "total": 0.06369048199940153
+      },
+      "sources": [
+        {
+          "file": "research/jumbling/sim/acceptance.json",
+          "sha256": "63eeb4b497affd6ddd7489ed14f1a074102eb1fcebfab1cb94a04a54b1e24ee8"
+        }
+      ]
+    },
+    {
+      "label": "random_0",
+      "steps": 6,
+      "attempted_steps": 6,
+      "status": "complete",
+      "refused": null,
+      "start_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "end_digest": "c52c4e27881f1bd9dc7e2e02e1a0b5484954763a787bdcf317b4a8b8845de80b",
+      "maxima": {
+        "height": {
+          "value": 2314538318160,
+          "step": 4,
+          "bits": 42
+        },
+        "denominator": {
+          "value": 2314538318160,
+          "step": 4,
+          "bits": 42
+        }
+      },
+      "crossings": {
+        "31": {
+          "step": 4,
+          "bits": 42
+        },
+        "53": null,
+        "63": null,
+        "64": null
+      },
+      "denominator_crossings": {
+        "31": {
+          "step": 4,
+          "bits": 42
+        },
+        "53": null,
+        "63": null,
+        "64": null
+      },
+      "stage_checks": [],
+      "digest_checks": [],
+      "cap0_height_checks": [],
+      "checks_passed": true,
+      "operand_widths": null,
+      "max_sign_operand_bits": null,
+      "seconds": {
+        "replay": 0.04209693800021341,
+        "bookkeeping": 0.004734497998470033,
+        "total": 0.050936673000251176
+      },
+      "sources": [
+        {
+          "file": "research/jumbling/sim/acceptance.json",
+          "sha256": "63eeb4b497affd6ddd7489ed14f1a074102eb1fcebfab1cb94a04a54b1e24ee8"
+        }
+      ]
+    },
+    {
+      "label": "random_1",
+      "steps": 5,
+      "attempted_steps": 5,
+      "status": "complete",
+      "refused": null,
+      "start_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "end_digest": "ef84c4ea7b5321758618dc2ec88ba421ea03c2522ef5e42527122fa099c9cc51",
+      "maxima": {
+        "height": {
+          "value": 550844356,
+          "step": 5,
+          "bits": 30
+        },
+        "denominator": {
+          "value": 550844356,
+          "step": 5,
+          "bits": 30
+        }
+      },
+      "crossings": {
+        "31": null,
+        "53": null,
+        "63": null,
+        "64": null
+      },
+      "denominator_crossings": {
+        "31": null,
+        "53": null,
+        "63": null,
+        "64": null
+      },
+      "stage_checks": [],
+      "digest_checks": [],
+      "cap0_height_checks": [],
+      "checks_passed": true,
+      "operand_widths": null,
+      "max_sign_operand_bits": null,
+      "seconds": {
+        "replay": 0.022950927000238153,
+        "bookkeeping": 0.004080216001966619,
+        "total": 0.029845959000340372
+      },
+      "sources": [
+        {
+          "file": "research/jumbling/sim/acceptance.json",
+          "sha256": "63eeb4b497affd6ddd7489ed14f1a074102eb1fcebfab1cb94a04a54b1e24ee8"
+        }
+      ]
+    },
+    {
+      "label": "negative_control",
+      "steps": 24,
+      "attempted_steps": 24,
+      "status": "complete",
+      "refused": null,
+      "start_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "end_digest": "c955a96219153e50f35416c557c4bd4a892d5b8ffbc606418c67df582cf2a8d3",
+      "maxima": {
+        "height": {
+          "value": 708588,
+          "step": 22,
+          "bits": 20
+        },
+        "denominator": {
+          "value": 708588,
+          "step": 22,
+          "bits": 20
+        }
+      },
+      "crossings": {
+        "31": null,
+        "53": null,
+        "63": null,
+        "64": null
+      },
+      "denominator_crossings": {
+        "31": null,
+        "53": null,
+        "63": null,
+        "64": null
+      },
+      "stage_checks": [],
+      "digest_checks": [
+        {
+          "step": 0,
+          "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "passed": true
+        },
+        {
+          "step": 1,
+          "expected": "a3f1333fb75fdd3415d69c681e4c3ab0f64160bcb4c37d7b8799b8259a88517b",
+          "actual": "a3f1333fb75fdd3415d69c681e4c3ab0f64160bcb4c37d7b8799b8259a88517b",
+          "passed": true
+        },
+        {
+          "step": 2,
+          "expected": "87818ea448125203ccecb0b5ea4d0d8ca5c8f6f29dbe73b35251b09759644fb8",
+          "actual": "87818ea448125203ccecb0b5ea4d0d8ca5c8f6f29dbe73b35251b09759644fb8",
+          "passed": true
+        },
+        {
+          "step": 3,
+          "expected": "633dbca65091a387fcc843b80f89abbb194c2d15bdc6243baeb78e33dff809e9",
+          "actual": "633dbca65091a387fcc843b80f89abbb194c2d15bdc6243baeb78e33dff809e9",
+          "passed": true
+        },
+        {
+          "step": 4,
+          "expected": "3c041ca04383cfe499b4b92d8eefeed5b23725fa82178643ce2f9c2f3673f73d",
+          "actual": "3c041ca04383cfe499b4b92d8eefeed5b23725fa82178643ce2f9c2f3673f73d",
+          "passed": true
+        },
+        {
+          "step": 5,
+          "expected": "e943bb7e366307b2d6e5f298698757119362dc8d3dabe74e16a07469c81c628c",
+          "actual": "e943bb7e366307b2d6e5f298698757119362dc8d3dabe74e16a07469c81c628c",
+          "passed": true
+        },
+        {
+          "step": 6,
+          "expected": "4359edc4d534ec54a8c9e2da25943893a9cb4bb3fa9d1fe254087fe337d9a4a6",
+          "actual": "4359edc4d534ec54a8c9e2da25943893a9cb4bb3fa9d1fe254087fe337d9a4a6",
+          "passed": true
+        },
+        {
+          "step": 7,
+          "expected": "344432f264b87863f59b6a3332e5cd029537e7031f59383ba7d4c008cc035325",
+          "actual": "344432f264b87863f59b6a3332e5cd029537e7031f59383ba7d4c008cc035325",
+          "passed": true
+        },
+        {
+          "step": 8,
+          "expected": "1a94494a6ac200f5ee7313b1ef9adc4963b361a0f3ad47ed50db5b80747d7ea2",
+          "actual": "1a94494a6ac200f5ee7313b1ef9adc4963b361a0f3ad47ed50db5b80747d7ea2",
+          "passed": true
+        },
+        {
+          "step": 9,
+          "expected": "41338226b80278cebd75a67df6d02412eda582d267ae0399e935cc681b61ef36",
+          "actual": "41338226b80278cebd75a67df6d02412eda582d267ae0399e935cc681b61ef36",
+          "passed": true
+        },
+        {
+          "step": 10,
+          "expected": "490be962c670712130481eb6f427c1a43f66e9fed399930b8c6ff33911a7d86e",
+          "actual": "490be962c670712130481eb6f427c1a43f66e9fed399930b8c6ff33911a7d86e",
+          "passed": true
+        },
+        {
+          "step": 11,
+          "expected": "05046795fb2db08b3002f4aed0974d33aa88e3a25057af2da017211c62c2e84f",
+          "actual": "05046795fb2db08b3002f4aed0974d33aa88e3a25057af2da017211c62c2e84f",
+          "passed": true
+        },
+        {
+          "step": 12,
+          "expected": "594145d0a4a122f97878615b52a88e689307259f1a5c157c06fbd44d9a862ac8",
+          "actual": "594145d0a4a122f97878615b52a88e689307259f1a5c157c06fbd44d9a862ac8",
+          "passed": true
+        },
+        {
+          "step": 13,
+          "expected": "44b1c96e83aa5d8210d94743feb412832a7163671888c13317d5d2040dde993e",
+          "actual": "44b1c96e83aa5d8210d94743feb412832a7163671888c13317d5d2040dde993e",
+          "passed": true
+        },
+        {
+          "step": 14,
+          "expected": "4e6567598c6085c5592f1bf8bfe00e45bdd090e8977d0bf3db59fbbb6eeceae8",
+          "actual": "4e6567598c6085c5592f1bf8bfe00e45bdd090e8977d0bf3db59fbbb6eeceae8",
+          "passed": true
+        },
+        {
+          "step": 15,
+          "expected": "c96507a78a2d4ec32db5ceb48a1f67119980dd862923e00d06c1f2cec0f8d385",
+          "actual": "c96507a78a2d4ec32db5ceb48a1f67119980dd862923e00d06c1f2cec0f8d385",
+          "passed": true
+        },
+        {
+          "step": 16,
+          "expected": "7ea0d707c03ee415c0ad390dceef1eaf5b35cfaa5463f3cfcb1bc6c3a2ff6ac4",
+          "actual": "7ea0d707c03ee415c0ad390dceef1eaf5b35cfaa5463f3cfcb1bc6c3a2ff6ac4",
+          "passed": true
+        },
+        {
+          "step": 17,
+          "expected": "73f3471c8dd38155ed657973017b40d9231e9a50e8ee5a79698a5489efa207e1",
+          "actual": "73f3471c8dd38155ed657973017b40d9231e9a50e8ee5a79698a5489efa207e1",
+          "passed": true
+        },
+        {
+          "step": 18,
+          "expected": "46839cc692fbb5168994729b045b90dc40fa877ef01c39233468269eb953a198",
+          "actual": "46839cc692fbb5168994729b045b90dc40fa877ef01c39233468269eb953a198",
+          "passed": true
+        },
+        {
+          "step": 19,
+          "expected": "bb52b98611fe37251a0495559e0d9f74e91d764660c9000af05dcf9f041bb2df",
+          "actual": "bb52b98611fe37251a0495559e0d9f74e91d764660c9000af05dcf9f041bb2df",
+          "passed": true
+        },
+        {
+          "step": 20,
+          "expected": "841e9cc0dadb87dc377ee3ab0a9644fa496e92c88a066a74cd7a39d919d5d0ef",
+          "actual": "841e9cc0dadb87dc377ee3ab0a9644fa496e92c88a066a74cd7a39d919d5d0ef",
+          "passed": true
+        },
+        {
+          "step": 21,
+          "expected": "f057c4848659b0a6fc00161fbe458ac2eee192c214cc1b896ec1517bf0857400",
+          "actual": "f057c4848659b0a6fc00161fbe458ac2eee192c214cc1b896ec1517bf0857400",
+          "passed": true
+        },
+        {
+          "step": 22,
+          "expected": "fcc0460d1176570c9ee740147f4cf686143ae2c991573ea1c99a11d6ac8e5373",
+          "actual": "fcc0460d1176570c9ee740147f4cf686143ae2c991573ea1c99a11d6ac8e5373",
+          "passed": true
+        },
+        {
+          "step": 23,
+          "expected": "78198ef1e7d070aaa684df4b0bec0d233d3337bfe9709d3de68d8316cf0d05c2",
+          "actual": "78198ef1e7d070aaa684df4b0bec0d233d3337bfe9709d3de68d8316cf0d05c2",
+          "passed": true
+        },
+        {
+          "step": 24,
+          "expected": "c955a96219153e50f35416c557c4bd4a892d5b8ffbc606418c67df582cf2a8d3",
+          "actual": "c955a96219153e50f35416c557c4bd4a892d5b8ffbc606418c67df582cf2a8d3",
+          "passed": true
+        }
+      ],
+      "cap0_height_checks": [
+        {
+          "step": 2,
+          "expected": 12,
+          "actual": 12,
+          "passed": true
+        },
+        {
+          "step": 4,
+          "expected": 18,
+          "actual": 18,
+          "passed": true
+        },
+        {
+          "step": 6,
+          "expected": 108,
+          "actual": 108,
+          "passed": true
+        },
+        {
+          "step": 8,
+          "expected": 81,
+          "actual": 81,
+          "passed": true
+        },
+        {
+          "step": 10,
+          "expected": 972,
+          "actual": 972,
+          "passed": true
+        },
+        {
+          "step": 12,
+          "expected": 1458,
+          "actual": 1458,
+          "passed": true
+        },
+        {
+          "step": 14,
+          "expected": 8748,
+          "actual": 8748,
+          "passed": true
+        },
+        {
+          "step": 16,
+          "expected": 6561,
+          "actual": 6561,
+          "passed": true
+        },
+        {
+          "step": 18,
+          "expected": 78732,
+          "actual": 78732,
+          "passed": true
+        },
+        {
+          "step": 20,
+          "expected": 118098,
+          "actual": 118098,
+          "passed": true
+        },
+        {
+          "step": 22,
+          "expected": 708588,
+          "actual": 708588,
+          "passed": true
+        },
+        {
+          "step": 24,
+          "expected": 531441,
+          "actual": 531441,
+          "passed": true
+        }
+      ],
+      "checks_passed": true,
+      "operand_widths": null,
+      "max_sign_operand_bits": null,
+      "seconds": {
+        "replay": 0.12846242199975677,
+        "bookkeeping": 0.01963293100379815,
+        "total": 0.155319077999593
+      },
+      "sources": [
+        {
+          "file": "research/jumbling/sim/acceptance.json",
+          "sha256": "63eeb4b497affd6ddd7489ed14f1a074102eb1fcebfab1cb94a04a54b1e24ee8"
+        }
+      ]
+    },
+    {
+      "label": "H6030",
+      "steps": 3156,
+      "attempted_steps": 3156,
+      "status": "complete",
+      "refused": null,
+      "start_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "end_digest": "cb1e89ed6b0b1581f8acea27e22b443df5784d928d4284579d69c444f60b37ad",
+      "maxima": {
+        "height": {
+          "value": 161248958501501950614773276773810505598987651742018268792896622318067227114166412741883994811740121934388218987027078172968600755358693696940943931089269336471628591969841318122359792613636265334882268379841413829942899941794601371358080631728857465067050979663631213110820010518344696503168259326652808941879125956818491061559205967395110309377178963398340179117165917021458832029579786820377711802120655308519387726340519190217627324758587441711836376920460970419747119236608301670330588565438130398662073839017092330695407935446626935180196602943462784657720848614959422113095358907128425919236791074964602286797057558273512427689447137445128945808356702314069373310735766089974338234810678804218960995573411623549051939116547074511634081870265986385660304937146169453335367341918274314174071068491864539316187823966257915832474104398279460862328849717249857932372202132801113263160974182844757441167491072,
+          "step": 3156,
+          "bits": 3018
+        },
+        "denominator": {
+          "value": 161248958501501950614773276773810505598987651742018268792896622318067227114166412741883994811740121934388218987027078172968600755358693696940943931089269336471628591969841318122359792613636265334882268379841413829942899941794601371358080631728857465067050979663631213110820010518344696503168259326652808941879125956818491061559205967395110309377178963398340179117165917021458832029579786820377711802120655308519387726340519190217627324758587441711836376920460970419747119236608301670330588565438130398662073839017092330695407935446626935180196602943462784657720848614959422113095358907128425919236791074964602286797057558273512427689447137445128945808356702314069373310735766089974338234810678804218960995573411623549051939116547074511634081870265986385660304937146169453335367341918274314174071068491864539316187823966257915832474104398279460862328849717249857932372202132801113263160974182844757441167491072,
+          "step": 3156,
+          "bits": 3018
+        }
+      },
+      "crossings": {
+        "31": {
+          "step": 170,
+          "bits": 32
+        },
+        "53": {
+          "step": 192,
+          "bits": 54
+        },
+        "63": {
+          "step": 202,
+          "bits": 64
+        },
+        "64": {
+          "step": 203,
+          "bits": 65
+        }
+      },
+      "denominator_crossings": {
+        "31": {
+          "step": 170,
+          "bits": 32
+        },
+        "53": {
+          "step": 192,
+          "bits": 54
+        },
+        "63": {
+          "step": 202,
+          "bits": 64
+        },
+        "64": {
+          "step": 203,
+          "bits": 65
+        }
+      },
+      "stage_checks": [
+        {
+          "stage": "end",
+          "step": 3156,
+          "passed": true,
+          "fields": {
+            "digest": {
+              "expected": "cb1e89ed6b0b1581f8acea27e22b443df5784d928d4284579d69c444f60b37ad",
+              "actual": "cb1e89ed6b0b1581f8acea27e22b443df5784d928d4284579d69c444f60b37ad",
+              "passed": true
+            }
+          }
+        }
+      ],
+      "digest_checks": [],
+      "cap0_height_checks": [],
+      "checks_passed": true,
+      "operand_widths": null,
+      "max_sign_operand_bits": null,
+      "seconds": {
+        "replay": 140.14162524103267,
+        "bookkeeping": 3.4565031180036385,
+        "total": 144.0461353089995
+      },
+      "sources": [
+        {
+          "file": "research/jumbling/restoration/10-x1-unbounded/witnesses/H6030.json",
+          "sha256": "87e72c1fc264f3b33450ee638c4a9a12cdc81a55bb535033fba62d08097240f2"
+        }
+      ]
+    },
+    {
+      "label": "correction35",
+      "steps": 5629,
+      "attempted_steps": 5629,
+      "status": "complete",
+      "refused": null,
+      "start_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "end_digest": "80642dd327e7c86b085019db9fda41c87a2f540386d2bfeb90397bf1abf325d1",
+      "maxima": {
+        "height": {
+          "value": 8,
+          "step": 3,
+          "bits": 4
+        },
+        "denominator": {
+          "value": 8,
+          "step": 3,
+          "bits": 4
+        }
+      },
+      "crossings": {
+        "31": null,
+        "53": null,
+        "63": null,
+        "64": null
+      },
+      "denominator_crossings": {
+        "31": null,
+        "53": null,
+        "63": null,
+        "64": null
+      },
+      "stage_checks": [
+        {
+          "stage": "end",
+          "step": 5629,
+          "passed": true,
+          "fields": {
+            "digest": {
+              "expected": "80642dd327e7c86b085019db9fda41c87a2f540386d2bfeb90397bf1abf325d1",
+              "actual": "80642dd327e7c86b085019db9fda41c87a2f540386d2bfeb90397bf1abf325d1",
+              "passed": true
+            }
+          }
+        }
+      ],
+      "digest_checks": [],
+      "cap0_height_checks": [],
+      "checks_passed": true,
+      "operand_widths": null,
+      "max_sign_operand_bits": null,
+      "seconds": {
+        "replay": 104.97333074697963,
+        "bookkeeping": 5.07691857700047,
+        "total": 110.53839493100077
+      },
+      "sources": [
+        {
+          "file": "research/jumbling/restoration/09-general-method/data/library-merged.json.gz",
+          "sha256": "cfe46e135875b672975001e2e179970299ed538ef9442895580c951bede3db7e"
+        }
+      ]
+    },
+    {
+      "label": "u1",
+      "steps": 624,
+      "attempted_steps": 624,
+      "status": "complete",
+      "refused": null,
+      "start_digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+      "end_digest": "ce7ddaaf5c29489d1fd604e1becbc80e0368f9fccb4925355ea26c5b8c16355c",
+      "maxima": {
+        "height": {
+          "value": 8,
+          "step": 0,
+          "bits": 4
+        },
+        "denominator": {
+          "value": 8,
+          "step": 0,
+          "bits": 4
+        }
+      },
+      "crossings": {
+        "31": null,
+        "53": null,
+        "63": null,
+        "64": null
+      },
+      "denominator_crossings": {
+        "31": null,
+        "53": null,
+        "63": null,
+        "64": null
+      },
+      "stage_checks": [
+        {
+          "stage": "end",
+          "step": 624,
+          "passed": true,
+          "fields": {
+            "digest": {
+              "expected": "ce7ddaaf5c29489d1fd604e1becbc80e0368f9fccb4925355ea26c5b8c16355c",
+              "actual": "ce7ddaaf5c29489d1fd604e1becbc80e0368f9fccb4925355ea26c5b8c16355c",
+              "passed": true
+            }
+          }
+        }
+      ],
+      "digest_checks": [],
+      "cap0_height_checks": [],
+      "checks_passed": true,
+      "operand_widths": null,
+      "max_sign_operand_bits": null,
+      "seconds": {
+        "replay": 12.618856905996836,
+        "bookkeeping": 0.58365070799573,
+        "total": 13.973001440999724
+      },
+      "sources": [
+        {
+          "file": "research/jumbling/restoration/12-low-height/runs/lc13-k40/steps/u1.json",
+          "sha256": "cf124dae839ac6eb2c2018f56f1220cbe43797225a25b80e7507a68c4db8de37"
+        },
+        {
+          "file": "research/jumbling/restoration/11-scramble-census/runs/round2/ia-k40-s7101.json",
+          "sha256": "e46e044ad60621e41c88e1be6e9bfc8e5781c6d8219d5fe390052431d4b341cb"
+        }
+      ]
+    }
+  ],
+  "every": 1,
+  "widths": false
+}

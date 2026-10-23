@@ -1,0 +1,6144 @@
+{
+  "state": "S4-10",
+  "digest": "100836e5c3712daae45afb9ce83bb7b15c96a7e2e0ffe65b703e1fd144f4827f",
+  "counts": {
+    "n_0": 146880,
+    "n_2": 395,
+    "n_4": 0,
+    "n_6": 0,
+    "n_above_6": 0,
+    "max_above_6": null,
+    "n_1": 29845,
+    "off": 30240
+  },
+  "pieces_by_heights": {
+    "0,0": 146880,
+    "1,1": 29845,
+    "2,0": 395
+  },
+  "pose_classes_by_heights": {
+    "0,0": 1,
+    "1,1": 10,
+    "2,0": 1
+  },
+  "n_total": 15454,
+  "grip_n": 15351,
+  "rim_summary": {
+    "0": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "1": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "2": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "3": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "4": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "5": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "6": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "7": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "8": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "9": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "10": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "11": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "12": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "13": {
+      "status": "admissible",
+      "N_c": 1566,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 0,
+      "F_c": 0,
+      "at_floor": false,
+      "blocked": false
+    },
+    "14": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "15": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "16": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "17": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "18": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "19": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "20": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "21": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "22": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "23": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "24": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "25": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "26": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "27": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "28": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "29": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "30": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "31": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "32": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "33": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "34": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "35": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "36": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "37": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "38": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "39": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "40": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "41": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "42": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "43": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "44": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "45": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 577,
+      "Out_c": 577,
+      "A_c": 577,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "46": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "47": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "48": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "49": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "50": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "51": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "52": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "53": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "54": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "55": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "56": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "57": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "58": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "59": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "60": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "61": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "62": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "63": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "64": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "65": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "66": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "67": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "68": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "69": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "70": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "71": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "72": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "73": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 577,
+      "Out_c": 577,
+      "A_c": 577,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "74": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "75": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "76": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "77": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 577,
+      "Out_c": 577,
+      "A_c": 577,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "78": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "79": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "80": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "81": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "82": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "83": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "84": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "85": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "86": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "87": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "88": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "89": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "90": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "91": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "92": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "93": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "94": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "95": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "96": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "97": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "98": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "99": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "100": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "101": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "102": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "103": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "104": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "105": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "106": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "107": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "108": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "109": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "110": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "111": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "112": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "113": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "114": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "115": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "116": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "117": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "118": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "119": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "120": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "121": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "122": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "123": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "124": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "125": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "126": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "127": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "128": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "129": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "130": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "131": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "132": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "133": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "134": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 577,
+      "Out_c": 577,
+      "A_c": 577,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "135": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "136": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "137": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "138": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "139": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "140": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "141": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "142": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "143": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "144": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "145": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "146": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "147": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "148": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "149": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "150": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "151": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "152": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "153": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "154": {
+      "status": "admissible",
+      "N_c": 1566,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 0,
+      "F_c": 0,
+      "at_floor": false,
+      "blocked": false
+    },
+    "155": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "156": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "157": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "158": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "159": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "160": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "161": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "162": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "163": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "164": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "165": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "166": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "167": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "168": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "169": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "170": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "171": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "172": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "173": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "174": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "175": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "176": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "177": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "178": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "179": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "180": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "181": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "182": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "183": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "184": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "185": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "186": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "187": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "188": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "189": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "190": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "191": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "192": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "193": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "194": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "195": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "196": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "197": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "198": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "199": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "200": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "201": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "202": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "203": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "204": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "205": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "206": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "207": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "208": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "209": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "210": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "211": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "212": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "213": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "214": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "215": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "216": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "217": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "218": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "219": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "220": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "221": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "222": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "223": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "224": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "225": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "226": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "227": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "228": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "229": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "230": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "231": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "232": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "233": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "234": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "235": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "236": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "237": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "238": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "239": {
+      "status": "admissible",
+      "N_c": 1566,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 0,
+      "F_c": 0,
+      "at_floor": false,
+      "blocked": false
+    },
+    "240": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "241": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "242": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "243": {
+      "status": "admissible",
+      "N_c": 1566,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 0,
+      "F_c": 0,
+      "at_floor": false,
+      "blocked": false
+    },
+    "244": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "245": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "246": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "247": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 577,
+      "Out_c": 577,
+      "A_c": 577,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "248": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "249": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "250": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "251": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "252": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "253": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "254": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "255": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "256": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "257": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "258": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "259": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "260": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "261": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "262": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "263": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "264": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 623,
+      "Out_c": 623,
+      "A_c": 623,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "265": {
+      "status": "admissible",
+      "N_c": 1360,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 103,
+      "F_c": 0,
+      "at_floor": false,
+      "blocked": false
+    },
+    "266": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "267": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "268": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "269": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "270": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "271": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "272": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "273": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "274": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "275": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "276": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "277": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "278": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 726,
+      "Out_c": 726,
+      "A_c": 726,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "279": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "280": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "281": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "282": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "283": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "284": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "285": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "286": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "287": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "288": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "289": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "290": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "291": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "292": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "293": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "294": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "295": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "296": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "297": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "298": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "299": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "300": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "301": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "302": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "303": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "304": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "305": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "306": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "307": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "308": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "309": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "310": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "311": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "312": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "313": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "314": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "315": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "316": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "317": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "318": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "319": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "320": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "321": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "322": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "323": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "324": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "325": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "326": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "327": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "328": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 726,
+      "Out_c": 726,
+      "A_c": 726,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "329": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "330": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "331": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "332": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "333": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "334": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "335": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "336": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "337": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "338": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "339": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "340": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "341": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "342": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "343": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "344": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "345": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "346": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "347": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "348": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "349": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "350": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "351": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "352": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "353": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "354": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "355": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "356": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "357": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "358": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "359": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "360": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "361": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "362": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "363": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "364": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "365": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "366": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "367": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "368": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "369": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "370": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "371": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "372": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "373": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "374": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "375": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "376": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "377": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "378": {
+      "status": "admissible",
+      "N_c": 1566,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 0,
+      "F_c": 0,
+      "at_floor": false,
+      "blocked": false
+    },
+    "379": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 634,
+      "Out_c": 634,
+      "A_c": 634,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "380": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "381": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "382": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "383": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "384": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "385": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "386": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "387": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "388": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "389": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "390": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "391": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "392": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "393": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "394": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "395": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 737,
+      "Out_c": 737,
+      "A_c": 737,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "396": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "397": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "398": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "399": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "400": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "401": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "402": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "403": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "404": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "405": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "406": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "407": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "408": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "409": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "410": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "411": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "412": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "413": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 577,
+      "Out_c": 577,
+      "A_c": 577,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "414": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "415": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "416": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "417": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "418": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "419": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "420": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "421": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "422": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "423": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "424": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "425": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "426": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "427": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "428": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 577,
+      "Out_c": 577,
+      "A_c": 577,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "429": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "430": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "431": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "432": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "433": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "434": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "435": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "436": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "437": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "438": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "439": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "440": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "441": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "442": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "443": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "444": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "445": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "446": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "447": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "448": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "449": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "450": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "451": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "452": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "453": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "454": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "455": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "456": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "457": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "458": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "459": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "460": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "461": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "462": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "463": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "464": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "465": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "466": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "467": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "468": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "469": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "470": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "471": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "472": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "473": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "474": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "475": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "476": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "477": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "478": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "479": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "480": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "481": {
+      "status": "admissible",
+      "N_c": 1566,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 0,
+      "F_c": 0,
+      "at_floor": false,
+      "blocked": false
+    },
+    "482": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "483": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "484": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "485": {
+      "status": "admissible",
+      "N_c": 1463,
+      "In_c": 783,
+      "Out_c": 680,
+      "A_c": 0,
+      "F_c": 103,
+      "at_floor": false,
+      "blocked": false
+    },
+    "486": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "487": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "488": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "489": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "490": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "491": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "492": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "493": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "494": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "495": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "496": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "497": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "498": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "499": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "500": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "501": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "502": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "503": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "504": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "505": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "506": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "507": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "508": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "509": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "510": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "511": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "512": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "513": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "514": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "515": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "516": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "517": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "518": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "519": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "520": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "521": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "522": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "523": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "524": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "525": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "526": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 832,
+      "Out_c": 832,
+      "A_c": 832,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "527": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "528": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "529": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "530": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 832,
+      "Out_c": 832,
+      "A_c": 832,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "531": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "532": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "533": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "534": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "535": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "536": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "537": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 474,
+      "Out_c": 474,
+      "A_c": 474,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "538": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "539": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 791,
+      "Out_c": 791,
+      "A_c": 791,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "540": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "541": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 746,
+      "Out_c": 746,
+      "A_c": 746,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "542": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 627,
+      "Out_c": 627,
+      "A_c": 627,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "543": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "544": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "545": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "546": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "547": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 577,
+      "Out_c": 577,
+      "A_c": 577,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "548": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "549": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "550": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 799,
+      "Out_c": 799,
+      "A_c": 799,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "551": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "552": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "553": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "554": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "555": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "556": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "557": {
+      "status": "admissible",
+      "N_c": 1566,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 0,
+      "F_c": 0,
+      "at_floor": false,
+      "blocked": false
+    },
+    "558": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "559": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "560": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 577,
+      "Out_c": 577,
+      "A_c": 577,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "561": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "562": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "563": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "564": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "565": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "566": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "567": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "568": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "569": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "570": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "571": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "572": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "573": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "574": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "575": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "576": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "577": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "578": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "579": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "580": {
+      "status": "admissible",
+      "N_c": 206,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": false,
+      "blocked": false
+    },
+    "581": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "582": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "583": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "584": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "585": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "586": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "587": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "588": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 680,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "589": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "590": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "591": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "592": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "593": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "594": {
+      "status": "admissible",
+      "N_c": 1360,
+      "In_c": 680,
+      "Out_c": 680,
+      "A_c": 0,
+      "F_c": 0,
+      "at_floor": false,
+      "blocked": false
+    },
+    "595": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "596": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "597": {
+      "status": "admissible",
+      "N_c": 0,
+      "In_c": 783,
+      "Out_c": 783,
+      "A_c": 783,
+      "F_c": 0,
+      "at_floor": true,
+      "blocked": false
+    },
+    "598": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    },
+    "599": {
+      "status": "blocked",
+      "N_c": null,
+      "In_c": null,
+      "Out_c": null,
+      "A_c": null,
+      "F_c": null,
+      "at_floor": null,
+      "blocked": true
+    }
+  },
+  "partition_sizes": {
+    "15abc9d37c10cc526b5308565e56c5680811342de1f7afafd92f5c2756de9465": 5859,
+    "2019ca643f63596e6960820729ec6b407260c5f16b988991b26ba53b7d86e070": 3097,
+    "536b7ee70b8e699f438cee0a1f6be7a80b1819d4b4dd421f723f854df9f0fe50": 395,
+    "8999e7b5a2cdf90767c8caa0ff17739d2ed9058c4f86d1d55dbbd7288d08d2a6": 6194,
+    "8f3fc192339d304acff9bfd3dbd3e37d71941b0a34aa75dc0d4f997bfc93c583": 2702,
+    "94cd1a5b4f46c3f608a033271efc7bffc6d3a70d0c489992e80981c55fb29570": 3097,
+    "aaca9e2b9d242b5b0904e41d2facc6d1a0bce651391cfc197d54a9a26eb61822": 146880,
+    "dfe33f145d234950b40871f44d7b8391926961941e42357482ed61b81ccd9a37": 2702,
+    "f638db0e98af4ff54b05e8df35431a8d6e5b435ce53c2b1681ad9e5b44d5895d": 6194
+  },
+  "off_grip_groups": {
+    "cells": 103,
+    "group_sizes": [
+      103
+    ],
+    "groups": [
+      {
+        "domain_key": "15abc9d37c10cc526b5308565e56c5680811342de1f7afafd92f5c2756de9465",
+        "cells": 103,
+        "common_holding_caps": [
+          556,
+          581,
+          594
+        ],
+        "holding_caps": {
+          "497": "blocked",
+          "502": "blocked",
+          "539": "admissible",
+          "541": "admissible",
+          "548": "blocked",
+          "550": "admissible",
+          "552": "blocked",
+          "556": "blocked",
+          "579": "blocked",
+          "581": "blocked",
+          "594": "admissible"
+        }
+      }
+    ],
+    "holding_caps": [
+      497,
+      502,
+      539,
+      541,
+      548,
+      550,
+      552,
+      556,
+      579,
+      581,
+      594
+    ],
+    "whole_group_holding_caps": [
+      556,
+      581,
+      594
+    ],
+    "reading": "one occupied side per domain/chamber pair; exact non-grip plane; a holder contains every vertex of the closed 3-cell"
+  },
+  "comparisons": [
+    {
+      "field": "rim_vs_seams",
+      "result": "pass",
+      "difference": null
+    },
+    {
+      "field": "domain_partition",
+      "reference": true,
+      "actual": true,
+      "result": "pass"
+    },
+    {
+      "field": "pieces_by_heights",
+      "reference": {
+        "0,0": 146880,
+        "1,1": 29845,
+        "2,0": 395
+      },
+      "actual": {
+        "0,0": 146880,
+        "1,1": 29845,
+        "2,0": 395
+      },
+      "result": "pass"
+    },
+    {
+      "field": "pose_classes_by_heights",
+      "reference": {
+        "0,0": 1,
+        "1,1": 10,
+        "2,0": 1
+      },
+      "actual": {
+        "0,0": 1,
+        "1,1": 10,
+        "2,0": 1
+      },
+      "result": "pass"
+    }
+  ],
+  "prose_comparisons": [],
+  "seconds": {
+    "replay": 0.23732951700367266,
+    "observe": 17.973566746004508,
+    "observe_seams": 17.267901831000927,
+    "off_grip": 0.39996560200233944
+  },
+  "input_sha256": {
+    "theory/results/trees-fixtures.json": "706626f5e9d0b907fe29d0e89fc057b0a6712fad9c33ef5f6ea43eb051c19b14",
+    "fixtures/wj-S4.json": "4a9ca4062df3c1efa60d5aac1f3f52e4f86aba50d639f7ecf6601265a4ff0da5"
+  },
+  "python": "3.11.15",
+  "numpy": "2.3.5",
+  "evidence_kind": "source and fixture replay; cloud research timings",
+  "status": "pass"
+}

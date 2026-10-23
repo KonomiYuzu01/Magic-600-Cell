@@ -15,6 +15,7 @@ public sealed class CellStructure
     public int[][] VertexCells { get; }
     public int[][] CellVertices { get; }
     public double[][] Vertices4 { get; }
+    public int[][] Helices { get; }
     public int[][] Rings { get; }
     public int[][] RingChains { get; }
     public int[] RingOf { get; }
@@ -45,6 +46,7 @@ public sealed class CellStructure
             if (CellVertices[c].Intersect(CellVertices[n]).Count() != 3) throw Json.Error("cell_vertices", "face neighbors must share exactly three vertices");
         }
         Vertices4 = DeriveVertices();
+        Helices = BuildHelices();
         Rings = BuildRings();
         RingOf = new int[Geometry.Cells];
         Array.Fill(RingOf, -1);
@@ -135,7 +137,7 @@ public sealed class CellStructure
         return (values[0], values[1], values[2]);
     }
 
-    private int[][] BuildRings()
+    private int[][] BuildHelices()
     {
         var faces = new Dictionary<(int, int, int), List<int>>();
         for (int cell = 0; cell < 600; cell++) for (int omit = 0; omit < 4; omit++)
@@ -166,7 +168,12 @@ public sealed class CellStructure
                 unique.Add(visited);
             }
         }
-        int[][] candidates = unique.ToArray();
+        return unique.ToArray();
+    }
+
+    private int[][] BuildRings()
+    {
+        int[][] candidates = Helices;
         BigInteger[] bits = Enumerable.Range(0, 600).Select(n => BigInteger.One << n).ToArray();
         BigInteger[] masks = candidates.Select(r => r.Aggregate(BigInteger.Zero, (mask, n) => mask | bits[n])).ToArray();
         var byCell = Enumerable.Range(0, 600).Select(_ => new List<int>()).ToArray();
@@ -196,7 +203,7 @@ public sealed class CellStructure
         return choice.Select(r => candidates[r]).ToArray();
     }
 
-    private int[] Chain(int[] ring)
+    public int[] Chain(int[] ring)
     {
         if (ring.Any(c => FaceNeighbors[c].Count(ring.Contains) != 2)) throw Json.Error("rings", "not a closed face-neighbor chain");
         var chain = new List<int> { ring[0] };

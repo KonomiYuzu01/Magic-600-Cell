@@ -40,7 +40,9 @@ public sealed class ParameterSet
         1 / Math.Tan(Number("fieldOfView") / 2), aspect, Choice("projection") switch
         {
             "perspective" => ProjectionKind.Perspective, "stereographic" => ProjectionKind.Stereographic,
-            "orthographic" => ProjectionKind.Orthographic, _ => throw Json.Error("projection", "unknown projection")
+            "orthographic" => ProjectionKind.Orthographic, "hemispheres" => ProjectionKind.Hemispheres,
+            "hopfRings" => ProjectionKind.HopfRings, "ringSheet" => ProjectionKind.RingSheet,
+            _ => throw Json.Error("projection", "unknown projection")
         });
 }
 

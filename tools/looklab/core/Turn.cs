@@ -36,6 +36,7 @@ public sealed class TurnData
 {
     private readonly bool[] moving = new bool[Geometry.Slots];
     private readonly int[] source, destination, inverseSource, inverseDestination;
+    private readonly int[] destinations, inverseDestinations, targets, inverseTargets;
     private readonly uint[] even, odd;
     public string ModelId { get; }
     public double Angle { get; }
@@ -62,6 +63,8 @@ public sealed class TurnData
         CheckPermutation(source, destination, "move");
         CheckPermutation(inverseSource, inverseDestination, "inverse");
         if (source.Concat(destination).Any(s => !moving[s])) throw Json.Error("moving_slots", "must include all permuted slots");
+        (destinations, targets) = BuildTargets(moving, source, destination);
+        (inverseDestinations, inverseTargets) = BuildTargets(moving, inverseSource, inverseDestination);
         var labels = Json.Get(root, "labels");
         EvenDigest = Json.Text(labels, "revision_even_sha256");
         OddDigest = Json.Text(labels, "revision_odd_sha256");
@@ -94,6 +97,33 @@ public sealed class TurnData
     }
 
     public bool IsMoving(int slot) => moving[slot];
+    public int DestinationSlot(int slot, bool inverse)
+    {
+        if (slot < 0 || slot >= Geometry.Slots) throw Json.Error("slot", "outside the full slot range");
+        return (inverse ? inverseDestinations : destinations)[slot];
+    }
+    public ReadOnlyMemory<int> TargetCells(bool inverse) => inverse ? inverseTargets : targets;
+
+    internal static (int[] Destinations, int[] Targets) BuildTargets(ReadOnlySpan<bool> moving, ReadOnlySpan<int> source, ReadOnlySpan<int> destination)
+    {
+        if (moving.Length != Geometry.Slots || source.Length != destination.Length) throw Json.Error("turn", "invalid target table lengths");
+        int[] slots = Enumerable.Range(0, Geometry.Slots).ToArray(), cells = Enumerable.Range(0, Geometry.Cells).ToArray();
+        for (int i = 0; i < source.Length; i++)
+        {
+            if (source[i] < 0 || source[i] >= Geometry.Slots || destination[i] < 0 || destination[i] >= Geometry.Slots)
+                throw Json.Error("turn", "invalid target slot");
+            slots[source[i]] = destination[i];
+        }
+        var seen = new bool[Geometry.Cells];
+        for (int slot = 0; slot < Geometry.Slots; slot++)
+        {
+            if (!moving[slot]) continue;
+            int c = slot / Geometry.StickersPerCell, d = slots[slot] / Geometry.StickersPerCell;
+            if (seen[c] && cells[c] != d) throw Json.Error("turn", "moving slots of cell " + c + " reach different cells");
+            cells[c] = d; seen[c] = true;
+        }
+        return (slots, cells);
+    }
     public ReadOnlyMemory<uint> Snapshot(long revision)
     {
         if (revision < 0) throw Json.Error("revision", "must be nonnegative");
