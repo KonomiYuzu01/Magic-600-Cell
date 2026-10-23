@@ -5,9 +5,11 @@ WORD36 and the two letters of the recorded 7306 first step. All writes are temp.
 """
 import ast
 import copy
+from contextlib import contextmanager, ExitStack, redirect_stdout
 import io
 import os
 from pathlib import Path
+from types import SimpleNamespace
 import signal
 import subprocess
 import sys
@@ -116,7 +118,7 @@ def toy_checker_worker(path):
     o = oracle()
     original, _, lattice = initial(o)
     with patch.dict(C.CASES, {7306: tuple(doc['pin'])}):
-        _, cp = C.authenticate_checker(doc['attempt'], doc['identity'], [(Path(doc['target']), {})], [doc['row']])
+        _, cp = C.authenticate_checker(doc['attempt'], doc['identity'], [(Path(doc['target']), {'end': {'steps': 1}})], [doc['row']])
         name = next(name for name in o.nodes if L.ToyState(name).digest() == cp['last']['digest'])
         _, cp, _ = C.replay_letter(o, L.ToyState(name), cp, [doc['row']], lattice)
     print(C.canonical(cp))
@@ -417,8 +419,109 @@ class ArtifactTests(unittest.TestCase):
 
 def checker_initial(o, state, lattice):
     first, ever = o.snapshot(state, lattice, set())
-    return dict(last=first, ever=C.bitset(ever), steps=0, letters=0, snapshots=1,
-                before=None, prefixes=[], audit=None, audit_units=0, audit_hash=C.ZERO_HASH)
+    return C.checker_initial(first, ever)
+
+
+def segmented_row(row):
+    row['search'] = dict(format=C.CHAIN, deciding_cursor=C.cursor_hash(C.search_cursor(row['input_digest'])))
+    return row
+
+
+class ToyAudit(C.ExhaustionAudit):
+    """Explicit transition oracle adapter; no geometry shortcut is tested here."""
+    def __init__(self, engine, *domain):
+        super().__init__(engine, *(domain or (tuple(engine.caps), tuple(engine.items), tuple(engine.jumble))))
+
+    def classification(self, state, c, inside=True):
+        cl = self.engine.classify(state, c)
+        return SimpleNamespace(straddle=None if self.engine.clean(cl) else {'piece': self.engine.certificate(cl)},
+                               uncertain=False, inside=cl.inside)
+
+    def endpoint(self, state, c, x, cl, hist):
+        return self.engine.histogram(self.move(state, c, x))
+
+    def peel_blocked(self, state, end, c, clean):
+        return self.engine.blocked(end)
+
+
+class TestLimits:
+    def __init__(self, *args, not_after=None, **kwargs):
+        self.not_after = not_after or time.time() + 86400
+    def check(self):
+        pass
+    boundary = finalizing = check
+    def times(self):
+        return dict(cpu_seconds=0., wall_seconds=0., trajectory_cpu_seconds=0., setup_cpu_seconds=0.)
+
+
+@contextmanager
+def toy_campaign(kind='pair'):
+    """Real manifests/receipts and orchestration with a declared tiny simulator."""
+    o = oracle(kind)
+    state, cp, lattice = initial(o)
+    original = copy.deepcopy(cp)
+    root = OUT / ('toy-campaign-' + C.uuid.uuid4().hex)
+    root.mkdir()
+    pin = ('synthetic.json', C.ZERO_HASH, state.digest(), (10, 5, 0))
+    identity = {'sources': {'test': 'fixed'}, 'ordering': C.ORDER}
+    rt = SimpleNamespace(np=SimpleNamespace(__version__='oracle'))
+    o.snapshot_cpu = 0.
+    o.rt = rt
+    domain = dict(caps=tuple(o.caps), items=tuple(o.items), jumble=tuple(o.jumble))
+    validate, advance_audit = C.validate_unit, C.audit_advance
+
+    def table(st, rt):
+        return (C.canonical({'state': st.name}) + '\n').encode()
+
+    def load(directory, descriptor, rt, digest, temporary):
+        st = L.ToyState(C.parse(C.artifact_bytes(directory, descriptor))['state'])
+        C.same(st.digest(), digest, 'reconstructed state digest')
+        return st
+
+    with ExitStack() as stack:
+        for ctx in (patch.dict(C.CASES, {7306: pin}), patch.object(C, 'Runtime', return_value=rt),
+                    patch.object(C, 'segment_identity', return_value=identity), patch.object(C, 'ReplayEngine', return_value=o),
+                    patch.object(C, 'load_case', return_value=state), patch.object(C, 'table_bytes', side_effect=table),
+                    patch.object(C, 'load_artifact_table', side_effect=load), patch.object(C, 'SegmentLimits', TestLimits),
+                    patch.object(C, 'ExhaustionAudit', ToyAudit),
+                    patch.object(C, 'validate_unit', side_effect=lambda *a, **kw: validate(*a, **domain)),
+                    patch.object(C, 'audit_advance', side_effect=lambda cur, proof, *args:
+                                 advance_audit(cur, proof, *args) if args else advance_audit(cur, proof, **domain))):
+            stack.enter_context(ctx)
+        previous, paths = None, []
+        for i in range(2):
+            directory = root / ('search-' + str(i))
+            directory.mkdir()
+            start = C.boundary(cp)
+            units = []
+            while cp['steps'] == 0 and cp['cursor']['phase'] != 'stuck':
+                state, cp, unit = one(o, state, cp, lattice)
+                units.append(unit)
+                if i == 0 and len(units) == 2:
+                    break
+            artifacts = {name: C.pack_artifact(directory, name, raw) for name, raw in (
+                ('checkpoint', (C.canonical(cp) + '\n').encode()), ('table', table(state, rt)),
+                ('units', b''.join((C.canonical(u) + '\n').encode() for u in units)),
+                ('events', b''.join((C.canonical(u['step']) + '\n').encode() for u in units if u['step'])))}
+            status = 'STUCK' if cp['cursor']['phase'] == 'stuck' else 'BUDGET'
+            path = C.publish(directory, 'search', identity, C.input_identity(7306), 'toy', previous, start,
+                             C.boundary(cp), artifacts, dict(local_cpu=0., cpu=0., segments=i + 1),
+                             time.time() + 86000 if i == 0 else deadline, status)
+            deadline = C.parse(path.read_bytes())['not_after']
+            paths.append(path)
+            previous = C.manifest_ref(path)
+        args = SimpleNamespace(out=str(root), chain=str(paths[-1]), audit=False, resume_check=None,
+                               not_after=None, cpu_seconds=3300, work_cpu_seconds=3000, wall_seconds=3600)
+        def run(**changes):
+            actual = SimpleNamespace(**(vars(args) | changes))
+            stream = io.StringIO()
+            with redirect_stdout(stream):
+                code = C.run_checker(actual)
+            report = C.parse(stream.getvalue().splitlines()[-1])
+            return code, report, root / report['manifest']
+        yield SimpleNamespace(o=o, rt=rt, root=root, paths=paths, args=args, run=run,
+                              initial=original, final=cp, load=load)
+
 
 
 class CheckerTests(unittest.TestCase):
@@ -439,7 +542,7 @@ class CheckerTests(unittest.TestCase):
             decision = dict(family='CL2', word=[[0, 1], [1, 12]], states=[a, b], state=b)
             row, ever = E.step_record(decision, o, before, lattice, ever, i + 1, 2 * i,
                                      E.Ledger(i + 1), lambda: {})
-            rows.append(row)
+            rows.append(segmented_row(row))
             cursor_state, before = b, row['after']
         cp = checker_initial(o, state, lattice)
         snapshots = [1]
@@ -462,6 +565,7 @@ class CheckerTests(unittest.TestCase):
         o = oracle()
         state, _, lattice = initial(o)
         row, _, _, _ = L.record(o, state, [[0, 1], [1, 13]], 'CL2', lattice)
+        segmented_row(row)
         cp = checker_initial(o, state, lattice)
         for field in ('Bk', 'M', 'N', 'off', 'Q', 'lattice_loss', 'ever_lattice_loss'):
             for prefix in (0, 1):
@@ -489,6 +593,7 @@ class CheckerTests(unittest.TestCase):
         o = oracle()
         state, _, lattice = initial(o)
         row, _, _, _ = L.record(o, state, [[0, 1], [1, 13]], 'CL2', lattice)
+        segmented_row(row)
         cp0 = checker_initial(o, state, lattice)
         mid, cp1, receipt1 = C.replay_letter(o, state, cp0, [row], lattice)
         _, cp2, receipt2 = C.replay_letter(o, mid, cp1, [row], lattice)
@@ -512,8 +617,8 @@ class CheckerTests(unittest.TestCase):
                 path = C.publish(d, 'checker', identity, C.input_identity(7306), 'c', previous,
                     None if i == 0 else C.checker_boundary(cp1), C.checker_boundary(cp), artifacts,
                     dict(local_cpu=1, cpu=i + 1, segments=i + 1), 9999999999,
-                    'incomplete' if i == 0 else 'complete', extra=dict(target=C.manifest_ref(target), report={}))
-                chain, authenticated = C.authenticate_checker(path, identity, [(target, {})], [row])
+                    'incomplete', extra=dict(target=C.manifest_ref(target), report={}))
+                chain, authenticated = C.authenticate_checker(path, identity, [(target, {'end': {'steps': 1}})], [row])
                 self.assertEqual(authenticated, cp)
                 if i == 0:
                     packet = OUT / 'pending-checker.json'
@@ -527,13 +632,10 @@ class CheckerTests(unittest.TestCase):
             m = C.parse(path.read_bytes())
             m['status'] = 'FAILED'
             C.write_json(path, m)
-            with self.assertRaisesRegex(ValueError, 'invalidates'):
-                C.authenticate_checker(path, identity, [(target, {})], [row])
+            with self.assertRaisesRegex(ValueError, 'failure status'):
+                C.authenticate_checker(path, identity, [(target, {'end': {'steps': 1}})], [row])
 
     def test_04_true_false_and_forged_exhaustion(self):
-        class ToyAudit(C.ExhaustionAudit):
-            def classify(self, state, c):
-                return self.engine.clean(self.engine.classify(state, c))
         for kind in ('stuck', 'pair', 'peel'):
             o = oracle(kind)
             auditor = ToyAudit(o, tuple(o.caps), tuple(o.items), tuple(o.jumble))
@@ -589,10 +691,293 @@ class CheckerTests(unittest.TestCase):
                                          tuple(o.caps), tuple(o.items), tuple(o.jumble)), after)
 
 
+def rewrite_artifact(path, name, raw):
+    """Deliberate mutation of one small test artifact, with its outer hashes fixed."""
+    m = C.parse(path.read_bytes())
+    old = m['artifacts'][name]
+    assert len(old['chunks']) == 1
+    chunk = old['chunks'][0]['path']
+    (path.parent / chunk).write_bytes(raw)
+    m['artifacts'][name] = dict(size=len(raw), sha256=C.sha(raw),
+                              chunks=[dict(path=chunk, size=len(raw), sha256=C.sha(raw))])
+    C.write_json(path, m)
+
+
+class CheckerRegressionTests(unittest.TestCase):
+    def test_01_post_replay_interruptions_are_incomplete_and_resume_only_missing_checks(self):
+        for stopping in ('boundaries', 'final_last', 'final_ever', 'tables'):
+            with self.subTest(check=stopping), toy_campaign() as t:
+                post = C.checker_post_unit
+                def stop(cp, *args):
+                    pending = (cp['steps'] == 1 and (
+                        (stopping == 'boundaries' and len(cp['checks']['boundaries']) == 1) or
+                        (stopping in ('final_last', 'final_ever') and cp['checks'][stopping] is None
+                         and len(cp['checks']['boundaries']) == 2) or
+                        (stopping == 'tables' and len(cp['checks']['tables']) == 1)))
+                    if pending:
+                        raise C.Budget('post-replay ' + stopping)
+                    return post(cp, *args)
+                with patch.object(C, 'checker_post_unit', side_effect=stop):
+                    code, report, attempt = t.run()
+                self.assertEqual(code, 1)
+                self.assertEqual((report['status'], report['passed'], report['literal_replay']),
+                                 ('incomplete', False, 'incomplete'))
+                self.assertEqual(report['steps'], 1)
+                snapshots = report['snapshots']
+                with patch.object(t.o, 'apply', side_effect=AssertionError('replayed completed prefix')):
+                    code, report, resumed = t.run(resume_check=str(attempt))
+                self.assertEqual((code, report['status'], report['passed']), (0, 'complete', True))
+                self.assertEqual(report['snapshots'], snapshots)
+                self.assertEqual(len(report['checks']['tables']), 2)
+                chain, final = C.search_chain(t.paths[-1])
+                C.authenticate_checker(resumed, chain[-1][1]['identity'], chain, C.search_rows(chain))
+
+    def test_02_audit_usage_error_precedes_reservation_and_publication(self):
+        with toy_campaign() as t, patch.object(C, 'reserve_attempt') as reserve, patch.object(C, 'new_output') as create:
+            with self.assertRaisesRegex(ValueError, 'candidate STUCK'):
+                t.run(audit=True)
+            reserve.assert_not_called()
+            create.assert_not_called()
+
+    def test_03_false_stuck_preserves_literal_replay_and_names_candidate_on_retry(self):
+        with toy_campaign('stuck') as t:
+            t.o.node('low', {'2': 10, '4': 4})
+            t.o.edge('s', 0, 12, 'low')
+            code, report, attempt = t.run(audit=True)
+            self.assertEqual((code, report['status'], report['passed']), (1, 'FAILED', False))
+            self.assertEqual((report['literal_replay'], report['exhaustion_verification']), ('complete', 'failed'))
+            self.assertEqual(report['invalidates'], dict(stuck_claim=True, accepted_steps=False))
+            self.assertEqual(report['independent_candidate']['word'], [[0, 12]])
+            code, resumed, _ = t.run(audit=True, resume_check=str(attempt))
+            self.assertEqual(resumed['literal_replay'], 'complete')
+            self.assertEqual(resumed['exhaustion_verification'], 'failed')
+            self.assertEqual(resumed['independent_candidate'], report['independent_candidate'])
+
+    def test_04_single_and_peel_replay_mutations_and_whole_prefix_digest_lists(self):
+        for family in ('SINGLE', 'PEEL'):
+            o = oracle('peel' if family == 'PEEL' else 'stuck')
+            if family == 'SINGLE':
+                o.node('low', {'2': 20, '4': 2})
+                o.edge('s', 0, 12, 'low')
+            state, _, lattice = initial(o)
+            _, _, units = finish(o)
+            row = units[-1]['step']
+            self.assertEqual(row['family'], family)
+            cp = checker_initial(o, state, lattice)
+            C.replay_letter(o, state, cp, [row], lattice)
+            mutations = []
+            for field in row['prefixes'][0]:
+                bad = copy.deepcopy(row)
+                bad['prefixes'][0][field] = {} if field == 'heights' else 'forged'
+                mutations.append(bad)
+            for field in ('input_digest', 'output_digest'):
+                bad = copy.deepcopy(row)
+                bad[field] = '1' * 64
+                mutations.append(bad)
+            for field in ('prefixes', 'prefix_digests'):
+                for delta in (-1, 1):
+                    bad = copy.deepcopy(row)
+                    if delta < 0:
+                        bad[field].pop()
+                    else:
+                        bad[field].append(bad[field][-1])
+                    mutations.append(bad)
+            for search in ({}, {'format': C.CHAIN, 'deciding_cursor': None},
+                           {'format': 'wrong', 'deciding_cursor': '1' * 64}):
+                bad = copy.deepcopy(row)
+                bad['search'] = search
+                mutations.append(bad)
+            for bad in mutations:
+                with self.subTest(family=family, row=bad):
+                    with self.assertRaises(ValueError):
+                        C.replay_letter(o, state, cp, [bad], lattice)
+            # Shape-valid but wrong deciding cursor is rejected by unit validation.
+            bad = copy.deepcopy(units[-1])
+            bad['step']['search']['deciding_cursor'] = '1' * 64
+            bad['sha256'] = C.digest_json({k: v for k, v in bad.items() if k != 'sha256'})
+            cur, prior = C.search_cursor(state.digest()), C.ZERO_HASH
+            domain = dict(caps=tuple(o.caps), items=tuple(o.items), jumble=tuple(o.jumble))
+            for u in units[:-1]:
+                cur = C.validate_unit(u, u['ordinal'], prior, cur, **domain)
+                prior = u['sha256']
+            with self.assertRaisesRegex(ValueError, 'deciding cursor binding'):
+                C.validate_unit(bad, bad['ordinal'], prior, cur, **domain)
+
+    def test_05_malformed_step_and_resume_receipts_publish_failed_manifest(self):
+        for field in ('prefixes', 'prefix_digests'):
+            with self.subTest(field=field), toy_campaign() as t:
+                path = t.paths[-1]
+                m = C.parse(path.read_bytes())
+                units = list(C.artifact_lines(path.parent, m['artifacts']['units']))
+                units[-1]['step'][field] = []
+                units[-1]['sha256'] = C.digest_json({k: v for k, v in units[-1].items() if k != 'sha256'})
+                rewrite_artifact(path, 'units', b''.join((C.canonical(u) + '\n').encode() for u in units))
+                code, report, attempt = t.run()
+                self.assertEqual((code, report['status'], report['literal_replay']), (1, 'FAILED', 'failed'))
+                self.assertIn('prefix', report['reason'])
+                self.assertEqual(report['invalidates']['accepted_steps_from'], 1)
+                self.assertTrue(attempt.is_file())
+        with toy_campaign() as t:
+            with patch.object(t.o, 'apply', side_effect=C.Budget('before first letter')):
+                _, _, attempt = t.run()
+            m = C.parse(attempt.read_bytes())
+            receipts = list(C.artifact_lines(attempt.parent, m['artifacts']['verification']))
+            receipts[-1]['checkpoint']['prefixes'] = [1, 2, 3]
+            rewrite_artifact(attempt, 'verification', b''.join((C.canonical(r) + '\n').encode() for r in receipts))
+            code, report, _ = t.run(resume_check=str(attempt))
+            self.assertEqual((code, report['status']), (1, 'FAILED'))
+            self.assertIn('prefix', report['reason'])
+
+    def test_06_inductive_validation_new_units_only_and_chain_mutations(self):
+        with toy_campaign() as t:
+            head = t.paths[-1]
+            m = C.parse(head.read_bytes())
+            n = len(list(C.artifact_lines(head.parent, m['artifacts']['units'])))
+            validator = C.validate_unit
+            with patch.object(C, 'validate_unit', wraps=validator) as counted:
+                chain, cp = C.search_chain(head)
+                self.assertEqual(counted.call_count, n)
+            code, _, attempt = t.run()
+            self.assertEqual(code, 0)
+            with patch.object(C, 'validate_unit', side_effect=AssertionError('revalidating certified units')):
+                code, _, _ = t.run(resume_check=str(attempt))
+                self.assertEqual(code, 0)
+            original = head.read_bytes()
+            for predecessor in (None, C.manifest_ref(head)):
+                bad = C.parse(original)
+                bad['predecessor'] = predecessor
+                bad['command'] = C.recorded_command(bad)
+                C.write_json(head, bad)
+                with self.assertRaises(ValueError):
+                    C.search_chain(head)
+                head.write_bytes(original)
+            first_original = t.paths[0].read_bytes()
+            backwards_head = C.parse(original)
+            backwards_head['predecessor'] = None
+            backwards_head['command'] = C.recorded_command(backwards_head)
+            C.write_json(head, backwards_head)
+            backwards_first = C.parse(first_original)
+            backwards_first['predecessor'] = C.manifest_ref(head)
+            backwards_first['command'] = C.recorded_command(backwards_first)
+            C.write_json(t.paths[0], backwards_first)
+            with self.assertRaises(ValueError):
+                C.search_chain(t.paths[0])
+            t.paths[0].write_bytes(first_original)
+            head.write_bytes(original)
+            ancestor = t.paths[0]
+            raw = ancestor.read_bytes()
+            ancestor.write_bytes(raw + b' ')
+            with self.assertRaises(ValueError):
+                C.search_chain(head)
+            ancestor.write_bytes(raw)
+
+    def test_09_literal_failure_invalidates_only_from_the_failing_step(self):
+        with toy_campaign() as t:
+            t.o.nodes['end']['hist']['4'] += 1
+            code, report, attempt = t.run()
+            self.assertEqual((code, report['literal_replay'], report['exhaustion_verification']),
+                             (1, 'failed', 'not_performed'))
+            self.assertEqual(report['invalidates']['accepted_steps_from'], 1)
+            chain, _ = C.search_chain(t.paths[-1])
+            with self.assertRaisesRegex(C.ReplayFailure, 'invalidates steps from 1'):
+                C.authenticate_checker(attempt, chain[-1][1]['identity'], chain, C.search_rows(chain))
+            _, resumed, _ = t.run(resume_check=str(attempt))
+            self.assertEqual(resumed['literal_replay'], 'failed')
+            self.assertEqual(resumed['invalidates']['accepted_steps_from'], 1)
+
+    def test_07_histogram_binding_and_search_status_kind(self):
+        with toy_campaign('stuck') as t:
+            head = t.paths[0]
+            raw = head.read_bytes()
+            for status in ('QUALIFIED', 'DIAGNOSTICS'):
+                bad = C.parse(raw)
+                bad['status'] = status
+                C.write_json(head, bad)
+                with self.assertRaisesRegex(ValueError, 'kind/status'):
+                    C.search_chain(head)
+                head.write_bytes(raw)
+            m = C.parse(raw)
+            units = list(C.artifact_lines(head.parent, m['artifacts']['units']))
+            units[0]['events'][0]['detail']['heights']['4'] += 1
+            rewrite_artifact(head, 'units', b''.join((C.canonical(u) + '\n').encode() for u in units))
+            with self.assertRaisesRegex(ValueError, 'histogram unit/accepted'):
+                C.search_chain(head)
+        with toy_campaign('stuck') as t:
+            head = t.paths[-1]
+            m = C.parse(head.read_bytes())
+            cp = C.parse(C.artifact_bytes(head.parent, m['artifacts']['checkpoint']))
+            cp['cursor']['hist']['4'] += 1
+            rewrite_artifact(head, 'checkpoint', (C.canonical(cp) + '\n').encode())
+            with self.assertRaises(ValueError):
+                C.search_chain(head)
+
+    def test_08_audit_requires_finished_prefixes_and_matching_final_histogram(self):
+        with toy_campaign() as t:
+            apply = t.o.apply
+            calls = []
+            def one_letter(*args):
+                if calls:
+                    raise C.Budget('pending CL2')
+                calls.append(True)
+                return apply(*args)
+            with patch.object(t.o, 'apply', side_effect=one_letter):
+                _, _, attempt = t.run()
+            m = C.parse(attempt.read_bytes())
+            cp = C.parse(C.artifact_bytes(attempt.parent, m['artifacts']['checkpoint']))
+            self.assertEqual(len(cp['prefixes']), 1)
+            receipts = list(C.artifact_lines(attempt.parent, m['artifacts']['verification']))
+            new = dict(cp, audit=C.audit_cursor(cp['last']['heights']))
+            receipts.append(dict(type='AUDIT_START', checkpoint=new))
+            rewrite_artifact(attempt, 'verification', b''.join((C.canonical(r) + '\n').encode() for r in receipts))
+            chain, _ = C.search_chain(t.paths[-1])
+            with self.assertRaisesRegex(ValueError, 'audit before complete'):
+                C.authenticate_checker(attempt, chain[-1][1]['identity'], chain, C.search_rows(chain))
+        with toy_campaign('stuck') as t:
+            code, report, attempt = t.run(audit=True)
+            self.assertEqual((code, report['result']), (0, 'STUCK'))
+            m = C.parse(attempt.read_bytes())
+            receipts = list(C.artifact_lines(attempt.parent, m['artifacts']['verification']))
+            receipts[-1]['checkpoint']['audit']['hist'] = {'4': 999}
+            rewrite_artifact(attempt, 'verification', b''.join((C.canonical(r) + '\n').encode() for r in receipts))
+            chain, _ = C.search_chain(t.paths[-1])
+            with self.assertRaisesRegex(ValueError, 'audit origin'):
+                C.authenticate_checker(attempt, chain[-1][1]['identity'], chain, C.search_rows(chain))
+
+
+
+def previous_prediction(engine, state, c, x, cl, hist):
+    """fabe918 IncrementalEngine.predict, retained only as this benchmark's baseline."""
+    engine.tick()
+    tw = engine.twist(c, x)
+    if tw.kidx >= 0:
+        return dict(hist)
+    height, left, _ = engine.matrix_info(tw.matrix, tw.kidx)
+    out = E.Counter(hist)
+    for matrix, k, members in engine.groups(state, cl.inside):
+        engine.tick()
+        old, factor, _ = engine.matrix_info(matrix, k)
+        if old:
+            key = tw.matrix, matrix
+            if key not in engine.products:
+                engine.products[key] = int(engine.rt.trees.dist(engine.rt.trees.qmul(left, factor)))
+            new = engine.products[key]
+            out[str(old)] -= len(members)
+        else:
+            new = height
+        if new:
+            out[str(new)] += len(members)
+    C.require(all(v >= 0 for v in out.values()), 'negative effective histogram')
+    engine.stats['predictions'] += 1
+    return {h: n for h, n in out.items() if n}
+
+
+
 class ExactSegmentTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        runtime_started = time.process_time()
         cls.rt = C.Runtime(OUT)
+        cls.runtime_setup_cpu = time.process_time() - runtime_started
         cls.engine = E.IncrementalEngine(cls.rt)
         cls.reference = E.ExactEngine(cls.rt)
         st = cls.rt.sim.State(cls.rt.ctx, menu=cls.rt.menu, filtered=False)
@@ -620,6 +1005,7 @@ class ExactSegmentTests(unittest.TestCase):
 
     def test_01_virtual_retained_jumble_cancellation_merging_and_all_endpoints(self):
         e, r = self.engine, self.reference
+        auditor = C.ExhaustionAudit(C.ReplayEngine(self.rt))
         digest = self.z.digest()
         for x in (1, 14):
             virtual, applied = self.compare_caps(self.z, 12, x, (0, 12, 35, 74, 188, 599))
@@ -632,6 +1018,7 @@ class ExactSegmentTests(unittest.TestCase):
                     p = e.predict(virtual, target, y, vc, hist)
                     q = r.histogram(r.move(applied, target, y))
                     self.assertEqual(p, q)
+                    self.assertEqual(auditor.endpoint(applied, target, y, ac, hist), q)
                     results.append((E.potential(p), y))
                 self.assertEqual(min(results), min((E.potential(e.predict(applied, target, y, ac, hist)), y)
                                                   for y in range(12, 60)))
@@ -704,18 +1091,44 @@ class ExactSegmentTests(unittest.TestCase):
     def test_04_recorded_7306_both_letters_every_cap_and_global_Bk(self):
         started = time.monotonic()
         e, r = E.IncrementalEngine(self.rt), self.reference
+        load_started = time.process_time()
         state = C.load_case(7306, self.rt, r)
+        input_load_cpu = time.process_time() - load_started
         # Seed the input with full classifications once; both implementations use
         # this same certified base, then independently classify every new cap.
+        classification_started = time.process_time()
         input_classes = {d: r.classify(state, d) for d in range(600)}
+        input_classification_cpu = time.process_time() - classification_started
+        auditor = C.ExhaustionAudit(C.ReplayEngine(self.rt))
+        clean = [d for d, cl in input_classes.items() if r.clean(cl)]
+        auditor.base_state, auditor.base_classes = state, dict(input_classes)
+        eligible_pairs = sum(1 for c in clean for d in auditor.meeting_caps(c)
+                             if input_classes[d].straddle is None or
+                             input_classes[d].straddle['piece'] in auditor.moved(state, c))
+        checker = C.ReplayEngine(self.rt)
+        checker_state = state
+        lattice = set(range(C.P)) - checker.off(state)
+        snapshot_started = time.process_time()
+        first_snapshot, seen = checker.snapshot(state, lattice, set())
+        initial_snapshot_cpu = time.process_time() - snapshot_started
+        self.assertEqual(first_snapshot['Bk'], 600 - len(clean))
+        apply_costs, peel_costs, target_costs, prediction_costs, replay_snapshot_costs = [], [], [], [], []
+        endpoint_cost = None
         e.classes.update({(state, d): cl for d, cl in input_classes.items()})
         multiple = False
         for c, x in ((208, 5), (336, 15)):
             virtual = e.virtual(state, c, x, e.classify(state, c))
+            apply_started = time.process_time()
             actual = e.move(state, c, x)
+            apply_costs.append(time.process_time() - apply_started)
             expected_bk = observed_bk = 0
+            actual_classes, cap_costs = {}, {}
             for d in range(600):
-                want, got = r.classify(actual, d), e.classify(virtual, d)
+                classify_started = time.process_time()
+                want = r.classify(actual, d)
+                cap_costs[d] = time.process_time() - classify_started
+                actual_classes[d] = want
+                got = e.classify(virtual, d)
                 self.assertEqual(got.status, want.status, (c, x, d))
                 if e.clean(want):
                     self.assertEqual(got.inside.tolist(), want.inside.tolist(), (c, x, d))
@@ -723,6 +1136,20 @@ class ExactSegmentTests(unittest.TestCase):
                 observed_bk += not e.clean(got)
                 e.classes[actual, d] = got
             self.assertEqual(observed_bk, expected_bk)
+            checker_state = checker.clone(checker_state)
+            checker.apply(checker_state, c, x)
+            snapshot_started = time.process_time()
+            snap, seen = checker.snapshot(checker_state, lattice, seen)
+            replay_snapshot_costs.append(time.process_time() - snapshot_started)
+            self.assertEqual(snap['Bk'], expected_bk)
+            self.assertEqual(snap['digest'], actual.digest())
+            peel_started = time.process_time()
+            self.assertEqual(auditor.peel_blocked(state, actual, c,
+                [d for d, cl in auditor.base_classes.items() if cl.straddle is None]), expected_bk)
+            peel_costs.append(time.process_time() - peel_started)
+            target_costs.extend(cap_costs[d] for d in auditor.meeting_caps(c)
+                                if auditor.original(state, d).straddle is None or
+                                auditor.original(state, d).straddle['piece'] in auditor.moved(state, c))
             hist = e.histogram(state)
             self.assertEqual(e.predict(state, c, x, e.classify(state, c), hist), r.histogram(actual))
             # Full set, not just the first witness; known blocked target 336.
@@ -733,19 +1160,126 @@ class ExactSegmentTests(unittest.TestCase):
                 cl = e.classify(virtual, 336)
                 self.assertTrue(e.clean(cl))
                 middle = e.histogram(virtual)
+                ac = actual_classes[336]
                 for y in range(12, 60):
-                    self.assertEqual(e.predict(virtual, 336, y, cl, middle),
-                                     r.predict(actual, 336, y, r.classify(actual, 336), middle))
+                    expected = r.predict(actual, 336, y, ac, middle)
+                    self.assertEqual(e.predict(virtual, 336, y, cl, middle), expected)
+                    self.assertEqual(auditor.endpoint(actual, 336, y, ac, middle), expected)
+                # Equal cache limits, a fresh engine for each implementation, and
+                # reset the one-group distribution between 48-item groups.
+                answers = []
+                for implementation in (previous_prediction, E.IncrementalEngine.predict):
+                    bench = E.IncrementalEngine(self.rt)
+                    batches, costs = [], []
+                    for repeat in range(6):
+                        bench.distribution = (None, None, ())
+                        begin = time.process_time()
+                        batches.append([implementation(bench, virtual, 336, y, cl, middle) for y in range(12, 60)])
+                        costs.append((time.process_time() - begin) / 48)
+                    prediction_costs.append(sum(costs) / len(costs))
+                    answers.append(batches)
+                self.assertEqual(answers[0], answers[1])
+                self.assertLess(prediction_costs[1], prediction_costs[0])
+                endpoint_cost = auditor.stats['prediction_cpu'] / auditor.stats['prediction_count']
             e.retain(actual)
             # Endpoint classifications reused by the next step equal fresh ones.
             for d in (0, 208, 336, 487, 599):
                 self.assertEqual(e.classify(actual, d).status, r.classify(actual, d).status)
             state = actual
+            auditor.base_state, auditor.base_classes, auditor.insides = actual, actual_classes, {}
         self.assertTrue(multiple, 'multiple moving blockers must be exercised')
         self.assertTrue(state.digest().startswith('782c2034c13135fc'))
         self.assertGreater(e.stats['unmoved_witness'], 0)
         self.assertGreater(e.stats['unmoved_fallbacks'], 0)
+        # Measure the cursor/hash/JSON/spool cost of one rejected target unit,
+        # including the 26-entry clean list. This is protocol work, no trajectory.
+        cur = C.audit_cursor(first_snapshot['heights'])
+        cur.update(phase='target', clean=clean, classified=600, ci=0, xi=0, di=0)
+        proof = dict(at={k: cur[k] for k in ('phase', 'classified', 'ci', 'xi', 'di')}, outcome='ineligible')
+        cp = dict(audit=cur, audit_units=0, audit_hash=C.ZERO_HASH)
+        begin = time.process_time()
+        with io.BytesIO() as spool:
+            for _ in range(2000):
+                after = C.audit_advance(cur, proof)
+                unit = C.audit_record(cp, after, proof)
+                spool.write((C.canonical(unit) + '\n').encode())
+        protocol_cost = (time.process_time() - begin) / 2000
+        # Projection, not a timed campaign: 100 CL2 steps / 201 snapshots, four
+        # cold process starts (each first replay snapshot does a full recount),
+        # all 59 openers per clean cap, all certificate-surviving targets, the
+        # packet's 39,792 endpoints, and all 59 PEEL items per clean cap, even
+        # those the count/height guard would prune. Allow four audit-cache rebuilds.
+        # Eligible-target and snapshot costs sample TWO fixed letters, not a bound
+        # uniform over unseen states. Include every possible protocol interval.
+        mean = lambda xs: sum(xs) / len(xs)
+        replay_projection = 4 * initial_snapshot_cpu + 197 * mean(replay_snapshot_costs) + 200 * mean(apply_costs)
+        audit_projection = (4 * input_classification_cpu + len(clean) * 59 * mean(apply_costs)
+                            + eligible_pairs * 59 * mean(target_costs)
+                            + (39792 + len(clean) * (48 + 59 + 59)) * endpoint_cost
+                            + len(clean) * 59 * (mean(apply_costs) + mean(peel_costs))
+                            + (600 + len(clean) * (48 + 59 + 59 * 600 + 59)) * protocol_cost)
+        setup_projection = 4 * (self.runtime_setup_cpu + input_load_cpu)
+        metrics = dict(prediction_before_ms=1000 * prediction_costs[0],
+                       prediction_after_ms=1000 * prediction_costs[1],
+                       audit_prediction_ms=1000 * endpoint_cost, apply_cpu=mean(apply_costs),
+                       full_600_caps_cpu=input_classification_cpu, initial_snapshot_cpu=initial_snapshot_cpu,
+                       replay_snapshot_cpu=mean(replay_snapshot_costs), audit_protocol_unit_cpu=protocol_cost,
+                       eligible_target_cpu=mean(target_costs), peel_recount_cpu=mean(peel_costs),
+                       clean_caps=len(clean), certificate_surviving_cap_pairs=eligible_pairs,
+                       replay_100_step_projection_cpu=replay_projection,
+                       audit_projection_cpu=audit_projection, four_process_setup_cpu=setup_projection,
+                       combined_projection_cpu=replay_projection + audit_projection + setup_projection,
+                       peak_rss_kib=C.resource.getrusage(C.resource.RUSAGE_SELF).ru_maxrss,
+                       python=sys.version, numpy=self.rt.np.__version__, input=C.input_identity(7306),
+                       sources={p: C.sha((C.ROOT / p).read_bytes()) for p in C.SOURCE_PATHS})
+        print('7306 unit-cost projection: ' + C.canonical(metrics), flush=True)
+        C.write_json(OUT / '7306-unit-costs.json', metrics)
+        self.assertLess(metrics['peak_rss_kib'], 3 * 1024 * 1024)
+        self.assertLess(metrics['combined_projection_cpu'], 4 * 3000, 'projected useful work exceeds four segments')
         print(f'7306 bounded two-letter all-cap differential: {time.monotonic() - started:.3f}s', flush=True)
+
+    def test_07_audit_target_uses_one_opener_and_no_endpoint_apply_or_histogram_recount(self):
+        checker = C.ReplayEngine(self.rt)
+        auditor = C.ExhaustionAudit(checker)
+        cur = C.audit_cursor(checker.histogram(self.z))
+        cur.update(phase='target', clean=[12], classified=600, ci=0, xi=13, di=35)
+        with patch.object(checker, 'apply', wraps=checker.apply) as applied, \
+                patch.object(checker, 'histogram', side_effect=AssertionError('unused middle histogram')):
+            with self.assertRaises(C.FalseStuck) as result:
+                auditor.unit(self.z, cur)
+        self.assertEqual(applied.call_count, 1)
+        self.assertEqual(result.exception.proof['ys'], list(range(12, 60)))
+        self.assertEqual(len(result.exception.proof['heights']), 48)
+
+    def test_06_replay_blocked_locality_union_and_interruption_invalidation(self):
+        checker = C.ReplayEngine(self.rt)
+        expected = C.ReplayEngine(self.rt)
+        base = checker.clone(self.z)
+        checker.blocked(base)  # The first observation is always a full sweep.
+        trial = checker.clone(base)
+        checker.apply(trial, 12, 14)
+        checker.apply(trial, 35, 13)  # No snapshot between: union of both neighbourhoods.
+        classify = trial.classify
+        with patch.object(trial, 'classify', wraps=classify) as counted:
+            got = checker.blocked(trial)
+            self.assertLessEqual(counted.call_count, 162)
+            self.assertGreater(counted.call_count, 0)
+        self.assertEqual(got, expected.blocked(trial))
+        # Interrupt after an actual application commits but before the engine can
+        # mark its new basis. It must fall back to a full sweep, never the old Bk.
+        trial = checker.clone(base)
+        checker.blocked(trial)
+        apply = trial.apply
+        def interrupted(*args, **kwargs):
+            apply(*args, **kwargs)
+            raise C.Budget('after simulator commit')
+        with patch.object(trial, 'apply', side_effect=interrupted):
+            with self.assertRaises(C.Budget):
+                checker.apply(trial, 12, 14)
+        with patch.object(trial, 'classify', wraps=trial.classify) as counted:
+            got = checker.blocked(trial)
+            self.assertEqual(counted.call_count, 600)
+        self.assertEqual(got, expected.blocked(trial))
 
     def test_05_real_segment_diagnostics_and_fresh_checker_retry(self):
         # Only the small WORD36-derived fixture is substituted, never a real

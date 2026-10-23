@@ -19,12 +19,16 @@ Separate diagnostic job, before trajectory; resume its manifest for search:
   python3 -I -B research/jumbling/restoration/13-tutorial-runner/scripts/height_descent_experiment.py --segment --case 7306 --out ../hd2p-7306 --diagnostics-only
 
 Omitting --segment retains height-descent-experiment/1 and its old CLI. New
-records use height-descent-segment/2, still rule HD2P/1. Diagnostic states and
+records use height-descent-segment/3, still rule HD2P/1. Diagnostic states and
 loss history never enter search. An optional --not-after 2026-10-24T12:00:00Z
 sets the immutable campaign deadline; the default is 24 hours from job start.
 Each case has six search/qualification/diagnostic and four checker/audit process
 reservations. Keep allocation.json for killed attempts too: deleting reservations
 would discard campaign accounting. Reserve at most three processes externally.
+Accounting assumes one output root per campaign, including killed attempts.
+The authenticated-resume induction and receipt trust boundary are documented in
+check_height_descent_experiment.py. Version 2 manifests need a fresh campaign;
+the qualification ledger interface and the HD2P/1 unit/STEP formats are unchanged.
 
 Useful work stops at 3000 CPU seconds; 300 seconds are reserved for publication,
 with a 3300 CPU hard stop and 3600 wall backstop. Every manifest lists committed
@@ -637,8 +641,10 @@ class IncrementalEngine(ExactEngine):
 
     Blocked classifications are incomplete. If their remembered witness moves,
     classify the unmoved complement once for (state,c,d), independently of x.
-    Every prediction gathers poses from the *effective* state, not from a cached
-    Classification distribution. Endpoints are owned immutable states.
+    A distribution belongs to an effective state AND its classification, never
+    just a classification (membership can survive a retained twist). Cache only
+    the most recent distribution: all 48 endpoint items share its multiplicities.
+    States supplied here are owned immutable states; accepted moves clone them.
     """
     def __init__(self, rt, tick=lambda: None, cache_limit=20000):
         super().__init__(rt, tick)
@@ -647,6 +653,7 @@ class IncrementalEngine(ExactEngine):
         self.classes, self.unmoved = BoundedCache(1800), BoundedCache(160)
         self.canonical_classes = BoundedCache(1800)
         self.relations, self.anchors = BoundedCache(4), BoundedCache(2000)
+        self.distribution = (None, None, ())
         self.stats = Counter()
 
     def matrix_info(self, matrix, kidx=None):
@@ -821,20 +828,30 @@ class IncrementalEngine(ExactEngine):
         if tw.kidx >= 0:
             return dict(hist)
         height, left, _ = self.matrix_info(tw.matrix, tw.kidx)
+        cached_state, cached_class, distribution = self.distribution
+        if cached_state is not state or cached_class is not cl:
+            distribution = []
+            for matrix, k, members in self.groups(state, cl.inside):
+                self.tick()
+                old, factor, _ = self.matrix_info(matrix, k)
+                distribution.append((matrix, old, factor, len(members)))
+            # Publish only a complete distribution; a budget interruption must
+            # not leave a partially filled cache valid for the next item.
+            distribution = tuple(distribution)
+            self.distribution = (state, cl, distribution)
         out = Counter(hist)
-        for matrix, k, members in self.groups(state, cl.inside):
+        for matrix, old, factor, count in distribution:
             self.tick()
-            old, factor, _ = self.matrix_info(matrix, k)
             if old:
                 key = tw.matrix, matrix
                 if key not in self.products:
                     self.products[key] = int(self.rt.trees.dist(self.rt.trees.qmul(left, factor)))
                 new = self.products[key]
-                out[str(old)] -= len(members)
+                out[str(old)] -= count
             else:
                 new = height
             if new:
-                out[str(new)] += len(members)
+                out[str(new)] += count
         C.require(all(v >= 0 for v in out.values()), 'negative effective histogram')
         self.stats['predictions'] += 1
         return {h: n for h, n in out.items() if n}
@@ -859,6 +876,7 @@ class IncrementalEngine(ExactEngine):
         self.relations.clear()
         self.unmoved.clear()
         self.anchors.clear()
+        self.distribution = (None, None, ())
 
 class SegmentedSearch:
     """One completed logical unit at a time. A failed unit changes no cursor."""
@@ -896,6 +914,7 @@ class SegmentedSearch:
         self.interrupt('before_unit')
         if phase == 'histogram':
             measured = engine.histogram(state)
+            C.same(measured, before['heights'], 'histogram unit/accepted measurements')
             add('INPUT', 'histogram', 'measured', dict(heights=measured))
         elif phase == 'input':
             c = tuple(engine.caps)[len(cursor['classes'])]

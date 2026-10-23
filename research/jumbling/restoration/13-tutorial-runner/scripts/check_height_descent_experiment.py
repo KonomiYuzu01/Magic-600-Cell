@@ -8,6 +8,44 @@ height_descent_experiment.py's module docstring. No search module or old pose/u
 contract is imported. Literal replay does not establish historical first choice;
 only a completed separate audit establishes terminal exhaustion.
 All geometry imports are lazy, after thread settings, cache routing and budgets.
+
+Version 3 resume trust boundary. Hashes authenticate committed bytes, not their
+author. The integrator retains an immutable, reviewed chain produced by these
+pinned programs; a party able to replace every manifest and rehash the history
+can forge self-certified receipts. authenticate_checker is NOT a proof checker
+for untrusted receipts. Rebuild from the pinned input if that trust is absent.
+Every finalized search segment has validated its predecessor's newest units;
+its start equals that predecessor's authenticated end, and both manifests and
+all artifacts are hash-linked. Inductively only the head's units remain to be
+validated. A checker receipt records that head, so a retry need only hash those
+committed bytes. Checker attempts use the same induction for prefix/audit/check
+receipts: the next attempt validates the preceding attempt's new receipts once.
+All ancestor bytes, links, interval boundaries, identities and budgets are still
+checked on every resume. Missing, reordered, duplicate or skipped segments fail.
+This trusts execution of the pinned finalizer, never cached geometry or rejected
+search candidates. Accounting assumes ONE campaign output root per table and
+retention of every allocation.json, including reservations of killed attempts.
+
+Audit exactness. The independent audit classifies actual simulator states. At a
+clean cap, a twist changes only inside poses: subtract each inside multiplicity
+at its old height and add it at dist(l_twist * l_pose). Right factors fix the
+root for I_a; lattice poses therefore contribute dist(l_twist), including all
+lattice collateral. Retained twists preserve every height. Endpoint histograms
+need no State.apply; openers and count-preserving PEEL trials still use it.
+A twist fixes its pole and keeps the moved regions inside that cap. A cap that
+does not meet it in the containing ball cannot change classification. The exact
+>= meeting predicate includes tangency. PEEL therefore recounts all meeting caps
+and retains all other statuses, giving the same GLOBAL Bk as a 600-cap recount.
+Consecutive literal-replay snapshots use that same locality fact, reclassifying
+the union of caps meeting any intervening twist. The first snapshot in a process
+always recounts all 600; no persisted classification cache is trusted. Replay
+states are mutated only through ReplayEngine.apply, which invalidates its cached
+count before mutation. Every other snapshot field is still measured from the
+actual state. A failed/uncertain application cannot publish a cached count.
+An original straddling witness outside the opener's inside set is unchanged and
+still blocks its target. This independent certificate avoids only impossible
+targets; every survivor gets an actual intermediate-state classification. No
+search classification, prediction, ledger or rejection is used by the audit.
 """
 
 import argparse
@@ -85,6 +123,16 @@ SOURCE_PATHS = [
 
 class Budget(Exception):
     """An unfinished operation; never evidence of family exhaustion."""
+
+
+class ReplayFailure(ValueError):
+    """An invalid accepted interval, with its first affected step preserved."""
+    def __init__(self, reason, step):
+        super().__init__(reason)
+        self.step = step
+
+
+RECORD_ERRORS = (ValueError, KeyError, TypeError, IndexError, AttributeError, AssertionError, OSError)
 
 
 def require(ok, reason):
@@ -274,10 +322,22 @@ class ReplayEngine:
         self.rt, self.tick = rt, tick
         self._height = {}
         self.snapshot_cpu, self.snapshot_count = 0., 0
+        self._blocked_cache = (None, None)
+        self._blocked_pending = (None, None, ())
+        self._affected_caps = {}
+
+    def blocked_basis(self, st):
+        if self._blocked_cache[0] is st:
+            return self._blocked_cache[1], ()
+        if self._blocked_pending[0] is st:
+            return self._blocked_pending[1:]
+        return None, ()
 
     def clone(self, st):
         out = self.rt.sim.State(self.rt.ctx, menu=self.rt.menu, filtered=False)
         out.pose_id, out._poses, out._lookup = st.pose_id.copy(), list(st._poses), dict(st._lookup)
+        blocked, changed = self.blocked_basis(st)
+        self._blocked_pending = (out, blocked, changed)
         return out
 
     def off(self, st):
@@ -302,13 +362,26 @@ class ReplayEngine:
         return hist
 
     def blocked(self, st):
-        blocked = set()
-        for c in range(600):
+        baseline, changed = self.blocked_basis(st)
+        blocked = set() if baseline is None else set(baseline)
+        if baseline is None:
+            caps = range(600)
+        else:
+            caps = set()
+            for c in changed:
+                if c not in self._affected_caps:
+                    self._affected_caps[c] = frozenset(d for d in range(600) if self.meets(c, d))
+                caps.update(self._affected_caps[c])
+        for c in caps:
             self.tick()
             cl = st.classify(c, need_inside=False, stop_at_straddle=True)
             require(not cl.uncertain, 'uncertain cap classification')
             if cl.straddle is not None:
                 blocked.add(c)
+            else:
+                blocked.discard(c)
+        self._blocked_cache = (st, frozenset(blocked))
+        self._blocked_pending = (None, None, ())
         return blocked
 
     def snapshot(self, st, initial_lattice, ever):
@@ -332,10 +405,19 @@ class ReplayEngine:
 
     def apply(self, st, c, j):
         self.tick()
+        baseline, changed = self.blocked_basis(st)
+        # Invalidate BEFORE mutation: even an asynchronous interruption after
+        # State.apply commits must never expose the preceding state's count.
+        if self._blocked_cache[0] is st:
+            self._blocked_cache = (None, None)
+        if self._blocked_pending[0] is st:
+            self._blocked_pending = (None, None, ())
         tw = self.rt.sim.Twist(self.rt.ctx, c, self.rt.restore.element(self.rt.menu, c, j),
                                'menu', {'menu': self.rt.menu.name})
         outcome = st.apply(tw, journal=False)
         require(outcome.applied and not outcome.uncertain, 'inadmissible or uncertain letter')
+        if baseline is not None:
+            self._blocked_pending = (st, baseline, tuple(sorted(set(changed) | {c})))
         self.tick()
 
     def meets(self, c, d):
@@ -562,8 +644,8 @@ def legacy_main():
 
 # Versioned transport and coverage protocol. This section contains no search
 # mechanics. The terminal enumerator below is independently written.
-SEGMENT = 'height-descent-segment/2'
-CHECK = 'height-descent-check/2'
+SEGMENT = 'height-descent-segment/3'
+CHECK = 'height-descent-check/3'
 CHAIN = 'hd2p-logical-units/1'
 ORDER = 'SINGLE(c,y);CL2(c,x,d,min(Q,y));PEEL(c,x)/1'
 ZERO_HASH = '0' * 64
@@ -810,6 +892,31 @@ def cursor_hash(cursor):
     return digest_json(cursor)
 
 
+def step_schema(row, deciding_cursor=None):
+    required = {'type', 'rule', 'index', 'family', 'word', 'letters', 'cumulative_letters',
+                'input_digest', 'prefix_digests', 'output_digest', 'before', 'prefixes', 'after', 'search'}
+    timing = {'cpu_seconds', 'wall_seconds', 'setup_cpu_seconds', 'trajectory_cpu_seconds'}
+    require(type(row) is dict and required <= set(row) <= required | timing, 'STEP schema')
+    same([row['type'], row['rule']], ['STEP', RULE], 'STEP type/rule')
+    word_shape(row['word'], row['family'])
+    n = len(row['word'])
+    require(type(row['prefixes']) is list and len(row['prefixes']) == n, 'STEP prefix count')
+    require(type(row['prefix_digests']) is list and len(row['prefix_digests']) == n,
+            'STEP prefix digest count')
+    for snapshot in [row['before'], *row['prefixes'], row['after']]:
+        schema(snapshot, {'digest', 'heights', 'maximum', 'n2_n4_n6', 'Q', 'Bk', 'M', 'N',
+                          'off', 'lattice_loss', 'ever_lattice_loss'}, 'STEP measurement schema')
+    same(row['prefix_digests'], [p['digest'] for p in row['prefixes']], 'STEP prefix digests')
+    for h in [row['input_digest'], *row['prefix_digests'], row['output_digest']]:
+        require(type(h) is str and re.fullmatch('[0-9a-f]{64}', h) is not None, 'STEP digest format')
+    schema(row['search'], {'format', 'deciding_cursor'}, 'STEP search schema')
+    same(row['search']['format'], CHAIN, 'STEP search version')
+    h = row['search']['deciding_cursor']
+    require(type(h) is str and re.fullmatch('[0-9a-f]{64}', h) is not None, 'STEP deciding cursor')
+    if deciding_cursor is not None:
+        same(h, cursor_hash(deciding_cursor), 'STEP deciding cursor binding')
+
+
 def advance_cursor(cursor, events, row=None, caps=tuple(range(600)),
                    items=tuple(range(1, 60)), jumble=tuple(range(12, 60))):
     """Validate interval coverage, including every endpoint, independently of hashes.
@@ -818,7 +925,8 @@ def advance_cursor(cursor, events, row=None, caps=tuple(range(600)),
     rejection claims on the terminal state. This reducer is a file protocol,
     shared with the writer; it never classifies, predicts or selects a move.
     """
-    cur = copy.deepcopy(cursor)
+    # Entries and histograms are immutable; only these two lists are appended.
+    cur = dict(cursor, classes=list(cursor['classes']), targets=list(cursor['targets']))
     require(cur['version'] == 'hd2p-cursor/1', 'cursor version')
     clean = [caps[i] for i, cl in enumerate(cur['classes']) if cl['clean']]
     phase, hist = cur['phase'], cur['hist']
@@ -955,6 +1063,7 @@ def advance_cursor(cursor, events, row=None, caps=tuple(range(600)),
     same(pos, len(events), 'duplicate candidate coverage')
     if chosen is not None:
         require(row is not None, 'unpublished STEP transaction')
+        step_schema(row, cursor)
         same([row['family'], row['word']], list(chosen), 'selected word/minimum')
         same([p['heights'] for p in row['prefixes']], predicted, 'selected prefix histograms')
         same(row['input_digest'], cursor['digest'], 'STEP state binding')
@@ -1100,11 +1209,20 @@ def manifest_chain(head, expected_format, identity=None):
     return chain
 
 
-def search_chain(head, identity=None):
-    chain = manifest_chain(head, SEGMENT, identity)
+def search_chain(head, identity=None, *, validated=None, chain=None):
+    """Authenticate every byte; reduce only units not certified by a successor.
+
+    ``validated`` may only come from an authenticated checker checkpoint. The
+    version-3 writer's predecessor validation supplies the induction for older
+    search segments (see the module trust boundary).
+    """
+    chain = manifest_chain(head, SEGMENT, identity) if chain is None else chain
+    refs = [manifest_ref(path) for path, _ in chain]
+    require(validated is None or validated in refs, 'validated search is not an ancestor')
     pin = chain[0][1]['input']
     cursor, previous, ordinal, steps, letters = search_cursor(pin['digest']), ZERO_HASH, 0, 0, 0
     cpu, segments, diagnostics, qualification = 0, 0, None, None
+    last = None
     for path, m in chain:
         require(m['kind'] in ('search', 'qualification', 'diagnostics'), 'search kind')
         cp = parse(artifact_bytes(path.parent, m['artifacts']['checkpoint']))
@@ -1119,22 +1237,45 @@ def search_chain(head, identity=None):
         same(m['start']['letters'], letters, 'starting global letters')
         if ordinal == 0 and steps == 0:
             same(m['start']['ever'], bitset(set()), 'original loss set')
-        event_rows = iter(artifact_lines(path.parent, m['artifacts']['events']))
-        for unit in artifact_lines(path.parent, m['artifacts']['units']):
-            ordinal += 1
-            cursor = validate_unit(unit, ordinal, previous, cursor)
-            previous = unit['sha256']
-            if unit['step'] is not None:
-                row = unit['step']
-                steps += 1
-                letters += len(row['word'])
-                same(row['cumulative_letters'], letters, 'cumulative letters')
-                same(next(event_rows, None), row, 'events/unit STEP equality')
-        require(next(event_rows, None) is None, 'extra STEP artifact')
-        same(cp['cursor'], cursor, 'checkpoint search cursor')
-        same([cp['steps'], cp['letters'], cp['unit_count'], cp['unit_hash']],
-             [steps, letters, ordinal, previous], 'checkpoint counters')
+        if last is None:
+            last = cp['last'] if cp['steps'] == 0 else None
+        if path == chain[-1][0] and validated != refs[-1]:
+            event_rows = iter(artifact_lines(path.parent, m['artifacts']['events']))
+            heights = pin['heights'] if steps == 0 else last['heights']
+            for unit in artifact_lines(path.parent, m['artifacts']['units']):
+                failing_step = cursor['step']
+                try:
+                    ordinal += 1
+                    if cursor['phase'] == 'histogram':
+                        same(unit['events'][0]['detail']['heights'], heights,
+                             'histogram unit/accepted measurements')
+                    cursor = validate_unit(unit, ordinal, previous, cursor)
+                    previous = unit['sha256']
+                    if unit['step'] is not None:
+                        row = unit['step']
+                        steps += 1
+                        letters += len(row['word'])
+                        same(row['cumulative_letters'], letters, 'cumulative letters')
+                        same(next(event_rows, None), row, 'events/unit STEP equality')
+                        last, heights = row['after'], row['after']['heights']
+                except RECORD_ERRORS as exc:
+                    raise ReplayFailure(str(exc), failing_step) from exc
+            require(next(event_rows, None) is None, 'extra STEP artifact')
+            same(cp['cursor'], cursor, 'checkpoint search cursor')
+            same([cp['steps'], cp['letters'], cp['unit_count'], cp['unit_hash']],
+                 [steps, letters, ordinal, previous], 'checkpoint counters')
+            same(cp['last']['heights'], heights, 'checkpoint accepted histogram')
+        else:
+            # A successor (or an authenticated checker receipt) already reduced
+            # this interval. Its artifact hashes and boundary are still checked.
+            require(cp['unit_count'] >= ordinal and cp['steps'] >= steps and cp['letters'] >= letters,
+                    'reversed search interval')
+            cursor, previous, ordinal = cp['cursor'], cp['unit_hash'], cp['unit_count']
+            steps, letters = cp['steps'], cp['letters']
+        last = cp['last']
         same(cp['last']['digest'], cursor['digest'], 'checkpoint measurement binding')
+        if cursor['hist'] is not None:
+            same(cursor['hist'], cp['last']['heights'], 'cursor/accepted histogram')
         end = boundary(cp)
         same(m['end'], end, 'ending checkpoint boundary')
         require(steps <= 200, 'cumulative step limit')
@@ -1146,6 +1287,8 @@ def search_chain(head, identity=None):
         same([b['segments'], b['cpu']], [segments, cpu], 'cumulative search accounting')
         require(segments <= 6 and cpu <= 19800, 'search allocation exceeded')
         require(m['status'] in ('BUDGET', 'HANDOFF', 'STUCK', 'QUALIFIED', 'DIAGNOSTICS'), 'search status')
+        if m['kind'] == 'search':
+            require(m['status'] not in ('QUALIFIED', 'DIAGNOSTICS'), 'search kind/status')
         if m['status'] == 'STUCK':
             same(cursor['phase'], 'stuck', 'STUCK without catalogue coverage')
         if m['status'] == 'HANDOFF':
@@ -1209,29 +1352,116 @@ def search_rows(chain):
     return [row for path, m in chain for row in artifact_lines(path.parent, m['artifacts']['events'])]
 
 
-def check_boundaries(chain, cp):
-    if cp['prefixes']:
-        return
-    for path, m in chain:
-        if m['end']['steps'] == cp['steps']:
-            end = parse(artifact_bytes(path.parent, m['artifacts']['checkpoint']))
-            same(end['last'], cp['last'], 'segment last measurements')
-            same(end['ever'], cp['ever'], 'segment exact lattice-loss set')
-            same(end['letters'], cp['letters'], 'segment global letters')
+def check_search_boundary(path, manifest, cp):
+    end = parse(artifact_bytes(path.parent, manifest['artifacts']['checkpoint']))
+    same(end['last'], cp['last'], 'segment last measurements')
+    same(end['ever'], cp['ever'], 'segment exact lattice-loss set')
+    same(end['letters'], cp['letters'], 'segment global letters')
+    if end['cursor']['hist'] is not None:
+        same(end['cursor']['hist'], cp['last']['heights'], 'cursor histogram/independent replay')
+
+
+def checker_initial(first, ever):
+    return dict(version='hd2p-checkpoint/3', last=first, ever=bitset(ever), steps=0, letters=0,
+                snapshots=1, before=None, prefixes=[], audit=None, audit_units=0, audit_hash=ZERO_HASH,
+                validated_search=None, search_segments=[], failure=None,
+                checks=dict(boundaries=[], final_last=None, final_ever=None, tables=[]))
+
+
+def checker_schema(cp):
+    schema(cp, {'version', 'last', 'ever', 'steps', 'letters', 'snapshots', 'before', 'prefixes',
+                'audit', 'audit_units', 'audit_hash', 'validated_search', 'search_segments', 'checks', 'failure'},
+           'checker checkpoint schema')
+    same(cp['version'], 'hd2p-checkpoint/3', 'checker checkpoint version')
+    schema(cp['checks'], {'boundaries', 'final_last', 'final_ever', 'tables'}, 'checker checks schema')
+    require(type(cp['prefixes']) is list and len(cp['prefixes']) <= 1, 'checker pending prefixes')
+    require(all(type(cp[k]) is int and cp[k] >= 0 for k in ('steps', 'letters', 'snapshots', 'audit_units')),
+            'checker counters')
+    require(type(cp['search_segments']) is list, 'checker search segments')
+    for name in ('boundaries', 'tables'):
+        values = cp['checks'][name]
+        require(type(values) is list and len(values) == len(set(values)), 'duplicate completed check')
+        require(all(v in cp['search_segments'] for v in values), 'completed check outside search chain')
+    same(len(unbitset(cp['ever'])), cp['last']['ever_lattice_loss'], 'checker loss bitset')
+    if cp['failure'] is not None:
+        schema(cp['failure'], {'phase', 'reason', 'step', 'candidate'}, 'checker failure schema')
+        require(cp['failure']['phase'] in ('literal_replay', 'exhaustion_verification')
+                and type(cp['failure']['reason']) is str and type(cp['failure']['step']) is int,
+                'checker failure fields')
 
 
 def checker_boundary(cp):
     return dict(digest=cp['last']['digest'], steps=cp['steps'], letters=cp['letters'],
                 prefixes=len(cp['prefixes']), ever=cp['ever'], snapshots=cp['snapshots'],
-                audit=cp['audit'], audit_units=cp['audit_units'], audit_hash=cp['audit_hash'])
+                audit=cp['audit'], audit_units=cp['audit_units'], audit_hash=cp['audit_hash'],
+                checkpoint_sha256=digest_json(cp))
+
+
+def check_receipt(cp, name, ref):
+    checks = copy.deepcopy(cp['checks'])
+    if name in ('boundaries', 'tables'):
+        require(ref not in checks[name], 'duplicate completed check')
+        checks[name].append(ref)
+    else:
+        require(name in ('final_last', 'final_ever') and checks[name] != ref, 'duplicate FINAL check')
+        checks[name] = ref
+    new = dict(cp, checks=checks)
+    return new, dict(type='CHECK', check=name, segment=ref, checkpoint=new)
+
+
+def post_replay_complete(cp):
+    head = cp['validated_search']
+    return (head is not None and bool(cp['search_segments']) and not cp['prefixes']
+            and cp['checks']['boundaries'] == cp['search_segments']
+            and cp['checks']['tables'] == cp['search_segments']
+            and cp['checks']['final_last'] == cp['checks']['final_ever'] == head['sha256'])
+
+
+def checker_post_unit(cp, chain, final, rt, temporary, at_end):
+    """One independently completed boundary/FINAL/table check, then its receipt.
+
+    The caller commits the receipt transactionally and checks its budget between
+    units. An interruption can repeat at most this check, never the whole list.
+    """
+    if cp['prefixes']:
+        return None
+    for path, manifest in chain:
+        ref = manifest_ref(path)['sha256']
+        if ref not in cp['checks']['boundaries'] and manifest['end']['steps'] == cp['steps']:
+            try:
+                check_search_boundary(path, manifest, cp)
+            except RECORD_ERRORS as exc:
+                raise ReplayFailure(str(exc), manifest['end']['steps']) from exc
+            return check_receipt(cp, 'boundaries', ref)
+    if not at_end:
+        return None
+    same(cp['steps'], final['steps'], 'FINAL step count')
+    same(cp['checks']['boundaries'], cp['search_segments'], 'missing segment replay boundary')
+    target = cp['validated_search']['sha256']
+    for name, key in (('final_last', 'last'), ('final_ever', 'ever')):
+        if cp['checks'][name] != target:
+            same(cp[key], final[key], 'FINAL ' + key)
+            return check_receipt(cp, name, target)
+    for path, manifest in chain:
+        ref = manifest_ref(path)['sha256']
+        if ref not in cp['checks']['tables']:
+            try:
+                load_artifact_table(path.parent, manifest['artifacts']['table'], rt,
+                                    manifest['end']['digest'], temporary)
+            except RECORD_ERRORS as exc:
+                raise ReplayFailure(str(exc), manifest['end']['steps']) from exc
+            return check_receipt(cp, 'tables', ref)
+    return None
 
 
 def replay_letter(engine, state, cp, rows, initial_lattice):
     """Transactional single-prefix verification, with one full snapshot per letter."""
+    require(cp['steps'] < len(rows), 'replay beyond STEP rows')
     row = rows[cp['steps']]
+    step_schema(row)
     k = len(cp['prefixes'])
     word, family = row['word'], row['family']
-    word_shape(word, family)
+    require(k < len(word), 'pending prefix position')
     same(row['rule'], RULE, 'STEP rule')
     same(row['type'], 'STEP', 'STEP type')
     same(row['index'], cp['steps'] + 1, 'STEP index')
@@ -1330,78 +1560,191 @@ def audit_advance(cursor, proof, caps=tuple(range(600)), items=tuple(range(1, 60
     return cur
 
 
-class ExhaustionAudit:
-    """Separate complete catalogue enumeration with actual simulator replay.
+class FalseStuck(ValueError):
+    def __init__(self, proof):
+        self.proof = proof
+        super().__init__('false STUCK: independent candidate ' + canonical(proof))
 
-    No prediction, incremental classification, search helper or search import.
-    A blocked original target's containment follows from exact intermediate
-    applicability: an unmoved original straddler would still straddle. Thus
-    testing every meeting target is an exhaustive superset, with no unsafe skip.
+
+class ExhaustionAudit:
+    """Independent exact catalogue; see the module's histogram/locality proof.
+
+    Only actual intermediate states are classified. Caches are bounded, private
+    to this auditor, and contain no search data or mutable local pose-ID keys.
     """
     def __init__(self, engine, caps=tuple(range(600)), items=tuple(range(1, 60)), jumble=tuple(range(12, 60))):
         self.engine, self.caps, self.items, self.jumble = engine, caps, items, jumble
-        self.open_key, self.open_state = None, None
+        self.opened = (None, None, None)
+        self.base_state, self.base_classes, self.insides = None, {}, {}
+        self.distribution = (None, ())
+        self.factor = lru_cache(maxsize=4096)(self._factor)
+        self.product = lru_cache(maxsize=20000)(self._product)
+        self.twist = lru_cache(maxsize=600)(self._twist)
+        self.neighbours = {}
+        self.stats = {}
 
-    def classify(self, state, c):
+    def timed(self, name, started):
+        self.stats[name + '_cpu'] = self.stats.get(name + '_cpu', 0.) + time.process_time() - started
+        self.stats[name + '_count'] = self.stats.get(name + '_count', 0) + 1
+
+    def classification(self, state, c, inside=True):
         self.engine.tick()
-        cl = state.classify(c, need_inside=False, stop_at_straddle=True)
+        started = time.process_time()
+        cl = state.classify(c, need_inside=inside, stop_at_straddle=True)
         require(not cl.uncertain, 'uncertain independent audit')
-        return cl.straddle is None
+        self.timed('classification', started)
+        return cl
+
+    def original(self, state, c):
+        if state is not self.base_state:
+            self.base_state, self.base_classes, self.insides = state, {}, {}
+        if c not in self.base_classes:
+            self.base_classes[c] = self.classification(state, c)
+        return self.base_classes[c]
+
+    def moved(self, state, c):
+        cl = self.original(state, c)
+        require(cl.straddle is None, 'blocked audit opener')
+        if c not in self.insides:
+            self.insides[c] = set(map(int, cl.inside))
+        return self.insides[c]
+
+    def meeting_caps(self, c):
+        if c not in self.neighbours:
+            self.neighbours[c] = tuple(d for d in self.caps if d != c and self.engine.meets(c, d))
+        return self.neighbours[c]
+
+    def _twist(self, c, x):
+        rt = self.engine.rt
+        return rt.sim.Twist(rt.ctx, c, rt.restore.element(rt.menu, c, x), 'menu', {'menu': rt.menu.name})
+
+    def _factor(self, matrix):
+        trees = self.engine.rt.trees
+        left, right = trees.factors(matrix)
+        require(trees.dist(right) == 0, 'audit right factor')
+        h = int(trees.dist(left))
+        require(h >= 0 and h % 2 == 0, 'audit left height')
+        return h, left
+
+    def _product(self, item, pose):
+        trees = self.engine.rt.trees
+        return int(trees.dist(trees.qmul(item, pose)))
+
+    def endpoint(self, state, c, x, cl, hist):
+        """Exact multiplicity transfer on an independently classified actual state."""
+        self.engine.tick()
+        started = time.process_time()
+        require(cl.straddle is None and not cl.uncertain, 'uncertified audit endpoint')
+        tw = self.twist(c, x)
+        if tw.kidx >= 0:
+            answer = dict(hist)
+        else:
+            rt = self.engine.rt
+            # State objects are immutable while used here; apply operates on a clone.
+            distribution_key, distribution = self.distribution
+            if distribution_key != (state, c):
+                ids, ns = rt.np.unique(state.pose_id[cl.inside], return_counts=True)
+                distribution = []
+                for pid, n in zip(ids.tolist(), ns.tolist()):
+                    self.engine.tick()
+                    h, factor = ((0, None) if state._poses[pid].kidx >= 0
+                                 else self.factor(state._pose_matrix(pid)))
+                    require(factor is None or h > 0, 'audit off-pose height')
+                    distribution.append((h, factor, n))
+                self.distribution = ((state, c), distribution)
+            item_height, item = self.factor(tw.matrix)
+            answer = dict(hist)
+            for height, factor, n in distribution:
+                self.engine.tick()
+                if height:
+                    answer[str(height)] = answer.get(str(height), 0) - n
+                    new = self.product(item, factor)
+                else:
+                    new = item_height
+                if new:
+                    answer[str(new)] = answer.get(str(new), 0) + n
+            require(all(n >= 0 for n in answer.values()), 'negative audit histogram')
+            answer = {h: n for h, n in answer.items() if n}
+        self.timed('prediction', started)
+        return answer
 
     def move(self, state, c, x):
+        started = time.process_time()
         trial = self.engine.clone(state)
         self.engine.apply(trial, c, x)
+        self.timed('apply', started)
         return trial
+
+    def peel_blocked(self, state, end, c, clean):
+        """Full Bk from unchanged nonmeeting caps and exact affected-cap checks."""
+        started = time.process_time()
+        blocked, moved = len(self.caps) - len(clean), self.moved(state, c)
+        for d in self.meeting_caps(c):
+            self.engine.tick()
+            original = self.original(state, d)
+            was = original.straddle is not None
+            if was and original.straddle['piece'] not in moved:
+                continue
+            now = self.classification(end, d, inside=False).straddle is not None
+            blocked += int(now) - int(was)
+        self.timed('peel_recount', started)
+        return blocked
 
     def unit(self, state, cursor):
         engine, cur = self.engine, cursor
         proof = dict(at={k: cur[k] for k in ('phase', 'classified', 'ci', 'xi', 'di')})
         phase, hist = cur['phase'], cur['hist']
         if phase == 'input':
-            proof['outcome'] = 'clean' if self.classify(state, self.caps[cur['classified']]) else 'blocked'
+            cl = self.original(state, self.caps[cur['classified']])
+            proof['outcome'] = 'clean' if cl.straddle is None else 'blocked'
         elif phase == 'single':
             c, x = cur['clean'][cur['ci']], self.jumble[cur['xi']]
-            end = engine.histogram(self.move(state, c, x))
+            end = self.endpoint(state, c, x, self.original(state, c), hist)
             found = maximum(end) <= maximum(hist) and qvalue(end) < qvalue(hist)
             proof.update(outcome='candidate' if found else 'rejected', word=[[c, x]], heights=end)
         elif phase in ('open', 'target'):
             c, x = cur['clean'][cur['ci']], self.items[cur['xi']]
-            key = state, c, x
-            if self.open_key != key:
-                middle = self.move(state, c, x)
-                self.open_key, self.open_state = key, middle
-            middle = self.open_state
-            mh = engine.histogram(middle)
             if phase == 'open':
+                mh = self.endpoint(state, c, x, self.original(state, c), hist)
                 proof.update(outcome='pruned' if maximum(mh) > maximum(hist) else 'survives', heights=mh)
             else:
                 d = self.caps[cur['di']]
-                if d == c or not engine.meets(c, d):
+                if d == c or d not in self.meeting_caps(c):
                     proof['outcome'] = 'ineligible'
-                elif not self.classify(middle, d):
+                elif (self.original(state, d).straddle is not None
+                      and self.original(state, d).straddle['piece'] not in self.moved(state, c)):
                     proof['outcome'] = 'blocked'
                 else:
-                    heights = [engine.histogram(self.move(middle, d, y)) for y in self.jumble]
-                    candidates = [(qvalue(h), y) for h, y in zip(heights, self.jumble)
-                                  if maximum(h) <= maximum(hist)]
-                    found = bool(candidates) and min(candidates)[0] < qvalue(hist)
-                    proof.update(outcome='candidate' if found else 'endpoints', ys=list(self.jumble), heights=heights)
-                    if found:
-                        proof['word'] = [[c, x], [d, min(candidates)[1]]]
+                    key = state, c, x
+                    open_key, middle, middle_hist = self.opened
+                    if open_key != key:
+                        middle = self.move(state, c, x)
+                        middle_hist = self.endpoint(state, c, x, self.original(state, c), hist)
+                        self.opened = (key, middle, middle_hist)
+                    cl = self.classification(middle, d)
+                    if cl.straddle is not None:
+                        proof['outcome'] = 'blocked'
+                    else:
+                        heights = [self.endpoint(middle, d, y, cl, middle_hist) for y in self.jumble]
+                        candidates = [(qvalue(h), y) for h, y in zip(heights, self.jumble)
+                                      if maximum(h) <= maximum(hist)]
+                        found = bool(candidates) and min(candidates)[0] < qvalue(hist)
+                        proof.update(outcome='candidate' if found else 'endpoints', ys=list(self.jumble), heights=heights)
+                        if found:
+                            proof['word'] = [[c, x], [d, min(candidates)[1]]]
         elif phase == 'peel':
             c, x = cur['clean'][cur['ci']], self.items[cur['xi']]
-            end = self.move(state, c, x)
-            h = engine.histogram(end)
+            h = self.endpoint(state, c, x, self.original(state, c), hist)
             found, bk = False, None
             if maximum(h) <= maximum(hist) and all(h.get(str(k), 0) == hist.get(str(k), 0) for k in (4, 6)):
-                measured = engine.blocked(end)
-                bk = measured if isinstance(measured, int) else len(measured)
+                end = self.move(state, c, x)
+                bk = self.peel_blocked(state, end, c, cur['clean'])
                 found = bk < len(self.caps) - len(cur['clean'])
             proof.update(outcome='candidate' if found else 'rejected', word=[[c, x]], heights=h, Bk=bk)
         else:
             raise ValueError('audit is complete')
         if proof['outcome'] == 'candidate':
-            raise ValueError('false STUCK: independent candidate ' + canonical(proof))
+            raise FalseStuck(proof)
         return audit_advance(cur, proof, self.caps, self.items, self.jumble), proof
 
 
@@ -1413,64 +1756,125 @@ def audit_record(cp, after, proof):
 
 
 def authenticate_checker(head, identity, target_chain, rows):
+    """Authenticate execution receipts under the module's self-certification trust.
+
+    All committed bytes are hashed. Older attempts were validated when their
+    successor was finalized; only the last attempt's new receipts are reduced.
+    """
     chain = manifest_chain(head, CHECK, identity)
-    targets = {sha(path.read_bytes()) for path, _ in target_chain}
-    prior, cpu, count = None, 0, 0
+    targets = [manifest_ref(path) for path, _ in target_chain]
+    target_map = {ref['sha256']: (path, m) for ref, (path, m) in zip(targets, target_chain)}
+    prior, cpu, count, previous_target = None, 0, 0, -1
     for path, m in chain:
-        require(m['target']['sha256'] in targets, 'checker belongs to different search chain')
+        require(m['target'] in targets, 'checker belongs to different search chain')
+        target_index = targets.index(m['target'])
+        require(target_index >= previous_target, 'checker target moved backwards')
+        previous_target = target_index
         target_path = confined(path.parent.parent, m['target']['path'])
         same(sha(target_path.read_bytes()), m['target']['sha256'], 'checker target hash')
-        require(m['status'] != 'FAILED', 'failed checking invalidates dependent segments')
         cp = parse(artifact_bytes(path.parent, m['artifacts']['checkpoint']))
-        receipts = list(artifact_lines(path.parent, m['artifacts']['verification']))
-        for receipt in receipts:
-            new = receipt['checkpoint']
-            if receipt['type'] == 'INITIAL':
-                require(prior is None, 'duplicate checker origin')
-                same(new['last']['digest'], m['input']['digest'], 'checker original state')
-                same([new['steps'], new['letters'], new['snapshots'], new['ever']],
-                     [0, 0, 1, bitset(set())], 'checker original counters')
-                same(new['last']['heights'], m['input']['heights'], 'checker original histogram')
-            else:
-                require(prior is not None and receipt['type'] == 'PREFIX', 'checker missing origin')
-                row = rows[prior['steps']]
-                k = len(prior['prefixes'])
-                same([receipt['step'], receipt['prefix'], receipt['row_sha256']],
-                     [row['index'], k + 1, digest_json(row)], 'checker receipt position')
-                same(new['last'], row['prefixes'][k], 'checker receipt measurement')
-                require(unbitset(prior['ever']) <= unbitset(new['ever']), 'lost transient lattice loss')
-                same(len(unbitset(new['ever'])), new['last']['ever_lattice_loss'], 'checker loss bitset')
-                expected = copy.deepcopy(prior)
-                before = prior['before'] if k else prior['last']
-                same(before, row['before'], 'checker before fields')
-                expected.update(last=new['last'], ever=new['ever'], letters=prior['letters'] + 1,
-                                snapshots=prior['snapshots'] + 1, before=before,
-                                prefixes=prior['prefixes'] + [new['last']])
-                if k + 1 == len(row['word']):
-                    contract(before, expected['prefixes'], row['word'], row['family'])
-                    expected.update(steps=prior['steps'] + 1, prefixes=[], before=None)
-                same(new, expected, 'checker receipt continuity')
-            prior = new
-        require(prior is not None, 'missing checker receipts')
-        for unit in artifact_lines(path.parent, m['artifacts']['audit']):
-            if prior['audit'] is None:
-                prior = dict(prior, audit=audit_cursor(prior['last']['heights']))
-            same(unit['version'], 'hd2p-audit-units/1', 'audit chain version')
-            same(unit['sha256'], digest_json({k: v for k, v in unit.items() if k != 'sha256'}), 'audit hash')
-            same([unit['ordinal'], unit['previous'], unit['before']],
-                 [prior['audit_units'] + 1, prior['audit_hash'], digest_json(prior['audit'])], 'audit interval chain')
-            after = audit_advance(prior['audit'], unit['proof'])
-            same(unit['after'], digest_json(after), 'audit next cursor')
-            prior = dict(prior, audit=after, audit_units=unit['ordinal'], audit_hash=unit['sha256'])
-        # An initialized audit may stop before its first unit.
-        if cp['audit'] is not None and prior['audit'] is None:
-            prior = dict(prior, audit=audit_cursor(prior['last']['heights']))
-        same(cp, prior, 'authenticated checker checkpoint')
-        same(m['end'], checker_boundary(cp), 'checker ending boundary')
-        if count:
-            same(m['start'], previous_end, 'checker start boundary')
+        checker_schema(cp)
+        if cp['failure'] and cp['failure']['phase'] == 'literal_replay':
+            raise ReplayFailure('failed literal replay invalidates steps from ' + str(cp['failure']['step']),
+                                cp['failure']['step'])
+        target_manifest = target_chain[target_index][1]
+        target_steps = target_manifest['end']['steps']
+        target_refs = [r['sha256'] for r in targets[:target_index + 1]]
+        require(cp['steps'] <= target_steps, 'checker ahead of target')
+        if path == chain[-1][0]:
+            for receipt in artifact_lines(path.parent, m['artifacts']['verification']):
+                new = receipt['checkpoint']
+                checker_schema(new)
+                kind = receipt['type']
+                if kind == 'INITIAL':
+                    require(prior is None, 'duplicate checker origin')
+                    same(new['last']['digest'], m['input']['digest'], 'checker original state')
+                    same(new['last']['heights'], m['input']['heights'], 'checker original histogram')
+                    same(new, checker_initial(new['last'], set()), 'checker original counters')
+                elif kind == 'SEARCH':
+                    require(prior is not None, 'checker missing origin')
+                    expected = dict(prior, validated_search=m['target'], search_segments=target_refs)
+                    same(new, expected, 'checker validated search receipt')
+                elif kind == 'CHECK':
+                    require(prior is not None and not prior['prefixes'], 'check before completed prefix')
+                    name, ref = receipt['check'], receipt['segment']
+                    require(ref in target_refs, 'check target is not an ancestor')
+                    search_path, search_manifest = target_map[ref]
+                    if name == 'boundaries':
+                        same(search_manifest['end']['steps'], prior['steps'], 'boundary receipt position')
+                        check_search_boundary(search_path, search_manifest, prior)
+                    else:
+                        same(prior['steps'], target_steps, 'post-replay check before replay completion')
+                        if name in ('final_last', 'final_ever'):
+                            same(ref, m['target']['sha256'], 'FINAL check target')
+                            final = parse(artifact_bytes(target_path.parent, target_manifest['artifacts']['checkpoint']))
+                            key = 'last' if name == 'final_last' else 'ever'
+                            same(prior[key], final[key], 'FINAL receipt ' + key)
+                    expected, _ = check_receipt(prior, name, ref)
+                    same(new, expected, 'completed check receipt')
+                elif kind == 'AUDIT_START':
+                    require(prior is not None and prior['audit'] is None and not prior['prefixes']
+                            and prior['steps'] == target_steps and prior['steps'] == len(rows)
+                            and post_replay_complete(prior), 'audit before complete literal replay')
+                    same(new, dict(prior, audit=audit_cursor(prior['last']['heights'])), 'audit origin')
+                else:
+                    require(prior is not None and kind == 'PREFIX', 'checker missing origin/receipt type')
+                    require(prior['steps'] < len(rows), 'receipt beyond STEP rows')
+                    row = rows[prior['steps']]
+                    step_schema(row)
+                    k = len(prior['prefixes'])
+                    require(k < len(row['word']), 'receipt prefix position')
+                    same([receipt['step'], receipt['prefix'], receipt['row_sha256']],
+                         [row['index'], k + 1, digest_json(row)], 'checker receipt position')
+                    same(new['last'], row['prefixes'][k], 'checker receipt measurement')
+                    require(unbitset(prior['ever']) <= unbitset(new['ever']), 'lost transient lattice loss')
+                    expected = copy.deepcopy(prior)
+                    before = prior['before'] if k else prior['last']
+                    same(before, row['before'], 'checker before fields')
+                    same(row['input_digest'], before['digest'], 'receipt input digest')
+                    same(row['cumulative_letters'], prior['letters'] - k + len(row['word']), 'receipt letters')
+                    expected.update(last=new['last'], ever=new['ever'], letters=prior['letters'] + 1,
+                                    snapshots=prior['snapshots'] + 1, before=before,
+                                    prefixes=prior['prefixes'] + [new['last']])
+                    if k + 1 == len(row['word']):
+                        contract(before, expected['prefixes'], row['word'], row['family'])
+                        same(row['after'], new['last'], 'receipt after measurements')
+                        same(row['output_digest'], new['last']['digest'], 'receipt output digest')
+                        expected.update(steps=prior['steps'] + 1, prefixes=[], before=None)
+                    same(new, expected, 'checker receipt continuity')
+                prior = new
+            require(prior is not None, 'missing checker receipts')
+            for unit in artifact_lines(path.parent, m['artifacts']['audit']):
+                require(prior['audit'] is not None and not prior['prefixes']
+                        and prior['steps'] == len(rows) == target_steps and post_replay_complete(prior),
+                        'audit before complete literal replay')
+                same(prior['audit']['hist'], prior['last']['heights'], 'audit/final histogram')
+                same(unit['version'], 'hd2p-audit-units/1', 'audit chain version')
+                same(unit['sha256'], digest_json({k: v for k, v in unit.items() if k != 'sha256'}), 'audit hash')
+                same([unit['ordinal'], unit['previous'], unit['before']],
+                     [prior['audit_units'] + 1, prior['audit_hash'], digest_json(prior['audit'])], 'audit interval chain')
+                after = audit_advance(prior['audit'], unit['proof'])
+                same(unit['after'], digest_json(after), 'audit next cursor')
+                prior = dict(prior, audit=after, audit_units=unit['ordinal'], audit_hash=unit['sha256'])
+            if cp['failure'] is not None:
+                require(post_replay_complete(prior) and prior['audit'] is not None,
+                        'exhaustion failure before literal replay')
+                prior = dict(prior, failure=cp['failure'])
+            same(cp, prior, 'authenticated checker checkpoint')
         else:
-            same(m['start'], None, 'checker original boundary')
+            prior = cp
+        if cp['audit'] is not None:
+            require(not cp['prefixes'] and cp['steps'] == target_steps and post_replay_complete(cp),
+                    'audit before complete literal replay')
+            same(cp['audit']['hist'], cp['last']['heights'], 'audit/final histogram')
+        same(m['end'], checker_boundary(cp), 'checker ending boundary')
+        same(m['start'], previous_end if count else None, 'checker start boundary')
+        require((m['status'] == 'FAILED') == (cp['failure'] is not None), 'checker failure status')
+        replay_done = cp['steps'] == target_steps and post_replay_complete(cp)
+        audit_done = cp['audit'] is not None and cp['audit']['phase'] == 'complete'
+        complete = replay_done and (target_manifest.get('status') != 'STUCK' or audit_done)
+        same(m['status'], 'FAILED' if cp['failure'] else 'complete' if complete else 'incomplete',
+             'checker completion status')
         previous_end = m['end']
         count += 1
         cpu += m['budget']['local_cpu']
@@ -1479,45 +1883,65 @@ def authenticate_checker(head, identity, target_chain, rows):
     return chain, cp
 
 
-def checking_report(cp, final, failed=None):
-    replayed = not cp['prefixes'] and cp['steps'] == final['steps']
+def checking_report(cp, final):
+    replayed = (not cp['prefixes'] and cp['steps'] == final['steps'] and post_replay_complete(cp))
     audited = cp['audit'] is not None and cp['audit']['phase'] == 'complete'
-    if failed is not None:
-        return dict(status='FAILED', result='BUDGET', passed=False, literal_replay='failed',
-                    exhaustion_verification='failed', reason=failed,
-                    invalidates='target search manifest and every dependent provisional descendant')
+    failure = cp['failure']
+    literal = 'complete' if replayed else 'incomplete'
+    exhaustion = 'complete' if audited else 'incomplete' if cp['audit'] else 'not_performed'
+    if failure:
+        if failure['phase'] == 'literal_replay':
+            literal = 'failed'
+        else:
+            exhaustion = 'failed'
+    complete = literal == 'complete' and (final['cursor']['phase'] != 'stuck' or exhaustion == 'complete')
     result = 'BUDGET'
-    if replayed and handoff(cp['last']['heights']):
+    if complete and handoff(cp['last']['heights']):
         result = 'HANDOFF'
-    if replayed and audited and final['cursor']['phase'] == 'stuck':
+    if complete and exhaustion == 'complete' and final['cursor']['phase'] == 'stuck':
         result = 'STUCK'
-    return dict(status='complete' if replayed and (final['cursor']['phase'] != 'stuck' or audited) else 'incomplete',
-                result=result, passed=replayed, literal_replay='complete' if replayed else 'incomplete',
-                exhaustion_verification='complete' if audited else 'incomplete' if cp['audit'] else 'not_performed',
-                steps=cp['steps'], letters=cp['letters'], digest=cp['last']['digest'],
-                snapshots=cp['snapshots'], scope='accepted suffix; terminal catalogue only when separately complete')
+    report = dict(status='FAILED' if failure else 'complete' if complete else 'incomplete',
+                  result=result if not failure else 'BUDGET', passed=complete and failure is None,
+                  literal_replay=literal, exhaustion_verification=exhaustion,
+                  steps=cp['steps'], letters=cp['letters'], digest=cp['last']['digest'],
+                  snapshots=cp['snapshots'], checks=cp['checks'],
+                  scope='accepted suffix with boundary/FINAL/table checks; exhaustion reported separately')
+    if failure:
+        report.update(reason=failure['reason'], invalidates=(
+            dict(accepted_steps_from=failure['step'], dependent_descendants=True)
+            if failure['phase'] == 'literal_replay' else dict(stuck_claim=True, accepted_steps=False)))
+        if failure['candidate'] is not None:
+            report['independent_candidate'] = failure['candidate']
+    return report
 
 
 def run_checker(args):
     root = external_directory(args.out)
-    directory = new_output(root, 'audit' if args.audit else 'checker')
-    with Path(args.chain).open('rb') as f:
-        header = f.read(MAX_FILE)
-    require(len(header) < MAX_FILE, 'manifest size')
-    case = parse(header)['input']['case']
-    require(type(case) is int and case in CASES, 'checker pinned case')
-    reservation = reserve_attempt(root, directory, case, 'checker')
-    chain, final = search_chain(args.chain)
+    # Usage errors precede directory creation, reservations and publication.
+    chain = manifest_chain(args.chain, SEGMENT)
     head = chain[-1][1]
     require(Path(args.chain).resolve().parent.parent == root, 'checker campaign root')
-    prior = previous = None
-    if args.resume_check:
-        old_chain, prior = authenticate_checker(args.resume_check, head['identity'], chain, search_rows(chain))
-        previous = old_chain[-1][1]
-        require(previous['budget']['segments'] < 4, 'four checker/audit segment limit')
+    final = parse(artifact_bytes(Path(args.chain).parent, head['artifacts']['checkpoint']))
+    if args.audit:
+        require(final['cursor']['phase'] == 'stuck', 'audit requires a candidate STUCK')
     deadline = head['not_after']
     if args.not_after:
         same(utc_deadline(args.not_after), deadline, 'campaign deadline cannot reset')
+    directory = new_output(root, 'audit' if args.audit else 'checker')
+    reservation = reserve_attempt(root, directory, head['input']['case'], 'checker')
+    prior = previous = validation_error = None
+    rows = []
+    malformed = RECORD_ERRORS
+    try:
+        rows = search_rows(chain)
+        if args.resume_check:
+            require(Path(args.resume_check).resolve().parent.parent == root, 'checker resume campaign root')
+            old_chain, prior = authenticate_checker(args.resume_check, head['identity'], chain, rows)
+            previous = old_chain[-1][1]
+            require(previous['budget']['segments'] < 4, 'four checker/audit segment limit')
+    except malformed as exc:
+        validation_error = exc
+        prior = previous = None
     used = previous['budget']['cpu'] if previous else 0
     limits = SegmentLimits(used, ceiling=13200, total=args.cpu_seconds, useful=args.work_cpu_seconds,
                            wall=args.wall_seconds, not_after=deadline)
@@ -1527,9 +1951,7 @@ def run_checker(args):
     engine = ReplayEngine(rt, limits.check)
     original = load_case(head['input']['case'], rt, engine)
     initial_lattice = set(range(P)) - engine.off(original)
-    rows = search_rows(chain)
-    receipts, failed = [], None
-    audit_cpu = 0.
+    receipts, audit_cpu, auditor = [], 0., None
     if prior:
         state = load_artifact_table(Path(args.resume_check).parent, previous['artifacts']['table'],
                                     rt, prior['last']['digest'], directory)
@@ -1538,16 +1960,44 @@ def run_checker(args):
     else:
         state = original
         first, ever = engine.snapshot(state, initial_lattice, set())
-        cp = dict(last=first, ever=bitset(ever), steps=0, letters=0, snapshots=1, before=None,
-                  prefixes=[], audit=None, audit_units=0, audit_hash=ZERO_HASH)
-        start = None
+        cp, start = checker_initial(first, ever), None
         receipts.append(dict(type='INITIAL', checkpoint=copy.deepcopy(cp)))
+
+    def commit(new, receipt):
+        nonlocal cp
+        saved, size = cp, len(receipts)
+        try:
+            receipts.append(receipt)
+            cp = new
+        except BaseException:
+            cp = saved
+            del receipts[size:]
+            raise
+
+    phase, failing_step = 'literal_replay', cp['steps'] + 1
     with (directory / 'audit.disposable').open('w+b') as audit_stream:
         try:
             limits.boundary()
-            check_boundaries(chain, cp)
-            while cp['steps'] < len(rows):
+            if validation_error is not None:
+                raise ReplayFailure('checker input/receipt validation: ' + str(validation_error),
+                                    getattr(validation_error, 'step', failing_step))
+            chain, final = search_chain(args.chain, validated=cp['validated_search'], chain=chain)
+            target = manifest_ref(args.chain)
+            if cp['validated_search'] != target:
+                require(cp['audit'] is None, 'cannot extend an audited terminal state')
+                new = dict(cp, validated_search=target,
+                           search_segments=[manifest_ref(path)['sha256'] for path, _ in chain])
+                commit(new, dict(type='SEARCH', checkpoint=new))
+            while cp['failure'] is None:
                 limits.check()
+                at_end = cp['steps'] == len(rows) and not cp['prefixes']
+                failing_step = cp['steps'] if at_end else cp['steps'] + 1
+                checked = checker_post_unit(cp, chain, final, rt, directory, at_end)
+                if checked is not None:
+                    commit(*checked)
+                    continue
+                if at_end:
+                    break
                 saved, prior_state, nreceipts = cp, state, len(receipts)
                 try:
                     state, cp, receipt = replay_letter(engine, state, cp, rows, initial_lattice)
@@ -1556,20 +2006,14 @@ def run_checker(args):
                     cp, state = saved, prior_state
                     del receipts[nreceipts:]
                     raise
-                check_boundaries(chain, cp)
-            check_boundaries(chain, cp)
-            same(cp['last'], final['last'], 'FINAL measurements (reused snapshot)')
-            same(cp['ever'], final['ever'], 'FINAL exact loss bitset')
-            # Hash-valid search tables still must reconstruct the replayed state.
-            for path, manifest in chain:
-                checkpoint = parse(artifact_bytes(path.parent, manifest['artifacts']['checkpoint']))
-                load_artifact_table(path.parent, manifest['artifacts']['table'], rt,
-                                    checkpoint['last']['digest'], directory)
-                limits.check()
-            if args.audit:
-                require(final['cursor']['phase'] == 'stuck', 'audit requires a candidate STUCK')
+            if args.audit and cp['failure'] is None:
+                require(cp['steps'] == len(rows) and not cp['prefixes'] and post_replay_complete(cp),
+                        'audit before complete literal replay')
+                phase = 'exhaustion_verification'
                 if cp['audit'] is None:
-                    cp = dict(cp, audit=audit_cursor(cp['last']['heights']))
+                    new = dict(cp, audit=audit_cursor(cp['last']['heights']))
+                    commit(new, dict(type='AUDIT_START', checkpoint=new))
+                same(cp['audit']['hist'], final['last']['heights'], 'audit/final histogram')
                 auditor = ExhaustionAudit(engine)
                 while cp['audit']['phase'] != 'complete':
                     limits.check()
@@ -1591,8 +2035,9 @@ def run_checker(args):
                         raise
         except Budget:
             pass
-        except (ValueError, KeyError, TypeError, AssertionError) as exc:
-            failed = str(exc)
+        except malformed as exc:
+            cp = dict(cp, failure=dict(phase=phase, reason=str(exc), step=getattr(exc, 'step', failing_step),
+                                      candidate=exc.proof if isinstance(exc, FalseStuck) else None))
         limits.finalizing()
         artifacts = {}
         audit_stream.flush()
@@ -1603,10 +2048,11 @@ def run_checker(args):
     artifacts['checkpoint'] = pack_artifact(directory, 'checkpoint', (canonical(cp) + '\n').encode())
     artifacts['table'] = pack_artifact(directory, 'table', table_bytes(state, rt))
     artifacts['allocation'] = pack_artifact(directory, 'allocation', (canonical(reservation) + '\n').encode())
-    report = checking_report(cp, final, failed)
+    report = checking_report(cp, final)
     timing = limits.times()
     artifacts['profile'] = pack_artifact(directory, 'profile', (canonical(dict(
         **timing, snapshot_cpu_seconds=engine.snapshot_cpu, audit_cpu_seconds=audit_cpu,
+        audit_costs={} if auditor is None else auditor.stats,
         python=sys.version, numpy=rt.np.__version__, snapshots=cp['snapshots'] - (prior['snapshots'] if prior else 0),
         audit_units=cp['audit_units'] - (prior['audit_units'] if prior else 0),
         max_rss_kib=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)) + '\n').encode())
@@ -1618,7 +2064,7 @@ def run_checker(args):
                   limits=dict(cpu_seconds=args.cpu_seconds, work_cpu_seconds=args.work_cpu_seconds,
                               wall_seconds=args.wall_seconds))
     path = publish(directory, 'audit' if args.audit else 'checker', identity, head['input'], head['campaign'],
-                   manifest_ref(args.resume_check) if args.resume_check else None,
+                   manifest_ref(args.resume_check) if previous else None,
                    start, checker_boundary(cp), artifacts, budget, deadline, report['status'],
                    extra=dict(target=manifest_ref(args.chain), report=report))
     (directory / 'audit.disposable').unlink()
@@ -1646,7 +2092,7 @@ def main():
     except Budget as exc:
         print(canonical(dict(result='BUDGET', finalized=False, reason=str(exc))), flush=True)
         return 1
-    except (ValueError, OSError, KeyError, TypeError, AssertionError) as exc:
+    except (ValueError, OSError, KeyError, TypeError, IndexError, AttributeError, AssertionError) as exc:
         print(canonical(dict(result='ERROR', finalized=False, reason=str(exc))), flush=True)
         return 1
 
