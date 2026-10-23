@@ -122,6 +122,14 @@ starts from the scramble in `out3/`, with `checkpoint.py` keeping a verified cop
   session is idle. From the third start on, the session keeps that one background wait open again (it wakes only
   when the run ends or after 2 h).
 
+- Run 3, third start (23:06 UTC) is the live run. `checkpoint.py` pushed checkpoints from step 59 onwards. A
+  container restart at about 02:59 UTC killed it during the search for the 98th bulk step. The step-97 checkpoint
+  was restored into an empty `out3/`, and the identical command with `--resume` was accepted. `run.json` records a
+  continuation at step 97, after 8,773 s of runner time.
+- 06:12 UTC progress: run 3's bulk ended `stuck` after 97 steps at `7e128820…`, as in run 2. Height and high are
+  `not_applicable`. The tail has two steps so far, the same as run 2's first two: index 97 `zero_bad` 60 letters to
+  1,082 off, and index 98 `zero_bad` 48 letters to 971 off. Runner time is 20,010 s.
+
 ## Not run
 
 - `check_run.py` (it runs after the runner ends).
