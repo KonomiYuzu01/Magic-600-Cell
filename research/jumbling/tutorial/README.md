@@ -63,7 +63,9 @@ The runner's development runs (stage 13 `PLAN.md` section 4; records under
 
 The acceptance-mode run at depth 40 (seed 7101) and the run at depth 100 (D3, seed 7102) are still running. Batch 1
 of the acceptance test (depths 10, 20, 40 and 100, seeds 9011 to 9043) runs only once the development runs at those
-depths reach the solved state (owner, 22 October 2026); it has not been run.
+depths reach the solved state (owner, 22 October 2026); it has not been run. The batches at 300, 1000 and 3000
+twists wait for rules that take height 4 to height 2, whose research the owner restarted on 23 October 2026
+([decision](../../../docs/wiki/decisions/owner-decisions-2026-10-23-depth.md)).
 
 ## Reproduce
 

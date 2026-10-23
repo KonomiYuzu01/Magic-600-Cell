@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-23] decision | Jumbling: no depth limit; research the rules for height 4
+Shown the development runs (depth 40 and 100 still in the bulk, the six 3000-twist runs stuck in the height phase) and three options, the owner kept all seven depths of the acceptance test and restarted the research on rules that take height 4 to height 2 ([decision page](decisions/owner-decisions-2026-10-23-depth.md)).
+
 ## [2026-10-22] decision | EN2A-002-R2 merges under an owner exception
 The owner chose option (a) for finding EN2A-002-R2 of pull request #124 (EN2 slice 3): its fix, which keeps the centroid cache's checked `.npy` name, merges without a third Codex verification round, with its regression test as the adjudicating experiment ([decision](decisions/owner-decisions-2026-10-22.md)). The exception covers that finding only; the review rules are unchanged.
 
