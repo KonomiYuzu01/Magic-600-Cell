@@ -203,26 +203,26 @@
     "07-seed7001-bulk-steps": {
       "inputs": {
         "research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7001/run/run.json": "c3baf34c43a7207ac4c94b15d9d851a367d586a965e30f1f69975a4465e19452",
-        "research/jumbling/tutorial/07-records.md": "e27ca7107c8e07ca49f8c67736660717e09881878dbb2834b107f406f3da2f69",
+        "research/jumbling/tutorial/07-records.md": "bf77573616dd1cface3c94a811d7353e4d04630059be2f8da0556d202425c7bb",
         "research/jumbling/tutorial/figures/diagrams.py": "a4c6237ba613ae886c54f71cbb427b46e92fe9bd6fe5ba0fffa6d7ab4cbdd02b"
       },
       "notes": [],
       "output": {
         "path": "07-seed7001-bulk-steps.svg",
-        "sha256": "ea37117085a5f889860f45bb0be29b48da1eae22ae457e90f60c6e49fe39465d"
+        "sha256": "b1c77f22659ccf5981417ac3cd8e1cf48a72405fae60ab66dd3892a8b67ab9a9"
       },
       "production_renderer_sha256": "4999331eb3c77ec66b6af2cf989eaeaca63d2046e00340409826223b231e8008"
     },
     "07-t1prime-b04-tree": {
       "inputs": {
-        "research/jumbling/tutorial/07-records.md": "e27ca7107c8e07ca49f8c67736660717e09881878dbb2834b107f406f3da2f69",
+        "research/jumbling/tutorial/07-records.md": "bf77573616dd1cface3c94a811d7353e4d04630059be2f8da0556d202425c7bb",
         "research/jumbling/tutorial/figures/diagrams.py": "a4c6237ba613ae886c54f71cbb427b46e92fe9bd6fe5ba0fffa6d7ab4cbdd02b",
         "research/jumbling/tutorial/records/ch07-examples.json": "441976af152ecd4f647d60c6f39d5daf69405dd6f39c0aa5b2871bc3a8d51c92"
       },
       "notes": [],
       "output": {
         "path": "07-t1prime-b04-tree.svg",
-        "sha256": "4a98009d1e6d884b5649d3444e6141006c6e8669a700c4db36dc1d750c880ac4"
+        "sha256": "f908a464739700a4b130ae5364be11a827692fa71dbf115db05430f4316db1b7"
       },
       "production_renderer_sha256": "4999331eb3c77ec66b6af2cf989eaeaca63d2046e00340409826223b231e8008"
     },
