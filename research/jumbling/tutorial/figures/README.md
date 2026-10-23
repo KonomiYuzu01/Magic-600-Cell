@@ -44,6 +44,8 @@ word or program, `figdata.py` loads the original named tree helpers and saves it
 spans. Lock, shift, F2, F3 and S·T have abstract diagrams, explicitly without a
 played word or action region. `appa-inventory` checks all permitted runner and
 census step records for those absent rules, screening reserved paths before reads.
+Committing a new runner or census record makes it stale: regenerate it with
+`figdata.py --only appa-inventory`, and `--check` then passes again.
 
 `figdata.py` replays only the named development records and calls their original
 count, target and pose functions to produce `figdata.json`

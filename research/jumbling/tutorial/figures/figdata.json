@@ -992,12 +992,18 @@
         "research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7001/run/run.json": "c3baf34c43a7207ac4c94b15d9d851a367d586a965e30f1f69975a4465e19452",
         "research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7106/run/run.json": "f3a0a3a4a5b6afe316e66fca4ffab26f1a244695d27b16bff350d571884ae2f3",
         "research/jumbling/restoration/13-tutorial-runner/runs/dev/d1-dev-s7101/run1-interrupted/run.json": "e80ed1c59cacf1d7f5eb1a0b7156cf81ae3a451662f190b88fb22b328812bba1",
+        "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7302/component-checkpoint/run.json": "ba873b212e0607a6f467fa0ba242fb7ec7286529f3c23c17c03f6dd6169c4007",
+        "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7303/killed-1/d2-s7303/run.json": "9fd8e57782784fc1a49c1ec6c20c5888148c00eeacb59f3cbec8e3ee4798b0a0",
+        "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7303/run2/d2-s7303/attempts/00139-high/kernel/run.json": "078bbbbe17dbf84127f28f6032bd9f5a677ca5ae2417bc3738fd4330ce321c06",
+        "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7303/run2/d2-s7303/run.json": "9a3a7fe86866cc2bd2e6490594f20a86ca94d2c0a0cf2a86161c1ea467f9600d",
         "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7304/component/attempts/00006-high/kernel/run.json": "7d8cc5d6e79cd0ab4310f5c2297ea3bb13fb618c343c17e4c273a63983a61e2c",
         "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7304/component/run.json": "bea05ffecfe4c27d168e32640ac99f5c93a40ccca69677abead3ca4805bf7d32",
         "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7304/full-killed-2/run.json": "3b602b845daa8f1de91673f8d0d871c4d9b50c9e7d6a04cf94dd26a31d01d105",
         "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7305/component/attempts/00011-high/kernel/run.json": "6707df8314641f83da1d3d2006ed04e06b8e2dcf0dfaa87374d7a2ba04856679",
         "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7305/component/run.json": "b916e4ac7f0bbaeb9ea02d0fa4ce03b2499156e9e37a0d1c651544a5ff2c121d",
         "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7305/full-interrupted/run.json": "84ab5cab35f2261d705ec50b0ac2000350656a1974b373751f334d1e83e134b0",
+        "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7306/component-checkpoint/attempts/00018-high/kernel/run.json": "53548c332bf9401e530217a5dfd399b5359daf37f8387c68b564881df4d1fab1",
+        "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7306/component-checkpoint/run.json": "42af8364f3ec1d29116d894d9a07bd23c5c9a67c312ddfca9bb9aa8e641598f8",
         "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7307/component/attempts/00006-high/kernel/run.json": "4c2281d01dc8cd06570300375ced23754a8f0b415d347dd1503ce3cda18f4422",
         "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7307/component/run.json": "72daacff1735a36bd1d54157a945ee8ae0e115a75db7c82bc4b8ac5eb9626c99",
         "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7307/full-interrupted/run.json": "b31543bc7960c7f83e016c327d3656e7ae0777ea4a14f307f4427693668a26ff",
@@ -1085,6 +1091,45 @@
           "steps": 98
         },
         {
+          "record": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7302/component-checkpoint/run.json",
+          "rules": {
+            "h4/L2": 1,
+            "h4/L4": 1,
+            "h4/U": 5,
+            "h4/pair": 3,
+            "r22d75/T0": 1,
+            "r22d75/T1": 3,
+            "r22d75/T2": 3,
+            "r22d81/H6": 2,
+            "r22d81/U": 3
+          },
+          "steps": 22
+        },
+        {
+          "record": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7303/killed-1/d2-s7303/run.json",
+          "rules": {
+            "conj": 77,
+            "cover": 5
+          },
+          "steps": 82
+        },
+        {
+          "record": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7303/run2/d2-s7303/attempts/00139-high/kernel/run.json",
+          "rules": {},
+          "steps": 0
+        },
+        {
+          "record": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7303/run2/d2-s7303/run.json",
+          "rules": {
+            "conj": 124,
+            "cover": 10,
+            "r22d75/T0": 1,
+            "r22d75/T1": 2,
+            "r22d75/T2": 2
+          },
+          "steps": 139
+        },
+        {
           "record": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7304/component/attempts/00006-high/kernel/run.json",
           "rules": {},
           "steps": 0
@@ -1125,6 +1170,24 @@
             "r22d75/T1": 4
           },
           "steps": 84
+        },
+        {
+          "record": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7306/component-checkpoint/attempts/00018-high/kernel/run.json",
+          "rules": {},
+          "steps": 0
+        },
+        {
+          "record": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7306/component-checkpoint/run.json",
+          "rules": {
+            "h4/L2": 1,
+            "h4/L4": 1,
+            "h4/U": 6,
+            "h4/pair": 1,
+            "r22d75/T0": 1,
+            "r22d75/T1": 6,
+            "r22d75/T2": 2
+          },
+          "steps": 18
         },
         {
           "record": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7307/component/attempts/00006-high/kernel/run.json",
@@ -5492,7 +5555,7 @@
         "research/jumbling/theory/seams.py": "e42dac099632ec063f63b3880cd4957cc49b1193b732e4fa2bf87eeb7882204b",
         "research/jumbling/theory/trees.py": "8431eedfb778a68b04e5938f3bcfee92feac8e54e718471ea33d6ccedb55a642",
         "research/jumbling/tutorial/04-high.md": "af09e7b4f47e7b2c8f373720e9d6730b14e6c5d190af0cd763a67eb306974328",
-        "research/jumbling/tutorial/A-macros.md": "355d39638bb6fdf3c336d01c2ab45f93e58df374fe5fbcd72625e651a6b06d87",
+        "research/jumbling/tutorial/A-macros.md": "df9acab7faccaaadb2267a5b8b62c9df7c629b7ca6bf4ba1f214028e33d3fb17",
         "research/jumbling/tutorial/figures/diagrams.py": "a4c6237ba613ae886c54f71cbb427b46e92fe9bd6fe5ba0fffa6d7ab4cbdd02b",
         "research/jumbling/tutorial/figures/figdata.py": "378fe2a3d0c83b56cab07a0ef28b5482c26044e8d04d1a9bfb8ad020659e1856"
       },

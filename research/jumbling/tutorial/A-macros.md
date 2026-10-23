@@ -16,7 +16,7 @@ Paths in the examples are repository-relative. For compactness, `RUNS` means
 `research/jumbling/restoration/13-tutorial-runner/runs`, and `ROUND` means
 `research/jumbling/restoration/12-low-height/runs/round22`. These abbreviations also apply to linked files.
 [`figures/figdata.py`](figures/figdata.py) checks the appendix's computed data; its `appa-inventory` data set lists
-all 14 committed non-reserved runner/kernel `run.json` files and all 15 stage-11 census step records. None has a
+every committed non-reserved runner/kernel `run.json` file and every stage-11 census step record. None has a
 lock, shift, F2, F3 or S·T step. The chapter evidence below supplies the corresponding older-stage checks. Reserved
 seeds are excluded before opening files. All this is headless research evidence.
 
