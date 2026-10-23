@@ -161,7 +161,7 @@
  },
  "phases": {
   "bulk": {
-   "result": "budget",
+   "result": "stuck",
    "steps": 97,
    "twists": 223,
    "end": {
@@ -174,41 +174,101 @@
    }
   },
   "height": {
-   "result": null,
+   "result": "not_applicable",
    "steps": 0,
    "twists": 0,
-   "start": null,
-   "end": null,
+   "start": {
+    "digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+    "off": 1193,
+    "heights": {
+     "2": 1193
+    }
+   },
+   "end": {
+    "digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+    "off": 1193,
+    "heights": {
+     "2": 1193
+    }
+   },
    "sub": {
     "r22d75": {
-     "result": null,
+     "result": "not_applicable",
      "steps": 0,
      "twists": 0,
-     "start": null,
-     "end": null
+     "start": {
+      "digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+      "off": 1193,
+      "heights": {
+       "2": 1193
+      }
+     },
+     "end": {
+      "digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+      "off": 1193,
+      "heights": {
+       "2": 1193
+      }
+     }
     },
     "r22d81": {
-     "result": null,
+     "result": "not_applicable",
      "steps": 0,
      "twists": 0,
-     "start": null,
-     "end": null
+     "start": {
+      "digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+      "off": 1193,
+      "heights": {
+       "2": 1193
+      }
+     },
+     "end": {
+      "digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+      "off": 1193,
+      "heights": {
+       "2": 1193
+      }
+     }
     },
     "h4": {
-     "result": null,
+     "result": "not_applicable",
      "steps": 0,
      "twists": 0,
-     "start": null,
-     "end": null
+     "start": {
+      "digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+      "off": 1193,
+      "heights": {
+       "2": 1193
+      }
+     },
+     "end": {
+      "digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+      "off": 1193,
+      "heights": {
+       "2": 1193
+      }
+     }
     }
    }
   },
   "high": {
-   "result": null,
+   "result": "not_applicable",
    "steps": 0,
    "twists": 0,
-   "start": null,
-   "end": null
+   "start": {
+    "digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+    "off": 1193,
+    "heights": {
+     "2": 1193
+    }
+   },
+   "end": {
+    "digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+    "off": 1193,
+    "heights": {
+     "2": 1193
+    }
+   }
   },
   "tail": {
    "result": null,
@@ -2860,7 +2920,7 @@
   "tail_twists": 0,
   "fallback_twists": 0,
   "lattice_twists": null,
-  "seconds": 8772.616146
+  "seconds": 16756.256001
  },
  "resumes": [
   {
