@@ -111,3 +111,8 @@ background waiter on the runner process.
   checkpoint `1459963` both held 168 steps. Restored (exit 0), resumed (accepted, `resumes` [..., 168]), checkpoint
   helper and a new waiter started. State: N 29,608, 27,830 off, 34,874 s of runner time, still in the bulk phase. The
   last steps change N by only a few each (164 to 168: 29,620 to 29,608) and leave off unchanged.
+- 14:08 UTC progress: runner alive at 188 steps (N 28,794, 26,814 off); a second waiter was started before the first
+  reached its limit. 16:08 UTC: that waiter stopped at its limit, runner alive at 201 steps.
+- 16:09 UTC (thirteenth restart, within a minute of the waiter stopping): the local `out/` and checkpoint `040f615`
+  both held 201 steps. Restored (exit 0), resumed (accepted, `resumes` [..., 201]), checkpoint helper and a new waiter
+  started. State: N 27,598, 24,789 off, 48,091 s of runner time, still in the bulk phase.
