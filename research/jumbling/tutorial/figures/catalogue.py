@@ -62,6 +62,14 @@ def figure_status(kind, name, pictures, png_manifest, svg_manifest):
                 or recorded.get('entry') != expected
                 or hashlib.sha256(path.read_bytes()).hexdigest() != recorded.get('png_sha256')):
             return 'stale'
+        if entry.get('sheet'):
+            # A sheet is drawn only when every panel is drawn and the sheet was composed from the panel bytes
+            # that the manifest records now.
+            composed = [(p.get('id'), p.get('png_sha256')) for p in recorded.get('panels', [])]
+            current = [(p, png_manifest.get(p, {}).get('png_sha256')) for p in entry['panels']]
+            if composed != current or any(figure_status('png', p, pictures, png_manifest, svg_manifest) != 'drawn'
+                                          for p in entry['panels']):
+                return 'stale'
         return 'drawn'
     # Old diagram manifests without output hashes retain their existence rule.
     if any('sha256' in row.get('output', {}) for row in svg_manifest.values()):

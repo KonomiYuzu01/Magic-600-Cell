@@ -38,6 +38,8 @@ class CatalogueTests(unittest.TestCase):
             path = 'png/' + entry['id'] + '.png'
             (self.f / path).write_bytes(raw)
             rows.append({'id': entry['id'], 'entry': copy.deepcopy(entry), 'png': path, 'png_sha256': sha(raw)})
+        # As make_figures.py records it: the sheet lists the panel bytes it was composed from.
+        rows[1]['panels'] = [{'id': 'single', 'png_sha256': rows[0]['png_sha256']}]
         self.manifest = {'figures': rows[:1], 'sheets': rows[1:]}
         self.save('figures.json', self.listed)
         self.save('manifest.json', self.manifest)
@@ -101,6 +103,27 @@ class CatalogueTests(unittest.TestCase):
         self.assert_stale('single')
         self.sheet['labels'] = ['Changed label']
         self.save('figures.json', self.listed)
+        self.assert_stale('sheet')
+
+    def embed_only_the_sheet(self):
+        (self.t / '01-example.md').write_text('![Figure 1.2: Sheet](figures/png/sheet.png)\n')
+        self.publish_catalogue()
+        self.assertEqual(self.check()[0], 0)
+
+    def test_sheet_with_changed_panel_recipe_is_stale(self):
+        # VB-01: a chapter embeds only the sheet; its panel's recipe changes.
+        self.embed_only_the_sheet()
+        self.picture['fit'] = 'core'
+        self.save('figures.json', self.listed)
+        self.assert_stale('sheet')
+
+    def test_sheet_composed_from_older_panel_bytes_is_stale(self):
+        # The panel was captured again (bytes and manifest row agree), but the sheet was not composed again.
+        self.embed_only_the_sheet()
+        raw = b'synthetic picture sentinel: single, captured again'
+        (self.f / 'png/single.png').write_bytes(raw)
+        self.manifest['figures'][0]['png_sha256'] = sha(raw)
+        self.save('manifest.json', self.manifest)
         self.assert_stale('sheet')
 
     def test_missing_png_is_stale(self):
