@@ -10,7 +10,7 @@ Target-list version of segment 3's closure2.py (only the choice of T changed): T
 - the vacancy premises for the target Bad(W): N1, N2 and the per-orbit demand, then the peeling certificate
   (thresholds per orbit, all routes reached) and the sufficient condition of Theorem B (holes >= thresholds).
 Then it constructs V (empty when Bad(W) holds no lattice piece; else generic_prepare from the certificate, and the
-two-pass greedy of vacate2.py if the certificate fails), replays
+batched two-pass greedy of vacate3.py if the certificate fails), replays
 V, P, Q, P^-1, V^-1 on the simulator (every twist checked admissible), writes each part with its input and output
 digests, and compares the end with S: T restored, collateral, protected exact poses, and, for the lattice pieces of S,
 lattice kept (on K at the end) and exact pose kept (same K pose) counted apart. Times of each phase are recorded.
@@ -47,7 +47,7 @@ import conjprep as CP  # noqa: E402
 import ghostlib as GL  # noqa: E402
 import vacate as VA  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import vacate2 as VA2  # noqa: E402
+import vacate3 as VA3  # noqa: E402
 from sim.kplus import matrix_json, to_tuple  # noqa: E402
 
 T0 = time.time()
@@ -167,16 +167,9 @@ def main():
         t = time.time()
         mask = np.zeros(G.NP, bool)
         mask[badW] = True
-        va = VA2.Vacate2(G, mask, G.holes)
         gsec = float(a[a.index('--greedy-seconds') + 1]) if '--greedy-seconds' in a else 600.0
         deadline = time.time() + gsec
-        gain0 = va.gain
-
-        def gain(word):
-            if time.time() > deadline:
-                raise TimeoutError
-            return gain0(word)
-        va.gain = gain
+        va = VA3.Vacate3(G, mask, G.holes, deadline=deadline)
         timed_out = False
         try:
             word, steps, ok = va.run()
