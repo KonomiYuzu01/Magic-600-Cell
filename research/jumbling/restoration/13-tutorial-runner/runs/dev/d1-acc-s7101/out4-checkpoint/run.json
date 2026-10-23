@@ -161,8 +161,8 @@
  },
  "phases": {
   "bulk": {
-   "result": "budget",
-   "completed": false,
+   "result": "stuck",
+   "completed": true,
    "steps": 97,
    "twists": 223,
    "end": {
@@ -175,41 +175,101 @@
    }
   },
   "height": {
-   "result": null,
+   "result": "not_applicable",
    "steps": 0,
    "twists": 0,
-   "start": null,
-   "end": null,
+   "start": {
+    "digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+    "off": 1193,
+    "heights": {
+     "2": 1193
+    }
+   },
+   "end": {
+    "digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+    "off": 1193,
+    "heights": {
+     "2": 1193
+    }
+   },
    "sub": {
     "r22d75": {
-     "result": null,
+     "result": "not_applicable",
      "steps": 0,
      "twists": 0,
-     "start": null,
-     "end": null
+     "start": {
+      "digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+      "off": 1193,
+      "heights": {
+       "2": 1193
+      }
+     },
+     "end": {
+      "digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+      "off": 1193,
+      "heights": {
+       "2": 1193
+      }
+     }
     },
     "r22d81": {
-     "result": null,
+     "result": "not_applicable",
      "steps": 0,
      "twists": 0,
-     "start": null,
-     "end": null
+     "start": {
+      "digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+      "off": 1193,
+      "heights": {
+       "2": 1193
+      }
+     },
+     "end": {
+      "digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+      "off": 1193,
+      "heights": {
+       "2": 1193
+      }
+     }
     },
     "h4": {
-     "result": null,
+     "result": "not_applicable",
      "steps": 0,
      "twists": 0,
-     "start": null,
-     "end": null
+     "start": {
+      "digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+      "off": 1193,
+      "heights": {
+       "2": 1193
+      }
+     },
+     "end": {
+      "digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+      "off": 1193,
+      "heights": {
+       "2": 1193
+      }
+     }
     }
    }
   },
   "high": {
-   "result": null,
+   "result": "not_applicable",
    "steps": 0,
    "twists": 0,
-   "start": null,
-   "end": null
+   "start": {
+    "digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+    "off": 1193,
+    "heights": {
+     "2": 1193
+    }
+   },
+   "end": {
+    "digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+    "off": 1193,
+    "heights": {
+     "2": 1193
+    }
+   }
   },
   "tail": {
    "result": null,
@@ -2861,6 +2921,6 @@
   "tail_twists": 0,
   "fallback_twists": 0,
   "lattice_twists": null,
-  "seconds": 9811.977829
+  "seconds": 18614.121051
  }
 }
