@@ -93,3 +93,6 @@ background waiter on the runner process.
 - 04:06 UTC (eighth restart): the local `out/` and the newest checkpoint `4de07e3` both held 123 steps (index 122
   written at 02:35:05). I restored the checkpoint into an empty `out/` (exit 0), resumed (accepted, `resumes` [25, 77,
   78, 123]), started `checkpoint.py --every 120` and a new waiter.
+- 04:34 UTC (ninth restart, about 04:30, **while the waiter was running**, so idleness is not the only cause): the
+  local `out/` and checkpoint `42d1d62` both held 127 steps (index 126 written at 04:28:21). I restored (exit 0),
+  resumed (accepted, `resumes` [25, 77, 78, 123, 127]), started `checkpoint.py --every 120` and a new waiter.
