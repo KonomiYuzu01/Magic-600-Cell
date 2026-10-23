@@ -548,7 +548,8 @@ the middle child (2, +1) is met for the first time and expanded; the third child
 `same_as [0, 0, 1]`. Parts: the root, 4 factor groups, 4 `conj` nodes, their 12 children and the 3 children of the
 first `conj 2`, 24 in all.
 
-![Figure 7.2: The tree of lattice step 19 of seed 7106 (orbit 6, 194 letters, 24 parts), with its same_as and inverse_of links](figures/07-orbit6-tree-s7106.svg)
+[Figure 6.8](06-lattice.md#67-rule-l3-one-orbit-step-under-schedule11-default-and-acceptance) draws this tree, row 19
+of the seed 7106 record, with its 24 parts, 194 letters and the same_as and inverse_of links.
 
 ## 7.7 Phase blocks, the stuck block and the run's result
 
@@ -1279,7 +1280,7 @@ The committed record `runs/dev/d0-s7001/run/run.json`, made by `runner.py --scra
   rules, words and digests after every step; its `bulk_order` ends with `reopen` (**computed**, key
   `A_d0.format1_record`).
 
-![Figure 7.3: The nine bulk steps of seed 7001 at depth 10, with off count and N after each step and the digest chain](figures/svg/07-seed7001-bulk-steps.svg)
+![Figure 7.2: The nine bulk steps of seed 7001 at depth 10: the off count and N at the start (0) and after each step (1 to 9, the table's steps 0 to 8), and the digest chain](figures/svg/07-seed7001-bulk-steps.svg)
 
 ### 7.12.2 Seed 7106 at depth 20: a played lattice phase
 
@@ -1342,7 +1343,7 @@ These options skip the bulk and give the tail no rule, to show the height rows q
   digest `3ab25d21…`, the sub-phase results, the component `bulk_budget` and the checker's verdict `component`.
   `research/jumbling/restoration/13-tutorial-runner/scripts/test_rules_height.py:863-886` (`test_01_r22d36_and_h4`) asserts the two steps' digests, off counts and heights.
 
-![Figure 7.4: The run from the R22D-36 state: the phase blocks in the fixed order, the two height steps and the stuck tail with its 54 units](figures/07-z36-phase-blocks.svg)
+![Figure 7.3: The run from the R22D-36 state: the phase blocks in the fixed order, the two height steps and the stuck tail with its 54 units](figures/svg/07-z36-phase-blocks.svg)
 
 ### 7.12.4 Four changed copies
 
@@ -1363,7 +1364,7 @@ refuses it. In copy b the final row reads `pass: false` and `verdict: solved` (s
 failure names are `test_check_run.py:1301` and `:1740` (`word_sha256`) and `:1336-1343` and `:1397`
 (`tree_expansion`).
 
-![Figure 7.5: The checker's rows for the D0 record of seed 7001 and its four changed copies, step by step](figures/07-checker-rows.svg)
+![Figure 7.4: The checker's rows for the D0 record of seed 7001 and its four changed copies, step by step](figures/svg/07-checker-rows.svg)
 
 ## 7.13 What a record shows
 
