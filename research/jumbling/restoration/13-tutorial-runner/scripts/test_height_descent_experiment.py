@@ -1,4 +1,4 @@
-"""Focused HD2P/1 acceptance; hard 550 wall-second ceiling, all writes temporary.
+"""Focused HD2P/2 acceptance; hard 550 wall-second ceiling, all writes temporary.
 
 python -I -B research/jumbling/restoration/13-tutorial-runner/scripts/test_height_descent_experiment.py
 
@@ -228,9 +228,7 @@ def reference(state, oracle):
                         candidates.append((score(end), y))
                 if candidates and min(candidates)[0] < q:
                     return 'CL2', [[c, x], [d, min(candidates)[1]]]
-    for c in clean:
-        for x in oracle.items:
-            end = oracle.move(state, c, x)
+            end = middle
             if end is None or height(end) > bound:
                 continue
             eh = oracle.histogram(end)
@@ -319,7 +317,7 @@ class OrderingTests(unittest.TestCase):
         o.node('peel', blocked={3: {11}})
         o.edge('s', 0, 2, 'peel')
         _, ledger, _ = self.compare(o, ('PEEL', [[0, 2]]))
-        self.assertEqual(ledger.complete, ['SINGLE', 'CL2'])
+        self.assertEqual(ledger.complete, ['SINGLE'])
 
     def test_07_pending_best_y_budget_never_falls_through(self):
         o, trace = self.pair(), []
@@ -415,6 +413,33 @@ class OrderingTests(unittest.TestCase):
                         o.edge('mid', d, y, 'end')
                         expected = reference(ToyState('s'), o)
                         self.compare(o, expected)
+
+    def test_14_same_opener_pair_precedes_peel_but_earlier_peel_precedes_later_pair(self):
+        o = self.pair(x=2)
+        self.compare(o, ('CL2', [[0, 2], [1, 13]]))
+        o.node('earlier_peel', blocked={3: {11}})
+        o.edge('s', 0, 1, 'earlier_peel')
+        _, ledger, trace = self.compare(o, ('PEEL', [[0, 1]]))
+        self.assertEqual(ledger.complete, ['SINGLE'])
+        self.assertFalse(any(e['at'].get('phase') == 'opener' and e['at'].get('x') == 2 for e in trace))
+
+    def test_15_all_48_literal_ties_and_height6_opener_count_increase(self):
+        o = self.pair()
+        o.items, o.jumble = tuple(range(1, 60)), tuple(range(12, 60))
+        o.nodes['s']['hist'] = {'2': 10, '4': 5, '6': 2}
+        o.nodes['middle']['hist'] = {'2': 10, '4': 9, '6': 2}
+        o.nodes['low']['hist'] = {'2': 15, '4': 100, '6': 1}
+        for y in o.jumble:
+            o.edge('middle', 1, y, 'low')
+        self.compare(o, ('CL2', [[0, 1], [1, 12]]))
+
+    def test_16_height6_single_allows_n4_increase_at_cap_236(self):
+        o = Oracle()
+        o.caps, o.insides = (236,), {236: {9, 10}}
+        o.nodes['s'] = dict(hist={'2': 99634, '4': 623, '6': 87}, blocked={})
+        o.node('height_four', {'2': 99634, '4': 710}, blocked={})
+        o.edge('s', 236, 12, 'height_four')
+        self.compare(o, ('SINGLE', [[236, 12]]))
 
 
 class RecordTests(unittest.TestCase):
@@ -673,6 +698,13 @@ class ExactTests(unittest.TestCase):
                 C.verify_output(output, self.rt)
 
     def test_06_input_hash_schema_assignment_and_digest_rejections(self):
+        for case in (7302, 7303, 7304, 7305, 7306, 7307):
+            pin = C.input_identity(case)
+            raw = (C.ROOT / pin['table']).read_bytes()
+            self.assertEqual(C.sha(raw), pin['sha256'])
+            table = C.parse(raw)
+            self.assertEqual(len(table['pose_id']), C.P)
+            self.assertEqual(table['digest'], pin['digest'])
         path = OUT / 'input-validation.json'
         C.export_table(self.a, self.rt, path)
         original = C.parse(path.read_bytes())

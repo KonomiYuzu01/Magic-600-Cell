@@ -1,4 +1,4 @@
-"""Independent, current-table-only replay of HD2P/1 experiment records.
+"""Independent, current-table-only replay of HD2P/2 experiment records.
 
 Legacy: python3 -I -B check_height_descent_experiment.py --out RUN.
 Segments: --chain SEARCH/manifest.json --out CAMPAIGN; add --resume-check
@@ -9,7 +9,12 @@ contract is imported. Literal replay does not establish historical first choice;
 only a completed separate audit establishes terminal exhaustion.
 All geometry imports are lazy, after thread settings, cache routing and budgets.
 
-Version 3 resume trust boundary. Hashes authenticate committed bytes, not their
+Formats: height-descent-segment/4, height-descent-check/4, hd2p-checkpoint/4,
+hd2p-independent-audit/2 and hd2p-audit-units/2. HD2P/1 is rejected before
+artifact replay. A terminal exhausted cursor requires an audit even when an
+asynchronous interruption labelled its search manifest BUDGET.
+
+Version 4 resume trust boundary. Hashes authenticate committed bytes, not their
 author. The integrator retains an immutable, reviewed chain produced by these
 pinned programs; a party able to replace every manifest and rehash the history
 can forge self-certified receipts. authenticate_checker is NOT a proof checker
@@ -46,6 +51,11 @@ An original straddling witness outside the opener's inside set is unchanged and
 still blocks its target. This independent certificate avoids only impossible
 targets; every survivor gets an actual intermediate-state classification. No
 search classification, prediction, ledger or rejection is used by the audit.
+The audit derives its own four item classes from exact menu matrices, scores
+their representatives with direct full-factor products, and expands the result
+to explicit coverage of all 48 literals. It never imports search signatures or
+height-count summaries. Its catalogue order may remain SINGLE, all CL2, all
+PEEL: exhaustion of that union is equivalent to exhaustion in HD2P/2 order.
 """
 
 import argparse
@@ -75,8 +85,8 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[4]
 J = ROOT / 'research/jumbling'
 P = 177120
-RULE = 'HD2P/1'
-FORMAT = 'height-descent-experiment/1'
+RULE = 'HD2P/2'
+FORMAT = 'height-descent-experiment/2'
 TABLE_ROOT = 'research/jumbling/restoration/13-tutorial-runner/runs/dev/'
 # These are the only development tables the executable can open. No discovery,
 # history reconstruction, acceptance inputs or run-directory Python imports.
@@ -305,6 +315,9 @@ def export_table(st, rt, path):
 
 
 def maximum(hist):
+    require(type(hist) is dict and all(type(h) is str and h.isdecimal() and str(int(h)) == h
+            and int(h) > 0 and int(h) % 2 == 0 and type(n) is int and n > 0
+            for h, n in hist.items()) and sum(hist.values()) <= P, 'complete histogram schema')
     return max(map(int, hist), default=0)
 
 
@@ -313,6 +326,7 @@ def qvalue(hist):
 
 
 def handoff(hist):
+    maximum(hist)
     return not (set(hist) - {'2'})
 
 
@@ -615,10 +629,17 @@ def verify_output(output, rt, tick=lambda: None, allow_pending=False, check_stre
     table = load_table(output / 'final-table.json', rt, expected_digest=snap['digest'])
     same(engine.histogram(table), snap['heights'], 'final table histogram')
     tick()
+    exhaustion = 'not_performed'
+    if result == 'STUCK':
+        auditor, cursor = ExhaustionAudit(engine), audit_cursor(snap['heights'])
+        while cursor['phase'] != 'complete':
+            tick()
+            cursor, _ = auditor.unit(st, cursor)
+        exhaustion = 'complete'
     return {'status': 'complete', 'passed': result != 'ERROR', 'steps': steps, 'letters': letters,
             'digest': snap['digest'], 'heights': snap['heights'],
-            'handoff': handoff(snap['heights']), 'exhaustion_verification': 'not_performed',
-            'scope': 'literal replay and ledger integrity; ordering/exhaustion not replay-proved'}
+            'handoff': handoff(snap['heights']), 'exhaustion_verification': exhaustion,
+            'scope': 'literal replay and ledger integrity; terminal STUCK independently audited'}
 
 
 def legacy_main():
@@ -644,10 +665,10 @@ def legacy_main():
 
 # Versioned transport and coverage protocol. This section contains no search
 # mechanics. The terminal enumerator below is independently written.
-SEGMENT = 'height-descent-segment/3'
-CHECK = 'height-descent-check/3'
-CHAIN = 'hd2p-logical-units/1'
-ORDER = 'SINGLE(c,y);CL2(c,x,d,min(Q,y));PEEL(c,x)/1'
+SEGMENT = 'height-descent-segment/4'
+CHECK = 'height-descent-check/4'
+CHAIN = 'hd2p-logical-units/2'
+ORDER = 'SINGLE(c,y);OPENER(c,x){CL2(d,min(Q,y));PEEL}/2'
 ZERO_HASH = '0' * 64
 CHUNK_BYTES = 4_000_000
 MAX_FILE = 5_000_000
@@ -797,6 +818,8 @@ def portable_command(mode, case=None):
 
 def recorded_command(manifest):
     cmd = portable_command(manifest['kind'], manifest['input']['case'])
+    if manifest.get('diagnostics', {}).get('cost_probe'):
+        cmd.append('--cost-probe')
     previous = manifest['predecessor']
     if manifest['kind'] in ('checker', 'audit'):
         cmd[cmd.index('--chain') + 1] = '../campaign/' + manifest['target']['path']
@@ -884,8 +907,8 @@ def utc_deadline(value):
 
 
 def search_cursor(digest, step=1):
-    return dict(version='hd2p-cursor/1', digest=digest, step=step, phase='histogram',
-                hist=None, classes=[], ci=0, xi=0, di=0, targets=[], filtered=False, middle=None)
+    return dict(version='hd2p-cursor/2', digest=digest, step=step, phase='histogram',
+                hist=None, classes=[], ci=0, xi=0, di=0, targets=[], filtered=False, middle=None, blocked_delta=0, cl2_done=False)
 
 
 def cursor_hash(cursor):
@@ -927,7 +950,7 @@ def advance_cursor(cursor, events, row=None, caps=tuple(range(600)),
     """
     # Entries and histograms are immutable; only these two lists are appended.
     cur = dict(cursor, classes=list(cursor['classes']), targets=list(cursor['targets']))
-    require(cur['version'] == 'hd2p-cursor/1', 'cursor version')
+    require(cur['version'] == 'hd2p-cursor/2', 'cursor version')
     clean = [caps[i] for i, cl in enumerate(cur['classes']) if cl['clean']]
     phase, hist = cur['phase'], cur['hist']
     pos = 0
@@ -952,6 +975,7 @@ def advance_cursor(cursor, events, row=None, caps=tuple(range(600)),
     def next_opener():
         cur['xi'] += 1
         cur['di'], cur['middle'] = 0, None
+        cur['blocked_delta'], cur['cl2_done'] = 0, False
         if cur['xi'] == len(items):
             cur['ci'], cur['xi'] = cur['ci'] + 1, 0
             cur['filtered'], cur['targets'] = False, []
@@ -960,13 +984,13 @@ def advance_cursor(cursor, events, row=None, caps=tuple(range(600)),
     def next_group():
         cur['di'] += 1
         if cur['di'] == len(cur['targets']):
-            next_opener()
+            cur.update(phase='peel', cl2_done=True)
 
     chosen, predicted = None, None
     if phase == 'histogram':
         e = take('INPUT', 'histogram', ('measured',))
         cur['hist'] = e['detail']['heights']
-        require(handoff(cur['hist']) or maximum(cur['hist']) in (4, 6), 'input height bound')
+        require(handoff(cur['hist']) or maximum(cur['hist']) in (4, 6), 'unsupported height: input maximum must be 4 or 6')
         cur['phase'] = 'handoff' if handoff(cur['hist']) else 'input'
     elif phase == 'input':
         c = caps[len(cur['classes'])]
@@ -981,6 +1005,7 @@ def advance_cursor(cursor, events, row=None, caps=tuple(range(600)),
         c, x = clean[cur['ci']], jumble[cur['xi']]
         e = take('SINGLE', 'candidate', ('inadmissible', 'height_prune', 'no_descent', 'lowering'), c=c, x=x)
         end = e['detail'].get('heights')
+        require(end is None or maximum(end) <= maximum(hist) + 2, 'impossible SINGLE height jump')
         want = ('inadmissible' if end is None else 'height_prune' if maximum(end) > maximum(hist)
                 else 'no_descent' if qvalue(end) >= qvalue(hist) else 'lowering')
         same(e['outcome'], want, 'SINGLE outcome/height')
@@ -993,11 +1018,12 @@ def advance_cursor(cursor, events, row=None, caps=tuple(range(600)),
         take(family, 'end', ('exhausted',))
         cur.update(ci=0, xi=0, di=0)
         cur['phase'] = {'single_end': 'opener' if clean else 'cl2_end',
-                        'cl2_end': 'peel' if clean else 'peel_end', 'peel_end': 'stuck'}[phase]
+                        'cl2_end': 'peel_end', 'peel_end': 'stuck'}[phase]
     elif phase == 'opener':
         c, x = clean[cur['ci']], items[cur['xi']]
         e = take('CL2', 'opener', ('opener_prune', 'opener_inadmissible', 'opener_survives'), c=c, x=x)
         middle = e['detail'].get('heights')
+        require(middle is None or maximum(middle) <= maximum(hist) + 2, 'impossible opener height jump')
         if e['outcome'] != 'opener_survives':
             if e['outcome'] == 'opener_prune':
                 require(middle is None or maximum(middle) > maximum(hist), 'opener prune')
@@ -1010,7 +1036,7 @@ def advance_cursor(cursor, events, row=None, caps=tuple(range(600)),
             elif cur['targets']:
                 cur['phase'] = 'group'
             else:
-                next_opener()
+                cur.update(phase='peel', cl2_done=True)
     elif phase == 'filter':
         c, d = clean[cur['ci']], caps[cur['di']]
         e = take('CL2', 'target_filter', ('same_cap', 'not_meeting', 'blocker_certificate',
@@ -1022,15 +1048,17 @@ def advance_cursor(cursor, events, row=None, caps=tuple(range(600)),
         if cur['di'] == len(caps):
             cur.update(filtered=True, di=0, phase='group')
             if not cur['targets']:
-                next_opener()
+                cur.update(phase='peel', cl2_done=True)
     elif phase == 'group':
         c, x, d = clean[cur['ci']], items[cur['xi']], cur['targets'][cur['di']]
         e = take('CL2', 'second_cap', ('intermediate_blocked', 'intermediate_clean'), c=c, x=x, d=d)
+        cur['blocked_delta'] += int(e['outcome'] == 'intermediate_blocked') - int(not cur['classes'][caps.index(d)]['clean'])
         best = None
         if e['outcome'] == 'intermediate_clean':
             for y in jumble:
                 e = take('CL2', 'second_item', ('endpoint', 'endpoint_prune'), c=c, x=x, d=d, y=y)
                 end = e['detail']['heights']
+                require(end is None or maximum(end) <= maximum(hist) + 2, 'impossible endpoint height jump')
                 good = end is not None and maximum(end) <= maximum(hist)
                 same(e['outcome'], 'endpoint' if good else 'endpoint_prune', 'endpoint bound')
                 if good:
@@ -1044,20 +1072,23 @@ def advance_cursor(cursor, events, row=None, caps=tuple(range(600)),
         if chosen is None:
             next_group()
     elif phase == 'peel':
+        require(cur['cl2_done'] and cur['di'] in (0, len(cur['targets'])), 'PEEL before opener CL2 completion')
         c, x = clean[cur['ci']], items[cur['xi']]
-        e = take('PEEL', 'candidate', ('height_or_count_prune', 'inadmissible', 'global_blocked'), c=c, x=x)
+        e = take('PEEL', 'candidate', ('height_or_count_prune', 'global_blocked'), c=c, x=x)
         end = e['detail'].get('heights')
+        same(end, cur['middle'], 'PEEL opener histogram')
         if e['outcome'] == 'global_blocked':
             require(maximum(end) <= maximum(hist) and all(end.get(str(k), 0) == hist.get(str(k), 0)
                                                         for k in (6, 4)), 'PEEL counts')
             same(e['detail']['before'], len(caps) - len(clean), 'PEEL input Bk')
+            same(e['detail']['after'], len(caps) - len(clean) + cur['blocked_delta'], 'PEEL shared Bk')
+            require(type(e['detail']['after']) is int and 0 <= e['detail']['after'] <= len(caps), 'PEEL global Bk range')
             if e['detail']['after'] < e['detail']['before']:
                 chosen, predicted = ('PEEL', [[c, x]]), [end]
-        cur['xi'] += 1
-        if cur['xi'] == len(items):
-            cur['ci'], cur['xi'] = cur['ci'] + 1, 0
-        if cur['ci'] == len(clean):
-            cur['phase'] = 'peel_end'
+        elif e['outcome'] == 'height_or_count_prune':
+            require(maximum(end) > maximum(hist) or any(end.get(str(k), 0) != hist.get(str(k), 0)
+                                                       for k in (6, 4)), 'false PEEL count prune')
+        next_opener()
     else:
         raise ValueError('completed or invalid cursor')
     same(pos, len(events), 'duplicate candidate coverage')
@@ -1213,7 +1244,7 @@ def search_chain(head, identity=None, *, validated=None, chain=None):
     """Authenticate every byte; reduce only units not certified by a successor.
 
     ``validated`` may only come from an authenticated checker checkpoint. The
-    version-3 writer's predecessor validation supplies the induction for older
+    version-4 writer's predecessor validation supplies the induction for older
     search segments (see the module trust boundary).
     """
     chain = manifest_chain(head, SEGMENT, identity) if chain is None else chain
@@ -1362,7 +1393,7 @@ def check_search_boundary(path, manifest, cp):
 
 
 def checker_initial(first, ever):
-    return dict(version='hd2p-checkpoint/3', last=first, ever=bitset(ever), steps=0, letters=0,
+    return dict(version='hd2p-checkpoint/4', last=first, ever=bitset(ever), steps=0, letters=0,
                 snapshots=1, before=None, prefixes=[], audit=None, audit_units=0, audit_hash=ZERO_HASH,
                 validated_search=None, search_segments=[], failure=None,
                 checks=dict(boundaries=[], final_last=None, final_ever=None, tables=[]))
@@ -1372,7 +1403,7 @@ def checker_schema(cp):
     schema(cp, {'version', 'last', 'ever', 'steps', 'letters', 'snapshots', 'before', 'prefixes',
                 'audit', 'audit_units', 'audit_hash', 'validated_search', 'search_segments', 'checks', 'failure'},
            'checker checkpoint schema')
-    same(cp['version'], 'hd2p-checkpoint/3', 'checker checkpoint version')
+    same(cp['version'], 'hd2p-checkpoint/4', 'checker checkpoint version')
     schema(cp['checks'], {'boundaries', 'final_last', 'final_ever', 'tables'}, 'checker checks schema')
     require(type(cp['prefixes']) is list and len(cp['prefixes']) <= 1, 'checker pending prefixes')
     require(all(type(cp[k]) is int and cp[k] >= 0 for k in ('steps', 'letters', 'snapshots', 'audit_units')),
@@ -1493,13 +1524,14 @@ def replay_letter(engine, state, cp, rows, initial_lattice):
 
 def audit_cursor(hist):
     require(maximum(hist) in (4, 6), 'audit height')
-    return dict(version='hd2p-independent-audit/1', hist=hist, phase='input',
+    return dict(version='hd2p-independent-audit/2', hist=hist, phase='input',
                 clean=[], classified=0, ci=0, xi=0, di=0)
 
 
 def audit_advance(cursor, proof, caps=tuple(range(600)), items=tuple(range(1, 60)), jumble=tuple(range(12, 60))):
     """Audit coverage protocol, intentionally separate from the search cursor."""
     cur = copy.deepcopy(cursor)
+    same(cur['version'], 'hd2p-independent-audit/2', 'audit cursor version')
     same(proof['at'], {k: cur[k] for k in ('phase', 'classified', 'ci', 'xi', 'di')}, 'audit interval')
     result, phase = proof['outcome'], cur['phase']
     require(result != 'candidate', 'false STUCK: independent candidate found')
@@ -1512,6 +1544,7 @@ def audit_advance(cursor, proof, caps=tuple(range(600)), items=tuple(range(1, 60
             cur['phase'] = 'single' if cur['clean'] else 'complete'
     elif phase == 'single':
         require(result == 'rejected', 'audit SINGLE outcome')
+        require(maximum(proof['heights']) <= maximum(cur['hist']) + 2, 'impossible audit height jump')
         require(maximum(proof['heights']) > maximum(cur['hist'])
                 or qvalue(proof['heights']) >= qvalue(cur['hist']), 'false audited SINGLE rejection')
         cur['xi'] += 1
@@ -1523,6 +1556,7 @@ def audit_advance(cursor, proof, caps=tuple(range(600)), items=tuple(range(1, 60
         advance_open = False
         if phase == 'open':
             require(result in ('survives', 'pruned'), 'audit opener outcome')
+            require(maximum(proof['heights']) <= maximum(cur['hist']) + 2, 'impossible audit opener height jump')
             same(result, 'pruned' if maximum(proof['heights']) > maximum(cur['hist']) else 'survives',
                  'audit opener height bound')
             if result == 'survives':
@@ -1534,7 +1568,9 @@ def audit_advance(cursor, proof, caps=tuple(range(600)), items=tuple(range(1, 60
             if result == 'endpoints':
                 same(proof['ys'], list(jumble), 'incomplete audit y group')
                 same(len(proof['heights']), len(jumble), 'audit endpoint coverage')
-                require(all(h is None or maximum(h) > maximum(cur['hist']) or qvalue(h) >= qvalue(cur['hist'])
+                require(all(maximum(h) <= maximum(cur['hist']) + 2 for h in proof['heights']),
+                        'impossible audit endpoint height jump')
+                require(all(maximum(h) > maximum(cur['hist']) or qvalue(h) >= qvalue(cur['hist'])
                             for h in proof['heights']), 'false audited exhaustion')
             cur['di'] += 1
             advance_open = cur['di'] == len(caps)
@@ -1582,10 +1618,61 @@ class ExhaustionAudit:
         self.twist = lru_cache(maxsize=600)(self._twist)
         self.neighbours = {}
         self.stats = {}
+        self.item_partition = None
+
+    def endpoint_group(self, state, c, cl, hist):
+        """Derive our own left cosets; score exact products, expand all literals.
+
+        The menu frames are elements of K+. If E_y E_z^-1 belongs to K+,
+        left multiplication by that quotient preserves every height. This
+        audit certificate is computed independently of the search program.
+        """
+        if self.item_partition is None:
+            from exact import matmul, transpose
+            from sim.kplus import to_tuple
+            menu = self.engine.rt.menu
+            kp = self.engine.rt.ctx.kplus
+            matrices = {y: to_tuple(menu.items[y][1]) for y in range(60)}
+            retained = {matrices[y] for y in range(60) if kp.index_of_matrix(matrices[y]) >= 0}
+            require(len(retained) == 12, 'audit retained subgroup')
+            groups = []
+            for y in self.jumble:
+                for group in groups:
+                    quotient = to_tuple(matmul(matrices[y], transpose(matrices[group[0]])))
+                    if quotient in retained:
+                        group.append(y)
+                        break
+                else:
+                    groups.append([y])
+            require(len(groups) == 4 and all(len(g) == 12 for g in groups), 'audit four item classes')
+            self.item_partition = groups
+        results = {}
+        for group in self.item_partition:
+            h = self.endpoint(state, c, group[0], cl, hist)
+            for y in group:
+                results[y] = h
+        self.stats['logical_endpoints'] = self.stats.get('logical_endpoints', 0) + len(self.jumble)
+        self.stats['representative_scorings'] = self.stats.get('representative_scorings', 0) + len(self.item_partition)
+        return [results[y] for y in self.jumble]
 
     def timed(self, name, started):
         self.stats[name + '_cpu'] = self.stats.get(name + '_cpu', 0.) + time.process_time() - started
         self.stats[name + '_count'] = self.stats.get(name + '_count', 0) + 1
+
+    def projection(self, cursor):
+        """Linear unit-cost estimate, explicitly incomplete until all are sampled."""
+        clean = len(cursor['clean']) if cursor['classified'] == len(self.caps) else None
+        totals = dict(input=len(self.caps), single=None if clean is None else clean * len(self.jumble),
+            open=None if clean is None else clean * len(self.items),
+            target=None if clean is None else clean * len(self.items) * len(self.caps),
+            peel=None if clean is None else clean * len(self.items))
+        estimates = {phase: (0. if count == 0 else None if count is None or not self.stats.get(phase + '_unit_count') else
+                     count * self.stats[phase + '_unit_cpu'] / self.stats[phase + '_unit_count'])
+                     for phase, count in totals.items()}
+        return dict(phase_cpu_seconds=estimates,
+            total_cpu_seconds=sum(estimates.values()) if all(v is not None for v in estimates.values()) else None,
+            missing_unit_costs=[phase for phase, value in estimates.items() if value is None],
+            scope='linear projection from measured completed units at this terminal state; not a bound')
 
     def classification(self, state, c, inside=True):
         self.engine.tick()
@@ -1692,6 +1779,7 @@ class ExhaustionAudit:
 
     def unit(self, state, cursor):
         engine, cur = self.engine, cursor
+        started = time.process_time()
         proof = dict(at={k: cur[k] for k in ('phase', 'classified', 'ci', 'xi', 'di')})
         phase, hist = cur['phase'], cur['hist']
         if phase == 'input':
@@ -1725,7 +1813,7 @@ class ExhaustionAudit:
                     if cl.straddle is not None:
                         proof['outcome'] = 'blocked'
                     else:
-                        heights = [self.endpoint(middle, d, y, cl, middle_hist) for y in self.jumble]
+                        heights = self.endpoint_group(middle, d, cl, middle_hist)
                         candidates = [(qvalue(h), y) for h, y in zip(heights, self.jumble)
                                       if maximum(h) <= maximum(hist)]
                         found = bool(candidates) and min(candidates)[0] < qvalue(hist)
@@ -1743,13 +1831,14 @@ class ExhaustionAudit:
             proof.update(outcome='candidate' if found else 'rejected', word=[[c, x]], heights=h, Bk=bk)
         else:
             raise ValueError('audit is complete')
+        self.timed(phase + '_unit', started)
         if proof['outcome'] == 'candidate':
             raise FalseStuck(proof)
         return audit_advance(cur, proof, self.caps, self.items, self.jumble), proof
 
 
 def audit_record(cp, after, proof):
-    body = dict(version='hd2p-audit-units/1', ordinal=cp['audit_units'] + 1,
+    body = dict(version='hd2p-audit-units/2', ordinal=cp['audit_units'] + 1,
                 previous=cp['audit_hash'], before=digest_json(cp['audit']),
                 after=digest_json(after), proof=proof)
     return dict(body, sha256=digest_json(body))
@@ -1849,7 +1938,7 @@ def authenticate_checker(head, identity, target_chain, rows):
                         and prior['steps'] == len(rows) == target_steps and post_replay_complete(prior),
                         'audit before complete literal replay')
                 same(prior['audit']['hist'], prior['last']['heights'], 'audit/final histogram')
-                same(unit['version'], 'hd2p-audit-units/1', 'audit chain version')
+                same(unit['version'], 'hd2p-audit-units/2', 'audit chain version')
                 same(unit['sha256'], digest_json({k: v for k, v in unit.items() if k != 'sha256'}), 'audit hash')
                 same([unit['ordinal'], unit['previous'], unit['before']],
                      [prior['audit_units'] + 1, prior['audit_hash'], digest_json(prior['audit'])], 'audit interval chain')
@@ -1872,7 +1961,10 @@ def authenticate_checker(head, identity, target_chain, rows):
         require((m['status'] == 'FAILED') == (cp['failure'] is not None), 'checker failure status')
         replay_done = cp['steps'] == target_steps and post_replay_complete(cp)
         audit_done = cp['audit'] is not None and cp['audit']['phase'] == 'complete'
-        complete = replay_done and (target_manifest.get('status') != 'STUCK' or audit_done)
+        complete = False
+        if replay_done:
+            final = parse(artifact_bytes(target_path.parent, target_manifest['artifacts']['checkpoint']))
+            complete = not terminal_exhaustion(final) or audit_done
         same(m['status'], 'FAILED' if cp['failure'] else 'complete' if complete else 'incomplete',
              'checker completion status')
         previous_end = m['end']
@@ -1883,7 +1975,13 @@ def authenticate_checker(head, identity, target_chain, rows):
     return chain, cp
 
 
+def terminal_exhaustion(final):
+    """One authenticated cursor predicate, independent of an asynchronous BUDGET."""
+    return final['cursor']['phase'] == 'stuck'
+
+
 def checking_report(cp, final):
+    require(maximum(cp['last']['heights']) in (0, 2, 4, 6), 'unsupported height in checker boundary')
     replayed = (not cp['prefixes'] and cp['steps'] == final['steps'] and post_replay_complete(cp))
     audited = cp['audit'] is not None and cp['audit']['phase'] == 'complete'
     failure = cp['failure']
@@ -1894,11 +1992,11 @@ def checking_report(cp, final):
             literal = 'failed'
         else:
             exhaustion = 'failed'
-    complete = literal == 'complete' and (final['cursor']['phase'] != 'stuck' or exhaustion == 'complete')
+    complete = literal == 'complete' and (not terminal_exhaustion(final) or exhaustion == 'complete')
     result = 'BUDGET'
     if complete and handoff(cp['last']['heights']):
         result = 'HANDOFF'
-    if complete and exhaustion == 'complete' and final['cursor']['phase'] == 'stuck':
+    if complete and exhaustion == 'complete' and terminal_exhaustion(final):
         result = 'STUCK'
     report = dict(status='FAILED' if failure else 'complete' if complete else 'incomplete',
                   result=result if not failure else 'BUDGET', passed=complete and failure is None,
@@ -1923,7 +2021,7 @@ def run_checker(args):
     require(Path(args.chain).resolve().parent.parent == root, 'checker campaign root')
     final = parse(artifact_bytes(Path(args.chain).parent, head['artifacts']['checkpoint']))
     if args.audit:
-        require(final['cursor']['phase'] == 'stuck', 'audit requires a candidate STUCK')
+        require(terminal_exhaustion(final), 'audit requires a candidate STUCK')
     deadline = head['not_after']
     if args.not_after:
         same(utc_deadline(args.not_after), deadline, 'campaign deadline cannot reset')
@@ -2053,6 +2151,7 @@ def run_checker(args):
     artifacts['profile'] = pack_artifact(directory, 'profile', (canonical(dict(
         **timing, snapshot_cpu_seconds=engine.snapshot_cpu, audit_cpu_seconds=audit_cpu,
         audit_costs={} if auditor is None else auditor.stats,
+        audit_projection=None if auditor is None else auditor.projection(cp['audit']),
         python=sys.version, numpy=rt.np.__version__, snapshots=cp['snapshots'] - (prior['snapshots'] if prior else 0),
         audit_units=cp['audit_units'] - (prior['audit_units'] if prior else 0),
         max_rss_kib=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)) + '\n').encode())

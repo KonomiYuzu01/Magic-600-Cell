@@ -1,4 +1,4 @@
-"""Combined HD2P/1 gate: unchanged suite plus segmented tests, 550 outer wall seconds.
+"""Combined HD2P/2 gate: reference and segmented tests, 550 outer wall seconds.
 
 No trajectory or qualification runs on development tables. Real work is bounded
 WORD36 and the two letters of the recorded 7306 first step. All writes are temp.
@@ -67,7 +67,6 @@ def oracle(kind='pair', full=False):
         o.edge('middle', 1, 13, 'end')
         o.edge('middle', 1, 14, 'end')  # Best-Q tie uses the smaller y.
     elif kind == 'peel':
-        o.meeting.clear()
         o.node('end', blocked={3: {11}})
         o.edge('s', 0, 1, 'end')
     return o
@@ -125,7 +124,7 @@ def toy_checker_worker(path):
 
 
 class SegmentOrderingTests(unittest.TestCase):
-    def test_01_all_candidate_phases_match_old_logical_units(self):
+    def test_01_all_candidate_phases_match_hd2p2_reference_units(self):
         phases = set()
         for kind in ('pair', 'peel', 'stuck'):
             o = oracle(kind)
@@ -267,6 +266,134 @@ class SegmentOrderingTests(unittest.TestCase):
         for i, (a, b) in enumerate(zip(got, expected)):
             E.qualification_compare(a, b, i + 1)
 
+    def test_07_opener_peel_precedence_and_cursor_obligations(self):
+        o = oracle('pair', full=True)
+        o.edges['s', 0, 2] = o.edges.pop(('s', 0, 1))
+        o.node('peel', blocked={3: {11}})
+        o.edge('s', 0, 1, 'peel')
+        _, cp, units = finish(o)
+        self.assertEqual(units[-1]['step']['word'], [[0, 1]])
+        self.assertEqual(L.reference(L.ToyState('s'), o), ('PEEL', [[0, 1]]))
+        state, cp, lattice = initial(o)
+        while cp['cursor']['phase'] != 'group':
+            state, cp, _ = one(o, state, cp, lattice)
+        forged = copy.deepcopy(cp['cursor'])
+        forged.update(phase='peel', cl2_done=False)
+        with self.assertRaisesRegex(ValueError, 'CL2 completion'):
+            C.advance_cursor(forged, [], caps=o.caps, items=o.items, jumble=o.jumble)
+        # The terminal predicates inspect complete supported histograms.
+        for h in ({'8': 1}, {'2': -1}, {'2': 0}, {'02': 1}):
+            o.nodes['s']['hist'] = h
+            with self.assertRaisesRegex(ValueError, 'unsupported height|histogram'):
+                finish(o)
+
+
+
+class ProbeTests(unittest.TestCase):
+    def args(self, **changes):
+        return SimpleNamespace(**(dict(segment=True, case=7304, out=str(OUT / 'probe-usage'),
+            cost_probe=True, diagnostics_only=True, resume=None, qualify_ledger=None, units=None,
+            cpu_seconds=3300, work_cpu_seconds=3000, wall_seconds=3540, max_steps=200,
+            not_after=None) | changes))
+
+    def test_01_argument_rejection_precedes_reservations(self):
+        E.validate_search_args(self.args())
+        for changes in (dict(segment=False), dict(case=7306), dict(diagnostics_only=False),
+                        dict(resume='unused'), dict(qualify_ledger='unused'), dict(wall_seconds=3600),
+                        dict(work_cpu_seconds=2999), dict(cpu_seconds=3299)):
+            with patch.object(C, 'reserve_attempt') as reservation:
+                with self.assertRaisesRegex(ValueError, 'cost-probe|separate qualification'):
+                    E.run_segment(self.args(**changes))
+                reservation.assert_not_called()
+        self.assertFalse(Path(self.args().out).exists())
+
+    def test_02_verdict_bounds_and_mandatory_comparisons(self):
+        report = dict(selection=dict(family='PEEL', word=[[23, 1]], opener_position=119,
+                      Q_before=797, Q_after=797, Bk_before=559, Bk_after=558),
+                      optimized_cpu_seconds=150., selected_opener_complete=True,
+                      status_openers_complete=119, failure=None)
+        self.assertEqual(E.cost_probe_verdict(report)[0], 'PASS')
+        for changes in (dict(optimized_cpu_seconds=150.00001), dict(selected_opener_complete=False),
+                        dict(status_openers_complete=118), dict(selection={}),
+                        dict(failure='exact histogram mismatch'), dict(failure='segment allowance')):
+            self.assertEqual(E.cost_probe_verdict(report | changes)[0], 'FAIL')
+        o = oracle('peel')
+        state, cp, lattice = initial(o)
+        row, openers, statuses, cursor = E.probe_enumeration(state, o, cp['last'], lattice, TestLimits())
+        self.assertEqual(row['family'], 'PEEL')
+        self.assertEqual(openers[0]['Bk'], row['after']['Bk'])
+        self.assertEqual(statuses, [False, False, True, True])
+        self.assertEqual(state.name, 's', 'diagnostic trial must never enter the trajectory')
+        self.assertEqual(cp['steps'], 0)
+        self.assertEqual(cursor['step'], 2, 'disposable probe cursor only')
+
+    def test_03_foreign_rule_rejected_before_reservation(self):
+        old = OUT / 'hd2p1-ledger.jsonl'
+        old.write_text(C.canonical(dict(rule='HD2P/1', step=1)) + '\n')
+        with patch.object(C, 'reserve_attempt') as reservation:
+            with self.assertRaisesRegex(ValueError, 'HD2P/1'):
+                E.run_segment(self.args(cost_probe=False, diagnostics_only=False, qualify_ledger=str(old)))
+            reservation.assert_not_called()
+        with self.assertRaisesRegex(ValueError, 'HD2P/1'):
+            list(E.old_units(old))
+        old.write_text(C.canonical(dict(rule='HD2P/1', format='height-descent-segment/3')) + '\n')
+        with patch.object(C, 'reserve_attempt') as reservation:
+            with self.assertRaisesRegex(ValueError, 'HD2P/1'):
+                E.run_segment(self.args(cost_probe=False, diagnostics_only=False, resume=str(old)))
+            reservation.assert_not_called()
+        with toy_campaign() as t:
+            manifest = C.parse(t.paths[-1].read_bytes())
+            manifest.update(rule='HD2P/1', format='height-descent-segment/3')
+            C.write_json(t.paths[-1], manifest)
+            with patch.object(C, 'reserve_attempt') as reservation:
+                with self.assertRaisesRegex(ValueError, 'manifest version'):
+                    C.run_checker(t.args)
+                reservation.assert_not_called()
+
+    def test_04_nonsegmented_cli_refuses_without_artifacts(self):
+        target = OUT / 'disabled-reference-cli'
+        with patch.object(sys, 'argv', ['height_descent_experiment.py', '--case', '7306', '--out', str(target)]), \
+                redirect_stdout(io.StringIO()) as output:
+            self.assertEqual(E.main(), 1)
+        self.assertEqual(C.parse(output.getvalue())['result'], 'ERROR')
+        self.assertFalse(target.exists())
+
+    def test_05_probe_reference_phases_on_explicit_bounded_oracle(self):
+        o = L.Oracle()
+        o.caps, o.items, o.jumble = tuple(range(600)), tuple(range(1, 60)), tuple(range(12, 60))
+        clean = {0, 1, 23, *range(562, 600)}
+        o.nodes['s'] = dict(hist={'2': 10, '4': 797}, blocked={d: {d} for d in o.caps if d not in clean})
+        o.insides = {d: {2} for d in o.caps}
+        o.meeting = {(2, 23)}
+        o.node('end', blocked={d: ps for d, ps in o.nodes['s']['blocked'].items() if d != 2})
+        o.edge('s', 23, 1, 'end')
+        o.tick, o.rt = lambda: None, SimpleNamespace()
+        o.stats, o.step_metrics = E.Counter(), []
+        o.profile = E.Profile(o.stats)
+        st = L.ToyState('s')
+        row, lattice, _, _ = L.record(o, st, [[23, 1]], 'PEEL')
+        rows = []
+        for c, x in [(c, x) for c in (0, 1) for x in o.items] + [(23, 1)]:
+            rows.append(dict(position=len(rows) + 1, c=c, x=x, middle=row['before']['heights'], pruned=False,
+                statuses={2: False} if c == 23 else {},
+                groups={2: [row['before']['heights']] * 48} if c == 23 else {}, Bk=558 if c == 23 else 559))
+        statuses = [d not in clean for d in o.caps]
+        result = row, rows, statuses, C.search_cursor(st.digest())
+        with patch.object(E, 'probe_enumeration', return_value=result), \
+                patch.object(C, 'ReplayEngine', return_value=o), patch.object(C, 'ExhaustionAudit', ToyAudit), \
+                patch.object(E.time, 'process_time', return_value=1.):
+            report = E.run_cost_probe(st, o, row['before'], lattice, TestLimits())
+            self.assertEqual(report['verdict'], 'PASS', report)
+            self.assertTrue(report['selected_opener_complete'])
+            self.assertEqual(report['status_openers_complete'], 119)
+            self.assertEqual(report['recounts_complete'], 119)
+            with patch.object(ToyAudit, 'classification', side_effect=C.Budget('reference interrupted')):
+                self.assertEqual(E.run_cost_probe(st, o, row['before'], lattice, TestLimits())['verdict'], 'FAIL')
+            with patch.object(ToyAudit, 'endpoint', return_value={'4': 796}):
+                report = E.run_cost_probe(st, o, row['before'], lattice, TestLimits())
+                self.assertEqual(report['verdict'], 'FAIL')
+                self.assertIn('48 endpoint', report['failure'])
+        self.assertEqual(st.name, 's')
 
 
 class ArtifactTests(unittest.TestCase):
@@ -440,6 +567,9 @@ class ToyAudit(C.ExhaustionAudit):
     def endpoint(self, state, c, x, cl, hist):
         return self.engine.histogram(self.move(state, c, x))
 
+    def endpoint_group(self, state, c, cl, hist):
+        return [self.endpoint(state, c, y, cl, hist) for y in self.jumble]
+
     def peel_blocked(self, state, end, c, clean):
         return self.engine.blocked(end)
 
@@ -452,6 +582,38 @@ class TestLimits:
     boundary = finalizing = check
     def times(self):
         return dict(cpu_seconds=0., wall_seconds=0., trajectory_cpu_seconds=0., setup_cpu_seconds=0.)
+
+
+def audit_resume_worker(path):
+    """Actual checker orchestration in a fresh process, with the explicit oracle."""
+    data = C.parse(Path(path).read_bytes())
+    test_out = Path(data['test_out']).resolve()
+    C.require(test_out.name.startswith('height-descent-acceptance-') and test_out.parent == Path('/tmp'),
+              'inherited temporary test directory')
+    o = oracle('stuck')
+    o.snapshot_cpu = 0.
+    rt = SimpleNamespace(np=SimpleNamespace(__version__='oracle'))
+    o.rt = rt
+    validate, advance = C.validate_unit, C.audit_advance
+    domain = dict(caps=o.caps, items=o.items, jumble=o.jumble)
+    def load(directory, descriptor, rt, digest, temporary):
+        state = L.ToyState(C.parse(C.artifact_bytes(directory, descriptor))['state'])
+        C.same(state.digest(), digest, 'worker table digest')
+        return state
+    with ExitStack() as stack:
+        stack.enter_context(patch.object(L, 'OUT', test_out))  # Keep the inherited write confinement.
+        for context in (patch.dict(C.CASES, {7306: tuple(data['pin'])}),
+            patch.object(C, 'Runtime', return_value=rt), patch.object(C, 'ReplayEngine', return_value=o),
+            patch.object(C, 'segment_identity', return_value=data['identity']),
+            patch.object(C, 'load_case', return_value=L.ToyState('s')),
+            patch.object(C, 'load_artifact_table', side_effect=load),
+            patch.object(C, 'table_bytes', side_effect=lambda st, rt: (C.canonical(dict(state=st.name)) + '\n').encode()),
+            patch.object(C, 'SegmentLimits', TestLimits), patch.object(C, 'ExhaustionAudit', ToyAudit),
+            patch.object(C, 'validate_unit', side_effect=lambda *a, **kw: validate(*a, **domain)),
+            patch.object(C, 'audit_advance', side_effect=lambda cur, proof, *args:
+                         advance(cur, proof, *args) if args else advance(cur, proof, **domain))):
+            stack.enter_context(context)
+        return C.run_checker(SimpleNamespace(**data['args']))
 
 
 @contextmanager
@@ -689,6 +851,15 @@ class CheckerTests(unittest.TestCase):
             C.audit_advance(cur, bad, tuple(o.caps), tuple(o.items), tuple(o.jumble))
         self.assertEqual(C.audit_advance(C.parse(C.canonical(cur)), C.parse(C.canonical(proof)),
                                          tuple(o.caps), tuple(o.items), tuple(o.jumble)), after)
+        for hist in (None, {'2': -1}, {'4': 0}, {'8': 1}):
+            bad = copy.deepcopy(proof)
+            bad['heights'][-1] = hist
+            with self.assertRaisesRegex(ValueError, 'histogram|height jump'):
+                C.audit_advance(cur, bad, tuple(o.caps), tuple(o.items), tuple(o.jumble))
+        cp = checker_initial(o, L.ToyState('s'), set())
+        cp['last']['heights'] = {'8': 1}
+        with self.assertRaisesRegex(ValueError, 'unsupported height'):
+            C.checking_report(cp, dict(steps=0, cursor=dict(phase='stuck')))
 
 
 def rewrite_artifact(path, name, raw):
@@ -704,6 +875,78 @@ def rewrite_artifact(path, name, raw):
 
 
 class CheckerRegressionTests(unittest.TestCase):
+    def test_00_budget_after_exhaustion_publication_audit_resumes_in_fresh_process(self):
+        with toy_campaign('stuck') as t:
+            root = OUT / 'budget-after-exhaustion'
+            armed = [False]
+            unit_record = C.unit_record
+
+            class BudgetAfterPublication(TestLimits):
+                def check(self):
+                    if armed[0]:
+                        armed[0] = False
+                        raise C.Budget('after exhaustion publication')
+
+            class ToySearch(L.Oracle):
+                def __init__(self, rt, tick):
+                    super().__init__()
+                    self.rt, self.tick = rt, tick
+                    self.stats = E.Counter()
+                    self.profile = E.Profile(self.stats)
+                    self.step_metrics, self.step_cpu_origin = [], time.process_time()
+                    self.factors, self.products, self.compositions, self.classes = {}, {}, {}, {}
+
+            def arm(ordinal, previous, before, after, events, row=None):
+                answer = unit_record(ordinal, previous, before, after, events, row)
+                if after['phase'] == 'stuck':
+                    armed[0] = True
+                return answer
+
+            args = SimpleNamespace(out=str(root), case=7306, diagnostics_only=False, qualify_ledger=None,
+                units=None, resume=None, not_after=None, cpu_seconds=3300, work_cpu_seconds=3000,
+                wall_seconds=3600, max_steps=200)
+            stream = io.StringIO()
+            with patch.object(E, 'IncrementalEngine', ToySearch), patch.object(C, 'unit_record', side_effect=arm), \
+                    patch.object(C, 'SegmentLimits', BudgetAfterPublication), redirect_stdout(stream):
+                self.assertEqual(E.run_segment(args), 0)
+            search = root / C.parse(stream.getvalue().splitlines()[-1])['manifest']
+            manifest = C.parse(search.read_bytes())
+            self.assertEqual(manifest['status'], 'BUDGET')
+            chain, final = C.search_chain(search)
+            self.assertTrue(C.terminal_exhaustion(final))
+            check_args = SimpleNamespace(**(vars(t.args) | dict(out=str(root), chain=str(search))))
+
+            def check(**changes):
+                out = io.StringIO()
+                with redirect_stdout(out):
+                    code = C.run_checker(SimpleNamespace(**(vars(check_args) | changes)))
+                report = C.parse(out.getvalue().splitlines()[-1])
+                return code, report, root / report['manifest']
+
+            code, report, first = check()
+            self.assertEqual((code, report['literal_replay'], report['result']), (1, 'complete', 'BUDGET'))
+            self.assertEqual(report['status'], 'incomplete')
+            unit, calls = ToyAudit.unit, [0]
+            def interrupted(auditor, state, cursor):
+                calls[0] += 1
+                if calls[0] == 4:
+                    raise C.Budget('unfinished audit')
+                return unit(auditor, state, cursor)
+            with patch.object(ToyAudit, 'unit', interrupted):
+                code, report, second = check(audit=True, resume_check=str(first))
+            self.assertEqual((code, report['literal_replay'], report['result']), (1, 'complete', 'BUDGET'))
+            self.assertEqual(report['exhaustion_verification'], 'incomplete')
+            C.authenticate_checker(second, manifest['identity'], chain, [])
+            payload = OUT / 'fresh-audit-resume.json'
+            C.write_json(payload, dict(test_out=str(OUT), args=vars(check_args) | dict(audit=True, resume_check=str(second)),
+                                      identity=manifest['identity'], pin=C.CASES[7306]))
+            child = subprocess.run([sys.executable, '-I', '-B', str(Path(__file__).resolve()),
+                                    '--audit-resume-worker', str(payload)], capture_output=True, text=True, timeout=20)
+            self.assertEqual(child.returncode, 0, child.stdout + child.stderr)
+            resumed = C.parse(child.stdout.splitlines()[-1])
+            self.assertEqual((resumed['literal_replay'], resumed['exhaustion_verification'], resumed['result']),
+                             ('complete', 'complete', 'STUCK'))
+
     def test_01_post_replay_interruptions_are_incomplete_and_resume_only_missing_checks(self):
         for stopping in ('boundaries', 'final_last', 'final_ever', 'tables'):
             with self.subTest(check=stopping), toy_campaign() as t:
@@ -946,30 +1189,71 @@ class CheckerRegressionTests(unittest.TestCase):
 
 
 def previous_prediction(engine, state, c, x, cl, hist):
-    """fabe918 IncrementalEngine.predict, retained only as this benchmark's baseline."""
+    """Frozen f62b889 predictor: the HD2P/1 baseline, not a search dependency."""
     engine.tick()
     tw = engine.twist(c, x)
     if tw.kidx >= 0:
         return dict(hist)
     height, left, _ = engine.matrix_info(tw.matrix, tw.kidx)
+    cached_state, cached_class, distribution = engine.distribution
+    if cached_state is not state or cached_class is not cl:
+        distribution = []
+        for matrix, k, members in engine.groups(state, cl.inside):
+            engine.tick()
+            old, factor, _ = engine.matrix_info(matrix, k)
+            distribution.append((matrix, old, factor, len(members)))
+        # Publish only a complete distribution; a budget interruption must
+        # not leave a partially filled cache valid for the next item.
+        distribution = tuple(distribution)
+        engine.distribution = (state, cl, distribution)
     out = E.Counter(hist)
-    for matrix, k, members in engine.groups(state, cl.inside):
+    for matrix, old, factor, count in distribution:
         engine.tick()
-        old, factor, _ = engine.matrix_info(matrix, k)
         if old:
             key = tw.matrix, matrix
             if key not in engine.products:
                 engine.products[key] = int(engine.rt.trees.dist(engine.rt.trees.qmul(left, factor)))
             new = engine.products[key]
-            out[str(old)] -= len(members)
+            out[str(old)] -= count
         else:
             new = height
         if new:
-            out[str(new)] += len(members)
+            out[str(new)] += count
     C.require(all(v >= 0 for v in out.values()), 'negative effective histogram')
     engine.stats['predictions'] += 1
     return {h: n for h, n in out.items() if n}
 
+
+
+class PreviousOverlay(E.VirtualOpener):
+    """f62b889 overlay, without precomputed effective-pose groups."""
+    def __init__(self, engine, base, c, x, inside):
+        self.base, self.c, self.x = base, c, x
+        self.inside = engine.rt.np.array(inside, dtype=engine.rt.np.int64, copy=True)
+        self.mask = engine.rt.np.zeros(C.P, dtype=bool)
+        self.mask[self.inside] = True
+        self.twist = engine.twist(c, x)
+
+
+class PreviousTargetEngine(E.IncrementalEngine):
+    """Bounded HD2P/1 target-cost baseline; never used by either executable."""
+    def virtual(self, state, c, x, cl):
+        return PreviousOverlay(self, state, c, x, cl.inside)
+
+    def groups(self, state, pieces):
+        if not isinstance(state, PreviousOverlay):
+            return super().groups(state, pieces)
+        merged = {}
+        for matrix, k, members in self.groups(state.base, pieces):
+            moved = state.mask[members]
+            for sub, changed in ((members[~moved], False), (members[moved], True)):
+                if not len(sub):
+                    continue
+                m, idx = self.compose(state.twist, matrix, k) if changed else (matrix, k)
+                if m not in merged:
+                    merged[m] = idx, []
+                merged[m][1].append(sub)
+        return [(m, k, self.rt.np.concatenate(parts)) for m, (k, parts) in merged.items()]
 
 
 class ExactSegmentTests(unittest.TestCase):
@@ -1014,10 +1298,17 @@ class ExactSegmentTests(unittest.TestCase):
                 if not e.clean(vc):
                     continue
                 hist, results = e.histogram(virtual), []
+                physical = e.stats['representative_scorings']
+                expanded = e.endpoints(virtual, target, vc, hist)
+                self.assertEqual(e.stats['representative_scorings'] - physical, 4)
+                self.assertEqual(set(expanded), set(range(12, 60)))
+                audit_expanded = auditor.endpoint_group(applied, target, ac, hist)
                 for y in range(12, 60):
                     p = e.predict(virtual, target, y, vc, hist)
                     q = r.histogram(r.move(applied, target, y))
                     self.assertEqual(p, q)
+                    self.assertEqual(expanded[y], q)
+                    self.assertEqual(audit_expanded[y - 12], q)
                     self.assertEqual(auditor.endpoint(applied, target, y, ac, hist), q)
                     results.append((E.potential(p), y))
                 self.assertEqual(min(results), min((E.potential(e.predict(applied, target, y, ac, hist)), y)
@@ -1044,6 +1335,9 @@ class ExactSegmentTests(unittest.TestCase):
             e.factors.clear()
             e.products.clear()
             e.compositions.clear()
+            e.signatures.cache.clear()
+            e.summaries.clear()
+            e.histograms.clear()
             self.assertEqual(want, e.predict(state, cap, 13, cl, hist))
             tiny = E.IncrementalEngine(self.rt, cache_limit=1)
             self.assertEqual(want, tiny.predict(state, cap, 13, cl, hist))
@@ -1065,6 +1359,85 @@ class ExactSegmentTests(unittest.TestCase):
         retained = r.move(self.z, 12, 1)
         hist = r.histogram(retained)
         self.assertEqual(e.predict(retained, 12, 14, cl, hist), r.histogram(r.move(retained, 12, 14)))
+
+    def test_08_exact_classes_full_factor_cancellation_and_count_equations(self):
+        from exact import matmul, transpose
+        from sim.kplus import to_tuple
+        e, r = self.engine, self.reference
+        self.assertEqual(sorted(map(len, e.signatures.classes)), [12] * 4)
+        for c in (0, 12, 35):
+            for group in e.signatures.classes:
+                inverse = transpose(e.twist(c, group[0]).matrix)
+                for y in group:
+                    self.assertGreaterEqual(self.rt.ctx.kplus.index_of_matrix(
+                        to_tuple(matmul(e.twist(c, y).matrix, inverse))), 0)
+        four = r.move(self.z, 12, 14)
+        for state, cap in ((self.z, 12), (four, 35)):
+            cl, hist = e.classify(state, cap), e.histogram(state)
+            summary = e.summary(state, cap, cl)
+            lattice, foreign, own = summary
+            self.assertEqual(lattice + sum(foreign.values()) + sum(map(sum, own.values())), len(cl.inside))
+            expanded = e.endpoints(state, cap, cl, hist)
+            for y, h in expanded.items():
+                self.assertEqual(h, r.predict(state, cap, y, r.classify(state, cap), hist))
+                j = e.signatures.class_of[y]
+                if not foreign.get(6, 0):
+                    q = (E.potential(hist) + 177120 * foreign.get(4, 0) + foreign.get(2, 0)
+                         - 177120 * own.get(6, (0,)*4)[j] - own.get(4, (0,)*4)[j])
+                    self.assertEqual(q, E.potential(h))
+                    self.assertLessEqual(e.lower_bound(summary, hist), q)
+                if E.top(hist) == 6:
+                    self.assertEqual(h.get('8', 0), foreign.get(6, 0))
+                else:
+                    self.assertEqual(h.get('6', 0), foreign.get(4, 0))
+        # Two poses share the entire old depth-two prefix. Cancelling that
+        # prefix reveals different next prefixes, so propagating it is unsound.
+        cancelling = e.twist(0, 12).matrix
+        inverse = transpose(cancelling)
+        pairs = {}
+        for c in (0, 12, 35, 74, 188):
+            for group in e.signatures.classes:
+                suffix = e.twist(c, group[0]).matrix
+                matrix = to_tuple(matmul(inverse, suffix))
+                h, factor, _ = e.matrix_info(matrix)
+                if h != 4:
+                    continue
+                old_prefix = e.signatures.signature(matrix, h, factor)
+                sh, sf, _ = e.matrix_info(suffix)
+                new_prefix = e.signatures.signature(suffix, sh, sf)
+                pairs.setdefault(old_prefix, {})[new_prefix] = matrix
+        shared = next((v for v in pairs.values() if len(v) >= 2), None)
+        self.assertIsNotNone(shared, 'exercise equal old prefixes and distinct cancelled continuations')
+        for new_prefix, matrix in list(shared.items())[:2]:
+            actual = to_tuple(matmul(cancelling, matrix))
+            h, factor, _ = e.matrix_info(actual)
+            self.assertEqual(e.signatures.signature(actual, h, factor), new_prefix)
+
+    def test_09_profile_count_includes_canonical_certificate_rebuilds(self):
+        e = E.IncrementalEngine(self.rt)
+        full = self.rt.sim.State.classify
+        with patch.object(self.rt.sim.State, 'classify', autospec=True, side_effect=full) as counted:
+            e.pin(self.z)
+            e.input_classify(self.z, 12)
+            moved = e.move(self.z, 12, 1)
+            for d in range(600):
+                cl = e.classify(moved, d)
+                if not e.clean(cl) and (moved, d) not in e.canonical_classes:
+                    e.input_classify(moved, d)
+                    break
+            self.assertGreater(e.stats['canonical_certificate_rebuilds'], 0)
+            self.assertEqual(e.stats['full_classifications'], counted.call_count)
+            self.assertEqual(e.stats['apply_full_classifications'], 1)
+            independent = E.ExactEngine(self.rt)
+            independent.stats, independent.classification_scope = e.stats, 'replay'
+            independent.classify(moved, 12)
+            self.assertEqual(e.stats['replay_full_classifications'], 1)
+            published = E.profile_report(e, C.search_cursor(self.z.digest()), time.process_time())
+            self.assertEqual(published['full_classifications'], counted.call_count)
+            before = counted.call_count
+            e.classes.clear()  # Pinned base still survives trial-cache eviction.
+            e.classify(self.z, 12)
+            self.assertEqual(counted.call_count, before)
 
     def test_03_tangency_and_selected_per_piece_oracles(self):
         from sim.kernel import Evaluator, pullback_form
@@ -1113,7 +1486,8 @@ class ExactSegmentTests(unittest.TestCase):
         initial_snapshot_cpu = time.process_time() - snapshot_started
         self.assertEqual(first_snapshot['Bk'], 600 - len(clean))
         apply_costs, peel_costs, target_costs, prediction_costs, replay_snapshot_costs = [], [], [], [], []
-        endpoint_cost = None
+        group_costs = []
+        endpoint_cost = endpoint_warm_cost = None
         e.classes.update({(state, d): cl for d, cl in input_classes.items()})
         multiple = False
         for c, x in ((208, 5), (336, 15)):
@@ -1136,6 +1510,16 @@ class ExactSegmentTests(unittest.TestCase):
                 observed_bk += not e.clean(got)
                 e.classes[actual, d] = got
             self.assertEqual(observed_bk, expected_bk)
+            original_classes = {d: e.classify(state, d) for d in range(600)}
+            inside = e.inside(original_classes[c])
+            eligible = [d for d in range(600) if d != c and e.meets(c, d)
+                        and (e.clean(original_classes[d]) or
+                             (e.certificate(original_classes[d]) in inside
+                              and e.contained(state, c, d, original_classes[c])))]
+            shared_bk = (sum(not e.clean(cl) for cl in original_classes.values())
+                         + sum(int(not e.clean(e.classify(virtual, d))) - int(not e.clean(original_classes[d]))
+                               for d in eligible))
+            self.assertEqual(shared_bk, expected_bk, 'CL2 classifications give full PEEL Bk')
             checker_state = checker.clone(checker_state)
             checker.apply(checker_state, c, x)
             snapshot_started = time.process_time()
@@ -1173,6 +1557,8 @@ class ExactSegmentTests(unittest.TestCase):
                     batches, costs = [], []
                     for repeat in range(6):
                         bench.distribution = (None, None, ())
+                        bench.summaries.clear()
+                        bench.histograms.clear()
                         begin = time.process_time()
                         batches.append([implementation(bench, virtual, 336, y, cl, middle) for y in range(12, 60)])
                         costs.append((time.process_time() - begin) / 48)
@@ -1180,7 +1566,38 @@ class ExactSegmentTests(unittest.TestCase):
                     answers.append(batches)
                 self.assertEqual(answers[0], answers[1])
                 self.assertLess(prediction_costs[1], prediction_costs[0])
-                endpoint_cost = auditor.stats['prediction_cpu'] / auditor.stats['prediction_count']
+                for cls in (PreviousTargetEngine, E.IncrementalEngine):
+                    bench = cls(self.rt)
+                    bench.classes.update({(state, d): cl for d, cl in input_classes.items()})
+                    costs = []
+                    for repeat in range(4):
+                        # Fresh target position; exact pose/complement caches
+                        # may be warm. Charge overlay setup and classification.
+                        bench.overlay = (None, None)
+                        bench.distribution = (None, None, ())
+                        started_group = time.process_time()
+                        v = bench.virtual(state, c, x, bench.classify(state, c))
+                        target = bench.classify(v, 336)
+                        if cls is PreviousTargetEngine:
+                            got = [previous_prediction(bench, v, 336, y, target, middle) for y in range(12, 60)]
+                        else:
+                            expanded = bench.endpoints(v, 336, target, middle)
+                            got = [expanded[y] for y in range(12, 60)]
+                        costs.append(time.process_time() - started_group)
+                        self.assertEqual(got, answers[0][0])
+                    group_costs.append(costs)
+                before_predictions = auditor.stats.get('prediction_count', 0)
+                auditor.factor.cache_clear()
+                auditor.product.cache_clear()
+                auditor.distribution, auditor.item_partition = (None, ()), None
+                audit_started = time.process_time()
+                expanded = auditor.endpoint_group(actual, 336, ac, middle)
+                endpoint_cost = (time.process_time() - audit_started) / 48
+                self.assertEqual(expanded, answers[0][0])
+                self.assertEqual(auditor.stats['prediction_count'] - before_predictions, 4)
+                audit_started = time.process_time()
+                self.assertEqual(auditor.endpoint_group(actual, 336, ac, middle), expanded)
+                endpoint_warm_cost = (time.process_time() - audit_started) / 48
             e.retain(actual)
             # Endpoint classifications reused by the next step equal fresh ones.
             for d in (0, 208, 336, 487, 599):
@@ -1191,6 +1608,16 @@ class ExactSegmentTests(unittest.TestCase):
         self.assertTrue(state.digest().startswith('782c2034c13135fc'))
         self.assertGreater(e.stats['unmoved_witness'], 0)
         self.assertGreater(e.stats['unmoved_fallbacks'], 0)
+        # The other recorded relaxation permits an opener's temporary n4 rise.
+        original = C.load_case(7306, self.rt, r)
+        v = e.virtual(original, 487, 12, e.classify(original, 487))
+        actual = r.move(original, 487, 12)
+        hist = r.histogram(actual)
+        self.assertEqual(hist['4'], 1965)
+        target, direct_target = e.classify(v, 240), r.classify(actual, 240)
+        expanded = e.endpoints(v, 240, target, hist)
+        self.assertEqual(expanded, {y: r.predict(actual, 240, y, direct_target, hist) for y in range(12, 60)})
+        self.assertEqual(expanded[14], {'2': 107936, '4': 1539})
         # Measure the cursor/hash/JSON/spool cost of one rejected target unit,
         # including the 26-entry clean list. This is protocol work, no trajectory.
         cur = C.audit_cursor(first_snapshot['heights'])
@@ -1204,10 +1631,19 @@ class ExactSegmentTests(unittest.TestCase):
                 unit = C.audit_record(cp, after, proof)
                 spool.write((C.canonical(unit) + '\n').encode())
         protocol_cost = (time.process_time() - begin) / 2000
+        proof = dict(at=proof['at'], outcome='endpoints', ys=list(range(12, 60)), heights=[cur['hist']] * 48)
+        begin = time.process_time()
+        with io.BytesIO() as spool:
+            for _ in range(200):
+                after = C.audit_advance(cur, proof)
+                unit = C.audit_record(cp, after, proof)
+                spool.write((C.canonical(unit) + '\n').encode())
+        clean_protocol_cost = (time.process_time() - begin) / 200
         # Projection, not a timed campaign: 100 CL2 steps / 201 snapshots, four
         # cold process starts (each first replay snapshot does a full recount),
-        # all 59 openers per clean cap, all certificate-surviving targets, the
-        # packet's 39,792 endpoints, and all 59 PEEL items per clean cap, even
+        # all 59 openers per clean cap, every certificate-surviving target CLEAN
+        # (48 logical endpoints each, not the old run's partial 39,792 coverage),
+        # and all 59 PEEL items per clean cap, even
         # those the count/height guard would prune. Allow four audit-cache rebuilds.
         # Eligible-target and snapshot costs sample TWO fixed letters, not a bound
         # uniform over unseen states. Include every possible protocol interval.
@@ -1215,15 +1651,27 @@ class ExactSegmentTests(unittest.TestCase):
         replay_projection = 4 * initial_snapshot_cpu + 197 * mean(replay_snapshot_costs) + 200 * mean(apply_costs)
         audit_projection = (4 * input_classification_cpu + len(clean) * 59 * mean(apply_costs)
                             + eligible_pairs * 59 * mean(target_costs)
-                            + (39792 + len(clean) * (48 + 59 + 59)) * endpoint_cost
+                            + eligible_pairs * 59 * 48 * endpoint_cost
+                            + len(clean) * (48 + 59 + 59) * endpoint_cost * 12
                             + len(clean) * 59 * (mean(apply_costs) + mean(peel_costs))
-                            + (600 + len(clean) * (48 + 59 + 59 * 600 + 59)) * protocol_cost)
+                            + (600 + len(clean) * (48 + 59 + 59 * 600 + 59)) * protocol_cost
+                            + eligible_pairs * 59 * max(0, clean_protocol_cost - protocol_cost))
         setup_projection = 4 * (self.runtime_setup_cpu + input_load_cpu)
         metrics = dict(prediction_before_ms=1000 * prediction_costs[0],
                        prediction_after_ms=1000 * prediction_costs[1],
+                       target_group_before_ms=1000 * mean(group_costs[0]),
+                       target_group_after_ms=1000 * mean(group_costs[1]),
+                       target_group_cold_before_ms=1000 * group_costs[0][0],
+                       target_group_cold_after_ms=1000 * group_costs[1][0],
+                       target_group_warm_before_ms=1000 * mean(group_costs[0][1:]),
+                       target_group_warm_after_ms=1000 * mean(group_costs[1][1:]),
                        audit_prediction_ms=1000 * endpoint_cost, apply_cpu=mean(apply_costs),
+                       audit_prediction_warm_ms=1000 * endpoint_warm_cost,
+                       projected_logical_endpoints=eligible_pairs * 59 * 48,
+                       projected_representative_scorings=eligible_pairs * 59 * 4,
                        full_600_caps_cpu=input_classification_cpu, initial_snapshot_cpu=initial_snapshot_cpu,
                        replay_snapshot_cpu=mean(replay_snapshot_costs), audit_protocol_unit_cpu=protocol_cost,
+                       audit_clean_protocol_unit_cpu=clean_protocol_cost,
                        eligible_target_cpu=mean(target_costs), peel_recount_cpu=mean(peel_costs),
                        clean_caps=len(clean), certificate_surviving_cap_pairs=eligible_pairs,
                        replay_100_step_projection_cpu=replay_projection,
@@ -1331,6 +1779,49 @@ class ExactSegmentTests(unittest.TestCase):
                 for key in ('word', 'family', 'input_digest', 'prefix_digests', 'output_digest',
                             'before', 'prefixes', 'after'):
                     self.assertEqual(a[key], b[key])
+            # Resume the last deciding unit on actual geometry, interrupt its
+            # STEP publication, evict every state cache, and repeat exactly.
+            deciding = C.search_cursor(fixture.digest())
+            direct_path, direct_doc = no_diag[-1]
+            for unit in C.artifact_lines(direct_path.parent, direct_doc['artifacts']['units']):
+                if unit['step'] is not None:
+                    expected_row = unit['step']
+                    break
+                deciding = C.advance_cursor(deciding, unit['events'])
+            tiny = E.IncrementalEngine(self.rt, cache_limit=1)
+            lattice = set(range(C.P)) - tiny.off(fixture)
+            def stop(at):
+                if at == 'before_step_publication':
+                    raise C.Budget('bounded real STEP interruption')
+            with self.assertRaises(C.Budget):
+                E.SegmentedSearch(tiny, stop).unit(fixture, deciding, expected_row['before'], lattice, set(), 0)
+            for cache in ('factors', 'products', 'twists', 'compositions', 'classes', 'canonical_classes',
+                          'unmoved', 'relations', 'anchors', 'summaries', 'histograms'):
+                getattr(tiny, cache).clear()
+            tiny.signatures.cache.clear()
+            tiny.pinned_state, tiny.pinned, tiny.overlay = None, {}, (None, None)
+            _, _, resumed_row, _, _ = E.SegmentedSearch(tiny).unit(
+                fixture, deciding, expected_row['before'], lattice, set(), 0)
+            for key in ('family', 'word', 'before', 'prefixes', 'after', 'prefix_digests'):
+                self.assertEqual(resumed_row[key], expected_row[key])
+            # A finalized probe, including a failed qualification, is a
+            # diagnostic predecessor with zero trajectory units and steps.
+            probe_root = OUT / 'bounded-probe-manifest'
+            with patch.dict(C.CASES, {7304: pin}), patch.object(E, 'run_cost_probe', return_value={
+                    'verdict': 'FAIL', 'reason': 'bounded orchestration fixture'}) as bounded_probe:
+                self.assertEqual(E.run_segment(search_args(probe_root, case=7304, segment=True,
+                    diagnostics_only=True, cost_probe=True, wall_seconds=3540)), 1)
+                bounded_probe.assert_called_once()
+                probe_manifest = latest(probe_root, 'diagnostics')
+                probe_doc = C.parse(probe_manifest.read_bytes())
+                self.assertIn('--cost-probe', probe_doc['command'])
+                self.assertEqual(probe_doc['diagnostics']['verdict'], 'FAIL')
+                _, probe_cp = C.search_chain(probe_manifest)
+                self.assertEqual((probe_cp['steps'], probe_cp['unit_count']), (0, 0))
+                self.assertEqual(probe_cp['last']['digest'], fixture.digest())
+                self.assertEqual(E.run_segment(search_args(probe_root, case=7304, resume=str(probe_manifest))), 0)
+                _, resumed = C.search_chain(latest(probe_root, 'search'))
+                self.assertEqual(resumed['last'], cp_direct['last'])
             args = SimpleNamespace(out=str(root), chain=str(head), audit=False, resume_check=None,
                                    not_after=None, cpu_seconds=3300, work_cpu_seconds=3000, wall_seconds=3600)
             with patch.object(C.ReplayEngine, 'apply', side_effect=C.Budget('verification interruption')):
@@ -1362,6 +1853,8 @@ if __name__ == '__main__':
         elif '--toy-checker-worker' in sys.argv:
             toy_checker_worker(sys.argv[-1])
             code = 0
+        elif '--audit-resume-worker' in sys.argv:
+            code = audit_resume_worker(sys.argv[-1])
         else:
             suite = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
             result = unittest.TextTestRunner(verbosity=2).run(suite)
