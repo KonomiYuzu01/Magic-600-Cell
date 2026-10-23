@@ -2860,6 +2860,17 @@
   "tail_twists": 0,
   "fallback_twists": 0,
   "lattice_twists": null,
-  "seconds": 8772.584335
- }
+  "seconds": 8772.616146
+ },
+ "resumes": [
+  {
+   "at_step": 97,
+   "seconds": 8772.584335,
+   "source": {
+    "commit": "35250486ccaf379fb7874e83c9ffe985a14ff56f",
+    "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "dirty": false
+   }
+  }
+ ]
 }
