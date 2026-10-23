@@ -197,7 +197,8 @@ def resume_point(record, state):
             or phases['tail'].get('result') in ('budget', 'timeout', 'stuck', 'error')
             or phases['lattice'].get('result') is not None):
         return 'terminal'
-    if not any(d.get('start') is not None or d.get('result') is not None for d in later):
+    if (phases['bulk'].get('completed') is not True
+            and not any(d.get('start') is not None or d.get('result') is not None for d in later)):
         return 'bulk'
     for name, data in pipeline:
         if data.get('result') in ('budget', 'timeout', 'error'):
@@ -618,7 +619,7 @@ class Runner:
         self.m.export(self.state, self.table)
         start = dict(source, **self.m.snapshot(self.state))
         self.record = {'format': api.FORMAT, 'menu': 'I_a', 'start': start, 'config': config,
-            'phases': {'bulk': {'result': 'budget', 'steps': 0, 'twists': 0,
+            'phases': {'bulk': {'result': 'budget', 'completed': False, 'steps': 0, 'twists': 0,
                 'end': dict(self.m.snapshot(self.state), table=self.rel(self.table))},
                 'height': {'result': None, 'steps': 0, 'twists': 0, 'start': None, 'end': None,
                            'sub': {name: {'result': None, 'steps': 0, 'twists': 0, 'start': None, 'end': None}
@@ -639,6 +640,8 @@ class Runner:
             record = read_json(self.out / 'run.json')
             if record['format'] != api.FORMAT:
                 raise ValueError('resume requires format 3')
+            if type(record['phases']['bulk'].get('completed', False)) is not bool:
+                raise ValueError('invalid bulk completion marker')
             config = self.configuration()
             old = record['config']
             if old.get('code') is None or old['code'] != config['code']:
@@ -656,6 +659,18 @@ class Runner:
                     raise ValueError('resume table source differs')
             elif start['kind'] != 'scramble' or list(self.args.scramble) != [start['k'], start['seed']]:
                 raise ValueError('resume scramble source differs')
+
+            def check_table(name, expected, boundary):
+                try:
+                    path = (self.out / name).resolve()
+                    if not path.is_relative_to(self.out):
+                        raise ValueError('table path escapes run')
+                    if read_json(path)['digest'] != expected or self.m.load(path).digest() != expected:
+                        raise ValueError('table digest differs')
+                except Exception as exc:
+                    raise ValueError(f'resume committed table for {boundary} is missing, unreadable '
+                                     'or its digest differs') from exc
+
             for index, step in enumerate(record['steps']):
                 if step['index'] != index or step.get('encoding') != 'json' or step['phase'] == 'lattice':
                     raise ValueError('resume requires non-lattice literal steps in order')
@@ -668,9 +683,14 @@ class Runner:
                 self.m.apply_word(state, word)
                 if state.digest() != step['after']['digest']:
                     raise ValueError('resume step after digest differs')
+                if 'table' in step:
+                    check_table(step['table'], step['after']['digest'], f'step {index}')
             point = resume_point(record, self.m.snapshot(state))
             if point == 'terminal':
                 raise ValueError('run is not in flight')
+            if point != 'bulk':
+                end = record['phases']['bulk']['end']
+                check_table(end['table'], end['digest'], 'bulk end')
             seconds = record['totals']['seconds']
             if type(seconds) not in (int, float) or not math.isfinite(seconds) or seconds < 0:
                 raise ValueError('invalid recorded running time')
@@ -695,10 +715,15 @@ class Runner:
         (self.out / 'bulk-progress.json').unlink(missing_ok=True)
         self.directories()
         self.record, self.state = record, state
+        bulk = record['phases']['bulk']
+        if bulk.get('completed') is True and bulk['result'] in ('budget', 'timeout'):
+            # The child can save its final boundary before the parent labels the component.
+            self.component('bulk_budget')
         recount(record)
         self.started = time.monotonic() - seconds
-        self.table = self.out / ('tables/bulk-end.json' if point == 'bulk' or not count else
-                                 f'tables/{count - 1:05d}.json')
+        self.table = self.out / (
+            'tables/bulk-end.json' if point == 'bulk' or not count or record['steps'][-1]['phase'] == 'bulk'
+            else f'tables/{count - 1:05d}.json')
         self.m.export(state, self.table)
         record.setdefault('resumes', []).append({'at_step': count, 'seconds': seconds, 'source': config['source']})
         record['result'], record['error'] = 'budget', None
@@ -819,6 +844,7 @@ class Runner:
         if result in ('budget', 'timeout'):
             # A step or clock budget ends the bulk early; later phases still run (plan, result table).
             self.component('bulk_budget')
+        self.record['phases']['bulk']['completed'] = True
         self.save()
 
     def heights(self):
@@ -1762,6 +1788,7 @@ def bulk_child(out, cache):
                'lock': restorer.level2, 'improve': restorer.improve, 'shift': restorer.shift,
                'conj': restorer.conj}
     phase = record['phases']['bulk']
+    phase['completed'] = False
     while True:
         n = int(restorer.misalignment())
         if n == 0:
@@ -1804,6 +1831,7 @@ def bulk_child(out, cache):
                      end=dict(runner.m.snapshot(state), table=runner.rel(runner.table)))
         runner.save()
         atomic_json(out / 'bulk-progress.json', {'step_started': None})
+    phase['completed'] = True
     atomic_json(out / 'bulk-progress.json', {'step_started': None})
     runner.save()
 

@@ -484,6 +484,10 @@ adds the keys below (`scripts/runner.py:445-505` unless noted). Keys marked I1 w
     `SCRIPTS`. With the plugins of I1 that is 49 files, the D19 rule among them (`scripts/runner.py:74-81`, :466-467;
     measured in the D0 records);
 - in `phases`:
+  - `bulk.completed` (since the resume fixes of 23 October 2026): `false` while the bulk child is still stepping,
+    `true` once the bulk has ended with its final result, a final `budget` or `timeout` included; `--resume` then
+    goes straight to the next phase. Older records have no such key and are read as before; the checker accepts it
+    only as a Boolean;
   - `height {result, steps, twists, start, end, sub: {r22d75, r22d81, h4}}`, each sub-phase with `{result, steps,
     start, end}`;
   - `high {result, steps, twists, start, end}`;
@@ -1605,11 +1609,15 @@ python3 -I -B research/jumbling/restoration/13-tutorial-runner/scripts/runner.py
 ```
 
 Resume replays the saved words and refuses a different configuration, source table or scramble, changed research
-code or versions, or a terminal record. It records each continuation in `resumes`; the checker replays its steps
-as for an uninterrupted run. Running time excludes the gap between sessions. Checkpoints include the run's referenced
-words, trees, tables, units, probe and lattice files, and omit repository provenance files and temporary files.
-The helper refuses protected branches, detached HEAD and staged changes outside its checkpoint directory. At the end,
-commit the completed run directory and remove its checkpoint directory in the same commit.
+code or versions, or a terminal record. Before it writes anything it checks that every table the record names for a
+completed step, and the bulk end table once the bulk has ended, exists, parses and has the recorded digest. A bulk
+that ended (`phases.bulk.completed`, section 2) is not entered again. It records each continuation in `resumes`; the
+checker replays its steps as for an uninterrupted run, and for a run that has ended it refuses a resume time above
+`totals.seconds`. Running time excludes the gap between sessions. Checkpoints include the run's referenced words,
+trees, tables, units, probe and lattice files, and omit repository provenance files and temporary files. The helper
+passes every path to Git literally and commits only its checkpoint directory, leaving anything else staged as it was;
+it refuses protected branches, detached HEAD and staged changes outside its checkpoint directory. At the end, commit
+the completed run directory and remove its checkpoint directory in the same commit.
 
 ## Replay
 

@@ -361,7 +361,9 @@ def check_record(test, out, record):
     phases = record['phases']
     test.assertEqual(list(phases), list(api.PHASE_ORDER))
     bulk = phases['bulk']
-    test.assertEqual(set(bulk), {'result', 'steps', 'twists', 'end'})
+    test.assertEqual(set(bulk) - {'completed'}, {'result', 'steps', 'twists', 'end'})
+    if 'completed' in bulk:
+        test.assertIs(type(bulk['completed']), bool)
     snapshot(bulk['end'])
     relative(bulk['end']['table'])
     test.assertIn(bulk['result'], ('lattice', 'stuck', 'timeout', 'budget'))
@@ -766,6 +768,7 @@ def bulk_finds_nothing(runner):
     """Stand in for a bulk child that finds no step at the start state, so the run is no component."""
     def bulk():
         runner.record['phases']['bulk']['result'] = 'stuck'
+        runner.record['phases']['bulk']['completed'] = True
         runner.save()
     return patch.object(runner, 'bulk', side_effect=bulk)
 
@@ -1011,6 +1014,131 @@ class ResumeTests(TemporaryTest):
             runner.run()
         self.assertEqual(before, self.tree(runner.out), 'a refusal must not write or clean up')
 
+    def test_resume_checks_all_committed_tables_before_writing(self):
+        cut = self.runner('committed-tables')
+        saved = self.interrupted(cut, 2)
+        self.assertEqual([s['phase'] for s in saved['steps']], ['height', 'height'])
+        for table in ('tables/00000.json', 'tables/00001.json', 'tables/bulk-end.json'):
+            for damage in ('missing', 'unreadable', 'digest', 'state'):
+                name = Path(table).stem + '-' + damage
+                with self.subTest(table=table, damage=damage):
+                    out = self.tmp / name
+                    shutil.copytree(cut.out, out)
+                    path = out / table
+                    if damage == 'missing':
+                        path.unlink()
+                    elif damage == 'unreadable':
+                        path.write_text('incomplete JSON {')
+                    else:
+                        doc = R.read_json(path)
+                        doc.update({'digest': '0' * 64} if damage == 'digest' else {'off_pieces': []})
+                        R.atomic_json(path, doc)
+                    (out / 'run.json.tmp').write_text('retain on refusal')
+                    resumed = self.runner(name, True)
+                    before = self.tree(out)
+                    with self.assertRaisesRegex(R.ResumeError, 'resume committed table'):
+                        resumed.run()
+                    self.assertEqual(before, self.tree(out), 'refusal must precede cleanup or writes')
+
+    def test_resume_rebuilds_the_mutable_in_flight_bulk_table(self):
+        for damage in ('missing', 'unreadable', 'digest'):
+            with self.subTest(damage=damage):
+                cut = self.runner('mutable-' + damage)
+                cut.initialize()
+                path = cut.out / 'tables/bulk-end.json'
+                if damage == 'missing':
+                    path.unlink()
+                elif damage == 'unreadable':
+                    path.write_text('incomplete JSON {')
+                else:
+                    cut.m.export(FakeState(()), path)
+                resumed = self.runner('mutable-' + damage, True)
+                self.assertEqual(resumed.resume(), 'bulk')
+                self.assertEqual(resumed.m.load(path).digest(), cut.state.digest())
+
+    def test_completed_bulk_is_not_reentered_before_height(self):
+        for label in ('zero-budget', 'timeout', 'stuck', 'lattice'):
+            extra = (() if label in ('zero-budget', 'lattice') else ('--bulk-steps', '2'))
+            if label == 'timeout':
+                extra += ('--bulk-seconds', '0.000000001')
+            start = FakeState((), turn=1) if label == 'lattice' else None
+            name = 'completed-bulk-' + label
+            cut = self.runner(name, start=start, extra=extra)
+            cut.initialize()
+
+            def child(*args, **kwargs):
+                if label == 'timeout':
+                    return SimpleNamespace(poll=lambda: None, returncode=-9)
+                record = R.read_json(cut.out / 'run.json')
+                record['phases']['bulk']['result'] = 'stuck'
+                R.atomic_json(cut.out / 'run.json', record)
+                return SimpleNamespace(poll=lambda: 0, returncode=0)
+
+            with self.subTest(result=label), patch.object(R.subprocess, 'Popen', side_effect=child), \
+                    patch.object(R, 'kill_child'), patch.object(cut, 'initialize'), patch.object(cut, 'finish'), \
+                    patch.object(cut, 'phases_between', side_effect=PowerLoss()):
+                with self.assertRaises(PowerLoss):
+                    cut.run()
+            saved = R.read_json(cut.out / 'run.json')
+            self.assertIsNone(saved['phases']['height']['start'])
+            resumed = self.runner(name, True, start=start, extra=extra)
+            with patch.object(resumed, 'bulk') as bulk:
+                result = resumed.run()
+            with self.subTest(result=label):
+                bulk.assert_not_called()
+                self.assertIs(saved['phases']['bulk']['completed'], True)
+                self.assertEqual(result['phases']['bulk'], saved['phases']['bulk'])
+                # The explicit marker is optional: old records keep their old classification.
+                saved['phases']['bulk'].pop('completed')
+                self.assertEqual(R.resume_point(saved, cut.m.snapshot(cut.state)), 'bulk')
+
+    def test_bulk_child_distinguishes_final_budget_from_interim_steps(self):
+        class Restorer:
+            def __init__(self, state, menu, order):
+                self.state, self.order, self.moves = state, order, []
+
+            def misalignment(self):
+                return len(self.state.off)
+
+            def seam(self):
+                piece = min(self.state.off)
+                self.state.off.remove(piece)
+                self.moves.append((piece, 1))
+                return [self.moves[-1]]
+
+            cover = level1 = level2 = improve = shift = conj = seam
+
+        cut = self.runner('bulk-final-budget', start=FakeState({1, 2}), extra=('--bulk-steps', '1'))
+        cut.initialize()
+        cut.m.menu = None
+        cut.m.seams = SimpleNamespace(SeamRestorer=Restorer)
+        saves, save = [], R.Runner.save
+
+        def observe(runner):
+            save(runner)
+            saves.append(copy.deepcopy(runner.record))
+
+        with patch.object(R, 'Mechanics', return_value=cut.m), patch.object(R.threading, 'Thread'), \
+                patch.object(R.Runner, 'save', observe):
+            R.bulk_child(cut.out, self.tmp / 'cache')
+        resumed = self.runner('bulk-final-budget', True, extra=('--bulk-steps', '1'))
+        tables, resume = [], resumed.resume
+
+        def capture_resume_table():
+            point = resume()
+            tables.append(resumed.table)
+            return point
+
+        with patch.object(resumed, 'resume', side_effect=capture_resume_table), patch.object(resumed, 'bulk') as bulk:
+            result = resumed.run()
+        bulk.assert_not_called()
+        self.assertEqual(tables, [resumed.out / 'tables/bulk-end.json'])
+        self.assertEqual(result['result'], 'solved')
+        self.assertEqual([r['phases']['bulk']['completed'] for r in saves], [False, True])
+        self.assertEqual([r['phases']['bulk']['result'] for r in saves], ['budget', 'budget'])
+        self.assertTrue(all(r['config']['component'] is None for r in saves))
+        self.assertEqual(result['config']['component'], 'bulk_budget')
+
     def test_resume_refusals_write_nothing(self):
         cut = self.runner('source')
         original = self.interrupted(cut, 1)
@@ -1021,6 +1149,7 @@ class ResumeTests(TemporaryTest):
             'scripts': lambda r: r['config']['scripts'].update({next(iter(r['config']['scripts'])): '0' * 64}),
             'code missing': lambda r: r['config'].pop('code'),
             'code changed': lambda r: r['config']['code'].update(sha256='0' * 64),
+            'bulk completion type': lambda r: r['phases']['bulk'].update(completed='yes'),
             'source seed': lambda r: r['start'].update(seed=8),
             'source depth': lambda r: r['start'].update(k=2),
             'solved': lambda r: r.update(result='solved'),
