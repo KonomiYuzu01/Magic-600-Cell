@@ -1111,7 +1111,7 @@ class ResumeTests(TemporaryTest):
         cut = self.runner('bulk-final-budget', start=FakeState({1, 2}), extra=('--bulk-steps', '1'))
         cut.initialize()
         cut.m.menu = None
-        cut.m.seams = SimpleNamespace(SeamRestorer=Restorer)
+        cut.m.bulk_restorer = Restorer
         saves, save = [], R.Runner.save
 
         def observe(runner):
@@ -1285,7 +1285,7 @@ class ResumeTests(TemporaryTest):
 
         mechanics = FakeMechanics()
         mechanics.menu = None
-        mechanics.seams = SimpleNamespace(SeamRestorer=Restorer)
+        mechanics.bulk_restorer = Restorer
         args = self.args('bulk', '--bulk-steps', '2')
         runner = R.Runner(args, mechanics, plugins())
         runner.initialize()
@@ -1314,7 +1314,7 @@ class ResumeTests(TemporaryTest):
                 constructed.append(state.off.copy())
                 super().__init__(state, menu, order)
 
-        mechanics.seams.SeamRestorer = ObservedRestorer
+        mechanics.bulk_restorer = ObservedRestorer
         with patch.object(R, 'Mechanics', return_value=mechanics), patch.object(R.threading, 'Thread'):
             R.bulk_child(runner.out, self.tmp / 'cache')
         actual = R.read_json(runner.out / 'run.json')
