@@ -157,6 +157,13 @@ starts from the scramble in `out3/`, with `checkpoint.py` keeping a verified cop
   `out4-checkpoint/run.json`): all 97 steps agree in rule, letters, word sha256, before and after digest, and off.
   There is no difference so far.
 
+- 22:50 UTC progress: run 4 has saved 102 steps (indices 0 to 101, runner time 26,373 s), and the checkpoint has all
+  102. Compared with run 3, all 102 agree in rule, letters, word sha256, before and after digest, and off. There is
+  no difference. Step 102 (unit `u107733`) is in its `close-pure-close` repair, with the same targets, lengths and
+  gains as run 3's so far: target 60370 length 6 gain 4, target 60413 length 4 gain 5, target 60404 length 6 gain 3,
+  leaving 43. Run 4 took 684 s for these three repair steps; run 3 took 14,348 s for the same three. These are cloud
+  timings of research code on a shared machine, not performance evidence.
+
 ## Not run
 
 - `check_run.py` (it runs after the runner ends).
