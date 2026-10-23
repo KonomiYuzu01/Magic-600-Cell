@@ -1,12 +1,23 @@
 """Independent, current-table-only replay of HD2P/1 experiment records.
 
-Run with Python -I -B, --out RUN (an existing experiment directory). No search
-module or old pose/u contract is imported. Replay proves literal word contracts;
-the search ledger and differential tests, not replay, establish enumeration order.
+Legacy: python3 -I -B check_height_descent_experiment.py --out RUN.
+Segments: --chain SEARCH/manifest.json --out CAMPAIGN; add --resume-check
+CHECK/manifest.json to resume unfinished verification, and --audit to enumerate
+a candidate terminal STUCK independently. Full repository-root commands are in
+height_descent_experiment.py's module docstring. No search module or old pose/u
+contract is imported. Literal replay does not establish historical first choice;
+only a completed separate audit establishes terminal exhaustion.
 All geometry imports are lazy, after thread settings, cache routing and budgets.
 """
 
 import argparse
+import copy
+from datetime import datetime, timezone
+from functools import lru_cache
+import io
+import re
+import tempfile
+import uuid
 import hashlib
 import json
 import math
@@ -17,6 +28,7 @@ import signal
 import sys
 import time
 
+PROCESS_WALL_START = time.monotonic()
 sys.dont_write_bytecode = True
 for _name in ('OPENBLAS_NUM_THREADS', 'OMP_NUM_THREADS', 'MKL_NUM_THREADS', 'NUMEXPR_NUM_THREADS'):
     os.environ[_name] = '1'
@@ -261,6 +273,7 @@ class ReplayEngine:
     def __init__(self, rt, tick=lambda: None):
         self.rt, self.tick = rt, tick
         self._height = {}
+        self.snapshot_cpu, self.snapshot_count = 0., 0
 
     def clone(self, st):
         out = self.rt.sim.State(self.rt.ctx, menu=self.rt.menu, filtered=False)
@@ -299,6 +312,7 @@ class ReplayEngine:
         return blocked
 
     def snapshot(self, st, initial_lattice, ever):
+        started = time.process_time()
         self.tick()
         hist, off = self.histogram(st), self.off(st)
         loss = initial_lattice & off
@@ -308,10 +322,13 @@ class ReplayEngine:
         n = int(self.rt.rim.Domains(st).total_misalignment())
         self.tick()
         q = qvalue(hist)
-        return ({'digest': st.digest(), 'heights': hist, 'maximum': maximum(hist),
+        snap = {'digest': st.digest(), 'heights': hist, 'maximum': maximum(hist),
                  'n2_n4_n6': [hist.get(str(h), 0) for h in (2, 4, 6)],
                  'Q': q, 'Bk': bk, 'M': 601 * q + bk, 'N': n, 'off': len(off),
-                 'lattice_loss': len(loss), 'ever_lattice_loss': len(ever)}, ever)
+                 'lattice_loss': len(loss), 'ever_lattice_loss': len(ever)}
+        self.snapshot_cpu += time.process_time() - started
+        self.snapshot_count += 1
+        return snap, ever
 
     def apply(self, st, c, j):
         self.tick()
@@ -363,14 +380,15 @@ def same(actual, reported, field):
     require(canonical(actual) == canonical(reported), field)
 
 
-def replay_step(engine, st, row, initial_lattice, ever, index, letters):
+def replay_step(engine, st, row, initial_lattice, ever, index, letters, before_snapshot=None):
     require(row.get('type') == 'STEP' and row.get('rule') == RULE, 'STEP rule')
     word, family = row.get('word'), row.get('family')
     word_shape(word, family)
     same(index, row.get('index'), 'step index')
     same(len(word), row.get('letters'), 'letters')
     same(letters + len(word), row.get('cumulative_letters'), 'cumulative letters')
-    before, old_ever = engine.snapshot(st, initial_lattice, ever)
+    before, old_ever = (engine.snapshot(st, initial_lattice, ever) if before_snapshot is None
+                        else (before_snapshot, ever))
     same(before, row.get('before'), 'before measurements')
     require(old_ever == ever, 'boundary loss tracking')
     if family == 'CL2':
@@ -460,7 +478,7 @@ def verify_output(output, rt, tick=lambda: None, allow_pending=False, check_stre
     same(input_identity(case), rows[0].get('input'), 'START input identity')
     same(FORMAT, rows[0].get('format'), 'START format')
     same(RULE, rows[0].get('rule'), 'START rule')
-    probes = []
+    probes, last = [], first
     for row in rows[1:-1]:
         tick()
         if row['type'] == 'PROBE':
@@ -489,14 +507,15 @@ def verify_output(output, rt, tick=lambda: None, allow_pending=False, check_stre
             probes.append(word)
         else:
             require(len(probes) == len(PROBES.get(case, [])), 'missing diagnostic probes')
-            st, ever = replay_step(engine, st, row, initial_lattice, ever, steps + 1, letters)
+            st, ever = replay_step(engine, st, row, initial_lattice, ever, steps + 1, letters, last)
+            last = row['after']  # Compared to the independently computed prefix above.
             steps += 1
             letters += len(row['word'])
         if check_stream is not None:
             emit(check_stream, {'type': 'REPLAY', 'event': row['type'], 'steps': steps,
                                 'letters': letters, 'passed': True})
     final = rows[-1]
-    snap, ever = engine.snapshot(st, initial_lattice, ever)
+    snap = last
     same(snap, final.get('last'), 'FINAL measurements')
     same(steps, final.get('steps'), 'FINAL steps')
     same(letters, final.get('letters'), 'FINAL letters')
@@ -516,11 +535,11 @@ def verify_output(output, rt, tick=lambda: None, allow_pending=False, check_stre
     tick()
     return {'status': 'complete', 'passed': result != 'ERROR', 'steps': steps, 'letters': letters,
             'digest': snap['digest'], 'heights': snap['heights'],
-            'handoff': handoff(snap['heights']),
+            'handoff': handoff(snap['heights']), 'exhaustion_verification': 'not_performed',
             'scope': 'literal replay and ledger integrity; ordering/exhaustion not replay-proved'}
 
 
-def main():
+def legacy_main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--out', required=True)
     ap.add_argument('--cpu-seconds', type=float, default=3300)
@@ -528,10 +547,10 @@ def main():
     limits = Limits(args.cpu_seconds)
     output = external_directory(args.out)
     # An independent later invocation never overwrites the experiment's report.
-    with (output / 'recheck.jsonl').open('x', encoding='utf-8') as stream:
+    with (output / ('recheck-' + uuid.uuid4().hex + '.jsonl')).open('x', encoding='utf-8') as stream:
         try:
             rt = Runtime(output)
-            report = verify_output(output, rt, limits.check, check_stream=stream)
+            report = verify_output(output, rt, limits.check, allow_pending=True, check_stream=stream)
         except Budget as exc:
             report = {'status': 'incomplete', 'passed': False, 'reason': str(exc)}
         except (ValueError, KeyError, TypeError, OSError, AssertionError) as exc:
@@ -539,6 +558,1097 @@ def main():
         emit(stream, dict(type='CHECK', **report, **limits.times()))
     print(canonical(report), flush=True)
     return 0 if report['status'] == 'complete' and report['passed'] else 1
+
+
+# Versioned transport and coverage protocol. This section contains no search
+# mechanics. The terminal enumerator below is independently written.
+SEGMENT = 'height-descent-segment/2'
+CHECK = 'height-descent-check/2'
+CHAIN = 'hd2p-logical-units/1'
+ORDER = 'SINGLE(c,y);CL2(c,x,d,min(Q,y));PEEL(c,x)/1'
+ZERO_HASH = '0' * 64
+CHUNK_BYTES = 4_000_000
+MAX_FILE = 5_000_000
+
+
+def schema(obj, fields, reason):
+    require(type(obj) is dict and set(obj) == fields, reason)
+
+
+def digest_json(value):
+    return sha(canonical(value).encode())
+
+
+def bitset(pieces):
+    bits = bytearray((P + 7) // 8)
+    for p in pieces:
+        require(type(p) is int and 0 <= p < P, 'loss bitset index')
+        bits[p // 8] |= 1 << (p % 8)
+    return bits.hex()
+
+
+def unbitset(encoded):
+    require(isinstance(encoded, str), 'loss bitset encoding')
+    return set(_decode_bitset(encoded))
+
+
+@lru_cache(maxsize=16)
+def _decode_bitset(encoded):
+    require(isinstance(encoded, str) and len(encoded) == 2 * ((P + 7) // 8)
+            and re.fullmatch('[0-9a-f]*', encoded) is not None, 'loss bitset encoding')
+    raw = bytes.fromhex(encoded)
+    result = {8 * i + b for i, byte in enumerate(raw) if byte
+              for b in range(8) if byte & (1 << b)}
+    same(bitset(result), encoded, 'loss bitset padding')
+    return frozenset(result)
+
+
+def safe_relative(name):
+    require(isinstance(name, str) and bool(name) and '\\' not in name and ':' not in name,
+            'portable artifact path')
+    p = Path(name)
+    require(not p.is_absolute() and all(t not in ('', '.', '..') for t in name.split('/')),
+            'artifact path traversal')
+    return p
+
+
+def confined(root, name):
+    p = root / safe_relative(name)
+    require(not any(q.is_symlink() for q in [p, *p.parents] if q != root.parent), 'artifact symlink')
+    require(p.resolve().is_relative_to(root.resolve()), 'artifact escaped root')
+    return p
+
+
+def pack_artifact(directory, name, source):
+    """Chunk raw bytes, including JSONL, without assuming a record fits a chunk."""
+    safe_relative(name)
+    require('/' not in name, 'artifact name')
+    if isinstance(source, bytes):
+        source = io.BytesIO(source)
+    total, h, chunks = 0, hashlib.sha256(), []
+    while True:
+        block = source.read(CHUNK_BYTES)
+        if not block:
+            break
+        filename = f'{name}.{len(chunks):05d}.chunk'
+        with (directory / filename).open('xb') as f:
+            f.write(block)
+            f.flush()
+            os.fsync(f.fileno())
+        chunks.append(dict(path=filename, size=len(block), sha256=sha(block)))
+        h.update(block)
+        total += len(block)
+    return dict(size=total, sha256=h.hexdigest(), chunks=chunks)
+
+
+def artifact_blocks(directory, descriptor):
+    schema(descriptor, {'size', 'sha256', 'chunks'}, 'artifact schema')
+    require(type(descriptor['size']) is int and descriptor['size'] >= 0, 'artifact size')
+    total, h, seen = 0, hashlib.sha256(), set()
+    for chunk in descriptor['chunks']:
+        schema(chunk, {'path', 'size', 'sha256'}, 'chunk schema')
+        require(chunk['path'] not in seen, 'duplicate chunk')
+        seen.add(chunk['path'])
+        require(type(chunk['size']) is int and 0 < chunk['size'] < MAX_FILE, 'chunk size')
+        path = confined(directory, chunk['path'])
+        require(path.stat().st_size == chunk['size'], 'truncated artifact')
+        block = path.read_bytes()
+        same(sha(block), chunk['sha256'], 'artifact hash')
+        h.update(block)
+        total += len(block)
+        yield block
+    same(total, descriptor['size'], 'artifact total size')
+    same(h.hexdigest(), descriptor['sha256'], 'artifact total hash')
+
+
+def artifact_bytes(directory, descriptor):
+    return b''.join(artifact_blocks(directory, descriptor))
+
+
+def artifact_lines(directory, descriptor):
+    pending = b''
+    for block in artifact_blocks(directory, descriptor):
+        lines = (pending + block).split(b'\n')
+        pending = lines.pop()
+        for line in lines:
+            require(bool(line), 'empty JSONL entry')
+            yield parse(line)
+    require(not pending, 'truncated JSONL artifact')
+
+
+def atomic_manifest(directory, manifest, interrupt=lambda _: None):
+    """Only this rename publishes a segment. Partial directories are disposable."""
+    raw = (canonical(manifest) + '\n').encode()
+    require(len(raw) < MAX_FILE, 'manifest size')
+    require(not (directory / 'manifest.json').exists(), 'immutable manifest exists')
+    interrupt('before_manifest')
+    with (directory / 'manifest.pending').open('xb') as f:
+        f.write(raw)
+        f.flush()
+        os.fsync(f.fileno())
+    interrupt('before_finalize')
+    (directory / 'manifest.pending').replace(directory / 'manifest.json')
+    fd = os.open(directory, os.O_RDONLY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+    return directory / 'manifest.json'
+
+
+def portable_command(mode, case=None):
+    script = 'research/jumbling/restoration/13-tutorial-runner/scripts/'
+    if mode in ('checker', 'audit'):
+        result = ['python3', '-I', '-B', script + 'check_height_descent_experiment.py',
+                  '--chain', '../campaign/SEARCH/manifest.json', '--out', '../campaign']
+        if mode == 'audit':
+            result += ['--audit', '--resume-check', '../campaign/CHECK/manifest.json']
+    else:
+        result = ['python3', '-I', '-B', script + 'height_descent_experiment.py',
+                  '--segment', '--case', str(case), '--out', '../campaign']
+        if mode == 'diagnostics':
+            result.append('--diagnostics-only')
+        if mode == 'qualification':
+            result += ['--qualify-ledger', '../first-run/search.jsonl', '--units', '1000']
+    return result
+
+
+def recorded_command(manifest):
+    cmd = portable_command(manifest['kind'], manifest['input']['case'])
+    previous = manifest['predecessor']
+    if manifest['kind'] in ('checker', 'audit'):
+        cmd[cmd.index('--chain') + 1] = '../campaign/' + manifest['target']['path']
+        if '--resume-check' in cmd:
+            i = cmd.index('--resume-check')
+            del cmd[i:i + 2]
+        if previous:
+            cmd += ['--resume-check', '../campaign/' + previous['path']]
+    elif previous:
+        cmd += ['--resume', '../campaign/' + previous['path']]
+    if manifest['kind'] == 'qualification':
+        cmd[cmd.index('--units') + 1] = str(manifest['qualification']['requested_units'])
+    cmd += ['--not-after', datetime.fromtimestamp(manifest['not_after'], timezone.utc).isoformat()]
+    for option, value in sorted(manifest['budget'].get('limits', {}).items()):
+        cmd += ['--' + option.replace('_', '-'), str(value)]
+    return cmd
+
+
+class SegmentLimits:
+    """One process, with setup charged and a distinct trajectory CPU origin.
+
+    Useful work stops at 3000 absolute CPU seconds (or earlier). 300 seconds
+    remain to publish. A forced kill retains only the preceding manifest.
+    Tests inject clocks and disable OS timers; CLI callers always arm them.
+    """
+    def __init__(self, used=0, ceiling=19800, total=3300, useful=3000, wall=3600,
+                 not_after=None, arm=True, cpu=time.process_time, monotonic=time.monotonic,
+                 utc=time.time):
+        require(2 <= total <= 3300 and 0 <= useful <= min(3000, total - 1), 'segment CPU envelope')
+        require(1 <= wall <= 3600 and 0 <= used <= ceiling, 'cumulative budget')
+        self.cpu, self.clock, self.utc = cpu, monotonic, utc
+        self.start, self.used, self.ceiling = (PROCESS_WALL_START if arm else monotonic()), used, ceiling
+        self.total, self.useful, self.wall = total, useful, wall
+        self.not_after = not_after if not_after is not None else utc() + 86400
+        require(math.isfinite(self.not_after) and self.not_after <= utc() + 86400, '24-hour campaign envelope')
+        self.work_start = None
+        if arm:
+            hard = math.ceil(min(total, ceiling - used))
+            require(hard > cpu() + 1, 'no remaining process allowance')
+            old = resource.getrlimit(resource.RLIMIT_CPU)[1]
+            if old != resource.RLIM_INFINITY:
+                hard = min(hard, old)
+            resource.setrlimit(resource.RLIMIT_CPU, (hard, hard))
+            signal.signal(signal.SIGPROF, self._expired)
+            signal.signal(signal.SIGALRM, self._expired)
+            signal.setitimer(signal.ITIMER_PROF, max(.001, min(useful, hard - 1) - cpu()))
+            signal.setitimer(signal.ITIMER_REAL, max(.001, min(wall - 300, self.not_after - utc() - 300)))
+        self.armed = arm
+
+    @staticmethod
+    def _expired(*_):
+        raise Budget('segment useful-work allowance')
+
+    def boundary(self):
+        self.work_start = self.cpu()
+        self.check()
+
+    def check(self):
+        if (self.cpu() >= min(self.useful, self.ceiling - self.used - 300)
+                or self.clock() - self.start >= self.wall - 300
+                or self.utc() >= self.not_after - 300):
+            raise Budget('segment/cumulative/campaign useful-work allowance')
+
+    def finalizing(self):
+        if self.armed:
+            signal.setitimer(signal.ITIMER_PROF, 0)
+            signal.setitimer(signal.ITIMER_REAL, 0)
+            signal.setitimer(signal.ITIMER_PROF, max(.001, min(self.total, self.ceiling - self.used)
+                                                     - self.cpu() - .5))
+            signal.setitimer(signal.ITIMER_REAL, max(.001, min(self.wall - (self.clock() - self.start),
+                                                              self.not_after - self.utc())))
+
+    def times(self):
+        return dict(cpu_seconds=self.cpu(), wall_seconds=self.clock() - self.start,
+                    trajectory_cpu_seconds=0 if self.work_start is None else self.cpu() - self.work_start,
+                    setup_cpu_seconds=self.cpu() if self.work_start is None else self.work_start)
+
+
+def utc_deadline(value):
+    if value is None:
+        return None
+    dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
+    require(dt.utcoffset() is not None and dt.utcoffset().total_seconds() == 0, 'not-after must be UTC')
+    return dt.timestamp()
+
+
+def search_cursor(digest, step=1):
+    return dict(version='hd2p-cursor/1', digest=digest, step=step, phase='histogram',
+                hist=None, classes=[], ci=0, xi=0, di=0, targets=[], filtered=False, middle=None)
+
+
+def cursor_hash(cursor):
+    return digest_json(cursor)
+
+
+def advance_cursor(cursor, events, row=None, caps=tuple(range(600)),
+                   items=tuple(range(1, 60)), jumble=tuple(range(12, 60))):
+    """Validate interval coverage, including every endpoint, independently of hashes.
+
+    Outcomes are claims, not geometry proofs. The separate audit checks all
+    rejection claims on the terminal state. This reducer is a file protocol,
+    shared with the writer; it never classifies, predicts or selects a move.
+    """
+    cur = copy.deepcopy(cursor)
+    require(cur['version'] == 'hd2p-cursor/1', 'cursor version')
+    clean = [caps[i] for i, cl in enumerate(cur['classes']) if cl['clean']]
+    phase, hist = cur['phase'], cur['hist']
+    pos = 0
+
+    def take(family, phase_name, outcomes, **at):
+        nonlocal pos
+        require(pos < len(events), 'missing candidate coverage')
+        e = events[pos]
+        pos += 1
+        schema(e, {'at', 'outcome', 'detail'}, 'unit event schema')
+        same(e['at'], dict(family=family, phase=phase_name, **at), 'candidate coordinates/order')
+        require(e['outcome'] in outcomes, 'candidate outcome')
+        return e
+
+    def next_single():
+        cur['xi'] += 1
+        if cur['xi'] == len(jumble):
+            cur['ci'], cur['xi'] = cur['ci'] + 1, 0
+        if cur['ci'] == len(clean):
+            cur['phase'] = 'single_end'
+
+    def next_opener():
+        cur['xi'] += 1
+        cur['di'], cur['middle'] = 0, None
+        if cur['xi'] == len(items):
+            cur['ci'], cur['xi'] = cur['ci'] + 1, 0
+            cur['filtered'], cur['targets'] = False, []
+        cur['phase'] = 'cl2_end' if cur['ci'] == len(clean) else 'opener'
+
+    def next_group():
+        cur['di'] += 1
+        if cur['di'] == len(cur['targets']):
+            next_opener()
+
+    chosen, predicted = None, None
+    if phase == 'histogram':
+        e = take('INPUT', 'histogram', ('measured',))
+        cur['hist'] = e['detail']['heights']
+        require(handoff(cur['hist']) or maximum(cur['hist']) in (4, 6), 'input height bound')
+        cur['phase'] = 'handoff' if handoff(cur['hist']) else 'input'
+    elif phase == 'input':
+        c = caps[len(cur['classes'])]
+        e = take('INPUT', 'classify', ('clean', 'blocked'), c=c)
+        b = e['detail']['blocker']
+        require(b is None if e['outcome'] == 'clean' else type(b) is int and 0 <= b < P,
+                'classification certificate')
+        cur['classes'].append(dict(clean=e['outcome'] == 'clean', blocker=b))
+        if len(cur['classes']) == len(caps):
+            cur['phase'] = 'single' if any(x['clean'] for x in cur['classes']) else 'single_end'
+    elif phase == 'single':
+        c, x = clean[cur['ci']], jumble[cur['xi']]
+        e = take('SINGLE', 'candidate', ('inadmissible', 'height_prune', 'no_descent', 'lowering'), c=c, x=x)
+        end = e['detail'].get('heights')
+        want = ('inadmissible' if end is None else 'height_prune' if maximum(end) > maximum(hist)
+                else 'no_descent' if qvalue(end) >= qvalue(hist) else 'lowering')
+        same(e['outcome'], want, 'SINGLE outcome/height')
+        if want == 'lowering':
+            chosen, predicted = ('SINGLE', [[c, x]]), [end]
+        else:
+            next_single()
+    elif phase in ('single_end', 'cl2_end', 'peel_end'):
+        family = {'single_end': 'SINGLE', 'cl2_end': 'CL2', 'peel_end': 'PEEL'}[phase]
+        take(family, 'end', ('exhausted',))
+        cur.update(ci=0, xi=0, di=0)
+        cur['phase'] = {'single_end': 'opener' if clean else 'cl2_end',
+                        'cl2_end': 'peel' if clean else 'peel_end', 'peel_end': 'stuck'}[phase]
+    elif phase == 'opener':
+        c, x = clean[cur['ci']], items[cur['xi']]
+        e = take('CL2', 'opener', ('opener_prune', 'opener_inadmissible', 'opener_survives'), c=c, x=x)
+        middle = e['detail'].get('heights')
+        if e['outcome'] != 'opener_survives':
+            if e['outcome'] == 'opener_prune':
+                require(middle is None or maximum(middle) > maximum(hist), 'opener prune')
+            next_opener()
+        else:
+            require(middle is not None and maximum(middle) <= maximum(hist), 'opener bound')
+            cur['middle'], cur['di'] = middle, 0
+            if not cur['filtered']:
+                cur['phase'] = 'filter'
+            elif cur['targets']:
+                cur['phase'] = 'group'
+            else:
+                next_opener()
+    elif phase == 'filter':
+        c, d = clean[cur['ci']], caps[cur['di']]
+        e = take('CL2', 'target_filter', ('same_cap', 'not_meeting', 'blocker_certificate',
+                                        'blocker_containment', 'target_survives'), c=c, d=d)
+        require((c == d) == (e['outcome'] == 'same_cap'), 'same cap filter')
+        if e['outcome'] == 'target_survives':
+            cur['targets'].append(d)
+        cur['di'] += 1
+        if cur['di'] == len(caps):
+            cur.update(filtered=True, di=0, phase='group')
+            if not cur['targets']:
+                next_opener()
+    elif phase == 'group':
+        c, x, d = clean[cur['ci']], items[cur['xi']], cur['targets'][cur['di']]
+        e = take('CL2', 'second_cap', ('intermediate_blocked', 'intermediate_clean'), c=c, x=x, d=d)
+        best = None
+        if e['outcome'] == 'intermediate_clean':
+            for y in jumble:
+                e = take('CL2', 'second_item', ('endpoint', 'endpoint_prune'), c=c, x=x, d=d, y=y)
+                end = e['detail']['heights']
+                good = end is not None and maximum(end) <= maximum(hist)
+                same(e['outcome'], 'endpoint' if good else 'endpoint_prune', 'endpoint bound')
+                if good:
+                    score = qvalue(end), y
+                    same(e['detail']['Q'], score[0], 'endpoint Q')
+                    if best is None or score < best[0]:
+                        best = score, end
+            if best is not None and best[0][0] < qvalue(hist):
+                chosen = 'CL2', [[c, x], [d, best[0][1]]]
+                predicted = [cur['middle'], best[1]]
+        if chosen is None:
+            next_group()
+    elif phase == 'peel':
+        c, x = clean[cur['ci']], items[cur['xi']]
+        e = take('PEEL', 'candidate', ('height_or_count_prune', 'inadmissible', 'global_blocked'), c=c, x=x)
+        end = e['detail'].get('heights')
+        if e['outcome'] == 'global_blocked':
+            require(maximum(end) <= maximum(hist) and all(end.get(str(k), 0) == hist.get(str(k), 0)
+                                                        for k in (6, 4)), 'PEEL counts')
+            same(e['detail']['before'], len(caps) - len(clean), 'PEEL input Bk')
+            if e['detail']['after'] < e['detail']['before']:
+                chosen, predicted = ('PEEL', [[c, x]]), [end]
+        cur['xi'] += 1
+        if cur['xi'] == len(items):
+            cur['ci'], cur['xi'] = cur['ci'] + 1, 0
+        if cur['ci'] == len(clean):
+            cur['phase'] = 'peel_end'
+    else:
+        raise ValueError('completed or invalid cursor')
+    same(pos, len(events), 'duplicate candidate coverage')
+    if chosen is not None:
+        require(row is not None, 'unpublished STEP transaction')
+        same([row['family'], row['word']], list(chosen), 'selected word/minimum')
+        same([p['heights'] for p in row['prefixes']], predicted, 'selected prefix histograms')
+        same(row['input_digest'], cursor['digest'], 'STEP state binding')
+        same(row['index'], cursor['step'], 'STEP global index')
+        return search_cursor(row['output_digest'], cursor['step'] + 1)
+    require(row is None, 'unsolicited STEP')
+    return cur
+
+
+def unit_record(ordinal, previous, before, after, events, row=None):
+    body = dict(version=CHAIN, ordinal=ordinal, previous=previous, before=cursor_hash(before),
+                after=cursor_hash(after), events=events, step=row)
+    return dict(body, sha256=digest_json(body))
+
+
+def validate_unit(unit, ordinal, previous, cursor, **domain):
+    schema(unit, {'version', 'ordinal', 'previous', 'before', 'after', 'events', 'step', 'sha256'},
+         'logical unit schema')
+    same(unit['version'], CHAIN, 'logical unit version')
+    same(unit['ordinal'], ordinal, 'overlapping or skipped interval')
+    same(unit['previous'], previous, 'unit predecessor')
+    same(unit['before'], cursor_hash(cursor), 'unit cursor boundary')
+    same(unit['sha256'], digest_json({k: v for k, v in unit.items() if k != 'sha256'}), 'unit hash')
+    end = advance_cursor(cursor, unit['events'], unit['step'], **domain)
+    same(unit['after'], cursor_hash(end), 'unit end cursor')
+    return end
+
+
+def table_bytes(st, rt):
+    return (canonical({'poses': [rt.matrix_json(st._pose_matrix(i)) for i in range(len(st._poses))],
+                       'pose_id': st.pose_id.tolist(), 'digest': st.digest(), 'journal': []}) + '\n').encode()
+
+
+def load_artifact_table(directory, descriptor, rt, digest, temporary):
+    # Reuse complete table validation; the temporary file is never evidence.
+    with tempfile.NamedTemporaryFile(dir=temporary, suffix='.json') as f:
+        for block in artifact_blocks(directory, descriptor):
+            f.write(block)
+        f.flush()
+        return load_table(f.name, rt, expected_digest=digest)
+
+
+def segment_identity(rt):
+    result = rt.identity()
+    result['sources'][str((HERE / 'test_height_descent_segments.py').relative_to(ROOT))] = sha(
+        (HERE / 'test_height_descent_segments.py').read_bytes())
+    result['ordering'] = ORDER
+    return result
+
+
+def manifest_ref(path):
+    path = Path(path)
+    return dict(path=path.parent.name + '/manifest.json', sha256=sha(path.read_bytes()))
+
+
+def new_output(root, kind):
+    root = external_directory(root)
+    root.mkdir(parents=True, exist_ok=True)
+    directory = root / (kind + '-' + uuid.uuid4().hex)
+    directory.mkdir()
+    return directory
+
+
+def publish(directory, kind, identity, pin, campaign, predecessor, start, end,
+            artifacts, budget, deadline, status, extra=None, interrupt=lambda _: None):
+    manifest = dict(format=CHECK if kind in ('checker', 'audit') else SEGMENT, rule=RULE,
+                    kind=kind, campaign=campaign, segment=directory.name, predecessor=predecessor,
+                    input=pin, identity=identity, start=start, end=end, artifacts=artifacts,
+                    budget=budget, not_after=deadline, status=status,
+                    verification='provisional' if kind not in ('checker', 'audit') else status,
+                    command=portable_command(kind, pin['case']), private_files=[],
+                    commit_files=['manifest.json'] + (['allocation.json'] if 'allocation' in artifacts else []) + [c['path'] for a in artifacts.values() for c in a['chunks']])
+    manifest['commit_files'].sort()
+    if extra:
+        manifest.update(extra)
+    manifest['command'] = recorded_command(manifest)
+    cache = directory / 'home_centroids.npy'
+    if cache.exists():
+        manifest['private_files'].append(dict(path=cache.name, size=cache.stat().st_size,
+                                              sha256=sha(cache.read_bytes())))
+    return atomic_manifest(directory, manifest, interrupt)
+
+
+def read_manifest(path, expected_format, identity=None):
+    path = Path(path).resolve()
+    raw = path.read_bytes()
+    require(len(raw) < MAX_FILE and raw.endswith(b'\n'), 'manifest size/completion')
+    m = parse(raw)
+    required = {'format', 'rule', 'kind', 'campaign', 'segment', 'predecessor', 'input', 'identity',
+                'start', 'end', 'artifacts', 'budget', 'not_after', 'status', 'verification',
+                'command', 'private_files', 'commit_files'}
+    require(required <= set(m) <= required | {'target', 'report', 'qualification', 'diagnostics'},
+            'manifest schema')
+    same(m['format'], expected_format, 'manifest version')
+    same(m['rule'], RULE, 'rule identity')
+    same(m['segment'], path.parent.name, 'segment identity')
+    require(type(m['not_after']) in (int, float) and math.isfinite(m['not_after']), 'campaign deadline')
+    pin = m['input']
+    require(type(pin.get('case')) is int and pin['case'] in CASES, 'pinned case')
+    same(pin, input_identity(pin['case']), 'input identity')
+    if identity is not None:
+        same(identity, m['identity'], 'source/model/menu/ordering identity')
+    expected = ['manifest.json'] + (['allocation.json'] if 'allocation' in m['artifacts'] else []) + [c['path'] for a in m['artifacts'].values() for c in a['chunks']]
+    expected.sort()
+    same(expected, m['commit_files'], 'commit inventory')
+    require(len(expected) == len(set(expected)), 'duplicate artifact file')
+    for name in expected:
+        safe_relative(name)
+    for a in m['artifacts'].values():
+        for _ in artifact_blocks(path.parent, a):
+            pass
+    if 'allocation' in m['artifacts']:
+        same(parse(confined(path.parent, 'allocation.json').read_bytes()),
+             parse(artifact_bytes(path.parent, m['artifacts']['allocation'])), 'budget reservation artifact')
+    # Private files are intentionally optional and can be deleted between runs.
+    for private in m['private_files']:
+        schema(private, {'path', 'size', 'sha256'}, 'private inventory')
+        safe_relative(private['path'])
+    same(m['command'], recorded_command(m), 'portable command')
+    return m
+
+
+def manifest_chain(head, expected_format, identity=None):
+    head = Path(head).resolve()
+    root = external_directory(head.parent.parent)
+    path, reverse, seen = head, [], set()
+    while True:
+        require(path not in seen, 'cyclic/duplicate predecessor')
+        seen.add(path)
+        m = read_manifest(path, expected_format, identity)
+        reverse.append((path, m))
+        ref = m['predecessor']
+        if ref is None:
+            break
+        schema(ref, {'path', 'sha256'}, 'predecessor schema')
+        path = confined(root, ref['path'])
+        same(sha(path.read_bytes()), ref['sha256'], 'predecessor hash')
+    chain = list(reversed(reverse))
+    for (_, a), (_, b) in zip(chain, chain[1:]):
+        for k in ('campaign', 'input', 'identity', 'not_after'):
+            same(a[k], b[k], 'chain ' + k)
+        same(a['end'], b['start'], 'chain state/cursor continuity')
+    return chain
+
+
+def search_chain(head, identity=None):
+    chain = manifest_chain(head, SEGMENT, identity)
+    pin = chain[0][1]['input']
+    cursor, previous, ordinal, steps, letters = search_cursor(pin['digest']), ZERO_HASH, 0, 0, 0
+    cpu, segments, diagnostics, qualification = 0, 0, None, None
+    for path, m in chain:
+        require(m['kind'] in ('search', 'qualification', 'diagnostics'), 'search kind')
+        cp = parse(artifact_bytes(path.parent, m['artifacts']['checkpoint']))
+        schema(cp, {'cursor', 'last', 'ever', 'steps', 'letters', 'unit_count', 'unit_hash',
+                       'diagnostics', 'qualification'}, 'checkpoint schema')
+        require(cp['last']['ever_lattice_loss'] == len(unbitset(cp['ever'])), 'loss bitset cardinality')
+        same(m['start']['cursor'], cursor_hash(cursor), 'starting search cursor')
+        same(m['start']['units'], ordinal, 'starting interval')
+        same(m['start']['unit_hash'], previous, 'starting chain hash')
+        same(m['start']['digest'], cursor['digest'], 'starting accepted state')
+        same(m['start']['steps'], steps, 'starting global steps')
+        same(m['start']['letters'], letters, 'starting global letters')
+        if ordinal == 0 and steps == 0:
+            same(m['start']['ever'], bitset(set()), 'original loss set')
+        event_rows = iter(artifact_lines(path.parent, m['artifacts']['events']))
+        for unit in artifact_lines(path.parent, m['artifacts']['units']):
+            ordinal += 1
+            cursor = validate_unit(unit, ordinal, previous, cursor)
+            previous = unit['sha256']
+            if unit['step'] is not None:
+                row = unit['step']
+                steps += 1
+                letters += len(row['word'])
+                same(row['cumulative_letters'], letters, 'cumulative letters')
+                same(next(event_rows, None), row, 'events/unit STEP equality')
+        require(next(event_rows, None) is None, 'extra STEP artifact')
+        same(cp['cursor'], cursor, 'checkpoint search cursor')
+        same([cp['steps'], cp['letters'], cp['unit_count'], cp['unit_hash']],
+             [steps, letters, ordinal, previous], 'checkpoint counters')
+        same(cp['last']['digest'], cursor['digest'], 'checkpoint measurement binding')
+        end = boundary(cp)
+        same(m['end'], end, 'ending checkpoint boundary')
+        require(steps <= 200, 'cumulative step limit')
+        b = m['budget']
+        require(type(b['local_cpu']) in (int, float) and 0 <= b['local_cpu'] <= 3300,
+                'local CPU accounting')
+        cpu += b['local_cpu']
+        segments += 1
+        same([b['segments'], b['cpu']], [segments, cpu], 'cumulative search accounting')
+        require(segments <= 6 and cpu <= 19800, 'search allocation exceeded')
+        require(m['status'] in ('BUDGET', 'HANDOFF', 'STUCK', 'QUALIFIED', 'DIAGNOSTICS'), 'search status')
+        if m['status'] == 'STUCK':
+            same(cursor['phase'], 'stuck', 'STUCK without catalogue coverage')
+        if m['status'] == 'HANDOFF':
+            require(handoff(cp['last']['heights']), 'false HANDOFF')
+        if m['kind'] == 'diagnostics':
+            require(diagnostics is None and steps == ordinal == 0, 'duplicate or late diagnostics')
+            if m['status'] == 'DIAGNOSTICS':
+                require('diagnostics' in m['artifacts'], 'missing diagnostic certificate')
+                certificate = parse(artifact_bytes(path.parent, m['artifacts']['diagnostics']))
+                same(certificate['input'], pin, 'diagnostic input')
+                same(certificate['identity'], m['identity'], 'diagnostic identity')
+                diagnostics = m['artifacts']['diagnostics']['sha256']
+            else:
+                same(m['status'], 'BUDGET', 'unfinished diagnostics')
+        same(cp['diagnostics'], diagnostics, 'diagnostic binding')
+        if m['kind'] == 'qualification':
+            q = m['qualification']
+            if qualification is not None:
+                same(q['ledger_sha256'], qualification['ledger_sha256'], 'qualification evidence changed')
+            same(q['completed_units'], ordinal, 'qualification units')
+            qualification = q
+        same(cp['qualification'], qualification, 'qualification binding')
+    return chain, cp
+
+
+def boundary(cp):
+    return dict(digest=cp['last']['digest'], cursor=cursor_hash(cp['cursor']),
+                steps=cp['steps'], letters=cp['letters'], units=cp['unit_count'],
+                unit_hash=cp['unit_hash'], ever=cp['ever'])
+
+
+def reserve_attempt(root, directory, case, role):
+    """Durable reservations survive killed/unfinalized processes.
+
+    Keep allocation.json even for interrupted attempts. A finalized manifest
+    includes it in the commit inventory. No elapsed work disappears on resume;
+    a lost attempt conservatively consumes its full 3300-second reservation.
+    """
+    import fcntl
+    with (root / '.allocation-lock').open('a+b') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        prior = []
+        for path in root.glob('*/allocation.json'):
+            require(not path.is_symlink(), 'allocation symlink')
+            rec = parse(path.read_bytes())
+            if rec['case'] == case and rec['role'] == role:
+                prior.append(rec)
+        limit = 6 if role == 'search' else 4
+        require(len(prior) < limit, 'reserved ' + role + ' segment allocation exhausted')
+        require(sorted(x['ordinal'] for x in prior) == list(range(1, len(prior) + 1)),
+                'missing/duplicate budget reservation')
+        record = dict(format='hd2p-allocation/1', case=case, role=role,
+                      ordinal=len(prior) + 1, cpu_reserved=3300, attempt=directory.name)
+        with (directory / 'allocation.json').open('x', encoding='utf-8') as f:
+            emit(f, record)
+            os.fsync(f.fileno())
+        return record
+
+
+def search_rows(chain):
+    return [row for path, m in chain for row in artifact_lines(path.parent, m['artifacts']['events'])]
+
+
+def check_boundaries(chain, cp):
+    if cp['prefixes']:
+        return
+    for path, m in chain:
+        if m['end']['steps'] == cp['steps']:
+            end = parse(artifact_bytes(path.parent, m['artifacts']['checkpoint']))
+            same(end['last'], cp['last'], 'segment last measurements')
+            same(end['ever'], cp['ever'], 'segment exact lattice-loss set')
+            same(end['letters'], cp['letters'], 'segment global letters')
+
+
+def checker_boundary(cp):
+    return dict(digest=cp['last']['digest'], steps=cp['steps'], letters=cp['letters'],
+                prefixes=len(cp['prefixes']), ever=cp['ever'], snapshots=cp['snapshots'],
+                audit=cp['audit'], audit_units=cp['audit_units'], audit_hash=cp['audit_hash'])
+
+
+def replay_letter(engine, state, cp, rows, initial_lattice):
+    """Transactional single-prefix verification, with one full snapshot per letter."""
+    row = rows[cp['steps']]
+    k = len(cp['prefixes'])
+    word, family = row['word'], row['family']
+    word_shape(word, family)
+    same(row['rule'], RULE, 'STEP rule')
+    same(row['type'], 'STEP', 'STEP type')
+    same(row['index'], cp['steps'] + 1, 'STEP index')
+    same(row['letters'], len(word), 'STEP letters')
+    same(row['cumulative_letters'], cp['letters'] - k + len(word), 'STEP cumulative letters')
+    before = cp['before'] if k else cp['last']
+    same(row['before'], before, 'before measurements')
+    same(row['input_digest'], before['digest'], 'input digest')
+    if family == 'CL2':
+        require(engine.meets(word[0][0], word[1][0]), 'CL2 caps do not meet')
+    trial = engine.clone(state)
+    engine.apply(trial, *word[k])
+    snap, ever = engine.snapshot(trial, initial_lattice, unbitset(cp['ever']))
+    same(snap, row['prefixes'][k], 'prefix measurements')
+    same(snap['digest'], row['prefix_digests'][k], 'prefix digest')
+    require(maximum(snap['heights']) <= maximum(before['heights']), 'current input height bound')
+    new = copy.deepcopy(cp)
+    new.update(last=snap, ever=bitset(ever), letters=cp['letters'] + 1,
+               snapshots=cp['snapshots'] + 1, before=before, prefixes=cp['prefixes'] + [snap])
+    if k + 1 == len(word):
+        contract(before, new['prefixes'], word, family)
+        same(row['after'], snap, 'after measurements')
+        same(row['output_digest'], snap['digest'], 'output digest')
+        new.update(steps=cp['steps'] + 1, prefixes=[], before=None)
+    receipt = dict(type='PREFIX', step=row['index'], prefix=k + 1,
+                   row_sha256=digest_json(row), checkpoint=new)
+    return trial, new, receipt
+
+
+def audit_cursor(hist):
+    require(maximum(hist) in (4, 6), 'audit height')
+    return dict(version='hd2p-independent-audit/1', hist=hist, phase='input',
+                clean=[], classified=0, ci=0, xi=0, di=0)
+
+
+def audit_advance(cursor, proof, caps=tuple(range(600)), items=tuple(range(1, 60)), jumble=tuple(range(12, 60))):
+    """Audit coverage protocol, intentionally separate from the search cursor."""
+    cur = copy.deepcopy(cursor)
+    same(proof['at'], {k: cur[k] for k in ('phase', 'classified', 'ci', 'xi', 'di')}, 'audit interval')
+    result, phase = proof['outcome'], cur['phase']
+    require(result != 'candidate', 'false STUCK: independent candidate found')
+    if phase == 'input':
+        require(result in ('clean', 'blocked'), 'audit classification')
+        if result == 'clean':
+            cur['clean'].append(caps[cur['classified']])
+        cur['classified'] += 1
+        if cur['classified'] == len(caps):
+            cur['phase'] = 'single' if cur['clean'] else 'complete'
+    elif phase == 'single':
+        require(result == 'rejected', 'audit SINGLE outcome')
+        require(maximum(proof['heights']) > maximum(cur['hist'])
+                or qvalue(proof['heights']) >= qvalue(cur['hist']), 'false audited SINGLE rejection')
+        cur['xi'] += 1
+        if cur['xi'] == len(jumble):
+            cur['ci'], cur['xi'] = cur['ci'] + 1, 0
+        if cur['ci'] == len(cur['clean']):
+            cur.update(phase='open', ci=0)
+    elif phase in ('open', 'target'):
+        advance_open = False
+        if phase == 'open':
+            require(result in ('survives', 'pruned'), 'audit opener outcome')
+            same(result, 'pruned' if maximum(proof['heights']) > maximum(cur['hist']) else 'survives',
+                 'audit opener height bound')
+            if result == 'survives':
+                cur.update(phase='target', di=0)
+            else:
+                advance_open = True
+        else:
+            require(result in ('ineligible', 'blocked', 'endpoints'), 'audit target outcome')
+            if result == 'endpoints':
+                same(proof['ys'], list(jumble), 'incomplete audit y group')
+                same(len(proof['heights']), len(jumble), 'audit endpoint coverage')
+                require(all(h is None or maximum(h) > maximum(cur['hist']) or qvalue(h) >= qvalue(cur['hist'])
+                            for h in proof['heights']), 'false audited exhaustion')
+            cur['di'] += 1
+            advance_open = cur['di'] == len(caps)
+        if advance_open:
+            cur.update(phase='open', di=0, xi=cur['xi'] + 1)
+            if cur['xi'] == len(items):
+                cur['ci'], cur['xi'] = cur['ci'] + 1, 0
+            if cur['ci'] == len(cur['clean']):
+                cur.update(phase='peel', ci=0)
+    elif phase == 'peel':
+        require(result == 'rejected', 'audit PEEL outcome')
+        h = proof['heights']
+        if maximum(h) <= maximum(cur['hist']) and all(h.get(str(k), 0) == cur['hist'].get(str(k), 0) for k in (4, 6)):
+            require(type(proof['Bk']) is int and len(caps) - len(cur['clean']) <= proof['Bk'] <= len(caps),
+                    'false audited PEEL rejection')
+        cur['xi'] += 1
+        if cur['xi'] == len(items):
+            cur['ci'], cur['xi'] = cur['ci'] + 1, 0
+        if cur['ci'] == len(cur['clean']):
+            cur['phase'] = 'complete'
+    else:
+        raise ValueError('invalid/finished audit cursor')
+    return cur
+
+
+class ExhaustionAudit:
+    """Separate complete catalogue enumeration with actual simulator replay.
+
+    No prediction, incremental classification, search helper or search import.
+    A blocked original target's containment follows from exact intermediate
+    applicability: an unmoved original straddler would still straddle. Thus
+    testing every meeting target is an exhaustive superset, with no unsafe skip.
+    """
+    def __init__(self, engine, caps=tuple(range(600)), items=tuple(range(1, 60)), jumble=tuple(range(12, 60))):
+        self.engine, self.caps, self.items, self.jumble = engine, caps, items, jumble
+        self.open_key, self.open_state = None, None
+
+    def classify(self, state, c):
+        self.engine.tick()
+        cl = state.classify(c, need_inside=False, stop_at_straddle=True)
+        require(not cl.uncertain, 'uncertain independent audit')
+        return cl.straddle is None
+
+    def move(self, state, c, x):
+        trial = self.engine.clone(state)
+        self.engine.apply(trial, c, x)
+        return trial
+
+    def unit(self, state, cursor):
+        engine, cur = self.engine, cursor
+        proof = dict(at={k: cur[k] for k in ('phase', 'classified', 'ci', 'xi', 'di')})
+        phase, hist = cur['phase'], cur['hist']
+        if phase == 'input':
+            proof['outcome'] = 'clean' if self.classify(state, self.caps[cur['classified']]) else 'blocked'
+        elif phase == 'single':
+            c, x = cur['clean'][cur['ci']], self.jumble[cur['xi']]
+            end = engine.histogram(self.move(state, c, x))
+            found = maximum(end) <= maximum(hist) and qvalue(end) < qvalue(hist)
+            proof.update(outcome='candidate' if found else 'rejected', word=[[c, x]], heights=end)
+        elif phase in ('open', 'target'):
+            c, x = cur['clean'][cur['ci']], self.items[cur['xi']]
+            key = state, c, x
+            if self.open_key != key:
+                middle = self.move(state, c, x)
+                self.open_key, self.open_state = key, middle
+            middle = self.open_state
+            mh = engine.histogram(middle)
+            if phase == 'open':
+                proof.update(outcome='pruned' if maximum(mh) > maximum(hist) else 'survives', heights=mh)
+            else:
+                d = self.caps[cur['di']]
+                if d == c or not engine.meets(c, d):
+                    proof['outcome'] = 'ineligible'
+                elif not self.classify(middle, d):
+                    proof['outcome'] = 'blocked'
+                else:
+                    heights = [engine.histogram(self.move(middle, d, y)) for y in self.jumble]
+                    candidates = [(qvalue(h), y) for h, y in zip(heights, self.jumble)
+                                  if maximum(h) <= maximum(hist)]
+                    found = bool(candidates) and min(candidates)[0] < qvalue(hist)
+                    proof.update(outcome='candidate' if found else 'endpoints', ys=list(self.jumble), heights=heights)
+                    if found:
+                        proof['word'] = [[c, x], [d, min(candidates)[1]]]
+        elif phase == 'peel':
+            c, x = cur['clean'][cur['ci']], self.items[cur['xi']]
+            end = self.move(state, c, x)
+            h = engine.histogram(end)
+            found, bk = False, None
+            if maximum(h) <= maximum(hist) and all(h.get(str(k), 0) == hist.get(str(k), 0) for k in (4, 6)):
+                measured = engine.blocked(end)
+                bk = measured if isinstance(measured, int) else len(measured)
+                found = bk < len(self.caps) - len(cur['clean'])
+            proof.update(outcome='candidate' if found else 'rejected', word=[[c, x]], heights=h, Bk=bk)
+        else:
+            raise ValueError('audit is complete')
+        if proof['outcome'] == 'candidate':
+            raise ValueError('false STUCK: independent candidate ' + canonical(proof))
+        return audit_advance(cur, proof, self.caps, self.items, self.jumble), proof
+
+
+def audit_record(cp, after, proof):
+    body = dict(version='hd2p-audit-units/1', ordinal=cp['audit_units'] + 1,
+                previous=cp['audit_hash'], before=digest_json(cp['audit']),
+                after=digest_json(after), proof=proof)
+    return dict(body, sha256=digest_json(body))
+
+
+def authenticate_checker(head, identity, target_chain, rows):
+    chain = manifest_chain(head, CHECK, identity)
+    targets = {sha(path.read_bytes()) for path, _ in target_chain}
+    prior, cpu, count = None, 0, 0
+    for path, m in chain:
+        require(m['target']['sha256'] in targets, 'checker belongs to different search chain')
+        target_path = confined(path.parent.parent, m['target']['path'])
+        same(sha(target_path.read_bytes()), m['target']['sha256'], 'checker target hash')
+        require(m['status'] != 'FAILED', 'failed checking invalidates dependent segments')
+        cp = parse(artifact_bytes(path.parent, m['artifacts']['checkpoint']))
+        receipts = list(artifact_lines(path.parent, m['artifacts']['verification']))
+        for receipt in receipts:
+            new = receipt['checkpoint']
+            if receipt['type'] == 'INITIAL':
+                require(prior is None, 'duplicate checker origin')
+                same(new['last']['digest'], m['input']['digest'], 'checker original state')
+                same([new['steps'], new['letters'], new['snapshots'], new['ever']],
+                     [0, 0, 1, bitset(set())], 'checker original counters')
+                same(new['last']['heights'], m['input']['heights'], 'checker original histogram')
+            else:
+                require(prior is not None and receipt['type'] == 'PREFIX', 'checker missing origin')
+                row = rows[prior['steps']]
+                k = len(prior['prefixes'])
+                same([receipt['step'], receipt['prefix'], receipt['row_sha256']],
+                     [row['index'], k + 1, digest_json(row)], 'checker receipt position')
+                same(new['last'], row['prefixes'][k], 'checker receipt measurement')
+                require(unbitset(prior['ever']) <= unbitset(new['ever']), 'lost transient lattice loss')
+                same(len(unbitset(new['ever'])), new['last']['ever_lattice_loss'], 'checker loss bitset')
+                expected = copy.deepcopy(prior)
+                before = prior['before'] if k else prior['last']
+                same(before, row['before'], 'checker before fields')
+                expected.update(last=new['last'], ever=new['ever'], letters=prior['letters'] + 1,
+                                snapshots=prior['snapshots'] + 1, before=before,
+                                prefixes=prior['prefixes'] + [new['last']])
+                if k + 1 == len(row['word']):
+                    contract(before, expected['prefixes'], row['word'], row['family'])
+                    expected.update(steps=prior['steps'] + 1, prefixes=[], before=None)
+                same(new, expected, 'checker receipt continuity')
+            prior = new
+        require(prior is not None, 'missing checker receipts')
+        for unit in artifact_lines(path.parent, m['artifacts']['audit']):
+            if prior['audit'] is None:
+                prior = dict(prior, audit=audit_cursor(prior['last']['heights']))
+            same(unit['version'], 'hd2p-audit-units/1', 'audit chain version')
+            same(unit['sha256'], digest_json({k: v for k, v in unit.items() if k != 'sha256'}), 'audit hash')
+            same([unit['ordinal'], unit['previous'], unit['before']],
+                 [prior['audit_units'] + 1, prior['audit_hash'], digest_json(prior['audit'])], 'audit interval chain')
+            after = audit_advance(prior['audit'], unit['proof'])
+            same(unit['after'], digest_json(after), 'audit next cursor')
+            prior = dict(prior, audit=after, audit_units=unit['ordinal'], audit_hash=unit['sha256'])
+        # An initialized audit may stop before its first unit.
+        if cp['audit'] is not None and prior['audit'] is None:
+            prior = dict(prior, audit=audit_cursor(prior['last']['heights']))
+        same(cp, prior, 'authenticated checker checkpoint')
+        same(m['end'], checker_boundary(cp), 'checker ending boundary')
+        if count:
+            same(m['start'], previous_end, 'checker start boundary')
+        else:
+            same(m['start'], None, 'checker original boundary')
+        previous_end = m['end']
+        count += 1
+        cpu += m['budget']['local_cpu']
+        same([m['budget']['segments'], m['budget']['cpu']], [count, cpu], 'checker cumulative budget')
+        require(count <= 4 and cpu <= 13200, 'checker allocation')
+    return chain, cp
+
+
+def checking_report(cp, final, failed=None):
+    replayed = not cp['prefixes'] and cp['steps'] == final['steps']
+    audited = cp['audit'] is not None and cp['audit']['phase'] == 'complete'
+    if failed is not None:
+        return dict(status='FAILED', result='BUDGET', passed=False, literal_replay='failed',
+                    exhaustion_verification='failed', reason=failed,
+                    invalidates='target search manifest and every dependent provisional descendant')
+    result = 'BUDGET'
+    if replayed and handoff(cp['last']['heights']):
+        result = 'HANDOFF'
+    if replayed and audited and final['cursor']['phase'] == 'stuck':
+        result = 'STUCK'
+    return dict(status='complete' if replayed and (final['cursor']['phase'] != 'stuck' or audited) else 'incomplete',
+                result=result, passed=replayed, literal_replay='complete' if replayed else 'incomplete',
+                exhaustion_verification='complete' if audited else 'incomplete' if cp['audit'] else 'not_performed',
+                steps=cp['steps'], letters=cp['letters'], digest=cp['last']['digest'],
+                snapshots=cp['snapshots'], scope='accepted suffix; terminal catalogue only when separately complete')
+
+
+def run_checker(args):
+    root = external_directory(args.out)
+    directory = new_output(root, 'audit' if args.audit else 'checker')
+    with Path(args.chain).open('rb') as f:
+        header = f.read(MAX_FILE)
+    require(len(header) < MAX_FILE, 'manifest size')
+    case = parse(header)['input']['case']
+    require(type(case) is int and case in CASES, 'checker pinned case')
+    reservation = reserve_attempt(root, directory, case, 'checker')
+    chain, final = search_chain(args.chain)
+    head = chain[-1][1]
+    require(Path(args.chain).resolve().parent.parent == root, 'checker campaign root')
+    prior = previous = None
+    if args.resume_check:
+        old_chain, prior = authenticate_checker(args.resume_check, head['identity'], chain, search_rows(chain))
+        previous = old_chain[-1][1]
+        require(previous['budget']['segments'] < 4, 'four checker/audit segment limit')
+    deadline = head['not_after']
+    if args.not_after:
+        same(utc_deadline(args.not_after), deadline, 'campaign deadline cannot reset')
+    used = previous['budget']['cpu'] if previous else 0
+    limits = SegmentLimits(used, ceiling=13200, total=args.cpu_seconds, useful=args.work_cpu_seconds,
+                           wall=args.wall_seconds, not_after=deadline)
+    rt = Runtime(directory)
+    identity = segment_identity(rt)
+    same(head['identity'], identity, 'checker source/model/menu identity')
+    engine = ReplayEngine(rt, limits.check)
+    original = load_case(head['input']['case'], rt, engine)
+    initial_lattice = set(range(P)) - engine.off(original)
+    rows = search_rows(chain)
+    receipts, failed = [], None
+    audit_cpu = 0.
+    if prior:
+        state = load_artifact_table(Path(args.resume_check).parent, previous['artifacts']['table'],
+                                    rt, prior['last']['digest'], directory)
+        cp, start = copy.deepcopy(prior), checker_boundary(prior)
+        require(unbitset(cp['ever']) <= initial_lattice, 'checker lattice basis')
+    else:
+        state = original
+        first, ever = engine.snapshot(state, initial_lattice, set())
+        cp = dict(last=first, ever=bitset(ever), steps=0, letters=0, snapshots=1, before=None,
+                  prefixes=[], audit=None, audit_units=0, audit_hash=ZERO_HASH)
+        start = None
+        receipts.append(dict(type='INITIAL', checkpoint=copy.deepcopy(cp)))
+    with (directory / 'audit.disposable').open('w+b') as audit_stream:
+        try:
+            limits.boundary()
+            check_boundaries(chain, cp)
+            while cp['steps'] < len(rows):
+                limits.check()
+                saved, prior_state, nreceipts = cp, state, len(receipts)
+                try:
+                    state, cp, receipt = replay_letter(engine, state, cp, rows, initial_lattice)
+                    receipts.append(receipt)
+                except BaseException:
+                    cp, state = saved, prior_state
+                    del receipts[nreceipts:]
+                    raise
+                check_boundaries(chain, cp)
+            check_boundaries(chain, cp)
+            same(cp['last'], final['last'], 'FINAL measurements (reused snapshot)')
+            same(cp['ever'], final['ever'], 'FINAL exact loss bitset')
+            # Hash-valid search tables still must reconstruct the replayed state.
+            for path, manifest in chain:
+                checkpoint = parse(artifact_bytes(path.parent, manifest['artifacts']['checkpoint']))
+                load_artifact_table(path.parent, manifest['artifacts']['table'], rt,
+                                    checkpoint['last']['digest'], directory)
+                limits.check()
+            if args.audit:
+                require(final['cursor']['phase'] == 'stuck', 'audit requires a candidate STUCK')
+                if cp['audit'] is None:
+                    cp = dict(cp, audit=audit_cursor(cp['last']['heights']))
+                auditor = ExhaustionAudit(engine)
+                while cp['audit']['phase'] != 'complete':
+                    limits.check()
+                    audit_started = time.process_time()
+                    try:
+                        after, proof = auditor.unit(state, cp['audit'])
+                    finally:
+                        audit_cpu += time.process_time() - audit_started
+                    unit = audit_record(cp, after, proof)
+                    limits.check()
+                    saved, offset = cp, audit_stream.tell()
+                    try:
+                        audit_stream.write((canonical(unit) + '\n').encode())
+                        cp = dict(cp, audit=after, audit_units=unit['ordinal'], audit_hash=unit['sha256'])
+                    except BaseException:
+                        cp = saved
+                        audit_stream.seek(offset)
+                        audit_stream.truncate()
+                        raise
+        except Budget:
+            pass
+        except (ValueError, KeyError, TypeError, AssertionError) as exc:
+            failed = str(exc)
+        limits.finalizing()
+        artifacts = {}
+        audit_stream.flush()
+        audit_stream.seek(0)
+        artifacts['audit'] = pack_artifact(directory, 'audit', audit_stream)
+    artifacts['verification'] = pack_artifact(directory, 'verification',
+                                             b''.join((canonical(r) + '\n').encode() for r in receipts))
+    artifacts['checkpoint'] = pack_artifact(directory, 'checkpoint', (canonical(cp) + '\n').encode())
+    artifacts['table'] = pack_artifact(directory, 'table', table_bytes(state, rt))
+    artifacts['allocation'] = pack_artifact(directory, 'allocation', (canonical(reservation) + '\n').encode())
+    report = checking_report(cp, final, failed)
+    timing = limits.times()
+    artifacts['profile'] = pack_artifact(directory, 'profile', (canonical(dict(
+        **timing, snapshot_cpu_seconds=engine.snapshot_cpu, audit_cpu_seconds=audit_cpu,
+        python=sys.version, numpy=rt.np.__version__, snapshots=cp['snapshots'] - (prior['snapshots'] if prior else 0),
+        audit_units=cp['audit_units'] - (prior['audit_units'] if prior else 0),
+        max_rss_kib=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)) + '\n').encode())
+    timing = limits.times()
+    budget = dict(segments=1 + (previous['budget']['segments'] if previous else 0),
+                  cpu=used + timing['cpu_seconds'], local_cpu=timing['cpu_seconds'],
+                  local_wall=timing['wall_seconds'], reserved_segments=reservation['ordinal'],
+                  reserved_cpu=3300 * reservation['ordinal'],
+                  limits=dict(cpu_seconds=args.cpu_seconds, work_cpu_seconds=args.work_cpu_seconds,
+                              wall_seconds=args.wall_seconds))
+    path = publish(directory, 'audit' if args.audit else 'checker', identity, head['input'], head['campaign'],
+                   manifest_ref(args.resume_check) if args.resume_check else None,
+                   start, checker_boundary(cp), artifacts, budget, deadline, report['status'],
+                   extra=dict(target=manifest_ref(args.chain), report=report))
+    (directory / 'audit.disposable').unlink()
+    print(canonical(dict(report, manifest=str(path.relative_to(root)), **timing)), flush=True)
+    return 0 if report['status'] == 'complete' and report['passed'] else 1
+
+
+def main():
+    if '--chain' not in sys.argv:
+        return legacy_main()
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument('--out', required=True)
+    ap.add_argument('--chain', required=True)
+    ap.add_argument('--resume-check')
+    ap.add_argument('--audit', action='store_true')
+    ap.add_argument('--cpu-seconds', type=float, default=3300)
+    ap.add_argument('--work-cpu-seconds', type=float, default=3000)
+    ap.add_argument('--wall-seconds', type=float, default=3600)
+    ap.add_argument('--not-after')
+    args = ap.parse_args()
+    try:
+        SegmentLimits(total=args.cpu_seconds, useful=args.work_cpu_seconds, wall=args.wall_seconds,
+                      not_after=utc_deadline(args.not_after))
+        return run_checker(args)
+    except Budget as exc:
+        print(canonical(dict(result='BUDGET', finalized=False, reason=str(exc))), flush=True)
+        return 1
+    except (ValueError, OSError, KeyError, TypeError, AssertionError) as exc:
+        print(canonical(dict(result='ERROR', finalized=False, reason=str(exc))), flush=True)
+        return 1
 
 
 if __name__ == '__main__':
