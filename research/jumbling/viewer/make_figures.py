@@ -125,7 +125,7 @@ def load_list(path):
         for key in ('cs', 'ss'):
             # Facet (cell) and sticker shrink, 0.40 to 1.00 in steps of 0.01 as the page's sliders.
             if key in entry and (type(entry[key]) not in (int, float) or not 0.4 <= entry[key] <= 1
-                                 or abs(entry[key] * 100 - round(entry[key] * 100)) > 1e-9):
+                                 or not re.fullmatch(r'(0|1)(\.[0-9]{1,2})?', str(entry[key]))):
                 raise ValueError(f'{name}: invalid {key} (0.40..1.00)')
     sheets_list(document.get('sheets', []), figures)
     # Reject reserved seeds before any simulator replay or capture, including when
@@ -293,14 +293,22 @@ def differences(manifest, baseline, out):
     for name in previous.keys() & current.keys():
         old, new = previous[name], current[name]
         if (old['png_sha256'] != new['png_sha256'] or old.get('entry') != new.get('entry')
+                or old.get('png') != new.get('png')
                 or old.get('capture') != new.get('capture')
                 or old.get('tutorial') != new.get('tutorial') or old.get('panels') != new.get('panels')
                 or old.get('composition') != new.get('composition')):
             different.add(name)
+    # Check every saved baseline file, including entries absent from this build.
+    for name, old in previous.items():
+        if not isinstance(name, str) or not ID.fullmatch(name):
+            raise ValueError('invalid figure id in baseline manifest')
+        if old.get('png') != f'png/{name}.png':
+            different.add(name)
+            continue
         try:
-            if sha((out / 'png' / f'{name}.png').read_bytes()) != old['png_sha256']:
+            if sha((out / old['png']).read_bytes()) != old['png_sha256']:
                 different.add(name)
-        except FileNotFoundError:
+        except (FileNotFoundError, IsADirectoryError):
             different.add(name)
     return sorted(different)
 

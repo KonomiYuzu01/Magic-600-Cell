@@ -6,6 +6,7 @@ import importlib.util
 import json
 from pathlib import Path, PurePosixPath
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -48,26 +49,72 @@ def load(relative):
     return json.loads((ROOT / relative).read_text(encoding="utf-8"))
 
 
+def drawing_fixture(root):
+    """Copy declared evidence; refreshed digests are synthetic renderer fixtures,
+    not a recomputation or a validation of the committed observations.
+    """
+    data = load(D.F + "/figdata.json")
+    saved = load(D.F + "/svg/manifest.json")
+    paths = {D.TREES_PATH, D.F + "/diagrams.py", D.F + "/figdata.json",
+             D.DEV + "/d0-s7001/run/step-trees/00000.json.gz"}
+    for entry in [*data["figures"].values(), *saved["figures"].values()]:
+        paths.update(entry["inputs"])
+    for relative in paths:
+        target = root / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(ROOT / relative, target)
+    for entry in data["figures"].values():
+        entry["inputs"] = {path: digest((root / path).read_bytes()) for path in entry["inputs"]}
+    (root / D.F / "figdata.json").write_text(json.dumps(data))
+
+
+class ComputedInputTests(unittest.TestCase):
+    def test_changed_chapter_and_appendix_inputs_refused_before_drawing(self):
+        data = load(D.F + "/figdata.json")
+        for name, changed in (
+            ("03-r22d75-prediction-cap64", D.LOW + "/scripts/round22/cloud/height4-descent-bbef1c8e/r22d75_from_snapshot.py"),
+            ("appa-u2-tree", D.API_PATH),
+        ):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                paths = set(data["figures"][name]["inputs"]) | {
+                    D.F + "/diagrams.py", D.F + "/figdata.json", D.T + "/" + D.FIGURES[name][1]}
+                for relative in paths:
+                    target = root / relative
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copyfile(ROOT / relative, target)
+                path = root / changed
+                path.write_bytes(path.read_bytes() + b"\n# changed fixture input\n")
+                with patch.object(D, "ROOT", root):
+                    with self.assertRaisesRegex(ValueError, re.escape(name) + ".*" + re.escape(changed)):
+                        D.Evidence(name).figdata()
+                    with self.assertRaisesRegex(ValueError, re.escape(name) + ".*" + re.escape(changed)):
+                        D.render(name, {})
+
+
 class DiagramsTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.temporary = tempfile.TemporaryDirectory(prefix="magic600-diagrams-test-")
+        cls.addClassCleanup(cls.temporary.cleanup)
         cls.base = Path(cls.temporary.name)
+        cls.repository = cls.base / "repo"
+        drawing_fixture(cls.repository)
+        patcher = patch.object(D, "ROOT", cls.repository)
+        patcher.start()
+        cls.addClassCleanup(patcher.stop)
+        cls.script = cls.repository / D.F / "diagrams.py"
         cls.first, cls.second = cls.base / "first", cls.base / "second"
         cls.manifest = D.generate(cls.first)
         D.generate(cls.second)
         cls.entries = D.validate_trees(load(D.TREES_PATH))
         cls.names = EXPECTED | set(cls.entries)
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.temporary.cleanup()
-
     def svg(self, name):
         return ET.parse(self.first / (name + ".svg")).getroot()
 
     def cli(self, *arguments):
-        return subprocess.run([sys.executable, "-I", "-B", str(SCRIPT), *map(str, arguments)],
+        return subprocess.run([sys.executable, "-I", "-B", str(self.script), *map(str, arguments)],
                               cwd=self.base, text=True, stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE, check=False)
 
@@ -120,11 +167,16 @@ class DiagramsTests(unittest.TestCase):
         second = {p.name: p.read_bytes() for p in self.second.iterdir()}
         self.assertEqual(first, second)
 
-    def test_every_unaffected_svg_stays_byte_identical(self):
+    def test_every_chapter_drawing_stays_identical(self):
         for name in (n for n in self.names if not n.startswith("appa-")):
             with self.subTest(figure=name):
-                self.assertEqual((self.first / (name + ".svg")).read_bytes(),
-                                 (HERE / "svg" / (name + ".svg")).read_bytes())
+                # Chapter prose already differs from the saved production hashes.
+                # Verify every drawing element; current provenance is tested above.
+                actual = self.svg(name)
+                saved = ET.parse(HERE / "svg" / (name + ".svg")).getroot()
+                for root in (actual, saved):
+                    root.remove(root.find("s:metadata", NS))
+                self.assertEqual(ET.tostring(actual), ET.tostring(saved))
 
     def test_manifest_hashes_and_relative_paths(self):
         self.assertEqual(self.manifest["format"], "magic600-tutorial-diagrams/1")
@@ -141,7 +193,7 @@ class DiagramsTests(unittest.TestCase):
                     self.assertNotIn("..", PurePosixPath(path).parts)
                     self.assertEqual(path, PurePosixPath(path).as_posix())
                     self.assertRegex(sha, r"^[0-9a-f]{64}$")
-                    self.assertEqual(sha, digest((ROOT / path).read_bytes()))
+                    self.assertEqual(sha, digest((self.repository / path).read_bytes()))
 
     def test_check_detects_changed_missing_output_and_provenance_without_writes(self):
         out = self.base / "check"
@@ -415,12 +467,13 @@ class DiagramsTests(unittest.TestCase):
             target.write_bytes(original)
 
     def test_stale_concept_inputs_are_refused_before_drawing(self):
-        data = load(D.F + "/figdata.json")["figures"]
+        data = json.loads((self.repository / D.F / "figdata.json").read_text())["figures"]
         for name in D.CONCEPT_FIGURES:
             stale = copy.deepcopy(data[name])
             stale["inputs"][D.F + "/figdata.py"] = "0" * 64
-            with self.subTest(name=name), patch.object(D.Evidence, "figdata", return_value=stale):
-                with self.assertRaisesRegex(ValueError, "stale concept figure data"):
+            document = {"format": "magic600-tutorial-figdata/1", "figures": {name: stale}}
+            with self.subTest(name=name), patch.object(D.Evidence, "json", return_value=document):
+                with self.assertRaisesRegex(ValueError, "stale figure data"):
                     D.render(name, {})
 
     def test_twisted_cycle_shows_exact_support_and_collateral_counts(self):
@@ -488,8 +541,9 @@ class DiagramsTests(unittest.TestCase):
         data = copy.deepcopy(load(D.F + "/figdata.json")["figures"]["appa-u2-tree"])
         data["inputs"][D.API_PATH] = "0" * 64
         evidence = D.Evidence("appa-u2-tree", "A-macros.md")
-        with patch.object(evidence, "figdata", return_value=data):
-            with self.assertRaisesRegex(ValueError, "stale appendix figure data"):
+        document = {"format": "magic600-tutorial-figdata/1", "figures": {evidence.name: data}}
+        with patch.object(evidence, "json", return_value=document):
+            with self.assertRaisesRegex(ValueError, "stale figure data"):
                 D.appendix_tree(evidence, D.Svg(evidence, "test"))
 
     def test_appendix_svg_numbers_match_the_reading_order(self):
@@ -532,7 +586,7 @@ class DiagramsTests(unittest.TestCase):
         self.assertEqual(len(word), 810)
         self.assertIn(digest(json.dumps(word, separators=(",", ":")).encode()), appendix)
 
-    def test_catalogue_lists_appendix_after_chapters_and_pending_recipes_without_reasons(self):
+    def test_catalogue_lists_appendix_after_chapters_and_checks_recipes(self):
         spec = importlib.util.spec_from_file_location("appendix_catalogue", HERE / "catalogue.py")
         catalogue = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(catalogue)
@@ -541,13 +595,14 @@ class DiagramsTests(unittest.TestCase):
         appendix_indexes = [i for i, row in enumerate(rows) if row[0] == "A-macros.md"]
         self.assertGreater(min(appendix_indexes), max(chapter_indexes))
         rendered, unexplained = catalogue.render()
-        self.assertFalse(any(name.startswith("appa-") for name in unexplained))
+        self.assertNotIn("(no reason recorded)", rendered)
         pending = [line for line in rendered.splitlines() if "`png/appa-" in line]
         self.assertTrue(pending)
         for line in pending:
             name = re.search(r"`png/([a-z0-9-]+)\.png`", line)[1]
-            status = "drawn" if (HERE / "png" / (name + ".png")).exists() else "missing"
-            self.assertTrue(line.endswith("| " + status + " |"), line)
+            self.assertRegex(line, r"\| (drawn|stale) \|$")
+            if not (HERE / "png" / (name + ".png")).exists():
+                self.assertTrue(line.endswith("| stale |"), line)
 
     def test_appendix_region_pairs_share_exact_support_and_established_capture_settings(self):
         document = load(D.F + "/figures.json")

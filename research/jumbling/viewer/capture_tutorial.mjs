@@ -65,7 +65,7 @@ function shotsList(path) {
       `Invalid dimensions for ${shot.name} (1..8192)`);
     // Facet (cell) and sticker shrink: 0.40 to 1.00 in steps of 0.01, as the page's sliders.
     insist(['cs', 'ss'].every((k) => typeof shot[k] === 'number' && shot[k] >= 0.4 && shot[k] <= 1
-      && Number.isInteger(Math.round(shot[k] * 100)) && Math.abs(shot[k] * 100 - Math.round(shot[k] * 100)) < 1e-9),
+      && /^(0|1)(\.[0-9]{1,2})?$/.test(String(shot[k]))),
       `Invalid cs or ss for ${shot.name} (0.40..1.00)`);
     return shot;
   });
@@ -219,6 +219,24 @@ async function render(browser, base, files, forbidden, shots, states, directory)
   return results;
 }
 
+function differences(results, baseline, out) {
+  const different = new Set(results.filter((s) => {
+    const previous = baseline.shots.find((p) => p.name === s.name);
+    return !previous || !isDeepStrictEqual(previous, s);
+  }).map((s) => s.name));
+  for (const shot of baseline.shots) {
+    insist(typeof shot.name === 'string' && NAME.test(shot.name), 'Invalid capture manifest shot name');
+    if (!results.some((r) => r.name === shot.name)) different.add(shot.name);
+    try {
+      if (sha(readFileSync(join(out, `${shot.name}.png`))) !== shot.png_sha256) different.add(shot.name);
+    } catch (error) {
+      if (error.code !== 'ENOENT' && error.code !== 'EISDIR') throw error;
+      different.add(shot.name);
+    }
+  }
+  return Array.from(different);
+}
+
 async function main() {
   const args = options(), shots = shotsList(args['--list']);
   const files = vendorFiles(args['--vendor']);
@@ -245,11 +263,7 @@ async function main() {
     const results = await render(browser, base, files, forbidden, shots, states, directory);
     insist(!forbidden.length, forbidden.join('\n'));
     if (baseline) {
-      const different = results.filter((s) => {
-        const previous = baseline.shots.find((p) => p.name === s.name);
-        return !previous || !isDeepStrictEqual(previous, s);
-      }).map((s) => s.name);
-      for (const s of baseline.shots) if (!results.some((r) => r.name === s.name)) different.push(s.name);
+      const different = differences(results, baseline, args['--out']);
       if (different.length) { console.error(`Shots differ: ${different.join(', ')}`); process.exitCode = 1; }
       else console.log(`check: ${results.length} PNG hashes and shot inputs match the manifest`);
     } else {

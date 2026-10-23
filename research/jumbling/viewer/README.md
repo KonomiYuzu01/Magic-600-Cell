@@ -71,6 +71,10 @@ The exporter reads the start table and replays the literal words, checking every
 visited before/after digest. It checks the target's after state for both pictures,
 so `moved.i32` always names the same pieces whose exact poses changed across the step.
 Seeds 9011 to 9073, non-empty output directories and output inside the record are refused.
+Before opening an input, it requires an inside-repository file that Git tracks
+with no staged or working-tree changes. This includes run records, start and
+checkpoint tables, words, lattice step trees, nested word programs and `--state`
+recipe files. One Git inventory is shared across each export; replay caches do not bypass it.
 
 ```text
 python3 -I -B research/jumbling/viewer/export_tutorial.py research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7001/run --step 0 --when before --out /tmp/tutorial-data/step0-before
@@ -112,7 +116,8 @@ The output manifest records Node, Playwright and Chromium versions, page and mod
 hashes, each shot's parameters (including the resolved cap, or null, ghost mode and
 `fit`), its framing report, state digest, tutorial hash and PNG hash. `--check`
 renders to a temporary directory, compares the manifest and names changed shots;
-it leaves the original pictures and manifest alone.
+it also hashes every saved PNG named by the baseline manifest, reporting missing
+or changed files, and leaves the original pictures and manifest alone.
 
 On an existing static export of the full-state page, place states under
 `tutorial/<state>/` and open `full.html?shot=step0-before`. Shot names use 1 to 64
@@ -186,8 +191,10 @@ IDs are unique, 1 to 64 lowercase letters, digits or hyphens, starting with a le
 or digit. `record` is a repository-relative run directory; outside records and
 start seeds 9011 to 9073 are refused. `cap`, `ghost`, `fit`, `w`, `h`, `cs` and `ss`
 are optional, with the screenshot defaults above. `--vendor` is optional with a matching
-installed three.js package. Each distinct record/step/before-or-after state is
-exported once into temporary data, then one capture run produces all pictures.
+installed three.js package. `cs` and `ss` must have at most two decimal digits,
+matching the page; values such as `0.4000000000000001` are refused. Each distinct
+record/step/before-or-after state is exported once into temporary data, then one
+capture run produces all pictures.
 Output is `png/<id>.png` and `manifest.json` (`magic600-tutorial-figures-manifest/1`),
 with each original entry, the export's tutorial provenance and state counts,
 resolved capture parameters (including `fit` and the `framing` report in each
@@ -197,8 +204,10 @@ paths; objects use one-space indentation and scalar lists stay on one line.
 Temporary export and capture data is removed.
 `--check` exports and captures again in temporary data, compares PNG hashes,
 state digests, capture parameters and framing, and names differences with exit
-status 1; it preserves existing output. Unlisted files in `png/` are reported and kept; only `--prune` removes
-them after a successful generation. `--check` and `--prune` cannot be combined.
+status 1. It verifies the actual saved PNGs for every baseline figure and sheet,
+including removed entries, and preserves existing output. Unlisted files in `png/`
+are reported and kept; only `--prune` removes them after a successful generation.
+`--check` and `--prune` cannot be combined.
 The unit tests use synthetic capture bytes and committed development records;
 they start no browser and establish no capture or native-rendering result.
 

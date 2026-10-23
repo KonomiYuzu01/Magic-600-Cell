@@ -44,8 +44,7 @@ is centred on the first cap, 91.
 ![Figure A.1: The actual conj step of seed 7101, index 29, before and after its three letters, with its moved pieces opaque](figures/png/appa-conj-region.png)
 
 Figure A.1. Before and after N = 15,226 → 13,422. Recipes `appa-conj-region-before` and `appa-conj-region-after`
-carry the full state digests. The two-panel sheet awaits capture.
-
+carry the full state digests.
 ### A.2 lock: open, close, close
 
 - **Rule**: U4 ([section 2.8](02-bulk.md#28-lock-u4-open-close-and-close)).
@@ -245,8 +244,7 @@ Figure A.9. Recorded tree `appa-zero-bad-tree`, covering [0, 60). A single span 
 ![Figure A.10: Before and after the 60-letter zero_bad step, with its moved pieces opaque](figures/png/appa-zero-bad-region.png)
 
 Figure A.10. Recipes `appa-zero-bad-region-before` and `appa-zero-bad-region-after`, local stereographic at the
-first cap, 12. The two-panel sheet awaits capture.
-
+first cap, 12.
 ### A.11 pure: the class-cell pure word
 
 - **Rule**: [section 5.6](05-tail.md#56-rule-pure-the-class-cell-pure-word).
@@ -277,8 +275,7 @@ Figure A.11. Computed tree `appa-pure-tree`. No runner record holds this older p
 ![Figure A.12: The b17 pure-cell step before and after, off 823 to 737](figures/png/appa-pure-region.png)
 
 Figure A.12. Recipes `appa-pure-region-before` and `appa-pure-region-after`, local stereographic at the first cap,
-570. The two-panel sheet awaits capture.
-
+570.
 ### A.12 close: V·W·V⁻¹
 
 - **Rule**: [section 5.8](05-tail.md#58-rule-close-the-closure-vwv¹).
@@ -467,4 +464,4 @@ whose exact poses change drawn opaque.
 
 Figure A.15. Recipes `appa-late-cycle-region-before` and `appa-late-cycle-region-after`, full digests
 `1b263d3e9e0b9dcd2feece889acf0d20c8c96492e2a5e895034be3dd9c46578e` and
-`d112f1dafe5123ec397502941e35192d482678b747c1e21dba728210673a9633`. The two-panel sheet awaits capture.
+`d112f1dafe5123ec397502941e35192d482678b747c1e21dba728210673a9633`.

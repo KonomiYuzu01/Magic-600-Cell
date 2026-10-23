@@ -150,11 +150,14 @@ class MakeFigures(unittest.TestCase):
 
     def test_reserved_seeds_are_refused_before_any_export(self):
         reserved = self.repository / 'records/reserved/run'
-        reserved.mkdir(parents=True)
         self.entries.append(dict(self.entries[0], id='reserved', record='records/reserved/run'))
+        read_json = batch.read_json
         for seed in (9011, 9050, 9073):
-            with self.subTest(seed=seed):
-                batch.write_json(reserved / 'run.json', {'start': {'seed': seed}})
+            def read(path):
+                # Do not create or open a run file for a reserved start.
+                return {'start': {'seed': seed}} if path == reserved / 'run.json' else read_json(path)
+
+            with self.subTest(seed=seed), mock.patch.object(batch, 'read_json', side_effect=read):
                 self.assert_refused('reserved and refused')
 
     def test_invalid_parameters_and_unknown_fields(self):
@@ -372,7 +375,9 @@ class MakeFigures(unittest.TestCase):
     def test_recipe_reserved_seed_is_refused_before_other_exports(self):
         self.entries.append({'id': 'reserved', 'state': {'start': {'scramble': [0, 9050]}, 'digest': 'a' * 64},
                              'view': 'global', 'proj': 'persp', 'emph': 'moved'})
-        self.assert_refused('reserved and refused')
+        document = {'format': batch.LIST_FORMAT, 'figures': self.entries}
+        with mock.patch.object(self, 'write_list'), mock.patch.object(batch, 'read_json', return_value=document):
+            self.assert_refused('reserved and refused')
 
     def test_recipe_checker_uses_temporary_exports_and_reports_each_failure(self):
         recipe = {'start': {'table': RUN + '/start-table.json'},
@@ -515,6 +520,48 @@ class MakeFigures(unittest.TestCase):
         self.assertEqual(result, 1, output)
         self.assertIn('Figures differ: replacement, step0-before', output)
 
+    def test_check_hashes_saved_panels_and_sheets_without_writes(self):
+        self.sheet_setup()
+        self.assertEqual(self.invoke()[0], 0)
+        for name in ('step0-before', 'pair'):
+            path = self.out / 'png' / (name + '.png')
+            original = path.read_bytes()
+            for damage in ('missing', 'corrupt'):
+                with self.subTest(name=name, damage=damage):
+                    if damage == 'missing':
+                        path.unlink()
+                    else:
+                        path.write_bytes(b'corrupt saved PNG sentinel')
+                    before = {p.relative_to(self.out): p.read_bytes() for p in self.out.rglob('*') if p.is_file()}
+                    result, output = self.invoke('--check')
+                    self.assertEqual(result, 1, output)
+                    self.assertIn(name, output)
+                    self.assertEqual(before, {p.relative_to(self.out): p.read_bytes()
+                                             for p in self.out.rglob('*') if p.is_file()})
+                    path.write_bytes(original)
+
+    def test_differences_hashes_every_baseline_png_even_removed_entries(self):
+        baseline = {'format': batch.MANIFEST_FORMAT, 'figures': [
+            {'id': 'removed', 'png': 'png/removed.png', 'png_sha256': sha(b'original')}], 'sheets': []}
+        current = {'format': batch.MANIFEST_FORMAT, 'figures': []}
+        reads = []
+
+        def read(path):
+            reads.append(path)
+            raise FileNotFoundError(path)
+
+        with mock.patch.object(Path, 'read_bytes', read):
+            self.assertEqual(batch.differences(current, baseline, self.out), ['removed'])
+        self.assertEqual(reads, [self.out / 'png/removed.png'])
+
+    def test_shrink_boundary_refused_consistently_before_export(self):
+        for key in ('cs', 'ss'):
+            with self.subTest(key=key):
+                self.entries[0].pop('cs', None)
+                self.entries[0].pop('ss', None)
+                self.entries[0][key] = 0.4000000000000001
+                self.assert_refused('invalid ' + key)
+
     def test_extra_files_are_reported_and_only_prune_removes_them(self):
         self.assertEqual(self.invoke()[0], 0)
         extra = self.out / 'png/unlisted.png'
@@ -548,6 +595,77 @@ class MakeFigures(unittest.TestCase):
 
 @unittest.skipUnless(shutil.which('node'), 'node is missing; shot parameter/capture checks skipped')
 class CaptureFraming(unittest.TestCase):
+    def test_capture_check_hashes_saved_pngs_without_writes(self):
+        self.assertTrue(run_node(self, r"""
+const { isDeepStrictEqual } = require('node:util');
+const { mkdtempSync, rmSync, unlinkSync, readdirSync, realpathSync } = require('node:fs');
+const { tmpdir } = require('node:os');
+(async () => {
+const directory = mkdtempSync(join(tmpdir(), 'magic600-capture-check-test-'));
+try {
+  const baseline = { format: 'magic600-tutorial-capture/1',
+    shots: [{ name: 'saved', png_sha256: sha(Buffer.from('original')) }] };
+  const results = structuredClone(baseline.shots);
+  const differences = sourceFunction('capture_tutorial.mjs', 'differences', {
+    readFileSync, join, sha, isDeepStrictEqual, insist: assert.ok, NAME: /^[A-Za-z0-9_-]{1,64}$/
+  });
+  assert.throws(() => differences([], { shots: [{ name: '../outside' }] }, directory), /Invalid capture manifest/);
+  const path = join(directory, 'saved.png');
+  writeFileSync(path, 'original');
+  assert.deepEqual(Array.from(differences(results, baseline, directory)), []);
+  writeFileSync(path, 'corrupted');
+  assert.deepEqual(Array.from(differences(results, baseline, directory)), ['saved']);
+  assert.equal(readFileSync(path, 'utf8'), 'corrupted');
+  unlinkSync(path);
+  assert.deepEqual(Array.from(differences(results, baseline, directory)), ['saved']);
+  assert.deepEqual(readdirSync(directory), []);
+  writeFileSync(path, 'original');
+  assert.deepEqual(Array.from(differences([], baseline, directory)), ['saved']);
+  // Exercise main's --check branch with synthetic render results and an inert
+  // server/browser interface: no socket, browser or screenshot is created.
+  writeFileSync(join(directory, 'manifest.json'), JSON.stringify(baseline));
+  const fakeProcess = {}, messages = [];
+  const main = sourceFunction('capture_tutorial.mjs', 'main', {
+    options: () => ({ '--check': true, '--out': directory, '--data': directory }),
+    shotsList: () => results, vendorFiles: () => new Map(), readFileSync, writeFileSync,
+    join, HERE: here, CDN: 'unused', PINNED: {}, json, sha, realpathSync, differences, Buffer, isDeepStrictEqual,
+    geometryFiles() {}, dataFiles: () => new Map(), insist: assert.ok, process: fakeProcess,
+    serve: async () => ({ address: () => ({ port: 1 }), close: done => done() }),
+    loadPlaywright: async () => ({ api: { chromium: { launch: async () => ({ close: async () => {} }) } } }),
+    render: async () => results, mkdtempSync, tmpdir, rmSync,
+    console: { log: message => messages.push(message), error: message => messages.push(message) }
+  });
+  for (const damage of ['unchanged', 'corrupt', 'missing']) {
+    if (damage === 'corrupt') writeFileSync(path, 'corrupted');
+    if (damage === 'missing') unlinkSync(path);
+    const before = readdirSync(directory).map(name => [name, readFileSync(join(directory, name), 'utf8')]);
+    fakeProcess.exitCode = 0;
+    await main();
+    assert.equal(fakeProcess.exitCode, damage === 'unchanged' ? 0 : 1);
+    assert.deepEqual(readdirSync(directory).map(name => [name, readFileSync(join(directory, name), 'utf8')]), before);
+    if (damage !== 'unchanged') assert.match(messages.at(-1), /Shots differ: saved/);
+  }
+} finally { rmSync(directory, { recursive: true, force: true }); }
+process.stdout.write('true');
+})().catch(e => { console.error(e); process.exitCode = 1; });
+"""))
+
+    def test_shrink_boundary_matches_page_validation(self):
+        self.assertTrue(run_node(self, r"""
+const list = entry => sourceFunction('capture_tutorial.mjs', 'shotsList', {
+  readFileSync: () => Buffer.from(JSON.stringify([{ name: 'a', state: 's', ...entry }])),
+  json, insist: assert.ok, NAME: /^[A-Za-z0-9_-]{1,64}$/
+})('unused')[0];
+for (const key of ['cs', 'ss']) {
+  assert.throws(() => list({ [key]: 0.4000000000000001 }), /Invalid cs or ss/);
+  for (let hundredths = 40; hundredths <= 100; hundredths++) {
+    const value = hundredths / 100;
+    assert.equal(list({ [key]: value })[key], value);
+  }
+}
+process.stdout.write('true');
+"""))
+
     def test_page_and_capture_fit_choices_and_requirements(self):
         self.assertTrue(run_node(self, r"""
 const parse = query => sourceFunction('full.js', 'shotParameters', {

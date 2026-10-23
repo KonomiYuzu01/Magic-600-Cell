@@ -140,7 +140,15 @@ class Evidence:
         document = self.json(F + "/figdata.json")
         if document.get("format") != "magic600-tutorial-figdata/1":
             raise ValueError("unsupported computed figure data")
-        return document["figures"][self.name]
+        data = document["figures"][self.name]
+        for path, digest in data["inputs"].items():
+            try:
+                actual = sha256(repository_path(path).read_bytes())
+            except OSError as error:
+                raise ValueError("stale figure data: " + self.name + ": " + path) from error
+            if actual != digest:
+                raise ValueError("stale figure data: " + self.name + ": " + path)
+        return data
 
     def note(self, value):
         self.notes.append(value)
@@ -837,9 +845,10 @@ def literal_assignment(text, name):
 
 def concept_data(e):
     data = e.figdata()
-    for path, digest in data["inputs"].items():
-        if sha256(e.raw(path)) != digest:
-            raise ValueError("stale concept figure data: " + e.name + ": " + path)
+    # Retain these figures' existing production-input inventory. All data sets
+    # share the digest validation in Evidence.figdata.
+    for path in data["inputs"]:
+        e.raw(path)
     return data
 
 
@@ -1476,9 +1485,8 @@ def appendix_st(e, s):
 
 def appendix_tree(e, s):
     data = e.figdata()
-    for path, digest in data["inputs"].items():
-        if sha256(e.raw(path)) != digest:
-            raise ValueError("stale appendix figure data: " + e.name + ": " + path)
+    for path in data["inputs"]:
+        e.raw(path)
     tree_api().check_tree(data["tree"], data["tree"]["letters"])
     y = folded_tree(s, data["tree"], 90, show_spans=True)
     if "word" in data and len(data["word"]) <= 40:
