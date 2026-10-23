@@ -74,3 +74,14 @@ between check-ins (an environment setting); a shorter `checkpoint.py --every` in
 helper, but not the command this task gives); or resuming the surviving local `out/` instead of the older
 checkpoint (the resume checks every step's digests, but that is not what step 4 says). I keep restoring and
 resuming at each check-in as instructed.
+
+## Restarts under the integrator's revised procedure (23 October 2026, 00:30 UTC)
+
+The integrator changed the procedure: resume the local `out/` directly when it has more steps than the newest
+checkpoint (restore only if that resume refuses), run `checkpoint.py --every 120`, and keep a harness-tracked
+background waiter on the runner process.
+
+- 00:06 UTC (sixth restart, old procedure): restored `09ece1f` (step 77) and resumed. The container died before
+  index 77 was done again.
+- 00:34 UTC (seventh restart): local `out/` had 78 steps (index 77 written at 00:12:09), the checkpoint had 77. I
+  resumed `out/` directly (accepted, `resumes` [25, 77, 78]), started `checkpoint.py --every 120` and a tracked waiter.
