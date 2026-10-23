@@ -465,7 +465,7 @@ The first bulk step at this state, with the rules in the runner's bulk order, is
 (72, 18): N falls from 13,270 to 11,704, off from 26,519 to 23,422, and the digest becomes `ab254e2a…` (**computed**,
 record `E_bulk0`, script `:211-223`). Chapter 2 gives the rule.
 
-![Figure 1.4: the 3,097 pieces that the letter (72, 18) moves at the start of seed 7001, in the local stereographic view centred on cap 72](figures/png/s7001-step0-before.png)
+![Figure 1.4: the 3,097 pieces that the letter (72, 18) moves at the start of seed 7001, in the local stereographic view centred on cap 72; 3,035 of them are in the frame](figures/png/s7001-step0-before.png)
 
 ## 1.8 Seams, face pieces and the cover graph
 

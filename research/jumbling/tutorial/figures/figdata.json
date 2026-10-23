@@ -28,7 +28,7 @@
         "research/jumbling/theory/restore.py": "2a7bfd448f24ecafd544aa54bae914dec817b801fb044dcee660c2ce46893861",
         "research/jumbling/theory/seams.py": "e42dac099632ec063f63b3880cd4957cc49b1193b732e4fa2bf87eeb7882204b",
         "research/jumbling/theory/trees.py": "8431eedfb778a68b04e5938f3bcfee92feac8e54e718471ea33d6ccedb55a642",
-        "research/jumbling/tutorial/figures/diagrams.py": "c9330d552dc06e8cd45218d7cdd5cd719b7bc4791ed1bcddb96f16b6374e7170"
+        "research/jumbling/tutorial/figures/diagrams.py": "a4c6237ba613ae886c54f71cbb427b46e92fe9bd6fe5ba0fffa6d7ab4cbdd02b"
       },
       "points": [
         {
@@ -495,7 +495,7 @@
         "research/jumbling/theory/restore.py": "2a7bfd448f24ecafd544aa54bae914dec817b801fb044dcee660c2ce46893861",
         "research/jumbling/theory/seams.py": "e42dac099632ec063f63b3880cd4957cc49b1193b732e4fa2bf87eeb7882204b",
         "research/jumbling/theory/trees.py": "8431eedfb778a68b04e5938f3bcfee92feac8e54e718471ea33d6ccedb55a642",
-        "research/jumbling/tutorial/05-tail.md": "1ce007e52c09437cea0a753924d96389e623d15a337bd7cebec8f67e12bc6f24",
+        "research/jumbling/tutorial/05-tail.md": "0ec94de6c2eb6c812793849cd0204d028c5aca886f8b8846b8d305e7fbed9f85",
         "research/jumbling/tutorial/figures/figdata.py": "378fe2a3d0c83b56cab07a0ef28b5482c26044e8d04d1a9bfb8ad020659e1856",
         "research/jumbling/tutorial/records/ch05-examples.json": "a21d9dbdb6f0c7fa7f08d2de86a9a507683a94535866a7b599f52c20def7866b",
         "research/jumbling/tutorial/scripts/ch05_examples.py": "1a0e487d0aff7dd574d13b8602e33ee991c0d21e55d7a5fc1689bef3e534833c"
@@ -529,7 +529,7 @@
         "research/jumbling/theory/trees.py": "8431eedfb778a68b04e5938f3bcfee92feac8e54e718471ea33d6ccedb55a642",
         "research/jumbling/tutorial/figures/figdata.py": "378fe2a3d0c83b56cab07a0ef28b5482c26044e8d04d1a9bfb8ad020659e1856",
         "research/jumbling/tutorial/records/ch06-examples.json": "795340cd03a95ec1133df289672d973bbf22deb038fa3c86eb9a91ac283105e8",
-        "research/jumbling/viewer/export_tutorial.py": "ca2116a6f93a68c3efa13b8ca1227c0d2b44146d74f0b7cd22f97b6d89bf21b9"
+        "research/jumbling/viewer/export_tutorial.py": "d08de1e85f55efe8fc6f4d4ed4b14e75e3d632f7a3b69640e9bbe10d4fd580fc"
       },
       "macro": 7,
       "note": "The recorded program's first correction; pictures use the label-equivalent representative T, not the uncommitted Y.R pose state.",
@@ -5015,7 +5015,7 @@
         "research/jumbling/restoration/12-low-height/runs/round22/line-a/replay/words/b17.json": "c50dea8e51de97ad3efb77ec1e17986cf75498884dd25e2f45a0ad483406a9c2",
         "research/jumbling/restoration/12-low-height/scripts/eb6.py": "f0b37865f1c8b237b27089af5d0eded3dc188988304c2d3ef6289ea62f4b469a",
         "research/jumbling/restoration/12-low-height/scripts/round22/r22d25_state.py": "ca45c9ba5ba14b10d48d1d2946c1265acdc8f6e609a5ef83737f79fde8201316",
-        "research/jumbling/restoration/13-tutorial-runner/scripts/runner.py": "b4dcaef80c0987ddd754d95fe4a5d91b8552a0ba5c6f45d1cfcfc44470cd2037",
+        "research/jumbling/restoration/13-tutorial-runner/scripts/runner.py": "a1cd10b1946349ec4483c53410ca797327d7f6c9486a78d91c1ec6bd0823194c",
         "research/jumbling/restoration/13-tutorial-runner/scripts/runner_api.py": "b92e73d33345da33ee3e6e7974d9ab8db1d35193dc69371b0e13d55bade08459",
         "research/jumbling/sim/kernel.py": "97076ffce3bdf9f10f69d221234750898fc43848a6fafc24a1c23d1b681e143c",
         "research/jumbling/sim/state.py": "7b92119080a1a7bb3155a0d91a2ac83f20b7f3d4e2c07fb976c17ff447e44259",
@@ -5491,9 +5491,9 @@
         "research/jumbling/theory/restore.py": "2a7bfd448f24ecafd544aa54bae914dec817b801fb044dcee660c2ce46893861",
         "research/jumbling/theory/seams.py": "e42dac099632ec063f63b3880cd4957cc49b1193b732e4fa2bf87eeb7882204b",
         "research/jumbling/theory/trees.py": "8431eedfb778a68b04e5938f3bcfee92feac8e54e718471ea33d6ccedb55a642",
-        "research/jumbling/tutorial/04-high.md": "cb8d6560925d7c99a62afd8cd699371afb3118ee170fa8a677a3c7b5723acb89",
-        "research/jumbling/tutorial/A-macros.md": "8459c8e25570518344ea299d4a4fdcacc63def2043e853e45bdf2064fd00fe3b",
-        "research/jumbling/tutorial/figures/diagrams.py": "c9330d552dc06e8cd45218d7cdd5cd719b7bc4791ed1bcddb96f16b6374e7170",
+        "research/jumbling/tutorial/04-high.md": "af09e7b4f47e7b2c8f373720e9d6730b14e6c5d190af0cd763a67eb306974328",
+        "research/jumbling/tutorial/A-macros.md": "355d39638bb6fdf3c336d01c2ab45f93e58df374fe5fbcd72625e651a6b06d87",
+        "research/jumbling/tutorial/figures/diagrams.py": "a4c6237ba613ae886c54f71cbb427b46e92fe9bd6fe5ba0fffa6d7ab4cbdd02b",
         "research/jumbling/tutorial/figures/figdata.py": "378fe2a3d0c83b56cab07a0ef28b5482c26044e8d04d1a9bfb8ad020659e1856"
       },
       "labels": [

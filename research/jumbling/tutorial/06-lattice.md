@@ -1499,7 +1499,7 @@ costs at this state (**computed**, record section C; the cost of the plan played
 
 Each plan wins on 12 orbits; no tie occurs here.
 
-![Figure 6.12: The lattice phase of the D0 record of seed 7106 as a sequence of 36 panels in cascade order: the pieces whose exact pose differs from solved, before row 19 and after each of rows 19 to 53, each panel labelled with its row, rule, letters and after digest](figures/png/ch06-d0-sequence.png)
+![Figure 6.12: The lattice phase of the D0 record of seed 7106 as a sequence of 36 panels in cascade order: the pieces whose exact pose differs from solved, before row 19 and after each of rows 19 to 53, each panel labelled with its row, rule, letters and after digest; the panel before row 19 frames 3,093 of its 3,097 pieces](figures/png/ch06-d0-sequence.png)
 
 ### 6.17.2 The same handoff under the late restorer (development mode)
 

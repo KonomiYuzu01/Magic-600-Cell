@@ -7647,8 +7647,7 @@
    "h": 800,
    "cs": 0.5,
    "ss": 0.62,
-   "cap": 30,
-   "fit": "cap"
+   "cap": 30
   },
   {
    "id": "bulk-conj-7101-s30-region-before",
@@ -18987,8 +18986,7 @@
    "h": 800,
    "cs": 0.5,
    "ss": 0.62,
-   "cap": 91,
-   "fit": "cap"
+   "cap": 91
   },
   {
    "id": "bulk-conj-7101-s30-region-after-2",
@@ -24668,8 +24666,7 @@
    "h": 800,
    "cs": 0.5,
    "ss": 0.62,
-   "cap": 268,
-   "fit": "cap"
+   "cap": 268
   },
   {
    "id": "bulk-conj-7101-s30-region-after-3",
@@ -30356,8 +30353,7 @@
    "h": 800,
    "cs": 0.5,
    "ss": 0.62,
-   "cap": 91,
-   "fit": "cap"
+   "cap": 91
   },
   {
    "id": "01-units-depth40-stop",
@@ -38342,8 +38338,7 @@
    "h": 800,
    "cs": 0.5,
    "ss": 0.62,
-   "cap": 12,
-   "fit": "cap"
+   "cap": 12
   },
   {
    "id": "ch04-r22d16-step-before",
@@ -120667,8 +120662,7 @@
    "h": 800,
    "cs": 0.5,
    "ss": 0.62,
-   "cap": 364,
-   "fit": "cap"
+   "cap": 364
   },
   {
    "id": "03-u2-fe273a8c-after",
@@ -126999,8 +126993,7 @@
    "h": 800,
    "cs": 0.5,
    "ss": 0.62,
-   "cap": 12,
-   "fit": "cap"
+   "cap": 12
   },
   {
    "id": "03-r22d36-piece-58388-h2",
@@ -138391,8 +138384,7 @@
    "h": 800,
    "cs": 0.5,
    "ss": 0.62,
-   "cap": 91,
-   "fit": "cap"
+   "cap": 91
   },
   {
    "id": "appa-zero-bad-region-before",

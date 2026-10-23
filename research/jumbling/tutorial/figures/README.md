@@ -103,6 +103,9 @@ picture of a word that turns one cap uses `fit: cap`, so its Before and After
 share the camera of that cap and its four nearest cells; a global picture with
 `ghost: none` uses `fit: core`; local pictures of words that turn several caps
 keep `all`, because a cap camera would leave most of their moved pieces outside.
+The panels of one sheet share their framing, and a picture whose cap camera
+leaves more than a tenth of its moved pieces outside keeps `all`; for these two
+reasons eight panels of six sheets keep `all`.
 The manifest's `framing` gives the moved pieces and how many are in frame; a
 caption states the count whenever some are outside.
 

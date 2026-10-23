@@ -254,7 +254,7 @@ Sources:
 - The older format 1 record `runs/depth10-seed7001/run.json` of stage 13 has the same words. Its runner had reopen
   last in its order, and reopen never fired.
 
-![Figure 2.2: Seed 7001, step 1: the 3,097 pieces that the face match (72, 18) moves, before and after it; all of them land (26,519 → 23,422 off)](figures/png/bulk-facematch-7001-s1.png)
+![Figure 2.2: Seed 7001, step 1: the 3,097 pieces that the face match (72, 18) moves, before and after it; all of them land (26,519 → 23,422 off); the Before panel frames 3,035 of them](figures/png/bulk-facematch-7001-s1.png)
 
 ### Example: a face match that closes a cut and puts no piece on the lattice (seed 7106, step 18)
 
@@ -295,7 +295,7 @@ record A and agree with the D0 record, step by step (**run on one instance**). T
 `runs/depth20-seed7106/run.json` of stage 13, with reopen last in its order, and the census record
 `runs/round1/ia-k20-s7106.json` of stage 11 have the same words.
 
-![Figure 2.3: Seed 7106, step 18: the 2,808 pieces inside cap 592 before and after the face match (592, 9), which moves no piece onto the lattice (3,097 off before and after)](figures/png/bulk-facematch-7106-s18.png)
+![Figure 2.3: Seed 7106, step 18: the 2,808 pieces inside cap 592 before and after the face match (592, 9), which moves no piece onto the lattice (3,097 off before and after); each panel frames 2,805 of them](figures/png/bulk-facematch-7106-s18.png)
 
 ## 2.5 cover (U1b, the cover order)
 

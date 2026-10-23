@@ -966,7 +966,7 @@ line's `end_summary.txt` byte for byte; H4-unlock from the stop with the 25 lett
 prints the same rows for indices 0 to 510 at `6999b921…` is not shown. The runner reached `bbef1c8e…` in D2's
 run at seed 7302, and its `h4` sub-phase ended at the same stall (section 3.8.4).
 
-![Figure 3.15: the stall at 2430f4cc…, in global perspective: the 8 straddlers of τ = 597 and the 1,123 straddlers of its blocked holders 578, 583, 588 and 595, 1,128 pieces in all (some are in both sets), drawn alike](figures/png/03-stall-2430f4cc.png)
+![Figure 3.15: the stall at 2430f4cc…, in global perspective: the 8 straddlers of τ = 597 and the 1,123 straddlers of its blocked holders 578, 583, 588 and 595, 1,128 pieces in all (some are in both sets), drawn alike; 1,089 of them are in the frame](figures/png/03-stall-2430f4cc.png)
 
 ### 3.8.4 Example (d): the other 3000-twist census stops (seeds 7304 to 7307)
 
