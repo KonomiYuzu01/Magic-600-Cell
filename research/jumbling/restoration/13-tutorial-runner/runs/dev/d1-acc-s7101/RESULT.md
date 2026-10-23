@@ -137,6 +137,21 @@ starts from the scramble in `out3/`, with `checkpoint.py` keeping a verified cop
   43. If the rate holds, that close alone needs many more hours. Saved runner time is 24,490 s at step 101; the
   latest checkpoint is step 102.
 
+- **Run 3 stopped** at 14:47 UTC on 23 October, on the integrator's instruction, during step 102's close (43 left
+  after its third repair step). It was killed by process id (helper first, then runner and its child). The latest
+  checkpoint is step 102, and `out3/` and `out3-checkpoint/` are kept unchanged. The reason is PR #128 (merged into
+  main as `e6b8be1`): it changed the tail rule close's greedy vacancy search (`gm/vacate2.py`) to evaluate candidates
+  exactly and faster, with the same decisions. Run 3 cannot resume across that change, because the runner refuses a
+  different code fingerprint.
+
+## Run 4 (on main with PR #128)
+
+- The branch merged `origin/main` with a merge commit (`d8578e2`). Run 4 started at 14:47 UTC on 23 October on
+  that commit, with the run 3 command and only the run number changed: `--out <line dir>/out4`, a fresh
+  `--cache`, and no `--resume`. `checkpoint.py` runs beside it for `out4`.
+- Comparison with run 3: acceptance mode has no clocks, so steps 0 to 101 must agree in rule, letters, word sha256,
+  before and after digest, and off. The first difference, if any, will be recorded here.
+
 ## Not run
 
 - `check_run.py` (it runs after the runner ends).
