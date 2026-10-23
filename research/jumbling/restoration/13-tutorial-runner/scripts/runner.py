@@ -74,7 +74,7 @@ JORDAN_CPU_SECONDS = 840
 ROW_KEYS = frozenset({'index', 'phase', 'subphase', 'rule', 'word', 'letters', 'encoding', 'word_sha256', 'tree',
                       'contract', 'gate', 'standing', 'before', 'after', 'table', 'seconds', 'attempts'})
 SCRIPTS = [SELF.relative_to(ROOT), SELF.with_name('runner_api.py').relative_to(ROOT), TH / 'seams.py', TH / 'restore.py',
-           TH / 'orient.py', TH / 'buffer.py', TH / 'trees.py',
+           TH / 'seamsx.py', TH / 'rim.py', TH / 'rimx.py', TH / 'orient.py', TH / 'buffer.py', TH / 'trees.py',
            J / 'sim/state.py', GM / 'mkblocks2.py', GM / 'tclose2.py',
            GM / 'fallback.py', LOW / 'cellpure5.py',
            LOW / 'round22/transport_census.py', LOW / 'round22/stepchk.py',
@@ -359,7 +359,9 @@ class Mechanics:
         sys.path[:0] = [str(ROOT / TH), str(ROOT / J), str(ROOT / J / 'fixtures')]
         import numpy as np
         import restore
+        import rimx
         import seams
+        import seamsx
         import sim
         import orient
         import buffer
@@ -368,6 +370,10 @@ class Mechanics:
         self.np, self.restore, self.seams, self.sim = np, restore, seams, sim
         self.orient, self.buffer, self.trees = orient, buffer, trees
         self.menu = restore.menu('I_a')
+        # The bulk child's restorer plays seams.SeamRestorer's words exactly, faster: restored caches on undo
+        # and parallel conj trials (seamsx.py; JUMBLING_BULK_WORKERS processes, default 1) over the exact
+        # cached domains of rimx.py.
+        self.bulk_restorer = type('BulkRestorer', (seamsx.SeamRestorer,), {'DOMAINS': rimx.Domains})
 
     def scramble(self, k, seed):
         state, _ = self.restore.scramble(self.menu, k, seed)
@@ -1782,7 +1788,7 @@ def bulk_child(out, cache):
     recount(record)
     # With reopen excluded, the rules use state-derived caches only; moves is
     # the output of this child's future words, never an input to their choices.
-    restorer = runner.m.seams.SeamRestorer(state, runner.m.menu, order=tuple(record['config']['bulk_order']))
+    restorer = runner.m.bulk_restorer(state, runner.m.menu, order=tuple(record['config']['bulk_order']))
     assert list(restorer.order) == BULK_ORDER and 'reopen' not in restorer.order
     methods = {'seam': restorer.seam, 'cover': restorer.cover, 'close': restorer.level1,
                'lock': restorer.level2, 'improve': restorer.improve, 'shift': restorer.shift,

@@ -175,6 +175,13 @@ The rules of each phase:
      twists the solver has played (`theory/restore.py:104`, :135), so it does not read only the current state.
    - This is the integrator default on the decision page (:82-85). It costs nothing measured: reopen never found the
      next step first in any census run (`11-scramble-census/README.md:154-155`).
+   - Since 23 October 2026 the bulk child plays these rules through `Mechanics.bulk_restorer`: `theory/seamsx.py`'s
+     `SeamRestorer` over the cached domains of `theory/rimx.py`. They give the same words as `seams.py` and
+     `rim.py`, faster: the caches of a state are restored when a trial twist is undone, and `conj` can run its trials
+     in forked workers, the first success taken in the original order. `JUMBLING_BULK_WORKERS` sets the number of
+     workers (default 1, the sequential path); the workers belong to the bulk child's process group, so they stop with
+     it. The record format does not change. `config.code` pins every file under `research/jumbling/`
+     (`scripts/runner.py:152-168`), so `--resume` refuses a run started on the older code (:653).
 3. **Tail phase**, at each state: the units of `mkblocks2.py`, largest first, then by key; for each unit the tail
    rules in order: `zero_bad` (a transport without endpoint collateral), `pure` (the class-cell pure twist of
    `cellpure5.py --search`), `close` (V·W·V⁻¹) and `t1prime` (W·V′·W⁻¹·V′⁻¹, whose closure is taken at Z1, the state
@@ -1192,6 +1199,39 @@ Test counts in this section are counted with `grep "def test_"`, per file and pe
 
   On the final candidate `cd5e6e8` (run above): OK, 18 tests, one skipped, 453.9 s; the two fixtures played their 16,184,022 retained twists at 93,978 and 95,778 twists per second.
 - `scripts/test_check_r22d25.py` (part of the R22D-25 packet): 7 tests, unchanged in I1. They are format checks and record mutations for `check_r22d25.py`, run by stage 12's `test_r22d25.py` and also on their own. On 20 October 2026 they ran inside `test_r22d25.py` (stage 12), which passed; On its own, on the final candidate `cd5e6e8` (run above): OK, 7 tests, 198.0 s.
+- `scripts/test_rimx.py` (23 October 2026, Codex): 4 tests of `theory/rimx.py` against `rim.Domains`.
+  - Synthetic scrambles of depth 1 to 3, each through two applies and two undos with cold, cleared and evicted
+    caches: the representatives, `dom`, `cham`, the members, every pole, and `rim_sets` and the misalignment of every
+    clean cap before and after every menu item.
+  - Exact twist keys across configurations, and floating-point proposals that are empty, reversed or not finite: the
+    exact fallback decides every case, also on a non-injective pose table.
+  - The D3 fixture state (20 domains): all 600 current N_c, 40 caps in full, and the `conj` access pattern of 44
+    trials, every result equal.
+  - Acceptance run: OK, 4 tests, 729.5 s (limit 900). On the fixture, Domains construction and scores after
+    classification took 18.6 s against 121.2 s (6.5 times faster; whole trials 3.1 times faster), with 122 MB in the
+    shared caches.
+- `scripts/test_seamsx.py` (23 October 2026, Codex): 13 tests of `theory/seamsx.py` against `seams.SeamRestorer`.
+  - The cache stack: random nested applies and undos, each restored `_cls`, `_sv` and `_bal` entry and the domains
+    equal to a fresh computation; absent entries, entries outside `NEAR[c]`, external journal edits, a raising apply
+    and the bound of three snapshots.
+  - Parallel `conj` through the real scheduler: an earlier success that finishes later still wins, a failed search
+    leaves state, journal and moves unchanged, and a worker exception or exit is an error.
+  - The recorded D1 states (`runs/dev/d1-dev-s7101/run1-interrupted/`): `conj` at the 11 `conj` steps among 29 to 42
+    with 1 and 3 workers against the parent and the record; every rule at three states; the bulk loop from step 29
+    to 42 with 3 workers, all 14 words as recorded.
+  - The D3 fixture: `conj` with 3 workers and the default domains returns the recorded word of step 199, trial 237
+    of 6,667, in 870.8 s.
+  - Acceptance run: OK, 13 tests, 1,301 s (limit 1,500).
+- Integration of the two in the runner's bulk restorer (`Mechanics.bulk_restorer`, `rimx.Domains` in `seamsx`), by
+  the integrator on 23 October 2026, replaying the bulk loop as `bulk_child` does and comparing rule, word, digest
+  and N with the record:
+  - D1 steps 29 to 42, `JUMBLING_BULK_WORKERS=1`: all 14 as recorded, 124.5 s (steps 30 to 42: 52.5 s; the record
+    took 78.2 s);
+  - D3 steps 199 to 201, `JUMBLING_BULK_WORKERS=3`: all three as recorded, 332.7 s (197.6, 7.8 and 127.4 s; the
+    cloud record took 868, 30 and 1,064 s on another machine).
+
+  Timings are cloud timings of research code with other jobs on the machine (headless Linux; measured (finite
+  inputs)).
 - Two records made with RUN-1's runner on 19 October 2026 and passed by RUN-2's `check_run.py` (`runs/`, format 1, measured (finite inputs)):
   - the depth 10 scramble of seed 7001, solved by the bulk phase in 9 twists (38 s);
   - the depth 20 scramble of seed 7106. The bulk phase brings it onto the lattice in 19 twists, all of rule `seam`. The lattice phase restores it in 8,701,310 twists. `verify_late.py` passed it in the runner and again in the checker (654 s in all); it checks the lattice word by composition and does not play it twist by twist (rule 5).
@@ -1641,7 +1681,7 @@ the completed run directory and remove its checkpoint directory in the same comm
 From the repository root, with Python 3 and NumPy, `S=research/jumbling/restoration/13-tutorial-runner/scripts`:
 
     for t in rules_height rules_kernel lattice_phase check_contracts check_lattice literal_lattice check_r22d25 \
-             runner check_run; do python3 -I -B $S/test_$t.py; done   # times in section 5
+             runner check_run rimx seamsx; do python3 -I -B $S/test_$t.py; done   # times in section 5
     python3 -I -B $S/runner.py --scramble 10 7001 --out <new dir> --cache <new dir> [--mode acceptance]
     python3 -I -B $S/runner.py --scramble 20 7106 --out <new dir> --cache <new dir> --mode acceptance  # about 12 minutes
     python3 -I -B $S/check_run.py <run dir> [--verify-seconds S] [--allow-unchecked-contracts]
@@ -1675,8 +1715,10 @@ word (not run). The `--out` path of the runner must not contain `.json`.
 | `scripts/test_literal_lattice.py` | Its acceptance tests, with the integrator's narrower worktree snapshot (LLP-robust-01, IF-02) and two added tests (LLP-contract-01, IF-01) |
 | `scripts/check_r22d25.py` | The independent checker of `r22d25-run/1` records (packet R22D-25, with the kernel of stage 12). The integrator's fixes: only `assets/manifest.json` must match its recorded digest (R22D25-robust-02, R22D25-contract-04), and an `unsupported` record must show its cause (R22D25-false-pass-05) |
 | `scripts/test_check_r22d25.py` | Its tests: format checks and record mutations, run by stage 12's `test_r22d25.py` or on their own |
+| `scripts/test_rimx.py`, `scripts/test_seamsx.py` | The tests of the exact bulk speed-up (`theory/rimx.py`, `theory/seamsx.py`; section 5), on synthetic scrambles, the recorded D1 states and the D3 fixture |
 | `runs/depth10-seed7001/`, `runs/depth20-seed7106/` | The two format 1 records of section 5: `run.json`, the words, the lattice phase's summary, report and solutions (gzipped), the logs, the runner's last line (`runner.json`) and the checker's output (`check.jsonl`) |
 | `runs/dev/d0-s7001/`, `runs/dev/d0-s7106/` | The format 3 records of D0 on the committed head (section 9): the run directory without the restorer's intermediates, the runner's last line (`runner.out`) and the checker's output (`check.jsonl`) |
+| `runs/dev/d3-s7102-fixture/` | A test fixture, not a run record: the state after bulk step 198 of the depth 100 development line and its next three recorded steps (its `README.md`) |
 
 ## Checks not run
 
