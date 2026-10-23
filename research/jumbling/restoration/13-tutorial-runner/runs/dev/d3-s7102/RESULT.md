@@ -116,3 +116,5 @@ background waiter on the runner process.
 - 16:09 UTC (thirteenth restart, within a minute of the waiter stopping): the local `out/` and checkpoint `040f615`
   both held 201 steps. Restored (exit 0), resumed (accepted, `resumes` [..., 201]), checkpoint helper and a new waiter
   started. State: N 27,598, 24,789 off, 48,091 s of runner time, still in the bulk phase.
+- 18:20 UTC (fourteenth restart, about 18:15, with a waiter running): the local `out/` and checkpoint `f56ffa9` both
+  held 205 steps. Restored (exit 0), resumed (accepted, `resumes` [..., 205]), checkpoint helper and waiter started.
