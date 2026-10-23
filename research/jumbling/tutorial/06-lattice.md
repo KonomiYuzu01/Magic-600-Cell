@@ -243,7 +243,7 @@ A_J = C2^34 × C5^2: 34 bits can be 0 or 1 and both C5 values can be anything; t
 b6, f0, f3 and f6 are always 0 (manual `04-lattice.md:58-66`). The lower bound on A_J is **computed** (a certificate of
 40 words); the upper bound is **proved (model review only)** (`METHOD.md:111-115`).
 
-![Figure 6.2: The 45 coordinates of ν, with the nine that are always 0 greyed, the start value at the depth 40 stop of seed 7101 marked, and the eleven corrections chosen there with the coordinates each one changes](figures/svg/ch06-nu-grid.svg)
+![Figure 6.2: The 45 coordinates of ν, with the nine that are always 0 greyed, the start value marked where E2's tail from the depth 40 stop of seed 7101 ends (digest 02a27279…, section 6.17.3), and the eleven corrections chosen there with the coordinates each one changes](figures/svg/ch06-nu-grid.svg)
 
 ## 6.5 Rule L1: choose the corrections
 
@@ -1268,7 +1268,7 @@ requires identity labels on the last lattice row (:1441-1443), and recomputes th
 The two D0 runs start from the same state and solve the orbits in the same order. Both end with identity labels, in
 different invisible rotations (stage 13 `README.md:1540-1541`).
 
-![Figure 6.11: Labels and poses at the end of the D0 record of seed 7106: the end state 71dbda5c… with every sticker label at home, next to the solved state, with the pieces whose exact pose differs between the two drawn opaque](figures/png/ch06-invisible-rotation.png)
+![Figure 6.11: Labels and poses at the end of the D0 record of seed 7106: the end state 71dbda5c… with every sticker label at home, next to the solved state; only the 1,206 pieces whose exact pose differs between the two are drawn](figures/png/ch06-invisible-rotation.png)
 
 ## 6.15 Bounds and measured lengths
 
@@ -1463,7 +1463,7 @@ What the table shows:
   comes.
 - A step's length is about its number of factors times their average length, which grows with s_o. Orbit 28 has the
   longest step, 325,790 letters: 203 factors of about 1,605 letters each, because its seed has 1,546 letters, the
-  longest under schedule11 (section 6.6). Orbit 31 has the most factors, 1,239, of about 70 letters each (s_o = 56).
+  longest under schedule11 (section 6.6). Orbit 30 has the most factors, 1,299, of about 70 letters each (s_o = 56).
 - Fixed errors are rare: 34 in all, on five frame orbits. Orbit 34 has 25 of them, which give 12 frame triples and one
   direct pair for the odd one left over (rule L3, part 2′).
 
@@ -1499,7 +1499,7 @@ costs at this state (**computed**, record section C; the cost of the plan played
 
 Each plan wins on 12 orbits; no tie occurs here.
 
-![Figure 6.12: The lattice phase of the D0 record of seed 7106 as a sequence of 36 panels in cascade order: the pieces whose exact pose differs from solved, before row 19 and after each of rows 19 to 53, each panel labelled with its row, rule, letters and after digest; the panel before row 19 frames 3,093 of its 3,097 pieces](figures/png/ch06-d0-sequence.png)
+![Figure 6.12: The lattice phase of the D0 record of seed 7106 as a sequence of 36 panels in cascade order: the pieces whose exact pose differs from solved, before row 19 and after each of rows 19 to 53, each panel labelled with its row, rule, letters and after digest; the panel before row 19 frames 3,093 of its 3,097 pieces (the 3,091 unsolved pieces and 6 whose sticker labels are at home but whose exact pose differs)](figures/png/ch06-d0-sequence.png)
 
 ### 6.17.2 The same handoff under the late restorer (development mode)
 
@@ -1566,7 +1566,8 @@ but only 9 factors, so its step has 393,486 letters (**computed**, record sectio
 No runner has played a phase with corrections from a development scramble yet. The only committed lattice program
 with corrections is the stage 12 record
 `research/jumbling/restoration/12-low-height/runs/round22/line-a/literal/lattice/restore-summary.json`, computed by the
-late restorer at the state where E2's literal steps end, the depth 40 stop of seed 7101 (**run on one instance**).
+late restorer at the state where E2's literal steps end (0 off, digest `02a27279…`; chapter 5). E2 started from the
+depth 40 stop of seed 7101, and this chapter calls that lattice input by the stop's name (**run on one instance**).
 There 60,046 pieces are not solved, and ν(Y) has 15 sign bits (b8, b12, b14, b15, b16, b17, b20, b21, b22, b23, b24,
 b26, b27, b29 and b32), f11 = 1 and C5_17 = 4 (record section F). Rule L1 gives eleven corrections:
 

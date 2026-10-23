@@ -991,7 +991,7 @@ three tests of sections 5.17.1 to 5.17.3 have the same text, seven lines lower.
 The test passes `--greedy-seconds 0` (:2745-2747). `tclose2.py` tries its peeling certificate before the greedy
 search, so that option did not decide this V′.
 
-![Figure 5.4: The T1′ step for b04 at 437 off pieces in five panels, the same 131 pieces in each (unit b04's 45 and 86 others): the start; after W (the unit lands; 478 off); after V′; after the middle W⁻¹ (392 off); after V′⁻¹ (392 off)](figures/png/05-t1prime-b04.png)
+![Figure 5.4: The T1′ step for b04 at 437 off pieces in five panels, the same 131 pieces in each (unit b04's 45 and 86 others): the start; after W (the unit lands; 478 off); after V′; after the middle W⁻¹ (392 off); after V′⁻¹ (392 off). The panels are turned to caps 99, 99, 178, 91 and 154, so the view changes from panel to panel: compare the pieces, not their places in the picture](figures/png/05-t1prime-b04.png)
 
 ### 5.17.2 A closure with a certificate V: unit b20 at 507 off pieces
 
@@ -1019,7 +1019,7 @@ The same 40,500-letter word was also played twist by twist by `stepchk.py`: stri
 (**measured**, cloud timing of research code; `runs/round22/line-a/literal/run1/03-b20-stepchk.json`; stage 12
 `README.md:1870`).
 
-![Figure 5.5: The b20 closure at 507 off pieces in four panels, the same 70 pieces in each (unit b20's 60 and 10 others): the start; after V; after the 36-letter middle (the unit lands); after V⁻¹ (447 off)](figures/png/05-close-b20.png)
+![Figure 5.5: The b20 closure at 507 off pieces in four panels, the same 70 pieces in each (unit b20's 60 and 10 others): the start; after V; after the 36-letter middle (the unit lands); after V⁻¹ (447 off). The panels are turned to caps 194, 194, 495 and 0, so the view changes from panel to panel: compare the pieces, not their places in the picture](figures/png/05-close-b20.png)
 
 ### 5.17.3 A T1′ step with a certificate V′: unit b07 at 324 off pieces
 
@@ -1117,7 +1117,7 @@ a twist-by-twist play of all of them.
 certificate V (their certificates' sha256 in `runs/round22/line-a/literal/certificates.json`; the certificates
 themselves are left out of the repository). The lattice phase from the end (digest `02a27279…`) is chapter 6.
 
-![Figure 5.8: E2's tail as one trajectory: the off count after each of the 13 steps (737 to 0) above a bar per step for its length on a logarithmic scale, the certificate steps marked](figures/svg/05-e2-trajectory.svg)
+![Figure 5.8: E2's tail as one trajectory: the off count after each of the 13 steps (737 to 0) above a bar per step for its length on a logarithmic scale, the certificate steps marked. Its Kind column uses the replay scripts' names: x-t1prime is the prepared T1′ step for b06 with b05](figures/svg/05-e2-trajectory.svg)
 
 ## 5.18 What the tail does not settle
 
