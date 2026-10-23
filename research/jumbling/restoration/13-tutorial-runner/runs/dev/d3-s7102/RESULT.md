@@ -85,3 +85,11 @@ background waiter on the runner process.
   index 77 was done again.
 - 00:34 UTC (seventh restart): local `out/` had 78 steps (index 77 written at 00:12:09), the checkpoint had 77. I
   resumed `out/` directly (accepted, `resumes` [25, 77, 78]), started `checkpoint.py --every 120` and a tracked waiter.
+- 02:06 UTC progress: the container stayed up while the waiter ran. **All 108 census steps agree** with the runner's
+  first 108 bulk steps: rule, twist count, N before and after, off after, and the twists themselves (272 twists;
+  `compare.py`, no difference). Index 107 ends at N 32,642 and 31,479 off, as in the census. The bulk phase went on:
+  118 steps at N 32,136 and 30,671 off, after 13,160 s of runner time.
+- 02:35 UTC: the waiter stopped at its two-hour limit. The runner was alive at 123 steps.
+- 04:06 UTC (eighth restart): the local `out/` and the newest checkpoint `4de07e3` both held 123 steps (index 122
+  written at 02:35:05). I restored the checkpoint into an empty `out/` (exit 0), resumed (accepted, `resumes` [25, 77,
+  78, 123]), started `checkpoint.py --every 120` and a new waiter.
