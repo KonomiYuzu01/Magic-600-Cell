@@ -106,8 +106,11 @@ keep `all`, because a cap camera would leave most of their moved pieces outside.
 The panels of one sheet share their framing, and a picture whose cap camera
 leaves more than a tenth of its moved pieces outside keeps `all`; for these two
 reasons eight panels of six sheets keep `all`.
-The manifest's `framing` gives the moved pieces and how many are in frame; a
-caption states the count whenever some are outside.
+The manifest's `framing` gives the moved pieces and how many are in frame.
+Thirty-five pictures leave some outside. Five of them appear in the chapters,
+and the captions of those figures (1.4, 2.2, 2.3, 3.15 and 6.12) state the
+count; the other thirty are step pictures that no chapter places, and their
+counts are in the manifest only.
 
 Each observation carries its full state digest and `path:function` source. Support
 rows are `[piece_id, position_before, position_after]`; pose changes include frame
