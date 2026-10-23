@@ -59,7 +59,7 @@ The runner's development runs (stage 13 `PLAN.md` section 4; records under
 |---|---|---|---|
 | D0 | seeds 7001 (depth 10) and 7106 (depth 20), acceptance mode | both restored to the solved state; the checker passes both records | 2.15, 6.17.1 |
 | D1 | seed 7101 (depth 40), development mode | the bulk stuck at 1,193 off; one tail step (`zero_bad`, 1,193 → 1,082 off); killed by a container restart in the tail, not checked | 2.15, 5.18 |
-| D2 | the 3000-twist census stops of seeds 7302 and 7304 to 7307 with the bulk off, and seed 7303 from its scramble | no run reached the lattice phase: the height phase stuck with n4 between 734 and 1,955, the high phase stuck (`kernel_exhausted`) or on its clock, the tail stopped while listing the units; four of the six records checked | 2.15, 3.8.4, 4.18, 5.18 |
+| D2 | the 3000-twist census stops of seeds 7302 and 7304 to 7307 with the bulk off, and seed 7303 from its scramble | no run reached the lattice phase: the height phase stuck with n4 between 734 and 1,955; the high phase stuck (`kernel_exhausted`) at 7304 to 7307, ran out of its clock at 7303 and was cut off by a lost container at 7302; the tail stopped while listing the units at 7304, 7305 and 7307 and was cut off by a lost container at 7306; four of the six records checked | 2.15, 3.8.4, 4.18, 5.18 |
 
 The acceptance-mode run at depth 40 (seed 7101) and the run at depth 100 (D3, seed 7102) are still running. Batch 1
 of the acceptance test (depths 10, 20, 40 and 100, seeds 9011 to 9043) runs only once the development runs at those
