@@ -163,13 +163,13 @@
   "bulk": {
    "result": "budget",
    "completed": false,
-   "steps": 75,
-   "twists": 157,
+   "steps": 81,
+   "twists": 175,
    "end": {
-    "digest": "4f5b54e8d3b4589ebf02dbb5411a0591d4a3e32fc69d6b7306757dc4edaa6998",
-    "off": 1442,
+    "digest": "4c67dfe8d5ab3354ef4ac5f3e5f9386800eff12f7db7a75651b952af30a6a428",
+    "off": 1404,
     "heights": {
-     "2": 1442
+     "2": 1404
     },
     "table": "tables/bulk-end.json"
    }
@@ -2247,6 +2247,168 @@
     "N": 2188
    },
    "seconds": 255.300193
+  },
+  {
+   "index": 75,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00075.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "a4f3db8b0aa1550405e8f36dacb74ab1e51aa3a65653562d4a686b81a9646c42",
+   "tree": {
+    "file": "step-trees/00075.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "4f5b54e8d3b4589ebf02dbb5411a0591d4a3e32fc69d6b7306757dc4edaa6998",
+    "off": 1442,
+    "N": 2188
+   },
+   "after": {
+    "digest": "7df8bb82920bfc52716419d55d308e4b2d8bc98130c048ed7029d49aa07ed95d",
+    "off": 1442,
+    "N": 2138
+   },
+   "seconds": 316.161178
+  },
+  {
+   "index": 76,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00076.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "dc59064b41104421377c57a17a8efb0512eacaf677d41caf3ef38d97d1388506",
+   "tree": {
+    "file": "step-trees/00076.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "7df8bb82920bfc52716419d55d308e4b2d8bc98130c048ed7029d49aa07ed95d",
+    "off": 1442,
+    "N": 2138
+   },
+   "after": {
+    "digest": "6ab9ccbf95a058db283cb9d5a6b053600a1b49feb7b873f6bf1675a94c892e61",
+    "off": 1442,
+    "N": 2128
+   },
+   "seconds": 18.695519
+  },
+  {
+   "index": 77,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00077.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "6ff536f92ce6b83f06ed0d709a51629e52f34100800e12861d4dc0e6df2b2b5a",
+   "tree": {
+    "file": "step-trees/00077.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "6ab9ccbf95a058db283cb9d5a6b053600a1b49feb7b873f6bf1675a94c892e61",
+    "off": 1442,
+    "N": 2128
+   },
+   "after": {
+    "digest": "5013605c87131bf0557f8098507f2aa1b912aface5ae137d2e183c4e25c67e37",
+    "off": 1442,
+    "N": 2056
+   },
+   "seconds": 167.122326
+  },
+  {
+   "index": 78,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00078.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "8cd0aa06b5a2634f314eefd62a8070b6a9ff8ab5ab8ef94e13525c069a820954",
+   "tree": {
+    "file": "step-trees/00078.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "5013605c87131bf0557f8098507f2aa1b912aface5ae137d2e183c4e25c67e37",
+    "off": 1442,
+    "N": 2056
+   },
+   "after": {
+    "digest": "3b22d8aa13aed78a63c797a07510bea36578157d0e328050a34cb0863f0197a8",
+    "off": 1404,
+    "N": 2030
+   },
+   "seconds": 93.295194
+  },
+  {
+   "index": 79,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00079.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "ae09b74ee62e82baa03351714f4377986367132df2a62c2fc6f7b4fe5e39ea3e",
+   "tree": {
+    "file": "step-trees/00079.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "3b22d8aa13aed78a63c797a07510bea36578157d0e328050a34cb0863f0197a8",
+    "off": 1404,
+    "N": 2030
+   },
+   "after": {
+    "digest": "d10e570ac2a4301edaa5a139ce5c97a1b34e20c953ebf87680b3820918c759ee",
+    "off": 1404,
+    "N": 2028
+   },
+   "seconds": 152.740111
+  },
+  {
+   "index": 80,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00080.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "58521b4d3e76151f71abc796d990a2cf66c9199f63c6dc8ceaa1f63fee3ddef1",
+   "tree": {
+    "file": "step-trees/00080.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "d10e570ac2a4301edaa5a139ce5c97a1b34e20c953ebf87680b3820918c759ee",
+    "off": 1404,
+    "N": 2028
+   },
+   "after": {
+    "digest": "4c67dfe8d5ab3354ef4ac5f3e5f9386800eff12f7db7a75651b952af30a6a428",
+    "off": 1404,
+    "N": 2014
+   },
+   "seconds": 174.441729
   }
  ],
  "stuck": null,
@@ -2261,12 +2423,12 @@
   "timed_out_attempts": 0
  },
  "totals": {
-  "bulk_twists": 157,
+  "bulk_twists": 175,
   "height_twists": 0,
   "high_twists": 0,
   "tail_twists": 0,
   "fallback_twists": 0,
   "lattice_twists": null,
-  "seconds": 2625.437755
+  "seconds": 3548.090427
  }
 }
