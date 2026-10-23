@@ -20961,7 +20961,7 @@
      },
      {
       "file": "research/jumbling/tutorial/figures/figdata.json",
-      "sha256": "c07987e8c7b0717eda910fda9615d659bb1c0276d189a9d1ab107828f2a58bd1"
+      "sha256": "210decdf8680dfe29f655f109ad9f3cb964007d4aa82196f630bb0d9c077d741"
      }
     ],
     "letter_count": 810,
@@ -20991,7 +20991,7 @@
      "in_frame": 280
     },
     "header_digest": "d112f1dafe5123ec397502941e35192d482678b747c1e21dba728210673a9633",
-    "tutorial_sha256": "72d9a4dfafd606b8542378b0b6d14bd11ce6fb2a977962f907f1c08e0bd5a016"
+    "tutorial_sha256": "bf22077f9cb7044269f8279f84ea2d7e8e3fbe257859383bd8a4e67deeba0080"
    },
    "png": "png/appa-late-cycle-region-after.png",
    "png_sha256": "a2f2c957d5382fdde38621c5f2f3bc3b3dd9b5affab83a212a72e9eb5380a09a"

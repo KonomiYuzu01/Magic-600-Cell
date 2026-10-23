@@ -46,6 +46,13 @@ played word or action region. `appa-inventory` checks all permitted runner and
 census step records for those absent rules, screening reserved paths before reads.
 Committing a new runner or census record makes it stale: regenerate it with
 `figdata.py --only appa-inventory`, and `--check` then passes again.
+The picture `appa-late-cycle-region-after` plays the top-level `word` of
+`figdata.json`, so the picture manifest (`manifest.json`) records the digest of
+that whole file, and any change to it, the inventory's included, makes that
+picture's entry stale for the viewer's `make_figures.py --check`. Run
+`make_figures.py` without `--check` afterwards; it has no partial mode and draws
+every picture again. While `word` is unchanged the PNGs stay byte for byte the
+same and only that entry changes.
 
 `figdata.py` replays only the named development records and calls their original
 count, target and pose functions to produce `figdata.json`
