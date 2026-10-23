@@ -152,6 +152,11 @@ starts from the scramble in `out3/`, with `checkpoint.py` keeping a verified cop
 - Comparison with run 3: acceptance mode has no clocks, so steps 0 to 101 must agree in rule, letters, word sha256,
   before and after digest, and off. The first difference, if any, will be recorded here.
 
+- 18:49 UTC progress: run 4 has 97 bulk steps (checkpoint step 97, runner time 9,812 s at the last save) and is in
+  the search for the 98th bulk step. Compared with run 3 (`out3-checkpoint/run.json` against
+  `out4-checkpoint/run.json`): all 97 steps agree in rule, letters, word sha256, before and after digest, and off.
+  There is no difference so far.
+
 ## Not run
 
 - `check_run.py` (it runs after the runner ends).
