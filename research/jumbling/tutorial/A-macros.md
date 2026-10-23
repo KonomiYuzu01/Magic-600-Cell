@@ -38,8 +38,8 @@ The record's before and after digests are `b48842271623…` and `0fc676b52af1…
 y [1] at [1, 2), z [1] at [2, 3), and the cap counts after each part. There is no inverse reference: z is not the
 inverse of x in this example. The runner's `step-trees/00029.json.gz` stores these same three spans.
 
-**Region.** Figure A.1 uses the same state and the same moved pieces in both panels; the local stereographic view
-is centred on the first cap, 91.
+**Region.** Figure A.1 draws the same 5,632 moved pieces in both panels, before and after the step; the local
+stereographic view is centred on the first cap, 91.
 
 ![Figure A.1: The actual conj step of seed 7101, index 29, before and after its three letters, with its moved pieces opaque](figures/png/appa-conj-region.png)
 
@@ -107,6 +107,8 @@ Figure A.4. Computed tree `appa-u2-tree`. No runner record holds this fixed-targ
 
 **Region.** [Figure 3.8](03-height.md#344-r22d88u-and-r22d88u2-the-pair-program) already gives its actual before,
 middle and after states, with the same moved-piece emphasis; read its first and third panels as the region pair.
+They show the same pieces but are turned to different caps (364 and 263), so compare the pieces, not their places in
+the picture.
 
 ### A.5 h4/pair: the two-letter U step
 
@@ -129,7 +131,8 @@ directory supply the choice: `_pair_choice` selects class A, order index 299, by
 Figure A.5. Computed tree `appa-h4-pair-tree`. No runner record holds this cloud-line step.
 
 **Region.** [Figure 3.13](03-height.md#355-h4pair-the-two-letter-u-step) already shows this example before, between
-and after its letters, with the moved pieces opaque. Its first and last panels are the region pair.
+and after its letters, with the moved pieces opaque. Its first and last panels are the region pair. They show the
+same pieces but are turned to different caps (553 and 535), so compare the pieces, not their places in the picture.
 
 ## High
 
@@ -196,8 +199,9 @@ at [1, 2), C⁶ [24] at [2, 26), V⁻¹ [1] at [26, 27), a⁻¹ [1] at [27, 28).
 the five other copies are `same_as` C. Both final inverse parts point back to their originals. The finer tree is
 chapter-defined: there is no committed runner step for D19 (the plugin would use one span).
 
-**Region.** [Figure 4.6](04-high.md#4142-a-d19-word-r22d-16) already shows this exact example before and after,
-including the 42 landed pieces and the unchanged off pieces.
+**Region.** [Figure 4.6](04-high.md#4142-a-d19-word-r22d-16) already shows this exact example before and after:
+the 231 pieces whose exact pose the step changes, among them unit 391 and the 41 other landed height-4 pieces.
+Pieces whose exact pose the step does not change are not drawn.
 
 ### A.9 S·T: a protected letter, then a landing letter
 
@@ -300,7 +304,9 @@ Its segments name the committed SAFE word, core and inverse; the core expands as
 `records/ch07-examples.json`, `E_trees.b20`, computed with `Runner.step_tree`. It has the three parts above.
 
 **Region.** [Figure 5.5](05-tail.md#5172-a-closure-with-a-certificate-v-unit-b20-at-507-off-pieces) already shows
-its actual before and after, with the intermediate V and W states. Use the first and last panels.
+its actual before and after, with the states after V and after the middle between them. Use the first and last
+panels. They show the
+same pieces but are turned to different caps (194 and 0), so compare the pieces, not their places in the picture.
 
 ### A.13 t1prime: W·V′·W⁻¹·V′⁻¹
 
@@ -328,7 +334,8 @@ expansion is needed for this example.
 from `records/ch07-examples.json`, `E_trees.b04` (the original `Runner.step_tree` helper).
 
 **Region.** [Figure 5.4](05-tail.md#5171-a-t1-step-with-a-literal-v-unit-b04-at-437-off-pieces) shows the actual
-start, each part boundary and the end. Its first and last panels give the region pair.
+start, each part boundary and the end. Its first and last panels give the region pair. They show the same pieces
+but are turned to different caps (99 and 154), so compare the pieces, not their places in the picture.
 
 ## Lattice
 
@@ -405,7 +412,8 @@ setup. Factor 0's seed contains its zero-length relocation and inverse; the late
 **Step tree.** [Figure 6.8](06-lattice.md#67-rule-l3-one-orbit-step-under-schedule11-default-and-acceptance)
 already draws the full recorded tree, including all 24 parts and zero spans. `trees.json` also already lists it
 as `tree-7106-19`; [Figure 6.5](06-lattice.md#67-rule-l3-one-orbit-step-under-schedule11-default-and-acceptance)
-expands the first factor into g, r⁻¹, c, r, g⁻¹ and gives its exact support and collateral.
+expands the first factor into g, r⁻¹, c, r, g⁻¹ and counts its exact support (2,400 pieces) and collateral
+(2,397); `figdata.json` lists the pieces.
 
 **Region.** [Figures 6.6 and 6.7](06-lattice.md#67-rule-l3-one-orbit-step-under-schedule11-default-and-acceptance)
 already give this exact step before and after in global perspective, with the same changed pieces opaque.

@@ -417,7 +417,7 @@ the four has a letter and τ exists, the plugin starts R22D-88's pair program at
   Z36 the program's first letter is H6 (12, 14) (**computed**, record section A0).
 - **Where in the code**: `r22d81_rule.py:249-254`, `:294-305`.
 
-![Figure 3.6: r22d81/H6 (274, 13) at 9a227291…: n6 falls from 172 to 13, and the target moves from cap 274 to cap 104 with u = 30](figures/png/03-h6-274.png)
+![Figure 3.6: r22d81/H6 (274, 13) at 9a227291…: the 2,987 pieces the letter moves, around cap 274, before and after; n6 falls from 172 to 13, and the target moves from cap 274 to cap 104 with u = 30](figures/png/03-h6-274.png)
 
 ### 3.4.2 r22d81/U
 
@@ -601,7 +601,7 @@ checks the count prediction after every letter it plays, U and retained letters 
   one instance**, section 3.8.1).
 - **Where in the code**: `h4_unlock.py:264-269`, `:306-316`.
 
-![Figure 3.9: h4/L4 (482, 15) at 391490f7…: n4 falls from 936 to 734, and the target moves from cap 482 to cap 597 with u = 41](figures/png/03-h4-l4-482.png)
+![Figure 3.9: h4/L4 (482, 15) at 391490f7…: the 2,331 pieces the letter moves, around cap 482, before and after; n4 falls from 936 to 734, and the target moves from cap 482 to cap 597 with u = 41](figures/png/03-h4-l4-482.png)
 
 ### 3.5.2 h4/U
 
@@ -634,9 +634,10 @@ checks the count prediction after every letter it plays, U and retained letters 
 - **Evidence**: stage 12's cloud line has no `h4/L2` step (`RESULT.md` gives "L2 0" for its run,
   `research/jumbling/restoration/12-low-height/runs/round22/cloud/height4-descent-bbef1c8e/RESULT.md:278`); there
   (23, 14) came first, as R22D-75's T2 letter (example (c)). The runner played it as an `h4/L2` step in D2's run at the
-  seed 7302 stop: step 16, (23, 14) at `e9065103…`, after the four U letters (357, 1), (357, 3), (593, 3), (593, 43),
-  with n2 103,630 → 103,571 and n4 = 936 kept, to `6999b921…`. D2's run at the seed 7306 stop played another, its step
-  16 (section 3.8.4). Both are **run on one instance**, and both records are last checkpoints that were not checked.
+  seed 7302 stop: step 17 (index 16), (23, 14) at `e9065103…`, after the four U letters (357, 1), (357, 3), (593, 3),
+  (593, 43), with n2 103,630 → 103,571 and n4 = 936 kept, to `6999b921…`. D2's run at the seed 7306 stop played
+  another, its step 17 (index 16; section 3.8.4). Both are **run on one instance**, and both records are last
+  checkpoints that were not checked.
 - **Without a target.** With τ null the program would skip U and try L2, and after an L2 letter it would fail at
   `h4_unlock.py:314`, which counts u at τ. The runner never lets it get there. It stops the program at a `START` line
   with τ null and ends the sub-phase `stuck`, reason `no_target`, with the note "no target; L2 is not run without a
@@ -648,7 +649,7 @@ checks the count prediction after every letter it plays, U and retained letters 
   L2 letters would have lowered n2 first.
 - **Where in the code**: `h4_unlock.py:289-303`.
 
-![Figure 3.11: h4/L2 (23, 14) at e9065103…, step 16 of D2's run at the seed 7302 stop: the pieces the letter moves, around cap 23, before and after; n2 falls from 103,630 to 103,571, n4 = 936 and every height-4 pose kept](figures/png/03-h4-l2-23.png)
+![Figure 3.11: h4/L2 (23, 14) at e9065103…, step 17 (index 16) of D2's run at the seed 7302 stop: the pieces the letter moves, around cap 23, before and after; n2 falls from 103,630 to 103,571, n4 = 936 and every height-4 pose kept. The panels are byte for byte those of Figure 3.4: the four U letters played in between do not move these pieces](figures/png/03-h4-l2-23.png)
 
 ### 3.5.4 How the h4 sub-phase ends
 
@@ -893,7 +894,7 @@ first cap that U tries is 357, whose items 1 to 11 give u = 11, 8, 41, 34, 8, 57
 its own after-letter check and printed no step (`h4_unlock_run0_prediction_assert.txt:2-8`; `RESULT.md:82-90`). The
 audit reads its U letter as (357, 1), the first item that lowers u (stage 12 README :1882). The runner, with the
 committed revision, later reached `bbef1c8e…` in D2's run at the seed 7302 stop and proposed `h4/U` (357, 1) there
-(step 12, an unchecked checkpoint; section 3.8.4).
+(step 13, index 12, an unchecked checkpoint; section 3.8.4).
 
 **Evidence**: **computed** for the `r22d75` and `r22d81` letters. These are records of the rule programs run to their
 own ends, not runner records. They are what the runner would play: it takes the first step at each state, and τ
@@ -1064,7 +1065,7 @@ statements). No state is known where the runner itself reaches R22D-88.
 | `r22d88/U2` | missing | no development state is known where the runner reaches it. Figure 3.8 shows a pair at `fe273a8c…` with τ = 311 fixed by hand: a figure of the mechanics, not of a runner step |
 | `h4/L4` | 3.9 | `391490f7…` (482, 15) |
 | `h4/U` | 3.10 | `0ad859c2…` (357, 1) |
-| `h4/L2` | 3.11 | `e9065103…` (23, 14), step 16 of D2's run at the seed 7302 stop |
+| `h4/L2` | 3.11 | `e9065103…` (23, 14), step 17 (index 16) of D2's run at the seed 7302 stop |
 | `h4/pair` | 3.12, 3.13 | `6999b921…`, `c312a2fc…` |
 
 ## 3.10 Where in the code
@@ -1103,7 +1104,7 @@ statements). No state is known where the runner itself reaches R22D-88.
    `bbef1c8e…`, as the audit read run 0 of an earlier revision.
 3. Whether the committed `two_letter_u.py` prints the recorded rows for indices 0 to 510 at `6999b921…`, which earlier
    revisions made (section 3.8.3). In D2's run at the seed 7302 stop it chose the same pair at the same order index,
-   119 of 2,065 first letters (step 17), but the checkpoint keeps no rows.
+   119 of 2,065 first letters (step 18, index 17), but the checkpoint keeps no rows.
 4. Whether the committed `r22d75_from_snapshot.py` prints the recorded letters at the seed 7302 stop and at the census
    stops, which scripts with the same rule code made (sections 3.8.2 and 3.8.4).
 5. Whether the runner's bulk hands over at any census stop. At seed 7305's stop it ran for its whole 21,600 s clock

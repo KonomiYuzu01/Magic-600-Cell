@@ -14,21 +14,59 @@ from pathlib import Path
 
 F = Path(__file__).resolve().parent
 T = F.parent
-EMBED = re.compile(r'^!\[(Figure [^:]+):[^\]]*\]\(figures/(png|svg)/([A-Za-z0-9-]+)\.(?:png|svg)\)', re.M)
+# Match embeds before validating their captions or destinations: a broken path
+# must never make an image disappear from the catalogue's checks.
+EMBED = re.compile(r'''!\[(.*?)\]\(((?:[^()"']|"[^"]*"|'[^']*'|\([^()]*\))*)\)''', re.S)
+FIGURE_LABEL = re.compile(r'^(Figure (?:\d+(?:\.\d+)*|[A-Z](?:\.\d+)+)):')
 
 # Reasons for figures that are not drawn yet; each entry is removed when its figure lands.
 MISSING = {}
+
+
+def embedded_entries(svg_names=None):
+    """Validate every inline image; a redraw may supply its drawable SVG names."""
+    rows, errors = [], []
+    for chapter in [*sorted(T.glob('0*.md')), *sorted(T.glob('A-*.md'))]:
+        text = chapter.read_text(encoding='utf-8')
+        for match in EMBED.finditer(text):
+            alt, destination = match.groups()
+            # Markdown permits angle brackets and an optional title.
+            link = re.fullmatch(r'\s*(?:<([^<>]*)>|(\S+?))(?:\s+(?:"[^"]*"|\x27[^\x27]*\x27|\([^()]*\)))?\s*', destination)
+            target = (link[1] if link[1] is not None else link[2]) if link else destination.strip()
+            label = FIGURE_LABEL.match(alt)
+            location = f'{chapter.name}:{text.count(chr(10), 0, match.start()) + 1}: {target}'
+            problems = []
+            if not label:
+                problems.append('alt text must start with Figure <number>:')
+            path = Path(target)
+            kind = path.parent.name
+            if (not link or kind not in ('png', 'svg')
+                    or path.parent.as_posix() != 'figures/' + kind
+                    or path.suffix != '.' + kind
+                    or target != path.as_posix()
+                    or not (T / path).resolve().is_relative_to((F / kind).resolve())):
+                problems.append('target must be inside figures/png/ or figures/svg/ with the matching extension')
+            elif kind == 'svg' and svg_names is not None:
+                if path.stem not in svg_names:
+                    problems.append('target has no diagram renderer')
+            elif not (T / path).is_file():
+                problems.append('target does not exist')
+            if problems:
+                errors.append(location + ': ' + '; '.join(problems))
+                continue
+            number, name = label[1], path.stem
+            rows.append((chapter.name, number, kind, name))
+    if errors:
+        raise ValueError('\n'.join(errors))
+    return rows
 
 
 def entries():
     listed = json.loads((F / 'figures.json').read_text())
     pictures = {e['id']: e for e in listed.get('figures', [])}
     pictures.update({s['id']: dict(s, sheet=True) for s in listed.get('sheets', [])})
-    rows, embedded = [], set()
-    for chapter in [*sorted(T.glob('0*.md')), *sorted(T.glob('A-*.md'))]:
-        for number, kind, name in EMBED.findall(chapter.read_text()):
-            embedded.add(name)
-            rows.append((chapter.name, number, kind, name))
+    rows = embedded_entries()
+    embedded = {row[3] for row in rows}
     for name in sorted(set(pictures) - embedded):
         rows.append(('', '', 'png', name))
     return rows, pictures
@@ -114,7 +152,11 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args(argv)
-    text, unexplained = render()
+    try:
+        text, unexplained = render()
+    except ValueError as error:
+        print('Invalid image embed: ' + str(error))
+        return 1
     target = F / 'CATALOGUE.md'
     if args.check:
         stale = not target.exists() or target.read_text() != text
