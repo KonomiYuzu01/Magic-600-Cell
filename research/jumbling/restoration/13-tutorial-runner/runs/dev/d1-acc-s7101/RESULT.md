@@ -130,6 +130,13 @@ starts from the scramble in `out3/`, with `checkpoint.py` keeping a verified cop
   `not_applicable`. The tail has two steps so far, the same as run 2's first two: index 97 `zero_bad` 60 letters to
   1,082 off, and index 98 `zero_bad` 48 letters to 971 off. Runner time is 20,010 s.
 
+- 12:08 UTC progress: run 3 is still running, now past the point where run 2 was killed. Tail steps 97 to 101 are
+  the same as run 2's (rule, letters and off: 60/1,082, 48/971, 96/860, 24/759, then `pure` 576/673). Step 102,
+  on unit `u107733`, is still unfinished. Its `pure` word knocked 55 lattice pieces off, and `close-pure-close` is
+  putting them back one at a time. Its third repair step took 7,343 s (14,348 s after the second's 7,005 s) and left
+  43. If the rate holds, that close alone needs many more hours. Saved runner time is 24,490 s at step 101; the
+  latest checkpoint is step 102.
+
 ## Not run
 
 - `check_run.py` (it runs after the runner ends).
