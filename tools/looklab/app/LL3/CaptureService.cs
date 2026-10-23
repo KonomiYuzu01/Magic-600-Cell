@@ -24,7 +24,7 @@ internal sealed class CaptureService
         return path;
     }
 
-    private static Image NativeImage(SubViewport viewport, Vector2I size)
+    internal static Image NativeImage(SubViewport viewport, Vector2I size)
     {
         Image image = viewport.GetTexture().GetImage();
         if (image == null || image.IsEmpty() || image.GetWidth() != size.X || image.GetHeight() != size.Y)

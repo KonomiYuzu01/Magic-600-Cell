@@ -124,9 +124,11 @@ internal sealed partial class CompareMode : VBoxContainer
             int n = (int)count.Value;
             for (int i = 0; i < choices.Count; i++) choices[i].Visible = i < n;
             double[]? q = stage?.Session.Camera.Q.ToArray();
+            double[]? spin = stage?.Session.Camera.Spin.ToArray();
             if (stage != null) { RemoveChild(stage); stage.QueueFree(); }
             stage = new CompareStage(root, schema, choices.Take(n).Select(c => presets[c.Selected]).ToArray());
             if (q != null) Array.Copy(q, stage.Session.Camera.Q, 16);
+            if (spin != null) Array.Copy(spin, stage.Session.Camera.Spin, 16);
             AddChild(stage); MoveChild(stage, 2);
         }
     }

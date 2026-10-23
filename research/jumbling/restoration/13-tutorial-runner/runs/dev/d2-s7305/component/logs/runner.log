@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "<repo>/research/jumbling/restoration/13-tutorial-runner/scripts/runner.py", line 1475, in run
+    self.tail()
+    ~~~~~~~~~^^
+  File "<repo>/research/jumbling/restoration/13-tutorial-runner/scripts/runner.py", line 1270, in tail
+    units = self.units(self.table, work / 'units')
+  File "<repo>/research/jumbling/restoration/13-tutorial-runner/scripts/runner.py", line 771, in units
+    self.require(child)
+    ~~~~~~~~~~~~^^^^^^^
+  File "<repo>/research/jumbling/restoration/13-tutorial-runner/scripts/runner.py", line 562, in require
+    raise RuleFailure('timeout', 'rule subprocess exceeded rule_seconds', timed_out=True)
+RuleFailure: rule subprocess exceeded rule_seconds

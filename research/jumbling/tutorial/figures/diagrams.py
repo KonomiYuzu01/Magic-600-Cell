@@ -51,11 +51,40 @@ BACKTICK = chr(96)
 ORIGINAL_RENDERER = "4999331eb3c77ec66b6af2cf989eaeaca63d2046e00340409826223b231e8008"
 UPDATED_FIGURES = {"bulk-n-7101", "bulk-conj-7101-s30", "03-counts-7302",
                    "03-r22d75-prediction-cap64", "ch04-six-stops-caps", "ch06-twisted-cycle"}
+# Preserve the production provenance of the already committed chapter SVGs.
+# The manifest still hashes every *current* verification input. Adding appendix
+# observations to a shared JSON file must not rewrite an unrelated chapter SVG.
+CHAPTER_DATA_RENDERER = "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc621884a26"
+CHAPTER_DATA_SHA256 = "35ae0c746ed3182ca3a60625117fa5ac7067d50ce16228c647cbcba45b04258b"
+CHAPTER_TREES_SHA256 = "748e36ba7ad9b6fd703d5d6ec549ae627a891e0683589812e25e64da1b8fca51"
+CONCEPT_FIGURES = {"ch04-point-model", "05-class-cells-71"}
+APPENDIX_RENDERER = "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
+APPENDIX_DATA_SHA256 = "305f6f11dd457e9f087083780a243b94c1d44311106620201bd93429c1d632ac"
+APPENDIX_DATA_SOURCE = "3f2eb8401954e130031f1b2d201b9b756762bd474d7b24ac71fecc9205a3919f"
 ET.register_namespace("", SVG_NS)
 
 
 def sha256(raw):
     return hashlib.sha256(raw).hexdigest()
+
+
+def production_inputs(name, inputs):
+    result = dict(inputs)
+    if name in CONCEPT_FIGURES:
+        return result
+    if name.startswith("appa-"):
+        result[F + "/diagrams.py"] = APPENDIX_RENDERER
+        if F + "/figdata.json" in result:
+            result[F + "/figdata.json"] = APPENDIX_DATA_SHA256
+        if F + "/figdata.py" in result:
+            result[F + "/figdata.py"] = APPENDIX_DATA_SOURCE
+    else:
+        result[F + "/diagrams.py"] = CHAPTER_DATA_RENDERER if name in UPDATED_FIGURES else ORIGINAL_RENDERER
+        if F + "/figdata.json" in result:
+            result[F + "/figdata.json"] = CHAPTER_DATA_SHA256
+        if TREES_PATH in result:
+            result[TREES_PATH] = CHAPTER_TREES_SHA256
+    return result
 
 
 def repository_path(value):
@@ -111,7 +140,15 @@ class Evidence:
         document = self.json(F + "/figdata.json")
         if document.get("format") != "magic600-tutorial-figdata/1":
             raise ValueError("unsupported computed figure data")
-        return document["figures"][self.name]
+        data = document["figures"][self.name]
+        for path, digest in data["inputs"].items():
+            try:
+                actual = sha256(repository_path(path).read_bytes())
+            except OSError as error:
+                raise ValueError("stale figure data: " + self.name + ": " + path) from error
+            if actual != digest:
+                raise ValueError("stale figure data: " + self.name + ": " + path)
+        return data
 
     def note(self, value):
         self.notes.append(value)
@@ -263,11 +300,8 @@ class Svg:
         self.root.set("height", str(height))
         self.root.set("viewBox", f"0 0 1200 {height}")
         self.background.set("height", str(height))
-        production_inputs = dict(self.evidence.inputs)
-        if self.evidence.name not in UPDATED_FIGURES:
-            production_inputs[F + "/diagrams.py"] = ORIGINAL_RENDERER
         self.el("metadata", text=json.dumps({
-            "figure": self.evidence.name, "inputs": production_inputs,
+            "figure": self.evidence.name, "inputs": production_inputs(self.evidence.name, self.evidence.inputs),
             "notes": self.evidence.notes,
             "tool": "Python " + ".".join(map(str, sys.version_info[:3])) + "; standard library SVG writer",
             "command": "python3 -I -B " + F + "/diagrams.py --only " + self.evidence.name,
@@ -384,7 +418,7 @@ def tree_api():
     return module
 
 
-def folded_tree(svg, root, y, label=None):
+def folded_tree(svg, root, y, label=None, show_spans=False):
     """One row per recorded part, retaining zero spans and all reference arrows."""
     if label:
         svg.text(40, y + 18, label, size=18, weight="600")
@@ -396,7 +430,10 @@ def folded_tree(svg, root, y, label=None):
         # Keep even depth-64 trees inside the page. Full index paths retain
         # their depth when the indentation reaches the available margin.
         x = 60 + min(depth, 10) * 28
-        lines = svg.wrapped(f"{node.get('name', node.get('kind', 'part'))} [{count(node['letters'])}]", 640 - x, 15)
+        text = f"{node.get('name', node.get('kind', 'part'))} [{count(node['letters'])}]"
+        if show_spans and "span" in node:
+            text += f" · [{node['span'][0]}, {node['span'][1]})"
+        lines = svg.wrapped(text, 640 - x, 15)
         path_lines = svg.wrapped(str(list(path)), 118, 13)
         ref_text = next((key + " " + str(node[key]) for key in ("inverse_of", "same_as") if key in node), "")
         ref_lines = svg.wrapped(ref_text, 224, 13)
@@ -804,6 +841,181 @@ def literal_assignment(text, name):
         if isinstance(statement, ast.Assign) and any(isinstance(t, ast.Name) and t.id == name for t in statement.targets):
             return ast.literal_eval(statement.value)
     raise ValueError("missing literal assignment: " + name)
+
+
+def concept_data(e):
+    data = e.figdata()
+    # Retain these figures' existing production-input inventory. All data sets
+    # share the digest validation in Evidence.figdata.
+    for path in data["inputs"]:
+        e.raw(path)
+    return data
+
+
+def cell_text(caps):
+    return "[" + ", ".join(map(str, caps)) + "]"
+
+
+def sup(number):
+    return str(number).translate(str.maketrans("0123456789", "⁰¹²³⁴⁵⁶⁷⁸⁹"))
+
+
+@figure("ch04-point-model", "04-high.md", "The point model at the R22D-16 lowering")
+def point_model(e, s):
+    data = concept_data(e)
+    target = set(data["content"]["cell"])
+    bad = [set(row["cell"]) for row in data["bad_cell_counts"]]
+    preimage = [set(row["cell"]) for row in data["preimage_cell_counts"]]
+    s.text(40, 96, f"Unit {', '.join(map(str, data['unit']))} · Z {data['state_digest'][:12]}…  →  "
+           f"a = {tuple(data['a'])}  →  Y {data['lowered_digest'][:12]}…")
+    s.text(40, 124, f"Q = branch {data['branch']} · {count(len(data['branch_caps']))} caps · "
+           f"{count(data['cells'])} cells × {len(data['labels'])} labels = {count(data['points'])} points")
+    y = s.legend([("target cell " + cell_text(sorted(target)), PALETTE["orange"]),
+                  ("caps of Bad(W) cells, W = C" + sup(data["exponent"]), PALETTE["purple"]),
+                  ("caps of V⁻¹(Bad(W)) cells", PALETTE["teal"]),
+                  ("adjacent caps in Q", PALETTE["line"])], 156)
+    # A schematic of the exact induced adjacency graph, not a 3-D projection.
+    # Keep marked caps central and place their neighbouring caps on an ellipse.
+    center = sorted(target | set().union(*bad, *preimage))
+    outer = sorted(set(data["patch_caps"]) - set(center))
+    positions = {}
+    for caps, rx, ry in ((center, 130, 90), (outer, 505, 240)):
+        samples = [(rx * math.cos(2 * math.pi * i / 360 - math.pi / 2),
+                    ry * math.sin(2 * math.pi * i / 360 - math.pi / 2)) for i in range(361)]
+        lengths = [0]
+        for a, b in zip(samples, samples[1:]):
+            lengths.append(lengths[-1] + math.dist(a, b))
+        at = 0
+        for i, cap in enumerate(caps):
+            while lengths[at] < lengths[-1] * i / len(caps):
+                at += 1
+            positions[cap] = (600 + samples[at][0], y + 280 + samples[at][1])
+    for a, b in data["patch_edges"]:
+        colour, width = PALETTE["line"], 1
+        if any({a, b} <= cell for cell in preimage):
+            colour, width = PALETTE["teal"], 4
+        if any({a, b} <= cell for cell in bad):
+            colour, width = PALETTE["purple"], 4
+        if {a, b} <= target:
+            colour, width = PALETTE["orange"], 4
+        s.line(*positions[a], *positions[b], colour=colour, width=width, data_edge=f"{a},{b}")
+    for cap in data["patch_caps"]:
+        x, yy = positions[cap]
+        is_bad = any(cap in cell for cell in bad)
+        is_preimage = any(cap in cell for cell in preimage)
+        # Outer rings mark a cap that also belongs to a second marked set.
+        rings = [colour for flag, colour in ((cap in target and is_bad, PALETTE["purple"]),
+                                             ((cap in target or is_bad) and is_preimage, PALETTE["teal"])) if flag]
+        for i, colour in enumerate(rings):
+            s.el("circle", cx=x, cy=yy, r=26 + 5 * i, fill="none", stroke=colour, stroke_width=3)
+        s.el("circle", cx=x, cy=yy, r=21, fill=PALETTE["white"],
+             stroke=PALETTE["orange"] if cap in target else PALETTE["purple"] if is_bad
+             else PALETTE["teal"] if is_preimage else PALETTE["muted"],
+             stroke_width=3 if cap in center else 1.5, data_cap=cap, data_target=str(cap in target).lower(),
+             data_bad=str(is_bad).lower(), data_preimage=str(is_preimage).lower())
+        s.text(x, yy + 5, cap, size=14, anchor="middle")
+    y += 570
+    s.text(40, y, f"Patch: {len(data['patch_caps'])} caps, {len(data['patch_edges'])} adjacency edges; "
+           "all neighbours of the marked cells, with every edge among them.", size=14)
+    y += 24
+    rows = ([["Bad(W)", cell_text(row["cell"]), row["chambers"]] for row in data["bad_cell_counts"]]
+            + [["V⁻¹(Bad(W))", cell_text(row["cell"]), row["chambers"]] for row in data["preimage_cell_counts"]])
+    y = draw_table(s, ["Set", "Home cell", "Chambers"], rows, y, [300, 520, 300])
+    y += 16
+    s.text(40, y, "One cell's five label points: " + cell_text(data["content"]["cell"])
+           + f" · content of {data['content']['pieces']} pieces", weight="600")
+    y += 55
+    for i, label in enumerate(data["labels"]):
+        x = 152 + i * 224
+        s.el("circle", cx=x, cy=y, r=23, fill=PALETTE["white"], stroke=PALETTE["orange"]
+             if label == data["content"]["label"] else PALETTE["blue"] if label == 0 else PALETTE["line"],
+             stroke_width=3, data_label=label)
+        s.text(x, y + 6, "r" + str(label), anchor="middle", size=18)
+        label_text = "lattice coset" if label == 0 else "target content" if label == data["content"]["label"] else "label " + str(label)
+        s.text(x, y + 48, label_text, anchor="middle", size=14)
+    y += 105
+    s.text(40, y, "The content's point, first letter first", weight="600")
+    y += 55
+    states = [data["content"]] + data["trace"]
+    for i, point in enumerate(states):
+        x = 40 + i * 235
+        first_element = len(s.root)
+        s.box(x, y, 180, 100, ("start" if i == 0 else "after " + ("x", "y", "x⁻¹", "y⁻¹")[i - 1])
+              + "\n" + cell_text(point["cell"]) + "\nlabel " + str(point["label"]), size=15)
+        elements = list(s.root)[first_element:]
+        group = s.el("g", data_path_step=i)
+        for element in elements:
+            s.root.remove(element)
+            group.append(element)
+        if i:
+            s.line(x - 53, y + 50, x - 4, y + 50, arrow=True)
+            s.text(x - 27, y - 14, str(tuple(data["trace"][i - 1]["letter"])), anchor="middle", size=14)
+    y += 138
+    end = data["after_power"]
+    power = "C" + sup(data["exponent"])
+    s.text(40, y, f"After {power}: {cell_text(end['cell'])}, label {end['label']}.")
+    y += 30
+    s.text(40, y, f"W = {power} · |Bad(W)| = {count(data['bad_count'])} home chambers · "
+           f"{power} is {'the identity' if data['power_is_identity'] else 'not the identity'} "
+           f"on all {count(data['points'])} points ({count(data['power_moved_points'])} moved).")
+    return s.paragraph(40, y + 30, f"V = {' · '.join(str(tuple(a)) for a in data['V'])} is a SAFE letter of branch "
+                       f"{data['setup_branch']}, outside Q. V⁻¹(Bad(W)) has "
+                       f"{count(data['preimage_count'])} chambers, "
+                       + ("all holes at Y" if data["preimage_is_holes"] else "some occupied at Y")
+                       + ": the exact replay of V·W·V⁻¹ from all home chambers takes off exactly these.")
+
+
+@figure("05-class-cells-71", "05-tail.md", "Two glued contents in the class cell model")
+def class_cells(e, s):
+    data = concept_data(e)
+    s.text(40, 96, f"Class {data['class_number']} · {data['off']} off pieces · state {data['state_digest'][:12]}…")
+    s.text(40, 126, f"{count(data['own_contents'])} contents ({count(data['lattice_contents'])} lattice) · "
+           f"{count(data['census']['cells'])} cells · {count(data['generators'])} generators")
+    shared = ", ".join(map(str, data["shared_caps"]))
+    s.el("circle", cx=600, cy=184, r=28, fill=PALETTE["white"], stroke=PALETTE["muted"], stroke_width=2)
+    s.text(600, 189, shared, anchor="middle", size=18)
+    s.text(600, 233, "shared cap", anchor="middle", size=14)
+    for i, cell in enumerate(data["cells"]):
+        x, y = 40 + i * 590, 260
+        s.line(600 + (-28 if i == 0 else 28), 184, x + 265, y - 12, colour=PALETTE["line"])
+        s.rect(x, y, 530, 605, fill=PALETTE["panel"], stroke=PALETTE["line"], rx=8)
+        s.text(x + 24, y + 36, cell["unit"] + " · cell " + cell_text(cell["caps"]), size=20, weight="600")
+        occupants = [c for p in cell["points"] for c in p["content"]]
+        equation = " + ".join(str(c["pieces"]) + " " + c["name"] for c in sorted(
+            occupants, key=lambda c: c["name"] == "lattice"))
+        s.text(x + 24, y + 68, f"{cell['own_pieces']} own pieces = {equation}", size=15)
+        s.text(x + 24, y + 112, "Label", size=14, weight="600")
+        s.text(x + 100, y + 112, "Content at the point", size=14, weight="600")
+        s.text(x + 315, y + 112, "Census owner", size=14, weight="600")
+        for j, point in enumerate(cell["points"]):
+            yy = y + 159 + j * 87
+            content = point["content"]
+            first_element = len(s.root)
+            colour = PALETTE["blue"] if content and content[0]["name"] == "lattice" else PALETTE["orange"] if content else PALETTE["muted"]
+            s.el("circle", cx=x + 45, cy=yy, r=21, fill=PALETTE["white"], stroke=colour,
+                 stroke_width=2, data_cell=cell["cell"], data_label=point["label"], data_point=point["point"])
+            s.text(x + 45, yy + 6, point["label"], anchor="middle", size=18)
+            s.text(x + 100, yy - 5, ", ".join(c["name"] for c in content) if content else "empty", colour=colour)
+            s.text(x + 100, yy + 20, " + ".join(str(c["pieces"]) for c in content) + " pieces" if content else "no content", size=14)
+            owner = point["owner"]
+            s.text(x + 315, yy - 5, owner["name"] if owner else "unowned")
+            if owner and "pieces" in owner:
+                s.text(x + 315, yy + 20, str(owner["pieces"]) + " pieces", size=14)
+            s.line(x + 24, yy + 40, x + 506, yy + 40, colour=PALETTE["line"], width=1)
+            elements = list(s.root)[first_element:]
+            group = s.el("g", data_cell=cell["cell"], data_label=point["label"])
+            for element in elements:
+                s.root.remove(element)
+                group.append(element)
+    y = s.paragraph(40, 905, "The lattice content owns label 0 and glues the off content. The off content owns the "
+                    "other labels of its cell, including points with no content. Content and owner are distinct.")
+    census = data["census"]
+    y = s.paragraph(40, y + 16, f"Census: {count(census['occupied_points'])} owned points · "
+                    f"{count(census['home_cells'])} home cells · {census['foreign_cells']} foreign cells · "
+                    f"{sum(census['vacant_home_points_by_kind'].values())} vacant home points.")
+    for difference in data["chapter_differences"]:
+        e.note(f"{difference['field']}: computed {difference['computed']}; chapter/record {difference['chapter']}.")
+    return y
 
 
 @figure("ch04-d19-tree", "04-high.md", "The recorded D19 word as named parts and repeated commutators")
@@ -1219,6 +1431,81 @@ def seed7001_steps(e, s):
                        "Every step is a one-letter seam step. The run ends with the solved digest.")
 
 
+@figure("appa-lock-shape", "A-macros.md", "lock: abstract opening and closing parts")
+def appendix_lock(e, s):
+    e.text(T + "/02-bulk.md")
+    y = 90
+    for n in (2, 3):
+        names = ("x: open cap c", "y: close cap d", "z: close cap e")[:n]
+        y = folded_tree(s, named_tree("lock (abstract)", [leaf(part, 1) for part in names]), y)
+    return s.paragraph(40, y, "Abstract shapes, not played words. The runner would store one span of length 2 or 3. "
+                       "No committed step supplies an example or an action region (chapter 2, section 2.8).")
+
+
+@figure("appa-shift-shape", "A-macros.md", "shift: abstract opening and improving parts")
+def appendix_shift(e, s):
+    e.text(T + "/02-bulk.md")
+    y = folded_tree(s, named_tree("shift (abstract)", [leaf("x: open cap c", 1), leaf("y: improve near c", 1)]), 90)
+    return s.paragraph(40, y, "Abstract shape, not a played word. The runner would store one span of length 2. "
+                       "No committed step supplies an example or an action region (chapter 2, section 2.10).")
+
+
+@figure("appa-f2-shape", "A-macros.md", "F2: abstract three-letter lowering")
+def appendix_f2(e, s):
+    e.text(T + "/04-high.md")
+    y = folded_tree(s, named_tree("r22d25/F2 (abstract)", [leaf(part, 1) for part in
+                    ("x = (c, x)", "y = (d, y)", "z = (c, z)")]), 90)
+    return s.paragraph(40, y, "Abstract shape only. No F2 step is committed; no before/after puzzle state is claimed "
+                       "(chapter 4, section 4.8). The plugin would record one span of 3 letters.")
+
+
+@figure("appa-f3-shape", "A-macros.md", "F3: abstract commutator, with both allowed lengths")
+def appendix_f3(e, s):
+    chapter = e.text(T + "/04-high.md")
+    y = 90
+    for k in map(int, re.search(r"k = (\d+) or (\d+)", chapter).groups()):
+        w = named_tree("W", [leaf("w" + str(i + 1), 1) for i in range(k)])
+        wi = named_tree("W⁻¹", [leaf("w" + str(i + 1) + "⁻¹", 1, inverse_of=[1, i])
+                                for i in reversed(range(k))])
+        wi["inverse_of"] = [1]
+        root = named_tree("r22d25/F3 (abstract)", [leaf("a", 1), w, leaf("a⁻¹", 1, inverse_of=[0]), wi])
+        y = folded_tree(s, root, y, "|W| = " + str(k))
+    return s.paragraph(40, y, "Abstract shapes only. No F3 step is committed; the plugin would store one span of 4 or 6 letters "
+                       "(chapter 4, section 4.9). Inverses reverse the order as well as invert each letter.")
+
+
+@figure("appa-st-shape", "A-macros.md", "S·T: abstract protected lowering, then landing")
+def appendix_st(e, s):
+    e.text(T + "/04-high.md")
+    y = folded_tree(s, named_tree("r22d25/ST (abstract)", [leaf("S: protected height 4 → 2", 1),
+                                                        leaf("T: strict landing at Z·S", 1)]), 90)
+    return s.paragraph(40, y, "Abstract shape only. In the committed catalogue S and T are single letters; no T provider "
+                       "is registered. No S·T step is committed (chapter 4, section 4.11).")
+
+
+def appendix_tree(e, s):
+    data = e.figdata()
+    for path in data["inputs"]:
+        e.raw(path)
+    tree_api().check_tree(data["tree"], data["tree"]["letters"])
+    y = folded_tree(s, data["tree"], 90, show_spans=True)
+    if "word" in data and len(data["word"]) <= 40:
+        y = s.paragraph(40, y, "Word: " + " · ".join(str(tuple(letter)) for letter in data["word"])) + 16
+    if "note" in data:
+        y = s.paragraph(40, y, data["note"]) + 16
+    return s.paragraph(40, y, "Lengths and zero-based, end-exclusive spans come from figdata.json. "
+                       "The original runner tree helper is applied to the committed word or factors; no search is run.")
+
+
+for _name, _title in (
+        ("appa-u2-tree", "The fixed-target U2 experiment: two single twists"),
+        ("appa-h4-pair-tree", "The recorded h4 freeing pair: two single twists"),
+        ("appa-pure-tree", "The accepted b17 pure-cell replay"),
+        ("appa-correction-tree", "Correction 0: macro 7, mirror2"),
+        ("appa-late-cycle-tree", "The late program's first three-cycle: factors 0 and 1")):
+    figure(_name, "A-macros.md", _title)(appendix_tree)
+
+
 def validate_trees(document):
     if not isinstance(document, dict) or set(document) != {"format", "entries"} or document["format"] != "magic600-tutorial-trees/1":
         raise ValueError("unsupported trees.json format; expected format and entries")
@@ -1250,18 +1537,19 @@ def render(name, entries):
         end = function(evidence, svg)
     else:
         entry = entries[name]
-        evidence = Evidence(name)
+        evidence = Evidence(name, "A-macros.md" if name.startswith("appa-") else None)
         evidence.raw(TREES_PATH)
         row, root = record_tree(evidence, entry["record"], entry["step"])
-        evidence.number = "Figure A." + str(list(entries).index(name) + 1)
+        if not name.startswith("appa-"):
+            evidence.number = "Figure A." + str(list(entries).index(name) + 1)
         title = row["rule"] + " · phase " + row["phase"] + " · step " + str(row["index"]) + " · " + count(row["letters"]) + " letters"
         evidence.alt = "Folded step tree of " + entry["record"] + ", " + title
         svg = Svg(evidence, title)
-        end = folded_tree(svg, root, 90)
+        end = folded_tree(svg, root, 90, show_spans=name.startswith("appa-"))
     data = svg.finish(end + 10)
     manifest = {"inputs": dict(sorted(evidence.inputs.items())),
                 "output": {"path": name + ".svg", "sha256": sha256(data)}, "notes": evidence.notes,
-                "production_renderer_sha256": evidence.inputs[F + "/diagrams.py"] if name in UPDATED_FIGURES else ORIGINAL_RENDERER}
+                "production_renderer_sha256": production_inputs(name, evidence.inputs)[F + "/diagrams.py"]}
     return data, manifest
 
 

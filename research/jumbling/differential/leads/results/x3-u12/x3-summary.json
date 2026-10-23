@@ -1,0 +1,152 @@
+{
+  "cpu_count": 4,
+  "python": "3.11.15",
+  "numpy": "2.3.5",
+  "commit": "13bec8a714285a615a00fbfe4eb587c75e9ee86b",
+  "evidence_kind": "source and fixture replay with the J1 reference engine; cloud research timings, not product performance evidence",
+  "production_command": [
+    "python",
+    "-B",
+    "research/jumbling/differential/leads/x3_previews.py",
+    "--out",
+    "OUT/x3-u12",
+    "--word",
+    "INPUTS/u12.json",
+    "--start",
+    "census",
+    "7101",
+    "--label",
+    "u12"
+  ],
+  "inputs": [
+    {
+      "label": "u12",
+      "status": "complete",
+      "refused": null,
+      "expanded_length": 1158,
+      "steps": 1158,
+      "attempted_steps": 1158,
+      "start_digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+      "end_digest": "4a0f42717312551e7f531ad3f57de63f0da61236e0b8d54050681d08a2ac0093",
+      "off_before": 1193,
+      "off_after": 1152,
+      "lattice_pieces_lifted_off": 0,
+      "off_pieces_landed": 41,
+      "other_off_exact_pose_unchanged": 1152,
+      "other_off_exact_pose_changed": 0,
+      "samples": [
+        {
+          "step": 0,
+          "off_lattice": 1193,
+          "poses": 317,
+          "height_bits": 4
+        },
+        {
+          "step": 100,
+          "off_lattice": 1811,
+          "poses": 325,
+          "height_bits": 4
+        },
+        {
+          "step": 200,
+          "off_lattice": 2069,
+          "poses": 327,
+          "height_bits": 4
+        },
+        {
+          "step": 300,
+          "off_lattice": 1983,
+          "poses": 322,
+          "height_bits": 4
+        },
+        {
+          "step": 400,
+          "off_lattice": 1731,
+          "poses": 324,
+          "height_bits": 4
+        },
+        {
+          "step": 500,
+          "off_lattice": 1238,
+          "poses": 1377,
+          "height_bits": 4
+        },
+        {
+          "step": 600,
+          "off_lattice": 4297,
+          "poses": 2737,
+          "height_bits": 4
+        },
+        {
+          "step": 700,
+          "off_lattice": 4159,
+          "poses": 2744,
+          "height_bits": 4
+        },
+        {
+          "step": 800,
+          "off_lattice": 4406,
+          "poses": 2715,
+          "height_bits": 4
+        },
+        {
+          "step": 900,
+          "off_lattice": 1739,
+          "poses": 2543,
+          "height_bits": 4
+        },
+        {
+          "step": 1000,
+          "off_lattice": 1481,
+          "poses": 2552,
+          "height_bits": 4
+        },
+        {
+          "step": 1100,
+          "off_lattice": 1152,
+          "poses": 1152,
+          "height_bits": 4
+        },
+        {
+          "step": 1158,
+          "off_lattice": 1152,
+          "poses": 332,
+          "height_bits": 4
+        }
+      ],
+      "seconds": {
+        "total": 37.69225572498817,
+        "median": 0.01892482600032963,
+        "p95": 0.10509512954936323,
+        "largest": 0.20139431899951887,
+        "twist_construction": 0.556963220000398,
+        "preview_wall": 38.29344193700035
+      },
+      "checks": [
+        {
+          "field": "input_digest",
+          "expected": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+          "actual": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+          "passed": true
+        },
+        {
+          "field": "output_digest",
+          "expected": "4a0f42717312551e7f531ad3f57de63f0da61236e0b8d54050681d08a2ac0093",
+          "actual": "4a0f42717312551e7f531ad3f57de63f0da61236e0b8d54050681d08a2ac0093",
+          "passed": true
+        }
+      ],
+      "sources": [
+        {
+          "file": "u12.json",
+          "sha256": "66f735c65e1c6756b7b74ce666a74b3c9e7eb70c662843e44cb38b4c16909cc4"
+        },
+        {
+          "file": "research/jumbling/restoration/11-scramble-census/runs/round2/ia-k40-s7101.json",
+          "sha256": "e46e044ad60621e41c88e1be6e9bfc8e5781c6d8219d5fe390052431d4b341cb"
+        }
+      ]
+    }
+  ],
+  "sample_every": 100
+}

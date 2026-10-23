@@ -483,9 +483,27 @@ adds the keys below (`scripts/runner.py:445-505` unless noted). Keys marked I1 w
   - `scripts` hashes `runner_api.py` too, so 22 files before the plugins, and every file each plugin lists in its
     `SCRIPTS`. With the plugins of I1 that is 49 files, the D19 rule among them (`scripts/runner.py:74-81`, :466-467;
     measured in the D0 records);
+  - `no_lattice` (P6, `cba2c6a`): the value of `--no-lattice`, false by default (`scripts/runner.py:600` at
+    `2b04d0c`);
+  - `code` (P6, `cba2c6a`): `{sha256, files}`, one fingerprint of every file under `research/jumbling`, leaving out
+    directories and files named `runs`, `cache` or `__pycache__` and the run's own output and checkpoint directories,
+    together with the Python and NumPy versions; `files` counts the entries, the two versions included. `--resume`
+    refuses a record whose `code` differs (`scripts/runner.py:152-169`, :603, :647-648 at `2b04d0c`). The checker
+    requires a `{sha256, files}` of this shape when the key is present (`config_code`; `scripts/check_run.py:410-414`
+    at `2b04d0c`);
+- `resumes` (P6, `cba2c6a`), at the top level and only in a run that `--resume` continued: one entry
+  `{at_step, seconds, source}` per continuation (`scripts/runner.py:728` at `2b04d0c`; "Resuming long runs and keeping
+  checkpoints" below). The checker requires these keys, steps and times that never decrease, an `at_step` within the
+  rows, a valid `source`, and, once the run has ended, no `seconds` above `totals.seconds` (`check_resumes`;
+  `scripts/check_run.py:290-331` at `2b04d0c`);
 - in `phases`:
+  - `bulk.completed` (since the resume fixes of 23 October 2026): `false` while the bulk child is still stepping,
+    `true` once the bulk has ended with its final result, a final `budget` or `timeout` included; `--resume` then
+    goes straight to the next phase. Older records have no such key and are read as before; the checker accepts it
+    only as a Boolean;
   - `height {result, steps, twists, start, end, sub: {r22d75, r22d81, h4}}`, each sub-phase with `{result, steps,
-    start, end}`;
+    start, end}` and, since P6 (`cba2c6a`), its `twists`, the letters of its rows (`scripts/runner.py:622-629`,
+    :221-237 at `2b04d0c`; the checker does not check them);
   - `high {result, steps, twists, start, end}`;
   - a sub-phase or the high phase that a plugin's `End` closed also has `reason`, `details` and `attempts`
     (:688-691);
@@ -517,8 +535,9 @@ adds the keys below (`scripts/runner.py:445-505` unless noted). Keys marked I1 w
     - the `verify_late.py` path, which only a stub lattice plugin takes, in tests: the run's result, `solved` or
       `error`, with the restorer's twists and no steps (:1363-1366). The record then has `config.component`
       `lattice_composition` and the top-level `lattice` of format 2;
-  - `tail {result, steps}` keeps its shape. It starts with `result: null` and can also end `not_applicable` or
-    `timeout`. Any phase that the run never reached keeps `result: null`. So does a phase that an exception cut off
+  - `tail {result, steps}` keeps its shape; since P6 (`cba2c6a`) it also has `twists`, the letters of its tail and
+    fallback rows, which the checker does not check. It starts with `result: null` and can also end `not_applicable`
+    or `timeout`. Any phase that the run never reached keeps `result: null`. So does a phase that an exception cut off
     after some of its steps, in an error run (the steps stand; section 3);
 - in `totals`: `height_twists` and `high_twists`. `lattice_twists` is the sum of the played lattice steps (:1458).
   It is 0 after a phase with no step (:1414), the restorer's twists on the `verify_late.py` path (:1363), and null
@@ -667,8 +686,10 @@ For a format 3 record (I0, extended by I1) it also checks:
   with `no_lattice` false. The run's own options must equal them: `literal_limit`, `seeds`, `tail_rules` and
   `config.lattice.restorer`, plus `fallback_max_length`, `par`, `pair_shards`, `bulk_steps`, `tail_steps` and
   `high_steps` in `budgets`. The file's `tail_steps` 0 counts as null, because the runner records an unlimited tail
-  as null (:316-317). The record does not keep `--no-lattice`, so the checker checks that option only in the file. A
-  development record must have `acceptance_config` null or missing. Any other case fails `acceptance_config`.
+  as null (:316-317). Until P6 the record did not keep `--no-lattice`, so the checker checks that option only in the
+  file; since P6 (`cba2c6a`) the record keeps it as `config.no_lattice`, which the checker reads only to decide whether
+  a resumed run has ended (`scripts/check_run.py:311` at `2b04d0c`). A development record must have
+  `acceptance_config` null or missing. Any other case fails `acceptance_config`.
 - **The kernel's D19 rule** (I1; `PLAN.md` revision 3e, E2; `scripts/check_run.py:326-337`). In acceptance mode, and
   in development mode whenever it is not null, `config.kernel.d19` must be exactly the `file` and `sha256` of
   `research/jumbling/restoration/12-low-height/scripts/round22/r22d19_rule.py` as it is in the checker's checkout.
@@ -1341,7 +1362,7 @@ Deferred by decision:
 
 - a lattice phase that ends `stuck`, `budget` or `timeout`, and the checker's rules for it (with packet P3 and stage
   I1; until then such an `End` gives an error record);
-- recording `--no-lattice` in `config`;
+- recording `--no-lattice` in `config` (done in P6, `cba2c6a`: `config.no_lattice`, section 2);
 - evidence for a claimed `budget` or `timeout` (a timed-out attempt or a reached step budget);
 - the development-mode fallback branch of the checker's `check_unit`, which does not require an off unit and a
   non-empty word;
@@ -1605,11 +1626,15 @@ python3 -I -B research/jumbling/restoration/13-tutorial-runner/scripts/runner.py
 ```
 
 Resume replays the saved words and refuses a different configuration, source table or scramble, changed research
-code or versions, or a terminal record. It records each continuation in `resumes`; the checker replays its steps
-as for an uninterrupted run. Running time excludes the gap between sessions. Checkpoints include the run's referenced
-words, trees, tables, units, probe and lattice files, and omit repository provenance files and temporary files.
-The helper refuses protected branches, detached HEAD and staged changes outside its checkpoint directory. At the end,
-commit the completed run directory and remove its checkpoint directory in the same commit.
+code or versions, or a terminal record. Before it writes anything it checks that every table the record names for a
+completed step, and the bulk end table once the bulk has ended, exists, parses and has the recorded digest. A bulk
+that ended (`phases.bulk.completed`, section 2) is not entered again. It records each continuation in `resumes`; the
+checker replays its steps as for an uninterrupted run, and for a run that has ended it refuses a resume time above
+`totals.seconds`. Running time excludes the gap between sessions. Checkpoints include the run's referenced words,
+trees, tables, units, probe and lattice files, and omit repository provenance files and temporary files. The helper
+passes every path to Git literally and commits only its checkpoint directory, leaving anything else staged as it was;
+it refuses protected branches, detached HEAD and staged changes outside its checkpoint directory. At the end, commit
+the completed run directory and remove its checkpoint directory in the same commit.
 
 ## Replay
 

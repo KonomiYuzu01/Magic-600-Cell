@@ -130,9 +130,10 @@ internal sealed class SwipeSession
 internal sealed class CompareCamera
 {
     public double[] Q { get; } = Geometry.Identity();
+    public double[] Spin { get; } = Geometry.Identity();
     public void Drag(double x, double y)
     {
-        Geometry.Rotate(Q, 0, 3, x * .004); Geometry.Rotate(Q, 1, 3, y * .004);
+        GlobalLayout.Drag(Q, Spin, x * .004, y * .004);
     }
 }
 

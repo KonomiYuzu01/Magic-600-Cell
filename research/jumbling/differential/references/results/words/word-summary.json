@@ -1,0 +1,8 @@
+{
+  "passed": false,
+  "compared": 4,
+  "unavailable": [
+    "r22b34"
+  ],
+  "errors": []
+}

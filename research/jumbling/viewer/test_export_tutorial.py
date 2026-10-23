@@ -7,6 +7,7 @@ import hashlib
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -51,6 +52,122 @@ def run_node(test, code, value):
 
 def sha(raw):
     return hashlib.sha256(raw).hexdigest()
+
+
+def commit_fixture(root):
+    """Only temporary test repositories get an index, commits or refs."""
+    env = {**os.environ, 'GIT_CONFIG_NOSYSTEM': '1', 'GIT_CONFIG_GLOBAL': os.devnull,
+           'GIT_AUTHOR_NAME': 'Fixture', 'GIT_AUTHOR_EMAIL': 'fixture@example.invalid',
+           'GIT_COMMITTER_NAME': 'Fixture', 'GIT_COMMITTER_EMAIL': 'fixture@example.invalid'}
+    for args in (['init', '-q'], ['add', '--all'],
+                 ['-c', 'commit.gpgsign=false', 'commit', '-qm', 'test inputs']):
+        subprocess.run(['git', '-C', str(root), *args], env=env, check=True, capture_output=True)
+
+
+class CommittedInputTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(prefix='magic600-committed-input-test-')
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        (self.root / 'anchor.txt').write_text('fixture')
+        commit_fixture(self.root)
+        patcher = mock.patch.object(exporter, 'ROOT', self.root)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_untracked_record_refused_before_read(self):
+        base = self.root / 'run'
+        base.mkdir()
+        shutil.copyfile(RUN / 'run.json', base / 'run.json')
+        with mock.patch.object(Path, 'read_bytes', side_effect=AssertionError('unverified input opened')):
+            with self.assertRaisesRegex(ValueError, r'run.json.*tracked|tracked.*run.json'):
+                exporter.export(base, 0, 'before', self.root / 'out')
+        self.assertFalse((self.root / 'out').exists())
+
+    def test_untracked_recipe_file_refused_before_read(self):
+        path = self.root / 'recipe.json'
+        path.write_text(json.dumps({'start': {'scramble': [0, 7001]}, 'digest': sha(b'')}))
+        with mock.patch.object(Path, 'read_bytes', side_effect=AssertionError('unverified recipe opened')):
+            with contextlib.redirect_stderr(io.StringIO()) as stderr:
+                result = exporter.main(['--state', str(path), '--out', str(self.root / 'out')])
+        self.assertEqual(result, 1)
+        self.assertIn('tracked and committed', stderr.getvalue())
+        self.assertFalse((self.root / 'out').exists())
+
+    def test_untracked_or_modified_recipe_inputs_refused_before_read(self):
+        for kind in ('table', 'word'):
+            path = self.root / (kind + '.json')
+            path.write_text('[]')
+            for status in ('untracked', 'modified', 'staged'):
+                with self.subTest(kind=kind, status=status):
+                    if status == 'modified':
+                        commit_fixture(self.root)
+                        path.write_text('[ ]')
+                    elif status == 'staged':
+                        subprocess.run(['git', '-C', str(self.root), 'add', str(path)], check=True)
+                    with mock.patch.object(Path, 'read_bytes', side_effect=AssertionError('unverified input opened')):
+                        with self.assertRaisesRegex(ValueError, r'tracked|unmodified|committed'):
+                            if kind == 'word':
+                                exporter.recipe_word(path.name, {})
+                            else:
+                                exporter.recipe_state({'start': {'table': path.name}, 'digest': 'a' * 64})
+            commit_fixture(self.root)
+
+    def test_record_tables_words_and_trees_checked_before_read(self):
+        source = RUN.parents[1] / 'd0-s7106/run'
+        record = json.loads((source / 'run.json').read_text())
+        row = record['steps'][19]
+        names = ('run.json', 'start-table.json', 'tables/bulk-end.json', row['word'], row['tree']['file'])
+        base = self.root / 'run'
+        for name in names:
+            path = base / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source / name, path)
+        commit_fixture(self.root)
+        original_read = Path.read_bytes
+        for name in names:
+            path = base / name
+            original = path.read_bytes()
+            path.write_bytes(original + b'\n')
+
+            def read(checked):
+                if checked == path:
+                    raise AssertionError('modified input opened: ' + name)
+                return original_read(checked)
+
+            with self.subTest(path=name), mock.patch.object(Path, 'read_bytes', read):
+                with self.assertRaisesRegex(ValueError, 'unmodified|committed'):
+                    exporter.replay_record(base, 19, 'before')
+            path.write_bytes(original)
+
+    def test_nested_word_must_be_committed_before_read(self):
+        (self.root / 'program.json').write_text(json.dumps({'segments': [{'word_file': 'child.json'}]}))
+        commit_fixture(self.root)
+        child = self.root / 'child.json'
+        child.write_text('[]')
+        original_read = Path.read_bytes
+
+        def read(path):
+            if path == child:
+                raise AssertionError('untracked child opened')
+            return original_read(path)
+
+        with mock.patch.object(Path, 'read_bytes', read):
+            with self.assertRaisesRegex(ValueError, 'tracked|committed'):
+                exporter.recipe_word('program.json', {})
+
+    def test_reserved_scramble_refused_before_mechanics_or_file_access(self):
+        for seed in (9011, 9050, 9073):
+            with self.subTest(seed=seed), mock.patch.object(exporter.check_run.restore, 'menu') as menu:
+                with mock.patch.object(Path, 'open', side_effect=AssertionError('file opened for reserved seed')):
+                    with self.assertRaisesRegex(ValueError, 'reserved and refused'):
+                        exporter.recipe_state({'start': {'scramble': [1, seed]}, 'digest': 'a' * 64})
+                menu.assert_not_called()
+
+    def test_reserved_record_path_refused_without_opening_any_file(self):
+        with mock.patch.object(Path, 'open', side_effect=AssertionError('reserved file opened')):
+            with self.assertRaisesRegex(ValueError, 'reserved and refused'):
+                exporter.replay_record(self.root / 'run-s9050', 0, 'before')
 
 
 class TutorialExport(unittest.TestCase):
@@ -211,11 +328,10 @@ class TutorialExport(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'reserved and refused'):
                     exporter.recipe_state({**valid, 'start': {'scramble': [0, seed]}})
                 scramble.assert_not_called()
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            (root / 'word.json').write_text(json.dumps({'word': [], 'seed': 9050}))
+        # Reserved-seed records remain in memory; never create or open their files.
+        with mock.patch.object(exporter.check_run, 'read_json', return_value={'word': [], 'seed': 9050}):
             with self.assertRaisesRegex(ValueError, 'reserved and refused'):
-                exporter.prepare_recipe({**valid, 'play': [{'word': 'word.json'}]}, root=root)
+                exporter.prepare_recipe({**valid, 'play': [{'word': self.recipe(True)['play'][0]['word']}]})
 
     def test_recipe_runner_start_and_piece_bounds(self):
         recipe = {'start': {'record': RUN.relative_to(exporter.ROOT).as_posix(), 'step': 0, 'when': 'after'},
@@ -233,7 +349,8 @@ class TutorialExport(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             (root / 'recipe.json').write_text(json.dumps(recipe))
-            with contextlib.redirect_stdout(io.StringIO()):
+            commit_fixture(root)
+            with mock.patch.object(exporter, 'ROOT', root), contextlib.redirect_stdout(io.StringIO()):
                 result = exporter.main(['--state', str(root / 'recipe.json'), '--out', str(root / 'out')])
             self.assertEqual(result, 0)
             self.assertEqual((root / 'out/moved.i32').read_bytes(), b'')
@@ -297,6 +414,7 @@ class TutorialExport(unittest.TestCase):
             doc = json.loads((root / 'summary.json').read_text())
             doc['library']['sha256'] = '0' * 64
             (root / 'summary.json').write_text(json.dumps(doc))
+            commit_fixture(root)
             with self.assertRaisesRegex(ValueError, 'library sha256 mismatch'):
                 exporter.recipe_word('summary.json', {}, root=root)
 
@@ -305,15 +423,19 @@ class TutorialExport(unittest.TestCase):
             root = Path(temporary)
             source = root / 'word.py'
             source.write_text('raise RuntimeError("must not execute")\nword = [[72, 18]]\n')
+            commit_fixture(root)
             self.assertEqual(exporter.recipe_word('word.py', {}, root=root), [[72, 18]])
             source.write_text('word = __import__("os").getcwd()\n')
+            commit_fixture(root)
             with self.assertRaisesRegex(ValueError, 'literal'):
                 exporter.recipe_word('word.py', {}, root=root)
             for name in ('../outside.json', '/outside.json', 'C:/outside.json'):
                 (root / 'program.json').write_text(json.dumps({'segments': [{'word_file': name}]}))
+                commit_fixture(root)
                 with self.assertRaisesRegex(ValueError, 'repository-relative'):
                     exporter.recipe_word('program.json', {}, root=root)
             (root / 'program.json').write_text(json.dumps({'segments': [{'word_file': 'program.json'}]}))
+            commit_fixture(root)
             with self.assertRaisesRegex(ValueError, 'cyclic'):
                 exporter.recipe_word('program.json', {}, root=root)
 
@@ -334,10 +456,14 @@ class TutorialExport(unittest.TestCase):
             shutil.copyfile(RUN / 'words/00000.json', root / 'word.json')
             local = {'start': {'table': 'start.json'}, 'play': [{'word': 'word.json'}],
                      'digest': DIGESTS['after']}
+            commit_fixture(root)
             with mock.patch.object(exporter, 'ROOT', root):
                 before = exporter.recipe_state(local, session)[3]
                 with (root / 'word.json').open('ab') as stream:
                     stream.write(b'\n')  # Same letters, different source bytes.
+                with self.assertRaisesRegex(ValueError, 'unmodified'):
+                    exporter.recipe_state(local, session)
+                commit_fixture(root)
                 after = exporter.recipe_state(local, session)[3]
             self.assertEqual(before['digest'], after['digest'])
             self.assertNotEqual(before['inputs'], after['inputs'])
@@ -396,6 +522,7 @@ process.stdout.write(JSON.stringify(manifest));
         (base / 'words').mkdir(parents=True)
         for name in ('run.json', 'start-table.json', 'words/00000.json'):
             shutil.copyfile(RUN / name, base / name)
+        self.enterContext(mock.patch.object(exporter, 'ROOT', Path(directory)))
         return base
 
     def refused(self, base, out, message, *, step=0, when='before'):
@@ -411,21 +538,23 @@ process.stdout.write(JSON.stringify(manifest));
             word = json.loads((base / 'words/00000.json').read_text())
             word['word'][0][1] = 19
             (base / 'words/00000.json').write_text(json.dumps(word))
+            commit_fixture(Path(directory))
             out = Path(directory) / 'output'
-            result = subprocess.run([sys.executable, '-I', '-B', str(HERE / 'export_tutorial.py'), str(base),
-                                     '--step', '0', '--when', 'before', '--out', str(out)],
-                                    capture_output=True, text=True, timeout=120)
-            self.assertNotEqual(result.returncode, 0)
-            self.assertIn('word_sha256', result.stderr)
+            self.refused(base, out, 'word_sha256')
             self.assertFalse(out.exists())
 
     def test_seed_9050_refused_before_replay(self):
-        with tempfile.TemporaryDirectory(prefix='magic600-tutorial-seed-') as directory:
-            base = self.copy_record(directory)
-            record = json.loads((base / 'run.json').read_text())
-            record['start']['seed'] = 9050
-            (base / 'run.json').write_text(json.dumps(record))
-            self.refused(base, Path(directory) / 'output', '9011..9073')
+        # Inject the forbidden start in memory over the permitted 7001 fixture.
+        record = json.loads((RUN / 'run.json').read_text())
+        record['start']['seed'] = 9050
+        original_read = Path.read_bytes
+
+        def read(path):
+            return json.dumps(record).encode() if path == RUN / 'run.json' else original_read(path)
+
+        with mock.patch.object(Path, 'read_bytes', read), mock.patch.object(exporter.check_run.restore, 'menu') as menu:
+            self.refused(RUN, self.root / 'reserved-output', '9011..9073')
+            menu.assert_not_called()
 
     def test_nonempty_output_keeps_existing_bytes(self):
         with tempfile.TemporaryDirectory(prefix='magic600-tutorial-existing-') as directory:
@@ -454,6 +583,7 @@ process.stdout.write(JSON.stringify(manifest));
             record = json.loads((base / 'run.json').read_text())
             record['start']['digest'] = record['steps'][0]['before']['digest'] = '0' * 64
             (base / 'run.json').write_text(json.dumps(record))
+            commit_fixture(Path(directory))
             self.refused(base, Path(directory) / 'output', 'start: replayed digest mismatch')
 
     def test_after_boundary_checked_even_for_before_picture(self):
@@ -466,6 +596,7 @@ process.stdout.write(JSON.stringify(manifest));
             word = json.loads(path.read_text())
             word['output_digest'] = '0' * 64
             path.write_text(json.dumps(word))
+            commit_fixture(Path(directory))
             for when in ('before', 'after'):
                 out = Path(directory) / when
                 out.mkdir()  # A pre-existing empty output also stays empty on refusal.
@@ -477,6 +608,7 @@ process.stdout.write(JSON.stringify(manifest));
             record = json.loads((base / 'run.json').read_text())
             record['steps'][1]['before']['digest'] = '0' * 64
             (base / 'run.json').write_text(json.dumps(record))
+            commit_fixture(Path(directory))
             self.refused(base, Path(directory) / 'output', 'broken digest chain', step=1)
 
     def test_lattice_word_and_verified_later_table(self):
@@ -496,6 +628,34 @@ process.stdout.write(JSON.stringify(manifest));
             letters = exporter.read_word(run, record['steps'][19])
             self.assertEqual(tutorial['letters_sha256'], sha(json.dumps(letters).encode('utf-8')))
             self.assertEqual(tutorial['caps'], list(dict.fromkeys(c for c, _ in letters)))
+
+    @unittest.skipUnless(shutil.which('node'), 'node is missing; viewer provenance check skipped')
+    def test_viewer_accepts_record_and_recipe_shots_only_with_their_provenance(self):
+        recipe = self.root / 'provenance-recipe'
+        exporter.export_recipe(self.recipe(True), recipe)
+        shots = {name: {part: json.loads((directory / f'{part}.json').read_text()) for part in ('header', 'tutorial')}
+                 for name, directory in (('record', self.outputs['after']), ('recipe', recipe))}
+        self.assertNotIn('run_sha256', shots['recipe']['tutorial'])
+        self.assertTrue(run_node(self, r"""
+const valid = sourceFunction('full.js', 'tutorialProvenance', {
+  hexDigest: (s) => typeof s === 'string' && /^[a-f0-9]{64}$/.test(s) });
+const { record, recipe } = input;
+const changed = (shot, change) => { const t = structuredClone(shot.tutorial); change(t); return valid(t, shot.header); };
+assert.ok(valid(record.tutorial, record.header));
+assert.ok(valid(recipe.tutorial, recipe.header));
+for (const shot of [record, recipe]) {
+  assert.ok(!changed(shot, (t) => { t.digest = '0'.repeat(64); }));
+  assert.ok(!changed(shot, (t) => { t.caps = [72, 72]; }));
+}
+assert.ok(!changed(record, (t) => { delete t.step; }));
+assert.ok(!changed(record, (t) => { t.when = 'during'; }));
+assert.ok(!changed(record, (t) => { t.run_sha256 = 'x'; }));
+assert.ok(!changed(recipe, (t) => { t.state.digest = '0'.repeat(64); }));
+assert.ok(!changed(recipe, (t) => { t.inputs[0].sha256 = 'x'; }));
+assert.ok(!changed(recipe, (t) => { delete t.inputs; }));
+assert.ok(!changed(recipe, (t) => { t.state = null; }));
+process.stdout.write('true');
+""", shots))
 
 
 class JavaScriptSyntax(unittest.TestCase):

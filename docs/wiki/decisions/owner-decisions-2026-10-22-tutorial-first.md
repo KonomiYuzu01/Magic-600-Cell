@@ -49,6 +49,8 @@ The integrator expects, from the six height-4 stops where the R22D-25 kernel wit
 and the deeper batches need new rules for height 4 to height 2. If the development runs show this, the integrator
 brings the evidence and the options to the owner; limiting the depth of the test would change the owner's decision
 of 17 October that scrambles are not restricted, so it is the owner's.
+Decided on 23 October 2026: the depth is not limited, and the research restarts on rules that take height 4 to
+height 2 ([owner-decisions-2026-10-23-depth](owner-decisions-2026-10-23-depth.md)).
 
 ## Effect
 

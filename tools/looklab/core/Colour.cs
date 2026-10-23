@@ -10,6 +10,10 @@ public sealed record PaletteModeReport(string Mode, double? MinDistance, double?
     bool? MeetsDistance, bool? MeetsBackground);
 // ClassIndex is null for a background gamut failure; otherwise it is the zero-based palette class.
 public sealed record GamutFailure(int? ClassIndex, string Reason);
+public sealed record CellColouring(int[] RingOf, int[] RingClass)
+{
+    public int ClassOf(int cell) => RingClass[RingOf[cell]];
+}
 public sealed record PaletteReport(IReadOnlyList<PaletteModeReport> Modes, IReadOnlyList<(int A, int B)> ClassPairs, int SameRingAdjacencies)
 {
     public IReadOnlyList<GamutFailure> GamutFailures { get; init; } = Array.Empty<GamutFailure>();
@@ -106,7 +110,15 @@ public static class Colour
 
     public static GamutColour Background(ParameterSet look) => MapToGamut(look.Number("bgLightness"), look.Number("bgTint"), look.Number("bgHue"));
 
-    public static PaletteReport Report(ParameterSet look, CellStructure structure, PaletteThresholds? thresholds = null)
+    public static PaletteReport Report(ParameterSet look, CellStructure structure, PaletteThresholds? thresholds = null) =>
+        Report(look, structure, count => new CellColouring(structure.RingOf,
+            CellStructure.ProperColouring(20, structure.RingGraph, count) ?? throw Json.Error("classes", "no proper ring colouring")), thresholds);
+
+    public static PaletteReport Report(ParameterSet look, CellStructure structure, CellColouring colouring, PaletteThresholds? thresholds = null) =>
+        Report(look, structure, _ => colouring, thresholds);
+
+    // Resolve the assignment after palette validation, preserving the original refusal order.
+    private static PaletteReport Report(ParameterSet look, CellStructure structure, Func<int, CellColouring> assignment, PaletteThresholds? thresholds)
     {
         if (thresholds != null && (!double.IsFinite(thresholds.Distance) || !double.IsFinite(thresholds.BackgroundLightness) || thresholds.Distance < 0 || thresholds.BackgroundLightness < 0))
             throw Json.Error("thresholds", "finite nonnegative thresholds required");
@@ -115,14 +127,16 @@ public static class Colour
         var failures = new List<GamutFailure>();
         for (int i = 0; i < colours.Length; i++) if (!colours[i].Ok) failures.Add(new GamutFailure(i, colours[i].Reason!));
         if (!background.Ok) failures.Add(new GamutFailure(null, background.Reason!));
-        int[] classes = CellStructure.ProperColouring(20, structure.RingGraph, colours.Length) ?? throw Json.Error("classes", "no proper ring colouring");
+        CellColouring colouring = assignment(colours.Length);
+        if (colouring.RingOf.Length != 600 || colouring.RingOf.Any(r => r < 0 || r >= colouring.RingClass.Length) ||
+            colouring.RingClass.Any(c => c < 0 || c >= colours.Length)) throw Json.Error("colouring", "invalid cell, ring or palette class");
         var pairs = new HashSet<(int, int)>();
         int sameRing = 0;
         for (int c = 0; c < 600; c++) foreach (int n in structure.FaceNeighbors[c].Where(n => n > c))
         {
-            int a = structure.RingOf[c], b = structure.RingOf[n];
+            int a = colouring.RingOf[c], b = colouring.RingOf[n];
             if (a == b) { sameRing++; continue; }
-            int ca = classes[a], cb = classes[b];
+            int ca = colouring.ClassOf(c), cb = colouring.ClassOf(n);
             pairs.Add((Math.Min(ca, cb), Math.Max(ca, cb)));
         }
         (int A, int B)[] classPairs = pairs.OrderBy(p => p.Item1).ThenBy(p => p.Item2).ToArray();

@@ -1295,6 +1295,7 @@ class CheckRunTests(unittest.TestCase):
     def test_v3_resumes(self):
         base, original = self.v3_case()
         source = {'commit': None, 'status_sha256': None, 'dirty': None}
+        original['totals']['seconds'] = 1.0
         original['resumes'] = [{'at_step': 0, 'seconds': 0.0, 'source': source},
                                {'at_step': len(original['steps']), 'seconds': 1.0, 'source': source}]
         self.check(base, original)
@@ -1306,7 +1307,8 @@ class CheckRunTests(unittest.TestCase):
                 rec = copy.deepcopy(original)
                 rec['resumes'] = rows
                 self.check(base, rec, 'resumes')
-        mutations = [dict(at_step=0, seconds=s, source=source) for s in (-1, True, float('nan'), float('inf'))]
+        mutations = [dict(at_step=0, seconds=s, source=source) for s in
+                     (-1, True, float('nan'), float('inf'), 1.01)]
         mutations += [dict(at_step=0, seconds=0, source=s) for s in (None, {}, {'dirty': 'yes'})]
         mutations += [dict(at_step=0, seconds=0, source=source, extra=1), dict(at_step=0, seconds=0)]
         for row in mutations:
@@ -1325,6 +1327,55 @@ class CheckRunTests(unittest.TestCase):
             fails = []
             C.check_resumes({'format': version, 'steps': [], 'resumes': []}, fails)
             self.assertEqual(fails, ['resumes'])
+
+    def test_resume_time_bound_preserves_in_flight_records(self):
+        source = {'commit': None, 'status_sha256': None, 'dirty': None}
+        for result, error in (('budget', None), ('error', 'signal 15')):
+            record = blank3({}, 'development')
+            record.update(result=result, error=error)
+            record['resumes'] = [{'at_step': 0, 'seconds': 1.0, 'source': source}]
+            fails = []
+            C.check_resumes(record, fails)
+            self.assertEqual(fails, [])
+        # --no-lattice can pause after the tail's final save, before finish supplies a verdict.
+        record.update(result='budget', error=None,
+                      phases={'bulk': {'completed': True}, 'tail': {'result': 'lattice'}})
+        record['config']['no_lattice'] = True
+        fails = []
+        C.check_resumes(record, fails)
+        self.assertEqual(fails, [])
+        record['acceptance']['verdict'] = 'budget'
+        fails = []
+        C.check_resumes(record, fails)
+        self.assertEqual(fails, ['resumes'])
+
+    def test_resume_time_bound_at_final_phase_boundaries(self):
+        source = {'commit': None, 'status_sha256': None, 'dirty': None}
+        cases = [('budget', None, 'height', 'budget'), ('budget', None, 'high', 'timeout'),
+                 ('budget', None, 'tail', 'budget'), ('budget', None, 'lattice', 'timeout'),
+                 ('error', 'signal 15', 'lattice', 'solved'), ('error', 'child failed', 'bulk', 'budget')]
+        for result, error, phase, end in cases:
+            with self.subTest(result=result, phase=phase):
+                record = blank3({}, 'development')
+                record.update(result=result, error=error, phases={phase: {'result': end}})
+                record['resumes'] = [{'at_step': 0, 'seconds': 1.0, 'source': source}]
+                fails = []
+                C.check_resumes(record, fails)
+                self.assertEqual(fails, ['resumes'])
+                record['totals']['seconds'] = 1.0
+                fails = []
+                C.check_resumes(record, fails)
+                self.assertEqual(fails, [])
+
+    def test_v3_bulk_completed_field(self):
+        base, original = self.v3_case()
+        original['phases']['bulk']['completed'] = True
+        self.check(base, original)
+        for value in (None, 0, 1, 'yes'):
+            with self.subTest(completed=value):
+                rec = copy.deepcopy(original)
+                rec['phases']['bulk']['completed'] = value
+                self.check(base, rec, 'phase_result')
 
     def test_v3_bulk_order(self):
         """No reopen in format 3: it reads the solver's earlier twists, not the state (plan D2)."""

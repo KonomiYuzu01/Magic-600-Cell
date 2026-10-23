@@ -17,5 +17,6 @@
     <Compile Include="../app/LL5/CvdProbeSource.cs" Link="LL5CvdProbeSource.cs" />
     <Compile Include="../app/LL5/PaletteDisplay.cs" Link="LL5PaletteDisplay.cs" />
     <Compile Include="../app/LL5/CostDisplay.cs" Link="LL5CostDisplay.cs" />
+    <Compile Include="../app/LL8/ShotManifest.cs" Link="LL8ShotManifest.cs" />
   </ItemGroup>
 </Project>

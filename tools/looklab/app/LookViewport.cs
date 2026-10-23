@@ -14,11 +14,19 @@ internal sealed partial class LookViewport : Node3D
     public const int LabelHeight = (Geometry.Slots + LabelWidth - 1) / LabelWidth;
     public Geometry Geometry { get; }
     public TurnData Turn { get; }
+    public GlobalLayout Layout { get; }
     public MultiMesh Instances { get; }
     public ShaderMaterial Material { get; }
     public Camera3D Camera { get; }
     public Godot.Environment Environment { get; }
     public double[] Q { get; } = Geometry.Identity();
+    public double[] Spin { get; } = Geometry.Identity();
+    public CellColouring Colouring { get; private set; } = null!;
+    private readonly byte[] cellLayoutUpload;
+    private byte[] cellClassesUpload = Array.Empty<byte>();
+    internal ReadOnlyMemory<byte> CellLayoutUpload => cellLayoutUpload;
+    internal ReadOnlyMemory<byte> CellClassesUpload => cellClassesUpload;
+    internal bool LayoutKindsBound { get; set; } = true;
     private readonly LookState state;
     private readonly Stopwatch stopwatch = Stopwatch.StartNew();
     private TurnClock clock;
@@ -37,6 +45,7 @@ internal sealed partial class LookViewport : Node3D
     {
         this.state = state; Animate = animate;
         Geometry = new Geometry(root);
+        Layout = new GlobalLayout(Geometry.CellStructure);
         Turn = new TurnData(System.IO.Path.Combine(root, "tools/looklab/fixtures/w3-turn.json"));
         if (Turn.ModelId != Geometry.ModelId) throw new Exception("turn model does not match verified geometry");
         clock = NewClock();
@@ -50,6 +59,15 @@ internal sealed partial class LookViewport : Node3D
         Material.SetShaderParameter("cvd_r2", new Godot.Vector4(0, 0, 1, 0));
         Material.SetShaderParameter("geometry_width", 300);
         Material.SetShaderParameter("q", Matrix(Q));
+        Material.SetShaderParameter("spin", Matrix(Spin));
+        Material.SetShaderParameter("theta", 0f);
+        Material.SetShaderParameter("turn_angle", (float)Turn.Angle);
+        Material.SetShaderParameter("hemisphere_offset", (float)GlobalLayout.HemisphereOffset);
+        Material.SetShaderParameter("hemisphere_scale", (float)GlobalLayout.HemisphereScale);
+        Material.SetShaderParameter("hemisphere_clamp", (float)GlobalLayout.HemisphereClamp);
+        using Image layoutImage = FloatImage(Layout.CellLayout(Turn).Select(x => (double)x).ToArray(), Geometry.Cells, GlobalLayout.LayoutRows, Image.Format.Rgbaf);
+        cellLayoutUpload = layoutImage.GetData();
+        Material.SetShaderParameter("cell_layout", ImageTexture.CreateFromImage(layoutImage));
         Material.SetShaderParameter("aspect", 1.6f);
         SetViewFrame(FocusFrame.Neutral);
         Material.SetShaderParameter("base_normal", Vector4(Geometry.BaseNormal.Span));
@@ -133,7 +151,7 @@ internal sealed partial class LookViewport : Node3D
         Material.SetShaderParameter("ss", (float)structure.Ss);
         Material.SetShaderParameter("d4", (float)structure.D4);
         Material.SetShaderParameter("zoom", (float)structure.Zoom);
-        Material.SetShaderParameter("projection_kind", (int)structure.Projection);
+        Material.SetShaderParameter("projection_kind", LayoutKindsBound ? (int)structure.Projection : Math.Min((int)structure.Projection, 2));
         foreach (string id in new[] { "edgeWeight", "edgeBrightness", "gloss", "glow", "fog", "keyLight", "fillLight", "sliceMin", "sliceMax" })
             Material.SetShaderParameter(id, (float)p.Number(id));
         foreach (string id in new[] { "cellsVisible", "sliceVisible" }) Material.SetShaderParameter(id, p.Boolean(id));
@@ -148,9 +166,10 @@ internal sealed partial class LookViewport : Node3D
             Array.Copy(rgb, 0, bytes, i * 4, 3); bytes[i * 4 + 3] = 1;
         }
         palette.Update(FloatImage(bytes, 8, 1, Image.Format.Rgbaf));
-        int[] rings = CellStructure.ProperColouring(20, Geometry.CellStructure.RingGraph, p.Integer("classes"))!;
-        Material.SetShaderParameter("cell_classes", FloatTexture(Enumerable.Range(0, Geometry.Cells)
-            .Select(cell => (double)rings[Geometry.CellStructure.RingOf[cell]]).ToArray(), Geometry.Cells, 1, Image.Format.Rf));
+        Colouring = Layout.Colouring(p, Geometry.CellStructure);
+        using Image classesImage = FloatImage(Enumerable.Range(0, Geometry.Cells).Select(cell => (double)Colouring.ClassOf(cell)).ToArray(), Geometry.Cells, 1, Image.Format.Rf);
+        cellClassesUpload = classesImage.GetData();
+        Material.SetShaderParameter("cell_classes", ImageTexture.CreateFromImage(classesImage));
         GamutColour background = LabColour.Background(p);
         Color bg = ToColor(background.Linear);
         Material.SetShaderParameter("background", bg); Environment.BackgroundColor = bg.LinearToSrgb();
@@ -173,21 +192,25 @@ internal sealed partial class LookViewport : Node3D
             double damping = state.Preset.Params.Number("cameraDamping");
             BezierCurve settle = state.Preset.Params.Curve("settle");
             double response = Easing.Ease(Math.Min(1, delta * (8 + 24 * damping)), settle.A, settle.B);
-            Geometry.Rotate(Q, 0, 3, velocity.X * delta);
-            Geometry.Rotate(Q, 1, 3, velocity.Y * delta);
+            GlobalLayout.Drag(Q, Spin, velocity.X * delta, velocity.Y * delta);
             velocity *= (float)(1 - response);
         }
         Vector2 size = GetViewport().GetVisibleRect().Size;
-        Material.SetShaderParameter("aspect", size.Y > 0 ? size.X / size.Y : 1);
-        Material.SetShaderParameter("q", Matrix(Q));
+        PushCamera(size.Y > 0 ? size.X / size.Y : 1);
         FrameStepped?.Invoke(delta);
+    }
+
+    internal void PushCamera(double aspect)
+    {
+        Material.SetShaderParameter("aspect", (float)aspect);
+        Material.SetShaderParameter("q", Matrix(Q));
+        Material.SetShaderParameter("spin", Matrix(Spin));
     }
 
     public void Drag(Vector2 relative)
     {
         double inertia = state.Preset.Params.Number("inertia");
-        Geometry.Rotate(Q, 0, 3, relative.X * .004 * (1 - inertia));
-        Geometry.Rotate(Q, 1, 3, relative.Y * .004 * (1 - inertia));
+        GlobalLayout.Drag(Q, Spin, relative.X * .004 * (1 - inertia), relative.Y * .004 * (1 - inertia));
         velocity = relative * (float)(inertia * .3);
     }
 

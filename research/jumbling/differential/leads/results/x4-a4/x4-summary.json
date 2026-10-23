@@ -1,0 +1,59 @@
+{
+  "evidence_kind": "source and fixture replay: J1 and research restorer",
+  "timing_kind": "cloud research code; not product performance evidence",
+  "cpu_count": 4,
+  "load_average": [
+    2.080078125,
+    2.0380859375,
+    2.4013671875
+  ],
+  "python": "3.11.15",
+  "numpy": "2.3.5",
+  "commit": "13bec8a714285a615a00fbfe4eb587c75e9ee86b",
+  "menu_identity": "fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c",
+  "menu_order_digest": "5a0429d2946fbf58b495d8f300e24a3fa164b1d9518ce4a5c3f4ef0a40625c3c",
+  "sources": [
+    {
+      "seed": 7105,
+      "record": "runs/round3/ia-k200-s7105.json",
+      "sha256": "a4f4c601eccffa61da52fc3e34a28568ad66eaac32d9e21212a4fe872f26a0e3"
+    }
+  ],
+  "jobs": 1,
+  "threshold": 10,
+  "steps": 16,
+  "cover_steps": 16,
+  "repair_steps": 0,
+  "pairs_compared": 48800,
+  "pairs_agree": 48711,
+  "disagreements": 89,
+  "traces": {
+    "blocked_d": 89
+  },
+  "unexplained": 0,
+  "recorded_flag_mismatches": [],
+  "research_choice_changes": [],
+  "one_query": {
+    "queries": 0,
+    "seconds": {
+      "median": null,
+      "largest": null
+    },
+    "parts": {
+      "inside_sets": {
+        "median": null,
+        "largest": null
+      },
+      "faces": {
+        "median": null,
+        "largest": null
+      },
+      "answers": {
+        "median": null,
+        "largest": null
+      }
+    },
+    "measurements": []
+  },
+  "seconds": 4922.714114407001
+}

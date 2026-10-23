@@ -294,12 +294,33 @@ def check_resumes(record, fails):
     if record.get('format') != 'runner-run/3' or not isinstance(rows, list) or not isinstance(steps, list):
         add(fails, 'resumes')
         return
+    # A signal can leave an unfinished run resumable. Only final boundaries bound
+    # resume times by totals.seconds; an in-flight snapshot keeps its old handling.
+    phases = record.get('phases', {})
+    phases = phases if isinstance(phases, dict) else {}
+    height = phases.get('height', {})
+    subs = height.get('sub', {}) if isinstance(height, dict) else {}
+    later = [phases.get(p) for p in ('height', 'high', 'tail')]
+    later += list(subs.values()) if isinstance(subs, dict) else []
+    lattice, tail = phases.get('lattice', {}), phases.get('tail', {})
+    error = record.get('error')
+    ended = (record.get('result') in ('solved', 'stuck') or record.get('stuck') is not None
+             or (record.get('result') == 'error' and not (isinstance(error, str) and error.startswith('signal ')))
+             or any(isinstance(d, dict) and d.get('result') in RUN_ENDS for d in later)
+             or (isinstance(lattice, dict) and lattice.get('result') is not None)
+             or (isinstance(record.get('config'), dict) and record['config'].get('no_lattice') is True
+                 and isinstance(tail, dict) and tail.get('result') in ('lattice', 'not_applicable')
+                 and isinstance(record.get('acceptance'), dict)
+                 and record['acceptance'].get('verdict') not in (None, 'error')))
+    totals = record.get('totals', {})
+    total = totals.get('seconds') if isinstance(totals, dict) else None
     last_step, last_seconds = 0, 0
     for row in rows:
         if (not isinstance(row, dict) or set(row) != {'at_step', 'seconds', 'source'}
                 or not integer(row['at_step']) or row['at_step'] > len(steps)
                 or type(row['seconds']) not in (int, float) or not math.isfinite(row['seconds'])
                 or row['at_step'] < last_step or row['seconds'] < last_seconds
+                or (ended and type(total) in (int, float) and math.isfinite(total) and row['seconds'] > total)
                 or not isinstance(row['source'], dict)):
             add(fails, 'resumes')
             continue
@@ -755,6 +776,8 @@ def check_v3_phases(record, steps, positions, start, ends, fails):
         return start if k == 0 else ends[k - 1]
 
     bulk = phases['bulk']
+    if 'completed' in bulk and type(bulk['completed']) is not bool:
+        add(fails, 'phase_result')
     if bulk.get('result') not in ('lattice', 'stuck', 'budget', 'timeout') or (
             bulk['result'] == 'lattice' and ends[0].count):
         add(fails, 'phase_result')

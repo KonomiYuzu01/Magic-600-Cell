@@ -1,0 +1,16 @@
+{
+  "from": "I2",
+  "literal": true,
+  "requested": 36,
+  "checked": 36,
+  "passed": 36,
+  "failed": 0,
+  "letters": 23932,
+  "library_sha256": "8a13eb6c4f4359ce4dd58a0018cf86eed3089111e11f20b7c00476f6393a661a",
+  "ok": true,
+  "evidence_kind": "source and fixture replay; cloud timings of research code",
+  "python": "3.11.15",
+  "numpy": "2.3.5",
+  "cpu_count": 4,
+  "commit": "c85154f9ea6793a5e000bd369ab99df8e7ba2661"
+}

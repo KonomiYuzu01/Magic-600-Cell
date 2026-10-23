@@ -34,8 +34,12 @@ its acceptance test is the owner's (decisions of
 
 ## Figures
 
-- **Puzzle pictures** (`figures/png/`) show exact simulator states: all 259,800 stickers of the state, the pieces a
-  step moves drawn opaque. They are headless Chromium captures of the research page
+- **Puzzle pictures** (`figures/png/`) show exact simulator states. Each draws the pieces its recipe emphasises
+  opaque (the pieces a step moves, the off pieces, or a named set); a few overview pictures also draw every other
+  sticker as a faint ghost. Nothing else is drawn on the puzzle: no outlines, numbers or cuts; panel labels sit below
+  the panels. A picture is framed on all its emphasised pieces, on a cap and its four nearest cells (`fit` `cap`), or on
+  the densest three quarters of the emphasised pieces (`fit` `core`); the manifest records how many emphasised pieces
+  lie in the frame. They are headless Chromium captures of the research page
   [`research/jumbling/viewer/full.html`](../viewer/full.html) in its shot mode, made by
   [`make_figures.py`](../viewer/make_figures.py) from [`figures/figures.json`](figures/figures.json); each has a
   manifest entry with its state digest and the PNG's sha256, and `--check` draws it again and compares. They are not
@@ -45,6 +49,23 @@ its acceptance test is the owner's (decisions of
 - Colours are provisional and decide nothing for the design track; G1 to G6 stay with the owner.
 - [`figures/CATALOGUE.md`](figures/CATALOGUE.md) lists every figure with its source and status; a figure that cannot
   yet be drawn is listed as missing with the reason.
+
+## Development runs
+
+The runner's development runs (stage 13 `PLAN.md` section 4; records under
+`research/jumbling/restoration/13-tutorial-runner/runs/dev/`) are **run on one instance** each, headless on Linux.
+
+| Run | Input | Result | Chapters |
+|---|---|---|---|
+| D0 | seeds 7001 (depth 10) and 7106 (depth 20), acceptance mode | both restored to the solved state; the checker passes both records | 2.15, 6.17.1 |
+| D1 | seed 7101 (depth 40), development mode | the bulk stuck at 1,193 off; one tail step (`zero_bad`, 1,193 → 1,082 off); killed by a container restart in the tail, not checked | 2.15, 5.18 |
+| D2 | the 3000-twist census stops of seeds 7302 and 7304 to 7307 with the bulk off, and seed 7303 from its scramble | no run reached the lattice phase: the height phase stuck with n4 between 734 and 1,955; the high phase stuck (`kernel_exhausted`) at 7304 to 7307, ran out of its clock at 7303 and was cut off by a lost container at 7302; the tail stopped while listing the units at 7304, 7305 and 7307 and was cut off by a lost container at 7306; four of the six records checked | 2.15, 3.8.4, 4.18, 5.18 |
+
+The acceptance-mode run at depth 40 (seed 7101) and the run at depth 100 (D3, seed 7102) are still running. Batch 1
+of the acceptance test (depths 10, 20, 40 and 100, seeds 9011 to 9043) runs only once the development runs at those
+depths reach the solved state (owner, 22 October 2026); it has not been run. The batches at 300, 1000 and 3000
+twists wait for rules that take height 4 to height 2, whose research the owner restarted on 23 October 2026
+([decision](../../../docs/wiki/decisions/owner-decisions-2026-10-23-depth.md)).
 
 ## Reproduce
 
