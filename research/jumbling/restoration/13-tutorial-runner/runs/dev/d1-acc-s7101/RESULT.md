@@ -200,6 +200,10 @@ starts from the scramble in `out3/`, with `checkpoint.py` keeping a verified cop
   | 106 | close | 1,144 | 342 | 3,435 |
   | 107 | t1prime | 974 | 297 | 2,646 |
 
+- 10:51 UTC progress: run 4 has checkpointed 109 steps (runner time 57,724 s at the last save). Steps 0 to 101 still
+  agree with run 3; run 3 has none after. Since the last note: index 108 `t1prime`, 1,240 letters, to 256 off,
+  2,797 s. Step 109 (unit `u60412`) is in `close-pure-close`: at its tenth repair step, after 7,653 s, 51 are left.
+
 ## Not run
 
 - `check_run.py` (it runs after the runner ends).
