@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-24] decision | Jumbling: a theorem programme instead of rule searches
+After a re-read of the research record (every deep stop came from a run cut by its clock, and each rule round proved termination, never coverage), the owner changed the method of the height 4 to height 2 research to constructive theorems with exact certificates, starting with the blocking structure of deep states, with Claude Opus instead of the Fable solver as the second sealed analysis of each joint attack ([decision page](decisions/owner-decisions-2026-10-24-theorem-program.md)).
+
 ## [2026-10-23] decision | Jumbling: no depth limit; research the rules for height 4
 Shown the development runs (depth 40 and 100 still in the bulk, the six 3000-twist runs stuck in the height phase) and three options, the owner kept all seven depths of the acceptance test and restarted the research on rules that take height 4 to height 2 ([decision page](decisions/owner-decisions-2026-10-23-depth.md)).
 
