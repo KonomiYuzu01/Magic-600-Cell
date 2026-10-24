@@ -1,0 +1,72 @@
+{
+ "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7304/component/tables/00005.json",
+ "word": [
+  [
+   451,
+   55
+  ],
+  [
+   344,
+   9
+  ],
+  [
+   522,
+   14
+  ]
+ ],
+ "rows": [
+  {
+   "letter": null,
+   "applied": null,
+   "n2": 95674,
+   "n4": 797,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 1594,
+   "off": 96471,
+   "digest": "ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980"
+  },
+  {
+   "letter": [
+    451,
+    55
+   ],
+   "applied": true,
+   "n2": 96740,
+   "n4": 797,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 1594,
+   "off": 97537,
+   "digest": "119fef8dc8b888acf84f60f2c083cc5cb2c290548d7ac2943b84cb2cea8121f2"
+  },
+  {
+   "letter": [
+    344,
+    9
+   ],
+   "applied": true,
+   "n2": 96740,
+   "n4": 797,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 1594,
+   "off": 97537,
+   "digest": "c43d0c95debc0e17083e06b751cabd84df2b22dcb633661cc7e08da8988ed3fa"
+  },
+  {
+   "letter": [
+    522,
+    14
+   ],
+   "applied": true,
+   "n2": 95185,
+   "n4": 749,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 1498,
+   "off": 95934,
+   "digest": "f93e461f9b1c65d5483cf3ba53db266baee71613d8a8808e091ce4a0484daad2"
+  }
+ ]
+}

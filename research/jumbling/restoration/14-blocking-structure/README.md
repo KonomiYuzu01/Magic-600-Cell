@@ -97,6 +97,8 @@ the twist changed.
 | `jamcheck.py` | For the own holders of every high unit (or named grips): the obstruction in units (pose groups), each unit's cell and its clean holders (pure own class, impure own class, other class) and blocked holders, and the foreign load. With `--moves`, every non-identity menu twist at the clean holders of the obstruction units is applied exactly and undone, and the change of Φ, the largest height, the off count, the straddlers and foreign load of the target and the units that land are recorded. |
 | `retained_search.py` | Lemma L as a search: a beam search over words of retained twists at clean grips for an own holder of a high unit that is clean and pure, with cost straddlers + foreign load; every reported word is replayed exactly. |
 | `coheld.py` | Lemma C: for every high unit, the foreign pieces with the same holder set (co-held) and those whose holder set contains the unit's. |
+| `peel.py` | Two-letter peeling of a target grip x through two clean grips A and B, then a lowering: every item at A, the best by straddlers + foreign load of x each followed by every item at B, and when x is clean every item at x, with the exact change of Φ and n4. Exact for the moved pieces; every twist undone and the digest checked. |
+| `replay_word.py` | Replays a literal word from a stored table, recomputing every height from scratch after each letter: admissibility, n2, n4, n6, Φ, the largest height, the off count and the digest. |
 
 The label table takes 2 to 4 CPU minutes per deep state (one process); the rest runs in seconds to minutes. Commands
 are in section 6.
@@ -172,9 +174,20 @@ foreign pieces (a retained letter at 451). The letters that land obstruction uni
 caps into frames, and some of those re-enter cap 522: (451, 43) lands three foreign units and leaves 4 straddlers and
 36 foreign pieces, and the letters that land the 87-piece unit 1910 leave at least 28 straddlers.
 
+**Two-letter peeling of 522, then a lowering** (`peel.py`; `results/s7304-peel-522.json`; replay in
+`results/s7304-peel-522-replay.json`). All 59 non-identity items at 451 were applied; the 14 with the smallest
+straddlers + foreign load of 522 were each followed by all 59 items at 344 (826 pairs, all admissible). 18 pairs make
+522 clean: the first letter (451, 55) or (451, 43), each with the same nine items at 344 (retained items 1, 7 and 9 and
+jumbles 13, 16, 19, 24, 43 and 56). After each of the 18, Φ is still 1594 and the foreign load of 522 is between 22
+and 52, and the item 14 at 522 then lowers Φ by 36 to 96 with no height above 4. The best word,
+(451, 55), (344, 9), (522, 14), replayed from the table with every height recomputed after each letter, takes n4 from
+797 to 749, Φ from 1594 to 1498 and the off count from 96,471 to 95,934. No letter raises Φ, so the word is tame. Its
+first two letters at two different helpers are what the single letters above and the words of HD2P/2 (at most two
+letters) cannot express.
+
 **HD2P/2** (pull request 131: literal words of at most two letters, SINGLE, CL2 and PEEL; Bk the global blocked count).
-It ended STUCK at all six D2 height ends. The independent audits passed at 7302, 7303, 7304, 7306 and 7307; the audit
-at 7305 was still running when this page was written.
+It ended STUCK at all six D2 height ends, and all six independent audits passed
+([campaign record](../13-tutorial-runner/runs/hd2p2/README.md)).
 
 ## 5. Reading
 
@@ -202,6 +215,8 @@ directory outside the repository:
     python3 -I -B $S/retained_search.py $T $D/state.npz $D/retained-deep.json --depth 14 --beam 30 --seconds 600 --groups 1557,1132,2234
     python3 -I -B $S/retained_search.py $T $D/state.npz $D/retained-check.json --check $D/retained.json
     python3 -I -B $S/coheld.py $T $D/state.npz $D/coheld.json
+    python3 -I -B $S/peel.py $T $D/state.npz 522 451 344 $D/peel-522.json
+    python3 -I -B $S/replay_word.py $T 451:55,344:9,522:14 $D/peel-522-replay.json
 
 The first command writes the label cache that the others read. `results/states.json` holds the `summary` and `high`
 blocks of the first command's output for each state, and `results/s7304-end-caps.json` its per-grip rows at the 7304
