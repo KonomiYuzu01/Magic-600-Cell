@@ -15,8 +15,10 @@
    "own": [
     2
    ],
+   "member_holder_rows": 6,
    "coheld_foreign": 0,
    "coheld_foreign_heights": [],
+   "common_holder_set_foreign": 0,
    "dominating_foreign": 0,
    "dominating_foreign_heights": []
   },
@@ -37,8 +39,10 @@
    "own": [
     522
    ],
+   "member_holder_rows": 3,
    "coheld_foreign": 0,
    "coheld_foreign_heights": [],
+   "common_holder_set_foreign": 0,
    "dominating_foreign": 0,
    "dominating_foreign_heights": []
   },
@@ -57,8 +61,10 @@
    "own": [
     375
    ],
+   "member_holder_rows": 4,
    "coheld_foreign": 0,
    "coheld_foreign_heights": [],
+   "common_holder_set_foreign": 0,
    "dominating_foreign": 0,
    "dominating_foreign_heights": []
   },
@@ -77,8 +83,10 @@
    "own": [
     251
    ],
+   "member_holder_rows": 4,
    "coheld_foreign": 0,
    "coheld_foreign_heights": [],
+   "common_holder_set_foreign": 0,
    "dominating_foreign": 0,
    "dominating_foreign_heights": []
   },
@@ -99,8 +107,10 @@
    "own": [
     540
    ],
+   "member_holder_rows": 2,
    "coheld_foreign": 0,
    "coheld_foreign_heights": [],
+   "common_holder_set_foreign": 0,
    "dominating_foreign": 0,
    "dominating_foreign_heights": []
   },
@@ -121,8 +131,10 @@
    "own": [
     540
    ],
+   "member_holder_rows": 2,
    "coheld_foreign": 0,
    "coheld_foreign_heights": [],
+   "common_holder_set_foreign": 0,
    "dominating_foreign": 0,
    "dominating_foreign_heights": []
   },
@@ -145,8 +157,10 @@
     540,
     596
    ],
+   "member_holder_rows": 1,
    "coheld_foreign": 0,
    "coheld_foreign_heights": [],
+   "common_holder_set_foreign": 0,
    "dominating_foreign": 0,
    "dominating_foreign_heights": []
   },
@@ -167,8 +181,10 @@
    "own": [
     522
    ],
+   "member_holder_rows": 5,
    "coheld_foreign": 0,
    "coheld_foreign_heights": [],
+   "common_holder_set_foreign": 0,
    "dominating_foreign": 0,
    "dominating_foreign_heights": []
   },
@@ -190,8 +206,10 @@
     73,
     229
    ],
+   "member_holder_rows": 2,
    "coheld_foreign": 0,
    "coheld_foreign_heights": [],
+   "common_holder_set_foreign": 0,
    "dominating_foreign": 0,
    "dominating_foreign_heights": []
   },
@@ -212,8 +230,10 @@
     162,
     239
    ],
+   "member_holder_rows": 2,
    "coheld_foreign": 0,
    "coheld_foreign_heights": [],
+   "common_holder_set_foreign": 0,
    "dominating_foreign": 0,
    "dominating_foreign_heights": []
   },
@@ -232,8 +252,10 @@
    "own": [
     336
    ],
+   "member_holder_rows": 6,
    "coheld_foreign": 0,
    "coheld_foreign_heights": [],
+   "common_holder_set_foreign": 0,
    "dominating_foreign": 25,
    "dominating_foreign_heights": [
     2
@@ -257,8 +279,10 @@
     183,
     375
    ],
+   "member_holder_rows": 2,
    "coheld_foreign": 0,
    "coheld_foreign_heights": [],
+   "common_holder_set_foreign": 0,
    "dominating_foreign": 0,
    "dominating_foreign_heights": []
   },
@@ -279,8 +303,10 @@
     2,
     64
    ],
+   "member_holder_rows": 2,
    "coheld_foreign": 0,
    "coheld_foreign_heights": [],
+   "common_holder_set_foreign": 0,
    "dominating_foreign": 0,
    "dominating_foreign_heights": []
   },
@@ -301,8 +327,10 @@
    "own": [
     522
    ],
+   "member_holder_rows": 5,
    "coheld_foreign": 0,
    "coheld_foreign_heights": [],
+   "common_holder_set_foreign": 0,
    "dominating_foreign": 0,
    "dominating_foreign_heights": []
   }
