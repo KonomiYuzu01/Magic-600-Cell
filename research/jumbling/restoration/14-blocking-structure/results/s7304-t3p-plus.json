@@ -1,0 +1,26 @@
+{
+ "cpu_s": 1.374129,
+ "digest": "ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980",
+ "exhausted": true,
+ "format": "t3p-plus/1",
+ "instances": [],
+ "limit": null,
+ "passed": true,
+ "prefix_word": [],
+ "setup": {
+  "labels": {
+   "cpu_s": 1.113571
+  },
+  "load": {
+   "cpu_s": 0.229714
+  },
+  "trees": {
+   "cpu_s": 7.241544
+  },
+  "word": {
+   "cpu_s": 5e-06
+  }
+ },
+ "tested_items": 0,
+ "tested_pairs": 0
+}

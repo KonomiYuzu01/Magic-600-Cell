@@ -1,0 +1,131 @@
+{
+ "cpu_s": 203.081,
+ "end_digest": "4c0234bf2b3234618fc9f8759eebe3e1b10ed19ab974122b31171178ee44010f",
+ "end_n4": 840,
+ "end_phi": 1680,
+ "format": "t3p-chain/1",
+ "name": "s7303",
+ "policy": "greedy: the best round of t3p.scan at each state (its tie-break), checked by t3p.check",
+ "rounds": [
+  {
+   "D": 198,
+   "F": 32,
+   "S": 0,
+   "digest_after": "558d7a6e599f560c690acfc47644dd44f3328876ec38344da4e9baad9b600977",
+   "failures": [],
+   "h": 13,
+   "helpers": [
+    [
+     364,
+     5
+    ]
+   ],
+   "order": [
+    364
+   ],
+   "passed": true,
+   "phi_after": 1874,
+   "predicted_phi": 1874,
+   "round": 1,
+   "statuses_before": {
+    "budget": 4,
+    "no-feasible-items": 2,
+    "round": 13,
+    "straddler-without-clean-holder": 15
+   },
+   "unit_piece": 23058,
+   "x": 282
+  },
+  {
+   "D": 87,
+   "F": 0,
+   "S": 0,
+   "digest_after": "53c12f4b133a9d9624cb262e48d6fcc73c41c4b34fd757e3d1244e5141ce1bb2",
+   "failures": [],
+   "h": 12,
+   "helpers": [],
+   "order": [],
+   "passed": true,
+   "phi_after": 1700,
+   "predicted_phi": 1700,
+   "round": 2,
+   "statuses_before": {
+    "budget": 8,
+    "no-disjoint-cover": 1,
+    "no-feasible-items": 2,
+    "round": 5,
+    "straddler-without-clean-holder": 19
+   },
+   "unit_piece": 3547,
+   "x": 236
+  },
+  {
+   "D": 113,
+   "F": 103,
+   "S": 0,
+   "digest_after": "4c0234bf2b3234618fc9f8759eebe3e1b10ed19ab974122b31171178ee44010f",
+   "failures": [],
+   "h": 14,
+   "helpers": [
+    [
+     24,
+     7
+    ]
+   ],
+   "order": [
+    24
+   ],
+   "passed": true,
+   "phi_after": 1680,
+   "predicted_phi": 1680,
+   "round": 3,
+   "statuses_before": {
+    "budget": 8,
+    "no-disjoint-cover": 1,
+    "no-feasible-items": 2,
+    "round": 4,
+    "straddler-without-clean-holder": 19
+   },
+   "unit_piece": 17135,
+   "x": 69
+  }
+ ],
+ "start_digest": "d01dc91edd1c73da399b8acb13a57b9f526da64a5d754993f42ae02856d51889",
+ "start_n4": 929,
+ "start_phi": 2206,
+ "stop": {
+  "digest": "4c0234bf2b3234618fc9f8759eebe3e1b10ed19ab974122b31171178ee44010f",
+  "phi": 1680,
+  "reason": "no round",
+  "single_letter_descents": 0,
+  "statuses": {
+   "budget": 13,
+   "no-disjoint-cover": 1,
+   "no-feasible-items": 3,
+   "straddler-without-clean-holder": 19
+  }
+ },
+ "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7303/run2/d2-s7303/tables/00138.json",
+ "word": [
+  [
+   364,
+   5
+  ],
+  [
+   282,
+   13
+  ],
+  [
+   236,
+   12
+  ],
+  [
+   24,
+   7
+  ],
+  [
+   69,
+   14
+  ]
+ ]
+}

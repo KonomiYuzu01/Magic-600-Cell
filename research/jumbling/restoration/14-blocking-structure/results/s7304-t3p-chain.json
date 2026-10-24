@@ -1,0 +1,74 @@
+{
+ "cpu_s": 88.821,
+ "end_digest": "f93e461f9b1c65d5483cf3ba53db266baee71613d8a8808e091ce4a0484daad2",
+ "end_n4": 749,
+ "end_phi": 1498,
+ "format": "t3p-chain/1",
+ "name": "s7304",
+ "policy": "greedy: the best round of t3p.scan at each state (its tie-break), checked by t3p.check",
+ "rounds": [
+  {
+   "D": 70,
+   "F": 22,
+   "S": 0,
+   "digest_after": "f93e461f9b1c65d5483cf3ba53db266baee71613d8a8808e091ce4a0484daad2",
+   "failures": [],
+   "h": 14,
+   "helpers": [
+    [
+     344,
+     9
+    ],
+    [
+     451,
+     55
+    ]
+   ],
+   "order": [
+    344,
+    451
+   ],
+   "passed": true,
+   "phi_after": 1498,
+   "predicted_phi": 1498,
+   "round": 1,
+   "statuses_before": {
+    "budget": 3,
+    "no-disjoint-cover": 2,
+    "round": 3,
+    "straddler-without-clean-holder": 11
+   },
+   "unit_piece": 23068,
+   "x": 522
+  }
+ ],
+ "start_digest": "ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980",
+ "start_n4": 797,
+ "start_phi": 1594,
+ "stop": {
+  "digest": "f93e461f9b1c65d5483cf3ba53db266baee71613d8a8808e091ce4a0484daad2",
+  "phi": 1498,
+  "reason": "no round",
+  "single_letter_descents": 0,
+  "statuses": {
+   "budget": 9,
+   "no-disjoint-cover": 2,
+   "straddler-without-clean-holder": 13
+  }
+ },
+ "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7304/component/tables/00005.json",
+ "word": [
+  [
+   344,
+   9
+  ],
+  [
+   451,
+   55
+  ],
+  [
+   522,
+   14
+  ]
+ ]
+}

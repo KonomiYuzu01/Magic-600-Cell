@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-24] update | Jumbling: the joint attack on the blocking structure (card 6)
+Astra and Claude Opus answered card 6 in part with sealed analyses, a cross-examination and exact runs ([stage 14](../../research/jumbling/restoration/14-blocking-structure/README.md)): a proved construction, the precedence peel T3P (at most 81 letters per round), gives tame descents at all six D2 height ends, and a per-cap accounting (Φ + 2F_x is unchanged by letters at x) explains why the lowerings run out. Chained greedily, its rounds lower Φ by 6% to 56% and then jam, mostly at grips whose straddlers no clean grip holds; at seed 7307 the D2 rule had stopped although single letters lower Φ by a quarter, because its measure counts height-6 pieces first.
+
 ## [2026-10-24] decision | Jumbling: a theorem programme instead of rule searches
 After a re-read of the research record (every deep stop came from a run cut by its clock, and each rule round proved termination, never coverage), the owner changed the method of the height 4 to height 2 research to constructive theorems with exact certificates, starting with the blocking structure of deep states, with Claude Opus instead of the Fable solver as the second sealed analysis of each joint attack ([decision page](decisions/owner-decisions-2026-10-24-theorem-program.md)).
 

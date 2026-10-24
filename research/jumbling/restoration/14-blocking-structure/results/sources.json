@@ -1,0 +1,114 @@
+[
+ {
+  "name": "d0-7106-start",
+  "state": "D0 seed 7106: random scramble of 20 twists (the runner reached the lattice from it)",
+  "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7106/run/start-table.json",
+  "table_sha256": "56b5d224d1678e9550916227668a1188bb2a915ad5b18067c345f28e4ed97c05",
+  "digest": "9ad04d455632d217ec922cad22721d5b3bd5d56f63786fdb78ad7c9620097083"
+ },
+ {
+  "name": "d1-start",
+  "state": "D1 seed 7101: random scramble of 40 twists",
+  "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d1-dev-s7101/run1-interrupted/start-table.json",
+  "table_sha256": "b04218e651e10a29df6bb36f5d65a51f6a2d7213aa0a11b142fef10784b2203c",
+  "digest": "be08cfaa04612751a5852bc79aec6f20a8f86634f2279e9a6ba1147041bfbf0a"
+ },
+ {
+  "name": "d1-bulkend",
+  "state": "D1 seed 7101 at the stop of the runner bulk (97 steps)",
+  "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d1-dev-s7101/run1-interrupted/tables/bulk-end.json",
+  "table_sha256": "3162145c487b1d6aa654c787958cc503d5d722bcf4cf32e939d0405ff138b438",
+  "digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818"
+ },
+ {
+  "name": "s7303-start",
+  "state": "Seed 7303: random scramble of 3000 twists",
+  "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7303/run2/d2-s7303/start-table.json",
+  "table_sha256": "b70bf1348a697481e93fc9030377204aa6b0d085b117d30205c03d20d98e9974",
+  "digest": "ee1a56a8bef6b56dbb3debc117b394c1d43260497c678c3a2838ae0b17a76822"
+ },
+ {
+  "name": "s7303-bulkend",
+  "state": "Seed 7303 after 18,900 s of the runner bulk (134 steps)",
+  "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7303/run2/d2-s7303/tables/bulk-end.json",
+  "table_sha256": "ea8e02d333f190390320e07f2d9b95b9e5a880453d714bf90747ebfeaf712424",
+  "digest": "516f427dfee858ff0cd3dc272d11490899305b678d33f3811d0d0a49858c30ed"
+ },
+ {
+  "name": "s7303-134",
+  "state": "Seed 7303 after the first step of the height phase (r22d75)",
+  "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7303/run2/d2-s7303/tables/00134.json",
+  "table_sha256": "5826897ce49ba3800b4393473266041c9db861e681341e492b3b81bec241f130",
+  "digest": "6d72a29b4cdf236f8cb80552517fc3b9a92450d3d59b68170ee9c7477379bfc1"
+ },
+ {
+  "name": "s7303-136",
+  "state": "Seed 7303 after the third step of the height phase",
+  "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7303/run2/d2-s7303/tables/00136.json",
+  "table_sha256": "8497e7e341db40906fd3e865d2ffc2a65af2db1d310fc41d26db734c26c4d237",
+  "digest": "65d33e72ff22e7e0749a89034f261110b77bdc1a5b5ab5d3d8ba4a377d3c0ec9"
+ },
+ {
+  "name": "s7303-end",
+  "state": "Seed 7303 at the end of the D2 height phase (r22d81 stuck; HD2P/2 input)",
+  "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7303/run2/d2-s7303/tables/00138.json",
+  "table_sha256": "efa9fe65fbd5114e07458ee584fd5aba3f8ecbcf77376d72e8b540035fb79959",
+  "digest": "d01dc91edd1c73da399b8acb13a57b9f526da64a5d754993f42ae02856d51889"
+ },
+ {
+  "name": "s7305-start",
+  "state": "Seed 7305: census stop of the 3000-twist scramble (D2 start)",
+  "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7305/component/start-table.json",
+  "table_sha256": "865df006a12b692911b19c210cadd1fa72b59794b256394955cabaea52c5001b",
+  "digest": "273eab69dee9e3a2f4a3997a75f6b8d9ad16814fa26b941bf7a219247f9bab6d"
+ },
+ {
+  "name": "s7305-bulkend",
+  "state": "Seed 7305 after 21,600 s of the runner bulk from the census stop (80 steps)",
+  "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7305/full-interrupted/tables/bulk-end.json",
+  "table_sha256": "be0f7e3b36295c1429428bb3949753e5999f90e5f547446b592e4d3af52b5c1e",
+  "digest": "736ea9e7679a142b44e7a51b02a5c08f8346146ed9f28b67c47258034c4ba9a7"
+ },
+ {
+  "name": "s7305-end",
+  "state": "Seed 7305 at the end of the D2 height phase (HD2P/2 input)",
+  "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7305/component/tables/00010.json",
+  "table_sha256": "f285ff06040a9e378d9475d9cabf7699ff94571f7fe78b8acd9685967c55f458",
+  "digest": "cc5ef7ecf0510ea9a74fc52bafe324d6d8f58294c4b0e20b40b97b414dada062"
+ },
+ {
+  "name": "s7304-start",
+  "state": "Seed 7304: census stop of the 3000-twist scramble (D2 start)",
+  "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7304/component/start-table.json",
+  "table_sha256": "fb45c528bc70c8739a63025c26ce72dcdc02d6507891b80cd089ae117561e9ff",
+  "digest": "7e2304b2a4a053b8714dd806e43ff64c2de9e11f5ef2258f3b8a65c9c1a936d4"
+ },
+ {
+  "name": "s7304-end",
+  "state": "Seed 7304 at the end of the D2 height phase (HD2P/2 input)",
+  "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7304/component/tables/00005.json",
+  "table_sha256": "021151122328b1c604bdea9a747e9fffc2a0b54cab2d811c0975e5a0f686454a",
+  "digest": "ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980"
+ },
+ {
+  "name": "s7306-end",
+  "state": "Seed 7306 at the end of the D2 height phase (HD2P/2 input)",
+  "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7306/component-checkpoint/tables/00017.json",
+  "table_sha256": "de32248e227598c7460203019495d762784956a28ddcfaca38af58d5daaff00a",
+  "digest": "ac4be82cf80e857137af957ff75438525ba950062e46a2fc5249aa0d7199d8f2"
+ },
+ {
+  "name": "s7307-end",
+  "state": "Seed 7307 at the end of the D2 height phase (HD2P/2 input)",
+  "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7307/component/tables/00005.json",
+  "table_sha256": "57517593a86b6480e32aca14ceb307369d2bf5d0fe534185a9d2356ef2ee6d01",
+  "digest": "895b45de8a9a83604ca8bf988a3c9a287e404e59bd22a5004703d0852b252507"
+ },
+ {
+  "name": "s7302-last",
+  "state": "Seed 7302 at the end of the D2 height phase (HD2P/2 input)",
+  "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7302/component-checkpoint/tables/00021.json",
+  "table_sha256": "919632272288dfb32288b02fc07b561799419c1574e5120a48e53b266d00e710",
+  "digest": "2430f4cc99ea121a6d3476ec21b66fc401e277d13809ad5e1c979e6e0abe1472"
+ }
+]
