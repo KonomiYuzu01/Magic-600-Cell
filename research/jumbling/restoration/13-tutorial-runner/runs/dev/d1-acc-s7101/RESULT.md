@@ -181,6 +181,11 @@ starts from the scramble in `out3/`, with `checkpoint.py` keeping a verified cop
   running". It does not answer the note above, so run 5 stays unstarted and the check-in prompt stays on run 4 until
   the integrator confirms. When run 5 starts, the routine's prompt is to be replaced with that text verbatim.
 
+- 02:50 UTC progress: run 4 finished step 102 and checkpointed it (`4ae8ffd`, 103 steps). Step 102 is tail rule
+  `close` on unit `u107733`: 111,316 letters, 673 to 595 off, 15,800 s. Run 4's first 102 steps (indices 0 to 101)
+  agree with run 3's in every compared field; run 3 has no step 102. Runner time is 42,173 s. Step 103 (unit `u106`)
+  has started. Run 5 is still not started; it waits for the integrator's confirmation (above).
+
 ## Not run
 
 - `check_run.py` (it runs after the runner ends).
