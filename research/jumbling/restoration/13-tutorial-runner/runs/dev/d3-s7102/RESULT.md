@@ -147,3 +147,6 @@ background waiter on the runner process.
   agrees with run 1 at all 225 steps of run 1** (`compare_runs.py`, no difference; 9,945 s in run 2 against 82,990 s
   in run 1). Beyond run 1, run 2 is at 232 bulk steps, N 26,608, 23,958 off, 11,391 s of runner time, still in the
   bulk phase.
+- 10:06 UTC progress: run 2 alive at 343 bulk steps, N 21,716, 16,248 off, 25,291 s of runner time (no restart since
+  06:06). The comparison with run 1 (`out-checkpoint/run.json` against `out2-checkpoint/run.json`) still finds no
+  difference in the 225 steps run 1 has.
