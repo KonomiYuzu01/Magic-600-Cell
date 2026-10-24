@@ -186,6 +186,9 @@ starts from the scramble in `out3/`, with `checkpoint.py` keeping a verified cop
   agree with run 3's in every compared field; run 3 has no step 102. Runner time is 42,173 s. Step 103 (unit `u106`)
   has started. Run 5 is still not started; it waits for the integrator's confirmation (above).
 
+- 03:01 UTC: the integrator withdrew the run 5 restart, because run 4 had already left the bulk (PR #132 changes only
+  the bulk). Run 4 continues, and the check-in routine stays on run 4.
+
 ## Not run
 
 - `check_run.py` (it runs after the runner ends).
