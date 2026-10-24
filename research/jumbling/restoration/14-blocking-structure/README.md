@@ -44,8 +44,10 @@ the left factor group of class CLS(k·e) is a L_{CLS(e)} a⁻¹, and the neighbo
 the class centre of the moved piece's branch becomes the centre of class σ_k(branch). ∎
 
 So the dynamics of retained twists at clean grips is a permutation action on the label table, exact without geometry.
-`retained_search.py` replays every word it reports on the exact simulator; all ten words it reported at the seed 7304
-stop matched the label calculus in their straddler count and foreign load (section 4).
+`retained_search.py` replays every word it reports on the exact simulator and rejects the word unless the replay
+confirms the label calculus: every letter admissible, the target grip holding the unit at its height, and its straddler
+count and foreign load as predicted. The ten words it reported at the seed 7304 stop and the three of the deeper search
+pass (section 4).
 
 **Corollary L1 (proved).** Under retained twists at clean grips:
 1. every piece keeps its straddle number (how many cuts it straddles) and its number of holders;
@@ -54,8 +56,10 @@ stop matched the label calculus in their straddler count and foreign load (secti
 3. two pieces with equal holder sets keep equal holder sets, and pieces that move together keep equal (or different)
    branches.
 
-So retained twists alone never lower the straddle incidence. In the measured states it is between 58,140 and 144,682
-(section 4); `blockmap.py` recomputes the incidence after each retained twist it scores and finds it unchanged.
+So retained twists alone never lower the straddle incidence. In the measured states it is between 849 (the D1 bulk
+stop, with 1,193 pieces off) and 144,682, and at least 98,166 at every state of the 3000-twist lines (section 4).
+`retained_search.py` checks point 2 at its target grips: after each replayed word the measured straddlers equal the
+label calculus's prediction.
 
 **Lemma Φ (one jumble; proved from card 5, Lemma 5.2).** Let x be a clean grip of class Q and h a jumble item of
 Λ_x. The twist (x, h) changes heights as follows. Every lattice piece in the cap goes to height 2, so Φ does not
@@ -156,7 +160,8 @@ contain its own.
 **Retained preparations** (Lemma L; `results/s7304-retained.json`, `results/s7304-retained-deep.json`). The beam
 search (depth 6, beam 6) lowers the cost straddlers + foreign load of the best own holder for 10 of the 14 units, from
 111 to 559 to between 12 and 322, with words of 1 or 2 retained twists, and finds no improvement for the other 4.
-Every word was replayed exactly, and the replayed straddler count and foreign load equal the label calculus's. For
+Every word was replayed exactly, and the replayed straddler count and foreign load equal the label calculus's
+(`results/s7304-retained-check.json`, `results/s7304-retained-deep-check.json`: `--check` of both outputs). For
 unit 1557 the best own holder becomes pure, with 12 straddlers left; for units 1132, 1582 and 2559 at 522, 2
 straddlers and 17 foreign pieces are left. A deeper search (depth 14, beam 30) finds nothing better for three units.
 No unit reached a clean pure own holder.
@@ -195,6 +200,7 @@ directory outside the repository:
     python3 -I -B $S/jamcheck.py $T $D/state.npz $D/moves-522.json --caps 522 --moves
     python3 -I -B $S/retained_search.py $T $D/state.npz $D/retained.json --depth 6 --beam 6 --seconds 150
     python3 -I -B $S/retained_search.py $T $D/state.npz $D/retained-deep.json --depth 14 --beam 30 --seconds 600 --groups 1557,1132,2234
+    python3 -I -B $S/retained_search.py $T $D/state.npz $D/retained-check.json --check $D/retained.json
     python3 -I -B $S/coheld.py $T $D/state.npz $D/coheld.json
 
 The first command writes the label cache that the others read. `results/states.json` holds the `summary` and `high`

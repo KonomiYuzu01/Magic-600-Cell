@@ -1,0 +1,126 @@
+{
+ "digest": "ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980",
+ "groups": [
+  {
+   "pose": 1132,
+   "size": 14,
+   "height": 4,
+   "branch": 4,
+   "start": [
+    127,
+    522
+   ],
+   "best": [
+    19,
+    522
+   ],
+   "status": "checked",
+   "word": [
+    [
+     451,
+     122
+    ],
+    [
+     344,
+     5417
+    ]
+   ],
+   "seconds": 0.0,
+   "replayed": true,
+   "predicted": {
+    "admissible": true,
+    "straddlers": 2,
+    "foreign": 17,
+    "group_inside": true
+   },
+   "replay": {
+    "admissible": true,
+    "straddlers": 2,
+    "foreign": 17,
+    "group_inside": true,
+    "group_heights": [
+     4
+    ]
+   },
+   "replay_problems": []
+  },
+  {
+   "pose": 1557,
+   "size": 17,
+   "height": 4,
+   "branch": 0,
+   "start": [
+    111,
+    540
+   ],
+   "best": [
+    12,
+    485
+   ],
+   "status": "checked",
+   "word": [
+    [
+     540,
+     2151
+    ]
+   ],
+   "seconds": 0.0,
+   "replayed": true,
+   "predicted": {
+    "admissible": true,
+    "straddlers": 12,
+    "foreign": 0,
+    "group_inside": true
+   },
+   "replay": {
+    "admissible": true,
+    "straddlers": 12,
+    "foreign": 0,
+    "group_inside": true,
+    "group_heights": [
+     4
+    ]
+   },
+   "replay_problems": []
+  },
+  {
+   "pose": 2234,
+   "size": 111,
+   "height": 4,
+   "branch": 2,
+   "start": [
+    114,
+    162
+   ],
+   "best": [
+    42,
+    162
+   ],
+   "status": "checked",
+   "word": [
+    [
+     384,
+     4821
+    ]
+   ],
+   "seconds": 0.0,
+   "replayed": true,
+   "predicted": {
+    "admissible": true,
+    "straddlers": 17,
+    "foreign": 25,
+    "group_inside": true
+   },
+   "replay": {
+    "admissible": true,
+    "straddlers": 17,
+    "foreign": 25,
+    "group_inside": true,
+    "group_heights": [
+     4
+    ]
+   },
+   "replay_problems": []
+  }
+ ]
+}
