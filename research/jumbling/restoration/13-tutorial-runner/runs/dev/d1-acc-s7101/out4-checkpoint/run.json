@@ -273,8 +273,8 @@
   },
   "tail": {
    "result": null,
-   "steps": 13,
-   "twists": 346518
+   "steps": 14,
+   "twists": 347310
   },
   "lattice": {
    "result": null,
@@ -5760,6 +5760,498 @@
    "N2": true,
    "construction": "certificate",
    "certificate_sha256": "b2a21b15ba8824a07b328865a9515fe5651855f21fd5ec0b5a0689d5804150b4"
+  },
+  {
+   "index": 110,
+   "phase": "tail",
+   "subphase": null,
+   "rule": "t1prime",
+   "unit": "units/00110.json",
+   "unit_key": 83,
+   "unit_size": 33,
+   "word": "words/00110.json",
+   "letters": 792,
+   "encoding": "json",
+   "word_sha256": "e4eae7803e290ff6d8efcf43a541fa1cd4051b36cbe2b58819f5f5c8cf42f25b",
+   "tree": {
+    "file": "step-trees/00110.json.gz",
+    "sha256": "5d54fa7675657ca97981df9e6cdb75adfe63635f0d03a5a2a7807b58b31c4d47",
+    "size": 5
+   },
+   "contract": "strict_prime",
+   "gate": "stepchk",
+   "standing": "rule",
+   "before": {
+    "digest": "625dd359efc88327d8e2a29f94f5a696c99fcfbd455ea2c5fab1a42ed6ae1167",
+    "off": 222,
+    "heights": {
+     "2": 222
+    }
+   },
+   "after": {
+    "digest": "261219b7e1fbe0b4b2f4343fa19c5f51ac3d3784d0c25076a27fb635bd24b6f5",
+    "off": 189,
+    "heights": {
+     "2": 189
+    }
+   },
+   "table": "tables/00110.json",
+   "landed": 33,
+   "others_landed": 0,
+   "attempts": [
+    {
+     "unit_key": 9013,
+     "rule": "zero_bad",
+     "seconds": 871.860401,
+     "outcome": "no word",
+     "reason": "transport found no strict zero-Bad word",
+     "timed_out": false
+    },
+    {
+     "unit_key": 9013,
+     "rule": "pure",
+     "seconds": 241.475451,
+     "outcome": "not strict_prime",
+     "reason": "whole literal word fails strict_prime",
+     "timed_out": false
+    },
+    {
+     "unit_key": 9013,
+     "rule": "close",
+     "seconds": 35.809714,
+     "outcome": "no literal closure",
+     "reason": "pure: no V",
+     "N1": false,
+     "N2": false,
+     "deficits": [
+      {
+       "orbit": 7,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 179,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 180,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 183,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 184,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 235,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 237,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      }
+     ],
+     "timed_out": false
+    },
+    {
+     "unit_key": 9013,
+     "rule": "close",
+     "seconds": 8e-06,
+     "outcome": "no word",
+     "reason": "transport: transport found no W_ok core",
+     "timed_out": false
+    },
+    {
+     "unit_key": 9013,
+     "rule": "t1prime",
+     "seconds": 98.248501,
+     "outcome": "no literal closure",
+     "reason": "no V",
+     "N1": false,
+     "N2": false,
+     "deficits": [
+      {
+       "orbit": 88,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 90,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 92,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 93,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 118,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 162,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 163,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 164,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 165,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 166,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 167,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 168,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 183,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 184,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 185,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 187,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 189,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 190,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 191,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 192,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 193,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 194,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 195,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 196,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 197,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 198,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 199,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 200,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 311,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 312,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 316,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 317,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 318,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 319,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 326,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 394,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 395,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 399,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 400,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 401,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 402,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 403,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 404,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 405,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 406,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 407,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 409,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      },
+      {
+       "orbit": 410,
+       "have": 0,
+       "need": 1,
+       "deficit": 1
+      }
+     ],
+     "timed_out": false
+    },
+    {
+     "unit_key": 83,
+     "rule": "zero_bad",
+     "seconds": 1687.026883,
+     "outcome": "no word",
+     "reason": "transport found no strict zero-Bad word",
+     "timed_out": false
+    },
+    {
+     "unit_key": 83,
+     "rule": "pure",
+     "seconds": 222.573173,
+     "outcome": "not strict_prime",
+     "reason": "whole literal word fails strict_prime",
+     "timed_out": false
+    },
+    {
+     "unit_key": 83,
+     "rule": "close",
+     "seconds": 35.475182,
+     "outcome": "no literal closure",
+     "reason": "pure: no V",
+     "N1": true,
+     "N2": false,
+     "deficits": [
+      {
+       "orbit": 26,
+       "have": 2,
+       "need": 3,
+       "deficit": 1
+      }
+     ],
+     "timed_out": false
+    },
+    {
+     "unit_key": 83,
+     "rule": "close",
+     "seconds": 36.991146,
+     "outcome": "no literal closure",
+     "reason": "transport: no V",
+     "N1": true,
+     "N2": false,
+     "deficits": [
+      {
+       "orbit": 26,
+       "have": 2,
+       "need": 3,
+       "deficit": 1
+      }
+     ],
+     "timed_out": false
+    }
+   ],
+   "seconds": 3622.165638,
+   "parts": [
+    [
+     "W",
+     24
+    ],
+    [
+     "V",
+     372
+    ],
+    [
+     "middle",
+     24
+    ],
+    [
+     "V_inverse",
+     372
+    ]
+   ],
+   "V_source": "tclose2",
+   "V_letters": 372,
+   "V_sha256": "046b1a4c3812ac8d63d86d3ad9ce2c8f4a25149409a017f48966d8545e805323"
   }
  ],
  "stuck": null,
@@ -5777,9 +6269,9 @@
   "bulk_twists": 223,
   "height_twists": 0,
   "high_twists": 0,
-  "tail_twists": 346518,
+  "tail_twists": 347310,
   "fallback_twists": 0,
   "lattice_twists": null,
-  "seconds": 87605.301453
+  "seconds": 91227.482653
  }
 }
