@@ -164,6 +164,19 @@ starts from the scramble in `out3/`, with `checkpoint.py` keeping a verified cop
   leaving 43. Run 4 took 684 s for these three repair steps; run 3 took 14,348 s for the same three. These are cloud
   timings of research code on a shared machine, not performance evidence.
 
+- 02:15 UTC on 24 October: **run 5 not started yet; run 4 kept alive, pending the integrator's confirmation.** The
+  integrator's message of 02:13 UTC (PR #132, the exact bulk speed-up, merged as `7dbc4ae`) asks for run 4 to be
+  stopped and restarted as run 5, because "run 4 is still in the bulk phase". The record says otherwise. Run 4's
+  bulk ended `stuck` at 97 steps, and the checkpoint's 102 steps are 97 bulk steps plus tail steps 97 to 101. Its
+  phases read bulk `stuck`, height and high `not_applicable`, tail running. PR #132 changes only the bulk, so a
+  restart would repeat about 26,400 s of runner time (about 9,800 s of it in the bulk) to get back to step 102.
+- Step 102 (unit `u107733`) is about to finish. `close-pure-close` stopped at 35 left with "no V" (greedy search
+  11,760 s), then `close-pure-expand` found a 55,646-letter closing word (sha256 `da9bdf34…`). `close-pure-whole`
+  plays the 24-letter pure word and the closing word from `e48ad986…` to `c8170209…`, with 595 off and no
+  collateral left. Run 3 never reached this point.
+- The next session step: if the integrator confirms run 5 anyway, stop run 4 after its next checkpoint (step 103)
+  and start run 5 as instructed. Otherwise run 4 continues under the check-in procedure.
+
 ## Not run
 
 - `check_run.py` (it runs after the runner ends).
