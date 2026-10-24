@@ -214,6 +214,11 @@ starts from the scramble in `out3/`, with `checkpoint.py` keeping a verified cop
   3; run 3 has none after. New since the last note: index 109 `close` on `u60412`, 228,796 letters, to 222 off,
   29,882 s; index 110 `t1prime`, 792 letters, to 189 off, 3,622 s. Step 111 (unit `u161418`) is running.
 
+- 22:53 UTC progress: run 4 has checkpointed 113 steps (runner time 113,386 s). Steps 0 to 101 still agree with run
+  3; run 3 has none after. New since the last note: index 111 `t1prime` on `u161418`, 44,844 letters, to 173 off,
+  11,797 s; index 112 `t1prime`, 4,732 letters, to 163 off, 10,361 s. Step 113 is running. A `t1prime` attempt on
+  unit `u9013` came first; the log now shows a transport census on unit `u60085`.
+
 ## Not run
 
 - `check_run.py` (it runs after the runner ends).
