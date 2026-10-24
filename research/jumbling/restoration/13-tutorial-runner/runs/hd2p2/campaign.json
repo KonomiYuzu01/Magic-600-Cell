@@ -2349,17 +2349,27 @@
     }
    ],
    "audit": {
-    "status": "incomplete",
-    "verification": "incomplete",
-    "passed": false,
-    "result": "BUDGET",
-    "exhaustion_verification": "incomplete",
-    "cpu_seconds": 3000.9,
+    "status": "complete",
+    "verification": "complete",
+    "passed": true,
+    "result": "STUCK",
+    "exhaustion_verification": "complete",
+    "cpu_seconds": 7784.9,
     "segments": [
      {
       "segment": "audit-37ad4f6922914a4980a76d57ac76ae9a",
       "status": "incomplete",
       "manifest_sha256": "0254fae6440685cfd0feb1fecb4caa5abadd4cb1cb61bb070b0389dd3ee5579c"
+     },
+     {
+      "segment": "audit-9cb26bc2d4db4aa5ba0f15d4c9e3f0a4",
+      "status": "incomplete",
+      "manifest_sha256": "0db7829d3098e406c1a77e844707eae61a0bb563afc571029107430cecd6143a"
+     },
+     {
+      "segment": "audit-2523bcb42d8f42dca2f3b4e9d4c38ea0",
+      "status": "complete",
+      "manifest_sha256": "f0209f2536b274a94f493c2697427d3013b2c63d9cbeceb6a07ccdcea628bb0c"
      }
     ]
    }

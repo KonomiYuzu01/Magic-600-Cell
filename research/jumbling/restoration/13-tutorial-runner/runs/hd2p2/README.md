@@ -10,16 +10,17 @@ performance evidence.
 
 ## Result
 
-Every case ends **STUCK**: no letter and no two-letter word of the rule's families lowers M at the end state. For five
-cases the checker's replay of every accepted letter from the pinned input and its independent audit of the exhaustion
-(with item classes it derives itself) are complete and passed; the 7305 audit is still running.
+Every case ends **STUCK**: no letter and no two-letter word of the rule's families lowers M at the end state. For all
+six cases the checker's replay of every accepted letter from the pinned input and its independent audit of the
+exhaustion (with item classes it derives itself) are complete and passed; the last audit, at 7305, finished at 12:44
+UTC on 24 October.
 
 | Case | Input table | Input (n4, n6) | Bk | Steps (SINGLE, CL2, PEEL) | Letters | End (n4, n6) | Bk | Input lattice pieces off at the end | Search CPU s | Audit |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 7302 | `d2-s7302/component-checkpoint/tables/00021.json` (`2430f4cc`) | (734, 0) | 563 | 10 (0, 3, 7) | 13 | (491, 0) | 557 | 3,086 | 3,352 | passed (10,313 CPU s) |
 | 7303 | `d2-s7303/run2/d2-s7303/tables/00138.json` (`d01dc91e`) | (929, 87) | 574 | 24 (1, 7, 16) | 31 | (710, 0) | 562 | 5,265 | 3,520 | passed (5,832 CPU s) |
 | 7304 | `d2-s7304/component/tables/00005.json` (`ac127dc3`) | (797, 0) | 559 | 8 (0, 0, 8) | 8 | (797, 0) | 551 | 1,472 | 5,058 | passed (11,209 CPU s) |
-| 7305 | `d2-s7305/component/tables/00010.json` (`cc5ef7ec`) | (1,419, 0) | 578 | 49 (4, 18, 27) | 67 | (906, 0) | 558 | 6,213 | 10,977 | running |
+| 7305 | `d2-s7305/component/tables/00010.json` (`cc5ef7ec`) | (1,419, 0) | 578 | 49 (4, 18, 27) | 67 | (906, 0) | 558 | 6,213 | 10,977 | passed (7,785 CPU s) |
 | 7306 | `d2-s7306/component-checkpoint/tables/00017.json` (`ac4be82c`) | (1,955, 0) | 574 | 19 (0, 7, 12) | 26 | (908, 0) | 562 | 4,024 | 4,962 | passed (8,899 CPU s) |
 | 7307 | `d2-s7307/component/tables/00005.json` (`895b45de`) | (1,585, 0) | 562 | 21 (0, 3, 18) | 24 | (1,332, 0) | 542 | 4,803 | 7,210 | passed (11,803 CPU s) |
 
@@ -34,13 +35,10 @@ blocked caps. CPU figures are single-thread research timings on a shared machine
 - Every case takes input lattice pieces off the lattice (1,472 to 6,213), as the earlier height rules do; the rule
   does not protect the lattice.
 - STUCK here means the stated families of words up to two letters are exhausted at the end state. It is not a proof
-  that the state cannot be lowered. Three letters are enough at least once: at the 7304 input a word of three
-  letters, each keeping the depth from rising, lowers n4 by 48
-  ([stage 14](../../../14-blocking-structure/README.md)).
+  that the state cannot be lowered.
 - After this campaign the owner changed the method: a constructive theorem programme replaces the search for rule
   catalogues, starting with the blocking structure of deep states
-  ([decision of 24 October 2026](../../../../../../docs/wiki/decisions/owner-decisions-2026-10-24-theorem-program.md);
-  [stage 14](../../../14-blocking-structure/README.md)).
+  ([decision of 24 October 2026](../../../../../../docs/wiki/decisions/owner-decisions-2026-10-24-theorem-program.md)).
 
 ## Records
 
