@@ -204,6 +204,12 @@ starts from the scramble in `out3/`, with `checkpoint.py` keeping a verified cop
   agree with run 3; run 3 has none after. Since the last note: index 108 `t1prime`, 1,240 letters, to 256 off,
   2,797 s. Step 109 (unit `u60412`) is in `close-pure-close`: at its tenth repair step, after 7,653 s, 51 are left.
 
+- 14:52 UTC progress: run 4 still has 109 checkpointed steps (no new step since 10:51 UTC), and steps 0 to 101 still
+  agree with run 3. Step 109 (unit `u60412`, 34 pieces) is closing. `close-pure-close` was followed by
+  `close-pure-expand` and `close-pure-whole`, whose last log line (13:47 UTC) reports a closing play from `eb13b265…`
+  to `625dd359…` with 222 off and no collateral. Its segment 2 is a 114,392-letter word. The runner itself is now
+  playing and saving the step; step 102 took the same path.
+
 ## Not run
 
 - `check_run.py` (it runs after the runner ends).
