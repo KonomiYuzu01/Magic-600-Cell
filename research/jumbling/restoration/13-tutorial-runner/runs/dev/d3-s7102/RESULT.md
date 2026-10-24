@@ -120,3 +120,5 @@ background waiter on the runner process.
   held 205 steps. Restored (exit 0), resumed (accepted, `resumes` [..., 205]), checkpoint helper and waiter started.
 - 20:06 UTC progress: runner alive at 209 bulk steps, N 27,258, 24,603 off, 59,278 s of runner time. The bulk phase
   is slowing: 205 to 209 took about 4,800 s of runner time and left off unchanged.
+- 24 October, 00:05 UTC progress: runner alive at 218 bulk steps, N 26,988, 24,340 off, 73,660 s of runner time,
+  still in the bulk phase. No restart since 18:15 UTC (container up 5 h 45 min, overlapping waiters).
