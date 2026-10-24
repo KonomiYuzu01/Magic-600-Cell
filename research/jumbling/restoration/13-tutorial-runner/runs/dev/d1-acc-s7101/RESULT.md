@@ -210,6 +210,10 @@ starts from the scramble in `out3/`, with `checkpoint.py` keeping a verified cop
   to `625dd359…` with 222 off and no collateral. Its segment 2 is a 114,392-letter word. The runner itself is now
   playing and saving the step; step 102 took the same path.
 
+- 18:52 UTC progress: run 4 has checkpointed 111 steps (runner time 91,227 s). Steps 0 to 101 still agree with run
+  3; run 3 has none after. New since the last note: index 109 `close` on `u60412`, 228,796 letters, to 222 off,
+  29,882 s; index 110 `t1prime`, 792 letters, to 189 off, 3,622 s. Step 111 (unit `u161418`) is running.
+
 ## Not run
 
 - `check_run.py` (it runs after the runner ends).
