@@ -273,8 +273,8 @@
   },
   "tail": {
    "result": null,
-   "steps": 5,
-   "twists": 804
+   "steps": 6,
+   "twists": 112120
   },
   "lattice": {
    "result": null,
@@ -3110,6 +3110,86 @@
     }
    ],
    "seconds": 1060.687388
+  },
+  {
+   "index": 102,
+   "phase": "tail",
+   "subphase": null,
+   "rule": "close",
+   "unit": "units/00102.json",
+   "unit_key": 107733,
+   "unit_size": 78,
+   "word": "words/00102.json.gz",
+   "letters": 111316,
+   "encoding": "json",
+   "word_sha256": "aeafc66edcd3155253120e05fa60407641d702bc648badb4dd97eb86b439666f",
+   "tree": {
+    "file": "step-trees/00102.json.gz",
+    "sha256": "e3f8ced20a7b7f0b577ca3535b7b19ee6579e38332da9736a90f39f8ff1da9cf",
+    "size": 4
+   },
+   "contract": "strict_prime",
+   "gate": "slp_apply",
+   "standing": "rule",
+   "before": {
+    "digest": "e48ad9864caad1480cc30a0e54dd3042b2d00380dbf9f552a9c146bce662a7b9",
+    "off": 673,
+    "heights": {
+     "2": 673
+    }
+   },
+   "after": {
+    "digest": "c8170209b461c7c9fed757a24721adfeac41c163bbe0fa5846609e85b9495498",
+    "off": 595,
+    "heights": {
+     "2": 595
+    }
+   },
+   "table": "tables/00102.json",
+   "landed": 78,
+   "others_landed": 0,
+   "attempts": [
+    {
+     "unit_key": 107733,
+     "rule": "zero_bad",
+     "seconds": 1600.933386,
+     "outcome": "no word",
+     "reason": "transport found no strict zero-Bad word",
+     "timed_out": false
+    },
+    {
+     "unit_key": 107733,
+     "rule": "pure",
+     "seconds": 202.443266,
+     "outcome": "not strict_prime",
+     "reason": "whole literal word fails strict_prime",
+     "timed_out": false
+    }
+   ],
+   "seconds": 15799.75706,
+   "parts": [
+    [
+     "V",
+     55646
+    ],
+    [
+     "middle",
+     24
+    ],
+    [
+     "V_inverse",
+     55646
+    ]
+   ],
+   "V_source": "certificate",
+   "V_letters": 55646,
+   "V_sha256": "da9bdf34c028b98a8d157beb1f9680f46fe9aa0971ebb888f739135fe38b6e58",
+   "T_size": 198,
+   "T_digest": "7593a055cbb3ca584b9ef0c707394a8b322ebeca3ce44d0120f5b0bba4e77556",
+   "N1": true,
+   "N2": true,
+   "construction": "certificate",
+   "certificate_sha256": "09578b50771b8274489dd60bd8778c3d2606afeb8a291b467379bbf3a67ce95d"
   }
  ],
  "stuck": null,
@@ -3127,9 +3207,9 @@
   "bulk_twists": 223,
   "height_twists": 0,
   "high_twists": 0,
-  "tail_twists": 804,
+  "tail_twists": 112120,
   "fallback_twists": 0,
   "lattice_twists": null,
-  "seconds": 26372.819949
+  "seconds": 42172.580742
  }
 }
