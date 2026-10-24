@@ -122,3 +122,17 @@ background waiter on the runner process.
   is slowing: 205 to 209 took about 4,800 s of runner time and left off unchanged.
 - 24 October, 00:05 UTC progress: runner alive at 218 bulk steps, N 26,988, 24,340 off, 73,660 s of runner time,
   still in the bulk phase. No restart since 18:15 UTC (container up 5 h 45 min, overlapping waiters).
+- 02:05 UTC progress: runner alive at 224 bulk steps, N 26,732, 23,958 off, 82,013 s of runner time.
+
+## Run 1 stopped; run 2 on the bulk speed-up (24 October 2026)
+
+- **Run 1 stopped at 225 bulk steps on the old code** (commit `04057a4`), at 02:26 UTC, on the integrator's
+  instruction. It is superseded by run 2. Its record is the last checkpoint `04f3197` in `out-checkpoint/` (225
+  steps, still in the bulk phase, N 26,730, 23,958 off, after-digest `aeecee11…`, 83,416 s of runner time). The
+  runner's process groups and `checkpoint.py` were killed after that checkpoint was pushed; no `runner.rc` was
+  written. The bulk phase had not ended, so run 1 has no phase result and no check.
+- Run 2 runs from the start on merged `main` (PR #132, `7dbc4ae`: exact bulk speed-up, rimx cached domains and
+  the seamsx restorer with parallel conj trials), with the identical runner command, `--out <dir>/out2` and
+  `JUMBLING_BULK_WORKERS=3`, beside `checkpoint.py --run <dir>/out2 --every 120`. `--resume` cannot continue run 1,
+  because its fingerprint pins the research code. `compare_runs.py` compares run 2 with run 1 step by step (rule,
+  letters, word sha256, before and after digest, N).
