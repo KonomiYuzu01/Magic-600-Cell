@@ -1,0 +1,153 @@
+{
+ "cpu_s": 33.82686,
+ "digest_after": "f93e461f9b1c65d5483cf3ba53db266baee71613d8a8808e091ce4a0484daad2",
+ "failures": [],
+ "format": "t3p-check/1",
+ "passed": true,
+ "prefix_word": [],
+ "rounds": [
+  {
+   "D": 70,
+   "F": 22,
+   "S": 0,
+   "cpu_s": 33.742093,
+   "d0": 70,
+   "digest_before": "ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980",
+   "dropped_identities": [],
+   "edges": [],
+   "f0": 0,
+   "failures": [],
+   "h": 14,
+   "helper_delta_phi": 0,
+   "helper_phi_equal": true,
+   "helpers": [
+    {
+     "D_at_helper": 0,
+     "F_at_helper": 0,
+     "clean": true,
+     "d": 0,
+     "delta_phi": 0,
+     "delta_phi_formula": 0,
+     "evacuators": [],
+     "f": 0,
+     "grip": 344,
+     "inside_size": 2334,
+     "item": 9,
+     "s": 0,
+     "straddlers": 0,
+     "straddlers_not_sent_out": 0,
+     "tame": true,
+     "uncovered_straddlers": 0,
+     "unit_intersection": 0
+    },
+    {
+     "D_at_helper": 0,
+     "F_at_helper": 0,
+     "clean": true,
+     "d": 0,
+     "delta_phi": 0,
+     "delta_phi_formula": 0,
+     "evacuators": [],
+     "f": 22,
+     "grip": 451,
+     "inside_size": 2989,
+     "item": 55,
+     "s": 0,
+     "straddlers": 0,
+     "straddlers_not_sent_out": 0,
+     "tame": true,
+     "uncovered_straddlers": 0,
+     "unit_intersection": 0
+    }
+   ],
+   "hypotheses": {
+    "P0": true,
+    "P1": true,
+    "P2": true,
+    "P3": true,
+    "P4": true
+   },
+   "intersections": [
+    {
+     "grips": [
+      344,
+      451
+     ],
+     "size": 0
+    }
+   ],
+   "order": [
+    344,
+    451
+   ],
+   "passed": true,
+   "phi_before": 1594,
+   "predicted_delta_phi": -96,
+   "predicted_phi": 1498,
+   "replay": [
+    {
+     "admissible": true,
+     "delta_phi_equal": true,
+     "digest": "ba4214fd42c49a23684b2c80c06e92b7d4cb55bb670333bdbe889eeda6f9305b",
+     "letter": [
+      344,
+      9
+     ],
+     "moved": 2334,
+     "moved_set_equal": true,
+     "n4": 797,
+     "phi": 1594
+    },
+    {
+     "admissible": true,
+     "delta_phi_equal": true,
+     "digest": "c43d0c95debc0e17083e06b751cabd84df2b22dcb633661cc7e08da8988ed3fa",
+     "letter": [
+      451,
+      55
+     ],
+     "moved": 2989,
+     "moved_set_equal": true,
+     "n4": 797,
+     "phi": 1594
+    },
+    {
+     "admissible": true,
+     "digest": "f93e461f9b1c65d5483cf3ba53db266baee71613d8a8808e091ce4a0484daad2",
+     "every_member_lowered": true,
+     "letter": [
+      522,
+      14
+     ],
+     "moved": 2195,
+     "moved_set_equal": true,
+     "n4": 749,
+     "phi": 1498
+    }
+   ],
+   "s0": 0,
+   "target_class": 4,
+   "unit_branch": 4,
+   "unit_height": 4,
+   "unit_held_before_lowering": true,
+   "unit_lowering": true,
+   "unit_piece": 26085,
+   "unit_size": 14,
+   "x": 522
+  }
+ ],
+ "setup": {
+  "labels": {
+   "cpu_s": 0.920547
+  },
+  "load": {
+   "cpu_s": 0.301944
+  },
+  "trees": {
+   "cpu_s": 7.786279
+  },
+  "word": {
+   "cpu_s": 5e-06
+  }
+ }
+}

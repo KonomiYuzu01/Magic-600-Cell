@@ -1,0 +1,180 @@
+{
+ "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7305/component/tables/00010.json",
+ "word": [
+  [
+   421,
+   4
+  ],
+  [
+   577,
+   1
+  ],
+  [
+   520,
+   14
+  ],
+  [
+   233,
+   9
+  ],
+  [
+   281,
+   12
+  ],
+  [
+   6,
+   45
+  ],
+  [
+   44,
+   15
+  ],
+  [
+   208,
+   13
+  ],
+  [
+   168,
+   15
+  ]
+ ],
+ "rows": [
+  {
+   "letter": null,
+   "applied": null,
+   "n2": 108453,
+   "n4": 1419,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 2838,
+   "off": 109872,
+   "digest": "cc5ef7ecf0510ea9a74fc52bafe324d6d8f58294c4b0e20b40b97b414dada062"
+  },
+  {
+   "letter": [
+    421,
+    4
+   ],
+   "applied": true,
+   "n2": 108453,
+   "n4": 1419,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 2838,
+   "off": 109872,
+   "digest": "7762888c0398c6f48caf572458a2cb40c8904584508d94f6ac9a3ccd1042083b"
+  },
+  {
+   "letter": [
+    577,
+    1
+   ],
+   "applied": true,
+   "n2": 108453,
+   "n4": 1419,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 2838,
+   "off": 109872,
+   "digest": "cad1996a9121de01d2c4dad2265e142342331da51efef8ab5ecc33a007dbb126"
+  },
+  {
+   "letter": [
+    520,
+    14
+   ],
+   "applied": true,
+   "n2": 109211,
+   "n4": 1299,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 2598,
+   "off": 110510,
+   "digest": "7eeaa561897cd516502724d4fc390ef402932fb7395a65822ead1046a6aa3398"
+  },
+  {
+   "letter": [
+    233,
+    9
+   ],
+   "applied": true,
+   "n2": 109211,
+   "n4": 1299,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 2598,
+   "off": 110510,
+   "digest": "dac40f5d80f2087d843d8c4acd5b9eb3853a27de04aebc6dbcedd536caed7aa4"
+  },
+  {
+   "letter": [
+    281,
+    12
+   ],
+   "applied": true,
+   "n2": 108776,
+   "n4": 1275,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 2550,
+   "off": 110051,
+   "digest": "56b80d7da603d29b8967ec9410cf619969323f5e884997e11f0a1b32dbe2b4c8"
+  },
+  {
+   "letter": [
+    6,
+    45
+   ],
+   "applied": true,
+   "n2": 109027,
+   "n4": 1275,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 2550,
+   "off": 110302,
+   "digest": "9288004c233bad8833b5b41783402df92c16f4109a05d13719a88165dc7fdd91"
+  },
+  {
+   "letter": [
+    44,
+    15
+   ],
+   "applied": true,
+   "n2": 108724,
+   "n4": 1256,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 2512,
+   "off": 109980,
+   "digest": "fc6877d5967291db536f7267d280246850e566bc4bf989dd22af8a0e3bc81f63"
+  },
+  {
+   "letter": [
+    208,
+    13
+   ],
+   "applied": true,
+   "n2": 107724,
+   "n4": 1240,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 2480,
+   "off": 108964,
+   "digest": "8f10b78c40b412255c335a5ea6389c24edcf4a317e01e1722303dfee8fb016b2"
+  },
+  {
+   "letter": [
+    168,
+    15
+   ],
+   "applied": true,
+   "n2": 108322,
+   "n4": 1237,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 2474,
+   "off": 109559,
+   "digest": "e77981a8dcbc15b2665f232c4a8f6d822cfe6885476e883a306fd63d2c6e71d6"
+  }
+ ]
+}

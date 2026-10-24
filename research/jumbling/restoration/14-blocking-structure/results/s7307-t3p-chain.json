@@ -1,0 +1,256 @@
+{
+ "cpu_s": 399.302,
+ "end_digest": "52aa8a30d5f32181de7666e364586e85aa75d48647533db2c6d68ca514422a49",
+ "end_n4": 684,
+ "end_phi": 1396,
+ "format": "t3p-chain/1",
+ "name": "s7307",
+ "policy": "greedy: the best round of t3p.scan at each state (its tie-break), checked by t3p.check",
+ "rounds": [
+  {
+   "D": 111,
+   "F": 0,
+   "S": 0,
+   "digest_after": "c157d29276f599df3bce7514896cd6145e6d7a18321981440bff068761d14200",
+   "failures": [],
+   "h": 13,
+   "helpers": [
+    [
+     516,
+     14
+    ],
+    [
+     597,
+     10
+    ]
+   ],
+   "order": [
+    516,
+    597
+   ],
+   "passed": true,
+   "phi_after": 2172,
+   "predicted_phi": 2172,
+   "round": 1,
+   "statuses_before": {
+    "budget": 5,
+    "round": 15,
+    "straddler-without-clean-holder": 21
+   },
+   "unit_piece": 28988,
+   "x": 543
+  },
+  {
+   "D": 135,
+   "F": 1,
+   "S": 0,
+   "digest_after": "6b1f7157ea8070a08e6388d5bdd579ec6e7867b19423d6d76c526b498cb232e1",
+   "failures": [],
+   "h": 15,
+   "helpers": [
+    [
+     10,
+     8
+    ],
+    [
+     147,
+     2
+    ]
+   ],
+   "order": [
+    10,
+    147
+   ],
+   "passed": true,
+   "phi_after": 1904,
+   "predicted_phi": 1904,
+   "round": 2,
+   "statuses_before": {
+    "budget": 5,
+    "no-feasible-items": 2,
+    "round": 13,
+    "straddler-without-clean-holder": 18
+   },
+   "unit_piece": 15234,
+   "x": 102
+  },
+  {
+   "D": 126,
+   "F": 0,
+   "S": 0,
+   "digest_after": "a7905c0e3369db6c00ffed74f8baac3d6fb46804f1f9191406b06d7f5f56a116",
+   "failures": [],
+   "h": 14,
+   "helpers": [
+    [
+     216,
+     2
+    ]
+   ],
+   "order": [
+    216
+   ],
+   "passed": true,
+   "phi_after": 1652,
+   "predicted_phi": 1652,
+   "round": 3,
+   "statuses_before": {
+    "budget": 10,
+    "no-feasible-items": 2,
+    "round": 9,
+    "straddler-without-clean-holder": 18
+   },
+   "unit_piece": 80868,
+   "x": 266
+  },
+  {
+   "D": 62,
+   "F": 0,
+   "S": 0,
+   "digest_after": "43fcff507c16f770c4ee73299392de04fe4014e2ef6ab3d7d7104a008fec0313",
+   "failures": [],
+   "h": 12,
+   "helpers": [
+    [
+     275,
+     1
+    ]
+   ],
+   "order": [
+    275
+   ],
+   "passed": true,
+   "phi_after": 1528,
+   "predicted_phi": 1528,
+   "round": 4,
+   "statuses_before": {
+    "budget": 10,
+    "no-feasible-items": 2,
+    "round": 3,
+    "straddler-without-clean-holder": 15
+   },
+   "unit_piece": 15121,
+   "x": 435
+  },
+  {
+   "D": 111,
+   "F": 46,
+   "S": 0,
+   "digest_after": "5cec437ecd9c963e452f10d63697e7e5d1d5656f3edf6c5b2eac4c18cd6995ca",
+   "failures": [],
+   "h": 12,
+   "helpers": [
+    [
+     435,
+     7
+    ]
+   ],
+   "order": [
+    435
+   ],
+   "passed": true,
+   "phi_after": 1398,
+   "predicted_phi": 1398,
+   "round": 5,
+   "statuses_before": {
+    "budget": 10,
+    "no-feasible-items": 2,
+    "round": 2,
+    "straddler-without-clean-holder": 14
+   },
+   "unit_piece": 84612,
+   "x": 319
+  },
+  {
+   "D": 1,
+   "F": 0,
+   "S": 0,
+   "digest_after": "52aa8a30d5f32181de7666e364586e85aa75d48647533db2c6d68ca514422a49",
+   "failures": [],
+   "h": 12,
+   "helpers": [],
+   "order": [],
+   "passed": true,
+   "phi_after": 1396,
+   "predicted_phi": 1396,
+   "round": 6,
+   "statuses_before": {
+    "budget": 11,
+    "no-feasible-items": 2,
+    "round": 1,
+    "straddler-without-clean-holder": 15
+   },
+   "unit_piece": 29641,
+   "x": 94
+  }
+ ],
+ "start_digest": "895b45de8a9a83604ca8bf988a3c9a287e404e59bd22a5004703d0852b252507",
+ "start_n4": 1585,
+ "start_phi": 3170,
+ "stop": {
+  "digest": "52aa8a30d5f32181de7666e364586e85aa75d48647533db2c6d68ca514422a49",
+  "phi": 1396,
+  "reason": "no round",
+  "single_letter_descents": 0,
+  "statuses": {
+   "budget": 10,
+   "no-feasible-items": 2,
+   "straddler-without-clean-holder": 15
+  }
+ },
+ "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7307/component/tables/00005.json",
+ "word": [
+  [
+   516,
+   14
+  ],
+  [
+   597,
+   10
+  ],
+  [
+   543,
+   13
+  ],
+  [
+   10,
+   8
+  ],
+  [
+   147,
+   2
+  ],
+  [
+   102,
+   15
+  ],
+  [
+   216,
+   2
+  ],
+  [
+   266,
+   14
+  ],
+  [
+   275,
+   1
+  ],
+  [
+   435,
+   12
+  ],
+  [
+   435,
+   7
+  ],
+  [
+   319,
+   12
+  ],
+  [
+   94,
+   12
+  ]
+ ]
+}

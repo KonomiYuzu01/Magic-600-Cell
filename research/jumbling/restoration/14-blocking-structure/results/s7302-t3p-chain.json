@@ -1,0 +1,105 @@
+{
+ "cpu_s": 360.465,
+ "end_digest": "b47d84743c0ab28505a4ddc171920f9e14e1c94b46d10de95b93ae0816427e0c",
+ "end_n4": 688,
+ "end_phi": 1376,
+ "format": "t3p-chain/1",
+ "name": "s7302",
+ "policy": "greedy: the best round of t3p.scan at each state (its tie-break), checked by t3p.check",
+ "rounds": [
+  {
+   "D": 67,
+   "F": 59,
+   "S": 0,
+   "digest_after": "f14c69663e803c03490209d38adb17c5b281cf186b2031ad38a23d3fca9423cc",
+   "failures": [],
+   "h": 15,
+   "helpers": [
+    [
+     277,
+     59
+    ]
+   ],
+   "order": [
+    277
+   ],
+   "passed": true,
+   "phi_after": 1452,
+   "predicted_phi": 1452,
+   "round": 1,
+   "statuses_before": {
+    "budget": 10,
+    "no-disjoint-cover": 2,
+    "no-feasible-items": 3,
+    "round": 3,
+    "straddler-without-clean-holder": 17
+   },
+   "unit_piece": 9110,
+   "x": 171
+  },
+  {
+   "D": 59,
+   "F": 21,
+   "S": 0,
+   "digest_after": "b47d84743c0ab28505a4ddc171920f9e14e1c94b46d10de95b93ae0816427e0c",
+   "failures": [],
+   "h": 14,
+   "helpers": [
+    [
+     39,
+     1
+    ]
+   ],
+   "order": [
+    39
+   ],
+   "passed": true,
+   "phi_after": 1376,
+   "predicted_phi": 1376,
+   "round": 2,
+   "statuses_before": {
+    "budget": 10,
+    "no-disjoint-cover": 2,
+    "no-feasible-items": 3,
+    "round": 6,
+    "straddler-without-clean-holder": 19
+   },
+   "unit_piece": 73004,
+   "x": 171
+  }
+ ],
+ "start_digest": "2430f4cc99ea121a6d3476ec21b66fc401e277d13809ad5e1c979e6e0abe1472",
+ "start_n4": 734,
+ "start_phi": 1468,
+ "stop": {
+  "digest": "b47d84743c0ab28505a4ddc171920f9e14e1c94b46d10de95b93ae0816427e0c",
+  "phi": 1376,
+  "reason": "no round",
+  "single_letter_descents": 0,
+  "statuses": {
+   "budget": 12,
+   "no-disjoint-cover": 2,
+   "no-feasible-items": 3,
+   "straddler-without-clean-holder": 16
+  }
+ },
+ "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7302/component-checkpoint/tables/00021.json",
+ "word": [
+  [
+   277,
+   59
+  ],
+  [
+   171,
+   15
+  ],
+  [
+   39,
+   1
+  ],
+  [
+   171,
+   14
+  ]
+ ]
+}

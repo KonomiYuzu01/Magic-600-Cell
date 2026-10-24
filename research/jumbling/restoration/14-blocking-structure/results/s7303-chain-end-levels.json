@@ -1,0 +1,1167 @@
+{
+ "cpu_s": 1.505213,
+ "digest": "4c0234bf2b3234618fc9f8759eebe3e1b10ed19ab974122b31171178ee44010f",
+ "format": "t3p-levels/1",
+ "high_units": [
+  {
+   "branch": 2,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 2,
+    "intersection_size": 6,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 7
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 27,
+     "level": 4
+    },
+    {
+     "grip": 140,
+     "level": 2
+    }
+   ],
+   "pose": 537,
+   "size": 17,
+   "unit_piece": 79795
+  },
+  {
+   "branch": 3,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 3,
+    "intersection_size": 7,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 9
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 69,
+     "level": 0
+    }
+   ],
+   "pose": 733,
+   "size": 7,
+   "unit_piece": 4911
+  },
+  {
+   "branch": 2,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 3,
+    "intersection_size": 5,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 7
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 140,
+     "level": 2
+    }
+   ],
+   "pose": 735,
+   "size": 5,
+   "unit_piece": 92628
+  },
+  {
+   "branch": 3,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 7,
+    "intersection_size": 7,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 10
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 69,
+     "level": 0
+    }
+   ],
+   "pose": 736,
+   "size": 65,
+   "unit_piece": 104312
+  },
+  {
+   "branch": 2,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 2,
+    "intersection_size": 6,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 7
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 364,
+     "level": 1
+    },
+    {
+     "grip": 400,
+     "level": 4
+    }
+   ],
+   "pose": 859,
+   "size": 111,
+   "unit_piece": 992
+  },
+  {
+   "branch": 2,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 11,
+    "intersection_size": 4,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 8
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 365,
+     "level": 1
+    }
+   ],
+   "pose": 860,
+   "size": 78,
+   "unit_piece": 49761
+  },
+  {
+   "branch": 3,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 2,
+    "intersection_size": 9,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 10
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 53,
+     "level": 2
+    },
+    {
+     "grip": 69,
+     "level": 0
+    }
+   ],
+   "pose": 861,
+   "size": 14,
+   "unit_piece": 142790
+  },
+  {
+   "branch": 3,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 1,
+    "intersection_size": 10,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 10
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 11,
+     "level": 3
+    },
+    {
+     "grip": 36,
+     "level": 5
+    }
+   ],
+   "pose": 862,
+   "size": 2,
+   "unit_piece": 160207
+  },
+  {
+   "branch": 3,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 2,
+    "intersection_size": 8,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 9
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 69,
+     "level": 0
+    }
+   ],
+   "pose": 863,
+   "size": 3,
+   "unit_piece": 120011
+  },
+  {
+   "branch": 3,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 6,
+    "intersection_size": 4,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 7
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 389,
+     "level": 3
+    }
+   ],
+   "pose": 883,
+   "size": 198,
+   "unit_piece": 7604
+  },
+  {
+   "branch": 0,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 1,
+    "intersection_size": 7,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 7
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 282,
+     "level": 0
+    },
+    {
+     "grip": 307,
+     "level": 1
+    }
+   ],
+   "pose": 913,
+   "size": 1,
+   "unit_piece": 44132
+  },
+  {
+   "branch": 0,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 7,
+    "intersection_size": 5,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 8
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 262,
+     "level": 1
+    },
+    {
+     "grip": 328,
+     "level": 4
+    }
+   ],
+   "pose": 967,
+   "size": 38,
+   "unit_piece": 41199
+  },
+  {
+   "branch": 2,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 1,
+    "intersection_size": 7,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 7
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 140,
+     "level": 2
+    },
+    {
+     "grip": 185,
+     "level": 3
+    }
+   ],
+   "pose": 1078,
+   "size": 1,
+   "unit_piece": 45880
+  },
+  {
+   "branch": 2,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 1,
+    "intersection_size": 7,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 7
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 364,
+     "level": 1
+    },
+    {
+     "grip": 407,
+     "level": 4
+    }
+   ],
+   "pose": 1084,
+   "size": 3,
+   "unit_piece": 97725
+  },
+  {
+   "branch": 1,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 2,
+    "intersection_size": 5,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 6
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 24,
+     "level": 1
+    }
+   ],
+   "pose": 1097,
+   "size": 48,
+   "unit_piece": 102246
+  },
+  {
+   "branch": 0,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 4,
+    "intersection_size": 5,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 7
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 282,
+     "level": 0
+    }
+   ],
+   "pose": 1349,
+   "size": 72,
+   "unit_piece": 2518
+  },
+  {
+   "branch": 0,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 3,
+    "intersection_size": 5,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 7
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 262,
+     "level": 1
+    },
+    {
+     "grip": 328,
+     "level": 4
+    }
+   ],
+   "pose": 1370,
+   "size": 24,
+   "unit_piece": 112184
+  },
+  {
+   "branch": 1,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 3,
+    "intersection_size": 6,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 8
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 234,
+     "level": 2
+    }
+   ],
+   "pose": 1436,
+   "size": 87,
+   "unit_piece": 3547
+  },
+  {
+   "branch": 0,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 3,
+    "intersection_size": 5,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 7
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 282,
+     "level": 0
+    }
+   ],
+   "pose": 1437,
+   "size": 15,
+   "unit_piece": 13940
+  },
+  {
+   "branch": 3,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 2,
+    "intersection_size": 6,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 7
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 69,
+     "level": 0
+    },
+    {
+     "grip": 78,
+     "level": 2
+    }
+   ],
+   "pose": 1438,
+   "size": 6,
+   "unit_piece": 62906
+  },
+  {
+   "branch": 0,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 3,
+    "intersection_size": 5,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 7
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 282,
+     "level": 0
+    }
+   ],
+   "pose": 1634,
+   "size": 31,
+   "unit_piece": 31254
+  },
+  {
+   "branch": 2,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 1,
+    "intersection_size": 8,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 8
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 140,
+     "level": 2
+    },
+    {
+     "grip": 185,
+     "level": 3
+    }
+   ],
+   "pose": 1672,
+   "size": 1,
+   "unit_piece": 161998
+  },
+  {
+   "branch": 3,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 2,
+    "intersection_size": 7,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 8
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 69,
+     "level": 0
+    }
+   ],
+   "pose": 1673,
+   "size": 8,
+   "unit_piece": 94748
+  },
+  {
+   "branch": 2,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 1,
+    "intersection_size": 8,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 8
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 140,
+     "level": 2
+    },
+    {
+     "grip": 185,
+     "level": 3
+    }
+   ],
+   "pose": 1674,
+   "size": 5,
+   "unit_piece": 135306
+  }
+ ],
+ "histogram": {
+  "0": 27,
+  "1": 49,
+  "2": 121,
+  "3": 112,
+  "4": 155,
+  "5": 81,
+  "6": 32,
+  "7": 23
+ },
+ "iterations": 8,
+ "lambda": 0,
+ "lambda_witness": {
+  "holder": 282,
+  "piece": 2518
+ },
+ "levels": [
+  4,
+  4,
+  2,
+  2,
+  2,
+  4,
+  6,
+  2,
+  6,
+  0,
+  5,
+  3,
+  3,
+  4,
+  2,
+  3,
+  3,
+  5,
+  3,
+  5,
+  2,
+  4,
+  5,
+  2,
+  1,
+  2,
+  6,
+  4,
+  5,
+  6,
+  6,
+  3,
+  2,
+  4,
+  5,
+  4,
+  5,
+  1,
+  4,
+  6,
+  1,
+  2,
+  1,
+  4,
+  3,
+  6,
+  4,
+  5,
+  2,
+  6,
+  2,
+  4,
+  5,
+  2,
+  3,
+  2,
+  6,
+  3,
+  3,
+  0,
+  6,
+  3,
+  3,
+  1,
+  6,
+  3,
+  2,
+  6,
+  5,
+  0,
+  2,
+  1,
+  4,
+  1,
+  5,
+  4,
+  3,
+  7,
+  2,
+  5,
+  1,
+  2,
+  5,
+  3,
+  3,
+  5,
+  5,
+  1,
+  5,
+  5,
+  5,
+  6,
+  4,
+  4,
+  5,
+  0,
+  7,
+  3,
+  2,
+  6,
+  6,
+  6,
+  1,
+  3,
+  5,
+  3,
+  5,
+  6,
+  2,
+  5,
+  4,
+  5,
+  4,
+  6,
+  5,
+  2,
+  5,
+  0,
+  5,
+  4,
+  3,
+  3,
+  4,
+  3,
+  2,
+  4,
+  1,
+  2,
+  3,
+  5,
+  3,
+  2,
+  2,
+  5,
+  7,
+  6,
+  5,
+  0,
+  3,
+  2,
+  2,
+  3,
+  1,
+  4,
+  2,
+  6,
+  5,
+  3,
+  3,
+  2,
+  0,
+  3,
+  5,
+  2,
+  6,
+  6,
+  2,
+  4,
+  5,
+  2,
+  1,
+  1,
+  5,
+  5,
+  2,
+  3,
+  6,
+  4,
+  2,
+  3,
+  2,
+  6,
+  6,
+  3,
+  3,
+  3,
+  4,
+  3,
+  6,
+  4,
+  4,
+  7,
+  7,
+  4,
+  3,
+  3,
+  5,
+  6,
+  6,
+  4,
+  3,
+  3,
+  3,
+  3,
+  2,
+  3,
+  0,
+  2,
+  6,
+  4,
+  4,
+  2,
+  1,
+  5,
+  4,
+  3,
+  5,
+  5,
+  1,
+  4,
+  2,
+  3,
+  2,
+  4,
+  4,
+  3,
+  3,
+  5,
+  4,
+  3,
+  3,
+  1,
+  7,
+  0,
+  3,
+  0,
+  3,
+  4,
+  5,
+  2,
+  7,
+  7,
+  0,
+  2,
+  2,
+  2,
+  0,
+  5,
+  4,
+  4,
+  7,
+  4,
+  5,
+  7,
+  2,
+  0,
+  1,
+  4,
+  4,
+  7,
+  4,
+  2,
+  5,
+  4,
+  4,
+  4,
+  6,
+  2,
+  2,
+  1,
+  5,
+  4,
+  1,
+  4,
+  4,
+  4,
+  4,
+  3,
+  5,
+  3,
+  5,
+  7,
+  1,
+  2,
+  2,
+  2,
+  4,
+  1,
+  3,
+  3,
+  2,
+  1,
+  0,
+  5,
+  7,
+  4,
+  1,
+  1,
+  4,
+  4,
+  4,
+  2,
+  3,
+  4,
+  7,
+  4,
+  3,
+  3,
+  6,
+  1,
+  3,
+  5,
+  4,
+  2,
+  2,
+  4,
+  4,
+  1,
+  7,
+  3,
+  3,
+  3,
+  3,
+  5,
+  4,
+  4,
+  7,
+  4,
+  4,
+  1,
+  4,
+  4,
+  2,
+  4,
+  2,
+  2,
+  5,
+  4,
+  4,
+  4,
+  4,
+  4,
+  4,
+  4,
+  4,
+  2,
+  2,
+  4,
+  3,
+  2,
+  2,
+  2,
+  1,
+  2,
+  4,
+  3,
+  2,
+  4,
+  4,
+  2,
+  4,
+  4,
+  2,
+  4,
+  1,
+  4,
+  2,
+  0,
+  1,
+  3,
+  4,
+  4,
+  5,
+  2,
+  1,
+  1,
+  2,
+  4,
+  4,
+  0,
+  2,
+  0,
+  4,
+  2,
+  3,
+  0,
+  4,
+  4,
+  4,
+  2,
+  1,
+  7,
+  4,
+  3,
+  4,
+  2,
+  4,
+  3,
+  4,
+  3,
+  4,
+  4,
+  5,
+  2,
+  4,
+  2,
+  2,
+  4,
+  7,
+  0,
+  4,
+  4,
+  4,
+  2,
+  7,
+  4,
+  7,
+  4,
+  7,
+  4,
+  2,
+  2,
+  4,
+  0,
+  4,
+  4,
+  2,
+  4,
+  4,
+  4,
+  5,
+  3,
+  4,
+  4,
+  4,
+  2,
+  4,
+  4,
+  7,
+  2,
+  4,
+  4,
+  4,
+  5,
+  4,
+  4,
+  4,
+  7,
+  4,
+  2,
+  4,
+  2,
+  4,
+  1,
+  2,
+  2,
+  2,
+  4,
+  2,
+  0,
+  4,
+  4,
+  3,
+  5,
+  2,
+  0,
+  2,
+  4,
+  2,
+  4,
+  2,
+  0,
+  4,
+  6,
+  3,
+  3,
+  5,
+  5,
+  2,
+  2,
+  1,
+  4,
+  5,
+  1,
+  4,
+  1,
+  4,
+  1,
+  2,
+  2,
+  4,
+  1,
+  2,
+  4,
+  1,
+  3,
+  3,
+  2,
+  2,
+  5,
+  4,
+  5,
+  4,
+  1,
+  3,
+  1,
+  2,
+  4,
+  4,
+  5,
+  3,
+  2,
+  4,
+  3,
+  3,
+  2,
+  3,
+  4,
+  2,
+  5,
+  4,
+  5,
+  4,
+  1,
+  4,
+  3,
+  5,
+  3,
+  5,
+  4,
+  3,
+  3,
+  4,
+  2,
+  4,
+  3,
+  3,
+  3,
+  5,
+  1,
+  5,
+  3,
+  2,
+  5,
+  2,
+  5,
+  3,
+  2,
+  2,
+  4,
+  3,
+  3,
+  3,
+  0,
+  3,
+  4,
+  3,
+  3,
+  1,
+  4,
+  3,
+  2,
+  4,
+  5,
+  3,
+  2,
+  4,
+  3,
+  5,
+  3,
+  1,
+  1,
+  0,
+  2,
+  2,
+  3,
+  5,
+  4,
+  2,
+  5,
+  3,
+  2,
+  5,
+  5,
+  3,
+  5,
+  2,
+  2,
+  5,
+  0,
+  2,
+  3,
+  0,
+  3,
+  3,
+  2,
+  3,
+  5,
+  5,
+  2,
+  3,
+  5,
+  5,
+  2,
+  3,
+  3,
+  3,
+  3,
+  1,
+  3
+ ],
+ "setup": {
+  "labels": {
+   "cpu_s": 0.924676
+  },
+  "load": {
+   "cpu_s": 0.201098
+  },
+  "trees": {
+   "cpu_s": 5.356808
+  },
+  "word": {
+   "cpu_s": 2.146934
+  }
+ }
+}

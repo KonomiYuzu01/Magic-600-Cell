@@ -1,0 +1,36 @@
+{
+ "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7307/component/tables/00005.json",
+ "word": [
+  [
+   516,
+   14
+  ]
+ ],
+ "rows": [
+  {
+   "letter": null,
+   "applied": null,
+   "n2": 98984,
+   "n4": 1585,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 3170,
+   "off": 100569,
+   "digest": "895b45de8a9a83604ca8bf988a3c9a287e404e59bd22a5004703d0852b252507"
+  },
+  {
+   "letter": [
+    516,
+    14
+   ],
+   "applied": true,
+   "n2": 98587,
+   "n4": 1183,
+   "n6": 7,
+   "max_h": 6,
+   "phi": 2394,
+   "off": 99777,
+   "digest": "60f6c25b27b674fda275942b13b401439a5cfdd9848948a66c97cae5a4141127"
+  }
+ ]
+}

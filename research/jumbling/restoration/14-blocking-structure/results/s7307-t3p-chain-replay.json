@@ -1,0 +1,252 @@
+{
+ "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7307/component/tables/00005.json",
+ "word": [
+  [
+   516,
+   14
+  ],
+  [
+   597,
+   10
+  ],
+  [
+   543,
+   13
+  ],
+  [
+   10,
+   8
+  ],
+  [
+   147,
+   2
+  ],
+  [
+   102,
+   15
+  ],
+  [
+   216,
+   2
+  ],
+  [
+   266,
+   14
+  ],
+  [
+   275,
+   1
+  ],
+  [
+   435,
+   12
+  ],
+  [
+   435,
+   7
+  ],
+  [
+   319,
+   12
+  ],
+  [
+   94,
+   12
+  ]
+ ],
+ "rows": [
+  {
+   "letter": null,
+   "applied": null,
+   "n2": 98984,
+   "n4": 1585,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 3170,
+   "off": 100569,
+   "digest": "895b45de8a9a83604ca8bf988a3c9a287e404e59bd22a5004703d0852b252507"
+  },
+  {
+   "letter": [
+    516,
+    14
+   ],
+   "applied": true,
+   "n2": 98587,
+   "n4": 1183,
+   "n6": 7,
+   "max_h": 6,
+   "phi": 2394,
+   "off": 99777,
+   "digest": "60f6c25b27b674fda275942b13b401439a5cfdd9848948a66c97cae5a4141127"
+  },
+  {
+   "letter": [
+    597,
+    10
+   ],
+   "applied": true,
+   "n2": 98587,
+   "n4": 1183,
+   "n6": 7,
+   "max_h": 6,
+   "phi": 2394,
+   "off": 99777,
+   "digest": "5c62bd5c37f3bfc78c92820f49989f22069abcfba5a657de1f9c36579933bd71"
+  },
+  {
+   "letter": [
+    543,
+    13
+   ],
+   "applied": true,
+   "n2": 98620,
+   "n4": 1072,
+   "n6": 7,
+   "max_h": 6,
+   "phi": 2172,
+   "off": 99699,
+   "digest": "c157d29276f599df3bce7514896cd6145e6d7a18321981440bff068761d14200"
+  },
+  {
+   "letter": [
+    10,
+    8
+   ],
+   "applied": true,
+   "n2": 98620,
+   "n4": 1072,
+   "n6": 7,
+   "max_h": 6,
+   "phi": 2172,
+   "off": 99699,
+   "digest": "6d22f0486737910f08ebc01dda83a5d67a82ef41bd35b74a267fe76c959886dd"
+  },
+  {
+   "letter": [
+    147,
+    2
+   ],
+   "applied": true,
+   "n2": 98620,
+   "n4": 1072,
+   "n6": 7,
+   "max_h": 6,
+   "phi": 2172,
+   "off": 99699,
+   "digest": "cd905135e5736a9627c3f57b4745be3bbf3d30d8f9bbd69d177ae171dd73e6f1"
+  },
+  {
+   "letter": [
+    102,
+    15
+   ],
+   "applied": true,
+   "n2": 97838,
+   "n4": 938,
+   "n6": 7,
+   "max_h": 6,
+   "phi": 1904,
+   "off": 98783,
+   "digest": "6b1f7157ea8070a08e6388d5bdd579ec6e7867b19423d6d76c526b498cb232e1"
+  },
+  {
+   "letter": [
+    216,
+    2
+   ],
+   "applied": true,
+   "n2": 97838,
+   "n4": 938,
+   "n6": 7,
+   "max_h": 6,
+   "phi": 1904,
+   "off": 98783,
+   "digest": "9b79fcccf8b7c25d50aa7470ab91a28849b8b75e97f31b40913cefde5895f64f"
+  },
+  {
+   "letter": [
+    266,
+    14
+   ],
+   "applied": true,
+   "n2": 98311,
+   "n4": 812,
+   "n6": 7,
+   "max_h": 6,
+   "phi": 1652,
+   "off": 99130,
+   "digest": "a7905c0e3369db6c00ffed74f8baac3d6fb46804f1f9191406b06d7f5f56a116"
+  },
+  {
+   "letter": [
+    275,
+    1
+   ],
+   "applied": true,
+   "n2": 98311,
+   "n4": 812,
+   "n6": 7,
+   "max_h": 6,
+   "phi": 1652,
+   "off": 99130,
+   "digest": "ffa4dea89a4599edf7d7f5c3d7aef18b353192c6ea58cb423b43552965c0e9cf"
+  },
+  {
+   "letter": [
+    435,
+    12
+   ],
+   "applied": true,
+   "n2": 99662,
+   "n4": 750,
+   "n6": 7,
+   "max_h": 6,
+   "phi": 1528,
+   "off": 100419,
+   "digest": "43fcff507c16f770c4ee73299392de04fe4014e2ef6ab3d7d7104a008fec0313"
+  },
+  {
+   "letter": [
+    435,
+    7
+   ],
+   "applied": true,
+   "n2": 99662,
+   "n4": 750,
+   "n6": 7,
+   "max_h": 6,
+   "phi": 1528,
+   "off": 100419,
+   "digest": "c3cd9899b46e70cef53bf4b2239c9ed24407e198f3064e33b5d64ac49ebfe07b"
+  },
+  {
+   "letter": [
+    319,
+    12
+   ],
+   "applied": true,
+   "n2": 98426,
+   "n4": 685,
+   "n6": 7,
+   "max_h": 6,
+   "phi": 1398,
+   "off": 99118,
+   "digest": "5cec437ecd9c963e452f10d63697e7e5d1d5656f3edf6c5b2eac4c18cd6995ca"
+  },
+  {
+   "letter": [
+    94,
+    12
+   ],
+   "applied": true,
+   "n2": 99622,
+   "n4": 684,
+   "n6": 7,
+   "max_h": 6,
+   "phi": 1396,
+   "off": 100313,
+   "digest": "52aa8a30d5f32181de7666e364586e85aa75d48647533db2c6d68ca514422a49"
+  }
+ ]
+}

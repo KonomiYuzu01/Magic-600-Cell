@@ -1,0 +1,90 @@
+{
+ "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7302/component-checkpoint/tables/00021.json",
+ "word": [
+  [
+   277,
+   59
+  ],
+  [
+   171,
+   15
+  ],
+  [
+   39,
+   1
+  ],
+  [
+   171,
+   14
+  ]
+ ],
+ "rows": [
+  {
+   "letter": null,
+   "applied": null,
+   "n2": 102750,
+   "n4": 734,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 1468,
+   "off": 103484,
+   "digest": "2430f4cc99ea121a6d3476ec21b66fc401e277d13809ad5e1c979e6e0abe1472"
+  },
+  {
+   "letter": [
+    277,
+    59
+   ],
+   "applied": true,
+   "n2": 103074,
+   "n4": 734,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 1468,
+   "off": 103808,
+   "digest": "9eb2d17181a77b25354b9c19a22ae16d3ab1c8467f17296a131449f79146fedf"
+  },
+  {
+   "letter": [
+    171,
+    15
+   ],
+   "applied": true,
+   "n2": 104158,
+   "n4": 726,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 1452,
+   "off": 104884,
+   "digest": "f14c69663e803c03490209d38adb17c5b281cf186b2031ad38a23d3fca9423cc"
+  },
+  {
+   "letter": [
+    39,
+    1
+   ],
+   "applied": true,
+   "n2": 104158,
+   "n4": 726,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 1452,
+   "off": 104884,
+   "digest": "78d01fb709e0f5884dfc6c7c1e21cd43f266119449c66cd89591d1fe08564e3a"
+  },
+  {
+   "letter": [
+    171,
+    14
+   ],
+   "applied": true,
+   "n2": 103285,
+   "n4": 688,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 1376,
+   "off": 103973,
+   "digest": "b47d84743c0ab28505a4ddc171920f9e14e1c94b46d10de95b93ae0816427e0c"
+  }
+ ]
+}

@@ -1,0 +1,1327 @@
+{
+ "best_certificate": {
+  "format": "t3p-certificate/1",
+  "rounds": [
+   {
+    "h": 15,
+    "helpers": [
+     [
+      277,
+      59
+     ]
+    ],
+    "unit_piece": 9110,
+    "x": 171
+   }
+  ],
+  "table_digest": "2430f4cc99ea121a6d3476ec21b66fc401e277d13809ad5e1c979e6e0abe1472"
+ },
+ "cpu_s": 67.01246,
+ "digest": "2430f4cc99ea121a6d3476ec21b66fc401e277d13809ad5e1c979e6e0abe1472",
+ "exhausted": true,
+ "family_exhausted": "All high pose units and their whole own holders (restricted to --targets when given); clean helpers distinct from the target, interacting by exact L1, avoiding every unit member, holding an obstruction piece or a branch-Q piece of height >=4; every maximal pairwise disjoint inside-set cover of S_x; all 60 items including dropped identities, subject to per-letter tameness and zero image straddlers; every tree-computed lowering item; assignment-specific acyclic precedence. This does not exhaust overlapping helpers, blocked helpers (T3P+), repeated helper grips, or multi-round policies.",
+ "format": "t3p-scan/1",
+ "phi": 1468,
+ "prefix_word": [],
+ "rows": [
+  {
+   "best": {
+    "D": 13,
+    "F": 29,
+    "F_minus_D": 16,
+    "h": 14,
+    "helper_delta_phi": 0,
+    "helpers": [],
+    "order": [],
+    "predicted_delta_phi": 32,
+    "predicted_phi": 1500,
+    "unit_piece": 159009,
+    "x": 104
+   },
+   "candidates": [],
+   "covers": 1,
+   "feasible_covers": 1,
+   "feasible_frontier_records": 12,
+   "lowering_items": [
+    14,
+    21,
+    23,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51
+   ],
+   "overlaps": [],
+   "pose": 704,
+   "status": "budget",
+   "unit_piece": 159009,
+   "unit_size": 13,
+   "x": 104
+  },
+  {
+   "count": 144,
+   "pose": 704,
+   "pose_groups": [
+    {
+     "count": 26,
+     "pose": 1614
+    },
+    {
+     "count": 118,
+     "pose": 2775
+    }
+   ],
+   "status": "straddler-without-clean-holder",
+   "unit_piece": 159009,
+   "unit_size": 13,
+   "x": 180
+  },
+  {
+   "best": {
+    "D": 67,
+    "F": 59,
+    "F_minus_D": -8,
+    "h": 15,
+    "helper_delta_phi": 0,
+    "helpers": [
+     [
+      277,
+      59
+     ]
+    ],
+    "order": [
+     277
+    ],
+    "predicted_delta_phi": -16,
+    "predicted_phi": 1452,
+    "unit_piece": 47497,
+    "x": 171
+   },
+   "candidates": [
+    274,
+    277
+   ],
+   "covers": 1,
+   "feasible_covers": 1,
+   "feasible_frontier_records": 24,
+   "lowering_items": [
+    15,
+    18,
+    22,
+    33,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59
+   ],
+   "overlaps": [],
+   "pose": 1098,
+   "status": "round",
+   "unit_piece": 47497,
+   "unit_size": 4,
+   "x": 171
+  },
+  {
+   "best": {
+    "D": 82,
+    "F": 284,
+    "F_minus_D": 202,
+    "h": 14,
+    "helper_delta_phi": 0,
+    "helpers": [],
+    "order": [],
+    "predicted_delta_phi": 404,
+    "predicted_phi": 1872,
+    "unit_piece": 31819,
+    "x": 482
+   },
+   "candidates": [],
+   "covers": 1,
+   "feasible_covers": 1,
+   "feasible_frontier_records": 12,
+   "lowering_items": [
+    14,
+    21,
+    23,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51
+   ],
+   "overlaps": [],
+   "pose": 1191,
+   "status": "budget",
+   "unit_piece": 31819,
+   "unit_size": 3,
+   "x": 482
+  },
+  {
+   "count": 253,
+   "pose": 1191,
+   "pose_groups": [
+    {
+     "count": 11,
+     "pose": 1063
+    },
+    {
+     "count": 7,
+     "pose": 2092
+    },
+    {
+     "count": 120,
+     "pose": 2141
+    },
+    {
+     "count": 63,
+     "pose": 2562
+    },
+    {
+     "count": 16,
+     "pose": 2793
+    },
+    {
+     "count": 36,
+     "pose": 2796
+    }
+   ],
+   "status": "straddler-without-clean-holder",
+   "unit_piece": 31819,
+   "unit_size": 3,
+   "x": 554
+  },
+  {
+   "candidates": [
+    20,
+    112,
+    185
+   ],
+   "covers": 0,
+   "feasible_covers": 0,
+   "feasible_frontier_records": 0,
+   "lowering_items": [
+    13,
+    17,
+    19,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42
+   ],
+   "overlaps": [
+    {
+     "grips": [
+      20,
+      112
+     ],
+     "size": 166
+    },
+    {
+     "grips": [
+      20,
+      185
+     ],
+     "size": 85
+    }
+   ],
+   "pose": 1235,
+   "status": "no-disjoint-cover",
+   "unit_piece": 108996,
+   "unit_size": 13,
+   "x": 71
+  },
+  {
+   "candidates": [],
+   "covers": 0,
+   "feasible_covers": 0,
+   "feasible_frontier_records": 0,
+   "lowering_items": [
+    13,
+    17,
+    19,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42
+   ],
+   "overlaps": [],
+   "pose": 1235,
+   "status": "no-disjoint-cover",
+   "unit_piece": 108996,
+   "unit_size": 13,
+   "x": 140
+  },
+  {
+   "best": {
+    "D": 134,
+    "F": 148,
+    "F_minus_D": 14,
+    "h": 12,
+    "helper_delta_phi": 0,
+    "helpers": [
+     [
+      20,
+      7
+     ],
+     [
+      104,
+      1
+     ]
+    ],
+    "order": [
+     20,
+     104
+    ],
+    "predicted_delta_phi": 28,
+    "predicted_phi": 1496,
+    "unit_piece": 19890,
+    "x": 12
+   },
+   "candidates": [
+    20,
+    104
+   ],
+   "covers": 1,
+   "feasible_covers": 1,
+   "feasible_frontier_records": 96,
+   "lowering_items": [
+    12,
+    16,
+    20,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32
+   ],
+   "overlaps": [],
+   "pose": 1236,
+   "status": "budget",
+   "unit_piece": 19890,
+   "unit_size": 101,
+   "x": 12
+  },
+  {
+   "count": 141,
+   "pose": 1236,
+   "pose_groups": [
+    {
+     "count": 3,
+     "pose": 871
+    },
+    {
+     "count": 19,
+     "pose": 938
+    },
+    {
+     "count": 19,
+     "pose": 1547
+    },
+    {
+     "count": 22,
+     "pose": 2133
+    },
+    {
+     "count": 11,
+     "pose": 2188
+    },
+    {
+     "count": 25,
+     "pose": 2201
+    },
+    {
+     "count": 27,
+     "pose": 2377
+    },
+    {
+     "count": 8,
+     "pose": 2526
+    },
+    {
+     "count": 7,
+     "pose": 2722
+    }
+   ],
+   "status": "straddler-without-clean-holder",
+   "unit_piece": 19890,
+   "unit_size": 101,
+   "x": 65
+  },
+  {
+   "best": {
+    "D": 134,
+    "F": 148,
+    "F_minus_D": 14,
+    "h": 12,
+    "helper_delta_phi": 0,
+    "helpers": [
+     [
+      20,
+      7
+     ],
+     [
+      104,
+      1
+     ]
+    ],
+    "order": [
+     20,
+     104
+    ],
+    "predicted_delta_phi": 28,
+    "predicted_phi": 1496,
+    "unit_piece": 137342,
+    "x": 12
+   },
+   "candidates": [
+    20,
+    104
+   ],
+   "covers": 1,
+   "feasible_covers": 1,
+   "feasible_frontier_records": 96,
+   "lowering_items": [
+    12,
+    16,
+    20,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32
+   ],
+   "overlaps": [],
+   "pose": 1263,
+   "status": "budget",
+   "unit_piece": 137342,
+   "unit_size": 7,
+   "x": 12
+  },
+  {
+   "count": 141,
+   "pose": 1263,
+   "pose_groups": [
+    {
+     "count": 3,
+     "pose": 871
+    },
+    {
+     "count": 19,
+     "pose": 938
+    },
+    {
+     "count": 19,
+     "pose": 1547
+    },
+    {
+     "count": 22,
+     "pose": 2133
+    },
+    {
+     "count": 11,
+     "pose": 2188
+    },
+    {
+     "count": 25,
+     "pose": 2201
+    },
+    {
+     "count": 27,
+     "pose": 2377
+    },
+    {
+     "count": 8,
+     "pose": 2526
+    },
+    {
+     "count": 7,
+     "pose": 2722
+    }
+   ],
+   "status": "straddler-without-clean-holder",
+   "unit_piece": 137342,
+   "unit_size": 7,
+   "x": 65
+  },
+  {
+   "count": 158,
+   "pose": 1354,
+   "pose_groups": [
+    {
+     "count": 8,
+     "pose": 876
+    },
+    {
+     "count": 90,
+     "pose": 1825
+    },
+    {
+     "count": 60,
+     "pose": 2674
+    }
+   ],
+   "status": "straddler-without-clean-holder",
+   "unit_piece": 152672,
+   "unit_size": 13,
+   "x": 94
+  },
+  {
+   "count": 73,
+   "pose": 1354,
+   "pose_groups": [
+    {
+     "count": 11,
+     "pose": 946
+    },
+    {
+     "count": 5,
+     "pose": 975
+    },
+    {
+     "count": 3,
+     "pose": 2116
+    },
+    {
+     "count": 3,
+     "pose": 2634
+    },
+    {
+     "count": 43,
+     "pose": 2689
+    },
+    {
+     "count": 8,
+     "pose": 2769
+    }
+   ],
+   "status": "straddler-without-clean-holder",
+   "unit_piece": 152672,
+   "unit_size": 13,
+   "x": 181
+  },
+  {
+   "candidates": [
+    535
+   ],
+   "covers": 1,
+   "feasible_covers": 0,
+   "feasible_frontier_records": 0,
+   "lowering_items": [
+    14,
+    21,
+    23,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51
+   ],
+   "overlaps": [],
+   "pose": 1463,
+   "status": "no-feasible-items",
+   "unit_piece": 34340,
+   "unit_size": 198,
+   "x": 597
+  },
+  {
+   "count": 122,
+   "pose": 1770,
+   "pose_groups": [
+    {
+     "count": 22,
+     "pose": 1463
+    },
+    {
+     "count": 100,
+     "pose": 2705
+    }
+   ],
+   "status": "straddler-without-clean-holder",
+   "unit_piece": 100980,
+   "unit_size": 7,
+   "x": 517
+  },
+  {
+   "candidates": [
+    535
+   ],
+   "covers": 1,
+   "feasible_covers": 0,
+   "feasible_frontier_records": 0,
+   "lowering_items": [
+    14,
+    21,
+    23,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51
+   ],
+   "overlaps": [],
+   "pose": 1770,
+   "status": "no-feasible-items",
+   "unit_piece": 100980,
+   "unit_size": 7,
+   "x": 597
+  },
+  {
+   "count": 185,
+   "pose": 1789,
+   "pose_groups": [
+    {
+     "count": 2,
+     "pose": 864
+    },
+    {
+     "count": 11,
+     "pose": 1745
+    },
+    {
+     "count": 160,
+     "pose": 1825
+    },
+    {
+     "count": 4,
+     "pose": 1936
+    },
+    {
+     "count": 8,
+     "pose": 2674
+    }
+   ],
+   "status": "straddler-without-clean-holder",
+   "unit_piece": 97694,
+   "unit_size": 46,
+   "x": 135
+  },
+  {
+   "best": {
+    "D": 67,
+    "F": 59,
+    "F_minus_D": -8,
+    "h": 15,
+    "helper_delta_phi": 0,
+    "helpers": [
+     [
+      277,
+      59
+     ]
+    ],
+    "order": [
+     277
+    ],
+    "predicted_delta_phi": -16,
+    "predicted_phi": 1452,
+    "unit_piece": 97694,
+    "x": 171
+   },
+   "candidates": [
+    274,
+    277
+   ],
+   "covers": 1,
+   "feasible_covers": 1,
+   "feasible_frontier_records": 24,
+   "lowering_items": [
+    15,
+    18,
+    22,
+    33,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59
+   ],
+   "overlaps": [],
+   "pose": 1789,
+   "status": "round",
+   "unit_piece": 97694,
+   "unit_size": 46,
+   "x": 171
+  },
+  {
+   "best": {
+    "D": 82,
+    "F": 284,
+    "F_minus_D": 202,
+    "h": 14,
+    "helper_delta_phi": 0,
+    "helpers": [],
+    "order": [],
+    "predicted_delta_phi": 404,
+    "predicted_phi": 1872,
+    "unit_piece": 37427,
+    "x": 482
+   },
+   "candidates": [],
+   "covers": 1,
+   "feasible_covers": 1,
+   "feasible_frontier_records": 12,
+   "lowering_items": [
+    14,
+    21,
+    23,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51
+   ],
+   "overlaps": [],
+   "pose": 1944,
+   "status": "budget",
+   "unit_piece": 37427,
+   "unit_size": 6,
+   "x": 482
+  },
+  {
+   "count": 253,
+   "pose": 1944,
+   "pose_groups": [
+    {
+     "count": 11,
+     "pose": 1063
+    },
+    {
+     "count": 7,
+     "pose": 2092
+    },
+    {
+     "count": 120,
+     "pose": 2141
+    },
+    {
+     "count": 63,
+     "pose": 2562
+    },
+    {
+     "count": 16,
+     "pose": 2793
+    },
+    {
+     "count": 36,
+     "pose": 2796
+    }
+   ],
+   "status": "straddler-without-clean-holder",
+   "unit_piece": 37427,
+   "unit_size": 6,
+   "x": 554
+  },
+  {
+   "count": 137,
+   "pose": 2148,
+   "pose_groups": [
+    {
+     "count": 4,
+     "pose": 1773
+    },
+    {
+     "count": 107,
+     "pose": 2529
+    },
+    {
+     "count": 19,
+     "pose": 2545
+    },
+    {
+     "count": 7,
+     "pose": 2560
+    }
+   ],
+   "status": "straddler-without-clean-holder",
+   "unit_piece": 34017,
+   "unit_size": 13,
+   "x": 142
+  },
+  {
+   "best": {
+    "D": 67,
+    "F": 59,
+    "F_minus_D": -8,
+    "h": 15,
+    "helper_delta_phi": 0,
+    "helpers": [
+     [
+      277,
+      59
+     ]
+    ],
+    "order": [
+     277
+    ],
+    "predicted_delta_phi": -16,
+    "predicted_phi": 1452,
+    "unit_piece": 9110,
+    "x": 171
+   },
+   "candidates": [
+    274,
+    277
+   ],
+   "covers": 1,
+   "feasible_covers": 1,
+   "feasible_frontier_records": 24,
+   "lowering_items": [
+    15,
+    18,
+    22,
+    33,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59
+   ],
+   "overlaps": [],
+   "pose": 2380,
+   "status": "round",
+   "unit_piece": 9110,
+   "unit_size": 17,
+   "x": 171
+  },
+  {
+   "best": {
+    "D": 82,
+    "F": 284,
+    "F_minus_D": 202,
+    "h": 14,
+    "helper_delta_phi": 0,
+    "helpers": [],
+    "order": [],
+    "predicted_delta_phi": 404,
+    "predicted_phi": 1872,
+    "unit_piece": 114908,
+    "x": 482
+   },
+   "candidates": [],
+   "covers": 1,
+   "feasible_covers": 1,
+   "feasible_frontier_records": 12,
+   "lowering_items": [
+    14,
+    21,
+    23,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51
+   ],
+   "overlaps": [],
+   "pose": 2381,
+   "status": "budget",
+   "unit_piece": 114908,
+   "unit_size": 48,
+   "x": 482
+  },
+  {
+   "count": 253,
+   "pose": 2381,
+   "pose_groups": [
+    {
+     "count": 11,
+     "pose": 1063
+    },
+    {
+     "count": 7,
+     "pose": 2092
+    },
+    {
+     "count": 120,
+     "pose": 2141
+    },
+    {
+     "count": 63,
+     "pose": 2562
+    },
+    {
+     "count": 16,
+     "pose": 2793
+    },
+    {
+     "count": 36,
+     "pose": 2796
+    }
+   ],
+   "status": "straddler-without-clean-holder",
+   "unit_piece": 114908,
+   "unit_size": 48,
+   "x": 554
+  },
+  {
+   "best": {
+    "D": 82,
+    "F": 284,
+    "F_minus_D": 202,
+    "h": 14,
+    "helper_delta_phi": 0,
+    "helpers": [],
+    "order": [],
+    "predicted_delta_phi": 404,
+    "predicted_phi": 1872,
+    "unit_piece": 46250,
+    "x": 482
+   },
+   "candidates": [],
+   "covers": 1,
+   "feasible_covers": 1,
+   "feasible_frontier_records": 12,
+   "lowering_items": [
+    14,
+    21,
+    23,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51
+   ],
+   "overlaps": [],
+   "pose": 2568,
+   "status": "budget",
+   "unit_piece": 46250,
+   "unit_size": 8,
+   "x": 482
+  },
+  {
+   "count": 253,
+   "pose": 2568,
+   "pose_groups": [
+    {
+     "count": 11,
+     "pose": 1063
+    },
+    {
+     "count": 7,
+     "pose": 2092
+    },
+    {
+     "count": 120,
+     "pose": 2141
+    },
+    {
+     "count": 63,
+     "pose": 2562
+    },
+    {
+     "count": 16,
+     "pose": 2793
+    },
+    {
+     "count": 36,
+     "pose": 2796
+    }
+   ],
+   "status": "straddler-without-clean-holder",
+   "unit_piece": 46250,
+   "unit_size": 8,
+   "x": 554
+  },
+  {
+   "best": {
+    "D": 134,
+    "F": 148,
+    "F_minus_D": 14,
+    "h": 12,
+    "helper_delta_phi": 0,
+    "helpers": [
+     [
+      20,
+      7
+     ],
+     [
+      104,
+      1
+     ]
+    ],
+    "order": [
+     20,
+     104
+    ],
+    "predicted_delta_phi": 28,
+    "predicted_phi": 1496,
+    "unit_piece": 40448,
+    "x": 12
+   },
+   "candidates": [
+    20,
+    104
+   ],
+   "covers": 1,
+   "feasible_covers": 1,
+   "feasible_frontier_records": 96,
+   "lowering_items": [
+    12,
+    16,
+    20,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32
+   ],
+   "overlaps": [],
+   "pose": 2671,
+   "status": "budget",
+   "unit_piece": 40448,
+   "unit_size": 3,
+   "x": 12
+  },
+  {
+   "count": 223,
+   "pose": 2681,
+   "pose_groups": [
+    {
+     "count": 60,
+     "pose": 1825
+    },
+    {
+     "count": 160,
+     "pose": 2227
+    },
+    {
+     "count": 3,
+     "pose": 2674
+    }
+   ],
+   "status": "straddler-without-clean-holder",
+   "unit_piece": 28969,
+   "unit_size": 48,
+   "x": 206
+  },
+  {
+   "count": 53,
+   "pose": 2681,
+   "pose_groups": [
+    {
+     "count": 3,
+     "pose": 2117
+    },
+    {
+     "count": 19,
+     "pose": 2227
+    },
+    {
+     "count": 27,
+     "pose": 2529
+    },
+    {
+     "count": 4,
+     "pose": 2683
+    }
+   ],
+   "status": "straddler-without-clean-holder",
+   "unit_piece": 28969,
+   "unit_size": 48,
+   "x": 433
+  },
+  {
+   "best": {
+    "D": 134,
+    "F": 148,
+    "F_minus_D": 14,
+    "h": 12,
+    "helper_delta_phi": 0,
+    "helpers": [
+     [
+      20,
+      7
+     ],
+     [
+      104,
+      1
+     ]
+    ],
+    "order": [
+     20,
+     104
+    ],
+    "predicted_delta_phi": 28,
+    "predicted_phi": 1496,
+    "unit_piece": 6328,
+    "x": 12
+   },
+   "candidates": [
+    20,
+    104
+   ],
+   "covers": 1,
+   "feasible_covers": 1,
+   "feasible_frontier_records": 96,
+   "lowering_items": [
+    12,
+    16,
+    20,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32
+   ],
+   "overlaps": [],
+   "pose": 2682,
+   "status": "budget",
+   "unit_piece": 6328,
+   "unit_size": 10,
+   "x": 12
+  },
+  {
+   "count": 141,
+   "pose": 2682,
+   "pose_groups": [
+    {
+     "count": 3,
+     "pose": 871
+    },
+    {
+     "count": 19,
+     "pose": 938
+    },
+    {
+     "count": 19,
+     "pose": 1547
+    },
+    {
+     "count": 22,
+     "pose": 2133
+    },
+    {
+     "count": 11,
+     "pose": 2188
+    },
+    {
+     "count": 25,
+     "pose": 2201
+    },
+    {
+     "count": 27,
+     "pose": 2377
+    },
+    {
+     "count": 8,
+     "pose": 2526
+    },
+    {
+     "count": 7,
+     "pose": 2722
+    }
+   ],
+   "status": "straddler-without-clean-holder",
+   "unit_piece": 6328,
+   "unit_size": 10,
+   "x": 65
+  },
+  {
+   "candidates": [
+    274
+   ],
+   "covers": 1,
+   "feasible_covers": 0,
+   "feasible_frontier_records": 0,
+   "lowering_items": [
+    14,
+    21,
+    23,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51
+   ],
+   "overlaps": [],
+   "pose": 2683,
+   "status": "no-feasible-items",
+   "unit_piece": 37689,
+   "unit_size": 48,
+   "x": 430
+  },
+  {
+   "count": 53,
+   "pose": 2812,
+   "pose_groups": [
+    {
+     "count": 3,
+     "pose": 2117
+    },
+    {
+     "count": 19,
+     "pose": 2227
+    },
+    {
+     "count": 27,
+     "pose": 2529
+    },
+    {
+     "count": 4,
+     "pose": 2683
+    }
+   ],
+   "status": "straddler-without-clean-holder",
+   "unit_piece": 22706,
+   "unit_size": 111,
+   "x": 433
+  },
+  {
+   "best": {
+    "D": 82,
+    "F": 284,
+    "F_minus_D": 202,
+    "h": 14,
+    "helper_delta_phi": 0,
+    "helpers": [],
+    "order": [],
+    "predicted_delta_phi": 404,
+    "predicted_phi": 1872,
+    "unit_piece": 127084,
+    "x": 482
+   },
+   "candidates": [],
+   "covers": 1,
+   "feasible_covers": 1,
+   "feasible_frontier_records": 12,
+   "lowering_items": [
+    14,
+    21,
+    23,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51
+   ],
+   "overlaps": [],
+   "pose": 2813,
+   "status": "budget",
+   "unit_piece": 127084,
+   "unit_size": 17,
+   "x": 482
+  },
+  {
+   "count": 253,
+   "pose": 2813,
+   "pose_groups": [
+    {
+     "count": 11,
+     "pose": 1063
+    },
+    {
+     "count": 7,
+     "pose": 2092
+    },
+    {
+     "count": 120,
+     "pose": 2141
+    },
+    {
+     "count": 63,
+     "pose": 2562
+    },
+    {
+     "count": 16,
+     "pose": 2793
+    },
+    {
+     "count": 36,
+     "pose": 2796
+    }
+   ],
+   "status": "straddler-without-clean-holder",
+   "unit_piece": 127084,
+   "unit_size": 17,
+   "x": 554
+  }
+ ],
+ "setup": {
+  "labels": {
+   "cpu_s": 146.928043
+  },
+  "load": {
+   "cpu_s": 0.308938
+  },
+  "trees": {
+   "cpu_s": 8.418261
+  },
+  "word": {
+   "cpu_s": 6e-06
+  }
+ },
+ "single_letter_descents": [],
+ "targets": null,
+ "tie_break": "predicted delta, h, item vector at grips 0..599 (omitted = identity)"
+}

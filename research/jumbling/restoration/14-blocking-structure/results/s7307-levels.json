@@ -1,0 +1,1251 @@
+{
+ "cpu_s": 1.545774,
+ "digest": "895b45de8a9a83604ca8bf988a3c9a287e404e59bd22a5004703d0852b252507",
+ "format": "t3p-levels/1",
+ "high_units": [
+  {
+   "branch": 4,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 3,
+    "intersection_size": 6,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 8
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 266,
+     "level": 1
+    }
+   ],
+   "pose": 590,
+   "size": 15,
+   "unit_piece": 80868
+  },
+  {
+   "branch": 2,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 2,
+    "intersection_size": 6,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 7
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 533,
+     "level": 5
+    },
+    {
+     "grip": 552,
+     "level": 5
+    }
+   ],
+   "pose": 609,
+   "size": 15,
+   "unit_piece": 26691
+  },
+  {
+   "branch": 2,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 2,
+    "intersection_size": 5,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 6
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 435,
+     "level": 1
+    }
+   ],
+   "pose": 617,
+   "size": 43,
+   "unit_piece": 28247
+  },
+  {
+   "branch": 2,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 3,
+    "intersection_size": 5,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 7
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 435,
+     "level": 1
+    }
+   ],
+   "pose": 654,
+   "size": 19,
+   "unit_piece": 15121
+  },
+  {
+   "branch": 1,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 4,
+    "intersection_size": 5,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 7
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 102,
+     "level": 1
+    }
+   ],
+   "pose": 769,
+   "size": 135,
+   "unit_piece": 15234
+  },
+  {
+   "branch": 0,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 4,
+    "intersection_size": 5,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 7
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 319,
+     "level": 2
+    }
+   ],
+   "pose": 906,
+   "size": 111,
+   "unit_piece": 84612
+  },
+  {
+   "branch": 1,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 1,
+    "intersection_size": 7,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 7
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 102,
+     "level": 1
+    },
+    {
+     "grip": 235,
+     "level": 2
+    }
+   ],
+   "pose": 907,
+   "size": 7,
+   "unit_piece": 66431
+  },
+  {
+   "branch": 0,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 2,
+    "intersection_size": 6,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 7
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 449,
+     "level": 4
+    },
+    {
+     "grip": 543,
+     "level": 1
+    }
+   ],
+   "pose": 1044,
+   "size": 111,
+   "unit_piece": 28988
+  },
+  {
+   "branch": 2,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 4,
+    "intersection_size": 5,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 7
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 597,
+     "level": 0
+    }
+   ],
+   "pose": 1061,
+   "size": 111,
+   "unit_piece": 55811
+  },
+  {
+   "branch": 4,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 1,
+    "intersection_size": 10,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 10
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 266,
+     "level": 1
+    },
+    {
+     "grip": 480,
+     "level": 6
+    }
+   ],
+   "pose": 1062,
+   "size": 10,
+   "unit_piece": 93241
+  },
+  {
+   "branch": 1,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 5,
+    "intersection_size": 5,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 8
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 102,
+     "level": 1
+    }
+   ],
+   "pose": 1116,
+   "size": 46,
+   "unit_piece": 25829
+  },
+  {
+   "branch": 4,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 10,
+    "intersection_size": 4,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 8
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 266,
+     "level": 1
+    }
+   ],
+   "pose": 1186,
+   "size": 38,
+   "unit_piece": 160496
+  },
+  {
+   "branch": 1,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 4,
+    "intersection_size": 5,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 7
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 405,
+     "level": 6
+    }
+   ],
+   "pose": 1218,
+   "size": 198,
+   "unit_piece": 142003
+  },
+  {
+   "branch": 4,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 2,
+    "intersection_size": 9,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 10
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 266,
+     "level": 1
+    },
+    {
+     "grip": 480,
+     "level": 6
+    }
+   ],
+   "pose": 1349,
+   "size": 7,
+   "unit_piece": 86942
+  },
+  {
+   "branch": 4,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 1,
+    "intersection_size": 10,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 10
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 509,
+     "level": 3
+    },
+    {
+     "grip": 588,
+     "level": 2
+    }
+   ],
+   "pose": 1453,
+   "size": 3,
+   "unit_piece": 47820
+  },
+  {
+   "branch": 0,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 15,
+    "intersection_size": 2,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 8
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 516,
+     "level": 0
+    }
+   ],
+   "pose": 1489,
+   "size": 395,
+   "unit_piece": 122609
+  },
+  {
+   "branch": 3,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 1,
+    "intersection_size": 7,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 7
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 226,
+     "level": 1
+    },
+    {
+     "grip": 338,
+     "level": 6
+    }
+   ],
+   "pose": 1700,
+   "size": 15,
+   "unit_piece": 159240
+  },
+  {
+   "branch": 2,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 2,
+    "intersection_size": 6,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 7
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 570,
+     "level": 2
+    },
+    {
+     "grip": 597,
+     "level": 0
+    }
+   ],
+   "pose": 1722,
+   "size": 46,
+   "unit_piece": 58776
+  },
+  {
+   "branch": 2,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 1,
+    "intersection_size": 5,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 5
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 10,
+     "level": 0
+    }
+   ],
+   "pose": 1774,
+   "size": 41,
+   "unit_piece": 6243
+  },
+  {
+   "branch": 4,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 2,
+    "intersection_size": 7,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 8
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 266,
+     "level": 1
+    },
+    {
+     "grip": 380,
+     "level": 2
+    }
+   ],
+   "pose": 1796,
+   "size": 10,
+   "unit_piece": 146901
+  },
+  {
+   "branch": 4,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 7,
+    "intersection_size": 5,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 10
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 266,
+     "level": 1
+    }
+   ],
+   "pose": 1797,
+   "size": 46,
+   "unit_piece": 128626
+  },
+  {
+   "branch": 1,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 1,
+    "intersection_size": 7,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 7
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 102,
+     "level": 1
+    }
+   ],
+   "pose": 1875,
+   "size": 15,
+   "unit_piece": 63865
+  },
+  {
+   "branch": 3,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 1,
+    "intersection_size": 8,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 8
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 208,
+     "level": 5
+    },
+    {
+     "grip": 431,
+     "level": 5
+    }
+   ],
+   "pose": 2004,
+   "size": 3,
+   "unit_piece": 38550
+  },
+  {
+   "branch": 1,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 4,
+    "intersection_size": 6,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 8
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 65,
+     "level": 2
+    },
+    {
+     "grip": 102,
+     "level": 1
+    }
+   ],
+   "pose": 2005,
+   "size": 63,
+   "unit_piece": 27224
+  },
+  {
+   "branch": 2,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 11,
+    "intersection_size": 3,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 10
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 533,
+     "level": 5
+    }
+   ],
+   "pose": 2006,
+   "size": 22,
+   "unit_piece": 133931
+  },
+  {
+   "branch": 3,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 4,
+    "intersection_size": 6,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 10
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 286,
+     "level": 3
+    },
+    {
+     "grip": 474,
+     "level": 0
+    }
+   ],
+   "pose": 2061,
+   "size": 10,
+   "unit_piece": 15375
+  },
+  {
+   "branch": 4,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 2,
+    "intersection_size": 9,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 10
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 509,
+     "level": 3
+    },
+    {
+     "grip": 588,
+     "level": 2
+    }
+   ],
+   "pose": 2113,
+   "size": 4,
+   "unit_piece": 35810
+  },
+  {
+   "branch": 4,
+   "cell_split": {
+    "clean_partial_holders": [],
+    "distinct_holder_rows": 8,
+    "intersection_size": 5,
+    "scope": "holder rows at all 600 grips, separately for every member",
+    "union_size": 10
+   },
+   "height": 4,
+   "own_holders": [
+    {
+     "grip": 368,
+     "level": 4
+    }
+   ],
+   "pose": 2114,
+   "size": 46,
+   "unit_piece": 97366
+  }
+ ],
+ "histogram": {
+  "0": 38,
+  "1": 74,
+  "2": 153,
+  "3": 84,
+  "4": 103,
+  "5": 67,
+  "6": 74,
+  "7": 7
+ },
+ "iterations": 8,
+ "lambda": 0,
+ "lambda_witness": {
+  "holder": 10,
+  "piece": 6243
+ },
+ "levels": [
+  1,
+  2,
+  4,
+  4,
+  1,
+  1,
+  4,
+  4,
+  2,
+  4,
+  0,
+  3,
+  2,
+  4,
+  2,
+  4,
+  4,
+  2,
+  2,
+  0,
+  4,
+  2,
+  4,
+  3,
+  3,
+  2,
+  4,
+  2,
+  4,
+  2,
+  3,
+  4,
+  2,
+  1,
+  4,
+  1,
+  4,
+  4,
+  2,
+  2,
+  4,
+  2,
+  4,
+  2,
+  4,
+  3,
+  1,
+  4,
+  3,
+  2,
+  0,
+  2,
+  3,
+  0,
+  2,
+  4,
+  3,
+  3,
+  2,
+  4,
+  3,
+  2,
+  3,
+  3,
+  4,
+  2,
+  4,
+  1,
+  1,
+  3,
+  3,
+  2,
+  2,
+  4,
+  3,
+  0,
+  3,
+  1,
+  2,
+  2,
+  3,
+  2,
+  3,
+  1,
+  2,
+  2,
+  2,
+  4,
+  0,
+  4,
+  3,
+  3,
+  3,
+  3,
+  0,
+  4,
+  4,
+  3,
+  4,
+  1,
+  4,
+  4,
+  1,
+  4,
+  1,
+  3,
+  1,
+  4,
+  2,
+  3,
+  2,
+  1,
+  0,
+  3,
+  3,
+  4,
+  5,
+  2,
+  2,
+  3,
+  3,
+  2,
+  2,
+  4,
+  3,
+  3,
+  4,
+  3,
+  2,
+  4,
+  2,
+  3,
+  5,
+  2,
+  2,
+  5,
+  4,
+  2,
+  3,
+  2,
+  2,
+  1,
+  3,
+  3,
+  4,
+  3,
+  5,
+  0,
+  3,
+  2,
+  3,
+  4,
+  2,
+  4,
+  3,
+  1,
+  2,
+  2,
+  4,
+  4,
+  3,
+  4,
+  1,
+  3,
+  4,
+  5,
+  4,
+  2,
+  2,
+  2,
+  4,
+  4,
+  2,
+  3,
+  3,
+  5,
+  0,
+  4,
+  3,
+  3,
+  4,
+  5,
+  5,
+  1,
+  3,
+  4,
+  4,
+  2,
+  4,
+  3,
+  5,
+  5,
+  3,
+  3,
+  5,
+  3,
+  3,
+  4,
+  4,
+  5,
+  0,
+  3,
+  2,
+  0,
+  3,
+  4,
+  6,
+  6,
+  5,
+  2,
+  4,
+  2,
+  4,
+  2,
+  3,
+  1,
+  0,
+  3,
+  3,
+  5,
+  5,
+  0,
+  1,
+  1,
+  1,
+  2,
+  1,
+  4,
+  6,
+  5,
+  1,
+  6,
+  4,
+  3,
+  5,
+  2,
+  3,
+  0,
+  5,
+  4,
+  0,
+  1,
+  2,
+  5,
+  4,
+  5,
+  3,
+  0,
+  5,
+  6,
+  5,
+  1,
+  2,
+  1,
+  4,
+  4,
+  4,
+  3,
+  6,
+  4,
+  6,
+  3,
+  2,
+  2,
+  3,
+  3,
+  1,
+  6,
+  6,
+  1,
+  1,
+  6,
+  5,
+  4,
+  6,
+  0,
+  0,
+  3,
+  3,
+  2,
+  2,
+  6,
+  5,
+  6,
+  6,
+  3,
+  3,
+  5,
+  6,
+  4,
+  6,
+  2,
+  5,
+  0,
+  5,
+  5,
+  4,
+  3,
+  6,
+  6,
+  4,
+  6,
+  6,
+  3,
+  5,
+  2,
+  1,
+  4,
+  4,
+  2,
+  6,
+  6,
+  5,
+  6,
+  5,
+  5,
+  1,
+  7,
+  2,
+  2,
+  4,
+  3,
+  5,
+  0,
+  2,
+  2,
+  5,
+  4,
+  2,
+  3,
+  6,
+  6,
+  4,
+  7,
+  5,
+  1,
+  4,
+  1,
+  6,
+  5,
+  6,
+  4,
+  2,
+  6,
+  4,
+  6,
+  4,
+  5,
+  3,
+  1,
+  1,
+  5,
+  0,
+  1,
+  5,
+  4,
+  4,
+  4,
+  5,
+  5,
+  5,
+  5,
+  3,
+  4,
+  7,
+  5,
+  3,
+  1,
+  4,
+  3,
+  1,
+  2,
+  5,
+  3,
+  4,
+  1,
+  4,
+  1,
+  1,
+  2,
+  2,
+  3,
+  0,
+  2,
+  5,
+  2,
+  7,
+  3,
+  4,
+  5,
+  4,
+  2,
+  6,
+  4,
+  0,
+  2,
+  6,
+  1,
+  6,
+  1,
+  5,
+  6,
+  2,
+  0,
+  5,
+  6,
+  5,
+  5,
+  5,
+  5,
+  5,
+  1,
+  1,
+  1,
+  4,
+  4,
+  1,
+  5,
+  2,
+  2,
+  6,
+  5,
+  2,
+  2,
+  1,
+  2,
+  6,
+  5,
+  0,
+  2,
+  6,
+  5,
+  2,
+  6,
+  6,
+  1,
+  2,
+  2,
+  1,
+  2,
+  1,
+  1,
+  1,
+  1,
+  2,
+  2,
+  7,
+  5,
+  0,
+  4,
+  4,
+  6,
+  5,
+  4,
+  2,
+  6,
+  0,
+  6,
+  3,
+  6,
+  4,
+  1,
+  1,
+  6,
+  6,
+  2,
+  4,
+  5,
+  4,
+  2,
+  0,
+  6,
+  6,
+  1,
+  0,
+  3,
+  6,
+  4,
+  6,
+  2,
+  6,
+  2,
+  2,
+  7,
+  2,
+  6,
+  6,
+  2,
+  2,
+  6,
+  4,
+  6,
+  0,
+  6,
+  0,
+  1,
+  2,
+  6,
+  1,
+  6,
+  0,
+  2,
+  6,
+  6,
+  2,
+  5,
+  5,
+  4,
+  2,
+  3,
+  6,
+  6,
+  5,
+  2,
+  6,
+  2,
+  0,
+  1,
+  2,
+  6,
+  4,
+  2,
+  2,
+  2,
+  2,
+  3,
+  7,
+  2,
+  4,
+  2,
+  6,
+  2,
+  2,
+  5,
+  1,
+  2,
+  0,
+  5,
+  2,
+  1,
+  6,
+  1,
+  1,
+  1,
+  2,
+  2,
+  0,
+  2,
+  1,
+  6,
+  2,
+  1,
+  5,
+  2,
+  2,
+  2,
+  3,
+  2,
+  2,
+  2,
+  2,
+  2,
+  1,
+  2,
+  2,
+  2,
+  2,
+  6,
+  1,
+  6,
+  2,
+  2,
+  2,
+  6,
+  2,
+  6,
+  6,
+  2,
+  1,
+  2,
+  2,
+  6,
+  2,
+  2,
+  2,
+  2,
+  6,
+  2,
+  2,
+  2,
+  0,
+  1,
+  2,
+  2,
+  6,
+  1,
+  2,
+  0,
+  2,
+  2
+ ],
+ "setup": {
+  "labels": {
+   "cpu_s": 0.687887
+  },
+  "load": {
+   "cpu_s": 0.314646
+  },
+  "trees": {
+   "cpu_s": 6.079746
+  },
+  "word": {
+   "cpu_s": 5e-06
+  }
+ }
+}

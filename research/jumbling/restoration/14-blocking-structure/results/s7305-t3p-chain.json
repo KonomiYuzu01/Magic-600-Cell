@@ -1,0 +1,200 @@
+{
+ "cpu_s": 979.505,
+ "end_digest": "e77981a8dcbc15b2665f232c4a8f6d822cfe6885476e883a306fd63d2c6e71d6",
+ "end_n4": 1237,
+ "end_phi": 2474,
+ "format": "t3p-chain/1",
+ "name": "s7305",
+ "policy": "greedy: the best round of t3p.scan at each state (its tie-break), checked by t3p.check",
+ "rounds": [
+  {
+   "D": 120,
+   "F": 0,
+   "S": 0,
+   "digest_after": "7eeaa561897cd516502724d4fc390ef402932fb7395a65822ead1046a6aa3398",
+   "failures": [],
+   "h": 14,
+   "helpers": [
+    [
+     421,
+     4
+    ],
+    [
+     577,
+     1
+    ]
+   ],
+   "order": [
+    421,
+    577
+   ],
+   "passed": true,
+   "phi_after": 2598,
+   "predicted_phi": 2598,
+   "round": 1,
+   "statuses_before": {
+    "budget": 13,
+    "no-feasible-items": 3,
+    "round": 9,
+    "straddler-without-clean-holder": 42
+   },
+   "unit_piece": 155983,
+   "x": 520
+  },
+  {
+   "D": 24,
+   "F": 0,
+   "S": 0,
+   "digest_after": "56b80d7da603d29b8967ec9410cf619969323f5e884997e11f0a1b32dbe2b4c8",
+   "failures": [],
+   "h": 12,
+   "helpers": [
+    [
+     233,
+     9
+    ]
+   ],
+   "order": [
+    233
+   ],
+   "passed": true,
+   "phi_after": 2550,
+   "predicted_phi": 2550,
+   "round": 2,
+   "statuses_before": {
+    "budget": 12,
+    "no-feasible-items": 6,
+    "round": 8,
+    "straddler-without-clean-holder": 37
+   },
+   "unit_piece": 94320,
+   "x": 281
+  },
+  {
+   "D": 122,
+   "F": 103,
+   "S": 0,
+   "digest_after": "fc6877d5967291db536f7267d280246850e566bc4bf989dd22af8a0e3bc81f63",
+   "failures": [],
+   "h": 15,
+   "helpers": [
+    [
+     6,
+     45
+    ]
+   ],
+   "order": [
+    6
+   ],
+   "passed": true,
+   "phi_after": 2512,
+   "predicted_phi": 2512,
+   "round": 3,
+   "statuses_before": {
+    "budget": 14,
+    "no-feasible-items": 6,
+    "round": 4,
+    "straddler-without-clean-holder": 35
+   },
+   "unit_piece": 25692,
+   "x": 44
+  },
+  {
+   "D": 16,
+   "F": 0,
+   "S": 0,
+   "digest_after": "8f10b78c40b412255c335a5ea6389c24edcf4a317e01e1722303dfee8fb016b2",
+   "failures": [],
+   "h": 13,
+   "helpers": [],
+   "order": [],
+   "passed": true,
+   "phi_after": 2480,
+   "predicted_phi": 2480,
+   "round": 4,
+   "statuses_before": {
+    "budget": 20,
+    "no-feasible-items": 6,
+    "round": 3,
+    "straddler-without-clean-holder": 38
+   },
+   "unit_piece": 56872,
+   "x": 208
+  },
+  {
+   "D": 3,
+   "F": 0,
+   "S": 0,
+   "digest_after": "e77981a8dcbc15b2665f232c4a8f6d822cfe6885476e883a306fd63d2c6e71d6",
+   "failures": [],
+   "h": 15,
+   "helpers": [],
+   "order": [],
+   "passed": true,
+   "phi_after": 2474,
+   "predicted_phi": 2474,
+   "round": 5,
+   "statuses_before": {
+    "budget": 21,
+    "no-feasible-items": 6,
+    "round": 1,
+    "straddler-without-clean-holder": 37
+   },
+   "unit_piece": 91843,
+   "x": 168
+  }
+ ],
+ "start_digest": "cc5ef7ecf0510ea9a74fc52bafe324d6d8f58294c4b0e20b40b97b414dada062",
+ "start_n4": 1419,
+ "start_phi": 2838,
+ "stop": {
+  "digest": "e77981a8dcbc15b2665f232c4a8f6d822cfe6885476e883a306fd63d2c6e71d6",
+  "phi": 2474,
+  "reason": "no round",
+  "single_letter_descents": 0,
+  "statuses": {
+   "budget": 20,
+   "no-feasible-items": 6,
+   "straddler-without-clean-holder": 37
+  }
+ },
+ "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7305/component/tables/00010.json",
+ "word": [
+  [
+   421,
+   4
+  ],
+  [
+   577,
+   1
+  ],
+  [
+   520,
+   14
+  ],
+  [
+   233,
+   9
+  ],
+  [
+   281,
+   12
+  ],
+  [
+   6,
+   45
+  ],
+  [
+   44,
+   15
+  ],
+  [
+   208,
+   13
+  ],
+  [
+   168,
+   15
+  ]
+ ]
+}

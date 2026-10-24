@@ -1,0 +1,126 @@
+{
+ "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7306/component-checkpoint/tables/00017.json",
+ "word": [
+  [
+   208,
+   5
+  ],
+  [
+   336,
+   15
+  ],
+  [
+   445,
+   55
+  ],
+  [
+   252,
+   13
+  ],
+  [
+   506,
+   7
+  ],
+  [
+   561,
+   14
+  ]
+ ],
+ "rows": [
+  {
+   "letter": null,
+   "applied": null,
+   "n2": 108360,
+   "n4": 1955,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 3910,
+   "off": 110315,
+   "digest": "ac4be82cf80e857137af957ff75438525ba950062e46a2fc5249aa0d7199d8f2"
+  },
+  {
+   "letter": [
+    208,
+    5
+   ],
+   "applied": true,
+   "n2": 108360,
+   "n4": 1955,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 3910,
+   "off": 110315,
+   "digest": "3aa2e884a7c24ae1e8ae0dfa78c5af2db40069c903950a072473e22fc15d0818"
+  },
+  {
+   "letter": [
+    336,
+    15
+   ],
+   "applied": true,
+   "n2": 108336,
+   "n4": 1623,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 3246,
+   "off": 109959,
+   "digest": "782c2034c13135fc3bd223eece014a9443554dc0cba0600f29efff57b8f0e359"
+  },
+  {
+   "letter": [
+    445,
+    55
+   ],
+   "applied": true,
+   "n2": 109141,
+   "n4": 1623,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 3246,
+   "off": 110764,
+   "digest": "12a17bc80cec802272a67d2166c0a0c20fc36fc59e847368fd24cc3fd57453d4"
+  },
+  {
+   "letter": [
+    252,
+    13
+   ],
+   "applied": true,
+   "n2": 108709,
+   "n4": 1353,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 2706,
+   "off": 110062,
+   "digest": "2d07a59c8a517f30381908a1baa8b83882a9dec1595362965a7e695f7d02de67"
+  },
+  {
+   "letter": [
+    506,
+    7
+   ],
+   "applied": true,
+   "n2": 108709,
+   "n4": 1353,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 2706,
+   "off": 110062,
+   "digest": "c22f286a0e3ef0471123db55ce98bb2e03ab03c2c817924667884fcee541ae4a"
+  },
+  {
+   "letter": [
+    561,
+    14
+   ],
+   "applied": true,
+   "n2": 107046,
+   "n4": 1342,
+   "n6": 0,
+   "max_h": 4,
+   "phi": 2684,
+   "off": 108388,
+   "digest": "5e9f7e4f69cb28b006c7aea7760b2d24e55dfc84065bbcdd771aad71e593a033"
+  }
+ ]
+}

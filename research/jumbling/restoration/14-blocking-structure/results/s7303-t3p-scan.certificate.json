@@ -1,0 +1,17 @@
+{
+ "format": "t3p-certificate/1",
+ "rounds": [
+  {
+   "h": 13,
+   "helpers": [
+    [
+     364,
+     5
+    ]
+   ],
+   "unit_piece": 23058,
+   "x": 282
+  }
+ ],
+ "table_digest": "d01dc91edd1c73da399b8acb13a57b9f526da64a5d754993f42ae02856d51889"
+}
