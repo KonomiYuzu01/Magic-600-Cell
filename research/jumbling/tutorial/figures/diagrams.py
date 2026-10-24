@@ -46,7 +46,7 @@ SVG_NS = "http://www.w3.org/2000/svg"
 NAME_RE = re.compile(r"[a-z0-9][a-z0-9-]{0,63}\Z")
 FIGURES = {}
 BACKTICK = chr(96)
-# Unchanged SVGs retain their original production metadata byte for byte.
+# Unchanged drawing code retains its pinned production renderer.
 # The manifest separately inventories the current inputs used to verify a redraw.
 ORIGINAL_RENDERER = "4999331eb3c77ec66b6af2cf989eaeaca63d2046e00340409826223b231e8008"
 UPDATED_FIGURES = {"bulk-n-7101", "bulk-conj-7101-s30", "03-counts-7302",
@@ -58,9 +58,29 @@ CHAPTER_DATA_RENDERER = "908108557d04296ca9866adfa5211c9473111916958a5673c194fcc
 CHAPTER_DATA_SHA256 = "35ae0c746ed3182ca3a60625117fa5ac7067d50ce16228c647cbcba45b04258b"
 CHAPTER_TREES_SHA256 = "748e36ba7ad9b6fd703d5d6ec549ae627a891e0683589812e25e64da1b8fca51"
 CONCEPT_FIGURES = {"ch04-point-model", "05-class-cells-71"}
+CONCEPT_RENDERER = "a4c6237ba613ae886c54f71cbb427b46e92fe9bd6fe5ba0fffa6d7ab4cbdd02b"
 APPENDIX_RENDERER = "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06"
 APPENDIX_DATA_SHA256 = "305f6f11dd457e9f087083780a243b94c1d44311106620201bd93429c1d632ac"
 APPENDIX_DATA_SOURCE = "3f2eb8401954e130031f1b2d201b9b756762bd474d7b24ac71fecc9205a3919f"
+# Changed drawings use this renderer and its actual production inputs. Caption
+# and chapter-digest updates alone keep the previous production renderer.
+REVISED_FIGURES = {
+    "01-phase-transitions", "01-step-tree-closure", "ch04-tier-shapes", "ch04-d19-tree",
+    "05-tree-b07-certificate", "ch06-orbit6-tree", "tree-7106-19", "appa-zero-bad-tree",
+    "appa-f3-shape", "appa-late-cycle-tree", "07-z36-phase-blocks", "07-checker-rows",
+}
+# The caption pass changed these exact files without changing the observations
+# consumed by figdata.py. Keep the recorded input digests; accept only these
+# specific presentation revisions, never an arbitrary later chapter edit.
+CAPTION_INPUT_REVISIONS = {
+    (T + "/04-high.md", "af09e7b4f47e7b2c8f373720e9d6730b14e6c5d190af0cd763a67eb306974328"):
+        "84d1527588abd0f4e0b9885bbad0ac8a5d2104099eaa377a6ae1c15c536b13bf",
+    (T + "/05-tail.md", "0ec94de6c2eb6c812793849cd0204d028c5aca886f8b8846b8d305e7fbed9f85"):
+        "3636059547042c427c76dba66d43ce3682225bf633d6a1b97cdfa22ce6518e6b",
+    (T + "/A-macros.md", "df9acab7faccaaadb2267a5b8b62c9df7c629b7ca6bf4ba1f214028e33d3fb17"):
+        "018d115ccd81bd8f062fdc52f0d73d22be1fcf548498b356a3061e1873d15ee0",
+}
+OBSERVATION_HELPERS_SHA256 = "7192707afecce7056d81f736b4d1776d708fc8488d540ba690aa3b4998d79241"
 ET.register_namespace("", SVG_NS)
 
 
@@ -68,9 +88,39 @@ def sha256(raw):
     return hashlib.sha256(raw).hexdigest()
 
 
+def observation_helpers_sha256(raw):
+    """Fingerprint the unchanged renderer helpers called by figdata.py.
+
+    height_counts calls height_examples and its parsers; point_model calls
+    literal_assignment. Drawing changes cannot certify a change to those helpers.
+    """
+    functions = {"height_examples", "tagged_lines", "table_after", "tables", "clean", "integer",
+                 "literal_assignment", "repository_path", "sha256"}
+    constants = {"HERE", "ROOT", "T", "F", "REST", "LOW", "ROUND", "CLOUD", "BACKTICK"}
+    parts = {}
+    tree = ast.parse(raw)
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and node.name in functions:
+            parts[node.name] = ast.dump(node, include_attributes=False)
+        elif isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id in constants:
+                    parts[target.id] = ast.dump(node.value, include_attributes=False)
+        elif isinstance(node, ast.ClassDef) and node.name == "Evidence":
+            for method in node.body:
+                if isinstance(method, ast.FunctionDef) and method.name in {"__init__", "raw", "text"}:
+                    parts["Evidence." + method.name] = ast.dump(method, include_attributes=False)
+    parts["imports"] = [ast.dump(node, include_attributes=False) for node in tree.body
+                        if isinstance(node, (ast.Import, ast.ImportFrom))]
+    return sha256(json.dumps(parts, sort_keys=True, separators=(",", ":")).encode())
+
+
 def production_inputs(name, inputs):
     result = dict(inputs)
+    if name in REVISED_FIGURES:
+        return result
     if name in CONCEPT_FIGURES:
+        result[F + "/diagrams.py"] = CONCEPT_RENDERER
         return result
     if name.startswith("appa-"):
         result[F + "/diagrams.py"] = APPENDIX_RENDERER
@@ -143,10 +193,14 @@ class Evidence:
         data = document["figures"][self.name]
         for path, digest in data["inputs"].items():
             try:
-                actual = sha256(repository_path(path).read_bytes())
+                raw = repository_path(path).read_bytes()
+                actual = sha256(raw)
             except OSError as error:
                 raise ValueError("stale figure data: " + self.name + ": " + path) from error
-            if actual != digest:
+            preserved = CAPTION_INPUT_REVISIONS.get((path, digest)) == actual
+            if path == F + "/diagrams.py" and digest == CONCEPT_RENDERER:
+                preserved = observation_helpers_sha256(raw) == OBSERVATION_HELPERS_SHA256
+            if actual != digest and not preserved:
                 raise ValueError("stale figure data: " + self.name + ": " + path)
         return data
 
@@ -217,7 +271,8 @@ class Svg:
             "font-size": "16", "fill": PALETTE["ink"],
             "aria-labelledby": "figure-title figure-description",
         })
-        self.el("title", text=evidence.number + ": " + title, id="figure-title")
+        display_title = evidence.number + ": " + title if evidence.number else title
+        self.el("title", text=display_title, id="figure-title")
         self.el("desc", text=evidence.alt or title, id="figure-description")
         defs = self.el("defs")
         for key in ("muted", "purple", "teal", "red", "blue"):
@@ -228,7 +283,7 @@ class Svg:
             })
             ET.SubElement(marker, "{" + SVG_NS + "}path", {"d": "M 0 0 L 10 5 L 0 10 z", "fill": PALETTE[key]})
         self.background = self.el("rect", x=0, y=0, width=1200, height=1, fill=PALETTE["white"])
-        self.text(40, 40, evidence.number + ": " + title, size=23, weight="600")
+        self.text(40, 40, display_title, size=23, weight="600")
         self.line(40, 60, 1160, 60, colour=PALETTE["line"])
 
     def el(self, tag, text=None, **attrs):
@@ -244,8 +299,12 @@ class Svg:
                        fill=colour, text_anchor=anchor, font_weight=weight, **attrs)
 
     @staticmethod
+    def text_width(text, size=15):
+        return len(str(text)) * size * .58
+
+    @staticmethod
     def wrapped(text, width, size=15):
-        chars = max(8, int(width / (size * .58)))
+        chars = max(8, int(width / Svg.text_width("M", size)))
         return [line for part in str(text).splitlines() for line in
                 (textwrap.wrap(part, width=chars, break_long_words=True, break_on_hyphens=False) or [""])]
 
@@ -439,13 +498,13 @@ def folded_tree(svg, root, y, label=None, show_spans=False):
         ref_lines = svg.wrapped(ref_text, 224, 13)
         h = max(22 * len(lines), 18 * len(path_lines), 18 * len(ref_lines)) + 12
         rows.append((node, path, depth, x, y, h, lines, path_lines, ref_lines))
-        positions[path] = (x, y + h / 2)
+        positions[path] = (x, y + h / 2, y - 3.5)
         y += h + 7
         for i in reversed(range(len(node.get("parts", [])))):
             stack.append((node["parts"][i], path + (i,), depth + 1))
     for node, path, depth, x, yy, h, lines, path_lines, ref_lines in rows:
         if path:
-            px, py = positions[path[:-1]]
+            px, py, _ = positions[path[:-1]]
             svg.path(f"M {fmt(px + 8)} {fmt(py + 8)} V {fmt(yy + h / 2)} H {fmt(x - 5)}")
         svg.rect(x, yy, 650 - x, h, fill=PALETTE["panel"] if "parts" in node else PALETTE["white"],
                  stroke=PALETTE["line"], rx=4)
@@ -461,12 +520,14 @@ def folded_tree(svg, root, y, label=None, show_spans=False):
             target = tuple(node[key])
             if target not in positions:
                 raise ValueError("tree reference has no target")
-            tx, ty = positions[target]
+            tx, ty, gap_y = positions[target]
             lane = 1040 + (reference_index % 8) * 14
             cy = yy + h / 2
             for j, line in enumerate(ref_lines):
                 svg.text(800, yy + 22 + j * 18, line, size=13, colour=PALETTE[colour])
-            svg.path(f"M 1024 {fmt(cy)} H {lane} V {fmt(ty)} H 650", colour=colour,
+            # Cross the index/reference columns in the gap above the target,
+            # then descend in the gutter between its box and its index label.
+            svg.path(f"M 1024 {fmt(cy)} H {lane} V {fmt(gap_y)} H 658 V {fmt(ty)} H 650", colour=colour,
                      arrow=True, dashed=key == "same_as")
             reference_index += 1
     return y + 22
@@ -633,9 +694,6 @@ def phase_transitions(e, s):
     y = s.paragraph(40, y, "Height sub-phases: " + " → ".join(data["subphase_order"]["height"]) + ". No transition returns to an earlier phase.")
     table = table_after(e.chapter, "**Transitions.**")
     rows = [(row[0] + " · " + row[1] + "\n" + row[2], row[3]) for row in table[1:]]
-    e.text(T + "/02-bulk.md")
-    rows += [("bulk · child crash or failed word contract", "run ends error"),
-             ("any phase · operator signal", "run ends error; lattice keeps a cancelled attempt and no phase result")]
     return flow(s, rows, y + 20)
 
 
@@ -1431,6 +1489,92 @@ def seed7001_steps(e, s):
                        "Every step is a one-letter seam step. The run ends with the solved digest.")
 
 
+def short_digest(value):
+    return value[:8] + "…" if value is not None else "null"
+
+
+def snapshot_text(state):
+    heights = ", ".join(str(h) + ": " + count(n) for h, n in state["heights"].items())
+    return ("off: " + count(state["off"]) + "\nheights: {" + heights + "}\ndigest: "
+            + short_digest(state["digest"]))
+
+
+@figure("07-z36-phase-blocks", "07-records.md", "The R22D-36 run: phases, height steps and stuck tail")
+def z36_phase_blocks(e, s):
+    record = e.record(7)
+    run, config = record["D_z36"], record["A_d0"]["config"]
+    y = s.paragraph(40, 96, "mode: " + run["mode"] + " · component: " + run["component"]) + 20
+    blocks = []
+    for phase in config["phase_order"]:
+        block = run["phases"][phase]
+        label = phase + "\nresult: " + str(block["result"] if block["result"] is not None else "null")
+        label += " · steps: " + count(block["steps"])
+        if "sub" in block:
+            detail = "\n".join(name + ": " + block["sub"][name]["result"] + " · steps: "
+                               + count(block["sub"][name]["steps"])
+                               for name in config["subphase_order"][phase])
+        elif phase == run["stuck"]["phase"]:
+            detail = "reason: " + run["stuck"]["reason"]
+        elif block["result"] is None:
+            detail = "not entered"
+        else:
+            detail = "twists: " + count(block["twists"])
+        blocks.append((label, detail))
+    y = flow(s, blocks, y)
+    s.text(40, y + 18, "Recorded height steps · zero-based indexes", size=18, weight="600")
+    rows = [[str(row["index"]), row["rule"] + "\n" + " · ".join(str(tuple(letter)) for letter in row["word"]["word"]),
+             snapshot_text(row["before"]), snapshot_text(row["after"])] for row in run["steps"]]
+    y = draw_table(s, ["Index", "Rule / letter", "Before", "After"], rows, y + 36, [70, 230, 410, 410])
+    stuck = run["stuck"]
+    y = draw_table(s, ["Stuck phase / reason", "Units", "Recorded unit sizes (distinct)", "Attempts"],
+                   [[stuck["phase"] + " / " + stuck["reason"], count(stuck["units"]),
+                     ", ".join(map(count, stuck["unit_sizes"])), count(stuck["attempts"])]],
+                   y, [240, 90, 670, 120])
+    check = run["check"]
+    return draw_table(s, ["Run result", "acceptance.verdict", "Checker pass", "Checker verdict", "Checker rc"],
+                      [[run["result"], run["acceptance"]["verdict"], json.dumps(check["final"]["pass"]),
+                        check["final"]["verdict"], str(check["rc"])]], y)
+
+
+def checker_change(change):
+    if "letter_after" in change:
+        return ("index " + str(change["step"]) + ": letter\n" + str(tuple(change["letter_before"]))
+                + " → " + str(tuple(change["letter_after"])) + "\nword_sha256 "
+                + ("updated" if change["row_sha256_updated"] else "unchanged"))
+    if "tree" in change:
+        return "index " + str(change["step"]) + ": tree\nspan → " + str(change["tree"]["span"])
+    return ("restorer → " + change["restorer"] + "\nacceptance config changed\n"
+            + short_digest(change["acceptance_config_sha256"]))
+
+
+@figure("07-checker-rows", "07-records.md", "The committed D0 check and its four changed copies")
+def checker_rows(e, s):
+    record = e.record(7)
+    committed = record["A_d0"]
+    copies = sorted(record["B_tampered"].items())
+    checks = [committed["check"]] + [check for _, check in copies]
+    headers = ["Index", "D0 · committed"] + [name + " · " + checker_change(check["change"]) for name, check in copies]
+    indexed = [{row["index"]: row for row in check["steps"]} for check in checks]
+    if any(set(rows) != set(indexed[0]) for rows in indexed):
+        raise ValueError("checker copies have different step indexes")
+    rows = []
+    for index in sorted(indexed[0]):
+        rows.append([str(index)] + ["pass" if column[index]["pass"] else "\n".join(column[index]["fails"])
+                                    for column in indexed])
+    final = ["Final"]
+    for check in checks:
+        row = check["final"]
+        cell = ("pass: " + json.dumps(row["pass"]) + "\nverdict: " + (row["verdict"] or "null")
+                + "\nend_digest: " + short_digest(row["end_digest"]) + "\nrc: " + str(check["rc"]))
+        if row["fails"]:
+            cell += "\nfails:\n" + "\n".join(row["fails"])
+        final.append(cell)
+    rows.append(final)
+    y = s.paragraph(40, 96, "Seed " + str(committed["start"]["seed"]) + " · checker step indexes. "
+                    "All failure names are retained, including the final row's failures. Null fields were not computed.") + 20
+    return draw_table(s, headers, rows, y, [90] + [206] * len(checks))
+
+
 @figure("appa-lock-shape", "A-macros.md", "lock: abstract opening and closing parts")
 def appendix_lock(e, s):
     e.text(T + "/02-bulk.md")
@@ -1540,9 +1684,7 @@ def render(name, entries):
         evidence = Evidence(name, "A-macros.md" if name.startswith("appa-") else None)
         evidence.raw(TREES_PATH)
         row, root = record_tree(evidence, entry["record"], entry["step"])
-        if not name.startswith("appa-"):
-            evidence.number = "Figure A." + str(list(entries).index(name) + 1)
-        title = row["rule"] + " · phase " + row["phase"] + " · step " + str(row["index"]) + " · " + count(row["letters"]) + " letters"
+        title = row["rule"] + " · phase " + row["phase"] + " · index " + str(row["index"]) + " · " + count(row["letters"]) + " letters"
         evidence.alt = "Folded step tree of " + entry["record"] + ", " + title
         svg = Svg(evidence, title)
         end = folded_tree(svg, root, 90, show_spans=name.startswith("appa-"))
@@ -1592,6 +1734,14 @@ def generate(out, only=None):
 def check(out, only=None):
     """Regenerate without modifying out, checking provenance as well as SVG bytes."""
     out = Path(out)
+    # Share the catalogue's complete embed validation. Known SVG names are
+    # checked against the generated outputs below; PNGs must already exist.
+    catalogue_path = repository_path(F + "/catalogue.py")
+    catalogue = types.ModuleType("tutorial_diagrams_catalogue")
+    catalogue.__file__ = str(catalogue_path)
+    exec(compile(catalogue_path.read_bytes(), str(catalogue_path), "exec"), catalogue.__dict__)
+    entries = validate_trees(json.loads(repository_path(TREES_PATH).read_text(encoding="utf-8")))
+    catalogue.embedded_entries(svg_names=set(FIGURES) | set(entries))
     with tempfile.TemporaryDirectory(prefix="magic600-diagrams-check-") as directory:
         fresh = generate(Path(directory), only)
         try:

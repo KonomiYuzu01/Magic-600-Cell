@@ -63,7 +63,9 @@ the pictures of `figures.json` that no chapter or appendix embeds yet.
 | 06-lattice.md | Figure 6.12 | `png/ch06-d0-sequence.png` | sheet of `ch06-d0-row19-before`, `ch06-d0-row19-after`, `ch06-d0-row20-after`, `ch06-d0-row21-after`, `ch06-d0-row22-after`, `ch06-d0-row23-after`, `ch06-d0-row24-after`, `ch06-d0-row25-after`, `ch06-d0-row26-after`, `ch06-d0-row27-after`, `ch06-d0-row28-after`, `ch06-d0-row29-after`, `ch06-d0-row30-after`, `ch06-d0-row31-after`, `ch06-d0-row32-after`, `ch06-d0-row33-after`, `ch06-d0-row34-after`, `ch06-d0-row35-after`, `ch06-d0-row36-after`, `ch06-d0-row37-after`, `ch06-d0-row38-after`, `ch06-d0-row39-after`, `ch06-d0-row40-after`, `ch06-d0-row41-after`, `ch06-d0-row42-after`, `ch06-d0-row43-after`, `ch06-d0-row44-after`, `ch06-d0-row45-after`, `ch06-d0-row46-after`, `ch06-d0-row47-after`, `ch06-d0-row48-after`, `ch06-d0-row49-after`, `ch06-d0-row50-after`, `ch06-d0-row51-after`, `ch06-d0-row52-after`, `ch06-d0-row53-after` | drawn |
 | 06-lattice.md | Figure 6.13 | `svg/ch06-d20-steps.svg` | `diagrams.py` | drawn |
 | 07-records.md | Figure 7.1 | `svg/07-t1prime-b04-tree.svg` | `diagrams.py` | drawn |
-| 07-records.md | Figure 7.3 | `svg/07-seed7001-bulk-steps.svg` | `diagrams.py` | drawn |
+| 07-records.md | Figure 7.2 | `svg/07-seed7001-bulk-steps.svg` | `diagrams.py` | drawn |
+| 07-records.md | Figure 7.3 | `svg/07-z36-phase-blocks.svg` | `diagrams.py` | drawn |
+| 07-records.md | Figure 7.4 | `svg/07-checker-rows.svg` | `diagrams.py` | drawn |
 | A-macros.md | Figure A.1 | `png/appa-conj-region.png` | sheet of `appa-conj-region-before`, `appa-conj-region-after` | drawn |
 | A-macros.md | Figure A.2 | `svg/appa-lock-shape.svg` | `diagrams.py` | drawn |
 | A-macros.md | Figure A.3 | `svg/appa-shift-shape.svg` | `diagrams.py` | drawn |
@@ -241,4 +243,4 @@ the pictures of `figures.json` that no chapter or appendix embeds yet.
 |  |  | `png/s7106-step9-after.png` | `dev/d0-s7106` step 9 after, local stereo | drawn |
 |  |  | `png/s7106-step9-before.png` | `dev/d0-s7106` step 9 before, local stereo | drawn |
 
-235 drawn, 0 stale, 0 missing.
+237 drawn, 0 stale, 0 missing.

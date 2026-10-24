@@ -736,6 +736,7 @@ the tail.
 | bulk | `budget` | `bulk_steps` reached (0 at the start: no child) | height | `runner.py:572-573`, `:1545-1547` |
 | bulk | `stuck` | no rule fires | height | `runner.py:1552-1558` |
 | bulk | `timeout` | a bulk clock ends (development mode only) | height; the run is marked a component | `runner.py:591-597`, `:615-617` |
+| bulk | no result | the bulk child crashes or its word contract fails | the run ends `error`; the recorded steps stand | `runner.py:610-611`, `:1479-1486` |
 | height sub-phase or high | `not_applicable` | its entry test fails at its start | the next sub-phase, or high, or the tail | `runner.py:649-650` |
 | height sub-phase or high | `handoff` | its entry test fails after a step | the same | `runner.py:654-656` |
 | height sub-phase or high | `lattice` | off = 0 after a step | the same; the later tests fail and the tail is `not_applicable` | `runner.py:670-671` |
@@ -753,6 +754,7 @@ the tail.
 | lattice | `budget` or `timeout` | the player's or the restorer's clock | the run ends `budget` | `runner.py:1383`; `lattice_phase.py:472-473`, `:564-565` |
 | lattice | `error` | the plugin reports an error | the run ends `error` | `runner.py:1378-1380` |
 | lattice | no result | a signal (SIGTERM or SIGHUP) stops the plugin's child | the phase keeps one attempt row, `outcome` `error` and `reason` `cancelled`; it records no result; the run ends `error` | `lattice_phase.py:468-471`; `runner.py:1313-1317`, `:1479-1486` |
+| any phase | — | a signal (SIGTERM or SIGHUP) stops the run | the run ends `error` (in the lattice phase as in the row above) | `runner.py:584-587`, `:618`, `:1479-1486` |
 
 Inside the bulk child the test is N = 0, not off = 0. The two agree by M3 (**proved (model review only)**, section
 1.7). A plugin may not claim `handoff` while its entry test holds, nor `lattice` while a piece is off; the runner
@@ -866,7 +868,7 @@ t1prime [n]
 └── W [n]
 ```
 
-![Figure 1.9: the two step trees above drawn folded, with inverse_of references as arrows](figures/svg/01-step-tree-closure.svg)
+![Figure 1.9: the closure step of b20 and the T1′ step of b07 above, drawn folded, with inverse_of references as arrows](figures/svg/01-step-tree-closure.svg)
 
 ## 1.14 Summary: what each phase reads
 
