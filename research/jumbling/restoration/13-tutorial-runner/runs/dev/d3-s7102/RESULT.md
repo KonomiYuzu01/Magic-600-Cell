@@ -136,3 +136,9 @@ background waiter on the runner process.
   `JUMBLING_BULK_WORKERS=3`, beside `checkpoint.py --run <dir>/out2 --every 120`. `--resume` cannot continue run 1,
   because its fingerprint pins the research code. `compare_runs.py` compares run 2 with run 1 step by step (rule,
   letters, word sha256, before and after digest, N).
+- Run 2 started at 02:27 UTC on `2e2609a` (the merge). 03:29 UTC (container restart, the first of run 2): local
+  `out2/` held 158 steps, checkpoint `f68c161` 156. I resumed `out2/` directly (accepted, `resumes` [158]) with
+  `JUMBLING_BULK_WORKERS=3`, plus `checkpoint.py --every 120` and a waiter. **Run 2 agrees with run 1 at all 158
+  steps** (rule, letters, word sha256, before and after digest, N; `compare_runs.py`, no difference). Those 158
+  steps took 3,642 s in run 2 against 29,996 s in run 1 (cloud timings of research code on a shared headless
+  Linux machine, not performance evidence).
