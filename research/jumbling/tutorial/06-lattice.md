@@ -243,7 +243,7 @@ A_J = C2^34 × C5^2: 34 bits can be 0 or 1 and both C5 values can be anything; t
 b6, f0, f3 and f6 are always 0 (manual `04-lattice.md:58-66`). The lower bound on A_J is **computed** (a certificate of
 40 words); the upper bound is **proved (model review only)** (`METHOD.md:111-115`).
 
-![Figure 6.2: The 45 coordinates of ν, with the nine that are always 0 greyed, the start value at the depth 40 stop of seed 7101 marked, and the eleven corrections chosen there with the coordinates each one changes](figures/svg/ch06-nu-grid.svg)
+![Figure 6.2: The 45 coordinates of ν, with the nine that are always 0 greyed, the start value marked where E2's tail from the depth 40 stop of seed 7101 ends (digest 02a27279…, section 6.17.3), and the eleven corrections chosen there with the coordinates each one changes](figures/svg/ch06-nu-grid.svg)
 
 ## 6.5 Rule L1: choose the corrections
 
@@ -325,7 +325,7 @@ writes the status `failure certificate: nu outside the span of the correction li
 
 **Where in the code.** `restore_lattice_late.py:311-353`; `restore_schedule11_late.py:290-332`; `nucoords.py:109-196`.
 
-![Figure 6.3: Before lattice/correction-0-7 of the depth 40 program of seed 7101, in the stereographic local view centred on the first cap of macro 7: the state T = solved · C⁻¹, whose labels are those of the played state before the first correction step (rule L4), with the pieces that the 9 letters of macro 7 (mirror2) move drawn opaque and the stickers near the cap as ghosts](figures/png/ch06-correction-before.png)
+![Figure 6.3: Before lattice/correction-0-7 of the depth 40 program of seed 7101, in the stereographic local view centred on the first cap of macro 7: the state T = solved · C⁻¹, whose labels are those of the played state before the first correction step (rule L4), with the 2,981 pieces that the 9 letters of macro 7 (mirror2) move drawn opaque and no other piece drawn](figures/png/ch06-correction-before.png)
 
 ![Figure 6.4: After lattice/correction-0-7: the same view and pieces after the 9 letters of macro 7 (mirror2), which changes the 14 sign bits b10, b12, b14, b17, b18, b21, b22, b23, b25, b26, b27, b28, b31 and b33 of ν](figures/png/ch06-correction-after.png)
 
@@ -784,7 +784,7 @@ with a tree of 92 parts (record section E; section 6.17.2).
 
 ![Figure 6.6: Before lattice/orbit-6 of the seed 7106 handoff (row 19, digest 1b263d3e…): the whole puzzle in perspective, with the pieces whose exact pose the step changes drawn opaque (among them the six orbit-6 pieces out of place and collateral pieces of later orbits)](figures/png/s7106-step19-before.png)
 
-![Figure 6.7: After lattice/orbit-6 (digest 949da503…): the same view and the same pieces; every orbit-6 piece is at home with the identity frame, and the collateral pieces have moved](figures/png/s7106-step19-after.png)
+![Figure 6.7: After lattice/orbit-6 (digest 949da503…): the same view and the same 4,341 pieces at their poses after the step; by the record every orbit-6 piece is now at home with the identity frame, and the collateral pieces have moved](figures/png/s7106-step19-after.png)
 
 ![Figure 6.8: The step tree of lattice/orbit-6 at the seed 7106 handoff: 24 parts and 194 letters, four twisted cycles that share one seed, with arrows for the inverse_of and same_as references](figures/svg/ch06-orbit6-tree.svg)
 
@@ -1268,7 +1268,7 @@ requires identity labels on the last lattice row (:1441-1443), and recomputes th
 The two D0 runs start from the same state and solve the orbits in the same order. Both end with identity labels, in
 different invisible rotations (stage 13 `README.md:1540-1541`).
 
-![Figure 6.11: Labels and poses at the end of the D0 record of seed 7106: the end state 71dbda5c… with every sticker label at home, next to the solved state, with the pieces whose exact pose differs between the two drawn opaque](figures/png/ch06-invisible-rotation.png)
+![Figure 6.11: Labels and poses at the end of the D0 record of seed 7106: the end state 71dbda5c… with every sticker label at home, next to the solved state; only the 1,206 pieces whose exact pose differs between the two are drawn](figures/png/ch06-invisible-rotation.png)
 
 ## 6.15 Bounds and measured lengths
 
@@ -1463,7 +1463,7 @@ What the table shows:
   comes.
 - A step's length is about its number of factors times their average length, which grows with s_o. Orbit 28 has the
   longest step, 325,790 letters: 203 factors of about 1,605 letters each, because its seed has 1,546 letters, the
-  longest under schedule11 (section 6.6). Orbit 31 has the most factors, 1,239, of about 70 letters each (s_o = 56).
+  longest under schedule11 (section 6.6). Orbit 30 has the most factors, 1,299, of about 70 letters each (s_o = 56).
 - Fixed errors are rare: 34 in all, on five frame orbits. Orbit 34 has 25 of them, which give 12 frame triples and one
   direct pair for the odd one left over (rule L3, part 2′).
 
@@ -1499,7 +1499,7 @@ costs at this state (**computed**, record section C; the cost of the plan played
 
 Each plan wins on 12 orbits; no tie occurs here.
 
-![Figure 6.12: The lattice phase of the D0 record of seed 7106 as a sequence of 36 panels in cascade order: the state before row 19, then the state after each of rows 19 to 53, each panel labelled with its row, rule, letters and after digest](figures/png/ch06-d0-sequence.png)
+![Figure 6.12: The lattice phase of the D0 record of seed 7106 as a sequence of 36 panels in cascade order: the pieces whose exact pose differs from solved, before row 19 and after each of rows 19 to 53, each panel labelled with its row, rule, letters and after digest; the panel before row 19 frames 3,093 of its 3,097 pieces (the 3,091 unsolved pieces and 6 whose sticker labels are at home but whose exact pose differs)](figures/png/ch06-d0-sequence.png)
 
 ### 6.17.2 The same handoff under the late restorer (development mode)
 
@@ -1566,7 +1566,8 @@ but only 9 factors, so its step has 393,486 letters (**computed**, record sectio
 No runner has played a phase with corrections from a development scramble yet. The only committed lattice program
 with corrections is the stage 12 record
 `research/jumbling/restoration/12-low-height/runs/round22/line-a/literal/lattice/restore-summary.json`, computed by the
-late restorer at the state where E2's literal steps end, the depth 40 stop of seed 7101 (**run on one instance**).
+late restorer at the state where E2's literal steps end (0 off, digest `02a27279…`; chapter 5). E2 started from the
+depth 40 stop of seed 7101, and this chapter calls that lattice input by the stop's name (**run on one instance**).
 There 60,046 pieces are not solved, and ν(Y) has 15 sign bits (b8, b12, b14, b15, b16, b17, b20, b21, b22, b23, b24,
 b26, b27, b29 and b32), f11 = 1 and C5_17 = 4 (record section F). Rule L1 gives eleven corrections:
 
@@ -1631,8 +1632,9 @@ same directory). T is the input of figures 6.3 and 6.4.
 
 - **Gaps in the runs.** No runner run has played a correction step from a development scramble or census stop, or
   ended its lattice phase with an `End` or with nothing scheduled (stage 13 `README.md:1634-1636`); the plugin's
-  fixtures cover them (sections 6.9 and 6.14). D1 (seed 7101, depth 40) and D2 are running and have no recorded result
-  (:1578). The slow test `LATTICE_PHASE_SLOW=1`, schedule11 on the rebuilt seed 7106 handoff
+  fixtures cover them (sections 6.9 and 6.14). No D1 or D2 record so far reached the lattice phase: D1's development
+  run was killed in its tail (section 5.18), and no recorded D2 run went past its high or tail phase (sections 4.18
+  and 5.18). The slow test `LATTICE_PHASE_SLOW=1`, schedule11 on the rebuilt seed 7106 handoff
   (`test_lattice_phase.py:1052-1076`), has not been run (stage 13 `README.md:1631`).
 - **Finite evidence.** The runs of this chapter show the phase on a few inputs. They do not show that every scramble is
   restored.

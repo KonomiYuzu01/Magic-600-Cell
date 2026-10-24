@@ -1,0 +1,759 @@
+{
+ "format": "runner-run/3",
+ "menu": "I_a",
+ "start": {
+  "kind": "table",
+  "file": "start-table.json",
+  "digest": "ba5371aebe00ac9411567545fe79e90fa3d2487d000d2c26d45613924d4e33ff",
+  "off": 96236,
+  "heights": {
+   "2": 94691,
+   "4": 1535,
+   "6": 10
+  }
+ },
+ "config": {
+  "literal_only": true,
+  "mode": "development",
+  "component": null,
+  "bulk_order": [
+   "seam",
+   "cover",
+   "close",
+   "conj",
+   "lock",
+   "improve",
+   "shift"
+  ],
+  "phase_order": [
+   "bulk",
+   "height",
+   "high",
+   "tail",
+   "lattice"
+  ],
+  "subphase_order": {
+   "height": [
+    "r22d75",
+    "r22d81",
+    "h4"
+   ]
+  },
+  "tail_rules": [
+   "zero_bad",
+   "pure",
+   "close",
+   "t1prime"
+  ],
+  "budgets": {
+   "bulk_steps": null,
+   "bulk_step_seconds": 21600.0,
+   "bulk_seconds": 21600.0,
+   "tail_steps": null,
+   "high_steps": null,
+   "rule_seconds": 3600,
+   "greedy_seconds": 60,
+   "cert_seconds": 3600,
+   "height_seconds": 12000.0,
+   "height_cpu": 12000.0,
+   "kernel_seconds": 3600.0,
+   "pair_shards": 3,
+   "fallback_max_length": 1,
+   "par": 1
+  },
+  "clock_sentinel": null,
+  "kernel": {
+   "seconds": 3600.0,
+   "wall_margin": 600,
+   "d19": {
+    "file": "research/jumbling/restoration/12-low-height/scripts/round22/r22d19_rule.py",
+    "sha256": "587bfc4bc241e78b00d4539a5ff238b00a2741900ffb44a02fb36b7499f044da"
+   },
+   "max_steps": 1
+  },
+  "lattice": {
+   "restorer": "schedule11"
+  },
+  "literal_limit": 10000000,
+  "seeds": "atlas",
+  "acceptance_config": null,
+  "source": {
+   "commit": "5f719ce8616b901257d7bb0ac324f7e5e5bdb3d6",
+   "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "dirty": false
+  },
+  "scripts": {
+   "research/jumbling/restoration/13-tutorial-runner/scripts/runner.py": "cd576897291482030aab89c709f7dcea136183b46c5c3a9509fdf4b3fe4f8ce4",
+   "research/jumbling/restoration/13-tutorial-runner/scripts/runner_api.py": "b92e73d33345da33ee3e6e7974d9ab8db1d35193dc69371b0e13d55bade08459",
+   "research/jumbling/theory/seams.py": "e42dac099632ec063f63b3880cd4957cc49b1193b732e4fa2bf87eeb7882204b",
+   "research/jumbling/theory/restore.py": "2a7bfd448f24ecafd544aa54bae914dec817b801fb044dcee660c2ce46893861",
+   "research/jumbling/theory/orient.py": "922c51544e296ef27ddc187f28cf321a155ff1dec41629b13f9d70c670869eed",
+   "research/jumbling/theory/buffer.py": "219509d954fe966f9ea9ad12b638736146672a030b13135e1e1cf2327c330076",
+   "research/jumbling/theory/trees.py": "8431eedfb778a68b04e5938f3bcfee92feac8e54e718471ea33d6ccedb55a642",
+   "research/jumbling/sim/state.py": "7b92119080a1a7bb3155a0d91a2ac83f20b7f3d4e2c07fb976c17ff447e44259",
+   "research/jumbling/restoration/09-general-method/scripts/gm/mkblocks2.py": "f7ac57a543cc7e3626a4baff13e6460c31e0c2fa563009125fb28e255b21ffac",
+   "research/jumbling/restoration/09-general-method/scripts/gm/tclose2.py": "ba1fd9bf32117ce405e49f81a499425646d4aee7c5e23a22e53d5ab1490b9584",
+   "research/jumbling/restoration/09-general-method/scripts/gm/fallback.py": "56f2ac790b71056798ce0407572927c2514b20df9e03c0edfb985fc324d62946",
+   "research/jumbling/restoration/12-low-height/scripts/cellpure5.py": "6eb1a497fa7fba9a3f7d4ccbc5e6581e9a1cf4d294fca855dd5863fe22017061",
+   "research/jumbling/restoration/12-low-height/scripts/round22/transport_census.py": "3cf13dc1a9103e0f220ea9182def1d19233ad89d5146585a84adbfd308e7cbc7",
+   "research/jumbling/restoration/12-low-height/scripts/round22/stepchk.py": "beb3f2dfa07868be973706bc2540de2f68d613ba6fb6e85cca0678d7477896a1",
+   "research/jumbling/restoration/12-low-height/scripts/round22/prep_t1prime.py": "a9d7c252d18248e36e8f0a94bec6712a5743a270a772ea54adf6d0416695cc94",
+   "research/jumbling/restoration/12-low-height/scripts/round22/jordan_target.py": "6273bcffa56893d5b11bcc101e7239e6a68ad811c141b51cd71c77f92e5be2a1",
+   "research/jumbling/restoration/12-low-height/scripts/r22b10_cert.py": "1c59ab5bfec0964963dbff2d97e3ddecb7a02d0304eb42f4792c0abb8c70238e",
+   "research/jumbling/restoration/12-low-height/scripts/check_r22b10.py": "e0405f8144cd66ff17dee4b93191f9b4c2ac97bb4faf285a8c554c3a1ffe596b",
+   "research/jumbling/restoration/12-low-height/scripts/expand_slp.py": "757d497d220c4b963485cf00f67e6ba7fb1db285d46bd56b9f8644d6b95448be",
+   "research/jumbling/restoration/12-low-height/scripts/slp_apply.py": "0485e23561ce43f6af86f9a7548b96e5a9e7653a39bc6a75ad71109e391a0cbe",
+   "research/jumbling/restoration/09-general-method/scripts/lattice/scripts/restore_lattice_late.py": "0c36b264ed28b65cc949a67a101ab7c225ec5c7d449dca1bf89f4b3a26c83989",
+   "research/jumbling/restoration/09-general-method/scripts/lattice/checker/verify_late.py": "0b954399a776c40f7ef32581ebac6fa9ec070f9571d115bf4f980a1fd0175b57",
+   "research/jumbling/restoration/13-tutorial-runner/scripts/rules_height.py": "711c94495e589a7839c0169aa2bf2025c672132319f9a8d3d16f5a523def913a",
+   "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/r22d75_from_snapshot.py": "15a6b764b12c493f5f90dd3fb643e79182ddf1775d50f76d53dfa75540584aac",
+   "research/jumbling/restoration/12-low-height/scripts/round22/r22d81_rule.py": "0ef504d1484e9f3328592057f3be46cf60cce6bebd44619cd48f2a5f43ce48c5",
+   "research/jumbling/restoration/12-low-height/scripts/round22/r22d81_pairs.py": "2a0cfb8c28f35f65dee06a7258c12767fbe439dd4a9308535cf0385bc53ed2f8",
+   "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/h4_unlock.py": "12078831f1b41c46b9a9f50a1fa88ddabdcafdbb9b766c1a278a662c0ffc44a7",
+   "research/jumbling/restoration/12-low-height/scripts/round22/cloud/height4-descent-bbef1c8e/two_letter_u.py": "ce5fb13584630e8c87d08273eaf41b74b68798a30ae606b1f55dd3da07fd93c9",
+   "research/jumbling/restoration/12-low-height/scripts/round22/r22d31_snapshots.py": "1e18b548b181dff29a1fee4c914acc785706887773b7cc75cbb62f8c25fb6256",
+   "research/jumbling/restoration/12-low-height/scripts/eb6.py": "f0b37865f1c8b237b27089af5d0eded3dc188988304c2d3ef6289ea62f4b469a",
+   "research/jumbling/restoration/13-tutorial-runner/scripts/rules_kernel.py": "da3c855a2176bc1cf7c93a547929a6a65c20ab2bd0d4cfd6da681a63c2c70eae",
+   "research/jumbling/restoration/12-low-height/scripts/round22/r22d25_search.py": "b2e2fa4ed1c34579589a68c2d7151e8209b60233b2665d2670d6ff7cd07f6c4b",
+   "research/jumbling/restoration/12-low-height/scripts/round22/r22d25_state.py": "ca45c9ba5ba14b10d48d1d2946c1265acdc8f6e609a5ef83737f79fde8201316",
+   "research/jumbling/restoration/12-low-height/scripts/round22/r22d19_rule.py": "587bfc4bc241e78b00d4539a5ff238b00a2741900ffb44a02fb36b7499f044da",
+   "research/jumbling/restoration/12-low-height/scripts/screen.py": "55acf5d2aba9f1ec57acfb7420e4e897548ed033b5a0c65cd7f32aee2332e48b",
+   "research/jumbling/theory/blocks.py": "7143a86f90f58688587f9b7ac493f3bf52b7f38202fbd702e08769624163a413",
+   "research/jumbling/theory/classes.py": "88357545e2513f76b9809742b7d77e234167cb88dc8f433f9de85c95c42f77cd",
+   "research/jumbling/theory/e3_class.py": "452d9a043ab01174bf62323e8f9a2b110d835dd87ac58922574b458fcfff9afd",
+   "research/jumbling/theory/rim.py": "a53626a88584dcea44646a4a4473a177a3697ed5ac26b061b639a4576debc750",
+   "research/jumbling/restoration/13-tutorial-runner/scripts/lattice_phase.py": "4f342f7b098d27083251ba5944c606a589883c8f2728add9c0ea13ea710c46e0",
+   "research/jumbling/restoration/13-tutorial-runner/scripts/literal_lattice.py": "164904b0e2881322454a32adf63ec8293f285531c0405249d43ee85d514937f0",
+   "research/jumbling/restoration/09-general-method/scripts/schedule11/restore_schedule11_late.py": "812695ed76ea8f724722366cee0d9229a9d26feda1e44ca49a2160c25674f73b",
+   "research/jumbling/restoration/09-general-method/scripts/lattice/scripts/rlib.py": "fb1a42be38d2df3c7fcefe51fa0d6ca2c62d520125386914ead5a87d1fe90f9d",
+   "research/jumbling/restoration/09-general-method/scripts/lattice/scripts/kit.py": "8127e7837efd464fd8214cb525a6de7d655154629a017022dd94f63a0582943f",
+   "research/jumbling/restoration/09-general-method/scripts/lattice/scripts/nucoords.py": "43d2e0fd6c76f553a8cf7da3f02edde8c76c79a6f7a62eed96ec28a4308ebbc6",
+   "research/jumbling/restoration/09-general-method/scripts/schedule11/sched11.py": "d1e051d8de9162c4334b7c119a069f5fb3bb091087847aad71ef0a9392ff96c5",
+   "research/jumbling/restoration/03-retained-group-and-lattice-restorer/scripts/rlib.py": "fb1a42be38d2df3c7fcefe51fa0d6ca2c62d520125386914ead5a87d1fe90f9d",
+   "research/jumbling/restoration/03-retained-group-and-lattice-restorer/scripts/kit.py": "8127e7837efd464fd8214cb525a6de7d655154629a017022dd94f63a0582943f",
+   "research/jumbling/restoration/03-retained-group-and-lattice-restorer/scripts/nucoords.py": "43d2e0fd6c76f553a8cf7da3f02edde8c76c79a6f7a62eed96ec28a4308ebbc6"
+  }
+ },
+ "phases": {
+  "bulk": {
+   "result": "budget",
+   "steps": 20,
+   "twists": 60,
+   "end": {
+    "digest": "21fa8560ad18b9b0cdb1714eb6f2fb24e2ff6e5bc9e7294bea78fad19258ae2b",
+    "off": 95431,
+    "heights": {
+     "2": 93886,
+     "4": 1535,
+     "6": 10
+    },
+    "table": "tables/bulk-end.json"
+   }
+  },
+  "height": {
+   "result": null,
+   "steps": 0,
+   "twists": 0,
+   "start": null,
+   "end": null,
+   "sub": {
+    "r22d75": {
+     "result": null,
+     "steps": 0,
+     "start": null,
+     "end": null
+    },
+    "r22d81": {
+     "result": null,
+     "steps": 0,
+     "start": null,
+     "end": null
+    },
+    "h4": {
+     "result": null,
+     "steps": 0,
+     "start": null,
+     "end": null
+    }
+   }
+  },
+  "high": {
+   "result": null,
+   "steps": 0,
+   "twists": 0,
+   "start": null,
+   "end": null
+  },
+  "tail": {
+   "result": null,
+   "steps": 0
+  },
+  "lattice": {
+   "result": null,
+   "steps": 0,
+   "twists": null
+  }
+ },
+ "steps": [
+  {
+   "index": 0,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00000.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "66208b1cc9cd4d17f931057ca71645316036bafc9d88f8281e23d69f1bc8dc25",
+   "tree": {
+    "file": "step-trees/00000.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "ba5371aebe00ac9411567545fe79e90fa3d2487d000d2c26d45613924d4e33ff",
+    "off": 96236,
+    "N": 112776
+   },
+   "after": {
+    "digest": "da9aa7f960796d69fd0efdd2b41eb53bdeb0e37caeda44b3d24d7b359e51e79c",
+    "off": 95689,
+    "N": 112724
+   },
+   "seconds": 1230.129609
+  },
+  {
+   "index": 1,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00001.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "7732a7e0cdefc0624c0bf77134ab2c0cbc9fde1f25a5c6806e7d6d2b067c276a",
+   "tree": {
+    "file": "step-trees/00001.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "da9aa7f960796d69fd0efdd2b41eb53bdeb0e37caeda44b3d24d7b359e51e79c",
+    "off": 95689,
+    "N": 112724
+   },
+   "after": {
+    "digest": "0cd62b5ea161fcf9057cb800130cc46682b4a050c8396113ace0c929b679a9a9",
+    "off": 95689,
+    "N": 112674
+   },
+   "seconds": 323.374808
+  },
+  {
+   "index": 2,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00002.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "0bd5bb345ce481e67cc5b7c6aadf44345a39b9c9b8e21a1a1767d4a3ab919773",
+   "tree": {
+    "file": "step-trees/00002.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "0cd62b5ea161fcf9057cb800130cc46682b4a050c8396113ace0c929b679a9a9",
+    "off": 95689,
+    "N": 112674
+   },
+   "after": {
+    "digest": "01854322affc6429e7dc67f9c3206828957f84b13cd1e662f1add03f10e10bc2",
+    "off": 95689,
+    "N": 112660
+   },
+   "seconds": 302.868406
+  },
+  {
+   "index": 3,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00003.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "46870454884fbd4ea493079f7703b3ec1be98dc9926915154d0fe7244bb27c35",
+   "tree": {
+    "file": "step-trees/00003.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "01854322affc6429e7dc67f9c3206828957f84b13cd1e662f1add03f10e10bc2",
+    "off": 95689,
+    "N": 112660
+   },
+   "after": {
+    "digest": "10eade1fc9e8cdb83f352c48fe6120a054adef952a7b62b43f5d34251ec648a0",
+    "off": 95689,
+    "N": 112606
+   },
+   "seconds": 35.961251
+  },
+  {
+   "index": 4,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00004.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "c042ee6c81e19d6e01c1d34facf9b0faee8d8475d335b1436e24487cbcfcf3ff",
+   "tree": {
+    "file": "step-trees/00004.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "10eade1fc9e8cdb83f352c48fe6120a054adef952a7b62b43f5d34251ec648a0",
+    "off": 95689,
+    "N": 112606
+   },
+   "after": {
+    "digest": "106447cdac2b5b1aeab065101d7d9b7086bf254c5aef62e55a527550481db8bc",
+    "off": 95689,
+    "N": 112604
+   },
+   "seconds": 68.675187
+  },
+  {
+   "index": 5,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00005.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "bef236b31d4fda249274b208d1113d7469db2b74641abd33af26df914ce6f162",
+   "tree": {
+    "file": "step-trees/00005.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "106447cdac2b5b1aeab065101d7d9b7086bf254c5aef62e55a527550481db8bc",
+    "off": 95689,
+    "N": 112604
+   },
+   "after": {
+    "digest": "e94bac01b539f3c9a8fd6dc8800e214221537f34143d7374e4bd5c3a319082c3",
+    "off": 95689,
+    "N": 112584
+   },
+   "seconds": 57.536362
+  },
+  {
+   "index": 6,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00006.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "348992270898245e159ae6eccff6dac1517d5534cca6dd6e8969178b55c53fd9",
+   "tree": {
+    "file": "step-trees/00006.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "e94bac01b539f3c9a8fd6dc8800e214221537f34143d7374e4bd5c3a319082c3",
+    "off": 95689,
+    "N": 112584
+   },
+   "after": {
+    "digest": "866b7b2a54767c273ba970486aaf4b5c4fbbeab18419145f158e766166f4fa06",
+    "off": 95689,
+    "N": 112538
+   },
+   "seconds": 43.04783
+  },
+  {
+   "index": 7,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00007.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "f0b16797cdefab44881f961b47e53f5cb92ede8396fe1fd14233b4c626722b80",
+   "tree": {
+    "file": "step-trees/00007.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "866b7b2a54767c273ba970486aaf4b5c4fbbeab18419145f158e766166f4fa06",
+    "off": 95689,
+    "N": 112538
+   },
+   "after": {
+    "digest": "8be08f385c0f47aa2236b1c0303741269e31bb94009936510fc559bd1f44c707",
+    "off": 95689,
+    "N": 112530
+   },
+   "seconds": 47.601995
+  },
+  {
+   "index": 8,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00008.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "6a1e9ac14273d1c5432674c27b702755775b299fd8be8ea7decab342a74a4441",
+   "tree": {
+    "file": "step-trees/00008.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "8be08f385c0f47aa2236b1c0303741269e31bb94009936510fc559bd1f44c707",
+    "off": 95689,
+    "N": 112530
+   },
+   "after": {
+    "digest": "947fa7fb330f8e21308965d166b5b3b72a73d9b929dff6d108df8974b1059a5a",
+    "off": 95689,
+    "N": 112496
+   },
+   "seconds": 41.952747
+  },
+  {
+   "index": 9,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00009.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "cc63d7f61a36f3e810b8962f6df6af233a852e446e3561e874981e36a01b4320",
+   "tree": {
+    "file": "step-trees/00009.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "947fa7fb330f8e21308965d166b5b3b72a73d9b929dff6d108df8974b1059a5a",
+    "off": 95689,
+    "N": 112496
+   },
+   "after": {
+    "digest": "cca4181fdb7cdaaeb4c5efc5e0cc8a1d027053362213af815e3ef2ed8ea68fe7",
+    "off": 95689,
+    "N": 112426
+   },
+   "seconds": 117.187079
+  },
+  {
+   "index": 10,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00010.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "f6ab9a1042bab48e2f5916d3cb92ba131b5665378ee2e02a747a1d04d251334e",
+   "tree": {
+    "file": "step-trees/00010.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "cca4181fdb7cdaaeb4c5efc5e0cc8a1d027053362213af815e3ef2ed8ea68fe7",
+    "off": 95689,
+    "N": 112426
+   },
+   "after": {
+    "digest": "594b273a6bc5fc6d51a64decdd645dbdc435f1351c036df0746fa7f68b51f76f",
+    "off": 95689,
+    "N": 112332
+   },
+   "seconds": 33.613636
+  },
+  {
+   "index": 11,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00011.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "6e020cce8932e8bc42fe10bcd8372569e831e682251dce1bfd8390bce7470df6",
+   "tree": {
+    "file": "step-trees/00011.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "594b273a6bc5fc6d51a64decdd645dbdc435f1351c036df0746fa7f68b51f76f",
+    "off": 95689,
+    "N": 112332
+   },
+   "after": {
+    "digest": "67447c654a44f5c682d12812af9cc15ea5780b114a38a45ac2f76e4b7163dc95",
+    "off": 95689,
+    "N": 112306
+   },
+   "seconds": 39.127473
+  },
+  {
+   "index": 12,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00012.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "e0f8170e0dabe9111267dfffbfa525ab9a7b9cd5fc0634f3a71affa00ae50e22",
+   "tree": {
+    "file": "step-trees/00012.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "67447c654a44f5c682d12812af9cc15ea5780b114a38a45ac2f76e4b7163dc95",
+    "off": 95689,
+    "N": 112306
+   },
+   "after": {
+    "digest": "3a054f76f0219449c882463cf6cdc83ffcdb23c6d7d27cd9e19c447f830ba8ad",
+    "off": 95689,
+    "N": 112296
+   },
+   "seconds": 59.798346
+  },
+  {
+   "index": 13,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00013.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "c2df3f9d75657691a20b382d4c7e473a04dbae1d35e3cdcbc353a03ea2f1bf92",
+   "tree": {
+    "file": "step-trees/00013.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "3a054f76f0219449c882463cf6cdc83ffcdb23c6d7d27cd9e19c447f830ba8ad",
+    "off": 95689,
+    "N": 112296
+   },
+   "after": {
+    "digest": "e5743a979a5e19bbe12b978ae94728e12cab396317d289f11d4e25769184d7a2",
+    "off": 95689,
+    "N": 112234
+   },
+   "seconds": 336.48097
+  },
+  {
+   "index": 14,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00014.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "db4c8395d6343785fb66b0b845766493dd9c5283cd45558955a79f9e07f2d915",
+   "tree": {
+    "file": "step-trees/00014.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "e5743a979a5e19bbe12b978ae94728e12cab396317d289f11d4e25769184d7a2",
+    "off": 95689,
+    "N": 112234
+   },
+   "after": {
+    "digest": "2de9e6035ea7e7b972b06eae1524a7d84ffad2978e98f228c16bb6d44de0c838",
+    "off": 95431,
+    "N": 112064
+   },
+   "seconds": 799.093619
+  },
+  {
+   "index": 15,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00015.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "dcd1fdf3f4e524789d7acfc255a874cfd3af323680a7ee21199c01f9b4b2d7d8",
+   "tree": {
+    "file": "step-trees/00015.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "2de9e6035ea7e7b972b06eae1524a7d84ffad2978e98f228c16bb6d44de0c838",
+    "off": 95431,
+    "N": 112064
+   },
+   "after": {
+    "digest": "cd58812e466d1b39b4ef6caa20677292b0d80a4268ac46eb09f5388ed088a932",
+    "off": 95431,
+    "N": 112016
+   },
+   "seconds": 672.691128
+  },
+  {
+   "index": 16,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00016.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "4e166ea82362997454e06a9e4c73d432487444c1f8fe7c02cb9a90580b90ca46",
+   "tree": {
+    "file": "step-trees/00016.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "cd58812e466d1b39b4ef6caa20677292b0d80a4268ac46eb09f5388ed088a932",
+    "off": 95431,
+    "N": 112016
+   },
+   "after": {
+    "digest": "3a3efa6341dd70ad309f0339b9fab386823e506ca83ca139c569a222548552ea",
+    "off": 95431,
+    "N": 111998
+   },
+   "seconds": 677.338451
+  },
+  {
+   "index": 17,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00017.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "481d63bb3bd19e7164dd54be5f8838c84d8a191bcd934a00991e7d5a8e812b26",
+   "tree": {
+    "file": "step-trees/00017.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "3a3efa6341dd70ad309f0339b9fab386823e506ca83ca139c569a222548552ea",
+    "off": 95431,
+    "N": 111998
+   },
+   "after": {
+    "digest": "3a57e01dfdb102b343131414fc6e8fda2763c78bd90d31c605ddf0b4abce4ed8",
+    "off": 95431,
+    "N": 111972
+   },
+   "seconds": 41.911284
+  },
+  {
+   "index": 18,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00018.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "0223b96c77d7d2b6001d4b8ecce451d83170d324621151efb615d23ec56f38f3",
+   "tree": {
+    "file": "step-trees/00018.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "3a57e01dfdb102b343131414fc6e8fda2763c78bd90d31c605ddf0b4abce4ed8",
+    "off": 95431,
+    "N": 111972
+   },
+   "after": {
+    "digest": "5779c5493ade5f353e8f402939aa7abd27c44769557b195dc95b06560c2af358",
+    "off": 95431,
+    "N": 111952
+   },
+   "seconds": 356.40047
+  },
+  {
+   "index": 19,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00019.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "4fb714bfa7e4573f38b5e234e2a479f758a3a3af827cc4153d30daf105491e17",
+   "tree": {
+    "file": "step-trees/00019.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "5779c5493ade5f353e8f402939aa7abd27c44769557b195dc95b06560c2af358",
+    "off": 95431,
+    "N": 111952
+   },
+   "after": {
+    "digest": "21fa8560ad18b9b0cdb1714eb6f2fb24e2ff6e5bc9e7294bea78fad19258ae2b",
+    "off": 95431,
+    "N": 111888
+   },
+   "seconds": 322.756464
+  }
+ ],
+ "stuck": null,
+ "lattice": null,
+ "result": "budget",
+ "error": null,
+ "acceptance": {
+  "verdict": null,
+  "certificate_steps": 0,
+  "fallback_steps": 0,
+  "probe": null,
+  "timed_out_attempts": 0
+ },
+ "totals": {
+  "bulk_twists": 60,
+  "height_twists": 0,
+  "high_twists": 0,
+  "tail_twists": 0,
+  "fallback_twists": 0,
+  "lattice_twists": null,
+  "seconds": 5633.815795
+ }
+}

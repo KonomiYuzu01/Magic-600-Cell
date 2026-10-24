@@ -1,0 +1,112 @@
+{
+  "format": "r22d25-run/1",
+  "catalogue": "r22d25-cat/1",
+  "limits": {
+    "direct": 244,
+    "S": 244,
+    "T": 720,
+    "ST": 964
+  },
+  "start": {
+    "kind": "table",
+    "file": "start-table.json",
+    "digest": "d01dc91edd1c73da399b8acb13a57b9f526da64a5d754993f42ae02856d51889",
+    "off": 100650,
+    "heights": {
+      "2": 99634,
+      "4": 929,
+      "6": 87
+    }
+  },
+  "steps": [],
+  "result": "budget",
+  "ledger": {
+    "F1": {
+      "status": "exhausted",
+      "tried": 0,
+      "pruned": {
+        "blocked": 33866,
+        "target_not_whole": 1534
+      },
+      "cursor": null
+    },
+    "F2": {
+      "status": "budget",
+      "tried": 2036,
+      "pruned": {
+        "blocked_first": 1107198189,
+        "blocked_second": 80063,
+        "other_off_pose": 121,
+        "lattice_pieces_off": 1915
+      },
+      "cursor": {
+        "unit": 3547,
+        "c": 9,
+        "x": 1,
+        "d": 24,
+        "y": 35,
+        "z": 31
+      }
+    },
+    "F3": {
+      "status": "budget",
+      "tried": 0,
+      "pruned": {},
+      "cursor": {
+        "phase": "not_reached",
+        "state": "d01dc91edd1c73da399b8acb13a57b9f526da64a5d754993f42ae02856d51889"
+      }
+    },
+    "d19": {
+      "status": "budget",
+      "tried": 0,
+      "pruned": {},
+      "cursor": {
+        "phase": "not_reached",
+        "state": "d01dc91edd1c73da399b8acb13a57b9f526da64a5d754993f42ae02856d51889"
+      }
+    },
+    "S": {
+      "status": "budget",
+      "tried": 0,
+      "pruned": {},
+      "cursor": {
+        "phase": "not_reached",
+        "state": "d01dc91edd1c73da399b8acb13a57b9f526da64a5d754993f42ae02856d51889"
+      }
+    },
+    "ST": {
+      "status": "budget",
+      "tried": 0,
+      "pruned": {},
+      "cursor": {
+        "phase": "not_reached",
+        "state": "d01dc91edd1c73da399b8acb13a57b9f526da64a5d754993f42ae02856d51889"
+      }
+    },
+    "T1": {
+      "status": "budget",
+      "tried": 0,
+      "pruned": {},
+      "cursor": {
+        "phase": "not_reached",
+        "state": "d01dc91edd1c73da399b8acb13a57b9f526da64a5d754993f42ae02856d51889"
+      }
+    }
+  },
+  "last": {
+    "digest": "d01dc91edd1c73da399b8acb13a57b9f526da64a5d754993f42ae02856d51889",
+    "off": 100650,
+    "heights": {
+      "2": 99634,
+      "4": 929,
+      "6": 87
+    }
+  },
+  "scripts": {
+    "research/jumbling/restoration/12-low-height/scripts/round22/r22d25_state.py": "ca45c9ba5ba14b10d48d1d2946c1265acdc8f6e609a5ef83737f79fde8201316",
+    "research/jumbling/restoration/12-low-height/scripts/round22/r22d25_search.py": "b2e2fa4ed1c34579589a68c2d7151e8209b60233b2665d2670d6ff7cd07f6c4b",
+    "assets/manifest.json": "b5db4469f3da9ba3cdbd93806a703f594153e61b08ce32d4fcce9de9c5cc60bc"
+  },
+  "seconds": 3601.0497908120014
+}

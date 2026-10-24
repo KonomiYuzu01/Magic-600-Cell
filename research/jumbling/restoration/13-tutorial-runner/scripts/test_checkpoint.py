@@ -133,6 +133,71 @@ class CheckpointTests(unittest.TestCase):
         self.assertFalse(junk.exists())
         self.assertEqual(self.git('status', '--porcelain', '--untracked-files=no'), b'')
 
+    def test_checkpoint_path_is_literal_and_leaves_matching_sibling_unstaged(self):
+        args = self.args('s*')
+        self.runner(args).initialize()
+        self.git('commit', '--allow-empty', '-m', 'Fixture root')
+        sibling = self.repo / 'runs/s1-checkpoint/unrelated.txt'
+        sibling.parent.mkdir(parents=True)
+        sibling.write_text('leave this sibling alone')
+        cp = C.Checkpointer(args.out, no_push=True)
+        # Git may prefer an existing directory for add; a matching indexed file also
+        # proves the helper's read pathspecs are literal, before staging its snapshot.
+        matching_file = self.repo / 'runs/s2-checkpoint'
+        matching_file.write_text('leave this matching file alone too')
+        self.git('add', 'runs/s2-checkpoint')
+        self.assertEqual(cp.git('diff', '--cached', '--name-only', '--', cp.relative).stdout, b'')
+        self.git('reset', 'HEAD', '--', 'runs/s2-checkpoint')
+        self.assertTrue(cp.round())
+        committed = self.git('ls-tree', '-r', '--name-only', '-z', 'HEAD').split(b'\0')
+        self.assertTrue(all(os.fsdecode(p).startswith(cp.relative + '/') for p in committed if p), committed)
+        self.assertEqual(self.git('diff', '--cached', '--name-only'), b'')
+        self.assertEqual(self.git('ls-files', '--others', '--exclude-standard', '--',
+                                  'runs/s1-checkpoint'), b'runs/s1-checkpoint/unrelated.txt\n')
+        self.assertEqual(sibling.read_text(), 'leave this sibling alone')
+
+    def test_commit_excludes_files_staged_at_add_boundary(self):
+        args = self.args()
+        self.runner(args).initialize()
+        cp = C.Checkpointer(args.out, no_push=True)
+        unrelated = self.repo / 'unrelated.txt'
+        unrelated.write_text('retain this staged content')
+        git = cp.git
+
+        def stage_concurrently(*arguments, **kwargs):
+            result = git(*arguments, **kwargs)
+            if arguments[0] == 'add':
+                self.git('add', 'unrelated.txt')
+            return result
+
+        with patch.object(cp, 'git', side_effect=stage_concurrently):
+            self.assertTrue(cp.round())
+        committed = self.git('ls-tree', '-r', '--name-only', '-z', 'HEAD').split(b'\0')
+        self.assertNotIn(b'unrelated.txt', committed)
+        self.assertEqual(self.git('diff', '--cached', '--name-only'), b'unrelated.txt\n')
+        self.assertEqual(self.git('show', ':unrelated.txt'), unrelated.read_bytes())
+
+    def test_unchanged_copy_leaves_concurrently_staged_content_uncommitted(self):
+        args = self.args()
+        self.runner(args).initialize()
+        cp = C.Checkpointer(args.out, no_push=True)
+        self.assertTrue(cp.round())
+        head = self.git('rev-parse', 'HEAD')
+        cp.last_sha = None                   # force a copy of the same record
+        (self.repo / 'unrelated.txt').write_text('retain this staged content')
+        git = cp.git
+
+        def stage_concurrently(*arguments, **kwargs):
+            result = git(*arguments, **kwargs)
+            if arguments[0] == 'add':
+                self.git('add', 'unrelated.txt')
+            return result
+
+        with patch.object(cp, 'git', side_effect=stage_concurrently):
+            self.assertTrue(cp.round())
+        self.assertEqual(self.git('rev-parse', 'HEAD'), head)
+        self.assertEqual(self.git('diff', '--cached', '--name-only'), b'unrelated.txt\n')
+
     def test_refuses_protected_detached_outside_and_unrelated_index(self):
         args = self.args()
         self.runner(args).initialize()

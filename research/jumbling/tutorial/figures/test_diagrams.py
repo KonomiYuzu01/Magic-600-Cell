@@ -6,10 +6,12 @@ import importlib.util
 import json
 from pathlib import Path, PurePosixPath
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 import xml.etree.ElementTree as ET
 
 
@@ -28,10 +30,16 @@ EXPECTED = {
     "bulk-conj-7101-s30", "03-counts-7302", "03-r22d75-prediction-cap64",
     "03-call-flow", "ch04-family-order", "ch04-tier-shapes", "ch04-d19-tree",
     "ch04-six-stops-caps", "05-tail-loop", "05-tree-b07-certificate",
+    "ch04-point-model", "05-class-cells-71",
     "05-e2-trajectory", "ch06-phase-flow", "ch06-nu-grid", "ch06-twisted-cycle",
     "ch06-orbit6-tree", "ch06-late-three-cycle", "ch06-retained-first",
     "ch06-d20-steps", "07-t1prime-b04-tree", "07-seed7001-bulk-steps",
+    "07-z36-phase-blocks", "07-checker-rows",
 }
+CHAPTER_EXPECTED = set(EXPECTED)
+APPENDIX_EXPECTED = {"appa-lock-shape", "appa-shift-shape", "appa-f2-shape", "appa-f3-shape", "appa-st-shape",
+                     "appa-u2-tree", "appa-h4-pair-tree", "appa-pure-tree", "appa-correction-tree", "appa-late-cycle-tree"}
+EXPECTED |= APPENDIX_EXPECTED
 
 
 def digest(raw):
@@ -42,26 +50,145 @@ def load(relative):
     return json.loads((ROOT / relative).read_text(encoding="utf-8"))
 
 
+def table_cells(root, first_width):
+    """Read visible cell text by the saved SVG's row and column boundaries."""
+    rectangles = root.findall("s:rect", NS)
+    text = root.findall("s:text", NS)
+    starts = sorted(float(r.get("y")) for r in rectangles
+                    if r.get("x") == "40" and float(r.get("width")) == first_width)
+    result = []
+    for y in starts:
+        cells = sorted((r for r in rectangles if float(r.get("y")) == y and r.get("x") != "0"),
+                       key=lambda r: float(r.get("x")))
+        row = []
+        for cell in cells:
+            x, width, height = (float(cell.get(key)) for key in ("x", "width", "height"))
+            labels = [n.text for n in text if x < float(n.get("x")) < x + width
+                      and y < float(n.get("y")) < y + height]
+            row.append(" ".join(labels))
+        result.append(row)
+    return result
+
+
+def drawing_fixture(root):
+    """Copy declared evidence; refreshed digests are synthetic renderer fixtures,
+    not a recomputation or a validation of the committed observations.
+    """
+    data = load(D.F + "/figdata.json")
+    saved = load(D.F + "/svg/manifest.json")
+    paths = {D.TREES_PATH, D.F + "/diagrams.py", D.F + "/catalogue.py", D.F + "/figdata.json",
+             D.DEV + "/d0-s7001/run/step-trees/00000.json.gz"}
+    for entry in [*data["figures"].values(), *saved["figures"].values()]:
+        paths.update(entry["inputs"])
+    for chapter in [*sorted((ROOT / D.T).glob("0*.md")), *sorted((ROOT / D.T).glob("A-*.md"))]:
+        paths.add(chapter.relative_to(ROOT).as_posix())
+        paths.update(D.T + "/" + path for path in re.findall(r"\((figures/png/[^)]+)\)", chapter.read_text()))
+    for relative in paths:
+        target = root / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(ROOT / relative, target)
+    for entry in data["figures"].values():
+        entry["inputs"] = {path: digest((root / path).read_bytes()) for path in entry["inputs"]}
+    (root / D.F / "figdata.json").write_text(json.dumps(data))
+
+
+class ComputedInputTests(unittest.TestCase):
+    def test_committed_observations_survive_the_pinned_presentation_revisions(self):
+        document = load(D.F + "/figdata.json")
+        self.assertEqual(D.observation_helpers_sha256(SCRIPT.read_bytes()), D.OBSERVATION_HELPERS_SHA256)
+        for name in ("03-counts-7302", "ch04-point-model", "05-class-cells-71"):
+            with self.subTest(figure=name):
+                self.assertEqual(D.Evidence(name).figdata(), document["figures"][name])
+
+    def test_preserved_observation_inputs_still_refuse_new_helper_and_chapter_edits(self):
+        with tempfile.TemporaryDirectory(prefix="magic600-preserved-input-test-") as temporary:
+            root = Path(temporary)
+            drawing_fixture(root)
+            # Test the real recorded digests, rather than the drawing fixture's
+            # synthetic refreshed ones. No observation is recomputed.
+            (root / D.F / "figdata.json").write_text(json.dumps(load(D.F + "/figdata.json")))
+            cases = [
+                ("03-counts-7302", D.F + "/diagrams.py", "def height_examples(e):", "def height_examples(e):\n    raise ValueError('changed')"),
+                ("ch04-point-model", D.F + "/diagrams.py", "def literal_assignment(text, name):", "def literal_assignment(text, name):\n    raise ValueError('changed')"),
+                ("ch04-point-model", D.T + "/04-high.md", None, "\nChanged chapter\n"),
+                ("ch04-point-model", D.T + "/A-macros.md", None, "\nChanged appendix\n"),
+                ("05-class-cells-71", D.T + "/05-tail.md", None, "\nChanged chapter\n"),
+            ]
+            with patch.object(D, "ROOT", root):
+                for name, relative, old, new in cases:
+                    path = root / relative
+                    original = path.read_text()
+                    with self.subTest(figure=name, path=relative):
+                        try:
+                            path.write_text(original.replace(old, new, 1) if old else original + new)
+                            with self.assertRaisesRegex(ValueError, re.escape(name) + ".*" + re.escape(relative)):
+                                D.Evidence(name).figdata()
+                        finally:
+                            path.write_text(original)
+
+    def test_class_cell_chapter_claims_still_match_the_preserved_observations(self):
+        data = load(D.F + "/figdata.json")["figures"]["05-class-cells-71"]
+        chapter = (ROOT / D.T / "05-tail.md").read_text()
+        patterns = {
+            "b05": r"b05's content sits at label (\d+) of the edge cell whose caps are (\d+) and (\d+); "
+                   r"that cell holds (\d+) own\s+pieces, the\s+(\d+) of b05 and (\d+) lattice pieces",
+            "b06": r"b06's content sits at label (\d+) of the vertex cell of cap (\d+); "
+                   r"that cell holds (\d+) own\s+pieces, the\s+(\d+) of b06 and (\d+) lattice pieces",
+        }
+        for cell in data["cells"]:
+            values = list(map(int, re.search(patterns[cell["unit"]], chapter).groups()))
+            own = [(point, content) for point in cell["points"] for content in point["content"]
+                   if content["name"] == cell["unit"]]
+            lattice = sum(content["pieces"] for point in cell["points"] for content in point["content"]
+                          if content["name"] == "lattice")
+            self.assertEqual(values, [own[0][0]["label"], *cell["caps"], cell["own_pieces"], own[0][1]["pieces"], lattice])
+
+    def test_changed_chapter_and_appendix_inputs_refused_before_drawing(self):
+        data = load(D.F + "/figdata.json")
+        for name, changed in (
+            ("03-r22d75-prediction-cap64", D.LOW + "/scripts/round22/cloud/height4-descent-bbef1c8e/r22d75_from_snapshot.py"),
+            ("appa-u2-tree", D.API_PATH),
+        ):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                paths = set(data["figures"][name]["inputs"]) | {
+                    D.F + "/diagrams.py", D.F + "/figdata.json", D.T + "/" + D.FIGURES[name][1]}
+                for relative in paths:
+                    target = root / relative
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copyfile(ROOT / relative, target)
+                path = root / changed
+                path.write_bytes(path.read_bytes() + b"\n# changed fixture input\n")
+                with patch.object(D, "ROOT", root):
+                    with self.assertRaisesRegex(ValueError, re.escape(name) + ".*" + re.escape(changed)):
+                        D.Evidence(name).figdata()
+                    with self.assertRaisesRegex(ValueError, re.escape(name) + ".*" + re.escape(changed)):
+                        D.render(name, {})
+
+
 class DiagramsTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.temporary = tempfile.TemporaryDirectory(prefix="magic600-diagrams-test-")
+        cls.addClassCleanup(cls.temporary.cleanup)
         cls.base = Path(cls.temporary.name)
+        cls.repository = cls.base / "repo"
+        drawing_fixture(cls.repository)
+        patcher = patch.object(D, "ROOT", cls.repository)
+        patcher.start()
+        cls.addClassCleanup(patcher.stop)
+        cls.script = cls.repository / D.F / "diagrams.py"
         cls.first, cls.second = cls.base / "first", cls.base / "second"
         cls.manifest = D.generate(cls.first)
         D.generate(cls.second)
         cls.entries = D.validate_trees(load(D.TREES_PATH))
         cls.names = EXPECTED | set(cls.entries)
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.temporary.cleanup()
-
     def svg(self, name):
         return ET.parse(self.first / (name + ".svg")).getroot()
 
     def cli(self, *arguments):
-        return subprocess.run([sys.executable, "-I", "-B", str(SCRIPT), *map(str, arguments)],
+        return subprocess.run([sys.executable, "-I", "-B", str(self.script), *map(str, arguments)],
                               cwd=self.base, text=True, stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE, check=False)
 
@@ -70,7 +197,10 @@ class DiagramsTests(unittest.TestCase):
         embedded = set()
         for chapter in sorted((ROOT / D.T).glob("0*.md")):
             embedded.update(re.findall(r"\(figures/svg/([a-z0-9-]+)\.svg\)", chapter.read_text(encoding="utf-8")))
-        self.assertEqual(embedded, EXPECTED)
+        self.assertEqual(embedded, CHAPTER_EXPECTED)
+        appendix = (ROOT / D.T / "A-macros.md").read_text()
+        appendix_embedded = set(re.findall(r"\(figures/svg/([a-z0-9-]+)\.svg\)", appendix))
+        self.assertEqual(appendix_embedded, APPENDIX_EXPECTED | {"appa-zero-bad-tree"})
         self.assertEqual(set(self.manifest["figures"]), self.names)
         self.assertEqual({p.stem for p in self.first.glob("*.svg")}, self.names)
         self.assertEqual(self.entries["tree-7106-19"], {
@@ -87,7 +217,12 @@ class DiagramsTests(unittest.TestCase):
                 self.assertEqual(view[:3], [0, 0, 1200])
                 self.assertGreater(view[3], 100)
                 self.assertIn("sans-serif", root.get("font-family"))
-                self.assertTrue(root.find("s:title", NS).text.startswith("Figure "))
+                title = root.find("s:title", NS).text
+                if name in self.entries and not name.startswith("appa-"):
+                    self.assertFalse(title.startswith("Figure "))
+                    self.assertFalse(title.startswith(":"))
+                else:
+                    self.assertTrue(title.startswith("Figure "))
                 self.assertTrue(root.find("s:desc", NS).text)
                 self.assertTrue(any(r.get("fill") == D.PALETTE["white"] and r.get("width") == "1200"
                                     and r.get("height") == root.get("height") for r in root.findall("s:rect", NS)))
@@ -101,9 +236,9 @@ class DiagramsTests(unittest.TestCase):
                             self.assertTrue(value.startswith("#"))
                 metadata = json.loads(root.find("s:metadata", NS).text)
                 self.assertEqual(metadata["figure"], name)
-                production = dict(self.manifest["figures"][name]["inputs"])
-                production[D.F + "/diagrams.py"] = self.manifest["figures"][name]["production_renderer_sha256"]
+                production = D.production_inputs(name, self.manifest["figures"][name]["inputs"])
                 self.assertEqual(metadata["inputs"], production)
+                self.assertEqual(production[D.F + "/diagrams.py"], self.manifest["figures"][name]["production_renderer_sha256"])
                 self.assertIn("diagrams.py --only " + name, metadata["command"])
 
     def test_two_full_runs_are_byte_identical(self):
@@ -111,11 +246,31 @@ class DiagramsTests(unittest.TestCase):
         second = {p.name: p.read_bytes() for p in self.second.iterdir()}
         self.assertEqual(first, second)
 
-    def test_every_unaffected_svg_stays_byte_identical(self):
-        for name in self.names - D.UPDATED_FIGURES:
+    def test_every_saved_drawing_matches_regeneration(self):
+        for name in self.names:
             with self.subTest(figure=name):
-                self.assertEqual((self.first / (name + ".svg")).read_bytes(),
-                                 (HERE / "svg" / (name + ".svg")).read_bytes())
+                # Chapter prose already differs from the saved production hashes.
+                # Verify every drawing element; current provenance is tested above.
+                actual = self.svg(name)
+                saved = ET.parse(HERE / "svg" / (name + ".svg")).getroot()
+                for root in (actual, saved):
+                    root.remove(root.find("s:metadata", NS))
+                self.assertEqual(ET.tostring(actual), ET.tostring(saved))
+
+    def test_changed_drawings_use_current_renderer_and_caption_updates_keep_their_pins(self):
+        current = digest(SCRIPT.read_bytes())
+        for name in D.REVISED_FIGURES:
+            self.assertEqual(self.manifest["figures"][name]["production_renderer_sha256"], current)
+        for name, pinned in {
+            "ch06-nu-grid": "4999331eb3c77ec66b6af2cf989eaeaca63d2046e00340409826223b231e8008",
+            "05-e2-trajectory": "4999331eb3c77ec66b6af2cf989eaeaca63d2046e00340409826223b231e8008",
+            "07-seed7001-bulk-steps": "4999331eb3c77ec66b6af2cf989eaeaca63d2046e00340409826223b231e8008",
+            "ch04-point-model": "a4c6237ba613ae886c54f71cbb427b46e92fe9bd6fe5ba0fffa6d7ab4cbdd02b",
+            "05-class-cells-71": "a4c6237ba613ae886c54f71cbb427b46e92fe9bd6fe5ba0fffa6d7ab4cbdd02b",
+            "appa-u2-tree": "e804f33d7681d431aaf6d216967762ed6caa2f34ca64a5f7378525301afbee06",
+        }.items():
+            with self.subTest(figure=name):
+                self.assertEqual(self.manifest["figures"][name]["production_renderer_sha256"], pinned)
 
     def test_manifest_hashes_and_relative_paths(self):
         self.assertEqual(self.manifest["format"], "magic600-tutorial-diagrams/1")
@@ -132,7 +287,7 @@ class DiagramsTests(unittest.TestCase):
                     self.assertNotIn("..", PurePosixPath(path).parts)
                     self.assertEqual(path, PurePosixPath(path).as_posix())
                     self.assertRegex(sha, r"^[0-9a-f]{64}$")
-                    self.assertEqual(sha, digest((ROOT / path).read_bytes()))
+                    self.assertEqual(sha, digest((self.repository / path).read_bytes()))
 
     def test_check_detects_changed_missing_output_and_provenance_without_writes(self):
         out = self.base / "check"
@@ -164,6 +319,26 @@ class DiagramsTests(unittest.TestCase):
         self.assertEqual(stale.returncode, 1)
         self.assertIn(name, stale.stdout)
         self.assertEqual(manifest_file.read_bytes(), altered_manifest)
+
+    def test_check_rejects_broken_embeds_with_chapter_line_and_target(self):
+        chapter = self.repository / D.T / "A-macros.md"
+        original = chapter.read_text()
+        for alt, target in (("Unnumbered", "figures/svg/01-menu-items.svg"),
+                            ("Figure A.99: Broken", "figures/not-drawn.svg"),
+                            ("Figure A.99: Missing", "figures/svg/not-drawn.svg"),
+                            ("Figure A.99: Missing", "figures/png/not-drawn.png")):
+            with self.subTest(target=target):
+                try:
+                    chapter.write_text(original + "\nInline ![" + alt + "](" + target + ")\n")
+                    before = {p.name: p.read_bytes() for p in self.first.iterdir()}
+                    result = self.cli("--out", self.first, "--check")
+                    self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+                    line = original.count("\n") + 2
+                    self.assertIn(f"A-macros.md:{line}:", result.stderr)
+                    self.assertIn(target, result.stderr)
+                    self.assertEqual(before, {p.name: p.read_bytes() for p in self.first.iterdir()})
+                finally:
+                    chapter.write_text(original)
 
     def test_only_draws_and_checks_the_requested_selection(self):
         out = self.base / "selected"
@@ -232,6 +407,51 @@ class DiagramsTests(unittest.TestCase):
         self.assertIn("word 1⁻¹ [0]", text)
         self.assertEqual(row["tree"]["size"], sum(1 for _ in D.tree_api().walk(tree)))
 
+    def test_configured_tree_titles_use_indexes_and_only_embedded_figure_numbers(self):
+        for name, entry in self.entries.items():
+            title = self.svg(name).find("s:title", NS).text
+            with self.subTest(figure=name):
+                self.assertIn(" · index " + str(entry["step"]) + " · ", title)
+                self.assertNotIn(" · step ", title)
+                if name == "appa-zero-bad-tree":
+                    self.assertTrue(title.startswith("Figure A.9:"))
+                else:
+                    self.assertFalse(title.startswith("Figure "))
+
+    def test_no_folded_tree_arrow_segment_intersects_a_label(self):
+        folded, checked = set(), 0
+        for name in sorted(self.names):
+            with patch.object(D, "folded_tree", wraps=D.folded_tree) as drawing:
+                raw, _ = D.render(name, self.entries)
+            if not drawing.called:
+                continue
+            folded.add(name)
+            root = ET.fromstring(raw)
+            boxes = []
+            for label in root.findall(".//s:text", NS):
+                x, y = float(label.get("x")), float(label.get("y"))
+                size = float(label.get("font-size", root.get("font-size")))
+                width = D.Svg.text_width(label.text or "", size)
+                x -= width * {"start": 0, "middle": .5, "end": 1}[label.get("text-anchor", "start")]
+                boxes.append((x, y - size, x + width, y + size * .25, label.text))
+            for arrow in root.findall("s:path[@marker-end]", NS):
+                checked += 1
+                tokens = iter(re.findall(r"[A-Za-z]|-?\d+(?:\.\d+)?", arrow.get("d")))
+                point = None
+                for command in tokens:
+                    if command == "M":
+                        point = (float(next(tokens)), float(next(tokens)))
+                        continue
+                    self.assertIn(command, ("H", "V"), arrow.get("d"))
+                    end = (float(next(tokens)), point[1]) if command == "H" else (point[0], float(next(tokens)))
+                    for left, top, right, bottom, label in boxes:
+                        crosses = (max(point[0], end[0]) >= left and min(point[0], end[0]) <= right
+                                   and max(point[1], end[1]) >= top and min(point[1], end[1]) <= bottom)
+                        self.assertFalse(crosses, (name, arrow.get("d"), label))
+                    point = end
+        self.assertTrue({"01-step-tree-closure", "appa-late-cycle-tree", *self.entries} <= folded)
+        self.assertGreater(checked, 0)
+
     def test_generic_tree_can_draw_a_different_record_and_step(self):
         entry = {"name": "tree-7001-0", "record": D.DEV + "/d0-s7001/run", "step": 0}
         entries = D.validate_trees({"format": "magic600-tutorial-trees/1", "entries": [entry]})
@@ -258,6 +478,106 @@ class DiagramsTests(unittest.TestCase):
         labels = {int(n.text) for n in root.findall("s:text", NS) if re.fullmatch(r"\d+", n.text or "")}
         self.assertEqual(labels, set(map(int, data["cover_graph"])) | set(data["cover_tops"]))
         self.assertEqual(len(labels), data["misaligned_caps"])
+
+    def test_phase_transitions_draw_exactly_the_chapter_table(self):
+        chapter = (ROOT / D.T / "01-state.md").read_text()
+        table = D.table_after(chapter, "**Transitions.**")[1:]
+        cells = table_cells(self.svg("01-phase-transitions"), 700)
+        expected = [[" ".join((row[0] + " · " + row[1] + " " + row[2]).split()),
+                     " ".join(row[3].split())] for row in table]
+        self.assertEqual(cells, expected)
+        self.assertNotIn(D.T + "/02-bulk.md", self.manifest["figures"]["01-phase-transitions"]["inputs"])
+
+    def test_z36_phases_steps_sizes_and_verdicts_follow_the_record(self):
+        record = load(D.T + "/records/ch07-examples.json")
+        run, config = record["D_z36"], record["A_d0"]["config"]
+        root = self.svg("07-z36-phase-blocks")
+        phases = table_cells(root, 700)
+        self.assertEqual(len(phases), len(config["phase_order"]))
+        for cells, name in zip(phases, config["phase_order"]):
+            block = run["phases"][name]
+            self.assertEqual(cells[0], f"{name} result: {block['result'] if block['result'] is not None else 'null'} · steps: {block['steps']}")
+            if "sub" in block:
+                expected = " ".join(f"{n}: {block['sub'][n]['result']} · steps: {block['sub'][n]['steps']}"
+                                    for n in config["subphase_order"][name])
+                self.assertEqual(cells[1], expected)
+            elif block["result"] is None:
+                self.assertEqual(cells[1], "not entered")
+        steps = table_cells(root, 70)[1:]
+        self.assertEqual(len(steps), len(run["steps"]))
+        for cells, row in zip(steps, run["steps"]):
+            self.assertEqual(cells[0], str(row["index"]))
+            self.assertIn(row["rule"], cells[1])
+            for letter in row["word"]["word"]:
+                self.assertIn(str(tuple(letter)), cells[1])
+            for cell, state in zip(cells[2:], (row["before"], row["after"])):
+                heights = ", ".join(f"{h}: {n:,}" for h, n in state["heights"].items())
+                self.assertEqual(cell, f"off: {state['off']:,} heights: {{{heights}}} digest: {state['digest'][:8]}…")
+        stuck = table_cells(root, 240)[1]
+        self.assertEqual(stuck[:2], [run["stuck"]["phase"] + " / " + run["stuck"]["reason"], str(run["stuck"]["units"])])
+        self.assertEqual(list(map(int, re.findall(r"\d+", stuck[2]))), run["stuck"]["unit_sizes"])
+        self.assertEqual(stuck[3], str(run["stuck"]["attempts"]))
+        self.assertEqual(table_cells(root, 224)[1], [run["result"], run["acceptance"]["verdict"],
+                         json.dumps(run["check"]["final"]["pass"]), run["check"]["final"]["verdict"], str(run["check"]["rc"])])
+
+    def test_checker_grid_keeps_every_step_and_final_failure_name(self):
+        record = load(D.T + "/records/ch07-examples.json")
+        copies = sorted(record["B_tampered"].items())
+        checks = [record["A_d0"]["check"]] + [check for _, check in copies]
+        cells = table_cells(self.svg("07-checker-rows"), 90)
+        self.assertEqual(len(cells), len(checks[0]["steps"]) + 2)
+        self.assertTrue(all(len(row) == 6 for row in cells))
+        for header, (name, check) in zip(cells[0][2:], copies):
+            self.assertTrue(header.startswith(name + " · "))
+            change = check["change"]
+            if "letter_after" in change:
+                self.assertIn("index " + str(change["step"]), header)
+                self.assertIn(str(tuple(change["letter_before"])) + " → " + str(tuple(change["letter_after"])), header)
+                self.assertIn("updated" if change["row_sha256_updated"] else "unchanged", header)
+            elif "tree" in change:
+                self.assertIn("index " + str(change["step"]), header)
+                self.assertIn(str(change["tree"]["span"]), header)
+            else:
+                self.assertIn(change["restorer"], header)
+                self.assertIn(change["acceptance_config_sha256"][:8] + "…", header)
+        for row_number, row in enumerate(cells[1:-1]):
+            self.assertEqual(row[0], str(checks[0]["steps"][row_number]["index"]))
+            for cell, check in zip(row[1:], checks):
+                result = check["steps"][row_number]
+                self.assertEqual(cell, "pass" if result["pass"] else " ".join(result["fails"]))
+        self.assertEqual(cells[-1][0], "Final")
+        for cell, check in zip(cells[-1][1:], checks):
+            final = check["final"]
+            digest = final["end_digest"][:8] + "…" if final["end_digest"] is not None else "null"
+            expected = f"pass: {json.dumps(final['pass'])} verdict: {final['verdict'] or 'null'} end_digest: {digest} rc: {check['rc']}"
+            if final["fails"]:
+                expected += " fails: " + " ".join(final["fails"])
+            self.assertEqual(cell, expected)
+
+    def test_new_chapter_figures_read_changed_values_from_synthetic_evidence(self):
+        record = copy.deepcopy(load(D.T + "/records/ch07-examples.json"))
+        run = record["D_z36"]
+        run["phases"]["bulk"].update(result="synthetic_budget", steps=17)
+        run["steps"][0]["rule"] = "synthetic/rule"
+        run["steps"][0]["word"]["word"] = [[22, 33]]
+        run["steps"][0]["after"].update(off=12345, heights={"4": 12345}, digest="abcd1234" + "0" * 56)
+        run["stuck"].update(units=55, unit_sizes=[2, 16, 26])
+        run["acceptance"]["verdict"] = "synthetic_verdict"
+        changed = record["B_tampered"]["a"]
+        changed["steps"][0]["fails"] = ["synthetic_failure"]
+        changed["change"]["letter_after"] = [22, 33]
+        changed["final"].update(end_digest="1234abcd" + "0" * 56, verdict="synthetic_verdict")
+        changed["rc"] = 7
+        with patch.object(D.Evidence, "record", return_value=record):
+            for name, expected in {
+                "07-z36-phase-blocks": ["synthetic_budget", "17", "synthetic/rule", "(22, 33)", "12,345",
+                                        "abcd1234…", "55", "2, 16, 26", "synthetic_verdict"],
+                "07-checker-rows": ["synthetic_failure", "(22, 33)", "1234abcd…", "synthetic_verdict", "rc: 7"],
+            }.items():
+                raw, _ = D.render(name, self.entries)
+                visible = " ".join(n.text for n in ET.fromstring(raw).findall(".//s:text", NS))
+                for value in expected:
+                    self.assertIn(value, visible)
 
     def test_bulk_chart_uses_cumulative_round_two_once(self):
         census = load(D.REST + "/11-scramble-census/runs/round2/ia-k40-s7101.json")
@@ -298,7 +618,7 @@ class DiagramsTests(unittest.TestCase):
 
     def test_computed_figures_replace_the_old_missing_observations(self):
         computed = load(D.F + "/figdata.json")["figures"]
-        for name in computed:
+        for name in (n for n in computed if not n.startswith("appa-")):
             with self.subTest(figure=name):
                 self.assertIn(D.F + "/figdata.json", self.manifest["figures"][name]["inputs"])
                 self.assertNotIn("not recorded", " ".join(self.svg(name).itertext()))
@@ -342,6 +662,79 @@ class DiagramsTests(unittest.TestCase):
         self.assertEqual(len(rows), 83)
         self.assertTrue(all(len(row) == 600 for row in rows))
 
+    def test_point_model_draws_the_exact_patch_five_labels_and_chronological_path(self):
+        data = load(D.F + "/figdata.json")["figures"]["ch04-point-model"]
+        root = self.svg("ch04-point-model")
+        nodes = root.findall("s:circle[@data-cap]", NS)
+        self.assertEqual([int(n.get("data-cap")) for n in nodes], data["patch_caps"])
+        edges = root.findall("s:line[@data-edge]", NS)
+        self.assertEqual([list(map(int, n.get("data-edge").split(","))) for n in edges], data["patch_edges"])
+        self.assertEqual({int(n.get("data-cap")) for n in nodes if n.get("data-target") == "true"},
+                         set(data["content"]["cell"]))
+        self.assertEqual({int(n.get("data-cap")) for n in nodes if n.get("data-bad") == "true"},
+                         {c for row in data["bad_cell_counts"] for c in row["cell"]})
+        self.assertEqual({int(n.get("data-cap")) for n in nodes if n.get("data-preimage") == "true"},
+                         {c for row in data["preimage_cell_counts"] for c in row["cell"]})
+        self.assertEqual([int(n.get("data-label")) for n in root.findall("s:circle[@data-label]", NS)], data["labels"])
+        groups = root.findall("s:g[@data-path-step]", NS)
+        self.assertEqual(len(groups), len(data["trace"]) + 1)
+        for group, point in zip(groups, [data["content"]] + data["trace"]):
+            text = " ".join(group.itertext())
+            self.assertIn(D.cell_text(point["cell"]), text)
+            self.assertIn("label " + str(point["label"]), text)
+        text = " ".join(root.itertext())
+        self.assertIn("W = C" + D.sup(data["exponent"]) + " · |Bad(W)| = " + D.count(data["bad_count"]), text)
+        self.assertIn(D.count(data["points"]) + " points", text)
+        self.assertIn("not the identity", text)
+        self.assertIn("V⁻¹(Bad(W)) has " + D.count(data["preimage_count"]) + " chambers", text)
+        for row in data["bad_cell_counts"] + data["preimage_cell_counts"]:
+            self.assertIn(D.cell_text(row["cell"]), text)
+        self.assertEqual(sum(r["chambers"] for r in data["bad_cell_counts"]), data["bad_count"])
+        self.assertEqual(sum(r["chambers"] for r in data["preimage_cell_counts"]), data["preimage_count"])
+
+    def test_class_cells_show_each_points_content_owner_and_piece_counts(self):
+        data = load(D.F + "/figdata.json")["figures"]["05-class-cells-71"]
+        root = self.svg("05-class-cells-71")
+        groups = root.findall("s:g[@data-cell]", NS)
+        self.assertEqual(len(groups), sum(len(c["points"]) for c in data["cells"]))
+        for cell in data["cells"]:
+            for point in cell["points"]:
+                group = next(g for g in groups if int(g.get("data-cell")) == cell["cell"]
+                             and int(g.get("data-label")) == point["label"])
+                text = " ".join(group.itertext())
+                for content in point["content"]:
+                    self.assertIn(content["name"], text)
+                    self.assertIn(str(content["pieces"]) + " pieces", text)
+                if not point["content"]:
+                    self.assertIn("empty", text)
+                self.assertIn(point["owner"]["name"], text)
+                self.assertIn(str(point["owner"]["pieces"]) + " pieces", text)
+        self.assertFalse(data["chapter_differences"])
+        self.assertEqual(data["shared_caps"], [91])
+
+    def test_both_concept_outputs_are_checked_without_writing(self):
+        out = self.base / "concept-check"
+        D.generate(out, D.CONCEPT_FIGURES)
+        self.assertEqual(D.check(out, D.CONCEPT_FIGURES), [])
+        for name in sorted(D.CONCEPT_FIGURES):
+            target = out / (name + ".svg")
+            original = target.read_bytes()
+            target.write_bytes(original.replace(b"<circle", b"<ellipse", 1))
+            before = target.read_bytes()
+            self.assertEqual(D.check(out, D.CONCEPT_FIGURES), [name])
+            self.assertEqual(target.read_bytes(), before)
+            target.write_bytes(original)
+
+    def test_stale_concept_inputs_are_refused_before_drawing(self):
+        data = json.loads((self.repository / D.F / "figdata.json").read_text())["figures"]
+        for name in D.CONCEPT_FIGURES:
+            stale = copy.deepcopy(data[name])
+            stale["inputs"][D.F + "/figdata.py"] = "0" * 64
+            document = {"format": "magic600-tutorial-figdata/1", "figures": {name: stale}}
+            with self.subTest(name=name), patch.object(D.Evidence, "json", return_value=document):
+                with self.assertRaisesRegex(ValueError, "stale figure data"):
+                    D.render(name, {})
+
     def test_twisted_cycle_shows_exact_support_and_collateral_counts(self):
         data = load(D.F + "/figdata.json")["figures"]["ch06-twisted-cycle"]
         self.assertEqual([len(p["word"]) for p in data["parts"]], [7, 3, 28, 3, 7])
@@ -368,6 +761,133 @@ class DiagramsTests(unittest.TestCase):
             for note in notes:
                 for line in D.Svg.wrapped("Data note: " + note, 1080, 15):
                     self.assertIn(line, visible)
+
+    def test_appendix_shapes_are_explicitly_abstract_and_have_no_invented_word(self):
+        for name in ("appa-lock-shape", "appa-shift-shape", "appa-f2-shape", "appa-f3-shape", "appa-st-shape"):
+            visible = " ".join(self.svg(name).itertext())
+            with self.subTest(figure=name):
+                self.assertIn("Abstract", visible)
+                self.assertIn("No", visible)
+                self.assertNotRegex(visible, r"\(\d+,\s*\d+\)")
+        f3 = " ".join(self.svg("appa-f3-shape").itertext())
+        self.assertIn("|W| = 1", f3)
+        self.assertIn("|W| = 2", f3)
+        self.assertIn("inverse_of [1]", f3)
+
+    def test_appendix_trees_keep_every_part_span_and_reference(self):
+        data = load(D.F + "/figdata.json")["figures"]
+        for name in sorted(APPENDIX_EXPECTED - {n for n in APPENDIX_EXPECTED if n.endswith("-shape")}):
+            tree = data[name]["tree"]
+            D.tree_api().check_tree(tree, tree["letters"])
+            visible = " ".join(self.svg(name).itertext())
+            nodes = list(D.tree_api().walk(tree))
+            with self.subTest(figure=name):
+                for node, _, _ in nodes:
+                    self.assertIn(node["name"], visible)
+                    self.assertIn("[" + D.count(node["letters"]) + "]", visible)
+                    if "span" in node:
+                        lo, hi = node["span"]
+                        self.assertIn(f"[{lo}, {hi})", visible)
+                    for key in ("inverse_of", "same_as"):
+                        if key in node:
+                            self.assertIn(key + " " + str(node[key]), visible)
+        entry = self.entries["appa-zero-bad-tree"]
+        self.assertEqual(entry["step"], 97)
+        visible = " ".join(self.svg("appa-zero-bad-tree").itertext())
+        self.assertIn("[0, 60)", visible)
+
+    def test_stale_appendix_data_is_refused_before_drawing_a_tree(self):
+        data = copy.deepcopy(load(D.F + "/figdata.json")["figures"]["appa-u2-tree"])
+        data["inputs"][D.API_PATH] = "0" * 64
+        evidence = D.Evidence("appa-u2-tree", "A-macros.md")
+        document = {"format": "magic600-tutorial-figdata/1", "figures": {evidence.name: data}}
+        with patch.object(evidence, "json", return_value=document):
+            with self.assertRaisesRegex(ValueError, "stale figure data"):
+                D.appendix_tree(evidence, D.Svg(evidence, "test"))
+
+    def test_appendix_svg_numbers_match_the_reading_order(self):
+        text = (ROOT / D.T / "A-macros.md").read_text()
+        figures = re.findall(r"!\[(Figure A\.(\d+)):[^\]]*\]\(figures/(svg|png)/([a-z0-9-]+)\.(?:svg|png)\)", text)
+        self.assertEqual([int(n) for _, n, _, _ in figures], list(range(1, len(figures) + 1)))
+        for label, _, kind, name in figures:
+            if kind == "svg":
+                self.assertTrue(self.svg(name).find("s:title", NS).text.startswith(label + ":"))
+
+    def test_appendix_short_words_are_the_committed_single_twists(self):
+        appendix = (ROOT / D.T / "A-macros.md").read_text()
+        sections = dict(re.findall(r"^### A\.(\d+) [^\n]*\n(.*?)(?=^### A\.|\Z)", appendix, re.M | re.S))
+        computed = load(D.F + "/figdata.json")["figures"]
+        d19 = D.literal_assignment((ROOT / D.LOW / "scripts/round22/r22d16_step.py").read_text(), "word")
+        for number, word in (("8", d19), ("14", computed["appa-correction-tree"]["word"])):
+            block = re.search(r"```text\n(.*?)\n```", sections[number], re.S)[1]
+            pairs = [[int(c), int(j)] for c, j in re.findall(r"\((\d+),\s*(\d+)\)", block)]
+            self.assertEqual(pairs, word)
+        for number, word in (("1", [[91, 1], [268, 50], [91, 15]]),
+                             ("4", computed["appa-u2-tree"]["word"]),
+                             ("5", computed["appa-h4-pair-tree"]["word"])):
+            for c, j in word:
+                self.assertIn(f"({c}, {j})", sections[number])
+
+    def test_appendix_long_word_file_hashes_match_the_evidence(self):
+        appendix = (ROOT / D.T / "A-macros.md").read_text()
+        paths = [D.DEV + "/d1-dev-s7101/run1-interrupted/words/00097.json",
+                 D.ROUND + "/line-a/replay/words/b17.json",
+                 D.ROUND + "/line-a/literal/run1/03-b20-program.json",
+                 D.ROUND + "/line-a/replay2/run2/00-b04-program.json",
+                 D.DEV + "/d0-s7106/run/words/00019.ia16.gz",
+                 D.RUNNER + "/runs/depth20-seed7106/lattice/solutions.json.gz"]
+        for path in paths:
+            with self.subTest(path=path):
+                self.assertIn(digest((ROOT / path).read_bytes()), appendix)
+        # The 810-letter word is cited by the digest of its compact JSON, which
+        # other data sets added to the shared file do not change.
+        word = load(D.F + "/figdata.json")["word"]
+        self.assertEqual(len(word), 810)
+        self.assertIn(digest(json.dumps(word, separators=(",", ":")).encode()), appendix)
+
+    def test_catalogue_lists_appendix_after_chapters_and_checks_recipes(self):
+        spec = importlib.util.spec_from_file_location("appendix_catalogue", HERE / "catalogue.py")
+        catalogue = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(catalogue)
+        rows, _ = catalogue.entries()
+        chapter_indexes = [i for i, row in enumerate(rows) if row[0].startswith("0")]
+        appendix_indexes = [i for i, row in enumerate(rows) if row[0] == "A-macros.md"]
+        self.assertGreater(min(appendix_indexes), max(chapter_indexes))
+        rendered, unexplained = catalogue.render()
+        self.assertNotIn("(no reason recorded)", rendered)
+        pending = [line for line in rendered.splitlines() if "`png/appa-" in line]
+        self.assertTrue(pending)
+        for line in pending:
+            name = re.search(r"`png/([a-z0-9-]+)\.png`", line)[1]
+            self.assertRegex(line, r"\| (drawn|stale) \|$")
+            if not (HERE / "png" / (name + ".png")).exists():
+                self.assertTrue(line.endswith("| stale |"), line)
+
+    def test_appendix_region_pairs_share_exact_support_and_established_capture_settings(self):
+        document = load(D.F + "/figures.json")
+        pictures = {f["id"]: f for f in document["figures"]}
+        computed = load(D.F + "/figdata.json")["figures"]
+        sheets = [s for s in document["sheets"] if s["id"].startswith("appa-")]
+        self.assertEqual(len(sheets), 4)
+        for sheet in sheets:
+            before, after = [pictures[name] for name in sheet["panels"]]
+            with self.subTest(sheet=sheet["id"]):
+                self.assertEqual(sheet["labels"], ["Before", "After"])
+                self.assertEqual(sheet["columns"], 2)
+                support = before["state"]["emph"]["pieces"]
+                self.assertTrue(support)
+                self.assertEqual(support, after["state"]["emph"]["pieces"])
+                for picture in (before, after):
+                    self.assertEqual((picture["cs"], picture["ss"]), (.5, .62))
+                    self.assertEqual(picture["emph"], "moved")
+                    self.assertRegex(picture["state"]["digest"], r"^[0-9a-f]{64}$")
+                data_name = {"appa-pure-region": "appa-pure-tree",
+                             "appa-late-cycle-region": "appa-late-cycle-tree"}.get(sheet["id"])
+                if data_name:
+                    data = computed[data_name]
+                    self.assertEqual(support, data["moved"])
+                    self.assertEqual(before["state"]["digest"], data["before_digest"])
+                    self.assertEqual(after["state"]["digest"], data["after_digest"])
 
 
 if __name__ == "__main__":

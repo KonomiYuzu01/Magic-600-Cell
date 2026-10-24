@@ -1,0 +1,80 @@
+{
+  "states": [
+    {
+      "state": "height4-bbef1c8e",
+      "status": "pass",
+      "seconds": {
+        "replay": 1022.1820393610033,
+        "observe": 35.97718405399792,
+        "observe_seams": 32.3691022790008,
+        "off_grip": 72.19108040200081,
+        "total": 1164.2786275980034
+      },
+      "file": "observation-height4-bbef1c8e.json"
+    },
+    {
+      "state": "height4-2430f4cc",
+      "status": "pass",
+      "seconds": {
+        "replay": 1081.3073614259993,
+        "observe": 33.59798204799881,
+        "observe_seams": 33.02436991099967,
+        "off_grip": 77.44059611199918,
+        "total": 1227.0077931859996
+      },
+      "file": "observation-height4-2430f4cc.json"
+    },
+    {
+      "state": "height4-ac127dc3",
+      "status": "pass",
+      "seconds": {
+        "replay": 1205.004667661,
+        "observe": 36.97239977600111,
+        "observe_seams": 35.0882439259949,
+        "off_grip": 68.22887865100347,
+        "total": 1346.596607845997
+      },
+      "file": "observation-height4-ac127dc3.json"
+    },
+    {
+      "state": "height4-cc5ef7ec",
+      "status": "pass",
+      "seconds": {
+        "replay": 1005.4794062820001,
+        "observe": 31.521125540006324,
+        "observe_seams": 28.50913823799783,
+        "off_grip": 69.05898797699774,
+        "total": 1136.2667073620032
+      },
+      "file": "observation-height4-cc5ef7ec.json"
+    },
+    {
+      "state": "height4-16c4aefe",
+      "status": "pass",
+      "seconds": {
+        "replay": 1100.8606100820034,
+        "observe": 37.93825108100282,
+        "observe_seams": 33.41400997599703,
+        "off_grip": 97.54812931000197,
+        "total": 1272.0644743529992
+      },
+      "file": "observation-height4-16c4aefe.json"
+    },
+    {
+      "state": "height4-895b45de",
+      "status": "pass",
+      "seconds": {
+        "replay": 1061.7185304110026,
+        "observe": 28.673862118994293,
+        "observe_seams": 27.59690160900209,
+        "off_grip": 68.12606490599865,
+        "total": 1187.3428613950018
+      },
+      "file": "observation-height4-895b45de.json"
+    }
+  ],
+  "status": "pass",
+  "prose_discrepancies_are_separate": true,
+  "height4_units": "recorded only; the requested comparisons cover heights, off and blocked caps",
+  "evidence_kind": "source and fixture replay; cloud research timings"
+}

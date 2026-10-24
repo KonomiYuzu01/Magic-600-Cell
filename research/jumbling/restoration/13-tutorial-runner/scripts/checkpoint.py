@@ -155,7 +155,7 @@ class Checkpointer:
                     self.last_sha = file_sha(previous)
 
     def git(self, *args, check=True):
-        result = subprocess.run(['git', '--no-optional-locks', *args], cwd=self.repo,
+        result = subprocess.run(['git', '--no-optional-locks', '--literal-pathspecs', *args], cwd=self.repo,
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if check and result.returncode:
             raise CheckpointError('git ' + args[0] + ' failed: ' + result.stderr.decode(errors='replace').strip())
@@ -219,12 +219,12 @@ class Checkpointer:
                         os.replace(backup, self.checkpoint)
                     raise
                 self.git('add', '-A', '-f', '--', self.relative)
-                if self.git('diff', '--cached', '--quiet', check=False).returncode:
+                if self.git('diff', '--cached', '--quiet', '--', self.relative, check=False).returncode:
                     message = f'Checkpoint {self.run.name}: step {len(record["steps"])}'
                     arguments = ['commit', '-m', message]
                     for trailer in self.trailers:
                         arguments += ['--trailer', trailer]
-                    self.git(*arguments)
+                    self.git(*arguments, '--only', '--', self.relative)
                     self.pending_push = not self.no_push
                 self.last_sha = hashlib.sha256(raw).hexdigest()
                 self.push()

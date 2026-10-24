@@ -107,7 +107,7 @@ internal static partial class Program
 
     private static void LL5HarnessTests()
     {
-        var run = Run("python", new[] { "-B", FileAt("tests/ll6_harness_test.py") });
+        var run = Run("python", new[] { "-B", FileAt("tests/ll8_harness_test.py") });
         Check(run.Code == 0, run.Out + run.Error);
         Check(System.Text.RegularExpressions.Regex.IsMatch(run.Error, @"Ran [1-9][0-9]* tests"), "harness cases did not run");
         Console.WriteLine(run.Error.Split('\n').First(line => line.StartsWith("Ran ", StringComparison.Ordinal)).Trim());

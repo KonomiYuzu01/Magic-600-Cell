@@ -16,6 +16,7 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
 import sys
 
 sys.dont_write_bytecode = True
@@ -40,6 +41,43 @@ class ReplaySession:
         self.starts = {}
 
 
+class CommittedInputs:
+    """Invocation-local Git inventory, checked before opening picture inputs."""
+    def __init__(self, root=None):
+        self.root = Path(ROOT if root is None else root).resolve()
+        self.tracked = None
+        self.changed = set()
+
+    def require(self, path):
+        path = Path(path).resolve()
+        if not path.is_relative_to(self.root):
+            raise ValueError('picture input must be inside the repository')
+        name = path.relative_to(self.root).as_posix()
+        for seed in re.findall(r'(?:s|seed-?)(\d+)', name):
+            refuse_seed(int(seed))
+        if self.tracked is None:
+            command = ['git', '--no-optional-locks', '-C', str(self.root)]
+            try:
+                tracked = subprocess.run([*command, 'ls-files', '-z'], check=True, capture_output=True).stdout
+                status = subprocess.run([*command, 'status', '--porcelain=v1', '-z',
+                                         '--untracked-files=no'], check=True, capture_output=True).stdout
+            except (OSError, subprocess.CalledProcessError) as exc:
+                raise ValueError('cannot verify committed picture inputs with Git') from exc
+            self.tracked = {os.fsdecode(p) for p in tracked.split(b'\0') if p}
+            rows = iter(status.split(b'\0'))
+            for row in rows:
+                if not row:
+                    continue
+                self.changed.add(os.fsdecode(row[3:]))
+                if b'R' in row[:2] or b'C' in row[:2]:
+                    self.changed.add(os.fsdecode(next(rows)))
+        if name not in self.tracked:
+            raise ValueError(f'{name}: picture input must be tracked and committed in Git')
+        if name in self.changed:
+            raise ValueError(f'{name}: picture input must be committed and unmodified')
+        return path
+
+
 def repository_path(name, root=None):
     root = ROOT if root is None else Path(root).resolve()
     try:
@@ -53,7 +91,7 @@ def refuse_seed(seed):
         raise ValueError('start seeds 9011..9073 are reserved and refused')
 
 
-def validate_recipe(recipe, root=None):
+def validate_recipe(recipe, root=None, committed=None):
     """Validate the complete recipe and its paths before any mechanics or writes."""
     if (not isinstance(recipe, dict) or not {'start', 'digest'} <= set(recipe)
             or not set(recipe) <= {'start', 'play', 'emph', 'digest'}):
@@ -70,7 +108,8 @@ def validate_recipe(recipe, root=None):
         repository_path(start['record'] + '/run.json', root)
         if type(start['step']) is not int or start['step'] < 0 or start['when'] not in ('before', 'after'):
             raise ValueError('invalid state start step or when')
-        run = check_run.read_json(base / 'run.json')
+        committed = CommittedInputs(root) if committed is None else committed
+        run = check_run.read_json(committed.require(base / 'run.json'))
         refuse_seed(run['start'].get('seed'))
         repository_path(start['record'] + '/start-table.json', root)
         for row in run.get('steps', [])[:start['step'] + 1]:
@@ -146,7 +185,7 @@ def correction_words(library):
     return words
 
 
-def recipe_word(name, inputs, root=None, active=()):
+def recipe_word(name, inputs, root=None, active=(), committed=None):
     """Read literal research words, including gzip and the stored segment programs.
 
     A census tape is history followed by moves. A replay log's LETTER rows are
@@ -155,6 +194,8 @@ def recipe_word(name, inputs, root=None, active=()):
     path = repository_path(name, root)
     if path in active:
         raise ValueError('cyclic word program')
+    committed = CommittedInputs(root) if committed is None else committed
+    committed.require(path)
     raw = path.read_bytes()
     inputs[path] = sha(raw)
     if path.name.endswith(('.ia16', '.ia16.gz')):
@@ -201,6 +242,7 @@ def recipe_word(name, inputs, root=None, active=()):
             if len(doc['runs']) != 1 or doc['runs'][0].get('order') != 'retained-first':
                 raise ValueError('expected one retained-first correction target')
             path = repository_path(CORRECTION_LIBRARY, root)
+            committed.require(path)
             raw_library = path.read_bytes()
             inputs[path] = sha(raw_library)
             decoded = gzip.decompress(raw_library)
@@ -248,7 +290,7 @@ def recipe_word(name, inputs, root=None, active=()):
                 if (len(keys) != 1 or not keys <= {'word_file', 'safe_word_file', 'core_file'}
                         or ('inverse' in segment and type(segment['inverse']) is not bool)):
                     raise ValueError('invalid literal word segment')
-                part = recipe_word(segment[next(iter(keys))], inputs, root, (*active, path))
+                part = recipe_word(segment[next(iter(keys))], inputs, root, (*active, path), committed)
                 word.extend(inverse_word(part) if segment.get('inverse') else part)
         else:
             raise ValueError(f'{name}: no literal word')
@@ -259,11 +301,12 @@ def recipe_word(name, inputs, root=None, active=()):
     return word
 
 
-def prepare_recipe(recipe, root=None):
-    validate_recipe(recipe, root)
+def prepare_recipe(recipe, root=None, committed=None):
+    committed = CommittedInputs(root) if committed is None else committed
+    validate_recipe(recipe, root, committed)
     inputs, words = {}, []
     for item in recipe.get('play', []):
-        word = recipe_word(item['word'], inputs, root)
+        word = recipe_word(item['word'], inputs, root, committed=committed)
         first, end = item.get('letters', [0, len(word)])
         if end > len(word):
             raise ValueError('state letter range is outside the word')
@@ -296,7 +339,9 @@ def moved_ids(before, after):
     return np.flatnonzero(before.pose_id != remap[after.pose_id]).astype('<i4')
 
 
-def read_word(base, row):
+def read_word(base, row, committed=None):
+    committed = CommittedInputs() if committed is None else committed
+    committed.require(check_run.inside(base, row['word']))
     failures = []
     word = check_run.load_word_v3(base, row, failures)
     if word is None or failures:
@@ -309,8 +354,11 @@ def read_word(base, row):
     return word['word']
 
 
-def play(state, row, word, base):
+def play(state, row, word, base, committed=None):
     if row['phase'] == 'lattice' and row['encoding'] == 'ia16':
+        committed = CommittedInputs() if committed is None else committed
+        committed.require(check_run.inside(base, row['word']))
+        committed.require(check_run.inside(base, row['tree']['file']))
         # The existing checker plays EVERY letter in chronological order. Its retained-
         # lattice representation rebuilds the exact simulator state at the boundary.
         failures = check_run.check_lattice.replay_lattice_step(
@@ -326,7 +374,7 @@ def play(state, row, word, base):
             raise ValueError(f'step {row["index"]}: inadmissible or uncertain twist ({cap}, {item})')
 
 
-def checkpoint(base, record, target, menu):
+def checkpoint(base, record, target, menu, committed=None):
     """Only use a named table at or BEFORE the target's before boundary."""
     candidates = []
     for i, row in enumerate(record['steps'][:target]):
@@ -341,6 +389,8 @@ def checkpoint(base, record, target, menu):
         path = check_run.inside(base, name)
         if not path.is_file():
             continue
+        committed = CommittedInputs() if committed is None else committed
+        committed.require(path)
         state = check_run.load_table(path, menu)
         check_boundary(state, reference, f'checkpoint {name}')
         check_boundary(state, record['steps'][n - 1]['after'], f'checkpoint after step {n - 1}')
@@ -348,11 +398,12 @@ def checkpoint(base, record, target, menu):
     return None, 0, None
 
 
-def replay_record(run, step, when, session=None):
+def replay_record(run, step, when, session=None, committed=None):
     base = Path(run).resolve()
     if type(step) is not int or step < 0 or when not in ('before', 'after'):
         raise ValueError('invalid step or when')
-    raw = (base / 'run.json').read_bytes()
+    committed = CommittedInputs() if committed is None else committed
+    raw = committed.require(base / 'run.json').read_bytes()
     record = json.loads(raw, object_pairs_hook=check_run.no_duplicates)
     if record.get('format') != 'runner-run/3' or record.get('menu') != 'I_a':
         raise ValueError('expected a runner-run/3 record with menu I_a')
@@ -374,11 +425,12 @@ def replay_record(run, step, when, session=None):
         if row['before']['digest'] != expected:
             raise ValueError(f'step {i}: broken digest chain')
 
+    committed.require(base / 'start-table.json')
     menu = check_run.restore.menu('I_a')
     state = check_run.load_table(base / 'start-table.json', menu)
     check_boundary(state, start, 'start')
     start_hash = sha((base / 'start-table.json').read_bytes())
-    later, first, source = checkpoint(base, record, step, menu)
+    later, first, source = checkpoint(base, record, step, menu, committed)
     if later is not None:
         state = later
     used = []
@@ -390,7 +442,8 @@ def replay_record(run, step, when, session=None):
         # still has the same bytes. Never skip replay of the requested step itself.
         for n in range(step, first - 1, -1):
             cached = session.records.get((base, n))
-            if cached and all(p.is_file() and sha(p.read_bytes()) == h for p, h in cached[3].items()):
+            if cached and all(p.is_file() and sha(committed.require(p).read_bytes()) == h
+                              for p, h in cached[3].items()):
                 state, used, source, inputs = copy_state(cached[0]), list(cached[1]), cached[2], dict(cached[3])
                 first = n
                 break
@@ -398,16 +451,17 @@ def replay_record(run, step, when, session=None):
     for i in range(first, step + 1):
         row = steps[i]
         check_boundary(state, row['before'], f'step {i} before')
-        word = read_word(base, row)
+        word = read_word(base, row, committed)
         word_path = check_run.inside(base, row['word'])
         used.append({'file': row['word'], 'sha256': sha(word_path.read_bytes())})
         inputs[word_path] = used[-1]['sha256']
         if row['encoding'] == 'ia16':
             path = check_run.inside(base, row['tree']['file'])
+            committed.require(path)
             inputs[path] = sha(path.read_bytes())
         if i == step:
             before, letters = copy_state(state), word
-        play(state, row, word, base)
+        play(state, row, word, base, committed)
         check_boundary(state, row['after'], f'step {i} after')
         if session is not None:
             session.records[base, i + 1] = (copy_state(state), list(used), source, dict(inputs))
@@ -469,9 +523,12 @@ def export(run, step, when, out):
     return write_render(state, moving, revision, tutorial, out)
 
 
-def recipe_state(recipe, session=None):
-    inputs, words = prepare_recipe(recipe)
+def recipe_state(recipe, session=None, committed=None):
+    committed = CommittedInputs() if committed is None else committed
+    inputs, words = prepare_recipe(recipe, committed=committed)
     session = ReplaySession() if session is None else session
+    if 'table' in recipe['start']:
+        committed.require(repository_path(recipe['start']['table']))
     menu = check_run.restore.menu('I_a')
     start, revision, caps = recipe['start'], 0, []
     if 'table' in start:
@@ -489,7 +546,7 @@ def recipe_state(recipe, session=None):
         revision = start['scramble'][0]
     else:
         base = repository_path(start['record'])
-        state, _, revision, original = replay_record(base, start['step'], start['when'], session)
+        state, _, revision, original = replay_record(base, start['step'], start['when'], session, committed)
         caps = original['caps']
         # replay_record retains exactly the inputs used to establish this boundary,
         # including the after boundary required for a before picture.
@@ -532,15 +589,16 @@ def recipe_state(recipe, session=None):
     return state, moving, revision + played, tutorial
 
 
-def export_recipe(recipe, out, session=None):
+def export_recipe(recipe, out, session=None, committed=None):
     out = Path(out).resolve()
-    validate_recipe(recipe)
+    committed = CommittedInputs() if committed is None else committed
+    validate_recipe(recipe, committed=committed)
     start = recipe['start']
     if 'record' in start and out.is_relative_to(repository_path(start['record'])):
         raise ValueError('--out must not be inside the record directory')
     if out.exists() and (not out.is_dir() or any(out.iterdir())):
         raise ValueError('--out exists and is not empty')
-    state, moving, revision, tutorial = recipe_state(recipe, session)
+    state, moving, revision, tutorial = recipe_state(recipe, session, committed)
     return write_render(state, moving, revision, tutorial, out)
 
 
@@ -556,7 +614,9 @@ def main(argv=None):
         if args.state is not None:
             if args.run is not None or args.step is not None or args.when is not None:
                 raise ValueError('--state cannot be combined with RUN/--step/--when')
-            header, tutorial = export_recipe(check_run.read_json(args.state), args.out)
+            committed = CommittedInputs()
+            recipe = check_run.read_json(committed.require(args.state))
+            header, tutorial = export_recipe(recipe, args.out, committed=committed)
         else:
             if args.run is None or args.step is None or args.when is None:
                 raise ValueError('give --state or RUN/--step/--when')

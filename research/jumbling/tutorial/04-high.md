@@ -515,7 +515,7 @@ occupies, `research/jumbling/theory/buffer.py:72-85`); the point model of branch
 | SAFE grip | a cap clean at Y with only lattice pieces inside | :233-234; `buffer.py:139-148` |
 | SAFE letters, image of a chamber | the letters (c, i) with c a SAFE grip and i one of the retained items 1 to 11, ordered by grip, then by item. Under a SAFE letter a chamber inside its cap moves to its image under the letter's lattice element; any other chamber stays | `buffer.py:151-163`, `:221-227` |
 
-![Figure 4.3: The point model of branch Q at the R22D-16 case: a patch of Q's caps as the 600-cell complex, the cells of the target and of Bad(W), the five label points of a cell, and how the commutator's letters move the points](figures/png/ch04-point-model.png)
+![Figure 4.3: The point model of branch Q at the R22D-16 case: a patch of Q's caps as the 600-cell complex, the cells of the target, of Bad(W) and of V⁻¹(Bad(W)), with their chambers counted by home cell (111 each), the five label points of a cell, and how the commutator's letters move the points](figures/svg/ch04-point-model.svg)
 
 **Candidates and order.** D19 goes through these loops in this order and stops at the first word that passes its replay
 (`run_rule`, `r22d19_rule.py:602-670`):
@@ -824,7 +824,7 @@ prune counts: after an accepted step the run loop replaces the ledger with a fre
 record keeps that fresh ledger with a `max_steps` cursor on the d19 row (`r22d25_search.py:557-561`, `:595`). The
 prune counts above come from record A, which calls `search_step` directly.
 
-![Figure 4.5: The R22D-36 test state before and after the F1 letter (12, 14): piece 58388 at height 6 and then 4, cap 12 with the 2,702 height-2 pieces it lands, the other 3,097 off pieces unchanged, and the lattice pieces](figures/png/ch04-r22d36-f1.png)
+![Figure 4.5: The R22D-36 test state before and after the F1 letter (12, 14): the same 2,703 pieces centred on cap 12, piece 58388 (height 6, then 4) and the 2,702 height-2 pieces the letter lands (5,800 → 3,098 off)](figures/png/ch04-r22d36-f1.png)
 
 ### 4.14.2 A d19 word: R22D-16
 
@@ -851,7 +851,7 @@ lattice piece off, and keeps the other 31,437 off pieces exact: 31,479 → 31,43
 This word was found before D19 existed, by a search that stopped at its first success (`PROOFS-B.md:1839-1841`). D19
 restricted to its case plays it letter for letter (section 4.10, Evidence).
 
-![Figure 4.6: The depth 100 stop of seed 7102 before and after the 28-letter R22D-16 step: unit 391 and the 41 other height-4 pieces it lands, the grips 61, 287, 110 and 149, and the 31,437 off pieces it leaves exact](figures/png/ch04-r22d16-step.png)
+![Figure 4.6: The depth 100 stop of seed 7102 before and after the 28-letter R22D-16 step: the same 231 pieces centred on cap 61, piece 391 among them; the step lands unit 391 and 41 other height-4 pieces (31,479 → 31,437 off)](figures/png/ch04-r22d16-step.png)
 
 ### 4.14.3 One call after (12, 14): a budget, not a stuck
 
@@ -1012,6 +1012,11 @@ checks contracts, not the kernel's claims of `stuck` or `budget` (`check_contrac
 5. **Rules that never fired.** No runner run from a scramble has taken a high step. F2, F3, S·T and T1 in blocker order
    have never fired at any state, so their figures are missing (section 4.15). The F1 and D19 figures come from
    committed fixtures (the R22D-36 test state and seed 7102's depth 100 stop), not from runner development runs.
+   The D2 development runs reached the high phase at 3000-twist states and took no step there (**run on one
+   instance** each, `runs/dev/` of stage 13): at the census stops of seeds 7304 to 7307 the kernel exhausted every
+   family (`kernel_exhausted`; 772.8 s at 7304, 2,914.6 s at 7306, whose record is an unchecked checkpoint, and
+   2,643.2 s at 7307); after seed 7303's own bulk and height phases its 3,600 s clock ended it (`budget`, stop family
+   F2 after 2,036 F2 candidates); and at seed 7302's stop the run was lost during the kernel call at `2430f4cc…`.
 6. **The pinned commit.** Every line number refers to `88dacaf`; chapter 1's refer to `35c3d4f`. The two agree for
    every file cited here except `check_run.py` after line 966, `test_runner.py` and the stage 13 `README.md`. The
    tutorial's citations are to be re-pinned to one commit, the one that merges the tutorial.

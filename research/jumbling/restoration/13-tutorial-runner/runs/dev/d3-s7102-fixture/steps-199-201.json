@@ -1,0 +1,97 @@
+{
+ "format": "d3-bulk-fixture/1",
+ "run": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d3-s7102",
+ "branch": "claude/dev-d3-s7102",
+ "commit": "2731667b87567f295f3c3dc0fdeb97d09b2325bf",
+ "table": {
+  "file": "bulk-198.json",
+  "source_commit": "0bca41f",
+  "sha256": "cd7fe134dd9481c00cbe80d26d2fdbb6d139390a55556d6df002688a2b765160",
+  "digest": "83abb70dcc69fb06b1790aa308f04c0258a8d288c96afb4b98c4faf16efe18b3",
+  "after_step": 198
+ },
+ "steps": [
+  {
+   "index": 199,
+   "rule": "conj",
+   "word": [
+    [
+     315,
+     1
+    ],
+    [
+     79,
+     4
+    ],
+    [
+     315,
+     1
+    ]
+   ],
+   "letters": 3,
+   "word_sha256": "f8ee5e25b029603b0a6fbc0f9c510e592d78ae71a8e2944633e7b767cd77c989",
+   "before": {
+    "digest": "83abb70dcc69fb06b1790aa308f04c0258a8d288c96afb4b98c4faf16efe18b3",
+    "off": 24789,
+    "N": 27644
+   },
+   "after": {
+    "digest": "47561186192fffd386b867e07b6bf4fe5cc6d28ca7a3fddcf02ca5ed8870facb",
+    "off": 24789,
+    "N": 27600
+   }
+  },
+  {
+   "index": 200,
+   "rule": "cover",
+   "word": [
+    [
+     38,
+     6
+    ]
+   ],
+   "letters": 1,
+   "word_sha256": "70d337561058f40bd06250d54b5ef3dab208a5aab6a976b20de8d23b4e4f139c",
+   "before": {
+    "digest": "47561186192fffd386b867e07b6bf4fe5cc6d28ca7a3fddcf02ca5ed8870facb",
+    "off": 24789,
+    "N": 27600
+   },
+   "after": {
+    "digest": "4146144878856cdfffa39a607aeb9cca010599132976e6396a6625df12817566",
+    "off": 24789,
+    "N": 27598
+   }
+  },
+  {
+   "index": 201,
+   "rule": "conj",
+   "word": [
+    [
+     6,
+     1
+    ],
+    [
+     89,
+     2
+    ],
+    [
+     6,
+     1
+    ]
+   ],
+   "letters": 3,
+   "word_sha256": "4d6b0462c257451f5d6f391f9bbed269daa52525ff4828dc54da0b84b7ab1c14",
+   "before": {
+    "digest": "4146144878856cdfffa39a607aeb9cca010599132976e6396a6625df12817566",
+    "off": 24789,
+    "N": 27598
+   },
+   "after": {
+    "digest": "f02c6a144799776d0940e7ff27dbc78e0a8060a723f6055a1cdc237834c27a56",
+    "off": 24789,
+    "N": 27566
+   }
+  }
+ ]
+}

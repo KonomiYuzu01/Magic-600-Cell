@@ -1,0 +1,2 @@
+SNAPSHOT {"snapshot_digest": "b78611f6ea470cdac4d2add15525f5268420d7d70478dc2a3b25b3491cf97933", "snapshot_off": 104941, "prefix": 0, "digest": "b78611f6ea470cdac4d2add15525f5268420d7d70478dc2a3b25b3491cf97933", "load_cpu": 7.7}
+START {"digest": "b78611f6ea470cdac4d2add15525f5268420d7d70478dc2a3b25b3491cf97933", "n6_n4_n2": [0, 1938, 103003], "off": 104941, "N": 128176, "cpu": 16.1}

@@ -5,6 +5,11 @@
       "name": "tree-7106-19",
       "record": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7106/run",
       "step": 19
+    },
+    {
+      "name": "appa-zero-bad-tree",
+      "record": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d1-dev-s7101/run1-interrupted",
+      "step": 97
     }
   ]
 }

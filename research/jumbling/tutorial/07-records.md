@@ -124,6 +124,7 @@ empty (`runner.py:391-392`). On the composition path the checker writes its own 
 | `error` | Null, or the reason of an error. A reason that contains `/` or `\` is replaced by `see child log`, and a signal gives `signal N` (`runner.py:101-103`, `:1485`). |
 | `acceptance` | `verdict`, `certificate_steps`, `fallback_steps`, `probe`, `timed_out_attempts` (section 7.8). |
 | `totals` | `bulk_twists`, `height_twists`, `high_twists`, `tail_twists`, `fallback_twists`, `lattice_twists`, `seconds`. `lattice_twists` is null until the lattice phase plays or schedules nothing. |
+| `resumes` | Only in a run that `--resume` continued (since `cba2c6a`): one entry `{at_step, seconds, source}` per continuation, giving the number of steps already recorded, the running time so far and the `source` of the continuing session (`runner.py:728` at `2b04d0c`; "Resumed runs" below). |
 
 The keys of `config` (`runner.py:479-491`):
 
@@ -139,16 +140,33 @@ The keys of `config` (`runner.py:479-491`):
 | `clock_sentinel` | 10⁹ in acceptance mode, null in development mode (`runner.py:484`). |
 | `kernel` | `seconds` (null in acceptance mode), `wall_margin`, `d19` (`file` and `sha256` of the D19 rule that the high plugin names) and `max_steps: 1` (chapter 4; `runner.py:469-477`, `:485-486`). |
 | `lattice` | `restorer`: `schedule11`, the default and the only value acceptance mode accepts; or `late`, in development mode only, with `--lattice-restorer late` (chapter 6; `runner.py:1608-1609`, `:153-156`). |
+| `no_lattice` | The value of `--no-lattice`, false by default; true ends the run before the lattice phase with `result: budget`. Acceptance mode requires false (`acceptance-config.json`). Recorded since `cba2c6a` (`runner.py:600`, `:1546-1549` at `2b04d0c`). |
 | `literal_limit`, `seeds` | Limits of the certificate path of the tail: 10,000,000 letters and `atlas` by default (chapter 5). |
 | `acceptance_config` | Acceptance mode: `file` (repository-relative), `sha256` and `options` of `acceptance-config.json`. Null in development mode (`runner.py:157-158`, `:488`). |
 | `source` | `commit`; `status_sha256`, the sha256 of the output of `git status --porcelain=v1 --untracked-files=all -- research/jumbling`; and `dirty`, true when that output is not empty. Taken before the run writes anything (`runner.py:130-142`, `:448`). |
+| `code` | `{sha256, files}`: one fingerprint of every file under `research/jumbling`, leaving out directories and files named `runs`, `cache` or `__pycache__` and the run's own output and checkpoint directories, together with the Python and NumPy versions; `files` is the number of entries, the two versions included. `--resume` refuses a record whose `code` differs. Recorded since `cba2c6a` (`runner.py:152-169`, `:603`, `:647-648` at `2b04d0c`). |
 | `scripts` | The sha256 of every script the steps depend on, keyed by repository-relative path: the runner's own list (`runner.py:74-81`) and each plugin's `SCRIPTS` (`runner.py:466-467`, `:490-491`). |
 
 In the committed acceptance record of seed 7001 (section 7.12.1), `scripts` has 49 entries: 22 from the runner's list
 and 27 more from the plugins' lists of 8 (`rules_height`), 10 (`rules_kernel`) and 12 (`lattice_phase`) paths, after
 three paths named twice (`restore_lattice_late.py`, `eb6.py`, `runner_api.py`) are merged. Every key is
-repository-relative, and every sha256 equals that of the file in the checkout (**computed**, `ch07-examples.json`, key
-`A_d0.scripts`).
+repository-relative, and every sha256 equalled that of the file in the checkout where the chapter's script ran,
+`41cc08d` (**computed**, `ch07-examples.json`, key `A_d0.scripts`). The resume work changed `runner.py` after that
+(`cba2c6a`, `e60da66`), so in a later checkout that one entry differs from the file. The checker reads `scripts` only
+for the spelling of its paths and loads none of them (`check_run.py:159-166` at `2b04d0c`), so it still passes the
+record (section 7.12).
+
+**Resumed runs.** A run that a container restart or a signal ended while it was still in flight can be continued:
+repeat its command with `--resume` (since `cba2c6a`, with the fixes of `e60da66`; stage 13 `README.md`, "Resuming long
+runs and keeping checkpoints"). Before it writes anything, the runner checks the record: format 3; a `bulk.completed`
+that is missing or a Boolean; the same `code`, and the same `config` apart from `component` and `source`; the same start
+table or scramble; every step a `json` word outside the lattice phase, in order, whose replay from the start reproduces
+its `word_sha256` and its before and after digests; every table the record names for a step, and the bulk's end table
+once the bulk has ended, with the recorded digest; a run still in flight; and a valid `totals.seconds`. It then
+continues from the last recorded step, does not enter a bulk that has ended again, and appends an entry to `resumes`.
+The running time goes on from `totals.seconds`, so the gap between the sessions is not counted (`runner.py:637-731`,
+`:181-219` at `2b04d0c`). Apart from `resumes`, the record of a resumed run reads like that of a run that was never
+interrupted, and the checker replays it the same way (section 7.11.2).
 
 ## 7.4 What every step records
 
@@ -530,7 +548,8 @@ the middle child (2, +1) is met for the first time and expanded; the third child
 `same_as [0, 0, 1]`. Parts: the root, 4 factor groups, 4 `conj` nodes, their 12 children and the 3 children of the
 first `conj 2`, 24 in all.
 
-![Figure 7.2: The tree of lattice step 19 of seed 7106 (orbit 6, 194 letters, 24 parts), with its same_as and inverse_of links](figures/07-orbit6-tree-s7106.svg)
+[Figure 6.8](06-lattice.md#67-rule-l3-one-orbit-step-under-schedule11-default-and-acceptance) draws this tree, row 19
+of the seed 7106 record, with its 24 parts, 194 letters and the same_as and inverse_of links.
 
 ## 7.7 Phase blocks, the stuck block and the run's result
 
@@ -543,6 +562,11 @@ first `conj 2`, 24 in all.
 | `high` | `result`, `steps`, `twists`, `start`, `end` |
 | `tail` | `result`, `steps` |
 | `lattice` | `result`, `steps`, `twists` (null until the phase plays or schedules nothing); `report` (`file`, `sha256`) after a played phase and after a phase that scheduled nothing |
+
+Newer records have more keys here: since `cba2c6a`, `twists` in each height sub-phase and in `tail`, the letters of
+that block's steps; since `e60da66`, `bulk.completed`, false while the bulk is running and true once it has ended with
+its final result, a final `budget` or `timeout` included (`runner.py:622-629`, `:221-237`, `:847`, `:1791`, `:1834`
+at `2b04d0c`). Older records, such as the D0 records of section 7.12, do not have them.
 
 A height sub-phase, the high phase or the lattice phase that a plugin's `End` closed also has `reason`, `details` and
 `attempts` (`runner.py:690-691`, `:1377`). After a signal during a plugin call, the block keeps that call's
@@ -1029,6 +1053,11 @@ For a format 3 record (`check_run.py:340-370`):
 - `source` has a 40-digit commit or null, a status sha256 or null, and `dirty` a boolean or null (`config`;
   `check_run.py:279-287`). `error` is a string without a path, and only when the result is `error` (`error`;
   `check_run.py:290-294`).
+- Since `cba2c6a` (citations at `2b04d0c`): `code`, when present, is `{sha256, files}` with a 64-digit sha256 and a
+  positive integer (`config_code`; `check_run.py:410-414`). `resumes`, when present, needs format 3; each entry has
+  exactly `at_step`, `seconds` and `source`; `at_step` is at most the number of rows, and `at_step` and `seconds` never
+  decrease; `source` passes the check above; and in a run that has ended, no `seconds` exceeds `totals.seconds`
+  (`resumes`; `check_run.py:290-331`, `:1251`). The rows of a resumed run are replayed like those of any other run.
 
 ### 7.11.3 Labels, trees, tables and phases
 
@@ -1102,7 +1131,8 @@ phase's table checks are the ones above (`table`).
 - The bulk's result is `lattice`, `stuck`, `budget` or `timeout`, and `lattice` only when no piece is off at its end
   (`phase_result`; `:730-732`). A bulk `budget` or `timeout` needs a component reason (`component`; `:733-734`).
 - The `steps` and `twists` of the bulk, height and high blocks match the rows (`phase_steps`, `phase_twists`;
-  `:740-745`).
+  `:740-745`). Since `e60da66`, a `bulk.completed` key must be a Boolean (`phase_result`; `check_run.py:779-780` at
+  `2b04d0c`); the `twists` of the height sub-phases and of the tail are not checked.
 - Each height sub-phase and the high phase: its `start` and `end` against the checker's snapshots
   (`<name>_start_digest`, `<name>_end_off` and the like). Every `not_applicable`, `handoff` and `lattice` claim is
   recomputed from those snapshots with the entry tests of chapter 1 (`entry_test`; `:661-667`, `:693-705`); a `stuck`
@@ -1196,8 +1226,14 @@ Sections 7.12.1 and 7.12.2 use the committed D0 records, made on 22 October 2026
 mode, with `config.source.dirty` false (`README.md:1545-1557`, `:1570-1578` at `88dacaf`). Sections 7.12.1, 7.12.3 and 7.12.4 also
 use runs and checks made by the chapter's script on 22 October 2026, on the head `41cc08d` with `config.source.dirty`
 false; their values are in `ch07-examples.json`. The `scripts` map of the chapter's development run equals that of the
-committed record (**computed**, key `C_dev7001.scripts_equal_to_d0`). Every example is **run on one instance**. Times
-are **measured** on headless Linux. The cited records keep the values; a time with no such record is omitted.
+committed record (**computed**, key `C_dev7001.scripts_equal_to_d0`). Run again at `2b04d0c` (23 October 2026, after
+the resume work), the script gives the same rules, words, digests, tables, trees, checker rows and verdicts. It differs
+in the times; in the recorded commit, the hashes of `runner.py` and `check_run.py` and that of the checkout's
+`git status`; in `A_d0.scripts.sha256_equal_to_checkout` and `C_dev7001.scripts_equal_to_d0`, both false because
+`runner.py` changed; in the development run's `config`, which also has `code` and `no_lattice`; and in the R22D-36
+run's new `phases` keys (section 7.7) (**run on one instance**; that run's record is not committed). Every example is
+**run on one instance**. Times are **measured** on headless Linux. The cited records keep the values; a time with no
+such record is omitted.
 
 ### 7.12.1 Seed 7001 at depth 10, acceptance mode
 
@@ -1244,7 +1280,7 @@ The committed record `runs/dev/d0-s7001/run/run.json`, made by `runner.py --scra
   rules, words and digests after every step; its `bulk_order` ends with `reopen` (**computed**, key
   `A_d0.format1_record`).
 
-![Figure 7.3: The nine bulk steps of seed 7001 at depth 10, with off count and N after each step and the digest chain](figures/svg/07-seed7001-bulk-steps.svg)
+![Figure 7.2: The nine bulk steps of seed 7001 at depth 10: the off count and N at the start (0) and after each step (1 to 9, the table's steps 0 to 8), and the digest chain](figures/svg/07-seed7001-bulk-steps.svg)
 
 ### 7.12.2 Seed 7106 at depth 20: a played lattice phase
 
@@ -1307,7 +1343,7 @@ These options skip the bulk and give the tail no rule, to show the height rows q
   digest `3ab25d21…`, the sub-phase results, the component `bulk_budget` and the checker's verdict `component`.
   `research/jumbling/restoration/13-tutorial-runner/scripts/test_rules_height.py:863-886` (`test_01_r22d36_and_h4`) asserts the two steps' digests, off counts and heights.
 
-![Figure 7.4: The run from the R22D-36 state: the phase blocks in the fixed order, the two height steps and the stuck tail with its 54 units](figures/07-z36-phase-blocks.svg)
+![Figure 7.3: The run from the R22D-36 state: the phase blocks in the fixed order, the two height steps and the stuck tail with its 54 units](figures/svg/07-z36-phase-blocks.svg)
 
 ### 7.12.4 Four changed copies
 
@@ -1328,7 +1364,7 @@ refuses it. In copy b the final row reads `pass: false` and `verdict: solved` (s
 failure names are `test_check_run.py:1301` and `:1740` (`word_sha256`) and `:1336-1343` and `:1397`
 (`tree_expansion`).
 
-![Figure 7.5: The checker's rows for the D0 record of seed 7001 and its four changed copies, step by step](figures/07-checker-rows.svg)
+![Figure 7.4: The checker's rows for the D0 record of seed 7001 and its four changed copies, step by step](figures/svg/07-checker-rows.svg)
 
 ## 7.13 What a record shows
 
@@ -1373,6 +1409,9 @@ failure names are `test_check_run.py:1301` and `:1740` (`word_sha256`) and `:133
 | Lattice phase, its ends and report | `runner.py:1301-1390` |
 | Run result | `runner.py:1463-1492` |
 | Options and their defaults | `runner.py:1586-1634` |
+| Code fingerprint, resume point, row recount (at `2b04d0c`) | `runner.py:152-169`, `:181-219`, `:221-237` |
+| Resume: checks, replay and the `resumes` entry (at `2b04d0c`) | `runner.py:637-731` |
+| Checker: `resumes` and `code` (at `2b04d0c`) | `check_run.py:290-331`, `:410-414` |
 | Lattice step trees | `lattice_phase.py:136-201` |
 | Lattice plugin, its ends and its report | `lattice_phase.py:456-580` |
 | Checker | `check_run.py:1151-1506` |

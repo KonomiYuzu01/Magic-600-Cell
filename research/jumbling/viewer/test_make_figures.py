@@ -19,6 +19,29 @@ batch = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(batch)
 REPOSITORY, REAL_EXPORT = batch.ROOT, batch.export_state
 RUN = 'research/jumbling/restoration/13-tutorial-runner/runs/dev/d0-s7001/run'
+NODE_HELPERS = r"""
+const assert = require('node:assert/strict');
+const { readFileSync, writeFileSync, mkdirSync } = require('node:fs');
+const { createHash } = require('node:crypto');
+const { join } = require('node:path');
+const { runInNewContext } = require('node:vm');
+const here = process.argv[1], input = JSON.parse(readFileSync(0, 'utf8'));
+const json = raw => JSON.parse(raw.toString('utf8'));
+const sha = raw => createHash('sha256').update(raw).digest('hex');
+function sourceFunction(file, name, globals = {}) {
+  const source = readFileSync(join(here, file), 'utf8');
+  const match = source.match(new RegExp(`(?:async )?function ${name}\\([^]*?\\n\\}`));
+  assert.ok(match, `${name}: source function not found`);
+  return runInNewContext(`(${match[0]})`, globals);
+}
+"""
+
+
+def run_node(test, code, value=None):
+    result = subprocess.run(['node', '-e', NODE_HELPERS + code, str(HERE)],
+                            input=json.dumps(value), capture_output=True, text=True, timeout=30)
+    test.assertEqual(result.returncode, 0, result.stderr)
+    return json.loads(result.stdout)
 
 
 def sha(raw):
@@ -39,6 +62,7 @@ class MakeFigures(unittest.TestCase):
         self.entries = [{'id': 'step0-before', 'record': 'records/example/run', 'step': 0,
                          'when': 'before', 'view': 'local', 'proj': 'stereo', 'emph': 'moved'}]
         self.changed_png = set()
+        self.changed_framing = set()
         self.sheets = []
         self.real_png = False
         patcher = mock.patch.object(batch, 'ROOT', self.repository)
@@ -72,7 +96,7 @@ class MakeFigures(unittest.TestCase):
             raw = (data / shot['state'] / 'tutorial.json').read_bytes()
             tutorial = json.loads(raw)
             resolved = {'ghost': 'near' if shot['view'] == 'local' else 'all',
-                        'w': 1600, 'h': 1000, 'cap': tutorial['caps'][0], **shot}
+                        'w': 1600, 'h': 1000, 'cap': tutorial['caps'][0], 'fit': 'all', **shot}
             parameters = {key: resolved[key] for key in batch.PARAMETERS}
             # Deliberately synthetic bytes, sufficient for hashing and file handling.
             picture = json.dumps([parameters, tutorial['digest'], shot['name'] in self.changed_png]).encode()
@@ -83,7 +107,9 @@ class MakeFigures(unittest.TestCase):
                 Image.new('RGB', (48, 32), color).save(buffer, format='PNG')
                 picture = buffer.getvalue()
             (out / f'{shot["name"]}.png').write_bytes(picture)
-            results.append({**resolved, 'header_digest': tutorial['digest'],
+            framing = {'fit': resolved['fit'], 'pieces': 4,
+                       'in_frame': 2 if shot['name'] in self.changed_framing else 3}
+            results.append({**resolved, 'framing': framing, 'header_digest': tutorial['digest'],
                             'tutorial_sha256': sha(raw), 'png_sha256': sha(picture)})
         batch.write_json(out / 'manifest.json', {'format': 'magic600-tutorial-capture/1',
             'versions': {'node': 'stub', 'playwright': 'stub', 'chromium': 'stub'},
@@ -124,11 +150,14 @@ class MakeFigures(unittest.TestCase):
 
     def test_reserved_seeds_are_refused_before_any_export(self):
         reserved = self.repository / 'records/reserved/run'
-        reserved.mkdir(parents=True)
         self.entries.append(dict(self.entries[0], id='reserved', record='records/reserved/run'))
+        read_json = batch.read_json
         for seed in (9011, 9050, 9073):
-            with self.subTest(seed=seed):
-                batch.write_json(reserved / 'run.json', {'start': {'seed': seed}})
+            def read(path):
+                # Do not create or open a run file for a reserved start.
+                return {'start': {'seed': seed}} if path == reserved / 'run.json' else read_json(path)
+
+            with self.subTest(seed=seed), mock.patch.object(batch, 'read_json', side_effect=read):
                 self.assert_refused('reserved and refused')
 
     def test_invalid_parameters_and_unknown_fields(self):
@@ -136,10 +165,60 @@ class MakeFigures(unittest.TestCase):
         for field, value in (('step', True), ('step', -1), ('when', 'during'), ('cap', 600),
                              ('cap', True), ('w', 0), ('h', 8193), ('h', 1.5), ('view', 'bad'),
                              ('proj', 'bad'), ('emph', 'bad'), ('ghost', None), ('unknown', 1),
+                             ('fit', 'bad'), ('fit', ''), ('fit', None), ('fit', False),
                              ('cs', 0.3), ('cs', 1.2), ('ss', 0.555), ('ss', True)):
             with self.subTest(field=field, value=value):
                 self.entries = [{**original, field: value}]
                 self.assert_refused('invalid')
+
+    def test_fit_requirements_are_refused_before_any_export(self):
+        original = dict(self.entries[0])
+        # Put a valid figure first: a later invalid fit must still prevent all exports.
+        for settings, message in (({'fit': 'cap', 'view': 'global'}, 'requires view=local'),
+                                  ({'fit': 'core'}, 'requires ghost=none'),
+                                  ({'fit': 'core', 'ghost': 'near'}, 'requires ghost=none'),
+                                  ({'fit': 'core', 'ghost': 'all'}, 'requires ghost=none'),
+                                  ({'fit': 'core', 'ghost': 'none', 'emph': 'none'}, 'emph other than none')):
+            with self.subTest(settings=settings):
+                self.entries = [original, {**original, 'id': 'invalid-fit', **settings}]
+                self.assert_refused(message)
+
+    def test_fit_passthrough_defaults_and_framing_in_manifest(self):
+        original = dict(self.entries[0])
+        self.entries += [dict(original, id='all', fit='all'),
+                         dict(original, id='cap', fit='cap', ghost='none'),
+                         dict(original, id='core', fit='core', ghost='none')]
+        result, output = self.invoke()
+        self.assertEqual(result, 0, output)
+        self.export_state.assert_called_once()
+        rows = batch.read_json(self.out / 'manifest.json')['figures']
+        self.assertNotIn('fit', rows[0]['entry'])
+        self.assertEqual(rows[0]['entry'], original)
+        self.assertEqual([row['capture']['fit'] for row in rows], ['all', 'all', 'cap', 'core'])
+        for entry, row in zip(self.entries, rows):
+            self.assertEqual(row['entry'], entry)
+            self.assertEqual(row['capture']['framing'],
+                             {'fit': row['capture']['fit'], 'pieces': 4, 'in_frame': 3})
+
+    def test_compact_json_round_trip_scalar_lists_and_order(self):
+        document = {'caps': [64, 185, 357], 'mixed': [1, -2.5, 1e-12, True, False, None,
+                    'comma, brackets [] and quote "', 'new\nline', '\\escaped'],
+                    'nested': [{'empty': [], 'ids': ['a', 'b']}, [1, 2], {'object': {'x': 3}}],
+                    'empty': {}, 'brackets': 'text [1,   2] stays as written'}
+        path = self.directory / 'compact.json'
+        batch.write_json(path, document)
+        raw = path.read_text()
+        self.assertEqual(json.loads(raw), document)
+        self.assertEqual(list(json.loads(raw)), list(document))
+        for key in ('caps', 'mixed'):
+            self.assertIn(f'"{key}": {json.dumps(document[key])}', raw.splitlines()[list(document).index(key) + 1])
+        self.assertIn('   "ids": ["a", "b"]', raw.splitlines())
+        self.assertIn('  [1, 2],', raw.splitlines())
+        self.assertIn('   "object": {\n    "x": 3\n   }', raw)
+        batch.write_json(path, [1, 'top level', True, None])
+        self.assertEqual(path.read_text(), '[1, "top level", true, null]\n')
+        with self.assertRaises(ValueError):
+            batch.write_json(path, {'bad': [float('nan')]})
 
     def test_wrong_format_empty_list_and_duplicate_json_keys(self):
         for document in ({'format': 'wrong', 'figures': self.entries},
@@ -207,6 +286,8 @@ class MakeFigures(unittest.TestCase):
         manifest = batch.read_json(self.out / 'manifest.json')
         row = manifest['sheets'][0]
         self.assertEqual(row['entry'], self.sheets[0])
+        self.assertEqual(row['composition']['font'], 'Pillow default (scalable)')
+        self.assertEqual(row['composition']['size'], 24)
         for panel in row['panels']:
             self.assertEqual(panel['png_sha256'], sha((self.out / f'png/{panel["id"]}.png').read_bytes()))
         path = self.out / row['png']
@@ -219,6 +300,24 @@ class MakeFigures(unittest.TestCase):
         self.assertEqual(self.invoke()[0], 0)
         self.assertEqual(path.read_bytes(), original)
         self.assertEqual(self.invoke('--check')[0], 0)
+
+    def test_sheet_font_scales_with_canvas_width_and_wraps_deterministically(self):
+        from PIL import Image
+        self.sheet_setup()
+        pictures = self.directory / 'wide-panels'
+        pictures.mkdir()
+        for name in self.sheets[0]['panels']:
+            Image.new('RGB', (1024, 32), 'red').save(pictures / f'{name}.png')
+        sheet = {**self.sheets[0], 'labels': ['A long label ' * 30, 'After']}
+        first = batch.compose_sheet(sheet, pictures)
+        output = (pictures / 'pair.png').read_bytes()
+        # Two 1024-pixel panels, two 12-pixel margins and one 12-pixel gap.
+        self.assertEqual(first['composition']['size'], round(2084 / 60))
+        with Image.open(pictures / 'pair.png') as im:
+            self.assertEqual(im.width, 2084)
+            self.assertGreater(im.height, 32 + 24 + 2 * first['composition']['size'])
+        self.assertEqual(batch.compose_sheet(sheet, pictures), first)
+        self.assertEqual((pictures / 'pair.png').read_bytes(), output)
 
     def test_check_sheets_detects_bytes_labels_layout_panels_and_missing_sheet(self):
         self.sheet_setup()
@@ -276,7 +375,9 @@ class MakeFigures(unittest.TestCase):
     def test_recipe_reserved_seed_is_refused_before_other_exports(self):
         self.entries.append({'id': 'reserved', 'state': {'start': {'scramble': [0, 9050]}, 'digest': 'a' * 64},
                              'view': 'global', 'proj': 'persp', 'emph': 'moved'})
-        self.assert_refused('reserved and refused')
+        document = {'format': batch.LIST_FORMAT, 'figures': self.entries}
+        with mock.patch.object(self, 'write_list'), mock.patch.object(batch, 'read_json', return_value=document):
+            self.assert_refused('reserved and refused')
 
     def test_recipe_checker_uses_temporary_exports_and_reports_each_failure(self):
         recipe = {'start': {'table': RUN + '/start-table.json'},
@@ -296,6 +397,17 @@ class MakeFigures(unittest.TestCase):
         result = subprocess.run(command, capture_output=True, text=True, timeout=120)
         self.assertEqual(result.returncode, 1, result.stderr)
         self.assertIn('bad: FAIL (state digest mismatch', result.stdout)
+        self.assertFalse(self.out.exists())
+
+    def test_recipe_checker_refuses_invalid_fit_before_exports(self):
+        entry = {'id': 'bad-fit', 'state': {'start': {'scramble': [0, 7001]}, 'digest': sha(b'')},
+                 'view': 'global', 'proj': 'persp', 'emph': 'moved', 'fit': 'cap'}
+        batch.write_json(self.list, {'format': batch.LIST_FORMAT, 'figures': [entry]})
+        result = subprocess.run([sys.executable, '-I', '-B', str(HERE / 'check_recipes.py'),
+                                 '--list', str(self.list)], capture_output=True, text=True, timeout=30)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn('fit=cap requires view=local', result.stderr)
+        self.assertEqual(result.stdout, '')
         self.assertFalse(self.out.exists())
 
     def test_distinct_records_and_steps_are_not_deduplicated(self):
@@ -376,6 +488,27 @@ class MakeFigures(unittest.TestCase):
         self.assertEqual(result, 1, output)
         self.assertIn('Figures differ: step0-before', output)
 
+    def test_check_detects_fit_and_framing_changes_with_identical_pngs(self):
+        self.assertEqual(self.invoke()[0], 0)
+        original = (self.out / 'manifest.json').read_bytes()
+        png = (self.out / 'png/step0-before.png').read_bytes()
+        for key, value in (('fit', 'cap'),
+                           ('framing', {'fit': 'all', 'pieces': 4, 'in_frame': 2})):
+            with self.subTest(key=key):
+                baseline = json.loads(original)
+                baseline['figures'][0]['capture'][key] = value
+                batch.write_json(self.out / 'manifest.json', baseline)
+                before = (self.out / 'manifest.json').read_bytes()
+                result, output = self.invoke('--check')
+                self.assertEqual(result, 1, output)
+                self.assertIn('Figures differ: step0-before', output)
+                self.assertEqual((self.out / 'manifest.json').read_bytes(), before)
+                self.assertEqual((self.out / 'png/step0-before.png').read_bytes(), png)
+        (self.out / 'manifest.json').write_bytes(original)
+        self.changed_framing.add('step0-before')
+        self.assertEqual(self.invoke('--check')[0], 1)
+        self.assertEqual((self.out / 'png/step0-before.png').read_bytes(), png)
+
     def test_check_detects_missing_added_or_damaged_figures(self):
         self.assertEqual(self.invoke()[0], 0)
         (self.out / 'png/step0-before.png').write_bytes(b'damaged')
@@ -386,6 +519,48 @@ class MakeFigures(unittest.TestCase):
         result, output = self.invoke('--check')
         self.assertEqual(result, 1, output)
         self.assertIn('Figures differ: replacement, step0-before', output)
+
+    def test_check_hashes_saved_panels_and_sheets_without_writes(self):
+        self.sheet_setup()
+        self.assertEqual(self.invoke()[0], 0)
+        for name in ('step0-before', 'pair'):
+            path = self.out / 'png' / (name + '.png')
+            original = path.read_bytes()
+            for damage in ('missing', 'corrupt'):
+                with self.subTest(name=name, damage=damage):
+                    if damage == 'missing':
+                        path.unlink()
+                    else:
+                        path.write_bytes(b'corrupt saved PNG sentinel')
+                    before = {p.relative_to(self.out): p.read_bytes() for p in self.out.rglob('*') if p.is_file()}
+                    result, output = self.invoke('--check')
+                    self.assertEqual(result, 1, output)
+                    self.assertIn(name, output)
+                    self.assertEqual(before, {p.relative_to(self.out): p.read_bytes()
+                                             for p in self.out.rglob('*') if p.is_file()})
+                    path.write_bytes(original)
+
+    def test_differences_hashes_every_baseline_png_even_removed_entries(self):
+        baseline = {'format': batch.MANIFEST_FORMAT, 'figures': [
+            {'id': 'removed', 'png': 'png/removed.png', 'png_sha256': sha(b'original')}], 'sheets': []}
+        current = {'format': batch.MANIFEST_FORMAT, 'figures': []}
+        reads = []
+
+        def read(path):
+            reads.append(path)
+            raise FileNotFoundError(path)
+
+        with mock.patch.object(Path, 'read_bytes', read):
+            self.assertEqual(batch.differences(current, baseline, self.out), ['removed'])
+        self.assertEqual(reads, [self.out / 'png/removed.png'])
+
+    def test_shrink_boundary_refused_consistently_before_export(self):
+        for key in ('cs', 'ss'):
+            with self.subTest(key=key):
+                self.entries[0].pop('cs', None)
+                self.entries[0].pop('ss', None)
+                self.entries[0][key] = 0.4000000000000001
+                self.assert_refused('invalid ' + key)
 
     def test_extra_files_are_reported_and_only_prune_removes_them(self):
         self.assertEqual(self.invoke()[0], 0)
@@ -418,12 +593,167 @@ class MakeFigures(unittest.TestCase):
         self.assertEqual((self.out / 'manifest.json').read_bytes(), original)
 
 
+@unittest.skipUnless(shutil.which('node'), 'node is missing; shot parameter/capture checks skipped')
+class CaptureFraming(unittest.TestCase):
+    def test_capture_check_hashes_saved_pngs_without_writes(self):
+        self.assertTrue(run_node(self, r"""
+const { isDeepStrictEqual } = require('node:util');
+const { mkdtempSync, rmSync, unlinkSync, readdirSync, realpathSync } = require('node:fs');
+const { tmpdir } = require('node:os');
+(async () => {
+const directory = mkdtempSync(join(tmpdir(), 'magic600-capture-check-test-'));
+try {
+  const baseline = { format: 'magic600-tutorial-capture/1',
+    shots: [{ name: 'saved', png_sha256: sha(Buffer.from('original')) }] };
+  const results = structuredClone(baseline.shots);
+  const differences = sourceFunction('capture_tutorial.mjs', 'differences', {
+    readFileSync, join, sha, isDeepStrictEqual, insist: assert.ok, NAME: /^[A-Za-z0-9_-]{1,64}$/
+  });
+  assert.throws(() => differences([], { shots: [{ name: '../outside' }] }, directory), /Invalid capture manifest/);
+  const path = join(directory, 'saved.png');
+  writeFileSync(path, 'original');
+  assert.deepEqual(Array.from(differences(results, baseline, directory)), []);
+  writeFileSync(path, 'corrupted');
+  assert.deepEqual(Array.from(differences(results, baseline, directory)), ['saved']);
+  assert.equal(readFileSync(path, 'utf8'), 'corrupted');
+  unlinkSync(path);
+  assert.deepEqual(Array.from(differences(results, baseline, directory)), ['saved']);
+  assert.deepEqual(readdirSync(directory), []);
+  writeFileSync(path, 'original');
+  assert.deepEqual(Array.from(differences([], baseline, directory)), ['saved']);
+  // Exercise main's --check branch with synthetic render results and an inert
+  // server/browser interface: no socket, browser or screenshot is created.
+  writeFileSync(join(directory, 'manifest.json'), JSON.stringify(baseline));
+  const fakeProcess = {}, messages = [];
+  const main = sourceFunction('capture_tutorial.mjs', 'main', {
+    options: () => ({ '--check': true, '--out': directory, '--data': directory }),
+    shotsList: () => results, vendorFiles: () => new Map(), readFileSync, writeFileSync,
+    join, HERE: here, CDN: 'unused', PINNED: {}, json, sha, realpathSync, differences, Buffer, isDeepStrictEqual,
+    geometryFiles() {}, dataFiles: () => new Map(), insist: assert.ok, process: fakeProcess,
+    serve: async () => ({ address: () => ({ port: 1 }), close: done => done() }),
+    loadPlaywright: async () => ({ api: { chromium: { launch: async () => ({ close: async () => {} }) } } }),
+    render: async () => results, mkdtempSync, tmpdir, rmSync,
+    console: { log: message => messages.push(message), error: message => messages.push(message) }
+  });
+  for (const damage of ['unchanged', 'corrupt', 'missing']) {
+    if (damage === 'corrupt') writeFileSync(path, 'corrupted');
+    if (damage === 'missing') unlinkSync(path);
+    const before = readdirSync(directory).map(name => [name, readFileSync(join(directory, name), 'utf8')]);
+    fakeProcess.exitCode = 0;
+    await main();
+    assert.equal(fakeProcess.exitCode, damage === 'unchanged' ? 0 : 1);
+    assert.deepEqual(readdirSync(directory).map(name => [name, readFileSync(join(directory, name), 'utf8')]), before);
+    if (damage !== 'unchanged') assert.match(messages.at(-1), /Shots differ: saved/);
+  }
+} finally { rmSync(directory, { recursive: true, force: true }); }
+process.stdout.write('true');
+})().catch(e => { console.error(e); process.exitCode = 1; });
+"""))
+
+    def test_shrink_boundary_matches_page_validation(self):
+        self.assertTrue(run_node(self, r"""
+const list = entry => sourceFunction('capture_tutorial.mjs', 'shotsList', {
+  readFileSync: () => Buffer.from(JSON.stringify([{ name: 'a', state: 's', ...entry }])),
+  json, insist: assert.ok, NAME: /^[A-Za-z0-9_-]{1,64}$/
+})('unused')[0];
+for (const key of ['cs', 'ss']) {
+  assert.throws(() => list({ [key]: 0.4000000000000001 }), /Invalid cs or ss/);
+  for (let hundredths = 40; hundredths <= 100; hundredths++) {
+    const value = hundredths / 100;
+    assert.equal(list({ [key]: value })[key], value);
+  }
+}
+process.stdout.write('true');
+"""))
+
+    def test_page_and_capture_fit_choices_and_requirements(self):
+        self.assertTrue(run_node(self, r"""
+const parse = query => sourceFunction('full.js', 'shotParameters', {
+  PARAMETERS: new URLSearchParams(query), requireValue: assert.ok
+})();
+const list = entry => sourceFunction('capture_tutorial.mjs', 'shotsList', {
+  readFileSync: () => Buffer.from(JSON.stringify([{ name: 'a', state: 's', ...entry }])),
+  json, insist: assert.ok, NAME: /^[A-Za-z0-9_-]{1,64}$/
+})('unused')[0];
+assert.equal(parse('shot=s').fit, 'all');
+assert.equal(list({}).fit, 'all');
+for (const view of ['local', 'global']) for (const proj of ['persp', 'stereo']) {
+  for (const ghost of ['near', 'all', 'none']) for (const emph of ['moved', 'off', 'none']) {
+    const entry = { view, proj, ghost, emph };
+    const query = new URLSearchParams({ shot: 's', ...entry });
+    assert.equal(parse(query).fit, 'all');
+    for (const fit of ['all', 'cap', 'core']) {
+      query.set('fit', fit);
+      const error = fit === 'cap' && view !== 'local' ? /fit=cap requires view=local/
+        : fit === 'core' && (ghost !== 'none' || emph === 'none') ? /fit=core requires ghost=none/ : null;
+      if (error) {
+        assert.throws(() => parse(query), error);
+        assert.throws(() => list({ ...entry, fit }), error);
+      } else {
+        assert.equal(parse(query).fit, fit);
+        assert.equal(list({ ...entry, fit }).fit, fit);
+      }
+    }
+  }
+}
+for (const fit of ['', 'bad', 'ALL', 'null', '0']) {
+  assert.throws(() => parse(`shot=s&fit=${fit}`), /Invalid shot fit/);
+  assert.throws(() => list({ fit }), /Invalid fit/);
+}
+for (const fit of [null, false, 0, [], {}]) assert.throws(() => list({ fit }), /Invalid fit/);
+for (const view of ['local', 'global']) {
+  assert.throws(() => parse(`shot=s&view=${view}&fit=core`), /fit=core requires ghost=none/);
+  assert.throws(() => list({ view, fit: 'core' }), /fit=core requires ghost=none/);
+}
+process.stdout.write('true');
+"""))
+
+    def test_capture_passes_fit_and_records_page_framing(self):
+        with tempfile.TemporaryDirectory(prefix='magic600-capture-framing-') as temporary:
+            results = run_node(self, r"""
+(async () => {
+  const entries = [
+    { name: 'default', view: 'global' }, { name: 'all', view: 'local', fit: 'all' },
+    { name: 'cap', view: 'local', ghost: 'none', fit: 'cap' },
+    { name: 'core', view: 'global', ghost: 'none', fit: 'core' }
+  ].map(s => ({ state: 's', cap: 0, ...s }));
+  const shots = sourceFunction('capture_tutorial.mjs', 'shotsList', {
+    readFileSync: () => Buffer.from(JSON.stringify(entries)), json, insist: assert.ok,
+    NAME: /^[A-Za-z0-9_-]{1,64}$/
+  })('unused');
+  const reports = shots.map(s => ({ fit: s.fit, pieces: 8, in_frame: s.fit === 'core' ? 6 : 8 }));
+  const urls = [], png = Buffer.from('synthetic PNG hash sentinel');
+  let index = 0;
+  const browser = { newContext: async () => {
+    const report = reports[index++];
+    return { newPage: async () => ({ setDefaultTimeout() {}, on() {}, route: async () => {},
+      goto: async url => { urls.push(url); }, waitForFunction: async () => {},
+      evaluate: async fn => runInNewContext(`(${fn})()`, {
+        document: { documentElement: { dataset: { shotReady: '1' } } },
+        window: { fullViewer: { view: { framing: report } } }
+      }), locator: () => ({ screenshot: async () => png }) }), close: async () => {} };
+  } };
+  const render = sourceFunction('capture_tutorial.mjs', 'render', {
+    mkdirSync, writeFileSync, join, sha, insist: assert.ok, URLSearchParams, console: { log() {} }
+  });
+  const results = await render(browser, 'http://127.0.0.1:1/', new Map(), [], shots,
+    new Map([['s', { header_digest: 'a'.repeat(64), tutorial_sha256: 'b'.repeat(64) }]]), input);
+  const plain = JSON.parse(JSON.stringify(results));
+  assert.deepEqual(urls.map(url => new URL(url).searchParams.get('fit')), ['all', 'all', 'cap', 'core']);
+  assert.deepEqual(plain.map(s => s.fit), ['all', 'all', 'cap', 'core']);
+  assert.deepEqual(plain.map(s => s.framing), Array.from(reports));
+  assert.ok(plain.every(s => s.png_sha256 === sha(png)));
+  process.stdout.write(JSON.stringify(plain));
+})().catch(e => { console.error(e); process.exitCode = 1; });
+""", temporary)
+            self.assertEqual([s['framing']['in_frame'] for s in results], [8, 8, 8, 6])
+
+
 @unittest.skipUnless(shutil.which('node'), 'node is missing; framing computation check skipped')
 class GhostFreeFraming(unittest.TestCase):
-    def test_posed_emphasis_extent_and_ghost_framing(self):
-        # Synthetic geometry and minimal CPU matrix operations: exercise the actual
-        # frameTutorial function without importing three.js, a DOM or a browser.
-        code = r"""
+    # Synthetic geometry and minimal CPU matrix operations: exercise the actual
+    # frameTutorial function without importing three.js, a DOM or a browser.
+    HARNESS = r"""
 const assert = require('node:assert/strict');
 const { readFileSync } = require('node:fs');
 const { runInNewContext } = require('node:vm');
@@ -446,28 +776,54 @@ class Vector4 {
 }
 const source = readFileSync(process.argv[1], 'utf8').match(/function frameTutorial\([^]*?\n\}/)[0];
 const coordinates = () => ({ set(...a) { this.a = a; } });
-function frame(view, proj, emph, ghost, moving = [5], aspect = 1.6) {
-  const frames = [0, 1, 2, 3, 4, 5].flatMap(i => { const a = identity(); a[12] = i * 10; return a; });
+function frame(view, proj, emph, ghost, moving = [5], aspect = 1.6, fit, fixture) {
+  const cells = fixture?.coordinates || [0, 1, 2, 3, 4, 5].map(i => [i * 10, 0, 0, 1]);
+  const ids = fixture?.ids || cells.map((_, i) => i);
+  const frames = cells.flatMap(p => { const a = identity(); a.splice(12, 4, ...p); return a; });
   const pose = identity(); pose[3] = 20; pose[7] = 5; // row-major pose; moves the last cell's piece
   pose[15] = -0.5; // beyond the cap-facing stereo hemisphere, still a finite projection
-  const camera = { near: 0.05, fov: 90, aspect, position: coordinates(), updateProjectionMatrix() {} };
+  const camera = { near: 0.05, far: 100, fov: 90, aspect, position: coordinates(),
+    updateProjectionMatrix() {
+      const f = 1 / Math.tan(this.fov * Math.PI / 360), n = this.near, z = this.far;
+      this.projectionMatrix = new Matrix4().fromArray([
+        f / this.aspect, 0, 0, 0, 0, f, 0, 0, 0, 0, (z + n) / (n - z), -1,
+        0, 0, 2 * z * n / (n - z), 0]);
+    },
+    updateMatrixWorld() {
+      const a = identity(); a.splice(12, 3, ...this.position.a.map(x => -x));
+      this.matrixWorldInverse = new Matrix4().fromArray(a);
+    } };
   camera.position.set(0, 0, 5);
+  camera.updateProjectionMatrix();
   const controls = { target: coordinates(), update() {} };
   controls.target.set(0, 0, 0);
-  const slots = new Uint32Array(6 * 433); for (let i = 0; i < 6; i++) slots[i * 433] = i;
-  const globals = { THREE: { Matrix4, Vector4 }, shot: { view, proj, emph, ghost, cs: 0.76, ss: 0.82 },
-    COUNTS: { cells: 6, base_stickers: 1, base_vertices: 3 }, camera, controls,
+  const slots = new Uint32Array(cells.length * 433); ids.forEach((id, i) => { slots[i * 433] = id; });
+  const app = { view: {} };
+  const globals = { THREE: { Matrix4, Vector4 }, shot: { view, proj, emph, ghost, cs: 0.76, ss: 0.82,
+      ...(fit === undefined ? {} : { fit }) }, app,
+    COUNTS: { cells: cells.length, base_stickers: 1, base_vertices: 3 }, camera, controls,
     capCenter: i => [i, 0, 0, 1], capOrientation: identity, cameraQ: identity, $: () => ({}),
     requireValue: assert.ok, poleParameters: () => ({ pole: [0, 0, 0, -1],
       basis: [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0]] }),
     geometry: { anchors: [0, 0, 0, 1], mesh: { normal: [0, 0, 0, 1], normal_length: 1, offsets: [0, 3] },
       A: { 'cell_frames.f32': frames, 'slot_piece.u32': slots, 'mesh_sticker.u32': [0, 0, 0],
            'mesh_vertices.f32': [-1, -0.5, 0, 1, 1, -0.5, 0, 1, 0, 0.5, 0, 1] } },
-    state: { poses: [...identity(), ...pose], index: [0, 0, 0, 0, 0, 1], lattice: [0, -1] } };
+    state: fixture ? { poses: identity(), index: ids.map(() => 0), lattice: [-1] }
+      : { poses: [...identity(), ...pose], index: [0, 0, 0, 0, 0, 1], lattice: [0, -1] } };
   runInNewContext(`(${source})`, globals)(0, moving);
-  return { eye: camera.position.a, target: controls.target.a, far: camera.far };
+  return { eye: camera.position.a, target: controls.target.a, far: camera.far,
+    framing: JSON.parse(JSON.stringify(app.view.framing)) };
 }
 const close = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} != ${b}`);
+"""
+
+    def run_frame(self, code):
+        result = subprocess.run(['node', '-e', self.HARNESS + code, str(HERE / 'full.js')],
+                                capture_output=True, text=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_posed_emphasis_extent_and_ghost_framing(self):
+        self.run_frame(r"""
 for (const proj of ['persp', 'stereo']) {
   const scale = proj === 'persp' ? 1.18 / 1.68 : 2;
   for (const view of ['local', 'global']) {
@@ -499,10 +855,103 @@ for (const ghost of ['near', 'all']) {
     close(result.eye[2], (40 + 0.76 * 0.82) * 0.5 / (view === 'local' ? 0.8 : 0.85));
   }
 }
-"""
-        result = subprocess.run(['node', '-e', code, str(HERE / 'full.js')],
-                                capture_output=True, text=True, timeout=30)
-        self.assertEqual(result.returncode, 0, result.stderr)
+// Absent fit and fit=all retain the same camera for every combination, including
+// no emphasis and empty sets. The known target/distance values above bracket it.
+for (const view of ['local', 'global']) for (const proj of ['persp', 'stereo']) {
+  for (const emph of ['moved', 'off', 'none']) for (const ghost of ['near', 'all', 'none']) {
+    for (const aspect of [1.6, 0.6]) for (const moving of [[5], []]) {
+      assert.deepEqual(frame(view, proj, emph, ghost, moving, aspect),
+        frame(view, proj, emph, ghost, moving, aspect, 'all'));
+    }
+  }
+}
+""")
+
+    def test_cap_uses_fixed_local_cells_with_or_without_ghosts(self):
+        self.run_frame(r"""
+for (const proj of ['persp', 'stereo']) for (const emph of ['moved', 'off', 'none']) {
+  for (const aspect of [1.6, 0.6]) {
+    const cap = frame('local', proj, emph, 'none', [5], aspect, 'cap');
+    for (const ghost of ['near', 'all']) {
+      const previous = frame('local', proj, emph, ghost, [5], aspect);
+      assert.deepEqual(cap.eye, previous.eye);
+      assert.deepEqual(cap.target, previous.target);
+      assert.equal(cap.far, previous.far);
+      assert.equal(cap.framing.pieces, emph === 'none' ? 0 : 1);
+      // The posed sixth cell is beyond the cap frame in stereo; perspective's
+      // fixed w=1 cells are much larger than the posed w=-0.5 cell.
+      assert.equal(cap.framing.in_frame, proj === 'persp' && emph !== 'none' ? 1 : 0);
+      assert.equal(previous.framing.pieces, cap.framing.pieces);
+      assert.equal(previous.framing.in_frame, cap.framing.in_frame);
+    }
+  }
+}
+""")
+
+    def test_core_excludes_outlier_and_counts_projected_piece_centroids(self):
+        self.run_frame(r"""
+const shrink = 0.76 * 0.82;
+// The projection has scale 1 (w=0). Median x is 4, y is -shrink/6;
+// ceil(3*5/4)=4 keeps x=0,2,4,6, excluding x=100. Bounds are
+// [-shrink, 6+shrink] by [-shrink/2, shrink/2], with z=2 throughout.
+const fixture = { coordinates: [0, 2, 4, 6, 100].map(x => [x, 0, 2, 0]) };
+for (const view of ['local', 'global']) for (const proj of ['persp', 'stereo']) {
+  for (const emph of ['moved', 'off']) for (const aspect of [1.6, 0.6]) {
+    const result = frame(view, proj, emph, 'none', [4, 2, 0, 3, 1], aspect, 'core', fixture);
+    assert.deepEqual(result.target, [3, 0, 2]);
+    close(result.eye[2], 2 + (3 + shrink) / (0.8 * Math.min(1, aspect)));
+    assert.equal(result.far, 100);
+    assert.deepEqual(result.framing, { fit: 'core', pieces: 5, in_frame: 4 });
+    assert.deepEqual(result, frame(view, proj, emph, 'none', [0, 1, 2, 3, 4], aspect, 'core', fixture));
+    const all = frame(view, proj, emph, 'none', [0, 1, 2, 3, 4], aspect, 'all', fixture);
+    close(all.target[0], 50);
+    assert.deepEqual(all.framing, { fit: 'all', pieces: 5, in_frame: 5 });
+  }
+}
+// One piece has stickers in two cells: use its mean projected vertices and
+// count it only once. The core includes both its stickers, including x=-2.
+const shared = { coordinates: [-2, 2, 0, 2, 100].map(x => [x, 0, 2, 0]), ids: [0, 0, 1, 2, 3] };
+const multiple = frame('global', 'stereo', 'moved', 'none', [0, 1, 2, 3], 1.6, 'core', shared);
+assert.deepEqual(multiple.target, [0, 0, 2]);
+close(multiple.eye[2], 2 + (2 + shrink) / 0.8);
+assert.deepEqual(multiple.framing, { fit: 'core', pieces: 4, in_frame: 3 });
+""")
+
+    def test_core_ties_depth_far_empty_set_and_report_front_check(self):
+        self.run_frame(r"""
+const shrink = 0.76 * 0.82;
+// Median x=1; the two end pieces are tied at L-infinity distance 3.
+// Piece 0 at x=4 wins over piece 3 at x=-2, despite appearing last.
+const ties = { coordinates: [-2, 0, 2, 4].map(x => [x, 0, 0, 0]), ids: [3, 2, 1, 0] };
+const tied = frame('global', 'stereo', 'moved', 'none', [3, 2, 1, 0], 1.6, 'core', ties);
+assert.deepEqual(tied.target, [2, 0, 0]);
+close(tied.eye[2], (2 + shrink) / 0.8);
+// Depth is excluded from selection distance, but included in bounds and far.
+const depth = { coordinates: [[0, 0, -200, 0], [2, 0, 0, 0], [4, 0, 10, 0], [100, 0, 0, 0]] };
+const deep = frame('global', 'stereo', 'moved', 'none', [0, 1, 2, 3], 1.6, 'core', depth);
+assert.deepEqual(deep.target, [2, 0, -95]);
+close(deep.eye[2], 10 + (2 + shrink) / 0.8);
+close(deep.far, deep.eye[2] + 201);
+assert.deepEqual(deep.framing, { fit: 'core', pieces: 4, in_frame: 3 });
+const empty = frame('local', 'stereo', 'moved', 'none', [], 0.6, 'core');
+assert.deepEqual(empty.eye, [0, 0, 5]);
+assert.deepEqual(empty.target, [0, 0, 0]);
+assert.equal(empty.far, 100);
+assert.deepEqual(empty.framing, { fit: 'core', pieces: 0, in_frame: 0 });
+const behind = { coordinates: [0, 1, 2, 3, 4].map(x => [x, 0, 0, 0]).concat([[0, 0, 20, 0]]) };
+for (const ghost of ['none', 'near', 'all']) {
+  const report = frame('local', 'stereo', 'moved', ghost, [5], 1.6, 'cap', behind).framing;
+  assert.deepEqual(report, { fit: 'cap', pieces: 1, in_frame: 0 });
+}
+// A centroid just inside the image edge is included even when some of its vertices
+// extend beyond it. Aspect applies to the image rectangle, not to fit's square.
+const edge = { coordinates: [0, 0, 0, 0, 0].map(x => [x, 0, 0, 0])
+  .concat([[1.25 * shrink * (1 - 1e-12), 0, 0, 0]]) };
+assert.equal(frame('local', 'stereo', 'moved', 'none', [5], 1, 'cap', edge).framing.in_frame, 1);
+edge.coordinates[5][0] *= 1.01;
+assert.equal(frame('local', 'stereo', 'moved', 'none', [5], 1, 'cap', edge).framing.in_frame, 0);
+assert.equal(frame('local', 'stereo', 'moved', 'none', [5], 1.6, 'cap', edge).framing.in_frame, 1);
+""")
 
 
 if __name__ == '__main__':
