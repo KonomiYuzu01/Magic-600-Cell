@@ -189,6 +189,17 @@ starts from the scramble in `out3/`, with `checkpoint.py` keeping a verified cop
 - 03:01 UTC: the integrator withdrew the run 5 restart, because run 4 had already left the bulk (PR #132 changes only
   the bulk). Run 4 continues, and the check-in routine stays on run 4.
 
+- 06:51 UTC progress: run 4 has checkpointed 108 steps (runner time 54,927 s). Steps 0 to 101 still agree with run 3
+  in every compared field; run 3 has nothing after that. The tail steps since the last note:
+
+  | index | rule | letters | off after | seconds |
+  |---|---|---|---|---|
+  | 103 | close | 820 | 523 | 2,178 |
+  | 104 | t1prime | 964 | 460 | 1,419 |
+  | 105 | close | 460 | 400 | 3,076 |
+  | 106 | close | 1,144 | 342 | 3,435 |
+  | 107 | t1prime | 974 | 297 | 2,646 |
+
 ## Not run
 
 - `check_run.py` (it runs after the runner ends).
