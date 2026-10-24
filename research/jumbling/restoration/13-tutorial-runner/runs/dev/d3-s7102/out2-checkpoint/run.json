@@ -166,10 +166,10 @@
   "bulk": {
    "result": "budget",
    "completed": false,
-   "steps": 156,
-   "twists": 408,
+   "steps": 158,
+   "twists": 412,
    "end": {
-    "digest": "78cf36d08c7866eaeef300b427379f6e910d70c6e1fb27356534cd2ef8469a6d",
+    "digest": "08ec8ea088261b00dc29de063d709931b5af45b120c6dc12353790e41227a3d6",
     "off": 28029,
     "heights": {
      "2": 27905,
@@ -4438,6 +4438,60 @@
     "N": 29916
    },
    "seconds": 121.40282
+  },
+  {
+   "index": 156,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00156.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "d8bed7533df1c0f40372fe7cfd5393f53e40e9a1fcc8c9c6a5f4d8df02854ed4",
+   "tree": {
+    "file": "step-trees/00156.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "78cf36d08c7866eaeef300b427379f6e910d70c6e1fb27356534cd2ef8469a6d",
+    "off": 28029,
+    "N": 29916
+   },
+   "after": {
+    "digest": "5ae3c55be37b40cdb644828eca7ad6538324df48098ef0b61f29e379838de9e0",
+    "off": 28029,
+    "N": 29914
+   },
+   "seconds": 100.339942
+  },
+  {
+   "index": 157,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "seam",
+   "word": "words/00157.json",
+   "letters": 1,
+   "encoding": "json",
+   "word_sha256": "3cebcd594a072015ccc1f58024f17cf6b71e20710b42d623d3285e0f4b8f2c1d",
+   "tree": {
+    "file": "step-trees/00157.json.gz",
+    "sha256": "22f912e37948a236d0bc2fd9664d117eb4e3274167667d7809fb46ce758d9e4f",
+    "size": 1
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "5ae3c55be37b40cdb644828eca7ad6538324df48098ef0b61f29e379838de9e0",
+    "off": 28029,
+    "N": 29914
+   },
+   "after": {
+    "digest": "08ec8ea088261b00dc29de063d709931b5af45b120c6dc12353790e41227a3d6",
+    "off": 28029,
+    "N": 29888
+   },
+   "seconds": 2.211219
   }
  ],
  "stuck": null,
@@ -4452,12 +4506,12 @@
   "timed_out_attempts": 0
  },
  "totals": {
-  "bulk_twists": 408,
+  "bulk_twists": 412,
   "height_twists": 0,
   "high_twists": 0,
   "tail_twists": 0,
   "fallback_twists": 0,
   "lattice_twists": null,
-  "seconds": 3589.042878
+  "seconds": 3691.749684
  }
 }
