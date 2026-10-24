@@ -142,3 +142,8 @@ background waiter on the runner process.
   steps** (rule, letters, word sha256, before and after digest, N; `compare_runs.py`, no difference). Those 158
   steps took 3,642 s in run 2 against 29,996 s in run 1 (cloud timings of research code on a shared headless
   Linux machine, not performance evidence).
+- 06:06 UTC (second restart of run 2; last save at 05:38): local `out2/` and checkpoint `6600cca` both held 232
+  steps. Restored (exit 0), resumed (accepted, `resumes` [158, 232]), checkpoint helper and waiter started. **Run 2
+  agrees with run 1 at all 225 steps of run 1** (`compare_runs.py`, no difference; 9,945 s in run 2 against 82,990 s
+  in run 1). Beyond run 1, run 2 is at 232 bulk steps, N 26,608, 23,958 off, 11,391 s of runner time, still in the
+  bulk phase.
