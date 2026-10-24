@@ -273,8 +273,8 @@
   },
   "tail": {
    "result": null,
-   "steps": 6,
-   "twists": 112120
+   "steps": 7,
+   "twists": 112940
   },
   "lattice": {
    "result": null,
@@ -3190,6 +3190,80 @@
    "N2": true,
    "construction": "certificate",
    "certificate_sha256": "09578b50771b8274489dd60bd8778c3d2606afeb8a291b467379bbf3a67ce95d"
+  },
+  {
+   "index": 103,
+   "phase": "tail",
+   "subphase": null,
+   "rule": "close",
+   "unit": "units/00103.json",
+   "unit_key": 106,
+   "unit_size": 72,
+   "word": "words/00103.json",
+   "letters": 820,
+   "encoding": "json",
+   "word_sha256": "41683b933241d0af6ce4ced417bc78c8b715507e8d50dfb865ce1f5e33099266",
+   "tree": {
+    "file": "step-trees/00103.json.gz",
+    "sha256": "b1059c8d5402296733cf56761e684d4f6abc6ce79bbad95debed7dedb644c120",
+    "size": 4
+   },
+   "contract": "strict_prime",
+   "gate": "stepchk",
+   "standing": "rule",
+   "before": {
+    "digest": "c8170209b461c7c9fed757a24721adfeac41c163bbe0fa5846609e85b9495498",
+    "off": 595,
+    "heights": {
+     "2": 595
+    }
+   },
+   "after": {
+    "digest": "fc9442f6c67f7cab5fabf0e231ef98712edb525ddf504ef273b96bd617e12923",
+    "off": 523,
+    "heights": {
+     "2": 523
+    }
+   },
+   "table": "tables/00103.json",
+   "landed": 72,
+   "others_landed": 0,
+   "attempts": [
+    {
+     "unit_key": 106,
+     "rule": "zero_bad",
+     "seconds": 1581.492005,
+     "outcome": "no word",
+     "reason": "transport found no strict zero-Bad word",
+     "timed_out": false
+    },
+    {
+     "unit_key": 106,
+     "rule": "pure",
+     "seconds": 233.495217,
+     "outcome": "not strict_prime",
+     "reason": "whole literal word fails strict_prime",
+     "timed_out": false
+    }
+   ],
+   "seconds": 2177.744105,
+   "parts": [
+    [
+     "V",
+     398
+    ],
+    [
+     "middle",
+     24
+    ],
+    [
+     "V_inverse",
+     398
+    ]
+   ],
+   "V_source": "tclose2",
+   "V_letters": 398,
+   "V_sha256": "f9802ccd4225ce238dd885e249a572522e8aee80a2cdb51443ca76489f541f6b"
   }
  ],
  "stuck": null,
@@ -3207,9 +3281,9 @@
   "bulk_twists": 223,
   "height_twists": 0,
   "high_twists": 0,
-  "tail_twists": 112120,
+  "tail_twists": 112940,
   "fallback_twists": 0,
   "lattice_twists": null,
-  "seconds": 42172.580742
+  "seconds": 44350.331368
  }
 }
