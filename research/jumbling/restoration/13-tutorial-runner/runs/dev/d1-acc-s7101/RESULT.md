@@ -177,6 +177,10 @@ starts from the scramble in `out3/`, with `checkpoint.py` keeping a verified cop
 - The next session step: if the integrator confirms run 5 anyway, stop run 4 after its next checkpoint (step 103)
   and start run 5 as instructed. Otherwise run 4 continues under the check-in procedure.
 
+- 02:19 UTC: the integrator's follow-up of 02:18 UTC gives the check-in text for run 5, to be set "once run 5 is
+  running". It does not answer the note above, so run 5 stays unstarted and the check-in prompt stays on run 4 until
+  the integrator confirms. When run 5 starts, the routine's prompt is to be replaced with that text verbatim.
+
 ## Not run
 
 - `check_run.py` (it runs after the runner ends).
