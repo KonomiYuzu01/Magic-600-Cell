@@ -1,0 +1,310 @@
+{
+ "digest": "ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980",
+ "groups": [
+  {
+   "pose": 1007,
+   "size": 198,
+   "height": 4,
+   "branch": 0,
+   "holders": [
+    2,
+    4,
+    31,
+    36
+   ],
+   "own": [
+    2
+   ],
+   "coheld_foreign": 0,
+   "coheld_foreign_heights": [],
+   "dominating_foreign": 0,
+   "dominating_foreign_heights": []
+  },
+  {
+   "pose": 1132,
+   "size": 14,
+   "height": 4,
+   "branch": 4,
+   "holders": [
+    387,
+    415,
+    436,
+    450,
+    522,
+    524,
+    543
+   ],
+   "own": [
+    522
+   ],
+   "coheld_foreign": 0,
+   "coheld_foreign_heights": [],
+   "dominating_foreign": 0,
+   "dominating_foreign_heights": []
+  },
+  {
+   "pose": 1154,
+   "size": 10,
+   "height": 4,
+   "branch": 0,
+   "holders": [
+    348,
+    355,
+    362,
+    375,
+    392
+   ],
+   "own": [
+    375
+   ],
+   "coheld_foreign": 0,
+   "coheld_foreign_heights": [],
+   "dominating_foreign": 0,
+   "dominating_foreign_heights": []
+  },
+  {
+   "pose": 1172,
+   "size": 87,
+   "height": 4,
+   "branch": 4,
+   "holders": [
+    251,
+    269,
+    352,
+    377,
+    411
+   ],
+   "own": [
+    251
+   ],
+   "coheld_foreign": 0,
+   "coheld_foreign_heights": [],
+   "dominating_foreign": 0,
+   "dominating_foreign_heights": []
+  },
+  {
+   "pose": 1247,
+   "size": 13,
+   "height": 4,
+   "branch": 0,
+   "holders": [
+    527,
+    540,
+    549,
+    560,
+    565,
+    586,
+    590
+   ],
+   "own": [
+    540
+   ],
+   "coheld_foreign": 0,
+   "coheld_foreign_heights": [],
+   "dominating_foreign": 0,
+   "dominating_foreign_heights": []
+  },
+  {
+   "pose": 1378,
+   "size": 28,
+   "height": 4,
+   "branch": 0,
+   "holders": [
+    527,
+    540,
+    549,
+    560,
+    565,
+    586,
+    590
+   ],
+   "own": [
+    540
+   ],
+   "coheld_foreign": 0,
+   "coheld_foreign_heights": [],
+   "dominating_foreign": 0,
+   "dominating_foreign_heights": []
+  },
+  {
+   "pose": 1557,
+   "size": 17,
+   "height": 4,
+   "branch": 0,
+   "holders": [
+    527,
+    540,
+    549,
+    560,
+    565,
+    586,
+    590,
+    596
+   ],
+   "own": [
+    540,
+    596
+   ],
+   "coheld_foreign": 0,
+   "coheld_foreign_heights": [],
+   "dominating_foreign": 0,
+   "dominating_foreign_heights": []
+  },
+  {
+   "pose": 1582,
+   "size": 15,
+   "height": 4,
+   "branch": 4,
+   "holders": [
+    348,
+    387,
+    415,
+    436,
+    522,
+    524,
+    543
+   ],
+   "own": [
+    522
+   ],
+   "coheld_foreign": 0,
+   "coheld_foreign_heights": [],
+   "dominating_foreign": 0,
+   "dominating_foreign_heights": []
+  },
+  {
+   "pose": 2219,
+   "size": 9,
+   "height": 4,
+   "branch": 2,
+   "holders": [
+    50,
+    73,
+    107,
+    153,
+    164,
+    165,
+    229
+   ],
+   "own": [
+    73,
+    229
+   ],
+   "coheld_foreign": 0,
+   "coheld_foreign_heights": [],
+   "dominating_foreign": 0,
+   "dominating_foreign_heights": []
+  },
+  {
+   "pose": 2234,
+   "size": 111,
+   "height": 4,
+   "branch": 2,
+   "holders": [
+    133,
+    137,
+    162,
+    187,
+    189,
+    239
+   ],
+   "own": [
+    162,
+    239
+   ],
+   "coheld_foreign": 0,
+   "coheld_foreign_heights": [],
+   "dominating_foreign": 0,
+   "dominating_foreign_heights": []
+  },
+  {
+   "pose": 2304,
+   "size": 111,
+   "height": 4,
+   "branch": 2,
+   "holders": [
+    336,
+    369,
+    393,
+    427,
+    468
+   ],
+   "own": [
+    336
+   ],
+   "coheld_foreign": 0,
+   "coheld_foreign_heights": [],
+   "dominating_foreign": 25,
+   "dominating_foreign_heights": [
+    2
+   ]
+  },
+  {
+   "pose": 2363,
+   "size": 32,
+   "height": 4,
+   "branch": 0,
+   "holders": [
+    152,
+    183,
+    237,
+    290,
+    301,
+    302,
+    375
+   ],
+   "own": [
+    183,
+    375
+   ],
+   "coheld_foreign": 0,
+   "coheld_foreign_heights": [],
+   "dominating_foreign": 0,
+   "dominating_foreign_heights": []
+  },
+  {
+   "pose": 2467,
+   "size": 111,
+   "height": 4,
+   "branch": 0,
+   "holders": [
+    2,
+    4,
+    22,
+    31,
+    36,
+    64
+   ],
+   "own": [
+    2,
+    64
+   ],
+   "coheld_foreign": 0,
+   "coheld_foreign_heights": [],
+   "dominating_foreign": 0,
+   "dominating_foreign_heights": []
+  },
+  {
+   "pose": 2559,
+   "size": 41,
+   "height": 4,
+   "branch": 4,
+   "holders": [
+    387,
+    415,
+    436,
+    477,
+    522,
+    524,
+    543
+   ],
+   "own": [
+    522
+   ],
+   "coheld_foreign": 0,
+   "coheld_foreign_heights": [],
+   "dominating_foreign": 0,
+   "dominating_foreign_heights": []
+  }
+ ]
+}

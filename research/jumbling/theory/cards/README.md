@@ -9,6 +9,7 @@ Self-contained problem statements for a natural-language proof assistant (the ow
 | [card-3-hidden-puzzles.md](card-3-hidden-puzzles.md) | R1 | Each of the five inscribed 600-cells of the grips carries an ordinary puzzle that never blocks itself; when can a stop be restored one class at a time? | ready |
 | [card-4-class-puzzle-and-vacancies.md](card-4-class-puzzle-and-vacancies.md) | R1 | The structure E3 used to return two fragments of one class (stars, label orbits, counting, edge holonomy), and how to empty a cell that a fragment shares with lattice pieces (moving vacant chambers). | ready |
 | [card-5-depth-and-lattice-group.md](card-5-depth-and-lattice-group.md) | R1, L2 | For the menu I_a: is the depth of poses on the left tree bounded, and which lattice correction group A_J do jumbled histories reach? Evidence in [card-5-evidence/](card-5-evidence/). | answered in part (below) |
+| [card-6-blocking-structure.md](card-6-blocking-structure.md) | M1, R1 | Why the grips a height-lowering needs are blocked at deep states, and a tame unlocking: a construction from the state that frees such a grip without raising any left height. Evidence in [restoration stage 14](../../restoration/14-blocking-structure/README.md). | ready |
 
 The lattice-prefix rule ([open-problems](../open-problems.md), "Results of 11 October 2026") was checked separately and has no card.
 

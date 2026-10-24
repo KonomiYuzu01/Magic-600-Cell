@@ -1,0 +1,5204 @@
+{
+ "digest": "ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980",
+ "targets": [
+  2,
+  522,
+  375,
+  251,
+  540,
+  596,
+  73,
+  229,
+  162,
+  239,
+  336,
+  183,
+  64
+ ],
+ "anatomy": [
+  {
+   "cap": 2,
+   "cls": 0,
+   "straddlers": 101,
+   "units": [
+    {
+     "pose": 2149,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 22,
+     "size": 87,
+     "cell": [
+      5,
+      19,
+      41,
+      68
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 2424,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 19,
+     "size": 111,
+     "cell": [
+      5,
+      19,
+      41
+     ],
+     "holders": 7,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 2473,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 60,
+     "size": 197,
+     "cell": [
+      5,
+      41
+     ],
+     "holders": 7,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    }
+   ],
+   "units_with_clean_pure_own_holder": 0,
+   "units_with_clean_holder": 0,
+   "foreign_load": {
+    "h2-b3": 168
+   },
+   "foreign_units": [
+    {
+     "pose": 2149,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 60,
+     "size": 87,
+     "cell": [
+      5,
+      19,
+      41,
+      68
+     ],
+     "holders": 9,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 9
+    },
+    {
+     "pose": 2424,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 91,
+     "size": 111,
+     "cell": [
+      5,
+      19,
+      41
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 2473,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 17,
+     "size": 197,
+     "cell": [
+      5,
+      41
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    }
+   ],
+   "clean": false,
+   "pure": false
+  },
+  {
+   "cap": 522,
+   "cls": 4,
+   "straddlers": 26,
+   "units": [
+    {
+     "pose": 1910,
+     "height": 2,
+     "branch": 1,
+     "on_cut": 22,
+     "size": 87,
+     "cell": [
+      340,
+      436,
+      451,
+      532
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      451
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 2494,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 4,
+     "size": 14,
+     "cell": [
+      344,
+      348,
+      390,
+      524
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      344
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    }
+   ],
+   "units_with_clean_pure_own_holder": 2,
+   "units_with_clean_holder": 2,
+   "foreign_load": {
+    "h2-b1": 91,
+    "h2-b3": 10
+   },
+   "foreign_units": [
+    {
+     "pose": 990,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 4,
+     "size": 4,
+     "cell": [
+      451,
+      532
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      451
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1540,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 1,
+     "size": 1,
+     "cell": [
+      451,
+      561
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      451
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1555,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 13,
+     "size": 13,
+     "cell": [
+      451,
+      532,
+      561
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      451
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1910,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 60,
+     "size": 87,
+     "cell": [
+      340,
+      436,
+      451,
+      532
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      451
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 2089,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 13,
+     "size": 13,
+     "cell": [
+      436,
+      451,
+      532,
+      561
+     ],
+     "holders": 10,
+     "clean_pure_own": [
+      451
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 9
+    },
+    {
+     "pose": 2494,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 10,
+     "size": 14,
+     "cell": [
+      344,
+      348,
+      390,
+      524
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      344
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    }
+   ],
+   "clean": false,
+   "pure": false
+  },
+  {
+   "cap": 375,
+   "cls": 0,
+   "straddlers": 142,
+   "units": [
+    {
+     "pose": 1020,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 14,
+     "size": 46,
+     "cell": [
+      133,
+      277,
+      301
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1321,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 1,
+     "size": 4,
+     "cell": [
+      133,
+      277,
+      348
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1458,
+     "height": 2,
+     "branch": 4,
+     "on_cut": 45,
+     "size": 1637,
+     "cell": [
+      468,
+      522
+     ],
+     "holders": 6,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 1736,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 4,
+     "size": 8,
+     "cell": [
+      277,
+      348
+     ],
+     "holders": 4,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 3
+    },
+    {
+     "pose": 1782,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 19,
+     "size": 78,
+     "cell": [
+      277,
+      477
+     ],
+     "holders": 4,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 3
+    },
+    {
+     "pose": 2279,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 23,
+     "size": 78,
+     "cell": [
+      277,
+      348
+     ],
+     "holders": 5,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 4
+    },
+    {
+     "pose": 2295,
+     "height": 2,
+     "branch": 4,
+     "on_cut": 36,
+     "size": 111,
+     "cell": [
+      522
+     ],
+     "holders": 6,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 6
+    }
+   ],
+   "units_with_clean_pure_own_holder": 0,
+   "units_with_clean_holder": 5,
+   "foreign_load": {
+    "h2-b3": 248,
+    "h2-b4": 101
+   },
+   "foreign_units": [
+    {
+     "pose": 1020,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 2,
+     "size": 46,
+     "cell": [
+      133,
+      277,
+      301
+     ],
+     "holders": 9,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1458,
+     "height": 2,
+     "branch": 4,
+     "in_cap": 8,
+     "size": 1637,
+     "cell": [
+      468,
+      522
+     ],
+     "holders": 7,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1526,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 111,
+     "size": 111,
+     "cell": [
+      277,
+      301,
+      477
+     ],
+     "holders": 7,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 1660,
+     "height": 2,
+     "branch": 4,
+     "in_cap": 33,
+     "size": 33,
+     "cell": [
+      355,
+      522
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1685,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 1,
+     "size": 1,
+     "cell": [
+      277,
+      301
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1695,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 46,
+     "size": 46,
+     "cell": [
+      277,
+      301,
+      348
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1736,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 3,
+     "size": 8,
+     "cell": [
+      277,
+      348
+     ],
+     "holders": 7,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 1782,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 59,
+     "size": 78,
+     "cell": [
+      277,
+      477
+     ],
+     "holders": 7,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 2279,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 26,
+     "size": 78,
+     "cell": [
+      277,
+      348
+     ],
+     "holders": 7,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 2295,
+     "height": 2,
+     "branch": 4,
+     "in_cap": 60,
+     "size": 111,
+     "cell": [
+      355,
+      522
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    }
+   ],
+   "clean": false,
+   "pure": false
+  },
+  {
+   "cap": 251,
+   "cls": 4,
+   "straddlers": 99,
+   "units": [
+    {
+     "pose": 817,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 19,
+     "size": 78,
+     "cell": [
+      61,
+      213
+     ],
+     "holders": 4,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 4
+    },
+    {
+     "pose": 858,
+     "height": 2,
+     "branch": 0,
+     "on_cut": 17,
+     "size": 61,
+     "cell": [
+      216,
+      444
+     ],
+     "holders": 7,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1362,
+     "height": 2,
+     "branch": 0,
+     "on_cut": 10,
+     "size": 46,
+     "cell": [
+      147,
+      323,
+      328
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      323
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1538,
+     "height": 2,
+     "branch": 0,
+     "on_cut": 23,
+     "size": 78,
+     "cell": [
+      323,
+      352
+     ],
+     "holders": 4,
+     "clean_pure_own": [
+      323
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 3
+    },
+    {
+     "pose": 1799,
+     "height": 2,
+     "branch": 0,
+     "on_cut": 13,
+     "size": 62,
+     "cell": [
+      216,
+      323
+     ],
+     "holders": 4,
+     "clean_pure_own": [
+      323
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 3
+    },
+    {
+     "pose": 1868,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 4,
+     "size": 5,
+     "cell": [
+      61,
+      184,
+      223
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1883,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 3,
+     "size": 3,
+     "cell": [
+      61,
+      223
+     ],
+     "holders": 6,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 1996,
+     "height": 2,
+     "branch": 0,
+     "on_cut": 6,
+     "size": 8,
+     "cell": [
+      216,
+      323
+     ],
+     "holders": 4,
+     "clean_pure_own": [
+      323
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 3
+    },
+    {
+     "pose": 2175,
+     "height": 2,
+     "branch": 0,
+     "on_cut": 2,
+     "size": 4,
+     "cell": [
+      147,
+      323
+     ],
+     "holders": 7,
+     "clean_pure_own": [
+      323
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 2478,
+     "height": 2,
+     "branch": 0,
+     "on_cut": 2,
+     "size": 3,
+     "cell": [
+      147,
+      323
+     ],
+     "holders": 6,
+     "clean_pure_own": [
+      323
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 5
+    }
+   ],
+   "units_with_clean_pure_own_holder": 6,
+   "units_with_clean_holder": 6,
+   "foreign_load": {
+    "h2-b0": 195,
+    "h2-b3": 101
+   },
+   "foreign_units": [
+    {
+     "pose": 807,
+     "height": 2,
+     "branch": 0,
+     "in_cap": 1,
+     "size": 1,
+     "cell": [
+      323,
+      352
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      323
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 817,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 59,
+     "size": 78,
+     "cell": [
+      61,
+      213
+     ],
+     "holders": 7,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 858,
+     "height": 2,
+     "branch": 0,
+     "in_cap": 2,
+     "size": 61,
+     "cell": [
+      216,
+      444
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 910,
+     "height": 2,
+     "branch": 0,
+     "in_cap": 4,
+     "size": 4,
+     "cell": [
+      323,
+      352
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      323
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1047,
+     "height": 2,
+     "branch": 0,
+     "in_cap": 5,
+     "size": 5,
+     "cell": [
+      147,
+      216,
+      323
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      323
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1059,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 3,
+     "size": 3,
+     "cell": [
+      61,
+      213,
+      223
+     ],
+     "holders": 9,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 9
+    },
+    {
+     "pose": 1065,
+     "height": 2,
+     "branch": 0,
+     "in_cap": 3,
+     "size": 3,
+     "cell": [
+      323,
+      352
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      323
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1362,
+     "height": 2,
+     "branch": 0,
+     "in_cap": 2,
+     "size": 46,
+     "cell": [
+      147,
+      323,
+      328
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      323
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1425,
+     "height": 2,
+     "branch": 0,
+     "in_cap": 10,
+     "size": 10,
+     "cell": [
+      147,
+      323,
+      352
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      323
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1470,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 26,
+     "size": 26,
+     "cell": [
+      61,
+      213,
+      223
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1496,
+     "height": 2,
+     "branch": 0,
+     "in_cap": 13,
+     "size": 13,
+     "cell": [
+      147,
+      216,
+      323
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      323
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1538,
+     "height": 2,
+     "branch": 0,
+     "in_cap": 52,
+     "size": 78,
+     "cell": [
+      323,
+      352
+     ],
+     "holders": 6,
+     "clean_pure_own": [
+      323
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 5
+    },
+    {
+     "pose": 1600,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 1,
+     "size": 1,
+     "cell": [
+      61,
+      213,
+      223
+     ],
+     "holders": 9,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 9
+    },
+    {
+     "pose": 1756,
+     "height": 2,
+     "branch": 0,
+     "in_cap": 20,
+     "size": 20,
+     "cell": [
+      147,
+      216,
+      323
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      323
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1799,
+     "height": 2,
+     "branch": 0,
+     "in_cap": 49,
+     "size": 62,
+     "cell": [
+      216,
+      323
+     ],
+     "holders": 7,
+     "clean_pure_own": [
+      323
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 1868,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 1,
+     "size": 5,
+     "cell": [
+      61,
+      184,
+      223
+     ],
+     "holders": 9,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 9
+    },
+    {
+     "pose": 1901,
+     "height": 2,
+     "branch": 0,
+     "in_cap": 4,
+     "size": 4,
+     "cell": [
+      216,
+      323,
+      352
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      323
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1971,
+     "height": 2,
+     "branch": 0,
+     "in_cap": 5,
+     "size": 5,
+     "cell": [
+      147,
+      216,
+      323,
+      352
+     ],
+     "holders": 10,
+     "clean_pure_own": [
+      323
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 9
+    },
+    {
+     "pose": 1996,
+     "height": 2,
+     "branch": 0,
+     "in_cap": 2,
+     "size": 8,
+     "cell": [
+      216,
+      323
+     ],
+     "holders": 7,
+     "clean_pure_own": [
+      323
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 2051,
+     "height": 2,
+     "branch": 0,
+     "in_cap": 1,
+     "size": 1,
+     "cell": [
+      147,
+      323
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      323
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 2064,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 3,
+     "size": 3,
+     "cell": [
+      61,
+      184,
+      223
+     ],
+     "holders": 9,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 9
+    },
+    {
+     "pose": 2085,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 5,
+     "size": 5,
+     "cell": [
+      61,
+      213,
+      223
+     ],
+     "holders": 10,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 10
+    },
+    {
+     "pose": 2090,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 2,
+     "size": 2,
+     "cell": [
+      61,
+      213,
+      223
+     ],
+     "holders": 10,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 10
+    },
+    {
+     "pose": 2110,
+     "height": 2,
+     "branch": 0,
+     "in_cap": 4,
+     "size": 5,
+     "cell": [
+      323,
+      352
+     ],
+     "holders": 7,
+     "clean_pure_own": [
+      323
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 2179,
+     "height": 2,
+     "branch": 0,
+     "in_cap": 2,
+     "size": 2,
+     "cell": [
+      147,
+      323,
+      328,
+      352
+     ],
+     "holders": 10,
+     "clean_pure_own": [
+      323
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 9
+    },
+    {
+     "pose": 2257,
+     "height": 2,
+     "branch": 0,
+     "in_cap": 3,
+     "size": 3,
+     "cell": [
+      216,
+      323,
+      352
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      323
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 2354,
+     "height": 2,
+     "branch": 0,
+     "in_cap": 13,
+     "size": 13,
+     "cell": [
+      147,
+      216,
+      323,
+      352
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      323
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 2500,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 1,
+     "size": 1,
+     "cell": [
+      61,
+      213,
+      223
+     ],
+     "holders": 9,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 9
+    }
+   ],
+   "clean": false,
+   "pure": false
+  },
+  {
+   "cap": 540,
+   "cls": 0,
+   "straddlers": 0,
+   "units": [],
+   "units_with_clean_pure_own_holder": 0,
+   "units_with_clean_holder": 0,
+   "foreign_load": {
+    "h2-b1": 111
+   },
+   "foreign_units": [
+    {
+     "pose": 1347,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 111,
+     "size": 111,
+     "cell": [
+      457,
+      502,
+      537
+     ],
+     "holders": 7,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [
+      540
+     ],
+     "blocked_holders": 6
+    }
+   ],
+   "clean": true,
+   "pure": false
+  },
+  {
+   "cap": 596,
+   "cls": 0,
+   "straddlers": 217,
+   "units": [
+    {
+     "pose": 945,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 34,
+     "size": 111,
+     "cell": [
+      521,
+      557,
+      580
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1247,
+     "height": 4,
+     "branch": 0,
+     "on_cut": 4,
+     "size": 13,
+     "cell": [
+      540
+     ],
+     "holders": 7,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      540
+     ],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 1378,
+     "height": 4,
+     "branch": 0,
+     "on_cut": 8,
+     "size": 28,
+     "cell": [
+      540
+     ],
+     "holders": 7,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      540
+     ],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 1440,
+     "height": 2,
+     "branch": 1,
+     "on_cut": 26,
+     "size": 86,
+     "cell": [
+      579,
+      582
+     ],
+     "holders": 4,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 4
+    },
+    {
+     "pose": 2233,
+     "height": 2,
+     "branch": 4,
+     "on_cut": 145,
+     "size": 2475,
+     "cell": [
+      588
+     ],
+     "holders": 1,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 1
+    }
+   ],
+   "units_with_clean_pure_own_holder": 0,
+   "units_with_clean_holder": 2,
+   "foreign_load": {
+    "h2-b1": 697,
+    "h2-b3": 211,
+    "h2-b4": 644
+   },
+   "foreign_units": [
+    {
+     "pose": 945,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 14,
+     "size": 111,
+     "cell": [
+      521,
+      557,
+      580
+     ],
+     "holders": 9,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 9
+    },
+    {
+     "pose": 1262,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 86,
+     "size": 86,
+     "cell": [
+      582,
+      583
+     ],
+     "holders": 4,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 4
+    },
+    {
+     "pose": 1280,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 46,
+     "size": 46,
+     "cell": [
+      582,
+      583,
+      598
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1361,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 3,
+     "size": 3,
+     "cell": [
+      582,
+      583,
+      586
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1368,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 5,
+     "size": 5,
+     "cell": [
+      562,
+      579,
+      582,
+      598
+     ],
+     "holders": 10,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 10
+    },
+    {
+     "pose": 1440,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 57,
+     "size": 86,
+     "cell": [
+      579,
+      582
+     ],
+     "holders": 6,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 1616,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 111,
+     "size": 111,
+     "cell": [
+      582,
+      586,
+      598
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1669,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 3,
+     "size": 3,
+     "cell": [
+      527,
+      582,
+      583
+     ],
+     "holders": 9,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 9
+    },
+    {
+     "pose": 1751,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 13,
+     "size": 13,
+     "cell": [
+      582,
+      583,
+      586
+     ],
+     "holders": 9,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 9
+    },
+    {
+     "pose": 1847,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 86,
+     "size": 86,
+     "cell": [
+      582,
+      598
+     ],
+     "holders": 4,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 4
+    },
+    {
+     "pose": 2029,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 2,
+     "size": 2,
+     "cell": [
+      527,
+      582,
+      583
+     ],
+     "holders": 10,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 10
+    },
+    {
+     "pose": 2117,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 111,
+     "size": 111,
+     "cell": [
+      568,
+      583,
+      598
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 2172,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 3,
+     "size": 3,
+     "cell": [
+      582,
+      583,
+      586
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 2185,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 86,
+     "size": 86,
+     "cell": [
+      582,
+      586
+     ],
+     "holders": 4,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 4
+    },
+    {
+     "pose": 2233,
+     "height": 2,
+     "branch": 4,
+     "in_cap": 644,
+     "size": 2475,
+     "cell": [
+      588
+     ],
+     "holders": 4,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 4
+    },
+    {
+     "pose": 2382,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 46,
+     "size": 46,
+     "cell": [
+      582,
+      583,
+      586
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 2426,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 13,
+     "size": 13,
+     "cell": [
+      582,
+      583,
+      598
+     ],
+     "holders": 9,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 9
+    },
+    {
+     "pose": 2479,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 197,
+     "size": 197,
+     "cell": [
+      580,
+      595
+     ],
+     "holders": 4,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 4
+    },
+    {
+     "pose": 2503,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 26,
+     "size": 26,
+     "cell": [
+      527,
+      582,
+      583
+     ],
+     "holders": 7,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    }
+   ],
+   "clean": false,
+   "pure": false
+  },
+  {
+   "cap": 73,
+   "cls": 2,
+   "straddlers": 299,
+   "units": [
+    {
+     "pose": 1006,
+     "height": 2,
+     "branch": 1,
+     "on_cut": 19,
+     "size": 86,
+     "cell": [
+      44,
+      146
+     ],
+     "holders": 4,
+     "clean_pure_own": [
+      146
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 3
+    },
+    {
+     "pose": 1267,
+     "height": 2,
+     "branch": 1,
+     "on_cut": 19,
+     "size": 78,
+     "cell": [
+      31,
+      146
+     ],
+     "holders": 4,
+     "clean_pure_own": [
+      146
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 3
+    },
+    {
+     "pose": 1805,
+     "height": 2,
+     "branch": 1,
+     "on_cut": 27,
+     "size": 86,
+     "cell": [
+      31,
+      100
+     ],
+     "holders": 4,
+     "clean_pure_own": [
+      100
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 3
+    },
+    {
+     "pose": 2074,
+     "height": 2,
+     "branch": 1,
+     "on_cut": 8,
+     "size": 156,
+     "cell": [
+      100,
+      153
+     ],
+     "holders": 4,
+     "clean_pure_own": [
+      100
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 3
+    },
+    {
+     "pose": 2336,
+     "height": 2,
+     "branch": 4,
+     "on_cut": 160,
+     "size": 2307,
+     "cell": [
+      60
+     ],
+     "holders": 1,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 1
+    },
+    {
+     "pose": 2496,
+     "height": 2,
+     "branch": 1,
+     "on_cut": 66,
+     "size": 1913,
+     "cell": [
+      44
+     ],
+     "holders": 1,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 1
+    }
+   ],
+   "units_with_clean_pure_own_holder": 4,
+   "units_with_clean_holder": 4,
+   "foreign_load": {
+    "h2-b1": 627,
+    "h2-b4": 321
+   },
+   "foreign_units": [
+    {
+     "pose": 913,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 46,
+     "size": 46,
+     "cell": [
+      31,
+      44,
+      146
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      146
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1006,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 67,
+     "size": 86,
+     "cell": [
+      44,
+      146
+     ],
+     "holders": 6,
+     "clean_pure_own": [
+      146
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 5
+    },
+    {
+     "pose": 1180,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 4,
+     "size": 4,
+     "cell": [
+      31,
+      100,
+      153
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      100
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1267,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 59,
+     "size": 78,
+     "cell": [
+      31,
+      146
+     ],
+     "holders": 7,
+     "clean_pure_own": [
+      146
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 1342,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 111,
+     "size": 111,
+     "cell": [
+      44,
+      146,
+      153
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      146
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1588,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 45,
+     "size": 45,
+     "cell": [
+      26,
+      100,
+      153
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      100
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1701,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 45,
+     "size": 45,
+     "cell": [
+      31,
+      44,
+      146
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      146
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1703,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 4,
+     "size": 4,
+     "cell": [
+      26,
+      100,
+      153
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      100
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1750,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 1,
+     "size": 1,
+     "cell": [
+      153,
+      181
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      181
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1785,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 3,
+     "size": 3,
+     "cell": [
+      31,
+      44,
+      146
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      146
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1805,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 29,
+     "size": 86,
+     "cell": [
+      31,
+      100
+     ],
+     "holders": 7,
+     "clean_pure_own": [
+      100
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 2074,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 70,
+     "size": 156,
+     "cell": [
+      100,
+      153
+     ],
+     "holders": 6,
+     "clean_pure_own": [
+      100
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 5
+    },
+    {
+     "pose": 2196,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 3,
+     "size": 3,
+     "cell": [
+      26,
+      100
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      100
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 2243,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 4,
+     "size": 4,
+     "cell": [
+      100,
+      153
+     ],
+     "holders": 7,
+     "clean_pure_own": [
+      100
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 2336,
+     "height": 2,
+     "branch": 4,
+     "in_cap": 321,
+     "size": 2307,
+     "cell": [
+      60
+     ],
+     "holders": 5,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 5
+    },
+    {
+     "pose": 2496,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 136,
+     "size": 1913,
+     "cell": [
+      44
+     ],
+     "holders": 2,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 2
+    }
+   ],
+   "clean": false,
+   "pure": false
+  },
+  {
+   "cap": 229,
+   "cls": 2,
+   "straddlers": 63,
+   "units": [
+    {
+     "pose": 754,
+     "height": 2,
+     "branch": 1,
+     "on_cut": 27,
+     "size": 86,
+     "cell": [
+      295,
+      322
+     ],
+     "holders": 5,
+     "clean_pure_own": [
+      295
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 4
+    },
+    {
+     "pose": 1060,
+     "height": 2,
+     "branch": 1,
+     "on_cut": 3,
+     "size": 4,
+     "cell": [
+      166,
+      295,
+      322
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      295
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1413,
+     "height": 2,
+     "branch": 1,
+     "on_cut": 7,
+     "size": 28,
+     "cell": [
+      153,
+      166,
+      295,
+      322
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      295
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1494,
+     "height": 2,
+     "branch": 1,
+     "on_cut": 19,
+     "size": 111,
+     "cell": [
+      153,
+      295,
+      322
+     ],
+     "holders": 7,
+     "clean_pure_own": [
+      295
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 1608,
+     "height": 2,
+     "branch": 1,
+     "on_cut": 4,
+     "size": 9,
+     "cell": [
+      220,
+      347,
+      447
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      347
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 2459,
+     "height": 2,
+     "branch": 1,
+     "on_cut": 3,
+     "size": 4,
+     "cell": [
+      153,
+      295
+     ],
+     "holders": 7,
+     "clean_pure_own": [
+      295
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 6
+    }
+   ],
+   "units_with_clean_pure_own_holder": 5,
+   "units_with_clean_holder": 6,
+   "foreign_load": {
+    "h2-b1": 202
+   },
+   "foreign_units": [
+    {
+     "pose": 754,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 30,
+     "size": 86,
+     "cell": [
+      295,
+      322
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      295
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1125,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 1,
+     "size": 1,
+     "cell": [
+      153,
+      166,
+      295,
+      322
+     ],
+     "holders": 10,
+     "clean_pure_own": [
+      295
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 9
+    },
+    {
+     "pose": 1413,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 20,
+     "size": 28,
+     "cell": [
+      153,
+      166,
+      295,
+      322
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      295
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1494,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 91,
+     "size": 111,
+     "cell": [
+      153,
+      295,
+      322
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      295
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1854,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 46,
+     "size": 46,
+     "cell": [
+      220,
+      322,
+      347
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      347
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1915,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 5,
+     "size": 5,
+     "cell": [
+      153,
+      322,
+      347
+     ],
+     "holders": 10,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      347
+     ],
+     "clean_other": [],
+     "blocked_holders": 9
+    },
+    {
+     "pose": 2200,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 5,
+     "size": 5,
+     "cell": [
+      166,
+      295,
+      322
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      295
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 2215,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 3,
+     "size": 3,
+     "cell": [
+      153,
+      220,
+      322,
+      347
+     ],
+     "holders": 9,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      347
+     ],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 2459,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 1,
+     "size": 4,
+     "cell": [
+      153,
+      295
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      295
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    }
+   ],
+   "clean": false,
+   "pure": false
+  },
+  {
+   "cap": 162,
+   "cls": 2,
+   "straddlers": 36,
+   "units": [
+    {
+     "pose": 1000,
+     "height": 2,
+     "branch": 0,
+     "on_cut": 19,
+     "size": 70,
+     "cell": [
+      276,
+      384
+     ],
+     "holders": 4,
+     "clean_pure_own": [
+      384
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 3
+    },
+    {
+     "pose": 2363,
+     "height": 4,
+     "branch": 0,
+     "on_cut": 17,
+     "size": 32,
+     "cell": [
+      183,
+      375
+     ],
+     "holders": 7,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    }
+   ],
+   "units_with_clean_pure_own_holder": 1,
+   "units_with_clean_holder": 1,
+   "foreign_load": {
+    "h2-b0": 65,
+    "h4-b0": 13
+   },
+   "foreign_units": [
+    {
+     "pose": 1000,
+     "height": 2,
+     "branch": 0,
+     "in_cap": 51,
+     "size": 70,
+     "cell": [
+      276,
+      384
+     ],
+     "holders": 6,
+     "clean_pure_own": [
+      384
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 5
+    },
+    {
+     "pose": 1051,
+     "height": 2,
+     "branch": 0,
+     "in_cap": 5,
+     "size": 5,
+     "cell": [
+      183,
+      276,
+      384
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      384
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1629,
+     "height": 2,
+     "branch": 0,
+     "in_cap": 6,
+     "size": 6,
+     "cell": [
+      176,
+      183,
+      276,
+      384
+     ],
+     "holders": 10,
+     "clean_pure_own": [
+      384
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 9
+    },
+    {
+     "pose": 2076,
+     "height": 2,
+     "branch": 0,
+     "in_cap": 3,
+     "size": 3,
+     "cell": [
+      183,
+      276,
+      384
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      384
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 2363,
+     "height": 4,
+     "branch": 0,
+     "in_cap": 13,
+     "size": 32,
+     "cell": [
+      183,
+      375
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    }
+   ],
+   "clean": false,
+   "pure": false
+  },
+  {
+   "cap": 239,
+   "cls": 2,
+   "straddlers": 290,
+   "units": [
+    {
+     "pose": 1020,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 16,
+     "size": 46,
+     "cell": [
+      133,
+      277,
+      301
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1151,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 7,
+     "size": 28,
+     "cell": [
+      170,
+      344,
+      348,
+      390
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      344
+     ],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 1250,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 1,
+     "size": 2,
+     "cell": [
+      170,
+      344,
+      348,
+      390
+     ],
+     "holders": 10,
+     "clean_pure_own": [
+      344
+     ],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1420,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 12,
+     "size": 28,
+     "cell": [
+      170,
+      344,
+      390
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      344
+     ],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 1695,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 15,
+     "size": 46,
+     "cell": [
+      277,
+      301,
+      348
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1736,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 4,
+     "size": 8,
+     "cell": [
+      277,
+      348
+     ],
+     "holders": 4,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 3
+    },
+    {
+     "pose": 1842,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 5,
+     "size": 12,
+     "cell": [
+      133,
+      170
+     ],
+     "holders": 6,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 5
+    },
+    {
+     "pose": 1903,
+     "height": 2,
+     "branch": 0,
+     "on_cut": 135,
+     "size": 993,
+     "cell": [
+      375
+     ],
+     "holders": 1,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 1
+    },
+    {
+     "pose": 2035,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 14,
+     "size": 39,
+     "cell": [
+      133,
+      170
+     ],
+     "holders": 4,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 3
+    },
+    {
+     "pose": 2225,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 46,
+     "size": 385,
+     "cell": [
+      170
+     ],
+     "holders": 1,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 0
+    },
+    {
+     "pose": 2276,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 4,
+     "size": 18,
+     "cell": [
+      170,
+      344,
+      390
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      344
+     ],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 2279,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 22,
+     "size": 78,
+     "cell": [
+      277,
+      348
+     ],
+     "holders": 4,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 3
+    },
+    {
+     "pose": 2365,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 8,
+     "size": 25,
+     "cell": [
+      170,
+      344
+     ],
+     "holders": 4,
+     "clean_pure_own": [
+      344
+     ],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 2
+    },
+    {
+     "pose": 2536,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 1,
+     "size": 5,
+     "cell": [
+      179,
+      260,
+      348,
+      397
+     ],
+     "holders": 10,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      397
+     ],
+     "clean_other": [],
+     "blocked_holders": 9
+    }
+   ],
+   "units_with_clean_pure_own_holder": 5,
+   "units_with_clean_holder": 13,
+   "foreign_load": {
+    "h2-b0": 92,
+    "h2-b3": 660
+   },
+   "foreign_units": [
+    {
+     "pose": 740,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 11,
+     "size": 11,
+     "cell": [
+      170,
+      344,
+      348,
+      390
+     ],
+     "holders": 10,
+     "clean_pure_own": [
+      344
+     ],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 741,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 29,
+     "size": 29,
+     "cell": [
+      170,
+      179,
+      344
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      344
+     ],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 745,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 1,
+     "size": 1,
+     "cell": [
+      133,
+      170,
+      179,
+      348
+     ],
+     "holders": 10,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 9
+    },
+    {
+     "pose": 771,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 46,
+     "size": 46,
+     "cell": [
+      133,
+      170,
+      277
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      170,
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 861,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 41,
+     "size": 41,
+     "cell": [
+      133,
+      170,
+      277
+     ],
+     "holders": 7,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      170,
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 5
+    },
+    {
+     "pose": 887,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 4,
+     "size": 4,
+     "cell": [
+      133,
+      170,
+      179
+     ],
+     "holders": 9,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 889,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 58,
+     "size": 58,
+     "cell": [
+      133,
+      170,
+      277
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      170,
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 1020,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 11,
+     "size": 46,
+     "cell": [
+      133,
+      277,
+      301
+     ],
+     "holders": 9,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1070,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 4,
+     "size": 4,
+     "cell": [
+      133,
+      170
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1151,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 20,
+     "size": 28,
+     "cell": [
+      170,
+      344,
+      348,
+      390
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      344
+     ],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1250,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 1,
+     "size": 2,
+     "cell": [
+      170,
+      344,
+      348,
+      390
+     ],
+     "holders": 11,
+     "clean_pure_own": [
+      344
+     ],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 9
+    },
+    {
+     "pose": 1253,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 49,
+     "size": 49,
+     "cell": [
+      170,
+      179,
+      344
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      344
+     ],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 1274,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 8,
+     "size": 8,
+     "cell": [
+      260,
+      348,
+      397
+     ],
+     "holders": 9,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      397
+     ],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1321,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 4,
+     "size": 4,
+     "cell": [
+      133,
+      277,
+      348
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1420,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 10,
+     "size": 28,
+     "cell": [
+      170,
+      344,
+      390
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      344
+     ],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1421,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 4,
+     "size": 4,
+     "cell": [
+      179,
+      344
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      344
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1512,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 78,
+     "size": 78,
+     "cell": [
+      170,
+      348
+     ],
+     "holders": 4,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 3
+    },
+    {
+     "pose": 1593,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 36,
+     "size": 36,
+     "cell": [
+      170,
+      179,
+      348
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1611,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 31,
+     "size": 31,
+     "cell": [
+      133,
+      170,
+      348
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1634,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 34,
+     "size": 34,
+     "cell": [
+      170,
+      179
+     ],
+     "holders": 6,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 5
+    },
+    {
+     "pose": 1695,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 17,
+     "size": 46,
+     "cell": [
+      277,
+      301,
+      348
+     ],
+     "holders": 9,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1736,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 1,
+     "size": 8,
+     "cell": [
+      277,
+      348
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1899,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 1,
+     "size": 1,
+     "cell": [
+      179,
+      344,
+      348
+     ],
+     "holders": 10,
+     "clean_pure_own": [
+      344
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 9
+    },
+    {
+     "pose": 1903,
+     "height": 2,
+     "branch": 0,
+     "in_cap": 92,
+     "size": 993,
+     "cell": [
+      375
+     ],
+     "holders": 4,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 4
+    },
+    {
+     "pose": 2013,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 26,
+     "size": 26,
+     "cell": [
+      133,
+      170,
+      179
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 2032,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 6,
+     "size": 6,
+     "cell": [
+      170,
+      179
+     ],
+     "holders": 5,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 4
+    },
+    {
+     "pose": 2119,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 4,
+     "size": 4,
+     "cell": [
+      344,
+      348
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      344
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 2225,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 30,
+     "size": 385,
+     "cell": [
+      170
+     ],
+     "holders": 3,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 2
+    },
+    {
+     "pose": 2238,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 4,
+     "size": 4,
+     "cell": [
+      170,
+      348
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 2276,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 1,
+     "size": 18,
+     "cell": [
+      170,
+      344,
+      390
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      344
+     ],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 2279,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 56,
+     "size": 78,
+     "cell": [
+      277,
+      348
+     ],
+     "holders": 6,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 5
+    },
+    {
+     "pose": 2300,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 16,
+     "size": 16,
+     "cell": [
+      170,
+      179,
+      348
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 2365,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 14,
+     "size": 25,
+     "cell": [
+      170,
+      344
+     ],
+     "holders": 7,
+     "clean_pure_own": [
+      344
+     ],
+     "clean_impure_own": [
+      170
+     ],
+     "clean_other": [],
+     "blocked_holders": 5
+    },
+    {
+     "pose": 2416,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 4,
+     "size": 4,
+     "cell": [
+      170,
+      277,
+      348
+     ],
+     "holders": 9,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      170,
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    }
+   ],
+   "clean": false,
+   "pure": false
+  },
+  {
+   "cap": 336,
+   "cls": 2,
+   "straddlers": 65,
+   "units": [
+    {
+     "pose": 899,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 19,
+     "size": 78,
+     "cell": [
+      212,
+      277
+     ],
+     "holders": 4,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 3
+    },
+    {
+     "pose": 1054,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 5,
+     "size": 14,
+     "cell": [
+      277,
+      301,
+      363
+     ],
+     "holders": 9,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1884,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 12,
+     "size": 45,
+     "cell": [
+      136,
+      277
+     ],
+     "holders": 4,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 3
+    },
+    {
+     "pose": 2011,
+     "height": 2,
+     "branch": 1,
+     "on_cut": 2,
+     "size": 15,
+     "cell": [
+      295,
+      322,
+      393,
+      505
+     ],
+     "holders": 10,
+     "clean_pure_own": [
+      295
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 9
+    },
+    {
+     "pose": 2186,
+     "height": 2,
+     "branch": 1,
+     "on_cut": 8,
+     "size": 78,
+     "cell": [
+      295,
+      393
+     ],
+     "holders": 4,
+     "clean_pure_own": [
+      295
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 3
+    },
+    {
+     "pose": 2434,
+     "height": 2,
+     "branch": 3,
+     "on_cut": 19,
+     "size": 88,
+     "cell": [
+      277,
+      427
+     ],
+     "holders": 4,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 3
+    }
+   ],
+   "units_with_clean_pure_own_holder": 2,
+   "units_with_clean_holder": 6,
+   "foreign_load": {
+    "h2-b1": 171,
+    "h2-b3": 323
+   },
+   "foreign_units": [
+    {
+     "pose": 809,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 17,
+     "size": 17,
+     "cell": [
+      136,
+      277,
+      363
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 890,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 18,
+     "size": 18,
+     "cell": [
+      212,
+      277,
+      363
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 895,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 17,
+     "size": 17,
+     "cell": [
+      212,
+      277,
+      363,
+      427
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 933,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 16,
+     "size": 16,
+     "cell": [
+      212,
+      277,
+      363
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1021,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 13,
+     "size": 13,
+     "cell": [
+      277,
+      363,
+      427,
+      477
+     ],
+     "holders": 9,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1031,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 5,
+     "size": 5,
+     "cell": [
+      136,
+      212,
+      277,
+      363
+     ],
+     "holders": 9,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1054,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 9,
+     "size": 14,
+     "cell": [
+      277,
+      301,
+      363
+     ],
+     "holders": 9,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1088,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 4,
+     "size": 4,
+     "cell": [
+      136,
+      212,
+      277
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1107,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 3,
+     "size": 3,
+     "cell": [
+      166,
+      295,
+      322
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      295
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1220,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 3,
+     "size": 3,
+     "cell": [
+      277,
+      363
+     ],
+     "holders": 7,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 1260,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 8,
+     "size": 8,
+     "cell": [
+      277,
+      363
+     ],
+     "holders": 7,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 1323,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 78,
+     "size": 78,
+     "cell": [
+      136,
+      277,
+      363
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1330,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 55,
+     "size": 55,
+     "cell": [
+      277,
+      363
+     ],
+     "holders": 6,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 5
+    },
+    {
+     "pose": 1606,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 4,
+     "size": 4,
+     "cell": [
+      295,
+      322,
+      393
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      295
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1677,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 45,
+     "size": 45,
+     "cell": [
+      295,
+      322,
+      393
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      295
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1810,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 4,
+     "size": 4,
+     "cell": [
+      277,
+      363
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1877,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 4,
+     "size": 4,
+     "cell": [
+      277,
+      363,
+      427
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1884,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 33,
+     "size": 45,
+     "cell": [
+      136,
+      277
+     ],
+     "holders": 6,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 5
+    },
+    {
+     "pose": 1934,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 1,
+     "size": 1,
+     "cell": [
+      295,
+      393
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      295
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1961,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 13,
+     "size": 13,
+     "cell": [
+      166,
+      295,
+      322
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      295
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 2011,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 12,
+     "size": 15,
+     "cell": [
+      295,
+      322,
+      393,
+      505
+     ],
+     "holders": 10,
+     "clean_pure_own": [
+      295
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 9
+    },
+    {
+     "pose": 2186,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 70,
+     "size": 78,
+     "cell": [
+      295,
+      393
+     ],
+     "holders": 6,
+     "clean_pure_own": [
+      295
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 5
+    },
+    {
+     "pose": 2213,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 13,
+     "size": 13,
+     "cell": [
+      295,
+      322,
+      393
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      295
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 2239,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 1,
+     "size": 1,
+     "cell": [
+      136,
+      212,
+      277
+     ],
+     "holders": 9,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 2252,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 18,
+     "size": 18,
+     "cell": [
+      212,
+      277,
+      363
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 2302,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 1,
+     "size": 1,
+     "cell": [
+      295,
+      322,
+      393
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      295
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 2377,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 4,
+     "size": 4,
+     "cell": [
+      277,
+      427
+     ],
+     "holders": 7,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 2393,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 12,
+     "size": 12,
+     "cell": [
+      136,
+      277
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 2443,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 3,
+     "size": 3,
+     "cell": [
+      295,
+      393
+     ],
+     "holders": 7,
+     "clean_pure_own": [
+      295
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 2460,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 6,
+     "size": 6,
+     "cell": [
+      295,
+      322,
+      393
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      295
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 2489,
+     "height": 2,
+     "branch": 3,
+     "in_cap": 4,
+     "size": 4,
+     "cell": [
+      277,
+      363,
+      427,
+      477
+     ],
+     "holders": 8,
+     "clean_pure_own": [],
+     "clean_impure_own": [
+      277
+     ],
+     "clean_other": [],
+     "blocked_holders": 7
+    }
+   ],
+   "clean": false,
+   "pure": false
+  },
+  {
+   "cap": 183,
+   "cls": 0,
+   "straddlers": 193,
+   "units": [
+    {
+     "pose": 1212,
+     "height": 2,
+     "branch": 2,
+     "on_cut": 31,
+     "size": 2762,
+     "cell": [
+      162
+     ],
+     "holders": 1,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 1
+    },
+    {
+     "pose": 2344,
+     "height": 2,
+     "branch": 2,
+     "on_cut": 2,
+     "size": 197,
+     "cell": [
+      162
+     ],
+     "holders": 4,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 4
+    },
+    {
+     "pose": 2490,
+     "height": 2,
+     "branch": 4,
+     "on_cut": 160,
+     "size": 2367,
+     "cell": [
+      159
+     ],
+     "holders": 3,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 3
+    }
+   ],
+   "units_with_clean_pure_own_holder": 0,
+   "units_with_clean_holder": 0,
+   "foreign_load": {
+    "h2-b2": 953,
+    "h2-b4": 247
+   },
+   "foreign_units": [
+    {
+     "pose": 1212,
+     "height": 2,
+     "branch": 2,
+     "in_cap": 758,
+     "size": 2762,
+     "cell": [
+      162
+     ],
+     "holders": 2,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 2
+    },
+    {
+     "pose": 2344,
+     "height": 2,
+     "branch": 2,
+     "in_cap": 195,
+     "size": 197,
+     "cell": [
+      162
+     ],
+     "holders": 4,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 4
+    },
+    {
+     "pose": 2490,
+     "height": 2,
+     "branch": 4,
+     "in_cap": 247,
+     "size": 2367,
+     "cell": [
+      159
+     ],
+     "holders": 6,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 6
+    }
+   ],
+   "clean": false,
+   "pure": false
+  },
+  {
+   "cap": 64,
+   "cls": 0,
+   "straddlers": 136,
+   "units": [
+    {
+     "pose": 877,
+     "height": 2,
+     "branch": 1,
+     "on_cut": 3,
+     "size": 78,
+     "cell": [
+      94,
+      134
+     ],
+     "holders": 4,
+     "clean_pure_own": [
+      94,
+      134
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 2
+    },
+    {
+     "pose": 1007,
+     "height": 4,
+     "branch": 0,
+     "on_cut": 41,
+     "size": 198,
+     "cell": [
+      2
+     ],
+     "holders": 4,
+     "clean_pure_own": [],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 4
+    },
+    {
+     "pose": 1180,
+     "height": 2,
+     "branch": 1,
+     "on_cut": 3,
+     "size": 4,
+     "cell": [
+      31,
+      100,
+      153
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      100
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1428,
+     "height": 2,
+     "branch": 1,
+     "on_cut": 11,
+     "size": 26,
+     "cell": [
+      94,
+      100
+     ],
+     "holders": 4,
+     "clean_pure_own": [
+      94,
+      100
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 2
+    },
+    {
+     "pose": 1485,
+     "height": 2,
+     "branch": 1,
+     "on_cut": 3,
+     "size": 78,
+     "cell": [
+      94,
+      181
+     ],
+     "holders": 4,
+     "clean_pure_own": [
+      94,
+      181
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 2
+    },
+    {
+     "pose": 1509,
+     "height": 2,
+     "branch": 1,
+     "on_cut": 19,
+     "size": 86,
+     "cell": [
+      100,
+      181
+     ],
+     "holders": 4,
+     "clean_pure_own": [
+      100,
+      181
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 2
+    },
+    {
+     "pose": 1766,
+     "height": 2,
+     "branch": 1,
+     "on_cut": 4,
+     "size": 12,
+     "cell": [
+      31,
+      146
+     ],
+     "holders": 6,
+     "clean_pure_own": [
+      146
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 5
+    },
+    {
+     "pose": 1805,
+     "height": 2,
+     "branch": 1,
+     "on_cut": 26,
+     "size": 86,
+     "cell": [
+      31,
+      100
+     ],
+     "holders": 4,
+     "clean_pure_own": [
+      100
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 3
+    },
+    {
+     "pose": 2417,
+     "height": 2,
+     "branch": 1,
+     "on_cut": 26,
+     "size": 86,
+     "cell": [
+      8,
+      94
+     ],
+     "holders": 7,
+     "clean_pure_own": [
+      94
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 6
+    }
+   ],
+   "units_with_clean_pure_own_holder": 8,
+   "units_with_clean_holder": 8,
+   "foreign_load": {
+    "h2-b1": 885
+   },
+   "foreign_units": [
+    {
+     "pose": 775,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 1,
+     "size": 1,
+     "cell": [
+      31,
+      94,
+      134,
+      181
+     ],
+     "holders": 10,
+     "clean_pure_own": [
+      94,
+      134,
+      181
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 799,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 9,
+     "size": 9,
+     "cell": [
+      31,
+      134,
+      146,
+      181
+     ],
+     "holders": 10,
+     "clean_pure_own": [
+      134,
+      146,
+      181
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 840,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 17,
+     "size": 17,
+     "cell": [
+      31,
+      134,
+      146,
+      181
+     ],
+     "holders": 10,
+     "clean_pure_own": [
+      134,
+      146,
+      181
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 877,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 75,
+     "size": 78,
+     "cell": [
+      94,
+      134
+     ],
+     "holders": 5,
+     "clean_pure_own": [
+      94,
+      134
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 3
+    },
+    {
+     "pose": 908,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 111,
+     "size": 111,
+     "cell": [
+      94,
+      100,
+      181
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      94,
+      100,
+      181
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 5
+    },
+    {
+     "pose": 924,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 38,
+     "size": 38,
+     "cell": [
+      31,
+      94,
+      181
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      94,
+      181
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 1099,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 1,
+     "size": 1,
+     "cell": [
+      24,
+      31,
+      94
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      94
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1235,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 3,
+     "size": 3,
+     "cell": [
+      31,
+      94,
+      134,
+      181
+     ],
+     "holders": 10,
+     "clean_pure_own": [
+      94,
+      134,
+      181
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1276,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 1,
+     "size": 1,
+     "cell": [
+      94,
+      134
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      94,
+      134
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1302,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 1,
+     "size": 1,
+     "cell": [
+      24,
+      94,
+      134
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      94,
+      134
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1328,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 87,
+     "size": 87,
+     "cell": [
+      31,
+      94,
+      100,
+      181
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      94,
+      100,
+      181
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 5
+    },
+    {
+     "pose": 1428,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 15,
+     "size": 26,
+     "cell": [
+      94,
+      100
+     ],
+     "holders": 7,
+     "clean_pure_own": [
+      94,
+      100
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 5
+    },
+    {
+     "pose": 1432,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 111,
+     "size": 222,
+     "cell": [
+      94,
+      134,
+      181
+     ],
+     "holders": 7,
+     "clean_pure_own": [
+      94,
+      134,
+      181
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 4
+    },
+    {
+     "pose": 1443,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 5,
+     "size": 5,
+     "cell": [
+      134,
+      181
+     ],
+     "holders": 7,
+     "clean_pure_own": [
+      134,
+      181
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 5
+    },
+    {
+     "pose": 1485,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 75,
+     "size": 78,
+     "cell": [
+      94,
+      181
+     ],
+     "holders": 5,
+     "clean_pure_own": [
+      94,
+      181
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 3
+    },
+    {
+     "pose": 1493,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 1,
+     "size": 1,
+     "cell": [
+      31,
+      94,
+      134,
+      181
+     ],
+     "holders": 10,
+     "clean_pure_own": [
+      94,
+      134,
+      181
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1503,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 1,
+     "size": 1,
+     "cell": [
+      24,
+      94,
+      134
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      94,
+      134
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 1509,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 67,
+     "size": 86,
+     "cell": [
+      100,
+      181
+     ],
+     "holders": 6,
+     "clean_pure_own": [
+      100,
+      181
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 4
+    },
+    {
+     "pose": 1586,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 3,
+     "size": 3,
+     "cell": [
+      31,
+      94,
+      134,
+      181
+     ],
+     "holders": 10,
+     "clean_pure_own": [
+      94,
+      134,
+      181
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 1598,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 13,
+     "size": 13,
+     "cell": [
+      31,
+      94,
+      181
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      94,
+      181
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 1615,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 111,
+     "size": 111,
+     "cell": [
+      31,
+      94,
+      134
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      94,
+      134
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 1750,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 1,
+     "size": 1,
+     "cell": [
+      153,
+      181
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      181
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 1766,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 8,
+     "size": 12,
+     "cell": [
+      31,
+      146
+     ],
+     "holders": 7,
+     "clean_pure_own": [
+      146
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 1805,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 57,
+     "size": 86,
+     "cell": [
+      31,
+      100
+     ],
+     "holders": 6,
+     "clean_pure_own": [
+      100
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 5
+    },
+    {
+     "pose": 1940,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 3,
+     "size": 3,
+     "cell": [
+      24,
+      31,
+      94
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      94
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 8
+    },
+    {
+     "pose": 2057,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 1,
+     "size": 1,
+     "cell": [
+      94,
+      134
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      94,
+      134
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 6
+    },
+    {
+     "pose": 2236,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 17,
+     "size": 30,
+     "cell": [
+      31,
+      94,
+      134,
+      181
+     ],
+     "holders": 10,
+     "clean_pure_own": [
+      94,
+      134,
+      181
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 2331,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 5,
+     "size": 5,
+     "cell": [
+      31,
+      94,
+      134,
+      181
+     ],
+     "holders": 10,
+     "clean_pure_own": [
+      94,
+      134,
+      181
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 2334,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 1,
+     "size": 1,
+     "cell": [
+      31,
+      94
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      94
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 2381,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 2,
+     "size": 2,
+     "cell": [
+      31,
+      94,
+      181
+     ],
+     "holders": 9,
+     "clean_pure_own": [
+      94,
+      181
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 2417,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 3,
+     "size": 86,
+     "cell": [
+      8,
+      94
+     ],
+     "holders": 8,
+     "clean_pure_own": [
+      94
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 7
+    },
+    {
+     "pose": 2418,
+     "height": 2,
+     "branch": 1,
+     "in_cap": 41,
+     "size": 41,
+     "cell": [
+      31,
+      94
+     ],
+     "holders": 4,
+     "clean_pure_own": [
+      94
+     ],
+     "clean_impure_own": [],
+     "clean_other": [],
+     "blocked_holders": 3
+    }
+   ],
+   "clean": false,
+   "pure": false
+  }
+ ],
+ "phi": 1594
+}

@@ -1,0 +1,403 @@
+{
+ "digest": "ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980",
+ "groups": [
+  {
+   "pose": 1007,
+   "size": 198,
+   "height": 4,
+   "branch": 0,
+   "start": [
+    269,
+    2
+   ],
+   "best": [
+    269,
+    2
+   ],
+   "status": "exhausted",
+   "word": [],
+   "seconds": 41.8
+  },
+  {
+   "pose": 1132,
+   "size": 14,
+   "height": 4,
+   "branch": 4,
+   "start": [
+    127,
+    522
+   ],
+   "best": [
+    19,
+    522
+   ],
+   "status": "exhausted",
+   "word": [
+    [
+     451,
+     122
+    ],
+    [
+     344,
+     5417
+    ]
+   ],
+   "seconds": 36.8,
+   "replay": {
+    "admissible": true,
+    "straddlers": 2,
+    "foreign": 17,
+    "group_inside": true,
+    "group_heights": [
+     4
+    ]
+   }
+  },
+  {
+   "pose": 1154,
+   "size": 10,
+   "height": 4,
+   "branch": 0,
+   "start": [
+    491,
+    375
+   ],
+   "best": [
+    248,
+    375
+   ],
+   "status": "exhausted",
+   "word": [
+    [
+     277,
+     5412
+    ]
+   ],
+   "seconds": 39.2,
+   "replay": {
+    "admissible": true,
+    "straddlers": 94,
+    "foreign": 154,
+    "group_inside": true,
+    "group_heights": [
+     4
+    ]
+   }
+  },
+  {
+   "pose": 1172,
+   "size": 87,
+   "height": 4,
+   "branch": 4,
+   "start": [
+    395,
+    251
+   ],
+   "best": [
+    169,
+    251
+   ],
+   "status": "exhausted",
+   "word": [
+    [
+     323,
+     6220
+    ]
+   ],
+   "seconds": 38.5,
+   "replay": {
+    "admissible": true,
+    "straddlers": 43,
+    "foreign": 126,
+    "group_inside": true,
+    "group_heights": [
+     4
+    ]
+   }
+  },
+  {
+   "pose": 1247,
+   "size": 13,
+   "height": 4,
+   "branch": 0,
+   "start": [
+    111,
+    540
+   ],
+   "best": [
+    111,
+    540
+   ],
+   "status": "exhausted",
+   "word": [],
+   "seconds": 39.0
+  },
+  {
+   "pose": 1378,
+   "size": 28,
+   "height": 4,
+   "branch": 0,
+   "start": [
+    111,
+    540
+   ],
+   "best": [
+    111,
+    540
+   ],
+   "status": "exhausted",
+   "word": [],
+   "seconds": 38.1
+  },
+  {
+   "pose": 1557,
+   "size": 17,
+   "height": 4,
+   "branch": 0,
+   "start": [
+    111,
+    540
+   ],
+   "best": [
+    12,
+    485
+   ],
+   "status": "exhausted",
+   "word": [
+    [
+     540,
+     2151
+    ]
+   ],
+   "seconds": 36.6,
+   "replay": {
+    "admissible": true,
+    "straddlers": 12,
+    "foreign": 0,
+    "group_inside": true,
+    "group_heights": [
+     4
+    ]
+   }
+  },
+  {
+   "pose": 1582,
+   "size": 15,
+   "height": 4,
+   "branch": 4,
+   "start": [
+    127,
+    522
+   ],
+   "best": [
+    19,
+    522
+   ],
+   "status": "exhausted",
+   "word": [
+    [
+     451,
+     122
+    ],
+    [
+     344,
+     5417
+    ]
+   ],
+   "seconds": 42.0,
+   "replay": {
+    "admissible": true,
+    "straddlers": 2,
+    "foreign": 17,
+    "group_inside": true,
+    "group_heights": [
+     4
+    ]
+   }
+  },
+  {
+   "pose": 2219,
+   "size": 9,
+   "height": 4,
+   "branch": 2,
+   "start": [
+    265,
+    229
+   ],
+   "best": [
+    25,
+    229
+   ],
+   "status": "exhausted",
+   "word": [
+    [
+     295,
+     3598
+    ],
+    [
+     347,
+     2368
+    ]
+   ],
+   "seconds": 37.7,
+   "replay": {
+    "admissible": true,
+    "straddlers": 7,
+    "foreign": 18,
+    "group_inside": true,
+    "group_heights": [
+     4
+    ]
+   }
+  },
+  {
+   "pose": 2234,
+   "size": 111,
+   "height": 4,
+   "branch": 2,
+   "start": [
+    114,
+    162
+   ],
+   "best": [
+    42,
+    162
+   ],
+   "status": "exhausted",
+   "word": [
+    [
+     384,
+     4821
+    ]
+   ],
+   "seconds": 40.1,
+   "replay": {
+    "admissible": true,
+    "straddlers": 17,
+    "foreign": 25,
+    "group_inside": true,
+    "group_heights": [
+     4
+    ]
+   }
+  },
+  {
+   "pose": 2304,
+   "size": 111,
+   "height": 4,
+   "branch": 2,
+   "start": [
+    559,
+    336
+   ],
+   "best": [
+    322,
+    336
+   ],
+   "status": "exhausted",
+   "word": [
+    [
+     295,
+     6037
+    ],
+    [
+     277,
+     2010
+    ]
+   ],
+   "seconds": 39.8,
+   "replay": {
+    "admissible": true,
+    "straddlers": 38,
+    "foreign": 284,
+    "group_inside": true,
+    "group_heights": [
+     4
+    ]
+   }
+  },
+  {
+   "pose": 2363,
+   "size": 32,
+   "height": 4,
+   "branch": 0,
+   "start": [
+    491,
+    375
+   ],
+   "best": [
+    248,
+    375
+   ],
+   "status": "exhausted",
+   "word": [
+    [
+     277,
+     5412
+    ]
+   ],
+   "seconds": 40.8,
+   "replay": {
+    "admissible": true,
+    "straddlers": 94,
+    "foreign": 154,
+    "group_inside": true,
+    "group_heights": [
+     4
+    ]
+   }
+  },
+  {
+   "pose": 2467,
+   "size": 111,
+   "height": 4,
+   "branch": 0,
+   "start": [
+    269,
+    2
+   ],
+   "best": [
+    269,
+    2
+   ],
+   "status": "exhausted",
+   "word": [],
+   "seconds": 41.4
+  },
+  {
+   "pose": 2559,
+   "size": 41,
+   "height": 4,
+   "branch": 4,
+   "start": [
+    127,
+    522
+   ],
+   "best": [
+    19,
+    522
+   ],
+   "status": "exhausted",
+   "word": [
+    [
+     451,
+     122
+    ],
+    [
+     344,
+     5417
+    ]
+   ],
+   "seconds": 35.3,
+   "replay": {
+    "admissible": true,
+    "straddlers": 2,
+    "foreign": 17,
+    "group_inside": true,
+    "group_heights": [
+     4
+    ]
+   }
+  }
+ ]
+}
