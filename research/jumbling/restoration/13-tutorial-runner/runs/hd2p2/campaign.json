@@ -1,0 +1,3420 @@
+{
+ "format": "hd2p2-campaign-record/1",
+ "rule": "HD2P/2",
+ "cases": {
+  "7302": {
+   "input": {
+    "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7302/component-checkpoint/tables/00021.json",
+    "sha256": "919632272288dfb32288b02fc07b561799419c1574e5120a48e53b266d00e710",
+    "digest": "2430f4cc99ea121a6d3476ec21b66fc401e277d13809ad5e1c979e6e0abe1472",
+    "heights": {
+     "2": 102750,
+     "4": 734
+    }
+   },
+   "search": {
+    "status": "STUCK",
+    "verification": "provisional",
+    "steps": 10,
+    "letters": 13,
+    "end_digest": "8c79415c6a732e88006d7b9e85f99813c91d04f7a1d07f65618f692c412c2334",
+    "cpu_seconds": 3351.9,
+    "segments": [
+     {
+      "segment": "search-2178bb75937249f092e6e185c0ee19ae",
+      "kind": "search",
+      "status": "BUDGET",
+      "manifest_sha256": "1ec000dc549e03a0b29540ff0a307aaa3fd531f415e2f9f45a70fb76686dcdf2"
+     },
+     {
+      "segment": "search-0d43bb28dc7d4ca996162cf2e665cef3",
+      "kind": "search",
+      "status": "STUCK",
+      "manifest_sha256": "7210f0f4e4ad008c5a485769a146444d8eae38618b6481e45bf3421c5d766855"
+     }
+    ]
+   },
+   "steps": [
+    {
+     "index": 1,
+     "family": "PEEL",
+     "word": [
+      [
+       20,
+       7
+      ]
+     ],
+     "n2_n4_n6": [
+      102750,
+      734,
+      0
+     ],
+     "Q": 734,
+     "Bk": 562,
+     "N": 133948,
+     "off": 103484,
+     "lattice_loss": 0,
+     "digest": "74b57d56930fac19f7773a68e608675987291df8b34f4be1e74d0d9834530e7a",
+     "cpu_seconds": 105.3
+    },
+    {
+     "index": 2,
+     "family": "PEEL",
+     "word": [
+      [
+       104,
+       7
+      ]
+     ],
+     "n2_n4_n6": [
+      102750,
+      734,
+      0
+     ],
+     "Q": 734,
+     "Bk": 561,
+     "N": 133970,
+     "off": 103484,
+     "lattice_loss": 0,
+     "digest": "51e76722d7aeeb9832edafb240e125ab8e70fff134b68d6dbe9d230daa095346",
+     "cpu_seconds": 270.4
+    },
+    {
+     "index": 3,
+     "family": "CL2",
+     "word": [
+      [
+       12,
+       10
+      ],
+      [
+       104,
+       14
+      ]
+     ],
+     "n2_n4_n6": [
+      102738,
+      619,
+      0
+     ],
+     "Q": 619,
+     "Bk": 562,
+     "N": 134346,
+     "off": 103357,
+     "lattice_loss": 455,
+     "digest": "d23a9d72a2231561c0d497fb77ebbbc8f278c53500bd3c30ad44946ae722bce5",
+     "cpu_seconds": 376.2
+    },
+    {
+     "index": 4,
+     "family": "PEEL",
+     "word": [
+      [
+       12,
+       5
+      ]
+     ],
+     "n2_n4_n6": [
+      102738,
+      619,
+      0
+     ],
+     "Q": 619,
+     "Bk": 561,
+     "N": 134770,
+     "off": 103357,
+     "lattice_loss": 455,
+     "digest": "e4ec741d31602318065b0ae10a08cd39a5405cbd663a4b3e3c9bcde1727dd8ea",
+     "cpu_seconds": 438.3
+    },
+    {
+     "index": 5,
+     "family": "PEEL",
+     "word": [
+      [
+       274,
+       2
+      ]
+     ],
+     "n2_n4_n6": [
+      102738,
+      619,
+      0
+     ],
+     "Q": 619,
+     "Bk": 560,
+     "N": 134880,
+     "off": 103357,
+     "lattice_loss": 455,
+     "digest": "d61cd89ee3ef5982f4c7f16576a5cf22562628aac85d9cd2904e88cb965807cc",
+     "cpu_seconds": 698.6
+    },
+    {
+     "index": 6,
+     "family": "PEEL",
+     "word": [
+      [
+       277,
+       45
+      ]
+     ],
+     "n2_n4_n6": [
+      102862,
+      619,
+      0
+     ],
+     "Q": 619,
+     "Bk": 559,
+     "N": 134948,
+     "off": 103481,
+     "lattice_loss": 1355,
+     "digest": "14323d61ee0769b697b0bf238f37bf0d4ab6262cf92d412403dec41a9b6388dd",
+     "cpu_seconds": 1011.7
+    },
+    {
+     "index": 7,
+     "family": "CL2",
+     "word": [
+      [
+       171,
+       3
+      ],
+      [
+       39,
+       15
+      ]
+     ],
+     "n2_n4_n6": [
+      103651,
+      573,
+      0
+     ],
+     "Q": 573,
+     "Bk": 560,
+     "N": 135508,
+     "off": 104224,
+     "lattice_loss": 2402,
+     "digest": "16ae6c28117f129a147053e3c21fc078d06f4324267fd5d8f56ead8c4416f72b",
+     "cpu_seconds": 1313.3
+    },
+    {
+     "index": 8,
+     "family": "PEEL",
+     "word": [
+      [
+       171,
+       1
+      ]
+     ],
+     "n2_n4_n6": [
+      103651,
+      573,
+      0
+     ],
+     "Q": 573,
+     "Bk": 559,
+     "N": 135604,
+     "off": 104224,
+     "lattice_loss": 2402,
+     "digest": "c05dd18ee0c081ade13336fe4b450c1a886444d7754993b0abb0e04248bc1ec3",
+     "cpu_seconds": 1552.0
+    },
+    {
+     "index": 9,
+     "family": "PEEL",
+     "word": [
+      [
+       471,
+       2
+      ]
+     ],
+     "n2_n4_n6": [
+      103651,
+      573,
+      0
+     ],
+     "Q": 573,
+     "Bk": 558,
+     "N": 135644,
+     "off": 104224,
+     "lattice_loss": 2402,
+     "digest": "9366f1bd92b0be448558b49f0e7910381b95b55160c06d6c64635191e6416fb3",
+     "cpu_seconds": 1979.5
+    },
+    {
+     "index": 10,
+     "family": "CL2",
+     "word": [
+      [
+       482,
+       1
+      ],
+      [
+       262,
+       15
+      ]
+     ],
+     "n2_n4_n6": [
+      103968,
+      491,
+      0
+     ],
+     "Q": 491,
+     "Bk": 557,
+     "N": 135816,
+     "off": 104459,
+     "lattice_loss": 3086,
+     "digest": "8c79415c6a732e88006d7b9e85f99813c91d04f7a1d07f65618f692c412c2334",
+     "cpu_seconds": 2525.9
+    }
+   ],
+   "audit": {
+    "status": "complete",
+    "verification": "complete",
+    "passed": true,
+    "result": "STUCK",
+    "exhaustion_verification": "complete",
+    "cpu_seconds": 10312.6,
+    "segments": [
+     {
+      "segment": "audit-5fa3f1a30d3b41bbad100ed9fbbca520",
+      "status": "incomplete",
+      "manifest_sha256": "f78677ec6abc1b0be6a71cf7e8e61b845f33164927219f46ad25a29b1f2259fb"
+     },
+     {
+      "segment": "audit-28e73a27de4b426d89582e209bf91530",
+      "status": "incomplete",
+      "manifest_sha256": "3f4e347808575a1c6600c84b74b2653b35313de76a360aafce9242299b34863d"
+     },
+     {
+      "segment": "audit-96e9fb8ae528405aab067e23be69e06a",
+      "status": "incomplete",
+      "manifest_sha256": "47b6fc036226cfbc5c250c779cb6925c195fe4332942c7141bef62e333b479ca"
+     },
+     {
+      "segment": "audit-c0ea476b35fc48678682872e5fd06a1e",
+      "status": "complete",
+      "manifest_sha256": "acdb7ea49f0190477ff01f8d13e0bd055641c5a4e0d78fa6c81df847a441c1a3"
+     }
+    ]
+   }
+  },
+  "7303": {
+   "input": {
+    "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7303/run2/d2-s7303/tables/00138.json",
+    "sha256": "efa9fe65fbd5114e07458ee584fd5aba3f8ecbcf77376d72e8b540035fb79959",
+    "digest": "d01dc91edd1c73da399b8acb13a57b9f526da64a5d754993f42ae02856d51889",
+    "heights": {
+     "2": 99634,
+     "4": 929,
+     "6": 87
+    }
+   },
+   "search": {
+    "status": "STUCK",
+    "verification": "provisional",
+    "steps": 24,
+    "letters": 31,
+    "end_digest": "1f7300355a5dc137c3cc181854a18c54cb2601632218704d6480a211e3acdf14",
+    "cpu_seconds": 3520.1,
+    "segments": [
+     {
+      "segment": "search-bc984aec6caa4076ae6a75ba9b9f6f37",
+      "kind": "search",
+      "status": "BUDGET",
+      "manifest_sha256": "5849e1b5b541ced1890e4aa78a464298c9b18bed35ccb6b5f19e9ab87527c2b5"
+     },
+     {
+      "segment": "search-28711e3dbf4549e09fa337d9249510d2",
+      "kind": "search",
+      "status": "STUCK",
+      "manifest_sha256": "46ea0cfd678ddfeb0414a12fafd73a342846a1e9187970c24c7554bbdcc8520c"
+     }
+    ]
+   },
+   "steps": [
+    {
+     "index": 1,
+     "family": "PEEL",
+     "word": [
+      [
+       24,
+       1
+      ]
+     ],
+     "n2_n4_n6": [
+      99634,
+      929,
+      87
+     ],
+     "Q": 15410456,
+     "Bk": 573,
+     "N": 115850,
+     "off": 100650,
+     "lattice_loss": 0,
+     "digest": "fce65ca15b1129bc0bbe678e86c4e595d55b3e9f2f561b1f6aea7e3432b21fbb",
+     "cpu_seconds": 69.3
+    },
+    {
+     "index": 2,
+     "family": "CL2",
+     "word": [
+      [
+       24,
+       4
+      ],
+      [
+       69,
+       14
+      ]
+     ],
+     "n2_n4_n6": [
+      100543,
+      919,
+      87
+     ],
+     "Q": 15410446,
+     "Bk": 573,
+     "N": 116248,
+     "off": 101549,
+     "lattice_loss": 1154,
+     "digest": "4d71ac14c1f53404a4be36794cbb1156a35311928229bbd867f434905b59407d",
+     "cpu_seconds": 130.9
+    },
+    {
+     "index": 3,
+     "family": "CL2",
+     "word": [
+      [
+       69,
+       7
+      ],
+      [
+       223,
+       15
+      ]
+     ],
+     "n2_n4_n6": [
+      101093,
+      913,
+      87
+     ],
+     "Q": 15410440,
+     "Bk": 573,
+     "N": 116624,
+     "off": 102093,
+     "lattice_loss": 1868,
+     "digest": "229849f1c6f942c46ab88de87e21d21dc5a82e8e14a7abe36d8b238fb577427d",
+     "cpu_seconds": 198.9
+    },
+    {
+     "index": 4,
+     "family": "PEEL",
+     "word": [
+      [
+       69,
+       5
+      ]
+     ],
+     "n2_n4_n6": [
+      101093,
+      913,
+      87
+     ],
+     "Q": 15410440,
+     "Bk": 572,
+     "N": 116554,
+     "off": 102093,
+     "lattice_loss": 1868,
+     "digest": "83e0ab77486b76828f7680649b8ae049429989189520b892b24ff9829b588b11",
+     "cpu_seconds": 242.0
+    },
+    {
+     "index": 5,
+     "family": "CL2",
+     "word": [
+      [
+       95,
+       4
+      ],
+      [
+       140,
+       15
+      ]
+     ],
+     "n2_n4_n6": [
+      101523,
+      903,
+      87
+     ],
+     "Q": 15410430,
+     "Bk": 573,
+     "N": 117192,
+     "off": 102513,
+     "lattice_loss": 2810,
+     "digest": "9b508e40cf4c8df1b1173de6ea8b94fb36ca1c2a5da2dfdc39cf31baebd515fb",
+     "cpu_seconds": 325.9
+    },
+    {
+     "index": 6,
+     "family": "PEEL",
+     "word": [
+      [
+       140,
+       1
+      ]
+     ],
+     "n2_n4_n6": [
+      101523,
+      903,
+      87
+     ],
+     "Q": 15410430,
+     "Bk": 571,
+     "N": 117106,
+     "off": 102513,
+     "lattice_loss": 2810,
+     "digest": "96aaf1c469e54c1fcac118f4f37fb3339427dd620e65585ad63169bd2eca0e97",
+     "cpu_seconds": 392.0
+    },
+    {
+     "index": 7,
+     "family": "CL2",
+     "word": [
+      [
+       140,
+       6
+      ],
+      [
+       71,
+       12
+      ]
+     ],
+     "n2_n4_n6": [
+      101864,
+      884,
+      87
+     ],
+     "Q": 15410411,
+     "Bk": 573,
+     "N": 117536,
+     "off": 102835,
+     "lattice_loss": 3439,
+     "digest": "aae5363b7c7db1651b7ed1c1b39c2308b303c6a21f5bfe8228f7ead6107e9b61",
+     "cpu_seconds": 497.5
+    },
+    {
+     "index": 8,
+     "family": "PEEL",
+     "word": [
+      [
+       71,
+       10
+      ]
+     ],
+     "n2_n4_n6": [
+      101864,
+      884,
+      87
+     ],
+     "Q": 15410411,
+     "Bk": 572,
+     "N": 117478,
+     "off": 102835,
+     "lattice_loss": 3439,
+     "digest": "82263c22fc58edecbb8244b75a6ea6d2f4ca634b218962b36dd7e7d122bb6d88",
+     "cpu_seconds": 542.7
+    },
+    {
+     "index": 9,
+     "family": "PEEL",
+     "word": [
+      [
+       140,
+       1
+      ]
+     ],
+     "n2_n4_n6": [
+      101864,
+      884,
+      87
+     ],
+     "Q": 15410411,
+     "Bk": 571,
+     "N": 117430,
+     "off": 102835,
+     "lattice_loss": 3439,
+     "digest": "eabc735e26bd573baa9e6d9ce25718eefc5b9f07c4e73423009f10a214090c44",
+     "cpu_seconds": 610.5
+    },
+    {
+     "index": 10,
+     "family": "PEEL",
+     "word": [
+      [
+       150,
+       1
+      ]
+     ],
+     "n2_n4_n6": [
+      101864,
+      884,
+      87
+     ],
+     "Q": 15410411,
+     "Bk": 570,
+     "N": 117526,
+     "off": 102835,
+     "lattice_loss": 3439,
+     "digest": "6c9799f084301b41577a70dc29400c081f8ddfec7bd2954883c49b705c5f33b9",
+     "cpu_seconds": 699.2
+    },
+    {
+     "index": 11,
+     "family": "PEEL",
+     "word": [
+      [
+       245,
+       2
+      ]
+     ],
+     "n2_n4_n6": [
+      101864,
+      884,
+      87
+     ],
+     "Q": 15410411,
+     "Bk": 569,
+     "N": 117610,
+     "off": 102835,
+     "lattice_loss": 3439,
+     "digest": "26a59642ee7b0ceb6214879b9a435ece3ded7638e034b6369309ec40816e4c74",
+     "cpu_seconds": 830.7
+    },
+    {
+     "index": 12,
+     "family": "PEEL",
+     "word": [
+      [
+       357,
+       6
+      ]
+     ],
+     "n2_n4_n6": [
+      101864,
+      884,
+      87
+     ],
+     "Q": 15410411,
+     "Bk": 568,
+     "N": 117782,
+     "off": 102835,
+     "lattice_loss": 3439,
+     "digest": "3b6a07ba8348cc04448ea08dd8df48c6a792495b7c5ab53275b6b10c493d3143",
+     "cpu_seconds": 991.8
+    },
+    {
+     "index": 13,
+     "family": "CL2",
+     "word": [
+      [
+       364,
+       3
+      ],
+      [
+       140,
+       13
+      ]
+     ],
+     "n2_n4_n6": [
+      101468,
+      802,
+      87
+     ],
+     "Q": 15410329,
+     "Bk": 569,
+     "N": 117902,
+     "off": 102357,
+     "lattice_loss": 2843,
+     "digest": "15e310f648be9cd405fbfcde993253a0caa76ff6e08128e010923ad8d34ce7aa",
+     "cpu_seconds": 1194.2
+    },
+    {
+     "index": 14,
+     "family": "CL2",
+     "word": [
+      [
+       71,
+       1
+      ],
+      [
+       140,
+       14
+      ]
+     ],
+     "n2_n4_n6": [
+      101948,
+      773,
+      87
+     ],
+     "Q": 15410300,
+     "Bk": 570,
+     "N": 118002,
+     "off": 102808,
+     "lattice_loss": 3637,
+     "digest": "a5e0e5e38b79125f4ab8d69dd93f010ea57c0cff43a529430925599357fb9652",
+     "cpu_seconds": 1279.5
+    },
+    {
+     "index": 15,
+     "family": "PEEL",
+     "word": [
+      [
+       71,
+       3
+      ]
+     ],
+     "n2_n4_n6": [
+      101948,
+      773,
+      87
+     ],
+     "Q": 15410300,
+     "Bk": 569,
+     "N": 118104,
+     "off": 102808,
+     "lattice_loss": 3637,
+     "digest": "e6e2aaa34a341e347167c92edb5cd1e1cbe9926c8e8911b5142393b3b862046b",
+     "cpu_seconds": 1328.2
+    },
+    {
+     "index": 16,
+     "family": "CL2",
+     "word": [
+      [
+       364,
+       1
+      ],
+      [
+       282,
+       13
+      ]
+     ],
+     "n2_n4_n6": [
+      102443,
+      623,
+      87
+     ],
+     "Q": 15410150,
+     "Bk": 569,
+     "N": 118664,
+     "off": 103153,
+     "lattice_loss": 4539,
+     "digest": "e67629d1a4ed13ff3020a355f97fa3ee3fba5e6f2dc15073f9227522d9da8932",
+     "cpu_seconds": 1532.8
+    },
+    {
+     "index": 17,
+     "family": "SINGLE",
+     "word": [
+      [
+       236,
+       12
+      ]
+     ],
+     "n2_n4_n6": [
+      102550,
+      710,
+      0
+     ],
+     "Q": 710,
+     "Bk": 569,
+     "N": 118926,
+     "off": 103260,
+     "lattice_loss": 5265,
+     "digest": "a6581da1ba361bf02078e07f7ee848627e9063df7c278ae024c191605dc6bf16",
+     "cpu_seconds": 1565.1
+    },
+    {
+     "index": 18,
+     "family": "PEEL",
+     "word": [
+      [
+       236,
+       3
+      ]
+     ],
+     "n2_n4_n6": [
+      102550,
+      710,
+      0
+     ],
+     "Q": 710,
+     "Bk": 568,
+     "N": 118882,
+     "off": 103260,
+     "lattice_loss": 5265,
+     "digest": "10be78747d530177b1943a123c5cd334363e9a851e51d170e45dff5ed05d06f4",
+     "cpu_seconds": 1693.0
+    },
+    {
+     "index": 19,
+     "family": "PEEL",
+     "word": [
+      [
+       63,
+       4
+      ]
+     ],
+     "n2_n4_n6": [
+      102550,
+      710,
+      0
+     ],
+     "Q": 710,
+     "Bk": 567,
+     "N": 118920,
+     "off": 103260,
+     "lattice_loss": 5265,
+     "digest": "504b039e517b646ea2b267bd182d2a196362df7bf54f5a07c1e9105e9a864fa1",
+     "cpu_seconds": 1733.5
+    },
+    {
+     "index": 20,
+     "family": "PEEL",
+     "word": [
+      [
+       282,
+       1
+      ]
+     ],
+     "n2_n4_n6": [
+      102550,
+      710,
+      0
+     ],
+     "Q": 710,
+     "Bk": 566,
+     "N": 119020,
+     "off": 103260,
+     "lattice_loss": 5265,
+     "digest": "107f19f1fdd1d276102a1bf3f27a7b823041013961eb3fef49e73f3e9f1cc518",
+     "cpu_seconds": 1885.9
+    },
+    {
+     "index": 21,
+     "family": "PEEL",
+     "word": [
+      [
+       282,
+       4
+      ]
+     ],
+     "n2_n4_n6": [
+      102550,
+      710,
+      0
+     ],
+     "Q": 710,
+     "Bk": 565,
+     "N": 119092,
+     "off": 103260,
+     "lattice_loss": 5265,
+     "digest": "a0e0bae7b34520f4ff64f7a8e689f10ad3bf84817d11ed3bfbaba623fb603138",
+     "cpu_seconds": 2052.1
+    },
+    {
+     "index": 22,
+     "family": "PEEL",
+     "word": [
+      [
+       461,
+       4
+      ]
+     ],
+     "n2_n4_n6": [
+      102550,
+      710,
+      0
+     ],
+     "Q": 710,
+     "Bk": 564,
+     "N": 119102,
+     "off": 103260,
+     "lattice_loss": 5265,
+     "digest": "1b7382a2eb8d2212c523b29b7b0f3a8a8599a6fd3e787011acb2db01eeba5bb4",
+     "cpu_seconds": 2325.4
+    },
+    {
+     "index": 23,
+     "family": "PEEL",
+     "word": [
+      [
+       543,
+       10
+      ]
+     ],
+     "n2_n4_n6": [
+      102550,
+      710,
+      0
+     ],
+     "Q": 710,
+     "Bk": 563,
+     "N": 119206,
+     "off": 103260,
+     "lattice_loss": 5265,
+     "digest": "56212aa45fc422be09fbb706d1b86e82167ff2900c25befbbf17dd297a2f03f7",
+     "cpu_seconds": 2636.5
+    },
+    {
+     "index": 24,
+     "family": "PEEL",
+     "word": [
+      [
+       562,
+       5
+      ]
+     ],
+     "n2_n4_n6": [
+      102550,
+      710,
+      0
+     ],
+     "Q": 710,
+     "Bk": 562,
+     "N": 119290,
+     "off": 103260,
+     "lattice_loss": 5265,
+     "digest": "1f7300355a5dc137c3cc181854a18c54cb2601632218704d6480a211e3acdf14",
+     "cpu_seconds": 2952.0
+    }
+   ],
+   "audit": {
+    "status": "complete",
+    "verification": "complete",
+    "passed": true,
+    "result": "STUCK",
+    "exhaustion_verification": "complete",
+    "cpu_seconds": 5832.3,
+    "segments": [
+     {
+      "segment": "audit-65f15807578a4a238fa03adbad8ba7d0",
+      "status": "incomplete",
+      "manifest_sha256": "70509e2e61f6082de15bd8b1fb1b92cc4797105309a141014694bc1d84f8d425"
+     },
+     {
+      "segment": "audit-288f532c7b104451927f57cbd928594f",
+      "status": "complete",
+      "manifest_sha256": "d68e91db3159741a0a9762cca292b778de6bdb09a311bb974d7c95f88c77a7d2"
+     }
+    ]
+   }
+  },
+  "7304": {
+   "input": {
+    "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7304/component/tables/00005.json",
+    "sha256": "021151122328b1c604bdea9a747e9fffc2a0b54cab2d811c0975e5a0f686454a",
+    "digest": "ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980",
+    "heights": {
+     "2": 95674,
+     "4": 797
+    }
+   },
+   "search": {
+    "status": "STUCK",
+    "verification": "provisional",
+    "steps": 8,
+    "letters": 8,
+    "end_digest": "1babf819ddb1fe8eb9315aea5b1ef1cf47dff7f89bd7fc86e5168271c15979fb",
+    "cpu_seconds": 5057.9,
+    "segments": [
+     {
+      "segment": "diagnostics-597d234b9c9946e6a0db2c5aea4c0466",
+      "kind": "diagnostics",
+      "status": "DIAGNOSTICS",
+      "manifest_sha256": "9994326d96599c05ba4f096471cba5596b91fdedeef1d93a95dedee79e6d2623"
+     },
+     {
+      "segment": "search-19fec46d1c5747569d6ed56a6d7c3078",
+      "kind": "search",
+      "status": "STUCK",
+      "manifest_sha256": "491e3f23f113056e8b7fdc4b728e0074e569604a26115e7527a9be5e1bf4959b"
+     }
+    ]
+   },
+   "steps": [
+    {
+     "index": 1,
+     "family": "PEEL",
+     "word": [
+      [
+       23,
+       1
+      ]
+     ],
+     "n2_n4_n6": [
+      95674,
+      797,
+      0
+     ],
+     "Q": 797,
+     "Bk": 558,
+     "N": 117796,
+     "off": 96471,
+     "lattice_loss": 0,
+     "digest": "b7e8e123317f45fa93a2f189ab88f097d51b15acc47a74b384807bf11247410b",
+     "cpu_seconds": 89.7
+    },
+    {
+     "index": 2,
+     "family": "PEEL",
+     "word": [
+      [
+       23,
+       2
+      ]
+     ],
+     "n2_n4_n6": [
+      95674,
+      797,
+      0
+     ],
+     "Q": 797,
+     "Bk": 557,
+     "N": 117832,
+     "off": 96471,
+     "lattice_loss": 0,
+     "digest": "d5ec1d4b20c9579e335d181088d3963195983ab2ee55a10934c30d40ea38c3ed",
+     "cpu_seconds": 141.1
+    },
+    {
+     "index": 3,
+     "family": "PEEL",
+     "word": [
+      [
+       23,
+       8
+      ]
+     ],
+     "n2_n4_n6": [
+      95674,
+      797,
+      0
+     ],
+     "Q": 797,
+     "Bk": 556,
+     "N": 117956,
+     "off": 96471,
+     "lattice_loss": 0,
+     "digest": "1143e3ff9466dea3aa6fc41c384c7af5f353f775d193687d2524fab4fb3594b6",
+     "cpu_seconds": 193.7
+    },
+    {
+     "index": 4,
+     "family": "PEEL",
+     "word": [
+      [
+       177,
+       35
+      ]
+     ],
+     "n2_n4_n6": [
+      96490,
+      797,
+      0
+     ],
+     "Q": 797,
+     "Bk": 555,
+     "N": 118308,
+     "off": 97287,
+     "lattice_loss": 1472,
+     "digest": "a475e22e4682bb8d9eafbe042a4659a4c0592db94049b469319ec45bf826fc3f",
+     "cpu_seconds": 365.1
+    },
+    {
+     "index": 5,
+     "family": "PEEL",
+     "word": [
+      [
+       384,
+       7
+      ]
+     ],
+     "n2_n4_n6": [
+      96490,
+      797,
+      0
+     ],
+     "Q": 797,
+     "Bk": 554,
+     "N": 118456,
+     "off": 97287,
+     "lattice_loss": 1472,
+     "digest": "a2436ee693835377b8df726851dd3623377ee9cc0e4ab2efc0f59920cd532ed9",
+     "cpu_seconds": 731.1
+    },
+    {
+     "index": 6,
+     "family": "PEEL",
+     "word": [
+      [
+       402,
+       7
+      ]
+     ],
+     "n2_n4_n6": [
+      96490,
+      797,
+      0
+     ],
+     "Q": 797,
+     "Bk": 553,
+     "N": 118408,
+     "off": 97287,
+     "lattice_loss": 1472,
+     "digest": "e645924b4473bb7d53c497b2b3c086362e4534a645ea0781e75faf3b3becd001",
+     "cpu_seconds": 1154.0
+    },
+    {
+     "index": 7,
+     "family": "PEEL",
+     "word": [
+      [
+       540,
+       1
+      ]
+     ],
+     "n2_n4_n6": [
+      96490,
+      797,
+      0
+     ],
+     "Q": 797,
+     "Bk": 552,
+     "N": 118590,
+     "off": 97287,
+     "lattice_loss": 1472,
+     "digest": "6731860407c85b2df543918f4870097f73a4c72d5fa3922edfb0ac7048c6ac57",
+     "cpu_seconds": 1732.3
+    },
+    {
+     "index": 8,
+     "family": "PEEL",
+     "word": [
+      [
+       540,
+       10
+      ]
+     ],
+     "n2_n4_n6": [
+      96490,
+      797,
+      0
+     ],
+     "Q": 797,
+     "Bk": 551,
+     "N": 118480,
+     "off": 97287,
+     "lattice_loss": 1472,
+     "digest": "1babf819ddb1fe8eb9315aea5b1ef1cf47dff7f89bd7fc86e5168271c15979fb",
+     "cpu_seconds": 2337.3
+    }
+   ],
+   "audit": {
+    "status": "complete",
+    "verification": "complete",
+    "passed": true,
+    "result": "STUCK",
+    "exhaustion_verification": "complete",
+    "cpu_seconds": 11209.2,
+    "segments": [
+     {
+      "segment": "audit-2adf3737c2224746b0bc2d360fca0fd9",
+      "status": "incomplete",
+      "manifest_sha256": "081bf2e5fb574735e8715d7a6f26766bff0c4dd2defaf3842829a1824f464cc1"
+     },
+     {
+      "segment": "audit-320e414765364c838fd2a03c962855dd",
+      "status": "incomplete",
+      "manifest_sha256": "9b3a22b6be09c2615b4656f721e610932bcf877158bcd6cd5f5e05f1a61ec995"
+     },
+     {
+      "segment": "audit-1958e0df9ada4e26b521ac082e639a0a",
+      "status": "incomplete",
+      "manifest_sha256": "f994e4e9c5d6e4b66c949389dca80d0cdebc1058814bf40059b2ac2ed85f5ba6"
+     },
+     {
+      "segment": "audit-e794d057611d453a8c214d2fabcc8ce6",
+      "status": "complete",
+      "manifest_sha256": "dc403bc693231d0d0b126a249d4de875bd63d684df492f33c26462cdab85d9f8"
+     }
+    ]
+   }
+  },
+  "7305": {
+   "input": {
+    "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7305/component/tables/00010.json",
+    "sha256": "f285ff06040a9e378d9475d9cabf7699ff94571f7fe78b8acd9685967c55f458",
+    "digest": "cc5ef7ecf0510ea9a74fc52bafe324d6d8f58294c4b0e20b40b97b414dada062",
+    "heights": {
+     "2": 108453,
+     "4": 1419
+    }
+   },
+   "search": {
+    "status": "STUCK",
+    "verification": "provisional",
+    "steps": 49,
+    "letters": 67,
+    "end_digest": "55323d24e5e70d3b4c3da3e62294072c3677415389a24b738d0736924566039e",
+    "cpu_seconds": 10976.8,
+    "segments": [
+     {
+      "segment": "search-3df9f6aa46074189b4386a52357d0c1b",
+      "kind": "search",
+      "status": "BUDGET",
+      "manifest_sha256": "ea7db818e15ad5c57d6737f338ced3faa6f6be2b38dd979c1e3e3cb1375a3b21"
+     },
+     {
+      "segment": "search-b58b2cb1223748a4bfeb871b2ec2cb4e",
+      "kind": "search",
+      "status": "BUDGET",
+      "manifest_sha256": "de25eb59ed1ff466d86918472f1230b6485884eefcd7b4b71915318919d98b7f"
+     },
+     {
+      "segment": "search-d7cac743ae484187a64aedfd4487c3b0",
+      "kind": "search",
+      "status": "BUDGET",
+      "manifest_sha256": "08dde3f00cfc6182202bb8f3991e500c6834d0abee3df81fa0137ba1b7e149f6"
+     },
+     {
+      "segment": "search-69bb4bb4eeab4f6baecfbed43b4b7049",
+      "kind": "search",
+      "status": "STUCK",
+      "manifest_sha256": "c4e8b08648214a8fdcec791b64f59a399319f1a914c1ee14cbee369e5d3504a6"
+     }
+    ]
+   },
+   "steps": [
+    {
+     "index": 1,
+     "family": "CL2",
+     "word": [
+      [
+       6,
+       32
+      ],
+      [
+       44,
+       15
+      ]
+     ],
+     "n2_n4_n6": [
+      108655,
+      1410,
+      0
+     ],
+     "Q": 1410,
+     "Bk": 576,
+     "N": 134428,
+     "off": 110065,
+     "lattice_loss": 1164,
+     "digest": "f18a0cf2c435c4579e4dcf0806c062c463ee638f1600608e7e8286d8fd5e0918",
+     "cpu_seconds": 98.9
+    },
+    {
+     "index": 2,
+     "family": "SINGLE",
+     "word": [
+      [
+       208,
+       13
+      ]
+     ],
+     "n2_n4_n6": [
+      107655,
+      1394,
+      0
+     ],
+     "Q": 1394,
+     "Bk": 575,
+     "N": 134074,
+     "off": 109049,
+     "lattice_loss": 1232,
+     "digest": "54c842913e49b100295a3e928ca6bba36cedb71c692da9f9461cf8422d43f001",
+     "cpu_seconds": 131.3
+    },
+    {
+     "index": 3,
+     "family": "CL2",
+     "word": [
+      [
+       44,
+       10
+      ],
+      [
+       31,
+       13
+      ]
+     ],
+     "n2_n4_n6": [
+      107258,
+      1372,
+      0
+     ],
+     "Q": 1372,
+     "Bk": 576,
+     "N": 134018,
+     "off": 108630,
+     "lattice_loss": 1541,
+     "digest": "5085754f4381784c76b330957aa079f5ecac7da274298bbf4d58c366212a786e",
+     "cpu_seconds": 210.9
+    },
+    {
+     "index": 4,
+     "family": "PEEL",
+     "word": [
+      [
+       44,
+       4
+      ]
+     ],
+     "n2_n4_n6": [
+      107258,
+      1372,
+      0
+     ],
+     "Q": 1372,
+     "Bk": 575,
+     "N": 133936,
+     "off": 108630,
+     "lattice_loss": 1541,
+     "digest": "71355152ef863db0ab9a9c8499b9acb670f496624acda0368405ec1e142ff7b8",
+     "cpu_seconds": 258.6
+    },
+    {
+     "index": 5,
+     "family": "PEEL",
+     "word": [
+      [
+       122,
+       1
+      ]
+     ],
+     "n2_n4_n6": [
+      107258,
+      1372,
+      0
+     ],
+     "Q": 1372,
+     "Bk": 574,
+     "N": 133892,
+     "off": 108630,
+     "lattice_loss": 1541,
+     "digest": "e42f0d4a45da450a9927034e61fdb5e41d29ac2346ae651baeed6c47cf94adf5",
+     "cpu_seconds": 322.5
+    },
+    {
+     "index": 6,
+     "family": "PEEL",
+     "word": [
+      [
+       122,
+       3
+      ]
+     ],
+     "n2_n4_n6": [
+      107258,
+      1372,
+      0
+     ],
+     "Q": 1372,
+     "Bk": 573,
+     "N": 133986,
+     "off": 108630,
+     "lattice_loss": 1541,
+     "digest": "353a23782ec1795826162e1d94b07bc3bf3046bbda314bc6f14ac62a22309a9b",
+     "cpu_seconds": 396.4
+    },
+    {
+     "index": 7,
+     "family": "CL2",
+     "word": [
+      [
+       67,
+       7
+      ],
+      [
+       113,
+       13
+      ]
+     ],
+     "n2_n4_n6": [
+      108240,
+      1327,
+      0
+     ],
+     "Q": 1327,
+     "Bk": 575,
+     "N": 134428,
+     "off": 109567,
+     "lattice_loss": 2568,
+     "digest": "f9c200d912f3d037797b125dfbc1ec18a61bff468aaa60b7c2e484fec63352e5",
+     "cpu_seconds": 485.2
+    },
+    {
+     "index": 8,
+     "family": "CL2",
+     "word": [
+      [
+       67,
+       1
+      ],
+      [
+       113,
+       14
+      ]
+     ],
+     "n2_n4_n6": [
+      107373,
+      1317,
+      0
+     ],
+     "Q": 1317,
+     "Bk": 575,
+     "N": 134164,
+     "off": 108690,
+     "lattice_loss": 1720,
+     "digest": "8c792663b1bd91c944321476e46e74e32431e83b448e3feca7952c71f0bd2739",
+     "cpu_seconds": 571.9
+    },
+    {
+     "index": 9,
+     "family": "PEEL",
+     "word": [
+      [
+       67,
+       9
+      ]
+     ],
+     "n2_n4_n6": [
+      107373,
+      1317,
+      0
+     ],
+     "Q": 1317,
+     "Bk": 574,
+     "N": 134230,
+     "off": 108690,
+     "lattice_loss": 1720,
+     "digest": "9ed23aacb60ea89e8c7cea3c808e819fae4d8a01f5ba35a079d2263985476c54",
+     "cpu_seconds": 627.6
+    },
+    {
+     "index": 10,
+     "family": "PEEL",
+     "word": [
+      [
+       113,
+       2
+      ]
+     ],
+     "n2_n4_n6": [
+      107373,
+      1317,
+      0
+     ],
+     "Q": 1317,
+     "Bk": 573,
+     "N": 134258,
+     "off": 108690,
+     "lattice_loss": 1720,
+     "digest": "57cffcdac5d8a968cb3ac9a465af18485b9901dc8c03af5e44f3a5336085ab77",
+     "cpu_seconds": 705.6
+    },
+    {
+     "index": 11,
+     "family": "PEEL",
+     "word": [
+      [
+       134,
+       1
+      ]
+     ],
+     "n2_n4_n6": [
+      107373,
+      1317,
+      0
+     ],
+     "Q": 1317,
+     "Bk": 572,
+     "N": 134214,
+     "off": 108690,
+     "lattice_loss": 1720,
+     "digest": "b31e90c43a6e915697010dfb26372a7792efbc09d5f43db9e86d2542aa1d8146",
+     "cpu_seconds": 815.6
+    },
+    {
+     "index": 12,
+     "family": "CL2",
+     "word": [
+      [
+       47,
+       1
+      ],
+      [
+       177,
+       12
+      ]
+     ],
+     "n2_n4_n6": [
+      108033,
+      1260,
+      0
+     ],
+     "Q": 1260,
+     "Bk": 571,
+     "N": 134752,
+     "off": 109293,
+     "lattice_loss": 2751,
+     "digest": "b45b715d97c15863a31846f4c7fb6eb6b5cf60cf209a3df60f35ed2b0ad3e777",
+     "cpu_seconds": 913.6
+    },
+    {
+     "index": 13,
+     "family": "PEEL",
+     "word": [
+      [
+       175,
+       4
+      ]
+     ],
+     "n2_n4_n6": [
+      108033,
+      1260,
+      0
+     ],
+     "Q": 1260,
+     "Bk": 570,
+     "N": 134736,
+     "off": 109293,
+     "lattice_loss": 2751,
+     "digest": "18c89b9fdc092163014faaf0d57c5316844316bd97196d40c4e37249ce73ec3f",
+     "cpu_seconds": 1052.5
+    },
+    {
+     "index": 14,
+     "family": "PEEL",
+     "word": [
+      [
+       175,
+       10
+      ]
+     ],
+     "n2_n4_n6": [
+      108033,
+      1260,
+      0
+     ],
+     "Q": 1260,
+     "Bk": 569,
+     "N": 134892,
+     "off": 109293,
+     "lattice_loss": 2751,
+     "digest": "90b1d8e11f22ded5c2cbdc1ebf451fabc56e1f42c93dbf51ce1388ba25f4c512",
+     "cpu_seconds": 1197.5
+    },
+    {
+     "index": 15,
+     "family": "PEEL",
+     "word": [
+      [
+       177,
+       1
+      ]
+     ],
+     "n2_n4_n6": [
+      108033,
+      1260,
+      0
+     ],
+     "Q": 1260,
+     "Bk": 568,
+     "N": 134888,
+     "off": 109293,
+     "lattice_loss": 2751,
+     "digest": "d6a6f27094921aa4aaea39891d741ab0bfc4021c79c61d8f188decc4a8d61ea1",
+     "cpu_seconds": 1351.0
+    },
+    {
+     "index": 16,
+     "family": "PEEL",
+     "word": [
+      [
+       204,
+       8
+      ]
+     ],
+     "n2_n4_n6": [
+      108033,
+      1260,
+      0
+     ],
+     "Q": 1260,
+     "Bk": 567,
+     "N": 134916,
+     "off": 109293,
+     "lattice_loss": 2751,
+     "digest": "7a83ca646797c9ab38805cd1df77497f7038c970ee9e97d86ecca7b84d6a6317",
+     "cpu_seconds": 1522.9
+    },
+    {
+     "index": 17,
+     "family": "CL2",
+     "word": [
+      [
+       226,
+       2
+      ],
+      [
+       175,
+       12
+      ]
+     ],
+     "n2_n4_n6": [
+      108006,
+      1257,
+      0
+     ],
+     "Q": 1257,
+     "Bk": 569,
+     "N": 135026,
+     "off": 109263,
+     "lattice_loss": 3196,
+     "digest": "7f3bfcda34a8c81ebc5958376f055d871089c0851b42af95e023add8a833523c",
+     "cpu_seconds": 1745.5
+    },
+    {
+     "index": 18,
+     "family": "PEEL",
+     "word": [
+      [
+       175,
+       1
+      ]
+     ],
+     "n2_n4_n6": [
+      108006,
+      1257,
+      0
+     ],
+     "Q": 1257,
+     "Bk": 568,
+     "N": 134942,
+     "off": 109263,
+     "lattice_loss": 3196,
+     "digest": "af7b1fe69a7aac9dd4032224f8c13f0e7568ceb002d3f6b65762b81b421284ed",
+     "cpu_seconds": 1886.8
+    },
+    {
+     "index": 19,
+     "family": "CL2",
+     "word": [
+      [
+       233,
+       9
+      ],
+      [
+       281,
+       12
+      ]
+     ],
+     "n2_n4_n6": [
+      107571,
+      1233,
+      0
+     ],
+     "Q": 1233,
+     "Bk": 569,
+     "N": 134902,
+     "off": 108804,
+     "lattice_loss": 3506,
+     "digest": "06464d681fef2d490a7e7f7406c6569b2829fba02333719e4015afc97faa3e3a",
+     "cpu_seconds": 2110.1
+    },
+    {
+     "index": 20,
+     "family": "SINGLE",
+     "word": [
+      [
+       168,
+       15
+      ]
+     ],
+     "n2_n4_n6": [
+      108013,
+      1230,
+      0
+     ],
+     "Q": 1230,
+     "Bk": 569,
+     "N": 135224,
+     "off": 109243,
+     "lattice_loss": 4608,
+     "digest": "07c780e407f40f2a760df09fd68b670573969734d39aeab327082e6eb8770440",
+     "cpu_seconds": 2147.6
+    },
+    {
+     "index": 21,
+     "family": "PEEL",
+     "word": [
+      [
+       10,
+       6
+      ]
+     ],
+     "n2_n4_n6": [
+      108013,
+      1230,
+      0
+     ],
+     "Q": 1230,
+     "Bk": 568,
+     "N": 135274,
+     "off": 109243,
+     "lattice_loss": 4608,
+     "digest": "7c97e112ad85387927bf976d226823e62d978000433107f40714d777cb34efe7",
+     "cpu_seconds": 2187.9
+    },
+    {
+     "index": 22,
+     "family": "CL2",
+     "word": [
+      [
+       102,
+       2
+      ],
+      [
+       10,
+       14
+      ]
+     ],
+     "n2_n4_n6": [
+      107751,
+      1218,
+      0
+     ],
+     "Q": 1218,
+     "Bk": 569,
+     "N": 135148,
+     "off": 108969,
+     "lattice_loss": 4888,
+     "digest": "2631d8e2b304ff7a9094ef2ec004c6276af0ad362c28c7bc8c81abacb6785e24",
+     "cpu_seconds": 2339.2
+    },
+    {
+     "index": 23,
+     "family": "SINGLE",
+     "word": [
+      [
+       168,
+       13
+      ]
+     ],
+     "n2_n4_n6": [
+      108372,
+      1211,
+      0
+     ],
+     "Q": 1211,
+     "Bk": 569,
+     "N": 135374,
+     "off": 109583,
+     "lattice_loss": 4888,
+     "digest": "c86b9299b7f353c0cf76aab1c87b409e0cc7dfdaebdbe53badd1c2cd46bd5a62",
+     "cpu_seconds": 2377.0
+    },
+    {
+     "index": 24,
+     "family": "CL2",
+     "word": [
+      [
+       134,
+       4
+      ],
+      [
+       31,
+       15
+      ]
+     ],
+     "n2_n4_n6": [
+      108414,
+      1208,
+      0
+     ],
+     "Q": 1208,
+     "Bk": 569,
+     "N": 135554,
+     "off": 109622,
+     "lattice_loss": 4888,
+     "digest": "5e695793913fb1e2f87a86d475a74f871a3dcce9d538f7e32e9fdef53a33a55e",
+     "cpu_seconds": 2544.9
+    },
+    {
+     "index": 25,
+     "family": "PEEL",
+     "word": [
+      [
+       281,
+       4
+      ]
+     ],
+     "n2_n4_n6": [
+      108414,
+      1208,
+      0
+     ],
+     "Q": 1208,
+     "Bk": 568,
+     "N": 135600,
+     "off": 109622,
+     "lattice_loss": 4888,
+     "digest": "f0aeab4a4d27bb9215f6c12f72b7c523d6e2074a5338e369957b9122b303ca29",
+     "cpu_seconds": 2756.1
+    },
+    {
+     "index": 26,
+     "family": "CL2",
+     "word": [
+      [
+       168,
+       1
+      ],
+      [
+       281,
+       12
+      ]
+     ],
+     "n2_n4_n6": [
+      107999,
+      1203,
+      0
+     ],
+     "Q": 1203,
+     "Bk": 569,
+     "N": 135382,
+     "off": 109202,
+     "lattice_loss": 4914,
+     "digest": "9a7de4768264d315e8eb4b1139dbc888ca3098061d41fda194c228020d0073d4",
+     "cpu_seconds": 2934.7
+    },
+    {
+     "index": 27,
+     "family": "CL2",
+     "word": [
+      [
+       94,
+       1
+      ],
+      [
+       31,
+       12
+      ]
+     ],
+     "n2_n4_n6": [
+      107896,
+      1193,
+      0
+     ],
+     "Q": 1193,
+     "Bk": 569,
+     "N": 135444,
+     "off": 109089,
+     "lattice_loss": 4527,
+     "digest": "9cd489c3a13744989d066feb952476127d08c29d4be3dc72fd0381d88256262a",
+     "cpu_seconds": 310.3
+    },
+    {
+     "index": 28,
+     "family": "PEEL",
+     "word": [
+      [
+       281,
+       4
+      ]
+     ],
+     "n2_n4_n6": [
+      107896,
+      1193,
+      0
+     ],
+     "Q": 1193,
+     "Bk": 568,
+     "N": 135436,
+     "off": 109089,
+     "lattice_loss": 4527,
+     "digest": "e7604371f1ea144ab829b05a07f3f32955b7e1ee443d8a99a670ea113d96cbd5",
+     "cpu_seconds": 490.0
+    },
+    {
+     "index": 29,
+     "family": "PEEL",
+     "word": [
+      [
+       368,
+       1
+      ]
+     ],
+     "n2_n4_n6": [
+      107896,
+      1193,
+      0
+     ],
+     "Q": 1193,
+     "Bk": 567,
+     "N": 135534,
+     "off": 109089,
+     "lattice_loss": 4527,
+     "digest": "9b5789d931e7f8ee6b7dccfe7d5ab4d2e3d03ac7089c09276943b9314eae98c6",
+     "cpu_seconds": 701.8
+    },
+    {
+     "index": 30,
+     "family": "PEEL",
+     "word": [
+      [
+       421,
+       1
+      ]
+     ],
+     "n2_n4_n6": [
+      107896,
+      1193,
+      0
+     ],
+     "Q": 1193,
+     "Bk": 566,
+     "N": 135520,
+     "off": 109089,
+     "lattice_loss": 4527,
+     "digest": "f6bb1d71969620f6b8ece284fa4164c16ed0cdc7a4c023ee5f286e4957a6ef39",
+     "cpu_seconds": 943.4
+    },
+    {
+     "index": 31,
+     "family": "PEEL",
+     "word": [
+      [
+       421,
+       9
+      ]
+     ],
+     "n2_n4_n6": [
+      107896,
+      1193,
+      0
+     ],
+     "Q": 1193,
+     "Bk": 565,
+     "N": 135532,
+     "off": 109089,
+     "lattice_loss": 4527,
+     "digest": "7cdbd6c36ffbf80535ea04cec8e4ebded77d0cb5155b0970ef89f9b6e349f9d8",
+     "cpu_seconds": 1184.8
+    },
+    {
+     "index": 32,
+     "family": "PEEL",
+     "word": [
+      [
+       499,
+       9
+      ]
+     ],
+     "n2_n4_n6": [
+      107896,
+      1193,
+      0
+     ],
+     "Q": 1193,
+     "Bk": 564,
+     "N": 135614,
+     "off": 109089,
+     "lattice_loss": 4527,
+     "digest": "ecb650219a4d95a6ce2e0430b3e788f9c938d34f1a64a63bd44aa49cea136a72",
+     "cpu_seconds": 1457.1
+    },
+    {
+     "index": 33,
+     "family": "PEEL",
+     "word": [
+      [
+       552,
+       1
+      ]
+     ],
+     "n2_n4_n6": [
+      107896,
+      1193,
+      0
+     ],
+     "Q": 1193,
+     "Bk": 563,
+     "N": 135658,
+     "off": 109089,
+     "lattice_loss": 4527,
+     "digest": "97ef6934e70bda9ba54afb2b907ad7ff424f1a7adc04904ce03f3b5e78e136da",
+     "cpu_seconds": 1779.3
+    },
+    {
+     "index": 34,
+     "family": "CL2",
+     "word": [
+      [
+       574,
+       2
+      ],
+      [
+       499,
+       12
+      ]
+     ],
+     "n2_n4_n6": [
+      108239,
+      1128,
+      0
+     ],
+     "Q": 1128,
+     "Bk": 564,
+     "N": 136002,
+     "off": 109367,
+     "lattice_loss": 5328,
+     "digest": "dbb0a73a4b0b628003967aa413706c7d9df2f5f745c0e796b2ec479e5c41a983",
+     "cpu_seconds": 2167.1
+    },
+    {
+     "index": 35,
+     "family": "PEEL",
+     "word": [
+      [
+       499,
+       2
+      ]
+     ],
+     "n2_n4_n6": [
+      108239,
+      1128,
+      0
+     ],
+     "Q": 1128,
+     "Bk": 563,
+     "N": 136014,
+     "off": 109367,
+     "lattice_loss": 5328,
+     "digest": "ff7d12b32b68cf61ed20cf35bc02d5daadd331b396d66b63b9348df552737b9f",
+     "cpu_seconds": 2475.0
+    },
+    {
+     "index": 36,
+     "family": "CL2",
+     "word": [
+      [
+       577,
+       1
+      ],
+      [
+       499,
+       12
+      ]
+     ],
+     "n2_n4_n6": [
+      107981,
+      1082,
+      0
+     ],
+     "Q": 1082,
+     "Bk": 563,
+     "N": 135896,
+     "off": 109063,
+     "lattice_loss": 4544,
+     "digest": "35410f68b86b99b85cfeb6be64f58d9e4885631578aac7ccbe962719c1681689",
+     "cpu_seconds": 2859.1
+    },
+    {
+     "index": 37,
+     "family": "SINGLE",
+     "word": [
+      [
+       520,
+       14
+      ]
+     ],
+     "n2_n4_n6": [
+      108626,
+      1073,
+      0
+     ],
+     "Q": 1073,
+     "Bk": 563,
+     "N": 136266,
+     "off": 109699,
+     "lattice_loss": 5380,
+     "digest": "657875b445d59bbb2140797807128a6d5469b28432f782eda2cd2fcfe68c7651",
+     "cpu_seconds": 2899.5
+    },
+    {
+     "index": 38,
+     "family": "CL2",
+     "word": [
+      [
+       421,
+       1
+      ],
+      [
+       520,
+       13
+      ]
+     ],
+     "n2_n4_n6": [
+      108472,
+      1017,
+      0
+     ],
+     "Q": 1017,
+     "Bk": 564,
+     "N": 136270,
+     "off": 109489,
+     "lattice_loss": 5404,
+     "digest": "8ccdc443dfa9208f69297aff726a3188a8e15c4b74f17e1fec2376e6bb0be8b1",
+     "cpu_seconds": 509.7
+    },
+    {
+     "index": 39,
+     "family": "PEEL",
+     "word": [
+      [
+       421,
+       1
+      ]
+     ],
+     "n2_n4_n6": [
+      108472,
+      1017,
+      0
+     ],
+     "Q": 1017,
+     "Bk": 563,
+     "N": 136292,
+     "off": 109489,
+     "lattice_loss": 5404,
+     "digest": "6fc77bc3d1fd6d25e37043a4effa779aadceb7e72b2f101955c5a31fb22ec75c",
+     "cpu_seconds": 759.1
+    },
+    {
+     "index": 40,
+     "family": "CL2",
+     "word": [
+      [
+       421,
+       7
+      ],
+      [
+       520,
+       14
+      ]
+     ],
+     "n2_n4_n6": [
+      108762,
+      1014,
+      0
+     ],
+     "Q": 1014,
+     "Bk": 564,
+     "N": 136354,
+     "off": 109776,
+     "lattice_loss": 5441,
+     "digest": "9e7b58a033952e8129bd56f61c034b05b8861eedbad8dd2093c1437bb0c322c2",
+     "cpu_seconds": 1077.8
+    },
+    {
+     "index": 41,
+     "family": "PEEL",
+     "word": [
+      [
+       421,
+       6
+      ]
+     ],
+     "n2_n4_n6": [
+      108762,
+      1014,
+      0
+     ],
+     "Q": 1014,
+     "Bk": 563,
+     "N": 136350,
+     "off": 109776,
+     "lattice_loss": 5441,
+     "digest": "452c130563fc9d5ef891e2988465385052882fe2bd6b4db284c8428363a99ac3",
+     "cpu_seconds": 1362.5
+    },
+    {
+     "index": 42,
+     "family": "PEEL",
+     "word": [
+      [
+       499,
+       2
+      ]
+     ],
+     "n2_n4_n6": [
+      108762,
+      1014,
+      0
+     ],
+     "Q": 1014,
+     "Bk": 562,
+     "N": 136390,
+     "off": 109776,
+     "lattice_loss": 5441,
+     "digest": "ed569ea6b6282da10afd86f00d14a878d73e5ea0306bd0e59da05647914ec915",
+     "cpu_seconds": 1672.7
+    },
+    {
+     "index": 43,
+     "family": "CL2",
+     "word": [
+      [
+       520,
+       1
+      ],
+      [
+       436,
+       14
+      ]
+     ],
+     "n2_n4_n6": [
+      107840,
+      989,
+      0
+     ],
+     "Q": 989,
+     "Bk": 562,
+     "N": 136294,
+     "off": 108829,
+     "lattice_loss": 5526,
+     "digest": "2bada48ebc28171d50f2b0a78e99f199b559a6cf22f2cdcaa5464ef9bc0bcb32",
+     "cpu_seconds": 2070.7
+    },
+    {
+     "index": 44,
+     "family": "PEEL",
+     "word": [
+      [
+       436,
+       1
+      ]
+     ],
+     "n2_n4_n6": [
+      107840,
+      989,
+      0
+     ],
+     "Q": 989,
+     "Bk": 561,
+     "N": 136250,
+     "off": 108829,
+     "lattice_loss": 5526,
+     "digest": "10d1461476b5f3df44d623b96c80fb7f5f447b1777b31c0846205f2964add2f7",
+     "cpu_seconds": 2413.5
+    },
+    {
+     "index": 45,
+     "family": "CL2",
+     "word": [
+      [
+       436,
+       4
+      ],
+      [
+       268,
+       14
+      ]
+     ],
+     "n2_n4_n6": [
+      107867,
+      975,
+      0
+     ],
+     "Q": 975,
+     "Bk": 561,
+     "N": 136288,
+     "off": 108842,
+     "lattice_loss": 6109,
+     "digest": "5a722b88f76075fb763a7778751b94a37e095540b5393c860cbc9bd10ec71668",
+     "cpu_seconds": 2791.4
+    },
+    {
+     "index": 46,
+     "family": "CL2",
+     "word": [
+      [
+       436,
+       2
+      ],
+      [
+       468,
+       15
+      ]
+     ],
+     "n2_n4_n6": [
+      108014,
+      906,
+      0
+     ],
+     "Q": 906,
+     "Bk": 561,
+     "N": 136426,
+     "off": 108920,
+     "lattice_loss": 6213,
+     "digest": "f160f696e18a117e8327fc85ed15303ae046cac47c0ee99683d8ffa72bcd86b0",
+     "cpu_seconds": 446.3
+    },
+    {
+     "index": 47,
+     "family": "PEEL",
+     "word": [
+      [
+       468,
+       1
+      ]
+     ],
+     "n2_n4_n6": [
+      108014,
+      906,
+      0
+     ],
+     "Q": 906,
+     "Bk": 560,
+     "N": 136360,
+     "off": 108920,
+     "lattice_loss": 6213,
+     "digest": "2254129438ff0aa3cf12acdc9b1e9ffaa0538644d98f7b60221aaf698318ab4a",
+     "cpu_seconds": 765.1
+    },
+    {
+     "index": 48,
+     "family": "PEEL",
+     "word": [
+      [
+       468,
+       9
+      ]
+     ],
+     "n2_n4_n6": [
+      108014,
+      906,
+      0
+     ],
+     "Q": 906,
+     "Bk": 559,
+     "N": 136412,
+     "off": 108920,
+     "lattice_loss": 6213,
+     "digest": "775f8dfd89484b626c8c8ec288160b3be3bc6d5a2eebdabf2d53a8be94ec0d19",
+     "cpu_seconds": 1109.4
+    },
+    {
+     "index": 49,
+     "family": "PEEL",
+     "word": [
+      [
+       577,
+       3
+      ]
+     ],
+     "n2_n4_n6": [
+      108014,
+      906,
+      0
+     ],
+     "Q": 906,
+     "Bk": 558,
+     "N": 136406,
+     "off": 108920,
+     "lattice_loss": 6213,
+     "digest": "55323d24e5e70d3b4c3da3e62294072c3677415389a24b738d0736924566039e",
+     "cpu_seconds": 1540.9
+    }
+   ],
+   "audit": {
+    "status": "incomplete",
+    "verification": "incomplete",
+    "passed": false,
+    "result": "BUDGET",
+    "exhaustion_verification": "incomplete",
+    "cpu_seconds": 3000.9,
+    "segments": [
+     {
+      "segment": "audit-37ad4f6922914a4980a76d57ac76ae9a",
+      "status": "incomplete",
+      "manifest_sha256": "0254fae6440685cfd0feb1fecb4caa5abadd4cb1cb61bb070b0389dd3ee5579c"
+     }
+    ]
+   }
+  },
+  "7306": {
+   "input": {
+    "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7306/component-checkpoint/tables/00017.json",
+    "sha256": "de32248e227598c7460203019495d762784956a28ddcfaca38af58d5daaff00a",
+    "digest": "ac4be82cf80e857137af957ff75438525ba950062e46a2fc5249aa0d7199d8f2",
+    "heights": {
+     "2": 108360,
+     "4": 1955
+    }
+   },
+   "search": {
+    "status": "STUCK",
+    "verification": "provisional",
+    "steps": 19,
+    "letters": 26,
+    "end_digest": "a6d929c5d23b100c7840d6acc902f8e8cae244f11362970cc93746bf76ac2649",
+    "cpu_seconds": 4961.7,
+    "segments": [
+     {
+      "segment": "search-a95d5a88cd45437d8862202876303504",
+      "kind": "search",
+      "status": "BUDGET",
+      "manifest_sha256": "52a23e14745397df9636e237e2961bc602460875059bf93a2b421f524a23e42c"
+     },
+     {
+      "segment": "search-861ad093fad34b0891502df2e334807b",
+      "kind": "search",
+      "status": "STUCK",
+      "manifest_sha256": "2818a29be16d31ed751f050e4da0e90b9cfdbe69a2d124325f2eec3d69203c36"
+     }
+    ]
+   },
+   "steps": [
+    {
+     "index": 1,
+     "family": "PEEL",
+     "word": [
+      [
+       16,
+       7
+      ]
+     ],
+     "n2_n4_n6": [
+      108360,
+      1955,
+      0
+     ],
+     "Q": 1955,
+     "Bk": 573,
+     "N": 140190,
+     "off": 110315,
+     "lattice_loss": 0,
+     "digest": "04adb993041a04b86cf498af85d5014ee99bb1cf446b515f3d1976fd2cdc006e",
+     "cpu_seconds": 84.8
+    },
+    {
+     "index": 2,
+     "family": "PEEL",
+     "word": [
+      [
+       109,
+       4
+      ]
+     ],
+     "n2_n4_n6": [
+      108360,
+      1955,
+      0
+     ],
+     "Q": 1955,
+     "Bk": 572,
+     "N": 140168,
+     "off": 110315,
+     "lattice_loss": 0,
+     "digest": "e5c1b73101a9698828bd70d149e19081aa5a2bbae11a8ebd4f02e0ec8855d59f",
+     "cpu_seconds": 145.0
+    },
+    {
+     "index": 3,
+     "family": "CL2",
+     "word": [
+      [
+       208,
+       5
+      ],
+      [
+       336,
+       15
+      ]
+     ],
+     "n2_n4_n6": [
+      108336,
+      1623,
+      0
+     ],
+     "Q": 1623,
+     "Bk": 572,
+     "N": 140098,
+     "off": 109959,
+     "lattice_loss": 538,
+     "digest": "022cf83dd0e05d5c11cf6a22afa3e43473f61934e695cd06c61e1f7072c729fe",
+     "cpu_seconds": 272.3
+    },
+    {
+     "index": 4,
+     "family": "PEEL",
+     "word": [
+      [
+       233,
+       1
+      ]
+     ],
+     "n2_n4_n6": [
+      108336,
+      1623,
+      0
+     ],
+     "Q": 1623,
+     "Bk": 571,
+     "N": 140042,
+     "off": 109959,
+     "lattice_loss": 538,
+     "digest": "11569f76cedf0e2a7593bad0ffc2f3690beac5fb2fbf6fd781a67efd33aeeb34",
+     "cpu_seconds": 361.9
+    },
+    {
+     "index": 5,
+     "family": "PEEL",
+     "word": [
+      [
+       200,
+       6
+      ]
+     ],
+     "n2_n4_n6": [
+      108336,
+      1623,
+      0
+     ],
+     "Q": 1623,
+     "Bk": 570,
+     "N": 140184,
+     "off": 109959,
+     "lattice_loss": 538,
+     "digest": "2fde2e01a32345471c32629fcd7bb19dc521420620b34ed0ae1d6287cdf62379",
+     "cpu_seconds": 453.8
+    },
+    {
+     "index": 6,
+     "family": "CL2",
+     "word": [
+      [
+       200,
+       6
+      ],
+      [
+       202,
+       12
+      ]
+     ],
+     "n2_n4_n6": [
+      108907,
+      1622,
+      0
+     ],
+     "Q": 1622,
+     "Bk": 570,
+     "N": 140610,
+     "off": 110529,
+     "lattice_loss": 1525,
+     "digest": "4bb6715f675df4de10b5973f401a9214e97632d2a197b07412ba81e571f4f12b",
+     "cpu_seconds": 588.8
+    },
+    {
+     "index": 7,
+     "family": "PEEL",
+     "word": [
+      [
+       336,
+       2
+      ]
+     ],
+     "n2_n4_n6": [
+      108907,
+      1622,
+      0
+     ],
+     "Q": 1622,
+     "Bk": 569,
+     "N": 140550,
+     "off": 110529,
+     "lattice_loss": 1525,
+     "digest": "de1e5e6c25d2fbefcc629b4ced447d2b28b0a36bc5d3d45c4c32f5857a206694",
+     "cpu_seconds": 742.7
+    },
+    {
+     "index": 8,
+     "family": "PEEL",
+     "word": [
+      [
+       336,
+       8
+      ]
+     ],
+     "n2_n4_n6": [
+      108907,
+      1622,
+      0
+     ],
+     "Q": 1622,
+     "Bk": 568,
+     "N": 140566,
+     "off": 110529,
+     "lattice_loss": 1525,
+     "digest": "c52e275ac39d66500e3648457c1696a5ea939b1450e607f8faf0201750b0c1a0",
+     "cpu_seconds": 912.7
+    },
+    {
+     "index": 9,
+     "family": "PEEL",
+     "word": [
+      [
+       351,
+       1
+      ]
+     ],
+     "n2_n4_n6": [
+      108907,
+      1622,
+      0
+     ],
+     "Q": 1622,
+     "Bk": 567,
+     "N": 140684,
+     "off": 110529,
+     "lattice_loss": 1525,
+     "digest": "51c1d7e75cc42b9c6a280ce8df8136aa6bee83fdb771152bdf0def01ac8b93bd",
+     "cpu_seconds": 1095.4
+    },
+    {
+     "index": 10,
+     "family": "PEEL",
+     "word": [
+      [
+       351,
+       6
+      ]
+     ],
+     "n2_n4_n6": [
+      108907,
+      1622,
+      0
+     ],
+     "Q": 1622,
+     "Bk": 566,
+     "N": 140654,
+     "off": 110529,
+     "lattice_loss": 1525,
+     "digest": "bbcfafd4bd2ccaf2cc43e7f0c56ccde7f34a3fec82934e535bc1b76e3050fda1",
+     "cpu_seconds": 1276.5
+    },
+    {
+     "index": 11,
+     "family": "PEEL",
+     "word": [
+      [
+       384,
+       1
+      ]
+     ],
+     "n2_n4_n6": [
+      108907,
+      1622,
+      0
+     ],
+     "Q": 1622,
+     "Bk": 565,
+     "N": 140744,
+     "off": 110529,
+     "lattice_loss": 1525,
+     "digest": "b454160b5a483b79de8d62c14b312ac18bf53bb494cd2a2a2e3f46adf83a369c",
+     "cpu_seconds": 1520.3
+    },
+    {
+     "index": 12,
+     "family": "CL2",
+     "word": [
+      [
+       445,
+       55
+      ],
+      [
+       252,
+       13
+      ]
+     ],
+     "n2_n4_n6": [
+      109169,
+      1352,
+      0
+     ],
+     "Q": 1352,
+     "Bk": 565,
+     "N": 140848,
+     "off": 110521,
+     "lattice_loss": 2855,
+     "digest": "74ca40ba7774f43b1c34e30b0fdff070a1bd32945047823e32e46a7e37e714e5",
+     "cpu_seconds": 1890.7
+    },
+    {
+     "index": 13,
+     "family": "PEEL",
+     "word": [
+      [
+       252,
+       3
+      ]
+     ],
+     "n2_n4_n6": [
+      109169,
+      1352,
+      0
+     ],
+     "Q": 1352,
+     "Bk": 564,
+     "N": 140744,
+     "off": 110521,
+     "lattice_loss": 2855,
+     "digest": "aee52a113b2c5daa6cfeb03257a2fd4b7a2c675c963c1ddc1a3c1f1d5dfa4b57",
+     "cpu_seconds": 2074.3
+    },
+    {
+     "index": 14,
+     "family": "PEEL",
+     "word": [
+      [
+       252,
+       3
+      ]
+     ],
+     "n2_n4_n6": [
+      109169,
+      1352,
+      0
+     ],
+     "Q": 1352,
+     "Bk": 563,
+     "N": 140914,
+     "off": 110521,
+     "lattice_loss": 2855,
+     "digest": "c185a99a4aaf8c447548cf76ea1e431fb0cca9310485aa91f0993eb70d08a051",
+     "cpu_seconds": 2255.5
+    },
+    {
+     "index": 15,
+     "family": "CL2",
+     "word": [
+      [
+       487,
+       12
+      ],
+      [
+       240,
+       14
+      ]
+     ],
+     "n2_n4_n6": [
+      108862,
+      936,
+      0
+     ],
+     "Q": 936,
+     "Bk": 564,
+     "N": 140700,
+     "off": 109798,
+     "lattice_loss": 3776,
+     "digest": "3fdc1f1f47400a12f0441258a85a81eec32c86cb541b997fe51c5d44c63b948a",
+     "cpu_seconds": 2672.7
+    },
+    {
+     "index": 16,
+     "family": "CL2",
+     "word": [
+      [
+       240,
+       1
+      ],
+      [
+       487,
+       14
+      ]
+     ],
+     "n2_n4_n6": [
+      108595,
+      926,
+      0
+     ],
+     "Q": 926,
+     "Bk": 563,
+     "N": 140512,
+     "off": 109521,
+     "lattice_loss": 3157,
+     "digest": "94a614e0b22d87649c855d247ec265067d8ae6a1929918c638080794b7f8932d",
+     "cpu_seconds": 2916.5
+    },
+    {
+     "index": 17,
+     "family": "CL2",
+     "word": [
+      [
+       506,
+       7
+      ],
+      [
+       561,
+       14
+      ]
+     ],
+     "n2_n4_n6": [
+      106932,
+      915,
+      0
+     ],
+     "Q": 915,
+     "Bk": 563,
+     "N": 140140,
+     "off": 107847,
+     "lattice_loss": 3515,
+     "digest": "027f96b51c4ae816febb6390364c2e6ef74f161d7787216db7c1a124c4500f31",
+     "cpu_seconds": 580.7
+    },
+    {
+     "index": 18,
+     "family": "PEEL",
+     "word": [
+      [
+       561,
+       8
+      ]
+     ],
+     "n2_n4_n6": [
+      106932,
+      915,
+      0
+     ],
+     "Q": 915,
+     "Bk": 562,
+     "N": 139988,
+     "off": 107847,
+     "lattice_loss": 3515,
+     "digest": "a4eb2cf6e3e999bcdb819eedfd7d1322c8405859d0d1e7c8e4b7a8f6a0e947b5",
+     "cpu_seconds": 974.2
+    },
+    {
+     "index": 19,
+     "family": "CL2",
+     "word": [
+      [
+       598,
+       3
+      ],
+      [
+       582,
+       15
+      ]
+     ],
+     "n2_n4_n6": [
+      107563,
+      908,
+      0
+     ],
+     "Q": 908,
+     "Bk": 562,
+     "N": 140502,
+     "off": 108471,
+     "lattice_loss": 4024,
+     "digest": "a6d929c5d23b100c7840d6acc902f8e8cae244f11362970cc93746bf76ac2649",
+     "cpu_seconds": 1497.9
+    }
+   ],
+   "audit": {
+    "status": "complete",
+    "verification": "complete",
+    "passed": true,
+    "result": "STUCK",
+    "exhaustion_verification": "complete",
+    "cpu_seconds": 8898.8,
+    "segments": [
+     {
+      "segment": "audit-2e0c3a2f834348cabd948d877916d6b3",
+      "status": "incomplete",
+      "manifest_sha256": "6d94868a36233ee8f338bce3d0a1b72257236c07b0176a67ba465311651ed773"
+     },
+     {
+      "segment": "audit-dcee21d677a14b57afd070eda77f2d86",
+      "status": "incomplete",
+      "manifest_sha256": "d5a81b8292408228ca1674036b26db2b83417b46139ac351ddd07a39037efc71"
+     },
+     {
+      "segment": "audit-f9d0d4f9137f4907b0688656adb76af0",
+      "status": "complete",
+      "manifest_sha256": "5c0d1f3e92bebda6992fdb322efadf31d27d19fc350a3dddd22bc2d2e55b998d"
+     }
+    ]
+   }
+  },
+  "7307": {
+   "input": {
+    "table": "research/jumbling/restoration/13-tutorial-runner/runs/dev/d2-s7307/component/tables/00005.json",
+    "sha256": "57517593a86b6480e32aca14ceb307369d2bf5d0fe534185a9d2356ef2ee6d01",
+    "digest": "895b45de8a9a83604ca8bf988a3c9a287e404e59bd22a5004703d0852b252507",
+    "heights": {
+     "2": 98984,
+     "4": 1585
+    }
+   },
+   "search": {
+    "status": "STUCK",
+    "verification": "provisional",
+    "steps": 21,
+    "letters": 24,
+    "end_digest": "e701c1bbaebc8144ad7f657db9264f3be9fc55f82bdc02fbed1af8cd6a09d538",
+    "cpu_seconds": 7209.9,
+    "segments": [
+     {
+      "segment": "search-fcad83a427e0456caabd279253af8b08",
+      "kind": "search",
+      "status": "BUDGET",
+      "manifest_sha256": "42e674bb269a8c87c569ca27bab6b8b735d22f926a44e96b71ea3081f259551f"
+     },
+     {
+      "segment": "search-1607c9cb750d47f3b13b6eaf160d5c65",
+      "kind": "search",
+      "status": "BUDGET",
+      "manifest_sha256": "224f08c945196982b47dcc41d31a89f5a09b377f4cf49d545a6c3025f66e2f4a"
+     },
+     {
+      "segment": "search-e95786b5985a4e18acdcfc289d6ff921",
+      "kind": "search",
+      "status": "STUCK",
+      "manifest_sha256": "0e626406a8e41d981cbe5e406b42cac1dcae51a74457ebe94a95f12ca8d3b524"
+     }
+    ]
+   },
+   "steps": [
+    {
+     "index": 1,
+     "family": "PEEL",
+     "word": [
+      [
+       10,
+       6
+      ]
+     ],
+     "n2_n4_n6": [
+      98984,
+      1585,
+      0
+     ],
+     "Q": 1585,
+     "Bk": 561,
+     "N": 115842,
+     "off": 100569,
+     "lattice_loss": 0,
+     "digest": "903794c611465c77667aabdbeb0103a12508c73232c5474d754aed6a927229cf",
+     "cpu_seconds": 70.0
+    },
+    {
+     "index": 2,
+     "family": "PEEL",
+     "word": [
+      [
+       50,
+       2
+      ]
+     ],
+     "n2_n4_n6": [
+      98984,
+      1585,
+      0
+     ],
+     "Q": 1585,
+     "Bk": 560,
+     "N": 115772,
+     "off": 100569,
+     "lattice_loss": 0,
+     "digest": "687d6900de55d75de72034681f0f85174e3e2114d511ca0b0a87d8bcdb4f16a0",
+     "cpu_seconds": 118.8
+    },
+    {
+     "index": 3,
+     "family": "PEEL",
+     "word": [
+      [
+       88,
+       8
+      ]
+     ],
+     "n2_n4_n6": [
+      98984,
+      1585,
+      0
+     ],
+     "Q": 1585,
+     "Bk": 559,
+     "N": 115956,
+     "off": 100569,
+     "lattice_loss": 0,
+     "digest": "c2898a23dc658aa0c0cdbcdfbba99852841bbd9befff6b20567c0b086fde2580",
+     "cpu_seconds": 195.7
+    },
+    {
+     "index": 4,
+     "family": "CL2",
+     "word": [
+      [
+       216,
+       2
+      ],
+      [
+       266,
+       14
+      ]
+     ],
+     "n2_n4_n6": [
+      99457,
+      1459,
+      0
+     ],
+     "Q": 1459,
+     "Bk": 559,
+     "N": 116304,
+     "off": 100916,
+     "lattice_loss": 657,
+     "digest": "a17810a6172e2f30934ced1a227cf5bdde6cd161d4da5da3052ca4b4efbe6978",
+     "cpu_seconds": 372.7
+    },
+    {
+     "index": 5,
+     "family": "PEEL",
+     "word": [
+      [
+       53,
+       24
+      ]
+     ],
+     "n2_n4_n6": [
+      100836,
+      1459,
+      0
+     ],
+     "Q": 1459,
+     "Bk": 558,
+     "N": 117024,
+     "off": 102295,
+     "lattice_loss": 2379,
+     "digest": "11e670a39d99139c7126ee9631baa72de8f317a7b931fcdfc168923d05d31cb1",
+     "cpu_seconds": 430.5
+    },
+    {
+     "index": 6,
+     "family": "PEEL",
+     "word": [
+      [
+       240,
+       6
+      ]
+     ],
+     "n2_n4_n6": [
+      100836,
+      1459,
+      0
+     ],
+     "Q": 1459,
+     "Bk": 557,
+     "N": 117284,
+     "off": 102295,
+     "lattice_loss": 2379,
+     "digest": "ac1bdf7907a8c101cf453aaac54dafce339fe8ae45b549dd7ad0d6c1f6a2ac2e",
+     "cpu_seconds": 597.5
+    },
+    {
+     "index": 7,
+     "family": "PEEL",
+     "word": [
+      [
+       266,
+       3
+      ]
+     ],
+     "n2_n4_n6": [
+      100836,
+      1459,
+      0
+     ],
+     "Q": 1459,
+     "Bk": 556,
+     "N": 117196,
+     "off": 102295,
+     "lattice_loss": 2379,
+     "digest": "38c71e4055ddb4377d67fc446bcadc77f4b935d49454b389826af57bec2c13b1",
+     "cpu_seconds": 800.0
+    },
+    {
+     "index": 8,
+     "family": "PEEL",
+     "word": [
+      [
+       226,
+       2
+      ]
+     ],
+     "n2_n4_n6": [
+      100836,
+      1459,
+      0
+     ],
+     "Q": 1459,
+     "Bk": 555,
+     "N": 117284,
+     "off": 102295,
+     "lattice_loss": 2379,
+     "digest": "b1e886023f7edf91a7cef86b83dac43cd36164fe911961e9ac3a3847add9d1a7",
+     "cpu_seconds": 994.7
+    },
+    {
+     "index": 9,
+     "family": "CL2",
+     "word": [
+      [
+       275,
+       1
+      ],
+      [
+       435,
+       12
+      ]
+     ],
+     "n2_n4_n6": [
+      102187,
+      1397,
+      0
+     ],
+     "Q": 1397,
+     "Bk": 554,
+     "N": 117768,
+     "off": 103584,
+     "lattice_loss": 3718,
+     "digest": "cc6d60200eb08ad62b99979a89740b605403fe79fa6872b7c0e1da1bd0a2bef9",
+     "cpu_seconds": 1272.0
+    },
+    {
+     "index": 10,
+     "family": "PEEL",
+     "word": [
+      [
+       394,
+       2
+      ]
+     ],
+     "n2_n4_n6": [
+      102187,
+      1397,
+      0
+     ],
+     "Q": 1397,
+     "Bk": 553,
+     "N": 117880,
+     "off": 103584,
+     "lattice_loss": 3718,
+     "digest": "a25e527df5c768f77d7967fdd8583691563f76de52e3ad115366ab8a12685713",
+     "cpu_seconds": 1593.2
+    },
+    {
+     "index": 11,
+     "family": "PEEL",
+     "word": [
+      [
+       335,
+       43
+      ]
+     ],
+     "n2_n4_n6": [
+      101009,
+      1397,
+      0
+     ],
+     "Q": 1397,
+     "Bk": 552,
+     "N": 117638,
+     "off": 102406,
+     "lattice_loss": 4516,
+     "digest": "f8fc276b65856914fcb28370325f42d8d33e667c6c7d427c7c881a81754092bd",
+     "cpu_seconds": 1889.2
+    },
+    {
+     "index": 12,
+     "family": "PEEL",
+     "word": [
+      [
+       203,
+       5
+      ]
+     ],
+     "n2_n4_n6": [
+      101009,
+      1397,
+      0
+     ],
+     "Q": 1397,
+     "Bk": 551,
+     "N": 117804,
+     "off": 102406,
+     "lattice_loss": 4516,
+     "digest": "6c888221f1145544ea52f7ddbab2dfac9e57b4d3becb77930d2e7eec6662b4d8",
+     "cpu_seconds": 2076.7
+    },
+    {
+     "index": 13,
+     "family": "PEEL",
+     "word": [
+      [
+       262,
+       1
+      ]
+     ],
+     "n2_n4_n6": [
+      101009,
+      1397,
+      0
+     ],
+     "Q": 1397,
+     "Bk": 550,
+     "N": 118274,
+     "off": 102406,
+     "lattice_loss": 4516,
+     "digest": "5ad2897aacb91e6ebe7b6ea28658556abe8522e5c518d8f984caeba453afc9f7",
+     "cpu_seconds": 2337.7
+    },
+    {
+     "index": 14,
+     "family": "PEEL",
+     "word": [
+      [
+       394,
+       46
+      ]
+     ],
+     "n2_n4_n6": [
+      99955,
+      1397,
+      0
+     ],
+     "Q": 1397,
+     "Bk": 549,
+     "N": 118046,
+     "off": 101352,
+     "lattice_loss": 4715,
+     "digest": "c96a20f77e34eefe8805865fe71b88bcebc27a59ccbd6040fc3158f4d65e3f21",
+     "cpu_seconds": 2771.1
+    },
+    {
+     "index": 15,
+     "family": "CL2",
+     "word": [
+      [
+       435,
+       7
+      ],
+      [
+       319,
+       12
+      ]
+     ],
+     "n2_n4_n6": [
+      98719,
+      1332,
+      0
+     ],
+     "Q": 1332,
+     "Bk": 548,
+     "N": 117682,
+     "off": 100051,
+     "lattice_loss": 4803,
+     "digest": "a8ec0e55bfc5f1aea37bb117eb414e446c3b7d1cfeaf67f655f02e97622ddb2b",
+     "cpu_seconds": 573.2
+    },
+    {
+     "index": 16,
+     "family": "PEEL",
+     "word": [
+      [
+       237,
+       2
+      ]
+     ],
+     "n2_n4_n6": [
+      98719,
+      1332,
+      0
+     ],
+     "Q": 1332,
+     "Bk": 547,
+     "N": 117786,
+     "off": 100051,
+     "lattice_loss": 4803,
+     "digest": "b9ea3b34fde4a0a9d7a8e2b70eb082b97a325b98b74ffdeb8ae6747107e29404",
+     "cpu_seconds": 795.9
+    },
+    {
+     "index": 17,
+     "family": "PEEL",
+     "word": [
+      [
+       369,
+       8
+      ]
+     ],
+     "n2_n4_n6": [
+      98719,
+      1332,
+      0
+     ],
+     "Q": 1332,
+     "Bk": 546,
+     "N": 117864,
+     "off": 100051,
+     "lattice_loss": 4803,
+     "digest": "b847f8be8dd91ecf7ec29033e019157c9803aa66bdb8685d4eb7d9848d2323dc",
+     "cpu_seconds": 1165.9
+    },
+    {
+     "index": 18,
+     "family": "PEEL",
+     "word": [
+      [
+       435,
+       9
+      ]
+     ],
+     "n2_n4_n6": [
+      98719,
+      1332,
+      0
+     ],
+     "Q": 1332,
+     "Bk": 545,
+     "N": 117978,
+     "off": 100051,
+     "lattice_loss": 4803,
+     "digest": "b03c7b9fb06289764fb8330b965c910e127afd0a5831a922384fd73b03faabb2",
+     "cpu_seconds": 1617.7
+    },
+    {
+     "index": 19,
+     "family": "PEEL",
+     "word": [
+      [
+       448,
+       3
+      ]
+     ],
+     "n2_n4_n6": [
+      98719,
+      1332,
+      0
+     ],
+     "Q": 1332,
+     "Bk": 544,
+     "N": 118010,
+     "off": 100051,
+     "lattice_loss": 4803,
+     "digest": "e2ddd3611e1172ebf0408a35e53f17ed6c33f1048ecac8cd35aa0a41a8327edf",
+     "cpu_seconds": 2136.8
+    },
+    {
+     "index": 20,
+     "family": "PEEL",
+     "word": [
+      [
+       597,
+       1
+      ]
+     ],
+     "n2_n4_n6": [
+      98719,
+      1332,
+      0
+     ],
+     "Q": 1332,
+     "Bk": 543,
+     "N": 118106,
+     "off": 100051,
+     "lattice_loss": 4803,
+     "digest": "c8d05511e155b7ae4db6517a3b76a9f1a663799af1eaf5a38f6a10819d5a0155",
+     "cpu_seconds": 2808.4
+    },
+    {
+     "index": 21,
+     "family": "PEEL",
+     "word": [
+      [
+       428,
+       4
+      ]
+     ],
+     "n2_n4_n6": [
+      98719,
+      1332,
+      0
+     ],
+     "Q": 1332,
+     "Bk": 542,
+     "N": 118180,
+     "off": 100051,
+     "lattice_loss": 4803,
+     "digest": "e701c1bbaebc8144ad7f657db9264f3be9fc55f82bdc02fbed1af8cd6a09d538",
+     "cpu_seconds": 605.3
+    }
+   ],
+   "audit": {
+    "status": "complete",
+    "verification": "complete",
+    "passed": true,
+    "result": "STUCK",
+    "exhaustion_verification": "complete",
+    "cpu_seconds": 11802.9,
+    "segments": [
+     {
+      "segment": "audit-b3c1633e2a134c7597bae595a25d7bbd",
+      "status": "incomplete",
+      "manifest_sha256": "f6ba3dce5358374dfd97ec126ac44cd63b50292c36531f2ceff7e98084201f5a"
+     },
+     {
+      "segment": "audit-39eaf13d632c48f7a9c8036ef6985d3d",
+      "status": "incomplete",
+      "manifest_sha256": "4631252e35de65dc796cdcb83e0d8f29d5f6677f3aa14cdc0b717bdb9722bddf"
+     },
+     {
+      "segment": "audit-4aab97f3b0144cf4a28e8a0eff8ce6b4",
+      "status": "incomplete",
+      "manifest_sha256": "2a3f7226faeda5492a543814130c390e3da3bf7ad68a3b6a077485396e589046"
+     },
+     {
+      "segment": "audit-55d0fa028c9947f99d8624812283b803",
+      "status": "complete",
+      "manifest_sha256": "bb4612d2f35abbc6091e7e517fd9c056d77d5aaea65ba053c427f813e41f5e07"
+     }
+    ]
+   }
+  }
+ },
+ "campaign": "e18c515277574a9dbd3764ef766357be"
+}
