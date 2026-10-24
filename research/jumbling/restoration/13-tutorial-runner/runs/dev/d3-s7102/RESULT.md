@@ -150,3 +150,6 @@ background waiter on the runner process.
 - 10:06 UTC progress: run 2 alive at 343 bulk steps, N 21,716, 16,248 off, 25,291 s of runner time (no restart since
   06:06). The comparison with run 1 (`out-checkpoint/run.json` against `out2-checkpoint/run.json`) still finds no
   difference in the 225 steps run 1 has.
+- 14:06 UTC progress: run 2 alive at 388 bulk steps, N 20,624, 14,904 off, 39,788 s of runner time (no restart since
+  06:06). Comparison with run 1: still no difference in run 1's 225 steps. The bulk is slowing again: steps 375 to
+  388 left off unchanged at 14,904 and took about 7,100 s.
