@@ -170,3 +170,6 @@ background waiter on the runner process.
 - 14:06 UTC progress: run 2 alive at 476 bulk steps, N 19,894, 14,528 off, 125,491 s of runner time. Comparison with
   run 1: still no difference in run 1's 225 steps. Since 10:06, 13 steps lowered N by 68; off unchanged. The last
   four steps took about 1,800 s each.
+- 18:06 UTC progress: run 2 alive at 484 bulk steps, N 19,822, 14,528 off, 140,477 s of runner time. Comparison with
+  run 1: still no difference in run 1's 225 steps. Since 14:06, 8 steps (about 1,900 s each) lowered N by 72; off
+  unchanged since 08:06.
