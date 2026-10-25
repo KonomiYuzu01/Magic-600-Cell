@@ -1,0 +1,14 @@
+{"off": 258, "blocks": [61, 10, 33, 29, 25, 5, 10, 85], "straddling": 17, "status_3": 0, "sec": 10}
+{"ghost": {"T_on_lattice_at_end": 85, "T_size": 85, "protected_exact_at_end": true, "free_alive": true, "free": 0, "badW_size": 87, "badW_occupied": 16, "T_landing_in_badW": 85, "badPinv_size": 0, "T_after_PQ_on_lattice": 85, "T_after_PQ_in_badPinv": 0, "badW_digest": "053cf97aa718b55110a01e91956b47330d796d7c49cb5e8e2c52bff8b5efb9c9"}, "sec": 10.1}
+{"safe_all_grips": 548, "letters": 6028, "off_lattice": 258, "sec": 28}
+{"orbits": 1316, "singletons": 1281, "sec": 29}
+{"menu": {"safe_grip_count": 548, "letters": 6028, "orbits": 1316, "singleton_orbits": 1281, "holes": 258}, "N1": true, "N2": true, "sec": 28.0}
+{"routing_edges": 18629808, "letters_avoiding_target": 5918, "sec": 36}
+{"peeling_candidates": 2678500, "sec": 82}
+{"certificate_error": "peeling stopped at 79 of 87 target chambers", "sec": 85.7}
+{"step": 1, "target": 167562, "length": 4, "gain": 1, "left": 15, "sec": 88}
+{"step": 2, "target": 169736, "length": 4, "gain": 4, "left": 11, "sec": 89}
+{"step": 3, "target": 159863, "length": 4, "gain": 1, "left": 10, "sec": 91}
+{"step": 4, "target": 163907, "length": 4, "gain": 1, "left": 9, "sec": 97}
+{"step": 5, "target": 165616, "length": 6, "gain": 1, "left": 8, "sec": 1041}
+{"result": "no V", "times": {"ghost_premises": 10.1, "menu_and_condition": 17.9, "greedy": 2312.5}, "sec": 2398.6}

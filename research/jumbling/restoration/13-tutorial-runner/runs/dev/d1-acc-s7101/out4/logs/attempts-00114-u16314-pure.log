@@ -1,0 +1,32 @@
+{"table": "00113.json", "off_before": 158, "domains": {"1": {"size": 125, "hub": [[1, 3]]}, "2": {"size": 33, "hub": [[1, 4]]}}, "sec": 4}
+{"own_contents": 1445, "free": 118, "blocked": [582], "fragments": {"1": 125}, "sec": 6}
+{"model": "pole permutations and label actions", "sec": 90}
+{"cells": 2641, "generators": 6962, "bad_at_start": 4, "sec": 95}
+{"carrier_cell": {"caps": [91], "n_caps": 1, "label": 3, "pieces_in_cell": 388}, "holes": 158, "chambers_of_X": 385, "holes_eq_chambers_of_X": false, "free": 118, "gens": 6962, "cells": 2641, "sec": 95}
+{"labels_of_X_in_orbit": [0, 1, 2, 3, 4], "edge_orbits": 6, "sec": 96}
+{"transport": {"kind": "vertex", "max_power": 60, "home_cells": 1441, "other_off_contents": 3, "lattice_contents": 1441, "grip_pairs": 24}, "sec": 97}
+{"pair": [8, 91], "commutators": 3481, "landing_powers": 0, "candidates": 0, "sec": 98}
+{"pair": [12, 91], "commutators": 6962, "landing_powers": 0, "candidates": 0, "sec": 99}
+{"pair": [26, 91], "commutators": 10443, "landing_powers": 0, "candidates": 0, "sec": 101}
+{"pair": [65, 91], "commutators": 13924, "landing_powers": 0, "candidates": 0, "sec": 102}
+{"pair": [91, 8], "commutators": 17405, "landing_powers": 0, "candidates": 0, "sec": 103}
+{"pair": [91, 12], "commutators": 20886, "landing_powers": 0, "candidates": 0, "sec": 105}
+{"pair": [91, 26], "commutators": 24367, "landing_powers": 0, "candidates": 0, "sec": 106}
+{"pair": [91, 65], "commutators": 27848, "landing_powers": 0, "candidates": 0, "sec": 107}
+{"pair": [91, 99], "commutators": 31329, "landing_powers": 0, "candidates": 0, "sec": 108}
+{"pair": [91, 100], "commutators": 34810, "landing_powers": 0, "candidates": 0, "sec": 110}
+{"pair": [91, 118], "commutators": 38291, "landing_powers": 0, "candidates": 0, "sec": 111}
+{"pair": [91, 137], "commutators": 41772, "landing_powers": 0, "candidates": 0, "sec": 112}
+{"pair": [91, 166], "commutators": 45253, "landing_powers": 0, "candidates": 0, "sec": 114}
+{"pair": [91, 227], "commutators": 48734, "landing_powers": 0, "candidates": 0, "sec": 115}
+{"pair": [91, 256], "commutators": 52215, "landing_powers": 0, "candidates": 0, "sec": 116}
+{"pair": [91, 268], "commutators": 55696, "landing_powers": 0, "candidates": 0, "sec": 117}
+{"pair": [99, 91], "commutators": 59177, "landing_powers": 0, "candidates": 0, "sec": 119}
+{"pair": [100, 91], "commutators": 62658, "landing_powers": 0, "candidates": 0, "sec": 120}
+{"pair": [118, 91], "commutators": 66139, "landing_powers": 0, "candidates": 0, "sec": 121}
+{"pair": [137, 91], "commutators": 69620, "landing_powers": 0, "candidates": 0, "sec": 123}
+{"pair": [166, 91], "commutators": 73101, "landing_powers": 0, "candidates": 0, "sec": 124}
+{"pair": [227, 91], "commutators": 76582, "landing_powers": 0, "candidates": 0, "sec": 125}
+{"pair": [256, 91], "commutators": 80063, "landing_powers": 0, "candidates": 0, "sec": 126}
+{"pair": [268, 91], "commutators": 83544, "landing_powers": 0, "candidates": 0, "sec": 128}
+{"transport": {"kind": "vertex", "max_power": 60, "home_cells": 1441, "other_off_contents": 3, "lattice_contents": 1441, "grip_pairs": 24, "commutators": 83544, "landing_powers": 0, "candidates": 0, "fewest_lattice_pieces_off": null, "result": "no candidate"}, "sec": 128}

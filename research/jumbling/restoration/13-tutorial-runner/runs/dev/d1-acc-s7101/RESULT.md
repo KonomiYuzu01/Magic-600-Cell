@@ -1,6 +1,89 @@
 # D1, seed 7101 at depth 40, acceptance mode (development line d1-acc-s7101)
 
-Status: **in progress** (progress note, 22 October 2026, 21:15 UTC; runs 1 and 2 were killed by container restarts; run 3 starts with checkpoints; run 1 was interrupted at 97 steps, run 2 restarted at 08:12 UTC). The run has not ended; the check has not run.
+Status: **finished** (25 October 2026, 05:20 UTC). Run 4 ended `stuck` in the tail at 158 off; `check_run.py` passes its record with verdict `stuck`. Runs 1 to 3 are interrupted or stopped records, kept below as history.
+
+## Final result (run 4)
+
+**Question answered:** in acceptance mode, the tutorial runner does not solve seed 7101 at depth 40. It plays 97 bulk
+steps and 17 tail steps, then stops `stuck` in the tail with 158 pieces off, all at height 2. No tail rule and no
+fallback word of length at most 1 applies to any of the five units it tried. The lattice phase is not reached.
+
+**Command** (from the repository root, on commit `d8578e2`, which merges `origin/main` with PR #128):
+
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/runner.py --scramble 40 7101 \
+        --out research/jumbling/restoration/13-tutorial-runner/runs/dev/d1-acc-s7101/out4 \
+        --cache <dir>/cache4 --mode acceptance > <dir>/runner4.out 2>&1; echo $? > <dir>/runner4.rc
+    python3 -I -B $S/checkpoint.py --run research/jumbling/restoration/13-tutorial-runner/runs/dev/d1-acc-s7101/out4 \
+        --pid <runner pid> --trailer '<co-author trailer>' --trailer '<session trailer>'
+    OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 -I -B -u $S/check_run.py \
+        research/jumbling/restoration/13-tutorial-runner/runs/dev/d1-acc-s7101/out4 > <dir>/check.out 2>&1
+
+Run 4 ran from 14:47 UTC on 23 October to about 03:09 UTC on 25 October, without a restart (no `resumes` in the
+record). The runner exited with code 0; the check ran from 03:09 to 05:13 UTC and exited with code 0.
+
+**Record:**
+
+- `result` `stuck`, `acceptance.verdict` `stuck`, `config.component` null.
+  - `certificate_steps` 0, `fallback_steps` 0, `probe` false, `timed_out_attempts` 0.
+- `config.source` commit `d8578e2`, `dirty` true. When the run started, the only uncommitted path in the worktree was
+  this line's untracked `out3/` directory (`git status --porcelain`). `config.code` is the research-code fingerprint
+  that `--resume` checks.
+- Start: scramble k 40, seed 7101, digest `be08cfaa…`, 90,441 off, all at height 2.
+
+| phase | result | steps | twists | runner seconds | end |
+|---|---|---|---|---|---|
+| bulk | `stuck` | 97 | 223 | 9,791 (sum of steps) | `7e128820…`, 1,193 off {2: 1,193}, N 1,734 |
+| height (r22d75, r22d81, h4) | `not_applicable` | 0 | 0 | | unchanged |
+| high | `not_applicable` | 0 | 0 | | unchanged |
+| tail | `stuck` | 17 | 397,280 | 103,294 (sum of steps) | `966dc8a9…`, 158 off {2: 158} |
+| lattice | not entered | 0 | | | |
+
+- Tail rules used: `zero_bad` 4, `pure` 1, `close` 5, `t1prime` 7.
+- Total runner time 130,870 s. The final, unsuccessful tail attempt is the remaining ≈17,800 s.
+- Every step's rule, length, off count and time are in `run4-steps.md`.
+
+**Where it stopped** (`stuck`, phase `tail`, reason `no_rule`): digest `966dc8a96f7bf40b4c0361d7a26d9a3efbf62e6c59c1a6677cf5de9f8aefe661`,
+158 off, all at height 2. The tail has no N (N is the bulk's misalignment count, 1,734 at the bulk's end). The record's
+stuck units and their attempts:
+
+| unit | size | zero_bad | pure | close (pure) | close (transport) | t1prime | fallback |
+|---|---|---|---|---|---|---|---|
+| 9013 | 61 | no word | not strict_prime | no V | no W_ok core | no V | bound exhausted (length 1) |
+| 60085 | 33 | no word | not strict_prime | no V | no V | no V | |
+| 81223 | 29 | no word | not strict_prime | no V | no V | no V | |
+| 112734 | 25 | no word | not strict_prime | no V | no W_ok core | no V | |
+| 16314 | 10 | no word | no word | no word | no W_ok core | no word | |
+
+In acceptance mode the fallback runs only as a probe, on the first unit (9013). It found no word within
+`fallback_max_length` 1, so `probe` is false and the run is `stuck`, not `coverage_failure`.
+
+**Checker** (`check.jsonl`, the same JSON lines as `check.out`): every one of the 114 steps passes, replayed twist by
+twist. The final line reads `pass` true, `verdict` `stuck`, `result` `stuck`, end digest `966dc8a9…`,
+`unchecked_contracts` 0 and `lattice_checked` false.
+
+**Agreement with earlier runs:**
+
+- Run 4's 97 bulk steps agree with the census record `ia-k40-s7101.json` (`compare.py`, as for run 1): the same rule,
+  twists, N and off, and the same 223 twists.
+- Run 4's first 102 steps agree with run 3's (`out3-checkpoint/run.json`) in rule, letters, word sha256, before and
+  after digest, and off. Run 3 ran on the code before PR #128. Its slower close was the only change, and it did not
+  change any decision up to step 101. Run 3 has no step 102.
+- Runs 1 and 2 agree with these over the steps they reached (97 bulk steps; run 2's five tail steps).
+
+**Files in this directory:**
+
+- `out4/`: run 4's record (21 MB). Two things are left out because they contain absolute scratch paths, and the
+  record refers to neither: the runner's `attempts/` scratch tree (121 MB, per-attempt programs and tables) and the 18
+  child logs `logs/attempts-<index>-units-units.log`. No file is over 20 MB, so nothing is gzipped.
+- `runner.out`: the runner's stdout (its final JSON line).
+- `check.out` and `check.jsonl`: the checker's output.
+- `run4-steps.md`: the full step table.
+- `out3-checkpoint/`: run 3's last checkpoint (step 102), kept as the record of run 3.
+- `interrupted-run1/`, `interrupted-run2/`: the partial records of runs 1 and 2.
+- `bulk-vs-census.md`: run 1's step-by-step comparison with the census.
+- `out4-checkpoint/` is removed in the same commit that adds `out4/`, as the checkpoint procedure says.
+
+
 
 ## Question
 
@@ -221,5 +304,7 @@ starts from the scramble in `out3/`, with `checkpoint.py` keeping a verified cop
 
 ## Not run
 
-- `check_run.py` (it runs after the runner ends).
-- Windows, DirectX, the native host, input, long-session and performance checks: none.
+- Windows, DirectX, the native host, input, long-session and performance checks: none. Times are cloud timings of
+  research code on a shared headless Linux machine, not performance evidence.
+- The lattice phase (and so `schedule11`): not reached, because the run stopped in the tail.
+- The development-mode D1 run (`PLAN.md`, section 4): not part of this line.

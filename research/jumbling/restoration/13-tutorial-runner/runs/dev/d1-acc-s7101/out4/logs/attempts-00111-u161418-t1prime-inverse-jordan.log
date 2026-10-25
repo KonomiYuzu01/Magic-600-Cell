@@ -1,0 +1,15 @@
+STATE 61b93abe34351a1d854683786e00a1d81782f151903327cd633dd8f870c007dc 258
+{"safe_all_grips": 548, "letters": 6028, "off_lattice": 258, "sec": 17}
+{"orbits": 1316, "singletons": 1281, "sec": 18}
+TARGET 87 16 053cf97aa718b55110a01e91956b47330d796d7c49cb5e8e2c52bff8b5efb9c9
+CONDITION {"fixed_vacant": true, "fixed_occupied": [], "necessary": true, "necessary_deficits": [], "sufficient": null, "sufficient_deficits": [], "by_orbit": [{"orbit": 28, "least_chamber": 82, "size": 7200, "target": 12, "holes": 28, "threshold": null}, {"orbit": 29, "least_chamber": 83, "size": 7200, "target": 12, "holes": 23, "threshold": null}, {"orbit": 31, "least_chamber": 105, "size": 2400, "target": 4, "holes": 8, "threshold": null}, {"orbit": 32, "least_chamber": 106, "size": 7200, "target": 24, "holes": 36, "threshold": null}, {"orbit": 33, "least_chamber": 108, "size": 3600, "target": 18, "holes": 24, "threshold": null}, {"orbit": 34, "least_chamber": 115, "size": 2400, "target": 16, "holes": 19, "threshold": null}, {"orbit": 35, "least_chamber": 116, "size": 120, "target": 1, "holes": 1, "threshold": null}]}
+JORDAN {"orbit": 31, "orbit_size": 2400, "prime": 2003, "cycle_least_point": 105, "verified": true, "stage": 0, "trial": 2, "length": 120, "word_sha256": "e4a3bbb0ce6ebd2f8c35445adcce1d9c4427b385bb3acc15ed832105ca79f122"}
+JORDAN {"orbit": 29, "orbit_size": 7200, "prime": 3851, "cycle_least_point": 97, "verified": true, "stage": 0, "trial": 6, "length": 120, "word_sha256": "ac1c3ab1ff59e61612689b408e75e9f470d8ae3a49878efaa4f492538e9d1f5b"}
+JORDAN {"orbit": 28, "orbit_size": 7200, "prime": 4363, "cycle_least_point": 82, "verified": true, "stage": 0, "trial": 8, "length": 120, "word_sha256": "cc9c4d0a7a92bca43a995c4e605e6a1506ca4105b526e1ae242e0cdd2fbfaca3"}
+JORDAN {"orbit": 33, "orbit_size": 3600, "prime": 2053, "cycle_least_point": 108, "verified": true, "stage": 0, "trial": 11, "length": 120, "word_sha256": "7435da4fe94686bdbeaef25d37fcbf8b21a3cf45905f019d6b0a0c16ba570ca3"}
+PROGRESS 0 20 4 7 24.5
+JORDAN {"orbit": 35, "orbit_size": 120, "prime": 83, "cycle_least_point": 116, "verified": true, "stage": 0, "trial": 26, "length": 120, "word_sha256": "c3acc4f46d63db5f8e64cbe847810b82767a4b514d86c753b0c9187c87205ea9"}
+JORDAN {"orbit": 34, "orbit_size": 2400, "prime": 1481, "cycle_least_point": 115, "verified": true, "stage": 0, "trial": 31, "length": 120, "word_sha256": "39e7081baf50b86b497b74eb66f29ee3018255684511c74073ca94ea12e76a91"}
+JORDAN {"orbit": 32, "orbit_size": 7200, "prime": 4079, "cycle_least_point": 228, "verified": true, "stage": 0, "trial": 40, "length": 120, "word_sha256": "754b00a4b23e5db15bb9bb4af99c68e633ab1f069c74778d031ac31c185d1045"}
+PROGRESS 0 40 7 7 25.0
+JORDAN_DONE [] cpu 25.0

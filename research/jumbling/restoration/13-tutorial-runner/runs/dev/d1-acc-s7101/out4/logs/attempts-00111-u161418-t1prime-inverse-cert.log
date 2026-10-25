@@ -1,0 +1,11 @@
+{"safe_all_grips": 548, "letters": 6028, "off_lattice": 258, "sec": 19}
+{"orbits": 1316, "singletons": 1281, "sec": 19}
+{"safe_all_grips": 600, "letters": 6600, "off_lattice": 0, "sec": 36}
+{"least": 105, "route": "atlas", "size": 2400, "s": 9214, "e": 5, "f": 19, "steps": 1, "sec": 36.405}
+{"least": 116, "route": "atlas", "size": 120, "s": 190, "e": 5, "f": 5, "steps": 0, "sec": 36.689}
+{"least": 82, "route": "atlas", "size": 7200, "s": 46, "e": 5, "f": 5, "steps": 5, "sec": 37.778}
+{"least": 115, "route": "atlas", "size": 2400, "s": 46, "e": 5, "f": 5, "steps": 3, "sec": 38.297}
+{"least": 108, "route": "atlas", "size": 3600, "s": 94, "e": 5, "f": 5, "steps": 2, "sec": 39.044}
+{"least": 106, "route": "atlas", "size": 7200, "s": 142, "e": 5, "f": 17, "steps": 5, "sec": 40.2}
+{"least": 83, "route": "atlas", "size": 7200, "s": 94, "e": 5, "f": 20, "steps": 5, "sec": 41.311}
+{"complete": true, "missing": [], "V_length": 22398, "bound": 94700, "seconds": 41.72814, "sec": 41.728}
