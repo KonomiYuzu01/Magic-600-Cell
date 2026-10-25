@@ -1,0 +1,350 @@
+{
+ "certificate": {
+  "excursion": 200,
+  "format": "macro-certificate/1",
+  "macros": [],
+  "prefix": [
+   [
+    364,
+    5
+   ],
+   [
+    282,
+    13
+   ],
+   [
+    236,
+    12
+   ],
+   [
+    24,
+    7
+   ],
+   [
+    69,
+    14
+   ],
+   [
+    282,
+    5
+   ],
+   [
+    364,
+    6
+   ],
+   [
+    95,
+    4
+   ],
+   [
+    140,
+    13
+   ],
+   [
+    69,
+    50
+   ],
+   [
+    24,
+    13
+   ],
+   [
+    69,
+    12
+   ],
+   [
+    140,
+    8
+   ],
+   [
+    364,
+    6
+   ],
+   [
+    140,
+    14
+   ],
+   [
+    272,
+    9
+   ],
+   [
+    245,
+    7
+   ],
+   [
+    365,
+    14
+   ],
+   [
+    365,
+    1
+   ],
+   [
+    508,
+    8
+   ],
+   [
+    365,
+    15
+   ],
+   [
+    69,
+    4
+   ],
+   [
+    71,
+    12
+   ]
+  ],
+  "start": {
+   "digest": "61d4b85ef0fdb41c492ba8fc25bfd2cb88ba8599a5c6338de408449afb6a59c4",
+   "phi": 936
+  },
+  "table_digest": "d01dc91edd1c73da399b8acb13a57b9f526da64a5d754993f42ae02856d51889"
+ },
+ "choice": null,
+ "cpu_s": 3.724356,
+ "digest": "61d4b85ef0fdb41c492ba8fc25bfd2cb88ba8599a5c6338de408449afb6a59c4",
+ "families": {
+  "E": {
+   "candidates": [],
+   "counts": {
+    "admitted_items": 13,
+    "assignments": 192,
+    "covers": 6,
+    "descending_words": 0,
+    "dp_covers": 48,
+    "dp_transitions": 240,
+    "helper_items": 240,
+    "product_covers": 0,
+    "products": 0,
+    "unit_holders": 13
+   },
+   "cpu_s": 3.657202,
+   "e0": 200,
+   "exhausted": true,
+   "reporting": "minimum choice key per unit/holder; DP frontier records, not every dominated word",
+   "search": "T3P covers and P0/P1, raising-budget DP or complete acyclic products; net descent",
+   "targets": [
+    {
+     "covers": 1,
+     "feasible_assignments": 48,
+     "status": "no-round",
+     "target": 282,
+     "unit": 31254
+    },
+    {
+     "covers": 1,
+     "feasible_assignments": 48,
+     "status": "no-round",
+     "target": 282,
+     "unit": 2518
+    },
+    {
+     "count": 27,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 11,
+     "unit": 160207
+    },
+    {
+     "count": 95,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 36,
+     "unit": 160207
+    },
+    {
+     "covers": 1,
+     "feasible_assignments": 48,
+     "status": "no-round",
+     "target": 282,
+     "unit": 13940
+    },
+    {
+     "covers": 1,
+     "feasible_assignments": 0,
+     "status": "no-round",
+     "target": 262,
+     "unit": 41199
+    },
+    {
+     "count": 117,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 328,
+     "unit": 41199
+    },
+    {
+     "covers": 1,
+     "feasible_assignments": 48,
+     "status": "no-round",
+     "target": 282,
+     "unit": 44132
+    },
+    {
+     "count": 137,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 464,
+     "unit": 44132
+    },
+    {
+     "covers": 1,
+     "feasible_assignments": 0,
+     "status": "no-round",
+     "target": 262,
+     "unit": 112184
+    },
+    {
+     "count": 117,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 328,
+     "unit": 112184
+    },
+    {
+     "count": 164,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 234,
+     "unit": 3547
+    },
+    {
+     "count": 118,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 238,
+     "unit": 7604
+    }
+   ]
+  }
+ },
+ "format": "pstar-step/1",
+ "options": {
+  "beam": 64,
+  "choice": "best",
+  "depth": 3,
+  "e0": 200,
+  "families": [
+   "E"
+  ]
+ },
+ "phi": 936,
+ "prefix": [
+  [
+   364,
+   5
+  ],
+  [
+   282,
+   13
+  ],
+  [
+   236,
+   12
+  ],
+  [
+   24,
+   7
+  ],
+  [
+   69,
+   14
+  ],
+  [
+   282,
+   5
+  ],
+  [
+   364,
+   6
+  ],
+  [
+   95,
+   4
+  ],
+  [
+   140,
+   13
+  ],
+  [
+   69,
+   50
+  ],
+  [
+   24,
+   13
+  ],
+  [
+   69,
+   12
+  ],
+  [
+   140,
+   8
+  ],
+  [
+   364,
+   6
+  ],
+  [
+   140,
+   14
+  ],
+  [
+   272,
+   9
+  ],
+  [
+   245,
+   7
+  ],
+  [
+   365,
+   14
+  ],
+  [
+   365,
+   1
+  ],
+  [
+   508,
+   8
+  ],
+  [
+   365,
+   15
+  ],
+  [
+   69,
+   4
+  ],
+  [
+   71,
+   12
+  ]
+ ],
+ "setup": {
+  "labels": {
+   "cpu_s": 0.962134
+  },
+  "load": {
+   "cpu_s": 0.170207
+  },
+  "trees": {
+   "cpu_s": 4.864569
+  },
+  "word": {
+   "cpu_s": 8.180614
+  }
+ }
+}

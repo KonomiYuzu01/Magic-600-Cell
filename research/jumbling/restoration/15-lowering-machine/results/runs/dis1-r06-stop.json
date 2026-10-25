@@ -1,0 +1,422 @@
+{
+ "choice": {
+  "claims": {
+   "D": 9,
+   "F": 0,
+   "delta": [
+    0,
+    0,
+    0,
+    -18
+   ],
+   "digests": [
+    "30bfb12c78ea33e27ceb1aace237be67fee6bb60a7b26ee193d6ba8fe3faa688",
+    "aedbf196a5ffd7a44b7eecf9c45adc75d9f04f22f5db90315452cd5ea87556ff",
+    "c953a2dafc516fcb972768ef5cace8d9f69254682f470e0aa580fb931724f515",
+    "f5209ef2d10d92594ef9d3a4e945ae2910e34e8dfad9ff82eba2ac9e9f759602"
+   ],
+   "excursion": 0,
+   "phi": [
+    1472,
+    1472,
+    1472,
+    1454
+   ],
+   "supports": [
+    {
+     "sha256": "77b2dea33aab081cdfdb88afbf7ec63cb389461309d1b14eff6fd8d142394d74",
+     "size": 3185
+    },
+    {
+     "sha256": "c843c4c3fdfa282113dde41486a8a71aeb7b00727bade52151e38d41d4f54dfb",
+     "size": 3052
+    },
+    {
+     "sha256": "3d03e897efd26141309cf9260f842bdf82d4f6c8a07321155d1ce96a8431eea3",
+     "size": 2519
+    },
+    {
+     "sha256": "2a7be9a53449a43a2b4cf8a360ca852b0df1cc747301e462768765efdd302561",
+     "size": 2725
+    }
+   ]
+  },
+  "excursion": 0,
+  "family": "R",
+  "length": 4,
+  "target": 229,
+  "terminal_phi": 1454,
+  "unit": null,
+  "word": [
+   [
+    181,
+    6
+   ],
+   [
+    295,
+    6
+   ],
+   [
+    347,
+    7
+   ],
+   [
+    229,
+    14
+   ]
+  ]
+ },
+ "cpu_s": 864.874849,
+ "digest": "956d3d3e5189646a38ede9ce134f04662c8c15e245593948c265041107bb9f92",
+ "families": {
+  "R": {
+   "beam": null,
+   "candidates": [
+    {
+     "claims": {
+      "D": 9,
+      "F": 0,
+      "delta": [
+       0,
+       0,
+       0,
+       -18
+      ],
+      "digests": [
+       "30bfb12c78ea33e27ceb1aace237be67fee6bb60a7b26ee193d6ba8fe3faa688",
+       "aedbf196a5ffd7a44b7eecf9c45adc75d9f04f22f5db90315452cd5ea87556ff",
+       "c953a2dafc516fcb972768ef5cace8d9f69254682f470e0aa580fb931724f515",
+       "f5209ef2d10d92594ef9d3a4e945ae2910e34e8dfad9ff82eba2ac9e9f759602"
+      ],
+      "excursion": 0,
+      "phi": [
+       1472,
+       1472,
+       1472,
+       1454
+      ],
+      "supports": [
+       {
+        "sha256": "77b2dea33aab081cdfdb88afbf7ec63cb389461309d1b14eff6fd8d142394d74",
+        "size": 3185
+       },
+       {
+        "sha256": "c843c4c3fdfa282113dde41486a8a71aeb7b00727bade52151e38d41d4f54dfb",
+        "size": 3052
+       },
+       {
+        "sha256": "3d03e897efd26141309cf9260f842bdf82d4f6c8a07321155d1ce96a8431eea3",
+        "size": 2519
+       },
+       {
+        "sha256": "2a7be9a53449a43a2b4cf8a360ca852b0df1cc747301e462768765efdd302561",
+        "size": 2725
+       }
+      ]
+     },
+     "excursion": 0,
+     "length": 4,
+     "target": 229,
+     "terminal_phi": 1454,
+     "unit": null,
+     "word": [
+      [
+       181,
+       6
+      ],
+      [
+       295,
+       6
+      ],
+      [
+       347,
+       7
+      ],
+      [
+       229,
+       14
+      ]
+     ]
+    },
+    {
+     "claims": {
+      "D": 9,
+      "F": 0,
+      "delta": [
+       0,
+       0,
+       0,
+       -18
+      ],
+      "digests": [
+       "14283783eb48a28e15d46a5e995989fc5c8fe8ff3b356d9e90f64199b78d48e8",
+       "3c4099d69a5bcc68ed9757209bd71646f5abd2e11c87368c239910e16f9e0791",
+       "57a703dc379b3e5cadb216adb1067c689ee68f4cead591854a791253d44d6b37",
+       "9a9d7d5db0c57ea93bf6357702d9475bffae2bce14bb2de578b55c19f4c084fd"
+      ],
+      "excursion": 0,
+      "phi": [
+       1472,
+       1472,
+       1472,
+       1454
+      ],
+      "supports": [
+       {
+        "sha256": "8f84df131144573a174ae261f0c02138fd5c9b7400d5952f9d9ed67d677955bb",
+        "size": 2048
+       },
+       {
+        "sha256": "35e57052c706b5e0809752227f5df3c3b031b7aa910cb11734dd8abef5492360",
+        "size": 3134
+       },
+       {
+        "sha256": "90d518ec5089c1ae7dd2a70dcd6d5fabfc17f92048d0f750bc80dd7cff9ca90e",
+        "size": 2038
+       },
+       {
+        "sha256": "b3b63b4b729e930bb13e740d4957d15a25c4b90160afed6103e8e2e352a331ae",
+        "size": 2035
+       }
+      ]
+     },
+     "excursion": 0,
+     "length": 4,
+     "target": 522,
+     "terminal_phi": 1454,
+     "unit": null,
+     "word": [
+      [
+       522,
+       9
+      ],
+      [
+       397,
+       5
+      ],
+      [
+       494,
+       4
+      ],
+      [
+       522,
+       12
+      ]
+     ]
+    }
+   ],
+   "counts": {
+    "descending_words": 96,
+    "lowering_tests": 4728048,
+    "nodes": 192932,
+    "pruned_letters": 26288460,
+    "retained_letters": 300168,
+    "skipped_repeats": 2015970,
+    "targets": 14
+   },
+   "cpu_s": 864.795988,
+   "depth": 3,
+   "exhausted": true,
+   "exhaustive_through": 3,
+   "reporting": "minimum choice key per target; descending words counted among the leaves tried",
+   "search": "R generator of pstar.family_r without a beam; repeated grips skipped; last letters pruned by an exact necessary condition",
+   "targets": [
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      77,
+      5115,
+      0
+     ],
+     "target": 2
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      220,
+      45892,
+      0
+     ],
+     "target": 64
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      165,
+      25619,
+      0
+     ],
+     "target": 73
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      55,
+      2563,
+      0
+     ],
+     "target": 162
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      55,
+      2442,
+      0
+     ],
+     "target": 183
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      132,
+      15697,
+      6204
+     ],
+     "target": 229
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      121,
+      12958,
+      0
+     ],
+     "target": 239
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      121,
+      13321,
+      0
+     ],
+     "target": 251
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      121,
+      13222,
+      2486
+     ],
+     "target": 336
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      88,
+      6413,
+      9757
+     ],
+     "target": 375
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      110,
+      10461,
+      0
+     ],
+     "target": 475
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      88,
+      7260,
+      40722
+     ],
+     "target": 522
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      77,
+      5236,
+      48081
+     ],
+     "target": 540
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      165,
+      25124,
+      0
+     ],
+     "target": 596
+    }
+   ]
+  }
+ },
+ "format": "pstar2-stop/1",
+ "options": {
+  "depth": 3,
+  "e0": 20,
+  "families": [
+   "R"
+  ],
+  "search": "pruned"
+ },
+ "phi": 1472,
+ "prefix": [
+  [
+   344,
+   9
+  ],
+  [
+   451,
+   55
+  ],
+  [
+   522,
+   14
+  ],
+  [
+   522,
+   8
+  ],
+  [
+   451,
+   44
+  ],
+  [
+   522,
+   15
+  ]
+ ],
+ "setup": {
+  "labels": {
+   "cpu_s": 1.161487
+  },
+  "load": {
+   "cpu_s": 0.252132
+  },
+  "trees": {
+   "cpu_s": 7.309425
+  },
+  "word": {
+   "cpu_s": 2.485699
+  }
+ },
+ "stop_options": {
+  "beam": null,
+  "search": "pruned"
+ },
+ "table_digest": "ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980"
+}

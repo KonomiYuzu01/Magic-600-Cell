@@ -1,0 +1,353 @@
+{
+ "excursion": 20,
+ "format": "macro-certificate/1",
+ "macros": [
+  {
+   "claims": {
+    "D": 111,
+    "F": 19,
+    "delta": [
+     0,
+     0,
+     0,
+     -184
+    ],
+    "digests": [
+     "8323e5301b9a06a5f1552ebfe4a36ead8aeca2d559fac5db12f8904169a6aaa8",
+     "1dd0167bc2d73bc23c0633233f043f5f18393a0e03e78623dbb8bf76c4b71283",
+     "4a0f06e336433f0ffe3473d449f5fd9f16a64b2a4557a27e9e216abe8a186f58",
+     "8a62138903b7801afdd81eeaaf0b535065d03e33135f628512bdbc05a31edc5f"
+    ],
+    "excursion": 0,
+    "phi": [
+     1680,
+     1680,
+     1680,
+     1496
+    ],
+    "supports": [
+     {
+      "sha256": "72d4d446cd30c2d554900a23e0abce6b3eaab6dc0b8b012c4e93bf9333e56847",
+      "size": 2896
+     },
+     {
+      "sha256": "ac3a3e732c0897a0e5f89a19ddaa1e8d573db1f261c93dcc4cecdcad3bed0070",
+      "size": 2496
+     },
+     {
+      "sha256": "9aeeb2dd89184fe3013ced9c16bc07b6eaeff1ca0e7199192891d33dfca4f526",
+      "size": 2903
+     },
+     {
+      "sha256": "906b099a4a41f2921a413adefec62e1f90cfec94c554ad3bdf955b631c1b3789",
+      "size": 2728
+     }
+    ]
+   },
+   "events": [
+    [
+     282,
+     5
+    ],
+    [
+     364,
+     6
+    ],
+    [
+     95,
+     4
+    ],
+    [
+     140,
+     13
+    ]
+   ]
+  },
+  {
+   "claims": {
+    "D": 48,
+    "F": 0,
+    "delta": [
+     20,
+     -96
+    ],
+    "digests": [
+     "b47ee69b20ac58afc36d4e209de1418e56aaa73c8ac98c4c4dea95bdba1d0534",
+     "feb36f10c2813d4c59923bb5d89d1f1ea45cda248453b7961194f26882eeefde"
+    ],
+    "excursion": 20,
+    "phi": [
+     1516,
+     1420
+    ],
+    "supports": [
+     {
+      "sha256": "7c4da42cfc5316bcf8a5a34d03e2ffa1330d465bb680ce7d79e21d514f2d69ed",
+      "size": 3445
+     },
+     {
+      "sha256": "d95c516fd9d3bcf1081b89dbed1c780ffd570ecbc882ec4e2d8c2fac93002955",
+      "size": 3116
+     }
+    ]
+   },
+   "events": [
+    [
+     69,
+     50
+    ],
+    [
+     24,
+     13
+    ]
+   ],
+   "unit_piece": 102246
+  },
+  {
+   "claims": {
+    "D": 113,
+    "F": 0,
+    "delta": [
+     -226
+    ],
+    "digests": [
+     "5f7734ff960602f5f9f93a0d5704d26f9e28b255cab9d2dc0292aba5211d4e2f"
+    ],
+    "excursion": 0,
+    "phi": [
+     1194
+    ],
+    "supports": [
+     {
+      "sha256": "d4a711862b280e6461371cbe030689937fd1a3fb819e6b5cb0b8b1a0f20fb466",
+      "size": 3226
+     }
+    ]
+   },
+   "events": [
+    [
+     69,
+     12
+    ]
+   ],
+   "unit_piece": 63146
+  },
+  {
+   "claims": {
+    "D": 32,
+    "F": 0,
+    "delta": [
+     0,
+     0,
+     -64
+    ],
+    "digests": [
+     "327302af7208ee4e1d3ded85bff62f894e96bf6b9854d4001885639ba7d09f49",
+     "200feb38a8042be87b131485bc8373e1d3c83ebbf45af6dea57b26fd0da67241",
+     "252a5205d0213fbebedbe4fd7bdd61c5d28c83682b32485389792c4a9ce94239"
+    ],
+    "excursion": 0,
+    "phi": [
+     1194,
+     1194,
+     1130
+    ],
+    "supports": [
+     {
+      "sha256": "906b099a4a41f2921a413adefec62e1f90cfec94c554ad3bdf955b631c1b3789",
+      "size": 2728
+     },
+     {
+      "sha256": "ac3a3e732c0897a0e5f89a19ddaa1e8d573db1f261c93dcc4cecdcad3bed0070",
+      "size": 2496
+     },
+     {
+      "sha256": "90e09f1a698a858eb31e61ecd857217d829c0bb32321c80c4483bd09b1240db1",
+      "size": 2424
+     }
+    ]
+   },
+   "events": [
+    [
+     140,
+     8
+    ],
+    [
+     364,
+     6
+    ],
+    [
+     140,
+     14
+    ]
+   ]
+  },
+  {
+   "claims": {
+    "D": 78,
+    "F": 57,
+    "delta": [
+     0,
+     0,
+     -42
+    ],
+    "digests": [
+     "f83cc8ff88c3d7566dc77a9bd6f5a243206bbc42bba236a987a40970aba1ffd2",
+     "beb1fe8d8e2d17649430032c235ad2497180abf56938db97f775701324848c3f",
+     "4b536522bfc4bfafec611a300631417b7721f7ecde5de36ec2f1a12136b88b28"
+    ],
+    "excursion": 0,
+    "phi": [
+     1130,
+     1130,
+     1088
+    ],
+    "supports": [
+     {
+      "sha256": "225d7681bd729172dc6350808d6e8cec18a2d278f7454e6e8c0ff785e6d20689",
+      "size": 2258
+     },
+     {
+      "sha256": "f4d6bc8c66fd3bce51f0ee014d8503c8a19e730a309353b4089babd37cf6310b",
+      "size": 3134
+     },
+     {
+      "sha256": "32a6db69627ebeb89596ff380803fd8f3b9cffb4a6e85ac48e80279afc61e147",
+      "size": 2951
+     }
+    ]
+   },
+   "events": [
+    [
+     272,
+     9
+    ],
+    [
+     245,
+     7
+    ],
+    [
+     365,
+     14
+    ]
+   ]
+  },
+  {
+   "claims": {
+    "D": 57,
+    "F": 0,
+    "delta": [
+     0,
+     0,
+     -114
+    ],
+    "digests": [
+     "2949cc1045052e00d2dbe0d2eade67ff013a300c4a265c0d842693a502522d59",
+     "0f80a88d2cdd1a8e8f608992915eb67d19dbdc1a892037500fcfb4117420c101",
+     "c2289d364af47351efd610f766a18e334389b48c36cbfd6cba8e0aaf3d8def99"
+    ],
+    "excursion": 0,
+    "phi": [
+     1088,
+     1088,
+     974
+    ],
+    "supports": [
+     {
+      "sha256": "32a6db69627ebeb89596ff380803fd8f3b9cffb4a6e85ac48e80279afc61e147",
+      "size": 2951
+     },
+     {
+      "sha256": "9ef93df3ab533db6ee1838a0bd97605f3f3090ed6e53ab39264ae90ae3ffe447",
+      "size": 2071
+     },
+     {
+      "sha256": "597e40f17316d9b54ef2f658e244c371c0f9b33861788256e0da499a35e0f843",
+      "size": 2858
+     }
+    ]
+   },
+   "events": [
+    [
+     365,
+     1
+    ],
+    [
+     508,
+     8
+    ],
+    [
+     365,
+     15
+    ]
+   ]
+  },
+  {
+   "claims": {
+    "D": 19,
+    "F": 0,
+    "delta": [
+     0,
+     -38
+    ],
+    "digests": [
+     "c30b2c3db2d4c17a0b1d758abe3653ca69784f36df1e13f0cb981bb39396c86e",
+     "61d4b85ef0fdb41c492ba8fc25bfd2cb88ba8599a5c6338de408449afb6a59c4"
+    ],
+    "excursion": 0,
+    "phi": [
+     974,
+     936
+    ],
+    "supports": [
+     {
+      "sha256": "d4a711862b280e6461371cbe030689937fd1a3fb819e6b5cb0b8b1a0f20fb466",
+      "size": 3226
+     },
+     {
+      "sha256": "fddb8e60896a4b5a1cde0b5f4126aaabb2658eb0f88531d08086f1185555ea60",
+      "size": 2933
+     }
+    ]
+   },
+   "events": [
+    [
+     69,
+     4
+    ],
+    [
+     71,
+     12
+    ]
+   ],
+   "unit_piece": 14425
+  }
+ ],
+ "prefix": [
+  [
+   364,
+   5
+  ],
+  [
+   282,
+   13
+  ],
+  [
+   236,
+   12
+  ],
+  [
+   24,
+   7
+  ],
+  [
+   69,
+   14
+  ]
+ ],
+ "start": {
+  "digest": "4c0234bf2b3234618fc9f8759eebe3e1b10ed19ab974122b31171178ee44010f",
+  "phi": 1680
+ },
+ "table_digest": "d01dc91edd1c73da399b8acb13a57b9f526da64a5d754993f42ae02856d51889"
+}

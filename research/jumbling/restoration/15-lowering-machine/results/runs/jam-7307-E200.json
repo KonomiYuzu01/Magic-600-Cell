@@ -1,0 +1,443 @@
+{
+ "certificate": {
+  "excursion": 200,
+  "format": "macro-certificate/1",
+  "macros": [],
+  "prefix": [
+   [
+    516,
+    14
+   ],
+   [
+    597,
+    10
+   ],
+   [
+    543,
+    13
+   ],
+   [
+    10,
+    8
+   ],
+   [
+    147,
+    2
+   ],
+   [
+    102,
+    15
+   ],
+   [
+    216,
+    2
+   ],
+   [
+    266,
+    14
+   ],
+   [
+    275,
+    1
+   ],
+   [
+    435,
+    12
+   ],
+   [
+    435,
+    7
+   ],
+   [
+    319,
+    12
+   ],
+   [
+    94,
+    12
+   ],
+   [
+    474,
+    7
+   ],
+   [
+    394,
+    22
+   ],
+   [
+    474,
+    14
+   ],
+   [
+    102,
+    8
+   ],
+   [
+    67,
+    9
+   ],
+   [
+    10,
+    1
+   ],
+   [
+    102,
+    12
+   ],
+   [
+    102,
+    1
+   ],
+   [
+    94,
+    1
+   ],
+   [
+    102,
+    15
+   ],
+   [
+    67,
+    6
+   ],
+   [
+    88,
+    11
+   ],
+   [
+    266,
+    3
+   ],
+   [
+    226,
+    14
+   ]
+  ],
+  "start": {
+   "digest": "60ac608e74e316d0d1905b57e71afd46a004c385b03687cbb4cd0f56e54dca38",
+   "phi": 1220
+  },
+  "table_digest": "895b45de8a9a83604ca8bf988a3c9a287e404e59bd22a5004703d0852b252507"
+ },
+ "choice": null,
+ "cpu_s": 2.307249,
+ "digest": "60ac608e74e316d0d1905b57e71afd46a004c385b03687cbb4cd0f56e54dca38",
+ "families": {
+  "E": {
+   "candidates": [],
+   "counts": {
+    "admitted_items": 0,
+    "assignments": 84,
+    "covers": 9,
+    "descending_words": 0,
+    "dp_covers": 84,
+    "dp_transitions": 0,
+    "helper_items": 60,
+    "product_covers": 0,
+    "products": 0,
+    "unit_holders": 21
+   },
+   "cpu_s": 2.219255,
+   "e0": 200,
+   "exhausted": true,
+   "reporting": "minimum choice key per unit/holder; DP frontier records, not every dominated word",
+   "search": "T3P covers and P0/P1, raising-budget DP or complete acyclic products; net descent",
+   "targets": [
+    {
+     "count": 9,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 533,
+     "unit": 26691
+    },
+    {
+     "count": 31,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 552,
+     "unit": 26691
+    },
+    {
+     "count": 32,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 232,
+     "unit": 105333
+    },
+    {
+     "covers": 1,
+     "feasible_assignments": 12,
+     "status": "no-round",
+     "target": 319,
+     "unit": 105333
+    },
+    {
+     "count": 3,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 117,
+     "unit": 38550
+    },
+    {
+     "count": 242,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 272,
+     "unit": 38550
+    },
+    {
+     "covers": 1,
+     "feasible_assignments": 12,
+     "status": "no-round",
+     "target": 516,
+     "unit": 47820
+    },
+    {
+     "count": 52,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 526,
+     "unit": 47820
+    },
+    {
+     "count": 32,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 517,
+     "unit": 58776
+    },
+    {
+     "covers": 1,
+     "feasible_assignments": 0,
+     "status": "no-round",
+     "target": 597,
+     "unit": 58776
+    },
+    {
+     "covers": 1,
+     "feasible_assignments": 12,
+     "status": "no-round",
+     "target": 102,
+     "unit": 25829
+    },
+    {
+     "count": 102,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 405,
+     "unit": 142003
+    },
+    {
+     "covers": 1,
+     "feasible_assignments": 12,
+     "status": "no-round",
+     "target": 102,
+     "unit": 63865
+    },
+    {
+     "covers": 1,
+     "feasible_assignments": 12,
+     "status": "no-round",
+     "target": 516,
+     "unit": 35810
+    },
+    {
+     "count": 52,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 526,
+     "unit": 35810
+    },
+    {
+     "count": 9,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 533,
+     "unit": 133931
+    },
+    {
+     "covers": 1,
+     "feasible_assignments": 12,
+     "status": "no-round",
+     "target": 102,
+     "unit": 66431
+    },
+    {
+     "count": 278,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 281,
+     "unit": 66431
+    },
+    {
+     "covers": 1,
+     "feasible_assignments": 12,
+     "status": "no-round",
+     "target": 10,
+     "unit": 6243
+    },
+    {
+     "count": 186,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 368,
+     "unit": 97366
+    },
+    {
+     "covers": 1,
+     "feasible_assignments": 0,
+     "status": "no-round",
+     "target": 597,
+     "unit": 55811
+    }
+   ]
+  }
+ },
+ "format": "pstar-step/1",
+ "options": {
+  "beam": 64,
+  "choice": "best",
+  "depth": 3,
+  "e0": 200,
+  "families": [
+   "E"
+  ]
+ },
+ "phi": 1220,
+ "prefix": [
+  [
+   516,
+   14
+  ],
+  [
+   597,
+   10
+  ],
+  [
+   543,
+   13
+  ],
+  [
+   10,
+   8
+  ],
+  [
+   147,
+   2
+  ],
+  [
+   102,
+   15
+  ],
+  [
+   216,
+   2
+  ],
+  [
+   266,
+   14
+  ],
+  [
+   275,
+   1
+  ],
+  [
+   435,
+   12
+  ],
+  [
+   435,
+   7
+  ],
+  [
+   319,
+   12
+  ],
+  [
+   94,
+   12
+  ],
+  [
+   474,
+   7
+  ],
+  [
+   394,
+   22
+  ],
+  [
+   474,
+   14
+  ],
+  [
+   102,
+   8
+  ],
+  [
+   67,
+   9
+  ],
+  [
+   10,
+   1
+  ],
+  [
+   102,
+   12
+  ],
+  [
+   102,
+   1
+  ],
+  [
+   94,
+   1
+  ],
+  [
+   102,
+   15
+  ],
+  [
+   67,
+   6
+  ],
+  [
+   88,
+   11
+  ],
+  [
+   266,
+   3
+  ],
+  [
+   226,
+   14
+  ]
+ ],
+ "setup": {
+  "labels": {
+   "cpu_s": 0.624893
+  },
+  "load": {
+   "cpu_s": 0.231385
+  },
+  "trees": {
+   "cpu_s": 6.357969
+  },
+  "word": {
+   "cpu_s": 10.646814
+  }
+ }
+}

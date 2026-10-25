@@ -1,0 +1,67 @@
+{
+ "cpu_s": 118.990621,
+ "digest": "ec5c05925b49a91fc7e1416d4017f93cec0ebc50b178397a5d5197f3426f300f",
+ "failures": [],
+ "format": "macro-check/1",
+ "macros": [
+  {
+   "claims": {
+    "D": 12,
+    "F": 0,
+    "delta": [
+     0,
+     0,
+     -24
+    ],
+    "digests": [
+     "dc8225fe2c872b4f22b862989c4083278b40dc653c6b57cc60b4e139358165e0",
+     "b709e0ce1d2d04d75c9ad9e7971408e1e4ae767fb14d30b14da0648ac7d8f390",
+     "ec5c05925b49a91fc7e1416d4017f93cec0ebc50b178397a5d5197f3426f300f"
+    ],
+    "excursion": 0,
+    "phi": [
+     2474,
+     2474,
+     2450
+    ],
+    "supports": [
+     {
+      "sha256": "a9a7f14ceea815692903b241f0247e79bcfff13db2027fb55e8a8b6029e1618b",
+      "size": 2611
+     },
+     {
+      "sha256": "4942cd353d92d4455caaeb1778eebeed5c0975a455ab842b31ccc3a53a8e7b03",
+      "size": 3303
+     },
+     {
+      "sha256": "bcdc5da124ea9c1865e33d9a5bd0a8825ac2f896b94b43561b729af7d86405bf",
+      "size": 2470
+     }
+    ]
+   },
+   "passed": true
+  }
+ ],
+ "passed": true,
+ "phi": 2450,
+ "replay": {
+  "digest": "ec5c05925b49a91fc7e1416d4017f93cec0ebc50b178397a5d5197f3426f300f",
+  "events": 12,
+  "passed": true,
+  "phi": 2450
+ },
+ "setup": {
+  "labels": {
+   "cpu_s": 0.381907
+  },
+  "load": {
+   "cpu_s": 0.202998
+  },
+  "trees": {
+   "cpu_s": 7.368206
+  },
+  "word": {
+   "cpu_s": 4.468434
+  }
+ }
+}

@@ -1,0 +1,236 @@
+{
+ "excursion": 20,
+ "format": "macro-certificate/1",
+ "macros": [
+  {
+   "claims": {
+    "D": 111,
+    "F": 12,
+    "delta": [
+     0,
+     0,
+     0,
+     -198
+    ],
+    "digests": [
+     "ed99cb47eb1f75c419621fd4d7a060ac9cfd6844ee85127e38857203088f9112",
+     "b9232b5db07a80ca8f1e3cda413739740b5ab27efe2177ac584b88a5378d40e3",
+     "b6db9bf5cd96dfb815c435a032d24127e99a1e02ef9710844bbfef9e5bd89dea",
+     "64999ffa8194fc1c025f9a7bf55911e3400189cc80543a033de3dc98491cb0fa"
+    ],
+    "excursion": 0,
+    "phi": [
+     1498,
+     1498,
+     1498,
+     1300
+    ],
+    "supports": [
+     {
+      "sha256": "f32a92535ae752798a56bc402b521b41c8b69b9ae928327a73fee06c9c3cc1e6",
+      "size": 2985
+     },
+     {
+      "sha256": "49d401d0aac4eeabd8116de30de4741b471bd87acf3811d73a7c7901035abe64",
+      "size": 2263
+     },
+     {
+      "sha256": "3c9289d6643c711eb2103b6e2ea80938e90a07ee56922f879c1280ae6442a90f",
+      "size": 2286
+     },
+     {
+      "sha256": "d2e14a3e91587abf2ab63be0f759d386e2e209a8dd41d234ab7a6697a4263604",
+      "size": 4045
+     }
+    ]
+   },
+   "events": [
+    [
+     277,
+     1
+    ],
+    [
+     384,
+     7
+    ],
+    [
+     375,
+     1
+    ],
+    [
+     162,
+     13
+    ]
+   ]
+  },
+  {
+   "claims": {
+    "D": 42,
+    "F": 18,
+    "delta": [
+     0,
+     0,
+     -48
+    ],
+    "digests": [
+     "adda5a2bd7de861a224556bce98b6ce338bedb04fbfc2379445d27511d90c0c0",
+     "297e064539f654e06c279c60aebcf6996130af1aa0cff49cc45c34ffcbcbf9e5",
+     "109fa519e7bc98266b8d99048e038ab242b7b475f269c8e87fdf5ed152b3ec25"
+    ],
+    "excursion": 0,
+    "phi": [
+     1300,
+     1300,
+     1252
+    ],
+    "supports": [
+     {
+      "sha256": "d2e14a3e91587abf2ab63be0f759d386e2e209a8dd41d234ab7a6697a4263604",
+      "size": 4045
+     },
+     {
+      "sha256": "00a6ee5c27debe9a12bf9c8ad7faa6f29bffe2062865146779e035953d5a68f0",
+      "size": 2234
+     },
+     {
+      "sha256": "56124329d9ddb55388b0054f4a7d53db7589f24d06bce52ee6da096a89981260",
+      "size": 2079
+     }
+    ]
+   },
+   "events": [
+    [
+     162,
+     6
+    ],
+    [
+     384,
+     1
+    ],
+    [
+     375,
+     15
+    ]
+   ]
+  },
+  {
+   "claims": {
+    "D": 18,
+    "F": 10,
+    "delta": [
+     0,
+     0,
+     -16
+    ],
+    "digests": [
+     "0fd3f1e1d4dd90a8d82e1b4db2567dafbc4b67295ddee5da79095c62c22a3d75",
+     "7bf91df6cff05df289bb9eeb863c0eed43c691eed06c4ea08ca09f291675712f",
+     "62b75ad9f32bb0a1d0377fc56afb26a7c5826c271141d75fd2d9a99c4b06470c"
+    ],
+    "excursion": 0,
+    "phi": [
+     1252,
+     1252,
+     1236
+    ],
+    "supports": [
+     {
+      "sha256": "56124329d9ddb55388b0054f4a7d53db7589f24d06bce52ee6da096a89981260",
+      "size": 2079
+     },
+     {
+      "sha256": "dfc1e8637726e8b5fbe811d65ec2f321faf65b137d281afc67f4133091337092",
+      "size": 2339
+     },
+     {
+      "sha256": "ec1276dce54a464c2f8ed5a50e9d599428f46e3f7911457c61b267264e9453b9",
+      "size": 1940
+     }
+    ]
+   },
+   "events": [
+    [
+     375,
+     5
+    ],
+    [
+     384,
+     2
+    ],
+    [
+     375,
+     13
+    ]
+   ]
+  },
+  {
+   "claims": {
+    "D": 22,
+    "F": 9,
+    "delta": [
+     0,
+     0,
+     -26
+    ],
+    "digests": [
+     "233e76c7226130511559ed1ab3f74d831ea19e7da48a628b6fcbdc967c8754e1",
+     "0207cc48b4a6b3a51a9ea25064f6aec1a1dfd16cbe2478566839e1920ebdc943",
+     "98f772726c6ec8cf66602d3372e26eab1e142fad7f09a7fd48cda6c18a409c64"
+    ],
+    "excursion": 0,
+    "phi": [
+     1236,
+     1236,
+     1210
+    ],
+    "supports": [
+     {
+      "sha256": "5930882547c3fbc984fbcc10568140275bf392b30840838928cffa671e8999d2",
+      "size": 2092
+     },
+     {
+      "sha256": "44fdd5624568dbf39b8c2e525336051453f8346aff2d49d2a39f05c327d815ec",
+      "size": 3076
+     },
+     {
+      "sha256": "a59eb5e947c6763668046768a59796056a5ef4c635ef9604dd75c4a6c0b8afad",
+      "size": 1936
+     }
+    ]
+   },
+   "events": [
+    [
+     522,
+     8
+    ],
+    [
+     451,
+     8
+    ],
+    [
+     522,
+     15
+    ]
+   ]
+  }
+ ],
+ "prefix": [
+  [
+   344,
+   9
+  ],
+  [
+   451,
+   55
+  ],
+  [
+   522,
+   14
+  ]
+ ],
+ "start": {
+  "digest": "f93e461f9b1c65d5483cf3ba53db266baee71613d8a8808e091ce4a0484daad2",
+  "phi": 1498
+ },
+ "table_digest": "ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980"
+}

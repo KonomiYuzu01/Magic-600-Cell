@@ -1,0 +1,412 @@
+{
+ "choice": {
+  "claims": {
+   "D": 10,
+   "F": 0,
+   "delta": [
+    0,
+    0,
+    0,
+    -20
+   ],
+   "digests": [
+    "55d7d5f4276837e111dad563462d2c6d75373fba2af263a148ee2597b714cd92",
+    "8fc170b99e5aa61abb730470b39cc63544e9968b2a45ca544cd0e9ae0275db90",
+    "6e356757d3aa7eabb56062131f633654941a5556cc4ccede90da56e065b60dab",
+    "59037372e50bfa2033b1342ba0ea284a2f574bfd64b1be20522de8b02ce73967"
+   ],
+   "excursion": 0,
+   "phi": [
+    1210,
+    1210,
+    1210,
+    1190
+   ],
+   "supports": [
+    {
+     "sha256": "a59eb5e947c6763668046768a59796056a5ef4c635ef9604dd75c4a6c0b8afad",
+     "size": 1936
+    },
+    {
+     "sha256": "6298d637dce64b520d6424f190867c9f7e4133a97cccaf2443d5de6c682d6c9b",
+     "size": 1956
+    },
+    {
+     "sha256": "59f77d25fe3968f15ad6236d55f4526931e4fd4cac60d6aa970cd70a76cb8325",
+     "size": 2241
+    },
+    {
+     "sha256": "5d9d6cecf615e356e2fca847c4c6ae22aa19a4013347a4a0f94ba9ed3ce1083f",
+     "size": 2208
+    }
+   ]
+  },
+  "excursion": 0,
+  "family": "R",
+  "length": 4,
+  "target": 375,
+  "terminal_phi": 1190,
+  "unit": null,
+  "word": [
+   [
+    522,
+    1
+   ],
+   [
+    375,
+    6
+   ],
+   [
+    384,
+    1
+   ],
+   [
+    375,
+    14
+   ]
+  ]
+ },
+ "cpu_s": 1418.816984,
+ "digest": "98f772726c6ec8cf66602d3372e26eab1e142fad7f09a7fd48cda6c18a409c64",
+ "families": {
+  "R": {
+   "beam": 1000000,
+   "candidates": [
+    {
+     "claims": {
+      "D": 10,
+      "F": 0,
+      "delta": [
+       0,
+       0,
+       0,
+       -20
+      ],
+      "digests": [
+       "55d7d5f4276837e111dad563462d2c6d75373fba2af263a148ee2597b714cd92",
+       "8fc170b99e5aa61abb730470b39cc63544e9968b2a45ca544cd0e9ae0275db90",
+       "6e356757d3aa7eabb56062131f633654941a5556cc4ccede90da56e065b60dab",
+       "59037372e50bfa2033b1342ba0ea284a2f574bfd64b1be20522de8b02ce73967"
+      ],
+      "excursion": 0,
+      "phi": [
+       1210,
+       1210,
+       1210,
+       1190
+      ],
+      "supports": [
+       {
+        "sha256": "a59eb5e947c6763668046768a59796056a5ef4c635ef9604dd75c4a6c0b8afad",
+        "size": 1936
+       },
+       {
+        "sha256": "6298d637dce64b520d6424f190867c9f7e4133a97cccaf2443d5de6c682d6c9b",
+        "size": 1956
+       },
+       {
+        "sha256": "59f77d25fe3968f15ad6236d55f4526931e4fd4cac60d6aa970cd70a76cb8325",
+        "size": 2241
+       },
+       {
+        "sha256": "5d9d6cecf615e356e2fca847c4c6ae22aa19a4013347a4a0f94ba9ed3ce1083f",
+        "size": 2208
+       }
+      ]
+     },
+     "excursion": 0,
+     "length": 4,
+     "target": 375,
+     "terminal_phi": 1190,
+     "unit": null,
+     "word": [
+      [
+       522,
+       1
+      ],
+      [
+       375,
+       6
+      ],
+      [
+       384,
+       1
+      ],
+      [
+       375,
+       14
+      ]
+     ]
+    },
+    {
+     "claims": {
+      "D": 9,
+      "F": 0,
+      "delta": [
+       0,
+       0,
+       0,
+       -18
+      ],
+      "digests": [
+       "514af79191d20b7f46a8378a773aaf94c8952ffac45d4cda1df23fd4f70cba08",
+       "369efd263f64187bb7d996ccb8815ddef1d7a3e219fc6109ea370edddfdf9daf",
+       "eb5670e1ac7000bcbecfdc2881f2bd78f302cdb0b5c7fa7a726e2daee6b48a25",
+       "125a51d42b5d7e0d56b0187bc871a337a01599e9e37bc1612f32e92ee5bc7912"
+      ],
+      "excursion": 0,
+      "phi": [
+       1210,
+       1210,
+       1210,
+       1192
+      ],
+      "supports": [
+       {
+        "sha256": "77b2dea33aab081cdfdb88afbf7ec63cb389461309d1b14eff6fd8d142394d74",
+        "size": 3185
+       },
+       {
+        "sha256": "b52b1bf6494b90e41e53e604a8e9ae3a512e398a3360abdda35366bce2f594f6",
+        "size": 2766
+       },
+       {
+        "sha256": "3d03e897efd26141309cf9260f842bdf82d4f6c8a07321155d1ce96a8431eea3",
+        "size": 2519
+       },
+       {
+        "sha256": "2a7be9a53449a43a2b4cf8a360ca852b0df1cc747301e462768765efdd302561",
+        "size": 2725
+       }
+      ]
+     },
+     "excursion": 0,
+     "length": 4,
+     "target": 229,
+     "terminal_phi": 1192,
+     "unit": null,
+     "word": [
+      [
+       181,
+       6
+      ],
+      [
+       295,
+       6
+      ],
+      [
+       347,
+       7
+      ],
+      [
+       229,
+       14
+      ]
+     ]
+    },
+    {
+     "claims": {
+      "D": 9,
+      "F": 0,
+      "delta": [
+       0,
+       0,
+       0,
+       -18
+      ],
+      "digests": [
+       "47a5701ddcbe5ec24109915abefcd69bed22a4bd42a6ca0676697333a138349e",
+       "d7789c1ed0253953550f5de1830857ef4a53343df3a0444ccca2f5804fecbee1",
+       "28a43a92261a9d74b44ded62b2824777221ea3e375361d51e8642800a160a790",
+       "d7d309a290f2ff67e33a709bc6544a09b1c042be2cc07961c5550eefcf42838e"
+      ],
+      "excursion": 0,
+      "phi": [
+       1210,
+       1210,
+       1210,
+       1192
+      ],
+      "supports": [
+       {
+        "sha256": "a59eb5e947c6763668046768a59796056a5ef4c635ef9604dd75c4a6c0b8afad",
+        "size": 1936
+       },
+       {
+        "sha256": "534e8ac83bf083c505e24c3f09983bf336189e41c6f80cf06e19527f705d8fcc",
+        "size": 3042
+       },
+       {
+        "sha256": "a06b4f1238b29c8000c715518cd3a9944abd5a0d5d2cdb0cc10bdf487b91242c",
+        "size": 2091
+       },
+       {
+        "sha256": "806bf0ea6d97a13c5c9ca87c2ca7eaec487ddb376e5ca7783118481dc6f8e6f9",
+        "size": 1955
+       }
+      ]
+     },
+     "excursion": 0,
+     "length": 4,
+     "target": 522,
+     "terminal_phi": 1192,
+     "unit": null,
+     "word": [
+      [
+       522,
+       9
+      ],
+      [
+       397,
+       5
+      ],
+      [
+       494,
+       4
+      ],
+      [
+       522,
+       12
+      ]
+     ]
+    }
+   ],
+   "counts": {
+    "descending_words": 1056,
+    "lowering_tests": 40516368,
+    "nodes": 172018,
+    "retained_letters": 25882956,
+    "targets": 11
+   },
+   "cpu_s": 1418.722666,
+   "depth": 3,
+   "exhausted": false,
+   "exhaustive_through": 2,
+   "reporting": "minimum choice key per target; all tested descending words counted",
+   "search": "R generator from the packet; beam per target ranked by (S,F-max D,word)",
+   "targets": [
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      77,
+      5896,
+      458898
+     ],
+     "target": 2
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      220,
+      48136,
+      10490535
+     ],
+     "target": 64
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      154,
+      23859,
+      3715162
+     ],
+     "target": 73
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      88,
+      6820,
+      491491
+     ],
+     "target": 162
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      121,
+      14322,
+      1668986
+     ],
+     "target": 229
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      121,
+      14641,
+      1775697
+     ],
+     "target": 251
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      110,
+      12034,
+      1313202
+     ],
+     "target": 336
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      77,
+      5599,
+      399971
+     ],
+     "target": 375
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      77,
+      6490,
+      587246
+     ],
+     "target": 522
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      77,
+      6083,
+      494461
+     ],
+     "target": 540
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      165,
+      26840,
+      4315300
+     ],
+     "target": 596
+    }
+   ]
+  }
+ },
+ "format": "pstar-step/1",
+ "options": {
+  "beam": 1000000,
+  "choice": "best",
+  "depth": 3,
+  "e0": 20,
+  "families": [
+   "R"
+  ]
+ },
+ "phi": 1210
+}

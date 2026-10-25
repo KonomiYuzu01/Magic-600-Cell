@@ -1,14 +1,23 @@
 # Card 7: multi-level unlocking and the lowering machine, for the menu I_a
 
-Status: **ready** (24 October 2026). Problem 2 of the theorem programme (owner decision of 24 October 2026,
+Status: **answered in part** by the joint attack of 24 October 2026 ([stage 15, section 2](../../restoration/15-lowering-machine/README.md#2-joint-attack-24-october-2026)):
+Question 1.3 by a chronological certificate for any word (Theorem MC), Question 2.1 by a proved lowering machine that
+has no instance where it was tested, and Question 2.3 as a finite test (Lemma RA); Questions 1.1, 1.2, 2.2 and 3.1
+have partial answers there, and 3.2 is open. Question 4 is answered negatively for the families of the certified
+procedure P*: it lowers Φ at all six chain ends and then stops for good at every one of them, at configurations
+where no macro of its families and no single letter lowers Φ (section 2.5). The text below is the card as attacked, with the
+corrections of the attack applied.
+
+Problem 2 of the theorem programme (owner decision of 24 October 2026,
 [`owner-decisions-2026-10-24-theorem-program`](../../../../docs/wiki/decisions/owner-decisions-2026-10-24-theorem-program.md)),
 together with the part of problem 1 that card 6 left open: an order of unlocking and lowering that does not jam
 ([card 6](card-6-blocking-structure.md), Question 3.3).
 
 Open problem M1 of the restoration (a construction from the state with a bound), in the form that remains after card 6.
 The precedence peel (Theorem T3P) lowers the depth Φ at the six ends of the D2 height phase by 6% to 56% and then has no
-round: at the chain ends, 131 own holders of high units are left, and each one is stopped by one of three obstacles
-(K2 below). Answer Questions 1 to 4. Each answer may be a proof, a reduction to finite certificates that a computer can
+round: at the chain ends, 131 own holders of high units are left, and the scan of T3P's family has no round at any of
+them, for one of the reasons of K2 below (statuses of that family, not obstacles to descent: 15 of the 131 descend by
+short words outside it, stage 15). Answer Questions 1 to 4. Each answer may be a proof, a reduction to finite certificates that a computer can
 check at the state, or a precise counterexample or counterexample shape. Partial results are useful. Label every
 statement proved, conditional (name the condition) or conjectured. Name every machine check as a certificate with its
 exact statement, and do not claim that a certificate holds.
@@ -75,7 +84,8 @@ From the joint attack on card 6 (`PROOFS.md`; section numbers of that file):
 - **Lemma P** (section 3). For a class P, Φ + 2J_P (J_P the off-lattice pieces of branch other than P) is unchanged by
   letters at grips of class P.
 - **Lemmas L4, L4′, L5, L6 and Proposition N** (section 4). A grip of level ℓ needs at least ℓ letters before it can be
-  clean; every tame descent has at least λ + 1 letters; λ = ∞ excludes every tame descent. A height-2 cell none of whose
+  clean; every tame descent has at least λ + 1 letters; λ = ∞ excludes every tame descent (and never occurs at a
+  reachable configuration: every grip has a finite level there, stage 15, Proposition FL). A height-2 cell none of whose
   holders has its branch's class (an orphan) moves only by retained letters until a jumble at a clean holder c with
   D_c ≥ F_c ≥ |V| raises it to height 4. A clean grip with F > 0 and no own high piece has no tame jumble. A finite set of
   states closed under Φ-neutral letters, with no descending letter, is a complete negative certificate for tame descent.
@@ -109,8 +119,9 @@ of the six D2 height ends (`results/s730N-t3p-chain.json`, end digests there and
   | 7307 | 3170 | 1396 | 17 (15 at 4, 2 at 6) | 20 | 40 |
 
   At every chain end the scan finds no round and no single letter lowers Φ; λ = 0 (some clean grip holds a high piece),
-  and every grip has a finite level (largest level 5 to 8).
-- **K2 (what stops the 131 own holders), by status and level of the own holder:**
+  and the largest level is 5 to 8 (every grip of a reachable configuration has a finite level, so only the values carry
+  information, as lower bounds).
+- **K2 (why the T3P scan has no round at the 131 own holders), by status and level of the own holder:**
 
   | Status | Number | Levels of these own holders |
   | --- | --- | --- |
@@ -119,8 +130,10 @@ of the six D2 height ends (`results/s730N-t3p-chain.json`, end digests there and
   | no feasible items | 10 | 1 (10) |
   | no disjoint cover | 5 | 1 (5) |
 
-  So every own holder of level 0 or 1 is stopped by the budget or by its helpers, and every own holder of level 2 or
-  more by a straddler that no clean grip holds. For the 84, the straddlers without a clean holder number 1 to 281 per
+  So, within T3P's family, every own holder of level 0 or 1 is stopped by the budget or by its helpers, and every own
+  holder of level 2 or more by a straddler that no clean grip holds. Outside it, 15 of the 131 descend by short words,
+  among them four of level 2 with a straddler without a clean holder (140 of 7303, 162 of 7304, 177 of 7305 and 202 of
+  7306; stage 15, section 2.2). For the 84, the straddlers without a clean holder number 1 to 281 per
   own holder, in 1 to 13 pose groups.
 - **K3 (the budget cases).** (F, D) with the least F − D over the units and feasible covers of each of the 32: 7302: 12 (148, 134), 104 (29, 13), 171 (59,
   21), 482 (284, 82); 7303: 69 (113, 103), 282 (198, 87), 364 (120, 111), 365 (133, 78); 7304: 375 (123, 42), 522 (70,
@@ -133,12 +146,15 @@ of the six D2 height ends (`results/s730N-t3p-chain.json`, end digests there and
   height 4 to 2 and raised 7 to height 6.
 - **K4 (overlapping and infeasible helpers).** At 229 of 7304 the only candidate helpers 295 and 347 share 186 pieces;
   over all 7,200 two-letter words at them (both orders, all items, the second letter evaluated after the first), 23
-  leave 229 clean and the least F − D at 229 among those is 25 (stage 14, DIS-5). At 71 of 7302 the candidate 20 shares
+  leave 229 clean and the least F − D at 229 among those is 25 (stage 14, DIS-5; computed at the D2 end, digest
+  `ac127dc3…`; at the chain end the same enumeration gives 19 clean words and again 25, stage 15, section 2.3). At 71 of
+  7302 the candidate 20 shares
   166 pieces with the candidate 112 and 85 with the candidate 185.
 - **K5 (the 7304 stop, before the chain).** Two tame descents are known there: W3 = (344, 9), (451, 55), (522, 14)
   (Φ 1594 → 1498) and W5 = W3 with item 49 at 522, then (451, 44), (522, 15) (Φ → 1472). After item 14 the 70 lowered
-  pieces lie in no clean cap other than 522 (a self-lock); after item 49 they lie in cap 451, whose letter (451, 44)
-  unloads them. At 540, reported in stage 14 section 5.3: the replay of (540, 12), (582, 29), (540, 12⁻¹), an instance
+  pieces lie in no clean cap other than 522 (a self-lock for helpers at other grips only: a retained letter at 522
+  itself re-aims them, and the chain end followed by (522, 8) is W5's configuration exactly, stage 15); after item 49
+  they lie in cap 451, whose letter (451, 44) unloads them. At 540, reported in stage 14 section 5.3: the replay of (540, 12), (582, 29), (540, 12⁻¹), an instance
   of the L9 shape without its hypothesis F_z ≤ D_z (F_582 = 514), gives Φ 1700, 2728, 2754.
 - **K6 (the measure).** At the D2 end of 7307 each of the twelve items of one lowering coset at 516 lowers 395 pieces
   and raises 7 to height 6, taking Φ from 3170 to 2394; the D2 rule's measure Q = 177121 n₆ + n₄ refused them. Φ is the
@@ -152,13 +168,15 @@ of the six D2 height ends (`results/s730N-t3p-chain.json`, end digests there and
    word after which x is clean, holds G, and has F < D(h) for a lowering item h, tame or with a bounded excursion, with
    hypotheses that are finite exact tests at X and explicit bounds on the length (in ℓ and the data of the hypotheses)
    and on the excursion. Candidates: nested rounds (a release tree whose letters at grips of level k are enabled by
-   letters at grips of level k − 1, extending T3P+ and Lemma A); and conjugation u·(x, h)·u⁻¹, where u frees x, with
+   letters at grips of level k − 1, extending T3P+ and Lemma A; an enabler need not be a partner of x, since it acts on
+   x only through the helpers it frees: 277 is not a partner of 162 of 7304); and conjugation u·(x, h)·u⁻¹, where u frees x, with
    conditions under which u⁻¹ stays admissible after the lowering and restores what u moved.
 2. Define the **release dependency structure** at X: for each blocked grip d, its straddler units without a clean
    holder, their holders and those holders' straddlers, down to clean grips. Prove that it has a startable part (a
    letter that is tame and lowers some level or some straddle count that matters), or characterize the cycles that
-   prevent this and the smallest controlled excursion that breaks one. K2 says every grip has a finite level at the
-   chain ends, so the question is the cost, not the possibility.
+   prevent this and the smallest controlled excursion that breaks one. Every grip has a finite level at every reachable
+   configuration (reverse the history), so finiteness decides nothing; reversing the history neither keeps G nor stays
+   tame, and the question is a release that does both.
 3. Extend T3P to overlapping helpers (K4): helpers whose inside sets meet, each evaluated at the configuration where it
    acts, with hypotheses that are still finite tests at X (or at a bounded number of intermediate configurations) and
    with the precedence argument of Lemma A.
@@ -170,7 +188,10 @@ of the six D2 height ends (`results/s730N-t3p-chain.json`, end digests there and
    and letters that lower G alternately at x and z. Each other piece moves only by the letters at one grip, so its height
    changes by at most 2 in total (Lemma 5.3); bound the excursion by the foreign loads of the two caps, and give a return
    (running products ending in the retained items, or the inverses of the first letters, as in L9) after which the other
-   pieces are back at their heights. For a unit at height 4 this is L9. Give the hypotheses as finite exact tests at X,
+   pieces are back at their heights. For a unit at height 4, L9 is the one-sided case: it returns x's other pieces only,
+   and when the product at the grip that acted last on G is not retained, that grip's return raises G again unless G
+   has first left its cap or been landed by the other grip (stage 15, Proposition RP).
+   Give the hypotheses as finite exact tests at X,
    the excursion, the length and the descent.
 2. **Relays.** For an own holder x of status budget (K3), Corollaries U and E say that descent at x needs letters at
    other grips that lower F_x or raise D_x. Give a construction (a relay: letters at grips of the classes of the foreign
@@ -184,7 +205,7 @@ of the six D2 height ends (`results/s730N-t3p-chain.json`, end digests there and
 
 ### 3. Placement
 
-1. Characterize what Φ-neutral letters (retained letters at clean grips; jumbles at clean pure grips, by Lemma Φ) can do
+1. Characterize what Φ-neutral letters (retained letters at clean grips; jumbles at clean grips with F = D, by Lemma Φ) can do
    to a high unit G and its surroundings: which own holders and which pairs of grips holding G whole they can reach, and
    what happens to the foreign loads and straddlers of those grips (Lemma L permutes label rows; Corollary L1 and Lemma
    L5 limit what retained letters change).

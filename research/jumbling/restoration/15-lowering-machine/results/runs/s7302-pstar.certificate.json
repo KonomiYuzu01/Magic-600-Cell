@@ -1,0 +1,191 @@
+{
+ "excursion": 20,
+ "format": "macro-certificate/1",
+ "macros": [
+  {
+   "claims": {
+    "D": 13,
+    "F": 0,
+    "delta": [
+     0,
+     -12,
+     -26
+    ],
+    "digests": [
+     "620c0b4dc967a595818653dcd1e339ae563846fd3b91d18065d6ee6c8e98381c",
+     "3cf92833fa2b5e10d7a74bb9c9b64db456b4013f651977604ff1dcbfd0e3677c",
+     "91c26c520be0e378117c5e1871e20fb86497a76dcc9fb7556a58bac3fc6b4cbc"
+    ],
+    "excursion": 0,
+    "phi": [
+     1376,
+     1364,
+     1338
+    ],
+    "supports": [
+     {
+      "sha256": "8dfa5dfb8b34078edf0f250ab5412057eca6783899a29fa19ddb3c561a986ba7",
+      "size": 3184
+     },
+     {
+      "sha256": "c094084a447b0cc14fa2f31235f6c650b12eac5a1e7b2e1ab513d9911bec2e4c",
+      "size": 2660
+     },
+     {
+      "sha256": "c500d39550a860b5529bdef3e0775479b42218eaa7808f7b5c6a123664521b7f",
+      "size": 3308
+     }
+    ]
+   },
+   "events": [
+    [
+     104,
+     8
+    ],
+    [
+     46,
+     12
+    ],
+    [
+     104,
+     15
+    ]
+   ]
+  },
+  {
+   "claims": {
+    "D": 7,
+    "F": 0,
+    "delta": [
+     0,
+     0,
+     -14
+    ],
+    "digests": [
+     "95a402d812729e95af4cf61f8486add123703d110ac8a4e5340a4263c16b4ea9",
+     "11443a8768d5ccac104dc2c02fd1bc8e3fbeef0901ec92365fe05b9442a24402",
+     "30371dcd19bed4bebc1baa9fa24a35a971356a10477a8749ca965201d0095e7c"
+    ],
+    "excursion": 0,
+    "phi": [
+     1338,
+     1338,
+     1324
+    ],
+    "supports": [
+     {
+      "sha256": "bd28e6499cfa8618ed8c6ee1c0d8d220997ed53f3262e66a275bd7c9f9ea14ff",
+      "size": 2772
+     },
+     {
+      "sha256": "c500d39550a860b5529bdef3e0775479b42218eaa7808f7b5c6a123664521b7f",
+      "size": 3308
+     },
+     {
+      "sha256": "bde20e148462111820f8163690aef1bebcc1d05021bfcb678502a15676187b0f",
+      "size": 2445
+     }
+    ]
+   },
+   "events": [
+    [
+     20,
+     1
+    ],
+    [
+     104,
+     4
+    ],
+    [
+     46,
+     14
+    ]
+   ],
+   "unit_piece": 1258
+  },
+  {
+   "claims": {
+    "D": 121,
+    "F": 6,
+    "delta": [
+     0,
+     0,
+     0,
+     -230
+    ],
+    "digests": [
+     "e2a7702f604375d84651d4c5687511d4b9faf03593399ac5f8ea1fe7b3efab76",
+     "22ac9bce51e5039e0f54bc8a62f996db1e4dbd36582da56e01646f0bdc89b57b",
+     "b175fb11252c9078c504452bb07a03380d45e182bf033e6a7b50f1b869a57995",
+     "f2143b23a3b53cf882fe5eaf89e928163bfb9c4315a3eb3c54a836db84ba07c3"
+    ],
+    "excursion": 0,
+    "phi": [
+     1324,
+     1324,
+     1324,
+     1094
+    ],
+    "supports": [
+     {
+      "sha256": "5a1d8f0a8c37c4a06d6985cff39f5f49c0b7178237a6e845966eefdf40b7e190",
+      "size": 2527
+     },
+     {
+      "sha256": "bde20e148462111820f8163690aef1bebcc1d05021bfcb678502a15676187b0f",
+      "size": 2445
+     },
+     {
+      "sha256": "5bf4121d0522b4407e1d81e4996b1b0b91013a602851e98a36d9128188df7a21",
+      "size": 2783
+     },
+     {
+      "sha256": "4d75ebcc3d5f3c8b6186602184c5b8b886a7031322cc59921cb43a8d789fde09",
+      "size": 2789
+     }
+    ]
+   },
+   "events": [
+    [
+     39,
+     1
+    ],
+    [
+     46,
+     3
+    ],
+    [
+     20,
+     7
+    ],
+    [
+     12,
+     12
+    ]
+   ]
+  }
+ ],
+ "prefix": [
+  [
+   277,
+   59
+  ],
+  [
+   171,
+   15
+  ],
+  [
+   39,
+   1
+  ],
+  [
+   171,
+   14
+  ]
+ ],
+ "start": {
+  "digest": "b47d84743c0ab28505a4ddc171920f9e14e1c94b46d10de95b93ae0816427e0c",
+  "phi": 1376
+ },
+ "table_digest": "2430f4cc99ea121a6d3476ec21b66fc401e277d13809ad5e1c979e6e0abe1472"
+}

@@ -1,0 +1,137 @@
+{
+ "excursion": 20,
+ "format": "macro-certificate/1",
+ "macros": [
+  {
+   "claims": {
+    "D": 499,
+    "F": 64,
+    "delta": [
+     0,
+     0,
+     -870
+    ],
+    "digests": [
+     "6077c52b8f38fc6528da0d31d52f4c868d47004e893e318c0b7ea7c47d76c585",
+     "fe681a46c5c3c8bcd3836ea30a257def7ab4116633ede201e53c4946c20ab301",
+     "95461041c298b566cdd9b8ad1e4ebabc3988c4b7a7b7571135d62b702f967616"
+    ],
+    "excursion": 0,
+    "phi": [
+     2684,
+     2684,
+     1814
+    ],
+    "supports": [
+     {
+      "sha256": "9c54eb81a1d64ddba8bac98cb8089b38c75cfa6b7759da7649a6121be125a054",
+      "size": 2902
+     },
+     {
+      "sha256": "08f68d867e8b5724fe58766fa2856ab1cbd0d1893be3721e6c1cfc305f5f6c58",
+      "size": 2586
+     },
+     {
+      "sha256": "fe6fa721701702c3e7505b2c0f85a2dd1c1beafc85a5883297bd5e72c572f404",
+      "size": 2800
+     }
+    ]
+   },
+   "events": [
+    [
+     582,
+     3
+    ],
+    [
+     487,
+     6
+    ],
+    [
+     240,
+     14
+    ]
+   ]
+  },
+  {
+   "claims": {
+    "D": 17,
+    "F": 0,
+    "delta": [
+     0,
+     0,
+     -34
+    ],
+    "digests": [
+     "3fbdeeb68bb347671b575f18c99c8b5af893cd4c73a9f42e63b1c3e144b5bc20",
+     "4cdd134fec959e5999aa8a2b4684967a4e53b2caf02a3f5e9d88f3eba42f452e",
+     "e4f3646b2c2efed6383739f7089f8072bc0c074ca2829cd312462b8e05092c5a"
+    ],
+    "excursion": 0,
+    "phi": [
+     1814,
+     1814,
+     1780
+    ],
+    "supports": [
+     {
+      "sha256": "ace6d7ac29f287af11808f49bf0286396855a2406e4c03cc4a587ea94a6519cb",
+      "size": 3554
+     },
+     {
+      "sha256": "d87ed1b632e0ca45ad21aa7ed2a8605447e3776390f177c21b5c06c2cfa9ac73",
+      "size": 2966
+     },
+     {
+      "sha256": "e3512995c79e20d1be8474bcaa9e2107feec7c8462d1ba815fb9ce11457e274c",
+      "size": 3363
+     }
+    ]
+   },
+   "events": [
+    [
+     561,
+     6
+    ],
+    [
+     598,
+     1
+    ],
+    [
+     561,
+     15
+    ]
+   ]
+  }
+ ],
+ "prefix": [
+  [
+   208,
+   5
+  ],
+  [
+   336,
+   15
+  ],
+  [
+   445,
+   55
+  ],
+  [
+   252,
+   13
+  ],
+  [
+   506,
+   7
+  ],
+  [
+   561,
+   14
+  ]
+ ],
+ "start": {
+  "digest": "5e9f7e4f69cb28b006c7aea7760b2d24e55dfc84065bbcdd771aad71e593a033",
+  "phi": 2684
+ },
+ "table_digest": "ac4be82cf80e857137af957ff75438525ba950062e46a2fc5249aa0d7199d8f2"
+}

@@ -1,0 +1,601 @@
+{
+ "certificate": {
+  "excursion": 200,
+  "format": "macro-certificate/1",
+  "macros": [],
+  "prefix": [
+   [
+    421,
+    4
+   ],
+   [
+    577,
+    1
+   ],
+   [
+    520,
+    14
+   ],
+   [
+    233,
+    9
+   ],
+   [
+    281,
+    12
+   ],
+   [
+    6,
+    45
+   ],
+   [
+    44,
+    15
+   ],
+   [
+    208,
+    13
+   ],
+   [
+    168,
+    15
+   ],
+   [
+    499,
+    1
+   ],
+   [
+    421,
+    6
+   ],
+   [
+    574,
+    1
+   ],
+   [
+    499,
+    15
+   ],
+   [
+    134,
+    1
+   ],
+   [
+    47,
+    1
+   ],
+   [
+    44,
+    5
+   ],
+   [
+    177,
+    13
+   ],
+   [
+    177,
+    2
+   ],
+   [
+    374,
+    1
+   ],
+   [
+    177,
+    15
+   ],
+   [
+    113,
+    2
+   ],
+   [
+    122,
+    2
+   ],
+   [
+    67,
+    7
+   ],
+   [
+    113,
+    13
+   ],
+   [
+    421,
+    5
+   ],
+   [
+    520,
+    10
+   ],
+   [
+    436,
+    14
+   ],
+   [
+    436,
+    8
+   ],
+   [
+    468,
+    15
+   ],
+   [
+    10,
+    6
+   ],
+   [
+    102,
+    2
+   ],
+   [
+    10,
+    14
+   ],
+   [
+    281,
+    5
+   ],
+   [
+    94,
+    2
+   ],
+   [
+    168,
+    13
+   ],
+   [
+    67,
+    1
+   ],
+   [
+    113,
+    14
+   ],
+   [
+    468,
+    6
+   ],
+   [
+    436,
+    7
+   ],
+   [
+    468,
+    14
+   ],
+   [
+    113,
+    1
+   ],
+   [
+    67,
+    2
+   ],
+   [
+    113,
+    12
+   ]
+  ],
+  "start": {
+   "digest": "c0070b05ea289022358cac9933348b605714dcd67b7dd05724a18a271bd94099",
+   "phi": 1572
+  },
+  "table_digest": "cc5ef7ecf0510ea9a74fc52bafe324d6d8f58294c4b0e20b40b97b414dada062"
+ },
+ "choice": null,
+ "cpu_s": 7.782664,
+ "digest": "c0070b05ea289022358cac9933348b605714dcd67b7dd05724a18a271bd94099",
+ "families": {
+  "E": {
+   "candidates": [],
+   "counts": {
+    "admitted_items": 78,
+    "assignments": 216,
+    "covers": 11,
+    "descending_words": 0,
+    "dp_covers": 108,
+    "dp_transitions": 2352,
+    "helper_items": 300,
+    "product_covers": 0,
+    "products": 0,
+    "unit_holders": 25
+   },
+   "cpu_s": 7.69323,
+   "e0": 200,
+   "exhausted": true,
+   "reporting": "minimum choice key per unit/holder; DP frontier records, not every dominated word",
+   "search": "T3P covers and P0/P1, raising-budget DP or complete acyclic products; net descent",
+   "targets": [
+    {
+     "covers": 1,
+     "feasible_assignments": 12,
+     "status": "no-round",
+     "target": 226,
+     "unit": 175811
+    },
+    {
+     "count": 22,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 259,
+     "unit": 175811
+    },
+    {
+     "count": 6,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 504,
+     "unit": 164929
+    },
+    {
+     "covers": 1,
+     "feasible_assignments": 24,
+     "status": "no-round",
+     "target": 374,
+     "unit": 52898
+    },
+    {
+     "covers": 1,
+     "feasible_assignments": 12,
+     "status": "no-round",
+     "target": 421,
+     "unit": 46423
+    },
+    {
+     "count": 6,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 504,
+     "unit": 75053
+    },
+    {
+     "covers": 1,
+     "feasible_assignments": 24,
+     "status": "no-round",
+     "target": 44,
+     "unit": 24202
+    },
+    {
+     "count": 143,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 55,
+     "unit": 24202
+    },
+    {
+     "covers": 1,
+     "feasible_assignments": 24,
+     "status": "no-round",
+     "target": 44,
+     "unit": 72248
+    },
+    {
+     "covers": 1,
+     "feasible_assignments": 0,
+     "status": "no-round",
+     "target": 389,
+     "unit": 152283
+    },
+    {
+     "covers": 1,
+     "feasible_assignments": 0,
+     "status": "no-round",
+     "target": 389,
+     "unit": 74954
+    },
+    {
+     "count": 269,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 512,
+     "unit": 74954
+    },
+    {
+     "count": 125,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 423,
+     "unit": 121888
+    },
+    {
+     "count": 63,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 570,
+     "unit": 121888
+    },
+    {
+     "count": 6,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 504,
+     "unit": 172445
+    },
+    {
+     "count": 6,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 504,
+     "unit": 129119
+    },
+    {
+     "covers": 1,
+     "feasible_assignments": 72,
+     "status": "no-round",
+     "target": 368,
+     "unit": 18124
+    },
+    {
+     "count": 114,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 462,
+     "unit": 18124
+    },
+    {
+     "count": 14,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 538,
+     "unit": 97943
+    },
+    {
+     "count": 2,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 576,
+     "unit": 97694
+    },
+    {
+     "covers": 1,
+     "feasible_assignments": 24,
+     "status": "no-round",
+     "target": 44,
+     "unit": 39279
+    },
+    {
+     "count": 143,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 55,
+     "unit": 39279
+    },
+    {
+     "covers": 1,
+     "feasible_assignments": 12,
+     "status": "no-round",
+     "target": 421,
+     "unit": 36816
+    },
+    {
+     "count": 240,
+     "covers": 0,
+     "feasible_assignments": 0,
+     "status": "straddler-without-clean-holder",
+     "target": 227,
+     "unit": 82773
+    },
+    {
+     "covers": 1,
+     "feasible_assignments": 12,
+     "status": "no-round",
+     "target": 436,
+     "unit": 82773
+    }
+   ]
+  }
+ },
+ "format": "pstar-step/1",
+ "options": {
+  "beam": 64,
+  "choice": "best",
+  "depth": 3,
+  "e0": 200,
+  "families": [
+   "E"
+  ]
+ },
+ "phi": 1572,
+ "prefix": [
+  [
+   421,
+   4
+  ],
+  [
+   577,
+   1
+  ],
+  [
+   520,
+   14
+  ],
+  [
+   233,
+   9
+  ],
+  [
+   281,
+   12
+  ],
+  [
+   6,
+   45
+  ],
+  [
+   44,
+   15
+  ],
+  [
+   208,
+   13
+  ],
+  [
+   168,
+   15
+  ],
+  [
+   499,
+   1
+  ],
+  [
+   421,
+   6
+  ],
+  [
+   574,
+   1
+  ],
+  [
+   499,
+   15
+  ],
+  [
+   134,
+   1
+  ],
+  [
+   47,
+   1
+  ],
+  [
+   44,
+   5
+  ],
+  [
+   177,
+   13
+  ],
+  [
+   177,
+   2
+  ],
+  [
+   374,
+   1
+  ],
+  [
+   177,
+   15
+  ],
+  [
+   113,
+   2
+  ],
+  [
+   122,
+   2
+  ],
+  [
+   67,
+   7
+  ],
+  [
+   113,
+   13
+  ],
+  [
+   421,
+   5
+  ],
+  [
+   520,
+   10
+  ],
+  [
+   436,
+   14
+  ],
+  [
+   436,
+   8
+  ],
+  [
+   468,
+   15
+  ],
+  [
+   10,
+   6
+  ],
+  [
+   102,
+   2
+  ],
+  [
+   10,
+   14
+  ],
+  [
+   281,
+   5
+  ],
+  [
+   94,
+   2
+  ],
+  [
+   168,
+   13
+  ],
+  [
+   67,
+   1
+  ],
+  [
+   113,
+   14
+  ],
+  [
+   468,
+   6
+  ],
+  [
+   436,
+   7
+  ],
+  [
+   468,
+   14
+  ],
+  [
+   113,
+   1
+  ],
+  [
+   67,
+   2
+  ],
+  [
+   113,
+   12
+  ]
+ ],
+ "setup": {
+  "labels": {
+   "cpu_s": 0.744334
+  },
+  "load": {
+   "cpu_s": 0.19677
+  },
+  "trees": {
+   "cpu_s": 6.890991
+  },
+  "word": {
+   "cpu_s": 16.098426
+  }
+ }
+}

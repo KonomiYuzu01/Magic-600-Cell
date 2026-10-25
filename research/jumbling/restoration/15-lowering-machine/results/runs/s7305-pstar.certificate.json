@@ -1,0 +1,171 @@
+{
+ "excursion": 20,
+ "format": "macro-certificate/1",
+ "macros": [
+  {
+   "claims": {
+    "D": 124,
+    "F": 0,
+    "delta": [
+     0,
+     0,
+     0,
+     -248
+    ],
+    "digests": [
+     "0458c6f910b5ba4bd52a39f37133a2f65b51ab8fe1a549c811eed69a92436502",
+     "943ef94ac58b8250f29d3ac25bff8cd044f7356ea14f814618c5fd03e96d83a7",
+     "9583e08aa5760bc86f0211e38f319e904421562a0be58a4f2f4cd95d41edd5eb",
+     "ab0435ce4a1b5e892f1f429a12ea62f9d8c8c53285c247def010c1a857363bde"
+    ],
+    "excursion": 0,
+    "phi": [
+     2474,
+     2474,
+     2474,
+     2226
+    ],
+    "supports": [
+     {
+      "sha256": "c14acb611ee3d83df628a763bea248fbfe70e849716ad5c1e2039f1d1a66d13e",
+      "size": 2367
+     },
+     {
+      "sha256": "1f693720ad90cfa4516749773dd8359c6ebf37d8faff2412d66f2ceb4f6d90b0",
+      "size": 3011
+     },
+     {
+      "sha256": "ce2821576c271b871595cefde34f01623398f513c6370a9f1b49c4f7331077dd",
+      "size": 2706
+     },
+     {
+      "sha256": "d8ee7b31f6cbfbf05314def50265590036de6081caceee0cbb65a9a1a27285f9",
+      "size": 2166
+     }
+    ]
+   },
+   "events": [
+    [
+     499,
+     1
+    ],
+    [
+     421,
+     6
+    ],
+    [
+     574,
+     1
+    ],
+    [
+     499,
+     15
+    ]
+   ]
+  },
+  {
+   "claims": {
+    "D": 81,
+    "F": 0,
+    "delta": [
+     0,
+     0,
+     0,
+     -162
+    ],
+    "digests": [
+     "436b0fdf829cf6185b0783f4badf4af7cc4a91e39833e3a0ca76e2c8aca00037",
+     "14a46f7eddd7cede174f164a7b0ed2e716dbaa0b28715aa5eee5bd292323bd6e",
+     "1c3f202695f1a9377db8c95f64c0bafac5ffa1d285f5030fbe2408eed291743a",
+     "045d9b72c63e950a84ef56f6a194539af17fb901b92650581c13a31d92708e4b"
+    ],
+    "excursion": 0,
+    "phi": [
+     2226,
+     2226,
+     2226,
+     2064
+    ],
+    "supports": [
+     {
+      "sha256": "dda810daf599c4e4086e7b26022156d2616febd5277e1f5d101e4f5210867612",
+      "size": 3174
+     },
+     {
+      "sha256": "37904acad286b85065db7a148c3323f94fe85c58ca04f3a2678ac2a37ff7d2b3",
+      "size": 3204
+     },
+     {
+      "sha256": "721199c8b35ec23fea4b12c4af7e037b855175ded35108cc9a8b9bdda923f47d",
+      "size": 2659
+     },
+     {
+      "sha256": "7b9211e9444a647b0ea8d7af2b9638fd2c63776317ee0c88b9c12562046e3f14",
+      "size": 2427
+     }
+    ]
+   },
+   "events": [
+    [
+     134,
+     1
+    ],
+    [
+     47,
+     1
+    ],
+    [
+     44,
+     5
+    ],
+    [
+     177,
+     13
+    ]
+   ]
+  }
+ ],
+ "prefix": [
+  [
+   421,
+   4
+  ],
+  [
+   577,
+   1
+  ],
+  [
+   520,
+   14
+  ],
+  [
+   233,
+   9
+  ],
+  [
+   281,
+   12
+  ],
+  [
+   6,
+   45
+  ],
+  [
+   44,
+   15
+  ],
+  [
+   208,
+   13
+  ],
+  [
+   168,
+   15
+  ]
+ ],
+ "start": {
+  "digest": "e77981a8dcbc15b2665f232c4a8f6d822cfe6885476e883a306fd63d2c6e71d6",
+  "phi": 2474
+ },
+ "table_digest": "cc5ef7ecf0510ea9a74fc52bafe324d6d8f58294c4b0e20b40b97b414dada062"
+}

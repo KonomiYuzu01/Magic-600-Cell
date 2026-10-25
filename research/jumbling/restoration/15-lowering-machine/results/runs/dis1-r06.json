@@ -1,0 +1,301 @@
+{
+ "kind": "pstar",
+ "label": "DIS-1: declared P* after R06 first",
+ "run": {
+  "cpu_s": 166.64706,
+  "digest": "956d3d3e5189646a38ede9ce134f04662c8c15e245593948c265041107bb9f92",
+  "format": "pstar-run/1",
+  "macro_words": [
+   "522:8,451:44,522:15"
+  ],
+  "options": {
+   "beam": 64,
+   "choice": "best",
+   "depth": 3,
+   "e0": 20,
+   "families": [
+    "T",
+    "R",
+    "M",
+    "E",
+    "L"
+   ]
+  },
+  "phi": 1472,
+  "prefix": "344:9,451:55,522:14",
+  "reason": "no-family-candidate",
+  "status": "stopped",
+  "steps": [
+   {
+    "choice": {
+     "excursion": 0,
+     "family": null,
+     "length": 3,
+     "target": 522,
+     "terminal_phi": 1472,
+     "word": "522:8,451:44,522:15"
+    },
+    "cpu_s": null,
+    "digest": "f93e461f9b1c65d5483cf3ba53db266baee71613d8a8808e091ce4a0484daad2",
+    "families": {},
+    "kind": "first",
+    "phi": null
+   },
+   {
+    "choice": null,
+    "cpu_s": 145.080308,
+    "digest": "956d3d3e5189646a38ede9ce134f04662c8c15e245593948c265041107bb9f92",
+    "families": {
+     "E": {
+      "candidates": 0,
+      "cpu_s": 0.833198,
+      "exhausted": true
+     },
+     "L": {
+      "candidates": 0,
+      "cpu_s": 0.234664,
+      "exhausted": true,
+      "pair_count": 0
+     },
+     "M": {
+      "candidates": 0,
+      "cpu_s": 107.392491,
+      "exhausted": true
+     },
+     "R": {
+      "beam": 64,
+      "candidates": 0,
+      "cpu_s": 27.33983,
+      "depth": 3,
+      "exhausted": false,
+      "exhaustive_through": 2,
+      "truncated_targets": [
+       2,
+       64,
+       73,
+       162,
+       183,
+       229,
+       239,
+       251,
+       336,
+       375,
+       475,
+       522,
+       540,
+       596
+      ]
+     },
+     "T": {
+      "candidates": 0,
+      "cpu_s": 9.014546,
+      "exhausted": true
+     }
+    },
+    "phi": 1472,
+    "t3p_scan": {
+     "rows": [
+      {
+       "count": 101,
+       "pose": 993,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 198,
+       "x": 2
+      },
+      {
+       "D": 42,
+       "F": 123,
+       "helpers": [
+        [
+         277,
+         1
+        ],
+        [
+         522,
+         1
+        ]
+       ],
+       "pose": 1136,
+       "status": "budget",
+       "unit_size": 10,
+       "x": 375
+      },
+      {
+       "count": 43,
+       "pose": 1153,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 87,
+       "x": 251
+      },
+      {
+       "D": 58,
+       "F": 111,
+       "helpers": [],
+       "pose": 1227,
+       "status": "budget",
+       "unit_size": 13,
+       "x": 540
+      },
+      {
+       "D": 58,
+       "F": 111,
+       "helpers": [],
+       "pose": 1353,
+       "status": "budget",
+       "unit_size": 28,
+       "x": 540
+      },
+      {
+       "count": 40,
+       "pose": 1427,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 3,
+       "x": 475
+      },
+      {
+       "D": 9,
+       "F": 22,
+       "helpers": [],
+       "pose": 1427,
+       "status": "budget",
+       "unit_size": 3,
+       "x": 522
+      },
+      {
+       "D": 58,
+       "F": 111,
+       "helpers": [],
+       "pose": 1533,
+       "status": "budget",
+       "unit_size": 17,
+       "x": 540
+      },
+      {
+       "count": 205,
+       "pose": 1533,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 17,
+       "x": 596
+      },
+      {
+       "count": 40,
+       "pose": 1747,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 3,
+       "x": 475
+      },
+      {
+       "D": 9,
+       "F": 22,
+       "helpers": [],
+       "pose": 1747,
+       "status": "budget",
+       "unit_size": 3,
+       "x": 522
+      },
+      {
+       "count": 40,
+       "pose": 2139,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 3,
+       "x": 475
+      },
+      {
+       "D": 9,
+       "F": 22,
+       "helpers": [],
+       "pose": 2139,
+       "status": "budget",
+       "unit_size": 3,
+       "x": 522
+      },
+      {
+       "count": 226,
+       "pose": 2212,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 9,
+       "x": 73
+      },
+      {
+       "pose": 2212,
+       "status": "no-disjoint-cover",
+       "unit_size": 9,
+       "x": 229
+      },
+      {
+       "count": 17,
+       "pose": 2227,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 111,
+       "x": 162
+      },
+      {
+       "count": 135,
+       "pose": 2227,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 111,
+       "x": 239
+      },
+      {
+       "pose": 2298,
+       "status": "no-disjoint-cover",
+       "unit_size": 111,
+       "x": 336
+      },
+      {
+       "count": 193,
+       "pose": 2360,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 32,
+       "x": 183
+      },
+      {
+       "D": 42,
+       "F": 123,
+       "helpers": [
+        [
+         277,
+         1
+        ],
+        [
+         522,
+         1
+        ]
+       ],
+       "pose": 2360,
+       "status": "budget",
+       "unit_size": 32,
+       "x": 375
+      },
+      {
+       "count": 101,
+       "pose": 2466,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 111,
+       "x": 2
+      },
+      {
+       "count": 41,
+       "pose": 2466,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 111,
+       "x": 64
+      }
+     ],
+     "single_letter_descents": []
+    }
+   }
+  ],
+  "table_digest": "ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980",
+  "trajectory": [
+   {
+    "digest": "f93e461f9b1c65d5483cf3ba53db266baee71613d8a8808e091ce4a0484daad2",
+    "phi": 1498
+   },
+   {
+    "digest": "956d3d3e5189646a38ede9ce134f04662c8c15e245593948c265041107bb9f92",
+    "phi": 1472
+   }
+  ]
+ }
+}
