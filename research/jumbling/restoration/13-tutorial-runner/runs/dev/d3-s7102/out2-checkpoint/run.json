@@ -166,10 +166,10 @@
   "bulk": {
    "result": "budget",
    "completed": false,
-   "steps": 444,
-   "twists": 1240,
+   "steps": 445,
+   "twists": 1243,
    "end": {
-    "digest": "653f3c0d1e112f4627d28322d06e20d76ac56c81ce4334e3a1e08785ccd48829",
+    "digest": "e63acbe354bd10d51aa2091b8b40c12cc99be3ffc98fbe57a0ca6f47ba3b8cc3",
     "off": 14820,
     "heights": {
      "2": 14739,
@@ -12214,6 +12214,33 @@
     "N": 20154
    },
    "seconds": 104.500276
+  },
+  {
+   "index": 444,
+   "phase": "bulk",
+   "subphase": null,
+   "rule": "conj",
+   "word": "words/00444.json",
+   "letters": 3,
+   "encoding": "json",
+   "word_sha256": "4f8a92f52db97a0483648aab90603e934bbc9beea9bca82839b16ccf073a5e6b",
+   "tree": {
+    "file": "step-trees/00444.json.gz",
+    "sha256": "f8d62a10e80956114f2fc4bfe0e6dc96d605f2b2cc5a9c22cfe17af9df4836f5",
+    "size": 4
+   },
+   "standing": "rule",
+   "before": {
+    "digest": "653f3c0d1e112f4627d28322d06e20d76ac56c81ce4334e3a1e08785ccd48829",
+    "off": 14820,
+    "N": 20154
+   },
+   "after": {
+    "digest": "e63acbe354bd10d51aa2091b8b40c12cc99be3ffc98fbe57a0ca6f47ba3b8cc3",
+    "off": 14820,
+    "N": 20148
+   },
+   "seconds": 108.76524
   }
  ],
  "stuck": null,
@@ -12228,13 +12255,13 @@
   "timed_out_attempts": 0
  },
  "totals": {
-  "bulk_twists": 1240,
+  "bulk_twists": 1243,
   "height_twists": 0,
   "high_twists": 0,
   "tail_twists": 0,
   "fallback_twists": 0,
   "lattice_twists": null,
-  "seconds": 98826.254568
+  "seconds": 98935.257603
  },
  "resumes": [
   {
