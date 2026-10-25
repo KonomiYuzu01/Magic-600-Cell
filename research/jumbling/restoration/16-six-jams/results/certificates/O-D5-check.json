@@ -1,0 +1,95 @@
+{
+ "cpu_s": 487.608535,
+ "digest": "3c77cf216a0d8b17c426e5b5d6c573f43040e7fb74d4b26fbe00a54fa725f7b3",
+ "failures": [],
+ "format": "macro-check/1",
+ "macros": [
+  {
+   "claims": {
+    "D": 146,
+    "F": 0,
+    "delta": [
+     292,
+     0,
+     0,
+     -222,
+     0,
+     0,
+     -292
+    ],
+    "digests": [
+     "e0ae5976a6e1963741af2a68d83be9a00beb96bc40ef858448b55d1f57c75063",
+     "2795b3f89cc68480e03eac18dd392e132a87d8ea14840edfa448a4b1219b0383",
+     "69127657b8800c26074097da0f23096e8eea4662d9927f277aaa8d385c47ed90",
+     "57c05b0223034ef02bc4e5b2a3a32b85e1d66c8c73a01998086e5159ab272d7d",
+     "40ed21569b0078de4f9a9d73cad8cfd5ddaab0ab410cf39c0f37780fc83a46ee",
+     "8ed75c229a9e8b31432eda9304feffd2c6a59724843b7bc96409f21aac5fd245",
+     "3c77cf216a0d8b17c426e5b5d6c573f43040e7fb74d4b26fbe00a54fa725f7b3"
+    ],
+    "excursion": 292,
+    "phi": [
+     1782,
+     1782,
+     1782,
+     1560,
+     1560,
+     1560,
+     1268
+    ],
+    "supports": [
+     {
+      "sha256": "bcd3143ca6663933203463da18a3cc1b0f9d3296ff39f4575765a6887903e118",
+      "size": 3206
+     },
+     {
+      "sha256": "bc453b1446ba124452f536981b581f57b17eaf85214664af8ebeb5021710122c",
+      "size": 3272
+     },
+     {
+      "sha256": "2ee9d1ce759f4eefa15afdf815dd5ec12db71fef7cdcd88e231c229012f0cd4b",
+      "size": 2608
+     },
+     {
+      "sha256": "3622b93c90a0308d2e2c95de4145eae56848e482fc5753b556ae0227abebddf3",
+      "size": 2880
+     },
+     {
+      "sha256": "3622b93c90a0308d2e2c95de4145eae56848e482fc5753b556ae0227abebddf3",
+      "size": 2880
+     },
+     {
+      "sha256": "f8563f9606a5b091f12c699c163b73cc76fa1c626d96929e3250174e11869190",
+      "size": 3129
+     },
+     {
+      "sha256": "e92abe4267f1ece0d6376d76550404772c6aff0d988858694fe01d56bde94d5d",
+      "size": 3063
+     }
+    ]
+   },
+   "passed": true
+  }
+ ],
+ "passed": true,
+ "phi": 1268,
+ "replay": {
+  "digest": "3c77cf216a0d8b17c426e5b5d6c573f43040e7fb74d4b26fbe00a54fa725f7b3",
+  "events": 38,
+  "passed": true,
+  "phi": 1268
+ },
+ "setup": {
+  "labels": {
+   "cpu_s": 0.884652
+  },
+  "load": {
+   "cpu_s": 0.337843
+  },
+  "trees": {
+   "cpu_s": 10.074635
+  },
+  "word": {
+   "cpu_s": 15.09888
+  }
+ }
+}

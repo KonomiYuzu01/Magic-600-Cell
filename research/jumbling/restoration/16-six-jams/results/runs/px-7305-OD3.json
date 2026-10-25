@@ -1,0 +1,311 @@
+{
+ "seed": "7305",
+ "start": {
+  "digest": "c0070b05ea289022358cac9933348b605714dcd67b7dd05724a18a271bd94099",
+  "phi": 1572
+ },
+ "segments": [
+  {
+   "directory": "seg-000",
+   "macros": 0,
+   "status": "stopped",
+   "end": {
+    "phi": 764,
+    "digest": "e1dd076d5af83999d9ec53a894286200467ee55be92a410c9eff52ce039bfe30"
+   },
+   "families": [
+    null
+   ],
+   "words": [],
+   "cpu_s": 285.459948,
+   "stop": {
+    "R": 0,
+    "X": [
+     {
+      "K": 1,
+      "minimal": false,
+      "nodes": 1,
+      "letters": 286,
+      "leaf_tests": 1136,
+      "hits": 24
+     },
+     {
+      "K": 2,
+      "minimal": false,
+      "nodes": 287,
+      "letters": 43538,
+      "leaf_tests": 171812,
+      "hits": 7032
+     }
+    ],
+    "cpu_s": 374.0,
+    "choice": {
+     "word": [
+      [
+       576,
+       1
+      ],
+      [
+       574,
+       1
+      ],
+      [
+       499,
+       12
+      ]
+     ],
+     "terminal_phi": 672,
+     "family": "X2"
+    }
+   }
+  },
+  {
+   "directory": "seg-001",
+   "macros": 2,
+   "status": "stopped",
+   "end": {
+    "phi": 542,
+    "digest": "ef29e6ffbec7045496f5d24eebb938d1dde3a56975e096aafc004726eb299651"
+   },
+   "families": [
+    null,
+    "T",
+    null
+   ],
+   "words": [
+    [
+     [
+      576,
+      1
+     ],
+     [
+      574,
+      1
+     ],
+     [
+      499,
+      12
+     ]
+    ],
+    [
+     [
+      574,
+      1
+     ],
+     [
+      499,
+      14
+     ]
+    ]
+   ],
+   "cpu_s": 381.752572,
+   "stop": {
+    "R": 0,
+    "X": [
+     {
+      "K": 1,
+      "minimal": false,
+      "nodes": 1,
+      "letters": 297,
+      "leaf_tests": 884,
+      "hits": 24
+     },
+     {
+      "K": 2,
+      "minimal": false,
+      "nodes": 298,
+      "letters": 46860,
+      "leaf_tests": 138387,
+      "hits": 7296
+     }
+    ],
+    "cpu_s": 349.4,
+    "choice": {
+     "word": [
+      [
+       436,
+       2
+      ],
+      [
+       268,
+       14
+      ]
+     ],
+     "terminal_phi": 514,
+     "family": "X1"
+    }
+   }
+  },
+  {
+   "directory": "seg-002",
+   "macros": 1,
+   "status": "stopped",
+   "end": {
+    "phi": 514,
+    "digest": "f3ec92731d3bf0fbd5e11d97d9f43b41846f736c57ca67aaa2528f45dbcbc277"
+   },
+   "families": [
+    null,
+    null
+   ],
+   "words": [
+    [
+     [
+      436,
+      2
+     ],
+     [
+      268,
+      14
+     ]
+    ]
+   ],
+   "cpu_s": 126.450262,
+   "stop": {
+    "R": 0,
+    "X": [
+     {
+      "K": 1,
+      "minimal": false,
+      "nodes": 1,
+      "letters": 286,
+      "leaf_tests": 574,
+      "hits": 12
+     },
+     {
+      "K": 2,
+      "minimal": false,
+      "nodes": 287,
+      "letters": 43703,
+      "leaf_tests": 87915,
+      "hits": 3588
+     }
+    ],
+    "cpu_s": 275.7,
+    "choice": {
+     "word": [
+      [
+       226,
+       2
+      ],
+      [
+       175,
+       12
+      ]
+     ],
+     "terminal_phi": 508,
+     "family": "X1"
+    }
+   }
+  },
+  {
+   "directory": "seg-003",
+   "macros": 1,
+   "status": "stopped",
+   "end": {
+    "phi": 508,
+    "digest": "71aa4fbb447fd69d6eb5a14f6486619157e9be7b38784ef0cac3fa8d0768081f"
+   },
+   "families": [
+    null,
+    null
+   ],
+   "words": [
+    [
+     [
+      226,
+      2
+     ],
+     [
+      175,
+      12
+     ]
+    ]
+   ],
+   "cpu_s": 91.604142,
+   "stop": {
+    "R": 0,
+    "X": [
+     {
+      "K": 1,
+      "minimal": false,
+      "nodes": 1,
+      "letters": 286,
+      "leaf_tests": 286,
+      "hits": 0
+     },
+     {
+      "K": 2,
+      "minimal": false,
+      "nodes": 287,
+      "letters": 43670,
+      "leaf_tests": 43634,
+      "hits": 0
+     },
+     {
+      "K": 3,
+      "minimal": true,
+      "nodes": 43957,
+      "letters": 4964498,
+      "leaf_tests": 42844,
+      "hits": 0
+     }
+    ],
+    "cpu_s": 548.1
+   }
+  }
+ ],
+ "start_macros": [
+  [
+   [
+    134,
+    12
+   ],
+   [
+    305,
+    2
+   ],
+   [
+    421,
+    51
+   ],
+   [
+    389,
+    6
+   ],
+   [
+    504,
+    28
+   ],
+   [
+    389,
+    7
+   ],
+   [
+    421,
+    12
+   ],
+   [
+    305,
+    4
+   ],
+   [
+    134,
+    14
+   ],
+   [
+    431,
+    3
+   ],
+   [
+    576,
+    13
+   ]
+  ]
+ ],
+ "phi": 508,
+ "digest": "71aa4fbb447fd69d6eb5a14f6486619157e9be7b38784ef0cac3fa8d0768081f",
+ "cpu_s": 2434.737,
+ "status": "stopped",
+ "reason": "no-candidate"
+}

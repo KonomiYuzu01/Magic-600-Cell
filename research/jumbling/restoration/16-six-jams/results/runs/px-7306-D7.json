@@ -1,0 +1,168 @@
+{
+ "seed": "7306",
+ "start": {
+  "digest": "1a9bcbb5d31084ad9f9b8fbaabea3f1b9bb5299c67f66f6040b677a95c7e138c",
+  "phi": 1490
+ },
+ "segments": [
+  {
+   "directory": "seg-000",
+   "macros": 0,
+   "status": "stopped",
+   "end": {
+    "phi": 1268,
+    "digest": "06ec09386826c80c138e40db6b5d232905f6fdcc2c128c8cd81c49d0bedc809d"
+   },
+   "families": [
+    null
+   ],
+   "words": [],
+   "cpu_s": 321.458773,
+   "stop": {
+    "R": 0,
+    "X": [
+     {
+      "K": 1,
+      "minimal": false,
+      "nodes": 1,
+      "letters": 286,
+      "leaf_tests": 1142,
+      "hits": 0
+     },
+     {
+      "K": 2,
+      "minimal": false,
+      "nodes": 287,
+      "letters": 45111,
+      "leaf_tests": 179703,
+      "hits": 0
+     },
+     {
+      "K": 3,
+      "minimal": true,
+      "nodes": 45398,
+      "letters": 5548059,
+      "leaf_tests": 126357,
+      "hits": 132
+     }
+    ],
+    "cpu_s": 692.7,
+    "choice": {
+     "word": [
+      [
+       351,
+       3
+      ],
+      [
+       384,
+       1
+      ],
+      [
+       485,
+       1
+      ],
+      [
+       526,
+       14
+      ]
+     ],
+     "terminal_phi": 1260,
+     "family": "X3"
+    }
+   }
+  },
+  {
+   "directory": "seg-001",
+   "macros": 1,
+   "status": "stopped",
+   "end": {
+    "phi": 1260,
+    "digest": "735d7597a573c3b57c3a6ab5c7d501c43e3486dda7e95fb2ddc6216d99ba450d"
+   },
+   "families": [
+    null,
+    null
+   ],
+   "words": [
+    [
+     [
+      351,
+      3
+     ],
+     [
+      384,
+      1
+     ],
+     [
+      485,
+      1
+     ],
+     [
+      526,
+      14
+     ]
+    ]
+   ],
+   "cpu_s": 146.99419,
+   "stop": {
+    "R": 0,
+    "X": [
+     {
+      "K": 1,
+      "minimal": false,
+      "nodes": 1,
+      "letters": 286,
+      "leaf_tests": 856,
+      "hits": 0
+     },
+     {
+      "K": 2,
+      "minimal": false,
+      "nodes": 287,
+      "letters": 44913,
+      "leaf_tests": 134034,
+      "hits": 0
+     },
+     {
+      "K": 3,
+      "minimal": true,
+      "nodes": 45200,
+      "letters": 5464151,
+      "leaf_tests": 74349,
+      "hits": 0
+     }
+    ],
+    "cpu_s": 661.5
+   }
+  }
+ ],
+ "start_macros": [
+  [
+   [
+    561,
+    1
+   ],
+   [
+    598,
+    4
+   ],
+   [
+    233,
+    6
+   ],
+   [
+    536,
+    11
+   ],
+   [
+    370,
+    15
+   ]
+  ]
+ ],
+ "phi": 1260,
+ "digest": "735d7597a573c3b57c3a6ab5c7d501c43e3486dda7e95fb2ddc6216d99ba450d",
+ "cpu_s": 1823.906,
+ "status": "stopped",
+ "reason": "no-candidate"
+}

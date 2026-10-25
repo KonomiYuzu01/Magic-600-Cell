@@ -1,0 +1,636 @@
+{
+ "seed": "7304",
+ "e0": 800,
+ "first": [],
+ "phi": 1172,
+ "counts": {
+  "helpers": 40,
+  "tame_items": 2312,
+  "lowering_tests": 564000,
+  "descending": 864
+ },
+ "candidates": [
+  {
+   "word": [
+    [
+     170,
+     15
+    ],
+    [
+     150,
+     13
+    ]
+   ],
+   "terminal_phi": 1172,
+   "excursion": 2,
+   "length": 2,
+   "target": 150,
+   "unit": null
+  },
+  {
+   "word": [
+    [
+     170,
+     22
+    ],
+    [
+     344,
+     13
+    ]
+   ],
+   "terminal_phi": 1172,
+   "excursion": 2,
+   "length": 2,
+   "target": 344,
+   "unit": null
+  },
+  {
+   "word": [
+    [
+     395,
+     14
+    ],
+    [
+     284,
+     12
+    ]
+   ],
+   "terminal_phi": 1172,
+   "excursion": 156,
+   "length": 2,
+   "target": 284,
+   "unit": null
+  },
+  {
+   "word": [
+    [
+     395,
+     21
+    ],
+    [
+     324,
+     14
+    ]
+   ],
+   "terminal_phi": 1172,
+   "excursion": 156,
+   "length": 2,
+   "target": 324,
+   "unit": null
+  },
+  {
+   "word": [
+    [
+     395,
+     22
+    ],
+    [
+     463,
+     12
+    ]
+   ],
+   "terminal_phi": 1172,
+   "excursion": 156,
+   "length": 2,
+   "target": 463,
+   "unit": null
+  },
+  {
+   "word": [
+    [
+     395,
+     23
+    ],
+    [
+     487,
+     12
+    ]
+   ],
+   "terminal_phi": 1172,
+   "excursion": 156,
+   "length": 2,
+   "target": 487,
+   "unit": null
+  },
+  {
+   "word": [
+    [
+     470,
+     14
+    ],
+    [
+     287,
+     12
+    ]
+   ],
+   "terminal_phi": 1186,
+   "excursion": 22,
+   "length": 2,
+   "target": 287,
+   "unit": null
+  },
+  {
+   "word": [
+    [
+     470,
+     22
+    ],
+    [
+     323,
+     13
+    ]
+   ],
+   "terminal_phi": 1186,
+   "excursion": 22,
+   "length": 2,
+   "target": 323,
+   "unit": null
+  },
+  {
+   "word": [
+    [
+     470,
+     23
+    ],
+    [
+     581,
+     12
+    ]
+   ],
+   "terminal_phi": 1186,
+   "excursion": 22,
+   "length": 2,
+   "target": 581,
+   "unit": null
+  },
+  {
+   "word": [
+    [
+     384,
+     14
+    ],
+    [
+     446,
+     14
+    ]
+   ],
+   "terminal_phi": 1272,
+   "excursion": 310,
+   "length": 2,
+   "target": 446,
+   "unit": null
+  },
+  {
+   "word": [
+    [
+     384,
+     23
+    ],
+    [
+     526,
+     14
+    ]
+   ],
+   "terminal_phi": 1272,
+   "excursion": 310,
+   "length": 2,
+   "target": 526,
+   "unit": null
+  },
+  {
+   "word": [
+    [
+     384,
+     20
+    ],
+    [
+     375,
+     13
+    ]
+   ],
+   "terminal_phi": 1292,
+   "excursion": 310,
+   "length": 2,
+   "target": 375,
+   "unit": null
+  }
+ ],
+ "least_excursion": [
+  {
+   "word": [
+    [
+     170,
+     15
+    ],
+    [
+     150,
+     13
+    ]
+   ],
+   "terminal_phi": 1172,
+   "excursion": 2,
+   "length": 2,
+   "target": 150,
+   "unit": null
+  },
+  {
+   "word": [
+    [
+     170,
+     22
+    ],
+    [
+     344,
+     13
+    ]
+   ],
+   "terminal_phi": 1172,
+   "excursion": 2,
+   "length": 2,
+   "target": 344,
+   "unit": null
+  },
+  {
+   "word": [
+    [
+     470,
+     14
+    ],
+    [
+     287,
+     12
+    ]
+   ],
+   "terminal_phi": 1186,
+   "excursion": 22,
+   "length": 2,
+   "target": 287,
+   "unit": null
+  },
+  {
+   "word": [
+    [
+     470,
+     22
+    ],
+    [
+     323,
+     13
+    ]
+   ],
+   "terminal_phi": 1186,
+   "excursion": 22,
+   "length": 2,
+   "target": 323,
+   "unit": null
+  },
+  {
+   "word": [
+    [
+     470,
+     23
+    ],
+    [
+     581,
+     12
+    ]
+   ],
+   "terminal_phi": 1186,
+   "excursion": 22,
+   "length": 2,
+   "target": 581,
+   "unit": null
+  },
+  {
+   "word": [
+    [
+     395,
+     14
+    ],
+    [
+     284,
+     12
+    ]
+   ],
+   "terminal_phi": 1172,
+   "excursion": 156,
+   "length": 2,
+   "target": 284,
+   "unit": null
+  },
+  {
+   "word": [
+    [
+     395,
+     21
+    ],
+    [
+     324,
+     14
+    ]
+   ],
+   "terminal_phi": 1172,
+   "excursion": 156,
+   "length": 2,
+   "target": 324,
+   "unit": null
+  },
+  {
+   "word": [
+    [
+     395,
+     22
+    ],
+    [
+     463,
+     12
+    ]
+   ],
+   "terminal_phi": 1172,
+   "excursion": 156,
+   "length": 2,
+   "target": 463,
+   "unit": null
+  },
+  {
+   "word": [
+    [
+     395,
+     23
+    ],
+    [
+     487,
+     12
+    ]
+   ],
+   "terminal_phi": 1172,
+   "excursion": 156,
+   "length": 2,
+   "target": 487,
+   "unit": null
+  },
+  {
+   "word": [
+    [
+     384,
+     23
+    ],
+    [
+     526,
+     14
+    ]
+   ],
+   "terminal_phi": 1272,
+   "excursion": 310,
+   "length": 2,
+   "target": 526,
+   "unit": null
+  },
+  {
+   "word": [
+    [
+     384,
+     14
+    ],
+    [
+     446,
+     14
+    ]
+   ],
+   "terminal_phi": 1272,
+   "excursion": 310,
+   "length": 2,
+   "target": 446,
+   "unit": null
+  },
+  {
+   "word": [
+    [
+     384,
+     20
+    ],
+    [
+     375,
+     13
+    ]
+   ],
+   "terminal_phi": 1292,
+   "excursion": 310,
+   "length": 2,
+   "target": 375,
+   "unit": null
+  }
+ ],
+ "closest": [
+  [
+   526,
+   "jumble",
+   -105,
+   [
+    384,
+    23
+   ],
+   0,
+   105
+  ],
+  [
+   446,
+   "jumble",
+   -105,
+   [
+    384,
+    14
+   ],
+   0,
+   105
+  ],
+  [
+   375,
+   "jumble",
+   -95,
+   [
+    384,
+    20
+   ],
+   10,
+   105
+  ],
+  [
+   284,
+   "jumble",
+   -78,
+   [
+    395,
+    14
+   ],
+   0,
+   78
+  ],
+  [
+   324,
+   "jumble",
+   -78,
+   [
+    395,
+    21
+   ],
+   0,
+   78
+  ],
+  [
+   463,
+   "jumble",
+   -78,
+   [
+    395,
+    22
+   ],
+   0,
+   78
+  ],
+  [
+   487,
+   "jumble",
+   -78,
+   [
+    395,
+    23
+   ],
+   0,
+   78
+  ],
+  [
+   287,
+   "jumble",
+   -4,
+   [
+    470,
+    14
+   ],
+   0,
+   4
+  ],
+  [
+   323,
+   "jumble",
+   -4,
+   [
+    470,
+    22
+   ],
+   0,
+   4
+  ],
+  [
+   581,
+   "jumble",
+   -4,
+   [
+    470,
+    23
+   ],
+   0,
+   4
+  ],
+  [
+   150,
+   "jumble",
+   -1,
+   [
+    170,
+    15
+   ],
+   0,
+   1
+  ],
+  [
+   344,
+   "jumble",
+   -1,
+   [
+    170,
+    22
+   ],
+   0,
+   1
+  ],
+  [
+   522,
+   "retained",
+   13,
+   [
+    375,
+    1
+   ],
+   22,
+   9
+  ],
+  [
+   522,
+   "jumble",
+   13,
+   [
+    375,
+    14
+   ],
+   22,
+   9
+  ],
+  [
+   540,
+   "jumble",
+   49,
+   [
+    470,
+    50
+   ],
+   111,
+   62
+  ],
+  [
+   540,
+   "retained",
+   53,
+   [
+    353,
+    1
+   ],
+   111,
+   58
+  ],
+  [
+   162,
+   "retained",
+   99,
+   [
+    384,
+    6
+   ],
+   111,
+   12
+  ],
+  [
+   162,
+   "jumble",
+   113,
+   [
+    375,
+    13
+   ],
+   125,
+   12
+  ],
+  [
+   500,
+   "jumble",
+   194,
+   [
+    470,
+    18
+   ],
+   198,
+   4
+  ]
+ ],
+ "cpu_s": 203.7
+}

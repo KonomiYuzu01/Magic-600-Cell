@@ -1,0 +1,81 @@
+{
+ "cpu_s": 472.752191,
+ "digest": "06ec09386826c80c138e40db6b5d232905f6fdcc2c128c8cd81c49d0bedc809d",
+ "failures": [],
+ "format": "macro-check/1",
+ "macros": [
+  {
+   "claims": {
+    "D": 111,
+    "F": 0,
+    "delta": [
+     0,
+     0,
+     0,
+     0,
+     -222
+    ],
+    "digests": [
+     "9f9e46c83da8a4250dee119941586888bd1e3cb4a086f30905e3a6c71cacac7a",
+     "61f68111825b3a34951039b86574d414adee1c4d0f8b11b0d0e82722b7bb817c",
+     "0c77957a1fbe1d4438fa6ef9560a1b24914f0798d50bd6d0dde191c93545cea4",
+     "d518b63028247dac034dda6a19a3b69182bfa3fffc4a9ca2c816d27d9043a238",
+     "06ec09386826c80c138e40db6b5d232905f6fdcc2c128c8cd81c49d0bedc809d"
+    ],
+    "excursion": 0,
+    "phi": [
+     1490,
+     1490,
+     1490,
+     1490,
+     1268
+    ],
+    "supports": [
+     {
+      "sha256": "fb0781bc94379c76dffd608cf4e3377572bc042236a5d5739437ce0b963e0f05",
+      "size": 3165
+     },
+     {
+      "sha256": "b563ffb1da89a5e22ab84cbf404d200e5b8dc16219420b821bed7a897ce6f484",
+      "size": 3299
+     },
+     {
+      "sha256": "2ee9d1ce759f4eefa15afdf815dd5ec12db71fef7cdcd88e231c229012f0cd4b",
+      "size": 2608
+     },
+     {
+      "sha256": "dc0568ddda613a5d2d02dd079232d7255a888e4ce8f8ab98684fb339dd0a15c1",
+      "size": 3038
+     },
+     {
+      "sha256": "e219c25d2a8cc825c8fe31d6bc55aed783ce6b0216e2b5a5fc4fed869a864edf",
+      "size": 2646
+     }
+    ]
+   },
+   "passed": true
+  }
+ ],
+ "passed": true,
+ "phi": 1268,
+ "replay": {
+  "digest": "06ec09386826c80c138e40db6b5d232905f6fdcc2c128c8cd81c49d0bedc809d",
+  "events": 36,
+  "passed": true,
+  "phi": 1268
+ },
+ "setup": {
+  "labels": {
+   "cpu_s": 1.299808
+  },
+  "load": {
+   "cpu_s": 0.36639
+  },
+  "trees": {
+   "cpu_s": 10.942539
+  },
+  "word": {
+   "cpu_s": 16.006765
+  }
+ }
+}

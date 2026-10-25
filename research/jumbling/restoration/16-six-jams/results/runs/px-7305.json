@@ -1,0 +1,182 @@
+{
+ "seed": "7305",
+ "start": {
+  "digest": "c0070b05ea289022358cac9933348b605714dcd67b7dd05724a18a271bd94099",
+  "phi": 1572
+ },
+ "segments": [
+  {
+   "directory": "seg-000",
+   "macros": 0,
+   "status": "stopped",
+   "end": {
+    "phi": 1572,
+    "digest": "c0070b05ea289022358cac9933348b605714dcd67b7dd05724a18a271bd94099"
+   },
+   "families": [
+    null
+   ],
+   "words": [],
+   "cpu_s": 171.172763,
+   "stop": {
+    "R": 0,
+    "X": [
+     {
+      "K": 1,
+      "minimal": false,
+      "nodes": 1,
+      "letters": 319,
+      "leaf_tests": 1257,
+      "hits": 24
+     },
+     {
+      "K": 2,
+      "minimal": false,
+      "nodes": 320,
+      "letters": 53735,
+      "leaf_tests": 208832,
+      "hits": 7956
+     }
+    ],
+    "cpu_s": 536.5,
+    "choice": {
+     "word": [
+      [
+       436,
+       2
+      ],
+      [
+       268,
+       14
+      ]
+     ],
+     "terminal_phi": 1544,
+     "family": "X1"
+    }
+   }
+  },
+  {
+   "directory": "seg-001",
+   "macros": 1,
+   "status": "stopped",
+   "end": {
+    "phi": 1544,
+    "digest": "08bf8d807b0d4afc3814fe5db87be2bdd6cce72b6ad389034547a979551b93f7"
+   },
+   "families": [
+    null,
+    null
+   ],
+   "words": [
+    [
+     [
+      436,
+      2
+     ],
+     [
+      268,
+      14
+     ]
+    ]
+   ],
+   "cpu_s": 144.470282,
+   "stop": {
+    "R": 0,
+    "X": [
+     {
+      "K": 1,
+      "minimal": false,
+      "nodes": 1,
+      "letters": 319,
+      "leaf_tests": 947,
+      "hits": 12
+     },
+     {
+      "K": 2,
+      "minimal": false,
+      "nodes": 320,
+      "letters": 53922,
+      "leaf_tests": 158768,
+      "hits": 3984
+     }
+    ],
+    "cpu_s": 491.3,
+    "choice": {
+     "word": [
+      [
+       226,
+       2
+      ],
+      [
+       175,
+       12
+      ]
+     ],
+     "terminal_phi": 1538,
+     "family": "X1"
+    }
+   }
+  },
+  {
+   "directory": "seg-002",
+   "macros": 1,
+   "status": "stopped",
+   "end": {
+    "phi": 1538,
+    "digest": "6069d068080676e412c1601bec7ebb40a2347dae5cda87795ed17491e7d7dd4a"
+   },
+   "families": [
+    null,
+    null
+   ],
+   "words": [
+    [
+     [
+      226,
+      2
+     ],
+     [
+      175,
+      12
+     ]
+    ]
+   ],
+   "cpu_s": 110.509465,
+   "stop": {
+    "R": 0,
+    "X": [
+     {
+      "K": 1,
+      "minimal": false,
+      "nodes": 1,
+      "letters": 319,
+      "leaf_tests": 626,
+      "hits": 0
+     },
+     {
+      "K": 2,
+      "minimal": false,
+      "nodes": 320,
+      "letters": 53889,
+      "leaf_tests": 104161,
+      "hits": 0
+     },
+     {
+      "K": 3,
+      "minimal": true,
+      "nodes": 54209,
+      "letters": 6733892,
+      "leaf_tests": 107646,
+      "hits": 0
+     }
+    ],
+    "cpu_s": 897.7
+   }
+  }
+ ],
+ "phi": 1538,
+ "digest": "6069d068080676e412c1601bec7ebb40a2347dae5cda87795ed17491e7d7dd4a",
+ "cpu_s": 2353.372,
+ "status": "stopped",
+ "reason": "no-candidate"
+}

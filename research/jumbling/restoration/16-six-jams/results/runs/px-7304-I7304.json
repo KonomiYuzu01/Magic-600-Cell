@@ -1,0 +1,102 @@
+{
+ "seed": "7304",
+ "start": {
+  "digest": "e608db08641168339b06e8346831574a01219ff18a936cec6fa442f11d1fd141",
+  "phi": 1172
+ },
+ "segments": [
+  {
+   "directory": "seg-000",
+   "macros": 0,
+   "status": "stopped",
+   "end": {
+    "phi": 554,
+    "digest": "0e245c04814a958fc67fb934c190a3a415c25c9ba2c6a96caedaac122065d814"
+   },
+   "families": [
+    null
+   ],
+   "words": [],
+   "cpu_s": 245.473764,
+   "stop": {
+    "R": 0,
+    "X": [
+     {
+      "K": 1,
+      "minimal": false,
+      "nodes": 1,
+      "letters": 462,
+      "leaf_tests": 913,
+      "hits": 0
+     },
+     {
+      "K": 2,
+      "minimal": false,
+      "nodes": 463,
+      "letters": 117854,
+      "leaf_tests": 230465,
+      "hits": 0
+     },
+     {
+      "K": 3,
+      "minimal": true,
+      "nodes": 118317,
+      "letters": 22934879,
+      "leaf_tests": 280441,
+      "hits": 0
+     }
+    ],
+    "cpu_s": 1497.9
+   }
+  }
+ ],
+ "start_macros": [
+  [
+   [
+    23,
+    10
+   ],
+   [
+    20,
+    2
+   ],
+   [
+    112,
+    2
+   ],
+   [
+    23,
+    11
+   ],
+   [
+    112,
+    2
+   ],
+   [
+    23,
+    6
+   ],
+   [
+    20,
+    1
+   ],
+   [
+    23,
+    7
+   ],
+   [
+    41,
+    1
+   ],
+   [
+    2,
+    14
+   ]
+  ]
+ ],
+ "phi": 554,
+ "digest": "0e245c04814a958fc67fb934c190a3a415c25c9ba2c6a96caedaac122065d814",
+ "cpu_s": 1743.933,
+ "status": "stopped",
+ "reason": "no-candidate"
+}

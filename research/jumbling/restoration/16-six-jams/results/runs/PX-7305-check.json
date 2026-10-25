@@ -1,0 +1,90 @@
+{
+ "cpu_s": 408.61033,
+ "digest": "6069d068080676e412c1601bec7ebb40a2347dae5cda87795ed17491e7d7dd4a",
+ "failures": [],
+ "format": "macro-check/1",
+ "macros": [
+  {
+   "claims": {
+    "D": 14,
+    "F": 0,
+    "delta": [
+     0,
+     -28
+    ],
+    "digests": [
+     "147f43fdf5629dd826f042cbc9c1865c99ebcd9c118454a1d1e0d3e7b3cbcf34",
+     "08bf8d807b0d4afc3814fe5db87be2bdd6cce72b6ad389034547a979551b93f7"
+    ],
+    "excursion": 0,
+    "phi": [
+     1572,
+     1544
+    ],
+    "supports": [
+     {
+      "sha256": "756cae20cee949d52e3ad12b574c8eb01503c07f81b132c484e632e0dd84dc0e",
+      "size": 1767
+     },
+     {
+      "sha256": "020c6ba0f8866f0f19c47d850e2e03ea8596a2e74754275b41511e0118b70d82",
+      "size": 2145
+     }
+    ]
+   },
+   "passed": true
+  },
+  {
+   "claims": {
+    "D": 3,
+    "F": 0,
+    "delta": [
+     0,
+     -6
+    ],
+    "digests": [
+     "1f9b10078b8dc7b7a07be0e8ce3726f062ab62a5599d95b4830c5eb6c3d1bc76",
+     "6069d068080676e412c1601bec7ebb40a2347dae5cda87795ed17491e7d7dd4a"
+    ],
+    "excursion": 0,
+    "phi": [
+     1544,
+     1538
+    ],
+    "supports": [
+     {
+      "sha256": "728162ffe33062028251216d6eec585fd96e8b70e173a972b253f49810641428",
+      "size": 2725
+     },
+     {
+      "sha256": "eaee97b68ebb200c11e8f37de2acf55a1b04b1a42a502c6cacae5265f4a32805",
+      "size": 2311
+     }
+    ]
+   },
+   "passed": true
+  }
+ ],
+ "passed": true,
+ "phi": 1538,
+ "replay": {
+  "digest": "6069d068080676e412c1601bec7ebb40a2347dae5cda87795ed17491e7d7dd4a",
+  "events": 47,
+  "passed": true,
+  "phi": 1538
+ },
+ "setup": {
+  "labels": {
+   "cpu_s": 0.670386
+  },
+  "load": {
+   "cpu_s": 0.227946
+  },
+  "trees": {
+   "cpu_s": 7.539284
+  },
+  "word": {
+   "cpu_s": 16.889904
+  }
+ }
+}

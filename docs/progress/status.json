@@ -117,7 +117,8 @@
       {"id": "card6", "title": "Card 6 (blocking structure): joint attack, proofs and exact experiments", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/134"},
       {"id": "card7", "title": "Card 7: unlocking chains and the lowering machine (release order, placement)", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/135"},
       {"id": "tail", "title": "Tail completion: shared cells, vacancies and locks", "weight": 1, "done": false, "evidence": null},
-      {"id": "bulk", "title": "Bulk: why the words that lower N get longer", "weight": 1, "done": false, "evidence": null}
+      {"id": "bulk", "title": "Bulk: why the words that lower N get longer", "weight": 1, "done": false, "evidence": null},
+      {"id": "card8", "title": "Card 8: the six jams of two-level P* (descents outside its families, or a negative certificate with excursion)", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/136"}
      ]}
   ]
 }
