@@ -1,0 +1,52 @@
+{
+ "candidates": [],
+ "clean_grips": 42,
+ "cpu_s": 0.20332,
+ "digest": "cf5dd7167d525a2a002d8889c3ad6e74fa2787c63be74e70c08e10a158511571",
+ "exhausted": true,
+ "format": "pstar-census/1",
+ "pair_count": 0,
+ "pairs": [],
+ "phi": 1498,
+ "prefix": [
+  [
+   344,
+   9
+  ],
+  [
+   451,
+   55
+  ],
+  [
+   522,
+   14
+  ],
+  [
+   277,
+   1
+  ],
+  [
+   375,
+   1
+  ],
+  [
+   384,
+   7
+  ]
+ ],
+ "setup": {
+  "labels": {
+   "cpu_s": 113.767629
+  },
+  "load": {
+   "cpu_s": 0.282342
+  },
+  "trees": {
+   "cpu_s": 7.409984
+  },
+  "word": {
+   "cpu_s": 2.463075
+  }
+ },
+ "unencodable": []
+}

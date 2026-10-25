@@ -1,0 +1,75 @@
+{
+ "excursion": 0,
+ "format": "macro-certificate/1",
+ "macros": [
+  {
+   "claims": {
+    "D": 22,
+    "F": 9,
+    "delta": [
+     0,
+     0,
+     -26
+    ],
+    "digests": [
+     "d4851f188ab4bc7879d9ccb6fdc4210b77130693bb3a5222b86251b6ab8054bb",
+     "32ae273f2cffd3202db9566eec9ef50edc3a6b349a9168c0fc9d9a31147fe46f",
+     "956d3d3e5189646a38ede9ce134f04662c8c15e245593948c265041107bb9f92"
+    ],
+    "excursion": 0,
+    "phi": [
+     1498,
+     1498,
+     1472
+    ],
+    "supports": [
+     {
+      "sha256": "111256a8c6061274e916342b999679ec58a84a367b307535b478c005b78d6875",
+      "size": 2195
+     },
+     {
+      "sha256": "44fdd5624568dbf39b8c2e525336051453f8346aff2d49d2a39f05c327d815ec",
+      "size": 3076
+     },
+     {
+      "sha256": "8f84df131144573a174ae261f0c02138fd5c9b7400d5952f9d9ed67d677955bb",
+      "size": 2048
+     }
+    ]
+   },
+   "events": [
+    [
+     522,
+     8
+    ],
+    [
+     451,
+     44
+    ],
+    [
+     522,
+     15
+    ]
+   ]
+  }
+ ],
+ "prefix": [
+  [
+   344,
+   9
+  ],
+  [
+   451,
+   55
+  ],
+  [
+   522,
+   14
+  ]
+ ],
+ "start": {
+  "digest": "f93e461f9b1c65d5483cf3ba53db266baee71613d8a8808e091ce4a0484daad2",
+  "phi": 1498
+ },
+ "table_digest": "ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980"
+}

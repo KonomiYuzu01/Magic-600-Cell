@@ -1,0 +1,99 @@
+{
+ "excursion": 0,
+ "format": "macro-certificate/1",
+ "macros": [
+  {
+   "claims": {
+    "D": 3,
+    "F": 0,
+    "delta": [
+     0,
+     0,
+     -6
+    ],
+    "digests": [
+     "d36f55d4d9e5d9a09259425cb440a1a43b8c739c2e0664a8374a075c23b63939",
+     "004fc4e6a6167a668157c3f4a9c726779923a40b0784a88038b8e74e66c15143",
+     "12e5f34ae71c2d11df8bbee2ab1045a11cdca4d1627dd1a53d0fbb58b62d5bb0"
+    ],
+    "excursion": 0,
+    "phi": [
+     2474,
+     2474,
+     2468
+    ],
+    "supports": [
+     {
+      "sha256": "0710fe8a50757998dfb8f34e83221510a9850c4cc4f2c5ee4d539a94222d4362",
+      "size": 2815
+     },
+     {
+      "sha256": "ecd8585728c73fd10d47cd7c62951b4d65694314d6c46ef59471ba8b1343f085",
+      "size": 1863
+     },
+     {
+      "sha256": "e98a238f4ceecf7b4fb43da28c971ceb2111a10b819396966e25a68ffd490eb3",
+      "size": 2379
+     }
+    ]
+   },
+   "events": [
+    [
+     250,
+     4
+    ],
+    [
+     208,
+     9
+    ],
+    [
+     113,
+     15
+    ]
+   ]
+  }
+ ],
+ "prefix": [
+  [
+   421,
+   4
+  ],
+  [
+   577,
+   1
+  ],
+  [
+   520,
+   14
+  ],
+  [
+   233,
+   9
+  ],
+  [
+   281,
+   12
+  ],
+  [
+   6,
+   45
+  ],
+  [
+   44,
+   15
+  ],
+  [
+   208,
+   13
+  ],
+  [
+   168,
+   15
+  ]
+ ],
+ "start": {
+  "digest": "e77981a8dcbc15b2665f232c4a8f6d822cfe6885476e883a306fd63d2c6e71d6",
+  "phi": 2474
+ },
+ "table_digest": "cc5ef7ecf0510ea9a74fc52bafe324d6d8f58294c4b0e20b40b97b414dada062"
+}

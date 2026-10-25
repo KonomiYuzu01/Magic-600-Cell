@@ -1,0 +1,502 @@
+{
+ "choice": {
+  "claims": {
+   "D": 131,
+   "F": 69,
+   "delta": [
+    0,
+    0,
+    0,
+    -124
+   ],
+   "digests": [
+    "59d3d9d75f2f2df7d5ef537dc928c6cd718c73d77c48106d942d90743ecb9092",
+    "9d56947efcc637cc094783d545b0aefbbb361b736145f4b094c3ef5a9410affb",
+    "6038f6e984a12f7d580ae8f970c24deb419267d208b979634af7eb2f8d9d58ff",
+    "62f19a2099c15c4471aecd91d6fc7e78b53638fadd8d6e8b68e9e71b19bb115c"
+   ],
+   "excursion": 0,
+   "phi": [
+    1376,
+    1376,
+    1376,
+    1252
+   ],
+   "supports": [
+    {
+     "sha256": "ef802f64dff14cd9b589bdef31ba6260ab60b5a3eb804518e0ca371a442ec920",
+     "size": 2830
+    },
+    {
+     "sha256": "f945870018a37f25e537e007ca05ee16a37136e3a8994fa20e383bb7c6c99e52",
+     "size": 2760
+    },
+    {
+     "sha256": "9bee9b9b413aaff18b50ea9d204c78abf983b6a75747d4ad47bf38b15929799e",
+     "size": 2515
+    },
+    {
+     "sha256": "ce01b035860c90abcea5f075af84722fd6600526f6ffc96fbac9bf764af30712",
+     "size": 2660
+    }
+   ]
+  },
+  "excursion": 0,
+  "family": "R",
+  "length": 4,
+  "target": 102,
+  "terminal_phi": 1252,
+  "unit": null,
+  "word": [
+   [
+    102,
+    8
+   ],
+   [
+    67,
+    9
+   ],
+   [
+    10,
+    1
+   ],
+   [
+    102,
+    12
+   ]
+  ]
+ },
+ "cpu_s": 772.09896,
+ "digest": "d9ea3c60c1ccda3c7801e7f22de674d4f8e63ffde356a4f5492430ad5f7a7330",
+ "families": {
+  "R": {
+   "beam": null,
+   "candidates": [
+    {
+     "claims": {
+      "D": 131,
+      "F": 69,
+      "delta": [
+       0,
+       0,
+       0,
+       -124
+      ],
+      "digests": [
+       "59d3d9d75f2f2df7d5ef537dc928c6cd718c73d77c48106d942d90743ecb9092",
+       "9d56947efcc637cc094783d545b0aefbbb361b736145f4b094c3ef5a9410affb",
+       "6038f6e984a12f7d580ae8f970c24deb419267d208b979634af7eb2f8d9d58ff",
+       "62f19a2099c15c4471aecd91d6fc7e78b53638fadd8d6e8b68e9e71b19bb115c"
+      ],
+      "excursion": 0,
+      "phi": [
+       1376,
+       1376,
+       1376,
+       1252
+      ],
+      "supports": [
+       {
+        "sha256": "ef802f64dff14cd9b589bdef31ba6260ab60b5a3eb804518e0ca371a442ec920",
+        "size": 2830
+       },
+       {
+        "sha256": "f945870018a37f25e537e007ca05ee16a37136e3a8994fa20e383bb7c6c99e52",
+        "size": 2760
+       },
+       {
+        "sha256": "9bee9b9b413aaff18b50ea9d204c78abf983b6a75747d4ad47bf38b15929799e",
+        "size": 2515
+       },
+       {
+        "sha256": "ce01b035860c90abcea5f075af84722fd6600526f6ffc96fbac9bf764af30712",
+        "size": 2660
+       }
+      ]
+     },
+     "excursion": 0,
+     "length": 4,
+     "target": 102,
+     "terminal_phi": 1252,
+     "unit": null,
+     "word": [
+      [
+       102,
+       8
+      ],
+      [
+       67,
+       9
+      ],
+      [
+       10,
+       1
+      ],
+      [
+       102,
+       12
+      ]
+     ]
+    },
+    {
+     "claims": {
+      "D": 15,
+      "F": 0,
+      "delta": [
+       0,
+       0,
+       0,
+       -30
+      ],
+      "digests": [
+       "d96ab50a6cf4bcd97c0d84b9618aab72b9199429bfa30c9b4854f6353f5ddd32",
+       "87ca522f2808c16a5620cdf30b6d15648a926e7e45e60666b1e236fd59b3495e",
+       "aa437d38bb2ecf05d593d4b26ff14f2d292f2fae70169a56328e6d848ce0b954",
+       "c19d8fcc785ae74b000bb451d0f0740d6e462df54939221c6ff4f0e7da707f4e"
+      ],
+      "excursion": 0,
+      "phi": [
+       1376,
+       1376,
+       1376,
+       1346
+      ],
+      "supports": [
+       {
+        "sha256": "f945870018a37f25e537e007ca05ee16a37136e3a8994fa20e383bb7c6c99e52",
+        "size": 2760
+       },
+       {
+        "sha256": "d63ad92eb2d9e9fd2df451a1e58ebcee21a69a19950b6a2444790531db905583",
+        "size": 2932
+       },
+       {
+        "sha256": "95f4996b59649f1a3fa4a40f8dff8bf8cc916d347024da07bd7302a07c122452",
+        "size": 3447
+       },
+       {
+        "sha256": "f95fdafa3fef1726ce3277df9fb97bfe1d37466ddc5aef5951a52e467b9161fb",
+        "size": 2958
+       }
+      ]
+     },
+     "excursion": 0,
+     "length": 4,
+     "target": 226,
+     "terminal_phi": 1346,
+     "unit": null,
+     "word": [
+      [
+       67,
+       4
+      ],
+      [
+       88,
+       11
+      ],
+      [
+       266,
+       3
+      ],
+      [
+       226,
+       14
+      ]
+     ]
+    }
+   ],
+   "counts": {
+    "descending_words": 696,
+    "lowering_tests": 9345696,
+    "nodes": 200845,
+    "pruned_letters": 21689690,
+    "retained_letters": 456203,
+    "skipped_repeats": 2085160,
+    "targets": 18
+   },
+   "cpu_s": 772.016102,
+   "depth": 3,
+   "exhausted": true,
+   "exhaustive_through": 3,
+   "reporting": "minimum choice key per target; descending words counted among the leaves tried",
+   "search": "R generator of pstar.family_r without a beam; repeated grips skipped; last letters pruned by an exact necessary condition",
+   "targets": [
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      88,
+      6765,
+      101684
+     ],
+     "target": 10
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      77,
+      4928,
+      71115
+     ],
+     "target": 102
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      110,
+      10758,
+      0
+     ],
+     "target": 117
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      121,
+      13178,
+      0
+     ],
+     "target": 118
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      88,
+      6688,
+      8877
+     ],
+     "target": 226
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      154,
+      21934,
+      0
+     ],
+     "target": 232
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      121,
+      13706,
+      0
+     ],
+     "target": 235
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      132,
+      15983,
+      0
+     ],
+     "target": 272
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      66,
+      4136,
+      25421
+     ],
+     "target": 319
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      154,
+      21923,
+      0
+     ],
+     "target": 338
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      77,
+      5049,
+      0
+     ],
+     "target": 368
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      143,
+      18689,
+      0
+     ],
+     "target": 405
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      77,
+      5137,
+      48279
+     ],
+     "target": 516
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      77,
+      5115,
+      0
+     ],
+     "target": 517
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      121,
+      13167,
+      0
+     ],
+     "target": 526
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      77,
+      4950,
+      0
+     ],
+     "target": 533
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      110,
+      11198,
+      0
+     ],
+     "target": 552
+    },
+    {
+     "beam_truncated": false,
+     "nodes_at_depth": [
+      0,
+      132,
+      15598,
+      0
+     ],
+     "target": 597
+    }
+   ]
+  }
+ },
+ "format": "pstar2-stop/1",
+ "options": {
+  "depth": 3,
+  "e0": 20,
+  "families": [
+   "R"
+  ],
+  "search": "pruned"
+ },
+ "phi": 1376,
+ "prefix": [
+  [
+   516,
+   14
+  ],
+  [
+   597,
+   10
+  ],
+  [
+   543,
+   13
+  ],
+  [
+   10,
+   8
+  ],
+  [
+   147,
+   2
+  ],
+  [
+   102,
+   15
+  ],
+  [
+   216,
+   2
+  ],
+  [
+   266,
+   14
+  ],
+  [
+   275,
+   1
+  ],
+  [
+   435,
+   12
+  ],
+  [
+   435,
+   7
+  ],
+  [
+   319,
+   12
+  ],
+  [
+   94,
+   12
+  ],
+  [
+   474,
+   7
+  ],
+  [
+   394,
+   22
+  ],
+  [
+   474,
+   14
+  ]
+ ],
+ "setup": {
+  "labels": {
+   "cpu_s": 1.101852
+  },
+  "load": {
+   "cpu_s": 0.229964
+  },
+  "trees": {
+   "cpu_s": 5.814049
+  },
+  "word": {
+   "cpu_s": 5.996741
+  }
+ },
+ "stop_options": {
+  "beam": null,
+  "search": "pruned"
+ },
+ "table_digest": "895b45de8a9a83604ca8bf988a3c9a287e404e59bd22a5004703d0852b252507"
+}

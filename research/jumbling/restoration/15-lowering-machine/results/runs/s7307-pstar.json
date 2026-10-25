@@ -1,0 +1,375 @@
+{
+ "kind": "pstar",
+ "label": "declared P* from the 7307 chain end",
+ "run": {
+  "cpu_s": 413.651727,
+  "digest": "d9ea3c60c1ccda3c7801e7f22de674d4f8e63ffde356a4f5492430ad5f7a7330",
+  "format": "pstar-run/1",
+  "macro_words": [
+   "474:7,394:22,474:14"
+  ],
+  "options": {
+   "beam": 64,
+   "choice": "best",
+   "depth": 3,
+   "e0": 20,
+   "families": [
+    "T",
+    "R",
+    "M",
+    "E",
+    "L"
+   ]
+  },
+  "phi": 1376,
+  "prefix": "516:14,597:10,543:13,10:8,147:2,102:15,216:2,266:14,275:1,435:12,435:7,319:12,94:12",
+  "reason": "no-family-candidate",
+  "status": "stopped",
+  "steps": [
+   {
+    "choice": {
+     "excursion": 0,
+     "family": "M",
+     "length": 3,
+     "target": 474,
+     "terminal_phi": 1376,
+     "word": "474:7,394:22,474:14"
+    },
+    "cpu_s": 247.006287,
+    "digest": "52aa8a30d5f32181de7666e364586e85aa75d48647533db2c6d68ca514422a49",
+    "families": {
+     "E": {
+      "candidates": 0,
+      "cpu_s": 1.389017,
+      "exhausted": true
+     },
+     "L": {
+      "candidates": 0,
+      "cpu_s": 0.269742,
+      "exhausted": true,
+      "pair_count": 0
+     },
+     "M": {
+      "candidates": 1,
+      "cpu_s": 203.944574,
+      "exhausted": true
+     },
+     "R": {
+      "beam": 64,
+      "candidates": 0,
+      "cpu_s": 27.154745,
+      "depth": 3,
+      "exhausted": false,
+      "exhaustive_through": 2,
+      "truncated_targets": [
+       10,
+       102,
+       117,
+       118,
+       226,
+       232,
+       235,
+       272,
+       286,
+       319,
+       338,
+       368,
+       405,
+       474,
+       516,
+       517,
+       526,
+       533,
+       552,
+       597
+      ]
+     },
+     "T": {
+      "candidates": 0,
+      "cpu_s": 14.032431,
+      "exhausted": true
+     }
+    },
+    "phi": 1396
+   },
+   {
+    "choice": null,
+    "cpu_s": 146.886,
+    "digest": "d9ea3c60c1ccda3c7801e7f22de674d4f8e63ffde356a4f5492430ad5f7a7330",
+    "families": {
+     "E": {
+      "candidates": 0,
+      "cpu_s": 1.151633,
+      "exhausted": true
+     },
+     "L": {
+      "candidates": 0,
+      "cpu_s": 0.609025,
+      "exhausted": true,
+      "pair_count": 0
+     },
+     "M": {
+      "candidates": 0,
+      "cpu_s": 110.185849,
+      "exhausted": true
+     },
+     "R": {
+      "beam": 64,
+      "candidates": 0,
+      "cpu_s": 21.950587,
+      "depth": 3,
+      "exhausted": false,
+      "exhaustive_through": 2,
+      "truncated_targets": [
+       10,
+       102,
+       117,
+       118,
+       226,
+       232,
+       235,
+       272,
+       319,
+       338,
+       368,
+       405,
+       516,
+       517,
+       526,
+       533,
+       552,
+       597
+      ]
+     },
+     "T": {
+      "candidates": 0,
+      "cpu_s": 12.765732,
+      "exhausted": true
+     }
+    },
+    "phi": 1376,
+    "t3p_scan": {
+     "rows": [
+      {
+       "count": 9,
+       "pose": 620,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 15,
+       "x": 533
+      },
+      {
+       "count": 31,
+       "pose": 620,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 15,
+       "x": 552
+      },
+      {
+       "count": 32,
+       "pose": 736,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 46,
+       "x": 232
+      },
+      {
+       "D": 46,
+       "F": 111,
+       "helpers": [],
+       "pose": 736,
+       "status": "budget",
+       "unit_size": 46,
+       "x": 319
+      },
+      {
+       "count": 3,
+       "pose": 924,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 3,
+       "x": 117
+      },
+      {
+       "count": 242,
+       "pose": 924,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 3,
+       "x": 272
+      },
+      {
+       "D": 7,
+       "F": 395,
+       "helpers": [],
+       "pose": 925,
+       "status": "budget",
+       "unit_size": 3,
+       "x": 516
+      },
+      {
+       "count": 52,
+       "pose": 925,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 3,
+       "x": 526
+      },
+      {
+       "count": 32,
+       "pose": 1096,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 46,
+       "x": 517
+      },
+      {
+       "pose": 1096,
+       "status": "no-feasible-items",
+       "unit_size": 46,
+       "x": 597
+      },
+      {
+       "D": 131,
+       "F": 135,
+       "helpers": [],
+       "pose": 1140,
+       "status": "budget",
+       "unit_size": 46,
+       "x": 102
+      },
+      {
+       "count": 102,
+       "pose": 1236,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 198,
+       "x": 405
+      },
+      {
+       "D": 15,
+       "F": 32,
+       "helpers": [
+        [
+         88,
+         8
+        ],
+        [
+         266,
+         3
+        ]
+       ],
+       "pose": 1715,
+       "status": "budget",
+       "unit_size": 15,
+       "x": 226
+      },
+      {
+       "count": 116,
+       "pose": 1715,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 15,
+       "x": 338
+      },
+      {
+       "D": 131,
+       "F": 135,
+       "helpers": [],
+       "pose": 1884,
+       "status": "budget",
+       "unit_size": 15,
+       "x": 102
+      },
+      {
+       "D": 131,
+       "F": 135,
+       "helpers": [],
+       "pose": 2021,
+       "status": "budget",
+       "unit_size": 63,
+       "x": 102
+      },
+      {
+       "count": 26,
+       "pose": 2021,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 63,
+       "x": 118
+      },
+      {
+       "D": 7,
+       "F": 395,
+       "helpers": [],
+       "pose": 2022,
+       "status": "budget",
+       "unit_size": 4,
+       "x": 516
+      },
+      {
+       "count": 52,
+       "pose": 2022,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 4,
+       "x": 526
+      },
+      {
+       "count": 9,
+       "pose": 2023,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 22,
+       "x": 533
+      },
+      {
+       "D": 131,
+       "F": 135,
+       "helpers": [],
+       "pose": 2132,
+       "status": "budget",
+       "unit_size": 7,
+       "x": 102
+      },
+      {
+       "count": 107,
+       "pose": 2132,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 7,
+       "x": 235
+      },
+      {
+       "count": 186,
+       "pose": 2133,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 46,
+       "x": 368
+      },
+      {
+       "D": 41,
+       "F": 157,
+       "helpers": [
+        [
+         102,
+         3
+        ]
+       ],
+       "pose": 2134,
+       "status": "budget",
+       "unit_size": 41,
+       "x": 10
+      },
+      {
+       "pose": 2135,
+       "status": "no-feasible-items",
+       "unit_size": 111,
+       "x": 597
+      }
+     ],
+     "single_letter_descents": []
+    }
+   }
+  ],
+  "table_digest": "895b45de8a9a83604ca8bf988a3c9a287e404e59bd22a5004703d0852b252507",
+  "trajectory": [
+   {
+    "digest": "52aa8a30d5f32181de7666e364586e85aa75d48647533db2c6d68ca514422a49",
+    "phi": 1396
+   },
+   {
+    "digest": "d9ea3c60c1ccda3c7801e7f22de674d4f8e63ffde356a4f5492430ad5f7a7330",
+    "phi": 1376
+   }
+  ]
+ }
+}

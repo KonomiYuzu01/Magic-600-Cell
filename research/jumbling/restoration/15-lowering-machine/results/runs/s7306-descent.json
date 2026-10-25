@@ -1,0 +1,448 @@
+{
+ "excursion": 20,
+ "format": "macro-certificate/1",
+ "macros": [
+  {
+   "claims": {
+    "D": 499,
+    "F": 64,
+    "delta": [
+     0,
+     0,
+     -870
+    ],
+    "digests": [
+     "6077c52b8f38fc6528da0d31d52f4c868d47004e893e318c0b7ea7c47d76c585",
+     "fe681a46c5c3c8bcd3836ea30a257def7ab4116633ede201e53c4946c20ab301",
+     "95461041c298b566cdd9b8ad1e4ebabc3988c4b7a7b7571135d62b702f967616"
+    ],
+    "excursion": 0,
+    "phi": [
+     2684,
+     2684,
+     1814
+    ],
+    "supports": [
+     {
+      "sha256": "9c54eb81a1d64ddba8bac98cb8089b38c75cfa6b7759da7649a6121be125a054",
+      "size": 2902
+     },
+     {
+      "sha256": "08f68d867e8b5724fe58766fa2856ab1cbd0d1893be3721e6c1cfc305f5f6c58",
+      "size": 2586
+     },
+     {
+      "sha256": "fe6fa721701702c3e7505b2c0f85a2dd1c1beafc85a5883297bd5e72c572f404",
+      "size": 2800
+     }
+    ]
+   },
+   "events": [
+    [
+     582,
+     3
+    ],
+    [
+     487,
+     6
+    ],
+    [
+     240,
+     14
+    ]
+   ]
+  },
+  {
+   "claims": {
+    "D": 17,
+    "F": 0,
+    "delta": [
+     0,
+     0,
+     -34
+    ],
+    "digests": [
+     "3fbdeeb68bb347671b575f18c99c8b5af893cd4c73a9f42e63b1c3e144b5bc20",
+     "4cdd134fec959e5999aa8a2b4684967a4e53b2caf02a3f5e9d88f3eba42f452e",
+     "e4f3646b2c2efed6383739f7089f8072bc0c074ca2829cd312462b8e05092c5a"
+    ],
+    "excursion": 0,
+    "phi": [
+     1814,
+     1814,
+     1780
+    ],
+    "supports": [
+     {
+      "sha256": "ace6d7ac29f287af11808f49bf0286396855a2406e4c03cc4a587ea94a6519cb",
+      "size": 3554
+     },
+     {
+      "sha256": "d87ed1b632e0ca45ad21aa7ed2a8605447e3776390f177c21b5c06c2cfa9ac73",
+      "size": 2966
+     },
+     {
+      "sha256": "e3512995c79e20d1be8474bcaa9e2107feec7c8462d1ba815fb9ce11457e274c",
+      "size": 3363
+     }
+    ]
+   },
+   "events": [
+    [
+     561,
+     6
+    ],
+    [
+     598,
+     1
+    ],
+    [
+     561,
+     15
+    ]
+   ]
+  },
+  {
+   "claims": {
+    "D": 8,
+    "F": 0,
+    "delta": [
+     0,
+     0,
+     0,
+     -16
+    ],
+    "digests": [
+     "8ba3b31416565f299f7b130cd96b7990e93d5f65ccb878c57e2251940b0ee3a6",
+     "0e35af42fedd089f56108b171b226e1661fe6da5b6937a2855b5341b331cbd04",
+     "76b04add24257ce4c52fe3252b6adcef42a70a695ba778cacb7e355cd8da9c14",
+     "a73a9469d8d94916ac9409c7eed83e0b5897b2db25b6beaada4f666b99cda970"
+    ],
+    "excursion": 0,
+    "phi": [
+     1780,
+     1780,
+     1780,
+     1764
+    ],
+    "supports": [
+     {
+      "sha256": "90537251f1566d45436d127cf48d0c69a67b64202b2700d676214034cc24e243",
+      "size": 2407
+     },
+     {
+      "sha256": "c54db63030b41a7e6ca71f4d0d870d1c60a8123dd0b6c5f8bf44c07c9c96db6e",
+      "size": 2276
+     },
+     {
+      "sha256": "293cf8cd8692d97b18545a8a7da0d88fb9aaa9e7584c393c351ea8e477cae0f3",
+      "size": 2458
+     },
+     {
+      "sha256": "4087a959d1f883ff4edfc8c14356084d7e49c13a8e7edc025d43c55149531376",
+      "size": 2477
+     }
+    ]
+   },
+   "events": [
+    [
+     233,
+     3
+    ],
+    [
+     373,
+     5
+    ],
+    [
+     233,
+     5
+    ],
+    [
+     173,
+     13
+    ]
+   ]
+  },
+  {
+   "claims": {
+    "D": 7,
+    "F": 0,
+    "delta": [
+     0,
+     0,
+     -14
+    ],
+    "digests": [
+     "ecd934f1e3ba3cf2ed6f7b8153bfd7007d7a129e0c6b4bda196ad88f42757a18",
+     "8c1b047a4623f08059b7e24f2377b9b7c524b473a23fed9496e8deac79a0f6f2",
+     "72e2fdf822d9c4e825bc9df9432f5304e45fed1e681f47dabd07dcce6d47d768"
+    ],
+    "excursion": 0,
+    "phi": [
+     1764,
+     1764,
+     1750
+    ],
+    "supports": [
+     {
+      "sha256": "e3512995c79e20d1be8474bcaa9e2107feec7c8462d1ba815fb9ce11457e274c",
+      "size": 3363
+     },
+     {
+      "sha256": "bcd3143ca6663933203463da18a3cc1b0f9d3296ff39f4575765a6887903e118",
+      "size": 3206
+     },
+     {
+      "sha256": "fb0781bc94379c76dffd608cf4e3377572bc042236a5d5739437ce0b963e0f05",
+      "size": 3165
+     }
+    ]
+   },
+   "events": [
+    [
+     561,
+     4
+    ],
+    [
+     598,
+     2
+    ],
+    [
+     561,
+     12
+    ]
+   ]
+  },
+  {
+   "claims": {
+    "D": 31,
+    "F": 25,
+    "delta": [
+     0,
+     0,
+     -12
+    ],
+    "digests": [
+     "c58ca2c2aecc858e7f8b49e5a8ef7fe875443c1b6bb6f394fe3f947c050f4d20",
+     "1e3f2915d03163d519a1e47bf2c4698da0a814f7b0b609be0635c1d72f7cef88",
+     "c4fd036ca1b66513df94f48ff0f638b74545eac578e21298df50ccb9b23e8195"
+    ],
+    "excursion": 0,
+    "phi": [
+     1750,
+     1750,
+     1738
+    ],
+    "supports": [
+     {
+      "sha256": "21d19bcdd0be662c01ddd870eee5cd4d854622b12df220bbb29b02ad32fef7aa",
+      "size": 2958
+     },
+     {
+      "sha256": "81f7c387ed0cb2d99dedd14913aeee684785d6ae23cad4395ca459bb8d6852cc",
+      "size": 2827
+     },
+     {
+      "sha256": "e0976cd6343a49483857cc94ca8008f7a9e3fc37b876354b85a5e983adf2a397",
+      "size": 2960
+     }
+    ]
+   },
+   "events": [
+    [
+     90,
+     6
+    ],
+    [
+     240,
+     1
+    ],
+    [
+     90,
+     15
+    ]
+   ]
+  },
+  {
+   "claims": {
+    "D": 25,
+    "F": 6,
+    "delta": [
+     0,
+     0,
+     -38
+    ],
+    "digests": [
+     "c89a787d26afcd2c461acc5dd1daa1083eaf32acd838f60da09159aee810ba9e",
+     "0be6e5542a37b7f9cc5f63e98a6f3587a03c033f6349891c800bd22c71ddeee1",
+     "bc48255c5c8d9e570307986366de196a13ff2ce7027f382067e02beac700dc63"
+    ],
+    "excursion": 0,
+    "phi": [
+     1738,
+     1738,
+     1700
+    ],
+    "supports": [
+     {
+      "sha256": "e0976cd6343a49483857cc94ca8008f7a9e3fc37b876354b85a5e983adf2a397",
+      "size": 2960
+     },
+     {
+      "sha256": "81f7c387ed0cb2d99dedd14913aeee684785d6ae23cad4395ca459bb8d6852cc",
+      "size": 2827
+     },
+     {
+      "sha256": "21d19bcdd0be662c01ddd870eee5cd4d854622b12df220bbb29b02ad32fef7aa",
+      "size": 2958
+     }
+    ]
+   },
+   "events": [
+    [
+     90,
+     9
+    ],
+    [
+     240,
+     1
+    ],
+    [
+     90,
+     12
+    ]
+   ]
+  },
+  {
+   "claims": {
+    "D": 1,
+    "F": 0,
+    "delta": [
+     0,
+     -2
+    ],
+    "digests": [
+     "1ab7841d3d8cb1c489ff725ea05d237d9a6b168514075d6553021040c7014fac",
+     "d0dabd8831b72f526099ae5298998fdeed943a0d8e2d7add463c2c9472b7776b"
+    ],
+    "excursion": 0,
+    "phi": [
+     1700,
+     1698
+    ],
+    "supports": [
+     {
+      "sha256": "cb1adaab9074b3aeefab30485e52aa4d6659912c25a0cf9c309d856bf77e408c",
+      "size": 2435
+     },
+     {
+      "sha256": "facc7969ef696e8c20e27b2a262aa0db441b9597d2949d75fbb3c97842f24448",
+      "size": 2112
+     }
+    ]
+   },
+   "events": [
+    [
+     200,
+     7
+    ],
+    [
+     202,
+     12
+    ]
+   ]
+  },
+  {
+   "claims": {
+    "D": 104,
+    "F": 0,
+    "delta": [
+     0,
+     0,
+     0,
+     -208
+    ],
+    "digests": [
+     "d17f57aa1f72712894475123834fd04a5a095f9e97e3e1e61cdb2ea68ccf8722",
+     "89219c48ff78cf27af5cfebe7e3d8e8fee198ac5441ff896707370f16e1c6f2d",
+     "7fab60c50217e3c7dc3bbf7a0197ac326e6bace43c326a7c822c2e5ef9a14c6f",
+     "1a9bcbb5d31084ad9f9b8fbaabea3f1b9bb5299c67f66f6040b677a95c7e138c"
+    ],
+    "excursion": 0,
+    "phi": [
+     1698,
+     1698,
+     1698,
+     1490
+    ],
+    "supports": [
+     {
+      "sha256": "c04c7628e8684459a53f5667918143fddeba6e80d44ec975193e7eb844747d7d",
+      "size": 2444
+     },
+     {
+      "sha256": "ea36e87e87723ce2ca8b1e6af55b0e5fdd5b36e07f89d31a313eae053116fff2",
+      "size": 2577
+     },
+     {
+      "sha256": "ac6b1a1d7647aafc69961c0b1d11b8f6bae7facb7af44a4f7cae561fb567aba2",
+      "size": 2392
+     },
+     {
+      "sha256": "cf20f1a546dffbc1627011a311cd65474aaa6353c0be3532de6ff7d4382e5fdd",
+      "size": 3095
+     }
+    ]
+   },
+   "events": [
+    [
+     16,
+     1
+    ],
+    [
+     109,
+     4
+    ],
+    [
+     16,
+     3
+    ],
+    [
+     139,
+     14
+    ]
+   ]
+  }
+ ],
+ "prefix": [
+  [
+   208,
+   5
+  ],
+  [
+   336,
+   15
+  ],
+  [
+   445,
+   55
+  ],
+  [
+   252,
+   13
+  ],
+  [
+   506,
+   7
+  ],
+  [
+   561,
+   14
+  ]
+ ],
+ "start": {
+  "digest": "5e9f7e4f69cb28b006c7aea7760b2d24e55dfc84065bbcdd771aad71e593a033",
+  "phi": 2684
+ },
+ "table_digest": "ac4be82cf80e857137af957ff75438525ba950062e46a2fc5249aa0d7199d8f2"
+}

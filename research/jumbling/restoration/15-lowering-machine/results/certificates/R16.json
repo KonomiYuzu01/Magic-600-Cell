@@ -1,0 +1,76 @@
+{
+ "excursion": 20,
+ "format": "macro-certificate/1",
+ "macros": [
+  {
+   "claims": {
+    "D": 499,
+    "F": 72,
+    "delta": [
+     20,
+     -854
+    ],
+    "digests": [
+     "56ee73380073c309c7bb9fde6433cec0b37590ce6316d28ed3c5a32ae96fb420",
+     "348070c19855ce80f2323bc0cfb61e872e27caaeb84a926f4b1649a134eb2f41"
+    ],
+    "excursion": 20,
+    "phi": [
+     2704,
+     1850
+    ],
+    "supports": [
+     {
+      "sha256": "0401d21a02d25497f16e29fa75e2c383e9c768caa4f3144ec37f9ca640220edc",
+      "size": 2560
+     },
+     {
+      "sha256": "928e2535fb009161601204243b7eb448f8db464ce4ef1cb10609f54fe7389d49",
+      "size": 2807
+     }
+    ]
+   },
+   "events": [
+    [
+     487,
+     33
+    ],
+    [
+     240,
+     14
+    ]
+   ]
+  }
+ ],
+ "prefix": [
+  [
+   208,
+   5
+  ],
+  [
+   336,
+   15
+  ],
+  [
+   445,
+   55
+  ],
+  [
+   252,
+   13
+  ],
+  [
+   506,
+   7
+  ],
+  [
+   561,
+   14
+  ]
+ ],
+ "start": {
+  "digest": "5e9f7e4f69cb28b006c7aea7760b2d24e55dfc84065bbcdd771aad71e593a033",
+  "phi": 2684
+ },
+ "table_digest": "ac4be82cf80e857137af957ff75438525ba950062e46a2fc5249aa0d7199d8f2"
+}

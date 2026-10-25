@@ -1,0 +1,506 @@
+{
+ "kind": "pstar",
+ "label": "declared P* from the 7302 chain end",
+ "run": {
+  "cpu_s": 1018.263697,
+  "digest": "f2143b23a3b53cf882fe5eaf89e928163bfb9c4315a3eb3c54a836db84ba07c3",
+  "format": "pstar-run/1",
+  "macro_words": [
+   "104:8,46:12,104:15",
+   "20:1,104:4,46:14",
+   "39:1,46:3,20:7,12:12"
+  ],
+  "options": {
+   "beam": 64,
+   "choice": "best",
+   "depth": 3,
+   "e0": 20,
+   "families": [
+    "T",
+    "R",
+    "M",
+    "E",
+    "L"
+   ]
+  },
+  "phi": 1094,
+  "prefix": "277:59,171:15,39:1,171:14",
+  "reason": "no-family-candidate",
+  "status": "stopped",
+  "steps": [
+   {
+    "choice": {
+     "excursion": 0,
+     "family": "M",
+     "length": 3,
+     "target": 104,
+     "terminal_phi": 1338,
+     "word": "104:8,46:12,104:15"
+    },
+    "cpu_s": 343.653622,
+    "digest": "b47d84743c0ab28505a4ddc171920f9e14e1c94b46d10de95b93ae0816427e0c",
+    "families": {
+     "E": {
+      "candidates": 0,
+      "cpu_s": 5.917971,
+      "exhausted": true
+     },
+     "L": {
+      "candidates": 0,
+      "cpu_s": 0.191432,
+      "exhausted": true,
+      "pair_count": 0
+     },
+     "M": {
+      "candidates": 1,
+      "cpu_s": 259.388091,
+      "exhausted": true
+     },
+     "R": {
+      "beam": 64,
+      "candidates": 1,
+      "cpu_s": 34.67424,
+      "depth": 3,
+      "exhausted": false,
+      "exhaustive_through": 2,
+      "truncated_targets": [
+       12,
+       65,
+       71,
+       94,
+       104,
+       140,
+       142,
+       171,
+       180,
+       181,
+       206,
+       430,
+       433,
+       482,
+       517,
+       554,
+       597
+      ]
+     },
+     "T": {
+      "candidates": 0,
+      "cpu_s": 43.156515,
+      "exhausted": true
+     }
+    },
+    "phi": 1376
+   },
+   {
+    "choice": {
+     "excursion": 0,
+     "family": "T",
+     "length": 3,
+     "target": 46,
+     "terminal_phi": 1324,
+     "word": "20:1,104:4,46:14"
+    },
+    "cpu_s": 199.533819,
+    "digest": "91c26c520be0e378117c5e1871e20fb86497a76dcc9fb7556a58bac3fc6b4cbc",
+    "families": {
+     "E": {
+      "candidates": 1,
+      "cpu_s": 15.061521,
+      "exhausted": true
+     },
+     "L": {
+      "candidates": 0,
+      "cpu_s": 0.57565,
+      "exhausted": true,
+      "pair_count": 0
+     },
+     "M": {
+      "candidates": 0,
+      "cpu_s": 124.321233,
+      "exhausted": true
+     },
+     "R": {
+      "beam": 64,
+      "candidates": 1,
+      "cpu_s": 30.728701,
+      "depth": 3,
+      "exhausted": false,
+      "exhaustive_through": 2,
+      "truncated_targets": [
+       12,
+       46,
+       65,
+       94,
+       121,
+       142,
+       171,
+       181,
+       206,
+       430,
+       433,
+       482,
+       517,
+       554,
+       597
+      ]
+     },
+     "T": {
+      "candidates": 1,
+      "cpu_s": 28.553927,
+      "exhausted": true
+     }
+    },
+    "phi": 1338
+   },
+   {
+    "choice": {
+     "excursion": 0,
+     "family": "R",
+     "length": 4,
+     "target": 12,
+     "terminal_phi": 1094,
+     "word": "39:1,46:3,20:7,12:12"
+    },
+    "cpu_s": 206.098881,
+    "digest": "30371dcd19bed4bebc1baa9fa24a35a971356a10477a8749ca965201d0095e7c",
+    "families": {
+     "E": {
+      "candidates": 1,
+      "cpu_s": 14.698903,
+      "exhausted": true
+     },
+     "L": {
+      "candidates": 0,
+      "cpu_s": 0.671405,
+      "exhausted": true,
+      "pair_count": 0
+     },
+     "M": {
+      "candidates": 0,
+      "cpu_s": 123.617645,
+      "exhausted": true
+     },
+     "R": {
+      "beam": 64,
+      "candidates": 1,
+      "cpu_s": 34.094994,
+      "depth": 3,
+      "exhausted": false,
+      "exhaustive_through": 2,
+      "truncated_targets": [
+       12,
+       65,
+       94,
+       142,
+       171,
+       181,
+       206,
+       430,
+       433,
+       482,
+       517,
+       554,
+       597
+      ]
+     },
+     "T": {
+      "candidates": 1,
+      "cpu_s": 32.704215,
+      "exhausted": true
+     }
+    },
+    "phi": 1324
+   },
+   {
+    "choice": null,
+    "cpu_s": 218.54692,
+    "digest": "f2143b23a3b53cf882fe5eaf89e928163bfb9c4315a3eb3c54a836db84ba07c3",
+    "families": {
+     "E": {
+      "candidates": 0,
+      "cpu_s": 3.234826,
+      "exhausted": true
+     },
+     "L": {
+      "candidates": 0,
+      "cpu_s": 0.235258,
+      "exhausted": true,
+      "pair_count": 0
+     },
+     "M": {
+      "candidates": 0,
+      "cpu_s": 183.80075,
+      "exhausted": true
+     },
+     "R": {
+      "beam": 64,
+      "candidates": 0,
+      "cpu_s": 19.763974,
+      "depth": 3,
+      "exhausted": false,
+      "exhaustive_through": 2,
+      "truncated_targets": [
+       12,
+       18,
+       65,
+       94,
+       142,
+       171,
+       181,
+       206,
+       430,
+       433,
+       482,
+       517,
+       554,
+       597
+      ]
+     },
+     "T": {
+      "candidates": 0,
+      "cpu_s": 11.171039,
+      "exhausted": true
+     }
+    },
+    "phi": 1094,
+    "t3p_scan": {
+     "rows": [
+      {
+       "D": 82,
+       "F": 284,
+       "helpers": [],
+       "pose": 1210,
+       "status": "budget",
+       "unit_size": 3,
+       "x": 482
+      },
+      {
+       "count": 253,
+       "pose": 1210,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 3,
+       "x": 554
+      },
+      {
+       "D": 6,
+       "F": 121,
+       "helpers": [],
+       "pose": 1211,
+       "status": "budget",
+       "unit_size": 1,
+       "x": 12
+      },
+      {
+       "count": 201,
+       "pose": 1211,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 1,
+       "x": 65
+      },
+      {
+       "count": 170,
+       "pose": 1363,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 13,
+       "x": 94
+      },
+      {
+       "count": 73,
+       "pose": 1363,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 13,
+       "x": 181
+      },
+      {
+       "D": 21,
+       "F": 105,
+       "helpers": [],
+       "pose": 1364,
+       "status": "budget",
+       "unit_size": 4,
+       "x": 171
+      },
+      {
+       "D": 6,
+       "F": 121,
+       "helpers": [],
+       "pose": 1418,
+       "status": "budget",
+       "unit_size": 2,
+       "x": 12
+      },
+      {
+       "count": 201,
+       "pose": 1418,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 2,
+       "x": 65
+      },
+      {
+       "pose": 1472,
+       "status": "no-feasible-items",
+       "unit_size": 198,
+       "x": 597
+      },
+      {
+       "D": 21,
+       "F": 105,
+       "helpers": [],
+       "pose": 1557,
+       "status": "budget",
+       "unit_size": 17,
+       "x": 171
+      },
+      {
+       "D": 6,
+       "F": 121,
+       "helpers": [],
+       "pose": 1558,
+       "status": "budget",
+       "unit_size": 3,
+       "x": 12
+      },
+      {
+       "count": 26,
+       "pose": 1558,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 3,
+       "x": 18
+      },
+      {
+       "count": 122,
+       "pose": 1789,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 7,
+       "x": 517
+      },
+      {
+       "pose": 1789,
+       "status": "no-feasible-items",
+       "unit_size": 7,
+       "x": 597
+      },
+      {
+       "D": 82,
+       "F": 284,
+       "helpers": [],
+       "pose": 1964,
+       "status": "budget",
+       "unit_size": 6,
+       "x": 482
+      },
+      {
+       "count": 253,
+       "pose": 1964,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 6,
+       "x": 554
+      },
+      {
+       "count": 137,
+       "pose": 2165,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 13,
+       "x": 142
+      },
+      {
+       "D": 82,
+       "F": 284,
+       "helpers": [],
+       "pose": 2394,
+       "status": "budget",
+       "unit_size": 48,
+       "x": 482
+      },
+      {
+       "count": 253,
+       "pose": 2394,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 48,
+       "x": 554
+      },
+      {
+       "D": 82,
+       "F": 284,
+       "helpers": [],
+       "pose": 2591,
+       "status": "budget",
+       "unit_size": 8,
+       "x": 482
+      },
+      {
+       "count": 253,
+       "pose": 2591,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 8,
+       "x": 554
+      },
+      {
+       "count": 223,
+       "pose": 2711,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 48,
+       "x": 206
+      },
+      {
+       "count": 53,
+       "pose": 2711,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 48,
+       "x": 433
+      },
+      {
+       "pose": 2712,
+       "status": "no-feasible-items",
+       "unit_size": 48,
+       "x": 430
+      },
+      {
+       "count": 53,
+       "pose": 2847,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 111,
+       "x": 433
+      },
+      {
+       "D": 82,
+       "F": 284,
+       "helpers": [],
+       "pose": 2848,
+       "status": "budget",
+       "unit_size": 17,
+       "x": 482
+      },
+      {
+       "count": 253,
+       "pose": 2848,
+       "status": "straddler-without-clean-holder",
+       "unit_size": 17,
+       "x": 554
+      }
+     ],
+     "single_letter_descents": []
+    }
+   }
+  ],
+  "table_digest": "2430f4cc99ea121a6d3476ec21b66fc401e277d13809ad5e1c979e6e0abe1472",
+  "trajectory": [
+   {
+    "digest": "b47d84743c0ab28505a4ddc171920f9e14e1c94b46d10de95b93ae0816427e0c",
+    "phi": 1376
+   },
+   {
+    "digest": "91c26c520be0e378117c5e1871e20fb86497a76dcc9fb7556a58bac3fc6b4cbc",
+    "phi": 1338
+   },
+   {
+    "digest": "30371dcd19bed4bebc1baa9fa24a35a971356a10477a8749ca965201d0095e7c",
+    "phi": 1324
+   },
+   {
+    "digest": "f2143b23a3b53cf882fe5eaf89e928163bfb9c4315a3eb3c54a836db84ba07c3",
+    "phi": 1094
+   }
+  ]
+ }
+}

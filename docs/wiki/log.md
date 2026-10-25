@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-24] update | Jumbling: the joint attack on the lowering machine (card 7)
+Astra and Claude Opus answered card 7 in part ([stage 15](../../research/jumbling/restoration/15-lowering-machine/README.md)): short retained releases (retained letters decided on one label table, then one lowering) free 15 of the 131 own holders that the precedence peel left, while the X1 pump reversed is proved but has no instance where tested. A certified greedy procedure over five families of such macros lowers Φ at all six D2 chain ends, by 13% to 64%, and then stops for good at every one of them, where no macro of its families and no single letter lowers Φ.
+
 ## [2026-10-24] update | Jumbling: the joint attack on the blocking structure (card 6)
 Astra and Claude Opus answered card 6 in part with sealed analyses, a cross-examination and exact runs ([stage 14](../../research/jumbling/restoration/14-blocking-structure/README.md)): a proved construction, the precedence peel T3P (at most 81 letters per round), gives tame descents at all six D2 height ends, and a per-cap accounting (Φ + 2F_x is unchanged by letters at x) explains why the lowerings run out. Chained greedily, its rounds lower Φ by 6% to 56% and then jam, mostly at grips whose straddlers no clean grip holds; at seed 7307 the D2 rule had stopped although single letters lower Φ by a quarter, because its measure counts height-6 pieces first.
 
