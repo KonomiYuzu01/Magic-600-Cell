@@ -1,0 +1,68 @@
+{
+ "seed": "7302",
+ "extra_prefix": "",
+ "digest": "661010e513ff5449fc5b2687d402f9370250ebe0f21f3c12e80f47780101a370",
+ "phi": 498,
+ "K": 1,
+ "minimal": false,
+ "counts": {
+  "nodes": 1,
+  "letters": 418,
+  "leaf_tests": 1257,
+  "hits": 36,
+  "skipped_same": 0,
+  "skipped_commute": 0,
+  "skipped_minimal": 0
+ },
+ "best_per_target": [
+  {
+   "word": [
+    [
+     597,
+     8
+    ],
+    [
+     590,
+     14
+    ]
+   ],
+   "terminal_phi": 494,
+   "F": 0,
+   "D": 2,
+   "target": 590
+  },
+  {
+   "word": [
+    [
+     597,
+     9
+    ],
+    [
+     523,
+     14
+    ]
+   ],
+   "terminal_phi": 494,
+   "F": 0,
+   "D": 2,
+   "target": 523
+  },
+  {
+   "word": [
+    [
+     597,
+     11
+    ],
+    [
+     591,
+     14
+    ]
+   ],
+   "terminal_phi": 494,
+   "F": 0,
+   "D": 2,
+   "target": 591
+  }
+ ],
+ "cpu_s": 23.772
+}

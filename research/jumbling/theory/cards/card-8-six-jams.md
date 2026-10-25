@@ -1,6 +1,11 @@
 # Card 8: the six jams of two-level P*, for the menu I_a
 
-Status: **open**; joint attack of 25 October 2026.
+Status: **answered in part** by the joint attack of 25 October 2026 ([stage 16, section 2](../../restoration/16-six-jams/README.md#2-joint-attack-25-october-2026)):
+every jam has a certified tame descent, so the least excursion is 0 at all six (Question 3); Questions 1.2, 1.3 and 2
+are answered by proved transport, routing and accounting results with certified descents, Question 1.1 for four of the
+six holders (307 and 517 stay open), and Question 4 in part: with transports at its stops P* continues at all six
+jams and stops again, and where it stops depends on the route. Section 2.6 there lists the corrections to the facts
+below.
 
 The open part of [card 7](card-7-lowering-machine.md), Question 4, which the owner put before the tail completion and
 the bulk on 25 October 2026
@@ -170,11 +175,13 @@ tables below were computed with these on the exact poses (label tables, levels, 
   - 7306, x = 370: the retained item 6 at 233 moves the 37 straddlers there off the cut with no new ones; the 3
     straddlers of 536 lie in cap 598, no retained item cleans 536, and the jumble (598, 20) does, at ΔΦ = +292.
   - 7307, x = 517: the retained item 3 at 448 moves the 42 straddlers there off the cut with no new ones; the 86
-    straddlers of 597 lie in cap 543, no retained item cleans 597, and the jumble (543, 12) does, at ΔΦ = +222.
+    straddlers of 597 lie in cap 543, no retained item cleans 597, and the jumble (543, 12) does, at ΔΦ = +222 at the
+    jam (after the relay (448, 3), retained items at 543 clean 597 at ΔΦ = 0; stage 16, section 2.6).
 
   So at each of the six the release needs, at some grip of its structure, either a word at several caps or a jumble
-  that raises Φ by 222 to 420 (or, for 307, a deeper structure). Whether words at several caps clean these grips tamely
-  is open.
+  that raises Φ by 222 to 420 (or, for 307, a deeper structure). Words at several caps clean 41, 305, 389, 536 and 597
+  tamely, and lowerings at 2, 504, 576 and 370 follow; after the releases of 597 no lowering at 517 was found within
+  stated bounds, and 307 has level 4 (stage 16, sections 2.2, 2.3 and 2.6).
 - **J5 (load jams).** At 7302 every own holder has F ≥ 3·max D; the clean ones are 12 (F 121, max D 6), 171 (105, 21)
   and 597 (205, 2), and the blocked ones have F of 654 to 1,513 against max D of 2 to 111. At 7303 the only clean own
   holder is 282 (F 274, max D 87), and the blocked ones have F of 257 to 1,022 against max D of 2 to 198.

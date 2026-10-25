@@ -1,0 +1,544 @@
+{
+ "seed": "7307",
+ "digest": "60ac608e74e316d0d1905b57e71afd46a004c385b03687cbb4cd0f56e54dca38",
+ "summary": {
+  "units": 14,
+  "high_pieces": 603,
+  "frozen": [
+   26691,
+   58776,
+   142003,
+   133931,
+   97366,
+   55811
+  ],
+  "frozen_pieces": 438,
+  "carried_whole": [
+   105333,
+   38550,
+   47820,
+   25829,
+   63865,
+   35810,
+   66431,
+   6243
+  ],
+  "carried_whole_pieces": 165
+ },
+ "units": [
+  {
+   "pose": 642,
+   "size": 15,
+   "height": 4,
+   "cls": 2,
+   "piece": 26691,
+   "whole_holders": [
+    485,
+    502,
+    514,
+    533,
+    549,
+    552
+   ],
+   "clean_whole": [],
+   "own": [
+    {
+     "grip": 533,
+     "clean": false,
+     "level": 5,
+     "S": 57,
+     "F": 98,
+     "maxD": 22
+    },
+    {
+     "grip": 552,
+     "clean": false,
+     "level": 5,
+     "S": 31,
+     "F": 131,
+     "maxD": 15
+    }
+   ],
+   "clean_partial": [],
+   "whole_levels": [
+    5,
+    6
+   ]
+  },
+  {
+   "pose": 763,
+   "size": 46,
+   "height": 4,
+   "cls": 0,
+   "piece": 105333,
+   "whole_holders": [
+    232,
+    244,
+    319,
+    336,
+    363
+   ],
+   "clean_whole": [
+    319
+   ],
+   "own": [
+    {
+     "grip": 232,
+     "clean": false,
+     "level": 2,
+     "S": 118,
+     "F": 885,
+     "maxD": 46
+    },
+    {
+     "grip": 319,
+     "clean": true,
+     "level": 0,
+     "S": 0,
+     "F": 111,
+     "maxD": 46
+    }
+   ],
+   "clean_partial": [],
+   "whole_levels": [
+    0,
+    2
+   ]
+  },
+  {
+   "pose": 939,
+   "size": 3,
+   "height": 4,
+   "cls": 0,
+   "piece": 38550,
+   "whole_holders": [
+    117,
+    126,
+    205,
+    208,
+    257,
+    272,
+    275,
+    327
+   ],
+   "clean_whole": [
+    275
+   ],
+   "own": [
+    {
+     "grip": 117,
+     "clean": false,
+     "level": 2,
+     "S": 89,
+     "F": 760,
+     "maxD": 3
+    },
+    {
+     "grip": 272,
+     "clean": false,
+     "level": 4,
+     "S": 357,
+     "F": 1221,
+     "maxD": 3
+    }
+   ],
+   "clean_partial": [],
+   "whole_levels": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ]
+  },
+  {
+   "pose": 940,
+   "size": 3,
+   "height": 6,
+   "cls": 0,
+   "piece": 47820,
+   "whole_holders": [
+    478,
+    486,
+    491,
+    516,
+    526,
+    530
+   ],
+   "clean_whole": [
+    516
+   ],
+   "own": [
+    {
+     "grip": 516,
+     "clean": true,
+     "level": 0,
+     "S": 0,
+     "F": 395,
+     "maxD": 7
+    },
+    {
+     "grip": 526,
+     "clean": false,
+     "level": 5,
+     "S": 52,
+     "F": 654,
+     "maxD": 7
+    }
+   ],
+   "clean_partial": [],
+   "whole_levels": [
+    0,
+    4,
+    5,
+    6
+   ]
+  },
+  {
+   "pose": 1111,
+   "size": 46,
+   "height": 4,
+   "cls": 2,
+   "piece": 58776,
+   "whole_holders": [
+    517,
+    568,
+    574,
+    584,
+    595,
+    597
+   ],
+   "clean_whole": [],
+   "own": [
+    {
+     "grip": 517,
+     "clean": false,
+     "level": 2,
+     "S": 74,
+     "F": 79,
+     "maxD": 95
+    },
+    {
+     "grip": 597,
+     "clean": false,
+     "level": 1,
+     "S": 86,
+     "F": 391,
+     "maxD": 157
+    }
+   ],
+   "clean_partial": [],
+   "whole_levels": [
+    1,
+    2,
+    3
+   ]
+  },
+  {
+   "pose": 1155,
+   "size": 46,
+   "height": 4,
+   "cls": 1,
+   "piece": 25829,
+   "whole_holders": [
+    102,
+    114,
+    138,
+    196,
+    211
+   ],
+   "clean_whole": [
+    102
+   ],
+   "own": [
+    {
+     "grip": 102,
+     "clean": true,
+     "level": 0,
+     "S": 0,
+     "F": 69,
+     "maxD": 68
+    }
+   ],
+   "clean_partial": [],
+   "whole_levels": [
+    0,
+    3
+   ]
+  },
+  {
+   "pose": 1256,
+   "size": 198,
+   "height": 4,
+   "cls": 1,
+   "piece": 142003,
+   "whole_holders": [
+    283,
+    307,
+    338,
+    405,
+    420
+   ],
+   "clean_whole": [],
+   "own": [
+    {
+     "grip": 405,
+     "clean": false,
+     "level": 5,
+     "S": 136,
+     "F": 678,
+     "maxD": 198
+    }
+   ],
+   "clean_partial": [],
+   "whole_levels": [
+    2,
+    4,
+    5,
+    6
+   ]
+  },
+  {
+   "pose": 1929,
+   "size": 15,
+   "height": 4,
+   "cls": 1,
+   "piece": 63865,
+   "whole_holders": [
+    102,
+    114,
+    138,
+    196,
+    211
+   ],
+   "clean_whole": [
+    102
+   ],
+   "own": [
+    {
+     "grip": 102,
+     "clean": true,
+     "level": 0,
+     "S": 0,
+     "F": 69,
+     "maxD": 68
+    }
+   ],
+   "clean_partial": [],
+   "whole_levels": [
+    0,
+    3
+   ]
+  },
+  {
+   "pose": 2058,
+   "size": 4,
+   "height": 6,
+   "cls": 0,
+   "piece": 35810,
+   "whole_holders": [
+    478,
+    486,
+    491,
+    516,
+    526,
+    530
+   ],
+   "clean_whole": [
+    516
+   ],
+   "own": [
+    {
+     "grip": 516,
+     "clean": true,
+     "level": 0,
+     "S": 0,
+     "F": 395,
+     "maxD": 7
+    },
+    {
+     "grip": 526,
+     "clean": false,
+     "level": 5,
+     "S": 52,
+     "F": 654,
+     "maxD": 7
+    }
+   ],
+   "clean_partial": [],
+   "whole_levels": [
+    0,
+    4,
+    5,
+    6
+   ]
+  },
+  {
+   "pose": 2059,
+   "size": 22,
+   "height": 4,
+   "cls": 2,
+   "piece": 133931,
+   "whole_holders": [
+    514,
+    533,
+    549
+   ],
+   "clean_whole": [],
+   "own": [
+    {
+     "grip": 533,
+     "clean": false,
+     "level": 5,
+     "S": 57,
+     "F": 98,
+     "maxD": 22
+    }
+   ],
+   "clean_partial": [],
+   "whole_levels": [
+    5,
+    6
+   ]
+  },
+  {
+   "pose": 2175,
+   "size": 7,
+   "height": 4,
+   "cls": 1,
+   "piece": 66431,
+   "whole_holders": [
+    102,
+    114,
+    138,
+    160,
+    196,
+    211,
+    281
+   ],
+   "clean_whole": [
+    102
+   ],
+   "own": [
+    {
+     "grip": 102,
+     "clean": true,
+     "level": 0,
+     "S": 0,
+     "F": 69,
+     "maxD": 68
+    },
+    {
+     "grip": 281,
+     "clean": false,
+     "level": 6,
+     "S": 299,
+     "F": 1028,
+     "maxD": 33
+    }
+   ],
+   "clean_partial": [],
+   "whole_levels": [
+    0,
+    3,
+    6
+   ]
+  },
+  {
+   "pose": 2176,
+   "size": 41,
+   "height": 4,
+   "cls": 2,
+   "piece": 6243,
+   "whole_holders": [
+    0,
+    1,
+    10,
+    14,
+    18
+   ],
+   "clean_whole": [
+    10
+   ],
+   "own": [
+    {
+     "grip": 10,
+     "clean": true,
+     "level": 0,
+     "S": 0,
+     "F": 216,
+     "maxD": 41
+    }
+   ],
+   "clean_partial": [],
+   "whole_levels": [
+    0,
+    1,
+    2
+   ]
+  },
+  {
+   "pose": 2177,
+   "size": 46,
+   "height": 4,
+   "cls": 4,
+   "piece": 97366,
+   "whole_holders": [
+    368,
+    400,
+    457,
+    485,
+    514
+   ],
+   "clean_whole": [],
+   "own": [
+    {
+     "grip": 368,
+     "clean": false,
+     "level": 4,
+     "S": 186,
+     "F": 324,
+     "maxD": 46
+    }
+   ],
+   "clean_partial": [],
+   "whole_levels": [
+    4,
+    5,
+    6
+   ]
+  },
+  {
+   "pose": 2178,
+   "size": 111,
+   "height": 4,
+   "cls": 2,
+   "piece": 55811,
+   "whole_holders": [
+    568,
+    574,
+    584,
+    595,
+    597
+   ],
+   "clean_whole": [],
+   "own": [
+    {
+     "grip": 597,
+     "clean": false,
+     "level": 1,
+     "S": 86,
+     "F": 391,
+     "maxD": 157
+    }
+   ],
+   "clean_partial": [],
+   "whole_levels": [
+    1,
+    2,
+    3
+   ]
+  }
+ ]
+}

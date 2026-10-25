@@ -1,0 +1,44 @@
+{
+ "seed": "7306",
+ "extra_prefix": "",
+ "digest": "1a9bcbb5d31084ad9f9b8fbaabea3f1b9bb5299c67f66f6040b677a95c7e138c",
+ "phi": 1490,
+ "K": 3,
+ "minimal": true,
+ "counts": {
+  "nodes": 52383,
+  "letters": 6786164,
+  "leaf_tests": 126594,
+  "hits": 132,
+  "skipped_same": 576202,
+  "skipped_commute": 8614232,
+  "skipped_minimal": 0
+ },
+ "best_per_target": [
+  {
+   "word": [
+    [
+     351,
+     3
+    ],
+    [
+     384,
+     1
+    ],
+    [
+     485,
+     1
+    ],
+    [
+     526,
+     14
+    ]
+   ],
+   "terminal_phi": 1482,
+   "F": 0,
+   "D": 4,
+   "target": 526
+  }
+ ],
+ "cpu_s": 433.914
+}

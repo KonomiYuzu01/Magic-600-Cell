@@ -1,0 +1,120 @@
+{
+ "seed": "7302",
+ "start": {
+  "digest": "661010e513ff5449fc5b2687d402f9370250ebe0f21f3c12e80f47780101a370",
+  "phi": 498
+ },
+ "segments": [
+  {
+   "directory": "seg-000",
+   "macros": 0,
+   "status": "stopped",
+   "end": {
+    "phi": 498,
+    "digest": "661010e513ff5449fc5b2687d402f9370250ebe0f21f3c12e80f47780101a370"
+   },
+   "families": [
+    null
+   ],
+   "words": [],
+   "cpu_s": 217.408476,
+   "stop": {
+    "R": 0,
+    "X": [
+     {
+      "K": 1,
+      "minimal": false,
+      "nodes": 1,
+      "letters": 418,
+      "leaf_tests": 1257,
+      "hits": 36
+     },
+     {
+      "K": 2,
+      "minimal": false,
+      "nodes": 419,
+      "letters": 96239,
+      "leaf_tests": 289860,
+      "hits": 15924
+     }
+    ],
+    "cpu_s": 593.6,
+    "choice": {
+     "word": [
+      [
+       597,
+       8
+      ],
+      [
+       590,
+       14
+      ]
+     ],
+     "terminal_phi": 494,
+     "family": "X1"
+    }
+   }
+  },
+  {
+   "directory": "seg-001",
+   "macros": 1,
+   "status": "stopped",
+   "end": {
+    "phi": 494,
+    "digest": "bc73c984c366c6b9748871007c90f621f56cafc69720aea87934ada19e9e0ac3"
+   },
+   "families": [
+    null,
+    null
+   ],
+   "words": [
+    [
+     [
+      597,
+      8
+     ],
+     [
+      590,
+      14
+     ]
+    ]
+   ],
+   "cpu_s": 136.896765,
+   "stop": {
+    "R": 0,
+    "X": [
+     {
+      "K": 1,
+      "minimal": false,
+      "nodes": 1,
+      "letters": 429,
+      "leaf_tests": 858,
+      "hits": 0
+     },
+     {
+      "K": 2,
+      "minimal": false,
+      "nodes": 430,
+      "letters": 101321,
+      "leaf_tests": 202498,
+      "hits": 0
+     },
+     {
+      "K": 3,
+      "minimal": true,
+      "nodes": 101751,
+      "letters": 18024611,
+      "leaf_tests": 447453,
+      "hits": 0
+     }
+    ],
+    "cpu_s": 1550.1
+   }
+  }
+ ],
+ "phi": 494,
+ "digest": "bc73c984c366c6b9748871007c90f621f56cafc69720aea87934ada19e9e0ac3",
+ "cpu_s": 2499.124,
+ "status": "stopped",
+ "reason": "no-candidate"
+}

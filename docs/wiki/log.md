@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-25] update | Jumbling: the joint attack on the six jams (card 8)
+Astra and Claude Opus answered card 8 in part ([stage 16](../../research/jumbling/restoration/16-six-jams/README.md)): every jam where two-level P* stopped has a certified tame descent, by a transport of supply to a target that is not an own holder or by a routing release whose helpers move the obligated pieces first, so the least excursion is 0 at all six. With transports at its stops the procedure continues at all six jams and stops again, at Φ 494 to 1538; where it stops depends on the route (at 7305 the end of an excursion descent leads to 508, the end of a tame one at the same Φ to 730), and no choice rule with a proof is known.
+
 ## [2026-10-25] decision | Jumbling: the six jams before the tail
 Shown that two-level P* stops for good at all six D2 chain ends, the owner put a card on these six jams (a descent outside the procedure's families, or a negative certificate with excursion for a stated alphabet) before the tail completion and the bulk ([decision page](decisions/owner-decisions-2026-10-25-jams-first.md), [card 8](../../research/jumbling/theory/cards/card-8-six-jams.md)).
 

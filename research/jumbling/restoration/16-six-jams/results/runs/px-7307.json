@@ -1,0 +1,214 @@
+{
+ "seed": "7307",
+ "start": {
+  "digest": "60ac608e74e316d0d1905b57e71afd46a004c385b03687cbb4cd0f56e54dca38",
+  "phi": 1220
+ },
+ "segments": [
+  {
+   "directory": "seg-000",
+   "macros": 0,
+   "status": "stopped",
+   "end": {
+    "phi": 1220,
+    "digest": "60ac608e74e316d0d1905b57e71afd46a004c385b03687cbb4cd0f56e54dca38"
+   },
+   "families": [
+    null
+   ],
+   "words": [],
+   "cpu_s": 177.421511,
+   "stop": {
+    "R": 0,
+    "X": [
+     {
+      "K": 1,
+      "minimal": false,
+      "nodes": 1,
+      "letters": 418,
+      "leaf_tests": 1647,
+      "hits": 0
+     },
+     {
+      "K": 2,
+      "minimal": false,
+      "nodes": 419,
+      "letters": 94985,
+      "leaf_tests": 369040,
+      "hits": 348
+     }
+    ],
+    "cpu_s": 559.1,
+    "choice": {
+     "word": [
+      [
+       382,
+       1
+      ],
+      [
+       516,
+       9
+      ],
+      [
+       494,
+       13
+      ]
+     ],
+     "terminal_phi": 1206,
+     "family": "X2"
+    }
+   }
+  },
+  {
+   "directory": "seg-001",
+   "macros": 1,
+   "status": "stopped",
+   "end": {
+    "phi": 1206,
+    "digest": "280c80e29d035bf28f34e2b4bbda9e5c194289a7405c8831cbf116c6a50ec118"
+   },
+   "families": [
+    null,
+    null
+   ],
+   "words": [
+    [
+     [
+      382,
+      1
+     ],
+     [
+      516,
+      9
+     ],
+     [
+      494,
+      13
+     ]
+    ]
+   ],
+   "cpu_s": 201.741083,
+   "stop": {
+    "R": 0,
+    "X": [
+     {
+      "K": 1,
+      "minimal": false,
+      "nodes": 1,
+      "letters": 418,
+      "leaf_tests": 1227,
+      "hits": 0
+     },
+     {
+      "K": 2,
+      "minimal": false,
+      "nodes": 419,
+      "letters": 94974,
+      "leaf_tests": 273177,
+      "hits": 0
+     },
+     {
+      "K": 3,
+      "minimal": true,
+      "nodes": 95393,
+      "letters": 16284862,
+      "leaf_tests": 269533,
+      "hits": 48
+     }
+    ],
+    "cpu_s": 1579.1,
+    "choice": {
+     "word": [
+      [
+       237,
+       3
+      ],
+      [
+       319,
+       4
+      ],
+      [
+       369,
+       10
+      ],
+      [
+       387,
+       14
+      ]
+     ],
+     "terminal_phi": 1114,
+     "family": "X3"
+    }
+   }
+  },
+  {
+   "directory": "seg-002",
+   "macros": 1,
+   "status": "stopped",
+   "end": {
+    "phi": 1114,
+    "digest": "4f651cdde595535addc21450038e7bf890e45dc4617aa0e57c4ecd4a60d2728a"
+   },
+   "families": [
+    null,
+    null
+   ],
+   "words": [
+    [
+     [
+      237,
+      3
+     ],
+     [
+      319,
+      4
+     ],
+     [
+      369,
+      10
+     ],
+     [
+      387,
+      14
+     ]
+    ]
+   ],
+   "cpu_s": 175.640743,
+   "stop": {
+    "R": 0,
+    "X": [
+     {
+      "K": 1,
+      "minimal": false,
+      "nodes": 1,
+      "letters": 407,
+      "leaf_tests": 797,
+      "hits": 0
+     },
+     {
+      "K": 2,
+      "minimal": false,
+      "nodes": 408,
+      "letters": 90805,
+      "leaf_tests": 174524,
+      "hits": 0
+     },
+     {
+      "K": 3,
+      "minimal": true,
+      "nodes": 91213,
+      "letters": 15393807,
+      "leaf_tests": 202677,
+      "hits": 0
+     }
+    ],
+    "cpu_s": 1488.5
+   }
+  }
+ ],
+ "phi": 1114,
+ "digest": "4f651cdde595535addc21450038e7bf890e45dc4617aa0e57c4ecd4a60d2728a",
+ "cpu_s": 4183.253,
+ "status": "stopped",
+ "reason": "no-candidate"
+}

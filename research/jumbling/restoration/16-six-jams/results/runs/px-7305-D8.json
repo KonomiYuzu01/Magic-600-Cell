@@ -1,0 +1,232 @@
+{
+ "seed": "7305",
+ "start": {
+  "digest": "c0070b05ea289022358cac9933348b605714dcd67b7dd05724a18a271bd94099",
+  "phi": 1572
+ },
+ "segments": [
+  {
+   "directory": "seg-000",
+   "macros": 0,
+   "status": "stopped",
+   "end": {
+    "phi": 764,
+    "digest": "8d0e1038e28e5b246fb5a11323e8e5486210f9c0b10cad1bcc5c526f823c2d5b"
+   },
+   "families": [
+    null
+   ],
+   "words": [],
+   "cpu_s": 262.966034,
+   "stop": {
+    "R": 0,
+    "X": [
+     {
+      "K": 1,
+      "minimal": false,
+      "nodes": 1,
+      "letters": 264,
+      "leaf_tests": 787,
+      "hits": 24
+     },
+     {
+      "K": 2,
+      "minimal": false,
+      "nodes": 265,
+      "letters": 37345,
+      "leaf_tests": 110784,
+      "hits": 6636
+     }
+    ],
+    "cpu_s": 367.2,
+    "choice": {
+     "word": [
+      [
+       436,
+       2
+      ],
+      [
+       268,
+       14
+      ]
+     ],
+     "terminal_phi": 736,
+     "family": "X1"
+    }
+   }
+  },
+  {
+   "directory": "seg-001",
+   "macros": 1,
+   "status": "stopped",
+   "end": {
+    "phi": 736,
+    "digest": "18074e251c11841a4232c00d69950d094d1e6e9c0f2c7efc6902df947518a228"
+   },
+   "families": [
+    null,
+    null
+   ],
+   "words": [
+    [
+     [
+      436,
+      2
+     ],
+     [
+      268,
+      14
+     ]
+    ]
+   ],
+   "cpu_s": 103.410983,
+   "stop": {
+    "R": 0,
+    "X": [
+     {
+      "K": 1,
+      "minimal": false,
+      "nodes": 1,
+      "letters": 264,
+      "leaf_tests": 532,
+      "hits": 12
+     },
+     {
+      "K": 2,
+      "minimal": false,
+      "nodes": 265,
+      "letters": 37455,
+      "leaf_tests": 76046,
+      "hits": 3312
+     }
+    ],
+    "cpu_s": 283.4,
+    "choice": {
+     "word": [
+      [
+       226,
+       2
+      ],
+      [
+       175,
+       12
+      ]
+     ],
+     "terminal_phi": 730,
+     "family": "X1"
+    }
+   }
+  },
+  {
+   "directory": "seg-002",
+   "macros": 1,
+   "status": "stopped",
+   "end": {
+    "phi": 730,
+    "digest": "658a7655fbbfff5f8312e153fe5332c4fa5df9a1fbc04ef1985f10f6be8097a6"
+   },
+   "families": [
+    null,
+    null
+   ],
+   "words": [
+    [
+     [
+      226,
+      2
+     ],
+     [
+      175,
+      12
+     ]
+    ]
+   ],
+   "cpu_s": 80.179848,
+   "stop": {
+    "R": 0,
+    "X": [
+     {
+      "K": 1,
+      "minimal": false,
+      "nodes": 1,
+      "letters": 264,
+      "leaf_tests": 266,
+      "hits": 0
+     },
+     {
+      "K": 2,
+      "minimal": false,
+      "nodes": 265,
+      "letters": 37422,
+      "leaf_tests": 38058,
+      "hits": 0
+     },
+     {
+      "K": 3,
+      "minimal": true,
+      "nodes": 37687,
+      "letters": 4000975,
+      "leaf_tests": 28305,
+      "hits": 0
+     }
+    ],
+    "cpu_s": 550.5
+   }
+  }
+ ],
+ "start_macros": [
+  [
+   [
+    94,
+    1
+   ],
+   [
+    134,
+    1
+   ],
+   [
+    421,
+    8
+   ],
+   [
+    499,
+    1
+   ],
+   [
+    421,
+    5
+   ],
+   [
+    305,
+    2
+   ],
+   [
+    389,
+    7
+   ],
+   [
+    504,
+    12
+   ]
+  ],
+  [
+   [
+    504,
+    1
+   ],
+   [
+    431,
+    3
+   ],
+   [
+    576,
+    13
+   ]
+  ]
+ ],
+ "phi": 730,
+ "digest": "658a7655fbbfff5f8312e153fe5332c4fa5df9a1fbc04ef1985f10f6be8097a6",
+ "cpu_s": 1649.264,
+ "status": "stopped",
+ "reason": "no-candidate"
+}

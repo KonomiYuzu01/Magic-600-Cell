@@ -1,0 +1,60 @@
+{
+ "cpu_s": 376.000949,
+ "digest": "0252221515f639e30dc5fba6ae2859cfe50fe50e631aac68faee9646363ebfd8",
+ "failures": [],
+ "format": "macro-check/1",
+ "macros": [
+  {
+   "claims": {
+    "D": 3,
+    "F": 0,
+    "delta": [
+     0,
+     -6
+    ],
+    "digests": [
+     "5f4ab132c6938b9aac8b783791bc939389d29042b960945d4d626d186e15c5c9",
+     "0252221515f639e30dc5fba6ae2859cfe50fe50e631aac68faee9646363ebfd8"
+    ],
+    "excursion": 0,
+    "phi": [
+     1572,
+     1566
+    ],
+    "supports": [
+     {
+      "sha256": "728162ffe33062028251216d6eec585fd96e8b70e173a972b253f49810641428",
+      "size": 2725
+     },
+     {
+      "sha256": "eaee97b68ebb200c11e8f37de2acf55a1b04b1a42a502c6cacae5265f4a32805",
+      "size": 2311
+     }
+    ]
+   },
+   "passed": true
+  }
+ ],
+ "passed": true,
+ "phi": 1566,
+ "replay": {
+  "digest": "0252221515f639e30dc5fba6ae2859cfe50fe50e631aac68faee9646363ebfd8",
+  "events": 45,
+  "passed": true,
+  "phi": 1566
+ },
+ "setup": {
+  "labels": {
+   "cpu_s": 1.300241
+  },
+  "load": {
+   "cpu_s": 0.211594
+  },
+  "trees": {
+   "cpu_s": 7.222
+  },
+  "word": {
+   "cpu_s": 16.019186
+  }
+ }
+}

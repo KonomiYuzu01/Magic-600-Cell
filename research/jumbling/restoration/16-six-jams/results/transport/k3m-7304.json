@@ -1,0 +1,19 @@
+{
+ "seed": "7304",
+ "extra_prefix": "",
+ "digest": "e608db08641168339b06e8346831574a01219ff18a936cec6fa442f11d1fd141",
+ "phi": 1172,
+ "K": 3,
+ "minimal": true,
+ "counts": {
+  "nodes": 106888,
+  "letters": 19632437,
+  "leaf_tests": 274381,
+  "hits": 0,
+  "skipped_same": 1175757,
+  "skipped_commute": 25882384,
+  "skipped_minimal": 0
+ },
+ "best_per_target": [],
+ "cpu_s": 1013.126
+}
