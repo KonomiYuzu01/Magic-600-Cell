@@ -188,3 +188,5 @@ background waiter on the runner process.
   run 1: still no difference in run 1's 225 steps. Since 12:13, two steps (5,971 and 1,570 s, plus the replay) lowered
   N by 4. The last six step times: 5,252, 6,110, 1,203, 258, 5,971 and 1,570 s. Off has stood at 14,528 since 08:06
   on 25 October.
+- 22:06 UTC progress: run 2 alive at 528 bulk steps, N 19,566, 14,528 off, 233,297 s of runner time. Comparison with
+  run 1: still no difference in run 1's 225 steps. Since 16:12, 9 steps lowered N by 30; off unchanged for 38 hours.
