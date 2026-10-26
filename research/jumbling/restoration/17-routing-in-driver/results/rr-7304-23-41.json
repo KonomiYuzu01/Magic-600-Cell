@@ -1,0 +1,146 @@
+{
+ "format": "s16-rr/1",
+ "seed": "7304",
+ "table_digest": "ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980",
+ "word": "",
+ "digest": "e608db08641168339b06e8346831574a01219ff18a936cec6fa442f11d1fd141",
+ "phi": 1172,
+ "options": {
+  "word": "",
+  "labels": null,
+  "nmin": 1,
+  "nmax": 3,
+  "helpers": 3,
+  "pairs": "23:41",
+  "count_only": false
+ },
+ "counts": {
+  "nmin": 1,
+  "nmax": 3,
+  "helpers": 3,
+  "pairs": 1,
+  "words": 63888,
+  "admissible": 39732,
+  "releases": 7129,
+  "distinct_releases": 7129,
+  "hits": 6839,
+  "states": 7129,
+  "letters": 38294707,
+  "leaf_tests": 3318384
+ },
+ "pairs": [
+  {
+   "c": 23,
+   "r": 41,
+   "S_r": 132,
+   "seqs": [
+    0,
+    0,
+    22
+   ],
+   "words": [
+    0,
+    0,
+    63888
+   ],
+   "admissible": 39732,
+   "releases": 7129,
+   "distinct": 7129,
+   "hits": 6839,
+   "best": {
+    "word": [
+     [
+      23,
+      2
+     ],
+     [
+      20,
+      2
+     ],
+     [
+      23,
+      6
+     ],
+     [
+      20,
+      1
+     ],
+     [
+      112,
+      6
+     ],
+     [
+      23,
+      11
+     ],
+     [
+      41,
+      1
+     ],
+     [
+      2,
+      14
+     ]
+    ],
+    "terminal_phi": 554,
+    "excursion": 0,
+    "length": 8,
+    "target": 2,
+    "unit": null,
+    "F": 0,
+    "D": 309,
+    "carrier": 23,
+    "released": 41
+   }
+  }
+ ],
+ "best_per_target": [
+  {
+   "word": [
+    [
+     23,
+     2
+    ],
+    [
+     20,
+     2
+    ],
+    [
+     23,
+     6
+    ],
+    [
+     20,
+     1
+    ],
+    [
+     112,
+     6
+    ],
+    [
+     23,
+     11
+    ],
+    [
+     41,
+     1
+    ],
+    [
+     2,
+     14
+    ]
+   ],
+   "terminal_phi": 554,
+   "excursion": 0,
+   "length": 8,
+   "target": 2,
+   "unit": null,
+   "F": 0,
+   "D": 309,
+   "carrier": 23,
+   "released": 41
+  }
+ ],
+ "complete": true,
+ "cpu_s": 2871.067
+}

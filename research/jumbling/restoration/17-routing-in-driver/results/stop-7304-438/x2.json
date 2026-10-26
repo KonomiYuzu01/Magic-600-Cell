@@ -1,0 +1,29 @@
+{
+ "format": "s16-transport/1",
+ "seed": "7304",
+ "table_digest": "ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980",
+ "word": "23:10,20:2,112:2,23:11,112:2,23:6,20:1,23:7,41:1,2:14,581:8,540:7,508:2,582:4,540:15,540:3,485:15",
+ "digest": "eacffbb3e9b9d9c25c518d388178d85a4e623ea50c97d17329ebcafa29f62124",
+ "phi": 438,
+ "options": {
+  "K": 2,
+  "minimal": false,
+  "word": "23:10,20:2,112:2,23:11,112:2,23:6,20:1,23:7,41:1,2:14,581:8,540:7,508:2,582:4,540:15,540:3,485:15",
+  "labels": "the label cache that the 7304 run wrote at its stop at 438 (outside the repository)"
+ },
+ "extra_prefix": "23:10,20:2,112:2,23:11,112:2,23:6,20:1,23:7,41:1,2:14,581:8,540:7,508:2,582:4,540:15,540:3,485:15",
+ "K": 2,
+ "minimal": false,
+ "counts": {
+  "nodes": 474,
+  "letters": 123420,
+  "leaf_tests": 118556,
+  "hits": 0,
+  "skipped_same": 5203,
+  "skipped_commute": 94017,
+  "skipped_minimal": 0
+ },
+ "best_per_target": [],
+ "complete": true,
+ "cpu_s": 35.066
+}

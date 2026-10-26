@@ -1,0 +1,56 @@
+{
+ "format": "s16-rr/1",
+ "seed": "7304",
+ "table_digest": "ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980",
+ "word": "23:10,20:2,112:2,23:11,112:2,23:6,20:1,23:7,41:1,2:14,581:8,540:7,508:2,582:4,540:15,540:3,485:15",
+ "digest": "eacffbb3e9b9d9c25c518d388178d85a4e623ea50c97d17329ebcafa29f62124",
+ "phi": 438,
+ "options": {
+  "word": "23:10,20:2,112:2,23:11,112:2,23:6,20:1,23:7,41:1,2:14,581:8,540:7,508:2,582:4,540:15,540:3,485:15",
+  "labels": "the label cache that the 7304 run wrote at its stop at 438 (outside the repository)",
+  "nmin": 1,
+  "nmax": 2,
+  "helpers": 2,
+  "pairs": "463:458",
+  "count_only": false
+ },
+ "counts": {
+  "nmin": 1,
+  "nmax": 2,
+  "helpers": 2,
+  "pairs": 1,
+  "words": 46739,
+  "admissible": 46739,
+  "releases": 7282,
+  "distinct_releases": 7282,
+  "hits": 0,
+  "states": 7282,
+  "letters": 43512381,
+  "leaf_tests": 1455620
+ },
+ "pairs": [
+  {
+   "c": 463,
+   "r": 458,
+   "S_r": 35,
+   "seqs": [
+    7,
+    101,
+    1237
+   ],
+   "words": [
+    2541,
+    44198,
+    0
+   ],
+   "admissible": 46739,
+   "releases": 7282,
+   "distinct": 7282,
+   "hits": 0,
+   "best": null
+  }
+ ],
+ "best_per_target": [],
+ "complete": true,
+ "cpu_s": 2971.921
+}

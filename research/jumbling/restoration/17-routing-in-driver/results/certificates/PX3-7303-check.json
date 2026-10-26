@@ -1,0 +1,155 @@
+{
+ "cpu_s": 217.093422,
+ "digest": "f3fc88372815b7297a6d62baf806a49265c3f0f439276e6b86844ef96c61cadd",
+ "failures": [],
+ "format": "macro-check/1",
+ "macros": [
+  {
+   "claims": {
+    "D": 198,
+    "F": 184,
+    "delta": [
+     0,
+     0,
+     0,
+     -28
+    ],
+    "digests": [
+     "8022ce03aa7518a9a63b54427a23b3082e77186c545a7ac45541a157ae30f760",
+     "e7a376cebd8a75faf71701b813b1fcd69d9d88a666df91849e4b945450f46488",
+     "ca9af93acb15846c6940c71d26805b6c0f4c4da50c61af7f480a2a0d44cd1539",
+     "42fdbf203c09e45d619bdc186cdb9233a4843fec17ec043ac3f7f2d3eb697e5e"
+    ],
+    "excursion": 0,
+    "phi": [
+     936,
+     936,
+     936,
+     908
+    ],
+    "supports": [
+     {
+      "sha256": "f4d6bc8c66fd3bce51f0ee014d8503c8a19e730a309353b4089babd37cf6310b",
+      "size": 3134
+     },
+     {
+      "sha256": "5e7192f1e3289641ecb418f03259d589f7e52d9ef5b3c48ca012d4a10c976bc1",
+      "size": 2332
+     },
+     {
+      "sha256": "3c846dfce21d25b2d820e1839fed4f2c9e17815f0ce66e292e057f44b66a327a",
+      "size": 3239
+     },
+     {
+      "sha256": "7f08a69f3e50131a101dcd70d6e953eebcb0b1651228a85dead4c9c8bf71c628",
+      "size": 3036
+     }
+    ]
+   },
+   "passed": true
+  },
+  {
+   "claims": {
+    "D": 184,
+    "F": 0,
+    "delta": [
+     0,
+     0,
+     -368
+    ],
+    "digests": [
+     "0f9a61e8d3f24536d15ebb33f329fc9cfacc83afbde97dcbf1da8eae0302ae86",
+     "e4aeac7a695dcb6046f2a7a59dcefdcde0566f5da0eed9a4e8b96883b79bbde0",
+     "e789e178f7b4996947199ba897290728f785894700bfdccc907b165e1d6a04c0"
+    ],
+    "excursion": 0,
+    "phi": [
+     908,
+     908,
+     540
+    ],
+    "supports": [
+     {
+      "sha256": "7f08a69f3e50131a101dcd70d6e953eebcb0b1651228a85dead4c9c8bf71c628",
+      "size": 3036
+     },
+     {
+      "sha256": "a6d9ba43c4fcce05035451597ca0910ff1429a5c02f167877ab748c61b40eb50",
+      "size": 2307
+     },
+     {
+      "sha256": "f94a2584fcd9fd9c431a50d5b30fe96e6faa1e29ee18275cccc857465ddfbc5d",
+      "size": 2835
+     }
+    ]
+   },
+   "passed": true
+  },
+  {
+   "claims": {
+    "D": 2,
+    "F": 0,
+    "delta": [
+     0,
+     0,
+     0,
+     -4
+    ],
+    "digests": [
+     "e19c5f7f1cbcafa654e90bf5a9bdd772e0e94192956e8f778e8c0841a503e7a6",
+     "2846455dde4c009998b5eb5bb1ac2306ef24762d347fdbf678d6bb22475e053d",
+     "953bfd5248d45608d0c9bf526afcaa8b3eabd326d363f36105cdfb2d34f53122",
+     "f3fc88372815b7297a6d62baf806a49265c3f0f439276e6b86844ef96c61cadd"
+    ],
+    "excursion": 0,
+    "phi": [
+     540,
+     540,
+     540,
+     536
+    ],
+    "supports": [
+     {
+      "sha256": "49e2f6314849765e20ffa140385964b9d9fa93b3ca3e56f058386c3307e849a1",
+      "size": 2402
+     },
+     {
+      "sha256": "ab855242b784e7cf8003bd6a533e050e03339c85910fe71701db5762f06002d0",
+      "size": 2823
+     },
+     {
+      "sha256": "3200b7aa467c395162c9109004f5f93e17d4a7c3a74b5edec3aab7c9a3ccf810",
+      "size": 3109
+     },
+     {
+      "sha256": "98faf278584159f0bd9ab6b0e1ff40a07eae648096829e445d2e645999f69a40",
+      "size": 2456
+     }
+    ]
+   },
+   "passed": true
+  }
+ ],
+ "passed": true,
+ "phi": 536,
+ "replay": {
+  "digest": "f3fc88372815b7297a6d62baf806a49265c3f0f439276e6b86844ef96c61cadd",
+  "events": 34,
+  "passed": true,
+  "phi": 536
+ },
+ "setup": {
+  "labels": {
+   "cpu_s": 1.694453
+  },
+  "load": {
+   "cpu_s": 0.177749
+  },
+  "trees": {
+   "cpu_s": 5.102568
+  },
+  "word": {
+   "cpu_s": 7.308643
+  }
+ }
+}
