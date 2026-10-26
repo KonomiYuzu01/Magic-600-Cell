@@ -181,3 +181,6 @@ background waiter on the runner process.
   lowered N by 66; off unchanged since 08:06 on 25 October.
 - 08:06 UTC progress: run 2 alive at 513 bulk steps, N 19,608, 14,528 off, 187,381 s of runner time. Comparison with
   run 1: still no difference in run 1's 225 steps. Since 04:06, 10 steps lowered N by 80; off unchanged for 24 hours.
+- 12:13 UTC (third restart of run 2): local `out2/` and checkpoint `0e061bb` both held 517 steps (N 19,600, 14,528
+  off, 200,205 s of runner time). Restored (exit 0), resumed (accepted after about 4 minutes of replay, `resumes`
+  [158, 232, 517]), checkpoint helper and waiter started. Steps now take 1,500 to 5,300 s each.
