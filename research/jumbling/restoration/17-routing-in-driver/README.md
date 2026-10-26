@@ -117,7 +117,7 @@ candidates and the choice. The label caches and the per-step records stay outsid
 | --- | --- | --- | --- | --- |
 | 7302 | 7302′, Φ 494 | 398 (RR2), 388 (RR3) | stop at 388 | 18,484 |
 | 7303 | 536 | (none) | stop at 536 | 19,584 |
-| 7304 | after I-7304, 554 | 442 (RR2), 438 (X1) | stop at 438 (stop search by separate runs, below) | 11,098 + «CPU438» |
+| 7304 | after I-7304, 554 | 442 (RR2), 438 (X1) | stop at 438 (stop search by separate runs, below) | 11,098 + 64,996 |
 | 7305 | from the jam, 1538 | 1476 (RR2), 1422 (X1), 1182 (RR2), 508 (R), 392 (X3), 386 (RR2) | stop at 386 | 12,405 |
 | 7305 | after O-SJ-D8, 730 | 508 (RR2) | stop at 508 | 8,187 |
 | 7305 | after O-D3, 508 | 412 (RR2), 406 (R), 386 (X1) | stop at 386 | 10,919 |
@@ -153,9 +153,10 @@ n = 3 (a count by `rr.py --count-only`). The run had used 11,098 CPU s when that
 passed its CPU limit inside it, which the limit does not bound (section 4); its record ends with segment 2 and the
 status `unknown`, as saved when the stop search began. The same stop search was computed by separate runs with the
 same inputs (the word of the record and the label cache the run wrote at 438): stage 15 `pstar2.py --stop-only` for
-family R, stage 16 `transport.py` for X with K = 1, 2 and 3 (minimal), and `rr.py` for RR in three groups that together
-hold the 19 pairs, with n ≤ 2 and then n = 3 (`results/stop-7304-438/`, «CPU438» CPU s in all). None has a candidate,
-so the run stops at 438.
+family R, stage 16 `transport.py` for X with K = 1, 2 and 3 (minimal), and `rr.py` for RR over the 19 pairs, with
+n ≤ 2 in three groups of pairs and with n = 3 one pair per process (a restart of the machine had ended the first, grouped
+runs of n = 3) (`results/stop-7304-438/`, 64,996 CPU s in all, without the runs the restart ended). None has a
+candidate, so the run stops at 438.
 
 ### 3.3 The stops
 
@@ -166,7 +167,7 @@ and two helpers (computed, the stop records in `results/runs/` and, for 7304, `r
 | --- | --- | --- | --- | --- | --- | --- |
 | 7302 | 388 | `266ec63e…` | 1,632 / 369,340 / 924,725 | 14, 8,206, 1,062 | 59,895, 8,548 | 6,259 |
 | 7303 | 536 | `f3fc8837…` | 312 / 53,053 / 148,505 | 25, 36,258, 8,003 | 205,700, 53,446 | 19,483 |
-| 7304 (separate runs) | 438 | `eacffbb3…` | 463 / 118,556 / «X3LEAF» | 19, 167,464, 21,246 | 778,272, «N3REL» | «CPU438» |
+| 7304 (separate runs) | 438 | `eacffbb3…` | 463 / 118,556 / 53,246 | 19, 167,464, 21,246 | 778,272, 117,985 | 64,996 |
 | 7305 from the jam | 386 | `550ff26a…` | 0 / 33 / 1,369 | 14, 9,874, 2,099 | 66,066, 13,006 | 4,949 |
 | 7305 after O-SJ-D8 | 508 | `f88cbcd4…` | 5 / 1,416 / 8,906 | 13, 10,200, 1,947 | 90,871, 17,141 | 6,559 |
 | 7305 after O-D3 | 386 | `ae0353b6…` | 0 / 4 / 365 | 16, 17,586, 2,657 | 135,036, 23,691 | 8,540 |
@@ -175,11 +176,11 @@ and two helpers (computed, the stop records in `results/runs/` and, for 7304, `r
 | 7307 | 1100 | `7d6b6613…` | 1,219 / 271,778 / 305,023 | 21, 20,990, 2,945 | 113,982, 21,193 | 11,125 |
 
 Each is a stop of the declared search, not a negative certificate (section 3.1). At every one of them RR finds
-releases, 3,979 to «MAXREL» routing words per stop with n ≤ 3 after which the blocked grip has no straddler, and no
+releases, 3,979 to 139,231 routing words per stop with n ≤ 3 after which the blocked grip has no straddler, and no
 tail of the declared forms descends after any of them: the stops of P*** are stops of the tails, not of the releases.
 The two runs at 7306 end at Φ 1158 in different configurations with the same counts. As in P**, the CPU limit bounds
 the segments but not the stop search: the longest stop search in a run took 19,483 CPU s (7303), and the one at 7304's
-stop at 438 took «CPU438» CPU s in its separate runs.
+stop at 438 took 64,996 CPU s in its separate runs.
 
 ### 3.4 Certificates
 
@@ -198,9 +199,10 @@ digest of its last stop above.
 
 They import the stage 14 to 16 scripts and change none of them, and they write only outside the repository. The
 records carry the format names of the stage 16 record helper (`s16-rr/1`, `s16-pxrr/1`). `results/stop-7304-438/`
-holds the separate stop search at 7304's stop at 438 (section 3.2): `rr-n2-*.json` and `rr-n3-*.json` for the three
-groups of pairs (`134-172`, `463-458` and `other`; `s16-rr/1`), `x1.json`, `x2.json` and `x3-minimal.json`
-(`s16-transport/1`) and `r.json` (the record of stage 15 `pstar2.py --stop-only`). The runs of section 3 were
+holds the separate stop search at 7304's stop at 438 (section 3.2): `rr-n2-134-172.json`, `rr-n2-463-458.json` and
+`rr-n2-other.json` for n ≤ 2 in three groups of pairs and `rr-n3/<c>-<r>.json` for n = 3, one per pair (`s16-rr/1`;
+`rr.py` counts and deduplicates per pair, so the records add up to the counts of one run over all pairs), `x1.json`,
+`x2.json` and `x3-minimal.json` (`s16-transport/1`) and `r.json` (the record of stage 15 `pstar2.py --stop-only`). The runs of section 3 were
 given the label caches of the P** stops (`--labels`, outside the repository), which only spares the label computation:
 the stage 16 loader reads a cache only when its digest equals the state's, and `pxrr.py` passes stage 15 only the copy
 it writes into its own output directory. In `pxrr.py`, as in stage 16 `pxrun.py`, the CPU limit bounds the segments
@@ -228,12 +230,12 @@ the 7304 run's record up to that stop (its start macros and the words of its seg
 the table and the word of the 7304 jam (stage 16 `jams.json`; `P` is its chain followed by its macros) and
 `S16=research/jumbling/restoration/16-six-jams/scripts`:
 
-    python3 -I -B $S/rr.py 7304 $D/rr-n3-134-172.json --word "$W" --nmin 3 --nmax 3 --helpers 2 --pairs 134:172
+    python3 -I -B $S/rr.py 7304 $D/134-172.json --word "$W" --nmin 3 --nmax 3 --helpers 2 --pairs 134:172
     python3 -I -B $S16/transport.py 7304 3 $D/x3-minimal.json --minimal --word "$W"
     python3 -I -B $S15/pstar2.py $T $D/r --prefix "$P,$W" --stop-only
 
-and likewise `--nmin 1 --nmax 2` and the other groups of pairs (the pairs of each group are in its record), and
-`transport.py` with K = 1 and 2 without `--minimal`. The certificates of section 3.4 and of O-SJ-D9's drop (section 2)
+and likewise for the other pairs with n = 3, `--nmin 1 --nmax 2` with the pairs of each n ≤ 2 record (`--pairs
+c:r,...`; the pairs are in the record), and `transport.py` with K = 1 and 2 without `--minimal`. The certificates of section 3.4 and of O-SJ-D9's drop (section 2)
 are
 
     python3 -I -B $S15/macro.py cert $T $D/ROW.json --prefix $W --labels $D/jam.npz --excursion 20 --macro M1 [--macro M2 ...]
