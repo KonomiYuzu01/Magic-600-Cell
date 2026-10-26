@@ -1,0 +1,7 @@
+ELIGIBILITY 31139216531467c7fb6b5398815d507a0f1e28acde9e67739b15da29a84ce5cf off 71 {'empty': 590, 'straddled': 5, 'eligible': 2, 'no_menu': 3} [[12, 61, [-1], [13, 17, 19, 34, 35, 36, 37, 38, 39, 40, 41, 42]], [91, 71, [-1], [14, 21, 23, 43, 44, 45, 46, 47, 48, 49, 50, 51]]] CPU 5.8
+SOURCE safe_grips 590 holes 71 orbits 713 singletons 678 orbits_with_holes 21 CPU 8.3
+CAP_RESULT 12 NO_PREP units [-1] pieces 61 [[13, 32, 32, 'NO_PREP', 32, 32], [17, 56, 56, 'NO_PREP', 56, 56], [19, 32, 32, 'NO_PREP', 32, 32], [34, 32, 32, 'NO_PREP', 32, 32], [35, 32, 32, 'NO_PREP', 32, 32], [36, 32, 32, 'NO_PREP', 32, 32], [37, 32, 32, 'NO_PREP', 32, 32], [38, 32, 32, 'NO_PREP', 32, 32], [39, 32, 32, 'NO_PREP', 32, 32], [40, 32, 32, 'NO_PREP', 32, 32], [41, 32, 32, 'NO_PREP', 32, 32], [42, 32, 32, 'NO_PREP', 32, 32]] CPU 17.1
+CAP_RESULT 91 OPEN_PREP units [-1] pieces 71 [[14, 0, 20, 'OPEN_PREP', 0, 0], [21, 0, 20, 'OPEN_PREP', 0, 0], [23, 0, 20, 'OPEN_PREP', 0, 0], [43, 0, 20, 'OPEN_PREP', 0, 0], [44, 0, 20, 'OPEN_PREP', 0, 0], [45, 0, 20, 'OPEN_PREP', 0, 0], [46, 0, 20, 'OPEN_PREP', 0, 0], [47, 0, 20, 'OPEN_PREP', 0, 0], [48, 0, 20, 'OPEN_PREP', 0, 0], [49, 0, 20, 'OPEN_PREP', 0, 0], [50, 0, 20, 'OPEN_PREP', 0, 0], [51, 0, 20, 'OPEN_PREP', 0, 0]] CPU 26.0
+SUMMARY {'NO_PREP': 1, 'OPEN_PREP': 1} CPU 26.0
+PREP_RESULT 91 14 PASS units [-1] landed 71 flow 71 source_orbits 21 middle_orbits 21 certificates {'source': [21, [], []], 'middle': [21, [], []]} CPU 44.6
+DONE CPU 44.6

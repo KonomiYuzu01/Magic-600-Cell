@@ -2,6 +2,12 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-26] update | Jumbling: the tail completion card opened (card 9)
+At the tail stop of the depth 40 development run (158 pieces off at height 2 in five units, where no tail rule applies) every unit passes stage 12's whole-cap test with SAFE preparations, and four literal whole-cap steps, two of them prepared, put every piece on the lattice; the runner's lattice phase then solved D1, which is not a runner run because the four steps are not runner rules ([stage 18](../../research/jumbling/restoration/18-tail-completion/README.md), [card 9](../../research/jumbling/theory/cards/card-9-tail-completion.md)).
+
+## [2026-10-26] decision | Jumbling: the tail completion, then a freeze
+The owner put the tail completion card next once stage 17 is merged, and freezes the jumbling tutorial and the jumbling research when that card ends ([decision page](decisions/owner-decisions-2026-10-26-tail-then-freeze.md)).
+
 ## [2026-10-26] update | Jumbling: routing releases in the driver (P***)
 Routing releases now run in the stop search of the certified procedure (P***, [stage 17](../../research/jumbling/restoration/17-routing-in-driver/README.md)): from the nine stops of P** it continues at eight, and the lowest Φ per seed (7302 to 7307) is 388, 536, 438, 386, 1158 and 1100, against 494, 536, 554, 508, 1260 and 1114 with P**. At every stop where it ends, 3,979 to 139,231 routing words release the blocked grip and no tail of its forms descends after any release, so the procedure now stops at its tails, not at its releases.
 
