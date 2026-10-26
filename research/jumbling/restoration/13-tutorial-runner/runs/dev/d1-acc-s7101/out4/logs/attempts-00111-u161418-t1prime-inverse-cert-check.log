@@ -1,0 +1,4 @@
+{"safe_all_grips": 548, "letters": 6028, "off_lattice": 258, "sec": 17}
+{"orbits": 1316, "singletons": 1281, "sec": 18}
+{"format": "r22b10/2", "complete": true, "T_size": 87, "orbits": [{"least": 105, "size": 2400, "k": 4, "route": "atlas", "s": 9214, "e": 5, "f": 19}, {"least": 116, "size": 120, "k": 1, "route": "atlas", "s": 190, "e": 5, "f": 5}, {"least": 82, "size": 7200, "k": 12, "route": "atlas", "s": 46, "e": 5, "f": 5}, {"least": 115, "size": 2400, "k": 16, "route": "atlas", "s": 46, "e": 5, "f": 5}, {"least": 108, "size": 3600, "k": 18, "route": "atlas", "s": 94, "e": 5, "f": 5}, {"least": 106, "size": 7200, "k": 24, "route": "atlas", "s": 142, "e": 5, "f": 17}, {"least": 83, "size": 7200, "k": 12, "route": "atlas", "s": 94, "e": 5, "f": 20}], "steps": 21, "V_length": 22398, "bound": 94700}
+PASS

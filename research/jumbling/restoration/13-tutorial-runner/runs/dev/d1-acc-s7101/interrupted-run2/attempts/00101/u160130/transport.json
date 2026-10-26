@@ -1,0 +1,43 @@
+{
+ "table": "00100.json",
+ "max_depth": 10,
+ "classes": {
+  "2": {
+   "cells": 2639,
+   "free_grips": 113,
+   "home_cells": 1441,
+   "occupied_points": 1488,
+   "foreign_cells": 6,
+   "foreign_untracked": 0,
+   "off_contents": 5,
+   "free_cells_by_kind": {
+    "3": 716,
+    "4": 479
+   },
+   "vacant_home_points_by_kind": {},
+   "pairs": 643,
+   "commutators": 2238283,
+   "base_clean_powers": 238632
+  }
+ },
+ "units": {
+  "state-b13": {
+   "content": 1397,
+   "point": 6989,
+   "content_size": 86,
+   "unit_size": 86,
+   "kind": 2,
+   "label": 4,
+   "cell": [
+    542,
+    593
+   ],
+   "home_cell": true,
+   "glued_to": [],
+   "unit_powers": 0,
+   "result": "no clean power moves it"
+  }
+ },
+ "digest": "080b4ea7dd47aaefd4d7fc90d7315e4b4c049a1db6d8333347af9eb289ddabd5",
+ "off": 759
+}

@@ -1,0 +1,75 @@
+{"table": "00109.json", "off_before": 222, "domains": {"1": {"size": 158, "hub": [[1, 3]]}, "2": {"size": 31, "hub": [[1, 2]]}, "3": {"size": 33, "hub": [[1, 4]]}}, "sec": 5}
+{"own_contents": 1446, "free": 116, "blocked": [349, 582], "fragments": {"1": 158}, "sec": 8}
+{"model": "pole permutations and label actions", "sec": 97}
+{"cells": 2641, "generators": 6844, "bad_at_start": 5, "sec": 102}
+{"carrier_cell": {"caps": [26, 91, 99], "n_caps": 3, "label": 3, "pieces_in_cell": 33}, "holes": 222, "chambers_of_X": 0, "holes_eq_chambers_of_X": false, "free": 116, "gens": 6844, "cells": 2641, "sec": 102}
+{"labels_of_X_in_orbit": [2, 3], "edge_orbits": 11, "sec": 104}
+{"transport": {"kind": "triangle", "max_power": 60, "home_cells": 1441, "other_off_contents": 4, "lattice_contents": 1441, "grip_pairs": 66}, "sec": 105}
+{"pair": [7, 26], "commutators": 3481, "landing_powers": 630, "candidates": 630, "sec": 106}
+{"pair": [8, 26], "commutators": 6962, "landing_powers": 1899, "candidates": 1899, "sec": 108}
+{"pair": [8, 91], "commutators": 10443, "landing_powers": 3126, "candidates": 3126, "sec": 109}
+{"pair": [12, 26], "commutators": 13924, "landing_powers": 5274, "candidates": 5154, "sec": 110}
+{"pair": [12, 91], "commutators": 17405, "landing_powers": 7222, "candidates": 5428, "sec": 112}
+{"pair": [12, 99], "commutators": 20886, "landing_powers": 9574, "candidates": 7525, "sec": 113}
+{"pair": [26, 7], "commutators": 24367, "landing_powers": 10204, "candidates": 8155, "sec": 115}
+{"pair": [26, 8], "commutators": 27848, "landing_powers": 11479, "candidates": 9430, "sec": 116}
+{"pair": [26, 12], "commutators": 31329, "landing_powers": 13623, "candidates": 11453, "sec": 118}
+{"pair": [26, 31], "commutators": 34810, "landing_powers": 14253, "candidates": 12083, "sec": 119}
+{"pair": [26, 37], "commutators": 38291, "landing_powers": 15569, "candidates": 13399, "sec": 121}
+{"pair": [26, 44], "commutators": 41772, "landing_powers": 16199, "candidates": 14029, "sec": 122}
+{"pair": [26, 91], "commutators": 45253, "landing_powers": 24616, "candidates": 21731, "sec": 123}
+{"pair": [26, 99], "commutators": 48734, "landing_powers": 33381, "candidates": 30496, "sec": 125}
+{"pair": [26, 100], "commutators": 52215, "landing_powers": 34850, "candidates": 31965, "sec": 127}
+{"pair": [26, 126], "commutators": 55696, "landing_powers": 36138, "candidates": 33253, "sec": 128}
+{"pair": [26, 153], "commutators": 59177, "landing_powers": 36768, "candidates": 33883, "sec": 129}
+{"pair": [26, 166], "commutators": 62658, "landing_powers": 38933, "candidates": 36048, "sec": 131}
+{"pair": [31, 26], "commutators": 66139, "landing_powers": 39563, "candidates": 36678, "sec": 132}
+{"pair": [37, 26], "commutators": 69620, "landing_powers": 40892, "candidates": 38007, "sec": 133}
+{"pair": [37, 99], "commutators": 73101, "landing_powers": 42165, "candidates": 39280, "sec": 135}
+{"pair": [44, 26], "commutators": 76582, "landing_powers": 42795, "candidates": 39910, "sec": 136}
+{"pair": [65, 91], "commutators": 80063, "landing_powers": 43409, "candidates": 40524, "sec": 138}
+{"pair": [91, 8], "commutators": 83544, "landing_powers": 44643, "candidates": 41758, "sec": 139}
+{"pair": [91, 12], "commutators": 87025, "landing_powers": 46588, "candidates": 42042, "sec": 140}
+{"pair": [91, 26], "commutators": 90506, "landing_powers": 55015, "candidates": 49740, "sec": 142}
+{"pair": [91, 65], "commutators": 93987, "landing_powers": 55629, "candidates": 50354, "sec": 143}
+{"pair": [91, 99], "commutators": 97468, "landing_powers": 64396, "candidates": 58129, "sec": 145}
+{"pair": [91, 100], "commutators": 100949, "landing_powers": 65859, "candidates": 59592, "sec": 146}
+{"pair": [91, 118], "commutators": 104430, "landing_powers": 66473, "candidates": 60206, "sec": 148}
+{"pair": [91, 137], "commutators": 107911, "landing_powers": 67895, "candidates": 61628, "sec": 149}
+{"pair": [91, 166], "commutators": 111392, "landing_powers": 70184, "candidates": 63917, "sec": 150}
+{"pair": [91, 227], "commutators": 114873, "landing_powers": 70798, "candidates": 64531, "sec": 152}
+{"pair": [91, 256], "commutators": 118354, "landing_powers": 72098, "candidates": 65831, "sec": 153}
+{"pair": [91, 268], "commutators": 121835, "landing_powers": 72712, "candidates": 66445, "sec": 154}
+{"pair": [99, 12], "commutators": 125316, "landing_powers": 75068, "candidates": 68546, "sec": 156}
+{"pair": [99, 26], "commutators": 128797, "landing_powers": 83842, "candidates": 77320, "sec": 157}
+{"pair": [99, 37], "commutators": 132278, "landing_powers": 85106, "candidates": 78584, "sec": 158}
+{"pair": [99, 91], "commutators": 135759, "landing_powers": 93880, "candidates": 86367, "sec": 160}
+{"pair": [99, 104], "commutators": 139240, "landing_powers": 94512, "candidates": 86999, "sec": 161}
+{"pair": [99, 126], "commutators": 142721, "landing_powers": 95769, "candidates": 88256, "sec": 162}
+{"pair": [99, 137], "commutators": 146202, "landing_powers": 97391, "candidates": 89878, "sec": 164}
+{"pair": [99, 166], "commutators": 149683, "landing_powers": 99591, "candidates": 92078, "sec": 165}
+{"pair": [99, 180], "commutators": 153164, "landing_powers": 100223, "candidates": 92710, "sec": 167}
+{"pair": [99, 256], "commutators": 156645, "landing_powers": 101512, "candidates": 93999, "sec": 168}
+{"pair": [99, 273], "commutators": 160126, "landing_powers": 102144, "candidates": 94631, "sec": 170}
+{"pair": [99, 290], "commutators": 163607, "landing_powers": 102776, "candidates": 95263, "sec": 171}
+{"pair": [100, 26], "commutators": 167088, "landing_powers": 104242, "candidates": 96729, "sec": 172}
+{"pair": [100, 91], "commutators": 170569, "landing_powers": 105703, "candidates": 98190, "sec": 174}
+{"pair": [104, 99], "commutators": 174050, "landing_powers": 106335, "candidates": 98822, "sec": 175}
+{"pair": [118, 91], "commutators": 177531, "landing_powers": 106949, "candidates": 99436, "sec": 176}
+{"pair": [126, 26], "commutators": 181012, "landing_powers": 108232, "candidates": 100719, "sec": 178}
+{"pair": [126, 99], "commutators": 184493, "landing_powers": 109482, "candidates": 101969, "sec": 179}
+{"pair": [137, 91], "commutators": 187974, "landing_powers": 110903, "candidates": 103390, "sec": 180}
+{"pair": [137, 99], "commutators": 191455, "landing_powers": 112524, "candidates": 105011, "sec": 182}
+{"pair": [153, 26], "commutators": 194936, "landing_powers": 113154, "candidates": 105641, "sec": 183}
+{"pair": [166, 26], "commutators": 198417, "landing_powers": 115311, "candidates": 107798, "sec": 185}
+{"pair": [166, 91], "commutators": 201898, "landing_powers": 117601, "candidates": 110088, "sec": 186}
+{"pair": [166, 99], "commutators": 205379, "landing_powers": 119801, "candidates": 112288, "sec": 188}
+{"pair": [180, 99], "commutators": 208860, "landing_powers": 120433, "candidates": 112920, "sec": 189}
+{"pair": [227, 91], "commutators": 212341, "landing_powers": 121047, "candidates": 113534, "sec": 190}
+{"pair": [256, 91], "commutators": 215822, "landing_powers": 122360, "candidates": 114847, "sec": 192}
+{"pair": [256, 99], "commutators": 219303, "landing_powers": 123661, "candidates": 116148, "sec": 193}
+{"pair": [268, 91], "commutators": 222784, "landing_powers": 124275, "candidates": 116762, "sec": 194}
+{"pair": [273, 99], "commutators": 226265, "landing_powers": 124907, "candidates": 117394, "sec": 196}
+{"pair": [290, 99], "commutators": 229746, "landing_powers": 125539, "candidates": 118026, "sec": 197}
+{"exact_try": {"x": [99, 9], "y": [91, 22], "n": 6, "word_len": 24, "to": [91, 137, 227], "lattice_pieces_off": 104, "other_off_in_caps": true, "others_exact_pose_kept": 189, "carrier_on_after": 33, "newly_off_as_expected": true}, "sec": 201}
+{"transport": {"kind": "triangle", "max_power": 60, "home_cells": 1441, "other_off_contents": 4, "lattice_contents": 1441, "grip_pairs": 66, "commutators": 229746, "landing_powers": 125539, "candidates": 118026, "fewest_lattice_pieces_off": 104, "result": "word", "to": [91, 137, 227], "cells_taken_off": [[65, 91, 227]], "lattice_pieces_off": 104}, "word_len": 24, "exact": {"all_admissible": true, "off_before": 222, "off_after": 293, "digest_after": "48ab6286d8d4996785e7564a1db8e75ff1a7875364be9fac5a6cbfdcb49954ae", "carrier_on_after": 33, "carrier_size": 33, "others_off": 189, "others_exact_pose_kept": 189, "lattice_pieces_in_X_before": 104, "newly_off_eq_lattice_pieces_of_X": true, "off_after_eq_others_plus_latX": true}, "sec": 201}
