@@ -1,0 +1,2211 @@
+{
+ "format": "s16-pxrr/1",
+ "seed": "7305",
+ "table_digest": "cc5ef7ecf0510ea9a74fc52bafe324d6d8f58294c4b0e20b40b97b414dada062",
+ "word": "436:2,268:14,226:2,175:12",
+ "digest": "550ff26addd2e982b92383b03e2870280dcd8c60b360c5ba625f495429bca2b5",
+ "phi": 386,
+ "options": {
+  "cpu_limit": 28800.0,
+  "labels": "the label cache of the P** stop (outside the repository)",
+  "start": "436:2,268:14;226:2,175:12",
+  "procedure": {
+   "families": [
+    "T",
+    "R",
+    "M",
+    "E",
+    "L"
+   ],
+   "e0": 20,
+   "depth": 3,
+   "beam": 64,
+   "choice": "best"
+  },
+  "rr": {
+   "nmax": 3,
+   "helpers": 2
+  }
+ },
+ "start": {
+  "digest": "6069d068080676e412c1601bec7ebb40a2347dae5cda87795ed17491e7d7dd4a",
+  "phi": 1538
+ },
+ "segments": [
+  {
+   "directory": "seg-000",
+   "macros": 0,
+   "status": "stopped",
+   "end": {
+    "phi": 1538,
+    "digest": "6069d068080676e412c1601bec7ebb40a2347dae5cda87795ed17491e7d7dd4a"
+   },
+   "families": [
+    null
+   ],
+   "words": [],
+   "cpu_s": 104.283375,
+   "stop": {
+    "R": 0,
+    "X": [
+     {
+      "K": 1,
+      "minimal": false,
+      "nodes": 1,
+      "letters": 319,
+      "leaf_tests": 626,
+      "hits": 0,
+      "skipped_same": 0,
+      "skipped_commute": 0,
+      "skipped_minimal": 0
+     },
+     {
+      "K": 2,
+      "minimal": false,
+      "nodes": 320,
+      "letters": 53889,
+      "leaf_tests": 104161,
+      "hits": 0,
+      "skipped_same": 3509,
+      "skipped_commute": 43923,
+      "skipped_minimal": 0
+     },
+     {
+      "K": 3,
+      "minimal": true,
+      "nodes": 54209,
+      "letters": 6733892,
+      "leaf_tests": 107646,
+      "hits": 0,
+      "skipped_same": 596288,
+      "skipped_commute": 9772565,
+      "skipped_minimal": 0
+     }
+    ],
+    "RR": [
+     {
+      "counts": {
+       "nmin": 1,
+       "nmax": 2,
+       "helpers": 2,
+       "pairs": 14,
+       "words": 27000,
+       "admissible": 23673,
+       "releases": 4907,
+       "distinct_releases": 4903,
+       "hits": 6,
+       "states": 4903,
+       "letters": 19380449,
+       "leaf_tests": 1490969
+      },
+      "pairs": [
+       {
+        "c": 177,
+        "r": 44,
+        "S_r": 25,
+        "seqs": [
+         11,
+         110,
+         1221
+        ],
+        "words": [
+         11,
+         0,
+         0
+        ],
+        "admissible": 11,
+        "releases": 11,
+        "distinct": 11,
+        "hits": 0
+       },
+       {
+        "c": 113,
+        "r": 100,
+        "S_r": 25,
+        "seqs": [
+         4,
+         48,
+         608
+        ],
+        "words": [
+         24,
+         352,
+         0
+        ],
+        "admissible": 376,
+        "releases": 49,
+        "distinct": 49,
+        "hits": 0
+       },
+       {
+        "c": 10,
+        "r": 102,
+        "S_r": 55,
+        "seqs": [
+         0,
+         2,
+         52
+        ],
+        "words": [
+         0,
+         22,
+         0
+        ],
+        "admissible": 22,
+        "releases": 13,
+        "distinct": 13,
+        "hits": 0
+       },
+       {
+        "c": 67,
+        "r": 122,
+        "S_r": 27,
+        "seqs": [
+         2,
+         50,
+         752
+        ],
+        "words": [
+         12,
+         1628,
+         0
+        ],
+        "admissible": 1640,
+        "releases": 323,
+        "distinct": 323,
+        "hits": 0
+       },
+       {
+        "c": 268,
+        "r": 221,
+        "S_r": 124,
+        "seqs": [
+         0,
+         0,
+         0
+        ],
+        "words": [
+         0,
+         0,
+         0
+        ],
+        "admissible": 0,
+        "releases": 0,
+        "distinct": 0,
+        "hits": 0
+       },
+       {
+        "c": 281,
+        "r": 233,
+        "S_r": 22,
+        "seqs": [
+         5,
+         73,
+         951
+        ],
+        "words": [
+         5,
+         1474,
+         0
+        ],
+        "admissible": 1479,
+        "releases": 176,
+        "distinct": 176,
+        "hits": 0
+       },
+       {
+        "c": 204,
+        "r": 247,
+        "S_r": 14,
+        "seqs": [
+         2,
+         25,
+         372
+        ],
+        "words": [
+         12,
+         638,
+         0
+        ],
+        "admissible": 650,
+        "releases": 103,
+        "distinct": 103,
+        "hits": 0
+       },
+       {
+        "c": 499,
+        "r": 271,
+        "S_r": 19,
+        "seqs": [
+         5,
+         74,
+         973
+        ],
+        "words": [
+         530,
+         9284,
+         0
+        ],
+        "admissible": 7610,
+        "releases": 1383,
+        "distinct": 1383,
+        "hits": 0
+       },
+       {
+        "c": 134,
+        "r": 305,
+        "S_r": 45,
+        "seqs": [
+         6,
+         80,
+         1006
+        ],
+        "words": [
+         308,
+         10230,
+         0
+        ],
+        "admissible": 9946,
+        "releases": 2500,
+        "distinct": 2500,
+        "hits": 0
+       },
+       {
+        "c": 421,
+        "r": 389,
+        "S_r": 26,
+        "seqs": [
+         1,
+         21,
+         311
+        ],
+        "words": [
+         242,
+         1760,
+         0
+        ],
+        "admissible": 1517,
+        "releases": 239,
+        "distinct": 235,
+        "hits": 6
+       },
+       {
+        "c": 436,
+        "r": 468,
+        "S_r": 27,
+        "seqs": [
+         7,
+         74,
+         859
+        ],
+        "words": [
+         17,
+         154,
+         0
+        ],
+        "admissible": 171,
+        "releases": 61,
+        "distinct": 61,
+        "hits": 0
+       },
+       {
+        "c": 374,
+        "r": 476,
+        "S_r": 3,
+        "seqs": [
+         0,
+         6,
+         128
+        ],
+        "words": [
+         0,
+         286,
+         0
+        ],
+        "admissible": 240,
+        "releases": 38,
+        "distinct": 38,
+        "hits": 0
+       },
+       {
+        "c": 549,
+        "r": 552,
+        "S_r": 6,
+        "seqs": [
+         0,
+         0,
+         0
+        ],
+        "words": [
+         0,
+         0,
+         0
+        ],
+        "admissible": 0,
+        "releases": 0,
+        "distinct": 0,
+        "hits": 0
+       },
+       {
+        "c": 574,
+        "r": 577,
+        "S_r": 37,
+        "seqs": [
+         11,
+         110,
+         1221
+        ],
+        "words": [
+         11,
+         0,
+         0
+        ],
+        "admissible": 11,
+        "releases": 11,
+        "distinct": 11,
+        "hits": 0
+       }
+      ],
+      "best": [
+       {
+        "word": [
+         [
+          421,
+          11
+         ],
+         [
+          574,
+          8
+         ],
+         [
+          520,
+          10
+         ],
+         [
+          421,
+          11
+         ],
+         [
+          389,
+          4
+         ],
+         [
+          421,
+          3
+         ],
+         [
+          389,
+          12
+         ]
+        ],
+        "terminal_phi": 1476,
+        "target": 389,
+        "carrier": 421,
+        "released": 389,
+        "F": 27,
+        "D": 58
+       }
+      ]
+     }
+    ],
+    "cpu_s": 2858.9,
+    "choice": {
+     "word": [
+      [
+       421,
+       11
+      ],
+      [
+       574,
+       8
+      ],
+      [
+       520,
+       10
+      ],
+      [
+       421,
+       11
+      ],
+      [
+       389,
+       4
+      ],
+      [
+       421,
+       3
+      ],
+      [
+       389,
+       12
+      ]
+     ],
+     "terminal_phi": 1476,
+     "family": "RR2"
+    }
+   }
+  },
+  {
+   "directory": "seg-001",
+   "macros": 1,
+   "status": "stopped",
+   "end": {
+    "phi": 1476,
+    "digest": "ea88ec5c7c0e2272f69c1637b52168760f1dcf7ad3cab96a1a9d9825d5eabc00"
+   },
+   "families": [
+    null,
+    null
+   ],
+   "words": [
+    [
+     [
+      421,
+      11
+     ],
+     [
+      574,
+      8
+     ],
+     [
+      520,
+      10
+     ],
+     [
+      421,
+      11
+     ],
+     [
+      389,
+      4
+     ],
+     [
+      421,
+      3
+     ],
+     [
+      389,
+      12
+     ]
+    ]
+   ],
+   "cpu_s": 169.819385,
+   "stop": {
+    "R": 0,
+    "X": [
+     {
+      "K": 1,
+      "minimal": false,
+      "nodes": 1,
+      "letters": 297,
+      "leaf_tests": 594,
+      "hits": 12,
+      "skipped_same": 0,
+      "skipped_commute": 0,
+      "skipped_minimal": 0
+     },
+     {
+      "K": 2,
+      "minimal": false,
+      "nodes": 298,
+      "letters": 46519,
+      "leaf_tests": 93149,
+      "hits": 3600,
+      "skipped_same": 3267,
+      "skipped_commute": 38236,
+      "skipped_minimal": 0
+     }
+    ],
+    "RR": [],
+    "cpu_s": 394.6,
+    "choice": {
+     "word": [
+      [
+       389,
+       2
+      ],
+      [
+       431,
+       14
+      ]
+     ],
+     "terminal_phi": 1422,
+     "family": "X1"
+    }
+   }
+  },
+  {
+   "directory": "seg-002",
+   "macros": 1,
+   "status": "stopped",
+   "end": {
+    "phi": 1422,
+    "digest": "1d9a510609f648352ab3e299a1c3ac8f5271a11a6653d283894bd08c22599036"
+   },
+   "families": [
+    null,
+    null
+   ],
+   "words": [
+    [
+     [
+      389,
+      2
+     ],
+     [
+      431,
+      14
+     ]
+    ]
+   ],
+   "cpu_s": 77.967604,
+   "stop": {
+    "R": 0,
+    "X": [
+     {
+      "K": 1,
+      "minimal": false,
+      "nodes": 1,
+      "letters": 286,
+      "leaf_tests": 11,
+      "hits": 0,
+      "skipped_same": 0,
+      "skipped_commute": 0,
+      "skipped_minimal": 0
+     },
+     {
+      "K": 2,
+      "minimal": false,
+      "nodes": 287,
+      "letters": 43373,
+      "leaf_tests": 3192,
+      "hits": 0,
+      "skipped_same": 3146,
+      "skipped_commute": 35332,
+      "skipped_minimal": 0
+     },
+     {
+      "K": 3,
+      "minimal": true,
+      "nodes": 43660,
+      "letters": 4859998,
+      "leaf_tests": 19079,
+      "hits": 0,
+      "skipped_same": 480249,
+      "skipped_commute": 7120608,
+      "skipped_minimal": 0
+     }
+    ],
+    "RR": [
+     {
+      "counts": {
+       "nmin": 1,
+       "nmax": 2,
+       "helpers": 2,
+       "pairs": 15,
+       "words": 17191,
+       "admissible": 15268,
+       "releases": 2651,
+       "distinct_releases": 2651,
+       "hits": 1088,
+       "states": 2651,
+       "letters": 9444281,
+       "leaf_tests": 105785
+      },
+      "pairs": [
+       {
+        "c": 177,
+        "r": 44,
+        "S_r": 25,
+        "seqs": [
+         11,
+         110,
+         1221
+        ],
+        "words": [
+         11,
+         0,
+         0
+        ],
+        "admissible": 11,
+        "releases": 11,
+        "distinct": 11,
+        "hits": 0
+       },
+       {
+        "c": 113,
+        "r": 100,
+        "S_r": 25,
+        "seqs": [
+         4,
+         48,
+         608
+        ],
+        "words": [
+         24,
+         352,
+         0
+        ],
+        "admissible": 376,
+        "releases": 49,
+        "distinct": 49,
+        "hits": 0
+       },
+       {
+        "c": 10,
+        "r": 102,
+        "S_r": 55,
+        "seqs": [
+         0,
+         2,
+         52
+        ],
+        "words": [
+         0,
+         22,
+         0
+        ],
+        "admissible": 22,
+        "releases": 13,
+        "distinct": 13,
+        "hits": 0
+       },
+       {
+        "c": 67,
+        "r": 122,
+        "S_r": 27,
+        "seqs": [
+         2,
+         50,
+         752
+        ],
+        "words": [
+         12,
+         1628,
+         0
+        ],
+        "admissible": 1640,
+        "releases": 323,
+        "distinct": 323,
+        "hits": 0
+       },
+       {
+        "c": 268,
+        "r": 221,
+        "S_r": 124,
+        "seqs": [
+         0,
+         0,
+         0
+        ],
+        "words": [
+         0,
+         0,
+         0
+        ],
+        "admissible": 0,
+        "releases": 0,
+        "distinct": 0,
+        "hits": 0
+       },
+       {
+        "c": 281,
+        "r": 233,
+        "S_r": 22,
+        "seqs": [
+         5,
+         73,
+         951
+        ],
+        "words": [
+         5,
+         1474,
+         0
+        ],
+        "admissible": 1479,
+        "releases": 176,
+        "distinct": 176,
+        "hits": 0
+       },
+       {
+        "c": 204,
+        "r": 247,
+        "S_r": 14,
+        "seqs": [
+         2,
+         25,
+         372
+        ],
+        "words": [
+         12,
+         638,
+         0
+        ],
+        "admissible": 650,
+        "releases": 103,
+        "distinct": 103,
+        "hits": 0
+       },
+       {
+        "c": 134,
+        "r": 305,
+        "S_r": 45,
+        "seqs": [
+         4,
+         64,
+         858
+        ],
+        "words": [
+         44,
+         5137,
+         0
+        ],
+        "admissible": 4743,
+        "releases": 1083,
+        "distinct": 1083,
+        "hits": 1083
+       },
+       {
+        "c": 389,
+        "r": 359,
+        "S_r": 141,
+        "seqs": [
+         0,
+         0,
+         0
+        ],
+        "words": [
+         0,
+         0,
+         0
+        ],
+        "admissible": 0,
+        "releases": 0,
+        "distinct": 0,
+        "hits": 0
+       },
+       {
+        "c": 431,
+        "r": 374,
+        "S_r": 65,
+        "seqs": [
+         0,
+         6,
+         130
+        ],
+        "words": [
+         0,
+         66,
+         0
+        ],
+        "admissible": 63,
+        "releases": 22,
+        "distinct": 22,
+        "hits": 0
+       },
+       {
+        "c": 389,
+        "r": 421,
+        "S_r": 135,
+        "seqs": [
+         0,
+         8,
+         152
+        ],
+        "words": [
+         0,
+         88,
+         0
+        ],
+        "admissible": 88,
+        "releases": 21,
+        "distinct": 21,
+        "hits": 0
+       },
+       {
+        "c": 520,
+        "r": 436,
+        "S_r": 26,
+        "seqs": [
+         3,
+         50,
+         705
+        ],
+        "words": [
+         264,
+         4378,
+         0
+        ],
+        "admissible": 3560,
+        "releases": 566,
+        "distinct": 566,
+        "hits": 0
+       },
+       {
+        "c": 520,
+        "r": 451,
+        "S_r": 133,
+        "seqs": [
+         0,
+         0,
+         0
+        ],
+        "words": [
+         0,
+         0,
+         0
+        ],
+        "admissible": 0,
+        "releases": 0,
+        "distinct": 0,
+        "hits": 0
+       },
+       {
+        "c": 577,
+        "r": 538,
+        "S_r": 14,
+        "seqs": [
+         1,
+         24,
+         385
+        ],
+        "words": [
+         242,
+         2794,
+         0
+        ],
+        "admissible": 2636,
+        "releases": 284,
+        "distinct": 284,
+        "hits": 5
+       },
+       {
+        "c": 549,
+        "r": 552,
+        "S_r": 6,
+        "seqs": [
+         0,
+         0,
+         0
+        ],
+        "words": [
+         0,
+         0,
+         0
+        ],
+        "admissible": 0,
+        "releases": 0,
+        "distinct": 0,
+        "hits": 0
+       }
+      ],
+      "best": [
+       {
+        "word": [
+         [
+          94,
+          1
+         ],
+         [
+          134,
+          1
+         ],
+         [
+          305,
+          2
+         ],
+         [
+          389,
+          5
+         ],
+         [
+          504,
+          12
+         ]
+        ],
+        "terminal_phi": 1182,
+        "target": 504,
+        "carrier": 134,
+        "released": 305,
+        "F": 0,
+        "D": 120
+       },
+       {
+        "word": [
+         [
+          520,
+          4
+         ],
+         [
+          577,
+          4
+         ],
+         [
+          520,
+          5
+         ],
+         [
+          577,
+          9
+         ],
+         [
+          484,
+          1
+         ],
+         [
+          538,
+          12
+         ]
+        ],
+        "terminal_phi": 1416,
+        "target": 538,
+        "carrier": 577,
+        "released": 538,
+        "F": 0,
+        "D": 3
+       }
+      ]
+     }
+    ],
+    "cpu_s": 1579.7,
+    "choice": {
+     "word": [
+      [
+       94,
+       1
+      ],
+      [
+       134,
+       1
+      ],
+      [
+       305,
+       2
+      ],
+      [
+       389,
+       5
+      ],
+      [
+       504,
+       12
+      ]
+     ],
+     "terminal_phi": 1182,
+     "family": "RR2"
+    }
+   }
+  },
+  {
+   "directory": "seg-003",
+   "macros": 2,
+   "status": "stopped",
+   "end": {
+    "phi": 508,
+    "digest": "ff3398db4e47751387293065544caca232212557464b0b71f86ef625ace11be2"
+   },
+   "families": [
+    null,
+    "R",
+    null
+   ],
+   "words": [
+    [
+     [
+      94,
+      1
+     ],
+     [
+      134,
+      1
+     ],
+     [
+      305,
+      2
+     ],
+     [
+      389,
+      5
+     ],
+     [
+      504,
+      12
+     ]
+    ],
+    [
+     [
+      431,
+      4
+     ],
+     [
+      504,
+      4
+     ],
+     [
+      574,
+      1
+     ],
+     [
+      576,
+      13
+     ]
+    ]
+   ],
+   "cpu_s": 144.403549,
+   "stop": {
+    "R": 0,
+    "X": [
+     {
+      "K": 1,
+      "minimal": false,
+      "nodes": 1,
+      "letters": 275,
+      "leaf_tests": 262,
+      "hits": 0,
+      "skipped_same": 0,
+      "skipped_commute": 0,
+      "skipped_minimal": 0
+     },
+     {
+      "K": 2,
+      "minimal": false,
+      "nodes": 276,
+      "letters": 40150,
+      "leaf_tests": 36641,
+      "hits": 0,
+      "skipped_same": 3025,
+      "skipped_commute": 32065,
+      "skipped_minimal": 0
+     },
+     {
+      "K": 3,
+      "minimal": true,
+      "nodes": 40426,
+      "letters": 4320228,
+      "leaf_tests": 50823,
+      "hits": 12,
+      "skipped_same": 444675,
+      "skipped_commute": 6207663,
+      "skipped_minimal": 0
+     }
+    ],
+    "RR": [],
+    "cpu_s": 566.3,
+    "choice": {
+     "word": [
+      [
+       520,
+       1
+      ],
+      [
+       576,
+       6
+      ],
+      [
+       574,
+       9
+      ],
+      [
+       520,
+       14
+      ]
+     ],
+     "terminal_phi": 392,
+     "family": "X3"
+    }
+   }
+  },
+  {
+   "directory": "seg-004",
+   "macros": 1,
+   "status": "stopped",
+   "end": {
+    "phi": 392,
+    "digest": "333916bc51697ea613150738b0f56086ff5a4f023b285049678557b987f432d9"
+   },
+   "families": [
+    null,
+    null
+   ],
+   "words": [
+    [
+     [
+      520,
+      1
+     ],
+     [
+      576,
+      6
+     ],
+     [
+      574,
+      9
+     ],
+     [
+      520,
+      14
+     ]
+    ]
+   ],
+   "cpu_s": 77.321369,
+   "stop": {
+    "R": 0,
+    "X": [
+     {
+      "K": 1,
+      "minimal": false,
+      "nodes": 1,
+      "letters": 275,
+      "leaf_tests": 0,
+      "hits": 0,
+      "skipped_same": 0,
+      "skipped_commute": 0,
+      "skipped_minimal": 0
+     },
+     {
+      "K": 2,
+      "minimal": false,
+      "nodes": 276,
+      "letters": 40172,
+      "leaf_tests": 34,
+      "hits": 0,
+      "skipped_same": 3025,
+      "skipped_commute": 32065,
+      "skipped_minimal": 0
+     },
+     {
+      "K": 3,
+      "minimal": true,
+      "nodes": 40448,
+      "letters": 4327631,
+      "leaf_tests": 1457,
+      "hits": 0,
+      "skipped_same": 444917,
+      "skipped_commute": 6212019,
+      "skipped_minimal": 0
+     }
+    ],
+    "RR": [
+     {
+      "counts": {
+       "nmin": 1,
+       "nmax": 2,
+       "helpers": 2,
+       "pairs": 14,
+       "words": 18170,
+       "admissible": 15930,
+       "releases": 2771,
+       "distinct_releases": 2771,
+       "hits": 31,
+       "states": 2771,
+       "letters": 9522887,
+       "leaf_tests": 95015
+      },
+      "pairs": [
+       {
+        "c": 113,
+        "r": 100,
+        "S_r": 25,
+        "seqs": [
+         4,
+         48,
+         608
+        ],
+        "words": [
+         24,
+         352,
+         0
+        ],
+        "admissible": 376,
+        "releases": 49,
+        "distinct": 49,
+        "hits": 0
+       },
+       {
+        "c": 10,
+        "r": 102,
+        "S_r": 55,
+        "seqs": [
+         0,
+         2,
+         52
+        ],
+        "words": [
+         0,
+         22,
+         0
+        ],
+        "admissible": 22,
+        "releases": 13,
+        "distinct": 13,
+        "hits": 0
+       },
+       {
+        "c": 67,
+        "r": 122,
+        "S_r": 27,
+        "seqs": [
+         2,
+         50,
+         752
+        ],
+        "words": [
+         12,
+         1628,
+         0
+        ],
+        "admissible": 1640,
+        "releases": 323,
+        "distinct": 323,
+        "hits": 0
+       },
+       {
+        "c": 305,
+        "r": 134,
+        "S_r": 45,
+        "seqs": [
+         5,
+         57,
+         695
+        ],
+        "words": [
+         25,
+         550,
+         0
+        ],
+        "admissible": 575,
+        "releases": 212,
+        "distinct": 212,
+        "hits": 0
+       },
+       {
+        "c": 305,
+        "r": 177,
+        "S_r": 26,
+        "seqs": [
+         5,
+         57,
+         695
+        ],
+        "words": [
+         25,
+         550,
+         0
+        ],
+        "admissible": 575,
+        "releases": 212,
+        "distinct": 212,
+        "hits": 0
+       },
+       {
+        "c": 268,
+        "r": 221,
+        "S_r": 124,
+        "seqs": [
+         0,
+         0,
+         0
+        ],
+        "words": [
+         0,
+         0,
+         0
+        ],
+        "admissible": 0,
+        "releases": 0,
+        "distinct": 0,
+        "hits": 0
+       },
+       {
+        "c": 281,
+        "r": 233,
+        "S_r": 22,
+        "seqs": [
+         5,
+         73,
+         951
+        ],
+        "words": [
+         25,
+         2002,
+         0
+        ],
+        "admissible": 2027,
+        "releases": 309,
+        "distinct": 309,
+        "hits": 0
+       },
+       {
+        "c": 204,
+        "r": 247,
+        "S_r": 14,
+        "seqs": [
+         2,
+         25,
+         372
+        ],
+        "words": [
+         12,
+         638,
+         0
+        ],
+        "admissible": 650,
+        "releases": 103,
+        "distinct": 103,
+        "hits": 0
+       },
+       {
+        "c": 431,
+        "r": 374,
+        "S_r": 147,
+        "seqs": [
+         0,
+         4,
+         80
+        ],
+        "words": [
+         0,
+         154,
+         0
+        ],
+        "admissible": 154,
+        "releases": 65,
+        "distinct": 65,
+        "hits": 0
+       },
+       {
+        "c": 504,
+        "r": 389,
+        "S_r": 9,
+        "seqs": [
+         6,
+         72,
+         898
+        ],
+        "words": [
+         258,
+         2222,
+         0
+        ],
+        "admissible": 1935,
+        "releases": 399,
+        "distinct": 399,
+        "hits": 0
+       },
+       {
+        "c": 520,
+        "r": 436,
+        "S_r": 27,
+        "seqs": [
+         3,
+         48,
+         675
+        ],
+        "words": [
+         13,
+         4268,
+         0
+        ],
+        "admissible": 3292,
+        "releases": 492,
+        "distinct": 492,
+        "hits": 0
+       },
+       {
+        "c": 520,
+        "r": 451,
+        "S_r": 128,
+        "seqs": [
+         0,
+         0,
+         0
+        ],
+        "words": [
+         0,
+         0,
+         0
+        ],
+        "admissible": 0,
+        "releases": 0,
+        "distinct": 0,
+        "hits": 0
+       },
+       {
+        "c": 577,
+        "r": 538,
+        "S_r": 14,
+        "seqs": [
+         1,
+         24,
+         385
+        ],
+        "words": [
+         253,
+         4642,
+         0
+        ],
+        "admissible": 4264,
+        "releases": 423,
+        "distinct": 423,
+        "hits": 31
+       },
+       {
+        "c": 549,
+        "r": 552,
+        "S_r": 6,
+        "seqs": [
+         3,
+         39,
+         519
+        ],
+        "words": [
+         33,
+         462,
+         0
+        ],
+        "admissible": 420,
+        "releases": 171,
+        "distinct": 171,
+        "hits": 0
+       }
+      ],
+      "best": [
+       {
+        "word": [
+         [
+          577,
+          2
+         ],
+         [
+          520,
+          1
+         ],
+         [
+          577,
+          10
+         ],
+         [
+          484,
+          1
+         ],
+         [
+          538,
+          12
+         ]
+        ],
+        "terminal_phi": 386,
+        "target": 538,
+        "carrier": 577,
+        "released": 538,
+        "F": 0,
+        "D": 3
+       }
+      ]
+     }
+    ],
+    "cpu_s": 1372.6,
+    "choice": {
+     "word": [
+      [
+       577,
+       2
+      ],
+      [
+       520,
+       1
+      ],
+      [
+       577,
+       10
+      ],
+      [
+       484,
+       1
+      ],
+      [
+       538,
+       12
+      ]
+     ],
+     "terminal_phi": 386,
+     "family": "RR2"
+    }
+   }
+  },
+  {
+   "directory": "seg-005",
+   "macros": 1,
+   "status": "stopped",
+   "end": {
+    "phi": 386,
+    "digest": "550ff26addd2e982b92383b03e2870280dcd8c60b360c5ba625f495429bca2b5"
+   },
+   "families": [
+    null,
+    null
+   ],
+   "words": [
+    [
+     [
+      577,
+      2
+     ],
+     [
+      520,
+      1
+     ],
+     [
+      577,
+      10
+     ],
+     [
+      484,
+      1
+     ],
+     [
+      538,
+      12
+     ]
+    ]
+   ],
+   "cpu_s": 77.923279,
+   "stop": {
+    "R": 0,
+    "X": [
+     {
+      "K": 1,
+      "minimal": false,
+      "nodes": 1,
+      "letters": 264,
+      "leaf_tests": 0,
+      "hits": 0,
+      "skipped_same": 0,
+      "skipped_commute": 0,
+      "skipped_minimal": 0
+     },
+     {
+      "K": 2,
+      "minimal": false,
+      "nodes": 265,
+      "letters": 37158,
+      "leaf_tests": 33,
+      "hits": 0,
+      "skipped_same": 2904,
+      "skipped_commute": 29403,
+      "skipped_minimal": 0
+     },
+     {
+      "K": 3,
+      "minimal": true,
+      "nodes": 37423,
+      "letters": 3882153,
+      "leaf_tests": 1369,
+      "hits": 0,
+      "skipped_same": 411642,
+      "skipped_commute": 5489165,
+      "skipped_minimal": 0
+     }
+    ],
+    "RR": [
+     {
+      "counts": {
+       "nmin": 1,
+       "nmax": 2,
+       "helpers": 2,
+       "pairs": 14,
+       "words": 9874,
+       "admissible": 9132,
+       "releases": 2099,
+       "distinct_releases": 2099,
+       "hits": 0,
+       "states": 2099,
+       "letters": 6857235,
+       "leaf_tests": 46061
+      },
+      "pairs": [
+       {
+        "c": 113,
+        "r": 100,
+        "S_r": 25,
+        "seqs": [
+         4,
+         48,
+         608
+        ],
+        "words": [
+         24,
+         352,
+         0
+        ],
+        "admissible": 376,
+        "releases": 49,
+        "distinct": 49,
+        "hits": 0
+       },
+       {
+        "c": 10,
+        "r": 102,
+        "S_r": 55,
+        "seqs": [
+         0,
+         2,
+         52
+        ],
+        "words": [
+         0,
+         22,
+         0
+        ],
+        "admissible": 22,
+        "releases": 13,
+        "distinct": 13,
+        "hits": 0
+       },
+       {
+        "c": 67,
+        "r": 122,
+        "S_r": 27,
+        "seqs": [
+         2,
+         50,
+         752
+        ],
+        "words": [
+         12,
+         1628,
+         0
+        ],
+        "admissible": 1640,
+        "releases": 323,
+        "distinct": 323,
+        "hits": 0
+       },
+       {
+        "c": 305,
+        "r": 134,
+        "S_r": 45,
+        "seqs": [
+         5,
+         57,
+         695
+        ],
+        "words": [
+         25,
+         550,
+         0
+        ],
+        "admissible": 575,
+        "releases": 212,
+        "distinct": 212,
+        "hits": 0
+       },
+       {
+        "c": 305,
+        "r": 177,
+        "S_r": 26,
+        "seqs": [
+         5,
+         57,
+         695
+        ],
+        "words": [
+         25,
+         550,
+         0
+        ],
+        "admissible": 575,
+        "releases": 212,
+        "distinct": 212,
+        "hits": 0
+       },
+       {
+        "c": 268,
+        "r": 221,
+        "S_r": 124,
+        "seqs": [
+         0,
+         0,
+         0
+        ],
+        "words": [
+         0,
+         0,
+         0
+        ],
+        "admissible": 0,
+        "releases": 0,
+        "distinct": 0,
+        "hits": 0
+       },
+       {
+        "c": 281,
+        "r": 233,
+        "S_r": 22,
+        "seqs": [
+         5,
+         73,
+         951
+        ],
+        "words": [
+         25,
+         2002,
+         0
+        ],
+        "admissible": 2027,
+        "releases": 309,
+        "distinct": 309,
+        "hits": 0
+       },
+       {
+        "c": 204,
+        "r": 247,
+        "S_r": 14,
+        "seqs": [
+         2,
+         25,
+         372
+        ],
+        "words": [
+         12,
+         638,
+         0
+        ],
+        "admissible": 650,
+        "releases": 103,
+        "distinct": 103,
+        "hits": 0
+       },
+       {
+        "c": 431,
+        "r": 374,
+        "S_r": 147,
+        "seqs": [
+         0,
+         4,
+         80
+        ],
+        "words": [
+         0,
+         154,
+         0
+        ],
+        "admissible": 154,
+        "releases": 65,
+        "distinct": 65,
+        "hits": 0
+       },
+       {
+        "c": 504,
+        "r": 389,
+        "S_r": 9,
+        "seqs": [
+         6,
+         72,
+         898
+        ],
+        "words": [
+         258,
+         2222,
+         0
+        ],
+        "admissible": 1935,
+        "releases": 475,
+        "distinct": 475,
+        "hits": 0
+       },
+       {
+        "c": 520,
+        "r": 436,
+        "S_r": 3,
+        "seqs": [
+         1,
+         26,
+         419
+        ],
+        "words": [
+         11,
+         781,
+         0
+        ],
+        "admissible": 670,
+        "releases": 122,
+        "distinct": 122,
+        "hits": 0
+       },
+       {
+        "c": 538,
+        "r": 484,
+        "S_r": 2,
+        "seqs": [
+         11,
+         110,
+         1221
+        ],
+        "words": [
+         11,
+         0,
+         0
+        ],
+        "admissible": 11,
+        "releases": 11,
+        "distinct": 11,
+        "hits": 0
+       },
+       {
+        "c": 549,
+        "r": 552,
+        "S_r": 6,
+        "seqs": [
+         3,
+         39,
+         519
+        ],
+        "words": [
+         33,
+         462,
+         0
+        ],
+        "admissible": 420,
+        "releases": 171,
+        "distinct": 171,
+        "hits": 0
+       },
+       {
+        "c": 538,
+        "r": 577,
+        "S_r": 26,
+        "seqs": [
+         0,
+         7,
+         146
+        ],
+        "words": [
+         0,
+         77,
+         0
+        ],
+        "admissible": 77,
+        "releases": 34,
+        "distinct": 34,
+        "hits": 0
+       }
+      ],
+      "best": []
+     },
+     {
+      "counts": {
+       "nmin": 3,
+       "nmax": 3,
+       "helpers": 2,
+       "pairs": 14,
+       "words": 66066,
+       "admissible": 62467,
+       "releases": 13006,
+       "distinct_releases": 12996,
+       "hits": 0,
+       "states": 12996,
+       "letters": 42747826,
+       "leaf_tests": 147994
+      },
+      "pairs": [
+       {
+        "c": 113,
+        "r": 100,
+        "S_r": 25,
+        "seqs": [
+         4,
+         48,
+         608
+        ],
+        "words": [
+         0,
+         0,
+         2662
+        ],
+        "admissible": 2662,
+        "releases": 260,
+        "distinct": 260,
+        "hits": 0
+       },
+       {
+        "c": 10,
+        "r": 102,
+        "S_r": 55,
+        "seqs": [
+         0,
+         2,
+         52
+        ],
+        "words": [
+         0,
+         0,
+         1936
+        ],
+        "admissible": 1936,
+        "releases": 632,
+        "distinct": 632,
+        "hits": 0
+       },
+       {
+        "c": 67,
+        "r": 122,
+        "S_r": 27,
+        "seqs": [
+         2,
+         50,
+         752
+        ],
+        "words": [
+         0,
+         0,
+         13673
+        ],
+        "admissible": 13673,
+        "releases": 2434,
+        "distinct": 2424,
+        "hits": 0
+       },
+       {
+        "c": 305,
+        "r": 134,
+        "S_r": 45,
+        "seqs": [
+         5,
+         57,
+         695
+        ],
+        "words": [
+         0,
+         0,
+         1694
+        ],
+        "admissible": 1694,
+        "releases": 636,
+        "distinct": 636,
+        "hits": 0
+       },
+       {
+        "c": 305,
+        "r": 177,
+        "S_r": 26,
+        "seqs": [
+         5,
+         57,
+         695
+        ],
+        "words": [
+         0,
+         0,
+         1694
+        ],
+        "admissible": 1694,
+        "releases": 636,
+        "distinct": 636,
+        "hits": 0
+       },
+       {
+        "c": 268,
+        "r": 221,
+        "S_r": 124,
+        "seqs": [
+         0,
+         0,
+         0
+        ],
+        "words": [
+         0,
+         0,
+         0
+        ],
+        "admissible": 0,
+        "releases": 0,
+        "distinct": 0,
+        "hits": 0
+       },
+       {
+        "c": 281,
+        "r": 233,
+        "S_r": 22,
+        "seqs": [
+         5,
+         73,
+         951
+        ],
+        "words": [
+         0,
+         0,
+         19360
+        ],
+        "admissible": 19360,
+        "releases": 3296,
+        "distinct": 3296,
+        "hits": 0
+       },
+       {
+        "c": 204,
+        "r": 247,
+        "S_r": 14,
+        "seqs": [
+         2,
+         25,
+         372
+        ],
+        "words": [
+         0,
+         0,
+         3751
+        ],
+        "admissible": 3751,
+        "releases": 435,
+        "distinct": 435,
+        "hits": 0
+       },
+       {
+        "c": 431,
+        "r": 374,
+        "S_r": 147,
+        "seqs": [
+         0,
+         4,
+         80
+        ],
+        "words": [
+         0,
+         0,
+         847
+        ],
+        "admissible": 847,
+        "releases": 304,
+        "distinct": 304,
+        "hits": 0
+       },
+       {
+        "c": 504,
+        "r": 389,
+        "S_r": 9,
+        "seqs": [
+         6,
+         72,
+         898
+        ],
+        "words": [
+         0,
+         0,
+         10285
+        ],
+        "admissible": 8030,
+        "releases": 2149,
+        "distinct": 2149,
+        "hits": 0
+       },
+       {
+        "c": 520,
+        "r": 436,
+        "S_r": 3,
+        "seqs": [
+         1,
+         26,
+         419
+        ],
+        "words": [
+         0,
+         0,
+         4477
+        ],
+        "admissible": 3700,
+        "releases": 564,
+        "distinct": 564,
+        "hits": 0
+       },
+       {
+        "c": 538,
+        "r": 484,
+        "S_r": 2,
+        "seqs": [
+         11,
+         110,
+         1221
+        ],
+        "words": [
+         0,
+         0,
+         0
+        ],
+        "admissible": 0,
+        "releases": 0,
+        "distinct": 0,
+        "hits": 0
+       },
+       {
+        "c": 549,
+        "r": 552,
+        "S_r": 6,
+        "seqs": [
+         3,
+         39,
+         519
+        ],
+        "words": [
+         0,
+         0,
+         3267
+        ],
+        "admissible": 2700,
+        "releases": 1095,
+        "distinct": 1095,
+        "hits": 0
+       },
+       {
+        "c": 538,
+        "r": 577,
+        "S_r": 26,
+        "seqs": [
+         0,
+         7,
+         146
+        ],
+        "words": [
+         0,
+         0,
+         2420
+        ],
+        "admissible": 2420,
+        "releases": 565,
+        "distinct": 565,
+        "hits": 0
+       }
+      ],
+      "best": []
+     }
+    ],
+    "cpu_s": 4949.2
+   }
+  }
+ ],
+ "start_macros": [
+  [
+   [
+    436,
+    2
+   ],
+   [
+    268,
+    14
+   ]
+  ],
+  [
+   [
+    226,
+    2
+   ],
+   [
+    175,
+    12
+   ]
+  ]
+ ],
+ "status": "stopped",
+ "reason": "no-candidate",
+ "complete": true,
+ "cpu_s": 12404.772
+}

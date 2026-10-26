@@ -1,0 +1,176 @@
+{
+ "cpu_s": 401.312481,
+ "digest": "266ec63ee2bcaee4af4b930a7d5b99bb84fc8ac4e9fe0b1e0549267d5b9de406",
+ "failures": [],
+ "format": "macro-check/1",
+ "macros": [
+  {
+   "claims": {
+    "D": 2,
+    "F": 0,
+    "delta": [
+     0,
+     -4
+    ],
+    "digests": [
+     "8afe1fb7eb3bc381e99c40942dba73dbf0f056382b19e3d31b0ed5db3bd74cb2",
+     "bc73c984c366c6b9748871007c90f621f56cafc69720aea87934ada19e9e0ac3"
+    ],
+    "excursion": 0,
+    "phi": [
+     498,
+     494
+    ],
+    "supports": [
+     {
+      "sha256": "5601784ac913982dbb8214c12e7d546801be8fc1897e43e2f7eef5a251f71603",
+      "size": 2913
+     },
+     {
+      "sha256": "609112a420ad5bdee1a5e3200c4e28ccffe0808851d2d2755f0facf347b86edd",
+      "size": 3077
+     }
+    ]
+   },
+   "passed": true
+  },
+  {
+   "claims": {
+    "D": 48,
+    "F": 0,
+    "delta": [
+     0,
+     0,
+     0,
+     0,
+     -96
+    ],
+    "digests": [
+     "660086b7735a84ebbd332edd297dc77b2cf44fe20493dcc553f8e6e07ec4d83a",
+     "7fb0bbe004c7776264c27a34385d16917bcb03cdfe144f42a901467c7996d127",
+     "b8a2ded1da744d786403c6e0a99e64624922197d42c7d4b40b421956422261f6",
+     "00986b5e4a08822874280c7ab9d7e93316d52dd7fb26dfb637269fbe0e5cb045",
+     "c6284e4c52f5e6c74618d040c835766e389ac409559d4a7a96a66143b098a0da"
+    ],
+    "excursion": 0,
+    "phi": [
+     494,
+     494,
+     494,
+     494,
+     398
+    ],
+    "supports": [
+     {
+      "sha256": "4c12edaebfc2f248cda0171f44daeef75c8b0d73a5ec67e0a365e1adbf43e319",
+      "size": 2896
+     },
+     {
+      "sha256": "63446bdcc33084b8be074ec198f1d46265805267dde37e0c0f74cf4f9071bd5d",
+      "size": 2713
+     },
+     {
+      "sha256": "13523df319925a82e525d9d8036af01b1f7de44e5874f4d7c0d1ede9b3ef5e86",
+      "size": 2895
+     },
+     {
+      "sha256": "a55648b447e46184e4ab1f09160dfcd8930f2a46c88ef1631032a5841e4efe00",
+      "size": 2653
+     },
+     {
+      "sha256": "bca03687b75b1e6185fb21fd2d7f38e691f35168ec88b7bbb20f4293b1dac965",
+      "size": 2814
+     }
+    ]
+   },
+   "passed": true
+  },
+  {
+   "claims": {
+    "D": 13,
+    "F": 8,
+    "delta": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     -10
+    ],
+    "digests": [
+     "97de67dd78e1aa10036abff6ddf8088ef14b67d73fe99ef8a8c232be7a359bbf",
+     "652f70d02bf0be308636c1ec5951dd19ff08f350eaf2faefbd61cc2cf173afc1",
+     "ac0a8469f5c1dce157acc3997988ed533da85430020c3c49ea1ba7408b4493f9",
+     "a31d593aa79864ddc78a313b609da6b4295194993c4778965330a1bd670c40bc",
+     "351041f9e07ee49ecb218a26296247d014fdb89482506472ebd88a2770eed5bd",
+     "243a9b47a922dedfb2d0ca5b4c94ad6e5e31f0adce26836e3c2a2764b095254c",
+     "266ec63ee2bcaee4af4b930a7d5b99bb84fc8ac4e9fe0b1e0549267d5b9de406"
+    ],
+    "excursion": 0,
+    "phi": [
+     398,
+     398,
+     398,
+     398,
+     398,
+     398,
+     388
+    ],
+    "supports": [
+     {
+      "sha256": "4cc2a613ff7083e3e2a4f10b86edc17031c1a0f7d7610027df264f697acd8da3",
+      "size": 2567
+     },
+     {
+      "sha256": "d277348cdfdab96d89a98a870bdc01a19eb8cb8c1730a8ce5d6e44148f221ccf",
+      "size": 2409
+     },
+     {
+      "sha256": "ac1ec8f1c259b89c9a0a3517a21c496e749ee9d72ed30ea625c375b99d188484",
+      "size": 2530
+     },
+     {
+      "sha256": "5f9583b292f8aaec9949a43a7d6e3cb4eb95e0d125b15ffa2dcd18629105d4d8",
+      "size": 2972
+     },
+     {
+      "sha256": "8cc84b320fbdd7d8f0f36f2bc4c019a7ec397e06ec9bcd304568d2da7ea763eb",
+      "size": 2598
+     },
+     {
+      "sha256": "7b5e49853136ee8ee135aadaa3598a31726f05ba2f818e89ca0563595ec73aea",
+      "size": 2570
+     },
+     {
+      "sha256": "b90c50f3485f169eeed5af045328694d3fa6437da1fe64616ed5ac3e93d91fc3",
+      "size": 2849
+     }
+    ]
+   },
+   "passed": true
+  }
+ ],
+ "passed": true,
+ "phi": 388,
+ "replay": {
+  "digest": "266ec63ee2bcaee4af4b930a7d5b99bb84fc8ac4e9fe0b1e0549267d5b9de406",
+  "events": 37,
+  "passed": true,
+  "phi": 388
+ },
+ "setup": {
+  "labels": {
+   "cpu_s": 1.087992
+  },
+  "load": {
+   "cpu_s": 0.235265
+  },
+  "trees": {
+   "cpu_s": 8.179546
+  },
+  "word": {
+   "cpu_s": 9.333305
+  }
+ }
+}

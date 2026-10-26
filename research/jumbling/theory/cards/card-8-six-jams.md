@@ -5,7 +5,10 @@ every jam has a certified tame descent, so the least excursion is 0 at all six (
 are answered by proved transport, routing and accounting results with certified descents, Question 1.1 for four of the
 six holders (307 and 517 stay open), and Question 4 in part: with transports at its stops P* continues at all six
 jams and stops again, and where it stops depends on the route. Section 2.6 there lists the corrections to the facts
-below.
+below. With routing releases also in its stop search (P***, [stage 17](../../restoration/17-routing-in-driver/README.md),
+26 October 2026), the procedure continues at eight of the nine stops of P** and stops again at Φ 386 to 1158; at every
+stop where it ends it releases the blocked grips in many configurations, and no tail of its forms descends after any
+release.
 
 The open part of [card 7](card-7-lowering-machine.md), Question 4, which the owner put before the tail completion and
 the bulk on 25 October 2026
