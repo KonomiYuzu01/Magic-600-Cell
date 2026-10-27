@@ -1,5 +1,9 @@
 # Problem cards for an external prover
 
+Status: **frozen** since 27 October 2026
+([owner decision](../../../../docs/wiki/decisions/owner-decisions-2026-10-27-freeze.md)): card 9 is the last card,
+and no card opens.
+
 Self-contained problem statements for a natural-language proof assistant (the owner runs it locally). Each card restates the model it needs, lists what is proved and what is only computed, and asks for a proof blueprint that names every machine check as a certificate. A returned blueprint is a lead until the integrator checks it and, where it names certificates, until exact code confirms them.
 
 | Card | Open problem | Question | Status |

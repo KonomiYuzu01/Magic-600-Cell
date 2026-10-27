@@ -1,6 +1,9 @@
 # D3, seed 7102 at depth 100, acceptance mode (development line d3-s7102)
 
-Status: **in progress** (22 October 2026, 13:50 UTC). The run has not ended; the check has not run.
+Status: **stopped at the owner's freeze** (27 October 2026). The run did not end by itself: it stopped at its last
+checkpoint, 530 bulk steps (N 19,560, 14,528 off, 245,275 s of runner time), when the tutorial was shelved
+([decision](../../../../../../../docs/wiki/decisions/owner-decisions-2026-10-27-freeze.md)). The check has
+not run on this interrupted record.
 
 ## Question
 
@@ -197,3 +200,7 @@ background waiter on the runner process.
   about two hours and was lost. The waiter stopped at its two-hour limit at 03:32 and was not replaced until this
   check-in, and the container restarted in that gap. Restored (exit 0), resumed (accepted at 04:10, `resumes` [...,
   530, 530]), checkpoint helper and waiter started. From now on a new waiter starts as soon as the old one stops.
+- 27 October, after 04:10 UTC: stopped. The owner shelved the tutorial; the integrator switched this line's
+  check-ins off and archived its cloud session, which ended run 2 before its next checkpoint. The record ends at the
+  checkpoint of 530 bulk steps (N 19,560, 14,528 off, 245,275 s of runner time); the off count had not changed
+  since 25 October while N fell by about 1 to 20 an hour. `check_run.py` was not run.
