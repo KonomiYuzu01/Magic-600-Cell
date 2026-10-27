@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "updated": "2026-10-26",
+  "updated": "2026-10-27",
   "current": "2.3",
   "paid_api_ceiling_usd": 100,
   "tracks": [{"id": "0.4.1", "title": "0.4.1"}, {"id": "stage-2", "title": "Stage 2"}, {"id": "migration", "title": "1.0 migration (path B)"}, {"id": "jumbling", "title": "1.0 jumbling puzzle"}],
@@ -116,7 +116,7 @@
      "items": [
       {"id": "card6", "title": "Card 6 (blocking structure): joint attack, proofs and exact experiments", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/134"},
       {"id": "card7", "title": "Card 7: unlocking chains and the lowering machine (release order, placement)", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/135"},
-      {"id": "tail", "title": "Tail completion: shared cells, vacancies and locks", "weight": 1, "done": false, "evidence": null},
+      {"id": "tail", "title": "Tail completion: shared cells, vacancies and locks", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/138"},
       {"id": "bulk", "title": "Bulk: why the words that lower N get longer", "weight": 1, "done": false, "evidence": null},
       {"id": "card8", "title": "Card 8: the six jams of two-level P* (descents outside its families, or a negative certificate with excursion)", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/136"},
       {"id": "rr-driver", "title": "Routing releases in the driver (P***): family RR, checks, runs from the nine stops of P**", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/137"}

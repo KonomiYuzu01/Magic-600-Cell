@@ -1,6 +1,14 @@
 # Card 9: the tail completion, from the depth 40 tail stop
 
-Status: **ready** (26 October 2026).
+Status: **answered in part** by the joint attack of 26 October 2026
+([stage 18, section 3](../../restoration/18-tail-completion/README.md#3-joint-attack-26-october-2026)): the profile
+identity makes a whole-cap plan a finite test at the state before any word is built, so a state-only rule (fewest
+single-cap stages, then lexicographic) certifies a complete plan at the stop and completes it in three literal steps of
+688,686 letters that pass the length and composed gates; their twist-by-twist replays were stopped at the owner's
+freeze on 27 October 2026 (Questions 1.2, 3.2 and 3.3 answered; 1.1 and 4.1 with bounds that depend on the seed
+lengths). From D1's entry whole caps alone stick (no glued-cap route for 112734, Question 2.2), and a rule that
+completes from the entry is proved only along D1's recorded path. Section 3.6 there lists the corrections to the facts
+below. With this card the tutorial and the jumbling research are frozen.
 
 The next card of the jumbling theorem programme after the six jams ([card 8](card-8-six-jams.md)), which the owner
 put first after stage 17 on 26 October 2026, with a freeze of the tutorial and the jumbling research when it ends
@@ -188,9 +196,13 @@ integrator's `wholecap.py` (stage 18, `scripts/`), COV-33's computation generali
   occupied landing chambers at every landing item (COV-33's obstruction over all preparations). "Passes prepared": with
   the inside mask empty (every hole moved out of the cap), an integer flow from the 28 source orbits to the middle
   demand orbits supplies every landing chamber (71, 29, 54, 33 and 33), and every partially filled source orbit and
-  every middle demand orbit has a global Jordan certificate, each checked again; by COV-10, COV-12, COV-32 and
-  Corollary A1 a SAFE-ALL preparation X and a vacating V′ exist together. "Passes unprepared": deficit 0 and global
-  Jordan certificates on every middle orbit that meets the landing chambers (6 orbits). `wholecap.py` builds no X and
+  every middle demand orbit has a global Jordan certificate, each checked again; by COV-10, COV-12, COV-32 and the
+  independently supported actions on the middle demand orbits (sealed seeds, R22B-08), which leave the middle orbits
+  that meet the cap but not the landing chambers as they are (their chambers in the cap are holes at the middle), a
+  SAFE-ALL preparation X and a vacating V′ exist together. (Corollary A1 alone needs witnesses on every orbit that
+  meets the target outside the fixed chambers; corrected after the joint attack, stage 18 section 3.6.) "Passes
+  unprepared": deficit 0 and global Jordan certificates on every middle orbit that meets the landing chambers (6
+  orbits). `wholecap.py` builds no X and
   no V′ as a word (T6 does). So the three disjoint instances at caps 91, 217 and 548 (or 560) together cover all 158
   off pieces, each passing at the stop by itself.
 
@@ -200,10 +212,14 @@ integrator's `wholecap.py` (stage 18, `scripts/`), COV-33's computation generali
   preparation helps) and 91 (20 short unprepared; passes prepared at item 14 with a flow of 71), the cap and item of
   E2's last step.
 - **T6 (the tail completed from the stop, literal).** Four whole-cap steps put every piece of the stop on the lattice.
-  Each was built as one literal word at its state and played twist by twist from the end table of the step before by
-  `slp_apply.py --unit`, which passed the strict′ contract for each (the unit on the lattice, no collateral, every
-  other off piece at its pose). The integrator chose the order by hand: at each state, a passing unprepared instance
-  if `wholecap.py` found one, else the passing prepared instance that moves the fewest holes.
+  Each was built as one literal word at its state and checked by `slp_apply.py --unit` from the end table of the step
+  before, which passed the strict′ contract for each (the unit on the lattice, no collateral, every other off piece
+  at its pose): X, W and W⁻¹ were played twist by twist, V′ and V′⁻¹ checked letter by letter as SAFE-ALL letters and
+  applied as one composed action. The full words of steps 1 to 3 were also played twist by twist, one twist per
+  letter, by `stepchk.py --require-strict` from the end of the step before, to the recorded end; the replay of
+  step 4 was stopped at the owner's freeze (stage 18, section 3.3). The integrator chose the order by hand: at each
+  state, a passing unprepared instance if `wholecap.py` found one, else the passing prepared instance that moves the
+  fewest holes.
 
   | Step | Off | Cap, item | Lands | X (holes moved out of the cap) | V′ | Letters | End digest |
   | --- | --- | --- | --- | --- | --- | --- | --- |

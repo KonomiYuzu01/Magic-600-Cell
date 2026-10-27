@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-26] update | Jumbling: card 9 attacked; a state-only rule completes the tail stop
+The joint attack on card 9 proved that a whole-cap plan is a finite test before any word is built (the profile identity), and gave a state-only rule (fewest single-cap stages, then lexicographic) that finds the rest of its plan at every later state; at the depth 40 tail stop it gives three stages of 688,686 letters, built at the states reached and passing the length and composed gates, while from D1's entry whole caps alone stick by a finite certificate ([stage 18, section 3](../../research/jumbling/restoration/18-tail-completion/README.md#3-joint-attack-26-october-2026), [`PROOFS.md`](../../research/jumbling/restoration/18-tail-completion/PROOFS.md)). T6's record was corrected: the gate composed its V′ spans. T6's steps 1 to 3 were also played twist by twist; the twist-by-twist replays of its step 4 and of the rule's three stages were stopped at the owner's freeze on 27 October 2026.
+
 ## [2026-10-26] update | Jumbling: the tail completion card opened (card 9)
 At the tail stop of the depth 40 development run (158 pieces off at height 2 in five units, where no tail rule applies) every unit passes stage 12's whole-cap test with SAFE preparations, and four literal whole-cap steps, two of them prepared, put every piece on the lattice; the runner's lattice phase then solved D1, which is not a runner run because the four steps are not runner rules ([stage 18](../../research/jumbling/restoration/18-tail-completion/README.md), [card 9](../../research/jumbling/theory/cards/card-9-tail-completion.md)).
 

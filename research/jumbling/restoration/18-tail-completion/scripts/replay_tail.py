@@ -1,21 +1,24 @@
 """Stage 18 (tail completion): replay a tail of literal whole-cap steps from its stored words, step by step.
 
-The steps directory holds steps.json ({"start_digest": ..., "steps": [{"dir", "start_digest", "end_digest",
-"off_before", "off_after", "unit_size", "X", "V", "letters", "x_sha256" (prepared steps only), "w_sha256", "v_sha256",
-"winv_sha256"}, ...]}) and one directory per step with w.json (W = (grip, item), one letter), winv.json (W^-1 as a
-core), v.json.gz (the literal SAFE-ALL word V' at the middle), x.json.gz (the SAFE-ALL preparation X; present exactly
-when the record's X is positive) and unit.json (the off pieces the step lands). The start table must have the recorded
-start digest, which is also the first step's. Before a step is played, its directory must be a plain name, the
-record's counts must be integers in range and consistent (X >= 0, V >= 1, the unit size >= 1, letters = X + 2 + 2V,
-the off count dropping by the unit size), every word file must have the recorded SHA-256 (of the JSON text of its
-word, or of the whole core for W^-1) and length, and the unit must be nonempty nonnegative integers without repeats,
-of the recorded size; an unreadable record or file rejects the step. Each step X.W.V'.W^-1.V'^-1 is then played twist
-by twist by
-slp_apply.py --unit from the previous end table, which checks the strict' contract; the replay also requires the
+The steps directory holds steps.json ({"start_digest": ..., "form": ..., "steps": [{"dir", "start_digest",
+"end_digest", "off_before", "off_after", "unit_size", "X", "V", "letters", "x_sha256" (prepared steps only), "w_sha256",
+"v_sha256", "winv_sha256"}, ...]}) and one directory per step with w.json (W = (grip, item), one letter), winv.json
+(W^-1 as a core), v.json.gz (the literal SAFE-ALL word V' at the middle), x.json.gz (the SAFE-ALL preparation X;
+present exactly when the record's X is positive) and unit.json (the off pieces the step lands). The form is
+"four-segment" (every step X.W.V'.W^-1.V'^-1; the default when the field is absent) or "three-segment" (every step
+X.W.V'.W^-1). The start table must have the recorded start digest, which is also the first step's. Before a step is
+played, its directory must be a plain name, the record's counts must be integers in range and consistent (X >= 0,
+V >= 1, the unit size >= 1, letters = X + 2 + 2V in the four-segment form and X + 2 + V in the three-segment form, the
+off count dropping by the unit size), every word file must have the recorded SHA-256 (of the JSON text of its word, or
+of the whole core for W^-1) and length, and the unit must be nonempty nonnegative integers without repeats, of the
+recorded size; an unreadable record or file rejects the step. Each step is then played by slp_apply.py --unit from the
+previous end table, which checks the strict' contract: X, W and W^-1 twist by twist (every letter an admissible twist
+at its state), V' and V'^-1 as SAFE-ALL words (every letter checked as a SAFE-ALL letter at the state before play, V'
+also against the input digest in its file, then the composed action applied at once). The replay also requires the
 recorded digests and off counts, every other off piece at its pose, the off count to drop by exactly the unit's size
-(so every unit piece was off and lands), and the length and hash of every segment as slp_apply reads it. It stops at
-the first difference. One JSON line per step, then {"done": ...}. Exit 0 only when every step passes. Research only,
-headless; exact geometry.
+(so every unit piece was off and lands), the kind and length of every segment and the hash of V' as slp_apply reads
+them. It stops at the first difference. One JSON line per step, then {"done": ...}. Exit 0 only when every step
+passes. Research only, headless; exact geometry.
 Usage (from the repository root): OPENBLAS_NUM_THREADS=1 python3 -I -B <this script> <start pose table> <steps dir>
 <new out dir>
 """
@@ -29,6 +32,7 @@ from pathlib import Path
 
 SLP = Path('research/jumbling/restoration/12-low-height/scripts/slp_apply.py')
 ENV = dict(os.environ, OPENBLAS_NUM_THREADS='1', OMP_NUM_THREADS='1', MKL_NUM_THREADS='1')
+FORMS = {'four-segment': 2, 'three-segment': 1}  # how often a step plays V': as V' and V'^-1, or as V' alone
 
 
 def read(path):
@@ -41,7 +45,7 @@ def sha(obj):
     return hashlib.sha256(json.dumps(obj).encode()).hexdigest()
 
 
-def precheck(steps_dir, rec):
+def precheck(steps_dir, rec, copies):
     """The stored files of one step against its record, before the step is played; returns a reason or None."""
     try:
         if type(rec['dir']) is not str or rec['dir'] in ('', '.', '..') or Path(rec['dir']).name != rec['dir']:
@@ -53,7 +57,7 @@ def precheck(steps_dir, rec):
         prepared = (d / 'x.json.gz').exists()
         if X < 0 or V < 1 or size < 1 or prepared != (X > 0) or prepared != ('x_sha256' in rec):
             return 'X, V or the unit size out of range, or a preparation without its recorded X and hash'
-        if rec['letters'] != X + 2 + 2 * V or rec['off_before'] - rec['off_after'] != size:
+        if rec['letters'] != X + 2 + copies * V or rec['off_before'] - rec['off_after'] != size:
             return 'the recorded letters or off counts do not match X, V and the unit size'
         words = {'w': read(d / 'w.json')['word'], 'v': read(d / 'v.json.gz')['word']}
         if prepared:
@@ -81,34 +85,40 @@ def main(argv):
     table, steps_dir, out = Path(argv[0]), Path(argv[1]), Path(argv[2])
     out.mkdir(parents=True, exist_ok=False)
     plan = json.loads((steps_dir / 'steps.json').read_text())
-    if (not plan['steps'] or plan['steps'][0]['start_digest'] != plan['start_digest']
+    form = plan.get('form', 'four-segment')
+    copies = FORMS.get(form) if type(form) is str else None
+    if (copies is None or not plan['steps'] or plan['steps'][0]['start_digest'] != plan['start_digest']
             or json.loads(table.read_text())['digest'] != plan['start_digest']):
-        print(json.dumps({'done': False, 'reason': 'no steps, or the start table is not the recorded start'}))
+        print(json.dumps({'done': False, 'reason': 'an unknown form, no steps, or the start table is not the '
+                                                   'recorded start'}))
         return 1
     for k, rec in enumerate(plan['steps']):
-        reason = precheck(steps_dir, rec)
+        reason = precheck(steps_dir, rec, copies)
         if reason:
             print(json.dumps({'done': False, 'failed_step': k + 1, 'reason': reason}))
             return 1
         d = (steps_dir / rec['dir']).resolve()
-        segs = [{'word_file': str(d / 'x.json.gz')}] if rec['X'] > 0 else []
-        segs += [{'word_file': str(d / 'w.json')}, {'safe_word_file': str(d / 'v.json.gz')},
-                 {'core_file': str(d / 'winv.json')}, {'safe_word_file': str(d / 'v.json.gz'), 'inverse': True}]
-        want = ([rec['X']] if rec['X'] > 0 else []) + [1, rec['V'], 1, rec['V']]
+        parts = [({'word_file': str(d / 'x.json.gz')}, rec['X'])] if rec['X'] > 0 else []
+        parts += [({'word_file': str(d / 'w.json')}, 1), ({'safe_word_file': str(d / 'v.json.gz')}, rec['V']),
+                  ({'core_file': str(d / 'winv.json')}, 1)]
+        if copies == 2:
+            parts.append(({'safe_word_file': str(d / 'v.json.gz'), 'inverse': True}, rec['V']))
+        want = [(next(key for key in seg if key != 'inverse'), n) for seg, n in parts]
+        v_at = [kind for kind, _ in want].index('safe_word_file')
         prog = out / f'{rec["dir"]}-program.json'
-        prog.write_text(json.dumps({'segments': segs}) + '\n')
+        prog.write_text(json.dumps({'segments': [seg for seg, _ in parts]}) + '\n')
         end = out / f'{rec["dir"]}.json'
         p = subprocess.run([sys.executable, '-I', '-B', str(SLP), 'table', str(table), str(prog), str(end), '--unit',
                             str(d / 'unit.json')], capture_output=True, text=True, env=ENV)
         rows = [json.loads(line) for line in p.stdout.splitlines() if line.startswith('{')]
         s = rows[-1] if rows else {}
         segrows = [r for r in rows if 'segment' in r]
-        lengths = [int(r['length']) for r in segrows]
+        kinds = [(r.get('kind'), int(r['length'])) for r in segrows]
         got = dict(step=k + 1, dir=rec['dir'], start_digest=s.get('start_digest'), end_digest=s.get('end_digest'),
                    off_before=s.get('off_before'), off_after=s.get('off_after'), unit_size=s.get('unit_size'),
-                   letters=sum(lengths), strict_prime=s.get('strict_prime'))
-        ok = (p.returncode == 0 and s.get('strict_prime') is True and lengths == want
-              and segrows[-3].get('word_sha256') == rec['v_sha256']
+                   letters=sum(n for _, n in kinds), strict_prime=s.get('strict_prime'))
+        ok = (p.returncode == 0 and s.get('strict_prime') is True and kinds == want
+              and segrows[v_at].get('word_sha256') == rec['v_sha256']
               and s.get('unit_on_lattice') == rec['unit_size'] and s.get('collateral') == 0
               and s.get('others_exact') == s.get('others')
               and all(got[key] == rec[key] for key in ('start_digest', 'end_digest', 'off_before', 'off_after',

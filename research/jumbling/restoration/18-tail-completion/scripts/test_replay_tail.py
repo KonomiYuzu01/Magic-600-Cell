@@ -1,10 +1,11 @@
 """Stage 18: the gate of replay_tail.py. Each mutation of a recorded tail must be rejected (exit 1): an empty unit, a
 unit with a lattice piece in place of one of its pieces, a changed unit size, X (positive or negative), letters or V
-in the record, a negative piece in the unit, a preparation file removed, two commuting letters of V' swapped (the same
-action, length and end), a changed end digest, and the wrong start table. With --full, the unmutated record must also
-replay (exit 0). Each case runs on its own copy of the steps directory under the new scratch directory; the record
-itself is only read. A piece that is in no step's unit is on the lattice at the start, since the recorded steps land
-every off piece. Research only, headless; exact geometry.
+in the record, a negative piece in the unit, a preparation file removed, two adjacent letters of V' swapped (the hash
+catches it even when they commute: the same action, length and end), the other step form in the record, a changed end
+digest, and the wrong start table. With --full, the unmutated record must also replay (exit 0). Each case runs on its
+own copy of the steps directory under the new scratch directory; the record itself is only read. A piece that is in no
+step's unit is on the lattice at the start, since the recorded steps land every off piece. Research only, headless;
+exact geometry.
 Usage (from the repository root): OPENBLAS_NUM_THREADS=1 python3 -I -B <this script> <start pose table> <steps dir>
 <new scratch dir> [--full]
 """
@@ -27,6 +28,12 @@ def record(d):
 def edit_record(d, k, **changes):
     plan = record(d)
     plan['steps'][k].update(changes)
+    (d / 'steps.json').write_text(json.dumps(plan) + '\n')
+
+
+def edit_form(d, form):
+    plan = record(d)
+    plan['form'] = form
     (d / 'steps.json').write_text(json.dumps(plan) + '\n')
 
 
@@ -67,6 +74,7 @@ def main(argv):
     for r in plan['steps']:
         landed |= set(json.loads((steps / r['dir'] / 'unit.json').read_text())['pieces'])
     lattice = next(p for p in range(len(landed) + 1) if p not in landed)
+    other = 'four-segment' if plan.get('form') == 'three-segment' else 'three-segment'
     cases = [
         ('empty unit', lambda d: edit_unit(d, 0, lambda ps: [])),
         ('a lattice piece in the unit', lambda d: edit_unit(d, 0, lambda ps: ps[1:] + [lattice])),
@@ -77,7 +85,8 @@ def main(argv):
         ('a negative piece in the unit', lambda d: edit_unit(d, 0, lambda ps: ps[1:] + [-1])),
         ('V in the record', lambda d: edit_record(d, prep, V=plan['steps'][prep]['V'] + 1)),
         ('preparation file removed', lambda d: (d / plan['steps'][prep]['dir'] / 'x.json.gz').unlink()),
-        ("two commuting letters of V' swapped", lambda d: swap_v(d, 0, 2)),
+        ("two adjacent letters of V' swapped", lambda d: swap_v(d, 0, 2)),
+        ('the other form in the record', lambda d: edit_form(d, other)),
         ('end digest in the record', lambda d: edit_record(d, 0, end_digest='0' * 64)),
     ]
     results = []
