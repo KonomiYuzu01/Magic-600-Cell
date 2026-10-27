@@ -39,8 +39,8 @@ The owner gave these decisions in three chat messages in Chinese on 27 October 2
   formats. It states no task, proposal or ranking for the engineering line.
 - An entry dated 27 October 2026 on the engineering line's handoff page
   ([engineering.md](../../progress/1.0/jumbling-handoff/engineering.md)) points to it.
-- With the owner's leave, the engineering session was sent one message: read the data page and this decision, and do
-  nothing else.
+- The owner allowed one message to the engineering session: read the data page and this decision, and do nothing
+  else.
 
 ## Integrator readings (the owner may change them)
 
