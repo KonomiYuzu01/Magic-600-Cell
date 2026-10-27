@@ -1,5 +1,10 @@
 # Restoring jumbled configurations (12 to 17 October 2026)
 
+Status: **frozen** since 27 October 2026 by the owner's decisions of
+[26](../../../docs/wiki/decisions/owner-decisions-2026-10-26-tail-then-freeze.md) and
+[27 October](../../../docs/wiki/decisions/owner-decisions-2026-10-27-freeze.md): stage 18 is the last stage, and no
+research round or run starts.
+
 This directory holds the restoration research of 12 to 17 October 2026 for the jumbling puzzle on the retained
 600-cell-Full geometry, with the twist menu I_a: at each of the 600 grips, the 12 rotations that keep the cut
 arrangement and 48 jumble twists that do not. The model has 177,120 pieces and 259,800 sticker slots, and its

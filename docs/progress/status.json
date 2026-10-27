@@ -112,7 +112,7 @@
       {"id": "dt-j3", "title": "DT-J3 encodings settled", "weight": 1, "done": false, "evidence": null},
       {"id": "dt-j4", "title": "DT-J4 words and motion settled", "weight": 1, "done": false, "evidence": null}
      ]},
-    {"id": "jumbling-theorems", "track": "jumbling", "title": "Theorem programme for height 4 (owner, 24 October)", "status": "in_progress", "acceptance": null, "acceptance_source": null, "blocker": null,
+    {"id": "jumbling-theorems", "track": "jumbling", "title": "Theorem programme for height 4 (owner, 24 October)", "status": "blocked", "acceptance": null, "acceptance_source": null, "blocker": null,
      "items": [
       {"id": "card6", "title": "Card 6 (blocking structure): joint attack, proofs and exact experiments", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/134"},
       {"id": "card7", "title": "Card 7: unlocking chains and the lowering machine (release order, placement)", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/135"},

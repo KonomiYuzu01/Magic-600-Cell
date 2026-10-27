@@ -2,6 +2,15 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-10-27] decision | Jumbling: handed to the engineering line as data, a puzzle to be solved
+After the freeze record the owner handed the jumbling research to the engineering line as research data only, with no engineering instructions, and framed the jumbling line as a puzzle to be solved, in which a methodology that restores the complete puzzle from any scramble of depth 3000 is open, rather than features reverse-engineered from the research's answers; the answers already given stay, and what is not yet decided assists the remaining research ([decision page](decisions/owner-decisions-2026-10-27-jumbling-handoff.md), [data page](../progress/1.0/jumbling-handoff/research-data.md)).
+
+## [2026-10-27] update | Jumbling: frozen; the D3 record merged as interrupted
+The status lines of the jumbling README, the tutorial, the restoration stages and the theory cards now say frozen, and the depth 100 development run (D3, seed 7102) is merged as an interrupted record that stops at its last checkpoint, 530 bulk steps with 14,528 pieces off, not checked ([its RESULT](../../research/jumbling/restoration/13-tutorial-runner/runs/dev/d3-s7102/RESULT.md)).
+
+## [2026-10-27] decision | Jumbling: the tutorial shelved and the freeze at once
+The owner shelved the jumbling tutorial and had the freeze of the tutorial and the jumbling research hold at once, so card 9's last twist-by-twist replays were stopped and only its record and the freeze record were merged; asked before the stop, the integrator confirmed that every scramble, depth 3000 included, can be restored (by its inverse, and from the state alone by Theorem M\*, without a length bound) ([decision page](decisions/owner-decisions-2026-10-27-freeze.md)).
+
 ## [2026-10-26] update | Jumbling: card 9 attacked; a state-only rule completes the tail stop
 The joint attack on card 9 proved that a whole-cap plan is a finite test before any word is built (the profile identity), and gave a state-only rule (fewest single-cap stages, then lexicographic) that finds the rest of its plan at every later state; at the depth 40 tail stop it gives three stages of 688,686 letters, built at the states reached and passing the length and composed gates, while from D1's entry whole caps alone stick by a finite certificate ([stage 18, section 3](../../research/jumbling/restoration/18-tail-completion/README.md#3-joint-attack-26-october-2026), [`PROOFS.md`](../../research/jumbling/restoration/18-tail-completion/PROOFS.md)). T6's record was corrected: the gate composed its V′ spans. T6's steps 1 to 3 were also played twist by twist; the twist-by-twist replays of its step 4 and of the rule's three stages were stopped at the owner's freeze on 27 October 2026.
 

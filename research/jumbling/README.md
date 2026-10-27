@@ -27,6 +27,16 @@ and draw it exactly, and how to restore a jumbled configuration to the solved st
   a measured coverage census with a manual of techniques and a completeness theorem for low heights
   ([decision](../../docs/wiki/decisions/owner-decisions-2026-10-17-jumbling-tutorial.md),
   [census](restoration/11-scramble-census/README.md)).
+- **26 and 27 October 2026:** the tutorial and the jumbling research are **frozen**. The tutorial is shelved
+  unaccepted; card 9 (restoration stage 18) is the last card, and its last twist-by-twist replays were stopped; the
+  development runs stay as recorded. Reopening any of it is an owner decision
+  ([26 October](../../docs/wiki/decisions/owner-decisions-2026-10-26-tail-then-freeze.md),
+  [27 October](../../docs/wiki/decisions/owner-decisions-2026-10-27-freeze.md)).
+- **27 October 2026:** the research is handed to the engineering line as data only
+  ([data page](../../docs/progress/1.0/jumbling-handoff/research-data.md)), and the jumbling line is designed as a
+  puzzle to be solved, in which a methodology that restores the complete puzzle from any scramble of depth 3000 is
+  open; the answers already given stay, and what is not yet decided assists the remaining research
+  ([decision](../../docs/wiki/decisions/owner-decisions-2026-10-27-jumbling-handoff.md)).
 
 ## Where it stands (17 October 2026)
 

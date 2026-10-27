@@ -61,11 +61,17 @@ The runner's development runs (stage 13 `PLAN.md` section 4; records under
 | D1 | seed 7101 (depth 40), development mode | the bulk stuck at 1,193 off; one tail step (`zero_bad`, 1,193 → 1,082 off); killed by a container restart in the tail, not checked | 2.15, 5.18 |
 | D2 | the 3000-twist census stops of seeds 7302 and 7304 to 7307 with the bulk off, and seed 7303 from its scramble | no run reached the lattice phase: the height phase stuck with n4 between 734 and 1,955; the high phase stuck (`kernel_exhausted`) at 7304 to 7307, ran out of its clock at 7303 and was cut off by a lost container at 7302; the tail stopped while listing the units at 7304, 7305 and 7307 and was cut off by a lost container at 7306; four of the six records checked | 2.15, 3.8.4, 4.18, 5.18 |
 
-The acceptance-mode run at depth 40 (seed 7101) and the run at depth 100 (D3, seed 7102) are still running. Batch 1
-of the acceptance test (depths 10, 20, 40 and 100, seeds 9011 to 9043) runs only once the development runs at those
-depths reach the solved state (owner, 22 October 2026); it has not been run. The batches at 300, 1000 and 3000
-twists wait for rules that take height 4 to height 2, whose research the owner restarted on 23 October 2026
-([decision](../../../docs/wiki/decisions/owner-decisions-2026-10-23-depth.md)).
+The acceptance-mode run at depth 40 (seed 7101, run 4) stopped `stuck` in the tail with 158 pieces off, all at
+height 2, and its check passes; card 9 completed that stop outside the runner
+([restoration stage 18](../restoration/18-tail-completion/README.md)). The run at depth 100 (D3, seed 7102) was
+stopped at the freeze at its last checkpoint, 530 bulk steps with 14,528 pieces off, and was not checked
+([its record](../restoration/13-tutorial-runner/runs/dev/d3-s7102/RESULT.md)).
+
+**The tutorial is frozen and shelved, unaccepted** (owner, 26 and 27 October 2026:
+[decision](../../../docs/wiki/decisions/owner-decisions-2026-10-27-freeze.md)). None of the 21 acceptance scrambles
+has run (seeds 9011 to 9073): batch 1 (depths 10, 20, 40 and 100) waited for the development runs at those depths to
+reach the solved state (owner, 22 October 2026), and the batches at 300, 1000 and 3000 twists for rules that take
+height 4 to height 2 ([decision](../../../docs/wiki/decisions/owner-decisions-2026-10-23-depth.md)).
 
 ## Reproduce
 
