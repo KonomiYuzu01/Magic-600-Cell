@@ -193,3 +193,7 @@ background waiter on the runner process.
 - 27 October, 01:30 UTC (fourth restart of run 2): local `out2/` and checkpoint `a2dd882` both held 530 steps (N
   19,560, 14,528 off, 245,275 s of runner time). Restored (exit 0), resumed (accepted at 01:34, `resumes` [158, 232,
   517, 530]), checkpoint helper and waiter started.
+- 04:06 UTC (fifth restart of run 2): still 530 steps in both `out2/` and the checkpoint. Index 530 had run for
+  about two hours and was lost. The waiter stopped at its two-hour limit at 03:32 and was not replaced until this
+  check-in, and the container restarted in that gap. Restored (exit 0), resumed (accepted at 04:10, `resumes` [...,
+  530, 530]), checkpoint helper and waiter started. From now on a new waiter starts as soon as the old one stops.
