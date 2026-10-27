@@ -32,6 +32,10 @@ and draw it exactly, and how to restore a jumbled configuration to the solved st
   development runs stay as recorded. Reopening any of it is an owner decision
   ([26 October](../../docs/wiki/decisions/owner-decisions-2026-10-26-tail-then-freeze.md),
   [27 October](../../docs/wiki/decisions/owner-decisions-2026-10-27-freeze.md)).
+- **27 October 2026:** the research is handed to the engineering line as data only
+  ([data page](../../docs/progress/1.0/jumbling-handoff/research-data.md)), and the jumbling line is designed as a
+  puzzle to be solved, in which a methodology that restores the complete puzzle from any scramble of depth 3000 is
+  open ([decision](../../docs/wiki/decisions/owner-decisions-2026-10-27-jumbling-handoff.md)).
 
 ## Where it stands (17 October 2026)
 
