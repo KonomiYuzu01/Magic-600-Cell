@@ -1,0 +1,73 @@
+{"table": "00100.json", "off_before": 759, "domains": {"1": {"size": 457, "hub": [[1, 3]]}, "2": {"size": 31, "hub": [[1, 2]]}, "3": {"size": 125, "hub": [[1, 4]]}, "4": {"size": 146, "hub": [[1, 2]]}}, "sec": 4}
+{"own_contents": 1445, "free": 113, "blocked": [6, 193, 371, 496], "fragments": {"2": 31, "4": 146}, "sec": 6}
+{"model": "pole permutations and label actions", "sec": 69}
+{"cells": 2639, "generators": 6667, "bad_at_start": 5, "sec": 75}
+{"carrier_cell": {"caps": [542, 593], "n_caps": 2, "label": 4, "pieces_in_cell": 86}, "holes": 759, "chambers_of_X": 86, "holes_eq_chambers_of_X": false, "free": 113, "gens": 6667, "cells": 2639, "sec": 75}
+{"labels_of_X_in_orbit": [0, 1, 2, 3, 4], "edge_orbits": 36, "sec": 76}
+{"near": 12, "grip_pairs": 62, "sec": 76}
+{"pair": [495, 513], "tools": 200, "cell_pairs": 10, "sec": 77}
+{"pair": [495, 541], "tools": 400, "cell_pairs": 19, "sec": 77}
+{"pair": [495, 552], "tools": 600, "cell_pairs": 28, "sec": 78}
+{"pair": [495, 593], "tools": 800, "cell_pairs": 35, "sec": 78}
+{"pair": [513, 495], "tools": 1000, "cell_pairs": 35, "sec": 79}
+{"pair": [513, 541], "tools": 1200, "cell_pairs": 43, "sec": 80}
+{"pair": [513, 564], "tools": 1400, "cell_pairs": 53, "sec": 80}
+{"pair": [513, 571], "tools": 1600, "cell_pairs": 61, "sec": 81}
+{"pair": [513, 593], "tools": 1800, "cell_pairs": 66, "sec": 81}
+{"pair": [541, 495], "tools": 2000, "cell_pairs": 66, "sec": 82}
+{"pair": [541, 513], "tools": 2200, "cell_pairs": 66, "sec": 82}
+{"pair": [541, 552], "tools": 2400, "cell_pairs": 74, "sec": 83}
+{"pair": [541, 571], "tools": 2600, "cell_pairs": 82, "sec": 84}
+{"pair": [541, 591], "tools": 2800, "cell_pairs": 90, "sec": 84}
+{"pair": [541, 593], "tools": 3000, "cell_pairs": 93, "sec": 85}
+{"pair": [552, 495], "tools": 3200, "cell_pairs": 93, "sec": 85}
+{"pair": [552, 541], "tools": 3400, "cell_pairs": 93, "sec": 86}
+{"pair": [552, 590], "tools": 3600, "cell_pairs": 103, "sec": 86}
+{"pair": [552, 591], "tools": 3800, "cell_pairs": 110, "sec": 87}
+{"pair": [552, 593], "tools": 4000, "cell_pairs": 114, "sec": 87}
+{"pair": [564, 513], "tools": 4200, "cell_pairs": 114, "sec": 88}
+{"pair": [564, 570], "tools": 4400, "cell_pairs": 124, "sec": 88}
+{"pair": [564, 571], "tools": 4600, "cell_pairs": 132, "sec": 89}
+{"pair": [564, 593], "tools": 4800, "cell_pairs": 138, "sec": 90}
+{"pair": [564, 597], "tools": 5000, "cell_pairs": 145, "sec": 90}
+{"pair": [570, 564], "tools": 5200, "cell_pairs": 145, "sec": 91}
+{"pair": [570, 590], "tools": 5400, "cell_pairs": 155, "sec": 91}
+{"pair": [570, 593], "tools": 5600, "cell_pairs": 162, "sec": 92}
+{"pair": [570, 597], "tools": 5800, "cell_pairs": 168, "sec": 93}
+{"pair": [571, 513], "tools": 6000, "cell_pairs": 168, "sec": 93}
+{"pair": [571, 541], "tools": 6200, "cell_pairs": 168, "sec": 94}
+{"pair": [571, 564], "tools": 6400, "cell_pairs": 168, "sec": 95}
+{"pair": [571, 591], "tools": 6600, "cell_pairs": 176, "sec": 95}
+{"pair": [571, 593], "tools": 6800, "cell_pairs": 179, "sec": 96}
+{"pair": [571, 597], "tools": 7000, "cell_pairs": 185, "sec": 96}
+{"pair": [590, 552], "tools": 7200, "cell_pairs": 185, "sec": 97}
+{"pair": [590, 570], "tools": 7400, "cell_pairs": 185, "sec": 98}
+{"pair": [590, 591], "tools": 7600, "cell_pairs": 193, "sec": 98}
+{"pair": [590, 593], "tools": 7800, "cell_pairs": 198, "sec": 99}
+{"pair": [590, 597], "tools": 8000, "cell_pairs": 204, "sec": 99}
+{"pair": [591, 541], "tools": 8200, "cell_pairs": 204, "sec": 100}
+{"pair": [591, 552], "tools": 8400, "cell_pairs": 204, "sec": 101}
+{"pair": [591, 571], "tools": 8600, "cell_pairs": 204, "sec": 101}
+{"pair": [591, 590], "tools": 8800, "cell_pairs": 204, "sec": 102}
+{"pair": [591, 593], "tools": 9000, "cell_pairs": 206, "sec": 102}
+{"pair": [591, 597], "tools": 9200, "cell_pairs": 211, "sec": 103}
+{"pair": [593, 495], "tools": 9400, "cell_pairs": 211, "sec": 103}
+{"pair": [593, 513], "tools": 9600, "cell_pairs": 211, "sec": 104}
+{"pair": [593, 541], "tools": 9800, "cell_pairs": 211, "sec": 105}
+{"pair": [593, 552], "tools": 10000, "cell_pairs": 211, "sec": 105}
+{"pair": [593, 564], "tools": 10200, "cell_pairs": 211, "sec": 106}
+{"pair": [593, 570], "tools": 10400, "cell_pairs": 211, "sec": 106}
+{"pair": [593, 571], "tools": 10600, "cell_pairs": 211, "sec": 107}
+{"pair": [593, 590], "tools": 10800, "cell_pairs": 211, "sec": 108}
+{"pair": [593, 591], "tools": 11000, "cell_pairs": 211, "sec": 108}
+{"pair": [593, 597], "tools": 11200, "cell_pairs": 211, "sec": 109}
+{"pair": [597, 564], "tools": 11400, "cell_pairs": 211, "sec": 109}
+{"pair": [597, 570], "tools": 11600, "cell_pairs": 211, "sec": 110}
+{"pair": [597, 571], "tools": 11800, "cell_pairs": 211, "sec": 111}
+{"pair": [597, 590], "tools": 12000, "cell_pairs": 211, "sec": 111}
+{"pair": [597, 591], "tools": 12200, "cell_pairs": 211, "sec": 112}
+{"pair": [597, 593], "tools": 12400, "cell_pairs": 211, "sec": 112}
+{"pair_tools": 12400, "cell_pairs": 211, "edge_cells": 89, "X_in_nodes": true, "z5_rank": 89, "z5_rank_with_unit_at_X": 89, "sec": 112}
+{"cycles_found": 6, "target_exponent": 1, "sec": 112}
+{"exact_try": {"solution": 0, "word_len": 576, "others_exact_pose_kept": 673, "carrier_on_after": 86}, "sec": 133}
+{"model_off": 4, "word_len": 576, "cycle": [[542, 593], [590, 593], [552, 590], [552, 593]], "exact": {"all_admissible": true, "off_before": 759, "off_after": 673, "digest_after": "e48ad9864caad1480cc30a0e54dd3042b2d00380dbf9f552a9c146bce662a7b9", "carrier_on_after": 86, "carrier_size": 86, "others_off": 673, "others_exact_pose_kept": 673, "lattice_pieces_in_X_before": 0, "newly_off_eq_lattice_pieces_of_X": true, "off_after_eq_others_plus_latX": true}, "sec": 133}

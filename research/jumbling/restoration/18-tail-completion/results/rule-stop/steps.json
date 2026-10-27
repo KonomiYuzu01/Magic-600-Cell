@@ -1,0 +1,57 @@
+{
+ "start_digest": "966dc8a96f7bf40b4c0361d7a26d9a3efbf62e6c59c1a6677cf5de9f8aefe661",
+ "form": "three-segment",
+ "steps": [
+  {
+   "dir": "01-91-14",
+   "grip": 91,
+   "item": 14,
+   "start_digest": "966dc8a96f7bf40b4c0361d7a26d9a3efbf62e6c59c1a6677cf5de9f8aefe661",
+   "end_digest": "d9edc19cf63f2811be0b5e3542700a9e92872a3c0a8efa3cd1d9c3adb2caec29",
+   "off_before": 158,
+   "off_after": 87,
+   "X": 34006,
+   "V": 340006,
+   "letters": 374014,
+   "unit_size": 71,
+   "x_sha256": "1e72dd0f35fd059e200fd4d290a211a86a046ae215d0e48f6581592dd315cb85",
+   "w_sha256": "fec9dc1b3f56ce8fbb6dde64edd7ec5a24b882d171a0b5a8d357630f879e3bc3",
+   "v_sha256": "365fb31180dd6269553e0e163b14a5e220efeeef4e392963f2fb0ab19dc40198",
+   "winv_sha256": "132ef1019379e624eb7680a2a84f4d923fe72c3bc81679520bad3aeb1e7c3110"
+  },
+  {
+   "dir": "02-217-15",
+   "grip": 217,
+   "item": 15,
+   "start_digest": "d9edc19cf63f2811be0b5e3542700a9e92872a3c0a8efa3cd1d9c3adb2caec29",
+   "end_digest": "ec6785c301b43fcd4863d0f14e6cc4a07e49967f475b0fc1dd8089a3746468a1",
+   "off_before": 87,
+   "off_after": 33,
+   "X": 714,
+   "V": 223796,
+   "letters": 224512,
+   "unit_size": 54,
+   "x_sha256": "230aae9206d39f8fe68f927112eec3ed26f587fb10757d10567638d9be3fecd9",
+   "w_sha256": "156a5ef5d556c5cd5e5542d0458f20b8027643afaf9e44de69bc2ef21ad95201",
+   "v_sha256": "cb2b35f41585988f3dc20f5ef486f7e0cbf69c6638f1dc2978acfd9e6bf6bbf3",
+   "winv_sha256": "6161c07de0331b504a633d54d9d46b95bcc2e8564e1799a257426babaee281cb"
+  },
+  {
+   "dir": "03-548-12",
+   "grip": 548,
+   "item": 12,
+   "start_digest": "ec6785c301b43fcd4863d0f14e6cc4a07e49967f475b0fc1dd8089a3746468a1",
+   "end_digest": "eea9b972f8b68708e56fb01e85badebfd64aad9e67e86ffb5c3c617bcb6c7075",
+   "off_before": 33,
+   "off_after": 0,
+   "X": 43528,
+   "V": 46630,
+   "letters": 90160,
+   "unit_size": 33,
+   "x_sha256": "6d78ae7e983d61b47d33b78d31fe19c6838fe981311fa9767c8ee5a26b91c1f7",
+   "w_sha256": "ef0388e767bf76fc10e3f18ece7a39bc9215d2fbfa3379828aeb604afceea261",
+   "v_sha256": "ac31f16d3901990637ededdc82a1227aa98cdac10f52f875ed96938f264fafce",
+   "winv_sha256": "ee016875a6288df901463f01bd62b5670e0ba629e1a85c8f82aa973de794926a"
+  }
+ ]
+}

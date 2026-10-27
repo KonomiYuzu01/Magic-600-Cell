@@ -1,0 +1,71 @@
+{
+ "start_digest": "966dc8a96f7bf40b4c0361d7a26d9a3efbf62e6c59c1a6677cf5de9f8aefe661",
+ "steps": [
+  {
+   "dir": "01-353-22",
+   "grip": 353,
+   "item": 22,
+   "start_digest": "966dc8a96f7bf40b4c0361d7a26d9a3efbf62e6c59c1a6677cf5de9f8aefe661",
+   "end_digest": "1007a60158dcdbaed7e8a4105a167f7c56de37e162d66796cb8b0415238897fe",
+   "off_before": 158,
+   "off_after": 129,
+   "X": 0,
+   "V": 43432,
+   "letters": 86866,
+   "unit_size": 29,
+   "w_sha256": "a733d120910bf4a244381bad60be9ed120bf487a78eb85e3d6d2fbec04f119fc",
+   "v_sha256": "f422d35002d493f71693d076fe12bfad7da0289177fbb4e5e1bb36d5062b8d2c",
+   "winv_sha256": "e744f767aaf44809f981a1780ce2282e3f0e8f1a1b1b79c38302a11dd695a2d6"
+  },
+  {
+   "dir": "02-217-15",
+   "grip": 217,
+   "item": 15,
+   "start_digest": "1007a60158dcdbaed7e8a4105a167f7c56de37e162d66796cb8b0415238897fe",
+   "end_digest": "5e9f262ca419fdf18ddaba81a870c03e50379c95e35baab280f4a9153d536d62",
+   "off_before": 129,
+   "off_after": 104,
+   "X": 0,
+   "V": 224538,
+   "letters": 449078,
+   "unit_size": 25,
+   "w_sha256": "156a5ef5d556c5cd5e5542d0458f20b8027643afaf9e44de69bc2ef21ad95201",
+   "v_sha256": "893a4633386a88b9bf5d94dc64fc929369eac66939e60afa6b04256371883da6",
+   "winv_sha256": "6161c07de0331b504a633d54d9d46b95bcc2e8564e1799a257426babaee281cb"
+  },
+  {
+   "dir": "03-560-13",
+   "grip": 560,
+   "item": 13,
+   "start_digest": "5e9f262ca419fdf18ddaba81a870c03e50379c95e35baab280f4a9153d536d62",
+   "end_digest": "b28448f3c4e1f1f7b6fd45fcf5c747f80536225b6f23ac534cc269ab0de95a42",
+   "off_before": 104,
+   "off_after": 71,
+   "X": 9748,
+   "V": 46740,
+   "letters": 103230,
+   "unit_size": 33,
+   "w_sha256": "d5a9beb3eaa17c8d6315502623b097ebc8ca9220f3dcfc300a9ccd80d83a0540",
+   "v_sha256": "c8805a83d6d67755cd416792cefa102ad8247357a35f5135e60011995b5e1821",
+   "winv_sha256": "0bddc656ee2a33498891f2194fd127daf98c2f87ae8dadfc45748acf0ca31f73",
+   "x_sha256": "679ffffc3da9bd035ecdd5f955a90576c58358f946f7c8eb0e55ffb99121fae8"
+  },
+  {
+   "dir": "04-91-14",
+   "grip": 91,
+   "item": 14,
+   "start_digest": "b28448f3c4e1f1f7b6fd45fcf5c747f80536225b6f23ac534cc269ab0de95a42",
+   "end_digest": "c75c8dde2ff850d247c07722cd1059cb50c33ada4657632fed90f16704bfffc0",
+   "off_before": 71,
+   "off_after": 0,
+   "X": 21592,
+   "V": 424994,
+   "letters": 871582,
+   "unit_size": 71,
+   "w_sha256": "fec9dc1b3f56ce8fbb6dde64edd7ec5a24b882d171a0b5a8d357630f879e3bc3",
+   "v_sha256": "646d99eb9b723ba427cd702edab869291917ba7e146a850583b0554e849a75a7",
+   "winv_sha256": "132ef1019379e624eb7680a2a84f4d923fe72c3bc81679520bad3aeb1e7c3110",
+   "x_sha256": "0c263457f9a0922912876622116068aa845bf62b705f0eebe31c59a211454e7a"
+  }
+ ]
+}

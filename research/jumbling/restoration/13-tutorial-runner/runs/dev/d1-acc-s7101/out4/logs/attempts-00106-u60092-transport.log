@@ -1,0 +1,1310 @@
+{"units": 1, "classes": {"4": 1}, "sec": 4}
+{"own_contents": 1444, "free": 114, "blocked": [35, 60, 242, 252, 475], "fragments": {"3": 125}, "sec": 6}
+{"model": "pole permutations and label actions", "sec": 88}
+{"cells": 2641, "generators": 6726, "bad_at_start": 3, "sec": 93}
+{"P": 4, "cells": 2641, "free_grips": 114, "home_cells": 1441, "occupied_points": 1492, "foreign_cells": 9, "foreign_untracked": 0, "off_contents": 3, "free_cells_by_kind": {"3": 718, "4": 479}, "vacant_home_points_by_kind": {}, "sec": 94}
+{"P": 4, "pair": [13, 14], "commutators": 3481, "base": 375, "unit_powers": 0, "sec": 96}
+{"P": 4, "pair": [13, 15], "commutators": 6962, "base": 750, "unit_powers": 0, "sec": 97}
+{"P": 4, "pair": [13, 16], "commutators": 10443, "base": 1125, "unit_powers": 0, "sec": 98}
+{"P": 4, "pair": [13, 21], "commutators": 13924, "base": 1500, "unit_powers": 0, "sec": 99}
+{"P": 4, "pair": [13, 22], "commutators": 17405, "base": 1875, "unit_powers": 0, "sec": 100}
+{"P": 4, "pair": [13, 29], "commutators": 20886, "base": 2250, "unit_powers": 0, "sec": 101}
+{"P": 4, "pair": [13, 33], "commutators": 24367, "base": 2625, "unit_powers": 0, "sec": 102}
+{"P": 4, "pair": [13, 34], "commutators": 27848, "base": 3000, "unit_powers": 0, "sec": 103}
+{"P": 4, "pair": [13, 39], "commutators": 31329, "base": 3375, "unit_powers": 0, "sec": 104}
+{"P": 4, "pair": [13, 40], "commutators": 34810, "base": 3750, "unit_powers": 0, "sec": 106}
+{"P": 4, "pair": [14, 15], "commutators": 38291, "base": 4125, "unit_powers": 0, "sec": 107}
+{"P": 4, "pair": [14, 21], "commutators": 41772, "base": 4500, "unit_powers": 0, "sec": 108}
+{"P": 4, "pair": [14, 29], "commutators": 45253, "base": 4875, "unit_powers": 0, "sec": 109}
+{"P": 4, "pair": [14, 39], "commutators": 48734, "base": 5250, "unit_powers": 0, "sec": 110}
+{"P": 4, "pair": [14, 81], "commutators": 52215, "base": 5625, "unit_powers": 0, "sec": 111}
+{"P": 4, "pair": [14, 108], "commutators": 55696, "base": 6000, "unit_powers": 0, "sec": 112}
+{"P": 4, "pair": [14, 114], "commutators": 59177, "base": 6375, "unit_powers": 0, "sec": 113}
+{"P": 4, "pair": [14, 124], "commutators": 62658, "base": 6750, "unit_powers": 0, "sec": 114}
+{"P": 4, "pair": [14, 127], "commutators": 66139, "base": 7125, "unit_powers": 0, "sec": 115}
+{"P": 4, "pair": [14, 142], "commutators": 69620, "base": 7500, "unit_powers": 0, "sec": 116}
+{"P": 4, "pair": [15, 16], "commutators": 73101, "base": 7875, "unit_powers": 0, "sec": 117}
+{"P": 4, "pair": [15, 21], "commutators": 76582, "base": 8250, "unit_powers": 0, "sec": 118}
+{"P": 4, "pair": [15, 22], "commutators": 80063, "base": 8625, "unit_powers": 0, "sec": 120}
+{"P": 4, "pair": [15, 29], "commutators": 83544, "base": 9000, "unit_powers": 0, "sec": 121}
+{"P": 4, "pair": [15, 81], "commutators": 87025, "base": 9375, "unit_powers": 0, "sec": 122}
+{"P": 4, "pair": [15, 82], "commutators": 90506, "base": 9750, "unit_powers": 0, "sec": 123}
+{"P": 4, "pair": [15, 83], "commutators": 93987, "base": 10125, "unit_powers": 0, "sec": 124}
+{"P": 4, "pair": [15, 109], "commutators": 97468, "base": 10500, "unit_powers": 0, "sec": 125}
+{"P": 4, "pair": [15, 127], "commutators": 100949, "base": 10875, "unit_powers": 0, "sec": 126}
+{"P": 4, "pair": [15, 143], "commutators": 104430, "base": 11250, "unit_powers": 0, "sec": 127}
+{"P": 4, "pair": [16, 21], "commutators": 107911, "base": 11625, "unit_powers": 0, "sec": 128}
+{"P": 4, "pair": [16, 22], "commutators": 111392, "base": 12000, "unit_powers": 0, "sec": 129}
+{"P": 4, "pair": [16, 33], "commutators": 114873, "base": 12375, "unit_powers": 0, "sec": 131}
+{"P": 4, "pair": [16, 40], "commutators": 118354, "base": 12750, "unit_powers": 0, "sec": 132}
+{"P": 4, "pair": [16, 83], "commutators": 121835, "base": 13125, "unit_powers": 0, "sec": 133}
+{"P": 4, "pair": [16, 109], "commutators": 125316, "base": 13500, "unit_powers": 0, "sec": 134}
+{"P": 4, "pair": [16, 115], "commutators": 128797, "base": 13875, "unit_powers": 0, "sec": 135}
+{"P": 4, "pair": [16, 123], "commutators": 132278, "base": 14250, "unit_powers": 0, "sec": 136}
+{"P": 4, "pair": [16, 128], "commutators": 135759, "base": 14625, "unit_powers": 0, "sec": 137}
+{"P": 4, "pair": [16, 144], "commutators": 139240, "base": 15000, "unit_powers": 0, "sec": 138}
+{"P": 4, "pair": [21, 33], "commutators": 142721, "base": 15375, "unit_powers": 0, "sec": 139}
+{"P": 4, "pair": [21, 81], "commutators": 146202, "base": 15750, "unit_powers": 0, "sec": 140}
+{"P": 4, "pair": [21, 83], "commutators": 149683, "base": 16125, "unit_powers": 0, "sec": 141}
+{"P": 4, "pair": [21, 108], "commutators": 153164, "base": 16500, "unit_powers": 0, "sec": 142}
+{"P": 4, "pair": [21, 122], "commutators": 156645, "base": 16875, "unit_powers": 0, "sec": 144}
+{"P": 4, "pair": [21, 128], "commutators": 160126, "base": 17250, "unit_powers": 0, "sec": 145}
+{"P": 4, "pair": [21, 156], "commutators": 163607, "base": 17625, "unit_powers": 0, "sec": 146}
+{"P": 4, "pair": [22, 29], "commutators": 167088, "base": 18000, "unit_powers": 0, "sec": 147}
+{"P": 4, "pair": [22, 34], "commutators": 170569, "base": 18375, "unit_powers": 0, "sec": 148}
+{"P": 4, "pair": [22, 40], "commutators": 174050, "base": 18750, "unit_powers": 0, "sec": 149}
+{"P": 4, "pair": [22, 82], "commutators": 177531, "base": 19125, "unit_powers": 0, "sec": 150}
+{"P": 4, "pair": [22, 101], "commutators": 181012, "base": 19500, "unit_powers": 0, "sec": 151}
+{"P": 4, "pair": [22, 109], "commutators": 184493, "base": 19875, "unit_powers": 0, "sec": 152}
+{"P": 4, "pair": [22, 123], "commutators": 187974, "base": 20250, "unit_powers": 0, "sec": 153}
+{"P": 4, "pair": [22, 129], "commutators": 191455, "base": 20625, "unit_powers": 0, "sec": 154}
+{"P": 4, "pair": [22, 163], "commutators": 194936, "base": 21000, "unit_powers": 0, "sec": 155}
+{"P": 4, "pair": [29, 34], "commutators": 198417, "base": 21375, "unit_powers": 0, "sec": 156}
+{"P": 4, "pair": [29, 39], "commutators": 201898, "base": 21750, "unit_powers": 0, "sec": 157}
+{"P": 4, "pair": [29, 82], "commutators": 205379, "base": 22125, "unit_powers": 0, "sec": 159}
+{"P": 4, "pair": [29, 101], "commutators": 208860, "base": 22500, "unit_powers": 0, "sec": 160}
+{"P": 4, "pair": [29, 114], "commutators": 212341, "base": 22875, "unit_powers": 0, "sec": 161}
+{"P": 4, "pair": [29, 127], "commutators": 215822, "base": 23250, "unit_powers": 0, "sec": 162}
+{"P": 4, "pair": [29, 135], "commutators": 219303, "base": 23625, "unit_powers": 0, "sec": 163}
+{"P": 4, "pair": [29, 155], "commutators": 222784, "base": 24000, "unit_powers": 0, "sec": 164}
+{"P": 4, "pair": [33, 40], "commutators": 226265, "base": 24375, "unit_powers": 0, "sec": 165}
+{"P": 4, "pair": [33, 115], "commutators": 229746, "base": 24750, "unit_powers": 0, "sec": 166}
+{"P": 4, "pair": [33, 122], "commutators": 233227, "base": 25125, "unit_powers": 0, "sec": 167}
+{"P": 4, "pair": [33, 128], "commutators": 236708, "base": 25500, "unit_powers": 0, "sec": 168}
+{"P": 4, "pair": [33, 152], "commutators": 240189, "base": 25875, "unit_powers": 0, "sec": 170}
+{"P": 4, "pair": [33, 159], "commutators": 243670, "base": 26250, "unit_powers": 0, "sec": 171}
+{"P": 4, "pair": [33, 190], "commutators": 247151, "base": 26625, "unit_powers": 0, "sec": 172}
+{"P": 4, "pair": [34, 39], "commutators": 250632, "base": 27000, "unit_powers": 0, "sec": 173}
+{"P": 4, "pair": [34, 40], "commutators": 254113, "base": 27375, "unit_powers": 0, "sec": 174}
+{"P": 4, "pair": [34, 101], "commutators": 257594, "base": 27750, "unit_powers": 0, "sec": 175}
+{"P": 4, "pair": [34, 129], "commutators": 261075, "base": 28125, "unit_powers": 0, "sec": 176}
+{"P": 4, "pair": [34, 135], "commutators": 264556, "base": 28500, "unit_powers": 0, "sec": 177}
+{"P": 4, "pair": [34, 164], "commutators": 268037, "base": 28875, "unit_powers": 0, "sec": 178}
+{"P": 4, "pair": [34, 171], "commutators": 271518, "base": 29250, "unit_powers": 0, "sec": 179}
+{"P": 4, "pair": [34, 191], "commutators": 274999, "base": 29625, "unit_powers": 0, "sec": 180}
+{"P": 4, "pair": [39, 114], "commutators": 278480, "base": 30000, "unit_powers": 0, "sec": 181}
+{"P": 4, "pair": [39, 124], "commutators": 281961, "base": 30375, "unit_powers": 0, "sec": 182}
+{"P": 4, "pair": [39, 135], "commutators": 285442, "base": 30750, "unit_powers": 0, "sec": 184}
+{"P": 4, "pair": [39, 171], "commutators": 288923, "base": 31125, "unit_powers": 0, "sec": 185}
+{"P": 4, "pair": [39, 178], "commutators": 292404, "base": 31500, "unit_powers": 0, "sec": 186}
+{"P": 4, "pair": [39, 206], "commutators": 295885, "base": 31875, "unit_powers": 0, "sec": 187}
+{"P": 4, "pair": [40, 115], "commutators": 299366, "base": 32250, "unit_powers": 0, "sec": 188}
+{"P": 4, "pair": [40, 123], "commutators": 302847, "base": 32625, "unit_powers": 0, "sec": 189}
+{"P": 4, "pair": [40, 129], "commutators": 306328, "base": 33000, "unit_powers": 0, "sec": 190}
+{"P": 4, "pair": [40, 159], "commutators": 309809, "base": 33375, "unit_powers": 0, "sec": 191}
+{"P": 4, "pair": [40, 164], "commutators": 313290, "base": 33750, "unit_powers": 0, "sec": 192}
+{"P": 4, "pair": [40, 205], "commutators": 316771, "base": 34125, "unit_powers": 0, "sec": 193}
+{"P": 4, "pair": [81, 83], "commutators": 320252, "base": 34500, "unit_powers": 0, "sec": 194}
+{"P": 4, "pair": [81, 108], "commutators": 323733, "base": 34875, "unit_powers": 0, "sec": 195}
+{"P": 4, "pair": [81, 127], "commutators": 327214, "base": 35250, "unit_powers": 0, "sec": 196}
+{"P": 4, "pair": [81, 142], "commutators": 330695, "base": 35625, "unit_powers": 0, "sec": 198}
+{"P": 4, "pair": [81, 143], "commutators": 334176, "base": 36000, "unit_powers": 0, "sec": 199}
+{"P": 4, "pair": [81, 156], "commutators": 337657, "base": 36375, "unit_powers": 0, "sec": 200}
+{"P": 4, "pair": [81, 241], "commutators": 341138, "base": 36750, "unit_powers": 0, "sec": 201}
+{"P": 4, "pair": [81, 251], "commutators": 344619, "base": 37125, "unit_powers": 0, "sec": 202}
+{"P": 4, "pair": [81, 264], "commutators": 348100, "base": 37500, "unit_powers": 0, "sec": 203}
+{"P": 4, "pair": [82, 101], "commutators": 351581, "base": 37875, "unit_powers": 0, "sec": 204}
+{"P": 4, "pair": [82, 109], "commutators": 355062, "base": 38250, "unit_powers": 0, "sec": 205}
+{"P": 4, "pair": [82, 127], "commutators": 358543, "base": 38625, "unit_powers": 0, "sec": 206}
+{"P": 4, "pair": [82, 143], "commutators": 362024, "base": 39000, "unit_powers": 0, "sec": 207}
+{"P": 4, "pair": [82, 155], "commutators": 365505, "base": 39375, "unit_powers": 0, "sec": 208}
+{"P": 4, "pair": [82, 163], "commutators": 368986, "base": 39750, "unit_powers": 0, "sec": 209}
+{"P": 4, "pair": [82, 265], "commutators": 372467, "base": 40125, "unit_powers": 0, "sec": 211}
+{"P": 4, "pair": [83, 109], "commutators": 375948, "base": 40500, "unit_powers": 0, "sec": 212}
+{"P": 4, "pair": [83, 128], "commutators": 379429, "base": 40875, "unit_powers": 0, "sec": 213}
+{"P": 4, "pair": [83, 143], "commutators": 382910, "base": 41250, "unit_powers": 0, "sec": 214}
+{"P": 4, "pair": [83, 144], "commutators": 386391, "base": 41625, "unit_powers": 0, "sec": 215}
+{"P": 4, "pair": [83, 156], "commutators": 389872, "base": 42000, "unit_powers": 0, "sec": 216}
+{"P": 4, "pair": [83, 241], "commutators": 393353, "base": 42375, "unit_powers": 0, "sec": 217}
+{"P": 4, "pair": [83, 253], "commutators": 396834, "base": 42750, "unit_powers": 0, "sec": 219}
+{"P": 4, "pair": [83, 266], "commutators": 400315, "base": 43125, "unit_powers": 0, "sec": 220}
+{"P": 4, "pair": [101, 129], "commutators": 403796, "base": 43500, "unit_powers": 0, "sec": 221}
+{"P": 4, "pair": [101, 135], "commutators": 407277, "base": 43875, "unit_powers": 0, "sec": 222}
+{"P": 4, "pair": [101, 155], "commutators": 410758, "base": 44250, "unit_powers": 0, "sec": 223}
+{"P": 4, "pair": [101, 163], "commutators": 414239, "base": 44625, "unit_powers": 0, "sec": 224}
+{"P": 4, "pair": [101, 191], "commutators": 417720, "base": 45000, "unit_powers": 0, "sec": 225}
+{"P": 4, "pair": [101, 296], "commutators": 421201, "base": 45375, "unit_powers": 0, "sec": 226}
+{"P": 4, "pair": [101, 298], "commutators": 424682, "base": 45750, "unit_powers": 0, "sec": 227}
+{"P": 4, "pair": [108, 122], "commutators": 428163, "base": 46125, "unit_powers": 0, "sec": 228}
+{"P": 4, "pair": [108, 124], "commutators": 431644, "base": 46500, "unit_powers": 0, "sec": 229}
+{"P": 4, "pair": [108, 142], "commutators": 435125, "base": 46875, "unit_powers": 0, "sec": 231}
+{"P": 4, "pair": [108, 156], "commutators": 438606, "base": 47250, "unit_powers": 0, "sec": 232}
+{"P": 4, "pair": [108, 189], "commutators": 442087, "base": 47625, "unit_powers": 0, "sec": 233}
+{"P": 4, "pair": [108, 251], "commutators": 445568, "base": 48000, "unit_powers": 0, "sec": 234}
+{"P": 4, "pair": [108, 288], "commutators": 449049, "base": 48375, "unit_powers": 0, "sec": 235}
+{"P": 4, "pair": [108, 297], "commutators": 452530, "base": 48750, "unit_powers": 0, "sec": 236}
+{"P": 4, "pair": [109, 123], "commutators": 456011, "base": 49125, "unit_powers": 0, "sec": 237}
+{"P": 4, "pair": [109, 143], "commutators": 459492, "base": 49500, "unit_powers": 0, "sec": 238}
+{"P": 4, "pair": [109, 144], "commutators": 462973, "base": 49875, "unit_powers": 0, "sec": 240}
+{"P": 4, "pair": [109, 163], "commutators": 466454, "base": 50250, "unit_powers": 0, "sec": 241}
+{"P": 4, "pair": [109, 253], "commutators": 469935, "base": 50625, "unit_powers": 0, "sec": 242}
+{"P": 4, "pair": [109, 289], "commutators": 473416, "base": 51000, "unit_powers": 0, "sec": 243}
+{"P": 4, "pair": [114, 124], "commutators": 476897, "base": 51375, "unit_powers": 0, "sec": 244}
+{"P": 4, "pair": [114, 127], "commutators": 480378, "base": 51750, "unit_powers": 0, "sec": 245}
+{"P": 4, "pair": [114, 135], "commutators": 483859, "base": 52125, "unit_powers": 0, "sec": 246}
+{"P": 4, "pair": [114, 142], "commutators": 487340, "base": 52500, "unit_powers": 0, "sec": 247}
+{"P": 4, "pair": [114, 155], "commutators": 490821, "base": 52875, "unit_powers": 0, "sec": 248}
+{"P": 4, "pair": [114, 206], "commutators": 494302, "base": 53250, "unit_powers": 0, "sec": 250}
+{"P": 4, "pair": [114, 299], "commutators": 497783, "base": 53625, "unit_powers": 0, "sec": 251}
+{"P": 4, "pair": [114, 309], "commutators": 501264, "base": 54000, "unit_powers": 0, "sec": 252}
+{"P": 4, "pair": [114, 313], "commutators": 504745, "base": 54375, "unit_powers": 0, "sec": 253}
+{"P": 4, "pair": [115, 123], "commutators": 508226, "base": 54750, "unit_powers": 0, "sec": 254}
+{"P": 4, "pair": [115, 128], "commutators": 511707, "base": 55125, "unit_powers": 0, "sec": 255}
+{"P": 4, "pair": [115, 144], "commutators": 515188, "base": 55500, "unit_powers": 0, "sec": 256}
+{"P": 4, "pair": [115, 159], "commutators": 518669, "base": 55875, "unit_powers": 0, "sec": 257}
+{"P": 4, "pair": [115, 190], "commutators": 522150, "base": 56250, "unit_powers": 0, "sec": 258}
+{"P": 4, "pair": [115, 205], "commutators": 525631, "base": 56625, "unit_powers": 0, "sec": 259}
+{"P": 4, "pair": [115, 300], "commutators": 529112, "base": 57000, "unit_powers": 0, "sec": 260}
+{"P": 4, "pair": [115, 310], "commutators": 532593, "base": 57375, "unit_powers": 0, "sec": 261}
+{"P": 4, "pair": [115, 314], "commutators": 536074, "base": 57750, "unit_powers": 0, "sec": 262}
+{"P": 4, "pair": [122, 128], "commutators": 539555, "base": 58125, "unit_powers": 0, "sec": 263}
+{"P": 4, "pair": [122, 152], "commutators": 543036, "base": 58500, "unit_powers": 0, "sec": 264}
+{"P": 4, "pair": [122, 156], "commutators": 546517, "base": 58875, "unit_powers": 0, "sec": 265}
+{"P": 4, "pair": [122, 189], "commutators": 549998, "base": 59250, "unit_powers": 0, "sec": 266}
+{"P": 4, "pair": [122, 190], "commutators": 553479, "base": 59625, "unit_powers": 0, "sec": 267}
+{"P": 4, "pair": [122, 288], "commutators": 556960, "base": 60000, "unit_powers": 0, "sec": 269}
+{"P": 4, "pair": [122, 302], "commutators": 560441, "base": 60375, "unit_powers": 0, "sec": 270}
+{"P": 4, "pair": [122, 317], "commutators": 563922, "base": 60750, "unit_powers": 0, "sec": 271}
+{"P": 4, "pair": [123, 129], "commutators": 567403, "base": 61125, "unit_powers": 0, "sec": 272}
+{"P": 4, "pair": [123, 144], "commutators": 570884, "base": 61500, "unit_powers": 0, "sec": 273}
+{"P": 4, "pair": [123, 163], "commutators": 574365, "base": 61875, "unit_powers": 0, "sec": 274}
+{"P": 4, "pair": [123, 205], "commutators": 577846, "base": 62250, "unit_powers": 0, "sec": 275}
+{"P": 4, "pair": [123, 289], "commutators": 581327, "base": 62625, "unit_powers": 0, "sec": 276}
+{"P": 4, "pair": [123, 300], "commutators": 584808, "base": 63000, "unit_powers": 0, "sec": 278}
+{"P": 4, "pair": [123, 318], "commutators": 588289, "base": 63375, "unit_powers": 0, "sec": 279}
+{"P": 4, "pair": [124, 142], "commutators": 591770, "base": 63750, "unit_powers": 0, "sec": 280}
+{"P": 4, "pair": [124, 178], "commutators": 595251, "base": 64125, "unit_powers": 0, "sec": 281}
+{"P": 4, "pair": [124, 189], "commutators": 598732, "base": 64500, "unit_powers": 0, "sec": 282}
+{"P": 4, "pair": [124, 206], "commutators": 602213, "base": 64875, "unit_powers": 0, "sec": 283}
+{"P": 4, "pair": [124, 297], "commutators": 605694, "base": 65250, "unit_powers": 0, "sec": 284}
+{"P": 4, "pair": [124, 299], "commutators": 609175, "base": 65625, "unit_powers": 0, "sec": 285}
+{"P": 4, "pair": [124, 321], "commutators": 612656, "base": 66000, "unit_powers": 0, "sec": 286}
+{"P": 4, "pair": [127, 142], "commutators": 616137, "base": 66375, "unit_powers": 0, "sec": 287}
+{"P": 4, "pair": [127, 143], "commutators": 619618, "base": 66750, "unit_powers": 0, "sec": 288}
+{"P": 4, "pair": [127, 155], "commutators": 623099, "base": 67125, "unit_powers": 0, "sec": 290}
+{"P": 4, "pair": [127, 264], "commutators": 626580, "base": 67500, "unit_powers": 0, "sec": 291}
+{"P": 4, "pair": [127, 265], "commutators": 630061, "base": 67875, "unit_powers": 0, "sec": 292}
+{"P": 4, "pair": [127, 309], "commutators": 633542, "base": 68250, "unit_powers": 0, "sec": 293}
+{"P": 4, "pair": [128, 144], "commutators": 637023, "base": 68625, "unit_powers": 0, "sec": 294}
+{"P": 4, "pair": [128, 156], "commutators": 640504, "base": 69000, "unit_powers": 0, "sec": 295}
+{"P": 4, "pair": [128, 190], "commutators": 643985, "base": 69375, "unit_powers": 0, "sec": 296}
+{"P": 4, "pair": [128, 266], "commutators": 647466, "base": 69750, "unit_powers": 0, "sec": 297}
+{"P": 4, "pair": [128, 310], "commutators": 650947, "base": 70125, "unit_powers": 0, "sec": 298}
+{"P": 4, "pair": [128, 317], "commutators": 654428, "base": 70500, "unit_powers": 0, "sec": 299}
+{"P": 4, "pair": [129, 163], "commutators": 657909, "base": 70875, "unit_powers": 0, "sec": 300}
+{"P": 4, "pair": [129, 164], "commutators": 661390, "base": 71250, "unit_powers": 0, "sec": 302}
+{"P": 4, "pair": [129, 191], "commutators": 664871, "base": 71625, "unit_powers": 0, "sec": 303}
+{"P": 4, "pair": [129, 205], "commutators": 668352, "base": 72000, "unit_powers": 0, "sec": 304}
+{"P": 4, "pair": [129, 296], "commutators": 671833, "base": 72375, "unit_powers": 0, "sec": 305}
+{"P": 4, "pair": [129, 318], "commutators": 675314, "base": 72750, "unit_powers": 0, "sec": 306}
+{"P": 4, "pair": [129, 341], "commutators": 678795, "base": 73125, "unit_powers": 0, "sec": 307}
+{"P": 4, "pair": [135, 155], "commutators": 682276, "base": 73500, "unit_powers": 0, "sec": 308}
+{"P": 4, "pair": [135, 171], "commutators": 685757, "base": 73875, "unit_powers": 0, "sec": 309}
+{"P": 4, "pair": [135, 191], "commutators": 689238, "base": 74250, "unit_powers": 0, "sec": 310}
+{"P": 4, "pair": [135, 206], "commutators": 692719, "base": 74625, "unit_powers": 0, "sec": 311}
+{"P": 4, "pair": [135, 298], "commutators": 696200, "base": 75000, "unit_powers": 0, "sec": 312}
+{"P": 4, "pair": [135, 313], "commutators": 699681, "base": 75375, "unit_powers": 0, "sec": 313}
+{"P": 4, "pair": [135, 345], "commutators": 703162, "base": 75750, "unit_powers": 0, "sec": 314}
+{"P": 4, "pair": [142, 251], "commutators": 706643, "base": 76125, "unit_powers": 0, "sec": 316}
+{"P": 4, "pair": [142, 264], "commutators": 710124, "base": 76500, "unit_powers": 0, "sec": 317}
+{"P": 4, "pair": [142, 297], "commutators": 713605, "base": 76875, "unit_powers": 0, "sec": 318}
+{"P": 4, "pair": [142, 299], "commutators": 717086, "base": 77250, "unit_powers": 0, "sec": 319}
+{"P": 4, "pair": [142, 309], "commutators": 720567, "base": 77625, "unit_powers": 0, "sec": 320}
+{"P": 4, "pair": [143, 241], "commutators": 724048, "base": 78000, "unit_powers": 0, "sec": 321}
+{"P": 4, "pair": [143, 253], "commutators": 727529, "base": 78375, "unit_powers": 0, "sec": 322}
+{"P": 4, "pair": [143, 264], "commutators": 731010, "base": 78750, "unit_powers": 0, "sec": 323}
+{"P": 4, "pair": [143, 265], "commutators": 734491, "base": 79125, "unit_powers": 0, "sec": 324}
+{"P": 4, "pair": [143, 367], "commutators": 737972, "base": 79500, "unit_powers": 0, "sec": 326}
+{"P": 4, "pair": [144, 253], "commutators": 741453, "base": 79875, "unit_powers": 0, "sec": 327}
+{"P": 4, "pair": [144, 266], "commutators": 744934, "base": 80250, "unit_powers": 0, "sec": 328}
+{"P": 4, "pair": [144, 289], "commutators": 748415, "base": 80625, "unit_powers": 0, "sec": 329}
+{"P": 4, "pair": [144, 300], "commutators": 751896, "base": 81000, "unit_powers": 0, "sec": 330}
+{"P": 4, "pair": [144, 310], "commutators": 755377, "base": 81375, "unit_powers": 0, "sec": 331}
+{"P": 4, "pair": [144, 368], "commutators": 758858, "base": 81750, "unit_powers": 0, "sec": 332}
+{"P": 4, "pair": [152, 159], "commutators": 762339, "base": 82125, "unit_powers": 0, "sec": 334}
+{"P": 4, "pair": [152, 178], "commutators": 765820, "base": 82500, "unit_powers": 0, "sec": 335}
+{"P": 4, "pair": [152, 189], "commutators": 769301, "base": 82875, "unit_powers": 0, "sec": 336}
+{"P": 4, "pair": [152, 190], "commutators": 772782, "base": 83250, "unit_powers": 0, "sec": 337}
+{"P": 4, "pair": [152, 244], "commutators": 776263, "base": 83625, "unit_powers": 0, "sec": 338}
+{"P": 4, "pair": [152, 302], "commutators": 779744, "base": 84000, "unit_powers": 0, "sec": 339}
+{"P": 4, "pair": [152, 355], "commutators": 783225, "base": 84375, "unit_powers": 0, "sec": 340}
+{"P": 4, "pair": [152, 356], "commutators": 786706, "base": 84750, "unit_powers": 0, "sec": 341}
+{"P": 4, "pair": [155, 265], "commutators": 790187, "base": 85125, "unit_powers": 0, "sec": 342}
+{"P": 4, "pair": [155, 298], "commutators": 793668, "base": 85500, "unit_powers": 0, "sec": 343}
+{"P": 4, "pair": [155, 309], "commutators": 797149, "base": 85875, "unit_powers": 0, "sec": 344}
+{"P": 4, "pair": [155, 313], "commutators": 800630, "base": 86250, "unit_powers": 0, "sec": 345}
+{"P": 4, "pair": [155, 379], "commutators": 804111, "base": 86625, "unit_powers": 0, "sec": 347}
+{"P": 4, "pair": [156, 241], "commutators": 807592, "base": 87000, "unit_powers": 0, "sec": 348}
+{"P": 4, "pair": [156, 251], "commutators": 811073, "base": 87375, "unit_powers": 0, "sec": 349}
+{"P": 4, "pair": [156, 266], "commutators": 814554, "base": 87750, "unit_powers": 0, "sec": 350}
+{"P": 4, "pair": [156, 288], "commutators": 818035, "base": 88125, "unit_powers": 0, "sec": 351}
+{"P": 4, "pair": [156, 317], "commutators": 821516, "base": 88500, "unit_powers": 0, "sec": 352}
+{"P": 4, "pair": [156, 380], "commutators": 824997, "base": 88875, "unit_powers": 0, "sec": 353}
+{"P": 4, "pair": [159, 164], "commutators": 828478, "base": 89250, "unit_powers": 0, "sec": 354}
+{"P": 4, "pair": [159, 190], "commutators": 831959, "base": 89625, "unit_powers": 0, "sec": 355}
+{"P": 4, "pair": [159, 205], "commutators": 835440, "base": 90000, "unit_powers": 0, "sec": 356}
+{"P": 4, "pair": [159, 244], "commutators": 838921, "base": 90375, "unit_powers": 0, "sec": 357}
+{"P": 4, "pair": [159, 314], "commutators": 842402, "base": 90750, "unit_powers": 0, "sec": 359}
+{"P": 4, "pair": [159, 346], "commutators": 845883, "base": 91125, "unit_powers": 0, "sec": 360}
+{"P": 4, "pair": [159, 356], "commutators": 849364, "base": 91500, "unit_powers": 0, "sec": 361}
+{"P": 4, "pair": [163, 289], "commutators": 852845, "base": 91875, "unit_powers": 0, "sec": 362}
+{"P": 4, "pair": [163, 296], "commutators": 856326, "base": 92250, "unit_powers": 0, "sec": 363}
+{"P": 4, "pair": [163, 318], "commutators": 859807, "base": 92625, "unit_powers": 0, "sec": 364}
+{"P": 4, "pair": [163, 391], "commutators": 863288, "base": 93000, "unit_powers": 0, "sec": 365}
+{"P": 4, "pair": [164, 171], "commutators": 866769, "base": 93375, "unit_powers": 0, "sec": 366}
+{"P": 4, "pair": [164, 191], "commutators": 870250, "base": 93750, "unit_powers": 0, "sec": 367}
+{"P": 4, "pair": [164, 205], "commutators": 873731, "base": 94125, "unit_powers": 0, "sec": 368}
+{"P": 4, "pair": [164, 244], "commutators": 877212, "base": 94500, "unit_powers": 0, "sec": 370}
+{"P": 4, "pair": [164, 341], "commutators": 880693, "base": 94875, "unit_powers": 0, "sec": 371}
+{"P": 4, "pair": [164, 346], "commutators": 884174, "base": 95250, "unit_powers": 0, "sec": 372}
+{"P": 4, "pair": [164, 359], "commutators": 887655, "base": 95625, "unit_powers": 0, "sec": 373}
+{"P": 4, "pair": [171, 178], "commutators": 891136, "base": 96000, "unit_powers": 0, "sec": 374}
+{"P": 4, "pair": [171, 191], "commutators": 894617, "base": 96375, "unit_powers": 0, "sec": 375}
+{"P": 4, "pair": [171, 206], "commutators": 898098, "base": 96750, "unit_powers": 0, "sec": 376}
+{"P": 4, "pair": [171, 244], "commutators": 901579, "base": 97125, "unit_powers": 0, "sec": 377}
+{"P": 4, "pair": [171, 345], "commutators": 905060, "base": 97500, "unit_powers": 0, "sec": 379}
+{"P": 4, "pair": [171, 359], "commutators": 908541, "base": 97875, "unit_powers": 0, "sec": 380}
+{"P": 4, "pair": [171, 376], "commutators": 912022, "base": 98250, "unit_powers": 0, "sec": 381}
+{"P": 4, "pair": [178, 189], "commutators": 915503, "base": 98625, "unit_powers": 0, "sec": 382}
+{"P": 4, "pair": [178, 206], "commutators": 918984, "base": 99000, "unit_powers": 0, "sec": 383}
+{"P": 4, "pair": [178, 244], "commutators": 922465, "base": 99375, "unit_powers": 0, "sec": 384}
+{"P": 4, "pair": [178, 321], "commutators": 925946, "base": 99750, "unit_powers": 0, "sec": 385}
+{"P": 4, "pair": [178, 355], "commutators": 929427, "base": 100125, "unit_powers": 0, "sec": 387}
+{"P": 4, "pair": [178, 376], "commutators": 932908, "base": 100500, "unit_powers": 0, "sec": 388}
+{"P": 4, "pair": [189, 288], "commutators": 936389, "base": 100875, "unit_powers": 0, "sec": 389}
+{"P": 4, "pair": [189, 297], "commutators": 939870, "base": 101250, "unit_powers": 0, "sec": 390}
+{"P": 4, "pair": [189, 302], "commutators": 943351, "base": 101625, "unit_powers": 0, "sec": 391}
+{"P": 4, "pair": [189, 321], "commutators": 946832, "base": 102000, "unit_powers": 0, "sec": 392}
+{"P": 4, "pair": [189, 355], "commutators": 950313, "base": 102375, "unit_powers": 0, "sec": 393}
+{"P": 4, "pair": [189, 419], "commutators": 953794, "base": 102750, "unit_powers": 0, "sec": 394}
+{"P": 4, "pair": [190, 302], "commutators": 957275, "base": 103125, "unit_powers": 0, "sec": 395}
+{"P": 4, "pair": [190, 310], "commutators": 960756, "base": 103500, "unit_powers": 0, "sec": 397}
+{"P": 4, "pair": [190, 314], "commutators": 964237, "base": 103875, "unit_powers": 0, "sec": 398}
+{"P": 4, "pair": [190, 317], "commutators": 967718, "base": 104250, "unit_powers": 0, "sec": 399}
+{"P": 4, "pair": [190, 356], "commutators": 971199, "base": 104625, "unit_powers": 0, "sec": 400}
+{"P": 4, "pair": [190, 420], "commutators": 974680, "base": 105000, "unit_powers": 0, "sec": 401}
+{"P": 4, "pair": [191, 296], "commutators": 978161, "base": 105375, "unit_powers": 0, "sec": 402}
+{"P": 4, "pair": [191, 298], "commutators": 981642, "base": 105750, "unit_powers": 0, "sec": 403}
+{"P": 4, "pair": [191, 341], "commutators": 985123, "base": 106125, "unit_powers": 0, "sec": 404}
+{"P": 4, "pair": [191, 345], "commutators": 988604, "base": 106500, "unit_powers": 0, "sec": 405}
+{"P": 4, "pair": [191, 359], "commutators": 992085, "base": 106875, "unit_powers": 0, "sec": 406}
+{"P": 4, "pair": [191, 421], "commutators": 995566, "base": 107250, "unit_powers": 0, "sec": 408}
+{"P": 4, "pair": [205, 300], "commutators": 999047, "base": 107625, "unit_powers": 0, "sec": 409}
+{"P": 4, "pair": [205, 314], "commutators": 1002528, "base": 108000, "unit_powers": 0, "sec": 410}
+{"P": 4, "pair": [205, 318], "commutators": 1006009, "base": 108375, "unit_powers": 0, "sec": 411}
+{"P": 4, "pair": [205, 341], "commutators": 1009490, "base": 108750, "unit_powers": 0, "sec": 412}
+{"P": 4, "pair": [205, 346], "commutators": 1012971, "base": 109125, "unit_powers": 0, "sec": 414}
+{"P": 4, "pair": [205, 432], "commutators": 1016452, "base": 109500, "unit_powers": 0, "sec": 415}
+{"P": 4, "pair": [206, 299], "commutators": 1019933, "base": 109875, "unit_powers": 0, "sec": 416}
+{"P": 4, "pair": [206, 313], "commutators": 1023414, "base": 110250, "unit_powers": 0, "sec": 417}
+{"P": 4, "pair": [206, 321], "commutators": 1026895, "base": 110625, "unit_powers": 0, "sec": 418}
+{"P": 4, "pair": [206, 345], "commutators": 1030376, "base": 111000, "unit_powers": 0, "sec": 419}
+{"P": 4, "pair": [206, 376], "commutators": 1033857, "base": 111375, "unit_powers": 0, "sec": 420}
+{"P": 4, "pair": [206, 433], "commutators": 1037338, "base": 111750, "unit_powers": 0, "sec": 422}
+{"P": 4, "pair": [241, 251], "commutators": 1040819, "base": 112125, "unit_powers": 0, "sec": 423}
+{"P": 4, "pair": [241, 253], "commutators": 1044300, "base": 112500, "unit_powers": 0, "sec": 424}
+{"P": 4, "pair": [241, 264], "commutators": 1047781, "base": 112875, "unit_powers": 0, "sec": 425}
+{"P": 4, "pair": [241, 266], "commutators": 1051262, "base": 113250, "unit_powers": 0, "sec": 426}
+{"P": 4, "pair": [241, 367], "commutators": 1054743, "base": 113625, "unit_powers": 0, "sec": 427}
+{"P": 4, "pair": [241, 380], "commutators": 1058224, "base": 114000, "unit_powers": 0, "sec": 428}
+{"P": 4, "pair": [241, 438], "commutators": 1061705, "base": 114375, "unit_powers": 0, "sec": 429}
+{"P": 4, "pair": [241, 440], "commutators": 1065186, "base": 114750, "unit_powers": 0, "sec": 431}
+{"P": 4, "pair": [244, 346], "commutators": 1068667, "base": 115125, "unit_powers": 0, "sec": 432}
+{"P": 4, "pair": [244, 355], "commutators": 1072148, "base": 115500, "unit_powers": 0, "sec": 433}
+{"P": 4, "pair": [244, 356], "commutators": 1075629, "base": 115875, "unit_powers": 0, "sec": 434}
+{"P": 4, "pair": [244, 359], "commutators": 1079110, "base": 116250, "unit_powers": 0, "sec": 435}
+{"P": 4, "pair": [244, 376], "commutators": 1082591, "base": 116625, "unit_powers": 0, "sec": 436}
+{"P": 4, "pair": [244, 468], "commutators": 1086072, "base": 117000, "unit_powers": 0, "sec": 437}
+{"P": 4, "pair": [251, 264], "commutators": 1089553, "base": 117375, "unit_powers": 0, "sec": 438}
+{"P": 4, "pair": [251, 288], "commutators": 1093034, "base": 117750, "unit_powers": 0, "sec": 439}
+{"P": 4, "pair": [251, 297], "commutators": 1096515, "base": 118125, "unit_powers": 0, "sec": 440}
+{"P": 4, "pair": [251, 380], "commutators": 1099996, "base": 118500, "unit_powers": 0, "sec": 441}
+{"P": 4, "pair": [251, 438], "commutators": 1103477, "base": 118875, "unit_powers": 0, "sec": 443}
+{"P": 4, "pair": [251, 461], "commutators": 1106958, "base": 119250, "unit_powers": 0, "sec": 444}
+{"P": 4, "pair": [253, 266], "commutators": 1110439, "base": 119625, "unit_powers": 0, "sec": 445}
+{"P": 4, "pair": [253, 289], "commutators": 1113920, "base": 120000, "unit_powers": 0, "sec": 446}
+{"P": 4, "pair": [253, 367], "commutators": 1117401, "base": 120375, "unit_powers": 0, "sec": 447}
+{"P": 4, "pair": [253, 368], "commutators": 1120882, "base": 120750, "unit_powers": 0, "sec": 448}
+{"P": 4, "pair": [253, 440], "commutators": 1124363, "base": 121125, "unit_powers": 0, "sec": 449}
+{"P": 4, "pair": [253, 462], "commutators": 1127844, "base": 121500, "unit_powers": 0, "sec": 450}
+{"P": 4, "pair": [264, 265], "commutators": 1131325, "base": 121875, "unit_powers": 0, "sec": 451}
+{"P": 4, "pair": [264, 309], "commutators": 1134806, "base": 122250, "unit_powers": 0, "sec": 453}
+{"P": 4, "pair": [264, 367], "commutators": 1138287, "base": 122625, "unit_powers": 0, "sec": 454}
+{"P": 4, "pair": [264, 438], "commutators": 1141768, "base": 123000, "unit_powers": 0, "sec": 455}
+{"P": 4, "pair": [264, 479], "commutators": 1145249, "base": 123375, "unit_powers": 0, "sec": 456}
+{"P": 4, "pair": [265, 309], "commutators": 1148730, "base": 123750, "unit_powers": 0, "sec": 457}
+{"P": 4, "pair": [265, 367], "commutators": 1152211, "base": 124125, "unit_powers": 0, "sec": 458}
+{"P": 4, "pair": [265, 379], "commutators": 1155692, "base": 124500, "unit_powers": 0, "sec": 459}
+{"P": 4, "pair": [265, 439], "commutators": 1159173, "base": 124855, "unit_powers": 50, "sec": 461}
+{"P": 4, "pair": [265, 479], "commutators": 1162654, "base": 125230, "unit_powers": 50, "sec": 462}
+{"P": 4, "pair": [266, 310], "commutators": 1166135, "base": 125605, "unit_powers": 50, "sec": 463}
+{"P": 4, "pair": [266, 317], "commutators": 1169616, "base": 125980, "unit_powers": 50, "sec": 464}
+{"P": 4, "pair": [266, 368], "commutators": 1173097, "base": 126355, "unit_powers": 50, "sec": 465}
+{"P": 4, "pair": [266, 380], "commutators": 1176578, "base": 126730, "unit_powers": 50, "sec": 466}
+{"P": 4, "pair": [266, 440], "commutators": 1180059, "base": 127105, "unit_powers": 50, "sec": 467}
+{"P": 4, "pair": [266, 480], "commutators": 1183540, "base": 127480, "unit_powers": 50, "sec": 468}
+{"P": 4, "pair": [288, 297], "commutators": 1187021, "base": 127855, "unit_powers": 50, "sec": 469}
+{"P": 4, "pair": [288, 302], "commutators": 1190502, "base": 128230, "unit_powers": 50, "sec": 470}
+{"P": 4, "pair": [288, 317], "commutators": 1193983, "base": 128605, "unit_powers": 50, "sec": 471}
+{"P": 4, "pair": [288, 380], "commutators": 1197464, "base": 128980, "unit_powers": 50, "sec": 472}
+{"P": 4, "pair": [288, 419], "commutators": 1200945, "base": 129355, "unit_powers": 50, "sec": 473}
+{"P": 4, "pair": [288, 461], "commutators": 1204426, "base": 129730, "unit_powers": 50, "sec": 474}
+{"P": 4, "pair": [288, 486], "commutators": 1207907, "base": 130105, "unit_powers": 50, "sec": 475}
+{"P": 4, "pair": [289, 300], "commutators": 1211388, "base": 130480, "unit_powers": 50, "sec": 476}
+{"P": 4, "pair": [289, 318], "commutators": 1214869, "base": 130855, "unit_powers": 50, "sec": 478}
+{"P": 4, "pair": [289, 368], "commutators": 1218350, "base": 131230, "unit_powers": 50, "sec": 479}
+{"P": 4, "pair": [289, 391], "commutators": 1221831, "base": 131605, "unit_powers": 50, "sec": 480}
+{"P": 4, "pair": [289, 462], "commutators": 1225312, "base": 131980, "unit_powers": 50, "sec": 481}
+{"P": 4, "pair": [289, 476], "commutators": 1228793, "base": 132355, "unit_powers": 50, "sec": 482}
+{"P": 4, "pair": [296, 298], "commutators": 1232274, "base": 132730, "unit_powers": 50, "sec": 483}
+{"P": 4, "pair": [296, 318], "commutators": 1235755, "base": 133105, "unit_powers": 50, "sec": 484}
+{"P": 4, "pair": [296, 341], "commutators": 1239236, "base": 133480, "unit_powers": 50, "sec": 485}
+{"P": 4, "pair": [296, 391], "commutators": 1242717, "base": 133855, "unit_powers": 50, "sec": 486}
+{"P": 4, "pair": [296, 421], "commutators": 1246198, "base": 134230, "unit_powers": 50, "sec": 487}
+{"P": 4, "pair": [296, 465], "commutators": 1249679, "base": 134605, "unit_powers": 50, "sec": 488}
+{"P": 4, "pair": [296, 504], "commutators": 1253160, "base": 134980, "unit_powers": 50, "sec": 490}
+{"P": 4, "pair": [297, 299], "commutators": 1256641, "base": 135355, "unit_powers": 50, "sec": 491}
+{"P": 4, "pair": [297, 321], "commutators": 1260122, "base": 135730, "unit_powers": 50, "sec": 492}
+{"P": 4, "pair": [297, 419], "commutators": 1263603, "base": 136105, "unit_powers": 50, "sec": 493}
+{"P": 4, "pair": [297, 461], "commutators": 1267084, "base": 136480, "unit_powers": 50, "sec": 494}
+{"P": 4, "pair": [298, 313], "commutators": 1270565, "base": 136855, "unit_powers": 50, "sec": 495}
+{"P": 4, "pair": [298, 345], "commutators": 1274046, "base": 137230, "unit_powers": 50, "sec": 496}
+{"P": 4, "pair": [298, 379], "commutators": 1277527, "base": 137605, "unit_powers": 50, "sec": 497}
+{"P": 4, "pair": [298, 421], "commutators": 1281008, "base": 137980, "unit_powers": 50, "sec": 498}
+{"P": 4, "pair": [298, 465], "commutators": 1284489, "base": 138355, "unit_powers": 50, "sec": 500}
+{"P": 4, "pair": [298, 499], "commutators": 1287970, "base": 138730, "unit_powers": 50, "sec": 501}
+{"P": 4, "pair": [299, 309], "commutators": 1291451, "base": 139105, "unit_powers": 50, "sec": 502}
+{"P": 4, "pair": [299, 313], "commutators": 1294932, "base": 139480, "unit_powers": 50, "sec": 503}
+{"P": 4, "pair": [299, 321], "commutators": 1298413, "base": 139855, "unit_powers": 50, "sec": 504}
+{"P": 4, "pair": [299, 433], "commutators": 1301894, "base": 140230, "unit_powers": 50, "sec": 505}
+{"P": 4, "pair": [299, 488], "commutators": 1305375, "base": 140605, "unit_powers": 50, "sec": 506}
+{"P": 4, "pair": [300, 310], "commutators": 1308856, "base": 140980, "unit_powers": 50, "sec": 507}
+{"P": 4, "pair": [300, 314], "commutators": 1312337, "base": 141355, "unit_powers": 50, "sec": 508}
+{"P": 4, "pair": [300, 318], "commutators": 1315818, "base": 141730, "unit_powers": 50, "sec": 510}
+{"P": 4, "pair": [300, 368], "commutators": 1319299, "base": 142105, "unit_powers": 50, "sec": 511}
+{"P": 4, "pair": [300, 432], "commutators": 1322780, "base": 142480, "unit_powers": 50, "sec": 512}
+{"P": 4, "pair": [300, 476], "commutators": 1326261, "base": 142855, "unit_powers": 50, "sec": 513}
+{"P": 4, "pair": [300, 489], "commutators": 1329742, "base": 143230, "unit_powers": 50, "sec": 514}
+{"P": 4, "pair": [302, 317], "commutators": 1333223, "base": 143605, "unit_powers": 50, "sec": 515}
+{"P": 4, "pair": [302, 355], "commutators": 1336704, "base": 143980, "unit_powers": 50, "sec": 516}
+{"P": 4, "pair": [302, 356], "commutators": 1340185, "base": 144355, "unit_powers": 50, "sec": 517}
+{"P": 4, "pair": [302, 419], "commutators": 1343666, "base": 144730, "unit_powers": 50, "sec": 518}
+{"P": 4, "pair": [302, 420], "commutators": 1347147, "base": 145105, "unit_powers": 50, "sec": 520}
+{"P": 4, "pair": [302, 486], "commutators": 1350628, "base": 145480, "unit_powers": 50, "sec": 521}
+{"P": 4, "pair": [302, 511], "commutators": 1354109, "base": 145855, "unit_powers": 50, "sec": 522}
+{"P": 4, "pair": [309, 313], "commutators": 1357590, "base": 146230, "unit_powers": 50, "sec": 523}
+{"P": 4, "pair": [309, 379], "commutators": 1361071, "base": 146605, "unit_powers": 50, "sec": 524}
+{"P": 4, "pair": [309, 479], "commutators": 1364552, "base": 146980, "unit_powers": 50, "sec": 525}
+{"P": 4, "pair": [309, 488], "commutators": 1368033, "base": 147355, "unit_powers": 50, "sec": 526}
+{"P": 4, "pair": [310, 314], "commutators": 1371514, "base": 147730, "unit_powers": 50, "sec": 527}
+{"P": 4, "pair": [310, 317], "commutators": 1374995, "base": 148105, "unit_powers": 50, "sec": 528}
+{"P": 4, "pair": [310, 368], "commutators": 1378476, "base": 148480, "unit_powers": 50, "sec": 529}
+{"P": 4, "pair": [310, 420], "commutators": 1381957, "base": 148855, "unit_powers": 50, "sec": 531}
+{"P": 4, "pair": [310, 480], "commutators": 1385438, "base": 149230, "unit_powers": 50, "sec": 532}
+{"P": 4, "pair": [310, 489], "commutators": 1388919, "base": 149605, "unit_powers": 50, "sec": 533}
+{"P": 4, "pair": [313, 345], "commutators": 1392400, "base": 149980, "unit_powers": 50, "sec": 534}
+{"P": 4, "pair": [313, 379], "commutators": 1395881, "base": 150355, "unit_powers": 50, "sec": 535}
+{"P": 4, "pair": [313, 433], "commutators": 1399362, "base": 150730, "unit_powers": 50, "sec": 536}
+{"P": 4, "pair": [313, 488], "commutators": 1402843, "base": 151105, "unit_powers": 50, "sec": 537}
+{"P": 4, "pair": [313, 499], "commutators": 1406324, "base": 151480, "unit_powers": 50, "sec": 538}
+{"P": 4, "pair": [314, 346], "commutators": 1409805, "base": 151855, "unit_powers": 50, "sec": 540}
+{"P": 4, "pair": [314, 356], "commutators": 1413286, "base": 152230, "unit_powers": 50, "sec": 541}
+{"P": 4, "pair": [314, 420], "commutators": 1416767, "base": 152605, "unit_powers": 50, "sec": 542}
+{"P": 4, "pair": [314, 432], "commutators": 1420248, "base": 152980, "unit_powers": 50, "sec": 543}
+{"P": 4, "pair": [314, 489], "commutators": 1423729, "base": 153355, "unit_powers": 50, "sec": 544}
+{"P": 4, "pair": [314, 509], "commutators": 1427210, "base": 153730, "unit_powers": 50, "sec": 545}
+{"P": 4, "pair": [317, 380], "commutators": 1430691, "base": 154105, "unit_powers": 50, "sec": 546}
+{"P": 4, "pair": [317, 420], "commutators": 1434172, "base": 154480, "unit_powers": 50, "sec": 547}
+{"P": 4, "pair": [317, 480], "commutators": 1437653, "base": 154855, "unit_powers": 50, "sec": 548}
+{"P": 4, "pair": [317, 486], "commutators": 1441134, "base": 155230, "unit_powers": 50, "sec": 550}
+{"P": 4, "pair": [318, 341], "commutators": 1444615, "base": 155605, "unit_powers": 50, "sec": 551}
+{"P": 4, "pair": [318, 391], "commutators": 1448096, "base": 155980, "unit_powers": 50, "sec": 552}
+{"P": 4, "pair": [318, 432], "commutators": 1451577, "base": 156355, "unit_powers": 50, "sec": 553}
+{"P": 4, "pair": [318, 476], "commutators": 1455058, "base": 156730, "unit_powers": 50, "sec": 554}
+{"P": 4, "pair": [318, 504], "commutators": 1458539, "base": 157105, "unit_powers": 50, "sec": 555}
+{"P": 4, "pair": [321, 355], "commutators": 1462020, "base": 157480, "unit_powers": 50, "sec": 556}
+{"P": 4, "pair": [321, 376], "commutators": 1465501, "base": 157855, "unit_powers": 50, "sec": 557}
+{"P": 4, "pair": [321, 419], "commutators": 1468982, "base": 158230, "unit_powers": 50, "sec": 559}
+{"P": 4, "pair": [321, 433], "commutators": 1472463, "base": 158605, "unit_powers": 50, "sec": 560}
+{"P": 4, "pair": [321, 522], "commutators": 1475944, "base": 158980, "unit_powers": 50, "sec": 561}
+{"P": 4, "pair": [341, 346], "commutators": 1479425, "base": 159355, "unit_powers": 50, "sec": 562}
+{"P": 4, "pair": [341, 359], "commutators": 1482906, "base": 159730, "unit_powers": 50, "sec": 563}
+{"P": 4, "pair": [341, 421], "commutators": 1486387, "base": 160105, "unit_powers": 50, "sec": 564}
+{"P": 4, "pair": [341, 432], "commutators": 1489868, "base": 160480, "unit_powers": 50, "sec": 565}
+{"P": 4, "pair": [341, 504], "commutators": 1493349, "base": 160855, "unit_powers": 50, "sec": 566}
+{"P": 4, "pair": [341, 525], "commutators": 1496830, "base": 161230, "unit_powers": 50, "sec": 568}
+{"P": 4, "pair": [345, 359], "commutators": 1500311, "base": 161605, "unit_powers": 50, "sec": 569}
+{"P": 4, "pair": [345, 376], "commutators": 1503792, "base": 161980, "unit_powers": 50, "sec": 570}
+{"P": 4, "pair": [345, 421], "commutators": 1507273, "base": 162355, "unit_powers": 50, "sec": 571}
+{"P": 4, "pair": [345, 433], "commutators": 1510754, "base": 162730, "unit_powers": 50, "sec": 572}
+{"P": 4, "pair": [345, 499], "commutators": 1514235, "base": 163105, "unit_powers": 50, "sec": 573}
+{"P": 4, "pair": [345, 520], "commutators": 1517716, "base": 163480, "unit_powers": 50, "sec": 574}
+{"P": 4, "pair": [346, 356], "commutators": 1521197, "base": 163855, "unit_powers": 50, "sec": 575}
+{"P": 4, "pair": [346, 359], "commutators": 1524678, "base": 164230, "unit_powers": 50, "sec": 576}
+{"P": 4, "pair": [346, 432], "commutators": 1528159, "base": 164605, "unit_powers": 50, "sec": 578}
+{"P": 4, "pair": [346, 468], "commutators": 1531640, "base": 164980, "unit_powers": 50, "sec": 579}
+{"P": 4, "pair": [346, 509], "commutators": 1535121, "base": 165355, "unit_powers": 50, "sec": 580}
+{"P": 4, "pair": [346, 525], "commutators": 1538602, "base": 165730, "unit_powers": 50, "sec": 581}
+{"P": 4, "pair": [355, 356], "commutators": 1542083, "base": 166105, "unit_powers": 50, "sec": 582}
+{"P": 4, "pair": [355, 376], "commutators": 1545564, "base": 166480, "unit_powers": 50, "sec": 583}
+{"P": 4, "pair": [355, 419], "commutators": 1549045, "base": 166855, "unit_powers": 50, "sec": 584}
+{"P": 4, "pair": [355, 468], "commutators": 1552526, "base": 167230, "unit_powers": 50, "sec": 585}
+{"P": 4, "pair": [355, 511], "commutators": 1556007, "base": 167605, "unit_powers": 50, "sec": 586}
+{"P": 4, "pair": [355, 522], "commutators": 1559488, "base": 167980, "unit_powers": 50, "sec": 587}
+{"P": 4, "pair": [356, 420], "commutators": 1562969, "base": 168355, "unit_powers": 50, "sec": 589}
+{"P": 4, "pair": [356, 468], "commutators": 1566450, "base": 168730, "unit_powers": 50, "sec": 590}
+{"P": 4, "pair": [356, 509], "commutators": 1569931, "base": 169105, "unit_powers": 50, "sec": 591}
+{"P": 4, "pair": [356, 511], "commutators": 1573412, "base": 169480, "unit_powers": 50, "sec": 592}
+{"P": 4, "pair": [359, 376], "commutators": 1576893, "base": 169855, "unit_powers": 50, "sec": 593}
+{"P": 4, "pair": [359, 421], "commutators": 1580374, "base": 170230, "unit_powers": 50, "sec": 594}
+{"P": 4, "pair": [359, 468], "commutators": 1583855, "base": 170605, "unit_powers": 50, "sec": 595}
+{"P": 4, "pair": [359, 520], "commutators": 1587336, "base": 170980, "unit_powers": 50, "sec": 596}
+{"P": 4, "pair": [359, 525], "commutators": 1590817, "base": 171355, "unit_powers": 50, "sec": 598}
+{"P": 4, "pair": [367, 438], "commutators": 1594298, "base": 171730, "unit_powers": 50, "sec": 599}
+{"P": 4, "pair": [367, 439], "commutators": 1597779, "base": 172077, "unit_powers": 107, "sec": 600}
+{"P": 4, "pair": [367, 440], "commutators": 1601260, "base": 172452, "unit_powers": 107, "sec": 601}
+{"P": 4, "pair": [367, 462], "commutators": 1604741, "base": 172827, "unit_powers": 107, "sec": 602}
+{"P": 4, "pair": [367, 479], "commutators": 1608222, "base": 173202, "unit_powers": 107, "sec": 604}
+{"P": 4, "pair": [367, 548], "commutators": 1611703, "base": 173533, "unit_powers": 172, "sec": 605}
+{"P": 4, "pair": [368, 440], "commutators": 1615184, "base": 173908, "unit_powers": 172, "sec": 606}
+{"P": 4, "pair": [368, 462], "commutators": 1618665, "base": 174283, "unit_powers": 172, "sec": 608}
+{"P": 4, "pair": [368, 476], "commutators": 1622146, "base": 174658, "unit_powers": 172, "sec": 609}
+{"P": 4, "pair": [368, 480], "commutators": 1625627, "base": 175033, "unit_powers": 172, "sec": 610}
+{"P": 4, "pair": [368, 489], "commutators": 1629108, "base": 175408, "unit_powers": 172, "sec": 611}
+{"P": 4, "pair": [368, 549], "commutators": 1632589, "base": 175783, "unit_powers": 172, "sec": 612}
+{"P": 4, "pair": [376, 433], "commutators": 1636070, "base": 176158, "unit_powers": 172, "sec": 613}
+{"P": 4, "pair": [376, 468], "commutators": 1639551, "base": 176533, "unit_powers": 172, "sec": 615}
+{"P": 4, "pair": [376, 520], "commutators": 1643032, "base": 176908, "unit_powers": 172, "sec": 616}
+{"P": 4, "pair": [376, 522], "commutators": 1646513, "base": 177283, "unit_powers": 172, "sec": 617}
+{"P": 4, "pair": [379, 439], "commutators": 1649994, "base": 177622, "unit_powers": 244, "sec": 618}
+{"P": 4, "pair": [379, 465], "commutators": 1653475, "base": 177997, "unit_powers": 244, "sec": 619}
+{"P": 4, "pair": [379, 479], "commutators": 1656956, "base": 178372, "unit_powers": 244, "sec": 620}
+{"P": 4, "pair": [379, 488], "commutators": 1660437, "base": 178747, "unit_powers": 244, "sec": 621}
+{"P": 4, "pair": [379, 499], "commutators": 1663918, "base": 179122, "unit_powers": 244, "sec": 622}
+{"P": 4, "pair": [379, 555], "commutators": 1667399, "base": 179465, "unit_powers": 294, "sec": 624}
+{"P": 4, "pair": [380, 438], "commutators": 1670880, "base": 179840, "unit_powers": 294, "sec": 625}
+{"P": 4, "pair": [380, 440], "commutators": 1674361, "base": 180215, "unit_powers": 294, "sec": 626}
+{"P": 4, "pair": [380, 461], "commutators": 1677842, "base": 180590, "unit_powers": 294, "sec": 627}
+{"P": 4, "pair": [380, 480], "commutators": 1681323, "base": 180965, "unit_powers": 294, "sec": 628}
+{"P": 4, "pair": [380, 486], "commutators": 1684804, "base": 181340, "unit_powers": 294, "sec": 629}
+{"P": 4, "pair": [380, 556], "commutators": 1688285, "base": 181715, "unit_powers": 294, "sec": 630}
+{"P": 4, "pair": [391, 439], "commutators": 1691766, "base": 182056, "unit_powers": 379, "sec": 632}
+{"P": 4, "pair": [391, 462], "commutators": 1695247, "base": 182431, "unit_powers": 379, "sec": 633}
+{"P": 4, "pair": [391, 465], "commutators": 1698728, "base": 182806, "unit_powers": 379, "sec": 634}
+{"P": 4, "pair": [391, 476], "commutators": 1702209, "base": 183181, "unit_powers": 379, "sec": 635}
+{"P": 4, "pair": [391, 504], "commutators": 1705690, "base": 183556, "unit_powers": 379, "sec": 636}
+{"P": 4, "pair": [391, 560], "commutators": 1709171, "base": 183895, "unit_powers": 421, "sec": 637}
+{"P": 4, "pair": [419, 461], "commutators": 1712652, "base": 184270, "unit_powers": 421, "sec": 638}
+{"P": 4, "pair": [419, 486], "commutators": 1716133, "base": 184645, "unit_powers": 421, "sec": 640}
+{"P": 4, "pair": [419, 511], "commutators": 1719614, "base": 185020, "unit_powers": 421, "sec": 641}
+{"P": 4, "pair": [419, 522], "commutators": 1723095, "base": 185395, "unit_powers": 421, "sec": 642}
+{"P": 4, "pair": [419, 572], "commutators": 1726576, "base": 185770, "unit_powers": 421, "sec": 643}
+{"P": 4, "pair": [420, 480], "commutators": 1730057, "base": 186145, "unit_powers": 421, "sec": 644}
+{"P": 4, "pair": [420, 486], "commutators": 1733538, "base": 186520, "unit_powers": 421, "sec": 645}
+{"P": 4, "pair": [420, 489], "commutators": 1737019, "base": 186895, "unit_powers": 421, "sec": 647}
+{"P": 4, "pair": [420, 509], "commutators": 1740500, "base": 187270, "unit_powers": 421, "sec": 648}
+{"P": 4, "pair": [420, 511], "commutators": 1743981, "base": 187645, "unit_powers": 421, "sec": 649}
+{"P": 4, "pair": [420, 573], "commutators": 1747462, "base": 188020, "unit_powers": 421, "sec": 650}
+{"P": 4, "pair": [421, 465], "commutators": 1750943, "base": 188395, "unit_powers": 421, "sec": 651}
+{"P": 4, "pair": [421, 499], "commutators": 1754424, "base": 188770, "unit_powers": 421, "sec": 652}
+{"P": 4, "pair": [421, 504], "commutators": 1757905, "base": 189145, "unit_powers": 421, "sec": 653}
+{"P": 4, "pair": [421, 520], "commutators": 1761386, "base": 189520, "unit_powers": 421, "sec": 654}
+{"P": 4, "pair": [421, 525], "commutators": 1764867, "base": 189895, "unit_powers": 421, "sec": 655}
+{"P": 4, "pair": [421, 574], "commutators": 1768348, "base": 190270, "unit_powers": 421, "sec": 657}
+{"P": 4, "pair": [432, 476], "commutators": 1771829, "base": 190645, "unit_powers": 421, "sec": 658}
+{"P": 4, "pair": [432, 489], "commutators": 1775310, "base": 191020, "unit_powers": 421, "sec": 659}
+{"P": 4, "pair": [432, 504], "commutators": 1778791, "base": 191395, "unit_powers": 421, "sec": 660}
+{"P": 4, "pair": [432, 509], "commutators": 1782272, "base": 191770, "unit_powers": 421, "sec": 661}
+{"P": 4, "pair": [432, 525], "commutators": 1785753, "base": 192145, "unit_powers": 421, "sec": 662}
+{"P": 4, "pair": [432, 576], "commutators": 1789234, "base": 192520, "unit_powers": 421, "sec": 663}
+{"P": 4, "pair": [433, 488], "commutators": 1792715, "base": 192895, "unit_powers": 421, "sec": 664}
+{"P": 4, "pair": [433, 499], "commutators": 1796196, "base": 193270, "unit_powers": 421, "sec": 665}
+{"P": 4, "pair": [433, 520], "commutators": 1799677, "base": 193645, "unit_powers": 421, "sec": 666}
+{"P": 4, "pair": [433, 522], "commutators": 1803158, "base": 194020, "unit_powers": 421, "sec": 667}
+{"P": 4, "pair": [433, 577], "commutators": 1806639, "base": 194395, "unit_powers": 421, "sec": 668}
+{"P": 4, "pair": [438, 440], "commutators": 1810120, "base": 194770, "unit_powers": 421, "sec": 670}
+{"P": 4, "pair": [438, 461], "commutators": 1813601, "base": 195145, "unit_powers": 421, "sec": 671}
+{"P": 4, "pair": [438, 479], "commutators": 1817082, "base": 195520, "unit_powers": 421, "sec": 672}
+{"P": 4, "pair": [438, 547], "commutators": 1820563, "base": 195895, "unit_powers": 421, "sec": 673}
+{"P": 4, "pair": [438, 548], "commutators": 1824044, "base": 196240, "unit_powers": 461, "sec": 674}
+{"P": 4, "pair": [438, 556], "commutators": 1827525, "base": 196615, "unit_powers": 461, "sec": 675}
+{"P": 4, "pair": [439, 462], "commutators": 1831006, "base": 196959, "unit_powers": 556, "sec": 677}
+{"P": 4, "pair": [439, 465], "commutators": 1834487, "base": 197298, "unit_powers": 653, "sec": 678}
+{"P": 4, "pair": [439, 479], "commutators": 1837968, "base": 197620, "unit_powers": 880, "sec": 679}
+{"P": 4, "pair": [439, 548], "commutators": 1841449, "base": 197774, "unit_powers": 1422, "sec": 680}
+{"P": 4, "pair": [439, 555], "commutators": 1844930, "base": 197999, "unit_powers": 1953, "sec": 681}
+{"P": 4, "pair": [439, 560], "commutators": 1848411, "base": 198219, "unit_powers": 2154, "sec": 683}
+{"P": 4, "pair": [440, 462], "commutators": 1851892, "base": 198594, "unit_powers": 2154, "sec": 684}
+{"P": 4, "pair": [440, 480], "commutators": 1855373, "base": 198969, "unit_powers": 2154, "sec": 685}
+{"P": 4, "pair": [440, 548], "commutators": 1858854, "base": 199314, "unit_powers": 2194, "sec": 686}
+{"P": 4, "pair": [440, 549], "commutators": 1862335, "base": 199689, "unit_powers": 2194, "sec": 687}
+{"P": 4, "pair": [440, 556], "commutators": 1865816, "base": 200064, "unit_powers": 2194, "sec": 688}
+{"P": 4, "pair": [461, 486], "commutators": 1869297, "base": 200439, "unit_powers": 2194, "sec": 689}
+{"P": 4, "pair": [461, 547], "commutators": 1872778, "base": 200814, "unit_powers": 2194, "sec": 691}
+{"P": 4, "pair": [461, 556], "commutators": 1876259, "base": 201189, "unit_powers": 2194, "sec": 692}
+{"P": 4, "pair": [461, 572], "commutators": 1879740, "base": 201564, "unit_powers": 2194, "sec": 693}
+{"P": 4, "pair": [462, 476], "commutators": 1883221, "base": 201939, "unit_powers": 2194, "sec": 694}
+{"P": 4, "pair": [462, 548], "commutators": 1886702, "base": 202277, "unit_powers": 2279, "sec": 695}
+{"P": 4, "pair": [462, 549], "commutators": 1890183, "base": 202652, "unit_powers": 2279, "sec": 696}
+{"P": 4, "pair": [462, 560], "commutators": 1893664, "base": 202963, "unit_powers": 2376, "sec": 698}
+{"P": 4, "pair": [465, 499], "commutators": 1897145, "base": 203338, "unit_powers": 2376, "sec": 699}
+{"P": 4, "pair": [465, 504], "commutators": 1900626, "base": 203713, "unit_powers": 2376, "sec": 700}
+{"P": 4, "pair": [465, 555], "commutators": 1904107, "base": 204052, "unit_powers": 2448, "sec": 701}
+{"P": 4, "pair": [465, 560], "commutators": 1907588, "base": 204391, "unit_powers": 2500, "sec": 702}
+{"P": 4, "pair": [465, 574], "commutators": 1911069, "base": 204766, "unit_powers": 2500, "sec": 703}
+{"P": 4, "pair": [468, 509], "commutators": 1914550, "base": 205141, "unit_powers": 2500, "sec": 704}
+{"P": 4, "pair": [468, 511], "commutators": 1918031, "base": 205516, "unit_powers": 2500, "sec": 705}
+{"P": 4, "pair": [468, 520], "commutators": 1921512, "base": 205891, "unit_powers": 2500, "sec": 706}
+{"P": 4, "pair": [468, 522], "commutators": 1924993, "base": 206266, "unit_powers": 2500, "sec": 707}
+{"P": 4, "pair": [468, 525], "commutators": 1928474, "base": 206641, "unit_powers": 2500, "sec": 709}
+{"P": 4, "pair": [468, 588], "commutators": 1931955, "base": 207016, "unit_powers": 2500, "sec": 710}
+{"P": 4, "pair": [476, 489], "commutators": 1935436, "base": 207391, "unit_powers": 2500, "sec": 711}
+{"P": 4, "pair": [476, 504], "commutators": 1938917, "base": 207766, "unit_powers": 2500, "sec": 712}
+{"P": 4, "pair": [476, 549], "commutators": 1942398, "base": 208141, "unit_powers": 2500, "sec": 713}
+{"P": 4, "pair": [476, 560], "commutators": 1945879, "base": 208496, "unit_powers": 2500, "sec": 715}
+{"P": 4, "pair": [476, 576], "commutators": 1949360, "base": 208871, "unit_powers": 2500, "sec": 716}
+{"P": 4, "pair": [479, 488], "commutators": 1952841, "base": 209246, "unit_powers": 2500, "sec": 717}
+{"P": 4, "pair": [479, 547], "commutators": 1956322, "base": 209621, "unit_powers": 2500, "sec": 718}
+{"P": 4, "pair": [479, 548], "commutators": 1959803, "base": 209962, "unit_powers": 2560, "sec": 719}
+{"P": 4, "pair": [479, 555], "commutators": 1963284, "base": 210310, "unit_powers": 2610, "sec": 720}
+{"P": 4, "pair": [480, 486], "commutators": 1966765, "base": 210685, "unit_powers": 2610, "sec": 721}
+{"P": 4, "pair": [480, 489], "commutators": 1970246, "base": 211060, "unit_powers": 2610, "sec": 723}
+{"P": 4, "pair": [480, 549], "commutators": 1973727, "base": 211435, "unit_powers": 2610, "sec": 724}
+{"P": 4, "pair": [480, 556], "commutators": 1977208, "base": 211810, "unit_powers": 2610, "sec": 725}
+{"P": 4, "pair": [480, 573], "commutators": 1980689, "base": 212185, "unit_powers": 2610, "sec": 726}
+{"P": 4, "pair": [486, 511], "commutators": 1984170, "base": 212560, "unit_powers": 2610, "sec": 727}
+{"P": 4, "pair": [486, 556], "commutators": 1987651, "base": 212935, "unit_powers": 2610, "sec": 728}
+{"P": 4, "pair": [486, 572], "commutators": 1991132, "base": 213310, "unit_powers": 2610, "sec": 729}
+{"P": 4, "pair": [486, 573], "commutators": 1994613, "base": 213685, "unit_powers": 2610, "sec": 730}
+{"P": 4, "pair": [488, 499], "commutators": 1998094, "base": 214060, "unit_powers": 2610, "sec": 731}
+{"P": 4, "pair": [488, 547], "commutators": 2001575, "base": 214435, "unit_powers": 2610, "sec": 732}
+{"P": 4, "pair": [488, 555], "commutators": 2005056, "base": 214790, "unit_powers": 2650, "sec": 734}
+{"P": 4, "pair": [488, 577], "commutators": 2008537, "base": 215165, "unit_powers": 2650, "sec": 735}
+{"P": 4, "pair": [489, 509], "commutators": 2012018, "base": 215540, "unit_powers": 2650, "sec": 736}
+{"P": 4, "pair": [489, 549], "commutators": 2015499, "base": 215915, "unit_powers": 2650, "sec": 737}
+{"P": 4, "pair": [489, 573], "commutators": 2018980, "base": 216290, "unit_powers": 2650, "sec": 738}
+{"P": 4, "pair": [489, 576], "commutators": 2022461, "base": 216665, "unit_powers": 2650, "sec": 739}
+{"P": 4, "pair": [499, 520], "commutators": 2025942, "base": 217040, "unit_powers": 2650, "sec": 740}
+{"P": 4, "pair": [499, 555], "commutators": 2029423, "base": 217395, "unit_powers": 2690, "sec": 742}
+{"P": 4, "pair": [499, 574], "commutators": 2032904, "base": 217770, "unit_powers": 2690, "sec": 743}
+{"P": 4, "pair": [499, 577], "commutators": 2036385, "base": 218145, "unit_powers": 2690, "sec": 744}
+{"P": 4, "pair": [504, 525], "commutators": 2039866, "base": 218520, "unit_powers": 2690, "sec": 745}
+{"P": 4, "pair": [504, 560], "commutators": 2043347, "base": 218875, "unit_powers": 2690, "sec": 746}
+{"P": 4, "pair": [504, 574], "commutators": 2046828, "base": 219250, "unit_powers": 2690, "sec": 747}
+{"P": 4, "pair": [504, 576], "commutators": 2050309, "base": 219625, "unit_powers": 2690, "sec": 748}
+{"P": 4, "pair": [509, 511], "commutators": 2053790, "base": 220000, "unit_powers": 2690, "sec": 749}
+{"P": 4, "pair": [509, 525], "commutators": 2057271, "base": 220375, "unit_powers": 2690, "sec": 750}
+{"P": 4, "pair": [509, 573], "commutators": 2060752, "base": 220750, "unit_powers": 2690, "sec": 751}
+{"P": 4, "pair": [509, 576], "commutators": 2064233, "base": 221125, "unit_powers": 2690, "sec": 752}
+{"P": 4, "pair": [509, 588], "commutators": 2067714, "base": 221500, "unit_powers": 2690, "sec": 753}
+{"P": 4, "pair": [511, 522], "commutators": 2071195, "base": 221875, "unit_powers": 2690, "sec": 754}
+{"P": 4, "pair": [511, 572], "commutators": 2074676, "base": 222250, "unit_powers": 2690, "sec": 755}
+{"P": 4, "pair": [511, 573], "commutators": 2078157, "base": 222625, "unit_powers": 2690, "sec": 756}
+{"P": 4, "pair": [511, 588], "commutators": 2081638, "base": 223000, "unit_powers": 2690, "sec": 757}
+{"P": 4, "pair": [520, 522], "commutators": 2085119, "base": 223375, "unit_powers": 2690, "sec": 759}
+{"P": 4, "pair": [520, 525], "commutators": 2088600, "base": 223750, "unit_powers": 2690, "sec": 760}
+{"P": 4, "pair": [520, 574], "commutators": 2092081, "base": 224125, "unit_powers": 2690, "sec": 761}
+{"P": 4, "pair": [520, 577], "commutators": 2095562, "base": 224500, "unit_powers": 2690, "sec": 762}
+{"P": 4, "pair": [520, 588], "commutators": 2099043, "base": 224875, "unit_powers": 2690, "sec": 763}
+{"P": 4, "pair": [522, 572], "commutators": 2102524, "base": 225250, "unit_powers": 2690, "sec": 764}
+{"P": 4, "pair": [522, 577], "commutators": 2106005, "base": 225625, "unit_powers": 2690, "sec": 765}
+{"P": 4, "pair": [522, 588], "commutators": 2109486, "base": 226000, "unit_powers": 2690, "sec": 766}
+{"P": 4, "pair": [525, 574], "commutators": 2112967, "base": 226375, "unit_powers": 2690, "sec": 767}
+{"P": 4, "pair": [525, 576], "commutators": 2116448, "base": 226750, "unit_powers": 2690, "sec": 768}
+{"P": 4, "pair": [525, 588], "commutators": 2119929, "base": 227125, "unit_powers": 2690, "sec": 769}
+{"P": 4, "pair": [547, 548], "commutators": 2123410, "base": 227456, "unit_powers": 2765, "sec": 770}
+{"P": 4, "pair": [547, 555], "commutators": 2126891, "base": 227803, "unit_powers": 2817, "sec": 772}
+{"P": 4, "pair": [547, 556], "commutators": 2130372, "base": 228178, "unit_powers": 2817, "sec": 773}
+{"P": 4, "pair": [547, 572], "commutators": 2133853, "base": 228553, "unit_powers": 2817, "sec": 774}
+{"P": 4, "pair": [547, 577], "commutators": 2137334, "base": 228928, "unit_powers": 2817, "sec": 775}
+{"P": 4, "pair": [547, 599], "commutators": 2140815, "base": 229303, "unit_powers": 2817, "sec": 776}
+{"P": 4, "pair": [548, 549], "commutators": 2144296, "base": 229634, "unit_powers": 2897, "sec": 777}
+{"P": 4, "pair": [548, 555], "commutators": 2147777, "base": 229787, "unit_powers": 3299, "sec": 778}
+{"P": 4, "pair": [548, 556], "commutators": 2151258, "base": 230132, "unit_powers": 3339, "sec": 779}
+{"P": 4, "pair": [548, 560], "commutators": 2154739, "base": 230283, "unit_powers": 3541, "sec": 781}
+{"P": 4, "pair": [548, 599], "commutators": 2158220, "base": 230621, "unit_powers": 3631, "sec": 782}
+{"P": 4, "pair": [549, 556], "commutators": 2161701, "base": 230996, "unit_powers": 3631, "sec": 783}
+{"P": 4, "pair": [549, 560], "commutators": 2165182, "base": 231343, "unit_powers": 3653, "sec": 784}
+{"P": 4, "pair": [549, 573], "commutators": 2168663, "base": 231718, "unit_powers": 3653, "sec": 785}
+{"P": 4, "pair": [549, 576], "commutators": 2172144, "base": 232093, "unit_powers": 3653, "sec": 786}
+{"P": 4, "pair": [549, 599], "commutators": 2175625, "base": 232468, "unit_powers": 3653, "sec": 787}
+{"P": 4, "pair": [555, 560], "commutators": 2179106, "base": 232688, "unit_powers": 3854, "sec": 788}
+{"P": 4, "pair": [555, 574], "commutators": 2182587, "base": 233027, "unit_powers": 3936, "sec": 789}
+{"P": 4, "pair": [555, 577], "commutators": 2186068, "base": 233382, "unit_powers": 3976, "sec": 791}
+{"P": 4, "pair": [555, 599], "commutators": 2189549, "base": 233693, "unit_powers": 4098, "sec": 792}
+{"P": 4, "pair": [556, 572], "commutators": 2193030, "base": 234068, "unit_powers": 4098, "sec": 793}
+{"P": 4, "pair": [556, 573], "commutators": 2196511, "base": 234443, "unit_powers": 4098, "sec": 794}
+{"P": 4, "pair": [556, 599], "commutators": 2199992, "base": 234818, "unit_powers": 4098, "sec": 795}
+{"P": 4, "pair": [560, 574], "commutators": 2203473, "base": 235159, "unit_powers": 4133, "sec": 796}
+{"P": 4, "pair": [560, 576], "commutators": 2206954, "base": 235514, "unit_powers": 4133, "sec": 797}
+{"P": 4, "pair": [560, 599], "commutators": 2210435, "base": 235858, "unit_powers": 4183, "sec": 798}
+{"P": 4, "pair": [572, 573], "commutators": 2213916, "base": 236233, "unit_powers": 4183, "sec": 800}
+{"P": 4, "pair": [572, 577], "commutators": 2217397, "base": 236608, "unit_powers": 4183, "sec": 801}
+{"P": 4, "pair": [572, 588], "commutators": 2220878, "base": 236983, "unit_powers": 4183, "sec": 802}
+{"P": 4, "pair": [572, 599], "commutators": 2224359, "base": 237358, "unit_powers": 4183, "sec": 803}
+{"P": 4, "pair": [573, 576], "commutators": 2227840, "base": 237733, "unit_powers": 4183, "sec": 804}
+{"P": 4, "pair": [573, 588], "commutators": 2231321, "base": 238108, "unit_powers": 4183, "sec": 805}
+{"P": 4, "pair": [573, 599], "commutators": 2234802, "base": 238483, "unit_powers": 4183, "sec": 806}
+{"P": 4, "pair": [574, 576], "commutators": 2238283, "base": 238858, "unit_powers": 4183, "sec": 807}
+{"P": 4, "pair": [574, 577], "commutators": 2241764, "base": 239233, "unit_powers": 4183, "sec": 809}
+{"P": 4, "pair": [574, 588], "commutators": 2245245, "base": 239608, "unit_powers": 4183, "sec": 810}
+{"P": 4, "pair": [574, 599], "commutators": 2248726, "base": 239983, "unit_powers": 4183, "sec": 811}
+{"P": 4, "pair": [576, 588], "commutators": 2252207, "base": 240358, "unit_powers": 4183, "sec": 812}
+{"P": 4, "pair": [576, 599], "commutators": 2255688, "base": 240733, "unit_powers": 4183, "sec": 813}
+{"P": 4, "pair": [577, 588], "commutators": 2259169, "base": 241108, "unit_powers": 4183, "sec": 814}
+{"P": 4, "pair": [577, 599], "commutators": 2262650, "base": 241483, "unit_powers": 4183, "sec": 815}
+{"P": 4, "pair": [588, 599], "commutators": 2266131, "base": 241858, "unit_powers": 4183, "sec": 817}
+{"P": 4, "entry_pair": [13, 14], "updates": 9, "sec": 819}
+{"P": 4, "entry_pair": [13, 15], "updates": 14, "sec": 820}
+{"P": 4, "entry_pair": [13, 16], "updates": 16, "sec": 821}
+{"P": 4, "entry_pair": [13, 21], "updates": 16, "sec": 822}
+{"P": 4, "entry_pair": [13, 22], "updates": 17, "sec": 823}
+{"P": 4, "entry_pair": [13, 29], "updates": 18, "sec": 824}
+{"P": 4, "entry_pair": [13, 33], "updates": 20, "sec": 825}
+{"P": 4, "entry_pair": [13, 34], "updates": 21, "sec": 826}
+{"P": 4, "entry_pair": [13, 39], "updates": 21, "sec": 828}
+{"P": 4, "entry_pair": [13, 40], "updates": 21, "sec": 829}
+{"P": 4, "entry_pair": [14, 15], "updates": 26, "sec": 830}
+{"P": 4, "entry_pair": [14, 21], "updates": 26, "sec": 831}
+{"P": 4, "entry_pair": [14, 29], "updates": 29, "sec": 832}
+{"P": 4, "entry_pair": [14, 39], "updates": 29, "sec": 833}
+{"P": 4, "entry_pair": [14, 81], "updates": 30, "sec": 834}
+{"P": 4, "entry_pair": [14, 108], "updates": 32, "sec": 835}
+{"P": 4, "entry_pair": [14, 114], "updates": 33, "sec": 836}
+{"P": 4, "entry_pair": [14, 124], "updates": 34, "sec": 837}
+{"P": 4, "entry_pair": [14, 127], "updates": 34, "sec": 839}
+{"P": 4, "entry_pair": [14, 142], "updates": 34, "sec": 840}
+{"P": 4, "entry_pair": [15, 16], "updates": 35, "sec": 841}
+{"P": 4, "entry_pair": [15, 21], "updates": 35, "sec": 842}
+{"P": 4, "entry_pair": [15, 22], "updates": 36, "sec": 843}
+{"P": 4, "entry_pair": [15, 29], "updates": 37, "sec": 844}
+{"P": 4, "entry_pair": [15, 81], "updates": 38, "sec": 845}
+{"P": 4, "entry_pair": [15, 82], "updates": 39, "sec": 846}
+{"P": 4, "entry_pair": [15, 83], "updates": 41, "sec": 848}
+{"P": 4, "entry_pair": [15, 109], "updates": 41, "sec": 849}
+{"P": 4, "entry_pair": [15, 127], "updates": 41, "sec": 850}
+{"P": 4, "entry_pair": [15, 143], "updates": 41, "sec": 851}
+{"P": 4, "entry_pair": [16, 21], "updates": 43, "sec": 852}
+{"P": 4, "entry_pair": [16, 22], "updates": 45, "sec": 854}
+{"P": 4, "entry_pair": [16, 33], "updates": 47, "sec": 855}
+{"P": 4, "entry_pair": [16, 40], "updates": 47, "sec": 856}
+{"P": 4, "entry_pair": [16, 83], "updates": 47, "sec": 857}
+{"P": 4, "entry_pair": [16, 109], "updates": 49, "sec": 858}
+{"P": 4, "entry_pair": [16, 115], "updates": 50, "sec": 859}
+{"P": 4, "entry_pair": [16, 123], "updates": 50, "sec": 860}
+{"P": 4, "entry_pair": [16, 128], "updates": 50, "sec": 862}
+{"P": 4, "entry_pair": [16, 144], "updates": 50, "sec": 863}
+{"P": 4, "entry_pair": [21, 33], "updates": 52, "sec": 864}
+{"P": 4, "entry_pair": [21, 81], "updates": 53, "sec": 865}
+{"P": 4, "entry_pair": [21, 83], "updates": 54, "sec": 866}
+{"P": 4, "entry_pair": [21, 108], "updates": 55, "sec": 867}
+{"P": 4, "entry_pair": [21, 122], "updates": 55, "sec": 868}
+{"P": 4, "entry_pair": [21, 128], "updates": 55, "sec": 870}
+{"P": 4, "entry_pair": [21, 156], "updates": 55, "sec": 871}
+{"P": 4, "entry_pair": [22, 29], "updates": 55, "sec": 872}
+{"P": 4, "entry_pair": [22, 34], "updates": 57, "sec": 873}
+{"P": 4, "entry_pair": [22, 40], "updates": 59, "sec": 874}
+{"P": 4, "entry_pair": [22, 82], "updates": 60, "sec": 875}
+{"P": 4, "entry_pair": [22, 101], "updates": 61, "sec": 876}
+{"P": 4, "entry_pair": [22, 109], "updates": 61, "sec": 877}
+{"P": 4, "entry_pair": [22, 123], "updates": 61, "sec": 878}
+{"P": 4, "entry_pair": [22, 129], "updates": 61, "sec": 880}
+{"P": 4, "entry_pair": [22, 163], "updates": 61, "sec": 881}
+{"P": 4, "entry_pair": [29, 34], "updates": 61, "sec": 882}
+{"P": 4, "entry_pair": [29, 39], "updates": 61, "sec": 883}
+{"P": 4, "entry_pair": [29, 82], "updates": 62, "sec": 884}
+{"P": 4, "entry_pair": [29, 101], "updates": 64, "sec": 885}
+{"P": 4, "entry_pair": [29, 114], "updates": 65, "sec": 886}
+{"P": 4, "entry_pair": [29, 127], "updates": 65, "sec": 887}
+{"P": 4, "entry_pair": [29, 135], "updates": 65, "sec": 889}
+{"P": 4, "entry_pair": [29, 155], "updates": 65, "sec": 890}
+{"P": 4, "entry_pair": [33, 40], "updates": 65, "sec": 891}
+{"P": 4, "entry_pair": [33, 115], "updates": 66, "sec": 892}
+{"P": 4, "entry_pair": [33, 122], "updates": 67, "sec": 893}
+{"P": 4, "entry_pair": [33, 128], "updates": 67, "sec": 894}
+{"P": 4, "entry_pair": [33, 152], "updates": 70, "sec": 895}
+{"P": 4, "entry_pair": [33, 159], "updates": 70, "sec": 896}
+{"P": 4, "entry_pair": [33, 190], "updates": 70, "sec": 897}
+{"P": 4, "entry_pair": [34, 39], "updates": 72, "sec": 899}
+{"P": 4, "entry_pair": [34, 40], "updates": 73, "sec": 900}
+{"P": 4, "entry_pair": [34, 101], "updates": 73, "sec": 901}
+{"P": 4, "entry_pair": [34, 129], "updates": 73, "sec": 902}
+{"P": 4, "entry_pair": [34, 135], "updates": 75, "sec": 903}
+{"P": 4, "entry_pair": [34, 164], "updates": 76, "sec": 904}
+{"P": 4, "entry_pair": [34, 171], "updates": 76, "sec": 905}
+{"P": 4, "entry_pair": [34, 191], "updates": 76, "sec": 906}
+{"P": 4, "entry_pair": [39, 114], "updates": 77, "sec": 907}
+{"P": 4, "entry_pair": [39, 124], "updates": 80, "sec": 908}
+{"P": 4, "entry_pair": [39, 135], "updates": 80, "sec": 909}
+{"P": 4, "entry_pair": [39, 171], "updates": 80, "sec": 910}
+{"P": 4, "entry_pair": [39, 178], "updates": 80, "sec": 911}
+{"P": 4, "entry_pair": [39, 206], "updates": 80, "sec": 913}
+{"P": 4, "entry_pair": [40, 115], "updates": 81, "sec": 914}
+{"P": 4, "entry_pair": [40, 123], "updates": 82, "sec": 915}
+{"P": 4, "entry_pair": [40, 129], "updates": 82, "sec": 916}
+{"P": 4, "entry_pair": [40, 159], "updates": 83, "sec": 917}
+{"P": 4, "entry_pair": [40, 164], "updates": 83, "sec": 918}
+{"P": 4, "entry_pair": [40, 205], "updates": 83, "sec": 919}
+{"P": 4, "entry_pair": [81, 83], "updates": 85, "sec": 921}
+{"P": 4, "entry_pair": [81, 108], "updates": 85, "sec": 922}
+{"P": 4, "entry_pair": [81, 127], "updates": 86, "sec": 923}
+{"P": 4, "entry_pair": [81, 142], "updates": 88, "sec": 924}
+{"P": 4, "entry_pair": [81, 143], "updates": 88, "sec": 925}
+{"P": 4, "entry_pair": [81, 156], "updates": 88, "sec": 926}
+{"P": 4, "entry_pair": [81, 241], "updates": 89, "sec": 927}
+{"P": 4, "entry_pair": [81, 251], "updates": 89, "sec": 929}
+{"P": 4, "entry_pair": [81, 264], "updates": 89, "sec": 930}
+{"P": 4, "entry_pair": [82, 101], "updates": 91, "sec": 931}
+{"P": 4, "entry_pair": [82, 109], "updates": 91, "sec": 932}
+{"P": 4, "entry_pair": [82, 127], "updates": 91, "sec": 933}
+{"P": 4, "entry_pair": [82, 143], "updates": 93, "sec": 934}
+{"P": 4, "entry_pair": [82, 155], "updates": 93, "sec": 935}
+{"P": 4, "entry_pair": [82, 163], "updates": 93, "sec": 936}
+{"P": 4, "entry_pair": [82, 265], "updates": 93, "sec": 937}
+{"P": 4, "entry_pair": [83, 109], "updates": 93, "sec": 938}
+{"P": 4, "entry_pair": [83, 128], "updates": 94, "sec": 939}
+{"P": 4, "entry_pair": [83, 143], "updates": 94, "sec": 941}
+{"P": 4, "entry_pair": [83, 144], "updates": 96, "sec": 942}
+{"P": 4, "entry_pair": [83, 156], "updates": 96, "sec": 943}
+{"P": 4, "entry_pair": [83, 241], "updates": 97, "sec": 944}
+{"P": 4, "entry_pair": [83, 253], "updates": 97, "sec": 945}
+{"P": 4, "entry_pair": [83, 266], "updates": 97, "sec": 946}
+{"P": 4, "entry_pair": [101, 129], "updates": 98, "sec": 948}
+{"P": 4, "entry_pair": [101, 135], "updates": 98, "sec": 949}
+{"P": 4, "entry_pair": [101, 155], "updates": 98, "sec": 950}
+{"P": 4, "entry_pair": [101, 163], "updates": 98, "sec": 951}
+{"P": 4, "entry_pair": [101, 191], "updates": 100, "sec": 952}
+{"P": 4, "entry_pair": [101, 296], "updates": 100, "sec": 953}
+{"P": 4, "entry_pair": [101, 298], "updates": 101, "sec": 954}
+{"P": 4, "entry_pair": [108, 122], "updates": 102, "sec": 955}
+{"P": 4, "entry_pair": [108, 124], "updates": 102, "sec": 956}
+{"P": 4, "entry_pair": [108, 142], "updates": 102, "sec": 957}
+{"P": 4, "entry_pair": [108, 156], "updates": 103, "sec": 959}
+{"P": 4, "entry_pair": [108, 189], "updates": 104, "sec": 960}
+{"P": 4, "entry_pair": [108, 251], "updates": 106, "sec": 961}
+{"P": 4, "entry_pair": [108, 288], "updates": 106, "sec": 962}
+{"P": 4, "entry_pair": [108, 297], "updates": 106, "sec": 963}
+{"P": 4, "entry_pair": [109, 123], "updates": 106, "sec": 964}
+{"P": 4, "entry_pair": [109, 143], "updates": 106, "sec": 966}
+{"P": 4, "entry_pair": [109, 144], "updates": 106, "sec": 967}
+{"P": 4, "entry_pair": [109, 163], "updates": 107, "sec": 968}
+{"P": 4, "entry_pair": [109, 253], "updates": 109, "sec": 969}
+{"P": 4, "entry_pair": [109, 289], "updates": 109, "sec": 970}
+{"P": 4, "entry_pair": [114, 124], "updates": 111, "sec": 971}
+{"P": 4, "entry_pair": [114, 127], "updates": 111, "sec": 972}
+{"P": 4, "entry_pair": [114, 135], "updates": 111, "sec": 973}
+{"P": 4, "entry_pair": [114, 142], "updates": 111, "sec": 974}
+{"P": 4, "entry_pair": [114, 155], "updates": 113, "sec": 975}
+{"P": 4, "entry_pair": [114, 206], "updates": 113, "sec": 976}
+{"P": 4, "entry_pair": [114, 299], "updates": 114, "sec": 977}
+{"P": 4, "entry_pair": [114, 309], "updates": 114, "sec": 979}
+{"P": 4, "entry_pair": [114, 313], "updates": 114, "sec": 980}
+{"P": 4, "entry_pair": [115, 123], "updates": 116, "sec": 981}
+{"P": 4, "entry_pair": [115, 128], "updates": 116, "sec": 982}
+{"P": 4, "entry_pair": [115, 144], "updates": 116, "sec": 983}
+{"P": 4, "entry_pair": [115, 159], "updates": 116, "sec": 984}
+{"P": 4, "entry_pair": [115, 190], "updates": 118, "sec": 985}
+{"P": 4, "entry_pair": [115, 205], "updates": 118, "sec": 987}
+{"P": 4, "entry_pair": [115, 300], "updates": 119, "sec": 988}
+{"P": 4, "entry_pair": [115, 310], "updates": 119, "sec": 989}
+{"P": 4, "entry_pair": [115, 314], "updates": 119, "sec": 990}
+{"P": 4, "entry_pair": [122, 128], "updates": 120, "sec": 991}
+{"P": 4, "entry_pair": [122, 152], "updates": 122, "sec": 992}
+{"P": 4, "entry_pair": [122, 156], "updates": 123, "sec": 993}
+{"P": 4, "entry_pair": [122, 189], "updates": 123, "sec": 994}
+{"P": 4, "entry_pair": [122, 190], "updates": 123, "sec": 995}
+{"P": 4, "entry_pair": [122, 288], "updates": 124, "sec": 996}
+{"P": 4, "entry_pair": [122, 302], "updates": 124, "sec": 998}
+{"P": 4, "entry_pair": [122, 317], "updates": 124, "sec": 999}
+{"P": 4, "entry_pair": [123, 129], "updates": 124, "sec": 1000}
+{"P": 4, "entry_pair": [123, 144], "updates": 124, "sec": 1001}
+{"P": 4, "entry_pair": [123, 163], "updates": 125, "sec": 1002}
+{"P": 4, "entry_pair": [123, 205], "updates": 125, "sec": 1003}
+{"P": 4, "entry_pair": [123, 289], "updates": 126, "sec": 1004}
+{"P": 4, "entry_pair": [123, 300], "updates": 126, "sec": 1005}
+{"P": 4, "entry_pair": [123, 318], "updates": 126, "sec": 1006}
+{"P": 4, "entry_pair": [124, 142], "updates": 126, "sec": 1007}
+{"P": 4, "entry_pair": [124, 178], "updates": 127, "sec": 1008}
+{"P": 4, "entry_pair": [124, 189], "updates": 128, "sec": 1009}
+{"P": 4, "entry_pair": [124, 206], "updates": 128, "sec": 1010}
+{"P": 4, "entry_pair": [124, 297], "updates": 129, "sec": 1012}
+{"P": 4, "entry_pair": [124, 299], "updates": 129, "sec": 1013}
+{"P": 4, "entry_pair": [124, 321], "updates": 129, "sec": 1014}
+{"P": 4, "entry_pair": [127, 142], "updates": 130, "sec": 1015}
+{"P": 4, "entry_pair": [127, 143], "updates": 130, "sec": 1016}
+{"P": 4, "entry_pair": [127, 155], "updates": 130, "sec": 1017}
+{"P": 4, "entry_pair": [127, 264], "updates": 130, "sec": 1018}
+{"P": 4, "entry_pair": [127, 265], "updates": 130, "sec": 1019}
+{"P": 4, "entry_pair": [127, 309], "updates": 130, "sec": 1020}
+{"P": 4, "entry_pair": [128, 144], "updates": 131, "sec": 1021}
+{"P": 4, "entry_pair": [128, 156], "updates": 131, "sec": 1023}
+{"P": 4, "entry_pair": [128, 190], "updates": 131, "sec": 1024}
+{"P": 4, "entry_pair": [128, 266], "updates": 131, "sec": 1025}
+{"P": 4, "entry_pair": [128, 310], "updates": 131, "sec": 1026}
+{"P": 4, "entry_pair": [128, 317], "updates": 131, "sec": 1027}
+{"P": 4, "entry_pair": [129, 163], "updates": 132, "sec": 1028}
+{"P": 4, "entry_pair": [129, 164], "updates": 133, "sec": 1030}
+{"P": 4, "entry_pair": [129, 191], "updates": 133, "sec": 1031}
+{"P": 4, "entry_pair": [129, 205], "updates": 134, "sec": 1032}
+{"P": 4, "entry_pair": [129, 296], "updates": 134, "sec": 1033}
+{"P": 4, "entry_pair": [129, 318], "updates": 134, "sec": 1034}
+{"P": 4, "entry_pair": [129, 341], "updates": 134, "sec": 1035}
+{"P": 4, "entry_pair": [135, 155], "updates": 134, "sec": 1036}
+{"P": 4, "entry_pair": [135, 171], "updates": 134, "sec": 1037}
+{"P": 4, "entry_pair": [135, 191], "updates": 134, "sec": 1039}
+{"P": 4, "entry_pair": [135, 206], "updates": 135, "sec": 1040}
+{"P": 4, "entry_pair": [135, 298], "updates": 137, "sec": 1041}
+{"P": 4, "entry_pair": [135, 313], "updates": 137, "sec": 1042}
+{"P": 4, "entry_pair": [135, 345], "updates": 137, "sec": 1043}
+{"P": 4, "entry_pair": [142, 251], "updates": 137, "sec": 1044}
+{"P": 4, "entry_pair": [142, 264], "updates": 137, "sec": 1045}
+{"P": 4, "entry_pair": [142, 297], "updates": 138, "sec": 1046}
+{"P": 4, "entry_pair": [142, 299], "updates": 138, "sec": 1048}
+{"P": 4, "entry_pair": [142, 309], "updates": 139, "sec": 1049}
+{"P": 4, "entry_pair": [143, 241], "updates": 140, "sec": 1050}
+{"P": 4, "entry_pair": [143, 253], "updates": 140, "sec": 1051}
+{"P": 4, "entry_pair": [143, 264], "updates": 141, "sec": 1052}
+{"P": 4, "entry_pair": [143, 265], "updates": 141, "sec": 1053}
+{"P": 4, "entry_pair": [143, 367], "updates": 141, "sec": 1054}
+{"P": 4, "entry_pair": [144, 253], "updates": 141, "sec": 1055}
+{"P": 4, "entry_pair": [144, 266], "updates": 141, "sec": 1056}
+{"P": 4, "entry_pair": [144, 289], "updates": 142, "sec": 1057}
+{"P": 4, "entry_pair": [144, 300], "updates": 142, "sec": 1058}
+{"P": 4, "entry_pair": [144, 310], "updates": 143, "sec": 1060}
+{"P": 4, "entry_pair": [144, 368], "updates": 143, "sec": 1061}
+{"P": 4, "entry_pair": [152, 159], "updates": 144, "sec": 1062}
+{"P": 4, "entry_pair": [152, 178], "updates": 144, "sec": 1063}
+{"P": 4, "entry_pair": [152, 189], "updates": 144, "sec": 1064}
+{"P": 4, "entry_pair": [152, 190], "updates": 144, "sec": 1065}
+{"P": 4, "entry_pair": [152, 244], "updates": 146, "sec": 1066}
+{"P": 4, "entry_pair": [152, 302], "updates": 147, "sec": 1067}
+{"P": 4, "entry_pair": [152, 355], "updates": 147, "sec": 1068}
+{"P": 4, "entry_pair": [152, 356], "updates": 147, "sec": 1069}
+{"P": 4, "entry_pair": [155, 265], "updates": 148, "sec": 1071}
+{"P": 4, "entry_pair": [155, 298], "updates": 149, "sec": 1072}
+{"P": 4, "entry_pair": [155, 309], "updates": 149, "sec": 1073}
+{"P": 4, "entry_pair": [155, 313], "updates": 149, "sec": 1074}
+{"P": 4, "entry_pair": [155, 379], "updates": 149, "sec": 1075}
+{"P": 4, "entry_pair": [156, 241], "updates": 150, "sec": 1076}
+{"P": 4, "entry_pair": [156, 251], "updates": 150, "sec": 1077}
+{"P": 4, "entry_pair": [156, 266], "updates": 151, "sec": 1078}
+{"P": 4, "entry_pair": [156, 288], "updates": 151, "sec": 1080}
+{"P": 4, "entry_pair": [156, 317], "updates": 151, "sec": 1081}
+{"P": 4, "entry_pair": [156, 380], "updates": 151, "sec": 1082}
+{"P": 4, "entry_pair": [159, 164], "updates": 152, "sec": 1083}
+{"P": 4, "entry_pair": [159, 190], "updates": 152, "sec": 1084}
+{"P": 4, "entry_pair": [159, 205], "updates": 152, "sec": 1085}
+{"P": 4, "entry_pair": [159, 244], "updates": 152, "sec": 1086}
+{"P": 4, "entry_pair": [159, 314], "updates": 154, "sec": 1087}
+{"P": 4, "entry_pair": [159, 346], "updates": 154, "sec": 1088}
+{"P": 4, "entry_pair": [159, 356], "updates": 154, "sec": 1089}
+{"P": 4, "entry_pair": [163, 289], "updates": 154, "sec": 1090}
+{"P": 4, "entry_pair": [163, 296], "updates": 155, "sec": 1091}
+{"P": 4, "entry_pair": [163, 318], "updates": 155, "sec": 1093}
+{"P": 4, "entry_pair": [163, 391], "updates": 157, "sec": 1094}
+{"P": 4, "entry_pair": [164, 171], "updates": 158, "sec": 1095}
+{"P": 4, "entry_pair": [164, 191], "updates": 158, "sec": 1096}
+{"P": 4, "entry_pair": [164, 205], "updates": 159, "sec": 1097}
+{"P": 4, "entry_pair": [164, 244], "updates": 159, "sec": 1098}
+{"P": 4, "entry_pair": [164, 341], "updates": 159, "sec": 1099}
+{"P": 4, "entry_pair": [164, 346], "updates": 160, "sec": 1101}
+{"P": 4, "entry_pair": [164, 359], "updates": 160, "sec": 1102}
+{"P": 4, "entry_pair": [171, 178], "updates": 160, "sec": 1103}
+{"P": 4, "entry_pair": [171, 191], "updates": 160, "sec": 1104}
+{"P": 4, "entry_pair": [171, 206], "updates": 161, "sec": 1105}
+{"P": 4, "entry_pair": [171, 244], "updates": 161, "sec": 1106}
+{"P": 4, "entry_pair": [171, 345], "updates": 162, "sec": 1107}
+{"P": 4, "entry_pair": [171, 359], "updates": 162, "sec": 1108}
+{"P": 4, "entry_pair": [171, 376], "updates": 162, "sec": 1109}
+{"P": 4, "entry_pair": [178, 189], "updates": 163, "sec": 1110}
+{"P": 4, "entry_pair": [178, 206], "updates": 163, "sec": 1111}
+{"P": 4, "entry_pair": [178, 244], "updates": 163, "sec": 1112}
+{"P": 4, "entry_pair": [178, 321], "updates": 163, "sec": 1114}
+{"P": 4, "entry_pair": [178, 355], "updates": 163, "sec": 1115}
+{"P": 4, "entry_pair": [178, 376], "updates": 163, "sec": 1116}
+{"P": 4, "entry_pair": [189, 288], "updates": 164, "sec": 1117}
+{"P": 4, "entry_pair": [189, 297], "updates": 164, "sec": 1118}
+{"P": 4, "entry_pair": [189, 302], "updates": 164, "sec": 1119}
+{"P": 4, "entry_pair": [189, 321], "updates": 164, "sec": 1120}
+{"P": 4, "entry_pair": [189, 355], "updates": 165, "sec": 1121}
+{"P": 4, "entry_pair": [189, 419], "updates": 165, "sec": 1122}
+{"P": 4, "entry_pair": [190, 302], "updates": 166, "sec": 1123}
+{"P": 4, "entry_pair": [190, 310], "updates": 166, "sec": 1125}
+{"P": 4, "entry_pair": [190, 314], "updates": 166, "sec": 1126}
+{"P": 4, "entry_pair": [190, 317], "updates": 167, "sec": 1127}
+{"P": 4, "entry_pair": [190, 356], "updates": 167, "sec": 1128}
+{"P": 4, "entry_pair": [190, 420], "updates": 167, "sec": 1129}
+{"P": 4, "entry_pair": [191, 296], "updates": 167, "sec": 1130}
+{"P": 4, "entry_pair": [191, 298], "updates": 167, "sec": 1131}
+{"P": 4, "entry_pair": [191, 341], "updates": 168, "sec": 1132}
+{"P": 4, "entry_pair": [191, 345], "updates": 169, "sec": 1133}
+{"P": 4, "entry_pair": [191, 359], "updates": 169, "sec": 1134}
+{"P": 4, "entry_pair": [191, 421], "updates": 169, "sec": 1135}
+{"P": 4, "entry_pair": [205, 300], "updates": 170, "sec": 1136}
+{"P": 4, "entry_pair": [205, 314], "updates": 170, "sec": 1138}
+{"P": 4, "entry_pair": [205, 318], "updates": 171, "sec": 1139}
+{"P": 4, "entry_pair": [205, 341], "updates": 171, "sec": 1140}
+{"P": 4, "entry_pair": [205, 346], "updates": 171, "sec": 1141}
+{"P": 4, "entry_pair": [205, 432], "updates": 171, "sec": 1142}
+{"P": 4, "entry_pair": [206, 299], "updates": 172, "sec": 1143}
+{"P": 4, "entry_pair": [206, 313], "updates": 172, "sec": 1144}
+{"P": 4, "entry_pair": [206, 321], "updates": 173, "sec": 1145}
+{"P": 4, "entry_pair": [206, 345], "updates": 173, "sec": 1146}
+{"P": 4, "entry_pair": [206, 376], "updates": 173, "sec": 1148}
+{"P": 4, "entry_pair": [206, 433], "updates": 173, "sec": 1149}
+{"P": 4, "entry_pair": [241, 251], "updates": 173, "sec": 1150}
+{"P": 4, "entry_pair": [241, 253], "updates": 173, "sec": 1151}
+{"P": 4, "entry_pair": [241, 264], "updates": 174, "sec": 1152}
+{"P": 4, "entry_pair": [241, 266], "updates": 175, "sec": 1153}
+{"P": 4, "entry_pair": [241, 367], "updates": 175, "sec": 1154}
+{"P": 4, "entry_pair": [241, 380], "updates": 175, "sec": 1155}
+{"P": 4, "entry_pair": [241, 438], "updates": 176, "sec": 1156}
+{"P": 4, "entry_pair": [241, 440], "updates": 176, "sec": 1158}
+{"P": 4, "entry_pair": [244, 346], "updates": 177, "sec": 1159}
+{"P": 4, "entry_pair": [244, 355], "updates": 177, "sec": 1160}
+{"P": 4, "entry_pair": [244, 356], "updates": 177, "sec": 1161}
+{"P": 4, "entry_pair": [244, 359], "updates": 177, "sec": 1162}
+{"P": 4, "entry_pair": [244, 376], "updates": 178, "sec": 1163}
+{"P": 4, "entry_pair": [244, 468], "updates": 178, "sec": 1164}
+{"P": 4, "entry_pair": [251, 264], "updates": 178, "sec": 1166}
+{"P": 4, "entry_pair": [251, 288], "updates": 178, "sec": 1167}
+{"P": 4, "entry_pair": [251, 297], "updates": 178, "sec": 1168}
+{"P": 4, "entry_pair": [251, 380], "updates": 179, "sec": 1169}
+{"P": 4, "entry_pair": [251, 438], "updates": 181, "sec": 1170}
+{"P": 4, "entry_pair": [251, 461], "updates": 181, "sec": 1171}
+{"P": 4, "entry_pair": [253, 266], "updates": 181, "sec": 1172}
+{"P": 4, "entry_pair": [253, 289], "updates": 181, "sec": 1173}
+{"P": 4, "entry_pair": [253, 367], "updates": 182, "sec": 1175}
+{"P": 4, "entry_pair": [253, 368], "updates": 184, "sec": 1176}
+{"P": 4, "entry_pair": [253, 440], "updates": 184, "sec": 1177}
+{"P": 4, "entry_pair": [253, 462], "updates": 184, "sec": 1178}
+{"P": 4, "entry_pair": [264, 265], "updates": 184, "sec": 1179}
+{"P": 4, "entry_pair": [264, 309], "updates": 185, "sec": 1180}
+{"P": 4, "entry_pair": [264, 367], "updates": 185, "sec": 1181}
+{"P": 4, "entry_pair": [264, 438], "updates": 185, "sec": 1182}
+{"P": 4, "entry_pair": [264, 479], "updates": 185, "sec": 1183}
+{"P": 4, "entry_pair": [265, 309], "updates": 186, "sec": 1184}
+{"P": 4, "entry_pair": [265, 367], "updates": 186, "sec": 1186}
+{"P": 4, "entry_pair": [265, 379], "updates": 186, "sec": 1187}
+{"P": 4, "entry_pair": [265, 439], "updates": 186, "sec": 1188}
+{"P": 4, "entry_pair": [265, 479], "updates": 186, "sec": 1189}
+{"P": 4, "entry_pair": [266, 310], "updates": 187, "sec": 1190}
+{"P": 4, "entry_pair": [266, 317], "updates": 187, "sec": 1191}
+{"P": 4, "entry_pair": [266, 368], "updates": 187, "sec": 1192}
+{"P": 4, "entry_pair": [266, 380], "updates": 187, "sec": 1193}
+{"P": 4, "entry_pair": [266, 440], "updates": 187, "sec": 1194}
+{"P": 4, "entry_pair": [266, 480], "updates": 187, "sec": 1195}
+{"P": 4, "entry_pair": [288, 297], "updates": 187, "sec": 1196}
+{"P": 4, "entry_pair": [288, 302], "updates": 187, "sec": 1197}
+{"P": 4, "entry_pair": [288, 317], "updates": 187, "sec": 1199}
+{"P": 4, "entry_pair": [288, 380], "updates": 188, "sec": 1200}
+{"P": 4, "entry_pair": [288, 419], "updates": 189, "sec": 1201}
+{"P": 4, "entry_pair": [288, 461], "updates": 189, "sec": 1202}
+{"P": 4, "entry_pair": [288, 486], "updates": 189, "sec": 1203}
+{"P": 4, "entry_pair": [289, 300], "updates": 189, "sec": 1204}
+{"P": 4, "entry_pair": [289, 318], "updates": 189, "sec": 1205}
+{"P": 4, "entry_pair": [289, 368], "updates": 189, "sec": 1206}
+{"P": 4, "entry_pair": [289, 391], "updates": 191, "sec": 1207}
+{"P": 4, "entry_pair": [289, 462], "updates": 191, "sec": 1208}
+{"P": 4, "entry_pair": [289, 476], "updates": 191, "sec": 1210}
+{"P": 4, "entry_pair": [296, 298], "updates": 191, "sec": 1211}
+{"P": 4, "entry_pair": [296, 318], "updates": 192, "sec": 1212}
+{"P": 4, "entry_pair": [296, 341], "updates": 193, "sec": 1213}
+{"P": 4, "entry_pair": [296, 391], "updates": 193, "sec": 1214}
+{"P": 4, "entry_pair": [296, 421], "updates": 194, "sec": 1215}
+{"P": 4, "entry_pair": [296, 465], "updates": 194, "sec": 1216}
+{"P": 4, "entry_pair": [296, 504], "updates": 194, "sec": 1217}
+{"P": 4, "entry_pair": [297, 299], "updates": 194, "sec": 1218}
+{"P": 4, "entry_pair": [297, 321], "updates": 194, "sec": 1219}
+{"P": 4, "entry_pair": [297, 419], "updates": 195, "sec": 1221}
+{"P": 4, "entry_pair": [297, 461], "updates": 195, "sec": 1222}
+{"P": 4, "entry_pair": [298, 313], "updates": 195, "sec": 1223}
+{"P": 4, "entry_pair": [298, 345], "updates": 195, "sec": 1224}
+{"P": 4, "entry_pair": [298, 379], "updates": 196, "sec": 1225}
+{"P": 4, "entry_pair": [298, 421], "updates": 197, "sec": 1226}
+{"P": 4, "entry_pair": [298, 465], "updates": 197, "sec": 1228}
+{"P": 4, "entry_pair": [298, 499], "updates": 197, "sec": 1229}
+{"P": 4, "entry_pair": [299, 309], "updates": 197, "sec": 1230}
+{"P": 4, "entry_pair": [299, 313], "updates": 197, "sec": 1231}
+{"P": 4, "entry_pair": [299, 321], "updates": 198, "sec": 1232}
+{"P": 4, "entry_pair": [299, 433], "updates": 198, "sec": 1233}
+{"P": 4, "entry_pair": [299, 488], "updates": 199, "sec": 1234}
+{"P": 4, "entry_pair": [300, 310], "updates": 199, "sec": 1235}
+{"P": 4, "entry_pair": [300, 314], "updates": 199, "sec": 1236}
+{"P": 4, "entry_pair": [300, 318], "updates": 200, "sec": 1237}
+{"P": 4, "entry_pair": [300, 368], "updates": 200, "sec": 1238}
+{"P": 4, "entry_pair": [300, 432], "updates": 200, "sec": 1240}
+{"P": 4, "entry_pair": [300, 476], "updates": 201, "sec": 1241}
+{"P": 4, "entry_pair": [300, 489], "updates": 201, "sec": 1242}
+{"P": 4, "entry_pair": [302, 317], "updates": 202, "sec": 1243}
+{"P": 4, "entry_pair": [302, 355], "updates": 203, "sec": 1244}
+{"P": 4, "entry_pair": [302, 356], "updates": 203, "sec": 1245}
+{"P": 4, "entry_pair": [302, 419], "updates": 203, "sec": 1246}
+{"P": 4, "entry_pair": [302, 420], "updates": 203, "sec": 1247}
+{"P": 4, "entry_pair": [302, 486], "updates": 204, "sec": 1248}
+{"P": 4, "entry_pair": [302, 511], "updates": 204, "sec": 1249}
+{"P": 4, "entry_pair": [309, 313], "updates": 204, "sec": 1250}
+{"P": 4, "entry_pair": [309, 379], "updates": 204, "sec": 1251}
+{"P": 4, "entry_pair": [309, 479], "updates": 204, "sec": 1253}
+{"P": 4, "entry_pair": [309, 488], "updates": 204, "sec": 1254}
+{"P": 4, "entry_pair": [310, 314], "updates": 204, "sec": 1255}
+{"P": 4, "entry_pair": [310, 317], "updates": 204, "sec": 1256}
+{"P": 4, "entry_pair": [310, 368], "updates": 204, "sec": 1257}
+{"P": 4, "entry_pair": [310, 420], "updates": 205, "sec": 1258}
+{"P": 4, "entry_pair": [310, 480], "updates": 205, "sec": 1259}
+{"P": 4, "entry_pair": [310, 489], "updates": 205, "sec": 1260}
+{"P": 4, "entry_pair": [313, 345], "updates": 205, "sec": 1261}
+{"P": 4, "entry_pair": [313, 379], "updates": 206, "sec": 1263}
+{"P": 4, "entry_pair": [313, 433], "updates": 207, "sec": 1264}
+{"P": 4, "entry_pair": [313, 488], "updates": 207, "sec": 1265}
+{"P": 4, "entry_pair": [313, 499], "updates": 207, "sec": 1266}
+{"P": 4, "entry_pair": [314, 346], "updates": 207, "sec": 1267}
+{"P": 4, "entry_pair": [314, 356], "updates": 207, "sec": 1268}
+{"P": 4, "entry_pair": [314, 420], "updates": 208, "sec": 1269}
+{"P": 4, "entry_pair": [314, 432], "updates": 209, "sec": 1271}
+{"P": 4, "entry_pair": [314, 489], "updates": 209, "sec": 1272}
+{"P": 4, "entry_pair": [314, 509], "updates": 209, "sec": 1273}
+{"P": 4, "entry_pair": [317, 380], "updates": 209, "sec": 1274}
+{"P": 4, "entry_pair": [317, 420], "updates": 209, "sec": 1275}
+{"P": 4, "entry_pair": [317, 480], "updates": 209, "sec": 1276}
+{"P": 4, "entry_pair": [317, 486], "updates": 209, "sec": 1277}
+{"P": 4, "entry_pair": [318, 341], "updates": 209, "sec": 1278}
+{"P": 4, "entry_pair": [318, 391], "updates": 209, "sec": 1279}
+{"P": 4, "entry_pair": [318, 432], "updates": 209, "sec": 1280}
+{"P": 4, "entry_pair": [318, 476], "updates": 209, "sec": 1282}
+{"P": 4, "entry_pair": [318, 504], "updates": 209, "sec": 1283}
+{"P": 4, "entry_pair": [321, 355], "updates": 209, "sec": 1284}
+{"P": 4, "entry_pair": [321, 376], "updates": 209, "sec": 1285}
+{"P": 4, "entry_pair": [321, 419], "updates": 209, "sec": 1286}
+{"P": 4, "entry_pair": [321, 433], "updates": 209, "sec": 1287}
+{"P": 4, "entry_pair": [321, 522], "updates": 209, "sec": 1288}
+{"P": 4, "entry_pair": [341, 346], "updates": 209, "sec": 1289}
+{"P": 4, "entry_pair": [341, 359], "updates": 209, "sec": 1290}
+{"P": 4, "entry_pair": [341, 421], "updates": 209, "sec": 1292}
+{"P": 4, "entry_pair": [341, 432], "updates": 209, "sec": 1293}
+{"P": 4, "entry_pair": [341, 504], "updates": 209, "sec": 1294}
+{"P": 4, "entry_pair": [341, 525], "updates": 209, "sec": 1295}
+{"P": 4, "entry_pair": [345, 359], "updates": 209, "sec": 1296}
+{"P": 4, "entry_pair": [345, 376], "updates": 209, "sec": 1297}
+{"P": 4, "entry_pair": [345, 421], "updates": 209, "sec": 1298}
+{"P": 4, "entry_pair": [345, 433], "updates": 210, "sec": 1300}
+{"P": 4, "entry_pair": [345, 499], "updates": 210, "sec": 1301}
+{"P": 4, "entry_pair": [345, 520], "updates": 210, "sec": 1302}
+{"P": 4, "entry_pair": [346, 356], "updates": 210, "sec": 1303}
+{"P": 4, "entry_pair": [346, 359], "updates": 210, "sec": 1304}
+{"P": 4, "entry_pair": [346, 432], "updates": 211, "sec": 1305}
+{"P": 4, "entry_pair": [346, 468], "updates": 212, "sec": 1306}
+{"P": 4, "entry_pair": [346, 509], "updates": 212, "sec": 1308}
+{"P": 4, "entry_pair": [346, 525], "updates": 212, "sec": 1309}
+{"P": 4, "entry_pair": [355, 356], "updates": 212, "sec": 1310}
+{"P": 4, "entry_pair": [355, 376], "updates": 213, "sec": 1311}
+{"P": 4, "entry_pair": [355, 419], "updates": 213, "sec": 1312}
+{"P": 4, "entry_pair": [355, 468], "updates": 213, "sec": 1313}
+{"P": 4, "entry_pair": [355, 511], "updates": 213, "sec": 1314}
+{"P": 4, "entry_pair": [355, 522], "updates": 213, "sec": 1315}
+{"P": 4, "entry_pair": [356, 420], "updates": 213, "sec": 1316}
+{"P": 4, "entry_pair": [356, 468], "updates": 214, "sec": 1318}
+{"P": 4, "entry_pair": [356, 509], "updates": 214, "sec": 1319}
+{"P": 4, "entry_pair": [356, 511], "updates": 214, "sec": 1320}
+{"P": 4, "entry_pair": [359, 376], "updates": 214, "sec": 1321}
+{"P": 4, "entry_pair": [359, 421], "updates": 214, "sec": 1322}
+{"P": 4, "entry_pair": [359, 468], "updates": 214, "sec": 1323}
+{"P": 4, "entry_pair": [359, 520], "updates": 215, "sec": 1324}
+{"P": 4, "entry_pair": [359, 525], "updates": 215, "sec": 1325}
+{"P": 4, "entry_pair": [367, 438], "updates": 216, "sec": 1326}
+{"P": 4, "entry_pair": [367, 439], "updates": 217, "sec": 1328}
+{"P": 4, "entry_pair": [367, 440], "updates": 217, "sec": 1329}
+{"P": 4, "entry_pair": [367, 462], "updates": 217, "sec": 1330}
+{"P": 4, "entry_pair": [367, 479], "updates": 218, "sec": 1331}
+{"P": 4, "entry_pair": [367, 548], "updates": 218, "sec": 1332}
+{"P": 4, "entry_pair": [368, 440], "updates": 218, "sec": 1334}
+{"P": 4, "entry_pair": [368, 462], "updates": 218, "sec": 1335}
+{"P": 4, "entry_pair": [368, 476], "updates": 219, "sec": 1336}
+{"P": 4, "entry_pair": [368, 480], "updates": 220, "sec": 1337}
+{"P": 4, "entry_pair": [368, 489], "updates": 220, "sec": 1339}
+{"P": 4, "entry_pair": [368, 549], "updates": 220, "sec": 1340}
+{"P": 4, "entry_pair": [376, 433], "updates": 220, "sec": 1341}
+{"P": 4, "entry_pair": [376, 468], "updates": 220, "sec": 1342}
+{"P": 4, "entry_pair": [376, 520], "updates": 220, "sec": 1343}
+{"P": 4, "entry_pair": [376, 522], "updates": 220, "sec": 1344}
+{"P": 4, "entry_pair": [379, 439], "updates": 222, "sec": 1345}
+{"P": 4, "entry_pair": [379, 465], "updates": 222, "sec": 1347}
+{"P": 4, "entry_pair": [379, 479], "updates": 222, "sec": 1348}
+{"P": 4, "entry_pair": [379, 488], "updates": 222, "sec": 1349}
+{"P": 4, "entry_pair": [379, 499], "updates": 222, "sec": 1350}
+{"P": 4, "entry_pair": [379, 555], "updates": 222, "sec": 1351}
+{"P": 4, "entry_pair": [380, 438], "updates": 222, "sec": 1352}
+{"P": 4, "entry_pair": [380, 440], "updates": 222, "sec": 1353}
+{"P": 4, "entry_pair": [380, 461], "updates": 222, "sec": 1355}
+{"P": 4, "entry_pair": [380, 480], "updates": 222, "sec": 1356}
+{"P": 4, "entry_pair": [380, 486], "updates": 222, "sec": 1357}
+{"P": 4, "entry_pair": [380, 556], "updates": 222, "sec": 1358}
+{"P": 4, "entry_pair": [391, 439], "updates": 222, "sec": 1359}
+{"P": 4, "entry_pair": [391, 462], "updates": 222, "sec": 1360}
+{"P": 4, "entry_pair": [391, 465], "updates": 222, "sec": 1361}
+{"P": 4, "entry_pair": [391, 476], "updates": 222, "sec": 1362}
+{"P": 4, "entry_pair": [391, 504], "updates": 223, "sec": 1364}
+{"P": 4, "entry_pair": [391, 560], "updates": 223, "sec": 1365}
+{"P": 4, "entry_pair": [419, 461], "updates": 223, "sec": 1366}
+{"P": 4, "entry_pair": [419, 486], "updates": 224, "sec": 1367}
+{"P": 4, "entry_pair": [419, 511], "updates": 224, "sec": 1368}
+{"P": 4, "entry_pair": [419, 522], "updates": 225, "sec": 1369}
+{"P": 4, "entry_pair": [419, 572], "updates": 225, "sec": 1370}
+{"P": 4, "entry_pair": [420, 480], "updates": 225, "sec": 1372}
+{"P": 4, "entry_pair": [420, 486], "updates": 225, "sec": 1373}
+{"P": 4, "entry_pair": [420, 489], "updates": 225, "sec": 1374}
+{"P": 4, "entry_pair": [420, 509], "updates": 225, "sec": 1375}
+{"P": 4, "entry_pair": [420, 511], "updates": 225, "sec": 1376}
+{"P": 4, "entry_pair": [420, 573], "updates": 225, "sec": 1377}
+{"P": 4, "entry_pair": [421, 465], "updates": 225, "sec": 1378}
+{"P": 4, "entry_pair": [421, 499], "updates": 225, "sec": 1379}
+{"P": 4, "entry_pair": [421, 504], "updates": 225, "sec": 1380}
+{"P": 4, "entry_pair": [421, 520], "updates": 226, "sec": 1382}
+{"P": 4, "entry_pair": [421, 525], "updates": 226, "sec": 1383}
+{"P": 4, "entry_pair": [421, 574], "updates": 226, "sec": 1384}
+{"P": 4, "entry_pair": [432, 476], "updates": 226, "sec": 1385}
+{"P": 4, "entry_pair": [432, 489], "updates": 226, "sec": 1386}
+{"P": 4, "entry_pair": [432, 504], "updates": 226, "sec": 1387}
+{"P": 4, "entry_pair": [432, 509], "updates": 226, "sec": 1388}
+{"P": 4, "entry_pair": [432, 525], "updates": 226, "sec": 1389}
+{"P": 4, "entry_pair": [432, 576], "updates": 226, "sec": 1391}
+{"P": 4, "entry_pair": [433, 488], "updates": 227, "sec": 1392}
+{"P": 4, "entry_pair": [433, 499], "updates": 227, "sec": 1393}
+{"P": 4, "entry_pair": [433, 520], "updates": 227, "sec": 1394}
+{"P": 4, "entry_pair": [433, 522], "updates": 227, "sec": 1395}
+{"P": 4, "entry_pair": [433, 577], "updates": 227, "sec": 1396}
+{"P": 4, "entry_pair": [438, 440], "updates": 227, "sec": 1397}
+{"P": 4, "entry_pair": [438, 461], "updates": 227, "sec": 1399}
+{"P": 4, "entry_pair": [438, 479], "updates": 228, "sec": 1400}
+{"P": 4, "entry_pair": [438, 547], "updates": 229, "sec": 1401}
+{"P": 4, "entry_pair": [438, 548], "updates": 229, "sec": 1402}
+{"P": 4, "entry_pair": [438, 556], "updates": 229, "sec": 1403}
+{"P": 4, "entry_pair": [439, 462], "updates": 229, "sec": 1404}
+{"P": 4, "entry_pair": [439, 465], "updates": 229, "sec": 1405}
+{"P": 4, "entry_pair": [439, 479], "updates": 229, "sec": 1406}
+{"P": 4, "entry_pair": [439, 548], "updates": 231, "sec": 1407}
+{"P": 4, "entry_pair": [439, 555], "updates": 231, "sec": 1408}
+{"P": 4, "entry_pair": [439, 560], "updates": 231, "sec": 1410}
+{"P": 4, "entry_pair": [440, 462], "updates": 231, "sec": 1411}
+{"P": 4, "entry_pair": [440, 480], "updates": 232, "sec": 1412}
+{"P": 4, "entry_pair": [440, 548], "updates": 232, "sec": 1413}
+{"P": 4, "entry_pair": [440, 549], "updates": 232, "sec": 1414}
+{"P": 4, "entry_pair": [440, 556], "updates": 232, "sec": 1415}
+{"P": 4, "entry_pair": [461, 486], "updates": 232, "sec": 1416}
+{"P": 4, "entry_pair": [461, 547], "updates": 233, "sec": 1417}
+{"P": 4, "entry_pair": [461, 556], "updates": 233, "sec": 1418}
+{"P": 4, "entry_pair": [461, 572], "updates": 233, "sec": 1419}
+{"P": 4, "entry_pair": [462, 476], "updates": 233, "sec": 1421}
+{"P": 4, "entry_pair": [462, 548], "updates": 234, "sec": 1422}
+{"P": 4, "entry_pair": [462, 549], "updates": 234, "sec": 1423}
+{"P": 4, "entry_pair": [462, 560], "updates": 234, "sec": 1424}
+{"P": 4, "entry_pair": [465, 499], "updates": 234, "sec": 1425}
+{"P": 4, "entry_pair": [465, 504], "updates": 235, "sec": 1426}
+{"P": 4, "entry_pair": [465, 555], "updates": 236, "sec": 1427}
+{"P": 4, "entry_pair": [465, 560], "updates": 236, "sec": 1428}
+{"P": 4, "entry_pair": [465, 574], "updates": 236, "sec": 1429}
+{"P": 4, "entry_pair": [468, 509], "updates": 236, "sec": 1430}
+{"P": 4, "entry_pair": [468, 511], "updates": 236, "sec": 1431}
+{"P": 4, "entry_pair": [468, 520], "updates": 236, "sec": 1432}
+{"P": 4, "entry_pair": [468, 522], "updates": 236, "sec": 1433}
+{"P": 4, "entry_pair": [468, 525], "updates": 236, "sec": 1435}
+{"P": 4, "entry_pair": [468, 588], "updates": 236, "sec": 1436}
+{"P": 4, "entry_pair": [476, 489], "updates": 236, "sec": 1437}
+{"P": 4, "entry_pair": [476, 504], "updates": 236, "sec": 1438}
+{"P": 4, "entry_pair": [476, 549], "updates": 236, "sec": 1439}
+{"P": 4, "entry_pair": [476, 560], "updates": 236, "sec": 1440}
+{"P": 4, "entry_pair": [476, 576], "updates": 236, "sec": 1441}
+{"P": 4, "entry_pair": [479, 488], "updates": 236, "sec": 1442}
+{"P": 4, "entry_pair": [479, 547], "updates": 236, "sec": 1443}
+{"P": 4, "entry_pair": [479, 548], "updates": 236, "sec": 1444}
+{"P": 4, "entry_pair": [479, 555], "updates": 236, "sec": 1446}
+{"P": 4, "entry_pair": [480, 486], "updates": 236, "sec": 1447}
+{"P": 4, "entry_pair": [480, 489], "updates": 236, "sec": 1448}
+{"P": 4, "entry_pair": [480, 549], "updates": 236, "sec": 1449}
+{"P": 4, "entry_pair": [480, 556], "updates": 236, "sec": 1450}
+{"P": 4, "entry_pair": [480, 573], "updates": 236, "sec": 1451}
+{"P": 4, "entry_pair": [486, 511], "updates": 236, "sec": 1452}
+{"P": 4, "entry_pair": [486, 556], "updates": 236, "sec": 1453}
+{"P": 4, "entry_pair": [486, 572], "updates": 236, "sec": 1454}
+{"P": 4, "entry_pair": [486, 573], "updates": 236, "sec": 1455}
+{"P": 4, "entry_pair": [488, 499], "updates": 236, "sec": 1456}
+{"P": 4, "entry_pair": [488, 547], "updates": 236, "sec": 1458}
+{"P": 4, "entry_pair": [488, 555], "updates": 236, "sec": 1459}
+{"P": 4, "entry_pair": [488, 577], "updates": 236, "sec": 1460}
+{"P": 4, "entry_pair": [489, 509], "updates": 236, "sec": 1461}
+{"P": 4, "entry_pair": [489, 549], "updates": 236, "sec": 1462}
+{"P": 4, "entry_pair": [489, 573], "updates": 237, "sec": 1463}
+{"P": 4, "entry_pair": [489, 576], "updates": 237, "sec": 1464}
+{"P": 4, "entry_pair": [499, 520], "updates": 237, "sec": 1465}
+{"P": 4, "entry_pair": [499, 555], "updates": 238, "sec": 1466}
+{"P": 4, "entry_pair": [499, 574], "updates": 238, "sec": 1467}
+{"P": 4, "entry_pair": [499, 577], "updates": 238, "sec": 1468}
+{"P": 4, "entry_pair": [504, 525], "updates": 238, "sec": 1470}
+{"P": 4, "entry_pair": [504, 560], "updates": 238, "sec": 1471}
+{"P": 4, "entry_pair": [504, 574], "updates": 238, "sec": 1472}
+{"P": 4, "entry_pair": [504, 576], "updates": 238, "sec": 1473}
+{"P": 4, "entry_pair": [509, 511], "updates": 238, "sec": 1474}
+{"P": 4, "entry_pair": [509, 525], "updates": 238, "sec": 1475}
+{"P": 4, "entry_pair": [509, 573], "updates": 239, "sec": 1477}
+{"P": 4, "entry_pair": [509, 576], "updates": 239, "sec": 1478}
+{"P": 4, "entry_pair": [509, 588], "updates": 239, "sec": 1479}
+{"P": 4, "entry_pair": [511, 522], "updates": 240, "sec": 1480}
+{"P": 4, "entry_pair": [511, 572], "updates": 240, "sec": 1481}
+{"P": 4, "entry_pair": [511, 573], "updates": 240, "sec": 1482}
+{"P": 4, "entry_pair": [511, 588], "updates": 240, "sec": 1483}
+{"P": 4, "entry_pair": [520, 522], "updates": 240, "sec": 1484}
+{"P": 4, "entry_pair": [520, 525], "updates": 240, "sec": 1485}
+{"P": 4, "entry_pair": [520, 574], "updates": 240, "sec": 1486}
+{"P": 4, "entry_pair": [520, 577], "updates": 240, "sec": 1488}
+{"P": 4, "entry_pair": [520, 588], "updates": 240, "sec": 1489}
+{"P": 4, "entry_pair": [522, 572], "updates": 240, "sec": 1490}
+{"P": 4, "entry_pair": [522, 577], "updates": 240, "sec": 1491}
+{"P": 4, "entry_pair": [522, 588], "updates": 240, "sec": 1492}
+{"P": 4, "entry_pair": [525, 574], "updates": 240, "sec": 1493}
+{"P": 4, "entry_pair": [525, 576], "updates": 240, "sec": 1494}
+{"P": 4, "entry_pair": [525, 588], "updates": 240, "sec": 1495}
+{"P": 4, "entry_pair": [547, 548], "updates": 240, "sec": 1496}
+{"P": 4, "entry_pair": [547, 555], "updates": 240, "sec": 1498}
+{"P": 4, "entry_pair": [547, 556], "updates": 240, "sec": 1499}
+{"P": 4, "entry_pair": [547, 572], "updates": 240, "sec": 1500}
+{"P": 4, "entry_pair": [547, 577], "updates": 240, "sec": 1501}
+{"P": 4, "entry_pair": [547, 599], "updates": 240, "sec": 1502}
+{"P": 4, "entry_pair": [548, 549], "updates": 240, "sec": 1503}
+{"P": 4, "entry_pair": [548, 555], "updates": 240, "sec": 1505}
+{"P": 4, "entry_pair": [548, 556], "updates": 240, "sec": 1506}
+{"P": 4, "entry_pair": [548, 560], "updates": 240, "sec": 1507}
+{"P": 4, "entry_pair": [548, 599], "updates": 240, "sec": 1508}
+{"P": 4, "entry_pair": [549, 556], "updates": 240, "sec": 1509}
+{"P": 4, "entry_pair": [549, 560], "updates": 240, "sec": 1510}
+{"P": 4, "entry_pair": [549, 573], "updates": 240, "sec": 1512}
+{"P": 4, "entry_pair": [549, 576], "updates": 240, "sec": 1513}
+{"P": 4, "entry_pair": [549, 599], "updates": 240, "sec": 1514}
+{"P": 4, "entry_pair": [555, 560], "updates": 240, "sec": 1515}
+{"P": 4, "entry_pair": [555, 574], "updates": 240, "sec": 1516}
+{"P": 4, "entry_pair": [555, 577], "updates": 240, "sec": 1517}
+{"P": 4, "entry_pair": [555, 599], "updates": 240, "sec": 1518}
+{"P": 4, "entry_pair": [556, 572], "updates": 240, "sec": 1520}
+{"P": 4, "entry_pair": [556, 573], "updates": 240, "sec": 1521}
+{"P": 4, "entry_pair": [556, 599], "updates": 240, "sec": 1522}
+{"P": 4, "entry_pair": [560, 574], "updates": 240, "sec": 1523}
+{"P": 4, "entry_pair": [560, 576], "updates": 240, "sec": 1524}
+{"P": 4, "entry_pair": [560, 599], "updates": 240, "sec": 1525}
+{"P": 4, "entry_pair": [572, 573], "updates": 240, "sec": 1526}
+{"P": 4, "entry_pair": [572, 577], "updates": 240, "sec": 1527}
+{"P": 4, "entry_pair": [572, 588], "updates": 240, "sec": 1528}
+{"P": 4, "entry_pair": [572, 599], "updates": 240, "sec": 1529}
+{"P": 4, "entry_pair": [573, 576], "updates": 240, "sec": 1531}
+{"P": 4, "entry_pair": [573, 588], "updates": 240, "sec": 1532}
+{"P": 4, "entry_pair": [573, 599], "updates": 240, "sec": 1533}
+{"P": 4, "entry_pair": [574, 576], "updates": 240, "sec": 1534}
+{"P": 4, "entry_pair": [574, 577], "updates": 240, "sec": 1535}
+{"P": 4, "entry_pair": [574, 588], "updates": 240, "sec": 1536}
+{"P": 4, "entry_pair": [574, 599], "updates": 240, "sec": 1537}
+{"P": 4, "entry_pair": [576, 588], "updates": 240, "sec": 1538}
+{"P": 4, "entry_pair": [576, 599], "updates": 240, "sec": 1540}
+{"P": 4, "entry_pair": [577, 588], "updates": 240, "sec": 1541}
+{"P": 4, "entry_pair": [577, 599], "updates": 240, "sec": 1542}
+{"P": 4, "entry_pair": [588, 599], "updates": 240, "sec": 1543}
+{"unit": "state-b05", "small_bad": {"bad": 67, "home_cell": [252, 253, 289, 462], "powers": 3, "letters": 216, "lands_in_model": true, "others_fixed_in_model": true, "exact": {"letters": 216, "off_after": 409, "unit_on_after": 58, "unit_size": 58, "others_off": 342, "others_exact_pose_kept": 342, "newly_off": 67, "newly_off_as_predicted": true, "digest_after": "76be3fbf708a26e4032382320f51a3f201d32dcf39fac5c3d100161f8617976e"}, "W_ok": true}, "sec": 1558}
+{"unit": "state-b05", "unit_size": 58, "kind": 4, "component_points": 480, "vacant_in_component": 0, "entry_home_cells": 120, "result": "transport with Bad 67", "sec": 1558}
+{"done": true, "units": 1, "sec": 1558}

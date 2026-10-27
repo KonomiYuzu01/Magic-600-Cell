@@ -1,0 +1,6 @@
+{"off": 186, "blocks": [61, 61, 10, 29, 25], "straddling": 11, "status_3": 0, "sec": 10}
+{"ghost": {"T_on_lattice_at_end": 61, "T_size": 61, "protected_exact_at_end": true, "free_alive": true, "free": 0, "badW_size": 111, "badW_occupied": 33, "T_landing_in_badW": 0, "badPinv_size": 0, "T_after_PQ_on_lattice": 61, "T_after_PQ_in_badPinv": 0, "badW_digest": "51c4d7b9fc89500759f86fe3f4732ee09ef1aa143b78a0416c3d7f5f1b6cf30c"}, "sec": 10.2}
+{"safe_all_grips": 569, "letters": 6259, "off_lattice": 186, "sec": 29}
+{"orbits": 909, "singletons": 874, "sec": 29}
+{"menu": {"safe_grip_count": 569, "letters": 6259, "orbits": 909, "singleton_orbits": 874, "holes": 186}, "N1": true, "N2": false, "sec": 28.6}
+{"result": "no V", "times": {"ghost_premises": 10.2, "menu_and_condition": 18.3}, "sec": 28.6}
