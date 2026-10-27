@@ -35,7 +35,8 @@ and draw it exactly, and how to restore a jumbled configuration to the solved st
 - **27 October 2026:** the research is handed to the engineering line as data only
   ([data page](../../docs/progress/1.0/jumbling-handoff/research-data.md)), and the jumbling line is designed as a
   puzzle to be solved, in which a methodology that restores the complete puzzle from any scramble of depth 3000 is
-  open ([decision](../../docs/wiki/decisions/owner-decisions-2026-10-27-jumbling-handoff.md)).
+  open; the answers already given stay, and what is not yet decided assists the remaining research
+  ([decision](../../docs/wiki/decisions/owner-decisions-2026-10-27-jumbling-handoff.md)).
 
 ## Where it stands (17 October 2026)
 

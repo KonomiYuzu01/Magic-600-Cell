@@ -3,7 +3,8 @@
 Research data handed to the engineering line under the owner's decisions of 27 October 2026
 ([handoff](../../../wiki/decisions/owner-decisions-2026-10-27-jumbling-handoff.md),
 [freeze](../../../wiki/decisions/owner-decisions-2026-10-27-freeze.md)). The owner frames the jumbling line as a puzzle
-to be solved: a methodology that restores the complete puzzle from any scramble of depth 3000 is open. This page gives
+to be solved: a methodology that restores the complete puzzle from any scramble of depth 3000 is open. The answers the
+owner has already given stay, and what is not yet decided assists the remaining research. This page gives
 the research data only: the definitions the records use, what is proved, what was computed at each scramble depth and
 where each method on record stopped, what is open, and where the records are and in which formats. It states no task,
 proposal or ranking for the line. The jumbling research is frozen, so nothing here changes; every file it cites is on

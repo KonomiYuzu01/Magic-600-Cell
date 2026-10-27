@@ -3,7 +3,7 @@
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
 ## [2026-10-27] decision | Jumbling: handed to the engineering line as data, a puzzle to be solved
-After the freeze record the owner handed the jumbling research to the engineering line as research data only, with no engineering instructions, and framed the jumbling line as a puzzle to be solved, in which a methodology that restores the complete puzzle from any scramble of depth 3000 is open, rather than features reverse-engineered from the research's answers ([decision page](decisions/owner-decisions-2026-10-27-jumbling-handoff.md), [data page](../progress/1.0/jumbling-handoff/research-data.md)).
+After the freeze record the owner handed the jumbling research to the engineering line as research data only, with no engineering instructions, and framed the jumbling line as a puzzle to be solved, in which a methodology that restores the complete puzzle from any scramble of depth 3000 is open, rather than features reverse-engineered from the research's answers; the answers already given stay, and what is not yet decided assists the remaining research ([decision page](decisions/owner-decisions-2026-10-27-jumbling-handoff.md), [data page](../progress/1.0/jumbling-handoff/research-data.md)).
 
 ## [2026-10-27] update | Jumbling: frozen; the D3 record merged as interrupted
 The status lines of the jumbling README, the tutorial, the restoration stages and the theory cards now say frozen, and the depth 100 development run (D3, seed 7102) is merged as an interrupted record that stops at its last checkpoint, 530 bulk steps with 14,528 pieces off, not checked ([its RESULT](../../research/jumbling/restoration/13-tutorial-runner/runs/dev/d3-s7102/RESULT.md)).
