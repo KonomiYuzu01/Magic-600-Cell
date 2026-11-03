@@ -2,8 +2,11 @@
 
 Status: **frozen** since 27 October 2026 by the owner's decisions of
 [26](../../../docs/wiki/decisions/owner-decisions-2026-10-26-tail-then-freeze.md) and
-[27 October](../../../docs/wiki/decisions/owner-decisions-2026-10-27-freeze.md): stage 18 is the last stage, and no
-research round or run starts.
+[27 October](../../../docs/wiki/decisions/owner-decisions-2026-10-27-freeze.md) for the original stage 01-18 programme.
+The owner subsequently authorized a bounded 2 November research round, stopped it at its final milestone,
+and requested publication. Its [height-depth archive](19-height-depth-framework/README.md) records finite
+regional descent, conditional bounds and complete admitted branches, with global coverage still open.
+The research remains stopped; this archival ingestion starts no new round or run.
 
 This directory holds the restoration research of 12 to 17 October 2026 for the jumbling puzzle on the retained
 600-cell-Full geometry, with the twist menu I_a: at each of the 600 grips, the 12 rotations that keep the cut

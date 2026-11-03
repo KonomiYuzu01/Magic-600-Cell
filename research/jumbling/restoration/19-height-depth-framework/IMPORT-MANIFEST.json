@@ -1,0 +1,1104 @@
+{
+  "format": "sanitized-research-archive/1",
+  "source_commit": "a2ebb4cccd6b60d7527c001ef3b2cbc56b179249",
+  "archive_date": "2026-11-03",
+  "evidence_kind": "source and synthetic_geometry; historical checks, not a fresh replay",
+  "runtime_of_original_mathematical_checks": {
+    "python": "CPython 3.14.7",
+    "numpy": "2.3.5"
+  },
+  "production": "Local Python standard-library JSON/text sanitization; gzip.compress(compresslevel=9, mtime=0); no uploaded original logs",
+  "hash_note": "Original digests in records identify captured pre-sanitization sources. Use the path/sha256 and uncompressed_sha256 fields here for the public edition.",
+  "files": [
+    {
+      "original_name": "REGIONAL_PROFILE_DESCENT_THEOREM.md",
+      "original_sha256": "2dc41980136b1fd71c2eddcc32c1206d6375db03e9df60d50f65f4c0d614a115",
+      "path": "records/REGIONAL_PROFILE_DESCENT_THEOREM.md",
+      "sha256": "cde87c6c5ff224728efecaa438db618adcc049d045d45dabee306d801f7d154e",
+      "uncompressed_sha256": "cde87c6c5ff224728efecaa438db618adcc049d045d45dabee306d801f7d154e",
+      "uncompressed_bytes": 13408,
+      "stored_bytes": 13408,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "TYPE_HEIGHT_THREE_BLOCK_WITNESS.md",
+      "original_sha256": "645131c745efd67c90c9cf1f5537bd0eb8c419c15512e58c499b997cea3ecddc",
+      "path": "records/TYPE_HEIGHT_THREE_BLOCK_WITNESS.md",
+      "sha256": "925b21faf2646cbabcf05391ab0fd6c00e83631e139a4783b4d5eed0c2b86d69",
+      "uncompressed_sha256": "925b21faf2646cbabcf05391ab0fd6c00e83631e139a4783b4d5eed0c2b86d69",
+      "uncompressed_bytes": 5977,
+      "stored_bytes": 5977,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "type-lex-recovery-transfer-proof.md",
+      "original_sha256": "e1f193003554cffa24e9c11d05911847042a9a8fc4276208aff39e853e14d083",
+      "path": "records/type-lex-recovery-transfer-proof.md",
+      "sha256": "e1f193003554cffa24e9c11d05911847042a9a8fc4276208aff39e853e14d083",
+      "uncompressed_sha256": "e1f193003554cffa24e9c11d05911847042a9a8fc4276208aff39e853e14d083",
+      "uncompressed_bytes": 7148,
+      "stored_bytes": 7148,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "type-height-weight-proof.md",
+      "original_sha256": "38900979b087f8d620843c5f73464a327dd373268bf78d9ae5dfc5186a4be2da",
+      "path": "records/type-height-weight-proof.md",
+      "sha256": "c78adcf19f1dd8927794f841496f999e6cd253fb2fdb9ce86120add025f34013",
+      "uncompressed_sha256": "c78adcf19f1dd8927794f841496f999e6cd253fb2fdb9ce86120add025f34013",
+      "uncompressed_bytes": 6234,
+      "stored_bytes": 6234,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "CONTROLLED_TYPE_HEIGHT_BOUND.md",
+      "original_sha256": "81d4736cb493efa446480c1008a55e9de50bbe16f16341c938981594fd9dea2d",
+      "path": "records/CONTROLLED_TYPE_HEIGHT_BOUND.md",
+      "sha256": "7c776f89e79e398a151947c25994e7045f1cd980cbae0e616b817c988e7c7493",
+      "uncompressed_sha256": "7c776f89e79e398a151947c25994e7045f1cd980cbae0e616b817c988e7c7493",
+      "uncompressed_bytes": 6866,
+      "stored_bytes": 6866,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "REGIONAL_HIGH_RESTORATION.md",
+      "original_sha256": "40d90a463aca52b6917f600be8a82787838bdc962628c2482280dbfc6386bf46",
+      "path": "records/REGIONAL_HIGH_RESTORATION.md",
+      "sha256": "2fb5cadc48efbd4a4448644d5c6895438d8775ec309c00806d4b227b21961fd9",
+      "uncompressed_sha256": "2fb5cadc48efbd4a4448644d5c6895438d8775ec309c00806d4b227b21961fd9",
+      "uncompressed_bytes": 8348,
+      "stored_bytes": 8348,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "HIGH_NO_OVERSHOOT_RESTORATION.md",
+      "original_sha256": "e098796f1843f04e4482a0a69f30dada774b2f3af0e9a8ff72529bda82baa256",
+      "path": "records/HIGH_NO_OVERSHOOT_RESTORATION.md",
+      "sha256": "668d5dbe1a2c503a3d11d4baa3995e3d2048802407040f3c46fc4b35df57a18c",
+      "uncompressed_sha256": "668d5dbe1a2c503a3d11d4baa3995e3d2048802407040f3c46fc4b35df57a18c",
+      "uncompressed_bytes": 5438,
+      "stored_bytes": 5438,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "CONTINUOUS_FRAMEWORK_CANDIDATE.md",
+      "original_sha256": "c69df63665764f10122824d739952e5b94ccea40002afb8d957850ee137235bd",
+      "path": "records/CONTINUOUS_FRAMEWORK_CANDIDATE.md",
+      "sha256": "9c322a38909fb18b59dd040576185855501481b478634c97134fede0ce5ca046",
+      "uncompressed_sha256": "9c322a38909fb18b59dd040576185855501481b478634c97134fede0ce5ca046",
+      "uncompressed_bytes": 7375,
+      "stored_bytes": 7375,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "GUARDED_OPTIMAL_RETURN.md",
+      "original_sha256": "7196bad98121a02d3edd9c7ab69783f1d1a7587a70d61a99cc568952b5f50147",
+      "path": "records/GUARDED_OPTIMAL_RETURN.md",
+      "sha256": "aabe470f9b081082aa70e028adf3cd278b216d2d191b7cb722660fca2a1d1cca",
+      "uncompressed_sha256": "aabe470f9b081082aa70e028adf3cd278b216d2d191b7cb722660fca2a1d1cca",
+      "uncompressed_bytes": 8419,
+      "stored_bytes": 8419,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "PREFIX_COMPLETE_OPTIMAL_RETURN.md",
+      "original_sha256": "7c2aa21578fa869e1f2440580d17923786ee3bf99ba79c3acb61589028a573f3",
+      "path": "records/PREFIX_COMPLETE_OPTIMAL_RETURN.md",
+      "sha256": "07d9479d0df99921961c79a02b48d6ec10dd5d60a6fee7b84ac4fa874d331f11",
+      "uncompressed_sha256": "07d9479d0df99921961c79a02b48d6ec10dd5d60a6fee7b84ac4fa874d331f11",
+      "uncompressed_bytes": 5313,
+      "stored_bytes": 5313,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "PREFIX_COMPLETE_OPTIMAL_RETURN_REVIEW.md",
+      "original_sha256": "263f81a89adda3941ede18a5f7d4d17bca17ce145724794e8ee697924ff72085",
+      "path": "records/PREFIX_COMPLETE_OPTIMAL_RETURN_REVIEW.md",
+      "sha256": "3f88b3ae462ff7e5cf183785c8bafaa8deb126dc3bc112e53cc73add8c5f0b89",
+      "uncompressed_sha256": "3f88b3ae462ff7e5cf183785c8bafaa8deb126dc3bc112e53cc73add8c5f0b89",
+      "uncompressed_bytes": 7798,
+      "stored_bytes": 7798,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "UPPER_BOUND_INDUCTION.md",
+      "original_sha256": "4a1a177e98530fbb13b5425d89ec8f8227fb8bd784035ab0697c29d9132b1139",
+      "path": "records/UPPER_BOUND_INDUCTION.md",
+      "sha256": "9ea220c94dd8a49da3297510fff84ba352434a33da15c63d1ffd4338bc7f8bd5",
+      "uncompressed_sha256": "9ea220c94dd8a49da3297510fff84ba352434a33da15c63d1ffd4338bc7f8bd5",
+      "uncompressed_bytes": 13838,
+      "stored_bytes": 13838,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "RESTORATION_DEPTH_PROFILE.md",
+      "original_sha256": "61dd12f3e8c9517ce8d6b12a9f322c4555af16786fb9090d1a40885bab270165",
+      "path": "records/RESTORATION_DEPTH_PROFILE.md",
+      "sha256": "5ab675c8c9cff82a42241a1d74349de8cb5d58d4f1727e655582c7f936927a18",
+      "uncompressed_sha256": "5ab675c8c9cff82a42241a1d74349de8cb5d58d4f1727e655582c7f936927a18",
+      "uncompressed_bytes": 11745,
+      "stored_bytes": 11745,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "HEIGHT_DEPTH_COROLLARIES.md",
+      "original_sha256": "3afa2837daa09356598208ec66963c6fc97fd49a8a03d582a982819cea234ce5",
+      "path": "records/HEIGHT_DEPTH_COROLLARIES.md",
+      "sha256": "ca124cb7097584ac2946fd3f8662df9ed1ae470a4203476a1a6e3d037381d36e",
+      "uncompressed_sha256": "ca124cb7097584ac2946fd3f8662df9ed1ae470a4203476a1a6e3d037381d36e",
+      "uncompressed_bytes": 7821,
+      "stored_bytes": 7821,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "tail-coverage-complete-profile-chain.md",
+      "original_sha256": "61de8dbd1d96f75c8157de10966a920e83e58502fcd440a591450017f2d2cf6f",
+      "path": "records/tail-coverage-complete-profile-chain.md",
+      "sha256": "b54107dbd0a4e2797459c43fcde3e48dbf8831ab4d80460e394854124bd4f0c2",
+      "uncompressed_sha256": "b54107dbd0a4e2797459c43fcde3e48dbf8831ab4d80460e394854124bd4f0c2",
+      "uncompressed_bytes": 9132,
+      "stored_bytes": 9132,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "tail-coverage-b07-profile-primitive.md",
+      "original_sha256": "84a5907c7eaa197556b4e16269784cf5279ca1e30f6b1458a29c5a03bce317a7",
+      "path": "records/tail-coverage-b07-profile-primitive.md",
+      "sha256": "84a5907c7eaa197556b4e16269784cf5279ca1e30f6b1458a29c5a03bce317a7",
+      "uncompressed_sha256": "84a5907c7eaa197556b4e16269784cf5279ca1e30f6b1458a29c5a03bce317a7",
+      "uncompressed_bytes": 8774,
+      "stored_bytes": 8774,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "tail-coverage-lattice-sticker-cost.md",
+      "original_sha256": "c59017a2ed68d14d7e65720e76a49be5c5c16b9b36c41ca06fe375462c9fb90d",
+      "path": "records/tail-coverage-lattice-sticker-cost.md",
+      "sha256": "c59017a2ed68d14d7e65720e76a49be5c5c16b9b36c41ca06fe375462c9fb90d",
+      "uncompressed_sha256": "c59017a2ed68d14d7e65720e76a49be5c5c16b9b36c41ca06fe375462c9fb90d",
+      "uncompressed_bytes": 6904,
+      "stored_bytes": 6904,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "profile-family-review-sol-note.md",
+      "original_sha256": "d1e8b583736c6f86cb7be507b6c2a9fe8226c0ce68062c3f63845d7d479e746c",
+      "path": "records/profile-family-review-sol-note.md",
+      "sha256": "47ebbc276811b4e5f56238a50da00a8cef19c84e34627b67b2d2b8044d253dbd",
+      "uncompressed_sha256": "47ebbc276811b4e5f56238a50da00a8cef19c84e34627b67b2d2b8044d253dbd",
+      "uncompressed_bytes": 9114,
+      "stored_bytes": 9114,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "profile-family-review-astra-note.md",
+      "original_sha256": "ae53d85246894c9d7da93a481fb1077728349927d2f6ba14a39c82151a1e8639",
+      "path": "records/profile-family-review-astra-note.md",
+      "sha256": "679ecd95df835f483ebcbf98fcaeeb0967adf142e87176d58a32d65f36489d4c",
+      "uncompressed_sha256": "679ecd95df835f483ebcbf98fcaeeb0967adf142e87176d58a32d65f36489d4c",
+      "uncompressed_bytes": 6914,
+      "stored_bytes": 6914,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "type-lex-recovery-review-note.md",
+      "original_sha256": "3570973b0bda276025d59d9afc3ca9d37c7998fc5fb1673f1cd4cdc13efc70c7",
+      "path": "records/type-lex-recovery-review-note.md",
+      "sha256": "54c2c0a8000fa5c466299b7b0b7bc51f276a768f525a11b617b5338f0d9e0c99",
+      "uncompressed_sha256": "54c2c0a8000fa5c466299b7b0b7bc51f276a768f525a11b617b5338f0d9e0c99",
+      "uncompressed_bytes": 4844,
+      "stored_bytes": 4844,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "type-lex-trimmed-independent-review.md",
+      "original_sha256": "845d6a4b8b775b2785a916773efaba18335962d5baf9a6bc97e5736113cde1e1",
+      "path": "records/type-lex-trimmed-independent-review.md",
+      "sha256": "fcd0bd3e85e21f31f66469c9c8434659a58df9e030f8a62d2a5fe2337dfda474",
+      "uncompressed_sha256": "fcd0bd3e85e21f31f66469c9c8434659a58df9e030f8a62d2a5fe2337dfda474",
+      "uncompressed_bytes": 9950,
+      "stored_bytes": 9950,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "type-lex-independent-weight-proof-review.md",
+      "original_sha256": "397700905baa165350f3ce1def4ec4774ff394ff7bc6440180d4739d404f5dd1",
+      "path": "records/type-lex-independent-weight-proof-review.md",
+      "sha256": "bd059e1c58c20d3ffbd5c2170d00490f5a81c2c39c601f05faa51aeb04545579",
+      "uncompressed_sha256": "bd059e1c58c20d3ffbd5c2170d00490f5a81c2c39c601f05faa51aeb04545579",
+      "uncompressed_bytes": 5837,
+      "stored_bytes": 5837,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "controlled-type-height-independent-review.md",
+      "original_sha256": "97f2c4c1db1550816d45eace9616bad3fd7d2390dfe8a30d8ca0028299e32e13",
+      "path": "records/controlled-type-height-independent-review.md",
+      "sha256": "89a21c70d13173dc55df67d39afb96c97f7e57e59329f611e0e222edfb3f31a6",
+      "uncompressed_sha256": "89a21c70d13173dc55df67d39afb96c97f7e57e59329f611e0e222edfb3f31a6",
+      "uncompressed_bytes": 6435,
+      "stored_bytes": 6435,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "regional-high-independent-proof-review.md",
+      "original_sha256": "fd704b6654bab0e9d8a34406d50a88ec923e84d41962e235aa7c3dbef643f1be",
+      "path": "records/regional-high-independent-proof-review.md",
+      "sha256": "4be96569dbe39f727c9d21dcbcd7166a522a4253ae62563dbae8368bfd7b69a8",
+      "uncompressed_sha256": "4be96569dbe39f727c9d21dcbcd7166a522a4253ae62563dbae8368bfd7b69a8",
+      "uncompressed_bytes": 10368,
+      "stored_bytes": 10368,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "high-no-overshoot-independent-review.md",
+      "original_sha256": "592e628b59930b301e8969b837cbf05d98b0b20952866364f46b7c4218cfc020",
+      "path": "records/high-no-overshoot-independent-review.md",
+      "sha256": "482844bb22853479b4047f58d3d03a1358c00c3efe652212fc8eac09c7a20f37",
+      "uncompressed_sha256": "482844bb22853479b4047f58d3d03a1358c00c3efe652212fc8eac09c7a20f37",
+      "uncompressed_bytes": 5926,
+      "stored_bytes": 5926,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "continuous-framework-independent-final-review.md",
+      "original_sha256": "1d390540f4992000f41e9eb05390c82227af96599ab107e1f7e40fff49d81a8c",
+      "path": "records/continuous-framework-independent-final-review.md",
+      "sha256": "11d3034cd337dd23ae0d132a308a483705e128f78c7e8f9662aeffd6d3d1ac22",
+      "uncompressed_sha256": "11d3034cd337dd23ae0d132a308a483705e128f78c7e8f9662aeffd6d3d1ac22",
+      "uncompressed_bytes": 4422,
+      "stored_bytes": 4422,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "complete-profile-tail-independent-review.md",
+      "original_sha256": "fe06a214f3c9e309fb2445849d007a61b0284e7fed6d1ad46b6f72dc0553aa0a",
+      "path": "records/complete-profile-tail-independent-review.md",
+      "sha256": "fed0bbc500a84ac47119640154aea4bdba3dda6aae8e938990fd502686a1fb81",
+      "uncompressed_sha256": "fed0bbc500a84ac47119640154aea4bdba3dda6aae8e938990fd502686a1fb81",
+      "uncompressed_bytes": 5699,
+      "stored_bytes": 5699,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "b07-profile-independent-review.md",
+      "original_sha256": "a02b88b2bdf08802ccc06c5c76110a7168e56089e6360fbb1452b7b04dbdf2d7",
+      "path": "records/b07-profile-independent-review.md",
+      "sha256": "27f1e4525ef8d813e1ec7489256e0aa3642c97ba8b1b0870652418beae27ce46",
+      "uncompressed_sha256": "27f1e4525ef8d813e1ec7489256e0aa3642c97ba8b1b0870652418beae27ce46",
+      "uncompressed_bytes": 3190,
+      "stored_bytes": 3190,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "entry-profile-independent-review.md",
+      "original_sha256": "ed0011074c58ffd54ebb79a0c6d6fe2b4a57c2d4839dc8bc8559c7d4fb513df6",
+      "path": "records/entry-profile-independent-review.md",
+      "sha256": "b0b84eebd4c0d329d2afb1f3dbf8772ebe5c3048fa233585ab5ff5183d6a940a",
+      "uncompressed_sha256": "b0b84eebd4c0d329d2afb1f3dbf8772ebe5c3048fa233585ab5ff5183d6a940a",
+      "uncompressed_bytes": 10845,
+      "stored_bytes": 10845,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "entry-profile-transfer-independent-review.md",
+      "original_sha256": "dc22562bd88172203e3005176531426f97f953cab9636a9287b89793e9179898",
+      "path": "records/entry-profile-transfer-independent-review.md",
+      "sha256": "3234818004ab29d34c1edd1a8ca138692e3d85f2772aaca6849f0e25df3131de",
+      "uncompressed_sha256": "3234818004ab29d34c1edd1a8ca138692e3d85f2772aaca6849f0e25df3131de",
+      "uncompressed_bytes": 9131,
+      "stored_bytes": 9131,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "lattice-sticker-cost-independent-review.md",
+      "original_sha256": "42f5e19afe1887074fbd3d9c53797eefe160fee3b265a346b0cb9d778320d450",
+      "path": "records/lattice-sticker-cost-independent-review.md",
+      "sha256": "230236e66258d281df8fe0d198a42ab47a79bda7c2844aaf563a8cc6b46d7613",
+      "uncompressed_sha256": "230236e66258d281df8fe0d198a42ab47a79bda7c2844aaf563a8cc6b46d7613",
+      "uncompressed_bytes": 4065,
+      "stored_bytes": 4065,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "lattice-library-height-independent-review.md",
+      "original_sha256": "e6db2d841b6eda9c77bea402ae78d91fead6d3601e45592628289f294dc2f382",
+      "path": "records/lattice-library-height-independent-review.md",
+      "sha256": "ac56908214ac457972819bb11433cf45e79c6f626cf7bd71142cb84ff12e0db9",
+      "uncompressed_sha256": "ac56908214ac457972819bb11433cf45e79c6f626cf7bd71142cb84ff12e0db9",
+      "uncompressed_bytes": 9618,
+      "stored_bytes": 9618,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "continuous-framework-independent-initial-result.json",
+      "original_sha256": "16822dffd26d7ddc95aa5bf96b84d3fab106d7dadcfe17ace38a00df3996acf9",
+      "path": "records/continuous-framework-independent-initial-result.json",
+      "sha256": "e772edc51b0f17f7bb9ba34487dbf66142e98a88ed7d5fd8ea483ffd4974dba0",
+      "uncompressed_sha256": "e772edc51b0f17f7bb9ba34487dbf66142e98a88ed7d5fd8ea483ffd4974dba0",
+      "uncompressed_bytes": 1630,
+      "stored_bytes": 1630,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "continuous-framework-independent-verified.json",
+      "original_sha256": "fb494413d31b1ca663b8b8cf7d7b7cf0bc380a1020e9f526a203f89cb0e675b0",
+      "path": "records/continuous-framework-independent-verified.json",
+      "sha256": "61530d2914190ccd05f9d0329b98612eaddf6943f45bb842e6095523cb1fc5cc",
+      "uncompressed_sha256": "61530d2914190ccd05f9d0329b98612eaddf6943f45bb842e6095523cb1fc5cc",
+      "uncompressed_bytes": 4112,
+      "stored_bytes": 4112,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "controlled-type-height-independent-review-receipt.json",
+      "original_sha256": "c07806124fdc1c2bf01c39b8babb0651ea48eb513fcf981888f9d9c03b141b80",
+      "path": "records/controlled-type-height-independent-review-receipt.json",
+      "sha256": "992f4d49ea834e7834a9216192a5364223f19d58958501828035eba3dc0fccc2",
+      "uncompressed_sha256": "992f4d49ea834e7834a9216192a5364223f19d58958501828035eba3dc0fccc2",
+      "uncompressed_bytes": 2726,
+      "stored_bytes": 2726,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "entry-profile-core-audit.json",
+      "original_sha256": "a519bb562d2ab47f12bf925cf021b0cf8981089a7975d933ec7f14d8d5f31e65",
+      "path": "records/entry-profile-core-audit.json",
+      "sha256": "cf15acfda04ca488b10ffc70f18027ec3575a9971e9e043da85d77128c45a657",
+      "uncompressed_sha256": "cf15acfda04ca488b10ffc70f18027ec3575a9971e9e043da85d77128c45a657",
+      "uncompressed_bytes": 39943,
+      "stored_bytes": 39943,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "entry-profile-independent-review.json",
+      "original_sha256": "9c7243811a8ceef8ff6040781e97c50dbac97ea31933b666b7b7295b1180be93",
+      "path": "records/entry-profile-independent-review.json",
+      "sha256": "34d3844a3db63b373fa7bf28a7540faab6755663554bdcac0795f1bceca3432a",
+      "uncompressed_sha256": "34d3844a3db63b373fa7bf28a7540faab6755663554bdcac0795f1bceca3432a",
+      "uncompressed_bytes": 34829,
+      "stored_bytes": 34829,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "entry-profile-input/entry-reconstructed-table.json",
+      "original_sha256": "ba22b6603ab1d602acbb87f8188a72acda4af13c99f23a17bbc6f3372eb81837",
+      "path": "records/entry-profile-input/entry-reconstructed-table.json.gz",
+      "sha256": "248b0ab1ec8bc83db2131de11cebb6dceb6f1e520ef12f3eec1a5ef261291676",
+      "uncompressed_sha256": "2a2099aafaff0fda67e4a6a68d1a549cd3609bcaa6b71e267f8d9a26f211e71f",
+      "uncompressed_bytes": 488546,
+      "stored_bytes": 29427,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "entry-profile-input/unit.json",
+      "original_sha256": "f57dd016f103ef999afdfe2ce08387c1bb55e3f6838118591e1935ab2b376ed9",
+      "path": "records/entry-profile-input/unit.json",
+      "sha256": "3ce009688ae7ba04f48d9717490a95a2c6aa7c709b0c6051db4a9d085093d030",
+      "uncompressed_sha256": "3ce009688ae7ba04f48d9717490a95a2c6aa7c709b0c6051db4a9d085093d030",
+      "uncompressed_bytes": 878,
+      "stored_bytes": 878,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "entry-profile-input/word.json",
+      "original_sha256": "182712d38a07684eb53da256ac6731ad64ae04f7f2ef9d1b96c46e2f7aceca75",
+      "path": "records/entry-profile-input/word.json",
+      "sha256": "378528611adac67df6d31671189e597bf1179dd088841a20b92ad11ae6640a63",
+      "uncompressed_sha256": "378528611adac67df6d31671189e597bf1179dd088841a20b92ad11ae6640a63",
+      "uncompressed_bytes": 632,
+      "stored_bytes": 632,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "entry-profile-transfer-audit.json",
+      "original_sha256": "f1a370f7151ad03f079a50f980f4b5ce7e28b330f7ca7e53ad405a63bfac1239",
+      "path": "records/entry-profile-transfer-audit.json",
+      "sha256": "c5a704479f707bc6e068c861b35b28179da3df8d2b57205fe532d9ac25eff95f",
+      "uncompressed_sha256": "c5a704479f707bc6e068c861b35b28179da3df8d2b57205fe532d9ac25eff95f",
+      "uncompressed_bytes": 47348,
+      "stored_bytes": 47348,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "entry-profile-transfer-independent-check.json",
+      "original_sha256": "ab087d68990ab8192f33b5073d4d56b06f5df6c297733404ec5dee7475e57300",
+      "path": "records/entry-profile-transfer-independent-check.json",
+      "sha256": "3441c449201ca82127f5d766e185c54e5a23e0fcf6e431e39594e8cde51b355f",
+      "uncompressed_sha256": "3441c449201ca82127f5d766e185c54e5a23e0fcf6e431e39594e8cde51b355f",
+      "uncompressed_bytes": 80135,
+      "stored_bytes": 80135,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/b07-profile-independent-verified.json",
+      "original_sha256": "95ae68bfd705dd91319a4a298599617c14b8bd4c1880aea0e126a28e0b295d7a",
+      "path": "records/evidence/b07-profile-independent-verified.json",
+      "sha256": "6f5620aa00e446c78bce3c8fc7018cd34c22bf2075e4ab294c83bbb974a71697",
+      "uncompressed_sha256": "6f5620aa00e446c78bce3c8fc7018cd34c22bf2075e4ab294c83bbb974a71697",
+      "uncompressed_bytes": 2626,
+      "stored_bytes": 2626,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/guarded-pump-prefix-code.json",
+      "original_sha256": "1106f0a33972b03178839be1f6ec879dbc99eb98d39dcaf647dce73c523a8345",
+      "path": "records/evidence/guarded-pump-prefix-code.json",
+      "sha256": "a98d9cee83ae0b81dffb77d39a1a0cbd60d966261845328f308a83523e79862c",
+      "uncompressed_sha256": "a98d9cee83ae0b81dffb77d39a1a0cbd60d966261845328f308a83523e79862c",
+      "uncompressed_bytes": 14782,
+      "stored_bytes": 14782,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/lattice-sticker-cost-independent-verified.json",
+      "original_sha256": "5e3e75fb92aba03dcf88573f5c54843057b5c027a4da9221421e22b0062cef0c",
+      "path": "records/evidence/lattice-sticker-cost-independent-verified.json",
+      "sha256": "8e6d44458448f7ae04d1108db99f55ca8aa816a39284c233decd809eac6a289f",
+      "uncompressed_sha256": "8e6d44458448f7ae04d1108db99f55ca8aa816a39284c233decd809eac6a289f",
+      "uncompressed_bytes": 1092,
+      "stored_bytes": 1092,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/native-profile-chain-independent-verified.json",
+      "original_sha256": "25f25483da6fc8fa6954a20299feb0311876f801f26a0083af9919377e25609a",
+      "path": "records/evidence/native-profile-chain-independent-verified.json",
+      "sha256": "43bb23fd3f9a101f5d1144a70cfde07a2e1510956dad5f77f25f32fc8cf822ae",
+      "uncompressed_sha256": "43bb23fd3f9a101f5d1144a70cfde07a2e1510956dad5f77f25f32fc8cf822ae",
+      "uncompressed_bytes": 5898,
+      "stored_bytes": 5898,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/prefix-catalogue-independent-verified.json",
+      "original_sha256": "f337dcac407412e1635fc0ab196749ed62edfe7f635b07c57b04566ee627070f",
+      "path": "records/evidence/prefix-catalogue-independent-verified.json",
+      "sha256": "9a1dfabaaf80522414e6321e051cd9ac5135fd9497061f111bb57694f40c197f",
+      "uncompressed_sha256": "9a1dfabaaf80522414e6321e051cd9ac5135fd9497061f111bb57694f40c197f",
+      "uncompressed_bytes": 1192,
+      "stored_bytes": 1192,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/prefix-complete-optimal-decoder.json",
+      "original_sha256": "e0ee92e8cefd7870abb8d6411909eb922fd56e3e549d56590ff9bdf910fd6680",
+      "path": "records/evidence/prefix-complete-optimal-decoder.json.gz",
+      "sha256": "acb54553bc9d2bd45d37fb75053271328edf650bc1c0cc67caa33cd294c07370",
+      "uncompressed_sha256": "ce5e6014a9a738e75575c84a2902a85598e837c50c61ff1cf3ec0325a71861f0",
+      "uncompressed_bytes": 3533771,
+      "stored_bytes": 1088438,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/px3-7304-depth6-regression-verified.json",
+      "original_sha256": "eb57cddae9cbd18a6d39628a763988709b11f5ed29ecbd3678cbc57a13e5d757",
+      "path": "records/evidence/px3-7304-depth6-regression-verified.json",
+      "sha256": "920dad96eae69e750d9c5eb96467c235ef005fd80888beaba7cc0a16ff9bcbe1",
+      "uncompressed_sha256": "920dad96eae69e750d9c5eb96467c235ef005fd80888beaba7cc0a16ff9bcbe1",
+      "uncompressed_bytes": 1089,
+      "stored_bytes": 1089,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/px3-7304-lattice76-core.json",
+      "original_sha256": "bf04a238eb7a4e520cb66525f91a850dced68140256c4bf1f7c856ef934d3536",
+      "path": "records/evidence/px3-7304-lattice76-core.json",
+      "sha256": "d8ab0996d309f8212c7006ae176b93d9d44ac6dbd85e175993b9c4f34443ee27",
+      "uncompressed_sha256": "d8ab0996d309f8212c7006ae176b93d9d44ac6dbd85e175993b9c4f34443ee27",
+      "uncompressed_bytes": 1364,
+      "stored_bytes": 1364,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/px3-7304-lattice76-review.json",
+      "original_sha256": "7faa76208a8a70c4539062fa5bca0e7d59435f2eb355bfaf295fdd8b812f363c",
+      "path": "records/evidence/px3-7304-lattice76-review.json",
+      "sha256": "77c7980e5268fb7cd89cf45b13b4ddac6d19c6a8771f5d9298b9b9e271ab3f9f",
+      "uncompressed_sha256": "77c7980e5268fb7cd89cf45b13b4ddac6d19c6a8771f5d9298b9b9e271ab3f9f",
+      "uncompressed_bytes": 31216,
+      "stored_bytes": 31216,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/seed-locality-reduction-review.json",
+      "original_sha256": "ca1c202e53058f83f5eefe26638cb9c5ff7ee4aedec097e1f7602d82a953b0ca",
+      "path": "records/evidence/seed-locality-reduction-review.json",
+      "sha256": "83942a15cf5640b4a75b3ab882c7663cb3beffde4123423ae6c590557a806141",
+      "uncompressed_sha256": "83942a15cf5640b4a75b3ab882c7663cb3beffde4123423ae6c590557a806141",
+      "uncompressed_bytes": 11928,
+      "stored_bytes": 11928,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/seed-single-turn-window-shortening.json",
+      "original_sha256": "26fda6e848d4365ae1412331a6d33c7775ff32ef814cdb94de69c342c3fbce69",
+      "path": "records/evidence/seed-single-turn-window-shortening.json",
+      "sha256": "47a0f372cdf1dec4fc245b0b4e9885a9029c0f5327af6fe3720aa743c8912418",
+      "uncompressed_sha256": "47a0f372cdf1dec4fc245b0b4e9885a9029c0f5327af6fe3720aa743c8912418",
+      "uncompressed_bytes": 164709,
+      "stored_bytes": 164709,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/seed-state-local-shortening-review.json",
+      "original_sha256": "25f421b1fa4884e893525ad6416d4ea2844a7064c165d2231b8b4b34c995b1cb",
+      "path": "records/evidence/seed-state-local-shortening-review.json",
+      "sha256": "d813eba70290ebcc9ad5d854d060cf213698343b7e67547fed5c46b6421daa16",
+      "uncompressed_sha256": "d813eba70290ebcc9ad5d854d060cf213698343b7e67547fed5c46b6421daa16",
+      "uncompressed_bytes": 12477,
+      "stored_bytes": 12477,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/sigma-history-return-review.json",
+      "original_sha256": "562151243a17d83cb666d2b557766367c88780f8d4761d24a5e0a031fee57726",
+      "path": "records/evidence/sigma-history-return-review.json",
+      "sha256": "71dd449c117dcd123d932de83fdccc687e595fb12c2921584bcc804f40afa902",
+      "uncompressed_sha256": "71dd449c117dcd123d932de83fdccc687e595fb12c2921584bcc804f40afa902",
+      "uncompressed_bytes": 4157,
+      "stored_bytes": 4157,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/sigma-history-return-verified.json",
+      "original_sha256": "33e042d1a1e0ecffd5e3d91273a11be8205a45d43e4eddc3945ae1066854faa8",
+      "path": "records/evidence/sigma-history-return-verified.json",
+      "sha256": "1aaba38ad62d7b828156e7f0a5a153a507eee86b55f2ef8d607701dbd90b2f8e",
+      "uncompressed_sha256": "1aaba38ad62d7b828156e7f0a5a153a507eee86b55f2ef8d607701dbd90b2f8e",
+      "uncompressed_bytes": 18905,
+      "stored_bytes": 18905,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/sigma-inverse-pump-probe.json",
+      "original_sha256": "43bc86eef167ee3ebdd7d0299c25edb7ec5fc67bb2f3dbdc3258581a422dc787",
+      "path": "records/evidence/sigma-inverse-pump-probe.json.gz",
+      "sha256": "60eb04dd6191640eb0577ad01317d53697dbd956c772206fc26010c5f563ef7d",
+      "uncompressed_sha256": "fafbc8caaf8bf897703571cedd62af53741ef3ba240adee71d34ed0c1e510ec9",
+      "uncompressed_bytes": 643930,
+      "stored_bytes": 144218,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/sigma-strict-continuation-verified.json",
+      "original_sha256": "6c1acb6040772eadf79d9366e32ff974d6fcc01461f9dc837921c21d85543599",
+      "path": "records/evidence/sigma-strict-continuation-verified.json",
+      "sha256": "dfe3e4bd6134d9b37620b5a18c456f7393e67a417c6357c49b721eae041b3c5a",
+      "uncompressed_sha256": "dfe3e4bd6134d9b37620b5a18c456f7393e67a417c6357c49b721eae041b3c5a",
+      "uncompressed_bytes": 8717,
+      "stored_bytes": 8717,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/sigma-transport-independent-verified.json",
+      "original_sha256": "b5f5821259177366c9e0c1d3d740b3870b3b7309c9b3513e8a9026135ada1ccc",
+      "path": "records/evidence/sigma-transport-independent-verified.json",
+      "sha256": "fa37a74bcdd64f44343386fcf80eae1e4cd8525fea5495dd747b4a7c12d3b711",
+      "uncompressed_sha256": "fa37a74bcdd64f44343386fcf80eae1e4cd8525fea5495dd747b4a7c12d3b711",
+      "uncompressed_bytes": 2493,
+      "stored_bytes": 2493,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/sigma12-cluster-independent-verified.json",
+      "original_sha256": "d809fe9bfa526ad8b127d56a3b484252f6e1c87cc2db17617c74679f20348520",
+      "path": "records/evidence/sigma12-cluster-independent-verified.json",
+      "sha256": "893fcbbdba516b4c3150cca5dde1861d162f19eb7535d0a00274990e6769a34b",
+      "uncompressed_sha256": "893fcbbdba516b4c3150cca5dde1861d162f19eb7535d0a00274990e6769a34b",
+      "uncompressed_bytes": 82595,
+      "stored_bytes": 82595,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/sigma12-preparation-independent-verified.json",
+      "original_sha256": "cbdeda989b9e394a3649aff00386ff9faac99fb255b4b164856e4feb52f292c3",
+      "path": "records/evidence/sigma12-preparation-independent-verified.json",
+      "sha256": "85f1e76759f296cfb76098223ee43477e918bf8868964b018d44e2888d41b41a",
+      "uncompressed_sha256": "85f1e76759f296cfb76098223ee43477e918bf8868964b018d44e2888d41b41a",
+      "uncompressed_bytes": 1350,
+      "stored_bytes": 1350,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/sigma12-third-independent-verified.json",
+      "original_sha256": "c393803d0c5751554751e276a5fed265d8456efded89cb5654814e0236998592",
+      "path": "records/evidence/sigma12-third-independent-verified.json",
+      "sha256": "27427afe92be998b07d15b6abaf21e174e3217e88919106497c74aacd1013c4e",
+      "uncompressed_sha256": "27427afe92be998b07d15b6abaf21e174e3217e88919106497c74aacd1013c4e",
+      "uncompressed_bytes": 51072,
+      "stored_bytes": 51072,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/sigma14-catalogue-conjugated-descent.json",
+      "original_sha256": "7faaffd1cf113fa231068f57e3d79626d3b58fc8e092d1550dab4a5dbefa12ef",
+      "path": "records/evidence/sigma14-catalogue-conjugated-descent.json.gz",
+      "sha256": "505f4ffea4c7d9f2d4eb2ae43b2a791d43a19d59f20e3a4082e900536cb1f2fa",
+      "uncompressed_sha256": "5a45c438566ac12019a09ef3fcd4a3f2cded793356332cafd6d03f21518ca5dd",
+      "uncompressed_bytes": 297451,
+      "stored_bytes": 46919,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/sigma14-fourletter-independent-verified.json",
+      "original_sha256": "632ea05276a83098c4a50dd078caec0b0fa0abd394de5cac2aca18718a858af6",
+      "path": "records/evidence/sigma14-fourletter-independent-verified.json",
+      "sha256": "237fe8fc614d527e8c9ae720f3f681d89bc209477c5490a9eb5495e11b456f64",
+      "uncompressed_sha256": "237fe8fc614d527e8c9ae720f3f681d89bc209477c5490a9eb5495e11b456f64",
+      "uncompressed_bytes": 2144,
+      "stored_bytes": 2144,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/sigma16-global-firsttwo-independent-verified.json",
+      "original_sha256": "6b802cdbd27158642bd8f9072203cc3f91f5c4c8897b0a9a1b505e14a660ba0d",
+      "path": "records/evidence/sigma16-global-firsttwo-independent-verified.json",
+      "sha256": "091502b953763be7573b1ec6d12aa7ecdd7b638dd4f63d72b06ce1ba412680e1",
+      "uncompressed_sha256": "091502b953763be7573b1ec6d12aa7ecdd7b638dd4f63d72b06ce1ba412680e1",
+      "uncompressed_bytes": 2617,
+      "stored_bytes": 2617,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/sigma16-no-rise-threeletter-independent-review.json",
+      "original_sha256": "73219934ce2a8960b625dd6e3ff4b868b3c96da4159ab3a2b2565bce7f7d0471",
+      "path": "records/evidence/sigma16-no-rise-threeletter-independent-review.json",
+      "sha256": "0ecb5b5dc94db38730256ced009cbf3171e7175db3616470c4e642a66be9930b",
+      "uncompressed_sha256": "0ecb5b5dc94db38730256ced009cbf3171e7175db3616470c4e642a66be9930b",
+      "uncompressed_bytes": 82202,
+      "stored_bytes": 82202,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/sigma16-nonraising-catalogue-independent-verified.json",
+      "original_sha256": "2ee32f1e9f886f106c79ce635e725f3a19594a5e018312fa92563f4dbbae6d67",
+      "path": "records/evidence/sigma16-nonraising-catalogue-independent-verified.json",
+      "sha256": "a828d67056f5ccc865b25cc356c7eeca59a6710511b786511f98d92a60162107",
+      "uncompressed_sha256": "a828d67056f5ccc865b25cc356c7eeca59a6710511b786511f98d92a60162107",
+      "uncompressed_bytes": 1334,
+      "stored_bytes": 1334,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/sigma16-three-letter-height14-independent-verified.json",
+      "original_sha256": "38e62946628d1aa57232274de3f68ab92c8e0c872a7c30c4ec2c1b5c1ac5f70f",
+      "path": "records/evidence/sigma16-three-letter-height14-independent-verified.json",
+      "sha256": "a6dbb7151ced92e40722747bd7c9ac635b915bff86cc83c14b07d3bb2aa44bb8",
+      "uncompressed_sha256": "a6dbb7151ced92e40722747bd7c9ac635b915bff86cc83c14b07d3bb2aa44bb8",
+      "uncompressed_bytes": 38719,
+      "stored_bytes": 38719,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/tau16-four-independent-verified.json",
+      "original_sha256": "86783e9b65b11097a602047660426bbaa17a79fcddff81b47eeef7460c18a705",
+      "path": "records/evidence/tau16-four-independent-verified.json.gz",
+      "sha256": "93c9ab0cc4a00d5eac46876fc9953a34f3935bbdea1688dde103b1d5de24313f",
+      "uncompressed_sha256": "1523bc02db35a470977a914ca3b7fe5fa3fbece292efbbf22ac7369526384a95",
+      "uncompressed_bytes": 577079,
+      "stored_bytes": 70796,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/tau16-sixletter-height12-independent-verified.json",
+      "original_sha256": "882df204d346a62c0c653ae9153ea32127e03a4b72a9acc42eb7ca05602a1faa",
+      "path": "records/evidence/tau16-sixletter-height12-independent-verified.json",
+      "sha256": "ac461a93fb6107501fe93f199a233982c8a6b24756ad94ed0c6b1b646f1578ce",
+      "uncompressed_sha256": "ac461a93fb6107501fe93f199a233982c8a6b24756ad94ed0c6b1b646f1578ce",
+      "uncompressed_bytes": 2116,
+      "stored_bytes": 2116,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/tau28-firststep-independent-verified.json",
+      "original_sha256": "406b7fce006bb6b5801e7c2367baa9547c7d26c6f01e406b189f047284e5ce88",
+      "path": "records/evidence/tau28-firststep-independent-verified.json",
+      "sha256": "5f8317a229e738abff0df9a82eca061ce1d926fccd446592824288bdf2f36d47",
+      "uncompressed_sha256": "5f8317a229e738abff0df9a82eca061ce1d926fccd446592824288bdf2f36d47",
+      "uncompressed_bytes": 1849,
+      "stored_bytes": 1849,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "evidence/upper-bound-induction-evidence.json",
+      "original_sha256": "8ea8dea9d6917b44f03bbd6cae607f7072c151540e5e3d68e62d9b4121d914b2",
+      "path": "records/evidence/upper-bound-induction-evidence.json",
+      "sha256": "b9e81b1636f10b36fe0f809a943552c8e86c851e5193d6cb11c51232ffcc818f",
+      "uncompressed_sha256": "b9e81b1636f10b36fe0f809a943552c8e86c851e5193d6cb11c51232ffcc818f",
+      "uncompressed_bytes": 58141,
+      "stored_bytes": 58141,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "high-no-overshoot-independent-verified.json",
+      "original_sha256": "b4c372f460d949bcd5c57c807a4ddf10106680d46ea5663675dc4a306f1420cc",
+      "path": "records/high-no-overshoot-independent-verified.json",
+      "sha256": "f263f819bc8bfa0d03ed40ce436dd17a1ce3b4844772da42c18995ef21174916",
+      "uncompressed_sha256": "f263f819bc8bfa0d03ed40ce436dd17a1ce3b4844772da42c18995ef21174916",
+      "uncompressed_bytes": 5139,
+      "stored_bytes": 5139,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "irregularity-descent-source-end-table.json",
+      "original_sha256": "1c724b3fa0b46c210e8d245aeb586703f76e2c97a5db0ecedaf34200ef84bf13",
+      "path": "records/irregularity-descent-source-end-table.json.gz",
+      "sha256": "04e596e01ff35cc8d1e01713965088469fcd70558d75571875fd2a25150f79ce",
+      "uncompressed_sha256": "094a91ef6396496067e6f1d3ea3dd59aaa28cd640f4d77437406eecbb63d5c61",
+      "uncompressed_bytes": 968880,
+      "stored_bytes": 108912,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "lattice-library-height-audit.json",
+      "original_sha256": "7b2616b9dbe99f64429da0f8a584b87778383fa9689a15f3d07250fdb4fd3081",
+      "path": "records/lattice-library-height-audit.json",
+      "sha256": "2fbc380e0fbcf3c62a9873424e83f1d8210ad6c50c5924216166fdcec4053c33",
+      "uncompressed_sha256": "2fbc380e0fbcf3c62a9873424e83f1d8210ad6c50c5924216166fdcec4053c33",
+      "uncompressed_bytes": 54592,
+      "stored_bytes": 54592,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "lattice-library-height-independent-review.json",
+      "original_sha256": "fb400a2cd762962f9308f092d6157b84f822150673e1a9b9c51ddd76c1ad72fc",
+      "path": "records/lattice-library-height-independent-review.json",
+      "sha256": "07c661ef02cbfdb4569c0cf27325eb01162b1b5a750157affcfbfe4aa3eb0047",
+      "uncompressed_sha256": "07c661ef02cbfdb4569c0cf27325eb01162b1b5a750157affcfbfe4aa3eb0047",
+      "uncompressed_bytes": 95562,
+      "stored_bytes": 95562,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "profile-family-review-astra-results.json",
+      "original_sha256": "2732a088d2187ff20d8d04be233b34580cad78a7cf18842164ff1656e01dfc12",
+      "path": "records/profile-family-review-astra-results.json",
+      "sha256": "f4815189fe8d392bf314c26c8a034d1c48deecca955f547d69ee432709505314",
+      "uncompressed_sha256": "f4815189fe8d392bf314c26c8a034d1c48deecca955f547d69ee432709505314",
+      "uncompressed_bytes": 4881,
+      "stored_bytes": 4881,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "profile-family-review-sol-receipt.json",
+      "original_sha256": "7cae4862b13e92da47fe80dae233030b613ca9bd28d3f31213a891d18fb15488",
+      "path": "records/profile-family-review-sol-receipt.json",
+      "sha256": "e96d79f017a6def1c3a0a9e805b8b5f1271487dd9b44d0f9a61e527a881e2aa0",
+      "uncompressed_sha256": "e96d79f017a6def1c3a0a9e805b8b5f1271487dd9b44d0f9a61e527a881e2aa0",
+      "uncompressed_bytes": 2974,
+      "stored_bytes": 2974,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "profile-family-validation-end-table.json",
+      "original_sha256": "225c799a4885858cd152170cb1d83af82e4d1601fd2ff0ca7afdc946e67d2a77",
+      "path": "records/profile-family-validation-end-table.json.gz",
+      "sha256": "abecd0b6db79e7ce2c0bf4e313efe7334f07d64c0e2915073d11d3141931fcc5",
+      "uncompressed_sha256": "7300785d953953881fa663dbf2503c5819869190fbf5703fa3f1c3678826ab88",
+      "uncompressed_bytes": 968345,
+      "stored_bytes": 108939,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "profile-family-validation-input-table.json",
+      "original_sha256": "2f52cecc72c01cdaa3ddc229ff5e84c0019fb49ef93d30c54e2d590cc4f46ecc",
+      "path": "records/profile-family-validation-input-table.json.gz",
+      "sha256": "03af45aac7af35edef1be25264403dea6e8643f75d00adb99fca24b43f633e92",
+      "uncompressed_sha256": "93eee479da0627bffb6bf1d51a71da8db660fcb0e91b60e05f9e6d2b2fac6f41",
+      "uncompressed_bytes": 969345,
+      "stored_bytes": 109004,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "profile-family-validation-matching-certificate.json",
+      "original_sha256": "79968f885fb0d0650168d09cf63083fab1d3f9e57692460e3d94aafd80510cc2",
+      "path": "records/profile-family-validation-matching-certificate.json",
+      "sha256": "ae77da7e8c02cbd5dd7edf74f2a46c4aa68ddd8321059ab6aeb79ed07139153e",
+      "uncompressed_sha256": "ae77da7e8c02cbd5dd7edf74f2a46c4aa68ddd8321059ab6aeb79ed07139153e",
+      "uncompressed_bytes": 4995,
+      "stored_bytes": 4995,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "profile-family-validation-results.json",
+      "original_sha256": "a83944c70a396ab73b51e4677539507669d3faf17216f88bee84c733fd1a574d",
+      "path": "records/profile-family-validation-results.json.gz",
+      "sha256": "2d174e393c67377c1dac6b679a50927b7bf3064459f5e36e7354e04760ca3110",
+      "uncompressed_sha256": "286901571eae1a82758c0c44dcb7a6190fb455582d2c5e75af748b664a20f79a",
+      "uncompressed_bytes": 321127,
+      "stored_bytes": 100866,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "profile-tail-suffix-independent-review.json",
+      "original_sha256": "15c598cf0fd09c4b8f5a3ebc1ce9e7bdb57434e1f7366ded4fce19ed0af910e5",
+      "path": "records/profile-tail-suffix-independent-review.json",
+      "sha256": "6004e8ce9c576e81f83c952b233d0b8297a13ffbff362c47b57db1591e399d54",
+      "uncompressed_sha256": "6004e8ce9c576e81f83c952b233d0b8297a13ffbff362c47b57db1591e399d54",
+      "uncompressed_bytes": 41519,
+      "stored_bytes": 41519,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "regional-high-independent-premise-verified.json",
+      "original_sha256": "8c9ff44662f0591fb6875e6e22c2d34f138ab9654f5884af338d64b627173ca8",
+      "path": "records/regional-high-independent-premise-verified.json",
+      "sha256": "6e905a20360d13debe6e8c6576f78ae4f08dbbdd49cacc418c2d8dee220d635f",
+      "uncompressed_sha256": "6e905a20360d13debe6e8c6576f78ae4f08dbbdd49cacc418c2d8dee220d635f",
+      "uncompressed_bytes": 10086,
+      "stored_bytes": 10086,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "regional-high-independent-seed-verified.json",
+      "original_sha256": "aeff80f76b496fcb67c13d9903f138c6d6451fbef31dea258cd664163256d7d2",
+      "path": "records/regional-high-independent-seed-verified.json",
+      "sha256": "6248104a726eabc2047a6a9e199c28c5026076e8d7fa5ed9be025a11950f0922",
+      "uncompressed_sha256": "6248104a726eabc2047a6a9e199c28c5026076e8d7fa5ed9be025a11950f0922",
+      "uncompressed_bytes": 34755,
+      "stored_bytes": 34755,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "regional-high-transfer-audit.json",
+      "original_sha256": "8aa654671443a6d4b6ef586b2d82b98dcedd490e6e9243c858dcd915081ce735",
+      "path": "records/regional-high-transfer-audit.json",
+      "sha256": "2d85d8aacb4dcd7776b79f01532de3d86be2ef344aa1907e67f4f4fabb82885d",
+      "uncompressed_sha256": "2d85d8aacb4dcd7776b79f01532de3d86be2ef344aa1907e67f4f4fabb82885d",
+      "uncompressed_bytes": 6649,
+      "stored_bytes": 6649,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "tail-coverage-b07-height-and-counterexample.json",
+      "original_sha256": "259b444b48d6cef0792c01ac3d54191c0203ae80baf34e5f81f2f2f70872af53",
+      "path": "records/tail-coverage-b07-height-and-counterexample.json",
+      "sha256": "f113c28b5c23a92e8ed25ec5eb7fb0900116140eac062cfc37274697fbe26c43",
+      "uncompressed_sha256": "f113c28b5c23a92e8ed25ec5eb7fb0900116140eac062cfc37274697fbe26c43",
+      "uncompressed_bytes": 9103,
+      "stored_bytes": 9103,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "tail-coverage-b07-prepared-profile.json",
+      "original_sha256": "cd5f6f07d0d0f98f61b5d0b67e2e0a070c21fc1454783fa6093ffbd09f56b95f",
+      "path": "records/tail-coverage-b07-prepared-profile.json",
+      "sha256": "80c0dfd14277509c5f3806ea2a18e35b8eb8e9eb5bd04bf92414cbff98b22948",
+      "uncompressed_sha256": "80c0dfd14277509c5f3806ea2a18e35b8eb8e9eb5bd04bf92414cbff98b22948",
+      "uncompressed_bytes": 26865,
+      "stored_bytes": 26865,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "tail-coverage-b07-profile-guard.json",
+      "original_sha256": "edc2c1f8edc0d2a5bd0bb25d71ad9bc5b8e2522248508e88437971fdee1f8586",
+      "path": "records/tail-coverage-b07-profile-guard.json",
+      "sha256": "46442fdedc1908e40f4e0c25b4a04941f2d918b532461f3e137fcf50d33b59eb",
+      "uncompressed_sha256": "46442fdedc1908e40f4e0c25b4a04941f2d918b532461f3e137fcf50d33b59eb",
+      "uncompressed_bytes": 14423,
+      "stored_bytes": 14423,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "tail-coverage-b07-resource-audit.json",
+      "original_sha256": "b9b2a2bf96dd0c911840178e4d78c5179cebf2ac257fb91a843668e3319d08f2",
+      "path": "records/tail-coverage-b07-resource-audit.json",
+      "sha256": "996bef1e410b291a053ad339cd381191fc9b41aecbb613ec80eab7a56eb6f773",
+      "uncompressed_sha256": "996bef1e410b291a053ad339cd381191fc9b41aecbb613ec80eab7a56eb6f773",
+      "uncompressed_bytes": 110348,
+      "stored_bytes": 110348,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "tail-coverage-completion-manifest.json",
+      "original_sha256": "724151810a4eb01d3e3dd104b92f329fd918198f67b4cca61052bda95349f16b",
+      "path": "records/tail-coverage-completion-manifest.json",
+      "sha256": "d44d1336ce265d4bdd951ba6715059b9e4fead5c066cbcd9c195b2ce74652f22",
+      "uncompressed_sha256": "d44d1336ce265d4bdd951ba6715059b9e4fead5c066cbcd9c195b2ce74652f22",
+      "uncompressed_bytes": 24071,
+      "stored_bytes": 24071,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "tail-coverage-input/00097.json",
+      "original_sha256": "5bd072352db2b20a6977fcd211ef8c1f7cc8da50494e696be50220640912e715",
+      "path": "records/tail-coverage-input/00097.json.gz",
+      "sha256": "bf5946746bd40db46d7b5a307f550b619855f6d6d44ab33104f677a8a55d7cce",
+      "uncompressed_sha256": "7db37ffe8eb88b01c7cf918831ae8fd32e251a26e1b9b2507564b81973069d56",
+      "uncompressed_bytes": 488776,
+      "stored_bytes": 29525,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "tail-coverage-input/b07-prefix36-table.json",
+      "original_sha256": "5761a6b0628fa2497d6ca10d760550b84b11f8efc5a432f6f8e312d99c143647",
+      "path": "records/tail-coverage-input/b07-prefix36-table.json.gz",
+      "sha256": "ff2d0d0a5e3e966bac5c3f838918068caae1b2fb0d89216e1ef94a0d44683ff9",
+      "uncompressed_sha256": "cb3d1efe87820787fde68911943f13529b3ed6e7d8e4f35bd1b3977e9d52413b",
+      "uncompressed_bytes": 488773,
+      "stored_bytes": 29519,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "tail-coverage-lattice-sticker-cost.json",
+      "original_sha256": "ddb98e6b7e44a24b079f19cc750714381a39933bc3925516d82997c7718ecede",
+      "path": "records/tail-coverage-lattice-sticker-cost.json",
+      "sha256": "e4c2a8db159a261b3631034ab3f9758b9621cb9bb49ed5d4fb17641775405089",
+      "uncompressed_sha256": "e4c2a8db159a261b3631034ab3f9758b9621cb9bb49ed5d4fb17641775405089",
+      "uncompressed_bytes": 241606,
+      "stored_bytes": 241606,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "tail-coverage-short-core-chain.json",
+      "original_sha256": "23a8195c0f5e05bf2cfa2d7523e020824d3eb95939a1dd3c41b4b69c90be6c32",
+      "path": "records/tail-coverage-short-core-chain.json",
+      "sha256": "ff4492cf6668e246b021eb65066a521ee7bdb0a0fc38937d483cddeb81cb5383",
+      "uncompressed_sha256": "ff4492cf6668e246b021eb65066a521ee7bdb0a0fc38937d483cddeb81cb5383",
+      "uncompressed_bytes": 135103,
+      "stored_bytes": 135103,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "tail-coverage-six-stage-static-suffix.json",
+      "original_sha256": "b0192dfb5ba9209f866ff59dc87e2d284138f5f804c5f4f6fc07be1af6213ab4",
+      "path": "records/tail-coverage-six-stage-static-suffix.json.gz",
+      "sha256": "b4192398ea04558e3a6434d606e4341d2539f4efe57071ace66ae1c5458f9dba",
+      "uncompressed_sha256": "bf93cdae08b622d53733658254b31c54056dd3e0c76e9da2ebfb0821d7f55d83",
+      "uncompressed_bytes": 472673,
+      "stored_bytes": 84513,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "type-height-weight-results.json",
+      "original_sha256": "3ce881efab9bec7c30a31c639c4a68f94a7c733af64fc316cbe57b8906acf336",
+      "path": "records/type-height-weight-results.json",
+      "sha256": "df844eb5924a49dd56ab68cab6d94d89b1c38df177ff15a409e51debff375e2d",
+      "uncompressed_sha256": "df844eb5924a49dd56ab68cab6d94d89b1c38df177ff15a409e51debff375e2d",
+      "uncompressed_bytes": 7255,
+      "stored_bytes": 7255,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "type-lex-282-results.json",
+      "original_sha256": "c0202ce27593e6c15af338a1a90e94df75ef633164122cf363b032cba8c7d68c",
+      "path": "records/type-lex-282-results.json",
+      "sha256": "b0abdcfa673e975814f7e8343ec62c91ed9a29e74fa1884d59df079c76bff2f4",
+      "uncompressed_sha256": "b0abdcfa673e975814f7e8343ec62c91ed9a29e74fa1884d59df079c76bff2f4",
+      "uncompressed_bytes": 28696,
+      "stored_bytes": 28696,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "type-lex-independent-282-13-end-table.json",
+      "original_sha256": "3a29a58e1040d0df654398f8ad3e97b1669339a91083e3c0911ab50a3eff93e4",
+      "path": "records/type-lex-independent-282-13-end-table.json.gz",
+      "sha256": "14cbb7f70c1c0eab331be91d08d6f18a0805181a955ed62d1eee7e4a0c733f07",
+      "uncompressed_sha256": "d0caaef6b3110119b3c047a8dd509290f4aa3221751f06a7962049cc8492bc74",
+      "uncompressed_bytes": 968298,
+      "stored_bytes": 108941,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "type-lex-independent-verified.json",
+      "original_sha256": "8716b84f2774382ef7a550b5826ea009fb76a1ef5ad652c6c6c06778e6b79715",
+      "path": "records/type-lex-independent-verified.json",
+      "sha256": "7d65e7a067a795e94262fa29ef1a57ac6619832524661e6cfcf84fe376307ece",
+      "uncompressed_sha256": "7d65e7a067a795e94262fa29ef1a57ac6619832524661e6cfcf84fe376307ece",
+      "uncompressed_bytes": 28630,
+      "stored_bytes": 28630,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "type-lex-independent-weight-review.json",
+      "original_sha256": "c10369b8b4b18c8f0cebbe4190bbe303d5484a6c5932fbd48d28d147bb3fe311",
+      "path": "records/type-lex-independent-weight-review.json",
+      "sha256": "ca3d85200c7238a3e5bfb0cb096c4b0cb046e46577c76e9715612f2e8f024ed2",
+      "uncompressed_sha256": "ca3d85200c7238a3e5bfb0cb096c4b0cb046e46577c76e9715612f2e8f024ed2",
+      "uncompressed_bytes": 1995,
+      "stored_bytes": 1995,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "type-lex-recovery-review-results.json",
+      "original_sha256": "46dacb5202f170496c9d323c1eaee3045630f0fb8804f3e88bb09e3323bd436d",
+      "path": "records/type-lex-recovery-review-results.json",
+      "sha256": "6261a29fda69868dba6bc431a92e656d56d33b6da805a563aedd0b1ebb11458e",
+      "uncompressed_sha256": "6261a29fda69868dba6bc431a92e656d56d33b6da805a563aedd0b1ebb11458e",
+      "uncompressed_bytes": 9642,
+      "stored_bytes": 9642,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "type-lex-recovery-transfer-full-replay.json",
+      "original_sha256": "59a324f7f10bf87fdd554355b9509812ab184c6f6a392d4061e8bf5e3bf23552",
+      "path": "records/type-lex-recovery-transfer-full-replay.json",
+      "sha256": "c8c03f6f04e39d53ff43c4391c11014dd63159d303f765b5a3bf4525daf31116",
+      "uncompressed_sha256": "c8c03f6f04e39d53ff43c4391c11014dd63159d303f765b5a3bf4525daf31116",
+      "uncompressed_bytes": 149468,
+      "stored_bytes": 149468,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "type-lex-recovery-transfer-joined-table.json",
+      "original_sha256": "722471dba8c67cd1a5296e5508acc60bcb85f245ebebc8315632dc41bd637859",
+      "path": "records/type-lex-recovery-transfer-joined-table.json.gz",
+      "sha256": "04e21d763ecc29acab5a0437bb24e278ccb62b0c4beff893726d56d2eb131764",
+      "uncompressed_sha256": "e986d00b1c368355f684330791f21ec1d0750101e81fd4fffe6ecefb0170d726",
+      "uncompressed_bytes": 978503,
+      "stored_bytes": 109944,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "type-lex-recovery-transfer-results.json",
+      "original_sha256": "db2a8561b31068d35a4394fa8b9360508a48c2abd0b10eab9dd40bf1164b5398",
+      "path": "records/type-lex-recovery-transfer-results.json",
+      "sha256": "c3f4c280dddacb599f482a4ace09f63600101c77a2bb840197986406d6961c28",
+      "uncompressed_sha256": "c3f4c280dddacb599f482a4ace09f63600101c77a2bb840197986406d6961c28",
+      "uncompressed_bytes": 4064,
+      "stored_bytes": 4064,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "type-lex-trimmed-independent-results.json",
+      "original_sha256": "6aa749702a36441ca1dda4306d7f9da3ff50582d3709e1b2b165e80ccd5dc5fe",
+      "path": "records/type-lex-trimmed-independent-results.json",
+      "sha256": "27ecdd18b3c026fc34fff9a69a9a3e0d53ba1b442edf2aefad789889a2173de3",
+      "uncompressed_sha256": "27ecdd18b3c026fc34fff9a69a9a3e0d53ba1b442edf2aefad789889a2173de3",
+      "uncompressed_bytes": 24102,
+      "stored_bytes": 24102,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "type-lex-trimmed-macro-end-table.json",
+      "original_sha256": "3ecd27648d1cf2f81240e418dbef55355a3ec6146c2dd6b75f78d6c8bea7d7eb",
+      "path": "records/type-lex-trimmed-macro-end-table.json.gz",
+      "sha256": "dbaf126a3bff89dd425a9e562ef00b1cac86e53aca94ef1ec4821f38d3095a24",
+      "uncompressed_sha256": "674a4e06da0189d182cc55f89c406e2afefadb677989e2388712911e5364b4d5",
+      "uncompressed_bytes": 966251,
+      "stored_bytes": 108797,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "type-lex-trimmed-macro.json",
+      "original_sha256": "c6afe349ef1de25a370ac0d83de6d137ccbf21d0c17c450f80aea8ba7fa34724",
+      "path": "records/type-lex-trimmed-macro.json",
+      "sha256": "616e39bc7c07e5b193631b23fce4bb7ad9355c1c660048d2548e6800029497c9",
+      "uncompressed_sha256": "616e39bc7c07e5b193631b23fce4bb7ad9355c1c660048d2548e6800029497c9",
+      "uncompressed_bytes": 3380,
+      "stored_bytes": 3380,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    },
+    {
+      "original_name": "type-weight-independent-review.json",
+      "original_sha256": "00f56d3148116cb49a2cb0a8f87e2d5fef582635d7054a75b1173195a2c22c9e",
+      "path": "records/type-weight-independent-review.json",
+      "sha256": "80fecc6e4157887a1117874ef8edc6c63a800cf7755cededd798da411efee679",
+      "uncompressed_sha256": "80fecc6e4157887a1117874ef8edc6c63a800cf7755cededd798da411efee679",
+      "uncompressed_bytes": 12806,
+      "stored_bytes": 12806,
+      "transformation": "sanitized English archival record; operational metadata removed; no mathematical search or simulator replay"
+    }
+  ]
+}
