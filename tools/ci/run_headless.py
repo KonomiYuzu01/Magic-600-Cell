@@ -11,11 +11,15 @@ a pull request whose changes are only Markdown in the documentation trees
 below runs the light checks (owner, 3 November 2026); any other change, an
 unreadable diff and every push to main run all checks.
 
-Usage: python tools/ci/run_headless.py [--list] [--base COMMIT] [--plan]
+The workflow runs a full set as parallel shards: --plan-github gives the
+shard numbers, and --shard K/N runs the K-th of N time-balanced shards.
+
+Usage: python tools/ci/run_headless.py [--list] [--base COMMIT] [--plan | --plan-github] [--shard K/N]
 """
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import subprocess
@@ -164,19 +168,85 @@ def select_checks(changed: list[str] | None, literals: set[str]) -> tuple[str, s
     return "docs-only", f"{len(changed)} changed Markdown file(s) in the documentation trees", LIGHT_CHECKS
 
 
+# Seconds per check on the Windows runner (the full run on main of 3 November 2026), used only
+# to balance the parallel shards; a check not listed counts as DEFAULT_SECONDS.
+SECONDS = {
+    "tests/test_jumbling_store_j1.py": 831, "tests/test_jumbling_j1_replay.py": 784,
+    "tests/test_jumbling_x1_witness.py": 559, "tests/test_jumbling_observations.py": 249,
+    "tests/test_jumbling_nu.py": 241, "tests/test_jumbling_straddlers.py": 172,
+    "tests/test_jumbling_leads_repair.py": 165, "tests/test_jumbling_leads_covers.py": 150,
+    "tests/test_jumbling_leads_scale.py": 124, "tests/test_jumbling_word_check.py": 104,
+    "tests/test_full_reference_replay.py": 74, "tests/test_codex_implement.py": 63,
+    "tests/test_workbench.py": 59, "tests/test_jumbling_session.py": 55,
+    "tests/test_feature_costs.py": 38, "tests/test_renderer_gate.py": 33,
+    "tests/test_turn_probe.py": 31, "tests/test_workflow_windows.py": 28,
+    "tests/test_engine_lifecycle.py": 27, "tests/test_native_bridge.py": 19,
+    "tests/test_stop_gate.py": 16, "tests/test_checkout_bytes.py": 15,
+    "tests/test_print_identity.py": 14, "tests/test_b412_fixture.py": 13,
+    "tests/test_log_workflow.py": 13, "tests/test_core.py": 12,
+}
+DEFAULT_SECONDS = 5
+# Parallel Windows jobs for a full run; the longest check (about 14 minutes) bounds the gain.
+FULL_SHARDS = 5
+
+
+def shard_count(mode: str) -> int:
+    return FULL_SHARDS if mode == "full" else 1
+
+
+def shards(checks: list[list[str]], count: int) -> list[list[list[str]]]:
+    """Split checks into count shards of similar time (longest first, then the lightest shard);
+    each shard keeps the list's order."""
+    loads = [0.0] * count
+    bins: list[list[list[str]]] = [[] for _ in range(count)]
+    for check in sorted(checks, key=lambda c: (-SECONDS.get(c[0], DEFAULT_SECONDS), " ".join(c))):
+        index = min(range(count), key=lambda k: (loads[k], k))
+        bins[index].append(check)
+        loads[index] += SECONDS.get(check[0], DEFAULT_SECONDS)
+    order = {" ".join(check): n for n, check in enumerate(checks)}
+    return [sorted(shard, key=lambda c: order[" ".join(c)]) for shard in bins]
+
+
+def parse_shard(text: str) -> tuple[int, int]:
+    """Parse "K/N" with 1 <= K <= N."""
+    match = re.fullmatch(r"([1-9][0-9]*)/([1-9][0-9]*)", text)
+    if not match or int(match.group(1)) > int(match.group(2)):
+        raise argparse.ArgumentTypeError(f"expected K/N with 1 <= K <= N, got {text!r}")
+    return int(match.group(1)), int(match.group(2))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--list", action="store_true", help="print the checks and exit")
     parser.add_argument("--base", default=os.environ.get("RUN_HEADLESS_BASE", ""),
                         help="pull-request base commit (default: $RUN_HEADLESS_BASE); empty runs all checks")
     parser.add_argument("--plan", action="store_true", help="print the mode and the checks it runs, and exit")
+    parser.add_argument("--plan-github", action="store_true",
+                        help="print the mode and the shard numbers as GitHub step outputs, and exit")
+    parser.add_argument("--shard", type=parse_shard, metavar="K/N", help="run shard K of N of the selected checks")
+    parser.add_argument("--expect-mode", choices=("full", "docs-only"),
+                        help="fail unless the selected mode is this one (the plan job's mode)")
     args = parser.parse_args()
     if args.list:
         for check in CHECKS:
             print(" ".join(check))
         return 0
     mode, reason, checks = select_checks(changed_files(args.base), full_check_literals())
-    print(f"Mode: {mode} ({reason}); {len(checks)} of {len(CHECKS)} checks", flush=True)
+    print(f"Mode: {mode} ({reason}); {len(checks)} of {len(CHECKS)} checks",
+          file=sys.stderr if args.plan_github else sys.stdout, flush=True)
+    if args.expect_mode and args.expect_mode != mode:
+        print(f"error: the plan chose {args.expect_mode} mode, this run chose {mode}", file=sys.stderr)
+        return 2
+    if args.plan_github:
+        count = shard_count(mode)
+        print(f"mode={mode}")
+        print(f"count={count}")
+        print(f"shards={json.dumps(list(range(1, count + 1)))}")
+        return 0
+    if args.shard:
+        index, count = args.shard
+        checks = shards(checks, count)[index - 1]
+        print(f"Shard {index} of {count}: {len(checks)} checks", flush=True)
     if args.plan:
         for check in checks:
             print(" ".join(check))
@@ -196,7 +266,7 @@ def main() -> int:
         elapsed = time.monotonic() - start
         print("::endgroup::", flush=True)
         results.append((name, outcome, elapsed))
-    width = max(len(name) for name, _, _ in results)
+    width = max((len(name) for name, _, _ in results), default=0)
     print("\nSummary (headless checks only; not Windows/DirectX or performance evidence)")
     for name, outcome, elapsed in results:
         print(f"{name:<{width}}  {outcome:<18} {elapsed:7.1f} s")

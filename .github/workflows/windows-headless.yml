@@ -1,7 +1,12 @@
-# Headless checks on a GitHub-hosted Windows runner (owner decision, 3 October 2026:
+# Headless checks on GitHub-hosted Windows runners (owner decision, 3 October 2026:
 # docs/wiki/decisions/owner-decisions-2026-10-03.md). A pass is not Windows/DirectX,
 # input, long-session or performance evidence; those checks still run on the owner's
-# machine. The runner has no personal data and gets no secrets.
+# machine. The runners have no personal data and get no secrets.
+#
+# The plan job chooses the mode (tools/ci/run_headless.py): a pull request that changes
+# only Markdown in the documentation trees runs the light checks in one shard; anything
+# else, and every push to main, runs all checks in time-balanced parallel shards. The
+# headless job passes only when the plan and every shard passed.
 name: Windows headless checks
 
 on:
@@ -18,9 +23,35 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  headless:
+  plan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      mode: ${{ steps.plan.outputs.mode }}
+      count: ${{ steps.plan.outputs.count }}
+      shards: ${{ steps.plan.outputs.shards }}
+    steps:
+      - name: Check out the exact committed bytes
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0 # the mode comes from the diff against the pull request's base
+
+      - name: Choose the mode and the shards
+        id: plan
+        env:
+          RUN_HEADLESS_BASE: ${{ github.event.pull_request.base.sha }}
+        run: python3 tools/ci/run_headless.py --plan-github >> "$GITHUB_OUTPUT"
+
+  shard:
+    needs: plan
+    name: shard ${{ matrix.shard }} of ${{ needs.plan.outputs.count }}
     runs-on: windows-2025
     timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.plan.outputs.shards) }}
     steps:
       - name: Check out the exact committed bytes
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -42,11 +73,24 @@ jobs:
         run: |
           python -c "import numpy,platform,struct;print('numpy',numpy.__version__,platform.python_implementation().lower(),platform.python_version(),struct.calcsize('P')*8)"
 
-      - name: Run the headless checks
+      - name: Run the headless checks of this shard
         # The default temp path keeps its 8.3 short name (RUNNER~1) on purpose: the tests
-        # must pass under it. A pull request that changes only Markdown in the documentation
-        # trees runs the light checks (tools/ci/run_headless.py); pushes to main have no base
-        # and run every check.
+        # must pass under it. The shard recomputes the mode from the same diff and fails if it
+        # differs from the plan's.
         env:
           RUN_HEADLESS_BASE: ${{ github.event.pull_request.base.sha }}
-        run: python tools/ci/run_headless.py
+        run: python tools/ci/run_headless.py --shard ${{ matrix.shard }}/${{ needs.plan.outputs.count }} --expect-mode ${{ needs.plan.outputs.mode }}
+
+  headless:
+    needs: [plan, shard]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require the plan and every shard to pass
+        env:
+          PLAN: ${{ needs.plan.result }}
+          SHARDS: ${{ needs.shard.result }}
+        run: |
+          echo "plan: $PLAN, shards: $SHARDS"
+          test "$PLAN" = success && test "$SHARDS" = success

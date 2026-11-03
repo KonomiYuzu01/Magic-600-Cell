@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-03] update | The full CI checks run as five parallel shards
+At the owner's request, a full Windows CI run now splits the 60 checks into five time-balanced shards on parallel runners (about 14 minutes of checks each, bounded by the longest test, against about 66 minutes in one job), after a plan job that chooses the mode; a final `headless` job passes only when the plan and every shard passed (`tools/ci/run_headless.py --shard`).
+
 ## [2026-11-03] update | Documentation-only pull requests run the light CI checks
 At the owner's request, the Windows CI job runs ten light checks (wiki, agent rules, review wrapper, Stop gate, workbench, bytes, skills and the runner's own test) for a pull request that changes only Markdown under `docs/wiki/`, `docs/development-guide/` or `docs/progress/`, except the files a full check reads; every other change and every push to `main` run all checks (`tools/ci/run_headless.py`). The owner waived the Codex review for this change and for the parallel split of the checks that follows it.
 
