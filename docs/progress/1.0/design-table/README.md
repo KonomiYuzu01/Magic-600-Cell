@@ -1,6 +1,6 @@
 # Design table
 
-Status: **working protocol for stage 2.3** (owner direction, 3 October 2026: the four roles exchange views from the start of the design work, and no role waits for another to finish). **On hold after DT-M1** (owner, 22 October 2026: [decision](../../../wiki/decisions/owner-decisions-2026-10-22-dt-m1.md)): no topic opens until the owner resumes the round table.
+Status: **working protocol for stage 2.3** (owner direction, 3 October 2026: the four roles exchange views from the start of the design work, and no role waits for another to finish). **On hold after DT-M1** (owner, 22 October 2026: [decision](../../../wiki/decisions/owner-decisions-2026-10-22-dt-m1.md)): no topic opens until the owner resumes the round table. **Resumed for the language** (owner, 3 November 2026: [decision](../../../wiki/decisions/owner-decisions-2026-11-03.md)): the mathematician and the engineer advisor assist the development of the project's own language; the front-end designer and the interaction artist, and topics DT-J2 to DT-J4, wait until that development is complete.
 
 The design table is how the four roles of charter section 5 work on one design question together: the front-end designer, the interaction artist, the mathematician and the engineer's advisor. Their role cards are subagents in `.claude/agents/` (`front-end-designer`, `interaction-artist`, `mathematician`, `engineer-advisor`). The mathematician advises in design rounds now; its own deliverables (the theory book, the formal grammar) start later, when the engineering work gives it a reference.
 
