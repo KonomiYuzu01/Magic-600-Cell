@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-03] decision | The language first, and the 2 November research to the repository
+The owner decided that the engineering line develops the project's own language first, with the round table's mathematician and engineer assisting and UI/UX and the design line waiting until it is complete; that the language and what the research needs of it are in 1.0's scope; that the earlier schedule is set aside; that the results of the restoration research restarted on 2 November enter the repository; and that a tool a solver develops through the built-in base tools while understanding its principle does not count as the program outputting a solution, the exact boundary to be set jointly ([decision](decisions/owner-decisions-2026-11-03.md)). The renderer selection closes and freezes in parallel on the owner's machine.
+
 ## [2026-10-27] decision | Jumbling: handed to the engineering line as data, a puzzle to be solved
 After the freeze record the owner handed the jumbling research to the engineering line as research data only, with no engineering instructions, and framed the jumbling line as a puzzle to be solved, in which a methodology that restores the complete puzzle from any scramble of depth 3000 is open, rather than features reverse-engineered from the research's answers; the answers already given stay, and what is not yet decided assists the remaining research ([decision page](decisions/owner-decisions-2026-10-27-jumbling-handoff.md), [data page](../progress/1.0/jumbling-handoff/research-data.md)).
 
