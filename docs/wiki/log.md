@@ -8,6 +8,9 @@ At the owner's request, a full Windows CI run now splits the 60 checks into five
 ## [2026-11-03] update | Documentation-only pull requests run the light CI checks
 At the owner's request, the Windows CI job runs ten light checks (wiki, agent rules, review wrapper, Stop gate, workbench, bytes, skills and the runner's own test) for a pull request that changes only Markdown under `docs/wiki/`, `docs/development-guide/` or `docs/progress/`, except the files a full check reads; every other change and every push to `main` run all checks (`tools/ci/run_headless.py`). The owner waived the Codex review for this change and for the parallel split of the checks that follows it.
 
+## [2026-11-03] ingest | Bounded Jumbling height-depth research
+Archived the stopped research round in [jumbling-height-depth-2026-11-02](evidence/jumbling-height-depth-2026-11-02.md), with sanitized proof/data records, exact integrity checks and explicit open global obligations. Publication is authorized; no implementation, architecture acceptance or new research is included.
+
 ## [2026-11-03] decision | The language first, and the 2 November research to the repository
 The owner decided that the engineering line develops the project's own language first, with the round table's mathematician and engineer assisting and UI/UX and the design line waiting until it is complete; that the language and what the research needs of it are in 1.0's scope; that the earlier schedule is set aside; that the results of the restoration research restarted on 2 November enter the repository; and that a tool a solver develops through the built-in base tools while understanding its principle does not count as the program outputting a solution, the exact boundary to be set jointly ([decision](decisions/owner-decisions-2026-11-03.md)). The renderer selection closes and freezes in parallel on the owner's machine.
 
@@ -613,6 +616,3 @@ Recorded the owner decisions in [owner-decisions-2026-09-29](decisions/owner-dec
 
 ## [2026-09-29] update | Wiki created
 Created the schema, index, log and the [development-loop](workflows/development-loop.md) workflow page.
-
-## [2026-11-03] ingest | Bounded Jumbling height-depth research
-Archived the stopped research round in [jumbling-height-depth-2026-11-02](evidence/jumbling-height-depth-2026-11-02.md), with sanitized proof/data records, exact integrity checks and explicit open global obligations. Publication is authorized; no implementation, architecture acceptance or new research is included.
