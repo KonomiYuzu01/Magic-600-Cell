@@ -1,0 +1,27 @@
+# Independent review: the high-domain restoration has no height overshoot
+
+Archived mathematical record from 2 November 2026. See README.md for its current scope and the independent review record. Original-source digests below identify the captured research version; IMPORT-MANIFEST.json binds this sanitized edition.
+
+The fresh independent seed receipt aeff80f76b496fcb67c13d9903f138c6d6451fbef31dea258cd664163256d7d2 proves that the exact 83-letter seed reaches the full X table, and its inverse restores all177120 exact poses. Every forward/inverse prefix has maximum height at most30. Source REPORT 52-56 and79-85 identifies X's target height30, the following1929 letters and sigma's target height3888. The existing exact suffix certificate is reused. Independently, the endpoint difference satisfies3888-30=2*1929; since no individual letter can increase height by more than2, every target increment along that legal suffix must equal2. No new1929-letter replay is needed or claimed.
+
+REPORT 107-124 gives the full isolation identity. A D11 piece receives only the cumulative cap11 product on the left of its exact X pose; a D80 piece receives only the cap80 product; every other nontarget piece keeps its X pose. REPORT 126-139 and144-165 extend this uniformly to admitted guarded blocks and all proper prefixes. A debris piece never receives an uncontrolled product of alternating, unrelated cap-group elements. Every cumulative product belongs to its single finite menu group.
+
+The new exact algebra check independently evaluates all60 menu matrices at each of caps11 and80. All7200 ordered pair products belong to the corresponding menu. All120 transposes are exact menu inverses, all120 matrices are orthogonal and fix their own cut normal, and exact tree factorization gives12 height0 and48 height2 elements per cap, with right height0. Inverse heights agree. These checks bind both the finite-group and inverse-legality premises without applying any physical letters. The source also proves same-cap composition and group closure in Stage15 PROOFS22-27, and reversibility in SENIOR-REVIEW7162.
+
+For every debris pose g X_p, tree isometry gives
+
+    h(g X_p) <= h(g)+h(X_p) <= 2+30 = 32.
+
+This inequality is algebraic; it does not assume a fresh mechanical application of g is legal at arbitrary X_p. Along the actual recognized trajectory, legality and the isolation formula come from the source. Reverse blocks and prefixes simply visit these already legal forward states. Every inverse letter is an actual same-cap menu item and the cut's moved set is preserved. The target decreases by2 per inverse pump/suffix letter, from its initial H>=3888. Nontarget heights remain at most32. Once X is reached, the seed inverse has peak30. Thus the complete reference return has peak at mostH and includes the initial state of heightH, so its peak is exactlyH.
+
+The already reviewed regional transfer preserves every individual prefix height under its type bijection and right K+ factors. The seven comparison targets have heightH, every other comparison piece has height at most32, and H>=3888. Therefore H is also the exact maximum height of the actual Gamma(A) input, independently of a matching description. The transferred geometric phase has peakH. Its all-lattice endpoint remains reachable for promised-reachable inputs, and the state-specific sticker construction has peak2. Consequently the full259800-sticker restoration has peak exactlyH and unchanged length boundH/2+20892764. The original reference-labelled exact-solved boundH/2+68 also retains peakH. This is optimal peak, because peak includes the initial state; it is not a claim of shortest word length or canonical-pose restoration for arbitrary Gamma labels.
+
+For the already reviewed D[k], let a found entrance prefix have length j<=k and let the initial full-state maximum be h. Each prefix height is at mosth+2j. The remaining lattice and D1 branches have peak2, while the regional branch has peak equal to its entrance maximumH<=h+2j. Hence every constructed path has peak at most
+
+    max(h+2k,2).
+
+The unchanged U(h,k) cost bound and corrected reachable-input promise remain those in continuous-framework-independent-final-review.md. The new E_sharp is a sharper valid uniform ceiling; this review does not claim it is pointwise minimal for every possible h,k or every admitted input. For k=0 and positive admitted height, the construction stays within the initial height. Initially lattice inputs may require the height2 correction phase; a solved or retained-solvable special input can of course need less.
+
+The frozen source/receipt manifest and new algebra counts are in high-no-overshoot-independent-verified.json, SHA256 b4c372f460d949bcd5c57c807a4ddf10106680d46ea5663675dc4a306f1420cc. It records Python3.14.7/NumPy2.3.5,5.96875 CPU seconds,7200 exact products and zero new geometry classifications or literal applications. The earlier166-letter seed cost23.53125CPU is explicitly reused, not charged or replayed again. The check binds the current regional and corrected framework candidates, their frozen reviews, the full correction-height review, source line spans, history and certificate bytes, and current pinned engine sources.
+
+No admission domain enlargement, practical recognizer, global entrance boundk(h,...), universal restoration, software architecture acceptance or source registry change follows. Source, main, candidates and earlier evidence were read-only. Review complete; no follow-up research or subprocess remains.

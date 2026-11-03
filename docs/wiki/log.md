@@ -604,3 +604,6 @@ Recorded the owner decisions in [owner-decisions-2026-09-29](decisions/owner-dec
 
 ## [2026-09-29] update | Wiki created
 Created the schema, index, log and the [development-loop](workflows/development-loop.md) workflow page.
+
+## [2026-11-03] ingest | Bounded Jumbling height-depth research
+Archived the stopped research round in [jumbling-height-depth-2026-11-02](evidence/jumbling-height-depth-2026-11-02.md), with sanitized proof/data records, exact integrity checks and explicit open global obligations. Publication is authorized; no implementation, architecture acceptance or new research is included.
