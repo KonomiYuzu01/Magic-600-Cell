@@ -44,5 +44,9 @@ jobs:
 
       - name: Run the headless checks
         # The default temp path keeps its 8.3 short name (RUNNER~1) on purpose: the tests
-        # must pass under it.
+        # must pass under it. A pull request that changes only Markdown in the documentation
+        # trees runs the light checks (tools/ci/run_headless.py); pushes to main have no base
+        # and run every check.
+        env:
+          RUN_HEADLESS_BASE: ${{ github.event.pull_request.base.sha }}
         run: python tools/ci/run_headless.py
