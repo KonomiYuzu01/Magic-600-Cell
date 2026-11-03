@@ -2,6 +2,8 @@
 
 Archived mathematical record from 2 November 2026. See README.md for its current scope and the independent review record. Original-source digests below identify the captured research version; IMPORT-MANIFEST.json binds this sanitized edition.
 
+PASS for current CONTINUOUS_FRAMEWORK_CANDIDATE.md, SHA256 c69df63665764f10122824d739952e5b94ccea40002afb8d957850ee137235bd. No remaining findings. This is the one scoped verification following the initial review, not another full review or architecture acceptance. Source a2ebb4cccd6b60d7527c001ef3b2cbc56b179249; all source and candidate bytes were read-only.
+
 The initial major finding CF-01 is preserved in continuous-framework-independent-initial-review.md and continuous-framework-independent-initial-result.json, against archived candidate v1 SHA256 8947379fd9ba19618b438e722176c362bb0d91310035851db1c18ce1ccb0b79a. The current candidate differs in exactly two paragraphs, lines 29 and 60. It now asserts totality only for finite geometric admission on the generated universe. Complete construction, acceptance exactly on D[k], and successful sticker synthesis are explicitly restricted to promised-reachable inputs. Unpromised geometric matches are not claimed reachable and do not receive an unsupported synthesis termination guarantee. This resolves CF-01 and introduces no new blocking issue.
 
 The already reviewed numerical composition is retained. With N=177120, four native preparation costs and core lengths give

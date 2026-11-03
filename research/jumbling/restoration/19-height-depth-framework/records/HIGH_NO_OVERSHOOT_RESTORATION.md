@@ -2,6 +2,8 @@
 
 Archived mathematical record from 2 November 2026. See README.md for its current scope and the independent review record. Original-source digests below identify the captured research version; IMPORT-MANIFEST.json binds this sanitized edition.
 
+Historical derived sharpening, pending independent review. Source a2ebb4cccd6b60d7527c001ef3b2cbc56b179249. This note leaves the reviewed earlier proofs immutable and replaces only their conservative excursion ceilings. It does not enlarge their admission domains or prove global entrance.
+
 ## Exact peak H on Gamma(A)
 
 Use A and Gamma(A) exactly as in REGIONAL_HIGH_RESTORATION.md. Every admitted reference has target height H>=3888, including incomplete admitted pump blocks. All heights here are individual left-tree distances; a full-state peak includes every physical piece and every literal prefix.

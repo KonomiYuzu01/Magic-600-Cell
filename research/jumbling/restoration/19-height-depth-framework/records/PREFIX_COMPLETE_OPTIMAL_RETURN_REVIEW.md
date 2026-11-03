@@ -2,6 +2,8 @@
 
 Archived mathematical record from 2 November 2026. See README.md for its current scope and the independent review record. Original-source digests below identify the captured research version; IMPORT-MANIFEST.json binds this sanitized edition.
 
+Verdict: PASS for the revised, explicitly sigma-background endpoint contract. No open blocking finding remains.
+
 This review covers PREFIX_COMPLETE_OPTIMAL_RETURN.md SHA256 9f687b88bb67e4f8b88c43fde9fa69d60590ca62a830c9ef8f4bb99add9fb2ae. The computation initially read its earlier version c60a600c0bf7f8cc2df66bcf90de0432b6475f1dfec2d10c43696a4ff767161a; the only reviewed correction is the endpoint-background clarification discussed below. Source identity remains a2ebb4cccd6b60d7527c001ef3b2cbc56b179249.
 
 Evidence:

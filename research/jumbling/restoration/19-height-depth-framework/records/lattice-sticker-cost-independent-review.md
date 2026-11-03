@@ -2,6 +2,8 @@
 
 Archived mathematical record from 2 November 2026. See README.md for its current scope and the independent review record. Original-source digests below identify the captured research version; IMPORT-MANIFEST.json binds this sanitized edition.
 
+Verdict: PASS for reachable all-lattice inputs, explicitly reusing the pinned source group, invariant, macro and cascade certificates. The resulting literal I_a cost is20892696. This is an old constructive lattice bound newly connected to the independently checked tail families, not a new universal off-lattice restoration theorem.
+
 Candidate note SHA256:c59017a2ed68d14d7e65720e76a49be5c5c16b9b36c41ca06fe375462c9fb90d. Candidate arithmetic/metric JSON SHA256:ddb98e6b7e44a24b079f19cc750714381a39933bc3925516d82997c7718ecede. Pinned source:a2ebb4cccd6b60d7527c001ef3b2cbc56b179249.
 
 `lattice-sticker-cost-independent-verify.py`, run by the matching saved command, checks the original compressed input bytes against Git blob SHA1 and SHA256; extracts and executes only the original pinned acceptance check's `bounds11` function with those verified private inputs; and matches all35 individual terms. The retained total is20866844. This is reuse of the original, separately authored acceptance arithmetic, not a fresh proof of its geometric seed or collateral premises.

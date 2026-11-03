@@ -2,6 +2,8 @@
 
 Archived mathematical record from 2 November 2026. See README.md for its current scope and the independent review record. Original-source digests below identify the captured research version; IMPORT-MANIFEST.json binds this sanitized edition.
 
+Historical candidate awaiting independent review. Source a2ebb4cccd6b60d7527c001ef3b2cbc56b179249; full177120 physical pieces and259800 stickers. Counts are literal legal menu letters. This is a finite descent segment, not a complete restoration or a universal selector.
+
 ## Exact finite construction
 
 Start at the already checked reachable state f3fc88372815b7297a6d62baf806a49265c3f0f439276e6b86844ef96c61cadd. Define chronological blocks
@@ -30,6 +32,8 @@ All five forward prefixes have maximum height4. At the end of C, all q0 through 
 | After A,D,C,E | 0 | 0 | 0 | 0 | 0 | 6 | 1136 | 102667 |
 
 Types0 through10 were already zero at the input and stay zero at these boundaries. Five additional priority types11 through15 are cleared of height above2. This is not all-lattice placement, and it does not make their future preservation automatic. Total high burden rises; the progress claim is the fixed priority rank. The shorter route leaves1777 more off pieces than the longer route. No shortest full-restoration or shortest five-letter rank-descent claim is made.
+
+## One common rank also accounts for the low-tail block
 
 Let n be the number of off-lattice pieces and set S=(N+1)*R+n, N=177120, with the same L=3 height weights. Since0<=n<=N, a strict integer decrease of R dominates any change of n. The block D preserves the complete typed q-vector and decreases n by1777. Thus every block in the actually replayed order A,D,C,E strictly decreases the ONE fixed S: high blocks have length at most3; the low-tail block has length4. The nine-letter construction joins height descent, geometric unlocking, recovery of collateral and a net low-tail reduction in a finite verified segment.
 

@@ -2,6 +2,8 @@
 
 Archived mathematical record from 2 November 2026. See README.md for its current scope and the independent review record. Original-source digests below identify the captured research version; IMPORT-MANIFEST.json binds this sanitized edition.
 
+Historical mathematical candidate, pending independent review. The fixed source is `a2ebb4cccd6b60d7527c001ef3b2cbc56b179249`. The proposed weights and corollary were supplied by the parent research thread; this note gives the proof and exact scope. It does not assert that the required macros exist at every reachable state.
+
 ## Definitions and source premises
 
 Partition the N=177120 labelled physical pieces into fixed types t=0,...,35, with N_t pieces of type t. Types are immutable physical attributes, not assignments chosen after seeing a move. The source registry defines these K+ orbits in `research/jumbling/sim/regions.py:68`–`:109` (SHA256 `54ffdfff32310b88a03dbc1dbe335c2780312aa83b2e20026a3935fbdf68b709`). Choose a fixed positive integer L before constructing a route.

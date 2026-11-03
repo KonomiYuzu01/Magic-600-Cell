@@ -2,6 +2,8 @@
 
 Archived mathematical record from 2 November 2026. See README.md for its current scope and the independent review record. Original-source digests below identify the captured research version; IMPORT-MANIFEST.json binds this sanitized edition.
 
+Historical proof draft, 2026-11-02. This extends GUARDED_OPTIMAL_RETURN.md. Its source isolation, perturbation, tree-code, and verified 1824-letter suffix premises remain unchanged. This is an exact recognition theorem for a specified infinite language, not a general restoration algorithm.
+
 Let A be the guarded boundary language recognized by that document. Let V(i,k) be the first k letters of certificate word W_i, with 0 <= k < |W_i|. Define
 
     A_prefix = { V(i,k)(Y) : Y in A, i in {0,...,6}, 0 <= k < |W_i| }.

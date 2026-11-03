@@ -1,5 +1,9 @@
 # A computable conditional bound with height-dependent macro lengths
 
+Archived mathematical record from 2 November 2026. See README.md for its current scope and the independent review record. Original-source digests below identify the captured research version; IMPORT-MANIFEST.json binds this sanitized edition.
+
+Historical mathematical candidate, pending independent review. Fixed source: a2ebb4cccd6b60d7527c001ef3b2cbc56b179249. This extends the cost accounting in `type-height-weight-proof.md` (SHA25638900979b087f8d620843c5f73464a327dd373268bf78d9ae5dfc5186a4be2da). It does not supply a missing macro, prove universal coverage, or complete a height-at-most2 tail. It requires no source or model change.
+
 ## Premises and the reason for this extension
 
 The fixed-length theorem assumes a single integer L bounds every chosen macro. Geometric unlocking may instead require a macro whose length grows with the current state. The following result permits that growth to be linear in the total typed height burden, with fixed coefficients.

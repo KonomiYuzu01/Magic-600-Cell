@@ -2,6 +2,8 @@
 
 Archived mathematical record from 2 November 2026. See README.md for its current scope and the independent review record. Original-source digests below identify the captured research version; IMPORT-MANIFEST.json binds this sanitized edition.
 
+Verdict: **PASS for the five-letter finite construction, its1+3+1 fixed-rank decomposition, the nine-letter low-tail comparison, and the scoped q11-elimination distance3.** No findings. The mixed-rank upper bound is valid only under the selector/domain/tail hypotheses written in the candidate.
+
 Frozen written candidate: TYPE_HEIGHT_THREE_BLOCK_WITNESS.md, SHA256645131c745efd67c90c9cf1f5537bd0eb8c419c15512e58c499b997cea3ecddc. Root simulator receipt: type-lex-trimmed-macro.json, SHA256c6afe349ef1de25a370ac0d83de6d137ccbf21d0c17c450f80aea8ba7fa34724. Source pin a2ebb4cccd6b60d7527c001ef3b2cbc56b179249; CPython3.14.7/NumPy2.3.5, full177120 physical pieces.
 
 ## Independent mechanical and endpoint checks

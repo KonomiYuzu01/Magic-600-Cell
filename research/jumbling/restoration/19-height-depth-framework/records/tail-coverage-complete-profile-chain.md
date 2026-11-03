@@ -2,6 +2,8 @@
 
 Archived mathematical record from 2 November 2026. See README.md for its current scope and the independent review record. Original-source digests below identify the captured research version; IMPORT-MANIFEST.json binds this sanitized edition.
 
+Historical research candidate, pinned repository a2ebb4cccd6b60d7527c001ef3b2cbc56b179249. This freezes the completed producer packet. The restricted residue obstruction and b07 primitive have independent parent receipts; the remaining three native cores, six-stage SP suffix and combined proof await their assigned independent reviews. No public/source files were changed.
+
 ## Statement
 
 Let E0 be the1082 labelled off pieces at their exact poses in D1 table00097 (digest cc41accae7cac3add5ab1c3b734b5ba7bee72c1008ec666caf27a1150fdb9938). Let h0 be that table's complete hole-count profile on G(E0), determined by the source SAFE alphabet and the full source chamber-orbit array in the frozen b07 packet.

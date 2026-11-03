@@ -2,6 +2,8 @@
 
 Archived mathematical record from 2 November 2026. See README.md for its current scope and the independent review record. Original-source digests below identify the captured research version; IMPORT-MANIFEST.json binds this sanitized edition.
 
+Verdict: PASS for the exact00097 off-geometry/source-profile family. This is a private independently reviewed result, not a change to the accepted repository registry. General C2 coverage remains open.
+
 The immutable candidate is `tail-coverage-complete-profile-chain.md`, SHA256 `61de8dbd1d96f75c8157de10966a920e83e58502fcd440a591450017f2d2cf6f`; its manifest is `tail-coverage-completion-manifest.json`, SHA256 `724151810a4eb01d3e3dd104b92f329fd918198f67b4cca61052bda95349f16b`. Source commit: `a2ebb4cccd6b60d7527c001ef3b2cbc56b179249`.
 
 ## Independent evidence

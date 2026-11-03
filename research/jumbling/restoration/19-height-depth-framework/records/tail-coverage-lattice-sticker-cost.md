@@ -16,6 +16,8 @@ The needed source premises are:
 2. Reachable lattice states have nu in A_J. The fixed36macro library consists of legal lattice-to-lattice words with its recorded nu values; its binary row space is V34, and its mod5 rank is2, spanning A_J by CRT. The source reviewer explicitly checked these premises in section8, lines331-347; M* uses them at351-366.
 3. The corrections-last relative-target argument applies: choose C with nu(C)=-nu(Y), construct T=solved*C^-1, and solve the sticker-relative state L_T^-1 L_Y with the retained schedule. Then the same retained word takes Y to T in sticker labels, and C solves the labels. The source specifies this at334-336 and361-364, and restore_schedule11_late.py320-354 implements it.
 
+Each correction coefficient may be reduced modulo the order of its **nu vector**, then represented by the shorter signed exponent. This need not preserve the macro's entire permutation. It preserves the required invariant, and T is constructed from the selected actual C, so the retained relative solve accounts for its full permutation. The bound is sum floor(order_nu/2)*macro_length=25852; the possible nu orders are1,2,5,10.
+
 ## What was checked now
 
 Three public compressed blobs were fetched at the exact pinned ref after the connector could not decode gzip. All compressed bytes were verified against Git blob hashes before saving privately:

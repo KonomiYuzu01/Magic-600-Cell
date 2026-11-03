@@ -8,8 +8,8 @@ related: [owner-decisions-2026-10-27-freeze, owner-decisions-2026-10-27-jumbling
 supersedes: []
 claims:
   - {id: scoped-research-status, evidence_kind: source, path: research/jumbling/restoration/19-height-depth-framework/README.md, sha256: a9b1b3334fabe880626395fdcd94b58d0e5dee444e29a15025ed90ab2cef6f8d, checked_at: 2026-11-03}
-  - {id: sanitized-evidence-inventory, evidence_kind: source, path: research/jumbling/restoration/19-height-depth-framework/IMPORT-MANIFEST.json, sha256: 4bd88f0fd293a2f682cb6e2922d131897226a911f01e3549ae1ee55d12f1276c, checked_at: 2026-11-03}
-  - {id: exact-publication-check, evidence_kind: synthetic_geometry, path: research/jumbling/restoration/19-height-depth-framework/PUBLICATION-CHECK.json, sha256: 0f0b664a6b03c83d38425d3125f8d48d2b4fdde0c8de10b9b1b90873badcb8b7, checked_at: 2026-11-03}
+  - {id: sanitized-evidence-inventory, evidence_kind: source, path: research/jumbling/restoration/19-height-depth-framework/IMPORT-MANIFEST.json, sha256: cbbe5a860824336f1b2ec0bbe99551403cc18c5214653594ffc10aa7a67562b4, checked_at: 2026-11-03}
+  - {id: exact-publication-check, evidence_kind: synthetic_geometry, path: research/jumbling/restoration/19-height-depth-framework/PUBLICATION-CHECK.json, sha256: 5a6d79748ccd238163b843cf68a2aa9a077b22f8e929c324017cb5a4c25d6d78, checked_at: 2026-11-03}
 ---
 
 # Bounded height-depth research archive

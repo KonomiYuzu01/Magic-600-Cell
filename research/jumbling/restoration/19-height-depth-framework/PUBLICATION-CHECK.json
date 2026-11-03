@@ -6,6 +6,8 @@
   "preserved_numeric_and_boolean_values": 2795732,
   "removed_metadata_keys": 255,
   "sanitized_location_strings": 7,
+  "mathematical_accounting_paragraphs_preserved": 8,
+  "mixed_administrative_math_paragraphs_preserved": 2,
   "exact_regional_pose_equations": 354240,
   "phase_rank_arithmetic": "PASS: 36 coordinates and four block boundaries",
   "privacy_scan": "PASS: decoded text and compressed JSON contents",

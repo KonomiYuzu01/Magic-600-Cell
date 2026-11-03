@@ -2,6 +2,8 @@
 
 Archived mathematical record from 2 November 2026. See README.md for its current scope and the independent review record. Original-source digests below identify the captured research version; IMPORT-MANIFEST.json binds this sanitized edition.
 
+PASS for the precise promised-reachable Gamma(A) theorem in REGIONAL_HIGH_RESTORATION.md, SHA256 40d90a463aca52b6917f600be8a82787838bdc962628c2482280dbfc6386bf46. No blocking finding. This is a private derived-proof review on source a2ebb4cccd6b60d7527c001ef3b2cbc56b179249, not repository theorem acceptance or universal entrance coverage. All source and candidate files were read-only. The final check manifest binds the exact dependencies and line spans below.
+
 The input is a valid full labelled configuration in the generated pose universe G0. The recognizer decides Gamma(A) on that universe without a history; reachability remains a separate promise for the sticker-restoration consequence. The comparison bijection does not relabel or modify the input mechanically. Exact pose matrices, physical home regions and actual right K+ factors are required throughout.
 
 ## Transfer, heights and the restoration endpoint

@@ -2,6 +2,8 @@
 
 Archived mathematical record from 2 November 2026. See README.md for its current scope and the independent review record. Original-source digests below identify the captured research version; IMPORT-MANIFEST.json binds this sanitized edition.
 
+Historical mathematical integration draft. No software architecture or global restoration theorem is accepted by this document. The regional-high constituent is under independent review; this composition must also receive review before being listed as verified. Source a2ebb4cccd6b60d7527c001ef3b2cbc56b179249.
+
 The endpoint is solved sticker labels/frames in the full177120-piece,259800-sticker I_a model. All costs count literal legal menu letters. Input states are exact generated-universe states promised reachable from solved. A stronger exact canonical pose endpoint is claimed only by the separately verified reference-labelled high-family construction, not by this whole framework.
 
 ## Three admitted entrance domains
@@ -40,12 +42,21 @@ These estimates include the prefix, all preparations, all temporary collateral a
 
 ## The induction is an actual concatenation of preserved contracts
 
+- The finite entrance prefix carries its own remaining-length counter; its endpoint is rechecked against an entrance predicate.
+- At a recognized high boundary, the unique eligible inverse pump block reduces target height by exactly twice its literal length and preserves the guarded regional boundary. Incomplete blocks first use their verified inverse prefix. The fixed sigma/seed suffix reaches lattice; its finite instruction counter closes the bottom of the height induction.
+- At the D1 entrance, each of the eleven verified stage boundaries has fewer off pieces, exact prescribed surviving off poses and the required successor profile. SAFE routing is recomputed, and its cost is accounted. Temporary off-count increases inside a core do not invalidate the boundary induction, since legality, peak height and endpoint collateral were separately proved.
+- At lattice, the finite constructive permutation/correction procedure closes the sticker goal with the checked cost C. Its bounded emitted schedule supplies a remaining-instruction counter; no unproved greedy monotonicity is assumed.
+
 Thus every accepted path joins all the way to its declared goal. A collection of lowering examples with an unknown tail is not being called a complete branch.
 
 ## Negative evidence has a different job
 
 The independently verified17deep-singleton placement exclusions remove40of the source112coverage cases;72cases in50classes remain. The class12 vacancy/profile rule also excludes specified multi-off families. These are all-word unreachability theorems on their exact matched patterns, so they can certify invalid reachability promises. They do not turn a failure of the positive entrance test into an unreachability decision, and do not supply a lowering macro.
 
+The three-letter high ghost guard at the separate s7303-derived state is a candidate additional entrance transition, of cost3 and Phi drop1496to1194. It is not inserted into D[k]'s complete branches unless its successor is proved to enter an already closed branch with an accounted cost. Its recorded path currently stops above height2, so this connection remains open.
+
 ## What would make this universal
 
 A proved computable k(h,...) that places every reachable state inside D[k(h,...)] would convert the explicit U/E formulas into a global quantitative theorem. No such bound or admission theorem is currently known. Taking an unbounded union over k covers the reachable component because it contains solved, but unboundedly increasing k only recovers a terminating promised-domain search, not a new computable uniform upper bound. This is the same distinction as the existing M* and source computability equivalence.
+
+Accordingly this draft provides a continuous promised-reachable framework on named infinite and profile-defined domains, with a finite geometric-admission rejection boundary. That boundary does not decide global reachability. It does not yet fulfill the owner's earlier universal coverage obligation.

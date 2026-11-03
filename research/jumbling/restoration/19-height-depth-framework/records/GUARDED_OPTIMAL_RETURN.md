@@ -2,6 +2,8 @@
 
 Archived mathematical record from 2 November 2026. See README.md for its current scope and the independent review record. Original-source digests below identify the captured research version; IMPORT-MANIFEST.json binds this sanitized edition.
 
+Historical proof draft, 2026-11-02. This is a derived consequence of the published X1 pump certificate and the verified return through the seed history. It is not a new pump mechanism, a general history decoder, or a general restoration theorem.
+
 The exact numerical certificate is `evidence/guarded-pump-prefix-code.json`, reproduced by `guarded-pump-prefix-code-command.ps1.txt`. The source is pinned at `a2ebb4cccd6b60d7527c001ef3b2cbc56b179249`; the certificate records input digests. The geometric admissibility input is the isolation and perturbation proof in `source/research/jumbling/restoration/10-x1-unbounded/REPORT.md`, using its `witnesses/CERT.json`. Those existing geometric results are premises here, not replaced by the small numerical checks below.
 
 Attribution: the core state-only inverse-pump return and unique inverse-certificate-block argument were already accepted in source/research/jumbling/restoration/09-general-method/SENIOR-REVIEW.md, R21F-06 and R21F-07/X21A-07 (lines7137-7138). This note revalidates and states that machinery as an exact recognizer contract, then appends the newly checked strict tau240 history return. The core inverse-block theorem is not counted as a new discovery of this run.

@@ -2,6 +2,8 @@
 
 Archived mathematical record from 2 November 2026. See README.md for its current scope and the independent review record. Original-source digests below identify the captured research version; IMPORT-MANIFEST.json binds this sanitized edition.
 
+Verdict: PASS, with no findings in the assigned scope. This review binds `type-lex-recovery-transfer-results.json` (`db2a8561b31068d35a4394fa8b9360508a48c2abd0b10eab9dd40bf1164b5398`), the full replay receipt (`59a324f7f10bf87fdd554355b9509812ab184c6f6a392d4061e8bf5e3bf23552`), and `type-lex-recovery-transfer-proof.md` (`e1f193003554cffa24e9c11d05911847042a9a8fc4276208aff39e853e14d083`). The separate manifest binds all review artifacts and current input bytes. No source or candidate was changed.
+
 The independently checked construction consists of `(282,13)` followed by
 
 `(59,7),(9,14),(543,10),(598,15),(371,2),(196,20),(262,21),(196,14)`.

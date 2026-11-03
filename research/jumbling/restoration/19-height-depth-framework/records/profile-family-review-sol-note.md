@@ -2,6 +2,8 @@
 
 Archived mathematical record from 2 November 2026. See README.md for its current scope and the independent review record. Original-source digests below identify the captured research version; IMPORT-MANIFEST.json binds this sanitized edition.
 
+Verdict: **PASS in the assigned mathematical scope, no findings.** This reviews REGIONAL_PROFILE_DESCENT_THEOREM.md, SHA2562dc41980136b1fd71c2eddcc32c1206d6375db03e9df60d50f65f4c0d614a115, on source a2ebb4cccd6b60d7527c001ef3b2cbc56b179249. It does not confer repository, architecture or release acceptance.
+
 The concrete words, all12 first-angle effects, rank arithmetic and exact reference depth are explicitly reused from their frozen independent receipts. The separate synthetic Gamma replay and numerical shard were not repeated or independently credited by this review. No new geometry, move search, replay or numerical experiment was performed.
 
 ## Exact finite admission
@@ -17,6 +19,8 @@ The count in line33 is correctly73 INDEXED references: Y0 plus12 choices of j ti
 For any matching pair, Z_p(lambda_p)=Y_pi(p)(lambda_pi(p)). The bijection preserves the collection of occupied physical regions, so geometric validity transfers from the valid reference. IN/OUT/STR predicates, including boundary conventions, agree for every corresponding individual piece and every cut.
 
 This proves BOTH directions of move legality at the current states: a cut has a physical straddler in one state exactly when it has a corresponding straddler in the other. Every moved pair receives the same left menu multiplier E; every unmoved pair remains fixed. Hence Z_p'=Y_pi(p)'t_p. Induction repeats this equality at every common legal prefix and shows that no word legal in only one state can have a first differing legality step. Candidate lines59–65 therefore establish equality of the entire legal-word languages, not merely forward transfer of the selected witness.
+
+Right multiplication by a K+ pose preserves height because its left unit fixes the tree root. It preserves lattice membership because K+ is a group. Type preservation and the bijection consequently preserve the complete q vector, n, Phi and maximum height at EVERY corresponding legal prefix. This accounts for all collateral. It does not identify physical labels or sticker assignments; the matching is a proof certificate, not a relabelling operation performed on the puzzle.
 
 At lines92–94, the goal is the TYPE-SUM condition q11=0. Every legal word has the same goal truth value and literal length from a Gamma input and its matched post-A reference. The independently proved reference minimum3 therefore transfers as a lower bound as well as an upper bound. The physical high piece corresponding to reference114169 may have another label under the matching; no fixed-label target-distance transfer is silently asserted. Nor is this a minimum distance to a five-letter endpoint, the lattice or solved stickers.
 
@@ -50,3 +54,5 @@ All paths below are relative to <archive>. Their digests matched during this rev
 | type-lex-recovery-review-results.json | 46dacb5202f170496c9d323c1eaee3045630f0fb8804f3e88bb09e3323bd436d | Frozen concrete/full-cache receipt |
 | type-lex-trimmed-independent-review.md | 845d6a4b8b775b2785a916773efaba18335962d5baf9a6bc97e5736113cde1e1 | Compact witness, all12 transfer, fixed ranks, exact local depth |
 | type-lex-trimmed-independent-results.json | 6aa749702a36441ca1dda4306d7f9da3ff50582d3709e1b2b165e80ccd5dc5fe | Frozen full-pose/first-touch reference evidence |
+
+The additional synthetic-certificate replay and the concrete numerical review shard named at candidate line108 remain separately reportable evidence. This proof review neither substitutes for those receipts nor reports a practical matching implementation. No new source theorem, architecture, release or global restoration assertion is accepted by this verdict.

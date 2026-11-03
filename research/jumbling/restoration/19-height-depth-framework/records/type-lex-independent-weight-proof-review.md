@@ -2,6 +2,8 @@
 
 Archived mathematical record from 2 November 2026. See README.md for its current scope and the independent review record. Original-source digests below identify the captured research version; IMPORT-MANIFEST.json binds this sanitized edition.
 
+Verdict: **PASS, with the hypotheses and conditional scope already stated in the frozen candidate.** No blocker, major, minor or nit finding is raised.
+
 Reviewed file: `type-height-weight-proof.md`, SHA256 `38900979b087f8d620843c5f73464a327dd373268bf78d9ae5dfc5186a4be2da`. The arithmetic artifact has SHA256 `3ce881efab9bec7c30a31c639c4a68f94a7c733af64fc316cbe57b8906acf336`; its manifest has SHA256 `930d23886205b2786456250212bafd40562a8ce4f0be5c195f9867fe9af61dd4`.
 
 ## Premises and proof

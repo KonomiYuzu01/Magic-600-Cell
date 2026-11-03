@@ -2,6 +2,8 @@
 
 Archived mathematical record from 2 November 2026. See README.md for its current scope and the independent review record. Original-source digests below identify the captured research version; IMPORT-MANIFEST.json binds this sanitized edition.
 
+Historical derived theorem, 2026-11-02. Metric: literal legal I_a menu letters in the full fixed model. All endpoints below are exact complete configurations, not only target-piece heights.
+
 Let S belong to the prefix-complete recognized language in PREFIX_COMPLETE_OPTIMAL_RETURN.md, and let H be the common left height of its seven labelled K pieces. The state-only prefix/boundary decoder returns from S to exact sigma in (H-3888)/2 letters.
 
 Combining this with independently replayed finite suffixes gives:

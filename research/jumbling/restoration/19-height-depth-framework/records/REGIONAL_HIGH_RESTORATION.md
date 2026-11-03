@@ -2,6 +2,8 @@
 
 Archived mathematical record from 2 November 2026. See README.md for its current scope and the independent review record. Original-source digests below identify the captured research version; IMPORT-MANIFEST.json binds this sanitized edition.
 
+Source: a2ebb4cccd6b60d7527c001ef3b2cbc56b179249. Historical derived proof, pending independent review. This is an enlargement of a proved infinite domain, not a universal restoration theorem. No new numerical search or solver implementation is claimed.
+
 Let A be the already recognized guarded pump language including incomplete literal prefixes, from PREFIX_COMPLETE_OPTIMAL_RETURN.md. Its reference states have a shared height H on the seven distinguished target pieces. The verified state-only return first decodes to sigma, follows the fixed return through the seed, and reaches the exact solved reference table in at most H/2+68 literal I_a letters. The finite seed uses83letters and the sigma prefix uses2012letters in total. Source geometry/guard/tree-code proofs and their existing independent reviews are premises.
 
 ## A larger, precisely defined domain

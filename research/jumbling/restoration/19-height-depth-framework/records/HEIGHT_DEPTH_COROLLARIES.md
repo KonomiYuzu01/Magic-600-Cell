@@ -2,6 +2,8 @@
 
 Archived mathematical record from 2 November 2026. See README.md for its current scope and the independent review record. Original-source digests below identify the captured research version; IMPORT-MANIFEST.json binds this sanitized edition.
 
+Historical proof draft, 2026-11-02. This records consequences of the pinned X1 theorem and the new finite witnesses. It does not change the accepted-result registry.
+
 Source: `source/research/jumbling/restoration/10-x1-unbounded/REPORT.md`, sections1,2.2–2.6, at repository commit a2ebb4cccd6b60d7527c001ef3b2cbc56b179249. New finite evidence: `evidence/sigma-strict-continuation-verified.json`. Independent mathematical review: height4_bridge accepted the metric argument, with the scope conditions below.
 
 ## Metric and premises

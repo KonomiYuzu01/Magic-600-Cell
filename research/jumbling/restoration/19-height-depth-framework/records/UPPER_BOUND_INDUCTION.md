@@ -2,6 +2,8 @@
 
 Archived mathematical record from 2 November 2026. See README.md for its current scope and the independent review record. Original-source digests below identify the captured research version; IMPORT-MANIFEST.json binds this sanitized edition.
 
+Historical research note, pinned source a2ebb4cccd6b60d7527c001ef3b2cbc56b179249. The new finite-neighborhood proposition below is a derived candidate submitted for independent review. The bounded-height counting theorem and general computability equivalence are existing accepted source results, not new findings.
+
 The domain for a general restoration statement is R, the legal-reachable component of the exactly solved configuration O under the full I_a menu. Reachability of every physically plausible configuration is not assumed. Words count literal menu letters on all 600 labelled grips; all 177,120 piece poses and collateral effects are retained.
 
 ## 1. A finite, state-only extension of the gap-68 construction

@@ -2,6 +2,8 @@
 
 Archived mathematical record from 2 November 2026. See README.md for its current scope and the independent review record. Original-source digests below identify the captured research version; IMPORT-MANIFEST.json binds this sanitized edition.
 
+Historical mathematical candidate, 2026-11-02. Independent review is recorded in separate receipts; this frozen document does not confer project acceptance.
+
 ## 1. Model, source and claim
 
 Use snapshot a2ebb4cccd6b60d7527c001ef3b2cbc56b179249, the full 177120 physical pieces and 259800 labelled sticker slots, exact Q(sqrt(5)) matrices and chronological literal I_a menu letters. The cost metric is not the retained-generator metric. Let lambda_p be the complete home region of physical piece p, K+ the finite orientation-preserving lattice symmetry group, h_p the existing tree height, and type(p) its fixed registry type. No physical labels are changed by the procedure.
@@ -59,6 +61,8 @@ All tests are exact with the fixed finite K+ and complete region data. A perfect
 For a matched pair, Z_p(lambda_p)=Y_pi(p)(lambda_pi(p)). Thus the sets of occupied regions are identical and validity transfers from Y. For any cut, corresponding regions have the same IN/OUT/STR classification. Its literal move is legal at Z if and only if it is legal at Y. A moved pair receives the same exact left multiplier; an unmoved pair stays fixed. Consequently
 
     Z_p(w) = Y_pi(p)(w) t_p
+
+at every legal prefix w. Induction gives equality of the entire legal-word languages, not only transfer of the selected forward witness. Right multiplication by K+ preserves height and lattice membership; type preservation then gives identical q, n, Phi and H at all corresponding prefixes. This accounts for all pieces, including collateral pieces that rise or become off-lattice. It does not mean their labelled sticker assignments are equal.
 
 The same pi and gauges give a certificate for Gamma(Yw) at each next boundary. Nothing here requires Z to be reachable from solved. Synthetic Gamma inputs may be unreachable; no reachability conclusion or lattice sticker theorem is invoked for them.
 
