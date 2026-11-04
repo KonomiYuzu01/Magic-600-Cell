@@ -42,7 +42,7 @@ The runtime therefore needs a defined place: which layers it may use, how, and w
 Open whatever the owner answers:
 
 - The availability protocol between the command layer and the engine, which needs its own Astra plan check before the
-  architecture freeze (KN5.8).
+  architecture freeze (KN5.8), including the form of the generation event (KN5.25).
 - The binding between runtime and engine, including zero-copy snapshot access (RTE.7).
 
 Conditional on an owner question:
@@ -92,4 +92,5 @@ responsiveness on the owner's machine (RTE.42), and it has not run.
 
 Accepting this record accepts ADR-L02.1 to ADR-L02.7 and the [D] clauses they cite. It does not choose a placement.
 
-The owner may overrule this integrator addition: the two new lanes of KN7.2, which EN4 also has to confirm.
+The owner may overrule these integrator additions: the two new lanes of KN7.2, which EN4 also has to confirm, and the
+availability generation of KN5.25.

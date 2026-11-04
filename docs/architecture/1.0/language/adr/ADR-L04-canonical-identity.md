@@ -94,5 +94,5 @@ either. The engine test is CT-KN2-06, which does not exist yet. The label-lift c
 Accepting this record accepts ADR-L04.1 to ADR-L04.9 and the [D] clauses they cite.
 
 The owner may overrule these integrator additions: KN1.14 to KN1.17, which come from note N1 and were not in the
-partition's first text, and the names "sticker class" and "frame group", which replace the first draft's "visible pose
-class" and "Stab_A".
+partition's first text; shape as a multiset (KN1.7), which corrects note N1's wording for tables that collide; and the
+names "sticker class" and "frame group", which replace the first draft's "visible pose class" and "Stab_A".

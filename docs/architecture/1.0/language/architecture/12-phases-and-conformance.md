@@ -562,7 +562,7 @@ LP0 has no executable component test in the supplied chapters. Its contract chec
 | PS3 | CT-PS3-07 | none | none | none | none |
 | DET | CT-DET-19 | none | none | none | none |
 | RPI | CT-RPI-15 | CT-RPI-16 | CT-RPI-17 | CT-RPI-25 | none |
-| EVD | CT-EVD-14, CT-EVD-15, CT-EVD-16 | none | none | none | none |
+| EVD | CT-EVD-14, CT-EVD-15, CT-EVD-16, CT-EVD-23 | none | none | none | none |
 | BND | CT-BND-25 | none | none | none | none |
 | RTE | CT-RTE-01, CT-RTE-02, CT-RTE-03, CT-RTE-04, CT-RTE-05, CT-RTE-06, CT-RTE-07, CT-RTE-08, CT-RTE-13, CT-RTE-14, CT-RTE-15, CT-RTE-20 | CT-RTE-09, CT-RTE-19 | CT-RTE-10, CT-RTE-17 | CT-RTE-11, CT-RTE-12, CT-RTE-16 | CT-RTE-18 |
 
@@ -570,11 +570,11 @@ LP0 has no executable component test in the supplied chapters. Its contract chec
 
 | Component | source | synthetic | windows | performance | human |
 | --- | --- | --- | --- | --- | --- |
-| KN1 | CT-KN1-01, CT-KN1-02, CT-KN1-03, CT-KN1-04, CT-KN1-05 | none | none | none | none |
+| KN1 | CT-KN1-01, CT-KN1-02, CT-KN1-03, CT-KN1-04, CT-KN1-05, CT-KN1-06 | none | none | none | none |
 | KN2 | CT-KN2-01, CT-KN2-02, CT-KN2-03, CT-KN2-04, CT-KN2-05, CT-KN2-06, CT-KN2-07 | none | none | none | none |
 | KN3 | CT-KN3-01, CT-KN3-03 | CT-KN3-02 | none | none | none |
 | KN4 | CT-KN4-01, CT-KN4-02, CT-KN4-03 | none | none | none | none |
-| KN5 | CT-KN5-01, CT-KN5-02, CT-KN5-03, CT-KN5-04, CT-KN5-05, CT-KN5-06, CT-KN5-07, CT-KN5-08, CT-KN5-09, CT-KN5-10, CT-KN5-11 | none | none | none | none |
+| KN5 | CT-KN5-01, CT-KN5-02, CT-KN5-03, CT-KN5-04, CT-KN5-05, CT-KN5-06, CT-KN5-07, CT-KN5-08, CT-KN5-09, CT-KN5-10, CT-KN5-11, CT-KN5-12 | none | none | none | none |
 | KN6 | CT-KN6-02 | none | none | none | none |
 | KN7 | CT-KN7-01, CT-KN7-02, CT-KN7-03, CT-KN7-04, CT-KN7-05 | none | none | none | none |
 | LG1 | CT-LG1-01, CT-LG1-02, CT-LG1-03, CT-LG1-04, CT-LG1-05 | none | none | none | none |
@@ -587,7 +587,7 @@ LP0 has no executable component test in the supplied chapters. Its contract chec
 | EV4 | CT-EV4-03 | none | none | none | none |
 | PS1 | CT-PS1-01, CT-PS1-02, CT-PS1-03, CT-PS1-04, CT-PS1-05, CT-PS1-06, CT-PS1-07, CT-PS1-08, CT-PS1-09, CT-PS1-10, CT-PS1-11, CT-PS1-12, CT-PS1-13, CT-PS1-14, CT-PS1-16, CT-PS1-18, CT-PS1-19, CT-PS1-21, CT-PS1-22, CT-PS1-23 | none | none | none | none |
 | PS2 | CT-PS2-01, CT-PS2-02, CT-PS2-03, CT-PS2-04, CT-PS2-05 | none | none | none | none |
-| ONE | CT-ONE-01, CT-ONE-02, CT-ONE-03, CT-ONE-04, CT-ONE-05, CT-ONE-06, CT-ONE-07, CT-ONE-08, CT-ONE-09, CT-ONE-10, CT-ONE-11, CT-ONE-12, CT-ONE-13, CT-ONE-14, CT-ONE-15, CT-ONE-16, CT-ONE-17, CT-ONE-18, CT-ONE-19, CT-ONE-20, CT-ONE-21, CT-ONE-22, CT-ONE-23, CT-ONE-24 | none | none | none | none |
+| ONE | CT-ONE-01, CT-ONE-02, CT-ONE-03, CT-ONE-04, CT-ONE-05, CT-ONE-06, CT-ONE-07, CT-ONE-08, CT-ONE-09, CT-ONE-10, CT-ONE-11, CT-ONE-12, CT-ONE-13, CT-ONE-14, CT-ONE-15, CT-ONE-16, CT-ONE-17, CT-ONE-18, CT-ONE-19, CT-ONE-20, CT-ONE-21, CT-ONE-22, CT-ONE-23, CT-ONE-24, CT-ONE-28 | none | none | none | none |
 | DET | CT-DET-01, CT-DET-02, CT-DET-03, CT-DET-04, CT-DET-05, CT-DET-06, CT-DET-07, CT-DET-08, CT-DET-09, CT-DET-10, CT-DET-11, CT-DET-12, CT-DET-13, CT-DET-14, CT-DET-15, CT-DET-17, CT-DET-18, CT-DET-20, CT-DET-21, CT-DET-22, CT-DET-23 | CT-DET-16 | none | none | none |
 | RPI | CT-RPI-01, CT-RPI-20 | none | none | none | none |
 | EVD | CT-EVD-01, CT-EVD-02, CT-EVD-03, CT-EVD-04, CT-EVD-05, CT-EVD-06, CT-EVD-07, CT-EVD-08, CT-EVD-09, CT-EVD-11, CT-EVD-13, CT-EVD-17, CT-EVD-18, CT-EVD-19, CT-EVD-20, CT-EVD-21, CT-EVD-22 | CT-EVD-10 | none | none | none |
@@ -649,16 +649,16 @@ Source counts from the index above:
 | Phase | source | synthetic | windows | performance | human | Total |
 | --- | --- | --- | --- | --- | --- | --- |
 | LP0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| LP1 | 22 | 3 | 3 | 6 | 1 | 35 |
-| LP2 | 198 | 3 | 0 | 0 | 0 | 201 |
+| LP1 | 23 | 3 | 3 | 6 | 1 | 36 |
+| LP2 | 201 | 3 | 0 | 0 | 0 | 204 |
 | LP3 | 37 | 12 | 5 | 3 | 0 | 57 |
 | LP4 | 29 | 3 | 1 | 0 | 3 | 36 |
 | LP5 | 19 | 0 | 0 | 0 | 0 | 19 |
 | LP6 | 10 | 0 | 0 | 0 | 1 | 11 |
-| Total | 315 | 21 | 9 | 9 | 5 | 359 |
+| Total | 319 | 21 | 9 | 9 | 5 | 363 |
 
-The imported index contains 359 tests: 315 source, 21 synthetic, 9 windows, 9 performance and 5 human.
-Section 18 adds ten source test requirements for this chapter. Including them gives 369 requirements, with 325 source;
+The imported index contains 363 tests: 319 source, 21 synthetic, 9 windows, 9 performance and 5 human.
+Section 18 adds ten source test requirements for this chapter. Including them gives 373 requirements, with 329 source;
 the other class counts are unchanged. Those ten are excluded from the imported phase totals. No number is a pass count.
 
 ## 16. Source differences and evidence limits

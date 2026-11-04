@@ -33,8 +33,8 @@
   },
   {
    "codes": [
+    "O--p-n",
     "O--p-u",
-    "O--p-x",
     "OI----"
    ],
    "count": 5,
@@ -178,6 +178,7 @@
   "job_outcome": {
    "c": "completed",
    "e": "error",
+   "n": "not stated",
    "u": "cut off",
    "x": "cancelled"
   },
@@ -6076,7 +6077,7 @@
   },
   {
    "cls": "B",
-   "code": "O--p-x",
+   "code": "O--p-n",
    "count": 1,
    "example_path": "research/jumbling/restoration/17-routing-in-driver/results/runs/pxrr-7304.json",
    "field": "complete",
@@ -6086,9 +6087,9 @@
    "mapping": {
     "check": "producer",
     "claim": "open",
-    "job_outcome": "cancelled"
+    "job_outcome": "not stated"
    },
-   "note": "First write left in place: the integrator stopped this run by hand, which only the README says. 17/README.md:151; 17/scripts/pxrr.py:54",
+   "note": "First write left in place: the record states no outcome. That the integrator stopped this run by hand is only in the README, a separate fact (EVD.47). 17/README.md:151; 17/scripts/pxrr.py:54",
    "rule": "R6",
    "value": false
   },
@@ -6110,7 +6111,7 @@
   },
   {
    "cls": "S",
-   "code": "O--p-x",
+   "code": "O--p-n",
    "count": 1,
    "example_path": "research/jumbling/restoration/17-routing-in-driver/results/runs/pxrr-7304.json",
    "field": "reason",
@@ -6120,9 +6121,9 @@
    "mapping": {
     "check": "producer",
     "claim": "open",
-    "job_outcome": "cancelled"
+    "job_outcome": "not stated"
    },
-   "note": "First write left in place: the integrator stopped this run by hand, which only the README says. 17/README.md:151; 17/scripts/pxrr.py:54",
+   "note": "First write left in place: the record states no outcome. That the integrator stopped this run by hand is only in the README, a separate fact (EVD.47). 17/README.md:151; 17/scripts/pxrr.py:54",
    "rule": "R6",
    "value": "initialised"
   },
@@ -6188,7 +6189,7 @@
   },
   {
    "cls": "S",
-   "code": "O--p-x",
+   "code": "O--p-n",
    "count": 1,
    "example_path": "research/jumbling/restoration/17-routing-in-driver/results/runs/pxrr-7304.json",
    "field": "status",
@@ -6198,9 +6199,9 @@
    "mapping": {
     "check": "producer",
     "claim": "open",
-    "job_outcome": "cancelled"
+    "job_outcome": "not stated"
    },
-   "note": "First write left in place: the integrator stopped this run by hand, which only the README says. 17/README.md:151; 17/scripts/pxrr.py:54",
+   "note": "First write left in place: the record states no outcome. That the integrator stopped this run by hand is only in the README, a separate fact (EVD.47). 17/README.md:151; 17/scripts/pxrr.py:54",
    "rule": "R6",
    "value": "unknown"
   },
@@ -8725,10 +8726,10 @@
   ],
   [
    "R6",
-   "O--p-x",
+   "O--p-n",
    3,
    3,
-   "First write left in place: the integrator stopped this run by hand, which only the README says. 17/README.md:151; 17/scripts/pxrr.py:54"
+   "First write left in place: the record states no outcome. That the integrator stopped this run by hand is only in the README, a separate fact (EVD.47). 17/README.md:151; 17/scripts/pxrr.py:54"
   ],
   [
    "T1",
@@ -8925,7 +8926,7 @@
    "no top format": 232,
    "records": 497
   },
-  "head": "9e060af083f2562f4cb6d604d392eb08445416d2",
+  "head": "7927cb30fb66398315426d8ca17a48ee3874b2d6",
   "manifest_sha256": "e2b388befa1671be67219b23c4a565c003c8ae960bd0aa69e07ddb030a669702",
   "parse_failures": [],
   "root": "research/jumbling/restoration",

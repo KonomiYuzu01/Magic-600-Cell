@@ -43,7 +43,8 @@ Under LQ3's recommendation:
   universal claim (EVD.42 to EVD.44). A finite computation does not stand for a wider statement: a leaf narrower than its
   statement reads as an inconsistency (I7 of EVD.40, EVD.59).
 - **ADR-L05.8** A certificate is a stored object of a named kind with a digest. One small kernel checker exists per
-  kind, it recomputes without caches and it shares no code with the producer. Its report enters the graph as one leaf
+  kind. It recomputes without caches, it shares no search or construction code with the producer, and it uses the
+  kernel's exact engines and model files, which the oracles test separately. Its report enters the graph as one leaf
   (EVD.46, KN6.1 to KN6.6).
 - **ADR-L05.9** Labels on record map by (format, field, value), never by word. A value that depends on a sibling field
   stays recorded until a whole-record rule maps it, and a recorded claim reads open (EVD.48 to EVD.52).
@@ -74,7 +75,7 @@ Conditional on an owner question:
 - Computing the words means a later edition re-reads old facts. Stored judgements would have to be migrated, and each
   migration would be a place to overstate a claim.
 - Keeping job outcome out of the claim blocks the commonest overstatement: reading "the job finished" as "the search was
-  complete".
+  complete". An outcome can still withhold a recorded leaf, and it supplies none (Theorem D (b1)).
 
 ## Alternatives considered
 
@@ -100,7 +101,7 @@ Conditional on an owner question:
 
 Classes: source, and proofs in the text. Theorems A to D are proved in chapter 06 from the mathematician's note N2. No
 person has reviewed them. The label counts are source evidence counted from Git blobs, and `corpus-labels.json` and its
-README give the production command. CT-EVD-01 to CT-EVD-22 are requirements only. No kernel checker in this design has
+README give the production command. CT-EVD-01 to CT-EVD-23 are requirements only. No kernel checker in this design has
 been built, though the research has its own checkers on record.
 
 ## What the owner accepts
@@ -108,5 +109,5 @@ been built, though the research has its own checkers on record.
 Accepting this record, with LQ3's recommendation, accepts ADR-L05.1 to ADR-L05.10 and the clauses they cite.
 
 The owner may overrule these integrator additions: the empty start of the invalid-pairs table (EVD.21), the default for
-records with no `format` key (EVD.53), the import values "not run" and "not stated" (EVD.47), the covered-set rule I7
-with EVD.59, and the guards of EVD.36.
+records with no `format` key (EVD.53), the import values "not run", "not stated" and "stated: not replayed" (EVD.47),
+the covered-set rule I7 with EVD.59, and the guards of EVD.36.

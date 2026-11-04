@@ -97,7 +97,7 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
     effect:  read a snapshot; seeded randomness; use a granted file, as required by the recorded computation
     cost:    the recorded deterministic budget under its recorded cost table
     errors:  LG4:input.repro_input_missing, LG4:input.repro_key_mismatch, LG3:capability.grant_mismatch,
-             budget.*, LG4:evidence.reproducibility_mismatch
+             KN7:budget.*, LG4:evidence.reproducibility_mismatch
   ```
 
 ## 2. Deterministic evaluation

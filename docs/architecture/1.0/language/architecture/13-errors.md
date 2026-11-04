@@ -38,9 +38,10 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
   measured capacity. A redundant `lbN_` part is removed when the source already identifies that library.
 - **ERR.4 [D]** The short form `category.slug` is legal only in an `errors:` line in the raising component's
   section. There it expands with that component's prefix. `category.*` denotes all registered codes of that
-  category from that component and needs no registry row of its own. An interface returning another component's
-  error uses its full code. Section 6 records what replaced the drafts' provisional short spellings, in prose and code
-  tables too (default 19; DT-L1 Round 3).
+  category from that component and needs no registry row of its own. With a prefix, as in `KN7:budget.*`, it denotes the
+  same for the named component. An interface returning another component's error uses its full code or such a family,
+  and a wildcard reaches at least one registered code. Section 6 records what replaced the drafts' provisional short
+  spellings, in prose and code tables too (default 19; DT-L1 Round 3).
 - **ERR.5 [D]** A code keeps its meaning for ever and is never reused. Retirement leaves the row, its meaning and
   its retirement edition in the registry. A proposal withdrawn before first use is marked as such, with no invented
   edition. It cannot become a different failure later (default 5; DT-L1 Round 3; V06).
@@ -600,7 +601,7 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
 | CT-ERR-01 | Parse every active code: registered source prefix, registered category, category equal to envelope.category, prefix equal to the reported origin; forwarding preserves both. | source |
 | CT-ERR-02 | Slugs match lower-case snake case and the 40-character bound; reject empty parts, redundant LB prefixes and names of remedies or selected twists/corrections. | source |
 | CT-ERR-03 | Compare registry editions: no code is reused or silently changes meaning; retired rows and their retirement editions remain, with unassigned editions explicit for pre-use withdrawals. | source |
-| CT-ERR-04 | Expand each component's errors lines, including wrapped lines and category wildcards; every concrete active code has a row, every row has Rule source and Used by, and forwarded codes retain full prefixes. | source |
+| CT-ERR-04 | Expand each component's errors lines, including wrapped lines and category wildcards, qualified or not; every concrete active code has a row, every wildcard reaches a code, every row has Rule source and Used by, and forwarded codes retain full prefixes. | source |
 | CT-ERR-05 | Every envelope has V06 fields, an admitted form and retry value; diagnostics bind a digest/range using the selected EV1.10 convention. Invalid draft bytes never replace the active version. | source |
 | CT-ERR-06 | Change and translate summaries/diagnostics while keeping code/context; handling and test outcomes remain the same without text matching. | source |
 | CT-ERR-07 | Every active consistency row originates in KN1 to KN7 and freezes only on a kernel invariant failure. Replay, cache, persistence, bundle and runtime-fault fixtures freeze no session. | source |

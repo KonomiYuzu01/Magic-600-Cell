@@ -28,8 +28,8 @@ state is, what else may look like a state, and how any of it can become real.
 - **ADR-L01.4** A derived state is an immutable value computed by the same exact kernels. It has no session revision, it
   lives in the value store by digest, and it is charged to the program's memory budget (KN2.11 to KN2.15, ONE.20 to
   ONE.30). It is never adopted. It becomes real only when the solver plays its word through `propose` and the engine
-  replays that word at the current revision (ONE.26). A derived state with no word can be compared and displayed, and
-  nothing more (ONE.27).
+  replays that word at the current revision (ONE.26). A derived state with no word cannot be proposed. It can still be
+  read, compared, displayed and derived from, and what is derived from it keeps its reachability claim (ONE.27).
 - **ADR-L01.5** The preview is the single exception: the one state-like value a commit can adopt.
   - The engine builds it and owns its immutable witness (KN5.9, ONE.31).
   - A proposal never carries a state or a digest for the engine to adopt (KN5.13).
@@ -93,7 +93,7 @@ Conditional on an owner question:
 
 ## Evidence
 
-Class: source. Nothing in this design has been executed. CT-ONE-01 to CT-ONE-27 are requirements, and none of them
+Class: source. Nothing in this design has been executed. CT-ONE-01 to CT-ONE-28 are requirements, and none of them
 exists yet (overview, section 3.4). The preview-swap test of partition 8.3 is LP2 acceptance, and it has not run. The
 counterexample above comes from note N1, which stands at (theorem, producer) until a model review reads it (chapter 06).
 
@@ -108,6 +108,7 @@ New integrator rules the owner may overrule (chapter 08, section 17):
 - ONE.34: previews only inside a command the solver invokes.
 - ONE.40: the engine discards a preview when the state revision moves.
 - ONE.41: on screen means presented.
+- ONE.27: a wordless import can be the base of `derive`, and what is derived keeps its reachability claim.
 
 Four clauses read the sources, and the owner may read them differently: ONE.12 ("shows the stale state"), ONE.21 with
 EV3.12 (the base of an imported value), ONE.61 ("holds no puzzle copy") and ONE.78 (charter S4 for a live twist).

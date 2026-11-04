@@ -195,7 +195,7 @@ Section 7 links the individual stage archives.
   operation check_named_word(input: StateRef, literal: LiteralWord, unit?: PieceSet, cap?: CapId) -> JobResult
     effect:  read a snapshot, budgets
     cost:    chapter 01's literal replay cost and the declared observation batches
-    errors:  LB1:input.incompatible_alphabet, KN1:input.identity_mismatch, stale.*, budget.*
+    errors:  LB1:input.incompatible_alphabet, KN1:input.identity_mismatch, KN2:stale.*, KN7:budget.*
   ```
 
   This names LB3's whole-word check. A blocked prefix and a false step flag retain their distinct kernel results.
@@ -219,7 +219,7 @@ Section 7 links the individual stage archives.
 | Sections, slabs and clips | Exact model geometry and named exact predicates | pure, budgets; change the view when published | Library code over KN3 exact polytope operations | A true section, a slab and a clip have separate predicates; an empty result concerns that predicate and input geometry. |
 | Layouts and atlases | Canonical objects at a stated revision | read a snapshot; change the view | Library code over exact KN2.4 reads | Per-object layouts, atlas membership, trees and dimension-tagged cell-complex incidence; evaluated per revision. |
 | State-graph representation | Explicit states and transitions | pure; change the view when published | Library code over declared graph data | Rendering a supplied graph chooses no word. Expanding a graph by puzzle-word search is a research tier candidate. |
-| Map property checks | Explicit domain, codomain, metric and map | pure, budgets | Library code over exact scalar/geometry operations | Homomorphism, injectivity, embedding and isometry checked separately. One pass implies none of the other properties. |
+| Map property checks | Explicit domain, codomain, metric and map | pure, budgets | Library code over exact scalar/geometry operations | Homomorphism, injectivity, embedding and isometry checked separately, each with its own result. A pass records its own property only, even where another follows by a theorem (an isometry or an embedding is injective): a claim of the other property cites that theorem. |
 | Linked selection | Canonical IDs with level and source relation | change the view | Library code; chapter 10 source maps | Carries the solver's pick between representations. A missing image means no image under that map, distinct from an unknown relation. |
 
 - **LB4.2 [D]** A chart's declared properties are decided exactly at exact camera poses, the identity or an element of

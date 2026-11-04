@@ -311,9 +311,10 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
 
 - **EV4.2 [B]** The palette includes every command, including a language overlay row (charter E5, DT-M1 Outcome C3).
   An unavailable entry keeps its place in the matches with its typed reason. Search uses labels, glossary terms,
-  command IDs and key names; it exposes a command's binding before disclosure. Its availability input is KN5.6's table
-  per revision, with no engine call for each search keystroke. Palette invocation uses the same gates and preview
-  rule as a key. Searching and showing a command never grants permission to run it.
+  command IDs and key names; it exposes a command's binding before disclosure. Its availability input is KN5.6's table,
+  read per revision and at each new generation (KN5.25), with no engine call for each search keystroke. Palette
+  invocation uses the same gates and preview rule as a key. Searching and showing a command never grants permission to
+  run it.
 
 - **EV4.3 [D]** A `Binding` maps a key sequence and routing context to a stable command ID with absolute arguments
   (DT-M1 Outcome, Absolute arguments and Terms). Its distinction from invocation identity follows from KN5.21:
@@ -590,7 +591,7 @@ glossary summaries of the owning chapter, not competing contracts.
 | Region class | L6 | The class g_A·R_A of a pose, which is the piece's posed region. | Chapter 01 KN1.7; DT-L1 N1 |
 | Frame group (change: replaces Orientation group) | L5 | The group of permutations of a piece's sticker regions that turns keeping its region can make; trivial, C2, C5, D5 or A5 by orbit. | Chapter 01 KN1.7 (R_A/S_A); Theory Lemma 7; DT-L1 N1 |
 | Gauge | L6 | A pair (σ, t): σ permutes the pieces, and each t_A is a rotation carrying A's reference region onto that of σA. Piece A takes the place σA had, so the same regions stay occupied. By Theorem 1 of note N1 (status: theorem, producer) every word stays admissible and the two runs stay related by the same gauge. A gauge is not equality and does not carry reachability. | Chapter 01 KN1.7, KN1.14; DT-L1 N1 |
-| Shape | L6 | The set of posed regions of a state, forgetting which piece fills which region. | Chapter 01 KN1.7; DT-L1 N1 |
+| Shape | L6 | The multiset of posed regions of a state, forgetting which piece fills which region. On a state without collisions, the set. | Chapter 01 KN1.7; DT-L1 N1 |
 | Digest | L2 | A short value computed from exact bytes, used to name them. Digests compare only at the same level. | Chapter 01 KN1.8 |
 | Level-qualified digest | L2 | A digest of normalised bytes naming the identity level it covers. | Chapter 01 KN1.8 |
 | Menu | L1 | The pinned set of rotations available to a grip in the named puzzle. | Chapter 01 KN1; partition LG2 |
@@ -827,7 +828,7 @@ glossary summaries of the owning chapter, not competing contracts.
 | Block | **achievement block**: solver-declared (`terms.json`). **jumbling block**: pieces no cut separates. Identity block and Provenance block keep their names, as bundles of fields. Bare "block" means achievement block only. Blocked is unrelated to all of these |
 | Provenance | **assistance provenance**: the origin of a word (BM2, PS1.32). **result trace**: how a result traces to its inputs and support (EV2.5). **attribution**: author, reproducer, scope setter, review class (EVD.6; PS1.35 already says Attribution) |
 | Macro | **macro**: a reusable named word. **lowering macro**: a word ending in a jumble that lowers Φ (stage 15 README). **macro certificate**: Theorem MC's event-by-event certificate of a word (stage 15 README) |
-| Covers | **covered set** (chapter 06, section 2) against **helper cover** (kernel row `covers`; card 7) |
+| Covers | **covered set** (chapter 06, section 2). **cap cover**: "d covers c", DT-J1 M4's predicate at a named cap (kernel row `covers`). **helper cover**: helpers whose inside sets cover a target's straddlers (card 7; stage 14) |
 | Level | **identity level**, **learning level** and **grip level** lev(c) (card 7) |
 | Witness | **witness word** against **witness piece** (chapter 10) |
 | Chamber | **cut chamber** against **flag chamber** (the theory) |

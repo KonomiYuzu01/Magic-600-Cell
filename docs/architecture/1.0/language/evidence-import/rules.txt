@@ -27,7 +27,7 @@ families\.R\.search=@@-S----@@F6
 ^pstar2/2\|(status|reason)=@@PSXp-c@@R2
 ^(s16-pxrr/1|path:16/results/runs/px-[^|]*)\|segments\[\]\.status@@OSEp-c@@R4
 ^(s16-pxrr/1|path:16/results/runs/px-[^|]*)\|(status="stopped|reason="no-cand)@@PSXp-c@@R3
-^s16-pxrr/1\|(status="unknown|reason="initialised|complete=false)@@O--p-x@@R6
+^s16-pxrr/1\|(status="unknown|reason="initialised|complete=false)@@O--p-n@@R6
 ^s16-pxrr/1\|complete=true@@-----c@@R3
 \|(search\.)?complete=true@@-SXp-c@@C1
 results\[\]\.status="level above 1@@PSEp-c@@L2

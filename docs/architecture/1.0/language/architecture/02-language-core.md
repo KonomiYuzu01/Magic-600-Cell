@@ -167,7 +167,7 @@ chapter 01's vocabulary. Types below name concepts, not final identifiers or con
   operation word_key(word: LiteralWord) -> WordEqualityKey
     effect:  pure
     cost:    deterministic word-processing cost, charged under LG4.7
-    errors:  budget.*, KN1:input.identity_mismatch
+    errors:  KN7:budget.*, KN1:input.identity_mismatch
   ```
 
 - **LG2.14 [D]** For 600-cell-Full the key uses free reduction. For jumbling it preserves the word's domain as a
@@ -202,7 +202,7 @@ chapter 01's vocabulary. Types below name concepts, not final identifiers or con
     effect:  prepare a preview
     lane:    as specified by KN5.9
     cost:    the exact length of the literal word, as specified by KN5.9
-    errors:  stale.*, input.*, capability.*, resource_limit.*
+    errors:  KN5:stale.*, KN5:input.*, KN5:capability.*, KN2:resource_limit.*
   ```
 
 - **LG2.18 [O]** Default 10 fixes the key's domain and its separation from execution, but does not give a complete

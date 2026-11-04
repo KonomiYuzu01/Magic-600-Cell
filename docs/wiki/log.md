@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-04] update | The language: Astra review of the full text
+The full review ran in three parallel shards at the fast tier: five major and seven minor findings, no blocker, all adopted and applied to the [architecture document](../architecture/1.0/language/architecture/00-overview.md) and the [ADR drafts](../architecture/1.0/language/adr/README.md), with the record in [DT-L1](../progress/1.0/design-table/topics/language-ecosystem.md#astra-review-of-the-full-text). Everything stays a draft for the owner: no ADR is accepted, and no owner question LQ1 to LQ21 is answered.
+
 ## [2026-11-04] update | The language: round 4 on what lets a user understand a principle
 The mathematician's check of the explanations, source tracing and learning path, with its follow-up, is applied to the [architecture document](../architecture/1.0/language/architecture/00-overview.md) and recorded in [DT-L1](../progress/1.0/design-table/topics/language-ecosystem.md#round-4). It stays a draft for the owner: no ADR is accepted, no owner question LQ1 to LQ21 is answered, and the glossary rows it adds are proposals.
 

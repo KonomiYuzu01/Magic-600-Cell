@@ -28,7 +28,7 @@ R2@@Two-level stop: a negative certificate for the five families as declared onl
 R3@@Final stop of P** or P***: R unbeamed, X1, X2, minimal X3, RR; minimal X3 through its lemma. 16/scripts/pxrun.py:92-100; 17/scripts/pxrr.py:98-120
 R4@@Segment stop inside a run; the next segment follows, so no negative. 16/scripts/pxrun.py:1-8
 R5@@Mid-run snapshot in the repository; the run went on (7305 shows two steps; 15/README.md:208). 15/scripts/pstar.py:925
-R6@@First write left in place: the integrator stopped this run by hand, which only the README says. 17/README.md:151; 17/scripts/pxrr.py:54
+R6@@First write left in place: the record states no outcome. That the integrator stopped this run by hand is only in the README, a separate fact (EVD.47). 17/README.md:151; 17/scripts/pxrr.py:54
 E1@@Beam search that ran to its depth: not exhaustive although the word says exhausted. 14/scripts/retained_search.py:107-148
 E2@@Second pass: the earlier best word replayed, no new search. 14/scripts/retained_search.py:250-262
 E3@@Prediction of the calculus, compared with the replay: not a result.

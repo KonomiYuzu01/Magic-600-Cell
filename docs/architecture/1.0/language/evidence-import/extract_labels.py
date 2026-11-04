@@ -94,7 +94,7 @@ NM=[("claim",dict(P="proved",C="conditional",R="refuted",O="open")),
 ("check",dict(N="none",p="producer",i="independent checker",m="model review")),
 ("check_mode",dict(t="reused through exact transport",a="fresh exact audit",r="actual replay",
  R="stated: not replayed")),
-("job_outcome",dict(c="completed",x="cancelled",u="cut off",e="error"))]
+("job_outcome",dict(c="completed",x="cancelled",u="cut off",e="error",n="not stated"))]
 def lines(n):
     with open(D+n,encoding="utf-8") as f:
         return [l.rstrip("\n").split("@@") for l in f if l.strip()]

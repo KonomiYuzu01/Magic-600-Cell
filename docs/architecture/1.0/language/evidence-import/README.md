@@ -24,9 +24,9 @@ python docs/architecture/1.0/language/evidence-import/extract_labels.py
 - The script reads the corpus from Git blobs at HEAD, never from a checkout. On Windows six pairs of names under
   `16-six-jams/results/runs/` differ only in case, so a walk of the checkout would miss six records (DT-L1 R3-E2).
 - It writes only the two generated files of this folder. It changes no research file.
-- The table on record was made at Git HEAD `9e060af083f2562f4cb6d604d392eb08445416d2`. The corpus manifest has SHA-256
+- The table on record was made at Git HEAD `7927cb30fb66398315426d8ca17a48ee3874b2d6`. The corpus manifest has SHA-256
   `e2b388befa1671be67219b23c4a565c003c8ae960bd0aa69e07ddb030a669702`.
-- `corpus-labels.json` has SHA-256 `d6156092cb3cdc01fba013cfbfa37d2ce78bc8a8d766ca473a17faa80337bf13`. A run at a later
+- `corpus-labels.json` has SHA-256 `6fcd45325a8789736534d53cd336297a0718c3c4386bb9da5af21fbb0ac13a68`. A run at a later
   HEAD changes the `head` field, and it changes the case-pair and working-tree fields if the checkout differs. The manifest
   digest is what identifies the corpus.
 
@@ -45,8 +45,8 @@ Source evidence, counted from Git blobs (DT-L1 round 3, engineer advisor):
 | Occurrences | 22,513 |
 
 Rows set one or more of six fields: claim, scope, basis, check, check mode and job outcome. Their values are those of
-partition section 8.1, so one row rarely states a whole claim, and an evidence envelope is built from several rows of one
-record.
+partition section 8.1 and the import values of chapter 06, EVD.47. One row rarely states a whole claim, and an evidence
+envelope is built from several rows of one record.
 
 ## What was inferred
 

@@ -2826,3 +2826,42 @@ These go to the owner once, with the topic. None adds a question to partition se
   computation, no test and no geometry.
 - The mathematician's explainer "For the owner" goes to the owner with the full text.
 - The corrections are listed in partition section 19, "Corrected after round 3".
+
+## Astra review of the full text
+
+The kickoff asks for a full Astra review of the whole proposal in at least two parallel shards. It ran at `7927cb30`,
+read-only and at the fast tier, as three concurrent shards. Shard A took chapters 01, 02, 08, 09 and 13 with ADR-L01, L02,
+L03, L04, L07 and L08. Shard B took chapters 05, 06 and 07, the evidence import table, and ADR-L05, L06, L09 and L10. Shard
+C took chapters 03, 04, 10, 11 and 12, ADR-L11 and L12, the ADR index and the kickoff's coverage table. Their records are
+`20261104T045920Z-f29d6171`, `20261104T045921Z-6618a6a2` and `20261104T045922Z-85b33949` under `work/reviews/`, which Git
+ignores.
+
+The result was five major and seven minor findings, and no blocker. Each was read against the text it cites. All twelve
+stand, and all twelve are adopted, the minor ones too, because each fix is small and local. Shard C's verdict was a pass,
+and shard B reproduced the corpus counts from Git blobs.
+
+| Finding | Severity | What was wrong | Applied in |
+| --- | --- | --- | --- |
+| C600-A-01 | major | Availability changes with no new revision: a preview reaching `presented`, a lane's admission or release. A palette reading once per revision would show a stale table | KN5.25 (new), KN5.6, EV4.2, chapter 08's lifecycle table, CT-KN5-12, partition KN5, ADR-L02 |
+| C600-A-02 | major | Shape as a set fails on raw tables that collide, which KN2.14 admits: (R, R, QR) and (R, QR, QR) give one set, different off counts and no gauge between them | KN1.7, KN2.14, shape's glossary row, CT-KN1-06, ADR-L04 |
+| C600-A-03 | major | ONE.27 and ADR-L01.4 said a wordless import can be compared and displayed "and nothing more", while ONE.21 and KN2.11 let `derive` start from it | ONE.27, ADR-L01.4, CT-ONE-28 |
+| B-01 | major | Theorem D (b) said a job outcome never moves a statement out of rows 5 to 7. EVD.41 makes a leaf inert under "not stated", so a stated outcome can release a leaf the graph already holds: row 7 to row 2 | Theorem D (b) narrowed, (b1) new, EVD.5, EVD.41, CT-EVD-05, ADR-L05 |
+| B-02 | major | `AssistanceSummary` reads run records, while BND.35 promised equal bytes from the journal alone. A view-only run leaves no journal row | The summary's `runs` field, BND.35, CT-BND-21, ADR-L09.4 |
+| C600-A-04 | minor | A local wildcard for another component's category expanded to nothing, so ERR.4's expansion rule failed on it | ERR.4, CT-ERR-04, and the `errors:` lines of chapters 01, 02, 03 and 09 |
+| B-03 | minor | ADR-L05.8 forbade all code sharing between a checker and its producer. KN6.2 forbids only search and construction code | ADR-L05.8 |
+| B-04 | minor | Rule R6 mapped `pxrr-7304.json` to cancelled, while EVD.47 calls it "not stated" and only the README says it was stopped | Rule R6, the generator's legend, the table and its digest, EVD.47, CT-EVD-23 |
+| B-05 | minor | CT-EVD-04 said neither pass reads the other's output, but stands₁ reads Ref, which comes from stands₀ | CT-EVD-04 |
+| B-06 | minor | The table's check mode "stated: not replayed" was not among EVD.4's modes | EVD.4, EVD.47, the import README, CT-EVD-23 |
+| C-001 | minor | The map property row said one pass implies no other property, which is false: an isometry or an embedding is injective | The row in chapter 03, section 4 |
+| C-002 | minor | The term "covers" merged the cap cover "d covers c" with card 7's helper cover | The confusable-terms row of chapter 04 |
+
+Three of these change something a round had settled, and the owner sees them with the integrator additions:
+
+- **Note N1.** Shape is a multiset. For a collision-free configuration that is the set note N1 writes, so Theorem 1 and every
+  use on a reachable state stand. The note's wording is corrected in chapter 01 and stays as written in round 3 above.
+- **Note N2.** Theorem D (b) as written in round 3 is refuted, and (b1) replaces its claim about job outcomes. The review
+  gives no verdict on the proofs as a whole, so N1 and N2 stay at (theorem, producer), and no person has reviewed either.
+- **The label table.** Rule R6's rows change value, so the table's digest changes. The digest in round 3's record stays as
+  history, and the import README carries the current one. The corpus manifest and every total are unchanged.
+
+New requirements: CT-KN1-06, CT-KN5-12, CT-ONE-28 and CT-EVD-23, which makes 373 in all. No test exists yet.

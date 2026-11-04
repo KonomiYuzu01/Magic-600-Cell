@@ -40,7 +40,8 @@ Every option the owner might choose needs them.
   run, the host sets it, and a program cannot raise it (BND.17, BND.34). Research output never becomes a preview in a
   solving session (BND.61).
 - **ADR-L09.4 Labelled records (BM4).** A solve record states which assistance classes the system recorded. The host
-  computes the summary from the journal and the run records, and no program writes it (BND.35).
+  computes the summary from the journal and the run records, the summary names those inputs, and no program writes it
+  (BND.35).
 - **ADR-L09.5 Boundary classes (BM5).** Each built-in tool declares its class, and the review checks the tool's entry
   and rows against that class (BND.27, BND.37). A class grants nothing by itself.
 - **ADR-L09.6 Policy as data.** The policy table is versioned data outside the kernel. No program can change it, and its

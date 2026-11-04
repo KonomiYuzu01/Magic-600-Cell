@@ -16,9 +16,10 @@ N2, R4-M38, R4-M39); [the charter](../../../../progress/1.0/charter-2.0-draft.md
 [the label table](../evidence-import/README.md); chapters 01, 05 and 13.
 
 Evidence: the order and the theorems below are the mathematician's note N2 in DT-L1 round 3, and I7 with Theorem D (b2)
-are its round 4 addition. By this chapter's own grades that note is (theorem, producer) until a model review reads it,
-and no person has reviewed it. The figures for the corpus are source evidence counted from Git blobs. The worked
-examples cite research records. No conformance test exists yet.
+are its round 4 addition. Theorem D (b1) replaces a part of the note's (b) that the Astra review refuted (DT-L1). By
+this chapter's own grades that note is (theorem, producer) until a model review reads it, and no person has reviewed it.
+The figures for the corpus are source evidence counted from Git blobs. The worked examples cite research records. No
+conformance test exists yet.
 
 ## 1. What a result states
 
@@ -54,12 +55,14 @@ examples cite research records. No conformance test exists yet.
 | Human review | A recorded review by a person |
 | Formal proof | A proof checked by a proof assistant (LQ15) |
 
-- **EVD.4 [D]** Each check records its mode: reused through exact transport, fresh exact audit, or actual replay. Modes
-  are facts about what the check covered. They are not a strength order, and no word reads them. A reused leaf is written
-  as AND(source leaf, transport lemma leaf), so reuse is visible in the graph. A fresh audit and an actual replay differ in
-  what they cover, so they are different statements or a recorded fact. The grades therefore number at most 30, not 90.
+- **EVD.4 [D]** Each check records its mode: reused through exact transport, fresh exact audit, or actual replay. EVD.47
+  adds one import value for a stated absence. Modes are facts about what the check covered. They are not a strength
+  order, and no word reads them. A reused leaf is written as AND(source leaf, transport lemma leaf), so reuse is visible
+  in the graph. A fresh audit and an actual replay differ in what they cover, so they are different statements or a
+  recorded fact. The grades therefore number at most 30, not 90.
 - **EVD.5 [D]** Job outcome is not evidence (KN7.3). A job can complete and leave a search incomplete, because a beam can
-  run to its depth and miss 228 descending words (stage 15). So completeness of a search is its own fact (EVD.13).
+  run to its depth and miss 228 descending words (stage 15). So completeness of a search is its own fact (EVD.13). An
+  outcome can withhold a leaf (EVD.41), and it supplies none (Theorem D (b1)).
 - **EVD.6 [D]** Provenance travels with the evidence as data: author, reproducer, scope setter and review class, as stage
   18 records them per theorem. Absence stays absent (PS1.35). The `AGENTS.md` evidence kinds for engineering claims
   (source or fixture, synthetic, actual Windows/DirectX, performance) are a separate field, which the display never folds
@@ -337,12 +340,12 @@ Non-domination forces a = a′, so Sat(a) = Sat(b), and antichains then give a =
   A leaf is in an argument of S when it is the direct child of S's OR node, or a child of an AND node under it. A child
   reached through a premise or another key belongs to that key's statement.
 
-- **EVD.41 [D]** Job outcome "not stated" is no contradiction. It makes a negative leaf inert, which blocks the negative
-  claim, and the word stays row 7 with the source label. A witness from such a job counts once it is checked. Two
-  further absences are no contradiction. A leaf of basis certificate, exhaustive computation or exact computation with
-  no `covered` fact, in an argument I7 (a) reads, is inert. A statement with no `form` fact counts as universal for I7
-  (a), and a leaf that I7 (a) would flag there is inert instead. An inert leaf counts at no threshold, and the word
-  reads as it would without it.
+- **EVD.41 [D]** Job outcome "not stated" is no contradiction. Unless the record says complete = no, which is I5, it
+  makes a negative or exhaustive leaf that rests on a search record inert, which blocks the negative claim, and the word
+  stays row 7 with the source label. A witness from such a job counts once it is checked. Two further absences are no
+  contradiction. A leaf of basis certificate, exhaustive computation or exact computation with no `covered` fact, in an
+  argument I7 (a) reads, is inert. A statement with no `form` fact counts as universal for I7 (a), and a leaf that I7 (a)
+  would flag there is inert instead. An inert leaf counts at no threshold, and the word reads as it would without it.
 
 ### Non-upgrade
 
@@ -350,9 +353,16 @@ Non-domination forces a = a′, so Sat(a) = Sat(b), and antichains then give a =
 
 - (a) Locality. word(S) reads only facts on Reach(S) and the versioned tables, so a record that adds no edge into Reach(S)
   changes no word.
-- (b) For any 𝒰 ⊆ 𝒰₀, a sample leaf or a job outcome never moves S from rows 5 to 7 into rows 1 to 4.
+- (b) For any 𝒰 ⊆ 𝒰₀, a sample leaf never moves S from rows 5 to 7 into rows 1 to 4.
   *Proof.* A sample leaf's grade is outside 𝒰, so it is false at ω₀ and ω₁. As a new OR child it changes neither pass, nor
-  Ref. A job outcome is not a leaf. Rows 1 to 4 read only the passes. ∎
+  Ref. Rows 1 to 4 read only the passes. ∎
+- (b1) A job outcome supplies no support. Let 𝒰 ⊆ 𝒰₀, and let two records differ only in job outcomes, with the same
+  leaves inert in both. If S reads a row of 5 to 7 under one, it reads no row of 1 to 4 under the other. *Proof.* A job
+  outcome is not a leaf, so it adds no OR child. With the same inert leaves the passes and Ref agree, and rows 1 to 4
+  read only the passes. ∎ The inert leaves change in one way only: "not stated" holds a leaf inert (EVD.41), and a
+  stated outcome ends that. Completed then activates a leaf the graph already holds, with its own basis, check, covered
+  set and complete = yes, so S can move from row 7 to row 2 (CT-EVD-05). The support is that leaf, and the outcome stops
+  withholding it. Any other stated outcome on such a leaf is I5, and no outcome lifts complete = no, which is I5 too.
 - (b2) Narrower support. Let S be universal, mixed with outer quantifier universal, or without a `form` fact, and let 𝒰
   ⊆ 𝒰₀. A leaf of basis certificate, exhaustive computation or exact computation in an argument of S, whose `covered` is
   absent or, as I7 compares it, not identical to S's `covers` and `input`, never moves S from rows 5 to 7 into rows 1 to
@@ -405,10 +415,13 @@ Non-domination forces a = a′, so Sat(a) = Sat(b), and antichains then give a =
 
 ### Definitions
 
-- **EVD.47 [D]** Two import values extend job outcome: *not run* and *not stated*. They are import values only and never
-  KN7 outcomes. "Not run" reads row 7. "Not stated" acts as EVD.41 says. A record such as `17/results/runs/pxrr-7304.json`,
-  whose status reads unknown and whose reason reads initialised, is "not stated", and only its stage's README says it was
-  stopped.
+- **EVD.47 [D]** Two import values extend job outcome: *not run* and *not stated*. One extends check mode: *stated: not
+  replayed*. They are import values only, never KN7 outcomes or modes of checking. "Not run" reads row 7. "Not stated"
+  acts as EVD.41 says. "Stated: not replayed" records that a part was not replayed: no check ran there, so it adds no
+  check, and no word reads it (EVD.4). A record such as `17/results/runs/pxrr-7304.json`, whose status reads unknown and
+  whose reason reads initialised, is "not stated". Only its stage's README says it was stopped (`17/README.md:151`). The
+  import may keep that statement beside the record as a separate recorded interpretation with the README's digest
+  (EVD.53). It changes no field of the record and no row of the table, and the word stays row 7.
 - **EVD.48 [D]** The enumeration rule, from the label table (`rule.txt`):
   - *Corpus.* The Git blobs of a manifest of path, blob digest and size. No importer or test walks a checkout.
   - *Record.* A `.json`, `.json.gz`, `.jsonl` or `.jsonl.gz` blob.
@@ -539,8 +552,8 @@ No conformance test exists yet.
 | CT-EVD-01 | The 504 node-level cases: stands₀ and stands₁ (6), covered-set kind (4), search record (3), job outcome (7). Each gives exactly one row of EVD.32 or a typed inconsistency | source |
 | CT-EVD-02 | Property test on small random graphs: summaries computed in any order are equal, and Theorem C's canonical form is unique | source |
 | CT-EVD-03 | Property test: raising a grade or adding an OR child never shrinks val, and sharing a node changes nothing | source |
-| CT-EVD-04 | Property test of the two passes: stands₀ implies stands₁, and neither reads the other's output | source |
-| CT-EVD-05 | A sample leaf and a job outcome never move a statement from rows 5 to 7 into rows 1 to 4, for 𝒰 ⊆ 𝒰₀ (Theorem D (b)) | source |
+| CT-EVD-04 | Property test of the two passes: stands₀ implies stands₁, stands₀ reads neither stands₁ nor Ref, and a proof of neg p that puts p in Ref turns stands₁ off for a statement resting on p | source |
+| CT-EVD-05 | A sample leaf never moves a statement from rows 5 to 7 into rows 1 to 4, for 𝒰 ⊆ 𝒰₀, and with the same inert leaves neither does a job outcome. Two records that differ only in job outcome, on an exhaustive leaf with matching `covered` and complete = yes, read row 7 under not stated and row 2 under completed; with complete = no both read row 0 (EVD.41, Theorem D (b), (b1)) | source |
 | CT-EVD-06 | A record that adds no edge into Reach(S) changes no word (Theorem D (a)) | source |
 | CT-EVD-07 | A pure child cycle reads open with a diagnostic, and a circular discharge stays conditional (EVD.26) | source |
 | CT-EVD-08 | Discharge by an identical key succeeds; an equivalent statement under another ID is refused until a bridge lemma exists, and a proof for D[7] does not discharge D[9] | source |
@@ -558,6 +571,7 @@ No conformance test exists yet.
 | CT-EVD-20 | The word function runs with no session effect, and changing a table edition changes words only through that edition (EVD.14, EVD.54) | source |
 | CT-EVD-21 | No policy row, capability or commit path reads a word or a claim (EVD.56) | source |
 | CT-EVD-22 | A leaf narrower than its statement reads row 0 or is refused at entry, an absent `covered` is inert, and a mixed(exists) refutation passes (EVD.18, EVD.40, EVD.41, EVD.59, Theorem D (b2)) | source |
+| CT-EVD-23 | The blob of `pxrr-7304.json` imports with job outcome not stated and reads row 7, and a README statement kept beside it changes no field. Every mapped job outcome and check mode lies in KN7.3, EVD.4 or EVD.47 (EVD.47) | source |
 
 ## 13. Open items
 

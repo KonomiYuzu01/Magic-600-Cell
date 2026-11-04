@@ -267,6 +267,7 @@ These exist under every option, so the policy can be set later without a redesig
   AssistanceSummary = {
     session:  session and epoch,
     journal:  Digest<journal range>,
+    runs:     Digest<run-record set>,
     policy:   Digest<policy>,
     commits:  counts by author class, profile and declassifier use,
     tools:    the boundary classes and author classes of the runs recorded for the session,
@@ -274,9 +275,11 @@ These exist under every option, so the policy can be set later without a redesig
   ```
 
 - **BND.35 [D]** A solve record states which assistance classes the system recorded. The host computes
-  `AssistanceSummary` from the journal's provenance blocks and the run records. No program writes it, and recomputing it
-  from the same journal gives the same bytes. A view tool leaves no journal row, so its class comes from the run
-  records. A word the solver retyped appears as the solver's word (BND.13).
+  `AssistanceSummary` from the journal's provenance blocks and the run records, and the summary names its inputs: `runs`
+  is the digest of the sorted digests of the run records it read. No program writes it, and recomputing it from the same
+  journal range, run records and policy gives the same bytes. A view tool leaves no journal row, so its class comes from
+  the run records: a later view-only run changes `runs`, and it can change `tools`, while the journal stands still. A
+  word the solver retyped appears as the solver's word (BND.13).
 - **BND.36 [O]** Whether labels are shown during a solve or only in records is LQ2 (BND.74, question 6). The summary
   exists either way.
 
@@ -639,7 +642,7 @@ policy table in force. Chapter 12 assigns them to phases.
 | CT-BND-18 | Setup search runs only for a named target, its setups keep the buffers fixed, the solver can edit the setup, and nothing previews without the solver's action | source |
 | CT-BND-19 | No view-model field holds a value for a twist the solver did not release (BND.4) | source |
 | CT-BND-20 | A held key commits at most once and a program cannot obtain a token (BND.29, with CT-KN5 and CT-ONE) | windows |
-| CT-BND-21 | `AssistanceSummary` recomputed from one journal gives the same bytes, no program can write it, and imported 0.4 macros appear as imported (BND.23, BND.35) | source |
+| CT-BND-21 | `AssistanceSummary` recomputed from one journal range, one set of run records and one policy gives the same bytes; two sets that differ by one view-only run give summaries with different `runs`; no program can write it; imported 0.4 macros appear as imported (BND.23, BND.35) | source |
 | CT-BND-22 | A switch of forms is a recorded migration; an older block keeps its form, and a gated use it cannot justify is refused with `PS1:capability.provenance_incompatible` | source |
 | CT-BND-23 | Every run record names the policy identity, and reproducing under another one is refused with `LG3:capability.grant_mismatch` | source |
 | CT-BND-24 | The flow code LQ21 retires is never emitted, and before LQ21 neither is (ERR.24, CT-ERR-15) | source |

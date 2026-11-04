@@ -115,6 +115,12 @@ operation model_info(identity: IdentityBlock) -> ModelInfo
   - A **gauge** is a pair γ = (σ, t), where σ permutes the pieces and t_A in SO(4) carries Ā₀ onto the reference region
     of σA. It acts on the right: (X·γ)[A] = X[σA]·t_A. 𝒢 is the group of all gauges. 𝒢_R is its subgroup with σ = id and
     t_A in R_A, and 𝒢_S the subgroup with σ = id and t_A in S_A.
+  - **Shape** counts multiplicity. Note N1 writes the set of posed regions, and on a collision-free configuration the
+    two agree. A twist keeps a configuration collision-free (state contract section 3, "No collisions"), but a raw table
+    can collide (KN2.14). Then the set forgets a count: for three pieces with congruent home regions, R a lattice region
+    and QR an off-lattice copy, the tables (R, R, QR) and (R, QR, QR) give one set, different off counts and no gauge
+    between them. Equal multisets always give a gauge: pick σ that matches the regions, and t_A = X[σA]⁻¹·Y[A] carries
+    Ā₀ onto the reference region of σA, so Y = X·γ.
 
 | Level | Jumbling puzzle | Equal when | Defined | 600-cell-Full |
 | --- | --- | --- | --- | --- |
@@ -125,7 +131,7 @@ operation model_info(identity: IdentityBlock) -> ModelInfo
 | Position | The chamber, derived from labels | As the region class | On the lattice only | Derived from labels |
 | Coset | g_A·K⁺ | Equal cosets; a quotient, not a gauge | Always | Not held |
 | Tree data, heights | Functions of the coset | Equal values; a quotient, not a gauge | Always; they determine the coset and the lattice test only on Γ(Λ) | Not held |
-| Shape | The set of posed regions | Y = X·γ with γ in 𝒢 | Always | Not held |
+| Shape | The multiset of posed regions | Y = X·γ with γ in 𝒢 | Always | Not held |
 
 | Map | Defined on | Kernel | What it preserves |
 | --- | --- | --- | --- |
@@ -188,7 +194,7 @@ operation model_info(identity: IdentityBlock) -> ModelInfo
 | Pose only | The pose table; the pose digest; the moved count; the orientation index; the journal; `v`; reachability; label and retained checkpoints, through their reachability clause; budgeted `uncertain`; pose groups |
 | Sticker class | Labelled posed stickers. On the lattice: labels, ν, the sticker test and the label digest |
 | Region class | Each piece's posed region, lattice flag, domain, tree positions and heights; inside sets and straddlers as sets of pieces; left multipliers |
-| Shape | Occupied regions; admissibility of every word; N, N_c, In_c, Out_c, the floor; Φ, q_t, H; the off count; multisets of heights by type; anything defined only from these, such as the repair list |
+| Shape | Occupied regions with their multiplicity; admissibility of every word; N, N_c, In_c, Out_c, the floor; Φ, q_t, H; the off count; multisets of heights by type; anything defined only from these, such as the repair list |
 
 - **KN1.16 [D]** Exact transport. A claim at a level moves along that level's subgroup with no re-run. The reused leaf is
   the conjunction of the source leaf, Theorem 1 and the checked relation Z = X·γ (N1, B.7; chapter 06). Legality and
@@ -278,7 +284,7 @@ operation model_info(identity: IdentityBlock) -> ModelInfo
   operation derive(base: StateRef, word: Word) -> Derived | Refused
     effect:  read a snapshot
     cost:    the word's exact length times the per-letter cost of the puzzle
-    errors:  budget.*, KN1:input.identity_mismatch
+    errors:  KN7:budget.*, KN1:input.identity_mismatch
 
   Derived = {
     ref:          DerivedRef       # digest, level, identity block
@@ -297,7 +303,8 @@ operation model_info(identity: IdentityBlock) -> ModelInfo
   corrections is witnessed in the jumbling puzzle while no retained word reaches its labels.
 - **KN2.14 [D]** A state a program builds from raw data, such as an imported pose table, enters as a derived state with
   reachability open or promised, as its source says. The kernel validates its form and identity. Validation says nothing
-  about reachability (A5: a pose state read without its journal is not a label checkpoint).
+  about reachability (A5: a pose state read without its journal is not a label checkpoint), and it does not test for
+  collisions: two pieces of a raw table can overlap, and shape keeps the count (KN1.7).
 - **KN2.15 [D]** The value store may evict a value and recompute it from its derivation. Eviction and recomputation never
   change a result or a charge (KN7.8).
 
@@ -370,7 +377,7 @@ query receipt(command: CommandId) -> Receipt
   ```text
   operation invoke(command: CommandId, row: RowId, args: Args) -> Receipt
     lane:    the row's lane (KN7.2)
-    errors:  input.*, stale.*, protection.*, busy.*, consistency.*, auth.*, capability.*
+    errors:  input.*, stale.*, KN2:protection.*, busy.*, consistency.*, auth.*, capability.*
   ```
 
 - **KN5.2 [B]** `invoke` returns a receipt at once (DT-M1). No engine call runs on the UI thread (R-14).
@@ -385,15 +392,25 @@ query receipt(command: CommandId) -> Receipt
 
 - **KN5.6 [B]** The engine computes one availability table per revision, and the shell shows a control as unavailable if
   and only if the table says so (V04.3, proposal; the shell never computes availability). A palette reads the table once
-  per revision, with no engine call per keystroke, and an unavailable entry keeps its place with a typed reason (DT-M1).
+  per revision, and again at each new generation (KN5.25), with no engine call per keystroke, and an unavailable entry
+  keeps its place with a typed reason (DT-M1).
 
   ```text
   Availability = {
-    revision: RevisionRef
-    rows:     Map<RowId, available | unavailable(Error)>
+    revision:   RevisionRef
+    generation: Nat        # KN5.25
+    rows:       Map<RowId, available | unavailable(Error)>
   }
   ```
 
+- **KN5.25 [D]** Availability reads inputs that no revision counts. A preview reaching `presented` makes a commit key
+  live (chapter 08, section 6), and a lane's admission or release changes a `not_busy` gate (KN7.1), with every revision
+  unchanged. DT-M1's sketch has the case: a check ends and Preview becomes available. So the engine numbers the tables of
+  one epoch by a *generation*, which advances whenever an input of the table changes: a revision, a preview's lifecycle
+  state or a lane's occupancy. A new generation replaces the last table, so one table stands for a revision at any
+  moment (KN5.6). The engine sends an event when the generation advances, and the palette's read follows that event, so
+  a keystroke still costs no engine call. Like every table it grants nothing: each row's gates run at invocation (KN5.7),
+  so a table one generation old can mislead a display and never a commit. The event's form belongs to KN5.8's protocol.
 - **KN5.7 [D]** A language-defined command is available when its static verdict passes and every non-optional kernel row
   it may invoke is available (default 17). The command layer computes this from two stored tables, so it needs no language
   code. Availability grants nothing: each row's gates still run when the program invokes it.
@@ -410,7 +427,7 @@ query receipt(command: CommandId) -> Receipt
     effect:  prepare a preview
     lane:    the exclusive lane for a long word, else the row's
     cost:    the exact length of the word
-    errors:  stale.*, input.*, capability.*, resource_limit.*
+    errors:  stale.*, input.*, capability.*, KN2:resource_limit.*
 
   Preview = {
     id:         PreviewId
@@ -446,7 +463,8 @@ query receipt(command: CommandId) -> Receipt
   operation commit(preview: PreviewId, token: UserActionToken) -> Receipt
     caller:  the shell only
     lane:    commit
-    errors:  KN5:auth.token_invalid, stale.*, protection.*, KN5:busy.commit_in_flight, consistency.*, unknown_outcome.*
+    errors:  KN5:auth.token_invalid, stale.*, KN2:protection.*, KN5:busy.commit_in_flight, consistency.*,
+             unknown_outcome.*
   ```
 
 - **KN5.15 [D]** The token is single-use and never persisted (V03.5). It carries an authenticator from a per-launch secret
@@ -501,7 +519,7 @@ query receipt(command: CommandId) -> Receipt
   operation check(certificate: CertificateRef, kind: CheckerKind) -> CheckReport
     effect:  read a snapshot
     cost:    declared by the checker from the certificate's size
-    errors:  evidence.*, input.*
+    errors:  evidence.*
 
   CheckReport = {
     verdict:  pass | fail(claim: ClaimId, reason) | not_applicable(reason)
@@ -611,7 +629,7 @@ these needs:
 | The revision reference's final fields | EN4 | KN0.2 |
 | The program and view lanes | EN4 | KN7.2 |
 | The language overlay of the command table and its checks in `build_command_table.py` | EN4 | KN5.3 |
-| The availability protocol, with the overlay rule | EN4 | KN5.7, KN5.8 |
+| The availability protocol, with the overlay rule and the generation event | EN4 | KN5.7, KN5.8, KN5.25 |
 | Query rows for the journal, revisions, checkpoints, workspace records and receipts | EN4 | KN4.3 |
 | A provenance block on proposals and on stored words | EN4 | KN5.9, KN4.4 |
 | The token's binding fields | EN4 | KN5.14 |
@@ -627,6 +645,7 @@ these needs:
 | CT-KN1-03 | A projection off the lattice returns a typed partial result with the count of pieces off | source |
 | CT-KN1-04 | An enumeration of the API finds no lift from a coarser level to a finer one | source |
 | CT-KN1-05 | `Digest<labels>` equals the oracle's state hash and `Digest<poses>` equals J1's digest on every fixture | source |
+| CT-KN1-06 | Equal shape means an equal multiset of posed regions: on the raw tables (R, R, QR) and (R, QR, QR), with Q the Cayley rotation ω = (2,0,0) at cap 0, the shapes and the off counts differ; no fixture has equal shapes with unequal off counts; a gauge with σ ≠ id keeps the multiset | source |
 | CT-KN2-01 | The J1 harness and the 600-cell-Full oracle (O01 to O07) pass through the kernel API | source |
 | CT-KN2-02 | Heights and domain IDs equal the library and `trees.py` on ENG-0J item 8's states and the H6030 witness. A free-mode case: the Cayley rotation ω = (2,0,0) at cap 0 reads heights (0,0) and lies outside K⁺, and its domain ID comes from an exact coset test, not from tree positions | source |
 | CT-KN2-03 | Protecting centre piece 0: refused at pose level inside Jumble, passes at label level after the crossing | source |
@@ -651,6 +670,7 @@ these needs:
 | CT-KN5-09 | Undo succeeds while a program job runs | source |
 | CT-KN5-10 | R-05: an enumeration of every entry point against the restriction table | source |
 | CT-KN5-11 | An undo that names a superseded action is refused as stale | source |
+| CT-KN5-12 | With `RevisionRef` held constant, a preview's creation, presentation and cancellation and a lane's admission and release each advance the generation, the commit row's availability follows chapter 08's lifecycle table, and no keystroke reaches the engine | source |
 | CT-KN6-01 | Every checker kind's mutation gate: tampered records and wrong start tables fail | source |
 | CT-KN6-02 | An import scan: no checker imports a producer's search or construction code | source |
 | CT-KN6-03 | The conformance corpus: the existing certificates pass under the kernel's checkers | source |

@@ -160,8 +160,11 @@ open_snapshot ──► open ──► closed      closed by: close_snapshot, th
   `propose`, and the engine replays it at the *current* revision, prefix by prefix (KN5.10). The derived state is not
   consulted. If the head has moved since the derivation, the end state can differ, or the word can be refused. The preview
   shows what the word does now. A proposal carries no state and no digest to adopt (KN5.13).
-- **ONE.27 [D]** A derived state with no word, such as an imported one, cannot be proposed. It can be compared and displayed,
-  and nothing more.
+- **ONE.27 [D]** A derived state with no word, such as an imported one, cannot be proposed: it has no word to replay. It
+  can be read, compared and displayed, and it can be the base of `derive` (ONE.21). A value derived from it keeps the
+  import's reachability claim, because a word cannot settle whether its start is reachable, and like every derived state
+  it is never adopted (ONE.24). That value's own word can be proposed: it replays at the current revision like any word
+  (ONE.26), and it says nothing about the imported value.
 - **ONE.28 [D]** A predicate that depends on reachability reads the state's claim (KN2.13). A5 gives the case: a pose state
   read without its journal is not a label checkpoint, and a lattice state that is not reachable can have ν = 0 and displaced
   centres. So `label_checkpoint` on a derived state answers yes or no only when its reachability is witnessed back to a
@@ -215,7 +218,7 @@ propose ─► building ─► ready ─► presented ─► committed
 | --- | --- | --- |
 | building | The engine replays the word. A long word runs as a job | No |
 | ready | The preview exists and has not reached the screen | No |
-| presented | The renderer adapter has reported a frame that shows it | Yes, while it stays fresh |
+| presented | The renderer adapter has reported a frame that shows it | Yes, while it stays fresh. The availability generation advances (KN5.25) |
 | stale | Its draft was edited, or a protection or workspace revision it depends on moved | No |
 | committed | Its end state was adopted | Ended |
 | replaced | A newer preview took the single slot (KN5.11) | Ended |
@@ -475,6 +478,7 @@ chapter reuses them.
 | CT-ONE-25 | Charter E2 end to end, with the three LP3 tools' views active: p95 at most 100 ms over at least 100 observations | performance |
 | CT-ONE-26 | The chord binds the presented preview under real frame pacing, in the selected renderer | windows |
 | CT-ONE-27 | People can tell a derived state on screen from the session state, in a form the owner sets | human |
+| CT-ONE-28 | A wordless import: reads, `compare`, display and `derive` work; the derived value keeps the import's open reachability claim, and no row proposes or adopts either value | source |
 
 CT-KN5-01 is the preview-swap test itself. CT-ONE-04 extends it to the gap between receiving a preview and presenting it.
 
