@@ -276,8 +276,8 @@ Provenance travels with the evidence as data: author, reproducer, scope setter a
 them per theorem.
 
 Existing labels map onto these fields without loss only by format, not by word. The same word means different things in
-different records, and 146 of the 411 JSON files of stages 14 to 19 have no `format` key (DT-L1 R2-E1). The import
-table of PS3 maps by (format, field, value), and the full text gives the mapping.
+different records, and 156 of the 417 JSON files of stages 14 to 19 have no top-level `format` key, while 146 have none
+at any depth (DT-L1 R3-E2). The import table of PS3 maps by (format, field, value), and the full text gives the mapping.
 
 - The research labels map directly: proved, certificate, computed, measured (an exact computation on finite inputs) and
   open.
@@ -426,7 +426,7 @@ Change notification stays advisory, so a client converges by reading the revisio
 | N, D, Φ, heights, units, clean steps; ν and label checkpoints; the Jumble on and off crossing | research data, state contract A5 | LB3 |
 | ν and the 36 corrections over F2 and F5; heights, branches and domains through the icosian tree | state contract A5, `research/jumbling/theory/restoration.md` | KN2, LB1, LB3 |
 | The repair list at a named cap | owner, 17 October | LB3, LB6 |
-| Words of any length (672,417 twists on record); scrambles as jobs, because most attempted twists are blocked | ENG-0J | LG4, KN7 |
+| Words of any length (2,352,984 literal letters stored flat on record, 224,683,850 composed; DT-L1 R3-E4); scrambles as jobs, because most attempted twists are blocked | ENG-0J | LG4, KN7 |
 
 ### 10.3 What the research needs (stages 14 to 19)
 
@@ -604,7 +604,7 @@ from DT-L1 E4; nothing has been measured.
 | LX-2 Placement | Kernel-call round trip in and out of process at LX-1's call mix; faults (memory exhaustion, deep recursion, an endless loop, a killed runtime); startup; transfer of 1,039,200 bytes of labels and 708,480 bytes of pose IDs per revision; a preview request carries its label set to the command layer | LQ9 | A placement passes when, during each fault, the journal and state hash are unchanged, the shell stays responsive and a commit completes within charter E2. Startup stays within the 3 s that charter E3 proposes. | Performance (owner's machine) |
 | LX-3 Sandbox, determinism and refusals | Budgets, interrupts, no ambient input or output; display plans across platforms at their declared precision; must-refuse cases for flow control (caps chosen by largest N_c, a search followed by a rebuild from base parts, the F2 and F5 solve over ν, a word laundered through the workspace, a choice between two words by a state fact, a flow through a module call), run under capability separation, static labels, run-time labels and, for RT2 and RT4, a variant whose static checker over an approved subset refuses dynamic code and binds its approval to the executed bytes | LQ9, LQ21 | One reproducibility key gives identical result bytes over repeated runs on Windows and on headless Linux, and display plans agree at their declared precision; planted clock, file and network reads are refused; every must-refuse case is refused under each form and variant, and the count of false refusals over the built-in tools and the solving-workflow tools, for each form and variant, goes to the owner with LQ21 | Source |
 | LX-4 Editor latency | Feedback latency on realistic modules | LQ9 | Bars set in the full text | Performance (owner's machine) |
-| LX-5 Exact arithmetic | Speed and licences of big-number and Q(√5) candidates at the recorded sizes: pose entries beyond 2^64, words of 672,417 letters, the 10⁷ admission bound | LQ8 | A licence list goes to the owner; a copyleft dependency needs the owner | Source; performance (owner's machine) |
+| LX-5 Exact arithmetic | Speed and licences of big-number and Q(√5) candidates at these sizes: synthetic pose entries beyond 2^64, literal words of 672,417 and 2,352,984 letters, 13,231,266 letters as one stream, the 10⁷ admission bound | LQ8 | A licence list goes to the owner; a copyleft dependency needs the owner | Source; performance (owner's machine) |
 | LX-6 Engine language | The deferred spike of the wiki question: port the hot path, check oracle equality, compare speed with NumPy | LQ8 | Oracle equality is source evidence; the speed comparison counts only from the owner's machine | Source; performance (owner's machine) |
 | LX-7 User charts | A chart stage generated from the subset against the built-in perspective stage | LQ7 | PresentMon at W3 on the owner's machine, three cold runs per candidate, inside the selection gate; GPU and CPU evaluations agree within the declared display precision (headless) | Performance (owner's machine); source |
 | LX-8 Syntax learnability | Two or three syntax candidates over one IR, tested with non-authors | LQ13 | A protocol the owner sets | Human test |
@@ -659,7 +659,7 @@ Performance figures count only from the owner's machine. Headless and cloud timi
     the owner's five words are versioned functions over those facts, and changing one is an edition with a recorded
     note. The envelope can then freeze before LQ3 is answered. A test runs through every combination of stored fields
     and checks that each gets exactly one display word or a typed inconsistency. An experiment builds envelopes for the
-    stage 14 to 19 corpus (13,387,282 bytes of records) and reports their nodes and bytes.
+    stage 14 to 19 corpus (497 records, 13,412,769 bytes at Git HEAD) and reports their nodes and bytes.
   - **Judgements** (DT-L1 M2). The envelope stores the claim fields of 8.1 and freezes only after LQ3 and the rules of
     8.1 are settled.
   - Under either option a stored envelope keeps only claims whose scope is an immutable input digest (8.1).
@@ -817,7 +817,8 @@ The integrator takes these defaults unless the owner overrules them.
 11. Nothing is added under `schemas/` in this stage. Formats are described in prose until the ADRs are accepted.
 12. A public J1 API replaces the adapters' use of private members before the language binds to J1.
 13. Artifacts are identified by content digest, never by path. Importers accept research records without a `format` key
-    and file names that differ only in case.
+    and file names that differ only in case. The corpus is read from Git blobs through a manifest of path, blob digest
+    and size; no importer or test walks a checkout.
 14. A commit names the preview on screen (INV-3), and the engine adopts only its own preview object.
 15. The runtime stays off a turn's critical path and reads the store only through query rows (section 9).
 16. Views get no workspace-write effect. A workspace change happens only inside a command the solver invokes.

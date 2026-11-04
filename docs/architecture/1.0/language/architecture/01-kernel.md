@@ -157,7 +157,7 @@ operation model_info(identity: IdentityBlock) -> ModelInfo
   ```text
   operation open_snapshot(at: RevisionRef | current) -> Snapshot
     effect:  read a snapshot
-    cost:    fixed, plus the rebuild cost if the revision is not resident
+    cost:    declared from the journal distance to the nearest checkpoint, resident or not (KN7.8)
     errors:  stale.revision_gone, input.unknown_session
   operation close_snapshot(s: Snapshot) -> nothing
   ```
@@ -205,10 +205,14 @@ operation model_info(identity: IdentityBlock) -> ModelInfo
 - **KN2.9 [B]** Nothing is reused from an earlier revision: no certificate, seed, hole count or pose-table index. A
   composed fast path is trusted only after an agreement test against per-twist replay, and every replay test states which
   check it ran (ENG-0J section 4).
-- **KN2.10 [D]** Words of any recorded length must work. The largest word on record has 672,417 twists, and the stage 18
-  admission bound is 10⁷ letters (ENG-0J; partition 10.3). Words stream through kernel calls in chunks. A compressed word
-  (a straight-line program) expands lazily, its exact length is a big integer, and that length is known before any
-  expansion. The length bound on what the kernel will replay comes from DT-J1's experiment X3.
+- **KN2.10 [D]** Words of any recorded length must work. The longest literal word stored flat has 2,352,984 letters
+  (stage 18 lattice phase, step 14), and the 53 words of that phase hold 13,231,266 letters in one stream. Stage 18's
+  admission bound is 10⁷ letters per word (partition 10.3). Composed words go further: 166,788,405 letters checked by
+  composition and never played, and 224,683,850 in the largest retained cascade. ENG-0J's 672,417 twists and the T6
+  step of 871,582 letters stay regression cases (LB5.13). These are source figures, and none of them is a limit (DT-L1
+  R3-E4). Words stream through kernel calls in chunks. A compressed word (a straight-line program) expands lazily, its
+  exact length is a big integer, and that length is known before any expansion. The length bound on what the kernel
+  will replay comes from DT-J1's experiment X3.
 
 ### Derived states and the value store
 
@@ -248,7 +252,7 @@ operation model_info(identity: IdentityBlock) -> ModelInfo
 
 | Kind | Use | Note |
 | --- | --- | --- |
-| Integers, unbounded | Pose entries, lengths, costs, bounds | Under I_a entry heights are unbounded (ENG-0J section 4); pose entries exceed 2^64; B11 has 6,775 digits |
+| Integers, unbounded | Pose entries, lengths, costs, bounds | Under I_a entry heights are unbounded (ENG-0J section 4), so pose entries can exceed 2^64; no table on record holds an integer above three decimal digits; B11 has 6,775 digits |
 | Rationals | Cayley parameters, exact locality values | |
 | Q(√5) | Poses, poles, cut offsets, region vertices | Signs are decided exactly (state contract section 3) |
 | F2, F5 | ν and the 36 corrections | ν has 35 sign bits, 8 frame bits and two values modulo 5 (A5) |
@@ -291,6 +295,14 @@ query receipt(command: CommandId) -> Receipt
 - **KN4.6 [P LQ4]** An experiment branch is a journal branch the engine owns. Exactly one line per session is active.
   Other branches can be viewed and compared, and programs cannot change them. Under LQ4's alternative, solving sessions
   have no branches and research uses separate sessions; the query rows above stay the same.
+- **KN4.7 [P LQ10]** One word commit is one journal row that cites the literal letters by digest, and the letters are
+  stored as `ia16` chunks. As J1 rows a word of 2,352,984 letters would take about 649 million characters at 276 per
+  row, against 4,705,968 raw bytes (arithmetic, DT-L1 R3-E4). The word encoding belongs to the data core, so the owner
+  decides it under LQ10.
+- **KN4.8 [D]** A stored delta between two jumbling revisions carries the pose-ID remap, or the revision carries its
+  full pose-ID array. Moved pairs alone do not rebuild the next revision, because `_compact` reorders the pose table
+  after a commit and remaps every pose ID, so unmoved pieces can change ID (`research/jumbling/sim/state.py:385-397`,
+  KN2.9).
 
 ## 6. KN5: command layer
 
@@ -342,7 +354,7 @@ query receipt(command: CommandId) -> Receipt
     effect:  prepare a preview
     lane:    the exclusive lane for a long word, else the row's
     cost:    the exact length of the word
-    errors:  stale.*, input.*, protection.*, capability.*, resource_limit.*
+    errors:  stale.*, input.*, capability.*, resource_limit.*
 
   Preview = {
     id:         PreviewId
@@ -355,6 +367,9 @@ query receipt(command: CommandId) -> Receipt
     provenance: ProvenanceBlock
   }
   ```
+
+  A word that conflicts with protection still gets a preview, and its `protection` field says so, because charter S4
+  shows that effect before a commit. The commit refuses it (KN5.16, ONE.33).
 
 - **KN5.10 [B]** The preview replays the literal word at the current revision, prefix by prefix, and shows the full effect.
   Exact length and cost are shown before any run. A program is never split silently (default 10).
@@ -375,15 +390,18 @@ query receipt(command: CommandId) -> Receipt
   operation commit(preview: PreviewId, token: UserActionToken) -> Receipt
     caller:  the shell only
     lane:    commit
-    errors:  stale.*, protection.*, busy.commit_in_flight, consistency.*, unknown_outcome.*
+    errors:  auth.token_invalid, stale.*, protection.*, busy.commit_in_flight, consistency.*, unknown_outcome.*
   ```
 
 - **KN5.15 [D]** The token is single-use and never persisted (V03.5). It carries an authenticator from a per-launch secret
   that the runtime never receives. No operation available to the runtime returns a token, in any placement of the
   runtime (LQ9).
-- **KN5.16 [B]** At commit the engine rechecks the revision, the literal-letter digest, the full-state hash and protection,
-  and refuses a mismatch as stale (partition KN5; `AGENTS.md`). It then adopts the end state of its own preview object.
-  One durable transaction writes the journal event, the receipt and the workspace changes that must agree (R-06).
+- **KN5.16 [B]** At commit the engine rechecks the revision, the literal-letter digest, the full-state hash and protection
+  (partition KN5; `AGENTS.md`). A moved revision, or a digest that differs from what the token binds, is refused as
+  stale. A protection conflict is refused as `protection`. Equal revisions with unequal digests mean the engine is
+  wrong, and they stop as `consistency` (chapter 08, section 7). The engine then adopts the end state of its own preview
+  object. One durable transaction writes the journal event, the receipt and the workspace changes that must agree
+  (R-06).
 - **KN5.17 [B]** A commit typed while another commit is in flight is refused as busy (DT-M1 Q6 (a)). The commit chord is one
   non-repeating chord, and key repeat never repeats a state change (R-18, DT-M1).
 - **KN5.18 [B]** A commit or undo goes ahead at once and cancels the jobs that read the revision it replaces. File jobs
@@ -471,7 +489,7 @@ query receipt(command: CommandId) -> Receipt
 
   ```text
   JobResult = {
-    outcome:  completed | cancelled | cut_off(budget: BudgetName) | error(Error)
+    outcome:  completed | cancelled | cut_off(by: Code) | error(Error)
     input:    Digest<level>
     params:   Digest
     covered:  a typed description of what was examined
@@ -500,18 +518,21 @@ query receipt(command: CommandId) -> Receipt
     kernel_cost:  Nat       # declared cost of kernel calls
     memory:       Nat       # logical units
     output:       Nat       # logical units of results, records and plans
-    safety_stop:  Seconds?  # never part of the reproducibility key
+    safety_stop:  Seconds?  # a machine limit, not a budget unit; never part of the reproducibility key
   }
   ```
 
 - **KN7.8 [D]** Every kernel call declares its cost before admission, as a function of its inputs only. A cache hit is
   charged as a miss, and a recomputation after an eviction is charged as nothing extra. Otherwise one reproducibility
   key would stop at different steps depending on what the cache held.
-- **KN7.9 [D]** Memory is counted in logical units: the length of a value's canonical encoding, whatever the kernel shares
-  or the allocator does. Windows and Linux allocators differ (INV-9). A 600-cell-Full state counts as 1,039,200 bytes of
-  labels (source). A pose state counts as its pose IDs (708,480 bytes, source) plus its table entries.
-- **KN7.10 [B]** A budget that ends cuts the job off, with the budget's name. A wall-clock safety stop also cuts it off, and
-  that run reads incomplete and not reproducible (INV-10).
+- **KN7.9 [D]** Memory is counted in logical units: the byte length of a value's arrays in the KN1 digest convention,
+  plus, for a pose table, the length of each entry's canonical exact key. The text form in a file is never the unit
+  (DT-L1 round 3). What the kernel shares or the allocator does changes nothing, because Windows and Linux allocators
+  differ (INV-9). A 600-cell-Full state counts as 1,039,200 bytes of labels (source). A pose state counts as its pose IDs
+  (708,480 bytes, source) plus its table entries.
+- **KN7.10 [B]** A budget that ends cuts the job off, with that budget's code. A wall-clock safety stop also cuts it off,
+  with the code `resource_limit.safety_stop`, because a `budget` code promises that the same key stops at the same place
+  and a clock cannot promise that. That run reads incomplete and not reproducible (INV-10).
 - **KN7.11 [B]** "Empty", "not found within budget" and "not run" are distinct results (default 6).
 
 ### Isolation of the critical path
@@ -555,9 +576,9 @@ these needs:
 | CT-KN2-04 | A blocked, invalid or uncertain word leaves every digest unchanged | source |
 | CT-KN2-05 | A scan finds no float on a decision path outside the sites of INV-4 | source |
 | CT-KN2-06 | The label-lift lemma as a property test on J1 fixtures. A lead, not a proof. | source |
-| CT-KN2-07 | The largest recorded word (672,417 twists) replays through the streaming interface | source |
+| CT-KN2-07 | The recorded literal words of 672,417, 871,582 and 2,352,984 letters, and the 13,231,266 letters of the stage 18 lattice phase as one stream, pass through the replay interface in chunks (KN2.10, LB5.13, CT-LB5-09) | source |
 | CT-KN3-01 | Sign tests at the state contract's small margins decide exactly | source |
-| CT-KN3-02 | Pose entries beyond 2^64 and a 6,775-digit integer round-trip exactly | source |
+| CT-KN3-02 | Synthetic pose entries beyond 2^64 and a 6,775-digit integer round-trip exactly. No record reaches 2^64, so the pose entries are built for the test | synthetic |
 | CT-KN3-03 | The A2 filter's result equals the exact result on adversarial cases | source |
 | CT-KN4-01 | A runtime in any placement cannot open a session file | source |
 | CT-KN4-02 | R-06: injected failures at each write leave all of the state as before | source |

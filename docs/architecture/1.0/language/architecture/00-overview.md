@@ -187,8 +187,9 @@ This walk-through follows one action through the parts. It is informative. The c
    and contract revision (INV-3).
 8. The engine rechecks the revision, the digest, the full-state hash and protection, and adopts the end state of its own
    preview object. One durable transaction writes the journal event and the receipt (R-06).
-9. A program view reads the new revision bundle and recomputes, skipping to the newest revision. Until it finishes, its
-   output shows its base revision and the stale state (charter D2).
+9. A program view reads the new revision bundle and recomputes, skipping to the newest revision. Until it finishes, the
+   view shows its designed stale state and names the base revision of its last output (charter D2). The old output is
+   not drawn against the new state (chapter 08, ONE.11 and ONE.12).
 
 A program never touches steps 7 and 8. It holds no token, and no operation available to it returns one.
 

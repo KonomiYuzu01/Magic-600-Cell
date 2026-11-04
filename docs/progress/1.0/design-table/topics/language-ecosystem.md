@@ -866,3 +866,466 @@ Each question is in partition section 15, with a recommendation and the alternat
 - The engineer advisor's corrections to P-M1 to P-M5 are applied when the explainers are given to the owner.
 - The handoff tables in `docs/progress/1.0/stage-2-experiment-protocol.md` and
   `docs/progress/1.0/renderer-experiment-plan.md` change only if the owner accepts LQ20.
+
+## Round 3
+
+The owner confirmed the partition's direction on 3 November 2026. Round 3 gives the full text what the partition left to it:
+the label table of default 20, the error registry of default 5, the figures for the interface contracts and the bars for
+the spikes (engineer advisor), and the answers to the two open obligations above (mathematician). Each record is appended
+unchanged, with its headings lowered two levels. The table the engineer advisor names under
+`work/reviews/language-round3/` entered the repository at
+[`docs/architecture/1.0/language/evidence-import/`](../../../../architecture/1.0/language/evidence-import/README.md).
+
+### Engineer advisor
+
+Source state: Git HEAD `9e060af083f2562f4cb6d604d392eb08445416d2`. Nothing here is a performance result: I took no timing, and every bar and rule in item 4 is an unmeasured proposal. Figures use the evidence classes of overview section 3.4. In paths, `14/` to `19/` stand for the stage folders under `research/jumbling/restoration/`. I do not choose any option under LQ1 to LQ21.
+
+#### 1. Label table (default 20)
+
+**Files**
+- Full table: `work/reviews/language-round3/corpus-labels.json`
+- Human summary: `work/reviews/language-round3/corpus-labels.md`
+- Script: `work/reviews/language-round3/extract_labels.py`, with its inputs `rules.txt`, `refs.txt`, `ext.txt` and `rule.txt` in the same folder. Run it from the repository root.
+- It is read-only on the corpus. Reruns gave the same SHA-256, `d6156092cb3cdc01fba013cfbfa37d2ce78bc8a8d766ca473a17faa80337bf13`, the last with only these files in the folder.
+- Corpus manifest SHA-256: `e2b388befa1671be67219b23c4a565c003c8ae960bd0aa69e07ddb030a669702`.
+
+**What was read**
+- The scan reads Git blobs, so both files of a case pair are read.
+- It covered 497 records: 417 `.json` (8,082,139 bytes) and 80 `.json.gz` (5,330,630 bytes compressed).
+- There are no JSONL files. There were no parse failures, and no file was unreadable.
+- The 53 `.ia16.gz` files are binary words with no fields.
+
+**The six modified files**
+- The six `16/results/runs/PX-*.json` working-tree files differ from HEAD. They are a case collision on Windows: each working file holds the bytes of its lowercase `px-*` twin, as the case-pair table in `corpus-labels.md` shows.
+- I read them only as blobs and did not touch them.
+- At HEAD the six `PX-*` blobs are `macro-certificate/1` records, 25,487 bytes in all.
+
+**The rule for "enumerated"** (full text in `corpus-labels.md`)
+- **Class S, enumerated string.** The last key is in a label lexicon (status, verdict, result, outcome, reason, stop, label, kind and the like), or the value starts with PASS, FAIL, UNKNOWN or INVALID, or holds `not_claimed`. In addition the value has at most 80 characters, is no digest, number, word code or path, and its (format, field) has at most 32 distinct values.
+- **Class B, verdict boolean.** The last key names a check, a job's end, a search's coverage, a letter's outcome or a claim.
+- **Not triples.** Prose fields are counted and kept word for word. Payload booleans are counted by last key. Numbers are skipped.
+- **A record without `format`.** It gets the synthetic format `path:<stage>/<path, digit runs as #>`.
+- **Field.** The key path, with `[]` for list items and `<k>` for keys that are numbers, digests or state names.
+
+**Totals**
+
+| Measure | Value |
+| --- | --- |
+| Formats | 160 (54 declared, 106 synthetic) |
+| Triples | 387 (190 strings, 197 booleans) |
+| Mapped | 298 |
+| Unmapped, recorded with a stated reason | 89 |
+| Without a rule | 0 |
+| Occurrences | 22,513 |
+| Extra rows | 24 (16 external, 8 values that code can emit but the corpus does not hold) |
+
+- The 16 external rows are the 0.4 states A to D, the four H-08 states and the eight research labels.
+- R2-E1's 60 formats covered the whole restoration archive, so they do not compare with 54.
+
+The 89 recorded rows:
+
+| Reason | Rows |
+| --- | --- |
+| Titles, modes, test expectations, predictions, run parameters: not verdicts | 43 |
+| Predicates of an instance | 17 |
+| Method or archive-integrity facts | 11 |
+| Phase not run | 6 |
+| Limits of a claim | 3 |
+| The runner's own ladder | 3 |
+| Review findings | 3 |
+| One word holding two claims | 3 |
+
+One row rarely states a whole claim. Of the 318 mapped rows (corpus plus external), 126 set a claim and 97 set a job outcome, so an envelope is built from several rows of one record.
+
+**The ten most ambiguous cases** (rows, occurrences, formats, distinct mappings; substring counts)
+
+| # | Word | Meanings found | Evidence |
+| --- | --- | --- | --- |
+| 1 | `budget` (3, 305, 2, 1) | A row of the T3P ledger F−D inside an exhausted family: a proved, scoped negative that names no resource. A mapper by word reads "not found within budget". | `14/scripts/t3p.py:557-638`; `15/README.md:127-129` |
+| 2 | `exhausted` (18, 323, 8, 3) | `groups[].status`: a beam search ran to its depth, so not exhaustive. `families.[TMEL].exhausted=true`: the declared family was searched. `families.R.exhausted=false`: only the flag `depth<=2`. | `14/scripts/retained_search.py:107-148`; `15/scripts/pstar.py:285` |
+| 3 | `stopped` (14, 102, 7, 2) | In `pstar-run/1`, explicitly not a negative certificate for family R. In `pstar2/2`, a negative for five declared families. Final stops of P** and P***: a negative for the declared set, with minimal X3 through its lemma. In `segments[]`, a transition. | `15/README.md:212-214`, `:236-242`; `16/scripts/pxrun.py:92-100`; `17/scripts/pxrr.py:98-120` |
+| 4 | `unknown` (5, 6, 5, 3) | A mid-run snapshot left in the repository. The first write of a run stopped by hand. `reachability: UNKNOWN`, a claim about a state. Outside the corpus, H-08's `unknown` and the category `unknown_outcome`. | `15/scripts/pstar.py:925`; `17/results/runs/pxrr-7304.json`; `17/README.md:151`; `19/README.md:90-92` |
+| 5 | `complete` and relatives (33, 68, 29, 11) | A job's end even when the content is negative (status complete with `uniform_*_guard_pass=false`). A finished enumeration. A run's terminal flag. A predicate (`complete_home_vertex_set_map`). A candidate's name. | `16/scripts/routing.py:89-133`; rows in `corpus-labels.json` |
+| 6 | `pass`, `passed` (75, 367, 58, 12) | Producer audit and model review share the word. Some words hold a condition, such as `PASS_CONDITIONAL_SYMBOLIC_THEOREM`. `macro-check/1 passed` comes from the certificate's own program. | `15/README.md:414-416`; `19/README.md:32-34` |
+| 7 | `verified` (24, 817, 13, 6) | `findings[].verification_status: verified` means the finding is real, so it speaks against the claim. Elsewhere it is a certificate check, or H-08's engine-checked state. | `docs/progress/1.0/command-table.md:21` |
+| 8 | `solved` (8, 8, 6, 5) | Sticker sense, exact identity in `*_exact_solved` keys, and the limit `all_lattice_not_claimed_sticker_solved_or_exact_identity`. | `docs/progress/1.0/jumbling-handoff/research-data.md:33` |
+| 9 | `blocked` (3, 496, 3, 2) | One word about three subjects: a word's case (468), a grip's certificate kind (24), a leaf's return (4). | rows in `corpus-labels.json` |
+| 10 | `not_` keys (16, 20, 11, 5) | In `*_not_replayed`, `*_not_reexecuted`, `*_not_recertified` and `not_restored`, true means not done, beside `replayed=true`, where true means done. | `19/README.md:93-94` |
+
+**Inferences to review** (for the mathematician and the main session)
+- Rule V14 (35 rows) maps historical `*-independent*` reviewer records to model review with a fresh audit, and keeps KN6's "independent checker" for a 1.0 checker. This is inferred from names and `19/README.md:32-34`.
+- Rule P13 (38 rows, 2,396 occurrences) sets check mode from a key's name alone.
+- Rule K1 (27 rows, 14,786 occurrences) leaves the check to the enclosing record.
+- Rule H1 maps reachability rows to open on one finite instance, as a claim of their own.
+
+#### 2. Error registry (default 5)
+
+Chapters 01 and 08 already spell 14 codes in `category.slug` form, and chapter 08 says chapter 13 owns the final spelling. I keep those spellings and add the prefix, apart from the changes below. No implementation is proposed.
+
+**Code form**
+
+```text
+<source>:<category>.<slug>       for example KN5:stale.revision_changed
+```
+
+- `source` is the component that raises the code, or `EVD` for the evidence pillar. This is one of default 19's prefix kinds. Charter bars, contract amendments and research items go in the registry's rule column, because one code can rest on several rules.
+- `category` is one of the sixteen below and equals the envelope's `category`. A lint checks this.
+- `slug` is lower-case snake case, at most 40 characters. It names the fact, never the remedy, and never a twist or a correction (DT-J1 A5).
+- The short form `category.slug` stays legal only in an `errors:` line of a component's section. The lint expands it there. `category.*` means every registered code of that category for that component.
+- Records and the registry store the full form.
+- A code keeps its meaning for ever and is never reused. A retired row stays, with its edition. `summary` may change and may be translated. Tests assert `code`, never text (V06, `10_V1_ARCHITECTURE.md:533-535`).
+
+**Envelope additions to V06**
+- `form` takes one of four values:
+  - `diagnostic`: on a source span; nothing ran.
+  - `refusal`: returned to the caller; no state change.
+  - `stop`: the reason inside a job outcome.
+  - `freeze`: a refusal that also freezes execution until recovery.
+- `span` is added for diagnostics.
+- `retry` gains one value, `after_user_request`: the same request may be sent again by a fresh user action, never automatically. `busy` and `cancelled` fit none of V06's four values (`10_V1_ARCHITECTURE.md:513`, `:521`).
+
+**The sixteen categories**
+
+| Category | Meaning | Recoverable, default retry | Display rule | Raising layer |
+| --- | --- | --- | --- | --- |
+| `input` | The request or file is wrong in a way the caller can fix. Nothing ran. | yes, `after_user_change` | Name the field or fact. Keep the draft. | Engine, session store, command layer, persistence |
+| `unverified_reference` | A reference does not determine one correspondence. Not a mathematical impossibility. | yes, `after_user_change` | Ask for the disambiguating frame. Never say impossible. | Engine |
+| `protection` | A protected set would move. A hard constraint, never a low score. | yes, `after_user_change` | Name the set and its level, and the two kinds of action. | Engine |
+| `stale` | The request rests on a revision, preview, token, handle or job result that is no longer current. | yes, `after_refresh` | Explicit action: say what changed and keep inputs. Hover and picking: discard quietly (V03.3). | Command layer, engine |
+| `cancelled` | Stopped on request, or because a commit or undo replaced the revision. State unchanged. | yes, `after_user_request` | No alarm. Say what was covered. Never "empty". | Engine (KN7) |
+| `resource_limit` | A limit the job did not declare: a product ceiling or a machine limit. | yes, `after_user_change` | Name the limit and the actual value (V05.2). A machine stop reads incomplete and not reproducible. | Engine, session store, persistence |
+| `consistency` | The kernel's own invariants disagree. | no, `never` | Stop and report. Draft kept. Hashes go only in `diagnostic`. | Kernel layers only |
+| `unknown_outcome` | The fate of a durable command cannot be established. | no, `never` | Read-only recovery. Say "not known", never "failed". Draft kept. | Command layer, session store |
+| `auth` | The authenticity of a connection or token is not established. | yes, `after_reconnect` | Say the link to the engine must be renewed. | Command layer, platform layer |
+| `busy` | Another job or commit holds the lane. | yes, `after_user_request` | Show what runs. Offer wait or cancel. Never replay blindly. | Command layer, engine |
+| `syntax` | Source cannot be parsed, or its edition header is missing or unknown. | yes, `after_user_change` | At the span. The last valid version keeps running (EV1). | Language core (LG1) |
+| `type` | A value has the wrong puzzle, level, exactness, cost unit or mode, or a partial result or verdict is ignored. | yes, `after_user_change` | At the span, naming both types with their levels. | LG2 |
+| `effect` | A program performs or inherits an effect its context forbids. | yes, `after_user_change` | At the span, with the call path that brought it. | LG3 |
+| `capability` | A grant is not held at load or at run time. | yes, `after_user_change` | Name the capability and the profile. Granting is the solver's act. | LG3 host, command layer |
+| `budget` | A limit the job declared. The same key stops at the same step. | yes, `after_user_change` | Name the budget, the amount used and what was covered. Never empty, never a negative. | Engine (KN7), interpreter (LG4) |
+| `evidence` | A certificate fails, a premise is unmet, a scope or digest differs, or stored fields are inconsistent. | yes, `after_user_change` | The claim reads as it would without that support. A failed check is never shown as refuted. | KN6, evidence pillar |
+
+**Rules for every category**
+- A message says what happened, why, and what the user can do (charter E6).
+- `summary` never needs internals (V06).
+- A message never names which correction or twist to use (DT-J1 A5).
+- Evidence, score and permission stay separate (charter M3).
+- The draft survives every category (`10_V1_ARCHITECTURE.md:537-540`).
+
+**Boundaries that must stay exact**
+- `budget` and `resource_limit`: a code is `budget` only if the job declared the limit and the same reproducibility key stops at the same place. Product ceilings are deterministic, but no job declares them, so they stay `resource_limit`.
+- `capability` and `auth`: a grant to a program, against the authenticity of a connection or token.
+- `effect` and `capability`: found statically in source, against a grant checked at load or run time.
+- `stale` and `consistency`: the revision moved, against equal revisions with unequal digests.
+- `consistency` is reserved to the kernel layers, because it freezes execution. A fault in the runtime ends the job, not the session (KN7.13).
+
+**Not errors.** These stay in the registry so nobody adds them as errors.
+- Off the lattice: `Partial<T>`, "off the lattice: k pieces" (KN0.4, KN1.9). It has no code. Ignoring it is `LG2:type.partial_ignored`.
+- `unknown(reason)` (KN0.5).
+- Admissible, blocked, invalid, uncertain, and the value `Refused` of `derive` (KN2.8, KN2.11).
+- Empty, not found within budget, not run (KN7.11).
+- "Applied, display out of date" (KN5.22, R-02).
+- Facts shown and not refused, such as a false step flag (ENG-0J item 3).
+
+**First code list.** Items of the brief's minimum list are in bold. Spellings marked c01 or c08 come from chapters 01 and 08.
+
+| Code | Form | Meaning | Rule source |
+| --- | --- | --- | --- |
+| `KN1:input.unknown_model` | refusal | Identity not in the registry | c01 |
+| **`KN1:input.identity_mismatch`** | refusal | Model identity mismatch: model, menu, menu order or contract revision differs from what the value is read against; `context.field` says which. Never an empty list or "no solution". | c01, KN1.4, ENG-0J item 3 |
+| **`KN1:input.level_not_held`** | refusal | Wrong level at run time | c01 |
+| `KN1:consistency.identity_disagrees` | freeze | Two parts of one running session name different identities | INV-7 |
+| `KN2:stale.revision_gone` | refusal | The store no longer holds the revision | c01, c08 |
+| `KN2:stale.epoch_changed` | refusal | A handle or preview of an earlier engine epoch | c08 |
+| `KN2:input.rotation_not_representable` | refusal | No exact form; never approximated | ENG-0J item 3 |
+| `KN2:input.twist_off_menu` | refusal | Outside the signed menu | ENG-0J item 3 |
+| `KN2:input.menu_invalid` | refusal | Not inverse-closed or not A4-invariant | ENG-0J item 3 |
+| `KN2:input.word_blocked_prefix` | refusal | A stored word has a blocked prefix at this revision; carries the prefix length | ENG-0J item 3 |
+| `KN2:input.recipe_shape` | refusal | Outside 1 to 256 steps, or not word and star steps | partition section 13 |
+| `KN2:unverified_reference.frame_ambiguous` | refusal | The references do not fix one correspondence | V06 |
+| `KN2:protection.orbit_would_move` | refusal | Label level | V06, KN1.11 |
+| `KN2:protection.piece_would_move` | refusal | Pose level; never crosses levels | KN1.11 |
+| `KN2:resource_limit.primitive_ceiling` | refusal | Above 3,000,000 primitives | V05.1 |
+| `KN2:resource_limit.word_length_bound` | refusal | Beyond X3's bound, with the length shown | ENG-0J X3 |
+| `KN2:consistency.fixed_nu_nonzero` | freeze | Nonzero in one of the nine fixed ν coordinates of I_a | ENG-0J item 3 |
+| `KN4:input.unknown_session` | refusal | No such session | c01 |
+| `KN4:input.checkpoint_unwitnessed` | refusal | Neither a witness nor a label certificate | ENG-0J item 3 |
+| `KN4:resource_limit.disk_full` | refusal | A durable write could not be made; nothing half-written | R-06 |
+| **`KN5:stale.revision_changed`** | refusal | Stale preview: its base differs from the current revision | c08 |
+| **`KN5:stale.preview_replaced`** | refusal | Token mismatch: the token names a preview that is no longer pending | c08 |
+| **`KN5:stale.token_mismatch`** | refusal | Token mismatch: a genuine token whose row, arguments, digest or identity differ | INV-3, CT-ONE-03 |
+| `KN5:stale.token_used` | refusal | A single-use token seen twice | KN5.15 |
+| `KN5:stale.no_fresh_preview` | refusal | The commit key was pressed with no fresh preview | c08 |
+| `KN5:stale.undo_superseded` | refusal | Another action landed first | KN5.19 |
+| `KN5:auth.token_invalid` | refusal | The authenticator fails | c08, narrowed |
+| `KN5:auth.session_credential` | refusal | The local engine credential is invalid | V06 |
+| `KN5:busy.commit_in_flight` | refusal | Another commit is in flight | c01, c08 |
+| `KN5:input.command_id_reused` | refusal | Same command ID, other content | KN5.21 |
+| `KN5:input.overlay_row_kind` | refusal | An overlay row of a forbidden kind | KN5.3 |
+| `KN5:input.jumble_off_pieces_off_lattice` | refusal | Jumble off at N > 0 | ENG-0J item 7 |
+| `KN5:input.jumble_off_nu_nonzero` | refusal | Jumble off at ν ≠ 0 | ENG-0J item 7, DT-J1 A5 |
+| `KN5:input.jumble_off_not_shown_reachable` | refusal | No journal reaches the configuration | ENG-0J item 7, A5 |
+| `KN5:input.jumble_on_labels_only` | refusal | Labels alone | ENG-0J item 7 |
+| `KN5:input.retained_tool_needs_jumble_off` | refusal | A retained tool while Jumble is on | ENG-0J item 7 |
+| `KN5:input.menu_word_needs_jumble_on` | refusal | A jumble letter while Jumble is off | ENG-0J item 7 |
+| `KN5:input.menu_change_in_episode` | refusal | A menu change inside an episode | ENG-0J section 4 |
+| `KN5:capability.commit_row_refused` | refusal | A runtime call names a commit row | c08 |
+| `KN5:consistency.state_hash_mismatch` | freeze | Equal revisions, unequal digests | c08 |
+| **`KN5:unknown_outcome.commit_fate`** | freeze | Unknown outcome: no receipt, broken continuity or an incomplete recovery record | KN5.23, V03.5 |
+| `KN5:unknown_outcome.read_only_recovery` | refusal | A request during read-only recovery | c08 |
+| `KN6:evidence.certificate_rejected` | refusal | A claim fails its check for the stated inputs | KN6.1 |
+| `KN6:evidence.no_checker` | refusal | No checker for this kind | KN6.1 |
+| `KN6:evidence.start_table_mismatch` | refusal | Wrong start table | KN6.5 |
+| **`KN7:budget.steps`**, `.kernel_cost`, `.memory`, `.output` | stop | Budget exhausted: job outcome cut off, reads open | KN7.7, KN7.10 |
+| `KN7:budget.not_declared` | refusal | A job without an explicit budget | KN7.7 |
+| `KN7:budget.over_ceiling` | refusal | A budget above the profile's ceiling | BM3 |
+| `KN7:resource_limit.safety_stop` | stop | Wall-clock stop: incomplete and not reproducible | KN7.10, INV-10 |
+| `KN7:resource_limit.runtime_lost` | stop | The runtime died; job outcome error; session untouched | KN7.13 |
+| `KN7:cancelled.by_user` | stop | Cancelled by the solver | V06 |
+| `KN7:cancelled.revision_replaced` | stop | A commit or undo replaced the revision | KN5.18 |
+| `KN7:busy.lane_full` | refusal | The lane admits no more jobs | KN7.2 |
+| `KN7:stale.job_input_digest` | refusal | A job result is read against another digest | KN7.3, ENG-0J item 3 |
+| `LG1:syntax.unexpected_token` | diagnostic | Parse error with recovery | LG1 |
+| `LG1:syntax.edition_missing` | diagnostic | No edition header | LG1 |
+| **`LG1:syntax.edition_unsupported`** | diagnostic | Edition unsupported, in source | LG1, PS2 |
+| `LG2:type.mismatch` | diagnostic | A general type error | LG2 |
+| **`LG2:type.level_mismatch`** | diagnostic | Wrong level, found statically | LG2 discipline 1 |
+| `LG2:type.puzzle_mismatch` | diagnostic | A 600-cell-Full piece used as a jumbling piece | LG2 discipline 1 |
+| `LG2:type.exact_required` | diagnostic | An approximate value in an exact position | LG2 discipline 2 |
+| `LG2:type.cost_unit_mix` | diagnostic | Letters, generators or actions mixed | LG2 discipline 3 |
+| `LG2:type.reachability_missing` | diagnostic | A state without a reachability claim | LG2 discipline 4 |
+| `LG2:type.mode_mismatch` | diagnostic | A tool used in the wrong Jumble mode | LG2 discipline 5 |
+| `LG2:type.verdict_as_boolean` | diagnostic | A verdict read as a boolean | LG2 discipline 6 |
+| `LG2:type.partial_ignored` | diagnostic | A `Partial<T>` used without its off-the-lattice case | KN0.4 |
+| `LG3:effect.undeclared` | diagnostic | An effect outside the declared set | LG3 |
+| `LG3:effect.view_writes_workspace` | diagnostic | A view with a workspace write | LG3, default 16 |
+| **`LG3:effect.flow_refused`** or **`LG3:capability.flow_refused`** | by LQ21 | Flow refused. Both spellings are reserved; LQ21 retires one before first use. | BM2, LQ21 |
+| **`LG3:capability.not_granted`** | refusal | Capability not granted | LG3 |
+| `LG3:capability.ambient_read` | refusal | A clock, file or network read without a grant | INV-10, LX-3 |
+| `LG4:input.ir_rejected` | refusal | IR fails validation at load | LG4 |
+| `LG5:input.module_digest_mismatch` | refusal | Module bytes differ from the lockfile | LG5 |
+| `LG5:input.model_not_supported` | refusal | The manifest does not list the model | LG5 |
+| `PS1:input.digest_mismatch` | refusal | Stored bytes differ from their digest | PS1 |
+| `PS1:resource_limit.record_too_large` | refusal | Above the shared limits table | R-01 |
+| **`PS2:input.edition_unsupported`** | refusal | Edition unsupported, in a stored record | PS2 |
+| `PS3:input.export_off_lattice` | refusal | An export off the lattice | ENG-0J item 3 |
+| `EVD:evidence.premise_unmet` | refusal | A cited premise is not held | 8.1 |
+| `EVD:evidence.scope_mismatch` | refusal | A claim is read outside its scope digest | 8.1 |
+| `EVD:evidence.inconsistent_fields` | refusal | Stored fields give no display word | section 13 |
+| `EVD:evidence.negative_without_completion` | refusal | A negative from a job that did not complete | KN7.4 |
+
+**Corrections for the drafted chapters**
+1. `auth.token_invalid` (chapter 08, step 3 and section 15) joins two cases, with the continuation "press the commit key again". V06 says `auth` needs an authenticated reconnect, and pressing again cannot repair a bad authenticator. I propose the split above: `stale.token_used` and a narrowed `auth.token_invalid`.
+2. KN5.16 says a mismatch is refused as stale, and chapter 08 step 7 says `consistency`. I support chapter 08. KN5.16 should be narrowed to a moved revision or digest binding.
+3. KN7.7 puts `safety_stop` inside `Budget`, and `JobResult` writes `cut_off(budget: BudgetName)`. A `budget.*` code promises a reproducible stop, and a wall-clock stop cannot. The outcome should read `cut_off(by: Code)`, with `KN7:resource_limit.safety_stop` for that case.
+
+#### 3. Figures for the interface contracts
+
+Every figure here is a size or a count. No figure is a timing, and none was measured on the owner's machine. "Shown" means current code or a committed record demonstrates it. "Arithmetic" means it is computed from shown figures.
+
+**600-cell-Full**
+
+| Figure | Value | Class | Basis |
+| --- | --- | --- | --- |
+| Slots, pieces | 259,800; 177,120 | source | Shown: `core.Model` on `assets/` |
+| Labels per revision | 1,039,200 bytes, int32 | source | Shown: `core.py:18`; the 0.4 transport sends them as `<u4` |
+| `PuzzleState` working arrays | about 3.2 MB | source | Arithmetic on `core.py:257-268` |
+| Generators | 600 move 4,596 slots, 600 move 4,600 | source | Shown: counted from `primitives.npz` |
+| Delta per generator | 2 bytes as a letter; 36,768 or 36,800 bytes as (slot, label) pairs | source | Arithmetic |
+| Pairs stop paying | above 129,900 changed slots | source | Arithmetic |
+| Stored snapshot, zlib level 3 | 623,022 bytes solved; 624,979, 644,567, 706,909, 747,783 after 1, 10, 100, 1,000 random generators | synthetic | Shown: fresh model, seed 600, no session |
+| Recipe ceilings | 1 to 256 steps; at most 3,000,000 primitives; chunks of 100,000 | source | Shown: `10_V1_ARCHITECTURE.md:359-363` |
+| Largest possible recipe | 6,000,000 bytes int16; 12,000,000 int32; up to 18,000,000 JSON characters | source | Arithmetic |
+| Largest recipe on record | None committed: oracle cases are generated, and I opened no user session | none | Not available |
+| 0.4 journal row | two 64-character hashes, recipe, certificate and ten small fields; about 250 bytes for a one-generator turn with an empty certificate | source | Arithmetic from `session.py:31` |
+
+**Jumbling puzzle**
+
+| Figure | Value | Class | Basis |
+| --- | --- | --- | --- |
+| Pose IDs per revision | 708,480 bytes, int32 | source | Shown: `research/jumbling/sim/state.py:103` |
+| Same in `u32le-base64` | 944,640 characters plus SHA-256 | source | Arithmetic on `research/jumbling/differential/candidate/store.py:24-28` |
+| Pose-table entries P | largest 2,049 (stage 18 lattice-d1); others 317 to 1,827; fixtures 1,248 to 1,591 | source | Shown: 12 records, 3 fixtures |
+| `poses.f32`, `pose_lattice.i32` at P = 2,049 | 131,136; 8,196 bytes | source | Arithmetic |
+| Render arrays at P = 2,049 | 847,812 bytes | source | Arithmetic |
+| One mask of 177,120 bits | 22,140 bytes | source | Arithmetic |
+| Render arrays plus one mask | 869,952 bytes | source | Arithmetic |
+| Exact pose as JSON | mean 146, largest 169 characters; 298,568 for P = 2,049 | source | Shown |
+| Largest integer in those tables | 3 decimal digits; fixture heights at most 32 | source | Shown: nothing on record reaches 2^64 |
+| Grip sets | 75 bytes each | source | Arithmetic |
+| Rim summary | 600 rows; about 14,400 bytes at six 4-byte fields | source | Arithmetic; width assumed |
+| End survey with certificates | 205,233 to 209,045 JSON characters; 563 to 578 blocked grips | source | Shown: `research/jumbling/fixtures/wj-*.json` |
+| J1 journal row | mean 274 to 276, largest 290 JSON characters over 2,366 rows | source | Shown: the same fixtures |
+| Pieces moved per twist | 1,637 to 4,193; medians 2,566 to 2,749 | source | Shown: the same fixtures |
+| Delta per twist | up to 33,544 bytes of (piece, pose ID) pairs, plus the remap of P × 4 bytes, plus new poses | source | Arithmetic |
+| Menu record | 10,750 characters (I_a, I_b); 4,362 (S4₀) | source | Shown |
+| Letters | K⁺ order 7,200; 36,000 letter codes, which fit 16 bits | source | Shown: `research/jumbling/tutorial/07-records.md:311-319` |
+| ν and corrections | 45 coordinates; 36 corrections of 5 to 5,629 twists | source | Shown: ENG-0J, KN3.2 |
+| Labels | 1,039,200 bytes, on the lattice only | source | Arithmetic |
+
+**Words on record**
+
+| Figure | Letters | Raw `ia16` bytes | Class | Basis |
+| --- | --- | --- | --- | --- |
+| Longest literal word stored flat: `18/results/lattice-d1/run/words/00014.ia16.gz`, step 14, rule `lattice/orbit-10` | 2,352,984 | 4,705,968 (118,208 gzipped) | source | Shown: `run.json` and the blob |
+| That phase, 53 files | 13,231,266 | 26,462,532 (1,965,617 gzipped) | source | Shown |
+| Longest E2 literal step | 672,417 | 1,344,834 | source | Length shown; bytes arithmetic |
+| Stage 18 admission bound, per word | 10⁷ | 20,000,000 | source | `18/README.md:169`; bytes arithmetic |
+| Lattice word, checked by composition, not played | 166,788,405 | 333,576,810 | source | `docs/progress/1.0/jumbling-handoff/research-data.md:125`; bytes arithmetic |
+| Largest retained cascade | 224,683,850 | 449,367,700 | source | `research/jumbling/restoration/README.md:40`; bytes arithmetic |
+| The 2,352,984-letter word as J1 rows | n/a | about 649 million characters at 276 per row | source | Arithmetic |
+| `macro-certificate/1` | 66 records, 226,451 bytes, 1,057 to 10,652 each | n/a | source | Shown |
+
+**Shared**
+
+| Figure | Value | Class | Basis |
+| --- | --- | --- | --- |
+| Digest | 32 bytes, 64 hex characters | source | Shown |
+| Identity block, revision reference | about 110 and 200 bytes in binary | source | Arithmetic; widths assumed |
+| Command rows | 86; IDs 1,340 characters (mean 15.6, longest 30); static table 21,348 JSON characters | source | Shown: `docs/progress/1.0/command-table.json` |
+| Availability per revision | about 1.4 KB when all are available; about 15 KB if all 86 carry a compact error of about 150 bytes | source | Arithmetic; error size assumed |
+| Language overlay rows | Not known yet | none | Depends on LP2 onward |
+| Value-store entry | 1,039,200 bytes; up to 1,007,048 at P = 2,049; plus a 32-byte key | source | Arithmetic |
+| Reference-map cache entry | about 1.75 MB plus words | source | `10_V1_ARCHITECTURE.md:471-472`, proposal |
+
+**Consequences for the drafted clauses**
+1. KN2.10, CT-KN2-07 and partition LX-5 are out of date (card R3-E4).
+2. KN7.9 counts memory as "the length of a value's canonical encoding" but gives 708,480 bytes. The existing store form is 944,640 characters, and PS1's canonical JSON would be larger again. Proposed wording: "Memory is counted in logical units: the byte length of a value's arrays in the KN1 digest convention, plus, for a pose table, the length of each entry's canonical exact key. The text form in a file is never the unit."
+3. A jumbling delta cannot be only the moved pairs. `_compact` reorders the pose table after a commit and remaps every pose ID (`research/jumbling/sim/state.py:385-397`), so unmoved pieces can change ID. A delta carries the remap, or the revision carries the full array. This agrees with KN2.9.
+4. KN3.2 should read "pose entries can exceed 2^64". The basis is unbounded height under I_a (ENG-0J section 4), not a record, so the test needs a synthetic fixture.
+
+#### 4. Bars for spikes
+
+All of this is proposal. Running any spike needs the owner's allowance (LQ18).
+
+##### LX-4 editor latency
+
+**Module sizes** (source: the 33 research scripts run from 55 to 1,034 lines, median 164, 7,723 in all, about 47 bytes per line)
+
+| Size | Lines | Why |
+| --- | --- | --- |
+| S | 200 | Near the median research script |
+| M | 1,000 | The largest research script |
+| L | 5,000 | Stress, five times the largest |
+| W | 50 modules, about 20,000 lines | About 2.6 times all 33 scripts |
+
+**Bars, p95 / p99 in milliseconds**
+
+| Interval, from the key message | S | M | L |
+| --- | --- | --- | --- |
+| Typed echo | 50 / 67 | 50 / 67 | 50 / 67 |
+| Syntax feedback | 67 / 100 | 67 / 100 | 100 / 150 |
+| Completion list shown | 100 / 150 | 100 / 150 | 150 / 250 |
+| Type and effect diagnostics, from the last key of a burst | 150 / 250 | 200 / 300 | 500 / 750 |
+| Stale state shown on a view (charter D2) | 100 / 150 | 100 / 150 | 100 / 150 |
+| Reference view re-run, updated view presented | 250 / 400 | 250 / 400 | 500 / 750 |
+
+At W, an edit to an exported signature has dependents re-checked within 1,000 / 1,500 ms.
+
+**Reasoning**
+- The gate allows 33.3 ms frames, and a key can land just after a frame samples input, so two frames (66.7 ms) is the honest worst case at the 30 fps floor.
+- Syntax feedback must land before the next key. A fast typist's gap is about 125 ms, which is a common estimate, not project evidence.
+- Completion uses 100 ms, the project's existing meaning of "responds" (charter E2).
+- Diagnostics are not on the keystroke path. The bars sit between the usual 0.1 s and 1 s human-factors limits, which are also not project evidence.
+- p99 is about 1.5 times p95. Any debounce counts against the bar.
+- The re-run bar applies only to a reference view: about 200 lines, one batch read of labels or pose IDs, and a per-orbit count. Another view has only the stale-state bar.
+
+**Protocol on the owner's machine**
+1. Freeze one candidate and its build identity. The module set is generated deterministically from the three LP3 tools and frozen by digest.
+2. Use a fixed, seeded edit script with four edit kinds: inside a body, a change to an exported signature, a completion trigger, and a break in syntax.
+3. Run with Jumble off and with Jumble on, at a fixture's end state, on fresh isolated data.
+4. Record the D6 conditions exactly, with frame generation off, PresentMon pinned (D7), and a quiet machine.
+5. Timed input is an owned-window message posted to the window's queue. Start the clock at the post. The end is the first presented frame that shows the result, matched by frame ID to PresentMon.
+6. Unlike the M1 series, automatic rendering stays on, because the gate must hold in the same run.
+7. One smoke run, then three series of 100 samples per metric, size and puzzle. No series stops early for being slow. A run that fails a correctness or state-hash check is invalid, kept and repeated whole.
+8. In the same runs, capture PresentMon at W3 and script at least 100 turns per series for E2.
+9. Report the median, p95, p99 and largest value for each series, with all three series shown.
+
+That is 10,800 samples, about three hours of foreground time at one second per sample (arithmetic), so it needs an agreed window.
+
+**Proposed decision rule.** "On the owner's machine, with one frozen candidate per route, the fixed module set and the fixed edit script: a route's editor path passes when every bar holds in each of three series at S, M and L on both puzzles, and the renderer gate (259,800 slots, average at least 30 fps, p99 at most 33.3 ms, peak VRAM at most about 7 GB) and charter E2 hold in the same runs. A bar missed at S or M fails the editor path until it is fixed. A bar missed only at L or W goes to the owner with the numbers. If editor work makes a run miss the gate or E2, the route fails at any size. No bar is relaxed without the owner."
+
+##### Exact wording for the other rules
+
+**LX-1.** Missing: a route-neutral meaning of "step", a sample plan and a unit of cost.
+
+"For each route and flow-label mode, run the three LP3 tools on one frozen input set, listed by digest. Report per tool: steps, kernel calls by row, bytes crossing the kernel boundary, and time per step and per call as the median and p99 of three series of 100 runs. A step is one instruction of the route's executed form, and the report names that form. Step counts are never compared across routes. The result is a lead for LQ9 and LQ21. No LX-1 figure passes or fails a route, and none stands in for charter E2. The decisive check is LP3's end-to-end E2 measurement on the owner's machine."
+
+**LX-2.** Missing: "responsive", "unchanged", the sample count during a fault, the meaning of startup, and the jumbling payload.
+
+"On the owner's machine, on a frozen candidate, with fresh isolated data, inject each fault into the runtime with a session open: allocation to its limit, recursion to its limit, a loop with no kernel call, and a forced kill. A placement passes only if, for every fault: (1) the journal rows and state hash afterwards equal those of a control run of the same commands without the fault; (2) the job ends with a typed outcome and the session stays open; (3) during the fault window the renderer gate holds and the LX-4 echo bar holds; (4) at least 100 commits issued during fault windows meet charter E2, the fault being repeated until 100 are observed. A placement that cannot survive the forced kill fails. Transfer is measured at 1,039,200 bytes of labels and at 869,952 bytes for the pose bundle at P = 2,049 with one mask. Startup runs from process start to the first interactive frame, with an existing session and the runtime loaded, in each of three cold runs, within the 3 s that charter E3 proposes." E3 stays a proposal until the owner sets it.
+
+**LX-3.** Missing: repeat count, the bytes compared, what counts as a refusal, and the denominator of false refusals.
+
+"Cases and keys are frozen by digest before the run. Each key runs ten times on Windows and ten on headless Linux, and all twenty runs give one SHA-256 over the canonical result bytes: the result value and stop reason in canonical JSON, with timing, host and path fields excluded and listed on the experiment card. A display plan agrees when its non-numeric fields are equal and each numeric field is within its declared precision. A case counts as refused only if it ends with its expected registry code and no state change, and a planted read returned no data. A crash, a hang or another code is a failure of that form. A false refusal is a refusal of a program on the frozen list of built-in and solving-workflow tools that the interim boundary allows. For each form and variant the report gives the count and each refused program with its code. No threshold is set; the count goes to the owner with LQ21."
+
+**LX-5.** Missing: current sizes, an equality rule and a source for the large entries.
+
+"Sizes: integers at 2^64, 2^256 and about 22,500 bits; synthetic pose entries built from the J1 negative control, because no table on record exceeds three decimal digits; literal words of 672,417 and 2,352,984 letters and the 10⁷ bound; 13,231,266 letters as one stream; and the 166,788,405-letter length as exact length arithmetic. Every candidate's results equal Python's exact integers on every fixture, and a difference removes the candidate. Speed is reported from the owner's machine, as median and p99 per operation and size, with no speed threshold at this stage. A licence list goes to the owner, and a copyleft dependency needs the owner."
+
+**LX-6.** Missing: the hot path, the oracle cases and the machine. The wiki question says "the same headless machine", while the partition counts speed only from the owner's machine.
+
+"The port covers applying a permutation and composing macros. Cases O01 to O07 of `tools/oracle/` give the same state hash, net digest and expansion digest as the 0.4 reference through `tools/oracle/compare.py`. Any difference is a demonstrated failure and stops the spike until it is explained. Speed compares the same inputs against NumPy in the pinned engine environment on the owner's machine, by the B4-12 method. A cloud or headless timing is a lead only. There is no speed threshold: both results go to LQ8 with LX-5."
+
+**LX-7.** Missing: the gate numbers, whether a pass is per run, and a contradiction. A GPU evaluation cannot be plain "headless"; it needs a named device.
+
+"At W3 on the owner's machine, the generated chart stage and the built-in perspective stage each make three cold runs. A candidate passes when each of its three runs meets the whole selection gate: all 259,800 slots at full detail, the most complex animation, average at least 30 fps, p99 at most 33.3 ms, PresentMon at native resolution with no frame generation, and peak VRAM at most about 7 GB. The report shows the difference from the built-in stage. For exact vertices and camera poses fixed before the run, GPU and CPU evaluations agree within the precision the chart declares, outside its declared singular neighbourhoods. That comparison runs without a window, names the device it used, and is never a gate result."
+
+**LX-8.** "No rule exists until the owner sets the protocol (LQ13). Agreement between authors or models does not replace it." `needs_owner: yes`.
+
+**LX-9.** Missing: what "differ" compares, what happens when only target bits differ, and what no difference means.
+
+"Step 1 compares the 64-bit patterns of the target coordinates for the 13,600 requests of R2-E2 on Windows CPython, Linux CPython and the LX-6 engine candidate. Step 2 places at least 1,000 requests within one ulp of exactly computed bisectors, including those step 1 found to differ, and compares the exact key of the chosen rotation. If any chosen rotation differs between any two runtimes, the request is recorded as a dyadic Cayley vector read exactly, and a drag compares its 60 candidates exactly in Q(√5). That amends the state contract: EN1's Astra check, then the owner. A difference in target bits alone is reported and feeds step 2. A run that finds no difference is a sample: it holds for the requests tested only, the report says so, and the amendment stays open to the owner."
+
+#### 5. Cards and explainers
+
+- id: R3-E1
+- on: partition 8.1, PS3, default 20, LQ3, LQ10, my R2-E1
+- kind: proposal
+- claim: Mapping by (format, field, value) works on this corpus, but job outcome needs two more import values, "not run" and "not stated", and "not stated" must block a negative claim. I also withdraw my R2-E1 sentence that "exhausted" next to "best" closes a search over a declared set: that status is a beam search that ran to its depth.
+- evidence:
+  - 387 triples: 298 mapped, 89 recorded, none without a rule; seven exact words have more than one mapping (`corpus-labels.md`).
+  - Default 6 keeps "not run" apart, while KN7's outcome has four values; six rows fall under rule U2.
+  - `17/results/runs/pxrr-7304.json` reads status unknown, reason initialised; only `17/README.md:151` says it was stopped.
+  - `14/scripts/retained_search.py:107-148` against `docs/progress/1.0/design-table/topics/language-ecosystem.md:528`.
+- needs_owner: yes
+
+- id: R3-E2
+- on: partition lines 279 and 662, defaults 13 and 20; topic lines 523, 526 and 830
+- kind: objection
+- claim: The corpus must be identified by Git blobs and a digest manifest, never by a checkout. On Windows the six case pairs collapse, so a walk of the checkout never sees six `macro-certificate/1` records. That is why the record says 411 files and 13,387,282 bytes.
+- evidence:
+  - Demonstrated: 417 plain JSON files and 13,412,769 record bytes at HEAD; 417 − 6 = 411, and 13,412,769 − 25,487 = 13,387,282.
+  - Correct wording for line 279: "156 of the 417 JSON files have no top-level `format` key, and 146 have none at any depth".
+  - Line 662 should read "497 records, 13,412,769 bytes at Git HEAD".
+  - Add to default 13: "The corpus is read from Git blobs through a manifest of path, blob digest and size; no importer or test walks a checkout."
+- needs_owner: no
+
+- id: R3-E3
+- on: default 20, PS3
+- kind: proposal
+- claim: Default 20's test cannot run until "field", "value" and the enumeration rule are defined. It must also cover booleans with their polarity and keep prose scope text beside each mapped row. I propose the rule of `corpus-labels.md`.
+- evidence:
+  - 197 of 387 triples are booleans, and 16 rows have inverted polarity.
+  - 25,134 boolean leaves exist, of which 10,388 over 175 keys are payload, so "every value" needs a stated boundary.
+  - 436 prose leaves over 16 keys are kept, 393 of them `scope`; a mapped word without its scope text overstates the claim.
+- needs_owner: no
+
+- id: R3-E4
+- on: partition LX-5, KN2, KN4, section 13; chapter 01 KN2.10 and CT-KN2-07; LQ10
+- kind: objection
+- claim: "The largest word on record has 672,417 twists" is wrong. The longest literal word stored flat has 2,352,984 letters, and composed words reach 224,683,850. A long word cannot be kept as J1 rows either: one word commit should be one journal row citing the literal letters by digest, stored as `ia16` chunks.
+- evidence:
+  - `18/results/lattice-d1/run/run.json`, step 14, with its blob of 4,705,968 bytes.
+  - About 649 million characters as J1 rows, at 276 per row, against 4.7 MB (arithmetic).
+  - `docs/architecture/1.0/language/architecture/01-kernel.md:208-209`, `:558`; partition line 607.
+  - Proposed test: CT-KN2-07 streams 2,352,984 letters and also 13,231,266 as one stream.
+- needs_owner: yes, for the word encoding of the data core (LQ10); the figure corrections need no one
+
+**P-E6. Why the runtime stays off a turn's critical path.** When you press a twist key, the program has about a tenth of a second to respond, while it keeps drawing every sticker. A program you or someone else wrote can be slow, can have a bug, and can even run for ever, and nobody can know that beforehand. So the key goes straight to the engine, which makes the turn and writes it down, and no user program stands in that line. User programs work beside it: they read a frozen copy of the puzzle and show their results when they are ready. If one is slow, its panel is marked out of date, and your twist still happens on time. If one crashes, only that program stops, and the puzzle, its history and the picture carry on. This is a design promise until it is measured on your laptop, which is what spike LX-2 is for.
+
+**P-E7. What a deterministic budget is, and why seconds cannot be one.** A budget says how much work a program may do before it is stopped. A deterministic budget counts things that come out the same every time: program steps, declared engine work, memory in fixed units and the size of the output. Run the same program on the same input with the same budget, and it stops at exactly the same point on any machine. Seconds do not behave that way, because the same run takes longer when the laptop is warm, on battery or busy with something else. A search stopped after ten seconds could find a result today and miss it tomorrow, and nobody could repeat it to check. "Not found within this budget" only means something if someone else can get the very same answer. Seconds are still shown for information, and a clock can still stop a run that has gone wrong. A run stopped that way is marked incomplete and not repeatable, and it can never support a claim that something does not exist.
+
+**P-E8. What the kernel's interface gives a program, and what it never gives.** The kernel is the small exact core that knows the rules of the puzzle. A program can ask it questions: read a frozen copy of the state, work out what a word of moves would do, or try moves on a private copy. Every answer says which state it is about, and "I don't know" is a real answer that never turns into "no". A program can also prepare a proposal, which the engine replays by itself and shows you as a preview. A program never gets a writable state, never gets the key that commits a move, and cannot hand the engine a result to adopt. It gets no clock and no files unless they are granted, and no network at all. Only your own key press on the preview you can see commits anything, and the engine checks everything again at that moment. So a wrong program can show you something wrong, but it cannot damage your session.
+
+**P-E9. Why a stored format must be frozen before the program that reads it.** A saved file outlives the program that wrote it, and your macros and checkpoints must still open in every later version. Code can be fixed any day, but a file already on your disk stays exactly as it was written. So the file's exact layout is agreed first, and the reader is written against that agreement, not the other way round. If the reader came first, its accidents, such as a field order or a lazy default, would quietly become the format, and every later version would have to copy them. Freezing also forces the hard question early: anything the format cannot record is lost for good when old data is imported. That is why the proposal under LQ10 freezes only a small core: words, recipes, macros, protection, filters, checkpoints, bindings and the evidence record. Other things, such as the syntax, can keep changing, because each change comes with a recorded migration. An old file then keeps the meaning it had on the day it was saved.
