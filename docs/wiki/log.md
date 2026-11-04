@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-04] decision | Stage 16 certificates renamed so a Windows checkout is clean
+The owner approved renaming the six stage 16 certificates `PX-<run>.json` to `PX-<run>-cert.json` with their blobs unchanged, because each differed only in case from its run record `px-<run>.json` and a Windows checkout kept one file for both and showed six modified paths; the research stays stopped and the review wrapper is unchanged, since a real implement run on the unfixed base was accepted. A worktree that still holds the pairs takes this merge by running `git checkout --` on the six old `PX-*` paths before the merge and on the six `px-*` paths after it.
+
 ## [2026-11-03] update | The full CI checks run as five parallel shards
 At the owner's request, a full Windows CI run now splits the 60 checks into five time-balanced shards on parallel runners (about 14 minutes of checks each, bounded by the longest test, against about 66 minutes in one job), after a plan job that chooses the mode; a final `headless` job passes only when the plan and every shard passed (`tools/ci/run_headless.py --shard`).
 

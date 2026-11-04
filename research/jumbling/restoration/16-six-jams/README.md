@@ -308,9 +308,11 @@ O-SJ-D7 leads to 1260.
 
 **Certificates.** The whole descent of each run, its start macros followed by its committed macros, was certified
 from its jam with `macro.py cert` (excursion allowance 20, and 838 for the run after O-D3) and checked with
-`macro.py check --replay` (computed, `results/runs/PX-<run>.json` and `-check.json`; at 7302, at 7304 and at 7306 from
-the jam the descent is SJ-D1, I-7304 and I-7306 of section 2.2). All checks passed, and each ends at the digest of its
-stop above.
+`macro.py check --replay` (computed, `results/runs/PX-<run>-cert.json` and `PX-<run>-check.json`; at 7302, at 7304 and
+at 7306 from the jam the descent is SJ-D1, I-7304 and I-7306 of section 2.2). All checks passed, and each ends at the
+digest of its stop above. Until 4 November 2026 the certificates were named `PX-<run>.json`; they were renamed with
+their bytes unchanged, because that name differs only in case from the run record `px-<run>.json` and a Windows
+checkout cannot hold both.
 
 ### 2.6 Corrections
 
