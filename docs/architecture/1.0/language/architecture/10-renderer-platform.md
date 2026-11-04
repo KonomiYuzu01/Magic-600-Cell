@@ -8,7 +8,7 @@ to the renderer line. It defines no syntax or implementation. LQ6, LQ7 and LQ20 
 kept below. Other language concepts retain their definitions in their owning chapters.
 
 Sources: [partition](../ecosystem-partition.md), sections 8.5, 9 and 15; [overview](00-overview.md), sections 3 and 8;
-[kernel](01-kernel.md); [DT-L1](../../../../progress/1.0/design-table/topics/language-ecosystem.md), E5, M4 and the
+[kernel](01-kernel.md); [DT-L1](../../../../progress/1.0/design-table/topics/language-ecosystem.md), E5, M4, R4-M43 and the
 outcome; [render contract](../../../../../research/jumbling/render-contract.md), `magic600-jumbling-render/1`;
 [renderer candidates and gate](../../../../wiki/decisions/renderer-candidates.md);
 [renderer experiment plan](../../../../progress/1.0/renderer-experiment-plan.md);
@@ -51,11 +51,22 @@ outcome; [render contract](../../../../../research/jumbling/render-contract.md),
     children:     List<NodeId>
     source:       source linkage of chapter 04
     commands:     command and Binding references of chapters 01 and 04
+    claims:       List<Key>                   # chapter 06; empty when the node states no claim
   }
   ```
 
   References preserve the types and levels of the data they name. A relation uses the grammar and evidence of chapters
   03 and 06. The node does not assign those meanings itself.
+- **RPI.65 [D]** Content shown in a view is one of three kinds. *State data* is what a kernel row returned for the
+  subject at `base`: labels, poses, exact sets, counts, partial results and verdicts, with any H-08 evidence state as
+  the engine gave it. Its support is that revision and that row, so it needs no statement reference. A *claim* is a
+  relation (EV3.8), a declared property, or anything shown with a word of EVD.32. It carries its `Key` in `claims`.
+  *Program content* is everything else a program publishes. It is shown as the output of its producing module and
+  carries no word of EVD.32. A word of EVD.32 reaches a display only through `word()` on a key, with the phrase of
+  EVD.36, and a view asks for it only on a key that has a record: with none, row 7 would call a kernel read open. A
+  node of kind relation with empty `claims` is refused with `EV3:input.display_plan_invalid`. Text a program writes
+  stays the program's text, whatever it says: the host does not read it for evidence. How the three kinds look is not
+  set here. Under LQ3's alternatives the function changes, not this rule.
 - **RPI.6 [D]** A `DisplayPlan` describes objects, charts, overlays and token colours for one declared subject, following
   partition section 8.5. Its semantic fields are independent of the adapter's buffers and pipelines:
 
@@ -459,7 +470,7 @@ outcome; [render contract](../../../../../research/jumbling/render-contract.md),
 
 | Code | Meaning and continuation |
 | --- | --- |
-| `EV3:input.display_plan_invalid` | Malformed plan, inconsistent subject or geometry binding, or invalid instance/source-map reference; refuse the publication before installation |
+| `EV3:input.display_plan_invalid` | Malformed plan, inconsistent subject or geometry binding, invalid instance/source-map reference, or a relation node with no statement reference; refuse the publication before installation |
 | `EV3:input.display_unsupported` | Unsupported dimension, primitive or projection-chain stage; report the unsupported part without silently changing its meaning |
 | `EV3:stale.display_plan` | Publication no longer matches the dependencies of the view it would replace; recompute at the newest revision |
 | `EV3:stale.display_pick` | Pick dependency or installed-generation mismatch; discard passive replies quietly and explain explicitly requested stale work |
@@ -499,6 +510,7 @@ outcome; [render contract](../../../../../research/jumbling/render-contract.md),
 | CT-RPI-24 | First frames using a jumbling revision read back the bound pose indices, pose table and lattice arrays and compare them with that revision's engine data (RPI.9; render contract section 7) | windows |
 | CT-RPI-25 | LX-7's three cold W3 runs per candidate use PresentMon and the unrelaxed renderer gate, comparing the generated stage with built-in perspective (RPI.60, RPI.61) | performance |
 | CT-RPI-26 | End-to-end charter E2 holds with program views active, and R-19 gate captures confirm that hidden and unchanged views add no rebuilds (RPI.11, RPI.62) | performance |
+| CT-RPI-27 | A word of EVD.32 reaches a display only through `word()` on a key with its phrase; a relation node with empty `claims` is refused with `EV3:input.display_plan_invalid`; state data needs no reference; text a program writes stays the program's text (RPI.5, RPI.65) | source |
 
 ## 12. Open items
 
@@ -509,7 +521,7 @@ outcome; [render contract](../../../../../research/jumbling/render-contract.md),
 | LQ20 | Whether to add the renderer handoff before its freeze or fit the frozen renderer unchanged (RPI.57 to RPI.59). The existing handoff tables are not amended by this chapter. |
 | LQ1, LQ16 | The language/profile arrangement and final product cut remain open. The portable data boundary still applies to any included producer; no research viewport is promised independently of LQ6 (RPI.1, RPI.19, RPI.43). |
 | LQ2, LQ21 | The joint boundary policy, checked display sinks and form of flow control, owned by chapter 07. No new permission follows from display or picking (RPI.14, RPI.26, RPI.45; DT-L1 R2-E3). |
-| LQ3, LQ10 | Evidence and stored forms remain in chapters 05 and 06. Chart and reachability references retain their fields and scope without settling either question (RPI.5 to RPI.7, RPI.28, RPI.48). |
+| LQ3, LQ10 | Evidence and stored forms remain in chapters 05 and 06. Chart and reachability references retain their fields and scope without settling either question (RPI.5 to RPI.7, RPI.28, RPI.48, RPI.65). |
 | LQ4 | Branch display and pinned-job lifetime remain in chapters 01 and 08. Reuse at another revision needs the existing rerun or exact-transport rule (RPI.7, RPI.12; DT-L1 R2-E1). |
 | LQ5, LQ8, LQ9 | Built-in implementation, engine language and runtime placement do not change this boundary. Each chosen placement must preserve the independent adoption and fault rules (RPI.1, RPI.2, RPI.46 to RPI.54). |
 | LQ18, LQ19 | Authorization of evidence spikes and the order of freeze gates are still owner questions. LX-3 and LX-7 are obligations, not runs authorized or performed here (RPI.56 to RPI.63). |

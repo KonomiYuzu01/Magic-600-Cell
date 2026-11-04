@@ -419,7 +419,7 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
 | --- | --- | --- | --- | --- | --- |
 | `EV3:stale.source_link` | refusal | Pick/source link no longer matches the installed plan base or producing source. | | EV3.5, EV3.6 | 04 EV3.5, EV3.6 |
 | `EV3:input.round_trip_undeclared` | refusal | Source part does not declare the requested editable field. | | EV3.7 | 04 EV3.5, EV3.7 |
-| `EV3:input.display_plan_invalid` | refusal | Malformed plan, inconsistent subject/geometry binding or invalid instance/map reference. | | RPI.8, RPI.10, RPI.21 | 10 RPI.10, RPI.25, RPI.64 |
+| `EV3:input.display_plan_invalid` | refusal | Malformed plan, inconsistent subject/geometry binding, invalid instance/map reference, or a relation node with no statement reference. | | RPI.8, RPI.10, RPI.21, RPI.65 | 10 RPI.10, RPI.25, RPI.64, RPI.65 |
 | `EV3:input.display_unsupported` | refusal | Dimension, primitive or chart stage is unsupported; no silent substitution. | | RPI.4, RPI.17 | 10 RPI.10, RPI.64 |
 | `EV3:stale.display_plan` | refusal | Publication no longer matches the dependencies of its target view. | | RPI.10, RPI.12 | 10 RPI.10, RPI.64 |
 | `EV3:stale.display_pick` | refusal | Pick dependencies or installed generation no longer match. | | RPI.24, RPI.25 | 10 RPI.25, RPI.64 |

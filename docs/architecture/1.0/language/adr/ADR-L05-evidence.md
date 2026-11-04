@@ -5,7 +5,7 @@ owner"). Its Decision is itself a proposal under LQ3, so accepting this record a
 
 Rests on: partition INV-5 and section 8.1; [chapter 06](../architecture/06-evidence.md); [chapter
 01](../architecture/01-kernel.md) KN6; [the label table](../evidence-import/README.md). Round table: DT-L1 M1, M2,
-R2-E1, R3-E1, R3-E3, R3-M1, note N2; explainers P-M6, P-M9 and P-M10.
+R2-E1, R3-E1, R3-E3, R3-M1, R4-M38, R4-M39, note N2; explainers P-M6, P-M9 and P-M10.
 
 ## Context
 
@@ -26,7 +26,7 @@ Under LQ3's recommendation:
   and it is not evidence (EVD.1 to EVD.3, EVD.5).
 - **ADR-L05.2** A key is a statement ID with its scope. A statement ID is injective on meanings, every scope field is
   immutable, and the context of a check stays apart from scope (EVD.7, EVD.8, EVD.10, EVD.12). A stored record holds
-  section 8.1's fields and the seven facts of EVD.13. The only other inputs of a word are four versioned tables
+  section 8.1's fields and the nine facts of EVD.13. The only other inputs of a word are four versioned tables
   (EVD.14).
 - **ADR-L05.3** Evidence is an AND/OR graph over keys. Arguments are immutable, and a premise is discharged only by a
   claim with the identical key (EVD.15 to EVD.17).
@@ -40,7 +40,8 @@ Under LQ3's recommendation:
   total and single-valued (EVD.32). Theorem D states locality, non-upgrade and scoped negatives. "Empty", "not found
   within budget" and "not run" stay distinct (EVD.33). A word is shown with its scope (EVD.36).
 - **ADR-L05.7** Refutation is asymmetric. A negative is proved only for its declared set, and sampling never upgrades a
-  universal claim (EVD.42 to EVD.44).
+  universal claim (EVD.42 to EVD.44). A finite computation does not stand for a wider statement: a leaf narrower than its
+  statement reads as an inconsistency (I7 of EVD.40, EVD.59).
 - **ADR-L05.8** A certificate is a stored object of a named kind with a digest. One small kernel checker exists per
   kind, it recomputes without caches and it shares no code with the producer. Its report enters the graph as one leaf
   (EVD.46, KN6.1 to KN6.6).
@@ -99,7 +100,7 @@ Conditional on an owner question:
 
 Classes: source, and proofs in the text. Theorems A to D are proved in chapter 06 from the mathematician's note N2. No
 person has reviewed them. The label counts are source evidence counted from Git blobs, and `corpus-labels.json` and its
-README give the production command. CT-EVD-01 to CT-EVD-21 are requirements only. No kernel checker in this design has
+README give the production command. CT-EVD-01 to CT-EVD-22 are requirements only. No kernel checker in this design has
 been built, though the research has its own checkers on record.
 
 ## What the owner accepts
@@ -107,4 +108,5 @@ been built, though the research has its own checkers on record.
 Accepting this record, with LQ3's recommendation, accepts ADR-L05.1 to ADR-L05.10 and the clauses they cite.
 
 The owner may overrule these integrator additions: the empty start of the invalid-pairs table (EVD.21), the default for
-records with no `format` key (EVD.53), and the import values "not run" and "not stated" (EVD.47).
+records with no `format` key (EVD.53), the import values "not run" and "not stated" (EVD.47), the covered-set rule I7
+with EVD.59, and the guards of EVD.36.

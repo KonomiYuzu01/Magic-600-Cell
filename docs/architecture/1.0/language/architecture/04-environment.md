@@ -265,14 +265,15 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
 - **EV3.8 [D]** The relationship strip consumes typed relations in the grammar shared by code and the theory book
   (partition EV3; DT-L1 M6, R2-E4). Its data contract carries a typed statement reference, its relation and operands,
   canonical IDs for the roles it names, its model and level, its base revision, its result and evidence references,
-  and any producing source location. Roles include destination, current occupant, wanted piece, buffers, frame and
-  residual. Chapter 06 defines statement identity and evidence; chapter 02 defines the types. These fields can join
-  EN3's view model now, without deciding the strip's design. Three scopes hold (DT-L1 R3-M4). The role "frame" takes a
-  value in the frame group under chosen reference frames, at label level, on the lattice; changing the frames conjugates
-  the value. Unqualified, "frame" means reference stickers, and every other use carries a qualifier: the frame domain and
-  frame part of the jumbling research, frame bits and frame sums, the C₃ and C₂ components of restoration theory that no
-  sticker shows, and A3's F_f. The strip must tell them apart, and the word it uses for each is a preference. "Current
-  occupant" is partial: off the lattice it has no value.
+  and any producing source location. The statement reference travels in `claims` of `ViewNode` (RPI.5, RPI.65). Roles
+  include destination, current occupant, wanted piece, buffers, frame and residual. Chapter 06 defines statement
+  identity and evidence; chapter 02 defines the types. These fields can join EN3's view model now, without deciding
+  the strip's design. Three scopes hold (DT-L1 R3-M4). The role "frame" takes a value in the frame group under chosen
+  reference frames, at label level, on the lattice; changing the frames conjugates the value. Unqualified, "frame"
+  means reference stickers, and every other use carries a qualifier: the frame domain and frame part of the jumbling
+  research, frame bits and frame sums, the C₃ and C₂ components of restoration theory that no sticker shows, and A3's
+  F_f. The strip must tell them apart, and the word it uses for each is a preference. "Current occupant" is partial:
+  off the lattice it has no value.
 
 - **EV3.9 [D]** A relation with no position off the lattice returns the distinct value "none: off the lattice";
   insufficient knowledge returns `unknown(reason)` (KN0.4, KN0.5; DT-L1 R2-E4). It never returns an old occupant, slot
@@ -454,11 +455,30 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
   unchanged lemma needs the chapter 06 identity and scope rules; executing a changed tool still needs checking and
   current grants. Author class, evidence, competence and permission stay separate (INV-5, BM2; DT-L1 R2-E4).
 
-- **EV5.6 [D]** The language learning path follows partition EV5: use tools; change a parameter; save layouts and
-  bindings; compose recipes and macros; write tools; maintain modules and evidence. It builds on the orbit-first
-  solving workflow and the glossary's L1 to L6 rather than introducing another numbered key scale (charter D7, M6;
-  DT-M1 Q9 (a)). Each step names its prerequisite concepts, command routes and fixture task. Proposed term levels are
-  listed in section 6; they are not new learning gates or an approved lesson order.
+- **EV5.6 [D]** The language learning path follows partition EV5: use tools and read their results; change a
+  parameter; save layouts and bindings; compose recipes and macros; read a principle record and state your tool's
+  principle; write tools; maintain modules and evidence. It builds on the orbit-first solving workflow and the
+  glossary's L1 to L6 rather than introducing another numbered key scale (charter D7, M6; DT-M1 Q9 (a)). Each step
+  names its prerequisite concepts, command routes and fixture task. The table below is the mathematician's proposal
+  (DT-L1 R4-M44 to R4-M48). Every cited H-08 ID exists in the command table, but those rows are draft (`pending-2.2`).
+  No fixture task exists yet, so every fixture is owed and the candidates are proposals. Placing conjugate and
+  commutator at step 4 is the mathematician's inference. Proposed term levels are listed in section 6; they are not
+  new learning gates or an approved lesson order.
+
+| Step | Prerequisite concepts | Command routes | Fixture |
+| --- | --- | --- | --- |
+| 1 Use tools and read results | Command, Availability, Revision, Base revision, Stale; Claim, Scope, Covered set, Basis, Check, evidence words, Standing, Threshold, Premise; every, some and negation (Statement form, Negation pair), Witness; empty, not found, not run (EVD.33); Unknown against None: off the lattice; Typed partial result, Verdict; Job, Budget, Job result; Reachability claim; Evidence graph on request; record parts `specification` and `not meant` | H-08 `command.find`, `object.inspect`, `view.findings`, `view.residuals`, `operation.check`, `job.stop`. `invoke` on an overlay row (chapter 01), `word` (chapter 06), `follow_pick` (EV3). Explanation and provenance view: owed | Owed. Candidate: read E3's 7302 and 7303 records (chapter 06, section 9) |
+| 2 Change a parameter | Editable parameter, new version, Fork, "a fork inherits no evidence", Diagnostic, Typed error | `edit_declared_part` (EV3), `diagnose` (EV1). Workspace command that persists it, host fork operation: owed | Owed |
+| 3 Save layouts and bindings | Layout, Workspace record, Binding with absolute arguments, Routing class, Preference, workspace undo | H-08 `keymap.edit`, `file.keymap.export`, `file.keymap.check`, `file.keymap.apply`, `grip.capture`. `edit_declared_part`. Save layout: owed | Owed |
+| 4 Compose recipes and macros | Word, Literal word, Equality key, Cost alphabet, Setup, Star, conjugate and commutator, Recipe, Macro, Macro base, Proposal, Preview, User-action token, Protection, Net and Strict, Complete effect, assistance provenance, Recording, fresh preview on reuse (LB7.2) | H-08 `macro.base.open`, `macro.select`, `macro.add`, `macro.save`, `macro.variant.create`, `macro.compare`, `operation.new`, `operation.phase.edit`, `operation.reuse`, `operation.check`, `operation.preview`, `operation.execute`, `worksheet.save`, `worksheet.load`. `propose` (chapter 01), `word_key` (chapter 02). Recording to macro: owed | Owed |
+| 5 Read a record, state your principle | Principle, Principle record, Hypothesis, Lemma, Theorem as a proof, Invariant, Counterexample, mixed statements, Decomposition, Base part, Step map, Leaf specification, Worked instance, Hand derivation, Fixture, a domain inside its lemma's scope | `hover`, `definition` (EV1). Reading a record: owed. Stating your own: owed; no data route exists, and EV5.9 leaves the map to the joint setting | Owed. Candidate: the floor instance in LB6.2 |
+| 6 Write tools | Module, Module manifest, Lockfile, language edition; exact against approximate; Identity level typing; Snapshot, State reference, Derived state; partial results and verdicts in code; budgets, jobs, Cost profile; Effect, Capability declaration, Profile, Author class, Provenance block; view nodes and overlays; boundary: KN2.5, Flow rule, Declassifier, why a preview is refused; stabiliser, coset, quotient, homomorphism, F2, F5, Q(√5), whose text depends on EV5.17 | `parse`, `complete`, `diagnose`, `hover`, `definition`, `rename` (EV1), `debug_step`, `inspect_value` (EV2), `open_snapshot`, `project`, `derive`, `propose` (chapter 01), `publish_view` (chapter 10). Create a module: owed | Owed |
+| 7 Maintain modules and evidence | Digest, Reproducibility key, Run record, Deterministic replay, Certificate, Check report, Per-claim trace, Grade, Alternative, Check mode, Statement ID, Statement key, Evidence envelope, Exact transport, evidence edition | `replay_run` (EV2), `reproduce` (chapter 09), `check` (chapter 01), `word` (chapter 06), `import_archive`, `export_check_bundle`, `migrate_record` (chapter 05) | Owed |
+
+  Four placements may not be obvious. `specification` and `not meant` are read at step 1, because empty against not
+  found cannot be read without them; the whole record is step 5. Basis and Check sit at step 1, because EV5.13 shows
+  the check beside the word. Partial results, verdicts, budgets and jobs are read at 1 and written at 6. Mixed
+  statements and Invariant sit at 5.
 
 - **EV5.7 [B]** Competence checks use fresh isolated fixture tasks and record independent completion, critical
   mistakes, help use and transfer to a new target. Time is recorded separately from correctness (owner design
@@ -517,12 +537,19 @@ glossary summaries of the owning chapter, not competing contracts.
 
 - **EV5.14 [O]** The mathematician reviewed these additions and scope changes in round 4 against the theory and the
   completed chapters, and this inventory carries the corrections (DT-L1 round 4). That review read the rows owned by
-  chapters 02, 05, 09 and 10 for internal consistency only. The proposed L1 to L6 levels use the existing glossary scale;
-  their final placement follows the owner's learning path and DT-M1's first-use rule. Jumbling and language terms need a
-  first-use order before their levels can be checked, and using the manual or the shelved tutorial for it is the owner's
-  call. Evidence words also depend on LQ3 and chapter 06, and the competence gate depends on LQ2 and LQ14. The inventory
-  carries round 3's corrections to DT-L1 R2-E1 (evidence), R2-E2 (identity levels), R2-E3 (flow control) and R2-E4
-  (principles and partial values). No entry or level is accepted by this inventory, and `terms.json` is unchanged.
+  chapters 02, 05, 09 and 10 for internal consistency only. The proposed L1 to L6 levels use the existing glossary
+  scale; their final placement follows the owner's learning path and DT-M1's first-use rule. Jumbling and language
+  terms need a first-use order before their levels can be checked, and using the manual or the shelved tutorial for it
+  is the owner's call. Evidence words also depend on LQ3 and chapter 06, and the competence gate depends on LQ2 and
+  LQ14. The inventory carries round 3's corrections to DT-L1 R2-E1 (evidence), R2-E2 (identity levels), R2-E3 (flow
+  control) and R2-E4 (principles and partial values). The mathematician's follow-up applied EV5.10's level rule to
+  every row by hand, and its level moves and new rows are proposals too. Some rows are only partly grounded. Principle
+  is the integrator's working definition (LB6.2), with no owner text. Base tool has no row, because what counts as one
+  is LQ2's question. Base part's meaning is inferred. Solve record is used and never defined. Fixture is generalised
+  from its uses. Revision and Statement are the mathematician's wording. Lemma, Theorem, Hypothesis, Invariant and
+  Counterexample are standard mathematics the sources use without defining. Foreign load, Clean grip and Tame face
+  tool writers only, and the L1 word for a grip is blocked or not. No entry or level is accepted by this inventory,
+  and `terms.json` is unchanged.
 
 - **EV5.15 [D]** Each integrated entry needs its own diagram under the existing glossary build rules (charter M6,
   default 8, `glossary/build.py`). This includes a changed concept whose old diagram no longer states its meaning.
@@ -537,8 +564,8 @@ glossary summaries of the owning chapter, not competing contracts.
 | Grip (scope change) | L1 | A world-fixed place, the pole of one cell. Choosing the grip for the next twist changes nothing in the puzzle state. | Chapter 01 KN1.5; state contract section 1 |
 | Label (scope change) | L1 | A sticker's identity at a lattice slot; the label array is the state of record for 600-cell-Full. | Chapter 01 KN1; partition LG2 |
 | Piece (scope change) | L1 | A rigid labelled object with stickers; slot occupancy is defined only on the lattice in the jumbling puzzle. | Chapter 01 KN1; DT-L1 M3, M6 |
-| Generator (scope change) | L1 | One of the 1,200 generators of 600-cell-Full; a negative number is its inverse. Every count names its alphabet. | Chapter 01 KN1.5; DT-M1 Terms |
-| Twist, 600-cell-Full (change) | L1 | A turn of one grip by a non-identity retained menu rotation, which can be a word in generators. | Overview 3.6; DT-M1 Terms |
+| Generator (scope change) | L1 | One of the 1,200 generators of 600-cell-Full; a negative number is its inverse. Every count says what it counts. | Chapter 01 KN1.5; DT-M1 Terms |
+| Twist, 600-cell-Full (change) | L1 | A turn of one grip by a non-identity retained menu rotation, which can be a sequence of generators. | Overview 3.6; DT-M1 Terms |
 | Twist, jumbling puzzle (change) | L1 | A turn of one grip by a non-identity active menu element, represented by a pinned menu letter. | Overview 3.6; DT-M1 Terms |
 | Retained twist | L1 | A twist in the cap's retained rotation subgroup, with the same rotation when Jumble is on. | DT-M1 Outcome C6, Terms |
 | Jumble twist | L1 | An active-menu twist outside that retained subgroup, refused when Jumble is off. | DT-M1 Outcome C6, Terms |
@@ -550,24 +577,27 @@ glossary summaries of the owning chapter, not competing contracts.
 | Orientation (scope change) | L5 | How a piece sits in its position as its labels show it; a piece can be at Home and wrongly oriented. A3's pose-level orientation is a separate quantity that labels do not read, and takes its own name. | Chapter 01 KN1; DT-L1 M3 |
 | Frame (scope change) | L4 | Unqualified, an ordered choice of reference stickers that fixes how a piece or block is read. Every other use carries a qualifier. | Theory Lemma 7; DT-L1 R3-M4 |
 | Position | L1 | The chamber occupied by a piece, derived from labels and undefined off the lattice. | Chapter 01 KN1.5, KN1.9 |
+| Chamber | L1 | One of the 177,120 fixed places a piece can fill. A position names one. | State contract section 2; [card 6, Model](../../../../../research/jumbling/theory/cards/card-6-blocking-structure.md); [theory, cut chambers](../../../../../research/Full_600cell_Puzzle_Theory.tex) |
 | Occupant (scope change) | L3 | The piece currently sitting in a position; partial off the lattice, where it has no value. | Chapter 01 KN1.9; EV3.8 |
 | Pose | L1 | A piece's exact rotation in the jumbling puzzle, independent of whether its stickers occupy lattice slots. | Chapter 01 KN1.5, KN1.6 |
 | Sticker | L1 | The identified region attached to a piece and its home host facet. | Chapter 01 KN1.5 |
 | Model identity | L1 | The immutable identity fixing the mechanical objects and interpretation of their data. | Chapter 01 KN1; INV-7 |
-| Canonical ID | L1 | An object identifier bound to a model and identity level, independent of its display. | Chapter 01 KN1.5; INV-6 |
+| Canonical ID | L1 | An object's fixed identifier in its model, independent of how it is drawn. | Chapter 01 KN1.5; INV-6 |
 | Identity block | L2 | Chapter 01's bundle of puzzle, model, menu, menu order and contract references. | Chapter 01 KN0.1 |
+| Identity level | L2 | How finely a value describes a state: from each piece's exact pose down to what the stickers show and coarser. Every stored value names its level. | Chapter 01 KN1.7, KN1.8 |
 | Identity tower | L6 | The puzzle's levels, a partial order, and the exact projections from finer information to coarser information. | Chapter 01 KN1.7; DT-L1 R2-E2 |
 | Sticker class | L6 | The class g_A·S_A of a pose: poses that show every labelled sticker in the same place. Earlier name: visible pose class. | Chapter 01 KN1.7; DT-L1 N1 |
 | Region class | L6 | The class g_A·R_A of a pose, which is the piece's posed region. | Chapter 01 KN1.7; DT-L1 N1 |
-| Frame group (change: replaces Orientation group) | L5 | The group of permutations of a piece's sticker regions that turns keeping its region can make: R_A/S_A; trivial, C2, C5, D5 or A5 by orbit. | Chapter 01 KN1.7; Theory Lemma 7; DT-L1 N1 |
+| Frame group (change: replaces Orientation group) | L5 | The group of permutations of a piece's sticker regions that turns keeping its region can make; trivial, C2, C5, D5 or A5 by orbit. | Chapter 01 KN1.7 (R_A/S_A); Theory Lemma 7; DT-L1 N1 |
 | Gauge | L6 | A pair (σ, t): σ permutes the pieces, and each t_A is a rotation carrying A's reference region onto that of σA. Piece A takes the place σA had, so the same regions stay occupied. By Theorem 1 of note N1 (status: theorem, producer) every word stays admissible and the two runs stay related by the same gauge. A gauge is not equality and does not carry reachability. | Chapter 01 KN1.7, KN1.14; DT-L1 N1 |
 | Shape | L6 | The set of posed regions of a state, forgetting which piece fills which region. | Chapter 01 KN1.7; DT-L1 N1 |
+| Digest | L2 | A short value computed from exact bytes, used to name them. Digests compare only at the same level. | Chapter 01 KN1.8 |
 | Level-qualified digest | L2 | A digest of normalised bytes naming the identity level it covers. | Chapter 01 KN1.8 |
 | Menu | L1 | The pinned set of rotations available to a grip in the named puzzle. | Chapter 01 KN1; partition LG2 |
-| Menu letter | L1 | A grip and menu-item reference meaningful under its menu identity, order digest and contract revision. | Chapter 01 KN1.3 |
-| Menu identity | L1 | The order-independent identity of the menu's rotations. | Chapter 01 KN1.3 |
-| Menu-order digest | L1 | The digest fixing the ordered menu that gives an item index its meaning. | Chapter 01 KN1.3 |
-| Seat | L1 | DT-M1's pinned right-coset input for the additional menu twists, with its base rotation fixed. | DT-M1 Outcome Seats; Q7 (a) |
+| Menu letter | L1 | A grip and a menu-item number, meaningful only under its named menu and that menu's order. | Chapter 01 KN1.3 |
+| Menu identity | L2 | The order-independent identity of the menu's rotations. | Chapter 01 KN1.3 |
+| Menu-order digest | L2 | The digest fixing the ordered menu that gives an item index its meaning. | Chapter 01 KN1.3 |
+| Seat | L1 | One of the four sets of twelve jumble twists at a cap; hold a seat, then press a twist key. | DT-M1 Outcome Seats; Q7 (a), only if Q7 picks seats |
 | Jumble on and Jumble off | L1 | The two session modes, without merging the two puzzles' model identities. | Overview 3.6; chapter 01 KN0.2 |
 | Word | L2 | A chronological list of letters in a named alphabet and identity. | Overview 3.6; chapter 01 KN2 |
 | Literal word | L2 | The word as written before normalisation, whose prefixes are checked and executed. | Chapter 01 KN2.7 |
@@ -581,16 +611,27 @@ glossary summaries of the owning chapter, not competing contracts.
 | Blocked | L1 | The jumbling-twist refusal caused by a cut-straddling piece, with the state unchanged. | Chapter 01 KN2.8; DT-J1 fix-first item 3 |
 | Invalid | L1 | The outcome of a request that is not an exact element of the active menu; the state is not tested. | Chapter 01 KN2.8 |
 | Uncertain | L1 | The distinct unresolved jumbling-twist outcome that permits no state change. | Chapter 01 KN2.8 |
-| Lattice | L1 | Configurations where every piece's pose lies in K⁺, so each piece fills a chamber and its stickers sit on slots. | Chapter 01 KN1.9; state contract section 2 |
+| Lattice | L1 | Configurations where every piece's pose is a rotation symmetry of the 600-cell, so each piece fills a chamber and its stickers sit on slots. | Chapter 01 KN1.9; state contract section 2 (K⁺); [card 6, Model](../../../../../research/jumbling/theory/cards/card-6-blocking-structure.md) |
 | Straddler set | L1 | The complete set of pieces straddling a named cap's cut at a named revision. | Chapter 01 KN2.4; DT-J1 fix-first item 3 |
-| N | L1 | The total misalignment count of (domain, cut-cell) pairs covered on only one side by that domain. | Chapter 03; [restoration section 2](../../../../../research/jumbling/theory/restoration.md#2-misalignment-and-the-rim-test) |
+| N | L1 | The total misalignment: how many times a cut cell, on any rotated cut, is covered on one side and not by the same alignment on the other. | Chapter 03; [restoration section 2](../../../../../research/jumbling/theory/restoration.md#2-misalignment-and-the-rim-test) |
+| N_c | L1 | A cap's misalignment: In_c + Out_c − 2·A_c. | [Descent manual](../../../../../research/jumbling/manual/02-descent.md) |
+| In_c, Out_c, A_c | L1 | At cap c's cut: the cut cells inside pieces cover, those outside pieces cover, and those covered on both sides by one alignment. | [Descent manual](../../../../../research/jumbling/manual/02-descent.md) |
+| Floor | L1 | A lower bound on a cap's misalignment: the size of the difference between In_c and Out_c. Twists of that cap alone keep both, so they cannot go below it. | [Descent manual](../../../../../research/jumbling/manual/02-descent.md); [open problems](../../../../../research/jumbling/theory/open-problems.md); BND.10 |
+| Cut cell | L1 | A pair of neighbouring chambers on either side of a cap's cut, sharing one face on it. | [Restoration section 2](../../../../../research/jumbling/theory/restoration.md#2-misalignment-and-the-rim-test); [jumbling observation](../../../../progress/1.0/jumbling-observation.md) |
+| Seam | L1 | A misaligned cut cell. An off-grip seam lies on a rotated cut that is no cap's cut, so no single twist closes it. | [Restoration section 2](../../../../../research/jumbling/theory/restoration.md#2-misalignment-and-the-rim-test); [jumbling observation](../../../../progress/1.0/jumbling-observation.md) |
+| u | L1 | The number of pieces that straddle a cap's cut and so block it. | Chapter 01 KN2.4; chapter 03; [engineering handoff](../../../../progress/1.0/jumbling-handoff/engineering.md) |
 | Lowering count D_x(h) | L6 | The number of inside pieces of height at least 4 and branch CLS(x) that item h lowers at grip x. | Chapter 03; [card 7, Terms](../../../../../research/jumbling/theory/cards/card-7-lowering-machine.md) |
 | Depth Φ | L6 | Under I_a, the sum over pieces of their left height above two, counting no negative contribution. | Chapter 03; [card 6, Model](../../../../../research/jumbling/theory/cards/card-6-blocking-structure.md) |
-| Height | L6 | The tree distance of a jumbling pose from the lattice root, with the tree side and menu stated. On Γ(Λ), left and right height 0 together mean the lattice; in free mode they do not. | Chapter 03; [restoration T5 to T7](../../../../../research/jumbling/theory/restoration.md) |
+| Height | L1 | How far a piece's pose lies from the lattice, on the stated side and menu. A jumble twist changes it by at most 2; a retained twist never does. | Chapter 03; [card 6, Model and T5](../../../../../research/jumbling/theory/cards/card-6-blocking-structure.md), for menu I_a |
+| Alignment domain | L6 | A coset γK⁺: pieces whose poses fit one rotated copy of the lattice. | [Card 6, Model](../../../../../research/jumbling/theory/cards/card-6-blocking-structure.md) |
+| Free mode | L6, not learner-facing | The simulator's infinite field-valued alphabet in place of a finite menu. On Γ(Λ) left and right height 0 together mean the lattice; in free mode they do not. | State contract; chapter 02 |
+| Foreign load | L6 | The number of pieces in grip x's cap of height at least 2 and tree branch other than the grip's class. | [Card 6, Model](../../../../../research/jumbling/theory/cards/card-6-blocking-structure.md); chapter 03 |
+| Clean grip | L6 | A grip with no straddlers, so all its twists are admissible. The opposite of blocked. | [Card 6, Model](../../../../../research/jumbling/theory/cards/card-6-blocking-structure.md) |
+| Tame | L6 | Of a word: no letter raises Φ. Stronger than every prefix staying at or below the start. | [Card 6, Model](../../../../../research/jumbling/theory/cards/card-6-blocking-structure.md) |
 | Domain ID | L6 | The exact identifier of a pose's alignment class, supplied with the height batch at its input revision. | Chapter 01 KN2.4; chapter 03 |
 | Height counts | L1 | The per-revision counts of pieces at the declared exact height values. | Chapter 01 KN2.4; DT-J1 Outcome A1 |
 | Rim summary | L1 | Per revision, for every cap: N_c, In_c, Out_c, A_c, blocked, and whether it is at its floor. It selects no twist and no cap. | Chapter 01 KN2.4; DT-J1 rule 6 |
-| Lifted (working term) | L1 | The lattice pieces taken off the lattice by a preview, distinct from its full moving set. | DT-J1 M22, fix-first item 4; chapter 03 |
+| Lifted (working term) | L1 | The lattice pieces a proposed operation takes off the lattice, distinct from its full moving set. | DT-J1 M22, fix-first item 4; chapter 03 |
 | Jumbling block | L6 | Pieces that no cut separates and therefore move together, distinct from a solver-declared achievement block. | Chapter 03; [tail section 3.1](../../../../../research/jumbling/manual/03-tail.md) |
 | Jumbling frame domain | L6 | A height-two alignment domain in the jumbling tree, distinct from an ordered sticker reference frame. | Chapter 03; [card 6, Model](../../../../../research/jumbling/theory/cards/card-6-blocking-structure.md) |
 | Clean-step unit | L6 | A jumbling block or one frame part of a block, as used by the tail's clean-step contract. | Chapter 03; [tail section 3.2](../../../../../research/jumbling/manual/03-tail.md) |
@@ -603,38 +644,52 @@ glossary summaries of the owning chapter, not competing contracts.
 | Retained checkpoint | L5 | A lattice configuration with a witnessed legal word in the 1,200 retained generators from solved, or certified equal to such a state. Every retained checkpoint is a label checkpoint. | Chapter 01 KN2.4; default 9 |
 | Label checkpoint | L5 | A reachable lattice configuration with ν = 0 (state contract A5). Its reachability clause reads the pose and the journal, so labels alone cannot establish it. | Chapter 01 KN2.4; DT-J1 O8 (1) |
 | Sticker test | L5 | The label-based completion test, distinct from equality of every exact pose. | Chapter 01 KN2.4; DT-J1 O8 (1) |
+| Revision | L1 | One numbered moment of a session; each change makes a new revision. | Chapter 01 KN0.2 |
 | Revision reference | L2 | The session, epoch, identity and state, workspace and protection revisions bound to a result. | Chapter 01 KN0.2 |
+| Base revision | L2 | The revision a result or view read. Once it is replaced, the output is stale until recomputed. | EV3.3; RPI.5 |
+| Stale | L2 | Output read at a revision whose dependencies no longer match the current one. It stays marked with that revision and is never passed off as current. | EV3.3; RPI.12, RPI.13 |
 | State reference | L6 | The typed reference to a snapshot or derived value used by kernel reads. | Chapter 01 KN0.3 |
 | Snapshot | L2 | A read-only handle pinned to one revision for its lifetime. | Chapter 01 KN2.2 |
 | Derived state | L6 | An immutable kernel-computed value with a derivation and reachability claim, without a session revision. | Chapter 01 KN2.11 to KN2.14 |
 | Derived model | L6 | A quotient, restriction or simplified model represented by a derivation and claim-preserving maps. | Chapter 01 KN1.12, KN1.13 |
 | Difference | L2 | A comparison of named states at a declared model and level. | Partition 4.1; chapters 02, 03 |
-| Typed partial result | L1 | A result that identifies its covered and missing parts or why it is undefined. | Chapter 01 KN0.4 |
+| Typed partial result | L1 | A result that says which part it covers, which part is missing, or why it is undefined. | Chapter 01 KN0.4 |
 | Verdict | L2 | Yes or no with evidence, or unknown with a reason, for a stated decision. | Chapter 01 KN0.5 |
 | None: off the lattice | L1 | A known absence of a lattice value, distinct from insufficient knowledge. | EV3.9; chapter 01 KN0.4; DT-L1 R2-E4 |
 | Reachability claim | L2 | What is on record about whether a state can be reached in a named puzzle: witnessed, by theorem without a witness, promised, refuted or open. | Chapter 01 KN2.13; chapter 06 |
 | Witnessed reachability | L2 | Reachability accompanied by a finite legal witness in the named puzzle. | Chapter 01 KN2.13 |
-| Reachable by theorem without a witness | L6 | A reachability claim supported by the cited theorem without a stored legal word. | Chapter 01 KN2.13 |
-| Promised reachability | L6 | A reachability assumption supplied by the source and not upgraded by input validation. | Chapter 01 KN2.13, KN2.14 |
-| Proposal | L2 | A word and provenance submitted for an engine-owned preview at a base revision. | Chapter 01 KN5.9 |
-| Preview | L2 | The engine's immutable witness and full-effect result at one base revision. | Chapter 01 KN5.9 |
+| Reachable by theorem without a witness | L2 | A reachability claim supported by the cited theorem without a stored legal word. | Chapter 01 KN2.13 |
+| Promised reachability | L2 | A reachability assumption supplied by the source and not upgraded by input validation. | Chapter 01 KN2.13, KN2.14 |
+| Proposal | L2 | A word, with a record of where it came from, submitted for a preview at a base revision. | Chapter 01 KN5.9 |
+| Preview | L2 | What the engine says will happen if you commit: the exact word and what it does, fixed at one base revision. | Chapter 01 KN5.9 |
 | User-action token | L2 | The shell's single-use authority bound to the displayed preview and its literal letters. | Chapter 01 KN5.14, KN5.15 |
 | Receipt | L2 | The command's durable identity, request digest and typed execution outcome. | Chapter 01 KN5.21 |
-| Availability | L1 | The per-revision command availability and typed reasons supplied through KN5. | Chapter 01 KN5.6, KN5.7 |
+| Availability | L1 | Whether a command can run now, and the reason when it cannot. | Chapter 01 KN5.6, KN5.7 |
 | Claim | L2 | A typed statement with an evidence state, without conflating score or execution permission. | Chapter 06; INV-5 |
+| Statement | L2 | A precise sentence about named objects that records can support or refute. | Chapter 06 section 2 |
+| Statement form | L2 | Whether a statement concerns one finite case, every case, some case, or a mix such as every case having some answer. | Chapter 06 EVD.9, section 2 |
+| Negation pair | L2 | A statement and its exact opposite, recorded together, so that one record can settle both. | Chapter 06 EVD.9 |
 | Statement ID | L6 | A typed-statement digest or stage-qualified, commit-pinned statement name. | Chapter 06; DT-L1 R2-E1 |
-| Key | L6 | A statement ID with its scope: what evidence discharges, refutes or transports. | Chapter 06 EVD.7 |
+| Statement key | L6 | A statement ID with its scope: what evidence discharges, refutes or transports. | Chapter 06 EVD.7 |
 | Scope | L2 | The declared inputs, identities and set for which a claim is asserted, every field immutable. | Chapter 06; partition 8.1 |
+| Covered set | L2 | What a claim is about: one instance, a declared search set, an admitted domain or every reachable state. The field name `covers` is not learner-facing. | Chapter 06 section 2; EVD.32. Not the kernel row `covers` |
+| Admitted domain | L2 | A named set of inputs with a test for membership, such as D[k]. | Chapter 06 section 2; [stage 19 README](../../../../../research/jumbling/restoration/19-height-depth-framework/README.md) |
 | Basis | L2 | The theorem, certificate, exhaustive computation, exact computation or sample on which a claim rests. | Chapter 06; partition 8.1 |
 | Check | L2 | A recorded confirmation with its checker or reviewer identity and mode. | Chapter 06; partition 8.1 |
 | Premise | L2 | A named obligation on which a conditional claim depends. | Chapter 06; partition 8.1 |
-| Domain | L6 | The declared inputs on which an operation or claim is defined or admitted. | Chapters 02, 06; partition 4.1 |
+| Hypothesis | L2 | A condition a statement assumes; the statement says nothing about cases where it fails. | Chapter 03 LB6.2; chapter 06 |
+| Lemma | L2 | A statement with a written proof, used as a step towards other statements; cited by stage and source commit. | Chapter 06 EVD.2 |
+| Theorem | L2 | A statement with a written proof, cited by stage and source commit. As a basis it says a proof is cited; who checked it is separate. | Chapter 06 EVD.1, EVD.2 |
+| Invariant | L2 | A quantity or property that a named set of twists leaves unchanged. | Chapter 03 LB6.2 |
+| Counterexample | L2 | A checked case that lies in a statement's scope, meets its hypotheses and breaks its conclusion. | Chapter 06 EVD.42; chapter 03 LB6.2 |
+| Witness | L2 | A concrete object that proves something exists; for reachability, a finite legal word from solved. | Chapter 01 KN2.13; chapter 06 EVD.44 |
+| Declared domain | L6 | The inputs on which an operation or claim is defined. | Chapters 02, 06; partition 4.1 |
 | Goal | L2 | A predicate typed by puzzle and identity level, with its completion meaning stated. | Chapter 01 KN1.11; chapter 02 |
 | Certificate | L2 | Data supporting stated claims for an independent checker of a named kind. | Chapter 01 KN6; chapter 06 |
 | Check report | L2 | The checker's verdict, identity, input digest and per-claim trace reference. | Chapter 01 KN6.1 |
-| Evidence | L2 | The support for a scoped claim, separate from author class, score and permission. | INV-5; chapter 06 |
+| Evidence | L2 | The support for a scoped claim, separate from who wrote the tool, score and permission. | INV-5; chapter 06 |
 | Evidence envelope | L6 | Chapter 05's stored evidence carrier, whose facts or judgements depend on LQ10. | Chapters 05, 06; partition LQ10 |
-| Provenance graph | L2 | The linked computation and evidence edges through which a result can be traced; only evidence edges are support. | Chapter 06; EV2.5 |
+| Result trace | L2 | The linked computation and evidence edges through which a result can be traced; only evidence edges are support. | Chapter 06; EV2.5 |
 | Per-claim trace | L2 | The independent checker's own steps and outcomes for each checked claim. | Chapter 01 KN6.4; EV2.6 |
 | Evidence words | L2 | The versioned display vocabulary for evidence and run status, interpreted by source and field. | Chapter 06; EV5.13 |
 | Proved | L2 | The word shown when a statement stands at the threshold with no premise assumed, over an admitted domain or every reachable state. It always carries its scope phrase. It says the recorded argument passes the threshold, not that a person has reviewed it. | Chapter 06; partition LQ3 |
@@ -646,7 +701,7 @@ glossary summaries of the owning chapter, not competing contracts.
 | Open | L2 | The stated claim is unresolved by the available evidence. | Chapter 06; partition 8.1 |
 | Verified | L2 | The command-layer evidence label interpreted in its check context, without granting execution. | Chapter 06; H-08 |
 | Recorded | L2 | A source's claim or result retained without treating it as a fresh independent check. | Chapter 06; partition PS3 |
-| Unknown | L1 | Insufficient evidence for the requested conclusion, never false or a numeric zero. | Chapter 01 KN0.5; INV-5 |
+| Unknown | L1 | Not enough is known for the requested conclusion; never false or a numeric zero. | Chapter 01 KN0.5; INV-5 |
 | Unchecked | L2 | A declared check has not been performed for the stated input and context. | Chapter 06; H-08 |
 | Computed | L6 | A research label whose meaning is mapped from its format, field and value. | Chapter 06; partition PS3 |
 | Measured | L6 | In the research evidence vocabulary, exact computation on finite inputs, not a performance timing. | Chapter 06; partition 8.1 |
@@ -656,24 +711,40 @@ glossary summaries of the owning chapter, not competing contracts.
 | Check mode | L6 | The recorded distinction among reused transport, fresh exact audit and actual replay. | Chapter 06; partition 8.1 |
 | Grade | L6 | A (basis, check) pair in chapter 06's partial order. | Chapter 06 EVD.19 |
 | Alternative | L6 | One argument's summary: its weakest grades and its premises. A statement's summary keeps the undominated ones. | Chapter 06 EVD.23 |
-| Standing | L6 | Whether some argument for a statement survives when every grade outside the threshold is distrusted: first with no premise assumed, then with every premise assumed except those whose negation stood in the first pass. It describes the records under one edition; it does not say the statement is true. | Chapter 06 EVD.30 |
-| Principle record | L2 | A tool's specification, justification, worked instance, generated decomposition and the parts a person writes: step map, reason, failure, what an answer does not mean, derivation, prerequisites and leaf specifications. | Chapter 03; INV-12 |
+| Standing | L2 | Whether a statement's recorded arguments clear the threshold: first with no premise assumed, then with every premise assumed except those refuted in the first pass. It describes records, not truth. | Chapter 06 EVD.30 |
+| Threshold | L2 | The versioned bar a recorded argument must clear before a word such as proved or conditional appears. | Chapter 06 EVD.29 (raising it is LQ3) |
+| Typed inconsistency | L2 | The word shown when the records behind a statement contradict each other or break a record rule. It states no claim. | Chapter 06 EVD.32 row 0, EVD.40 |
+| Evidence graph | L2 | The record of how supports combine: an argument needs all its parts, and any one argument that clears the threshold carries the statement. | Chapter 06 EVD.15, EVD.39 |
+| Principle record | L2 | A tool's specification, justification, worked instance, generated decomposition and the parts a person writes: step map, reason, failure, what an answer does not mean, hand derivation, prerequisites and leaf specifications. | Chapter 03; INV-12 |
+| Principle | L2 | The statement named as a tool's reason in its principle record, with that statement's hypotheses: why an answer means what the specification says. | Chapter 03 LB6.2, a working definition with no owner text |
+| Decomposition | L2 | The generated list of the parts a tool calls, down to base parts. It shows how the tool is built, not why its answer is right. | Chapter 03 LB6.2; EV5.4 |
+| Base part | L2 | A shipped function at which a tool's decomposition stops. | Chapter 03 LB6.1, LB6.2 (meaning inferred) |
+| Step map | L2 | A stated relation between a decomposition's parts and the steps of a proof, reporting what is unmapped on both sides. | Chapter 03 LB6.2 |
+| Hand derivation | L2 | The written working of a worked instance: the givens read from named parts, and the steps a person checks from them, with the step count. | Chapter 03 LB6.2 |
+| Leaf specification | L2 | A written statement of what an opaque base part computes, naming the test that covers it. | Chapter 03 LB6.2 |
+| Worked instance | L2 | A small instance on the real geometry whose steps a person can check by hand from named givens. | Chapter 03 LB6.1 |
+| Fixture | L2 | A fixed input with its expected results, kept apart from the solver's session. A pass shows the tool reproduced those results at that input, nothing wider. | Chapter 03 LB6.2; EV5.7 |
+| Fork | L2 | Your own copy of a built-in tool. It keeps a link to its origin and inherits none of the origin's evidence. | Chapter 03 LB6.3; EV5.5 |
+| Editable parameter | L2 | A value a tool's source declares editable. Changing it makes a new version of the tool with no inherited evidence. | EV3.7; chapter 03 LB6.3 |
 | Library entry | L6 | A source-addressed operation with its checked domain, effects and supporting references. | Chapter 03 |
+| Research tier | L6, not learner-facing unless LQ16 ships it | The entries that search, minimise, rank or select over twists, words or caps. They stay out of the solving profile; whether they ship is open. | Chapter 03 LB1.5; BS2 |
 | Effect | L6 | A declared and checked kind of interaction a program can perform. | Chapter 02; partition LG3 |
 | Capability declaration | L6 | A module's request for authority that the host must grant for the profile and run. | Chapters 02, 09 |
 | Typed IR | L6 | The checked intermediate representation consumed by execution and environment services. | Chapter 02; partition LG4, LQ9 |
 | Module | L6 | A digest-addressed source unit with its edition, manifest and dependencies. | Chapter 02; partition LG5 |
 | Module manifest | L6 | The module's declared supported identities, capabilities, edition and dependencies. | Chapter 02 |
 | Lockfile | L6 | The dependency resolution that pins the digests used by a run. | Chapter 02 |
-| Edition | L6 | A named source or semantic version whose changes preserve recorded saved meaning through migration. | Chapters 02, 05 |
+| Language edition | L6 | A named source or semantic version whose changes preserve recorded saved meaning through migration. | Chapters 02, 05 |
 | Profile | L6 | The chapter 07 capability and labelling context, without deciding a separate product entrance. | Chapters 07, 09; partition LQ1 |
 | Author class | L6 | The recorded source class of a tool, distinct from mathematical evidence and understanding. | Chapter 07; partition BM2 |
 | Provenance block | L6 | Chapter 07's assistance-origin information carried by previews and stored words. | Chapter 07; partition BM2 |
 | Boundary class | L6 | A shipped tool's reviewed class under the human-solve boundary. | Chapter 07; partition BM5 |
 | Declassifier | L6 | A fixed policy-enabled entry that permits a named information flow; programs cannot declare one. | Chapter 07; partition BM2 |
+| Flow rule | L6, not learner-facing unless LQ2 turns it on | A policy switch: when on, in the solving profile, a preview's word and target may depend on the state or computed results only through declassifiers. | Chapter 07 BND.33 |
 | Flow label | L6 | The provenance information following permitted data and control dependencies if LQ21 selects labels. | Chapter 07; partition LQ21 |
 | Capability separation | L6 | LQ21's alternative separating state-reading programs from preview-preparing programs. | Chapter 07; partition BM2 |
-| Solving session | L2 | A session whose journal can stand as a solve record; every ordinary session is one. A profile belongs to a run. | Chapter 07 BND.14 |
+| Solving session | L2 | A session whose journal can stand as a solve record; every ordinary session is one. | Chapter 07 BND.14 |
+| Solve record | L2 | The journal of a solve, read as its record, with the assistance the system recorded. | Chapter 07 BND.14, BND.35 (the mathematician's reading; the term is used and never defined) |
 | Sink | L6 | A place a labelled value can reach: a preview, a draft, a display, a workspace, a file or a record. | Chapter 07 BND.26 |
 | Transparent entry | L6 | A shipped function on the policy's list whose output carries only the join of its inputs. | Chapter 07 BND.25 |
 | Policy table | L6 | The versioned data that fills the boundary mechanisms with a joint setting's choices. | Chapter 07 BND.28 |
@@ -688,21 +759,21 @@ glossary summaries of the owning chapter, not competing contracts.
 | Latest wins | L2 | Admission or recomputation that supersedes an older request with the newest applicable input. | Chapter 01 KN7.2 |
 | Reproducibility key | L6 | The complete identity of a deterministic run's source, inputs, seed, units and budgets. | Chapter 09 |
 | Run record | L6 | The stored run inputs, reproducibility references, stop reason and results. | Chapter 05 |
-| Branch | L6 | An engine-owned journal line whose availability in solving sessions remains LQ4. | Chapters 01, 08 |
+| Journal branch | L6 | An engine-owned journal line whose availability in solving sessions remains LQ4. | Chapters 01, 08 |
 | Journal | L2 | The session store's parent-linked durable events, distinct from the debugger's inspection cursor. | Chapter 01 KN4.1; chapter 08 |
-| Checkpoint | L2 | A stored session point with the replay path needed to reconstruct and validate it. | Chapter 01 KN4; chapter 05 |
+| Saved checkpoint | L2 | A stored session point with the replay path needed to reconstruct and validate it. | Chapter 01 KN4; chapter 05 |
 | Workspace record | L2 | Persistent work around the puzzle changed only through workspace commands, with provenance where required. | Chapter 01 KN4.4; chapter 05 |
 | Filter | L1 | A declared query limiting display or interaction without changing the mechanical state. | Chapter 05; solving workflow section 4.3 |
 | Preference | L1 | A persisted user setting whose stored meaning is versioned by chapter 05. | Chapter 05; partition PS1 |
 | Search space | L6 | The declared set and alphabet over which a research search ranges. | Chapter 03; partition LB5 |
 | Search record | L6 | The inputs, coverage and outcome of a search, including a bounded failure to find a witness. | Chapters 03, 05, 06 |
 | Strategy | L6 | A research procedure composed over a declared search space and budget. | Chapter 03; partition LB5 |
-| Rank | L6 | A declared quantity with stated decrease obligations on the admitted operations. | Chapter 03; partition 10.3 |
+| Descent rank | L6 | A declared quantity with stated decrease obligations on the admitted operations. | Chapter 03; partition 10.3 |
 | View-model node | L6 | The declarative node by which program content reaches the host. | Chapter 10; EV3.2 |
-| View | L1 | A revision-bound presentation of information, subject to charter D8 and LQ6. | Chapter 10; EV3.11 |
+| View | L1 | A presentation of information at one revision. | Chapter 10; EV3.11; charter D8 and LQ6 |
 | Panel | L6 | A declared host container for view-model content and its command references. | Chapter 10; EV3.2 |
 | Control | L6 | A view-model element naming a typed command interaction. | Chapter 10; EV3.2 |
-| Overlay | L1 | Declarative information attached to a view through a display plan. | Chapter 10; partition EV3 |
+| Overlay | L1 | Declarative information attached to a view. | Chapter 10; partition EV3 |
 | Display plan | L6 | The renderer-independent description consumed by the adapter, with its base and derivation references. | Chapter 10 |
 | Display instance | L1 | A particular drawn occurrence that maps back to a canonical object. | Chapter 10; default 7 |
 | Source map | L6 | Chapter 10's linkage between produced display instances, canonical IDs and source locations. | Chapter 10 |
@@ -720,21 +791,48 @@ glossary summaries of the owning chapter, not competing contracts.
 | Recording | L2 | A sequence of semantic commands and resolved objects with revision references. | EV4.10; chapter 05 |
 | Routing class | L1 | The key-routing context that separates text, list or view navigation, and global dispatch. | EV4.4; DT-M1 Outcome C2 |
 | Portable key layer | L6 | The physical-code binding data below platform character labels and IME handling. | EV4.7; DT-M1 Outcome K5 |
-| Layout | L6 | A declared placement of view-model content, with round trip only where source permits it. | Chapters 05, 10; EV3.7 |
+| Layout | L2 | A saved arrangement of what a view shows; a program's layout can change only where its source declares it editable. | Chapters 05, 10; EV3.7 |
 | Chart | L6 | A display map governed by chapter 10's declared domain and precision. | Chapter 10; partition LQ7 |
-| Projection | L1 | A stated map used to display the geometry, without altering its canonical objects. | Chapter 10; charter M2 |
+| Display projection | L1 | A stated map used to display the geometry, without altering its canonical objects. | Chapter 10; charter M2 |
 | Section | L6 | A declared representation of a geometric section with its exact mathematical basis. | Chapters 03, 10; partition LB4 |
 | Atlas | L6 | A collection of linked charts with their domains and object correspondences. | Chapters 03, 10; partition LB4 |
 | Action | L6 | The declared mathematical action on the typed objects of a representation. | Chapter 03; partition LB4 |
 | Embedding | L6 | A representation map with its source objects and stated mathematical properties. | Chapter 03; partition LB4 |
-| Relation | L1 | A typed statement about named operands at a declared identity level and revision. | EV3.8; chapters 02, 06 |
+| Relation | L1 | A stated connection between named objects in one state, such as which piece occupies a position. | EV3.8; chapters 02, 06 |
 | Graph | L6 | A representation with typed vertices and edges whose meanings are declared. | Chapter 03; partition LB4 |
 | Tree | L6 | A tree representation with declared node identities and edge relations. | Chapter 03; partition LB1, LB4 |
 | Cell complex | L6 | A representation of cells and their incidence relations at a stated dimension. | Chapter 03; partition LB4 |
 | State graph | L6 | A graph of named states and declared transitions, without making its nodes authoritative sessions. | Chapters 03, 10; partition LB4 |
-| Relationship strip | L1 | The consumer of the shared typed-relation grammar inside Global and Local. | EV3.8; owner design decisions section 2 |
-| Competence check | L1 | An isolated task recording correctness, mistakes, help and transfer, with access policy left to LQ14. | EV5.7 to EV5.9 |
+| Relationship strip | L1 | The strip that shows stated relations, in the grammar shared by the code and the theory book, inside Global and Local. | EV3.8; owner design decisions section 2 |
+| Competence check | L1 | An isolated task recording correctness, mistakes, help and transfer. | EV5.7 to EV5.9; access policy: LQ14 |
 | Soft disclosure | L1 | Gradual introduction of key information while the palette continues to offer every command. | EV5.8; owner design decisions section 5 |
+
+- **EV5.18 [D]** The word chosen for a sense is notation preference (owner design decisions, section 8). Three things
+  are correctness: one reference resolves to one concept (EV5.10); each sense has its own row, so a script can tell
+  them apart; a bare word is never used where two senses can occur. The qualified names below are proposals. Applying
+  them to prose, and the script check, come with LP4 under EV5.10, and a sense without a row gets one when it is
+  integrated (EV5.15).
+
+| Word | Qualified names |
+| --- | --- |
+| Domain | **alignment domain**: a coset γK⁺, pieces whose poses fit one rotated copy of the lattice (card 6, Model). **declared domain**: the inputs on which an operation or claim is defined. **admitted domain**: a declared domain with a membership test, such as D[k] (chapter 06, section 2). **chart domain**: where a chart's map is defined (chapter 10). Jumbling frame domain stays: an alignment domain at height 2 |
+| Projection | **display projection**: a chart stage that draws the 4D geometry (RPI.31). **level projection**: the exact, possibly partial map to a coarser identity level (`project`, KN1.9); the label projection π is one |
+| Key | **key**: on the keyboard. **statement key**: statement ID with scope (EVD.7). **equality key**: a word's normal form. **reproducibility key**: chapter 09. **source key**: the DisplayInstance field (chapter 10) |
+| Checkpoint | **saved checkpoint**: a stored session point (`session.checkpoint.save`, KN4.1). **retained checkpoint** and **label checkpoint**: predicates on a state (A5) |
+| Branch | **journal branch**: an engine-owned journal line. **tree branch**: the class b(A) of a piece's first tree step (card 6, Model). Stage 19's "complete branch" stays research prose |
+| Edition | **language edition**: a source or semantic version. **evidence edition**: the four versioned tables (EVD.14) |
+| Rank | **descent rank**: a declared quantity with decrease obligations (chapter 03). **matrix rank**: linear algebra (chapter 03). **census rank**: the orbit field `rank` (`assets/census.json`; what it counts is not established) |
+| F symbols | F_x stays foreign load (card 6, Model; card 7 writes F_c for it). The floor takes the word floor or another symbol, and chapters 01 and 07 now use the word. Which symbol is preference; the collision is correctness. F_f, F2 and F5 keep their own meanings |
+| Clean | **clean grip**: S_d empty (card 6, Model). **clean step**: a legal word landing a unit. Bare "clean" is never used. "Unblocked grip" is an option (preference) |
+| Block | **achievement block**: solver-declared (`terms.json`). **jumbling block**: pieces no cut separates. Identity block and Provenance block keep their names, as bundles of fields. Bare "block" means achievement block only. Blocked is unrelated to all of these |
+| Provenance | **assistance provenance**: the origin of a word (BM2, PS1.32). **result trace**: how a result traces to its inputs and support (EV2.5). **attribution**: author, reproducer, scope setter, review class (EVD.6; PS1.35 already says Attribution) |
+| Macro | **macro**: a reusable named word. **lowering macro**: a word ending in a jumble that lowers Φ (stage 15 README). **macro certificate**: Theorem MC's event-by-event certificate of a word (stage 15 README) |
+| Covers | **covered set** (chapter 06, section 2) against **helper cover** (kernel row `covers`; card 7) |
+| Level | **identity level**, **learning level** and **grip level** lev(c) (card 7) |
+| Witness | **witness word** against **witness piece** (chapter 10) |
+| Chamber | **cut chamber** against **flag chamber** (the theory) |
+| Base part | **decomposition leaf** (LB6.1) against **base-tier function** (BS2) |
+| Derivation | **hand derivation**: the written working of a worked instance (LB6.2). **state derivation**: how a derived state was computed (KN2.11) |
 
 ## 7. Error codes added by this chapter
 
@@ -804,7 +902,7 @@ the unresolved protocols named in their checks.
 | CT-EV4-09 | EV4.12: playback under the recommendation pauses for every user commit; the alternative automates view and workspace steps only; neither stores or replays a token. | source |
 | CT-EV4-10 | EV4.13, EV4.16: recording and source conversion preserve provenance, cannot revive old permission and cannot launder research output into a solving preview. | source |
 | CT-EV5-01 | EV5.2 to EV5.5: generated docs and principle records resolve their pinned source, domains, empty-answer meanings, instances, decomposition, evidence and the parts a person writes; a fork inherits no check. | source |
-| CT-EV5-02 | EV5.6, EV5.10, EV5.14, EV5.15: the integrated glossary covers chapter terms, proposed changes have been reviewed, every entry has build evidence, flow goals need no undisclosed concept, each step's concepts are taught earlier, and prerequisites form a DAG. | source |
+| CT-EV5-02 | EV5.6, EV5.10, EV5.14, EV5.15, EV5.18: the integrated glossary covers chapter terms, proposed changes have been reviewed, every entry has build evidence, each sense of a homonym has its own row, flow goals need no undisclosed concept, each step's prerequisite concepts are taught before that step's task, and prerequisites form a DAG. | source |
 | CT-EV5-03 | EV5.7, EV5.8: non-authors perform isolated fixture and transfer tasks under the owner's rubric; correctness, time and help use are reported separately. | human |
 | CT-EV5-04 | EV5.8, EV5.9: ordinary soft disclosure never locks commands; if the owner chooses BS3, only the settled per-principle capability gate changes preview access. | source |
 | CT-EV5-05 | EV5.1, EV5.3, EV5.11: the mathematician reviews the principle explanations and shared grammar; people can follow a real example to its primitives and its reasons under the owner's comprehension protocol. | human |
@@ -817,7 +915,7 @@ The partition's owner questions remain open. This table records their effect on 
 | Question | What stays fixed and what the answer changes | Clauses |
 | --- | --- | --- |
 | LQ1, one language or several | Digest-bound source and records stay fixed; shared versus separate research tooling changes editor coverage and the final learning steps. Capability profiles do not by themselves authorize separate product entrances. | EV1.1, EV5.2, EV5.6 |
-| LQ2, solver-developed tools | The execution gate and built-in boundary stay; the joint policy decides admitted preview and display flows and any BS3 competence gate. | EV4.16, EV5.1, EV5.9 |
+| LQ2, solver-developed tools | The execution gate and built-in boundary stay; the joint policy decides admitted preview and display flows and any BS3 competence gate. | EV4.16, EV5.9, EV5.16 |
 | LQ3, evidence model | Source labels and references remain traceable; diagnostic obligations and explanation summaries use the selected evidence model. | EV1.4, EV2.5, EV5.13, EV5.14 |
 | LQ4, branches and pinned jobs | Journal inspection remains read-only; branch hosts and cancellation of pinned runs follow the selected option. | EV2.8, EV2.10 |
 | LQ5, built-in implementation | Every built-in retains source and a principle record; the source language, debugger mapping and documentation adapter can differ for native tools. | EV1.7, EV2.12, EV5.2 |
@@ -863,7 +961,7 @@ Other dependencies and differences in the sources remain visible:
 | H-08's renderer rule versus derived-state display | The older table forbids drawing an uncommitted state. The partition and KN2.12 require explicitly identified derived display plans. ONE.62 and RPI.7 keep these plans apart from adoption of the session state, and the renderer handoff carries that line. | EV3.3 to EV3.5, EV3.12, EV3.13 |
 | Solving workflow's historical key sets versus DT-M1 | The workflow records 0.4's orbit sets as historical requirements; DT-M1 selects one default map, explicit applied anchors and solver rebinds for 1.0. Its settled rule governs bindings here. | EV4.7, EV4.8, EV5.6 |
 | Glossary versus DT-M1 and KN1 | The current twist entry equates a twist with a generator. Cap, label, piece, generator, orbit, orientation, protection-prefix and complete-effect entries need their puzzle and level scope; label-fixed centres can rotate in pose. Section 6 proposes corrections without changing the glossary. | EV2.2, EV3.9, EV4.9, EV5.14 |
-| Research block, frame and unit vocabulary | The tail's block and frame-part unit differ from a solver-declared block and an ordered sticker frame; card 6 uses unit for pieces with one exact pose. Proposed entries qualify those meanings instead of merging them. The mathematician must settle their language names. | EV5.10, EV5.14 |
+| Research block, frame and unit vocabulary | The tail's block and frame-part unit differ from a solver-declared block and an ordered sticker frame; card 6 uses unit for pieces with one exact pose. Proposed entries qualify those meanings instead of merging them, and EV5.18 lists the proposed names. | EV5.10, EV5.14, EV5.18 |
 | KN2.14 versus the display base requirement | An imported derived value need not have the snapshot ancestry from which EV3's required base revision would come. The kernel remains unchanged; ONE.21 and EV3.12 give the display contract. | EV3.4, EV3.12 |
 | DT-L1 rounds 2 and 3 | Round 3 answered R2-E1 to R2-E4 (overview section 8). Every use here names its card, and EV3.8, EV3.9, EV5.3 and EV5.4 carry round 3's corrections. | EV2.5, EV2.6, EV2.10, EV3.8, EV3.9, EV4.9, EV4.16, EV5.3, EV5.4, EV5.10, EV5.13, EV5.14 |
 | EN3 and EN4 | Relationship data joins EN3's pending view-model fields; overlay registration, query rows, lanes, receipt and availability transport, bindings and undo require EN4's final H-08. | EV1.8, EV2.8, EV3.8, EV4.1 to EV4.15 |

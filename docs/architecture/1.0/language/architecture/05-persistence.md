@@ -467,7 +467,9 @@ operation expand_stored_word(word: StoredWord, bound: Budget) -> LiteralWordStre
 | Immutable inputs | Input digest(s) where the statement has them, source/module digests, declared family/alphabet/bounds or admitted-domain parameters covered by the statement |
 | Scope-membership evidence | The evidence that the object lies in the scope, kept apart from the claim itself (EVD.13) |
 | Search record | Completeness or closure of a search, stored apart from the job outcome (EVD.13) |
+| Covered set of a leaf | `covered` of chapter 06, computed from the leaf's own record (EVD.59) |
 | Premise class | The class of each premise, with its statement ID (EVD.13) |
+| Guards of a statement | The class and name of each guard (EVD.36); a guard is part of the statement, so its ID binds it (EVD.8) |
 | Sources and original labels | Source content digests, record/field locations and labels preserved word for word, with stage and source version |
 | Attribution | Author, reproducer, scope setter and review class when recorded; absence stays absent |
 | Engineering evidence class | Source/fixture, synthetic, windows, performance or human where applicable; separate from mathematical basis/check |

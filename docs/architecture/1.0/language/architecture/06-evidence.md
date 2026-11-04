@@ -12,12 +12,13 @@ What the stored envelope holds, facts or judgements, is LQ10, and chapter 05 car
 
 Sources: [the partition](../ecosystem-partition.md), section 8.1 and defaults 5, 6 and 20;
 [DT-L1](../../../../progress/1.0/design-table/topics/language-ecosystem.md) (M1, M2, R2-E1, R3-E1 to R3-E3, R3-M1, note
-N2); [the charter](../../../../progress/1.0/charter-2.0-draft.md), bar M3;
+N2, R4-M38, R4-M39); [the charter](../../../../progress/1.0/charter-2.0-draft.md), bar M3;
 [the label table](../evidence-import/README.md); chapters 01, 05 and 13.
 
-Evidence: the order and the theorems below are the mathematician's note N2 in DT-L1 round 3. By this chapter's own grades
-that note is (theorem, producer) until a model review reads it, and no person has reviewed it. The figures for the corpus
-are source evidence counted from Git blobs. The worked examples cite research records. No conformance test exists yet.
+Evidence: the order and the theorems below are the mathematician's note N2 in DT-L1 round 3, and I7 with Theorem D (b2)
+are its round 4 addition. By this chapter's own grades that note is (theorem, producer) until a model review reads it,
+and no person has reviewed it. The figures for the corpus are source evidence counted from Git blobs. The worked
+examples cite research records. No conformance test exists yet.
 
 ## 1. What a result states
 
@@ -58,7 +59,7 @@ are source evidence counted from Git blobs. The worked examples cite research re
   as AND(source leaf, transport lemma leaf), so reuse is visible in the graph. A fresh audit and an actual replay differ in
   what they cover, so they are different statements or a recorded fact. The grades therefore number at most 30, not 90.
 - **EVD.5 [D]** Job outcome is not evidence (KN7.3). A job can complete and leave a search incomplete, because a beam can
-  run to its depth and miss 228 descending words (stage 15). So completeness of a search is its own fact (EVD.12).
+  run to its depth and miss 228 descending words (stage 15). So completeness of a search is its own fact (EVD.13).
 - **EVD.6 [D]** Provenance travels with the evidence as data: author, reproducer, scope setter and review class, as stage
   18 records them per theorem. Absence stays absent (PS1.35). The `AGENTS.md` evidence kinds for engineering claims
   (source or fixture, synthetic, actual Windows/DirectX, performance) are a separate field, which the display never folds
@@ -69,10 +70,11 @@ are source evidence counted from Git blobs. The worked examples cite research re
   ```text
   Statement = {
     id:        StatementId,
-    form:      finite | universal | existence | mixed,
+    form:      finite | universal | existence | mixed(outer: forall | exists),
     negation:  StatementId?,
     subject:   Level,
     premises:  List<PremiseRef>,
+    guards:    List<{ class, name }>,
   }
 
   StatementId = stage-qualified, commit-pinned name | digest of a typed statement
@@ -88,12 +90,14 @@ are source evidence counted from Git blobs. The worked examples cite research re
   ```
 
 - **EVD.7 [D]** A *key* is a statement ID with its scope. Everything that discharges, refutes or transports works on keys.
-- **EVD.8 [D]** A statement ID must be injective on meanings. It binds every parameter, the puzzle and the level. An ID
-  that omitted k would let a proof for D[7] discharge a premise about D[9]. Two statements that mean the same under
-  different IDs stay different until a bridge lemma with its own ID links them. That is the safe direction.
-- **EVD.9 [D]** Statement form decides what can refute a claim (section 6), and a statement names its negation when it has
-  one. The pair is mutual. One record can settle both sides: the word `535:1,363:5,535:1,597:14` gives "finite instance"
-  for "a descent exists here" and "refuted" for "no descent exists here" (stage 15).
+- **EVD.8 [D]** A statement ID must be injective on meanings. It binds every parameter, every guard, the puzzle and the
+  level. An ID that omitted k would let a proof for D[7] discharge a premise about D[9]. Two statements that mean the
+  same under different IDs stay different until a bridge lemma with its own ID links them. That is the safe direction.
+- **EVD.9 [D]** Statement form decides what can refute a claim (section 6), and a statement names its negation when it
+  has one. The pair is mutual. One record can settle both sides: the word `535:1,363:5,535:1,597:14` gives "finite
+  instance" for "a descent exists here" and "refuted" for "no descent exists here" (stage 15). A statement whose
+  `covers` is not one_instance is never of form finite. A mixed statement names its outer quantifier, and its negation
+  has the other one.
 - **EVD.10 [D]** Every scope field is immutable, and no scope field is revision-bound context. Scope does not require an
   input digest. A theorem and a bound on D[k] have none. This replaces the earlier sentence that a stored scope "is an
   immutable input digest", which would have excluded every theorem (R3-M1).
@@ -116,10 +120,12 @@ are source evidence counted from Git blobs. The worked examples cite research re
 
   ScopeMembership = { key, member: the checked fact that an instance lies in the scope, check: Grade }
   Premise = { key, class: reachability_promise | open_hypothesis | model_assumption }
+  Leaf    = { grade, identity, covered: Covered? }
+  Covered = { covers: a value of Scope.covers, input: Digest<level>? }
   ```
 
-- **EVD.13 [D]** The facts a stored record holds, in addition to section 8.1's fields, are the seven R3-M1 named. Each of
-  them was shown to be needed by a case the earlier fields got wrong.
+- **EVD.13 [D]** The facts a stored record holds, in addition to section 8.1's fields, are nine: the seven R3-M1 named
+  and two that round 4 added. Each of them was shown to be needed by a case the earlier fields got wrong.
 
 | Fact | Why it is needed |
 | --- | --- |
@@ -130,6 +136,22 @@ are source evidence counted from Git blobs. The worked examples cite research re
 | Completeness or closure of a search | A completed job can leave a search incomplete (EVD.5) |
 | Premise class | A reachability promise is not an open hypothesis and not a model assumption |
 | Tool digest of each check, and the declared common base | "Independent" reads them (EVD.28); `macro.py` holds both `cert` and `check --replay` |
+| Covered set of a leaf | A finite computation can otherwise stand for a wider statement (I7) |
+| Guards of a statement | "Proved on D[k]" would otherwise hide a reachability promise (EVD.36) |
+
+- **EVD.59 [D]** `covered` is computed from the leaf's own record, never copied from the statement. Identical means
+  equal field by field, and digests at different levels are never identical (KN1.8).
+
+| Basis | `covered` |
+| --- | --- |
+| Exhaustive computation | `SearchRecord.declared` as search_set(family, alphabet, bounds), with the job's input digest |
+| Exact computation | The job's input: one_instance with its digest, or search_set for a declared list |
+| Certificate | The certificate's stated inputs (KN6.6, EVD.46); each checker kind states them |
+| Theorem, sample | Not read |
+
+  No row of the label table sets admitted domain, every reachable state or sample, so I7 (b) has no trigger on a
+  labelled row today. I7 (a) cannot be tested on the table, which has no `form` and no statement's `covers`. A
+  whole-record rule may add to this.
 
 - **EVD.14 [D]** The only inputs of a word that are not facts are four versioned tables: the order on grades, the invalid
   pairs, the threshold and the import table. So a word is a function of the facts and an edition. The proofs of section 4
@@ -142,13 +164,16 @@ are source evidence counted from Git blobs. The worked examples cite research re
   has one OR node. A *premise* is a node that holds when it is assumed or when a claim with the identical key holds.
 - **EVD.16 [D]** Arguments are immutable. A new record enters as a new node or a new OR child, and it changes nothing
   that was stored.
-- **EVD.17 [D]** A premise is discharged only by a claim with the identical key. Identity is by statement ID. An equivalent
-  statement under another ID is refused with `EVD:evidence.premise_unmet` until a bridge lemma exists. A universal reaches
-  an instance only through an AND node with the instance's membership check.
+- **EVD.17 [D]** A premise is discharged only by a claim with the identical key. Identity is by statement ID. An
+  equivalent statement under another ID is refused with `EVD:evidence.premise_unmet` until a bridge lemma exists. A
+  universal reaches an instance only through an AND node with the instance's membership check. A finite computation that
+  serves a proof of a universal statement has its own statement and key. It enters the universal's argument as a premise
+  discharged by that key, beside a theorem leaf saying why it suffices. A bridge lemma is such a theorem.
 - **EVD.18 [D]** A claim about a pinned input reaches another revision only by a re-run at that revision or by an exact
   transport that a lemma justifies. Offered elsewhere, it is refused with `EVD:evidence.scope_mismatch`. Exact transport
-  along a gauge is the reused leaf of EVD.4, with the gauge theorem and the checked relation Z = X·γ (KN1.16). A result on
-  a derived state keeps that state's reachability claim (KN2.13).
+  along a gauge is the reused leaf of EVD.4, with the gauge theorem and the checked relation Z = X·γ (KN1.16). A result
+  on a derived state keeps that state's reachability claim (KN2.13). A leaf that would meet I7 is refused at entry with
+  `EVD:evidence.scope_mismatch`. I7 is what a stored or imported record reads, because arguments are immutable (EVD.16).
 
 ## 4. The order on evidence
 
@@ -252,10 +277,10 @@ Non-domination forces a = a′, so Sat(a) = Sat(b), and antichains then give a =
 
 | Row | Condition | Word | Claim field |
 | --- | --- | --- | --- |
-| 0 | Any inconsistency I1 to I6 in Reach(S) | typed inconsistency | none |
+| 0 | Any inconsistency I1 to I7 in Reach(S) | typed inconsistency | none |
 | 1 | stands₀(neg S) | refuted | refuted |
 | 2 | stands₀(S), and the covered set is one finite instance or a declared search set | finite instance | proved |
-| 3 | stands₀(S), and the covered set is an admitted domain or every reachable state | proved, with a mandatory scope phrase ("proved on D[k]") | proved |
+| 3 | stands₀(S), and the covered set is an admitted domain or every reachable state | proved, with a mandatory scope phrase ("proved on D[k], for reachable inputs") | proved |
 | 4 | stands₁(S) | conditional, premises named | conditional |
 | 5 | A search record for S or neg S with complete = no and a stop that is a deterministic budget or a declared limit | not found within budget | open |
 | 6 | A job for S or neg S ended cancelled, in error, by wall clock or resource stop, or cut off on a non-search job | incomplete | open |
@@ -267,10 +292,17 @@ Non-domination forces a = a′, so Sat(a) = Sat(b), and antichains then give a =
   finite instance with basis theorem shown; promised to conditional; refuted to refuted; open to open.
 - **EVD.35 [D]** A ceiling of the product is not a declared limit, so it reads row 6, matching the boundary between the
   `budget` and `resource_limit` categories (ERR.16).
-- **EVD.36 [D]** A display phrase carries the claim's scope. A mapped word without its scope text overstates the claim, and
-  a scope that cannot be typed keeps the row recorded (R3-E3). Every row prints its scope in an explanation, row 2
+- **EVD.36 [D]** A display phrase carries the claim's scope. A mapped word without its scope text overstates the claim,
+  and a scope that cannot be typed keeps the row recorded (R3-E3). Every row prints its scope in an explanation, row 2
   included: "finite instance" alone hides "three letters of family R only". Row 3's word cannot be shown without its
-  phrase. The `claim` field is never a display word.
+  phrase. The `claim` field is never a display word. The phrase names the covered set and every *guard* of the
+  statement, and `scope_phrase` is computed from `covers` and `guards`. A guard is a hypothesis that meets three
+  conditions: the statement's own text holds it, so it is no node of the graph; the membership test of `covers` does not
+  decide it; and applying the statement to an instance must discharge it as a premise (EVD.17). A guard reads by its
+  premise class: a reachability promise as "for reachable inputs", an open hypothesis as "given" and its name, a model
+  assumption as "under" and its name. A hypothesis the membership test decides is not a guard, because the set's name
+  already says it. A premise that is a node of the graph is not a guard, because row 4 names it. Where the covered set
+  is an admitted domain or every reachable state, a statement whose guards cannot be typed keeps the row recorded.
 - **EVD.37 [D]** A conditional refutation is a conditional neg S. S itself reads open, and no further Claim value is needed.
 
   ```text
@@ -289,7 +321,7 @@ Non-domination forces a = a′, so Sat(a) = Sat(b), and antichains then give a =
 
 ### Inconsistencies
 
-- **EVD.40 [D]** Row 0 reads the following. I1 to I4 and I6 read `EVD:evidence.inconsistent_fields`, and I5 reads
+- **EVD.40 [D]** Row 0 reads the following. I1 to I4, I6 and I7 read `EVD:evidence.inconsistent_fields`, and I5 reads
   `EVD:evidence.negative_without_completion`.
 
 | Case | Inconsistency |
@@ -300,9 +332,17 @@ Non-domination forces a = a′, so Sat(a) = Sat(b), and antichains then give a =
 | I4 | stands₀(S) and stands₀(neg S) |
 | I5 | A negative or exhaustive leaf whose search record says complete = no, or says complete = yes with job outcome cancelled, cut off, error or not run |
 | I6 | A refuting leaf on a universal statement with no scope-membership fact |
+| I7 | (a) A leaf of basis certificate, exhaustive computation or exact computation in an argument of a universal statement, or of a mixed statement with outer quantifier universal, whose `covered` is not identical to the statement's `covers` and `input`. In a reused leaf (EVD.4) the source leaf is compared after the transport lemma's checked relation. (b) A leaf of basis exhaustive computation or exact computation whose `covered` is neither one_instance nor search_set. (c) A statement of form finite whose `covers` is not one_instance. |
+
+  A leaf is in an argument of S when it is the direct child of S's OR node, or a child of an AND node under it. A child
+  reached through a premise or another key belongs to that key's statement.
 
 - **EVD.41 [D]** Job outcome "not stated" is no contradiction. It makes a negative leaf inert, which blocks the negative
-  claim, and the word stays row 7 with the source label. A witness from such a job counts once it is checked.
+  claim, and the word stays row 7 with the source label. A witness from such a job counts once it is checked. Two
+  further absences are no contradiction. A leaf of basis certificate, exhaustive computation or exact computation with
+  no `covered` fact, in an argument I7 (a) reads, is inert. A statement with no `form` fact counts as universal for I7
+  (a), and a leaf that I7 (a) would flag there is inert instead. An inert leaf counts at no threshold, and the word
+  reads as it would without it.
 
 ### Non-upgrade
 
@@ -313,9 +353,18 @@ Non-domination forces a = a′, so Sat(a) = Sat(b), and antichains then give a =
 - (b) For any 𝒰 ⊆ 𝒰₀, a sample leaf or a job outcome never moves S from rows 5 to 7 into rows 1 to 4.
   *Proof.* A sample leaf's grade is outside 𝒰, so it is false at ω₀ and ω₁. As a new OR child it changes neither pass, nor
   Ref. A job outcome is not a leaf. Rows 1 to 4 read only the passes. ∎
-- (c1) Scoped negative. Its covered set is a declared search set, and scope is part of the key and immutable, so its word
-  is at most "finite instance". The full-family statement has a different key, and the only edge to it is a bridge lemma
-  with its own ID (stage 16 `PROOFS.md`, LB5). An upgrade happens only by a proof.
+- (b2) Narrower support. Let S be universal, mixed with outer quantifier universal, or without a `form` fact, and let 𝒰
+  ⊆ 𝒰₀. A leaf of basis certificate, exhaustive computation or exact computation in an argument of S, whose `covered` is
+  absent or, as I7 compares it, not identical to S's `covers` and `input`, never moves S from rows 5 to 7 into rows 1 to
+  4. The same holds for refuting an existence statement, whose negation is universal. *Proof.* If S has a form and
+  `covered` is present, I7 holds, and row 0 comes first in the decision list. Otherwise the leaf is inert (EVD.41), so
+  it is false at ω₀ and ω₁ as a sample leaf is, and it changes neither pass, nor Ref. Rows 1 to 4 read only the passes.
+  ∎ (b2) concerns recorded fields: a false `covered` is a false record, which no word can detect, and the check field is
+  the defence.
+- (c1) Scoped negative. Its covered set is a declared search set, and scope is part of the key and immutable, so its
+  word is at most "finite instance". The full-family statement has a different key. I7 keeps a leaf of the narrower
+  search out of its arguments, so the only edge to it is a bridge lemma with its own ID (stage 16 `PROOFS.md`, LB5). An
+  upgrade happens only by a proof.
 - (c2) Reachability promise. T(Z) = AND(theorem on D[k], admission(Z), reach(Z)). val(reach(Z)) at T = ∅ is nonempty only
   through a claim with the identical key: a journal from solved, a checked witness or a theorem. So T(Z) stays conditional
   until that claim exists.
@@ -328,7 +377,9 @@ Non-domination forces a = a′, so Sat(a) = Sat(b), and antichains then give a =
   - One exactly checked counterexample refutes a universal statement, however it was found. It needs checked scope
     membership and identical identity fields. A failure at a state whose membership is unknown refutes nothing (I6).
   - An existence statement is refuted only by a proof or a complete certificate.
-  - A mixed statement is refuted only by a witness x plus a complete negative at x.
+  - A mixed statement with outer quantifier universal is refuted only by a witness x plus a complete negative at x. One
+    with outer quantifier existential is refuted as an existence statement is, only by a proof or a complete
+    certificate.
 - **EVD.43 [P LQ3]** A negative is proved only for its declared set, by a completed exhaustive search, by a closure-set
   certificate or by a theorem. The floor lemma (`research/jumbling/theory/open-problems.md`) and the all-word exclusions
   on record are negatives proved by a theorem. The floor lemma needs a stage-qualified name before it serves as evidence
@@ -428,9 +479,9 @@ share the exact geometry and model files, which is the declared common base. `ma
 
 | Statement | Word |
 | --- | --- |
-| The fixed-L implication | proved: (theorem, model review) |
+| The fixed-L implication | proved, given Sel: (theorem, model review) |
 | The bound "cost ≤ L·R_L(Z₀)", which is AND(implication, premise Sel) | conditional, on Sel |
-| U(h, k) on D[k] | "proved on D[k]", with the reachability promise inside the statement |
+| U(h, k) on D[k] | "proved on D[k], for reachable inputs": the reachability promise is a guard of the statement |
 | U(h, k) applied to a concrete Z | conditional on reach(Z) |
 | ¬Adm_k(Z) for a rejected Z | finite instance; T(Z) reads open |
 
@@ -455,7 +506,7 @@ here", and S₄ is neg E₃.
   runs the checkers. The word function, the summaries and the passes are pure library code over those facts, with a pinned
   edition of the four tables. They have no session effect, so a bug in them can give a wrong word and cannot change a
   session (overview, section 7).
-- **EVD.55 [P LQ10]** Under LQ10's recommendation the envelope stores facts and derives judgements. The seven facts of
+- **EVD.55 [P LQ10]** Under LQ10's recommendation the envelope stores facts and derives judgements. The nine facts of
   EVD.13 enter the field list of PS1.36. Which word encoding the data core uses stays open (R3-E4). Under the judgement
   alternative the envelope stores the claim fields of EVD.1, and freezes only after LQ3 and this chapter are settled.
 - **EVD.56 [D]** Evidence never grants anything. No policy row reads a word, and a stronger claim admits no preview (INV-5,
@@ -471,7 +522,7 @@ here", and S₄ is neg E₃.
 | --- | --- |
 | `EVD:evidence.premise_unmet` | A premise is cited with no claim of the identical key (EVD.17) |
 | `EVD:evidence.scope_mismatch` | A claim is offered outside its immutable scope (EVD.18) |
-| `EVD:evidence.inconsistent_fields` | Row 0 reads I1 to I4 or I6 (EVD.40) |
+| `EVD:evidence.inconsistent_fields` | Row 0 reads I1 to I4, I6 or I7 (EVD.40) |
 | `EVD:evidence.negative_without_completion` | Row 0 reads I5, or a negative is offered from a job that did not complete its declared coverage (EVD.40, EVD.43) |
 
   Other chapters' evidence rows stay theirs: `KN6:evidence.*`, `LB5:evidence.reduction_scope_mismatch`,
@@ -493,29 +544,31 @@ No conformance test exists yet.
 | CT-EVD-06 | A record that adds no edge into Reach(S) changes no word (Theorem D (a)) | source |
 | CT-EVD-07 | A pure child cycle reads open with a diagnostic, and a circular discharge stays conditional (EVD.26) | source |
 | CT-EVD-08 | Discharge by an identical key succeeds; an equivalent statement under another ID is refused until a bridge lemma exists, and a proof for D[7] does not discharge D[9] | source |
-| CT-EVD-09 | Each of I1 to I6 raises its code, and "not stated" does not (EVD.40, EVD.41) | source |
+| CT-EVD-09 | Each of I1 to I7 raises its code, and "not stated" does not (EVD.40, EVD.41) | source |
 | CT-EVD-10 | A scope digest coarser than the subject level is refused with the solved and centre-0-turned pair (EVD.11) | synthetic |
-| CT-EVD-11 | A universal is refuted by one checked counterexample with membership, and not without it; an existence statement is not refuted by a cut-off search; a mixed statement needs a witness and a complete negative (EVD.42) | source |
+| CT-EVD-11 | A universal is refuted by one checked counterexample with membership, and not without it; an existence statement is not refuted by a cut-off search; a mixed statement with outer quantifier universal needs a witness and a complete negative, and one with outer quantifier existential a proof or a complete certificate (EVD.42) | source |
 | CT-EVD-12 | E1, E2 and E3 give the words of section 9 from their records | source |
 | CT-EVD-13 | A checked witness found by sampling proves its existence statement, and two samples stay below every threshold (EVD.27, EVD.44) | source |
 | CT-EVD-14 | The label table covers every (format, field, value) of a corpus read from Git blobs; each row is mapped or recorded with a reason, and a run from a checkout is refused (EVD.48) | source |
-| CT-EVD-15 | A mapped row keeps its scope text, and a row with an untypable scope stays recorded (EVD.36) | source |
+| CT-EVD-15 | A mapped row keeps its scope text, and a row with an untypable scope stays recorded. U(h, k) on D[k] reads "proved on D[k], for reachable inputs", and a statement whose guards cannot be typed keeps the row recorded (EVD.36) | source |
 | CT-EVD-16 | A whole-record rule maps `stopped` by family, and a word alone maps nothing (EVD.51) | source |
 | CT-EVD-17 | V14, P13, K1 and H1 hold with their limits: a mode from a key creates no transport edge, K1 without a covering check reads none, an open reach row discharges nothing | source |
 | CT-EVD-18 | Reused evidence appears as AND(source leaf, transport leaf), and a transport along a gauge names its checked relation (EVD.4, EVD.18) | source |
 | CT-EVD-19 | A `CheckReport` pass adds one leaf with its digests, a fail removes it and refutes nothing, `not_applicable` adds none (EVD.31, EVD.46) | source |
 | CT-EVD-20 | The word function runs with no session effect, and changing a table edition changes words only through that edition (EVD.14, EVD.54) | source |
 | CT-EVD-21 | No policy row, capability or commit path reads a word or a claim (EVD.56) | source |
+| CT-EVD-22 | A leaf narrower than its statement reads row 0 or is refused at entry, an absent `covered` is inert, and a mixed(exists) refutation passes (EVD.18, EVD.40, EVD.41, EVD.59, Theorem D (b2)) | source |
 
 ## 13. Open items
 
 | Item | Clauses | What decides it |
 | --- | --- | --- |
 | LQ3 | EVD.1 to EVD.3, EVD.19, EVD.21, EVD.29, EVD.32, EVD.42 to EVD.44 | The owner. Whether to raise the threshold above 𝒰₀, and what the invalid pairs are |
-| LQ10 | EVD.55 | The owner. Facts or judgements in the envelope, and the word encoding (R3-E4) |
+| LQ10 | EVD.55 | The owner. Facts or judgements in the envelope, and the word encoding (R3-E4). Under the judgement alternative I7 needs the same facts in whatever stores the justification |
 | LQ15 | EVD.3 | The owner. Whether formal proof is a live value in 1.0 |
 | PS3.12 | EVD.53 | This chapter and EN4. Dispatch of absent-format records |
 | The label table | EVD.49 to EVD.52 | A draft. It freezes with the edition that first uses it |
+| The `form` fact | EVD.9, EVD.40, EVD.42 | The label table has no producer for `form`, though EVD.42, I6 and I7 read it. CT-EVD-12 therefore needs the forms of E1 to E3 from a whole-record rule or from the test's own statements |
 
 Under LQ3's alternatives this chapter changes as follows. A simpler model with fewer fields keeps sections 5 and 6 with fewer
 rows, and needs its own mapping of the labels on record. Judgements stored directly remove EVD.14's freedom to change a table

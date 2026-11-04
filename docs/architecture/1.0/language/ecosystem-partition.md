@@ -261,9 +261,9 @@ Rules (draft; the full text states them, with proofs where they need them):
   - One argument is summarised by its set of weakest leaves.
   - Independent arguments for one statement all stay unless one dominates another, so a statement's summary is a set of
     alternatives. Nothing adds up.
-  - A stored record also holds seven facts (DT-L1 R3-M1): statement form, negation pair, subject level, scope-membership
-    evidence, completeness of a search apart from the job outcome, premise class, and the tool digest of each check with
-    the declared common base.
+  - A stored record also holds nine facts (DT-L1 R3-M1 and round 4): statement form, negation pair, subject level,
+    scope-membership evidence, completeness of a search apart from the job outcome, premise class, the tool digest of each
+    check with the declared common base, the covered set of a leaf and the guards of a statement.
   - What the stored envelope holds is part of LQ10: facts, with the order, the summaries and the five words derived as
     versioned functions (DT-L1 R2-E1), or the judgements themselves (DT-L1 M2). Section 13 gives both.
 - A premise is discharged only by a claim with the identical statement and scope. Identity is by statement ID: a
@@ -273,7 +273,8 @@ Rules (draft; the full text states them, with proofs where they need them):
   - One exactly checked counterexample refutes a universal statement, however it was found, given checked scope
     membership and identical identity fields.
   - An existence statement is refuted only by a proof or a complete certificate.
-  - A mixed statement is refuted only by a witness plus a complete negative at that witness.
+  - A mixed statement with an outer universal is refuted only by a witness plus a complete negative at that witness; one
+    with an outer existential, as an existence statement is.
 - A negative is proved only for its declared set, by a completed exhaustive search, a closure-set certificate or a
   theorem.
   - A cut-off search reads open and keeps its search record.
@@ -951,3 +952,5 @@ structure, and LQ16 gains one sentence. The cards are in
 | LB6 | The instance; generated parts | The instance's steps are checked from named givens, and the parts a person writes are named | R4-M1, R4-M17 |
 | EV5 | Six learning steps | Seven: step 1 includes reading results, and a step for reading a principle record comes before writing tools | R4-M45, R4-M47 |
 | LQ16 | Nothing on the theory book | The cut also settles whether the theory book covers the language's libraries | R4-M49 |
+| 8.1 | Seven more facts in a stored record | Nine: a leaf's covered set and a statement's guards join them | R4-M38, R4-M39 |
+| 8.1 | A mixed statement is refuted only by a witness plus a complete negative | Split by outer quantifier | R4-M39 |

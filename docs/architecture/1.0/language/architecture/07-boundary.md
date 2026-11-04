@@ -69,9 +69,9 @@ These are the facts every option faces. They come from DT-L1 M5 and R2-E3 as R3-
   whether every program's output is a solving step. A budgeted program always stops, so one run is decided by running
   it, and only a check over all states stays out of reach. Budgets make runs finite. They do not make "searches" a
   property of what a program computes, and a budget is not a boundary mechanism.
-- **BND.10 [D]** A static fact can answer a question over twists. In_c and Out_c are kept by a twist of c and
-  A_c ≤ min(In_c, Out_c), so N_c ≥ F_c: when N_c equals its floor, no twist of cap c alone lowers N_c, and nothing was
-  tried. A piece's domain at height 2 fixes the twists at each own holder that lower that piece.
+- **BND.10 [D]** A static fact can answer a question over twists. In_c and Out_c are kept by a twist of c and A_c ≤
+  min(In_c, Out_c), so N_c ≥ |In_c − Out_c|, the floor: when N_c equals its floor, no twist of cap c alone lowers N_c,
+  and nothing was tried. A piece's domain at height 2 fixes the twists at each own holder that lower that piece.
 - **BND.11 [D]** A composition can answer one too. Any composition-closed class that contains the ν read, the correction
   rows and reduction over F2 and F5 contains the function that returns the correction combination, which DT-J1's filter
   put out. The research's `solve(b2, b5)` is that function. "Searches" is intensional: a lookup table computes the same

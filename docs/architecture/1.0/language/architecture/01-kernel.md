@@ -188,7 +188,7 @@ operation model_info(identity: IdentityBlock) -> ModelInfo
 | Pose only | The pose table; the pose digest; the moved count; the orientation index; the journal; `v`; reachability; label and retained checkpoints, through their reachability clause; budgeted `uncertain`; pose groups |
 | Sticker class | Labelled posed stickers. On the lattice: labels, ν, the sticker test and the label digest |
 | Region class | Each piece's posed region, lattice flag, domain, tree positions and heights; inside sets and straddlers as sets of pieces; left multipliers |
-| Shape | Occupied regions; admissibility of every word; N, N_c, In_c, Out_c, F_c; Φ, q_t, H; the off count; multisets of heights by type; anything defined only from these, such as the repair list |
+| Shape | Occupied regions; admissibility of every word; N, N_c, In_c, Out_c, the floor; Φ, q_t, H; the off count; multisets of heights by type; anything defined only from these, such as the repair list |
 
 - **KN1.16 [D]** Exact transport. A claim at a level moves along that level's subgroup with no re-run. The reused leaf is
   the conjunction of the source leaf, Theorem 1 and the checked relation Z = X·γ (N1, B.7; chapter 06). Legality and

@@ -1964,3 +1964,865 @@ The items marked `needs_owner` go to the owner once, with the topic. None of the
   None of it is Windows, DirectX, input or performance evidence.
 - The explainers P-E6 to P-E9, P-M6 to P-M10 and the corrected P-M1 to P-M5 go to the owner with the full text.
 - The partition is corrected as listed above, and its section 19 records the corrections.
+
+## Round 4
+
+The kickoff has the mathematician oversee what lets a user understand a principle: the documents, the explanations, the
+source tracing and the learning path, because the owner's 3 November principle presumes that understanding. Round 4 is
+that check of the full text, at `683c863a`. The record and its follow-up are appended with their headings lowered two
+levels, and two lines are changed: each opened a list of files with a private path, and those paths are now relative to
+the repository root.
+
+### Mathematician: the understanding parts
+
+### R4: the mathematician's check of the understanding parts
+
+**Verdict.** The core is sound and should stay: LB6.2, EV5.3, EV5.4, BND.12, BND.13, BND.72 and Theorem D state the hard facts correctly. A decomposition gives structure and not reasons, nothing certifies understanding, and a recorded sample never upgrades a claim. The text around that core does not match it yet, so I would not accept it as it stands. Four sentences promise what software cannot deliver. The `PrincipleRecord` has the right shape, but a real tool cannot fill it until "by hand" is defined and its fields are typed. An explanation can show an unreviewed result as "proved" today, and two gaps let a premise-carrying or finite result pass the same way. Eight glossary findings state something false, including Gauge and Frame; Standing is right in substance. The learning path is six step names, so its order cannot be verified, and where it can be tested it teaches evidence too late. Several errors began in my own cards M6, R3-M4 and N2. No fix needs an option under LQ1 to LQ21; where a finding reaches one, I stop there. Totals are 14 blockers, 29 major, 11 minor and 1 nit, and most blockers are one-line wording fixes.
+
+**Reading notes**
+- Line numbers are at HEAD `683c863a`. The source moved from `f7bb5d3f` during this check. In the cited files, chapters 03 and 04 changed only by reflowing and one added sentence (ch03:45-46), which affects no finding.
+- I wrote no file and ran no engine computation. Numbers come from the cited records, plus my arithmetic on them.
+- "My inference" marks anything I did not read directly in a source.
+
+**Short names.** All paths are relative to the repository root.
+- partition: `docs\architecture\1.0\language\ecosystem-partition.md`
+- ch00, ch01, ch03, ch04, ch06, ch07, ch10: `docs\architecture\1.0\language\architecture\00-overview.md`, `01-kernel.md`, `03-libraries.md`, `04-environment.md`, `06-evidence.md`, `07-boundary.md`, `10-renderer-platform.md`
+- DT-L1: `docs\progress\1.0\design-table\topics\language-ecosystem.md`
+- terms.json, build.py: `docs\progress\1.0\glossary\terms.json`, `docs\progress\1.0\glossary\build.py`
+- owner page: `docs\wiki\decisions\owner-decisions-2026-11-03.md`
+- contract: `research\jumbling\state-contract.md`
+- restoration: `research\jumbling\theory\restoration.md`
+- card 6, card 7: `research\jumbling\theory\cards\card-6-blocking-structure.md`, `card-7-lowering-machine.md`
+- PROOFS, t3p.py: `research\jumbling\restoration\14-blocking-structure\PROOFS.md`, `scripts\t3p.py` in the same folder
+- stage 14, 15, 18 and 19 README: `README.md` in `research\jumbling\restoration\14-blocking-structure\`, `15-lowering-machine\`, `18-tail-completion\`, `19-height-depth-framework\`
+- manual 02, manual 03: `research\jumbling\manual\02-descent.md`, `03-tail.md`
+- tutorial: `research\jumbling\tutorial\README.md`, `02-bulk.md`
+- open problems: `research\jumbling\theory\open-problems.md`
+- tex: `research\Full_600cell_Puzzle_Theory.tex`
+
+#### Question 1: does the `PrincipleRecord` work?
+
+**Answer.** Nearly. The seven hand-written parts cover what a learner needs, and no part is mathematically meaningless. Three things stop it today:
+- It never says which part is the principle, and `reason` can be a bare ID.
+- `by hand`, `step map`, `justification` and `specification` are ill-defined as written.
+- Several required parts do not exist for some real tools, so admission would refuse an honest record.
+
+**Test: `t3p.py check` from stage 14.** My mapping: its nearest home is LB5's theorem-schema instance check (ch03:253).
+
+| Part | How it fills | Fit |
+| --- | --- | --- |
+| specification | check(Z, certificate) on poses in Γ(Λ), since heights need the tree. Answer: passed, or the failed hypotheses of the first failing round (t3p.py:340-343, 398-406) | No empty answer exists; output type missing (M4, M5) |
+| justification | Theorem T3P with Lemma A (PROOFS:72-96). Separately the code replays the word (t3p.py:352-382), and that replay needs no theorem | Two arguments, not one reference (M3) |
+| instance | 7304 stop `ac127dc3…`, x = 522, h = 14, helpers (344, 9) and (451, 55): F = 22, D = 70, Φ falls from 1594 to 1498 (card 6, C7) | Fits |
+| decomposition | Label table, inside sets, tree arithmetic, digraph test, sums, replay | Fits |
+| step map | P0 to P4 map to nodes. Lemma A's induction has no node, and the label table has no proof step | A relation, not a map (M2) |
+| reason | P0 and P1 let each helper act alone; labels are functions of the pose, so the counts at x add; Lemma Φ gives 2(F − D) at the last letter | Fits, if prose is allowed (M2) |
+| failure | Overlapping inside sets at 229 and 336 break P0 (stage 14 README:407-408). F ≥ D gives no descent. Dropping P2 gives T3PE, a weaker theorem and not a break (stage 15 README:66-68) | "What breaks" is too narrow (M5) |
+| not meant | A fail concerns this certificate at this Z only; "15 of the 131 descend" outside the family (card 7:19-20) | Fits |
+| derivation | 1594 + 0 + 2(22 − 70) = 1498. The 0 is my arithmetic from these figures. 22 and 70 come from a 177,120 × 600 label table | Not hand-checkable as written (M1) |
+| prerequisites | Branch, clean, foreign load, lowering count, tame | No correct glossary rows (M52) |
+| leaf specs | Exact evaluator, tree arithmetic | Fits (see M9) |
+
+**Contrast cases**
+- The floor, LB6.2's own example, passes once `givens` exists. Cap 30 has In 840, Out 737, A 0 (manual 02:114-118). A person can check 840 + 737 = 1,577, 840 − 737 = 103 and 30,286 − 1,474 = 28,812. Nobody can check 840 itself.
+- WC-PLAN (stage 18) has steps of up to 871,582 letters, and "a person cannot" play them (manual 03:62-63). It is a research tier candidate. If it shipped, INV-12 would apply and admission would refuse it. I stop at LQ16.
+- D[k] (stage 19) has no producer and no implementation, so nothing exists to generate a decomposition from.
+
+**R4-M1 (blocker). "By hand" is undefined and, read literally, undeliverable.** LB6.1, ch03:378-381; `derivation`, ch03:400; partition:114; CT-LB6-04, ch03:523.
+No person can verify 840 cut cells or a count from that label table, and ch03:380-381 rightly excludes a toy geometry.
+Replacement:
+- Split `derivation` into `givens` (facts read from named leaf calls or certificates) and `steps` (what a person verifies from the givens, with the step count).
+- LB6.1: "one small instance on the real geometry whose steps a person can check by hand from named givens".
+- Add: "A digest is never a step."
+
+Any ceiling on the step count is the owner's; I propose no number.
+
+**R4-M2 (major). `step map` and `reason` are not well defined.** ch03:396-397.
+- A map from nodes to lemma steps can be neither total nor onto. The floor's proof has three steps (N_c = In_c + Out_c − 2A_c; A_c ≤ min; a twist keeps In_c and Out_c), and the third has no node.
+- Statement IDs name statements (ch06:78), so nothing addresses a step inside a proof.
+- "By statement ID" permits a bare ID, and an ID is not a reason.
+
+Replacement:
+- "`step map`: a relation between nodes and (statement ID, step label) that reports the unmapped items on both sides."
+- "`reason`: the statement ID and a short proof idea in glossary terms at or below the record's level."
+- Add to LB6.2: "The principle of a tool is the statement named in `reason`, with its hypotheses." This is a proposal, and its wording is preference.
+
+**R4-M3 (major). `justification` assumes one lemma or certificate per tool.** ch03:392.
+Theorem MC certifies a word event by event (stage 15 README:61-65), so its evidence is per output. U2's "take the most misaligned first" (restoration:103) has no lemma. A tracking tool is true by definition. `t3p.py check` has two arguments.
+Replacement: "`justification`: a list of arguments, each a lemma, a per-output certificate kind, a replay or "by definition", with an evidence reference where one exists."
+
+**R4-M4 (major). `specification` lacks what a reader needs to use the answer.** ch03:391.
+It has no output type, puzzle, menu, level (KN1.15), parameters, tie rule or budget dependence. "Function" also fails for P*, a procedure with a key, E₀ = 20 and beam 64 (stage 15 README:168-189).
+Replacement: "`specification`: function or declared procedure; inputs, parameters and budget; output type; puzzle, menu and level; domain; tie rule; empty-answer meaning; negative-answer scope."
+
+**R4-M5 (major). Required parts may not exist, yet admission refuses incompleteness.** ch03:398, ch03:410.
+A check has no empty answer. A definition has no hypothesis. Dropping a hypothesis can give a weaker theorem or an open question.
+Replacement: "Every part admits a typed "none, because ...". `failure` is given per hypothesis, as a concrete counterexample, a weaker conclusion or "necessity open"."
+
+**R4-M6 (major). No rule ties a tool's domain to its lemma's scope.** ch03:391-392.
+T3 is stated on Γ(Λ) (restoration:25). In free mode ω = (2,0,0) at cap 0 has heights (0,0) and is not in K⁺ (DT-L1:1653, :1659). A height-based lattice test claiming "every pose" and citing T3 would be wrong there, and the record format would accept it.
+Replacement: "The domain lies inside the cited statement's scope, or the record names the part outside it and what the answer means there."
+
+**R4-M7 (major). Binding to the module digest alone is too weak.** ch03:384.
+A dependency or kernel change leaves that digest unchanged while the decomposition changes, and a regenerated graph can strand the hand-written step map.
+Replacement: "The record is bound to the module digest, its lockfile closure, the model identity and its statement IDs. A changed decomposition marks the hand-written parts stale."
+
+**R4-M8 (minor). The floor example cites no pinned statement.** ch03:385-387; EVD.43, ch06:332; DT-L1:1479.
+The proof exists: tutorial `02-bulk.md`:94-99 ("proved (model review only)"), manual 02:34-36 and open problems:125, restated in BND.10. It has no stage-qualified name, which EVD.2 requires for basis theorem.
+Replacement: cite open problems:125 in LB6.2 and EVD.43, and name the statement before it serves as evidence.
+
+**R4-M9 (minor). Three small rules are missing.** ch03:401-402, ch03:408.
+Replacement:
+- "Prerequisite records form a DAG, and each prerequisite term sits at or below the record's level."
+- "A leaf specification names the oracle test that covers it."
+- "An over-approximated call edge is marked "may call"."
+
+#### Question 2: does any clause promise too much?
+
+**Answer.** Yes. No clause says outright that software certifies understanding, but INV-12's title and EV5.1's "alone" imply it, and "authored" and `author: own` imply authorship. No clause says a decomposition supplies reasons, but INV-12, the glossary row and CT-EV5-05 leave the reasons out.
+
+**R4-M10 (blocker). "Understanding is a deliverable."** partition:110, :117; EV5.1, ch04:418-420; origin my M6, DT-L1:447.
+This promises a state of a person as a product. "Alone" implies that a combination could establish it, which contradicts EV5.3 (ch04:435-436) and BND.72. Two identical records can differ in what the person understood (BND.12), so no combination helps. "This understanding" also slides from built-in tools to the solver's own tool.
+Replacement:
+- INV-12 title: "The means of understanding are a deliverable."
+- EV5.1: "Nothing the software records, alone or together, establishes that a person understands a principle, and none of it decides the joint boundary."
+- partition:117: "The 3 November principle presumes that a solver understands their tool's principle. The program can supply only the means."
+
+**R4-M11 (blocker). BND.82 fails in both halves.** ch07:596-597; also ch07:545, partition:563, partition:588, ch07:511.
+- A record cannot describe "what a solve used": a retyped search result appears as the solver's word (BND.13, BND.35, BND.76).
+- "Ships no solver" presets LQ16. Partition:563 says "The shipped research tier (ready-made search, strategies)" in the same row as "the program ships no solver". ch03:251 lists P* and WC-PLAN as candidates, and BND.74 question 7 is open.
+- The same overreach sits in BM4 (partition:552), BND.35 (ch07:275) and Assistance summary (ch04:662).
+
+Replacement:
+- BND.82: "The boundary describes what the system recorded about a solve, and says what it cannot record. Under the interim reading, nothing shipped in the solving profile chooses a solving word by itself."
+- BM4 and BND.35: "which assistance classes the system recorded".
+- Assistance summary: "The per-solve account of the assistance the system recorded."
+- BND.70 and the BS2 cells: "the solving profile ships no solver".
+
+Whether a research tier ships is LQ16, and I stop there.
+
+**R4-M12 (blocker). A bug can make a claim read as proved.** ch00:226-227.
+EVD.54 says the word function is library code and "a bug in them can give a wrong word" (ch06:453-454), and a user module can say anything (ch00:221).
+Replacement: "A bug in the language can make a tool lie, and a bug in the word function can show a wrong word. It cannot corrupt a session, commit a word the solver did not see, or change a stored claim."
+Proposal: "An evidence word reaches a display only through `word()` on a key; any other program text is shown as the program's own." I found no such clause, by grep only.
+
+**R4-M13 (blocker). "Every result can be traced to the primitives."** partition:116; compare ch03:379-380.
+Stage 19's archive holds no executable producers (stage 19 README:188-192; partition:457), so an imported result cannot reach primitives. "Reported" results have no committed program (ch06:400). EV2.9 and EV2.12 are open.
+Replacement: "Every result the runtime produces can be traced to primitives and evidence. An imported result traces to its stored bytes and source label, and the trace says that its producer is absent."
+
+**R4-M14 (major). Names imply a measurement.** "Understanding labels" (ch03:454), "understanding gate" (ch04:471, ch04:507-508), "A checkable principle" (ch03:564), "principle check" (ch03:412).
+None is defined, and each reads as a test of understanding.
+Replacement: "competence results", "competence gate", "A principle record stays required", "no inherited pass, cost approval or record".
+
+**R4-M15 (major). "Authorship" contradicts BND.18 and BND.20.** partition:562-565; ch07:510-513; BND.23, ch07:162; ch03:469.
+BND.20's own counterexample applies: text copied by hand reads `own`.
+Replacement: "Author class (BND.18): created or forked locally. It records how the bytes arrived, not who thought of them." ch03:469: "chapter 07's author-class mechanism". The field name `author` is preference.
+
+**R4-M16 (major). The solver's own tool has no record and no defined principle.** EV5.9, ch04:469-473; partition:564; ch07:512.
+Owner decision 6 concerns the solver's tool, but LB6 covers built-ins only and "that principle" has no map from a tool. My inference: code cannot supply that map, because a closed formula for the floor and a loop over 60 items have different call graphs and one principle.
+Replacement, added to EV5.9: "No source defines which principle a solver's tool embodies. Any such map belongs to the joint setting." I stop at LQ2.
+
+**R4-M17 (major). The hand-written parts exist only in LB6.2.** partition:111-115, :214; ch03:377-381; ch04:642; CT-EV5-01, ch04:788; CT-EV5-05, ch04:792; partition section 19.
+A record with no `reason` satisfies INV-12 and CT-EV5-01, and only CT-LB6-01 catches it. CT-EV5-05 tests "to its primitives", which is structure.
+Replacement:
+- Row: "A tool's specification, justification, worked instance, generated decomposition and the parts a person writes: step map, reason, failure, what an answer does not mean, derivation, prerequisites and leaf specifications."
+- CT-EV5-05: "to its primitives and its reasons".
+- Add the hand parts to INV-12 and to section 19.
+
+**R4-M18 (major). "A fixture proves numbers."** ch03:408-409; origin my DT-L1:1485.
+This conflicts with EV5.4's "source evidence" (ch04:442-444). Nothing says where expected claims come from, so a fixture can test a module against its own output.
+Replacement: "A fixture pass shows that the module reproduced the expected claims at that input. The expected claims come from the written derivation, never from the module's own output."
+
+**R4-M19 (major). The [B] tags overstate the record's status.** ch03:377; ch04:417 (the understanding sentence); ch04:429; partition:40.
+[B] means restating "a source in force" (ch00:66). INV-12 sits on a page marked "Not accepted" (partition:3-4), and no owner text names a principle record (DT-L1:46-50; owner page:46-48). The chain is my M6, default 18 and R3-M4.
+Replacement: tag these [D], and write at partition:40 that INV-12 is a proposal built on the owner's principle. This corrects a status and does not object to the record.
+
+**R4-M20 (minor). BND.72 and BND.73 say slightly too much.** ch07:558-560, :562-563.
+No act of "a promise the solver makes" exists. A check cannot show who completed a task, or what help came from outside the program. Partition:772-773 already foresees BS3 gating.
+Replacement: "A competence check records that a task was completed in this install, with the help used inside the program. Neither shows what anyone understood, so "understanding" in BND.3 stays outside what the software can establish; how the boundary treats that is the joint setting's question."
+
+#### Question 3: are the glossary additions true?
+
+**Answer.** Mostly, but eight findings state something false. Gauge and Frame fail. Standing is right in substance. Exact transport is the only duplicate name in the table; a one-line check of all 199 rows confirmed that.
+
+**R4-M21 (blocker). Exact transport appears twice.** ch04:546, :637.
+build.py:60-62 fails on a duplicate, and row 546 is too narrow for KN7.5 and EVD.18.
+Replacement, keeping one row: "A lemma-justified move of a claim to another input that preserves its subject, with no re-run. Along a gauge, the lemma is Theorem 1 of note N1 and the checked relation is Z = X·γ."
+
+**R4-M22 (blocker). Frame group describes R_A, and it duplicates an existing entry.** ch04:543.
+- "The turns that keep its region" are the elements of R_A, not of the quotient. A centre has 12 such turns and a trivial frame group. Orbit 0 has 6 turns and a group of order 2 (DT-L1 B.3, :1546-1563).
+- Orientation group (terms.json:246, L5) is the same concept: the census equals `HG` on all 35 orbits (DT-L1:1563), and tex Lemma 7 calls it H_o. Two names break M1, and L6 sits above where the solver meets it.
+
+Replacement, one entry at L5: "The group of permutations of a piece's sticker regions that turns keeping its region can make: R_A/S_A; trivial, C2, C5, D5 or A5 by orbit." Which name stays is preference. The old gloss "ways ... turned in place" goes too.
+
+**R4-M23 (blocker). Frame row and EV3.8.** ch04:533, ch04:268-271; origin my DT-L1:1492-1493.
+- "The other three uses" is a false count. Frame also names the frame domain (ch04:577; card 6:14), "frame part" (ch04:578), frame bits (contract:171), frame sums (tex Lemma 8), "piece frames" (restoration:173) and "D's frame" (restoration:53).
+- "Take their own names" fails, because "the C₃ frame component no sticker shows" is a description. It also omits O01's "C₂ component of the same kind" (restoration:174).
+- That component lies in the abelianised K⁺ stabiliser (restoration:173), so it is not a frame-group value.
+- KN1.7 defines no reference stickers; the source is tex Lemma 7. The old gloss's "fixes how a piece or block is oriented" is lost.
+- A3's F_f is per facet and Lemma 7's frame is per position (my inference), so "transported frame" may not be one thing.
+- "The relation "frame" is the frame group" is my type error. A role takes one element, which depends on chosen reference frames, and changing them conjugates it (tex:997-998).
+
+Replacement:
+- Row: "Unqualified, an ordered choice of reference stickers that fixes how a piece or block is read. Every other use carries a qualifier."
+- EV3.8: "The role "frame" takes a value in the frame group under chosen reference frames, at label level, on the lattice; changing the frames conjugates the value." The words chosen are preference.
+
+**R4-M24 (blocker). Gauge drops its defining condition and reads as "same state".** ch04:544.
+- The row omits that t_A carries A's reference region onto σA's (ch01:115-116; used at DT-L1:1527). Without it the admissibility clause is false: σ = id with a small rotation t_A moves A's region.
+- "Renames" misleads. A piece's identity is canonical (INV-6). For σ ≠ id, A takes σA's place and digests differ (DT-L1 B.6 (e)). For σ = id, solved with one centre turned is a gauge image of solved, passes the sticker test and is unreachable (KN1.17).
+- On the charitable reading "representatives of the region class" the second clause is true, but the row gives a reader no way to know that.
+
+Replacement: "A pair (σ, t): σ permutes the pieces, and each t_A is a rotation carrying A's reference region onto that of σA. Piece A takes the place σA had, so the same regions stay occupied. By Theorem 1 of note N1 (status: theorem, producer) every word stays admissible and the two runs stay related by the same gauge. A gauge is not equality and does not carry reachability."
+The word "gauge" is preference.
+
+**R4-M25 (minor). Standing is right, but three words need care.** ch04:641, against EVD.30.
+"Threshold" has no row, "carries" is undefined, and "unrefuted" means "whose negation does not stand in the first pass".
+Replacement: "Whether some argument for a statement survives when every grade outside the threshold is distrusted: first with no premise assumed, then with every premise assumed except those whose negation stood in the first pass. It describes the records under one edition; it does not say the statement is true."
+That the plain word suggests approval is preference.
+
+**R4-M26 (blocker). Solving session contradicts its source.** ch04:658, against BND.14 and BND.17.
+A profile belongs to a run, not to a session.
+Replacement: "A session whose journal can stand as a solve record; every ordinary session is one. A profile belongs to a run."
+
+**R4-M27 (blocker). Label checkpoint is not label-level.** ch04:586, :585.
+KN1.15 (ch01:188) and contract:174-175 make it a pose-level fact through its reachability clause, and the row is circular. Counterexample: solved with one centre turned has solved labels and is unreachable (KN1.17).
+Replacement:
+- Label checkpoint: "A reachable lattice configuration with ν = 0 (state contract A5). Its reachability clause reads the pose and the journal, so labels alone cannot establish it."
+- Retained checkpoint: "A lattice configuration with a witnessed legal word in the 1,200 retained generators from solved, or certified equal to such a state. Every retained checkpoint is a label checkpoint." (contract:76-80, :176)
+
+**R4-M28 (blocker). Five evidence rows disagree with EVD.32.**
+- Not found within budget (ch04:625) implies a scoped negative exists. The beam reads this word while 228 descending words exist (ch06:442-444). Replacement: "A search stopped at its budget or declared limit without covering its set, and found no witness. It gives no negative at all, even inside that set."
+- Finite instance (ch04:624): "without a universal claim" is false for an exhaustive negative. Replacement: "The word for a statement that stands on one input or on a declared search set. Nothing outside that set is claimed."
+- Conditional (ch04:623): a premise whose negation stands gives open, not conditional (ch06:240-241). Replacement: "A statement that stands once every premise not refuted is assumed; the word names the premises."
+- Incomplete (ch04:626): a budget stop is also not a completed search, yet it reads row 5. Replacement: "The job was cancelled, failed, or hit a resource stop, so it gives no negative. A search stopped by its own declared budget reads "not found within budget"."
+- Basis (ch04:610) omits exhaustive computation (ch06:41). Replacement: "The theorem, certificate, exhaustive computation, exact computation or sample on which a claim rests."
+
+**R4-M29 (blocker). Rim summary is not per named cap.** ch04:574.
+KN2.4 (ch01:236), ENG-0J and `jumbling-observation.md`:128 give it for every cap.
+Replacement: "Per revision, for every cap: N_c, In_c, Out_c, A_c, blocked, and whether it is at its floor. It selects no twist and no cap."
+
+**R4-M30 (major). Reachability claim calls a promise evidence.** ch04:597.
+Promised maps to conditional (ch06:266-267), and open is no evidence at all.
+Replacement: "What is on record about whether a state can be reached in a named puzzle: witnessed, by theorem without a witness, promised, refuted or open."
+
+**R4-M31 (major). Orientation is circular and merges two quantities.** ch04:532.
+Label-level orientation (core.py:268) is not A3's per-sticker element, which differs at equal labels (DT-L1:1536, :1639; ch01:133).
+Replacement: "How a piece sits in its position as its labels show it; a piece can be at Home and wrongly oriented. A3's pose-level orientation is a separate quantity that labels do not read, and takes its own name."
+
+**R4-M32 (major). ν is called an invariant without saying of what.** ch04:582.
+Jumble words change it (contract:185).
+Replacement: "The 45 coordinates read from the labels of a lattice configuration: 35 sign bits, 8 frame bits and two values modulo 5. Retained twists do not change them, and jumble words can. Undefined off the lattice."
+
+**R4-M33 (major). Homonyms break EV5.10 (ch04:476).** One reference cannot resolve to one concept for these. Telling them apart is correctness; the words are preference.
+- Domain (ch04:613) against alignment domain.
+- Projection (ch04:707) against π and KN1.7's maps.
+- Key (ch04:608) against keyboard key.
+- Checkpoint (ch04:675) against the two checkpoint predicates.
+- Branch (ch04:673) against tree branch.
+- Edition (ch04:650) against EVD.14's edition.
+- Rank (ch04:682) against census rank.
+- F_c (floor) against F_x (foreign load).
+- Clean grip against clean step.
+- Block, in three senses; provenance, in three senses; macro, against stage 15's macro.
+
+**R4-M34 (minor). Circular or empty rows.**
+- Lattice (ch04:566): "Configurations where every piece's pose lies in K⁺, so each piece fills a chamber and its stickers sit on slots." (contract:26)
+- Invalid (ch04:564): "The outcome of a request that is not an exact element of the active menu; the state is not tested." (`research\jumbling\sim\state.py`:348-350; the contract's outcome list has no such outcome)
+- Cap (ch04:521) uses grip as a place (KN1.5:88), while Grip says "the choice" (terms.json:80). Grip needs a listed scope change.
+- Tree, Section, Action, Embedding, Computed and Verified repeat their own word. Their owning chapters should supply a definition.
+
+**R4-M35 (minor). Imprecise rows.**
+- Generator (ch04:524): "One of the 1,200 generators of 600-cell-Full; a negative number is its inverse. Every count names its alphabet."
+- Height (ch04:571): add "On Γ(Λ), left and right height 0 together mean the lattice; in free mode they do not."
+- Lowering supply (ch04:569): sources say "lowering count" (stage 15 README:19; ch03:146). "Lowering count D_x(h): the number of inside pieces of height at least 4 and branch CLS(x) that item h lowers at grip x."
+- Alternative (ch04:640): "One argument's summary: its weakest grades and its premises. A statement's summary keeps the undominated ones." (ch06:188-189)
+- Reported (ch04:636): "Computed by a program that is not committed, so the repository cannot replay it." (ch06:400)
+- ν-correction (ch04:583): "One of the 36 named constructions in the static catalogue, with a fixed effect on ν."
+
+**R4-M36 (minor). Existing entries need changes the table does not list.**
+- Occupant is partial off the lattice.
+- Stage order's UI "next-orbit suggestions" (terms.json:129) and Target's "candidate list with reasons" (terms.json:169) conflict with BND.65 and LB6.7.
+
+#### Question 4: is the trace honest about standing?
+
+**Answer.** It is honest about recorded samples and named premises. Theorem D is right for what it states. An explanation can present an unreviewed result as proved today. Two gaps beside Theorem D let a premise-carrying or finite result read as proved.
+
+**R4-M37 (blocker). Unreviewed reads as proved.** Proved, ch04:622; EV5.13, ch04:492-496; EVD.32 row 3; EVD.39, ch06:286-287.
+(theorem, producer) lies in 𝒰₀, so it stands and reads "proved", with the evidence shown "on request". The row says "established". Note N1 is itself at (theorem, producer) (ch01:181-182), and no research proof has had a human review (owner page:57-58). Raising the threshold is LQ3, and I stop there. This finding asks for neither that nor human review.
+Replacement, independent of LQ3:
+- Add to EV5.13: "An explanation shows the check beside the word, and says so where no human review or formal proof is recorded."
+- Row: "The word shown when a statement stands at the threshold with no premise assumed, over an admitted domain or every reachable state. It always carries its scope phrase. It says the recorded argument passes the threshold, not that a person has reviewed it."
+
+**R4-M38 (major). A premise inside a statement disappears from the phrase.** E2, ch06:430; EVD.36, ch06:270-272.
+Counterexample (my inference; stage 19's records not read):
+- A lattice table with two pieces of O0 swapped has b0 = 1, which never occurs on a reachable configuration under I_a (contract:173).
+- Menus are inverse-closed, so no word solves it (DT-L1:1540).
+- It passes the k = 0 lattice test (stage 19 README:143-145), and such a table "does not inherit the sticker theorem" (:167-168).
+
+A reader of "proved on D[k]" concludes the bound holds for it. Theorem D (c2) treats a concrete Z correctly, so only the phrase misleads.
+Replacement: "The scope phrase names any premise class held inside the statement: "proved on D[k], for reachable inputs"."
+
+**R4-M39 (major). A finite computation can read as proved.** ch06:43, :171-172, :297, :312.
+Theorem D (b) covers only leaves recorded as sample, while "sample" is relative to a statement. I2 reads identity fields, and `covers` is not one of them. EVD.21's table reads (basis, check) pairs, which cannot see the statement.
+Counterexample: the I_a fixture at t = 150 has heights at most 4 (restoration:45). Attached as (exact computation, producer) to "every reachable state has height at most 4", it reads row 3. Height 8 occurs, by the same line.
+Replacement: new I7, "A leaf of basis exact computation, exhaustive computation or certificate under a universal or mixed statement, where the leaf's own covered set is smaller than the statement's `covers`." Leaves then need a covered-set fact. This corrects my N2.
+
+**R4-M40 (major). The lemma's word is not the answer's word.** EV5.3, ch04:429-431; EVD.17.
+An answer rests on the lemma, on the input's membership and on the code computing the function. T3P reading "proved" says nothing about a certificate that its own program re-evaluated (corpus rule C3, `docs\architecture\1.0\language\evidence-import\refs.txt`:39).
+Replacement, added to EV5.3: "The word of a cited statement is the word of that statement only and never reads as the word of the shown answer."
+
+**R4-M41 (major). Row 2 may drop its scope, and the claim field says "proved".** ch06:270-272, :257, :281, :445.
+"Finite instance" hides "three letters of family R only". A view printing `claim` prints "proved" for a finite instance.
+Replacement: "Every row prints its scope in an explanation, row 2 included. The `claim` field is never a display word."
+
+**R4-M42 (minor). Two kinds of edge look like one.** EV2.5, ch04:163-167; Provenance graph, ch04:619.
+"This value came from that call" is not support.
+Replacement: show computation edges and evidence edges separately, count only evidence edges, and show the edition with the word (EVD.14).
+
+**R4-M43 (minor, unverified). Statement references.** EV3.8 gives relations a statement reference. I could not establish that every other shown fact has one, because I did not read chapter 10 in full.
+Proposal: a shown fact without a statement reference carries no evidence word.
+
+#### Question 5: does the learning path teach ideas in time?
+
+**Answer.** This cannot be shown yet. Where it can be tested, reading evidence and reading a principle come too late or not at all. The level findings below are my inference from the rows.
+
+**R4-M44 (major). The steps have no content.** EV5.6, ch04:451-455; partition:225.
+The clause says each step names its concepts, routes and fixture task, and none is given.
+Replacement: add a table (step, prerequisite concepts, command routes, fixture task), marked as owed until written.
+
+**R4-M45 (major). Reading results comes last.**
+Step 1 needs evidence words, empty against not found against not run, stale, unknown against "none: off the lattice", and the scope of a negative. Evidence appears at step 6.
+Replacement: step 1 becomes "use tools and read their results". Step 6 stays "maintain modules and evidence".
+
+**R4-M46 (major). Used before taught.**
+- Step 2: round trip is L6. An edit makes a new digest, and "a fork inherits no evidence", so fork and scope come first.
+- Step 3: Layout is L6.
+- Step 4: Preview (L2) reads full effect, while Complete effect is L4.
+
+**R4-M47 (major). No step teaches a principle.**
+Nothing teaches reading a record or stating one's own tool's principle, although the owner's principle turns on this.
+Replacement: before "write tools", add "read a principle record, then state your tool's specification, reason, a dropped hypothesis and a worked instance".
+
+**R4-M48 (major). Concepts missing for building a tool from base parts.**
+- Language: exact against approximate; level typing; snapshot and revision; partial results and verdicts; budgets and jobs; effects and capabilities; profiles; derived state and reachability; fork semantics; the boundary itself (rule 6, the flow rule, why a preview is refused).
+- Logic: universal, existence, mixed, negation, premise, witness.
+- Mathematics: conjugate, commutator, stabiliser, coset, quotient, homomorphism, invariant, F2 and F5, Q(√5).
+
+**R4-M49 (major, owner scope). The mathematics may have no text.** EV5.11, ch04:482-483.
+"Its 1.0 scope is what the interface shows", so LB1's mathematics may go unwritten. Whether the language's library counts as shown is the owner's call, and I stop there.
+
+**R4-M50 (major). The levels do not cover the jumbling or language terms.**
+L1 to L6 are retained-workflow levels, and `solving-workflow.md` has no jumbling content. 89 of 199 rows sit at L6, so bar M6 cannot be checked. The manual and tutorial chapters give an order (my inference), but EV5 cites neither, and the tutorial is "frozen and shelved, unaccepted" (tutorial README:70). Using them is the owner's call.
+Replacement, added to EV5.14: "Jumbling and language terms need a first-use order before their levels can be checked."
+
+**R4-M51 (minor). CT-EV5-02 tests flow goals only.** ch04:789.
+Replacement: add "each step's concepts are taught earlier, and prerequisites form a DAG."
+
+#### Question 6: bar M1 and the term levels
+
+**Answer.** Yes to both: learner-facing terms lack entries, and terms sit above their level.
+
+**R4-M52 (major). Learner-facing terms with no entry.**
+- A grep of terms.json and the table found none of: principle, decomposition, fixture, base tool, base part, fork, lemma, theorem, hypothesis, invariant, counterexample, witness, threshold, stale, chamber, digest, level, floor, foreign load, clean grip, tame, seam, cut cell.
+- From reading, also none of: hand derivation, step map, leaf specification, statement form, negation pair, typed inconsistency (row 0's word), evidence graph, base revision, research tier, flow rule, free mode, solve record, u, covers.
+
+**R4-M53 (major). Terms above their level.** Each left term's definition needs the right term.
+- Height counts (L1) against Height (L6).
+- N (L1) against domain and cut cell.
+- Menu identity and Menu-order digest (L1) against digest (L2).
+- Canonical ID and Relation (L1) against the identity levels (L6).
+- Principle record (L2) against Evidence envelope, Typed IR and Statement ID (L6).
+- Solving session (L2) against Profile (L6).
+- Assistance summary and Proposal (L2) against Provenance block (L6). Whether labels show at preview is BND.74 question 6, and I stop there.
+- Typed partial result, Availability and Seat ("right-coset") at L1.
+- Relationship strip at L1 ("consumer" is implementation language). Replacement: "A display of typed relations about what is in view, in the grammar shared by code and the theory book."
+
+**R4-M54 (minor). EV5.10's check does not exist.** ch04:475-479; build.py:60-62 checks duplicates only.
+Proposal: a definition may use only terms at its own level or lower, and rows that never reach the UI carry a "not learner-facing" flag.
+
+**R4-M55 (nit).**
+- partition:482-484 drops the owner's "by itself" (owner page:47-48).
+- "Base" has several senses; what "built-in base tools" means stops at LQ2.
+- EV5.7's "independent completion" is the owner's wording, and the software sees only help used inside the program.
+- EVD.18 cites KN1.13 for gauge transport (ch06:150), and KN1.16 is the clause.
+
+#### Checked and found right
+
+- **Understanding core:** all seven R3-M4 parts are in LB6.2. Also right: "structure, not reasons", "cannot certify", EV5.3's repair-list sentence, EV5.5 and LB6.3 on forks. EV5.7 matches the owner's text, and EV5.8 and EV5.12 invent no threshold.
+- **Tracing:** EV2.2, EV2.4, EV2.6, EV3.3, EV3.4 and EV3.9, plus EV2.5's "adds no evidence edge". Theorem D (a), (b) for recorded samples, and (c1) to (c3). EVD.30, EVD.33, EVD.34, EVD.42 to 45. Examples E1 to E3 read correctly under the word function.
+- **Boundary:** BND.3 matches the owner's wording. BND.7 to 9, BND.11 to 13, BND.20 and BND.79 are right. BND.81 and ch10:348-350 make no promise.
+- **Kernel:** KN1.7 and KN1.14 to 1.17 match N1. I re-derived the gauge product law and re-read Theorem 1's proof steps. ν's 35 + 8 + 2 coordinates match contract:171, and the census frame groups match Lemma 8's abelianisations at restoration:180.
+- **Rows true against their source** (level and homonym issues are listed above):
+  - Puzzle and model: Label, Piece, both Twist rows, Retained twist, Jumble twist, Orbit, Net and Strict, Complete effect, Position, Pose, Sticker, Model identity, Canonical ID, Identity block, Identity tower, Sticker class, Region class, Shape, Level-qualified digest.
+  - Menus and words: Menu, Menu letter, Menu identity, Menu-order digest, Seat, Jumble on and off, Word, Literal word, Equality key, Recipe, Compressed word, Macro, Macro base, Cost alphabet.
+  - Jumbling: Admissible, Blocked, Uncertain, Straddler set, N, Depth Φ, Domain ID, Height counts, Lifted, Jumbling block, Jumbling frame domain, Clean-step unit, Pose unit, Clean step, Excursion, Repair list, Sticker test.
+  - State and results: Revision reference, State reference, Snapshot, Derived state, Derived model, Difference, Typed partial result, Verdict, None: off the lattice, the three reachability values.
+  - Commands: Proposal, Preview, User-action token, Receipt, Availability.
+  - Evidence: Claim, Statement ID, Key, Scope, Check, Premise, Goal, Certificate, Check report, Evidence, Evidence envelope, Per-claim trace, Evidence words, Refuted, Open, Recorded, Unknown, Measured, Lead, Check mode, Grade.
+  - Boundary: Author class, Provenance block, Boundary class, Declassifier, Flow label, Capability separation, Sink, Transparent entry, Policy table, Pick record.
+  - Jobs and session: Job, Job result, Budget, Lane, Latest wins, Kernel row, Language overlay, Journal, Workspace record, Filter, Preference.
+  - Environment: the EV1 to EV4 rows, Competence check, Soft disclosure.
+
+**Not checked, or only partly:**
+- Rows owned by chapters 02, 05, 09 and 10 were read for internal consistency only: Library entry, Effect, Capability declaration, Typed IR, Module, Module manifest, Lockfile, Edition, Reproducibility key, Run record, Search space, Search record, Strategy, Rank, the view and display rows, and the representation rows.
+- Verified and Unchecked were checked only against the mapping at ch06:401, because I did not read H-08.
+- For stages 16 and 17 I read headings only. For stage 19 I read the README only, and manual 02 and the tutorial only at the cited lines. I read no modified `PX-*.json` file.
+- I did not re-derive BND.10's sentence on height-2 domains.
+- I ran no tests and no geometry.
+
+#### For the owner: what "understanding the principle" can mean here
+
+Software cannot measure understanding. The program can give you everything needed to understand a tool: what it computes, why that is true, where it stops being true, a worked example you can check yourself, and a trail back to its sources. It can record that you finished a practice task and what help you used inside the program. It cannot see what is in your head, who first thought of a word, or what you did outside the program: a retyped word looks like your own. So inside this software "understanding the principle" can only mean two things: the means are there, and the records are honest about what they show. Whether that is enough for a solver's tool to count as their own is for you and the integrator to decide. And "proved" here means passed the recorded checks; no person has yet reviewed the research proofs.
+
+### Mathematician: follow-up
+
+The record left seven items for drafting: R4-M52, R4-M53, R4-M33, R4-M44 to R4-M48, R4-M39, R4-M38 and R4-M43. The
+mathematician drafted them on request and wrote no file. Line numbers in this reply are at `01263d68`.
+
+All seven drafts follow. I wrote nothing and changed nothing.
+
+HEAD moved after your message, from d97240d8 to 01263d68, and the language documents are clean in the working tree. Everything below is rebased onto 01263d68. Where lines moved I cite clause IDs. `chNN` means the chapter under `docs/architecture/1.0/language/architecture/`.
+
+#### 1. R4-M52
+
+| Term | Level | Definition | Source |
+| --- | --- | --- | --- |
+| Principle | L2 | The statement named as a tool's reason in its principle record, with that statement's hypotheses: why an answer means what the specification says. | LB6.2, ch03:413-414 |
+| Decomposition | L2 | The generated list of the parts a tool calls, down to base parts. It shows how the tool is built, not why its answer is right. | ch03:398; EV5.4 |
+| Fixture | L2 | A fixed input with its expected results, kept apart from the solver's session. A pass shows the tool reproduced those results at that input, nothing wider. | ch03:397; LB6.2; EV5.7 |
+| Base tool | no row yet | Owner's phrase. What counts as one is the joint setting's question, so I give no definition (LQ2). | owner page:46; BND.3; ch07:509 |
+| Base part | L2 | A shipped function at which a tool's decomposition stops. | LB6.1; ch03:398 (inference: library entries and kernel calls) |
+| Fork | L2 | Your own copy of a built-in tool. It keeps a link to its origin and inherits none of the origin's evidence. | LB6.3; EV5.5 |
+| Lemma | L2 | A statement with a written proof, used as a step towards other statements; cited by stage and source commit. | EVD.2 |
+| Theorem | L2 | A statement with a written proof, cited by stage and source commit. As a basis it says a proof is cited; who checked it is separate. | EVD.1, EVD.2 |
+| Hypothesis | L2 | A condition a statement assumes; the statement says nothing about cases where it fails. | ch03:402; ch06:118 |
+| Invariant | L2 | A quantity or property that a named set of twists leaves unchanged. | LB6.2 (invariance of In_c and Out_c) |
+| Counterexample | L2 | A checked case that lies in a statement's scope, meets its hypotheses and breaks its conclusion. | EVD.42; ch03:402 |
+| Witness | L2 | A concrete object that proves something exists; for reachability, a finite legal word from solved. | KN2.13; EVD.44 |
+| Threshold | L2 | The versioned bar a recorded argument must clear before a word such as proved or conditional appears. | EVD.29 (raising it is LQ3) |
+| Stale | L2 | Output read at a revision whose dependencies no longer match the current one. It stays marked with that revision and is never passed off as current. | EV3.3; RPI.12, RPI.13 |
+| Chamber | L1 | One of the 177,120 fixed places a piece can fill. A position names one. | state contract:26; card 6:13; tex:753-756 |
+| Digest | L2 | A short value computed from exact bytes, used to name them. Digests compare only at the same level. | KN1.8 |
+| Identity level | L2 | How finely a value describes a state: from each piece's exact pose down to what the stickers show and coarser. Every stored value names its level. | KN1.7, KN1.8 |
+| Floor | L1 | A lower bound on a cap's misalignment: the size of the difference between In_c and Out_c. Twists of that cap alone keep both, so they cannot go below it. | manual 02:34-36; open problems:125; BND.10 |
+| Foreign load | L6 | The number of pieces in grip x's cap of height at least 2 and branch other than the grip's class. | card 6:20; ch03:146 |
+| Clean grip | L6 | A grip with no straddlers, so all its twists are admissible. The opposite of blocked. | card 6:17 |
+| Tame | L6 | Of a word: no letter raises Φ. Stronger than every prefix staying at or below the start. | card 6:22 |
+| Seam | L1 | A misaligned cut cell. An off-grip seam lies on a rotated cut that is no cap's cut, so no single twist closes it. | restoration:58; observation:25, :124 |
+| Cut cell | L1 | A pair of neighbouring chambers on either side of a cap's cut, sharing one face on it. | restoration:50; observation:110 |
+| Derivation (my "hand derivation") | L2 | The written working of a worked instance: the givens read from named parts, and the steps a person checks from them, with the step count. | ch03:404-405 |
+| Step map | L2 | A stated relation between a decomposition's parts and the steps of a proof, reporting what is unmapped on both sides. | ch03:400 |
+| Leaf specification | L2 | A written statement of what an opaque base part computes, naming the test that covers it. | ch03:407 |
+| Statement form | L2 | Whether a statement concerns one finite case, every case, some case, or a mix such as every case having some answer. | EVD.9; ch06:72; DT-L1:1376 |
+| Negation pair | L2 | A statement and its exact opposite, recorded together, so that one record can settle both. | EVD.9 |
+| Typed inconsistency | L2 | The word shown when the records behind a statement contradict each other or break a record rule. It states no claim. | EVD.32 row 0; EVD.40 |
+| Evidence graph | L2 | The record of how supports combine: an argument needs all its parts, and any one argument that clears the threshold carries the statement. | EVD.15, EVD.39 |
+| Base revision | L2 | The revision a result or view read. Once it is replaced, the output is stale until recomputed. | EV3.3; RPI.5 |
+| Research tier | L6, not learner-facing unless LQ16 ships it | The entries that search, minimise, rank or select over twists, words or caps. They stay out of the solving profile; whether they ship is open. | LB1.5; BS2 |
+| Flow rule | L6, not learner-facing unless LQ2 turns it on | A policy switch: when on, in the solving profile, a preview's word and target may depend on the state or computed results only through declassifiers. | BND.33 |
+| Free mode | L6, not learner-facing | The simulator's infinite field-valued alphabet in place of a finite menu. On Γ(Λ) left and right height 0 together mean the lattice; in free mode they do not. | state contract:158; ch02:130 |
+| Solve record | L2 | The journal of a solve, read as its record, with the assistance the system recorded. | BND.14, BND.35 (my reading) |
+| u | L1 | The number of pieces that straddle a cap's cut and so block it. | engineering.md:60; ch01:238; ch03:142 |
+| Covered set | L2; the field name `covers` is not learner-facing | What a claim is about: one instance, a declared search set, an admitted domain or every reachable state. | ch06:81-82; EVD.32. Not the kernel row `covers` (ch01:239) |
+
+The level rule forces seven more rows:
+
+| Term | Level | Definition | Source |
+| --- | --- | --- | --- |
+| Revision | L1 | One numbered moment of a session; each change makes a new revision. | KN0.2 |
+| In_c, Out_c, A_c | L1 | At cap c's cut: the cut cells inside pieces cover, those outside pieces cover, and those covered on both sides by one alignment. | manual 02:30-32 |
+| N_c | L1 | A cap's misalignment: In_c + Out_c − 2·A_c. | manual 02:34 |
+| Editable parameter | L2 | A value a tool's source declares editable. Changing it makes a new version of the tool with no inherited evidence. | EV3.7; LB6.3 |
+| Worked instance | L2 | A small instance on the real geometry whose steps a person can check by hand from named givens. | LB6.1 |
+| Admitted domain | L2 | A named set of inputs with a test for membership, such as D[k]. | ch06:82; stage 19 README:143-145 |
+| Statement | L2 | A precise sentence about named objects that records can support or refute. | ch06:70-76 |
+
+Foreign load, Clean grip and Tame are learner-facing to tool writers only. The L1 word for a grip is blocked or not.
+
+**Not grounded, or only partly:**
+- **Principle:** the integrator's working definition at ch03:413-414; no owner text.
+- **Base tool:** I stop at LQ2.
+- **Base part:** meaning inferred.
+- **Solve record:** used, never defined.
+- **Fixture:** generalised from uses.
+- **Revision, Statement:** my wording.
+- **Lemma, Theorem, Hypothesis, Invariant, Counterexample:** standard mathematics the sources use without defining.
+
+#### 2. R4-M53
+
+These are proposals, because final levels follow the owner's learning path (EV5.14).
+
+| Term | Level | Text or note |
+| --- | --- | --- |
+| Height counts | stays L1 | Forces Height to L1 |
+| Height | L6 to L1 | "How far a piece's pose lies from the lattice, on the stated side and menu. A jumble twist changes it by at most 2; a retained twist never does." (card 6:14, :26). The Γ(Λ) sentence moves to Free mode |
+| N | stays L1 | "The total misalignment: how many times a cut cell, on any rotated cut, is covered on one side and not by the same alignment on the other." Forces Cut cell to L1. Alignment domain stays L6 (my choice) |
+| Menu identity, Menu-order digest | L1 to L2 | Beside Identity block and Level-qualified digest |
+| Menu letter | stays L1, forced by that move | "A grip and a menu-item number, meaningful only under its named menu and that menu's order." |
+| Canonical ID | stays L1 | "An object's fixed identifier in its model, independent of how it is drawn." |
+| Relation | stays L1 | "A stated connection between named objects in one state, such as which piece occupies a position." |
+| Principle record | stays L2 | Text at HEAD is right. Forces Decomposition, Worked instance, Step map, Derivation and Leaf specification to L2 |
+| Solving session | stays L2 | Drop "A profile belongs to a run." (Profile is L6). Forces Solve record to L2 |
+| Assistance summary | stays L2 | Text at HEAD is right |
+| Proposal | stays L2 | "A word, with a record of where it came from, submitted for a preview at a base revision." |
+| Typed partial result | stays L1 | "A result that says which part it covers, which part is missing, or why it is undefined." |
+| Availability | stays L1 | "Whether a command can run now, and the reason when it cannot." |
+| Seat | stays L1 | "One of the four sets of twelve jumble twists at a cap; hold a seat, then press a twist key." (DT-M1:856-858; only if Q7 picks seats) |
+| Relationship strip | stays L1 | "The strip that shows stated relations, in the grammar shared by the code and the theory book, inside Global and Local." |
+| Preview | stays L2 | "What the engine says will happen if you commit: the exact word and what it does, fixed at one base revision." Complete effect stays L4 |
+| Frame group | L5, settled at HEAD | Move "R_A/S_A" to the source column, because its parts are defined in L6 rows |
+| Standing | L6 to L2, forced by Proved, Conditional, Finite instance | "Whether a statement's recorded arguments clear the threshold: first with no premise assumed, then with every premise assumed except those refuted in the first pass. It describes records, not truth." |
+| Threshold | enters at L2 | Same force |
+| Domain | stays L6 | Proved uses "admitted domain", so only the new Admitted domain row enters at L2 |
+| Reachable by theorem, Promised reachability | L6 to L2 | Forced by the Reachability claim row at HEAD; their texts are fine |
+| Layout | L6 to L2, forced by step 3 | "A saved arrangement of what a view shows; a program's layout can change only where its source declares it editable." |
+| Round trip | stays L6 | The learner word at step 2 is Editable parameter |
+| Grade, Key | stay L6 | |
+| View | stays L1 | "A presentation of information at one revision." D8 and LQ6 go to the source column |
+| Competence check | stays L1 | "An isolated task recording correctness, mistakes, help and transfer." LQ14 goes to the source column |
+
+These are new, from a full pass over section 6 at 01263d68. They were not in R4-M53:
+
+| Term | Level | Problem | Text |
+| --- | --- | --- | --- |
+| Lattice | L1 | K⁺ is undefined; this was my R4 wording | "Configurations where every piece's pose is a rotation symmetry of the 600-cell, so each piece fills a chamber and its stickers sit on slots." K⁺ goes to the source column (state contract:26; card 6:13) |
+| Twist, 600-cell-Full | L1 | Uses Word (L2) | "... which can be a sequence of generators." |
+| Generator | L1 | Uses alphabet (L2) | Last sentence: "Every count says what it counts." |
+| Lifted | L1 | Uses Preview (L2) | "The lattice pieces a proposed operation takes off the lattice, distinct from its full moving set." |
+| Unknown | L1 | Uses Evidence (L2) | "Not enough is known for the requested conclusion; never false or a numeric zero." |
+| Overlay | L1 | Uses Display plan (L6) | "Declarative information attached to a view." |
+| Evidence | L2 | Uses Author class (L6) | "The support for a scoped claim, separate from who wrote the tool, score and permission." |
+
+#### 3. R4-M33
+
+The word chosen is preference (owner 8B). Three things are correctness:
+- One reference resolves to one concept (EV5.10).
+- Each sense has its own row, so a script can tell them apart.
+- A bare word is never used where two senses can occur.
+
+| Word | Qualified names |
+| --- | --- |
+| Domain | **alignment domain**: a coset γK⁺, pieces whose poses fit one rotated copy of the lattice (card 6:14). **declared domain**: the inputs on which an operation or claim is defined. **admitted domain**: a declared domain with a membership test, such as D[k] (ch06:82). **chart domain**: where a chart's map is defined (ch10:260). Jumbling frame domain stays: an alignment domain at height 2 |
+| Projection | **display projection**: a chart stage that draws the 4D geometry (RPI.31). **level projection**: the exact, possibly partial map to a coarser identity level (`project`, KN1.9); the label projection π is one |
+| Key | **key**: on the keyboard. **statement key**: statement ID with scope (EVD.7). **equality key**: a word's normal form. **reproducibility key**: chapter 09. **source key**: the DisplayInstance field (ch10:187) |
+| Checkpoint | **saved checkpoint**: a stored session point (`session.checkpoint.save`, KN4.1). **retained checkpoint** and **label checkpoint**: predicates on a state (A5) |
+| Branch | **journal branch**: an engine-owned journal line. **tree branch**: the class b(A) of a piece's first tree step (card 6:14). Stage 19's "complete branch" stays research prose |
+| Edition | **language edition**: a source or semantic version. **evidence edition**: the four versioned tables (EVD.14) |
+| Rank | **descent rank**: a declared quantity with decrease obligations (ch03:330). **matrix rank**: linear algebra (ch03:68). **census rank**: the orbit field `rank` (census.json:10; I did not establish what it counts) |
+| F symbols | F_x stays foreign load (card 6:20; card 7:82 writes F_c for it). The floor takes the word floor or another symbol (BND.10 and KN1.15 write F_c). Which symbol is preference; the collision is correctness. F_f, F2 and F5 keep their own rows |
+| Clean | **clean grip**: S_d empty (card 6:17). **clean step**: a legal word landing a unit. Bare "clean" is never used. "Unblocked grip" is an option (preference) |
+| Block | **achievement block**: solver-declared (terms.json:206). **jumbling block**: pieces no cut separates. Identity block and Provenance block keep their names, as bundles of fields. Bare "block" means achievement block only. Blocked is unrelated to all of these |
+| Provenance | **assistance provenance**: the origin of a word (BM2, PS1.32). **result trace**: how a result traces to its inputs and support (EV2.5). **attribution**: author, reproducer, scope setter, review class (EVD.6; PS1.35 already says Attribution) |
+| Macro | **macro**: a reusable named word. **lowering macro**: a word ending in a jumble that lowers Φ (stage 15 README:25). **macro certificate**: Theorem MC's event-by-event certificate of a word (stage 15 README:61) |
+
+Five more collisions turned up under the same rule:
+- **covers:** covered set (ch06:81) against helper cover (ch01:239, card 7:50).
+- **level:** identity level, learning level, grip level lev(c) (card 7:47).
+- **witness:** witness word against witness piece (ch10:148).
+- **chamber:** cut chamber (tex:753-756) against flag chamber (tex:588-604).
+- **base part:** decomposition leaf (LB6.1) against base-tier function (BS2).
+
+#### 4. R4-M44 to R4-M48
+
+I found no order error, so no step moves or splits. All 22 cited H-08 IDs exist in `command-table.json` at HEAD, but those rows are draft (`pending-2.2`). No fixture task exists yet, so every fixture is owed; candidates are mine.
+
+| Step | Prerequisite concepts | Command routes | Fixture |
+| --- | --- | --- | --- |
+| 1 Use tools and read results | Command, Availability, Revision, Base revision, Stale; Claim, Scope, Covered set, Basis, Check, evidence words, Standing, Threshold, Premise; every, some and negation (Statement form, Negation pair), Witness; empty, not found, not run (EVD.33); Unknown against None: off the lattice; Typed partial result, Verdict; Job, Budget, Job result; Reachability claim; Evidence graph on request; record parts `specification` and `not meant` | H-08 `command.find`, `object.inspect`, `view.findings`, `view.residuals`, `operation.check`, `job.stop`. `invoke` on an overlay row (ch01:371), `word` (ch06:277), `follow_pick` (ch04:245). Explanation and provenance view: owed | Owed. Candidate: read E3's 7302 and 7303 records (ch06:445-448) |
+| 2 Change a parameter | Editable parameter, new version, Fork, "a fork inherits no evidence", Diagnostic, Typed error | `edit_declared_part` (ch04:249), `diagnose` (ch04:45). Workspace command that persists it, host fork operation: owed | Owed |
+| 3 Save layouts and bindings | Layout, Workspace record, Binding with absolute arguments, Routing class, Preference, workspace undo | H-08 `keymap.edit`, `file.keymap.export`, `file.keymap.check`, `file.keymap.apply`, `grip.capture`. `edit_declared_part`. Save layout: owed | Owed |
+| 4 Compose recipes and macros | Word, Literal word, Equality key, Cost alphabet, Setup, Star, conjugate and commutator (my inference), Recipe, Macro, Macro base, Proposal, Preview, User-action token, Protection, Net and Strict, Complete effect, assistance provenance, Recording, fresh preview on reuse (LB7.2) | H-08 `macro.base.open`, `macro.select`, `macro.add`, `macro.save`, `macro.variant.create`, `macro.compare`, `operation.new`, `operation.phase.edit`, `operation.reuse`, `operation.check`, `operation.preview`, `operation.execute`, `worksheet.save`, `worksheet.load`. `propose` (ch01:409), `word_key` (ch02:167). Recording to macro: owed | Owed |
+| 5 Read a record, state your principle | Principle, Principle record, Hypothesis, Lemma, Theorem as a proof, Invariant, Counterexample, mixed statements, Decomposition, Base part, Step map, Leaf specification, Worked instance, Derivation, Fixture, a domain inside its lemma's scope | `hover`, `definition` (ch04:69, :72). Reading a record: owed. Stating your own: owed; no data route exists, and EV5.9 leaves the map to the joint setting | Owed. Candidate: the floor instance in LB6.2 |
+| 6 Write tools | Module, Module manifest, Lockfile, language edition; exact against approximate; Identity level typing; Snapshot, State reference, Derived state; partial results and verdicts in code; budgets, jobs, Cost profile; Effect, Capability declaration, Profile, Author class, Provenance block; view nodes and overlays; boundary: KN2.5, Flow rule, Declassifier, why a preview is refused; stabiliser, coset, quotient, homomorphism, F2, F5, Q(√5), whose text depends on EV5.17 | `parse`, `complete`, `diagnose`, `hover`, `definition`, `rename` (ch04:39-75), `debug_step`, `inspect_value` (ch04:125, :129), `open_snapshot`, `project`, `derive`, `propose` (ch01:213, :149, :278, :409), `publish_view` (ch10:107). Create a module: owed | Owed |
+| 7 Maintain modules and evidence | Digest, Reproducibility key, Run record, Deterministic replay, Certificate, Check report, Per-claim trace, Grade, Alternative, Check mode, Statement ID, Key, Evidence envelope, Exact transport, evidence edition | `replay_run` (ch04:149), `reproduce` (ch09:96), `check` (ch01:501), `word` (ch06:277), `import_archive`, `export_check_bundle`, `migrate_record` (ch05:798, :804, :612) | Owed |
+
+**Placements that may not be obvious:**
+- `specification` and `not meant` are read at step 1, because empty against not found cannot be read without them. The whole record is step 5.
+- Basis and Check sit at step 1, because EV5.13 shows the check beside the word.
+- Partial results, verdicts, budgets and jobs are read at 1 and written at 6.
+- Mixed statements and Invariant sit at 5.
+
+**One text fix:** EV5.6 (ch04:457) still lists six steps. Replace the list with: "use tools and read their results; change a parameter; save layouts and bindings; compose recipes and macros; read a principle record and state your tool's principle; write tools; maintain modules and evidence."
+
+#### 5. R4-M39
+
+**Text**
+
+ch06:72 becomes:
+
+```text
+form:      finite | universal | existence | mixed(outer: forall | exists),
+```
+
+Add to EVD.9: "A statement whose `covers` is not one_instance is never of form finite. A mixed statement names its outer quantifier, and its negation has the other one."
+
+Add to the block at ch06:108-119:
+
+```text
+Leaf    = { grade, identity, covered: Covered? }
+Covered = { covers: a value of Scope.covers, input: Digest<level>? }
+```
+
+New clause after EVD.13, next free number:
+
+"**EVD.59 [D]** `covered` is computed from the leaf's own record, never copied from the statement. Identical means equal field by field, and digests at different levels are never identical (KN1.8)."
+
+| Basis | `covered` |
+| --- | --- |
+| Exhaustive computation | `SearchRecord.declared` as search_set(family, alphabet, bounds), with the job's input digest |
+| Exact computation | The job's input: one_instance with its digest, or search_set for a declared list |
+| Certificate | The certificate's stated inputs (KN6.6, EVD.46); each checker kind states them |
+| Theorem, sample | Not read |
+
+New row after I6:
+
+| Case | Inconsistency |
+| --- | --- |
+| I7 | (a) A leaf of basis certificate, exhaustive computation or exact computation in an argument of a universal statement, or of a mixed statement with outer quantifier universal, whose `covered` is not identical to the statement's `covers` and `input`. In a reused leaf (EVD.4) the source leaf is compared after the transport lemma's checked relation. (b) A leaf of basis exhaustive computation or exact computation whose `covered` is neither one_instance nor search_set. (c) A statement of form finite whose `covers` is not one_instance. |
+
+After the table: "A leaf is in an argument of S when it is the direct child of S's OR node, or a child of an AND node under it. A child reached through a premise or another key belongs to that key's statement."
+
+Add to EVD.41: "Two further absences are no contradiction. A leaf of basis certificate, exhaustive computation or exact computation with no `covered` fact, in an argument I7 (a) reads, is inert. A statement with no `form` fact counts as universal for I7 (a), and a leaf that I7 (a) would flag there is inert instead. An inert leaf counts at no threshold, and the word reads as it would without it."
+
+Add to EVD.17: "A finite computation that serves a proof of a universal statement has its own statement and key. It enters the universal's argument as a premise discharged by that key, beside a theorem leaf saying why it suffices. A bridge lemma is such a theorem."
+
+Add to EVD.18: "A leaf that would meet I7 is refused at entry with `EVD:evidence.scope_mismatch`. I7 is what a stored or imported record reads, because arguments are immutable (EVD.16)."
+
+**Where the fact lives**
+- **Record and field:** `Leaf.covered`, carried in the `EvidenceEnvelope` facts payload (PS1.36, ch05:484).
+- **PS1.35 table, new row:** `| Covered set of a leaf | `covered` of chapter 06, computed from the leaf's own record (EVD.59) |`
+- **EVD.13, new row:** `| Covered set of a leaf | A finite computation can otherwise stand for a wider statement (I7) |`
+- **LQ10:** under the judgement alternative I7 needs the same fact in whatever stores the justification. I stop there.
+
+**Theorem D**
+- (a) and (b) are unchanged. I7 reads only `covered`, `covers`, `input` and `form` on Reach(S).
+- New, after (b):
+
+  "(b2) Narrower support. Let S be universal, mixed with outer quantifier universal, or without a `form` fact, and let 𝒰 ⊆ 𝒰₀. A leaf of basis certificate, exhaustive computation or exact computation in an argument of S, whose `covered` is absent or, as I7 compares it, not identical to S's `covers` and `input`, never moves S from rows 5 to 7 into rows 1 to 4. The same holds for refuting an existence statement, whose negation is universal. *Proof.* If S has a form and `covered` is present, I7 holds, and row 0 comes first in the decision list. Otherwise the leaf is inert (EVD.41), so it is false at ω₀ and ω₁ as a sample leaf is, and it changes neither pass, nor Ref. Rows 1 to 4 read only the passes. ∎ (b2) concerns recorded fields: a false `covered` is a false record, which no word can detect, and the check field is the defence."
+- (c1), last two sentences become: "The full-family statement has a different key. I7 keeps a leaf of the narrower search out of its arguments, so the only edge to it is a bridge lemma with its own ID (stage 16 `PROOFS.md`, LB5). An upgrade happens only by a proof."
+- (c2) and (c3) are unchanged.
+
+**Other edits**
+- Row 0, ch06:255: "I1 to I7".
+- EVD.40, ch06:292: "I1 to I4, I6 and I7 read".
+- ch06:474: "I1 to I4, I6 or I7".
+- CT-EVD-09, ch06:496: "I1 to I7".
+- New CT-EVD-22: a narrower leaf reads row 0 or is refused at entry, an absent `covered` is inert, and a mixed(exists) refutation passes.
+- The fact count changes at EVD.13, EVD.55, partition:264 and ADR-L05:29; see item 6 for the number.
+
+**Why these limits**
+- Theorem leaves are excluded because a wider theorem reaches a narrower statement through EVD.17, and comparing would flag every instantiation.
+- Sample leaves are excluded because they sit below every threshold.
+- Existence is excluded because one witness entails it (EVD.44).
+- Without `outer`, EVD.42's refutation of a mixed statement and CT-EVD-11 break, because neg S rests on a witness plus a complete negative at x.
+- The test is "identical", not "contained", because inclusion of search sets and domains is not decidable in general (EVD.8's safe direction).
+- (b) spares certificates, because a closure-set certificate may cover more (EVD.43).
+- Counterexample to today's text (mine): the two-letter exhaustive leaf attached to the three-letter negative reads row 2.
+
+**Checks: all hold**
+- **E1:** S₁ is finite, so I7 is not read; finite instance stands.
+- **E2:** implication and U(h, k) have theorem leaves, not read. T(Z) and ¬Adm_k(Z) are finite and one_instance, so (c) passes. A macro at one state, offered for Sel, is flagged or refused, which enforces ch06:437.
+- **E3:**
+  - Beam: no leaf, row 5.
+  - Two-letter set: `covered` equals its `covers`, row 2.
+  - Unbeamed search: witness under an existence statement, not read, S₄ refuted.
+  - 7303: `covered` equals `covers`, row 2.
+  - 7305 and 7306: no leaf, row 6.
+  - Φ 498: identical for the five families, and "no word descends there" stays open.
+- **EVD.21:** unchanged and still empty. (exact computation, producer) is valid in E1's a₂ and wrong only relative to a statement, so a pair table cannot hold it.
+- **EVD.32:** conditions of rows 1 to 7 are unchanged and row 0's range extends. The list stays total and single-valued. CT-EVD-01's 504 count is unchanged, because I7 reads leaf facts, not node-level cases.
+- **EVD.42 to EVD.44, EVD.4, EVD.18:** hold. A witness refuting a universal sits under neg S, which is an existence statement, so I7 is not read.
+
+**Import**
+- Counted at HEAD from the table's `code` strings, which agree with its `mapping` lines:
+
+  | Basis | Rows | Scope in those rows |
+  | --- | --- | --- |
+  | Exhaustive computation | 56 | declared search set in all 56 |
+  | Exact computation | 64 | one finite instance in 46, declared search set in 18 |
+  | Certificate | 4 | one finite instance in 3, no scope in 1 |
+  | Theorem | 10 | no scope |
+
+- No row sets admitted domain, every reachable state or sample. So I7 (b) has no trigger on a labelled row, and EVD.59's table fits every labelled pair.
+- I7 (a) cannot be tested on the table, which has no `form` and no statement's `covers`.
+- I did not read `rule.txt` in full, so a whole-record rule may add to these counts.
+- Inference: on import `covers` and `covered` are typed from the same record, so (a) bites only when a record is attached to a statement built elsewhere. No importer exists to confirm this.
+- Existing gap, not created by I7: `form` has no producer in the label table, though EVD.42 and I6 read it too. CT-EVD-12 therefore needs the forms of E1 to E3 from a whole-record rule or from the test's own statements.
+
+#### 6. R4-M38
+
+Keep EVD.36 as it stands at HEAD and append:
+
+"The phrase names the covered set and every *guard* of the statement. A guard is a hypothesis that meets three conditions: the statement's own text holds it, so it is no node of the graph; the membership test of `covers` does not decide it; and applying the statement to an instance must discharge it as a premise (EVD.17). A guard reads by its premise class: a reachability promise as "for reachable inputs", an open hypothesis as "given" and its name, a model assumption as "under" and its name. A hypothesis the membership test decides is not a guard, because the set's name already says it. A premise that is a node of the graph is not a guard, because row 4 names it. Where the covered set is an admitted domain or every reachable state, a statement whose guards cannot be typed keeps the row recorded."
+
+**Supporting edits**
+- Add `guards: List<{ class, name }>,` to Statement.
+- EVD.8: "It binds every parameter, every guard, the puzzle and the level."
+- `scope_phrase` is computed from `covers` and `guards`.
+- EVD.13 gains `| Guards of a statement | "Proved on D[k]" would otherwise hide a reachability promise (EVD.36) |`.
+- With item 5 that makes nine facts: "the seven R3-M1 named and two that round 4 added", and "nine" in EVD.55, partition:264 and ADR-L05:29.
+- Add a guard case to CT-EVD-15.
+- No label row sets those two scopes, so the import is unaffected today.
+
+**Needs it:** U(h, k) on D[k].
+- The admission test takes a promised-reachable input (stage 19 README:143-145) and does not decide reachability (:152). T(Z)'s reach(Z) in Theorem D (c2) is exactly this guard.
+- The phrase is "proved on D[k], for reachable inputs". Use it at ch06:258 and ch06:433.
+- A concrete case, my inference because I did not read the stage 19 records: a lattice table with two O0 pieces swapped.
+
+**Does not need it:** the 7303 negative (ch06:448). Input, family R and three letters are all in `covers`, and it speaks of that input as given. Its phrase stays "finite instance, three letters of family R only".
+
+**Consequence:** the fixed-L implication holds Sel in its text (stage 19 README:100-102), so ch06:431 reads "proved, given Sel". The bound's premise node stays row 4.
+
+#### 7. R4-M43
+
+**Settled: no.** I read chapter 10 in full at d97240d8, and the 01263d68 changes do not touch this question.
+- `ViewNode`, `DisplayPlan`, `DisplayInstance` and `SourceMap` have no statement field (ch10:45-54, :63-76, :179-189, :198-203).
+- Links exist only for relation overlays (:149), certified overlays (:148), derived-state reachability (:151), chart properties (:264) and the strip's contract (EV3.8).
+- `content` can hold any typed data, including the text "proved", and chapter 10 never mentions `word()`.
+
+Add to `ViewNode`:
+
+```text
+claims:       List<Key>                   # chapter 06; empty when the node states no claim
+```
+
+New clause, placed after RPI.5:
+
+"**RPI.65 [D]** Content shown in a view is one of three kinds. *State data* is what a kernel row returned for the subject at `base`: labels, poses, exact sets, counts, partial results and verdicts, with any H-08 evidence state as the engine gave it. Its support is that revision and that row, so it needs no statement reference. A *claim* is a relation (EV3.8), a declared property, or anything shown with a word of EVD.32. It carries its `Key` in `claims`. *Program content* is everything else a program publishes. It is shown as the output of its producing module and carries no word of EVD.32. A word of EVD.32 reaches a display only through `word()` on a key, with the phrase of EVD.36, and a view asks for it only on a key that has a record: with none, row 7 would call a kernel read open. A node of kind relation with empty `claims` is refused with `EV3:input.display_plan_invalid`. Text a program writes stays the program's text, whatever it says: the host does not read it for evidence. How the three kinds look is not set here. Under LQ3's alternatives the function changes, not this rule."
+
+**Supporting edits**
+- ch10:462 meaning gains "or a relation node with no statement reference".
+- `claims` is where EV3.8's typed statement reference travels.
+- Add a CT-RPI case.
+
+#### Corrections to my R4 wording
+
+1. R4-M26: "A profile belongs to a run." is above L2 and must leave the Solving session row (at HEAD).
+2. R4-M37, R4-M28: Proved, Conditional and Finite instance use stands, threshold and admitted domain at L2; item 2's moves resolve this.
+3. R4-M25: the Standing text uses grade and edition; item 2 rewords it for L2.
+4. R4-M35: the Γ(Λ) sentence cannot sit in an L1 Height row; it moves to Free mode.
+5. R4-M12: limited to EVD.32's words, because H-08's four states come straight from the engine (the command-layer row of ch06's vocabulary table).
+6. R4-M39: "smaller than" becomes "not identical", and "universal or mixed" splits by outer quantifier.
+7. My Lattice row used K⁺ at L1 (at HEAD); item 2 fixes it.
+8. My first Floor draft said "the least twists can reach", which is false: it is a bound that need not be attained. The row above says so.
+
+**Found in passing:** ch06:61 cites EVD.12 for completeness of a search; the fact table is EVD.13.
+
+**Owner:** none of the seven drafts needs an owner answer as written. They stop at LQ2 (Base tool, the principle map of a solver's tool), Q7 (Seat), LQ10, LQ14, LQ16 and EV5.17. The level moves stay proposals under EV5.14.
+
+Files, all under `docs\`:
+- `architecture\1.0\language\architecture\03-libraries.md`
+- `architecture\1.0\language\architecture\04-environment.md`
+- `architecture\1.0\language\architecture\05-persistence.md`
+- `architecture\1.0\language\architecture\06-evidence.md`
+- `architecture\1.0\language\architecture\10-renderer-platform.md`
+- `architecture\1.0\language\ecosystem-partition.md`
+- `architecture\1.0\language\adr\ADR-L05-evidence.md`
+- `architecture\1.0\language\evidence-import\corpus-labels.json`
+- `progress\1.0\command-table.json`
+
+### Outcome of round 4
+
+Settled by the main session on 4 November 2026. Nothing here is an owner decision. The verdict stands as the record gives
+it: the core is sound (LB6.2, EV5.3, EV5.4, BND.12, BND.13, BND.72 and Theorem D) and the text around it needed
+correcting. The totals are 14 blockers, 29 major, 11 minor and 1 nit. No correction chooses an option under LQ1 to LQ21.
+
+#### Dispositions
+
+Every card is adopted, except where the table says otherwise. Partition section 19 records what changed on that page.
+
+| Card | Severity | Disposition | Applied in |
+| --- | --- | --- | --- |
+| R4-M1 | blocker | Adopted | LB6.1, LB6.2 (`givens` and `steps`), CT-LB6-04, partition LB6 row. Any ceiling on the step count stays with the owner |
+| R4-M2 | major | Adopted. The sentence naming the principle stays a working definition | LB6.2 |
+| R4-M3 to R4-M7 | major | Adopted | LB6.2 |
+| R4-M8, R4-M9 | minor | Adopted | LB6.2, EVD.43 |
+| R4-M10 | blocker | Adopted | INV-12, EV5.1, EV5.16 |
+| R4-M11 | blocker | Adopted | BND.82, BM4, BND.35, BND.70, BS1 to BS4, the Assistance summary row |
+| R4-M12 | blocker | Adopted. The clause the card proposed is RPI.65, limited to EVD.32's words, because H-08's four states come straight from the engine | Overview, RPI.65 |
+| R4-M13 | blocker | Adopted | INV-12, LB6.1 |
+| R4-M14 | major | Adopted | Chapters 03 and 04 |
+| R4-M15 | major | Adopted | BS1 to BS4, BND.23, LB7.3 |
+| R4-M16 | major | Adopted. Any map from a tool to a principle stays with LQ2 | EV5.9 |
+| R4-M17 | major | Adopted | INV-12, the LB6 and EV5 rows, the Principle record row, CT-EV5-01, CT-EV5-05 |
+| R4-M18 | major | Adopted | LB6.2 |
+| R4-M19 | major | Adopted | LB6.1, EV5.3, EV5.16, partition 1.2 |
+| R4-M20 | minor | Adopted | BND.72, BND.73 |
+| R4-M21 to R4-M27 | blocker | Adopted | Chapter 04's glossary rows, EV3.8 |
+| R4-M28 | blocker | Adopted, with one row reworded (below) | Chapter 04's glossary rows |
+| R4-M29 | blocker | Adopted | Rim summary row |
+| R4-M30 to R4-M32 | major | Adopted | Chapter 04's glossary rows |
+| R4-M33 | major | Adopted through the follow-up. The qualified names are proposals, and the word chosen is preference | EV5.18, the renamed glossary rows, KN1.15, BND.10 |
+| R4-M34 | minor | Adopted for Lattice, Invalid and Grip. Tree, Section, Action, Embedding, Computed and Verified are deferred: their definitions come from the chapters that own them, and nothing here invents them | Chapter 04's glossary rows |
+| R4-M35, R4-M36 | minor | Adopted | Chapter 04's glossary rows |
+| R4-M37 | blocker | Adopted. Raising the threshold stays with LQ3 | EV5.13, the Proved row |
+| R4-M38 | major | Adopted through the follow-up: a statement names its guards | EVD.8, EVD.13, EVD.36, section 9 example E2, PS1.35, CT-EVD-15 |
+| R4-M39 | major | Adopted through the follow-up: a leaf's `covered`, the inconsistency I7 and Theorem D (b2) | EVD.9, EVD.13, EVD.17, EVD.18, EVD.32, EVD.40 to EVD.42, EVD.59, Theorem D, PS1.35, CT-EVD-22 |
+| R4-M40 | major | Adopted | EV5.3 |
+| R4-M41 | major | Adopted | EVD.36 |
+| R4-M42 | minor | Adopted | EV2.5 |
+| R4-M43 | minor | Adopted through the follow-up: `claims` on `ViewNode` and RPI.65 | RPI.5, RPI.65, EV3.8, CT-RPI-27, chapter 13's `display_plan_invalid` row |
+| R4-M44 to R4-M48 | major | Adopted through the follow-up. No step moves or splits, and a table gives each step's concepts, routes and fixture | EV5.6, CT-EV5-02, partition EV5 row |
+| R4-M49 | major | Adopted as an open item for the owner | EV5.17, LQ16 |
+| R4-M50 | major | Adopted | EV5.14 |
+| R4-M51 | minor | Adopted | CT-EV5-02 |
+| R4-M52, R4-M53 | major | Adopted through the follow-up, as proposals under EV5.14 | Chapter 04's glossary rows, EV5.14 |
+| R4-M54 | minor | Adopted as a proposal for LP4 | EV5.10 |
+| R4-M55 | nit | Adopted where the text was wrong. "Base" stops at LQ2, and EV5.7 keeps the owner's "independent completion", with BND.72 saying what the software sees | Partition section 11, EVD.18 |
+
+The "Not found within budget" row differs from R4-M28. The card's "It gives no negative at all, even inside that set."
+would contradict DET.30, which lets a part examined completely carry a narrower claim of its own. The row now reads "It
+gives no negative over that set; only a part it examined completely can carry a narrower claim of its own."
+
+#### What the main session changed in the follow-up
+
+The mathematics of the seven drafts was checked against their sources and holds. The mathematician's eight corrections to
+its own round 4 wording are listed in its reply. The citation at EVD.5 now reads EVD.13, as it found. The learning path's
+H-08 citations number 24 distinct IDs by a separate count, not the 22 the reply gives, and all of them exist. The label
+table's counts in the reply's import section were confirmed by a separate count of `corpus-labels.json`. These changes
+are the main session's own:
+
+| Change | Why | Applied in |
+| --- | --- | --- |
+| A guards row beside the covered-set row | The envelope has to hold every fact EVD.13 names | PS1.35 |
+| The mixed-statement sentences split by outer quantifier | Row 1 reads the negation. A statement with an outer universal is refuted through a mixed negation, which rests on a witness plus a complete negative; a statement with an outer existential has a negation that I7 (a) reads, so it needs a proof or a complete certificate | EVD.42, CT-EVD-11, partition 8.1 |
+| The floor is written as a word | F_c meant the floor in BND.10 and KN1.15 and foreign load in card 7. DT-L1 and the jumbling observation keep their F_c as records | KN1.15, BND.10, the F symbols row of EV5.18 |
+| Height's row names its menu | Card 6 states the height facts for menu I_a | The Height row |
+| "Hand derivation" for the reply's "Derivation" | KN2.11 and RPI.6 use "derivation" for a derived state | The Hand derivation and Principle record rows, the Derivation row of EV5.18 |
+| "Keep their own meanings" for the reply's "keep their own rows" | `terms.json` has no row for F_f, F2 or F5 | The F symbols row of EV5.18 |
+| An Alignment domain row at L6 | The reply names the sense and keeps it at L6 without drafting a row | Chapter 04's glossary rows |
+| The covered-set rule in the record of the decision | So that accepting ADR-L05 covers EVD.59 and I7 | ADR-L05.7 and its overrule list, with the guards of EVD.36 |
+
+#### The source check
+
+Beside round 4, the text was read against a list of problems another session raised while the chapters were being
+written. Most of the list was already answered by the text or is an open item with an owner. Five points were not:
+
+| Finding | Applied in |
+| --- | --- |
+| A live twist has no preview, while INV-3 spoke only of a fresh one. The reading of charter S4 goes to the owner | INV-3, ONE.78, BND.5, ADR-L01.8 |
+| Three chapters read a derived state's base revision differently. A value's lineage and a plan's base are now separate | ONE.21, EV3.4, EV3.12 (now [D]), RPI.7, ADR-L11.3 |
+| KN2.9 and KN7.3 did not state R-08's distinction: a read result may repeat when a digest returns, a permission never | KN2.9, KN7.3 |
+| The stage 15 row promised one certificate per admissible word, and `pstar2-*` is no format name | Partition 10.3 |
+| Partition 8.1 mixed the bases of two counts and said that label families map directly | Partition 8.1 |
+
+#### Questions for the owner
+
+These go to the owner once, with the topic. None adds a question to partition section 15.
+
+| Card | Question | What the owner weighs |
+| --- | --- | --- |
+| R4-M1 | Boundary, with LQ14 | Whether a hand-checkable instance has a ceiling on its step count |
+| R4-M16, R4-M55 | LQ2 | Which principle a solver's tool embodies, and what "built-in base tools" covers |
+| R4-M37 | LQ3 | Whether "proved" needs a higher threshold than a recorded argument at (theorem, producer) |
+| R4-M20 | LQ2, LQ14 | How the boundary treats an "understanding" the software cannot see |
+| R4-M49 | LQ16 | Whether the language's libraries count as shown, so that the theory book covers them |
+| R4-M50 | Owner's call | Whether the shelved tutorial's chapter order may inform the first-use order of the jumbling terms |
+| Record, question 1 | LQ16 | Whether a research tier with WC-PLAN ships. A principle record could not admit it as it stands |
+
+#### Records
+
+- The record's numbers come from the cited records and the mathematician's arithmetic on them. It ran no engine
+  computation, no test and no geometry.
+- The mathematician's explainer "For the owner" goes to the owner with the full text.
+- The corrections are listed in partition section 19, "Corrected after round 3".

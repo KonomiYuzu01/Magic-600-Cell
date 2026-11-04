@@ -590,7 +590,7 @@ LP0 has no executable component test in the supplied chapters. Its contract chec
 | ONE | CT-ONE-01, CT-ONE-02, CT-ONE-03, CT-ONE-04, CT-ONE-05, CT-ONE-06, CT-ONE-07, CT-ONE-08, CT-ONE-09, CT-ONE-10, CT-ONE-11, CT-ONE-12, CT-ONE-13, CT-ONE-14, CT-ONE-15, CT-ONE-16, CT-ONE-17, CT-ONE-18, CT-ONE-19, CT-ONE-20, CT-ONE-21, CT-ONE-22, CT-ONE-23, CT-ONE-24 | none | none | none | none |
 | DET | CT-DET-01, CT-DET-02, CT-DET-03, CT-DET-04, CT-DET-05, CT-DET-06, CT-DET-07, CT-DET-08, CT-DET-09, CT-DET-10, CT-DET-11, CT-DET-12, CT-DET-13, CT-DET-14, CT-DET-15, CT-DET-17, CT-DET-18, CT-DET-20, CT-DET-21, CT-DET-22, CT-DET-23 | CT-DET-16 | none | none | none |
 | RPI | CT-RPI-01, CT-RPI-20 | none | none | none | none |
-| EVD | CT-EVD-01, CT-EVD-02, CT-EVD-03, CT-EVD-04, CT-EVD-05, CT-EVD-06, CT-EVD-07, CT-EVD-08, CT-EVD-09, CT-EVD-11, CT-EVD-13, CT-EVD-17, CT-EVD-18, CT-EVD-19, CT-EVD-20, CT-EVD-21 | CT-EVD-10 | none | none | none |
+| EVD | CT-EVD-01, CT-EVD-02, CT-EVD-03, CT-EVD-04, CT-EVD-05, CT-EVD-06, CT-EVD-07, CT-EVD-08, CT-EVD-09, CT-EVD-11, CT-EVD-13, CT-EVD-17, CT-EVD-18, CT-EVD-19, CT-EVD-20, CT-EVD-21, CT-EVD-22 | CT-EVD-10 | none | none | none |
 | BND | CT-BND-01, CT-BND-02, CT-BND-04, CT-BND-05, CT-BND-06, CT-BND-07, CT-BND-08, CT-BND-09, CT-BND-10, CT-BND-11, CT-BND-12, CT-BND-13, CT-BND-14, CT-BND-22, CT-BND-23, CT-BND-24 | none | none | none | none |
 | ERR | CT-ERR-01, CT-ERR-02, CT-ERR-03, CT-ERR-04, CT-ERR-05, CT-ERR-06, CT-ERR-07, CT-ERR-08, CT-ERR-09, CT-ERR-10, CT-ERR-12, CT-ERR-13, CT-ERR-14, CT-ERR-15 | none | none | none | none |
 
@@ -607,7 +607,7 @@ LP0 has no executable component test in the supplied chapters. Its contract chec
 | EV3 | CT-EV3-03, CT-EV3-06, CT-EV3-07, CT-EV3-08 | CT-EV3-01, CT-EV3-02, CT-EV3-04 | none | none | none |
 | EV4 | none | CT-EV4-02, CT-EV4-04 | none | none | none |
 | ONE | none | none | CT-ONE-26 | CT-ONE-25 | none |
-| RPI | CT-RPI-02, CT-RPI-04, CT-RPI-05, CT-RPI-06, CT-RPI-08, CT-RPI-09, CT-RPI-12, CT-RPI-19, CT-RPI-22, CT-RPI-23 | CT-RPI-03, CT-RPI-07, CT-RPI-10, CT-RPI-11, CT-RPI-14, CT-RPI-18 | CT-RPI-13, CT-RPI-21, CT-RPI-24 | CT-RPI-26 | none |
+| RPI | CT-RPI-02, CT-RPI-04, CT-RPI-05, CT-RPI-06, CT-RPI-08, CT-RPI-09, CT-RPI-12, CT-RPI-19, CT-RPI-22, CT-RPI-23, CT-RPI-27 | CT-RPI-03, CT-RPI-07, CT-RPI-10, CT-RPI-11, CT-RPI-14, CT-RPI-18 | CT-RPI-13, CT-RPI-21, CT-RPI-24 | CT-RPI-26 | none |
 | BND | CT-BND-15, CT-BND-17, CT-BND-18, CT-BND-19 | none | CT-BND-20 | none | none |
 
 ### 15.5. LP4
@@ -650,15 +650,15 @@ Source counts from the index above:
 | --- | --- | --- | --- | --- | --- | --- |
 | LP0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | LP1 | 22 | 3 | 3 | 6 | 1 | 35 |
-| LP2 | 197 | 3 | 0 | 0 | 0 | 200 |
-| LP3 | 36 | 12 | 5 | 3 | 0 | 56 |
+| LP2 | 198 | 3 | 0 | 0 | 0 | 201 |
+| LP3 | 37 | 12 | 5 | 3 | 0 | 57 |
 | LP4 | 29 | 3 | 1 | 0 | 3 | 36 |
 | LP5 | 19 | 0 | 0 | 0 | 0 | 19 |
 | LP6 | 10 | 0 | 0 | 0 | 1 | 11 |
-| Total | 313 | 21 | 9 | 9 | 5 | 357 |
+| Total | 315 | 21 | 9 | 9 | 5 | 359 |
 
-The imported index contains 357 tests: 313 source, 21 synthetic, 9 windows, 9 performance and 5 human.
-Section 18 adds ten source test requirements for this chapter. Including them gives 367 requirements, with 323 source;
+The imported index contains 359 tests: 315 source, 21 synthetic, 9 windows, 9 performance and 5 human.
+Section 18 adds ten source test requirements for this chapter. Including them gives 369 requirements, with 325 source;
 the other class counts are unchanged. Those ten are excluded from the imported phase totals. No number is a pass count.
 
 ## 16. Source differences and evidence limits

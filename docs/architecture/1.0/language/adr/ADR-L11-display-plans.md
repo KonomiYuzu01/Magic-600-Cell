@@ -4,7 +4,7 @@ Status: **Proposed.** Not accepted. The owner accepts or rejects it ([`AGENTS.md
 owner").
 
 Rests on: partition INV-4, INV-6, INV-8, INV-9, section 8.5 and LB4; [chapter
-10](../architecture/10-renderer-platform.md). Round table: DT-L1 E5, M4, R2-E2.
+10](../architecture/10-renderer-platform.md). Round table: DT-L1 E5, M4, R2-E2, R4-M43.
 
 ## Context
 
@@ -26,7 +26,8 @@ revision cannot serve that.
   bundle and a program publication are separate atomic installations (RPI.9, RPI.10).
 - **ADR-L11.3** `ViewNode` and `DisplayPlan` are declarative (RPI.5, RPI.6). A derived state is displayed only by a plan
   naming its derivation and base revision (RPI.7). A value imported with no session ancestor states lineage `imported`,
-  and its plan base is a comparison base that claims nothing (EV3.12, ONE.21).
+  and its plan base is a comparison base that claims nothing (EV3.12, ONE.21). Content shown in a view is state data, a
+  claim with its key, or program content, and a word of EVD.32 reaches a display only through `word()` (RPI.65).
 - **ADR-L11.4** A view does work only when visible and only for changed data (RPI.11). It exposes its base revision and
   status (RPI.13), and it has no workspace-write effect (RPI.14).
 - **ADR-L11.5** Display primitives are a stated inventory (RPI.15). A backend reports support or a typed refusal for
@@ -98,7 +99,7 @@ Conditional on an owner question:
 Classes: source for the contract and the workload count. The figure of 18,288,000 is counted from `assets/mesh.json`,
 30,480 base vertices times 600 cells. It is a workload count, not measured throughput. No Windows, DirectX or
 performance result supports this record. LX-7 has not run, and PresentMon figures count only from the owner's machine
-(RPI.61). CT-RPI-01 to CT-RPI-26 are requirements only.
+(RPI.61). CT-RPI-01 to CT-RPI-27 are requirements only.
 
 ## What the owner accepts
 
