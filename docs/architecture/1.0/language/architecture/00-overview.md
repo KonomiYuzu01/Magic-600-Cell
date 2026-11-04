@@ -71,7 +71,7 @@ Each clause starts with one status tag. The tag says what would have to change f
 "Must" and "never" state requirements. "May" states a permission. A clause tagged [P LQn] names what changes under the
 alternatives of LQn, where the change is not obvious.
 
-A clause that rests on one of the round table's open obligations says so (section 8).
+Section 8 lists what the text may and may not rely on from the round table's mathematics.
 
 ### 3.2 Signatures
 
@@ -228,14 +228,34 @@ Two consequences follow:
 - The boundary mechanisms that rest on the checker or the interpreter (flow control, BM2) are only as strong as those
   parts. Their limits are stated in chapter 07.
 
-## 8. What the full text does not rely on yet
+## 8. What the full text relies on
 
-DT-L1 records two open obligations. Until the mathematician has answered them and the main session has settled the
-answers:
+DT-L1 recorded two open obligations, and round 3 cleared both (note N1 and cards R3-M1 to R3-M4). Partition section 19
+lists what they corrected.
 
-- No clause relies on the visible pose class off the lattice.
-- No clause relies, without saying so, on what the revised partition adopted from the engineer advisor's cards R2-E1 to
-  R2-E4.
+The text may rely on:
+
+- Theorem 1 of note N1 (gauge transfer) and its corollaries, on and off the lattice, for exact classes (KN1.14).
+- The classes g_A·S_A and g_A·R_A, and the levels of KN1.7 as a partial order.
+- The orbit table and Lemma R of note N1, as computed results.
+- Exact transport of a claim along its level's subgroup (KN1.16).
+- What the revised partition adopted from the engineer advisor's cards R2-E1 to R2-E4, as round 3 corrected it.
+
+Under chapter 06's grades, note N1 stands at (theorem, producer) until a model review reads it. Its transfer step is the
+reviewed lemma of stage 19. No person has reviewed either.
+
+The text does not rely on:
+
+- Labels or π off the lattice. There it says labelled posed stickers.
+- S_A read as R_A.
+- Transfer of reachability, or of label and retained checkpoints.
+- Equality of digest, journal, moved count or orientation across a class.
+- A budgeted `uncertain`, which is not constant on a class.
+- "A different class means a later twist separates". That is false.
+- Shape as the coarsest congruence, which is open and not needed.
+- Tree tests outside Γ(Λ).
+- A class as equality. State equality stays exact pose equality, with no symmetry quotient (KN1.6).
+- A gauge at the coset, tree or height levels. Those are quotients.
 
 ## 9. Coverage of the kickoff
 

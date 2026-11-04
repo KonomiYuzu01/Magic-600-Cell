@@ -822,6 +822,8 @@ Mechanisms that hold under every owner option, adopted in the revised partition:
 - The mathematician's answer to R2-E1 to R2-E4. The full text does not rely on what the revised partition adopted from
   those cards until the mathematician has checked it.
 
+Both are cleared: see [the outcome of round 3](#outcome-of-round-3).
+
 ### Experiments
 
 - The spikes LX-1 to LX-9 with the decision rules of partition section 12, if the owner allows spikes in this stage
@@ -1329,3 +1331,636 @@ That is 10,800 samples, about three hours of foreground time at one second per s
 **P-E8. What the kernel's interface gives a program, and what it never gives.** The kernel is the small exact core that knows the rules of the puzzle. A program can ask it questions: read a frozen copy of the state, work out what a word of moves would do, or try moves on a private copy. Every answer says which state it is about, and "I don't know" is a real answer that never turns into "no". A program can also prepare a proposal, which the engine replays by itself and shows you as a preview. A program never gets a writable state, never gets the key that commits a move, and cannot hand the engine a result to adopt. It gets no clock and no files unless they are granted, and no network at all. Only your own key press on the preview you can see commits anything, and the engine checks everything again at that moment. So a wrong program can show you something wrong, but it cannot damage your session.
 
 **P-E9. Why a stored format must be frozen before the program that reads it.** A saved file outlives the program that wrote it, and your macros and checkpoints must still open in every later version. Code can be fixed any day, but a file already on your disk stays exactly as it was written. So the file's exact layout is agreed first, and the reader is written against that agreement, not the other way round. If the reader came first, its accidents, such as a field order or a lazy default, would quietly become the format, and every later version would have to copy them. Freezing also forces the hard question early: anything the format cannot record is lost for good when old data is imported. That is why the proposal under LQ10 freezes only a small core: words, recipes, macros, protection, filters, checkpoints, bindings and the evidence record. Other things, such as the syntax, can keep changing, because each change comes with a recorded migration. An old file then keeps the meaning it had on the day it was saved.
+
+### Mathematician
+
+Both open obligations are answered.
+
+- **Label-lift (N1):** the lemma holds off the lattice, with a full proof.
+- **R2-E1 to R2-E4:** most adoptions stand. These do not stand as written:
+  - "one bit per run" is false;
+  - "combine by the strongest" is undefined on incomparable arguments;
+  - LB4's vertex rule cannot establish a region property;
+  - the scope rule "immutable input digest" would exclude every theorem;
+  - "height zero" means the lattice only on Γ(Λ);
+  - KN1.7 (chapter 01:118) names the wrong kernel for the map from labels to position.
+
+Default 10's key property is true only under four hypotheses, proved in R3-M2.
+
+**Source and abbreviations.** Source state: Git HEAD `ea73aaef`; I did not read the six modified `PX-*.json` files.
+- partition = `docs/architecture/1.0/language/ecosystem-partition.md`
+- contract = `research/jumbling/state-contract.md`
+- tex = `research/Full_600cell_Puzzle_Theory.tex`
+- restoration = `research/jumbling/theory/restoration.md` (earlier cards call it "trees")
+- stage N = the README of that stage under `research/jumbling/restoration/`
+- state.py = `research/jumbling/sim/state.py`
+- chapter NN = the chapter of that number under `docs/architecture/1.0/language/architecture/`
+
+**Evidence.** Every computation here is synthetic exact geometry: headless, fresh data from `assets/`, no session. None of it is Windows, DirectX, input or performance evidence.
+
+**Scope of this record.** I choose no option under LQ1 to LQ21. "(preference)" marks notation that can change without touching a proof. N1 and N2 fall inside bar M4's reduced scope, because the identity levels and the display words rely on them. The engineer's round 3 record was in the file when I finished, so R3-M1 also answers R3-E1, R3-E2, R3-E3 and its "Inferences to review".
+
+#### A. Cards
+
+##### R3-M1
+
+- id: R3-M1
+- on: R2-E1; Fix-first item 11; the Adopted rows on the import table, discharge, pinned inputs, the 0.4 import and scope; partition 8.1, section 13, PS3; also R3-E1, R3-E2, R3-E3 and the engineer's "Inferences to review"
+- kind: support
+- claim: Facts stored and judgements derived is sound: every judgement M1 and M2 need is a function of the stored facts and four versioned tables, and N2 gives that function, but only once the facts gain seven fields. The import table, identical-ID discharge, the pinned-input rule and the 0.4 mapping stand; the scope rule and "refutation is asymmetric" need the corrections below.
+- evidence:
+  - **Derivability.** M1's Claim values, M2's summaries and the display words are all computed in N2 (C.4, C.8).
+    - The only inputs that are not record facts are four versioned tables: the order, the invalid pairs, the threshold and the import table.
+    - So a word is a function of the facts and an edition. N2's proofs hold for any finite poset, so changing a table is an edition and breaks no proof (partition:659-660).
+  - **Seven fields the facts must gain:**
+    1. Statement form (finite, universal, existence, mixed), with every parameter bound in the ID. Refutation depends on the form (C.12, correction 4).
+    2. The negation pair. One record, `535:1,363:5,535:1,597:14`, gives "finite instance" for "a descent exists here" and "refuted" for "no descent exists here" (stage 15:223).
+    3. The subject level (counterexample under Scope below).
+    4. Scope-membership evidence. A failure at stage 19's synthetic state says nothing about reachable states, because that state's reachability is unknown (stage 19:88-92).
+    5. Completeness or closure of a search, apart from the job outcome. A completed beam job can be empty while 228 descending words exist (stage 15:212-223).
+    6. The premise class: reachability promise, open hypothesis or model assumption.
+    7. The tool digest of each check and the declared common base, which "independent" reads (C.6). `macro.py` holds both `cert` and `check --replay` (stage 15:415).
+  - **Stand as adopted:** the import table; identical-ID discharge; the pinned-input rule (N1 and Lemma 14, tex:1431-1444, supply transports); the 0.4 mapping. Versioned functions are mathematically sound; the choice stays LQ10.
+  - **Discharge.** It is sound if IDs are injective on meanings, so an ID must bind every parameter, the puzzle and the level. An ID that omits k would let a proof for D[7] discharge a premise about D[9].
+    - A universal reaches an instance only through an AND node with the instance's membership check.
+    - Equivalent statements under different IDs stay refused until a bridge lemma with its own ID links them. That is the safe direction.
+  - **Refutation** stands with C.12 corrections 3, 4 and 5.
+  - **Scope, two changes and a gap:**
+    - "Immutable input digest" would exclude every theorem and every bound on D[k], which have no input digest (partition:244, :665; PS1.35 at chapter 05:454). Rule: every scope field is immutable, and no field is revision-bound context.
+    - "A scope names the level its digest covers" stands, with a rule: the digest must be at least as fine as the statement's subject level, and a coarser one is a typed inconsistency. Counterexample: "Z is reachable in J(A4₀)" with a label digest. Solved and solved-with-centre-0-turned share their labels, and the second is unreachable (B.5).
+    - The list "(labels or poses)" has a gap off the lattice. Labels do not exist there, so pose is the only stored level until a sticker-class digest exists (B.7).
+  - **Summary size.** R2-E1's 90 becomes 30: check mode is a fact and leaves the order (C.2).
+  - **Import limit.** R3-E1 withdraws the "exhausted" example, and that shows the limit: one (format, field, value) row rarely states a claim. A value whose meaning depends on a sibling field stays recorded until a whole-record rule maps it, which is the safe direction because a recorded claim reads open. Stage 15's `stopped` is a negative for T, M, E and L and not for R (stage 15:212-214). The count is 156 of 417 files with no top-level `format` key and 146 with none at any depth (partition:279-280).
+  - **Engineer's round 3 record:**
+    - R3-E1, support. "Not run" and "not stated" are import values, not KN7 outcomes. "Not run" reads row 7. "Not stated" makes a negative leaf inert and is not an inconsistency (C.9).
+    - R3-E2, support. A leaf's identity needs exactly this blob digest.
+    - R3-E3, support. A mapped word without its scope text overstates the claim, and a scope that cannot be typed keeps the row recorded. One term per concept: R3-E3's "polarity" is the sense of a boolean key; my field 2 is the negation pair, so I do not call it polarity.
+    - Rule V14 stands. KN6 is defined by properties the historical reviewer records do not show, and the two checks are incomparable, so the mapping loses no strength. Limit: it applies to reviewer records, not to program checkers such as `replay_word.py`.
+    - Rule P13 is safe because no word reads check mode. Condition: a mode read from a key name never creates a transport edge.
+    - Rule K1 is safe when the enclosing record's check covers the row. Otherwise the check reads none.
+    - Rule H1 is correct. An open reach(Z) row adds no OR child, so it can discharge nothing (C.10).
+    - The `budget` row of ambiguity table case 1 shows why row 5 reads the search record's stop reason and never the word.
+- needs_owner: yes. These facts bear on LQ3 and LQ10. I choose no option.
+
+##### R3-M2
+
+- id: R3-M2
+- on: R2-E2; Fix-first items 13 and 15; the Adopted rows on kernel calls, the token, tests, charts and LX-9; default 10; LB4
+- kind: objection
+- claim: The placement, the token, the equality key, items 13 and 15, and LX-9 stand, and default 10's property is true under four hypotheses, proved below, and false without them. LB4's "on exact vertices" must change, which also corrects my M4.
+- evidence:
+  - **Stand as adopted:** kernel calls typed by puzzle and level; typed partial results; small exact algebra as library code; the token with the menu-order digest; literal letters for preview, protection, commit and token (peak height and Strict protection read the states between letters); LX-9; picking by instance IDs; the shader test.
+  - **Default 10, proposition.** Let w be a word and key(w) the word that replaces every maximal run of adjacent letters at one grip c by the single letter (c, g_m⋯g₁).
+    - Under the four hypotheses below, w is admissible at X exactly when key(w) is, with the same end state and so the same end digest.
+    - Proof. g fixes n_c, so it maps both closed half-spaces of c onto themselves. After an admissible (c, g₁), c has no straddler and the same inside set. So a run at c is admissible exactly when c has no straddler at its start, and it ends where (c, g_m⋯g₁) ends. Induction over runs gives the claim.
+  - **The four hypotheses:**
+    1. Adjacent same-grip runs only.
+    2. Identity products are kept. (2, id) at a blocked grip measures `blocked`, while the empty word is admissible. Stage 16's R1 and `_journal_witness` drop identities, which is valid only on words already admitted (stage 16 PROOFS.md:53-69; state.py:489-510). LB1.9 and CT-LB1-02 already agree.
+    3. The menu is closed under products. A4₀, S4₀ and I_a are; the contract allows menus that are not groups (contract:151-154). With a 16-item menu, g a half-turn fixing n_0 and n_13 (`research/jumbling/sim/accept.py:964-975` style), (0,g), (0,h) are both admissible and the merged letter is `invalid`. For such a menu the key holds group elements and is not run through the menu test.
+    4. Exact classification, not budgeted `uncertain` (B.6 (d)).
+  - **The key is sound, not complete.** Equal keys give equal partial maps; unequal keys say nothing, because letters at grips that do not interact commute (stage 16 PROOFS.md:58-63). A trace key needs the global lexicographic rule and its own property test (LG2.18 already says so).
+  - **Consequences of N1:**
+    - Partition:152's "lower" and "higher" must read coarser and finer on a branching order (chapter 01 KN1.7 and KN1.10 already do).
+    - Heights can batch per coset.
+    - A lattice test by heights holds only on Γ(Λ). M3:371's "lattice (height 0)" and chapter 02:130's "equivalently height zero" need that scope: Cayley ω = (2,0,0) at cap 0 is not in K⁺, has heights (0,0), and has cosine −3/5 (B.6 (e)). T3's proof needs entries in Z[φ][½] (restoration:25-28).
+    - In free mode, domain IDs go by exact coset tests, not tree positions, because T6 uses T3. Add a free-mode case to the height tests.
+    - The label-lift property test (CT-KN2-06) becomes a conformance test with S, R and σ ≠ id cases, no longer a lead for the lemma.
+    - KN1.7's map table (chapter 01:118): the kernel of labels to position is the frame group R_A/S_A, not "sticker orientation within a slot". A3's orientation is pose-level and labels do not read it (B.6 (d)).
+  - **LB4, objection.** A per-vertex test can refute a region property; it cannot establish one.
+    - Domain: take a stereographic chart with its pole on the axis of cell c. The centre piece's 8 vertices are at least 0.2296 from the axis, and its centroid is on it (computed distance 1.9e-16). So the vertex test passes while the chart is undefined at an interior point.
+    - Injectivity: a linear map to 3D can be injective on the vertices and is never injective on a 4D region.
+    - Section membership does reduce to vertices, by convexity.
+    - Fix for LB4, LB4.2, RPI.30 and CT-LB4-01: decide domain by an exact region test (KN3's polytope operations), injectivity by a theorem or an exact region test, and use vertices only where a theorem reduces the property. Include the posed vertices. The restriction to exact camera poses stands.
+    - My M4:409-410 used a pole at a 600-cell vertex, where the singular point is itself a piece vertex. That example hid the gap.
+- needs_owner: no
+
+##### R3-M3
+
+- id: R3-M3
+- on: R2-E3; Fix-first items 16 to 19; partition section 11 facts; BM2; LX-3
+- kind: objection
+- claim: R2-E3's composition is right, and no composition-closed class excludes it; but "one bit per run" is false, and Rice's theorem does not carry the argument once budgets exist. Items 16 to 19 stand with the additions below.
+- evidence:
+  - **Audit of the facts (partition:479-495):**
+    - F1 (:479-480): true.
+    - F2 (:481-482): right conclusion, wrong reason once budgets exist. A budgeted program is total, so Rice's theorem no longer applies as stated: one run is decided by running it, and only a check over all states stays out of reach. The decisive fact is that the verdict is not a function of (word, state), because the identical pair can be the solver's named macro or a search's output. This also corrects M5:437.
+    - F3 (:483-484): true. In_c and Out_c are kept by a twist of c and A_c ≤ min(In_c, Out_c), so N_c ≥ F_c. "Lower it" means that piece, at each own holder (M5:429-430).
+    - F4 (:485-488): the first half is true (45 coordinates, 36 corrections, `Span.solve` over F2 and F5, nucoords.py:170-196). Precise form: any composition-closed class containing the ν read, the rows and F2/F5 reduction contains the forbidden function, and "searches" is intensional, since a lookup table computes the same function. "Only an enumerated list with flow control" is overstated: a list that leaves a part out also stops the shipped composition (BS2, partition:545). What a solver writes from base parts, only flow control stops.
+    - F5 (:489-491): "one bit per run" is false (below). The display-sink sentence is true.
+    - F6 (:492): overstated. The checkable part is a flow property. "Themselves" and "understanding" are not, because two identical flows can differ in whether the person understood.
+    - F7 (:493-495): true, with limits: flows inside the sandbox and records the system writes.
+  - **Counterexample to one bit:**
+
+    ```text
+    for j in public_list:
+        preview(letter[j])       # constant word, passes a label check
+        if state_test(j): stop   # state-dependent stop, invisible to the rule
+    ```
+
+    The pending preview (a later one replaces it, `KN5:stale.preview_replaced`) is the program's choice among up to 36,000 letters, log₂ 36,000 ≈ 15.1 bits, and `state_test` may hold a whole search. One bit holds only for one preview as the last action on a path with no state-dependent stop. LG3.15 already says data and branch checks do not close these channels; the partition's F5 and the Adopted row's "one-bit leak" need the correction.
+  - **Three fixes, no option chosen:** one preview per run, as the last action on a low control path; stop-sensitive labels; capability separation, where a previewing program reads no state, so this channel does not arise, at the coarseness BM2:525-526 states.
+  - **Missing facts:**
+    - The verdict is not a function of (word, state).
+    - Repeated runs with a public index accumulate bits.
+    - Step and budget profiles are channels: a program that reads its remaining budget reads a state-derived value.
+    - A refusal and its error category are preview outcomes; add them to item 19 and BM2:514.
+    - A pick declassifier launders a one-item list, so it should declassify the choice, not the option set, unless the list is a fixed entry such as the repair list.
+    - Labels hold only against sandboxed programs, and a missing provenance field reads unknown, never own.
+  - **LX-3 must-refuse additions:** stop-selected preview, refusal-driven selection, one-item pick, accumulation across runs.
+- needs_owner: yes. These facts bear on LQ2 and LQ21. I choose no option.
+
+##### R3-M4
+
+- id: R3-M4
+- on: R2-E4; M6; INV-12; EV5, LB6, EV3; the Adopted rows on the principle record and the strip
+- kind: support
+- claim: The principle record as data, the fixture, the envelope reference and the checker trace stand, but a decomposition generated from the call graph gives structure, not reasons, so it is necessary and not sufficient for a person to understand a principle. Seven things must be added by hand.
+- evidence:
+  - **Counterexamples.** The floor's call graph is two set sizes and a subtraction; the reason is the invariance of In_c and Out_c and A_c ≤ min (`docs/progress/1.0/jumbling-observation.md:118`). `Span.solve`'s graph is generic elimination; the reason is that ν is a homomorphism, the corrections span, and G is the kernel (card 1). Neither reason appears in any call graph.
+  - **Add by hand to each principle record:**
+    1. A map from decomposition nodes to lemma steps.
+    2. The invariant or reason, by statement ID.
+    3. A dropped-hypothesis failure example, in the style of tex:1528-1551.
+    4. What an empty or negative answer does not mean. INV-12:111 keeps "means"; M6:456's repair list is the example.
+    5. A written hand derivation of the instance with its step count. A fixture proves numbers, not that a person can check them by hand (INV-12:113).
+    6. Prerequisites: glossary terms and earlier records, which bar M6 needs.
+    7. Specifications for opaque kernel leaves.
+  - **Generate** the decomposition from the typed IR before lowering, and bind the record to the module digest. Higher-order calls over-approximate. A fork inherits no evidence, and its statement counts as unchanged only under an identical ID.
+  - **EV5.** It can supply the means of understanding, but it cannot certify understanding (R3-M3, F6). Whether a check gates anything stays LQ14.
+  - **Stand as adopted:** pointwise and whole-state contracts with their charging, one meaning of "twist", source-prefixed IDs (their form is preference), seconds as a display unit only.
+  - **Strip:**
+    - The relation "frame" is R_A/S_A, at label level.
+    - "Frame" currently names four things: reference stickers (glossary:244-252), the nucoords frame group, restoration:173-174's C₃ component that no sticker shows, and A3's F_f. The disambiguation is correctness; the word chosen is preference.
+    - "Current occupant" is partial.
+    - "None: off the lattice" stays distinct from "unknown".
+- needs_owner: yes. LQ14 stays the owner's.
+
+#### B. Note N1: the label-lift lemma off the lattice
+
+**Answer.** The lemma holds off the lattice, for every configuration, with a full proof (Theorem 1). The lattice is needed for one step only, deriving s_A from equal labels (Corollary 3). What does not extend is anything that reads a pose literally, above all reachability.
+
+##### B.1 Objects
+
+- A configuration X assigns to each piece A a pose X[A] ∈ SO(4). Twists multiply on the left. A's posed region is X[A](Ā₀).
+- w(X) is the end state of a word w admissible from X. m_A(w; X) is A's left multiplier: w(X)[A] = m_A(w; X)·X[A]. (Preference: the contract's h_A(x) is the signed offset, so I write m_A; stage 19 writes pi for the piece permutation, which collides with A3's π, so I write σ.)
+- R_A = {s ∈ SO(4): s(Ā₀) = Ā₀}.
+- S_A = {s ∈ R_A: s maps each sticker region of A onto itself}. Equivalently, s fixes n_f for every f ∈ Host(A), because a sticker region is a 3-dimensional patch that spans the facet hyperplane of f.
+- R_A ⊂ K⁺ (computed, B.3), so R_A permutes A's sticker regions. S_A is the kernel of R_A → Sym(Host(A)), so S_A is normal in R_A, and R_A/S_A is the frame group.
+- KN1's Stab_A is S_A, as chapter 01:110 defines it. It must not be read as R_A: with R_A the class is not visible (39,530 labels differ, B.6 (d)).
+- Classes are those of contract section 3 in real arithmetic (contract:30-36), not budgeted certificates.
+- I write sticker class for KN1's visible pose class g_A·S_A. "Visible" cannot mean colours: 177,000 of the 177,120 pieces share their host set with another piece, so it must mean labelled. The name is preference; the definition is not.
+
+**The gauge group.** 𝒢 is the set of pairs γ = (σ, t), with σ a permutation of the pieces and t_A ∈ SO(4) satisfying t_A(Ā₀) = (σA)‾₀.
+- It acts on the right: (X·γ)[A] = X[σA]·t_A.
+- The product is (σ,t)(σ′,t′) = (σσ′, A ↦ t_{σ′A}·t′_A).
+- Subgroups: 𝒢_S (σ = id, t_A ∈ S_A) ≤ 𝒢_R (σ = id, t_A ∈ R_A) ≤ 𝒢.
+
+##### B.2 Theorem and corollaries
+
+**Theorem 1 (gauge transfer).** No lattice hypothesis; any exact alphabet. Let X be any configuration, γ = (σ, t) ∈ 𝒢, Z = X·γ, and (c, g) any exact twist.
+- (a) A's posed region in Z equals σA's posed region in X.
+- (b) A's class at c in Z equals σA's class at c in X. So the outcomes agree, and I_c(Z) = σ⁻¹·I_c(X).
+- (c) If the twist is admissible, (c,g)Z = ((c,g)X)·γ with the same γ.
+- (d) For every word w: w is admissible from X exactly when it is admissible from Z; w(Z) = w(X)·γ; and m_A(w; Z) = m_{σA}(w; X).
+
+*Proof.*
+- (a) Z[A](Ā₀) = X[σA](t_A(Ā₀)) = X[σA]((σA)‾₀).
+- (b) Classes read only the posed region (contract:30-36, :179). The menu test reads only the letter.
+- (c) If σA ∈ I_c(X), then ((c,g)Z)[A] = g·X[σA]·t_A = ((c,g)X)[σA]·t_A. If not, both sides equal X[σA]·t_A, since an admissible twist leaves the other pieces in place (contract:51). Left and right multiplication commute.
+- (d) Induction on the prefixes. ∎
+
+**Corollary 2.** For γ ∈ 𝒢_S the labelled posed sticker regions of X and Z agree at every later prefix, because X′[A]·t_A maps each sticker region of A where X′[A] does.
+
+**Corollary 3 (kernel of π).** On lattice configurations, π(X) = π(Y) exactly when X[A] ∈ Y[A]·S_A for every piece A.
+- Proof: equal labels put each sticker (A, f) in slot(k(A), k(f)) for both poses (contract:146), so s = Y[A]⁻¹X[A] fixes A's chamber and every f ∈ Host(A). Every piece has a sticker (B.3), so this reaches every piece. The converse is direct.
+- "Labels" here exclude A3's orientation, which `lattice_stickers` returns separately and which differs at equal labels (B.6 (d)).
+
+**Corollary 4 (goals; Lemma 13, tex:1370-1374).** If a goal set 𝒯 is invariant under 𝒢′ ≤ 𝒢, then for γ ∈ 𝒢′ the words from X that end in 𝒯 are exactly those from X·γ, so the distance in letters to 𝒯 is constant on 𝒢′-orbits.
+- The sticker test is invariant under 𝒢_S. Lattice placement and low height are invariant under 𝒢.
+- Solvability to the sticker test is therefore a sticker-class property. Menus are inverse-closed (contract:153), so a reachable state is solvable, and so is every state in its sticker class, although such a state may be unreachable.
+
+**Relation to the record.** Contract A5's lemma is Theorem 1 at σ = id on the lattice. Proposition S (restoration:82-86) is its shape part. Stage 19's transfer is the same step off the lattice: "Z_p(w) = Y_pi(p)(w) t_p", specialising a previously reviewed lemma, with reachability not needed (`records/REGIONAL_PROFILE_DESCENT_THEOREM.md:16`, :61-67). New here are the statement for all of 𝒢 at once, the typing by levels and Lemma R. Stage 19's Γ(Y) is Y·𝒢.
+
+##### B.3 Structure (computed, exhaustive over the 36 orbits)
+
+| Retained orbit | Size | Stickers | \|R_A\| | \|S_A\| | Vertices |
+| --- | --- | --- | --- | --- | --- |
+| −1 (centres) | 600 | 1 | 12 | 12 | 8 |
+| 0 | 1,200 | 2 | 6 | 3 | 12 |
+| 1 | 3,600 | 1 | 2 | 2 | 10 |
+| 3 | 3,600 | 2 | 2 | 1 | 10 |
+| 6 | 720 | 5 | 10 | 1 | 24 |
+| 2, 15, 29 | 2,400 | 1 | 3 | 3 | 9 |
+| 33 | 2,400 | 1 | 3 | 3 | 5 |
+| 8, 11, 22, 25 | 3,600 | 2 | 2 | 1 | 7 |
+| 32 | 3,600 | 2 | 2 | 1 | 6 |
+| 17, 28 | 1,440 | 5 | 5 | 1 | 13 |
+| 34 | 120 | 20 | 60 | 1 | 14 |
+| 19 others | 7,200 | 1 or 2 | 1 | 1 | 5 to 7 |
+
+- Every piece has a sticker (histogram: 1: 107,400; 2: 66,000; 5: 3,600; 20: 120).
+- In all 36 orbits the SO(4) stabiliser equals R_A, and R_A ⊂ K⁺.
+- R_A/S_A has order 2 for orbits 0, 3, 8, 11, 22, 25, 32; 5 for 17, 28; 10 for 6; 60 for 34; 1 otherwise. This equals nucoords.py's HG (line 9).
+- 15,000 pieces have S_A ≠ 1, so the lattice fibre of π has 12^600 · 3^1200 · 2^3600 · 3^9600 pose tables.
+
+**Lemma R (rigidity, computed).** If t ∈ SO(4) and t(Ā₀) = B̄₀, then t ∈ K⁺ and B lies in A's K⁺ orbit.
+- Evidence: only four orbit pairs share a vertex Gram multiset (retained 4/5, 12/13, 18/19, 26/27). Each has one matching map, with determinant −1, so they are mirror images.
+- Consequences:
+  - A posed region is a retained chamber closure exactly when the pose lies in K⁺, which is the converse of contract:26.
+  - Each posed region fixes its coset gK⁺, so domains and N are functions of the shape alone. This sharpens restoration:86.
+  - 𝒢 ≅ ∏ over the 36 orbits of R_O ≀ Sym(O).
+- Theorem 1 and Corollaries 2 to 4 do not use Lemma R. The 𝒢-orbit of X is the set of configurations with the same occupied regions, by the no-collision rule alone (contract:52).
+
+##### B.4 Levels
+
+A function has a level when it is constant on that level's classes. Piece-indexed functions transform by σ at shape level. The levels form a partial order, not a chain: pose → sticker class → region class → {coset → tree data → heights; shape}.
+
+| Level | Object | Equal when | Forgets | Defined |
+| --- | --- | --- | --- | --- |
+| Pose | g_A | X = Y | nothing | always |
+| Sticker class | g_A·S_A | Y = X·γ, γ ∈ 𝒢_S | turns in place | always |
+| Labels | the slots of A's stickers | as the sticker class (Cor. 3) | | lattice only |
+| Region class | g_A·R_A, that is the posed region | Y = X·γ, γ ∈ 𝒢_R | frames R_A/S_A | always |
+| Position | the chamber | as the region class | | lattice only |
+| Coset | g_A·K⁺ | quotient, not a gauge | place within the domain | always |
+| Tree data, heights | functions of the coset | quotient, not a gauge | | always; they determine the coset and the lattice test only on Γ(Λ) |
+| Shape | the set of posed regions | Y = X·γ, γ ∈ 𝒢 | which piece fills which region | always |
+
+Only 𝒢_S, 𝒢_R and 𝒢 are gauges. Equal cosets or equal heights give no transfer by Theorem 1, because two such configurations can have different shapes.
+
+| Reads at this level | Functions |
+| --- | --- |
+| Pose only | The pose table; the pose digest (state.py:473-486); `moved_count` (state.py:162); the orientation index; the journal; `v`; reachability; label and retained checkpoints through their reachability clause; budgeted `uncertain`; pose groups |
+| Sticker class | Labelled posed stickers; on the lattice, labels, ν, the sticker test and the label digest |
+| Region class | Each piece's posed region, lattice flag, domain, tree positions and heights; inside sets and straddlers as sets of pieces; left multipliers |
+| Shape | Occupied regions; admissibility of every word; N, N_c, In_c, Out_c, F_c; Φ, q_t, H; the off count; multisets of heights by type; anything defined only from these, such as the repair list |
+
+##### B.5 Protection and reachability
+
+**Protection (refines M3:364-367).** The pose-level verdict m_A(w) = 1 and the label-level verdict X[A]⁻¹·m_A(w)·X[A] ∈ S_A are both invariant under 𝒢_R; the second uses that S_A is normal in R_A. So M3's "exception" means two different predicates, not non-invariance. M3's rule stands: a verdict carries its level and never crosses over. A comparison with a stored literal pose is pose-level only.
+
+**Reachability does not transfer.** Let Y be solved and let X be Y with only centre 0 turned by a third-turn of A4₀, so X and Y are in one sticker class.
+- v(X) is nonzero at the centres and zero at O02.
+- The 1,200 generators give v(G) = {0, V, 2V}, where V is nonzero at O02 (restoration:173-174; `research/jumbling/theory/results/lens-invariants.json`).
+- So v(X) ∉ v(G), and X is unreachable in J(A4₀), yet X passes the sticker test.
+- Reachability of such a state in J(I_a) is open.
+
+##### B.6 Computations
+
+Command form, from the repository root: `tools/.venv/engine/Scripts/python.exe -B <script>`, with `research/jumbling`, `research/jumbling/theory` and `research/jumbling/fixtures` on `sys.path`. The script is not in the repository; its core is:
+
+```python
+import numpy as np, sim, wj, rim          # sim: research/jumbling; rim: theory; wj: fixtures
+c = sim.get_context()                     # reads assets/ only; no session
+d, k, g = c.data, c.kplus, c.regions
+P = k.perms.astype(np.int64)
+for o, p in enumerate(g.reps):            # one representative per K+ orbit
+    R = np.flatnonzero(g.piece_of[o] == p)    # R_A as indices into K+
+    h = np.array(d.hosts(p))
+    S = R[(P[R][:, h] == h).all(1)]           # S_A: also fixes every host facet
+M = wj.make_menu(c, 'I_a')
+# right factor of piece A: s_A = t s t^-1 with t = g.transport[A], s random in S or R of its orbit
+# X[A] = Y[A] s_A; per step compare at random grips the exact class of every piece
+# (sim.kernel: Evaluator(pullback_form(pose, d.N[e])).classify(g.vform(A))), N (rim.Domains(st).total_misalignment())
+# and, after one twist applied to both, status, moved count and X[A] == Y[A] s_A exactly.
+```
+
+SO(4) stabilisers come from backtracking over the Gram matrix of the exact region vertices read as floats, tolerance 1e-9. A true symmetry cannot be missed, and everything found was an exact element of K⁺.
+
+Walks are samples: they test that the simulator matches the theorem and prove nothing themselves.
+
+- **(c) Right-factor walks.** I_a, seed 7, five jumbles then four twists, six random grips per step, every piece given a random S or R factor (factors on off-lattice pieces capped at 1,500; nontrivial factors 8,853 for S, 21,945 for R).
+  - 0 class differences in both walks.
+  - N 7830, 7830, 9190, 10550 on both sides; domains 6, 6, 7, 7 with the same partition.
+  - Same outcomes; pieces moved by each twist 3097, 2808, 2702, 3097.
+  - Off-lattice counts 15,485, 18,293, 20,995, 20,995.
+  - X[A] = Y[A]·s_A exact at each step; digests differ.
+- **(d) Boundary cases:**
+  - Solved with S factors: labels equal; the orientation index differs at 10,311 slots.
+  - Solved with R factors: 39,530 labels differ, `moved_count` 23,595, frame agreement true.
+  - Lens word (0,12)(24,a)(0,12⁻¹), 2,808 pieces moved, from the S variant: admissible, ends on the lattice, labels equal, pose digests differ.
+  - Six-jumble state (seed 5) with S factors: all 600 grips have the same status (142 blocked, 458 admissible).
+  - Budget: at grip 0 with budget 240, Y is admissible and X is `uncertain`, because X needs 2,760 exact evaluations.
+  - The identity letter at blocked grip 2 reads `blocked`.
+  - Merge: (c,g₁), (c,g₂) move 3,097 pieces each, the merged letter is admissible, moves 3,097, and gives the same digest.
+- **(e) σ ≠ id and free mode:**
+  - 3,600 pieces swapped in pairs, 50 transpositions per K⁺ orbit, t_p ∈ K⁺, Y off the lattice. Over five steps of 10 grips: 0 differences between class(Z, e) and class(Y, e)[σ]; N equal (7624, 9190, 10756, 10962, 12344); Z[p] = Y[σp]·t_p exact; digests differ.
+  - Tree data equal for 40 of 40 sampled off-lattice pieces under R factors.
+  - Free-mode Cayley rotations at cap 0:
+
+  | ω | In K⁺ | Angle | Heights | Note |
+  | --- | --- | --- | --- | --- |
+  | (2,0,0) | no | 126.87° | (0,0) | cos −3/5, denominator 5 |
+  | (1,1,0) | no | 109.47° | (0,0) | cos −1/3, denominator 3 |
+  | (1,0,0) | no | 90° | (1,1) | |
+  | (3,0,0) | no | 143.13° | (1,1) | |
+  | (1,1,1) | yes | 120° | (0,0) | |
+
+  So "heights 0 exactly when on the lattice" is false outside Γ(Λ): an odd denominator takes the pose off the lattice at an odd prime, and the tree at 2 does not see that.
+
+##### B.7 What the full text may and may not rely on
+
+**May rely on:**
+- Theorem 1 and Corollaries 2 to 4, on and off the lattice, for exact classes. This lifts overview section 8's first restriction and chapter 01:116's "relies on nothing".
+- The named classes g_A·S_A and g_A·R_A.
+- The table of B.3 and Lemma R, as computed results.
+- The level table as a partial order.
+- Exact transport: a level-ℓ claim moves along that level's subgroup with no re-run, and the reused leaf is AND(source leaf, Theorem 1, the checked relation Z = X·γ).
+- Correction to M3:375: "only legality claims transfer" is too strict. Legality and shape-level claims (q, n, Φ, H) transfer.
+- Status under N2's own grades: (theorem, producer) until a model review reads this note. The transfer step itself is the reviewed stage 19 lemma. No person has reviewed either (owner, 3 November: none required). The property test stays as an engine conformance test.
+
+**May not rely on:**
+- Labels or π off the lattice; say labelled posed stickers.
+- Stab_A = R_A as "visible".
+- Transfer of reachability, or of label and retained checkpoints.
+- Equality of digest, journal, `moved_count` or orientation.
+- Budgeted `uncertain`.
+- "Different class means a later twist separates." This is false: Z = Y·γ with γ ∉ 𝒢_S has the same word language.
+- Shape as the coarsest congruence, which is open and not needed.
+- Tree tests outside Γ(Λ).
+- A class as equality: contract:25 and A5:180, :182 and :183 stand, with no symmetry quotient taken.
+- A gauge at the coset, tree or height rows.
+
+**Off-lattice digests** need a level. An optional sticker-class digest is the least exact key in g_A·S_A, at most 12 products per piece; until one exists, pose is the only stored level.
+
+**Open:**
+- Whether the same word language implies the same shape.
+- Reachability of sticker classes in J(I_a).
+- An exact certificate for Lemma R.
+- A bridge lemma with its own ID, if the text wants to weaken reach(Z) to "some member of Z's sticker class is reachable" for sticker-level goals.
+
+#### C. Note N2: the order on evidence
+
+##### C.1 The order
+
+Grades are P ⊂ Basis × Check, at most 30 values, with the product order: (b,k) ≤ (b′,k′) exactly when b ≤ b′ and k ≤ k′.
+- Basis: sample lies below theorem, certificate, exhaustive and exact, which are pairwise incomparable.
+- Check: none < producer < independent checker, model review, human review and formal proof, which are pairwise incomparable.
+
+**Principle.** x ≤ y only when a trust policy that accepts x and rejects y would be incoherent. Everything else stays incomparable: a wrong comparability hides a leaf behind another, while a missing one only shows one leaf more.
+
+**Reasons:**
+- A later check runs on a result the producer accepted, so what passes it has passed the producer, and "none" detects nothing.
+- A sample does not entail its statement even when everything recorded is right.
+- The product is right and an ordinal sum is not: (sample, independent checker) against (theorem, none) can be coherently accepted and rejected either way.
+
+All proofs below hold for any finite poset, so the table is versioned. Invalid pairs are a versioned table and read as typed inconsistencies.
+
+##### C.2 Check mode stays out
+
+The partition's "modes are facts" stands. A reused leaf is AND(source leaf, transport lemma leaf). A fresh audit and an actual replay differ in what they cover, so they are different statements or a recorded fact. So R2-E1's 90 becomes 30.
+
+##### C.3 Scenarios
+
+A scenario is ω = (D, T): D is a down-set of distrusted grades, T a set of assumed premises. Ω is ordered by less distrust and more assumptions. val is the least solution of:
+- val(leaf q) = {ω: q ∉ D}
+- val(premise p) = {ω: p ∈ T} ∪ val(C), with C the claim with the identical key, if one exists
+- AND = ∩ (the empty AND is Ω)
+- OR = ∪ (the empty OR is ∅)
+
+Each statement key has one OR node. The system is monotone on a finite lattice, so the least solution exists (Knaster-Tarski) and is reached by iteration from ∅ (Kleene). Every val is an up-set of Ω.
+
+##### C.4 Summaries
+
+An alternative is a = (L, Π), with L a set of grades and Π a set of premises. Sat(a) = {(D,T): L ∩ D = ∅, Π ⊆ T}. Every val is a finite union of such sets. a dominates b when Sat(b) ⊆ Sat(a).
+
+**Theorem A (the weakest governs).** Sat(L, Π) = Sat(min L, Π).
+*Proof.* If y ∈ L ∩ D, a minimal x ≤ y in L lies in D, because D is a down-set. ∎
+
+**Theorem B.** Sat(L₂,Π₂) ⊆ Sat(L₁,Π₁) exactly when Π₁ ⊆ Π₂ and L₁ ⊆ ↑L₂.
+*Proof.* (⇐) Let (D,T) ∈ Sat(L₂,Π₂). Then Π₁ ⊆ T. If x ∈ L₁ ∩ D, some y ∈ L₂ with y ≤ x lies in D, a contradiction. (⇒) Take ω = (P∖↑L₂, Π₂), which lies in Sat(L₂,Π₂). ∎
+
+**Theorem C (canonical summary).** Each val(v) has exactly one set 𝒮(v) of alternatives whose L are antichains and which are pairwise non-dominating.
+- AND: take pairwise (min(L₁∪L₂), Π₁∪Π₂), then reduce.
+- OR: take the union, then reduce.
+
+*Proof.* Existence: use Theorem A and delete dominated alternatives. Uniqueness: let 𝒜 and ℬ be two such sets. For a ∈ 𝒜, ω_a = (P∖↑L_a, Π_a) lies in some Sat(b), which by Theorem B gives Sat(a) ⊆ Sat(b). Symmetrically Sat(b) ⊆ Sat(a′). Non-domination forces a = a′, so Sat(a) = Sat(b), and antichains then give a = b. ∎
+
+So:
+- The summary does not depend on evaluation order, because ∩ and ∪ are associative, commutative and idempotent.
+- It is defined on a DAG, because sharing is harmless.
+- It is monotone: raising a grade or adding an OR child enlarges val.
+
+"The set of weakest leaves" is right at an AND node. At an OR node the summary is a set of alternatives, not one set of leaves.
+
+##### C.5 Cycles and unresolved premises
+
+The least solution is the union of well-founded derivations, so a cycle gives its members only what they have from outside.
+- A pure child cycle has val ∅ and reads open with a diagnostic.
+- A circular discharge stays conditional on its premises and is never proved.
+- An unresolved premise is a free atom. With the OR form, an open claim C leaves S conditional on p; it does not drag S to open.
+
+##### C.6 Independent arguments
+
+Replace "combine by the strongest" with "keep every undominated argument". Nothing adds up, and if one argument dominates, it alone stays. When two arguments are incomparable both stay: two samples stay below every threshold, and no number of them makes a proof.
+
+"Independent" is a displayed fact: two arguments share no leaf identity and no tool digest apart from the declared common base (kernels, model files). It is not needed for soundness. A leaf present in every alternative stays a single point of failure, since val ⊆ val(leaf). The graph keeps leaf identities, grades are a projection of them, and common failure points are shown.
+
+##### C.7 Threshold and standing
+
+The threshold is a versioned up-set 𝒰 ⊆ 𝒰₀ = {(b,k): b ≠ sample, k ≠ none}. 𝒰₀ is the weakest threshold that keeps 8.1; raising it belongs to LQ3, and I do not choose.
+
+- ω₀ = (P∖𝒰, ∅), and stands₀(v) means ω₀ ∈ val(v).
+- Ref = {p: stands₀(neg p)}.
+- ω₁ = (P∖𝒰, Prem∖Ref), and stands₁(v) means ω₁ ∈ val(v).
+
+stands₀ does not read Ref, so there is no circularity through negation. Both are one pass of unit propagation, and stands₀ implies stands₁. The exact alternative form can be exponential and is computed lazily for display.
+
+A failed check removes its leaf from val and refutes nothing; the claim reads as it would without that support, as the error registry's `evidence` row says.
+
+##### C.8 The word function
+
+A decision list, first match wins, so it is total and single-valued.
+
+| Row | Condition | Word | Claim field |
+| --- | --- | --- | --- |
+| 0 | Any inconsistency I1 to I6 in Reach(S) | typed inconsistency | none |
+| 1 | stands₀(neg S) | refuted | refuted |
+| 2 | stands₀(S), covered set one finite instance or a declared search set | finite instance | proved |
+| 3 | stands₀(S), covered set an admitted domain or every reachable state | proved, with a mandatory scope phrase ("proved on D[k]") | proved |
+| 4 | stands₁(S) | conditional, premises named | conditional |
+| 5 | A search record for S or neg S with complete = false and stop reason a deterministic budget or a declared limit | not found within budget | open |
+| 6 | A job for S or neg S ended cancelled, error, wall-clock or resource stop, or cut off on a non-search job | incomplete | open |
+| 7 | Otherwise | open (recorded-only claims keep their source label) | open |
+
+- Default 6's three results are distinct: "empty" is a completed exhaustive negative (row 2), "not found" is row 5, and "not run" is no record or R3-E1's import value (row 7).
+- A search record's target is the existence statement, shared by the pair {E, neg E}.
+- 4.1's reachability values map as: witnessed to finite instance; by theorem without a witness to finite instance with basis theorem shown; promised to conditional; refuted to refuted; open to open.
+- A product ceiling is not a declared limit, so it reads row 6, matching the registry's `budget` and `resource_limit` boundary.
+
+R2-E1's combination test is finite at node level: three booleans with stands₀ ⇒ stands₁ (6 cases), covered-set kind (4), search record (none, complete, budget or limit: 3), job outcome (none, the four of KN7, not run, not stated: 7). That is 504 cases, plus property tests of the passes on small graphs.
+
+##### C.9 Inconsistencies
+
+These read `EVD:evidence.inconsistent_fields`, and I5 reads `EVD:evidence.negative_without_completion`.
+- I1: a value outside its versioned enumeration, or a pair the table lists invalid.
+- I2: a discharge edge between different keys, a negation pair that is not mutual, or a leaf whose identity fields differ from its statement's scope.
+- I3: a scope digest coarser than the statement's subject level.
+- I4: stands₀(S) and stands₀(neg S).
+- I5: a negative or exhaustive leaf whose search record says complete = false, or complete = true with job outcome cancelled, cut off, error or not run.
+- I6: a refuting leaf on a universal statement with no scope-membership fact.
+
+Job outcome "not stated" (R3-E1) is no contradiction. It makes a negative leaf inert, which blocks the negative claim, and the word stays row 7 with the source label. A witness from such a job counts once checked.
+
+##### C.10 Non-upgrade
+
+Key = statement ID plus scope. Arguments are immutable, so a new record enters as a new node or a new OR child. Reach(S) is the smallest node set containing S and neg S, closed under children, discharge edges and negation pairs of premises.
+
+**Theorem D.**
+- (a) Locality. word(S) reads only facts on Reach(S) and the versioned tables, so a record that adds no edge into Reach(S) changes no word.
+- (b) For any 𝒰 ⊆ 𝒰₀, a sample leaf or a job outcome never moves S from rows 5 to 7 into rows 1 to 4. *Proof.* A sample leaf's grade is outside 𝒰, so it is false at ω₀ and ω₁. As a new OR child it changes neither pass, nor Ref. A job outcome is not a leaf. Rows 1 to 4 read only the passes. ∎
+- (c1) Scoped negative. Its covered set is a declared search set, and scope is part of the key and immutable, so its word is at most "finite instance". The full-family statement has a different key, and the only edge to it is a bridge lemma with its own ID (stage 16 PROOFS.md:53-79; LB5). An upgrade happens only by a proof.
+- (c2) Reachability promise. T(Z) = AND(theorem on D[k], admission(Z), reach(Z)). val(reach(Z)) at T = ∅ is nonempty only through a claim with the identical key: a journal from solved, a checked witness or a theorem. So T(Z) stays conditional until that claim exists.
+- (c3) `OUTSIDE_CERTIFIED_DOMAIN(k)` is a leaf for ¬Adm_k(Z), whose word is finite instance, with no edge to reachability or solvability (stage 19:152), so their words do not change. T(Z) falls to open, not refuted. A different k is a different key.
+
+##### C.11 Worked examples
+
+**E1, stage 15 macro certificate R01.** S₁ is "the word `104:8,46:4,104:15` from `b47d8474…` ends at `1db0dd54…` with Φ 1376, 1376, 1376, 1350 and excursion 0" (stage 15:104); finite instance, pose level. S₁ is the OR of:
+- a₁ = {(certificate, producer) `results/certificates/R01.json`, (theorem, model review) Theorem MC}
+- a₂ = {(exact, producer)} `macro.py check --replay`, `R01-check.json`: same script file as `cert`, so it counts as an independent checker only if the tool-digest fact says so
+- a₃ = {(exact, independent checker)} `replay_word.py` (under rule V14 the import may record it differently; the word below does not change)
+
+a₃ dominates a₂ by Theorem B. a₁ and a₃ are incomparable, so "strongest" is undefined and both stay. Word: finite instance. Under a raised threshold that requires a later check, a₁ falls and a₃ carries the same word. All three share the exact geometry and model files, the declared common base.
+
+**E2, stage 19.**
+- Fixed-L implication: (theorem, model review), `records/type-height-weight-proof.md` with its review. Word: proved.
+- The bound "cost ≤ L·R_L(Z₀)" is AND(implication, premise Sel). Word: conditional. Sel is "every admitted nonterminal state has a legal selected macro …", a mixed statement (stage 19:100-102); "Neither theorem proves that the needed macro exists at every reachable state" (:112).
+- A macro found at one state discharges nothing, and a failed budgeted search at one state does not refute Sel.
+- U(h,k) on D[k]: (theorem, model review), `records/continuous-framework-independent-final-review.md:5`. Word: "proved on D[k]", with the reachability promise inside the statement.
+- Applied to a concrete Z it reads conditional on reach(Z), and the synthetic state stays conditional (stage 19:88-92).
+- For a rejected Z, ¬Adm_k(Z) reads finite instance and T(Z) reads open.
+
+**E3, a cut-off search, the 7302 stop at Φ 1094.** E₃ is "some family-R word with at most three retained letters lowers Φ here", and S₄ is neg E₃.
+- Declared run: job completed, beam 64 truncated at three letters, complete = false (stage 15:212-214). Word for both: not found within budget.
+- The two-letter subset was exhaustive. It has its own key and reads finite instance.
+- The unbeamed search found `535:1,363:5,535:1,597:14` (Φ 688; 228 descending words; 545 CPU s; stage 15:223). E₃ reads finite instance, and S₄ reads refuted.
+- The same search at the 7303 stop found none, 0 words: a scoped negative, finite instance, for three letters of family R only.
+- The runs at 7305 and 7306 stopped by the integrator at 922 and 699 CPU s are cancelled jobs: incomplete, and their continuation has its own record (stage 15:198-201).
+- The two-level stop at Φ 498 (`661010e5…`) is a negative for the five declared families only, and "no word descends there" stays open (stage 15:239-241, :395-404).
+
+##### C.12 Corrections to 8.1
+
+1. Line 254: keep every undominated argument (C.6).
+2. Line 267 and INV-5:78: "never upgrades a universal claim". Counterexample: a checked witness found by sampling proves an existence statement, as line 266 agrees; its leaf's basis is exact or certificate, not sample.
+3. Line 263: a negative can also be proved by a theorem (the floor lemma; the all-word exclusions at `records/CONTINUOUS_FRAMEWORK_CANDIDATE.md:54`).
+4. Line 261: a counterexample needs checked scope membership and identical identity fields (stage 19:88-92). A mixed statement is refuted only by a witness x plus a complete negative at x.
+5. A conditional refutation is a conditional neg S. S itself reads open, and no extra Claim value is needed.
+6. Line 266: job completed is not search complete, so store completeness or closure separately (the beam).
+7. Line 253: "weakest leaves" holds per argument; a statement's summary is a set of alternatives.
+8. Line 244, section 13 line 665 and PS1.35: every scope field immutable, no field revision-bound context.
+
+Line 264's "reads open" stands as the Claim value; the display word is "not found within budget".
+
+#### D. Explainers
+
+**P-M6. How supports are compared, and why the weakest governs.** Most results rest on several supports at once. Each support carries two stamps: what it is based on (a proof, a certificate, a complete enumeration, an exact calculation or a sample) and who confirmed it (nobody, the program that made it, a separate checker, an AI review, a person, or a formal proof). Only a few stamps can be compared: a support nobody confirmed is below the same support confirmed by its producer, that is below any later check, and a sample is below anything that actually implies the result. Most pairs cannot be compared, because a certificate passed by a checker and a proof read by an AI model fail in different ways, so the system keeps both and never forces them onto one scale. When a result needs two supports together, it is only as safe as the weaker one, because whoever distrusts the stronger must also distrust the weaker; so only the weakest supports need showing. When a result has two separate arguments, it stands if either stands, so both stay listed unless one is plainly better, and they never add up: two samples are still no proof. You set the bar a support must clear before a word such as "proved" appears. Trade-off: a single scale would read faster, but it would claim comparisons nobody can justify.
+
+**P-M7. What the label-lift result means for a solver.** Two puzzle states can differ only by pieces turned in place: every sticker sits where it sat, but the exact pose of some pieces differs. It is now proved that such states behave identically for ever, in the middle of a jumble as well as when every piece is in a retained place: the same twists are legal, the same pieces move, and the stickers stay the same after every twist. So a hidden turn can never block you later, never make a solve longer and never make the puzzle unsolvable by the sticker test. Tools may therefore reuse a check between such states without running it again. Three things do not carry over: the exact record of poses (the digest and the journal), protection that reads poses, and the question whether that exact state can be reached from solved. There is also a warning in the other direction: two states with different stickers can have exactly the same legal twists, so equal legality never means the same puzzle. The proof is short and uses only the rule that a twist turns whatever lies wholly inside a cap; the same step was already reviewed by AI in stage 19, no person has reviewed it, and the new typing by levels still needs a second reader.
+
+**P-M8. Levels of identity (ADR 4).** The language must know what a value talks about, so each value names its level. The finest level is the pose: exactly how a piece sits in 4D. Next comes the sticker class: what the labelled stickers show, which ignores turns in place. Then comes the region class, only the space a piece fills, which also ignores how its stickers are swapped within that space, and finally the shape, the set of filled spaces, without saying which piece fills which. Labels and slot positions are the sticker class and the region class read when every piece is in a retained place; otherwise they do not exist, so the program says "none: off the lattice", which is different from "unknown". The levels branch rather than form one ladder: a piece's height (how far its pose is from a retained one) keeps the piece's name but forgets its place, while the shape keeps places but forgets names. A claim may be carried to another state only along a level it does not depend on: "this twist is legal" carries across the whole shape level, "the stickers are home" across turns in place only, and "this state is reachable" across nothing. Trade-off: every value and claim carries a level, which is more to read and write, and in return a result cannot silently be applied where it is false.
+
+**P-M9. Scope, premises and how a premise is cleared (ADR 5).** Every claim says what it is about (its scope) and what it assumes (its premises). A premise is an open debt: the result reads "conditional" and names it. It is cleared only by a claim with exactly the same identity, meaning the same statement, the same puzzle, the same menu and the same state. If two statements merely mean the same thing, the system refuses the link until someone adds a small lemma connecting them; that can leave a true result unlinked, but it never links a false one. The main example is the reachability promise: the restoration theorems of stage 19 apply only to states that can be reached from solved, so a bound for a given state stays conditional until a journal or a checked word shows that state is reachable. Likewise "no macro in this family" is a result about that family only, and "outside the certified domain" says only that the finite entrance test failed, not that the state is unreachable or unsolvable. A theorem about a whole set reaches one state only through an explicit step that checks the state belongs to the set. Trade-off: more "conditional" and "open" on screen, against no result that quietly claims more than was shown.
+
+**P-M10. How the display word is computed, and why refutation is one-sided.** The word on screen comes from a fixed list of questions, and the first yes decides, so every result gets exactly one word. An inconsistent record shows an error instead of a word. If the opposite statement is established, the word is "refuted". If the statement is established at your bar, the word is "finite instance" for one case or a stated search, and "proved" for a whole domain, whose name is always shown. If it would stand once its named assumptions hold, the word is "conditional". Otherwise it is open, and the word says why: "not found within budget" for a search stopped by its preset limit, "incomplete" for a job cancelled, failed or stopped by the clock, or plain "open". Refutation is one-sided because one checked counterexample inside the claim's scope ends "always", while failing to find something ends nothing: in stage 15 a finished search with a narrowed beam found no macro, and the full search then found 228. Trade-off: you see more "open" and "not found" than a looser rule would show, and none of them is a disguised "no".
+
+**Corrected P-M1 to P-M5.** The engineer advisor's corrections 1 to 5 are applied, plus two updates from this round. P-M1 had no listed correction; I added one sentence for INV-4's third float site. P-M2 and P-M5 also carry updates from N1 and R3-M3.
+
+**P-M1. Exact numbers for decisions.** Computers usually store numbers approximately ("floating point"), with tiny rounding errors: harmless for drawing, risky for deciding. In the solved puzzle, pieces touch the cuts (the flat boundaries along which caps turn) at distance zero, so a rounding error could make a legal twist look blocked. The jumbling contract's tests include a piece crossing a cut by five ten-billionths of the distance from the centre to a cell, which must count as blocked. So every decision uses exact numbers: whole numbers, fractions and numbers a + b√5, which the geometry needs. A fast approximate test may answer first only where a proved limit on its error shows it cannot be wrong. One place still starts from approximate numbers: a rotation requested by angle is turned into an exact rotation, the exact result is recorded and replay uses it, and a spike (LX-9) checks that this choice is the same on every computer. Trade-off: none for you; the charter binds this.
+
+**P-M2. Poses, stickers and what you can see.** A pose is how a piece sits in 4D; a slot is a fixed place where one sticker sits. Some pieces, like cell centres, can turn in place: the pose changes, every sticker stays in its slot, so nothing shows. 600-cell-Full records only stickers, so it cannot see such a turn at all; poses exist only in the jumbling puzzle, where Jumble off stores the exit poses and Jumble on replays later moves from them. A proof in the jumbling contract, so far reviewed only by AI, shows no later twist can tell such poses apart; that proof covered states with every piece in a retained place, and note N1 of this round extends it to every state, mid-jumble included (the extension has no second reader yet). So a solve ends on the sticker test (all stickers home), as you chose on 22 October. I propose the language checks whether each value describes poses or stickers. One catch: protection inside Jumble reads poses, so it can object to a turn no sticker shows. Trade-off, later: mark such objections, or let protection read stickers, a contract change.
+
+**P-M3. How sure is a result?** Your five words (proved, conditional, finite instance, not found within budget, incomplete) mix three questions. How true is it: proved, true if named assumptions hold (conditional), disproved, or open? What is it about: one finite case, everything a stated search covered, or every state the puzzle can reach? How did the calculation end: finished, cancelled, stopped at its budget (a preset limit on work), or with an error? A cancellation, a budget stop or an error never yields a negative answer. On one scale a search stopped by its budget would be both "not found within budget" and "incomplete". I propose storing the three answers separately and computing exactly one of your five words, or refuted, or open, from them for display. Trade-off: one simple scale is easier to read but can mislabel results; separate answers are exact but need a careful display.
+
+**P-M4. Certificates and independent checkers.** A certificate is a record that lets anyone confirm a result without trusting how it was found. To show a twist is blocked, it gives two exact points of one piece, one on each side of the cap's boundary. To show what a macro does, it gives every twist and a digest, a short fingerprint, of each state. A checker is a separate small program that recomputes every claim from the certificate, twist by twist; it shares no search or construction code with the program that found the result, but both use the same exact simulator and model files, which are tested separately. It is tested with damaged certificates, which it must reject. Reviews by an AI model or a person are recorded as other kinds of check. Trade-off: extra work and storage, against trusting the finder.
+
+**P-M5. What the boundary can and cannot enforce.** A read-only program can search: it tries twists on copies and reports the best. For a language without limits, no checker can tell, for every program, whether its output is a solving move; a classic theorem (Rice's) rules that out. Budgets make each run finite, so one run can be decided by running it, but checking a program on every state stays out of reach, and the deeper limit remains: the same word at the same state can be your own choice or a program's, so no test on the word and the state can tell them apart. Even a plain formula can answer a search: when a cap's mismatch count equals its floor, a simple formula, no twist of that cap alone can lower the count, and nothing was tried. Software can enforce what ships, one deliberate action (a key press or a click) for every commit (a held key never repeats a commit; program views and the camera need no such action), and which abilities each mode (solving, writing tools, research) grants. It can also record where each previewed move came from, indirect choices included, but only in a language that tracks data and branches: static labels need a checker over exactly the code that runs, which an own language has and a borrowed runtime can add over an approved subset, and labels at run time need an own interpreter, an own compiled front end or a modified runtime. Even then a program can signal by when it stops, which needs a stricter rule; a word retyped or carried in a file from elsewhere loses the record, and your understanding stays invisible. Trade-off: stricter rules forbid harmless tools; looser rules rely on honest labels.
+
+### Outcome of round 3
+
+Settled by the main session on 4 November 2026, in the order of the [round protocol](../README.md): the filter, then
+demonstrated failures, then the 8B order among admissible options, then experiments for unmeasured objections. Nothing
+here is an owner decision until the owner answers the questions at the end. In this section N1, N2 and the section
+letters are those of the mathematician's record above.
+
+#### The two open obligations
+
+Both are cleared.
+
+- **The label-lift lemma off the lattice (M3).** N1 proves it for every configuration and any exact alphabet (Theorem 1,
+  Corollaries 2 to 4). The lattice is needed for one step only: deriving a turn in place from equal labels. The full
+  text relies on what B.7 lists and on nothing B.7 rules out. Under N2's own grades the note's status is (theorem,
+  producer) until a model review reads it. The transfer step itself is the reviewed stage 19 lemma. No person has
+  reviewed either, and the owner requires none (3 November 2026). CT-KN2-06 stays as an engine conformance test.
+- **The mathematician's answer to R2-E1 to R2-E4.** R3-M1 to R3-M4 give it. What the revised partition adopted from
+  those cards stands, except for the corrections below.
+
+#### Out by the filter
+
+- A pick that clears the labels of the list it was made from. A program could build a one-item list and turn one key
+  press into its own choice, which the 2 October boundary forbids. The record's fix enters chapter 07 as a rule for the
+  joint setting: a pick declassifies the solver's choice, and the option set keeps its labels unless the list is a fixed
+  entry such as the repair list.
+- A reachability claim moved along a gauge, and a label or retained checkpoint moved along one. Neither transfers
+  (B.5).
+
+#### Demonstrated failures, adopted
+
+| Failure or gap | Card | Applied in |
+| --- | --- | --- |
+| "One bit per run" is false: a state-dependent stop selects among up to 36,000 pending previews, about 15.1 bits | R3-M3 | Partition section 11, BM2, chapter 07, chapter 11's LX-3 corpus |
+| Rice's theorem does not carry the argument once budgets exist; the verdict is not a function of (word, state) | R3-M3 | Partition section 11, chapter 07 |
+| A refusal and its error category are preview outcomes; a read of the remaining budget is a state-derived read; a missing provenance field reads unknown, never own | R3-M3 | BM2, chapter 07, chapter 09 |
+| "Combine by the strongest" is undefined on incomparable arguments; keep every undominated argument | N2, C.6 and C.12 | Partition 8.1, chapter 06 |
+| Facts lack seven fields: statement form, negation pair, subject level, scope-membership evidence, search completeness, premise class, tool digest of each check | R3-M1 | Partition 8.1, chapter 05's envelope, chapter 06 |
+| "Immutable input digest" would exclude every theorem; every scope field is immutable and none is revision-bound context | R3-M1, C.12 | Partition 8.1 and section 13, PS1.35, chapter 06 |
+| The eight corrections of C.12, among them a checked witness found by sampling proves an existence statement, and a job completed is not a search complete | N2, C.12 | Partition 8.1, INV-5, chapter 06 |
+| Default 10's key property needs four hypotheses | R3-M2 | Partition default 10, LG2.13, LG2.14 |
+| A per-vertex test can refute a region property and cannot establish one | R3-M2 | Partition LB4, LB4.2, RPI.30, CT-LB4-01 |
+| "Height zero" means the lattice only on Γ(Λ) | R3-M2 | Chapters 01 and 02, with a free-mode height test |
+| The kernel of labels to position is the frame group R_A/S_A | R3-M2 | KN1.7 |
+| The levels form a partial order with region class, coset, tree data, heights and shape | N1, B.4 | Partition KN table, KN1.7 to KN1.11 |
+| Two protection predicates, each with its level | N1, B.5 | KN1.11 |
+| A generated decomposition gives structure, not reasons; seven parts are added by hand | R3-M4 | `PrincipleRecord` (LB6.1, LB6.2), EV5.3, EV5.4 |
+| "Frame" names four things, and "current occupant" is partial | R3-M4 | EV3.8, the strip's clauses |
+| The corpus is read from Git blobs, never from a checkout; the counts at partition lines 279 and 662 | R3-E2 | Partition, default 13 |
+| The largest word figure | R3-E4 | Chapter 01, the partition |
+
+#### Order among admissible options
+
+No option under LQ1 to LQ21 is chosen. Round 3 changes what the owner weighs under three of them:
+
+- LQ2 and LQ21: the three fixes for the stop channel (one preview per run as the last action on a low control path,
+  stop-sensitive labels, capability separation) enter chapter 07 as options. None is preferred.
+- LQ3: the threshold is a versioned up-set. Chapter 06 states the weakest one that keeps partition 8.1. Raising it is
+  the owner's.
+- LQ10: the envelope stores the seven facts. Which word encoding the data core uses stays open (R3-E4).
+
+#### Experiments
+
+- LX-3's must-refuse corpus gains four cases: a stop-selected preview, refusal-driven selection, a one-item pick, and
+  accumulation across runs.
+- R2-E1's combination test becomes the 504 cases of C.8, plus property tests of the two passes on small graphs.
+- CT-KN2-06 becomes a conformance test with S, R and σ ≠ id cases.
+
+Each runs only under LQ18 or inside its phase. None has run.
+
+#### Questions for the owner
+
+The items marked `needs_owner` go to the owner once, with the topic. None of them adds a question to partition section
+15.
+
+| Card | Question | What the owner weighs |
+| --- | --- | --- |
+| R3-E1 | LQ3, LQ10 | "Not run" and "not stated" as import values of job outcome |
+| R3-E4 | LQ10 | The word encoding of the data core: one journal row citing literal letters by digest, stored as `ia16` chunks |
+| The engineer advisor's LX-8 bars | LQ13 | The bars for the syntax comparison |
+| R3-M1 | LQ3, LQ10 | The seven facts and the four versioned tables |
+| R3-M3 | LQ2, LQ21 | The corrected facts and the three fixes for the stop channel |
+| R3-M4 | LQ14 | Whether a check gates anything, given that EV5 can supply the means of understanding and cannot certify it |
+
+#### Records
+
+- The record of the mathematician's computations is synthetic exact geometry: headless, with fresh data from `assets/`.
+  None of it is Windows, DirectX, input or performance evidence.
+- The explainers P-E6 to P-E9, P-M6 to P-M10 and the corrected P-M1 to P-M5 go to the owner with the full text.
+- The partition is corrected as listed above, and its section 19 records the corrections.

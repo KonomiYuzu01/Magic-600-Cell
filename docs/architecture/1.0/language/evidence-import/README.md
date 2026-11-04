@@ -48,13 +48,13 @@ Rows set one or more of six fields: claim, scope, basis, check, check mode and j
 partition section 8.1, so one row rarely states a whole claim, and an evidence envelope is built from several rows of one
 record.
 
-## What is still inferred
+## What was inferred
 
-These four rules were set by the engineer advisor from names and stage READMEs. They stay inferences until chapter 06
-rules on them:
+The engineer advisor set these four rules from names and stage READMEs. Chapter 06 (EVD.52) lets them stand, each with a
+limit:
 
 - **V14** maps historical `*-independent*` reviewer records to model review with a fresh audit, and keeps "independent
-  checker" for a 1.0 checker under KN6.
-- **P13** sets the check mode from a key's name alone.
-- **K1** leaves the check to the enclosing record.
-- **H1** maps reachability rows to open on one finite instance, as a claim of their own.
+  checker" for a 1.0 checker under KN6. It applies to reviewer records, not to program checkers.
+- **P13** sets the check mode from a key's name alone. A mode read that way never creates a transport edge.
+- **K1** leaves the check to the enclosing record, and only when that record's check covers the row.
+- **H1** maps reachability rows to open on one finite instance, as a claim of their own. Such a row can discharge nothing.

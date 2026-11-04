@@ -10,8 +10,10 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
 [DT-L1 Round 3](../../../../progress/1.0/design-table/topics/language-ecosystem.md#round-3), engineer advisor item 2;
 [V06, V03.3 and V05](../../10_V1_ARCHITECTURE.md), as proposals where marked;
 [01 Kernel](01-kernel.md), [02 Language core](02-language-core.md), [03 Libraries](03-libraries.md),
-[04 Environment](04-environment.md), [05 Persistence](05-persistence.md), [08 One state](08-one-state.md),
-[09 Determinism](09-determinism.md), [10 Renderer and platform independence](10-renderer-platform.md);
+[04 Environment](04-environment.md), [05 Persistence](05-persistence.md), [06 Evidence](06-evidence.md),
+[07 Boundary](07-boundary.md), [08 One state](08-one-state.md), [09 Determinism](09-determinism.md),
+[10 Renderer and platform independence](10-renderer-platform.md), [11 Route and spikes](11-route-and-spikes.md),
+[12 Phases and conformance](12-phases-and-conformance.md);
 [ENG-0J](../../../../progress/1.0/packets/engineering/ENG-0J-jumbling-backend.md), acceptance item 3 and section 4;
 [DT-J1](../../../../progress/1.0/design-table/topics/jumble-solver-aids.md), A5 and its Outcome; and
 [charter E6 and M3](../../../../progress/1.0/charter-2.0-draft.md).
@@ -37,8 +39,8 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
 - **ERR.4 [D]** The short form `category.slug` is legal only in an `errors:` line in the raising component's
   section. There it expands with that component's prefix. `category.*` denotes all registered codes of that
   category from that component and needs no registry row of its own. An interface returning another component's
-  error uses its full code. Section 6 supplies the replacements for the drafts' provisional short spellings,
-  including spellings in prose and code tables (default 19; DT-L1 Round 3).
+  error uses its full code. Section 6 records what replaced the drafts' provisional short spellings, in prose and code
+  tables too (default 19; DT-L1 Round 3).
 - **ERR.5 [D]** A code keeps its meaning for ever and is never reused. Retirement leaves the row, its meaning and
   its retirement edition in the registry. A proposal withdrawn before first use is marked as such, with no invented
   edition. It cannot become a different failure later (default 5; DT-L1 Round 3; V06).
@@ -171,8 +173,8 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
 | Unmapped research label | PS3.10, default 20; DT-L1 R2-E1. Original text remains recorded, with no invented failed check. |
 | `OUTSIDE_CERTIFIED_DOMAIN(k)` | LB5.4; partition 8.1 and 10.3. Completed rejection of membership in the stated D[k], with that scope. It says nothing about reachability or solvability. |
 
-- **ERR.22 [D]** `input.lb5_outside_certified_domain` in chapter 03 misclassifies its own completed membership
-  answer. It leaves the error registry. Its withdrawn prefixed spelling, `LB5:input.outside_certified_domain`,
+- **ERR.22 [D]** `input.lb5_outside_certified_domain`, in chapter 03's first text, misclassified its own completed
+  membership answer. It has left the error registry. Its withdrawn prefixed spelling, `LB5:input.outside_certified_domain`,
   is recorded here only to prevent future allocation as an error. Section 6 records that withdrawal as a removal,
   not a code substitution. A cut-off membership job returns unknown membership, never this completed rejection
   (LB5.4, INV-5, default 6).
@@ -187,7 +189,7 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
   requirement; a chapter's code table alone is not its justification (default 5).
 
 - **ERR.24 [O]** Both `LG3:effect.flow_refused` and `LG3:capability.flow_refused` remain reserved. LQ21 retires
-  one before first use, and chapter 07 owns the rule and applicable form. Flow labels can reject a forbidden source
+  one before first use, and chapter 07 owns the rule (BND.33) and the form. Flow labels can reject a forbidden source
   flow; capability separation rejects the combined authority. Static and run-time label variants can detect the
   refusal at different points. LQ2 still decides permitted flows, sinks and exceptions under either mechanism
   (BM2; LG3.12 to LG3.14; DT-L1 R2-E3). The reconciliation target for the current capability spelling is a reservation,
@@ -263,7 +265,7 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
 | `KN5:input.retained_tool_needs_jumble_off` | refusal | Retained workflow tool requested with Jumble on. | | ENG-0J item 7; LG2.8 | Round 3; not yet used |
 | `KN5:input.menu_word_needs_jumble_on` | refusal | Session menu-word operation requested with Jumble off. | | ENG-0J item 7; PS1.21 | Round 3; not yet used |
 | `KN5:input.menu_change_in_episode` | refusal | Attempt to change the pinned menu inside an episode. | | ENG-0J section 4 | Round 3; not yet used |
-| `KN5:capability.commit_row_refused` | refusal | Runtime attempts to invoke a commit row. | | ONE.3, ONE.4 | 08 ONE.67, section 15 |
+| `KN5:capability.commit_row_refused` | refusal | Runtime attempts to invoke a commit row. | | ONE.3, ONE.4 | 07 BND.83; 08 ONE.67, section 15 |
 | `KN5:consistency.state_hash_mismatch` | freeze | Equal authoritative revisions disagree in their full-state digests. | | KN5.16; ONE commit step 7 | 08 section 15 |
 | `KN5:unknown_outcome.commit_fate` | freeze | No authoritative receipt/continuity/recovery record establishes durable fate. | | KN5.23; V03.5 | Round 3; 01 KN5 commit and 08 commit step 9 use the family |
 | `KN5:unknown_outcome.read_only_recovery` | refusal | Proposal or commit requested while durable-outcome recovery allows only reads. | | KN5.23; ONE.70 | 08 section 15 |
@@ -332,13 +334,13 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
 
 | Code | Form | Meaning | Retry | Rule source | Used by |
 | --- | --- | --- | --- | --- | --- |
-| `LG3:effect.undeclared` | diagnostic | Transitive effect exceeds the allowed effect set of its declaration/context. | | LG3.2, LG3.5, LG3.6; Round 3 | 02 section 6; 04 EV1.2, EV1.4, EV3.2 |
+| `LG3:effect.undeclared` | diagnostic | Transitive effect exceeds the allowed effect set of its declaration/context. | | LG3.2, LG3.5, LG3.6; Round 3 | 02 section 6; 04 EV1.2, EV1.4, EV3.2; 07 BND.83 |
 | `LG3:effect.view_writes_workspace` | diagnostic | View has a workspace-write effect through its body or callees. | | Default 16; LG3.5 | Round 3; not yet used as a concrete code |
-| `LG3:effect.flow_refused` | pending LQ21 | Reserved flow-label spelling; rule and form await chapter 07 and LQ21. | | BM2; ERR.24; Round 3 | 02 LG3.12, LG3.14, section 6 placeholder; chapter 07 pending |
-| `LG3:capability.flow_refused` | pending LQ21 | Reserved capability-separation spelling; LQ21 retires one alternative before use. | | BM2; ERR.24; Round 3 | 02 LG3.13, LG3.14, section 6 placeholder; chapter 07 pending |
-| `LG3:capability.not_granted` | refusal | Requested authority is absent or barred by the effective sandbox/profile. | | LG3.8, LG3.9; DET.37, DET.42 | 02 section 6; 09 DET.37, DET.52; Round 3 |
+| `LG3:effect.flow_refused` | pending LQ21 | Reserved flow-label spelling; the rule (BND.33) and the form await LQ2 and LQ21. | | BM2; ERR.24; Round 3 | 02 LG3.12, LG3.14, section 6; 07 BND.83, CT-BND-24 |
+| `LG3:capability.flow_refused` | pending LQ21 | Reserved capability-separation spelling; LQ21 retires one alternative before use. | | BM2; ERR.24; Round 3 | 02 LG3.13, LG3.14, section 6; 07 BND.83, CT-BND-24 |
+| `LG3:capability.not_granted` | refusal | Requested authority is absent or barred by the effective sandbox/profile. | | LG3.8, LG3.9; DET.37, DET.42 | 02 section 6; 07 BND.61, BND.83; 09 DET.37, DET.52; Round 3 |
 | `LG3:capability.ambient_read` | refusal | Clock, file or network read requested without a grant; network remains barred in 1.0. | | INV-10; default 2; LX-3 | Round 3; not yet used as a concrete code |
-| `LG3:capability.grant_mismatch` | refusal | Resource, right, module or profile differs from the effective grant. | | DET.37, DET.40 | 09 DET.7, DET.52 |
+| `LG3:capability.grant_mismatch` | refusal | Resource, right, module or profile differs from the effective grant. | | DET.37, DET.40 | 07 BND.83, CT-BND-23; 09 DET.7, DET.52 |
 
 ### LG4: interpreter and run host
 
@@ -445,8 +447,8 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
 | `PS1:resource_limit.record_too_large` | refusal | A record exceeds the applicable shared limits table. | | R-01; PS1.10; Round 3 | Round 3; not yet used as a concrete code |
 | `PS1:resource_limit.persistence_size` | refusal | Stored, decoded, cumulative, parsing or expansion resource bound would be exceeded. | | PS1.10, PS1.11 | 05 read_record, write_record, expand_stored_word, migrate_record, import_archive, export_check_bundle; PS1.42 |
 | `PS1:resource_limit.word_expansion` | refusal | Exact expanded length exceeds the consuming operation's admission bound; retain that length. | | PS1.19, PS1.21 | 05 expand_stored_word, PS1.42 |
-| `PS1:evidence.scope_not_immutable` | refusal | Persisted claim has only transient scope/context. | | PS1.35; partition 8.1; DT-L1 R2-E1 | 05 write_record, export_check_bundle, PS1.42 |
-| `PS1:capability.provenance_incompatible` | refusal | Required provenance form, label or dependency cannot justify a gated use. | | PS1.32, PS1.33; BM2; DT-L1 R2-E3 | 05 expand_stored_word, migrate_record, PS1.42 |
+| `PS1:evidence.scope_not_immutable` | refusal | Persisted claim has revision-bound context in its scope. | | PS1.35; EVD.10; partition 8.1; DT-L1 R2-E1, R3-M1 | 05 write_record, export_check_bundle, PS1.42; 06 EVD.58 |
+| `PS1:capability.provenance_incompatible` | refusal | Required provenance form, label or dependency cannot justify a gated use. | | PS1.32, PS1.33; BM2; DT-L1 R2-E3 | 05 expand_stored_word, migrate_record, PS1.42; 07 BND.83, CT-BND-22 |
 
 ### PS2: editions and migration admission
 
@@ -465,25 +467,25 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
 | `PS3:busy.legacy_session_locked` | refusal | Required existing 0.4 lock cannot be acquired under the source-preservation contract. | | PS3.1, PS3.2 | 05 import_archive, PS1.42 |
 | `PS3:unknown_outcome.import_publication` | freeze | Active-pointer switch cannot be authoritatively reconciled; recover before any retry/publication. | | PS3.9 | 05 import_archive, PS1.42 |
 
-### EVD: evidence pillar reservations
+### EVD: the evidence pillar
 
 | Code | Form | Meaning | Retry | Rule source | Used by |
 | --- | --- | --- | --- | --- | --- |
-| `EVD:evidence.premise_unmet` | refusal | Cited premise is not held for the required statement and scope. | | Partition 8.1; Round 3 | Round 3 reservation; chapter 06 confirmation pending |
-| `EVD:evidence.scope_mismatch` | refusal | Claim is offered outside its immutable scope digest. | | Partition 8.1; Round 3 | Round 3 reservation; chapter 06 confirmation pending |
-| `EVD:evidence.inconsistent_fields` | refusal | Stored evidence fields admit no display-word result under the selected model. | | Partition section 13; Round 3 | Round 3 reservation; chapter 06 confirmation pending |
-| `EVD:evidence.negative_without_completion` | refusal | Negative conclusion offered from a job that did not complete its declared coverage. | | KN7.4; Round 3 | Round 3 reservation; chapter 06 confirmation pending |
+| `EVD:evidence.premise_unmet` | refusal | Cited premise is not held for the required statement and scope. | | Partition 8.1; Round 3 | 06 EVD.17, EVD.58 |
+| `EVD:evidence.scope_mismatch` | refusal | Claim is offered outside its immutable scope. | | Partition 8.1; Round 3 | 06 EVD.18, EVD.58 |
+| `EVD:evidence.inconsistent_fields` | refusal | Stored evidence fields admit no display-word result under the selected model. | | Partition section 13; Round 3 | 06 EVD.40, EVD.58 |
+| `EVD:evidence.negative_without_completion` | refusal | Negative conclusion offered from a job that did not complete its declared coverage. | | KN7.4; Round 3 | 06 EVD.40, EVD.43, EVD.58 |
 
 ## 6. Reconciliation
 
-- **ERR.28 [D]** The following table has one row per concrete chapter spelling, including prefix-only changes.
-  Each of its first two cells holds one code. It is a migration list for the integrator, not a second set of runtime
-  aliases. Reserved rows wait for their named decisions. The outside-domain row records a withdrawn spelling and
-  requires removal from `errors:`, as ERR.22 specifies. Wildcards require no individual rows. Generic Round 3 codes
+- **ERR.28 [D]** The following table has one row per concrete spelling the drafts first used, including prefix-only
+  changes. Each of its first two cells holds one code. The chapters now use the registry codes, so the table is a record of
+  that migration, not a second set of runtime aliases. Reserved rows wait for their named decisions. The outside-domain
+  row records a withdrawn spelling, removed from `errors:` as ERR.22 specifies. Wildcards require no individual rows. Generic Round 3 codes
   retained alongside more specific chapter codes keep their original scopes; their existence does not merge distinct
   failures.
 
-| Spelling in the chapters | Registry code | What changed |
+| Spelling first used | Registry code | What changed |
 | --- | --- | --- |
 | `auth.token_invalid` | `KN5:auth.token_invalid` | Prefix; authenticator failure only, reconnect required. Reuse of a genuine token is separately stale. |
 | `budget.display_plan_limit` | `KN7:budget.display_plan_limit` | Reserved declared-job case only, ERR.25. A fixed ceiling uses the separate EV3 resource-limit reservation. No unconditional emission yet. |
@@ -609,7 +611,7 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
 | CT-ERR-12 | Reconciliation covers every concrete chapter spelling once; equal-meaning merges retain typed context and distinct comparisons/authority facts remain distinct. Withdrawn outside-domain entries are removed, not renamed into active errors. | source |
 | CT-ERR-13 | Exercise all category content rules: reason and next action data, retained drafts, typed scope/level/coverage and limits; no unchecked part is safe, no failed support automatically refutes a claim, and no message selects a solving twist/correction. | source |
 | CT-ERR-14 | Kill the runtime: jobs end as error with KN7:resource_limit.runtime_lost, state and journal remain equal, and the engine preview remains usable through the normal shell gate. | source |
-| CT-ERR-15 | Reserved flow codes cannot be emitted before chapter 07 and LQ21 choose the rule and retire one; EVD reservations await chapter 06, and plan/recursion reservations use only their settled contracts. | source |
+| CT-ERR-15 | Reserved flow codes cannot be emitted before LQ2 and LQ21 set the rule and retire one, and plan/recursion reservations use only their settled contracts. | source |
 
 ## 8. Open items
 
@@ -644,8 +646,8 @@ the named producers, checks or payloads; they do not silently change an allocate
 | Flow rule and form [O] | Chapter 07, LQ2 and LQ21 settle the active flow row and retire the other; no selection is implied by the reconciliation column. | ERR.24 |
 | Plan-limit classification [O] | RPI.50 and LP1 choose declared allowances versus fixed ceilings, their units and amounts. Reserved rows cover the alternatives without choosing one. | ERR.25 |
 | Recursion guard [O] | DET.28 and LP1 choose the non-budget guard or logical stack/memory treatment and its count. | ERR.26 |
-| Chapters 06 and 07 | They add their codes later. Round 3's EVD rows remain reservations pending chapter 06 confirmation; no unavailable clause numbers or evidence order are assumed. | ERR.21, ERR.23, ERR.24 |
-| Source differences and integration | Section 6 records all chapter spellings. Non-kernel consistency uses, outside-domain-as-input, unsupported-IR-as-type and unconditional plan/recursion classification need the indicated integration changes. Round 3's two budget-admission rows are retained but retired before use. Chapters 01 and 08's current commit and safety-stop corrections are preserved. | ERR.16 to ERR.29 |
+| Chapters 06 and 07 | Chapter 06 confirms the four EVD rows and adds none (EVD.58). Chapter 07 adds none and uses the rows of BND.83. | ERR.21, ERR.23, ERR.24 |
+| Source differences and integration | Section 6 records the spellings the chapters first used, and the chapters now use the registry codes. Round 3's two budget-admission rows are retained but retired before use. Chapters 01 and 08's current commit and safety-stop corrections are preserved. | ERR.16 to ERR.29 |
 | LP1, EN3 and EN4 | Final envelope encoding, typed context, command/revision transport, shared limits and the declared charge schedule still need their owning contracts. No new numerical limit is supplied here. The retained primitive ceiling is V05.1's source compatibility fact; fixed ν coordinates are ENG-0J A5's I_a-only invariant. | ERR.8, ERR.16, ERR.23, ERR.25, ERR.26 |
-| DT-L1 open obligations | No clause uses visible pose classes off the lattice. R2-E1 supports stored evidence/scope, R2-E3 supports provenance/flow, and R2-E4 supports partial-result and principle-record references where cited. Their mathematical review remains pending under overview section 8. | ERR.21, ERR.24; LB6 and PS1 tables |
+| DT-L1 obligations | Round 3 cleared them (overview section 8). R2-E1 supports stored evidence/scope, R2-E3 supports provenance/flow, and R2-E4 supports partial-result and principle-record references where cited, each as round 3 corrected it. | ERR.21, ERR.24; LB6 and PS1 tables |
 | Design hold and evidence | Built-in tools retain the 2 October boundary and 17 October exception until the joint setting. No UI design or DT-J2 to DT-J4 work is opened. Required tests have no results here; the writing check proves structure only. | ERR.1, ERR.13, ERR.30 |

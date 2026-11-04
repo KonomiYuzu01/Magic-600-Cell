@@ -38,14 +38,14 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
   ```text
   operation parse(source, edition) -> { recovered_structure, diagnostics, source_digest }
     effect:  pure
-    errors:  syntax.recovery_gap
+    errors:  LG1:syntax.recovery_gap
   operation complete(source, position, module_context) -> { candidates, source_digest }
     effect:  pure
-    errors:  stale.editor_source, input.identity_mismatch
+    errors:  EV1:stale.editor_source, KN1:input.identity_mismatch
   operation diagnose(source, module_context) -> { diagnostics, static_verdict, source_digest }
     effect:  pure
-    errors:  syntax.recovery_gap, type.incompatible_value, type.exactness_required,
-             effect.undeclared_effect, evidence.obligation_unmet, input.identity_mismatch
+    errors:  LG1:syntax.recovery_gap, LG2:type.mismatch, LG2:type.exact_required,
+             LG3:effect.undeclared, EV1:evidence.obligation_unmet, KN1:input.identity_mismatch
   ```
 
 - **EV1.3 [D]** Completion uses the recovered scope, the chapter 02 type and effect information, and the selected
@@ -55,8 +55,8 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
 
 - **EV1.4 [D]** Diagnostics distinguish ordinary type errors, effect errors, exactness violations, unmet evidence
   obligations and model or menu identity mismatches (partition EV1, default 5). Each diagnostic has a stable typed
-  code, a source range and the relevant typed context. `type.exactness_required` identifies an approximate value at an
-  exact decision site; `evidence.obligation_unmet` identifies a required claim or check that is absent. An open claim
+  code, a source range and the relevant typed context. `LG2:type.exact_required` identifies an approximate value at an
+  exact decision site; `EV1:evidence.obligation_unmet` identifies a required claim or check that is absent. An open claim
   that the program is allowed to inspect is a value, not an error (INV-5, KN0.5). Chapter 02 defines the checks, and
   chapter 06 defines the evidence they inspect.
 
@@ -68,19 +68,19 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
   ```text
   operation hover(source, position, module_context) -> { information, references, source_digest }
     effect:  pure
-    errors:  stale.editor_source
+    errors:  EV1:stale.editor_source
   operation definition(source, position, module_context) -> List<SourceRange>
     effect:  pure
-    errors:  stale.editor_source
+    errors:  EV1:stale.editor_source
   operation rename(source, declaration, proposed_name, module_context) -> { edits, diagnostics, source_digest }
     effect:  pure
-    errors:  stale.editor_source, type.incompatible_value
+    errors:  EV1:stale.editor_source, LG2:type.mismatch
   ```
 
 - **EV1.6 [D]** Go to definition resolves a declaration in the digest-pinned dependency graph. Rename proposes edits
   to the resolved declaration and its references, with the source digest for each edit. It does not replace equal
   text in unrelated scopes or rewrite a dependency under its old digest (partition LG5, default 13). Applying edits
-  to changed bytes is refused as `stale.editor_source`. A resulting draft is checked again before it can run.
+  to changed bytes is refused as `EV1:stale.editor_source`. A resulting draft is checked again before it can run.
 
 - **EV1.7 [D]** A running tool is pinned to a checked module digest and its locked dependencies. Editing makes another
   draft; it does not replace the bytes being executed. While the draft is broken, the last valid version keeps running
@@ -125,10 +125,10 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
   operation debug_step(run, ir_position) -> { ir_position, values, source_ranges, outcome }
     effect:  read a snapshot
     cost:    interpreter steps and declared kernel costs, under KN7
-    errors:  input.replay_dependency_missing, capability.debug_write_forbidden, stale.revision_gone
+    errors:  EV2:input.replay_dependency_missing, EV2:capability.debug_write_forbidden, KN2:stale.revision_gone
   operation inspect_value(run, value_reference) -> { value, type, identity, level, origin }
     effect:  read a snapshot
-    errors:  input.replay_dependency_missing
+    errors:  EV2:input.replay_dependency_missing
   ```
 
 - **EV2.2 [D]** Value inspection preserves the chapter 02 type and KN1 identity and level. It distinguishes exact
@@ -140,8 +140,8 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
 - **EV2.3 [D]** Deterministic replay preflights the `ReproKey` of chapter 09 from the `RunRecord` of chapter 05. It
   resolves every required source and module digest, edition and IR version, identity block, input digest and level,
   parameters, seeds, cost units and deterministic budgets before evaluation (INV-7, INV-10; partition 8.4; DT-L1 R2-E2).
-  A missing module returns `input.replay_dependency_missing`, naming the missing digest. A different model, menu
-  identity, menu order or contract revision returns `input.identity_mismatch`, with expected and available identities.
+  A missing module returns `EV2:input.replay_dependency_missing`, naming the missing digest. A different model, menu
+  identity, menu order or contract revision returns `KN1:input.identity_mismatch`, with expected and available identities.
   A similarly named local file is never a replacement. The record remains inspectable as recorded evidence without a
   successful replay claim.
 
@@ -149,13 +149,13 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
   operation replay_run(record: RunRecord) -> { outcome, comparison, profile, evidence_references }
     effect:  read a snapshot
     cost:    the deterministic budget and declared costs of the recorded run
-    errors:  input.replay_dependency_missing, input.identity_mismatch, consistency.replay_mismatch,
-             capability.debug_write_forbidden
+    errors:  EV2:input.replay_dependency_missing, KN1:input.identity_mismatch, EV2:evidence.replay_mismatch,
+             EV2:capability.debug_write_forbidden
   ```
 
 - **EV2.4 [D]** A replay matches the record's exact result bytes, level-qualified digests, outcome, coverage and
   deterministic budget usage under chapter 09's comparison rules. A difference is
-  `consistency.replay_mismatch`, with the differing result or trace position where available. Display floats are
+  `EV2:evidence.replay_mismatch`, with the differing result or trace position where available. Display floats are
   compared at their declared precision, as partition 8.4 requires; elapsed time and new session receipts are not exact
   results to reproduce. A wall-clock safety stop remains incomplete and not reproducible (KN7.10). Replay cannot
   upgrade that record into a completed negative, or label a missing dependency as a refutation (INV-5, default 6).
@@ -181,7 +181,7 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
 - **EV2.8 [B]** Journal travel reads `journal`, `revision_info`, `checkpoints` and, when needed, `workspace_records`
   and `receipt` through KN4.3 query rows (INV-2). Opening an old snapshot changes only what the debugger inspects. It
   does not select an active journal line, reset the session, apply an inverse word or write session files. A revision
-  that is unavailable reports `stale.revision_gone`; the debugger never silently opens the current revision instead
+  that is unavailable reports `KN2:stale.revision_gone`; the debugger never silently opens the current revision instead
   (KN0.6). Chapter 08 defines snapshot and branch lifecycles.
 
 - **EV2.9 [O]** Replay of a run with workspace, file or preview effects needs a chapter 09 replay contract agreed with
@@ -189,7 +189,7 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
   replay sinks whose inputs are captured and digest-pinned. No source settles those sinks or which external inputs a
   record must capture. Both options keep the debugger read-only, grant no ambient files or clock, and distinguish
   trace inspection from a complete deterministic re-execution. Unsupported effects report
-  `capability.debug_write_forbidden` instead of touching the live workspace.
+  `EV2:capability.debug_write_forbidden` instead of touching the live workspace.
 
 - **EV2.10 [P LQ4]** A research run pinned by digest may finish while the solver commits or undoes. Its debugger and
   result keep the old input; reaching the new revision requires a re-run or exact transport justified by a lemma
@@ -236,17 +236,17 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
 - **EV3.5 [D]** A pick returns the `DisplayInstance` of the adopted plan. Chapter 10's `SourceMap` resolves it to the
   canonical ID at its model and level and, for a language-produced instance, to the producing source location.
   The shell checks the plan's base revision and the editor checks the source digest before using the result
-  (KN0.6, INV-6). A stale pick or obsolete source link returns `stale.source_link`. Missing source is explicit; the
+  (KN0.6, INV-6). A stale pick or obsolete source link returns `EV3:stale.source_link`. Missing source is explicit; the
   host never substitutes a nearby declaration. The chain uses instance IDs without inverting a chart (partition 8.5).
 
   ```text
   operation follow_pick(instance: DisplayInstance, map: SourceMap, shown_base: RevisionRef)
       -> { canonical_id, level, source_location?, producing_module }
     effect:  pure
-    errors:  stale.source_link, input.identity_mismatch
+    errors:  EV3:stale.source_link, KN1:input.identity_mismatch
   operation edit_declared_part(source, declaration, field, value) -> { edits, source_digest }
     effect:  pure
-    errors:  input.round_trip_undeclared, stale.editor_source, type.incompatible_value
+    errors:  EV3:input.round_trip_undeclared, EV1:stale.editor_source, LG2:type.mismatch
   ```
 
 - **EV3.6 [D]** Source navigation for a running tool opens the digest that produced the selected output, including
@@ -257,7 +257,7 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
 - **EV3.7 [D]** Round trip is limited to parameters, layouts and defaults explicitly declared editable by their source
   (partition EV3). An edit identifies the declaration, its digest, its typed field and proposed value. It returns
   source edits for checking; it does not infer arbitrary code from a drawing. An undeclared field returns
-  `input.round_trip_undeclared`. Persisting a layout or parameter follows the workspace command and undo rules; an
+  `EV3:input.round_trip_undeclared`. Persisting a layout or parameter follows the workspace command and undo rules; an
   expression with workspace effects cannot run just because the view has recomputed (default 16, KN4.4).
 
 - **EV3.8 [D]** The relationship strip consumes typed relations in the grammar shared by code and the theory book
@@ -265,12 +265,15 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
   canonical IDs for the roles it names, its model and level, its base revision, its result and evidence references,
   and any producing source location. Roles include destination, current occupant, wanted piece, buffers, frame and
   residual. Chapter 06 defines statement identity and evidence; chapter 02 defines the types. These fields can join
-  EN3's view model now, without deciding the strip's design.
+  EN3's view model now, without deciding the strip's design. Three scopes hold (DT-L1 R3-M4). The relation "frame" is the
+  frame group R_A/S_A, at label level. "Frame" now names four things: reference stickers, that frame group, the C₃
+  component of restoration theory that no sticker shows, and A3's F_f. The strip must tell them apart, and the word it
+  uses for each is a preference. "Current occupant" is partial: off the lattice it has no value.
 
 - **EV3.9 [D]** A relation with no position off the lattice returns the distinct value "none: off the lattice";
   insufficient knowledge returns `unknown(reason)` (KN0.4, KN0.5; DT-L1 R2-E4). It never returns an old occupant, slot
-  zero or false for either case. A partially defined relation retains its coverage and missing part. Relations neither
-  lift labels into poses nor rely on the visible pose class off the lattice (KN1.9, KN1.10; overview section 8).
+  zero or false for either case. A partially defined relation retains its coverage and missing part. Relations do not
+  lift labels into poses, and off the lattice they read poses, classes or regions, never labels (KN1.9, KN1.10, KN1.15).
 
 - **EV3.10 [B]** Relations and other program view data are recomputed for changed inputs at a named revision, never
   per frame (R-19; partition EV3). Frame drawing reuses those results. Latest-wins evaluation skips superseded
@@ -327,7 +330,7 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
   }
   operation resolve_binding(key_event, routing_context, bindings, layout) -> Binding | unhandled
     effect:  pure
-    errors:  input.binding_conflict, input.binding_prefix_conflict, input.binding_layout_mismatch
+    errors:  EV4:input.binding_conflict, EV4:input.binding_prefix_conflict, EV4:input.binding_layout_mismatch
   ```
 
 - **EV4.4 [B]** Routing follows DT-M1 Outcome C2, in order: key capture; text input; a focused list or view taking only
@@ -388,7 +391,7 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
   revision guards. Generated source passes the same chapter 02 checks and chapter 09 grants as typed source. A word
   assembled from it receives a fresh whole-word preview and protection check; no old receipt or certificate supplies
   permission (INV-3, defaults 14 and 18). New invocations receive new durable identities. Playback that cannot resolve
-  a step reports `input.recording_step_unresolved`, preserving the record for inspection. It never replaces a missing
+  a step reports `EV4:input.recording_step_unresolved`, preserving the record for inspection. It never replaces a missing
   canonical ID with a visual pick.
 
 - **EV4.14 [O]** Mapping recorded revisions into a new playback session is not specified by LQ11. Chapters 05 and 08
@@ -425,14 +428,18 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
 
 - **EV5.3 [B]** A tool explanation consumes the `PrincipleRecord` defined in chapter 03 (INV-12). It exposes the exact
   function and domain, the meaning of an empty or negative answer, the supporting lemma or certificate with its
-  evidence, a small hand-checkable instance on the real geometry, and the decomposition into base parts. A completed
-  empty repair list concerns the named cap and the admitted repair shape; it never asserts that no solving step
-  exists (DT-J1 Outcome, Out by the filter). A cut-off job has no completed empty answer (KN7.4, KN7.11).
+  evidence, a small hand-checkable instance on the real geometry, the decomposition into base parts, and the parts a
+  person writes by hand (LB6.2): the map from decomposition to lemma steps, the reason, a failure example, what an answer
+  does not mean, the hand derivation, the prerequisites and the leaf specifications. A completed empty repair list
+  concerns the named cap and the admitted repair shape; it never asserts that no solving step exists (DT-J1 Outcome, Out
+  by the filter). A cut-off job has no completed empty answer (KN7.4, KN7.11). This section supplies the means of
+  understanding. It cannot certify understanding (DT-L1 R3-M4, BND.72).
 
 - **EV5.4 [D]** Explanation links use EV2's lazy provenance expansion down to primitives and stage-qualified,
   source-commit-pinned lemmas. A long word is a digest and positions until expanded. The decomposition is generated
-  from the checked IR call graph and kernel calls, and the hand-checkable instance has a matching headless fixture
-  (partition INV-12, LG4; DT-L1 M6, R2-E4). A fixture pass is source evidence for that instance. It does not prove a
+  from the checked IR before lowering, from its call graph and kernel calls, and the hand-checkable instance has a
+  matching headless fixture (partition INV-12, LG4; DT-L1 M6, R2-E4). A generated decomposition gives structure, not
+  reasons: the reasons are the hand-written parts of LB6.2 (DT-L1 R3-M4). A fixture pass is source evidence for that instance. It does not prove a
   universal lemma or record a human comprehension result. KN6 trace links use the checker's own output.
 
 - **EV5.5 [D]** A fork inherits no evidence (default 18). An explanation of a fork retains links to cited statements
@@ -497,9 +504,9 @@ glossary summaries of the owning chapter, not competing contracts.
 - **EV5.14 [O]** The mathematician must review these additions and scope changes against the theory and the completed
   chapters. Their proposed L1 to L6 levels use the existing glossary scale; their final placement follows the owner's
   learning path and DT-M1's first-use rule. Evidence words also depend on LQ3 and chapter 06, and the understanding
-  gate depends on LQ2 and LQ14. The inventory includes the unsettled adoptions from DT-L1 R2-E1 (evidence), R2-E2
-  (identity levels), R2-E3 (flow control) and R2-E4 (principles and partial values). No entry or level is accepted by
-  this inventory, and `terms.json` is unchanged.
+  gate depends on LQ2 and LQ14. The inventory carries round 3's corrections to DT-L1 R2-E1 (evidence), R2-E2 (identity
+  levels), R2-E3 (flow control) and R2-E4 (principles and partial values). No entry or level is accepted by this
+  inventory, and `terms.json` is unchanged.
 
 - **EV5.15 [D]** Each integrated entry needs its own diagram under the existing glossary build rules (charter M6,
   default 8, `glossary/build.py`). This includes a changed concept whose old diagram no longer states its meaning.
@@ -522,14 +529,20 @@ glossary summaries of the owning chapter, not competing contracts.
 | Net and Strict checks (scope change) | L2 | Protection on the whole end state or on every executed literal prefix, at the puzzle's protection level. | Chapter 01 KN2.7; partition default 10 |
 | Complete effect (scope change) | L4 | The whole operation's effect at its declared puzzle and level, including every hidden mechanical part. | Chapter 01 KN5.10; charter S4 |
 | Orientation (scope change) | L5 | A piece's orientation relative to its lattice position and reference frame, distinct from a full jumbling pose. | Chapter 01 KN1; DT-L1 M3 |
+| Frame (scope change) | L4 | Unqualified, the ordered reference stickers. The other three uses take their own names: frame group, the C₃ frame component no sticker shows, and state contract A3's transported frame F_f. | Chapter 01 KN1.7; DT-L1 R3-M4 |
 | Position | L1 | The chamber occupied by a piece, derived from labels and undefined off the lattice. | Chapter 01 KN1.5, KN1.9 |
 | Pose | L1 | A piece's exact rotation in the jumbling puzzle, independent of whether its stickers occupy lattice slots. | Chapter 01 KN1.5, KN1.6 |
 | Sticker | L1 | The identified region attached to a piece and its home host facet. | Chapter 01 KN1.5 |
 | Model identity | L1 | The immutable identity fixing the mechanical objects and interpretation of their data. | Chapter 01 KN1; INV-7 |
 | Canonical ID | L1 | An object identifier bound to a model and identity level, independent of its display. | Chapter 01 KN1.5; INV-6 |
 | Identity block | L2 | Chapter 01's bundle of puzzle, model, menu, menu order and contract references. | Chapter 01 KN0.1 |
-| Identity tower | L6 | The puzzle's levels and the exact projections from finer information to coarser information. | Chapter 01 KN1.7; DT-L1 R2-E2 |
-| Visible pose class | L6 | The pose class of chapter 01, with no off-lattice preservation claim assumed here. | Chapter 01 KN1.7; overview section 8 |
+| Identity tower | L6 | The puzzle's levels, a partial order, and the exact projections from finer information to coarser information. | Chapter 01 KN1.7; DT-L1 R2-E2 |
+| Sticker class | L6 | The class g_A·S_A of a pose: poses that show every labelled sticker in the same place. Earlier name: visible pose class. | Chapter 01 KN1.7; DT-L1 N1 |
+| Region class | L6 | The class g_A·R_A of a pose, which is the piece's posed region. | Chapter 01 KN1.7; DT-L1 N1 |
+| Frame group | L6 | The group R_A/S_A of a piece: the turns that keep its region and permute its sticker regions. | Chapter 01 KN1.7; DT-L1 N1 |
+| Gauge | L6 | A pair (σ, t) that renames pieces and changes their pose representatives exactly; by Theorem 1 of note N1 it keeps every word's admissibility. | Chapter 01 KN1.7, KN1.14; DT-L1 N1 |
+| Shape | L6 | The set of posed regions of a state, forgetting which piece fills which region. | Chapter 01 KN1.7; DT-L1 N1 |
+| Exact transport | L6 | Reuse of a claim along a level's gauge subgroup with no re-run, under a checked relation. | Chapter 01 KN1.16; chapter 06 |
 | Level-qualified digest | L2 | A digest of normalised bytes naming the identity level it covers. | Chapter 01 KN1.8 |
 | Menu | L1 | The pinned set of rotations available to a grip in the named puzzle. | Chapter 01 KN1; partition LG2 |
 | Menu letter | L1 | A grip and menu-item reference meaningful under its menu identity, order digest and contract revision. | Chapter 01 KN1.3 |
@@ -591,7 +604,8 @@ glossary summaries of the owning chapter, not competing contracts.
 | Availability | L1 | The per-revision command availability and typed reasons supplied through KN5. | Chapter 01 KN5.6, KN5.7 |
 | Claim | L2 | A typed statement with an evidence state, without conflating score or execution permission. | Chapter 06; INV-5 |
 | Statement ID | L6 | A typed-statement digest or stage-qualified, commit-pinned statement name. | Chapter 06; DT-L1 R2-E1 |
-| Scope | L2 | The declared inputs, identities and set for which a claim is asserted. | Chapter 06; partition 8.1 |
+| Key | L6 | A statement ID with its scope: what evidence discharges, refutes or transports. | Chapter 06 EVD.7 |
+| Scope | L2 | The declared inputs, identities and set for which a claim is asserted, every field immutable. | Chapter 06; partition 8.1 |
 | Basis | L2 | The proof, certificate, exact computation or sample on which a claim rests. | Chapter 06; partition 8.1 |
 | Check | L2 | A recorded confirmation with its checker or reviewer identity and mode. | Chapter 06; partition 8.1 |
 | Premise | L2 | A named obligation on which a conditional claim depends. | Chapter 06; partition 8.1 |
@@ -621,6 +635,9 @@ glossary summaries of the owning chapter, not competing contracts.
 | Reported | L6 | A source-qualified result whose producer or replayability status remains explicit. | Chapter 06; partition 8.1 |
 | Exact transport | L6 | A lemma-justified transfer of a claim between inputs that preserves the claim's subject. | Chapter 01 KN1.13, KN7.5; chapter 06 |
 | Check mode | L6 | The recorded distinction among reused transport, fresh exact audit and actual replay. | Chapter 06; partition 8.1 |
+| Grade | L6 | A (basis, check) pair in chapter 06's partial order. | Chapter 06 EVD.19 |
+| Alternative | L6 | One undominated argument for a statement; a statement's summary is a set of them. | Chapter 06 EVD.23 |
+| Standing | L6 | Whether the evidence graph carries a statement at the threshold: first with no premise assumed, then with every unrefuted premise assumed. | Chapter 06 EVD.30 |
 | Principle record | L2 | The tool's specification, support, hand-checkable real instance and decomposition. | Chapter 03; INV-12 |
 | Library entry | L6 | A source-addressed operation with its checked domain, effects and supporting references. | Chapter 03 |
 | Effect | L6 | A declared and checked kind of interaction a program can perform. | Chapter 02; partition LG3 |
@@ -637,6 +654,12 @@ glossary summaries of the owning chapter, not competing contracts.
 | Declassifier | L6 | A fixed policy-enabled entry that permits a named information flow; programs cannot declare one. | Chapter 07; partition BM2 |
 | Flow label | L6 | The provenance information following permitted data and control dependencies if LQ21 selects labels. | Chapter 07; partition LQ21 |
 | Capability separation | L6 | LQ21's alternative separating state-reading programs from preview-preparing programs. | Chapter 07; partition BM2 |
+| Solving session | L2 | A session in the solving profile, where the human-solve boundary applies. | Chapter 07 BND.14 |
+| Sink | L6 | A place a labelled value can reach: a preview, a draft, a display, a workspace, a file or a record. | Chapter 07 BND.26 |
+| Transparent entry | L6 | A shipped function on the policy's list whose output carries only the join of its inputs. | Chapter 07 BND.25 |
+| Policy table | L6 | The versioned data that fills the boundary mechanisms with a joint setting's choices. | Chapter 07 BND.28 |
+| Assistance summary | L2 | The per-solve account of which tools assisted, derived from provenance blocks. | Chapter 07 BND.35 |
+| Pick record | L6 | The record of a solver's choice among listed options, with the list that offered them. | Chapter 07 BND.54 |
 | Job | L2 | Admitted cancellable work with a pinned input, budget and typed outcome. | Chapter 01 KN7 |
 | Job result | L2 | A value with outcome, input digest, parameters, coverage and budget use. | Chapter 01 KN7.3 |
 | Budget | L2 | Deterministic limits on steps, declared kernel cost, logical memory and output. | Chapter 01 KN7.7 |
@@ -696,27 +719,27 @@ glossary summaries of the owning chapter, not competing contracts.
 
 ## 7. Error codes added by this chapter
 
-These are the codes used by the clauses above. Chapter 13 owns the final spelling. `input.identity_mismatch` and
-`stale.revision_gone` are reused from chapter 01 rather than added here. Cancellation, budget exhaustion and command
+These are the codes used by the clauses above. Chapter 13 owns the final spelling. `KN1:input.identity_mismatch` and
+`KN2:stale.revision_gone` are reused from chapter 01 rather than added here. Cancellation, budget exhaustion and command
 receipts keep their KN7 and KN5 outcomes; an open or unknown evidence value is not another error category.
 
 | Code | Meaning | Clauses |
 | --- | --- | --- |
-| `syntax.recovery_gap` | A missing or invalid source span was recovered for editing; it supplies no executable value. | EV1.2, EV1.4 |
-| `type.incompatible_value` | A source expression, edit or declared parameter has an incompatible type. | EV1.4, EV1.6, EV3.7 |
-| `type.exactness_required` | An approximate value reaches an exact decision site. | EV1.4 |
-| `effect.undeclared_effect` | An inferred effect is outside the declaration or the allowed view effects. | EV1.4, EV3.2 |
-| `evidence.obligation_unmet` | A required claim or check is absent for a checked operation's obligation. | EV1.4 |
-| `stale.editor_source` | An editor response or proposed edit names source bytes that are no longer its target. | EV1.1, EV1.6 |
-| `input.replay_dependency_missing` | A required digest, source edition, IR version or trace input cannot be resolved. | EV2.1, EV2.3, EV2.6 |
-| `consistency.replay_mismatch` | Replay under the stated key differs from the record's required exact comparison. | EV2.4 |
-| `capability.debug_write_forbidden` | Debugging or replay would require a live write or an unsupported effect. | EV2.1, EV2.9 |
-| `stale.source_link` | A pick or source link does not match the adopted plan's base or producing source. | EV3.5, EV3.6 |
-| `input.round_trip_undeclared` | The selected source part does not declare the requested round-trip edit. | EV3.7 |
-| `input.binding_conflict` | Bindings resolve to a duplicate or conflicting physical chord in a routing class. | EV4.3, EV4.7 |
-| `input.binding_prefix_conflict` | A complete command binding is also a prefix of another sequence in that class. | EV4.7 |
-| `input.binding_layout_mismatch` | Layout-dependent resolution is missing or conflicts under a declared layout. | EV4.7 |
-| `input.recording_step_unresolved` | A recorded semantic step lacks a required command, module, object or input mapping. | EV4.13, EV4.14 |
+| `LG1:syntax.recovery_gap` | A missing or invalid source span was recovered for editing; it supplies no executable value. | EV1.2, EV1.4 |
+| `LG2:type.mismatch` | A source expression, edit or declared parameter has an incompatible type. | EV1.4, EV1.6, EV3.7 |
+| `LG2:type.exact_required` | An approximate value reaches an exact decision site. | EV1.4 |
+| `LG3:effect.undeclared` | An inferred effect is outside the declaration or the allowed view effects. | EV1.4, EV3.2 |
+| `EV1:evidence.obligation_unmet` | A required claim or check is absent for a checked operation's obligation. | EV1.4 |
+| `EV1:stale.editor_source` | An editor response or proposed edit names source bytes that are no longer its target. | EV1.1, EV1.6 |
+| `EV2:input.replay_dependency_missing` | A required digest, source edition, IR version or trace input cannot be resolved. | EV2.1, EV2.3, EV2.6 |
+| `EV2:evidence.replay_mismatch` | Replay under the stated key differs from the record's required exact comparison. | EV2.4 |
+| `EV2:capability.debug_write_forbidden` | Debugging or replay would require a live write or an unsupported effect. | EV2.1, EV2.9 |
+| `EV3:stale.source_link` | A pick or source link does not match the adopted plan's base or producing source. | EV3.5, EV3.6 |
+| `EV3:input.round_trip_undeclared` | The selected source part does not declare the requested round-trip edit. | EV3.7 |
+| `EV4:input.binding_conflict` | Bindings resolve to a duplicate or conflicting physical chord in a routing class. | EV4.3, EV4.7 |
+| `EV4:input.binding_prefix_conflict` | A complete command binding is also a prefix of another sequence in that class. | EV4.7 |
+| `EV4:input.binding_layout_mismatch` | Layout-dependent resolution is missing or conflicts under a declared layout. | EV4.7 |
+| `EV4:input.recording_step_unresolved` | A recorded semantic step lacks a required command, module, object or input mapping. | EV4.13, EV4.14 |
 
 ## 8. Conformance tests
 
@@ -823,8 +846,8 @@ Other dependencies and differences in the sources remain visible:
 | Glossary versus DT-M1 and KN1 | The current twist entry equates a twist with a generator. Cap, label, piece, generator, orbit, orientation, protection-prefix and complete-effect entries need their puzzle and level scope; label-fixed centres can rotate in pose. Section 6 proposes corrections without changing the glossary. | EV2.2, EV3.9, EV4.9, EV5.14 |
 | Research block, frame and unit vocabulary | The tail's block and frame-part unit differ from a solver-declared block and an ordered sticker frame; card 6 uses unit for pieces with one exact pose. Proposed entries qualify those meanings instead of merging them. The mathematician must settle their language names. | EV5.10, EV5.14 |
 | KN2.14 versus the display base requirement | An imported derived value need not have the snapshot ancestry from which EV3's required base revision would come. The kernel remains unchanged; EV3.12 carries the missing display contract. | EV3.4, EV3.12 |
-| DT-L1 round 2 | The mathematician's answers to R2-E1 to R2-E4 are unavailable. Every use here names its card. No off-lattice visible-pose-class property supports a clause or a test. | EV2.5, EV2.6, EV2.10, EV3.8, EV3.9, EV4.9, EV4.16, EV5.4, EV5.10, EV5.13, EV5.14 |
+| DT-L1 rounds 2 and 3 | Round 3 answered R2-E1 to R2-E4 (overview section 8). Every use here names its card, and EV3.8, EV3.9, EV5.3 and EV5.4 carry round 3's corrections. | EV2.5, EV2.6, EV2.10, EV3.8, EV3.9, EV4.9, EV4.16, EV5.3, EV5.4, EV5.10, EV5.13, EV5.14 |
 | EN3 and EN4 | Relationship data joins EN3's pending view-model fields; overlay registration, query rows, lanes, receipt and availability transport, bindings and undo require EN4's final H-08. | EV1.8, EV2.8, EV3.8, EV4.1 to EV4.15 |
-| Chapters written in parallel | Chapter 02 finalises checker and IR services; 03 supplies principle records; 05 supplies bytes and versioning; 06 supplies evidence meaning; 07 and 09 supply policy and grants; 08 supplies lifecycles; 10 supplies display linkage; 13 collects error spellings. | EV1 to EV5 |
+| Other chapters | Chapter 02 owns checker and IR services; 03 principle records; 05 bytes and versioning; 06 evidence meaning; 07 and 09 policy and grants; 08 lifecycles; 10 display linkage; 13 error spellings. | EV1 to EV5 |
 | LX-4, LX-8 and chapter 12 | Editor latency bars, human-test form and phased acceptance remain future requirements, with no result claimed here. | EV1.9, EV5.12; CT-EV1-06, CT-EV5-03, CT-EV5-05 |
 | Design line | The owner's 3 November hold still covers the editor's appearance, the strip's design and DT-J2 to DT-J4. This data chapter reopens none of them. | EV1.12, EV3.13, EV5.11 |

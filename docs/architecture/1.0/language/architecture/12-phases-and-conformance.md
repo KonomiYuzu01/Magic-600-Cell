@@ -9,7 +9,8 @@ It records no completed language phase, implemented conformance test or new meas
 Sources: [the partition](../ecosystem-partition.md), sections 12 to 17 and INV-1 to INV-12;
 [DT-L1](../../../../progress/1.0/design-table/topics/language-ecosystem.md), owner input, E4, E6, Outcome and Round 3;
 [chapters 01](01-kernel.md), [02](02-language-core.md), [03](03-libraries.md), [04](04-environment.md),
-[05](05-persistence.md), [08](08-one-state.md), [09](09-determinism.md) and [10](10-renderer-platform.md);
+[05](05-persistence.md), [06](06-evidence.md), [07](07-boundary.md), [08](08-one-state.md), [09](09-determinism.md),
+[10](10-renderer-platform.md), [11](11-route-and-spikes.md) and [13](13-errors.md);
 [EN1 to EN4](../../../../progress/1.0/replan-2026-10-22.md);
 [the charter](../../../../progress/1.0/charter-2.0-draft.md), sections 5 and 8;
 [H-08](../../../../progress/1.0/command-table.md);
@@ -68,27 +69,27 @@ Sources: [the partition](../ecosystem-partition.md), sections 12 to 17 and INV-1
 | Architecture 03 | Libraries | `03-libraries.md` exists as a draft |
 | Architecture 04 | Environment | `04-environment.md` exists as a draft |
 | Architecture 05 | Persistence | `05-persistence.md` exists as a draft |
-| Architecture 06 | Evidence and certificates | `06-evidence.md` is absent |
-| Architecture 07 | Boundary mechanisms and option sets | `07-boundary.md` is absent |
+| Architecture 06 | Evidence and certificates | `06-evidence.md` exists as a draft |
+| Architecture 07 | Boundary mechanisms and option sets | `07-boundary.md` exists as a draft |
 | Architecture 08 | One state | `08-one-state.md` exists as a draft |
 | Architecture 09 | Determinism | `09-determinism.md` exists as a draft |
 | Architecture 10 | Renderer/platform independence | `10-renderer-platform.md` exists as a draft |
-| Architecture 11 | Routes and spikes | `11-route-and-spikes.md` is absent |
-| Architecture 12 | This phase and conformance chapter | This draft; no content review or acceptance yet |
-| Architecture 13 | Error registry | `13-errors.md` is absent |
-| ADR 1 | One mechanics and one authoritative state: derived states and preview exception | Absent; `../adr/` is absent |
-| ADR 2 | Runtime as command-layer client, off the critical path | Absent |
-| ADR 3 | Exactness, numeric tower and algebras | Absent |
-| ADR 4 | Canonical identity, identity tower and source maps | Absent |
-| ADR 5 | Evidence model and certificates | Absent |
-| ADR 6 | Effects, capabilities and flow control | Absent; flow-control form follows LP1 evidence under the recommendations |
-| ADR 7 | Typed IR as stable contract | Absent; follows the route choice |
-| ADR 8 | Jobs and deterministic budgets | Absent |
-| ADR 9 | Boundary mechanisms, policy left to joint setting | Absent |
-| ADR 10 | Persistence formats, data core and editions | Absent |
-| ADR 11 | Display plans and user charts | Absent |
-| ADR 12 | Implementation route and runtime placement | Absent; follows evidence |
-| Evidence import table | Default 20's versioned table, enumeration rule and recorded inferences | [`evidence-import/`](../evidence-import/README.md) exists with `corpus-labels.json`, `corpus-labels.md`, `extract_labels.py`, `rules.txt`, `refs.txt`, `ext.txt`, `rule.txt`; draft, with V14, P13, K1 and H1 still inferred |
+| Architecture 11 | Routes and spikes | `11-route-and-spikes.md` exists as a draft |
+| Architecture 12 | This phase and conformance chapter | This draft |
+| Architecture 13 | Error registry | `13-errors.md` exists as a draft |
+| ADR 1 | One mechanics and one authoritative state: derived states and preview exception | [`ADR-L01`](../adr/ADR-L01-one-state.md) exists as a proposal |
+| ADR 2 | Runtime as command-layer client, off the critical path | [`ADR-L02`](../adr/ADR-L02-runtime-as-client.md) exists as a proposal |
+| ADR 3 | Exactness, numeric tower and algebras | [`ADR-L03`](../adr/ADR-L03-exactness.md) exists as a proposal |
+| ADR 4 | Canonical identity, identity tower and source maps | [`ADR-L04`](../adr/ADR-L04-canonical-identity.md) exists as a proposal |
+| ADR 5 | Evidence model and certificates | [`ADR-L05`](../adr/ADR-L05-evidence.md) exists as a proposal |
+| ADR 6 | Effects, capabilities and flow control | [`ADR-L06`](../adr/ADR-L06-effects-and-flow.md) exists as a proposal; flow-control form follows LP1 evidence under the recommendations |
+| ADR 7 | Typed IR as stable contract | [`ADR-L07`](../adr/ADR-L07-typed-ir.md) exists as a proposal; follows the route choice |
+| ADR 8 | Jobs and deterministic budgets | [`ADR-L08`](../adr/ADR-L08-jobs-and-budgets.md) exists as a proposal |
+| ADR 9 | Boundary mechanisms, policy left to joint setting | [`ADR-L09`](../adr/ADR-L09-boundary-mechanisms.md) exists as a proposal |
+| ADR 10 | Persistence formats, data core and editions | [`ADR-L10`](../adr/ADR-L10-persistence.md) exists as a proposal |
+| ADR 11 | Display plans and user charts | [`ADR-L11`](../adr/ADR-L11-display-plans.md) exists as a proposal |
+| ADR 12 | Implementation route and runtime placement | [`ADR-L12`](../adr/ADR-L12-route.md) exists as a proposal; follows evidence |
+| Evidence import table | Default 20's versioned table, enumeration rule and recorded inferences | [`evidence-import/`](../evidence-import/README.md) exists with `corpus-labels.json`, `corpus-labels.md`, `extract_labels.py`, `rules.txt`, `refs.txt`, `ext.txt`, `rule.txt`; draft, with V14, P13, K1 and H1 ruled on by EVD.52 |
 | Glossary | An entry for every language term before use; default 8 | Existing [`terms.json`](../../../../progress/1.0/glossary/terms.json), [`glossary.md`](../../../../progress/1.0/glossary/glossary.md), diagrams and [`build.py`](../../../../progress/1.0/glossary/build.py); EV5.14's additions and changes are proposed, not integrated |
 | Owner answers | Answers or explicitly accepted decision procedures as specified in section 9 | LQ1 to LQ21 are all open |
 
@@ -97,7 +98,7 @@ Sources: [the partition](../ecosystem-partition.md), sections 12 to 17 and INV-1
 
 | Acceptance item | How checked | Evidence class |
 | --- | --- | --- |
-| Complete contracts ready for review | Inspect every inventory entry, cross-chapter owner, glossary reference and default-20 mapping or explicit unmapped row; inspect the unresolved mathematical obligations under overview section 8 | source |
+| Complete contracts ready for review | Inspect every inventory entry, cross-chapter owner, glossary reference and default-20 mapping or explicit unmapped row; inspect that no clause relies on more than overview section 8 allows | source |
 | Astra review with no open blocker or major | At least two independent concurrent shards review the current full proposal; the integrator records every finding's disposition and verifies closure under `AGENTS.md` | source, review record only |
 | Owner answers at their proper scope | Compare the answer record with every row of section 9, including accepted procedures and the deferred LQ2 joint setting; obtain understanding confirmation under PHS.5 | human |
 | ADR drafts needing no spike evidence accepted | Owner accepts partition section 17's drafts except the form of flow control in ADR 6, ADR 7 and ADR 12; retain those exceptions for LP1 | human |
@@ -107,8 +108,8 @@ Sources: [the partition](../ecosystem-partition.md), sections 12 to 17 and INV-1
   earlier phase is not permission to start experiments.
 - **PHS.12 [D]** At LP0 exit, execution evidence and the conformance implementations remain open. Under the
   recommendations, LQ8, LQ9 and LQ21 await LP1's evidence, LQ13 awaits LX-8 before the parser, and LQ2 awaits the joint
-  setting before LP6. The answer procedures are settled at exit, not those choices. Overview section 8's mathematical
-  obligations remain explicit wherever not discharged; no clause relies on the visible pose class off the lattice.
+  setting before LP6. The answer procedures are settled at exit, not those choices. Note N1 keeps the status overview
+  section 8 states, and no clause reads labels off the lattice.
 
 ## 3. LP1: interfaces and evidence
 
@@ -175,9 +176,9 @@ Sources: [the partition](../ecosystem-partition.md), sections 12 to 17 and INV-1
 | Preview swap refused | Replace the pending preview after presentation and before commit; token binding refuses it and no state changes | source |
 | Repeatable budget exhaustion | Repeat each declared-budget case, including cache/eviction variants, and compare stop step, coverage and charges | source |
 | Centre-0 protection | Refuse the centre-0 pose-level case inside Jumble and pass its label-level case after the crossing (DT-L1 R2-E2) | source |
-| Heights and domain IDs agree | Compare the kernel with the library reference and `trees.py` on ENG-0J acceptance item 8's states and H6030 (DT-L1 R2-E2) | source |
-| R-11's jumbling property | Check that the equality key preserves admissible starts and end digests; execution and prefix protection still use literal letters (default 10; DT-L1 R2-E2) | source |
-| Label-lift property lead | Run the named fixture property test and record it as a lead, without asserting the off-lattice lemma proved (DT-L1 R2-E2; overview section 8) | source |
+| Heights and domain IDs agree | Compare the kernel with the library reference and `trees.py` on ENG-0J acceptance item 8's states and H6030, and check the free-mode case of CT-KN2-02 (DT-L1 R2-E2, note N1) | source |
+| R-11's jumbling property | Under LG2.14's four hypotheses, check that the equality key preserves admissible starts and end digests; execution and prefix protection still use literal letters (default 10; DT-L1 R2-E2, note N1) | source |
+| Gauge transfer | Run CT-KN2-06 with S, R and σ ≠ id cases, on and off the lattice. It checks the engine against note N1, which stands at (theorem, producer) under chapter 06's grades; a pass adds no proof (KN1.14; overview section 8) | source |
 
 - **PHS.20 [D]** LP2 depends on LP1's gates and the design-system ADR or the owner's charter amendment under LQ19
   (partition LP2). The syntax choice LQ13 precedes the parser. With LQ18's alternative, deferred spikes and LQ8/LQ9/LQ21
@@ -270,7 +271,7 @@ Sources: [the partition](../ecosystem-partition.md), sections 12 to 17 and INV-1
 - **PHS.32 [D]** LP5 depends on LP2, LP3 and the research results in the repository (partition LP5). It does not
   depend on LP4's editor appearance. The import baseline is the Git-blob manifest, not a checkout walk (default 13;
   DT-L1 R3-E2). The mapping and envelope depend explicitly on DT-L1 R2-E1; provenance on R2-E3; trace/principle
-  linkage on R2-E4. Their unsettled mathematical reading remains an explicit dependency under overview section 8.
+  linkage on R2-E4, each as round 3 corrected it (R3-M1, R3-M3, R3-M4).
 - **PHS.33 [D]** At LP5 exit, product import, packaging, final documentation and machine gates remain open. Global
   research claims that were open remain open; an admitted-domain rejection does not become unreachability. LQ2's
   policy must still be set jointly before LP6. If a mandatory archived check lacks its dependencies, LP5 waits and
@@ -405,13 +406,14 @@ completed applicable language products + design-system ADR + migration/renderer/
 | Architecture and interfaces | Current chapters/ADR drafts, EN3 jumbling interfaces, EN4 layer contracts, final H-08 with its availability protocol, undo and lanes |
 | Renderer feature list | Feature support and unresolved requirements, LQ7 option and LQ20 handoff/disposition, ONE.41's presented-preview report, existing renderer evidence at its exact scope |
 | Decisions and evidence | Required spike cards/results or the LQ18 universal-interface alternative; exactness/determinism/boundary contracts and the relevant test vectors |
-| Review and limitations | Current-candidate findings and dispositions, evidence classes, open mathematical obligations and dependencies, without assuming off-lattice visible-pose preservation |
+| Review and limitations | Current-candidate findings and dispositions, evidence classes, open dependencies and note N1's status, with no reading of labels off the lattice |
 
 - **PHS.49 [P LQ10]** The migration-format-freeze input is EN4's packet, expanded in PS2.13: complete path B target
   inventory, identifiers/versions, byte/digest/gzip profiles, shared limits, provenance compatibility, evidence
   envelope, lossless label/import mapping, reference replay/conversion vectors, source-preservation and publication
   contracts, and recorded editions/recovery. Under facts storage it freezes the language-neutral data core of
-  PS2.10, explicitly relying on DT-L1 R2-E1. Under judgements, settled LQ3 and chapter 06's rules precede it. Syntax-also
+  PS2.10, explicitly relying on DT-L1 R2-E1 as R3-M1 corrected it: the envelope's added facts, and scope fields that are
+  all immutable with none revision-bound (PS1.35, EVD.10, EVD.13). Under judgements, settled LQ3 and chapter 06's rules precede it. Syntax-also
   adds source-edition/syntax specification and evidence before this gate; language-data-out requires a versioned
   interim target and later recorded conversion. No variant permits loss of a path B target or provenance by default.
 - **PHS.50 [D]** Format review uses the original and decoded digests of archived inputs, immutable scopes and each
@@ -468,7 +470,7 @@ completed applicable language products + design-system ADR + migration/renderer/
 | --- | --- | --- |
 | LP0 | One state, exactness, identity levels, evidence versus permission, boundary limits, saved meaning, full phase order | Answer section 9 at its stated scope; accept the non-spike ADR drafts; decide LQ18/LQ19/LQ20; confirm understanding |
 | LP1 | Exact arithmetic and host trade-offs, route/placement faults, flow forms and false refusals, data-core losslessness, both freeze packets | Decide evidence-led LQ8/LQ9/LQ21 and remaining ADRs, LQ13 by its prerequisite; sign off after Astra rulings subject to LQ19 |
-| LP2 | Oracle equality, typed partial results, literal-prefix checks, deterministic cut-offs, property test versus proof | Confirm understanding of the core evidence and remaining limits; no new scope decision is inferred from a pass |
+| LP2 | Oracle equality, typed partial results, literal-prefix checks, deterministic cut-offs, a conformance test versus a proof | Confirm understanding of the core evidence and remaining limits; no new scope decision is inferred from a pass |
 | LP3 | The three complete loops, presented-preview binding, receipts/undo, source/key equivalence and full E2 interval | Review the measured result and remaining trade-offs; a missed bar waits for correction or an explicit owner decision |
 | LP4 | How source, principles and evidence connect; replay limits; learning and transfer evidence; adopted editor bars | Set the non-author protocol and any learning-gate decision, judge its results, confirm understanding; design remains under LQ19 |
 | LP5 | Archive claim scopes, missing producers, conditional bounds, bit-for-bit reproduction and global coverage still open | Confirm the research handover's meaning and limits; resolve LQ2 jointly before LP6 if still pending; no new search authorised |
@@ -537,8 +539,7 @@ completed applicable language products + design-system ADR + migration/renderer/
   `AGENTS.md`'s matching-source evidence rule. A structural check of this document cannot authorise that claim.
 - **PHS.67 [D]** The following tables preserve each test's class exactly as its defining chapter states it. Each
   ID occurs in one phase table under the recommendations. The totals are source counts of those table rows and the
-  conformance tables of
-  chapters 01 to 05 and 08 to 10, not executed-test counts. A source-class held-key or fault fixture supplies no
+  conformance tables of chapters 01 to 11 and 13, not executed-test counts. A source-class held-key or fault fixture supplies no
   actual input or native isolation result; the separate windows/performance tests still apply (PHS.6).
 
 ### 15.1. LP0
@@ -561,6 +562,9 @@ LP0 has no executable component test in the supplied chapters. Its contract chec
 | PS3 | CT-PS3-07 | none | none | none | none |
 | DET | CT-DET-19 | none | none | none | none |
 | RPI | CT-RPI-15 | CT-RPI-16 | CT-RPI-17 | CT-RPI-25 | none |
+| EVD | CT-EVD-14, CT-EVD-15, CT-EVD-16 | none | none | none | none |
+| BND | CT-BND-25 | none | none | none | none |
+| RTE | CT-RTE-01, CT-RTE-02, CT-RTE-03, CT-RTE-04, CT-RTE-05, CT-RTE-06, CT-RTE-07, CT-RTE-08, CT-RTE-13, CT-RTE-14, CT-RTE-15, CT-RTE-20 | CT-RTE-09, CT-RTE-19 | CT-RTE-10, CT-RTE-17 | CT-RTE-11, CT-RTE-12, CT-RTE-16 | CT-RTE-18 |
 
 ### 15.3. LP2
 
@@ -586,6 +590,9 @@ LP0 has no executable component test in the supplied chapters. Its contract chec
 | ONE | CT-ONE-01, CT-ONE-02, CT-ONE-03, CT-ONE-04, CT-ONE-05, CT-ONE-06, CT-ONE-07, CT-ONE-08, CT-ONE-09, CT-ONE-10, CT-ONE-11, CT-ONE-12, CT-ONE-13, CT-ONE-14, CT-ONE-15, CT-ONE-16, CT-ONE-17, CT-ONE-18, CT-ONE-19, CT-ONE-20, CT-ONE-21, CT-ONE-22, CT-ONE-23, CT-ONE-24 | none | none | none | none |
 | DET | CT-DET-01, CT-DET-02, CT-DET-03, CT-DET-04, CT-DET-05, CT-DET-06, CT-DET-07, CT-DET-08, CT-DET-09, CT-DET-10, CT-DET-11, CT-DET-12, CT-DET-13, CT-DET-14, CT-DET-15, CT-DET-17, CT-DET-18, CT-DET-20, CT-DET-21, CT-DET-22, CT-DET-23 | CT-DET-16 | none | none | none |
 | RPI | CT-RPI-01, CT-RPI-20 | none | none | none | none |
+| EVD | CT-EVD-01, CT-EVD-02, CT-EVD-03, CT-EVD-04, CT-EVD-05, CT-EVD-06, CT-EVD-07, CT-EVD-08, CT-EVD-09, CT-EVD-11, CT-EVD-13, CT-EVD-17, CT-EVD-18, CT-EVD-19, CT-EVD-20, CT-EVD-21 | CT-EVD-10 | none | none | none |
+| BND | CT-BND-01, CT-BND-02, CT-BND-04, CT-BND-05, CT-BND-06, CT-BND-07, CT-BND-08, CT-BND-09, CT-BND-10, CT-BND-11, CT-BND-12, CT-BND-13, CT-BND-14, CT-BND-22, CT-BND-23, CT-BND-24 | none | none | none | none |
+| ERR | CT-ERR-01, CT-ERR-02, CT-ERR-03, CT-ERR-04, CT-ERR-05, CT-ERR-06, CT-ERR-07, CT-ERR-08, CT-ERR-09, CT-ERR-10, CT-ERR-12, CT-ERR-13, CT-ERR-14, CT-ERR-15 | none | none | none | none |
 
 ### 15.4. LP3
 
@@ -601,6 +608,7 @@ LP0 has no executable component test in the supplied chapters. Its contract chec
 | EV4 | none | CT-EV4-02, CT-EV4-04 | none | none | none |
 | ONE | none | none | CT-ONE-26 | CT-ONE-25 | none |
 | RPI | CT-RPI-02, CT-RPI-04, CT-RPI-05, CT-RPI-06, CT-RPI-08, CT-RPI-09, CT-RPI-12, CT-RPI-19, CT-RPI-22, CT-RPI-23 | CT-RPI-03, CT-RPI-07, CT-RPI-10, CT-RPI-11, CT-RPI-14, CT-RPI-18 | CT-RPI-13, CT-RPI-21, CT-RPI-24 | CT-RPI-26 | none |
+| BND | CT-BND-15, CT-BND-17, CT-BND-18, CT-BND-19 | none | CT-BND-20 | none | none |
 
 ### 15.5. LP4
 
@@ -614,6 +622,7 @@ LP0 has no executable component test in the supplied chapters. Its contract chec
 | EV4 | CT-EV4-01, CT-EV4-07, CT-EV4-08, CT-EV4-09, CT-EV4-10 | CT-EV4-06 | CT-EV4-05 | none | none |
 | EV5 | CT-EV5-01, CT-EV5-02, CT-EV5-04, CT-EV5-06 | none | none | none | CT-EV5-03, CT-EV5-05 |
 | PS1 | CT-PS1-15, CT-PS1-17 | none | none | none | none |
+| BND | CT-BND-03 | none | none | none | none |
 
 ### 15.6. LP5
 
@@ -624,6 +633,8 @@ LP0 has no executable component test in the supplied chapters. Its contract chec
 | LB5 | CT-LB5-01, CT-LB5-02, CT-LB5-03, CT-LB5-04, CT-LB5-05, CT-LB5-06, CT-LB5-07, CT-LB5-08, CT-LB5-09 | none | none | none | none |
 | PS3 | CT-PS3-08, CT-PS3-09, CT-PS3-10 | none | none | none | none |
 | DET | CT-DET-24 | none | none | none | none |
+| EVD | CT-EVD-12 | none | none | none | none |
+| ERR | CT-ERR-11 | none | none | none | none |
 
 ### 15.7. LP6
 
@@ -631,24 +642,23 @@ LP0 has no executable component test in the supplied chapters. Its contract chec
 | --- | --- | --- | --- | --- | --- |
 | PS3 | CT-PS3-01, CT-PS3-02, CT-PS3-03, CT-PS3-04, CT-PS3-05, CT-PS3-06, CT-PS3-11, CT-PS3-12 | none | none | none | none |
 | ONE | none | none | none | none | CT-ONE-27 |
-
-The integrator adds chapters 06, 07, 11 and 13's tests to this index when those chapters arrive.
+| BND | CT-BND-16, CT-BND-21 | none | none | none | none |
 
 Source counts from the index above:
 
 | Phase | source | synthetic | windows | performance | human | Total |
 | --- | --- | --- | --- | --- | --- | --- |
 | LP0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| LP1 | 6 | 1 | 1 | 3 | 0 | 11 |
-| LP2 | 151 | 2 | 0 | 0 | 0 | 153 |
-| LP3 | 32 | 12 | 4 | 3 | 0 | 51 |
-| LP4 | 28 | 3 | 1 | 0 | 3 | 35 |
-| LP5 | 17 | 0 | 0 | 0 | 0 | 17 |
-| LP6 | 8 | 0 | 0 | 0 | 1 | 9 |
-| Total | 242 | 18 | 6 | 6 | 4 | 276 |
+| LP1 | 22 | 3 | 3 | 6 | 1 | 35 |
+| LP2 | 197 | 3 | 0 | 0 | 0 | 200 |
+| LP3 | 36 | 12 | 5 | 3 | 0 | 56 |
+| LP4 | 29 | 3 | 1 | 0 | 3 | 36 |
+| LP5 | 19 | 0 | 0 | 0 | 0 | 19 |
+| LP6 | 10 | 0 | 0 | 0 | 1 | 11 |
+| Total | 313 | 21 | 9 | 9 | 5 | 357 |
 
-The imported index contains 276 tests: 242 source, 18 synthetic, 6 windows, 6 performance and 4 human.
-Section 18 adds ten source test requirements for this chapter. Including them gives 286 requirements, with 252 source;
+The imported index contains 357 tests: 313 source, 21 synthetic, 9 windows, 9 performance and 5 human.
+Section 18 adds ten source test requirements for this chapter. Including them gives 367 requirements, with 323 source;
 the other class counts are unchanged. Those ten are excluded from the imported phase totals. No number is a pass count.
 
 ## 16. Source differences and evidence limits
@@ -724,9 +734,9 @@ Every owner question is still open. The matrix in PHS.38 describes required futu
 
 | Open dependency or mechanism | Clauses and what settles it |
 | --- | --- |
-| Missing architecture/ADRs and content review | PHS.9/PHS.10: integrator supplies chapters 06, 07, 11, 13, ADR drafts and glossary integration; Astra reviews the assembled current candidate |
-| Mathematical obligations | PHS.12/PHS.19/PHS.32/PHS.48: mathematician's label-lift and R2-E1 to R2-E4 responses, then main-session settlement; no off-lattice reliance assumed |
-| Import-table inferences | PHS.9/PHS.31/PHS.49: chapter 06 and the mathematician/main session rule on V14, P13, K1, H1 and Round 3's proposed outcome treatment |
+| Content review | PHS.9/PHS.10: integrator supplies the glossary integration; Astra reviews the assembled current candidate |
+| Status of note N1 | PHS.12/PHS.19/PHS.32/PHS.48: N1 stands at (theorem, producer) until a model review reads it, and its transfer step is the reviewed stage 19 lemma; no person has reviewed either |
+| Import-table dispatch | PHS.9/PHS.31/PHS.49: EVD.52 rules on V14, P13, K1 and H1 with their limits. Records with no format key stay wholly recorded until a discriminator table exists (EVD.53, PS3.12) |
 | EN3/EN4 and H-08 | PHS.16/PHS.20/PHS.53/PHS.55/PHS.69: missing jumbling interfaces, final rows/fields, undo, lanes, availability, dependency freshness, layer contracts and migration packet |
 | Specification choices routed to existing chapters | PHS.55: byte and numeric profiles, limits, provenance version, exactness control flow, word keys, metering/resources, archive dependencies, replay/linkage/recording and chart/backend contracts remain with those owners |
 | Human protocols and editor bars [O] | PHS.27: owner sets/adopts protocols and criteria; mathematician checks content; chapter 11 supplies adopted LX-4 detail; no participant or timing result exists |
@@ -737,4 +747,4 @@ Every owner question is still open. The matrix in PHS.38 describes required futu
 | Design-system ADR | PHS.28/PHS.36/PHS.44 to PHS.47: closed design line and owner LQ19 decision; no DT-J2 to DT-J4 work opened |
 | Research availability and scope | PHS.31 to PHS.33/PHS.59: archive inputs and independent checks; missing required dependencies wait; research remains stopped and global coverage remains open |
 | Glossary integration and production evidence | PHS.9/PHS.26/PHS.53: reviewed additions, one term per concept and puzzle/alphabet cost units, existing tooling and EV5.15 diagram evidence |
-| Remaining test definitions | PHS.61 to PHS.67: integrator adds chapters 06, 07, 11 and 13 and revises counts; future implementation supplies every CT test and matching evidence |
+| Test implementation | PHS.61 to PHS.67: future implementation supplies every CT test and matching evidence |

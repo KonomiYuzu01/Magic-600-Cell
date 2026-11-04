@@ -1,10 +1,11 @@
 # The language's ecosystem: partition and owner questions
 
-Status: **draft for the owner, step 1 of the language kickoff of 3 November 2026, revised after rounds 1 and 2 of the
+Status: **draft for the owner, step 1 of the language kickoff of 3 November 2026, revised after rounds 1 to 3 of the
 round table. Not accepted.** Nothing on this page is an ADR, a frozen architecture or a chosen syntax. The page divides
 the ecosystem of the project's own language into components with boundaries. It also maps every capability the kickoff
-names to a component and lists the decisions the owner takes before the full architecture is written. Accepting ADRs
-and freezing the architecture are the owner's decisions.
+names to a component and lists the decisions the owner takes. The owner confirmed the direction, and the full text
+follows it in [`architecture/`](architecture/00-overview.md) and `adr/`. Section 19 lists what round 3 corrected here.
+Accepting ADRs and freezing the architecture are the owner's decisions.
 
 - Round table: [DT-L1](../../../progress/1.0/design-table/topics/language-ecosystem.md) (the mathematician and the
   engineer advisor). Its cards use the IDs of the first draft; section 18 maps them to the IDs on this page.
@@ -75,7 +76,7 @@ Every component below is built on these twelve invariants. Each restates a bindi
       under every runtime, so that a run stays reproducible (INV-10), is spike LX-9.
   - Types keep exact and approximate values apart. Nothing converts implicitly from approximate to exact.
 - **INV-5 Evidence is not score and not permission** (charter bar M3).
-  - A claim is a typed value with evidence. Unknown is never false, and sampling never upgrades a positive claim.
+  - A claim is a typed value with evidence. Unknown is never false, and sampling never upgrades a universal claim.
   - Evidence, score and permission are separate fields.
 - **INV-6 Identity is canonical, never visual.**
   - Objects are addressed by canonical IDs bound to a model and to a level of the identity tower (KN1).
@@ -149,7 +150,7 @@ the kernel, not a second engine.
 
 | Component | Owns | Never |
 | --- | --- | --- |
-| KN1 Model registry and identity | Model identities (the 600-cell-Full manifest, the jumbling puzzle's J1 identity); menu identity, menu-order digest and contract revision; the canonical ID scheme for cell, grip, cap, generator, menu letter, piece, sticker, slot, position, pose and orbit. The identity tower, which differs by puzzle: the jumbling puzzle has pose, visible pose class g_A·Stab_A, labels (defined on the lattice only) and position, with the exact maps between the levels and their kernels; 600-cell-Full holds labels only, and positions derive from them. Snapshots, derived states, digests and predicates name their puzzle and level. A projection to a lower level is an explicit kernel call with a typed partial result ("off the lattice: k pieces"), never a sentinel. Records of derived models; one normalisation of digest byte conventions. | Changes a model without a new identity and a migration; reinterprets a record of another identity; moves a claim along a map that does not preserve its subject; lifts a value from a lower level to a higher one |
+| KN1 Model registry and identity | Model identities (the 600-cell-Full manifest, the jumbling puzzle's J1 identity); menu identity, menu-order digest and contract revision; the canonical ID scheme for cell, grip, cap, generator, menu letter, piece, sticker, slot, position, pose and orbit. The identity tower, which differs by puzzle and whose levels form a partial order, not a chain: the jumbling puzzle has pose, sticker class g_A·S_A (the first draft's "visible pose class"), labels (defined on the lattice only), region class g_A·R_A, position (lattice only), coset, tree data and heights, and shape, with the exact maps between the levels and their kernels; 600-cell-Full holds labels only, and positions derive from them. Snapshots, derived states, digests and predicates name their puzzle and level. A projection to a coarser level is an explicit kernel call with a typed partial result ("off the lattice: k pieces"), never a sentinel. Records of derived models; one normalisation of digest byte conventions. | Changes a model without a new identity and a migration; reinterprets a record of another identity; moves a claim along a map that does not preserve its subject; lifts a value from a coarser level to a finer one |
 | KN2 Exact engines | 600-cell-Full: the label permutation of 259,800 slots by 1,200 generators; words and recipes (word and star steps); collateral support; Net and Strict protection. Jumbling: exact poses over Q(√5); admissibility with certificates; the outcomes admissible, blocked, invalid and uncertain. Batch kernels over words, compressed words and all pieces. The calls and per-revision batches that decide something are typed by puzzle and level, each with an oracle agreement test: projections, protection, the end tests, ν, and heights with domain IDs per distinct pose (equal to LB3 and to the research's `trees.py`). A value store for derived states, by digest. | Uses floats on a decision path; changes state on a refusal; reuses a result at another revision unless its input digest is the same or an exact transport justifies it (KN7) |
 | KN3 Exact arithmetic | Unbounded integers (pose entries exceed 2^64), rationals, Q(√5) and the finite fields F2 and F5. Exact matrices: Cayley rotations; the state contract's A1 input map and the menu-mode drag choice (LX-9). The state contract's A2 filtered sign test with its proven bound. Exact polytope operations. The small exact algebra above this (quaternions, the icosian order and its tree, rows over F2 and F5) is library code (LB1). | Rounds silently |
 | KN4 Session store | The journal (parent-linked events, branches kept), revisions, snapshots and checkpoints, jumble episodes, recovery, atomic writes, workspace records. Only the engine opens the session files. | Exposes a writable state to a program; is opened by another process |
@@ -162,7 +163,7 @@ the kernel, not a second engine.
 | Component | Contents |
 | --- | --- |
 | LG1 Syntax and editions | Surface syntax with an edition header per file, a formatter and error recovery. The style is open (LQ13). The typed IR is the contract, so the syntax can be chosen by a learnability test. |
-| LG2 Types | Algebraic data types, generics and inference, plus the domain families of 4.1. The checker enforces six kinds of discipline. (1) Identity types bound to a model and to a level of the identity tower: a 600-cell-Full piece and a jumbling piece are different types, and so are a pose and its visible pose class. (2) Exact and approximate values kept apart. (3) Cost units typed by puzzle that never mix: menu letters, retained generators and UI actions. Cost units are part of the reproducibility key and are written into every run record, so "twist" gets one meaning per puzzle in the glossary before the data core freezes. Seconds are a display unit, never a budget unit. (4) A reachability claim on every state. (5) Mode-typed operations: retained-workflow tools need Jumble off, and menu words need Jumble on. (6) Verdicts with evidence where a boolean would hide Unknown, and goals as predicates typed by level. |
+| LG2 Types | Algebraic data types, generics and inference, plus the domain families of 4.1. The checker enforces six kinds of discipline. (1) Identity types bound to a model and to a level of the identity tower: a 600-cell-Full piece and a jumbling piece are different types, and so are a pose and its sticker class. (2) Exact and approximate values kept apart. (3) Cost units typed by puzzle that never mix: menu letters, retained generators and UI actions. Cost units are part of the reproducibility key and are written into every run record, so "twist" gets one meaning per puzzle in the glossary before the data core freezes. Seconds are a display unit, never a budget unit. (4) A reachability claim on every state. (5) Mode-typed operations: retained-workflow tools need Jumble off, and menu words need Jumble on. (6) Verdicts with evidence where a boolean would hide Unknown, and goals as predicates typed by level. |
 | LG3 Effects and capabilities | Effects: pure, read a snapshot, change the view, change the workspace, prepare a preview, use a granted file, seeded randomness, budgets. Effects are inferred, checked and inherited through calls. Rules: no program effect commits, because a commit comes only from the shell's token (INV-3). Views get no workspace-write effect, so a view never makes an undo stale (DT-M1 Q4 (a)). A workspace change happens only inside a command the solver invokes, as one undoable action. Flow control in the solving profile (BM2) takes the form that owner question LQ21 chooses: provenance labels that follow data flow and control flow, or capability separation, under which a program either reads state-derived data or prepares previews. Modules declare capabilities, and the host grants them per profile and per run. Static checks never replace the engine's run-time revalidation. |
 | LG4 Typed IR and interpreter | A typed domain IR shared by code, GUI and keys, versioned as the stable contract. A deterministic interpreter, with no machine code, own VM or JIT before measurement. Bulk operations lower to kernel batch calls, so a program never walks every sticker in the interpreter. Compressed words stream. Views evaluate incrementally per revision and skip to the newest revision (latest wins). Budgets and cancellation points are enforced. Pointwise contracts run in the interpreter and are charged to the step budget; a contract over a whole state runs once per revision or as an agreement test in CI, never per call inside a loop. |
 | LG5 Modules, packages and versions | Modules addressed by content digest. A manifest (supported model identities, capabilities, edition, dependencies) and a lockfile. Every run record names its module digests. Sharing in 1.0 is owner question LQ12 (recommended: local only). |
@@ -172,7 +173,7 @@ the kernel, not a second engine.
 These are placeholders to show coverage. The names are not final.
 
 - Model and identity: model, cell, grip, cap, generator, menu, menu letter (grip, item), piece, sticker, slot, position,
-  pose, visible pose class, orbit; the levels of the identity tower.
+  pose, sticker class, region class, orbit; the levels of the identity tower.
 - State: snapshot (read-only and bound to a revision), derived state (with derivation, base revision and reachability
   claim), difference.
 - Words:
@@ -208,7 +209,7 @@ entry.
 | LB1 Base library | Collections and relations; graphs, trees and AND/OR graphs. Fixed points over finite lattices. Exact linear algebra over Z, Q, Q(√5), F2 and F5. The quaternion algebra over Q(√5) with the icosian order, its 2-adic valuation and the 5-regular tree, for heights, branches and domains (cosets γK⁺). Permutation groups (orbits, stabilisers, cycle types, Schreier tables, primitivity tests). Words, normal forms (trace normal forms included), conjugates, commutators and powers; on jumbling words these are total on words and partial on states. Straight-line programs. Exact bipartite matching and integral flows. Big integers and symbolic bounds (binomials, digit counts). Budgeted enumeration with a completeness report. |
 | LB2 600-cell-Full library | Orbits and stage order. Seeds, stars, setups and buffers (guarded); frames as exact slot tuples. Collateral and support. Protection: Net, Strict, block and position locks; an unchecked part is never shown as safe. Residuals, blocks and work sheets. Macro analysis. The orbit-first workflow of [solving-workflow.md](../../../progress/1.0/solving-workflow.md). |
 | LB3 Jumbling library | Menus (A4₀ ⊆ Λ, I_a). Admissibility classes and certificates; straddlers; blocked twists. N, D and Φ; heights and n₂, n₄, n₆, branches and domains through the icosian tree (LB1; the per-revision batch is KN2's); units; clean steps; excursion along a word. ν over F2 and F5, and the 36 corrections; solving for a correction combination is research tier only (section 11). The three separate end tests: retained checkpoint, label checkpoint, sticker test. The Jumble on and off rules. Protection verdicts that carry their level: pose-based inside Jumble, label-based in 600-cell-Full, never crossing over. The repair list at a cap the solver names (17 October). Shown facts follow DT-J1 rule 6. |
-| LB4 Representations library | Exact geometry and display geometry. Charts with a declared domain, inverse and loss. A chart's declared properties (domain, injectivity, section membership) are decided exactly for the chart function on exact vertices at exact camera poses (the identity or an element of K⁺). Between those poses, whether a point lies in the chart's domain is a display decision that decides nothing (INV-4). Per-object layouts are evaluated per revision; how projection charts are evaluated is LQ7 (8.5). Projections: perspective, stereographic, local chart, Hopf rings, two hemispheres. True sections, slabs and clips, decided exactly and then drawn. Atlases; trees; cell complexes with dimension-tagged incidence; state graphs. Declared properties checked separately: homomorphism, injectivity, embedding, isometry. Linked selection across representations by canonical ID. |
+| LB4 Representations library | Exact geometry and display geometry. Charts with a declared domain, inverse and loss. A chart's declared properties are decided exactly at exact camera poses (the identity or an element of K⁺): domain by an exact region test (KN3's polytope operations), injectivity by a theorem or an exact region test, and section membership on the posed vertices, to which convexity reduces it. A per-vertex test can refute a region property and cannot establish one (DT-L1 R3-M2). Between those poses, whether a point lies in the chart's domain is a display decision that decides nothing (INV-4). Per-object layouts are evaluated per revision; how projection charts are evaluated is LQ7 (8.5). Projections: perspective, stereographic, local chart, Hopf rings, two hemispheres. True sections, slabs and clips, decided exactly and then drawn. Atlases; trees; cell complexes with dimension-tagged incidence; state graphs. Declared properties checked separately: homomorphism, injectivity, embedding, isometry. Linked selection across representations by canonical ID. |
 | LB5 Research library | Restricted search with deterministic budgets. A search record names its family, alphabet, bounds, beam, seed and stop reason. A negative result is scoped to its declared search, with closure-set certificates where they exist. Search reductions such as minimality and dynamic targets are recorded as lemmas, so a reduced search's negative reaches its full family only through the lemma. Strategies, selectors and ranks, with checked strict decrease. Theorem schemas: hypotheses decided on an instance and the conclusion replayed. Conditional models: regional profiles, quotients, partial actions. Admitted domains, with rejection outside them. Family recognition by exact matching. Experiment branches and run records. Certificate builders. Replay and import of the research formats (10.3) through PS3's import table. |
 | LB6 Built-in tools | The tools 1.0 ships, written with LB1 to LB5 where possible. Each is viewable and forkable, ships its principle record (INV-12) as data in its module manifest and declares its boundary class (BM5). The record's hand-checkable instance runs as a headless fixture, its decomposition is generated from the IR's call graph and kernel calls, and its lemma or certificate resolves to an evidence envelope. A fork inherits no evidence. |
 | LB7 User modules | The solver's tools, macros, recipes, layouts and bindings, and forks of built-in tools, in a local workspace. |
@@ -241,7 +242,7 @@ result apart, and records how the job that produced it ended as a fifth, separat
 | Field | Values |
 | --- | --- |
 | Claim: how true | proved; conditional (named premises); refuted; open |
-| Scope: about what | The set the statement covers: one finite instance; a declared search set (family, alphabet, bounds); an admitted domain such as D[k]; or every reachable state of a named puzzle. Its identity: model identity, menu identity and menu-order digest, contract revision, input digest with the level it covers (labels or poses), source and module digests. The context of a check: revision, protection set, goal and role; it serves only claims in memory and the display, and a stored envelope keeps only claims whose scope is an immutable input digest. |
+| Scope: about what | The set the statement covers: one finite instance; a declared search set (family, alphabet, bounds); an admitted domain such as D[k]; or every reachable state of a named puzzle. Its identity: model identity, menu identity and menu-order digest, contract revision, input digest, where the statement has one, with the level it covers (labels or poses; off the lattice poses only, until a sticker-class digest exists), source and module digests. Every scope field is immutable, and a digest is at least as fine as the statement's subject level. The context of a check (revision, protection set, goal and role) is not scope: it serves only claims in memory and the display, and it is never stored. |
 | Basis: on what | theorem (a cited proof, qualified by stage and pinned to a source commit); certificate (kind and digest); exhaustive computation over a declared set; exact computation on finite inputs (the research's "measured"); sample |
 | Check: who confirmed | none; producer; independent checker (KN6); model review; human review; formal proof. Each check records its mode: reused through exact transport, fresh exact audit or actual replay. The modes are facts, not a strength order. |
 | Job outcome (KN7, not evidence) | completed; cancelled; cut off; error |
@@ -251,20 +252,29 @@ Rules (draft; the full text states them, with proofs where they need them):
 - Evidence is stored as an AND/OR provenance graph.
   - A stated partial order on (basis, check) pairs compares its leaves.
   - One argument is summarised by its set of weakest leaves.
-  - Independent arguments for one statement combine by the strongest.
+  - Independent arguments for one statement all stay unless one dominates another, so a statement's summary is a set of
+    alternatives. Nothing adds up.
+  - A stored record also holds seven facts (DT-L1 R3-M1): statement form, negation pair, subject level, scope-membership
+    evidence, completeness of a search apart from the job outcome, premise class, and the tool digest of each check with
+    the declared common base.
   - What the stored envelope holds is part of LQ10: facts, with the order, the summaries and the five words derived as
     versioned functions (DT-L1 R2-E1), or the judgements themselves (DT-L1 M2). Section 13 gives both.
 - A premise is discharged only by a claim with the identical statement and scope. Identity is by statement ID: a
   stage-qualified, commit-pinned name or the digest of a typed statement. An equivalent statement under another ID is
   refused.
 - Refutation is asymmetric.
-  - One exactly checked counterexample refutes a universal statement, however it was found.
+  - One exactly checked counterexample refutes a universal statement, however it was found, given checked scope
+    membership and identical identity fields.
   - An existence statement is refuted only by a proof or a complete certificate.
-- A negative is proved only for its declared set, by a completed exhaustive search or a closure-set certificate.
+  - A mixed statement is refuted only by a witness plus a complete negative at that witness.
+- A negative is proved only for its declared set, by a completed exhaustive search, a closure-set certificate or a
+  theorem.
   - A cut-off search reads open and keeps its search record.
   - `OUTSIDE_CERTIFIED_DOMAIN(k)` refutes membership in D[k]. It says nothing about reachability or solvability.
-- A job that did not complete yields no negative claim. A witness it found counts once it is checked.
-- Sampling never upgrades a positive claim.
+- A job that did not complete yields no negative claim. A witness it found counts once it is checked. A job that
+  completed is not a search that completed: completeness or closure is stored apart.
+- Sampling never upgrades a universal claim. A checked witness found by sampling proves an existence statement, because
+  its basis is exact computation or certificate.
 - A claim about a pinned input reaches another revision only by a re-run at that revision or by an exact transport
   that a lemma justifies.
 - A result on a derived state keeps that state's reachability claim.
@@ -344,8 +354,8 @@ exception, and DT-J1 binds as settled:
 - The recommended option of LQ7 follows from this: a chart subset that is pure and total, uses float32, has bounded
   loops and has no recursion, allocation or big integers. It compiles to portable HLSL, and the CPU interpreter is its
   reference evaluator.
-- A chart's declared properties are decided exactly for the chart function on exact vertices at exact camera poses
-  (LB4). Between poses, domain membership is a display decision.
+- A chart's declared properties are decided exactly at exact camera poses, by an exact region test or a theorem (LB4).
+  Between poses, domain membership is a display decision.
 - The shader test compares the GPU output with an exact or interval evaluation on the declared domain and excludes a
   stated neighbourhood of singular sets. PresentMon in LX-7 stays the performance evidence.
 - Per-object layouts, such as sheets, atlases, trees and state graphs, are evaluated on the CPU per revision.
@@ -478,21 +488,28 @@ exception.
 
 - A general-purpose language with read access to the state can express any solving procedure, and a solver can type a
   word computed elsewhere.
-- No checker decides, for every program, whether its output is a solving step (Rice's theorem). Budgets make each run
-  finite, but they do not make "searches" a property of what a program computes.
+- Whether the program chose a word is not a function of (word, state): the identical pair can be the solver's named
+  macro or a search's output. For programs without limits, no checker decides whether every output is a solving step
+  (Rice's theorem). A budgeted program always stops, so one run is decided by running it, and only a check over all
+  states stays out of reach. Budgets make each run finite, but they do not make "searches" a property of what a program
+  computes.
 - Even a static fact can answer a question over twists. When N_c equals its floor, no twist of cap c alone lowers N_c,
-  and nothing was tried. A piece's domain at height 2 fixes the twists that lower it.
+  and nothing was tried. A piece's domain at height 2 fixes the twists at each own holder that lower that piece.
 - A composition of shipped functions can answer one too. Generic elimination over F2 and F5, applied to the ν on screen
   and the shipped correction rows, returns the correction combination that DT-J1's filter put out; the research's
-  `solve(b2, b5)` already does this (DT-L1 R2-E3). No class of "non-searching" functions defines a safe tier; only an
-  enumerated list with flow control stops such a composition.
-- Flow control covers data and branches, not whether a run ends or emits a preview, so one bit per run can still leak.
-  A tool that shows a state-derived word for the solver to retype passes any preview check, and DT-J1's filter also
-  covers what is shown, so display sinks are a policy question too.
-- So the boundary concerns who chose a word, not what the word does. It is a property of information flow.
-- Software can control what it ships, how execution happens, which capabilities a profile grants, which flows reach a
-  preview, and how records are labelled. It cannot establish authorship or understanding, and nothing it does binds a
-  person who retypes a word.
+  `solve(b2, b5)` already does this (DT-L1 R2-E3). No class of "non-searching" functions defines a safe tier, because
+  "searches" is intensional: a lookup table computes the same function. A list that leaves a part out stops the shipped
+  composition. What a solver writes from base parts, only flow control stops.
+- Flow control covers data and branches, not whether a run ends or emits a preview. A state-dependent stop can select
+  among up to 36,000 pending previews, about 15.1 bits per run, and repeated runs add up (DT-L1 R3-M3; chapter 07 gives
+  three fixes). A tool that shows a state-derived word for the solver to retype passes any preview check, and DT-J1's
+  filter also covers what is shown, so display sinks are a policy question too.
+- So the boundary concerns who chose a word, not what the word does. The part of that question software can check is a
+  flow property. "Themselves" and "understanding" are not checkable, because two identical flows can differ in what the
+  person understood.
+- Software can control what it ships, how execution happens, which capabilities a profile grants, which flows inside the
+  sandbox reach a preview, and how the records the system writes are labelled. It cannot establish authorship or
+  understanding, and nothing it does binds a person who retypes a word.
 
 **Mechanisms present in every option**, so the policy can be set later without a redesign:
 
@@ -511,7 +528,8 @@ exception.
   - Declassifiers are fixed kernel or library entries that the policy enables: setup search for a named target, the
     repair pair the solver picks, the solver's own pick, and the author classes the policy admits. No program can
     declare one.
-  - A preview's outcome (its end state, N, its protection verdict) is state-derived.
+  - A preview's outcome (its end state, N, its protection verdict, a refusal and its error category) is state-derived,
+    and so is a read of the budget used. A missing provenance field reads unknown, never own.
   - Flow control takes one of two forms, owner question LQ21:
     - **Flow labels** follow data flow and control flow: statically in the checker, with more refusals and no run-time
       cost, or also at run time, with fewer refusals and a cost per step. A record can say where each previewed word
@@ -602,7 +620,7 @@ from DT-L1 E4; nothing has been measured.
 | --- | --- | --- | --- | --- |
 | LX-1 Interpreter cost | Cost per IR step and per kernel call for the three LP3 tools in each route, with flow labels off, static only, and at run time | LQ9, LQ21 | A headless lead only; a function timer never stands in for charter E2. The decisive check is LP3's end-to-end E2 measurement. | Source (lead) |
 | LX-2 Placement | Kernel-call round trip in and out of process at LX-1's call mix; faults (memory exhaustion, deep recursion, an endless loop, a killed runtime); startup; transfer of 1,039,200 bytes of labels and 708,480 bytes of pose IDs per revision; a preview request carries its label set to the command layer | LQ9 | A placement passes when, during each fault, the journal and state hash are unchanged, the shell stays responsive and a commit completes within charter E2. Startup stays within the 3 s that charter E3 proposes. | Performance (owner's machine) |
-| LX-3 Sandbox, determinism and refusals | Budgets, interrupts, no ambient input or output; display plans across platforms at their declared precision; must-refuse cases for flow control (caps chosen by largest N_c, a search followed by a rebuild from base parts, the F2 and F5 solve over ν, a word laundered through the workspace, a choice between two words by a state fact, a flow through a module call), run under capability separation, static labels, run-time labels and, for RT2 and RT4, a variant whose static checker over an approved subset refuses dynamic code and binds its approval to the executed bytes | LQ9, LQ21 | One reproducibility key gives identical result bytes over repeated runs on Windows and on headless Linux, and display plans agree at their declared precision; planted clock, file and network reads are refused; every must-refuse case is refused under each form and variant, and the count of false refusals over the built-in tools and the solving-workflow tools, for each form and variant, goes to the owner with LQ21 | Source |
+| LX-3 Sandbox, determinism and refusals | Budgets, interrupts, no ambient input or output; display plans across platforms at their declared precision; must-refuse cases for flow control (caps chosen by largest N_c, a search followed by a rebuild from base parts, the F2 and F5 solve over ν, a word laundered through the workspace, a choice between two words by a state fact, a flow through a module call, a stop-selected preview, refusal-driven selection, a one-item pick, accumulation across runs), run under capability separation, static labels, run-time labels and, for RT2 and RT4, a variant whose static checker over an approved subset refuses dynamic code and binds its approval to the executed bytes | LQ9, LQ21 | One reproducibility key gives identical result bytes over repeated runs on Windows and on headless Linux, and display plans agree at their declared precision; planted clock, file and network reads are refused; every must-refuse case is refused under each form and variant, and the count of false refusals over the built-in tools and the solving-workflow tools, for each form and variant, goes to the owner with LQ21 | Source |
 | LX-4 Editor latency | Feedback latency on realistic modules | LQ9 | Bars set in the full text | Performance (owner's machine) |
 | LX-5 Exact arithmetic | Speed and licences of big-number and Q(√5) candidates at these sizes: synthetic pose entries beyond 2^64, literal words of 672,417 and 2,352,984 letters, 13,231,266 letters as one stream, the 10⁷ admission bound | LQ8 | A licence list goes to the owner; a copyleft dependency needs the owner | Source; performance (owner's machine) |
 | LX-6 Engine language | The deferred spike of the wiki question: port the hot path, check oracle equality, compare speed with NumPy | LQ8 | Oracle equality is source evidence; the speed comparison counts only from the owner's machine | Source; performance (owner's machine) |
@@ -662,7 +680,7 @@ Performance figures count only from the owner's machine. Headless and cloud timi
     stage 14 to 19 corpus (497 records, 13,412,769 bytes at Git HEAD) and reports their nodes and bytes.
   - **Judgements** (DT-L1 M2). The envelope stores the claim fields of 8.1 and freezes only after LQ3 and the rules of
     8.1 are settled.
-  - Under either option a stored envelope keeps only claims whose scope is an immutable input digest (8.1).
+  - Under either option every scope field of a stored claim is immutable, and none is revision-bound context (8.1).
 - The source syntax, the IR and the module formats freeze later and evolve by editions with recorded migrations.
 - A stored word keeps its meaning across editions.
 
@@ -689,7 +707,7 @@ The phases have no day counts (the earlier schedule is set aside), and no gate i
 | --- | --- | --- | --- |
 | LP0 Contracts | This partition; the architecture document; ADR drafts; glossary entries for every language term. The owner's answers to LQ1 to LQ21; for LQ8, LQ9, LQ13 and LQ21 the answer may be how each is decided, and under the recommendations the choice follows its evidence (LP1; LQ13 before LP2's parser). LQ2's option set follows in the joint setting, before LP6. Once LQ18 is answered, the spikes may start during LP0. | Astra review in at least two shards with no open blocker or major; the owner accepts the ADR drafts that need no spike evidence: every draft of section 17 except the form of flow control in ADR 6, ADR 7 and ADR 12, which follow the route inside LP1 | none |
 | LP1 Interfaces and evidence | The spikes LX-1 to LX-9 as experiment code (LQ18), in the order of section 12, and the choices they feed: LQ8 after LX-5 and LX-6, then LQ9 and LQ21 after LX-1 to LX-5, with the form of flow control in ADR 6, ADR 7 and ADR 12 for the owner to accept. The kernel interface specification: snapshot handles, batch queries, derived states and the value store, previews and token binding, receipts, availability, query rows, checkers, jobs and deterministic budgets. Canonical IDs and the identity tower; digest normalisation; the data core formats. The runtime's command-layer needs folded into EN4's final H-08. The display-plan primitives handed to the renderer line (LQ20). | LQ8, LQ9 and LQ21 answered with their spike evidence, and the remaining ADRs accepted; then the architecture-freeze gate ruling (Astra), with the command table, the layer interfaces and the renderer feature list; the migration-format-freeze gate ruling (Astra); the owner's sign-off | LP0, and LQ18 for the spikes. EN3: command rows, view-model fields, jumbling interfaces. EN4: final H-08 with undo available while a job runs, layer interfaces, migration-format packet. LQ10, and LQ3 if LQ10 chooses judgements. |
-| LP2 Headless core | The kernel API over the engine and over J1, with a public J1 API in place of the adapters' private members; a candidate adapter through which the existing 600-cell-Full oracle (`tools/oracle/`, cases O01 to O07) runs on the kernel API, with the cases the language adds; parser, checker, IR and interpreter with budgets and cancellation; the conformance suite | The J1 harness and the 600-cell-Full oracle pass on the API. Conformance and determinism tests give identical bytes on Windows and Linux. No float on a decision path, checked. The preview-swap test is refused. Repeated budgeted runs stop at the same step. The centre-0 case is refused at pose level inside Jumble and passes at label level after the crossing. Heights and domain IDs equal the library and `trees.py` on ENG-0J acceptance item 8's states and the H6030 witness. R-11's property test passes with its jumbling case, and the label-lift lemma's property test runs as a lead, not a proof. | LP1's gates. The design-system ADR, or the charter amendment of LQ19. The syntax (LQ13) before the parser. |
+| LP2 Headless core | The kernel API over the engine and over J1, with a public J1 API in place of the adapters' private members; a candidate adapter through which the existing 600-cell-Full oracle (`tools/oracle/`, cases O01 to O07) runs on the kernel API, with the cases the language adds; parser, checker, IR and interpreter with budgets and cancellation; the conformance suite | The J1 harness and the 600-cell-Full oracle pass on the API. Conformance and determinism tests give identical bytes on Windows and Linux. No float on a decision path, checked. The preview-swap test is refused. Repeated budgeted runs stop at the same step. The centre-0 case is refused at pose level inside Jumble and passes at label level after the crossing. Heights and domain IDs equal the library and `trees.py` on ENG-0J acceptance item 8's states and the H6030 witness. R-11's property test passes with its jumbling case under default 10's hypotheses, and the label-lift conformance test passes with its S, R and σ ≠ id cases. | LP1's gates. The design-system ADR, or the charter amendment of LQ19. The syntax (LQ13) before the parser. |
 | LP3 First closed loop | Three built-in tools in the language (600-cell-Full, jumbling, representations) running end to end: source, check, run, view nodes, preview, user commit, receipt, undo | The same result through source, command and key. Oracle equality of every committed step. Charter E2 measured end to end on the owner's machine, p95 at most 100 ms over at least 100 observations (the B4-12 table in `10_V1_ARCHITECTURE.md`), with those tools' views active. | LP2; the frozen H-08; the renderer freeze for the on-screen half |
 | LP4 Authoring environment | Editor services, debugger and replay, source and UI linkage, bindings and recording, docs, principle records and the learning path, first edition | Editor latency bars; tests with non-authors in a form the owner sets | LP3; the shell. The editor's look waits for the design line, which resumes after the language (owner, 3 November). |
 | LP5 Research expressiveness | Research library; import and independent check of the stage 14 to 19 archives; branches and run records; family recognition; ranks; symbolic bounds | Archived certificates and verdicts re-checked by the language's checkers and matched; a run record reproduced bit for bit; no new search counts as acceptance | LP2 and LP3; the research results in the repository (the research stays stopped) |
@@ -812,8 +830,9 @@ The integrator takes these defaults unless the owner overrules them.
 10. Every word has one normal form (R-11), used only as an equality key: free reduction for 600-cell-Full words, and
     domain-preserving merging for jumbling words. Preview, protection, commit and the token use the literal letters.
     R-11's property test gains a jumbling case: the key's word is admissible at a state exactly when the literal word
-    is, with the same end digest. A word's exact expanded length and cost are shown before any run. A program is never
-    split silently.
+    is, with the same end digest. That property holds under four hypotheses: only runs of adjacent letters at one grip
+    merge, identity products are kept, the menu is closed under products, and classification is exact (DT-L1 R3-M2). A
+    word's exact expanded length and cost are shown before any run. A program is never split silently.
 11. Nothing is added under `schemas/` in this stage. Formats are described in prose until the ADRs are accepted.
 12. A public J1 API replaces the adapters' use of private members before the language binds to J1.
 13. Artifacts are identified by content digest, never by path. Importers accept research records without a `format` key
@@ -852,8 +871,9 @@ After the owner confirms the direction, the full text follows:
   10. Persistence formats, the data core and editions.
   11. Display plans and user charts.
   12. Implementation route and runtime placement (after the evidence).
-- **DT-L1's open obligations**: the label-lift lemma off the lattice, and the mathematician's check of what this
-  revision adopted from the engineer advisor's round 2 cards. The full text relies on neither until it is done.
+- **DT-L1's open obligations**, now cleared: the label-lift lemma off the lattice (note N1), and the mathematician's
+  check of what this revision adopted from the engineer advisor's round 2 cards (R3-M1 to R3-M4). Section 19 lists the
+  corrections.
 - **Plain-language explainers** from the round table on the key concepts, for the owner.
 
 ## 18. Identifiers
@@ -876,3 +896,27 @@ The first draft used IDs that collided with the charter's bars, the state contra
 | LP0 to LP6 | Phases | L0 to L6 |
 | LQ1 to LQ21 | Owner questions | Q1 to Q18; LQ19 to LQ21 are new |
 | Defaults 1 to 20 | Integrator defaults | Defaults 1 to 13 |
+
+## 19. What round 3 corrected
+
+Round 3 of the round table found errors in the text the owner confirmed. None changes this page's structure or any owner
+question. Each is corrected in place, and this section keeps the change visible. The cards and the proofs are in
+[DT-L1, the outcome of round 3](../../../progress/1.0/design-table/topics/language-ecosystem.md#outcome-of-round-3).
+
+| Where | First text | Now | Card |
+| --- | --- | --- | --- |
+| INV-5, 8.1 | Sampling never upgrades a positive claim | Never a universal claim: a checked witness found by sampling proves an existence statement | N2, C.12 |
+| KN1, 4.1, LG2 | Levels pose, visible pose class, labels, position, read as a chain with lower and higher | A partial order with sticker class, region class, coset, tree data, heights and shape; coarser and finer | N1, B.4; R3-M2 |
+| LB4, 8.5 | Chart properties decided on exact vertices | Decided by an exact region test or a theorem; a vertex test can only refute a region property | R3-M2 |
+| 8.1, section 13 | A stored claim's scope is an immutable input digest | Every scope field is immutable; a digest is at least as fine as the subject level | R3-M1 |
+| 8.1 | Independent arguments combine by the strongest | Every undominated argument stays; a statement's summary is a set of alternatives | N2, C.6 |
+| 8.1 | Five fields | Seven more facts in a stored record | R3-M1 |
+| 8.1 | Refutation and negatives | Counterexamples need checked membership; mixed statements added; a negative can rest on a theorem; a completed job is not a completed search | N2, C.12 |
+| Section 11 | Rice's theorem as the reason no checker exists | The verdict is not a function of (word, state); Rice covers programs without limits | R3-M3 |
+| Section 11 | Only an enumerated list with flow control stops a composition | A list that leaves a part out stops the shipped composition; what a solver writes, only flow control stops | R3-M3 |
+| Section 11 | One bit per run can leak | A stop can select among up to 36,000 previews, about 15.1 bits, and runs add up | R3-M3 |
+| Section 11 | The boundary is a property of information flow | The checkable part is a flow property; "themselves" and "understanding" are not | R3-M3 |
+| BM2 | A preview's outcome: end state, N, protection verdict | Also a refusal and its error category, and a read of the budget used; a missing field reads unknown | R3-M3 |
+| LX-3 | Six must-refuse cases | Ten | R3-M3 |
+| Default 10, LP2 | The key's property stated without conditions | Four hypotheses | R3-M2 |
+| LP2 | Label-lift property test as a lead | A conformance test; the lemma is proved at status (theorem, producer) until a model review reads it | N1 |

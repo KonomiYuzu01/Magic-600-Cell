@@ -27,8 +27,8 @@ chapter 01's vocabulary. Types below name concepts, not final identifiers or con
   ```text
   operation parse(source: SourceBytes, edition: Edition) -> ParsedProgram | Diagnostics
     effect:  pure
-    errors:  syntax.missing_edition, syntax.unsupported_edition, syntax.invalid_encoding,
-             syntax.invalid_literal, syntax.unexpected_token
+    errors:  LG1:syntax.edition_missing, LG1:syntax.edition_unsupported, LG1:syntax.invalid_encoding,
+             LG1:syntax.invalid_literal, LG1:syntax.unexpected_token
   ```
 
 - **LG1.3 [B]** Source is UTF-8, with line endings pinned to LF before any source digest is taken (partition PS1;
@@ -71,13 +71,13 @@ chapter 01's vocabulary. Types below name concepts, not final identifiers or con
 ### The six disciplines
 
 - **LG2.2 [B]** An identity type binds an object to its model and level (INV-6; KN1.5, KN1.7). A piece of 600-cell-Full
-  and a piece of the jumbling puzzle do not unify, even if their stored indices agree. A pose and its visible pose
-  class do not unify either. The checker refuses a cross-model comparison or call argument and refuses a pose-table
+  and a piece of the jumbling puzzle do not unify, even if their stored indices agree. A pose and its sticker class do
+  not unify either. The checker refuses a cross-model comparison or call argument and refuses a pose-table
   index or display instance used as a canonical identity.
 - **LG2.3 [D]** A change of level uses KN1.9's explicit projection and handles KN0.4's partial result (partition KN1;
   DT-L1 M3, R2-E2). The checker refuses an implicit projection, a fabricated value for a missing projection or a lift
-  from a coarser level. Protection verdicts keep their level (KN1.11). No rule here relies on the visible pose class
-  off the lattice, as required by overview section 8.
+  from a coarser level. Protection verdicts keep their level (KN1.11). Labels are undefined off the lattice, so a rule
+  that reads them there refuses; a class is never equality (KN1.17).
 - **LG2.4 [B]** Exact and approximate values are separate types (INV-4). Exact-to-approximate conversion is explicit
   and names a precision. There is no language conversion back, including through an ordinary boolean, a cast, a
   generic container or a helper function. Approximate values cannot decide legality, admissibility, protection,
@@ -127,7 +127,7 @@ chapter 01's vocabulary. Types below name concepts, not final identifiers or con
 | --- | --- | --- |
 | Exact pose | Jumbling poses; every labelled piece has its solved pose. It is a contract-equality predicate, not the end of a jumbled solve. | State contract section 2, A3, A5; KN1.6 |
 | Sticker test | Labels; every slot has its home label. In the jumbling puzzle it also requires the lattice test before π is available. | State contract A5; KN2.4 |
-| Lattice placement | Jumbling poses; the exact lattice test, equivalently height zero in DT-L1 M3's goal chain | State contract section 2, A5; DT-L1 M3 |
+| Lattice placement | Jumbling poses; the exact lattice test. It is equivalent to height zero only on Γ(Λ) (T3): in free mode ω = (2,0,0) at cap 0 has heights (0,0) and lies off the lattice | State contract section 2, A5; DT-L1 M3, R3-M2 |
 | Low height | Jumbling poses; the declared exact height bound of the goal, with the height function named | DT-L1 M3; chapter 03 |
 | Retained checkpoint | Jumbling poses on the lattice, witnessed equal to a state reached from solved by a legal retained-generator word | State contract section 5, as amended by A5 |
 | Label checkpoint | Lattice-checked jumbling poses and their label projection, with reachability and ν = 0 under the pinned convention; it certifies retained reachability of the labels without producing a retained word | State contract A5; KN2.13 |
@@ -148,7 +148,7 @@ chapter 01's vocabulary. Types below name concepts, not final identifiers or con
 
 | Family | Types | Definition or interface |
 | --- | --- | --- |
-| Model and identity | Model, cell, grip, cap, generator, menu, menu letter, piece, sticker, slot, position, pose, visible pose class, orbit, identity levels | KN0.1; KN1.1 to KN1.11; LG2.2, LG2.3 |
+| Model and identity | Model, cell, grip, cap, generator, menu, menu letter, piece, sticker, slot, position, pose, sticker class, region class, orbit, identity levels | KN0.1; KN1.1 to KN1.11; LG2.2, LG2.3 |
 | State | Snapshot, derived state, difference | KN0.3; KN2.2, KN2.11 to KN2.14; chapter 08 |
 | Words | Literal words of signed retained generators; literal menu words; equality keys; recipes with word and star steps; compressed words; exact expansion length and costs | KN2.7 to KN2.10; LG2.13 to LG2.18; chapter 03 |
 | Operations | Proposal, preview, user-action token, receipt, admissible/blocked/invalid/uncertain outcome, typed error | KN2.8; KN5.9 to KN5.24; chapters 08, 13 |
@@ -160,20 +160,29 @@ chapter 01's vocabulary. Types below name concepts, not final identifiers or con
 - **LG2.13 [D]** A word equality key has a type of its own, indexed by the word's puzzle and identity (default 10;
   DT-L1 R2-E2). It is never a subtype of a literal word. No replay, derivation, protection, proposal or commit interface
   accepts it in place of literal letters, and there is no implicit conversion to a literal word. Key equality says
-  nothing about equal Strict-protection results or equal peak height.
+  nothing about equal Strict-protection results or equal peak height. The key is sound, not complete: equal keys give
+  equal partial maps, and unequal keys say nothing, because letters at grips that do not interact commute.
 
   ```text
   operation word_key(word: LiteralWord) -> WordEqualityKey
     effect:  pure
     cost:    deterministic word-processing cost, charged under LG4.7
-    errors:  budget.*, input.identity_mismatch
+    errors:  budget.*, KN1:input.identity_mismatch
   ```
 
 - **LG2.14 [D]** For 600-cell-Full the key uses free reduction. For jumbling it preserves the word's domain as a
   partial map on states (default 10; DT-L1 M4, R2-E2). A same-cap inverse pair at a straddling cap is refused, while the
   empty word is admissible. Merging the pair therefore retains an identity letter's domain test; deleting it is
   invalid. Key agreement requires the same admissible starts and end digest, as R-11's extended property test states.
-  No key rule removes an intermediate state from the literal sequence used for execution.
+  No key rule removes an intermediate state from the literal sequence used for execution. The property holds under four
+  hypotheses, and is false without them (DT-L1 R3-M2). With key(w) the word that replaces every maximal run of adjacent
+  letters at one grip c by the single letter (c, g_m⋯g₁):
+
+  1. Only runs of adjacent letters at one grip merge.
+  2. Identity products are kept: (2, id) at a blocked grip measures `blocked`, while the empty word is admissible.
+  3. The menu is closed under products, as A4₀, S4₀ and I_a are. For a menu that is not, the key holds group elements and
+     is not run through the menu test.
+  4. Classification is exact, not a budgeted `uncertain`.
 - **LG2.15 [D]** Validation and inverse, conjugate, commutator and composition share one well-formed word domain
   (R-11, read with default 10 and DT-L1 M4). These operations are total on well-formed words within granted resources;
   their state actions remain partial. Forming a conjugate does not assert that it is admissible at the caller's
@@ -343,7 +352,7 @@ chapter 01's vocabulary. Types below name concepts, not final identifiers or con
 | --- | --- | --- |
 | Steps | Versioned interpreter evaluation steps, including calls, control flow, expansion work and pointwise contract evaluation | At evaluation steps and loop continuations; no unmetered recursion or loop |
 | Kernel cost | Each kernel call's declared input-dependent cost, including operand sizes or exact word length as its contract specifies | Before admitting the call; streaming follows the batch's declared charging and cancellation contract |
-| Memory | Logical size from canonical encodings of retained values, snapshot handles and derived states, independent of allocator sharing (KN7.9) | Before allocation or growth retains additional charged values |
+| Memory | KN7.9's logical units for retained values, snapshot handles and derived states: array bytes in the KN1 digest convention plus each pose entry's canonical exact-key length, independent of allocator sharing | Before allocation or growth retains additional charged values |
 | Output | Logical size of emitted results, records, traces and plans | Before extending or publishing output |
 | Wall-clock safety stop | No deterministic charge; this is a safety stop only | Host safety checks; a stopped run is incomplete and not reproducible (KN7.10) |
 
@@ -456,26 +465,26 @@ chapter 01's vocabulary. Types below name concepts, not final identifiers or con
 
 | Code | Meaning |
 | --- | --- |
-| `syntax.missing_edition` | No edition header selects the source rules |
-| `syntax.unsupported_edition` | The requested source edition is not supported |
-| `syntax.invalid_encoding` | Source bytes are not valid under the UTF-8 and pinned-byte contract |
-| `syntax.invalid_literal` | A literal has no value of its declared kind, including a zero rational denominator |
-| `syntax.unexpected_token` | Parsing failed at a token or required structure; recovery locations accompany the code |
-| `type.identity_mismatch` | An argument or comparison uses another puzzle or model identity |
-| `type.level_mismatch` | A level is wrong or a partial projection was used as a total value |
-| `type.exactness_violation` | An approximate value or dependent condition reaches exact computation |
-| `type.cost_unit_mismatch` | Puzzle or cost unit indices do not agree |
-| `type.reachability_required` | A state lacks its typed reachability claim |
-| `type.mode_mismatch` | A session operation requires the other mode |
-| `type.verdict_required` | A decision loses unknown or uses an evidence-bearing verdict as a boolean |
-| `type.word_key_not_executable` | An equality key is supplied where literal execution data is required |
-| `type.unsupported_ir_version` | The executor cannot preserve the requested IR contract |
-| `effect.not_allowed` | A function's transitive effects exceed its context, including a view writing workspace or preparing a preview |
-| `capability.denied` | A declared or inferred capability lacks the required run grant |
-| `capability.flow_not_allowed` | The selected boundary mechanism refuses a flow or combination of capabilities |
-| `input.module_digest_mismatch` | Loaded module content differs from its expected digest |
-| `input.module_dependency_missing` | Content required by the lockfile is unavailable |
-| `input.module_contract_mismatch` | Manifest, file edition or dependency contracts do not agree |
+| `LG1:syntax.edition_missing` | No edition header selects the source rules |
+| `LG1:syntax.edition_unsupported` | The requested source edition is not supported |
+| `LG1:syntax.invalid_encoding` | Source bytes are not valid under the UTF-8 and pinned-byte contract |
+| `LG1:syntax.invalid_literal` | A literal has no value of its declared kind, including a zero rational denominator |
+| `LG1:syntax.unexpected_token` | Parsing failed at a token or required structure; recovery locations accompany the code |
+| `LG2:type.identity_mismatch` | An argument or comparison uses another puzzle or model identity |
+| `LG2:type.level_mismatch` | A level is wrong or a partial projection was used as a total value |
+| `LG2:type.exactness_violation` | An approximate value or dependent condition reaches exact computation |
+| `LG2:type.cost_unit_mix` | Puzzle or cost unit indices do not agree |
+| `LG2:type.reachability_missing` | A state lacks its typed reachability claim |
+| `LG2:type.mode_mismatch` | A session operation requires the other mode |
+| `LG2:type.verdict_required` | A decision loses unknown or uses an evidence-bearing verdict as a boolean |
+| `LG2:type.word_key_not_executable` | An equality key is supplied where literal execution data is required |
+| `LG4:input.ir_version_unsupported` | The executor cannot preserve the requested IR contract |
+| `LG3:effect.undeclared` | A function's transitive effects exceed its context, including a view writing workspace or preparing a preview |
+| `LG3:capability.not_granted` | A declared or inferred capability lacks the required run grant |
+| `LG3:effect.flow_refused`, `LG3:capability.flow_refused` | Reserved: the selected boundary mechanism refuses a flow or a combination of capabilities. LQ21 retires one before first use, and neither is emitted before that (ERR.24) |
+| `LG5:input.module_digest_mismatch` | Loaded module content differs from its expected digest |
+| `LG5:input.module_dependency_missing` | Content required by the lockfile is unavailable |
+| `LG5:input.module_contract_mismatch` | Manifest, file edition or dependency contracts do not agree |
 
 ## 7. Conformance tests
 
@@ -492,8 +501,8 @@ Tests of open mechanisms use the selected option's contract and cannot decide th
 | CT-LG1-05 | Large integer, rational and Q(√5) literals lower without float rounding; approximate literals remain a different kind and a zero denominator is refused | source |
 | CT-LG1-06 | LX-8 candidates lower the shared semantic corpus to the same typed operations, effects, literal order and charges before the owner's learnability protocol runs | source |
 | CT-LG2-01 | Algebraic matches account for every constructor; generics and inference cannot erase a model, level, mode, precision, unit or effect requirement | source |
-| CT-LG2-02 | A Full piece cannot substitute for a jumbling piece; pose, visible pose class, label digest and pose-table index are not interchangeable | source |
-| CT-LG2-03 | Partial projection is handled explicitly and no typed operation lifts labels to poses; no test assumes visible pose equivalence off the lattice | source |
+| CT-LG2-02 | A Full piece cannot substitute for a jumbling piece; pose, sticker class, label digest and pose-table index are not interchangeable | source |
+| CT-LG2-03 | Partial projection is handled explicitly and no typed operation lifts labels to poses; a read of labels off the lattice refuses, and no test treats a class as equality | source |
 | CT-LG2-04 | Explicit exact-to-approximate conversion names precision; direct casts and helper-mediated approximate-to-exact conversions are refused | source |
 | CT-LG2-05 | Under LG2.5's selected mechanism, approximate comparisons cannot steer a word, target, exact goal, evidence or budget, including through branches, generics, closures, storage and module calls | source |
 | CT-LG2-06 | Addition, ordering and budget use refuse mixed puzzle or unit indices for menu letters, retained generators and UI actions; seconds cannot be a deterministic budget | source |
@@ -575,9 +584,8 @@ Open mechanisms and dependencies:
 - **New integrator default LG3.6.** Preview preparation is confined to commands the solver invokes, and views have no
   preview effect. This follows from BM1 and default 16; it is additional to the partition's explicit effect defaults
   and the owner may overrule it.
-- **DT-L1 obligations.** Overview section 8 still applies to LG2.3, LG2.4, LG2.6, LG2.13 to LG2.18, LG3.11 to
-  LG3.15, LG4.5, LG4.10, LG4.14, LG5.2 and LG5.8. Uses of R2-E2 to R2-E4 are cited in those clauses. No clause depends
-  on the visible pose class off the lattice. The round-three answers are unavailable here.
+- **DT-L1 obligations.** Round 3 cleared them (overview section 8). LG2.3, LG2.13 and LG2.14 carry its corrections, and
+  the uses of R2-E2 to R2-E4 stay cited in their clauses.
 - **EN3, EN4 and LP1 interfaces.** KN2.3's batches, KN5's overlay and query rows, undo during jobs, lanes and final
   command contexts remain chapter 01's dependencies (LG3.3, LG3.5, LG4.5, LG4.9, LG4.13). This chapter does not repair
   the current H-08 draft or choose its final binding shapes.

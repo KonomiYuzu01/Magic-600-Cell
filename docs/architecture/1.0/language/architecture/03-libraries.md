@@ -67,7 +67,7 @@ Section 7 links the individual stage archives.
 | Exact linear algebra | Z, Q, Q(√5), F2 or F5 values | pure, budgets | Library code over KN3 | Rows, kernels, rank and equation solving in the declared domain. Inconsistency is about the supplied equations. Puzzle-word selection through these equations is a research tier candidate, including correction combination. |
 | Quaternion and icosian algebra | Exact pose matrices or algebraic values | pure, budgets | Library code over KN3 | Quaternion factors over Q(√5), the icosian order, its 2-adic valuation and 5-regular tree; heights, branches and cosets γK⁺. Per-revision decisions use LB3's batch entries. |
 | Permutation groups | Permutations of an explicit finite set | pure, budgets | Library code | Orbits, stabilisers, cycle types, Schreier tables and primitivity tests. A failed group-membership test concerns this group. Extracting a puzzle word by a Schreier search is a research tier candidate. |
-| Literal words | Full signed generators; jumbling menu letters | pure | Library code | Concatenation, inverse, conjugate, commutator and powers construct words. Construction alone checks no state. `errors: input.lb1_incompatible_alphabet`. |
+| Literal words | Full signed generators; jumbling menu letters | pure | Library code | Concatenation, inverse, conjugate, commutator and powers construct words. Construction alone checks no state. `errors: LB1:input.incompatible_alphabet`. |
 | Word equality keys | Same alphabet and identity as the word | pure | Library code | Free reduction for Full; domain-preserving merging for jumbling. Keys do not replace executed letters (LB1.9). |
 | Trace equality keys | Words and a stated independence relation | pure, budgets | Library code | A global canonical key for interchangeable orders; a search for a least word is a research tier candidate. The precise convention is open in LB1.10. |
 | Straight-line programs | Words | pure, budgets | Library code; application through KN2.4 `replay` | Exact expanded length and cost without full expansion, lazy expansion and chunk iteration. Empty expansion is a zero-letter word, subject to the word's alphabet contract. |
@@ -104,7 +104,7 @@ Section 7 links the individual stage archives.
 | Guarded setups and buffers | Full labels and positions | read a snapshot, budgets | Library code over KN2.4 `labels`, `positions`, `effect` | Buffers are positions with changing occupants. Setup search for a target the solver names is the exception in LB1.5; its empty result names the guarded setup family examined. |
 | Star and recipe construction | Full words and exact slot-tuple frames | pure, budgets | Library code; KN2.4 `effect`, `replay` on application | Chronological setup⁻¹, relocation⁻¹, seed, relocation, setup. Recipe steps retain their full witnesses. Frame checks use ordered slot tuples. |
 | Collateral and support | Full labels | pure for an effect; read a snapshot for its consequences | KN2.4 `effect`; library code for reports | Support per orbit and the full source-to-destination map. Empty net support says identity at the end; it says nothing about intermediate support. |
-| Net and Strict protection | Full labels | read a snapshot, budgets | KN2.4 `protection`; library code for lock predicates | Captured protected state, block, identity and position locks. Unknown or unchecked coverage cannot produce a safe verdict. Requested assurance with missing coverage has `errors: protection.lb2_incomplete_coverage`. |
+| Net and Strict protection | Full labels | read a snapshot, budgets | KN2.4 `protection`; library code for lock predicates | Captured protected state, block, identity and position locks. Unknown or unchecked coverage cannot produce a safe verdict. Requested assurance with missing coverage has `errors: LB2:protection.incomplete_coverage`. |
 | Residuals and exact completion | Full labels and positions | read a snapshot | Library code over KN2.4 `labels`, `positions` | Non-buffer positions, buffer occupants, frames, orientations and home labels. Empty candidate lists or matching colours never establish completion. |
 | Blocks and work sheets | Full labels and positions; stored words | read a snapshot; change the workspace only in a command | Library code over KN2.4 reads and `effect`; KN4 commands for storage | Home and referenced relations, named roles, Prepare/Macro/Cleanup and gains/losses. Reuse resolves roles again and needs a fresh check. |
 | Named macro analysis and comparison | Full labels | read a snapshot, budgets | KN2.4 `effect`, `protection`, `replay`; library code | Reports effects of the caller's named macros without choosing one. Ranking or selecting macros, generated endgame corrections and automatic next-target selection are research tier candidate entries. |
@@ -124,14 +124,15 @@ Section 7 links the individual stage archives.
 - **LB2.5 [D]** An admissible, protection-preserving operation need not improve the named goal (solving workflow
   section 4.1; INV-5). Inspection, analysis, goal satisfaction and execution permission remain separate. The workflow's
   historical candidate and next-orbit suggestions do not admit automatic target selection under the interim reading
-  (partition section 11). That entry stays a research tier candidate pending chapter 07's ruling.
+  (partition section 11). That entry stays a research tier candidate under the interim reading (BND.65).
 
 ## 4. LB3: jumbling library
 
 - **LB3.1 [D]** The following entries cover partition LB3. The level is the state level actually read, including when
-  a derived scalar is returned. No entry here relies on the visible pose class off the lattice (overview section 8).
+  a derived scalar is returned. Off the lattice an entry reads poses, classes or regions, never labels (KN1.15).
   Heights, branches and domain IDs use exact poses and the icosian tree; their per-revision batch must agree with LB1
-  and `trees.py` (KN2.4, DT-L1 R2-E2).
+  and `trees.py` (KN2.4, DT-L1 R2-E2). A lattice test by heights holds only on Γ(Λ). In free mode, domain IDs go by exact
+  coset tests, because T6 uses T3 (DT-L1 R3-M2). Heights can batch per coset.
 
 | Entry | Level | Effect | Backing | Notes |
 | --- | --- | --- | --- | --- |
@@ -143,7 +144,7 @@ Section 7 links the individual stage archives.
 | Units and clean-step contract | Jumbling poses | read a snapshot, budgets | Library code over KN2.4 `pose_table`, `pose_ids`, `word_check` | Named unit and free set; landings, lifted lattice pieces and unchanged other off poses. A false contract is an observed failure of that contract, not by itself a refusal to preview. |
 | D and release accounting | Jumbling poses | read a snapshot, budgets | Library code over exact heights, branches and the caller's named word; KN2.4 `word_check` | D_x(h), the high-piece lowering count for a named item, is distinct from an admitted domain D[k]. F_x, D_x(h) and ΔΦ are read when the letter acts. Listing or maximising over lowerings is a research tier candidate. |
 | Release and whole-word checks | Jumbling poses | read a snapshot, budgets | KN2.4 `release_check`, `word_check`, `replay` | Literal prefixes, digests, moved sets, ΔN, Δn_h and Δu at the named cap; step flag, tameness, excursion and peak. An unplayed suffix stays unchecked. |
-| ν and drafted correction-set check | Jumbling labels, on the lattice only | read a snapshot, budgets | KN2.4 `nu`, `correction_set_check` | Uses the fixed C5 convention of A5. Off the lattice returns undefined, never stale coordinates, zeros or partial ν. The set is drafted by the solver. `errors: consistency.lb3_fixed_nu_coordinate` for a violated fixed coordinate on a reachable I_a result. |
+| ν and drafted correction-set check | Jumbling labels, on the lattice only | read a snapshot, budgets | KN2.4 `nu`, `correction_set_check` | Uses the fixed C5 convention of A5. Off the lattice returns undefined, never stale coordinates, zeros or partial ν. The set is drafted by the solver. `errors: KN2:consistency.fixed_nu_nonzero` for a violated fixed coordinate on a reachable I_a result. |
 | Correction catalogue | Jumbling labelled action, with literal menu words | pure; read a snapshot for a word check | Library code over the shipped constructions; KN2.4 `word_check`, `replay`; KN6 | The 36 ν-corrections in fixed ID order with their fixed rows (source: DT-J1 O7 (a), A5). Lookup by solver-supplied ID chooses no combination. |
 | Correction-combination solve | Jumbling labels | read a snapshot, budgets | LB1 exact linear algebra over ν and the correction rows | research tier candidate; includes the operation exemplified by `solve(b2,b5)` (DT-L1 R2-E3). It cannot be inferred safe from its algebraic implementation. |
 | Retained checkpoint, label checkpoint, sticker test | Jumbling poses and explicit label projection; Full labels as applicable | read a snapshot, budgets | KN2.4 `retained_checkpoint`, `label_checkpoint`, `sticker_test` | Three independently named tests, with different premises and conclusions (LB3.2). |
@@ -171,7 +172,8 @@ Section 7 links the individual stage archives.
   with no quantifier, minimum or argmax over twists or words, and are supplied per cap or for the solver's named
   objects. There is no largest/top/first selection by the method, unlock list, existence answer, prefetch for an unnamed
   cap or automatic correction combination. The per-revision rim entry excludes the research survey's all-items loop
-  (DT-J1 fix-first 6). A static domain or floor fact can imply something about twists; chapter 07 rules on those edges.
+  (DT-J1 fix-first 6). A static domain or floor fact can imply something about twists; those edges wait for the joint
+  setting (BND.66).
 - **LB3.6 [B]** The repair list uses the exception of 17 October and DT-J1 G3, O10 and O11. For each nonidentity x at
   the solver's cap c, it tests the meeting misaligned caps d in neutral cap order. After x, y minimises N_d; after x,y,
   z minimises N_c; ties use the smaller pinned menu index. The row exists only under ENG-0J's unblocked, nonclosed and
@@ -192,7 +194,7 @@ Section 7 links the individual stage archives.
   operation check_named_word(input: StateRef, literal: LiteralWord, unit?: PieceSet, cap?: CapId) -> JobResult
     effect:  read a snapshot, budgets
     cost:    chapter 01's literal replay cost and the declared observation batches
-    errors:  input.lb1_incompatible_alphabet, input.identity_mismatch, stale.*, budget.*
+    errors:  LB1:input.incompatible_alphabet, KN1:input.identity_mismatch, stale.*, budget.*
   ```
 
   This names LB3's whole-word check. A blocked prefix and a false step flag retain their distinct kernel results.
@@ -211,7 +213,7 @@ Section 7 links the individual stage archives.
 | Entry | Level | Effect | Backing | Notes |
 | --- | --- | --- | --- | --- |
 | Exact geometry and display conversion | Model geometry; poses or labels explicitly | pure; read a snapshot for state geometry | Library code over KN3 exact polytope operations and KN2.4 pose/label reads | Explicit exact-to-display conversion; no approximate value decides a mechanical predicate. |
-| Chart contract and property checks | Exact vertices at exact camera poses | pure, budgets | Library code over KN3 | Declared domain, inverse where defined and information loss; exact domain, injectivity and section-membership checks on the stated inputs. `errors: type.lb4_approximate_property_input`. |
+| Chart contract and property checks | Exact vertices at exact camera poses | pure, budgets | Library code over KN3 | Declared domain, inverse where defined and information loss; exact domain, injectivity and section-membership checks on the stated inputs. `errors: LB4:type.approximate_property_input`. |
 | Projection families | Geometry, with precision-tagged display values | pure; change the view when published | Library code; chapter 10 evaluator | Perspective, stereographic, local chart, Hopf rings and two hemispheres; singular and excluded points retain their domain status. |
 | Sections, slabs and clips | Exact model geometry and named exact predicates | pure, budgets; change the view when published | Library code over KN3 exact polytope operations | A true section, a slab and a clip have separate predicates; an empty result concerns that predicate and input geometry. |
 | Layouts and atlases | Canonical objects at a stated revision | read a snapshot; change the view | Library code over exact KN2.4 reads | Per-object layouts, atlas membership, trees and dimension-tagged cell-complex incidence; evaluated per revision. |
@@ -219,10 +221,13 @@ Section 7 links the individual stage archives.
 | Map property checks | Explicit domain, codomain, metric and map | pure, budgets | Library code over exact scalar/geometry operations | Homomorphism, injectivity, embedding and isometry checked separately. One pass implies none of the other properties. |
 | Linked selection | Canonical IDs with level and source relation | change the view | Library code; chapter 10 source maps | Carries the solver's pick between representations. A missing image means no image under that map, distinct from an unknown relation. |
 
-- **LB4.2 [D]** A chart's declared properties are decided exactly for its chart function on exact vertices at exact
-  camera poses, the identity or an element of K⁺ (partition LB4; DT-L1 M4, R2-E2). Between those poses, domain
-  membership is a display decision that decides nothing. A precision agreement test does not establish injectivity,
-  domain validity or an inverse. A property checked on a finite set is scoped to that set.
+- **LB4.2 [D]** A chart's declared properties are decided exactly at exact camera poses, the identity or an element of
+  K⁺ (partition LB4; DT-L1 M4, R2-E2, R3-M2). Domain is decided by an exact region test over KN3's polytope operations,
+  injectivity by a theorem or an exact region test, and section membership on the posed vertices, to which convexity
+  reduces it. A per-vertex test can refute a region property and cannot establish one: with a stereographic pole on the
+  axis of cell c, the centre piece's 8 vertices stay at least 0.2296 from the axis while its centroid lies on it. Between
+  exact poses, domain membership is a display decision that decides nothing. A precision agreement test does not
+  establish injectivity, domain validity or an inverse. A property checked on a finite set is scoped to that set.
 - **LB4.3 [P LQ7]** If LQ7's recommendation is accepted, user projection charts use chapter 10's chart subset and its
   CPU reference evaluator and portable HLSL path. This chapter defines no subset of its own. Under built-in-only
   charts, the same entry contracts apply to the parameterised built-ins and user projection evaluation is absent.
@@ -241,13 +246,13 @@ Section 7 links the individual stage archives.
 | Entry | Level | Effect | Backing | Notes |
 | --- | --- | --- | --- | --- |
 | Restricted word search | Poses or labels, with typed goal | read a snapshot, budgets; seeded randomness if used | Library code over KN2.4 `classify`, `effect`, `replay` and observations | research tier candidate; finite families, exhaustive prefixes and beams recorded separately. Empty means only the searched set has no witness. |
-| Search reductions and gates | Word families with their puzzle and level | pure, budgets; read a snapshot for instance tests | Library code; KN6 for certificates | research tier candidate; minimality, dynamic targets, symmetry and commuting reductions cite lemmas preserving the required conclusion. Brute-force agreement is a scoped test, not the lemma. `errors: evidence.lb5_reduction_scope_mismatch`. |
+| Search reductions and gates | Word families with their puzzle and level | pure, budgets; read a snapshot for instance tests | Library code; KN6 for certificates | research tier candidate; minimality, dynamic targets, symmetry and commuting reductions cite lemmas preserving the required conclusion. Brute-force agreement is a scoped test, not the lemma. `errors: LB5:evidence.reduction_scope_mismatch`. |
 | Strategies, selectors and ranks | Exact states and typed progress predicates | read a snapshot, budgets | Library code over KN2.4 observations and `replay` | research tier candidate; P*, P**, P***, T3P chains, routing and WC-PLAN. Availability, closure and strict-decrease obligations stay separate. |
 | Release structures and accounting | Jumbling poses; explicit AND/OR graph | read a snapshot, budgets | LB1 graphs/fixed points; LB3 exact observations | A supplied graph and ledger can be checked. Searching schedules, enablers, conjugated releases or a viable controller is a research tier candidate. |
 | Theorem-schema instance check | Stated puzzle, level and named word | read a snapshot, budgets | Library code for hypotheses; KN2.4 `replay`; KN6 | Decides hypotheses and checks the supplied conclusion. Constructing or selecting its solving word is a research tier candidate. An unmet premise leaves the implication inapplicable. |
 | Conditional models and partial actions | Named finer/coarser levels and derivation | pure; read a snapshot for a model instance | Library code; KN1 maps and exact KN2.4 reads | Regional profiles, quotients and restrictions state their maps and preserved subjects. Recognition of a supplied instance does not assert its reachability. |
-| Regional-family recognition | Jumbling poses | read a snapshot, budgets | LB1 exact bipartite matching over full reference pose tables | Γ(Y), type-preserving bijections and K⁺ gauges; transfers legality only. No automatic sticker-goal, distance or reachability transport. |
-| Admitted-domain membership | Jumbling poses, declared D[k] | read a snapshot, budgets | Library code over KN2.4 `classify`, `replay` and branch predicates | research tier candidate when it enumerates legal words. Complete rejection is `OUTSIDE_CERTIFIED_DOMAIN(k)` with that domain's scope (LB5.4); `errors: input.lb5_outside_certified_domain` names the rejection, while the membership job completed. |
+| Regional-family recognition | Jumbling poses | read a snapshot, budgets | LB1 exact bipartite matching over full reference pose tables | Γ(Y), type-preserving bijections and K⁺ gauges; transfers legality and shape-level claims (KN1.16). No automatic sticker-goal, distance or reachability transport. |
+| Admitted-domain membership | Jumbling poses, declared D[k] | read a snapshot, budgets | Library code over KN2.4 `classify`, `replay` and branch predicates | research tier candidate when it enumerates legal words. Complete rejection is `OUTSIDE_CERTIFIED_DOMAIN(k)` with that domain's scope (LB5.4). It is a completed answer and a value, not an error (ERR.21, ERR.22). |
 | Closure-set negative certificates | Explicit alphabet, state set and ceiling | pure; read a snapshot, budgets for checking | Library certificate builder; KN6 and KN2.4 `replay` | Includes stage 14's finite neutral-plateau certificates and stage 15's excursion closure sets. Constructing the closure by word search is a research tier candidate. A negative requires all admitted edges, including raising letters within the ceiling. |
 | Bound calculation and compressed witnesses | Exact scalar/word values | pure, budgets | LB1 integers and straight-line programs | Fixed/controlled costs, lexicographic ranks and symbolic bounds with named premises; no expansion claim follows. Selecting a witness is a research tier candidate. |
 | Experiment runs and branches | Kernel-derived states and their inputs | read a snapshot, budgets; change the workspace only through commands | Library code; KN4 queries and commands, KN7 jobs | Chapter 08 owns branch lifecycles; chapter 05 owns `RunRecord`; chapter 09 owns `ReproKey`. No branch or record becomes an authoritative puzzle copy. |
@@ -273,9 +278,9 @@ Section 7 links the individual stage archives.
   globally. The 6,775-digit B11 is a theoretical bound (source evidence: stage 19 README), not an expanded word or a
   measured run. A frontier exit, low height and a restored sticker state remain different goals.
 - **LB5.6 [D]** Family recognition and claim transport use the preserved subject of the map (KN1.13; DT-L1 M3).
-  Γ(Y) matches the full background, including collateral, through exact matching. It transfers legal-word languages
-  and legality along prefixes. It can permute which physical piece occupies a region, so it supplies no sticker-goal
-  or reachability transport. Reference indices are counted separately from distinct fibres. Exact transport, fresh
+  Γ(Y) matches the full background, including collateral, through exact matching. It transfers legal-word languages,
+  legality along prefixes and shape-level claims such as q, n, Φ and H (N1, B.7). It can permute which physical piece
+  occupies a region, so it supplies no sticker-goal or reachability transport. Reference indices are counted separately from distinct fibres. Exact transport, fresh
   audit and actual replay remain distinct check modes (DT-L1 R2-E1); chapter 06 defines their evidence reading.
 - **LB5.7 [P LQ4]** With LQ4's recommendation, experiment branches are engine-owned journal branches and a job on a
   digest-pinned input may finish after a commit. Under its alternatives, research uses separate sessions or the pinned
@@ -319,7 +324,7 @@ Its mathematical configurations and captured reviews establish only their stated
 
 | Partition row | Named entries | Contract and archive scope |
 | --- | --- | --- |
-| Full pose tables, Γ(Y), gauges and exact recognition | LB1 Quaternion and icosian algebra; Exact matching and integral flows; LB5 Regional-family recognition | Full reference background and type-preserving matching. The finite recognition algorithm is mathematical; a general practical matcher was not built. Legal-word languages transfer; sticker goals do not. |
+| Full pose tables, Γ(Y), gauges and exact recognition | LB1 Quaternion and icosian algebra; Exact matching and integral flows; LB5 Regional-family recognition | Full reference background and type-preserving matching. The finite recognition algorithm is mathematical; a general practical matcher was not built. Legal-word languages and shape-level claims transfer; sticker goals do not (KN1.14, KN1.17). |
 | Chronological blocks, continuations and frontier exits | LB1 Literal words; LB3 Release and whole-word checks; LB5 Theorem-schema instance check | The 5/9-letter continuations finish at a frontier with q16 remaining. Their stated height ceiling and earlier-type progress do not make them restored states. |
 | R3, S, R_L and lexicographic descent | LB5 Strategies, selectors and ranks; Bound calculation and compressed witnesses | Each rank retains its block contract. The length-3 rank lemma does not cover the four-letter D block; S covers its stated cleanup progress. |
 | Conditional bounds, obligations and reachability promise | LB5 Theorem-schema instance check; Conditional models and partial actions | Availability, invariant-domain and reachability premises accumulate. Chapter 06 owns discharge by identical statement and scope (DT-L1 R2-E1). No finite check proves global availability. |
@@ -374,9 +379,11 @@ Its mathematical configurations and captured reviews establish only their stated
   displayed claims can be traced to those primitives and evidence. An abstract toy geometry alone cannot be its
   hand-checkable instance.
 - **LB6.2 [D]** The record is data in the module manifest. Its instance runs as a headless fixture, the decomposition
-  is generated from the typed IR's call graph and kernel calls, and its justification resolves to an
-  `EvidenceEnvelope` (partition LB6; DT-L1 R2-E4). Chapter 02 defines the manifest and IR; chapter 05 their stored
-  forms; chapter 06 the envelope's meaning. The conceptual content is:
+  is generated from the typed IR before lowering, from the call graph and kernel calls, and its justification resolves
+  to an `EvidenceEnvelope` (partition LB6; DT-L1 R2-E4). The record is bound to the module digest. Chapter 02 defines the
+  manifest and IR; chapter 05 their stored forms; chapter 06 the envelope's meaning. A generated decomposition gives
+  structure, not reasons: the floor's call graph is two set sizes and a subtraction, and its reason is the invariance of
+  In_c and Out_c (DT-L1 R3-M4). So the record also holds what a person writes by hand. The conceptual content is:
 
   ```text
   PrincipleRecord = {
@@ -384,16 +391,25 @@ Its mathematical configurations and captured reviews establish only their stated
     justification:  lemma or certificate reference, evidence-envelope reference
     instance:       real-geometry input, expected claims, headless fixture reference
     decomposition:  generated IR call graph with library entries and kernel calls
+    by hand:
+      step map:     decomposition nodes to lemma steps
+      reason:       the invariant or reason, by statement ID
+      failure:      an example of what breaks when a hypothesis is dropped
+      not meant:    what an empty or negative answer does not mean
+      derivation:   a written hand derivation of the instance, with its step count
+      prerequisites: glossary terms and earlier records (bar M6)
+      leaf specs:   a specification for each opaque kernel leaf
   }
   ```
 
   These are content requirements, not storage keys. The fixture names model identity and the level it checks. Its
   claims and checker trace resolve through their recorded digests. The decomposition names transitive calls and their
-  effects; it cannot conceal a kernel call behind a hand-written description.
-  Admission of an incomplete record has `errors: evidence.lb6_principle_record_incomplete`.
+  effects; it cannot conceal a kernel call behind a hand-written description. Higher-order calls over-approximate. A
+  fixture proves numbers, and the written derivation is what lets a person check them by hand.
+  Admission of an incomplete record has `errors: LB6:evidence.principle_record_incomplete`.
 - **LB6.3 [D]** A fork inherits no evidence (default 18). It can retain source references as references, but its new
   module digest has no inherited pass, cost approval or principle check. Any claim asserted for it needs its own scope
-  and check under chapter 06. Every built-in declares chapter 07's `BoundaryClass` under BM5, reviewed when it ships.
+  and check under chapter 06, and its statement counts as unchanged only under an identical statement ID. Every built-in declares chapter 07's `BoundaryClass` under BM5, reviewed when it ships.
   A class declaration and a `PrincipleRecord` are separate obligations.
 - **LB6.4 [P LQ5]** Under LQ5's recommendation every tool above the kernel is written in the language, using LB1 to
   LB5, while exact engines and independent checkers remain kernel code. Under the native-tool or per-tool alternatives,
@@ -430,8 +446,8 @@ Its mathematical configurations and captured reviews establish only their stated
   mechanism of DT-L1 R2-E4 cannot describe an opaque native body. This dependency is conditional on that alternative
   and settles neither LQ5 nor the implementation route.
 - **LB6.7 [D]** H-08's `view.recommendations`, `target.next.activate`, `object.actions`, `structure.find` and any
-  macro-comparison mode that selects a solving target or word require a separate content definition and chapter 07's
-  ruling (partition section 11; DT-L1 M5, R2-E3). Such a selector is a research tier candidate, with no candidate
+  macro-comparison mode that selects a solving target or word require a separate content definition and a ruling of the
+  joint setting (partition section 11; BND.65; DT-L1 M5, R2-E3). Such a selector is a research tier candidate, with no candidate
   admitted BM5 class or `PrincipleRecord` at this stage. The static inspector versions in the table above do not
   include that selection. A research runner, correction solver or WC-PLAN is also a research tier candidate, outside
   this solving-tool table. Understanding labels or competence checks do not themselves grant a preview capability;
@@ -442,7 +458,7 @@ Its mathematical configurations and captured reviews establish only their stated
 - **LB7.1 [D]** The local workspace holds the solver's tools, macros, recipes, layouts and bindings, and forks of
   built-in tools (partition LB7). Module identity, dependencies, manifests and lockfiles use chapter 02; stored forms
   use chapter 05. A binding names the command it invokes under chapter 04. Keeping an object in the workspace grants
-  no effect, capability or evidence. Entry admission has `errors: capability.lb7_module_grant_missing` when the host
+  no effect, capability or evidence. Entry admission has `errors: LB7:capability.module_grant_missing` when the host
   grant is absent.
 - **LB7.2 [D]** Workspace-changing operations run only inside commands the solver invokes and form undoable actions
   (default 16). Program views cannot write the workspace. A macro or work sheet reused at another revision, target or
@@ -483,12 +499,12 @@ Its mathematical configurations and captured reviews establish only their stated
 | CT-LB2-04 | Exact completion reads identities, slots and orientations. Empty candidates, a permitted residual or unchanged colours cannot pass it. | source |
 | CT-LB3-01 | Separate fixtures distinguish retained checkpoint, label checkpoint and sticker test. A reachable nonzero-ν lattice state fails the label checkpoint; an imported table without reachability stays unestablished. | source |
 | CT-LB3-02 | Centre piece 0 under retained generator 1 distinguishes pose and label protection. A pose refusal cannot be replaced by the label pass at a crossing. | source |
-| CT-LB3-03 | Heights and domain IDs agree with LB1 and `trees.py` on ENG-0J item 8's states and H6030. Φ = 0 with height-2 pieces does not pass the sticker test. | source |
+| CT-LB3-03 | Heights and domain IDs agree with LB1 and `trees.py` on ENG-0J item 8's states and H6030. Φ = 0 with height-2 pieces does not pass the sticker test. In free mode, heights (0,0) do not imply the lattice, and domain IDs come from exact coset tests. | source |
 | CT-LB3-04 | Off-lattice ν is undefined; the pinned C5 convention round-trips. A planted nonzero fixed I_a coordinate is a consistency error. A drafted correction set is checked without selecting one. | source |
 | CT-LB3-05 | A named-cap repair list agrees with the pinned y/z tie rule and neutral order; empty is possible only after completion and is scoped to that repair family. No unnamed-cap job is started. | source |
 | CT-LB3-06 | On exact word fixtures, prefix peak, excursion, tameness and the step flag are recomputed separately. A false flag with no protection conflict does not itself refuse an admissible word. | source |
 | CT-LB3-07 | Per-revision fact results contain no all-items outcome table. Named-word checks answer only their named word; no recommendation, next-cap skip or correction combination leaks through the inspector entries. | source |
-| CT-LB4-01 | At exact vertices and exact camera poses, declared domain and section membership decide exactly, including boundary cases. Homomorphism, injectivity, embedding and isometry each require their own check. | source |
+| CT-LB4-01 | At exact camera poses, declared domain is decided by an exact region test and section membership on the posed vertices, including boundary cases. A chart whose vertices all pass and whose domain fails at an interior point is refused. Homomorphism, injectivity, embedding and isometry each require their own check. | source |
 | CT-LB4-02 | Between exact camera poses, approximate domain decisions reach only display data. Replacing them changes no admissibility, protection, digest or exact claim. | synthetic |
 | CT-LB4-03 | Multiple display instances map to the correct canonical IDs and levels; chart inverse values cannot identify a pick. Layout filters preserve the mechanically analysed set. | source |
 | CT-LB5-01 | Stage 14: import every `t3p-*/1` kind and check W3/W5 certificates, P0 to P4, locality and fixed-point levels; changed helper sets, precedence or input digest fail; replay rows preserve chronological observables. | source |
@@ -516,14 +532,13 @@ Its mathematical configurations and captured reviews establish only their stated
 
 | Code | Meaning and clause |
 | --- | --- |
-| `input.lb1_incompatible_alphabet` | Word composition/application uses incompatible puzzle alphabets or pinned letter meanings; LB1.3, LB1.9. |
-| `protection.lb2_incomplete_coverage` | The requested protection assurance cannot cover the whole executed prefix; no safe verdict is issued; LB2.3. |
-| `consistency.lb3_fixed_nu_coordinate` | A reachable I_a result has a nonzero coordinate that A5 fixes at zero; LB3's ν entry. |
-| `type.lb4_approximate_property_input` | An approximate display value is supplied where an exact chart-property input is required; LB4.1, LB4.2. |
-| `input.lb5_outside_certified_domain` | Typed `OUTSIDE_CERTIFIED_DOMAIN(k)` rejection carrying k and the checked domain scope; LB5.4. This is a completed membership answer, not an errored search or a reachability verdict. |
-| `evidence.lb5_reduction_scope_mismatch` | A reduction lemma is offered for another family, alphabet, hypothesis set or conclusion; it cannot transport this negative; LB5.3. |
-| `evidence.lb6_principle_record_incomplete` | A proposed shipped tool lacks a required record part or a resolving evidence/fixture reference; LB6.1, LB6.2. |
-| `capability.lb7_module_grant_missing` | A module's requested entry effect lacks the host grant required by chapter 09; LB7.1, LB7.5. |
+| `LB1:input.incompatible_alphabet` | Word composition/application uses incompatible puzzle alphabets or pinned letter meanings; LB1.3, LB1.9. |
+| `LB2:protection.incomplete_coverage` | The requested protection assurance cannot cover the whole executed prefix; no safe verdict is issued; LB2.3. |
+| `KN2:consistency.fixed_nu_nonzero` | A reachable I_a result has a nonzero coordinate that A5 fixes at zero; LB3's ν entry. |
+| `LB4:type.approximate_property_input` | An approximate display value is supplied where an exact chart-property input is required; LB4.1, LB4.2. |
+| `LB5:evidence.reduction_scope_mismatch` | A reduction lemma is offered for another family, alphabet, hypothesis set or conclusion; it cannot transport this negative; LB5.3. |
+| `LB6:evidence.principle_record_incomplete` | A proposed shipped tool lacks a required record part or a resolving evidence/fixture reference; LB6.1, LB6.2. |
+| `LB7:capability.module_grant_missing` | A module's requested entry effect lacks the host grant required by chapter 09; LB7.1, LB7.5. |
 
 ## 12. Open items
 
@@ -567,11 +582,11 @@ Further dependencies and source differences:
 
 | Item | Clauses and disposition in this chapter |
 | --- | --- |
-| DT-L1 open obligations | LB1.1, LB1.6, LB1.7, LB3.1, LB4.2, LB5.6, LB5.9, LB6.2 cite the relevant R2-E1 to R2-E4 cards explicitly. The mathematician's answer is still pending. No off-lattice visible-class claim is used. |
+| DT-L1 obligations | Round 3 cleared them (overview section 8). LB1.1, LB1.6, LB1.7, LB3.1, LB4.2, LB5.6, LB5.9 and LB6.2 cite the relevant cards, and LB3.1, LB4.2, LB5.6, LB6.2 and LB6.3 carry round 3's corrections. |
 | EN3, EN4 and LP1 | Public J1 API before binding (default 12), named observation and mode rows, workspace queries/commands, lanes and manifest/effect contracts; LB1.2, LB3.9, LB6.5, LB7.2. Chapter 01's pending interfaces are not asserted delivered. |
 | Recorded word lengths | LB5.13 and KN2.10 carry the figures of DT-L1 R3-E4, and the partition is corrected. ENG-0J's "672,417 on record" stays as written in that packet; EN3 should cite the longer figures when it next changes it. Streaming behaviour is unchanged. |
 | Stage 15 certificate scope and format shorthand | LB5.11: the partition's general MC wording needs the terminal-jumble/descent restriction for `macro-certificate/1`; the actual two-level run name is `pstar2/2`, beyond its `pstar2-*` shorthand. The coverage rows retain both subjects. |
 | Stage 18 replay claims | LB5.12: the archive's section 3.3 corrects its earlier blanket twist-by-twist description. Composition and complete replay stay separate; four words' third gate is unfinished. The shortened-chain totals withdrawn in its section 3.4 are not reused. |
 | Historical restoration theory | LB3.2, LB3.3, LB5.5: `theory/restoration.md` still lists retained-group sufficiency and phase-L membership as open and earlier lens-word content as a product take-away; A5 and DT-J1 now govern checkpoints and shipped correction content. Its early height-boundedness question is superseded by stage 10's unboundedness, retained in the archive and research data. Its float centroid cover selector is replaced by DT-J1's exact covers query. Its method-selected caps and words remain research tier candidate entries. |
-| Historical workflow/command recommendations | LB2.5, LB6.7: `solving-workflow.md` describes suggested next targets and H-08 contains recommendation rows; the interim policy admits no method-selected target. These are catalogue leads pending chapter 07, not shipped solving behavior. |
+| Historical workflow/command recommendations | LB2.5, LB6.7: `solving-workflow.md` describes suggested next targets and H-08 contains recommendation rows; the interim policy admits no method-selected target. They stay catalogue leads under the interim reading (BND.65), not shipped solving behavior. |
 | Principle instances and conformance corpus | LB6.5, LB7.6: no candidate record or new test exists yet. LP1 and later phases choose real-geometry instances and implement the tests. Human-check form is the owner's; measured cost and native evidence remain absent. |

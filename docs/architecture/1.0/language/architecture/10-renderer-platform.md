@@ -97,7 +97,7 @@ outcome; [render contract](../../../../../research/jumbling/render-contract.md),
   operation validate_engine_bundle(candidate: revision-bound bundle) -> complete bundle | refresh_required(Error)
     effect:  pure
     cost:    declared validation cost for its metadata and arrays
-    errors:  consistency.display_bundle_mismatch
+    errors:  EV3:input.display_bundle_mismatch
   ```
 - **RPI.10 [D]** Program publication is a separate atomic installation of matching nodes, plans, instances and source
   maps, following EV3 and KN0.6. Validation happens before installation. An incomplete publication replaces none of
@@ -109,8 +109,8 @@ outcome; [render contract](../../../../../research/jumbling/render-contract.md),
     effect:  change the view
     lane:    view, latest wins (KN7.2)
     cost:    declared construction and validation cost, plus logical output size
-    errors:  input.display_plan_invalid, input.display_unsupported, stale.display_plan,
-             budget.display_plan_limit
+    errors:  EV3:input.display_plan_invalid, EV3:input.display_unsupported, EV3:stale.display_plan,
+             KN7:budget.display_plan_limit
   ```
 
   The adapter consumes the installed data. This operation is not a language entry into the backend.
@@ -236,14 +236,14 @@ outcome; [render contract](../../../../../research/jumbling/render-contract.md),
                          requested: object kind and level) -> Partial<canonical target and source linkage>
     effect:  read a snapshot, if an exact level projection is needed
     cost:    map lookup plus the declared kernel projection cost
-    errors:  input.display_plan_invalid, stale.display_pick
+    errors:  EV3:input.display_plan_invalid, EV3:stale.display_pick
   ```
 
   A valid partial answer off the lattice is not a stale answer. It uses KN0.4 and never invokes a chart inverse.
 - **RPI.26 [D]** Linked representations carry the same canonical target and keep their separate instance IDs (LB4).
   The shell routes an explicit pick to the appropriate command or source-link action of chapter 04. A picked object
-  grants no capability, supplies no commit token and certifies no claim (INV-3 and INV-5). This chapter relies on no
-  visible pose class off the lattice, as required by overview section 8.
+  grants no capability, supplies no commit token and certifies no claim (INV-3 and INV-5). Off the lattice a pick
+  resolves to a piece, and no slot or position exists for it (KN1.7).
 - **RPI.27 [O]** Multi-layer pick disambiguation remains V08's open product decision D-5. Front layer, working object
   and explicit depth choice are alternatives for the owner when the design line resumes. This chapter fixes the
   identity and staleness of any returned candidate, without selecting the policy or reopening that design work.
@@ -272,11 +272,12 @@ outcome; [render contract](../../../../../research/jumbling/render-contract.md),
 - **RPI.29 [B]** A float evaluation decides no exact predicate (INV-4). A drawn section, slab, clip or domain does not
   prove membership, equality, legality, admissibility, protection or reachability. Where those facts are needed,
   kernel or library exact results arrive with their subject, revision and evidence.
-- **RPI.30 [D]** Checks of declared domain, injectivity and section membership use the chart function on exact vertices
-  at exact camera poses, the identity or an element of K⁺ (LB4 and DT-L1 R2-E2). Between those poses domain membership
-  is a display decision. A check records the vertices and poses it covers; a finite check does not prove an unstated
-  claim over all points or all cameras (INV-5). Approximate camera matrices are not rounded into exact poses for a
-  decision.
+- **RPI.30 [D]** Checks of declared properties run at exact camera poses, the identity or an element of K⁺ (LB4.2; DT-L1
+  R2-E2, R3-M2). Domain is decided by an exact region test, injectivity by a theorem or an exact region test, and section
+  membership on the posed vertices. A vertex test can refute a region property and cannot establish one. Between those
+  poses domain membership is a display decision. A check records the regions, vertices and poses it covers; a finite
+  check does not prove an unstated claim over all points or all cameras (INV-5). Approximate camera matrices are not
+  rounded into exact poses for a decision.
 - **RPI.31 [D]** A projection chart receives frame-dependent vertex inputs during four-dimensional camera rotation or
   turn animation (partition section 8.5, DT-L1 E5). The gate's combined rotation and turn workload gives every vertex
   new input every frame. At full detail this is 18,288,000 vertex evaluations per frame: 30,480 base vertices times
@@ -368,7 +369,7 @@ outcome; [render contract](../../../../../research/jumbling/render-contract.md),
       -> admitted | not_established(reason) | refused(Error)
     effect:  pure
     cost:    declared validation cost for the definition and check references
-    errors:  type.chart_subset_violation, evidence.chart_check_failed
+    errors:  LG2:type.chart_subset_violation, EV3:evidence.chart_check_failed
   ```
 
   `not_established` retains an unknown verdict. The subset error applies only under recommended LQ7. This operation
@@ -403,7 +404,7 @@ outcome; [render contract](../../../../../research/jumbling/render-contract.md),
     caller:  renderer adapter
     effect:  change the view, through the host
     cost:    declared plan validation and preparation cost
-    errors:  input.display_plan_invalid, input.display_unsupported, busy.renderer_unavailable
+    errors:  EV3:input.display_plan_invalid, EV3:input.display_unsupported, EV3:busy.renderer_unavailable
   ```
 
   This is an adapter responsibility, not an operation granted to a program. The returned work stays inside the adapter.
@@ -458,15 +459,15 @@ outcome; [render contract](../../../../../research/jumbling/render-contract.md),
 
 | Code | Meaning and continuation |
 | --- | --- |
-| `input.display_plan_invalid` | Malformed plan, inconsistent subject or geometry binding, or invalid instance/source-map reference; refuse the publication before installation |
-| `input.display_unsupported` | Unsupported dimension, primitive or projection-chain stage; report the unsupported part without silently changing its meaning |
-| `stale.display_plan` | Publication no longer matches the dependencies of the view it would replace; recompute at the newest revision |
-| `stale.display_pick` | Pick dependency or installed-generation mismatch; discard passive replies quietly and explain explicitly requested stale work |
-| `type.chart_subset_violation` | Under recommended LQ7, the evaluator violates the subset or its checked bounds; no shader is submitted |
-| `evidence.chart_check_failed` | A declared chart property or precision requirement fails its check; identify the failed obligation and withhold checked status |
-| `budget.display_plan_limit` | View construction or plan output exceeds its admitted limit; cut off the job and install no incomplete publication |
-| `consistency.display_bundle_mismatch` | Metadata and mutable arrays do not form one complete matching engine bundle; request a validated refresh |
-| `busy.renderer_unavailable` | Device loss or recovery prevents drawing or picking; report display availability separately from committed receipts |
+| `EV3:input.display_plan_invalid` | Malformed plan, inconsistent subject or geometry binding, or invalid instance/source-map reference; refuse the publication before installation |
+| `EV3:input.display_unsupported` | Unsupported dimension, primitive or projection-chain stage; report the unsupported part without silently changing its meaning |
+| `EV3:stale.display_plan` | Publication no longer matches the dependencies of the view it would replace; recompute at the newest revision |
+| `EV3:stale.display_pick` | Pick dependency or installed-generation mismatch; discard passive replies quietly and explain explicitly requested stale work |
+| `LG2:type.chart_subset_violation` | Under recommended LQ7, the evaluator violates the subset or its checked bounds; no shader is submitted |
+| `EV3:evidence.chart_check_failed` | A declared chart property or precision requirement fails its check; identify the failed obligation and withhold checked status |
+| `KN7:budget.display_plan_limit` | Reserved until RPI.50 settles the limit (ERR.25): view construction or plan output exceeds its admitted limit; cut off the job and install no incomplete publication |
+| `EV3:input.display_bundle_mismatch` | Metadata and mutable arrays do not form one complete matching engine bundle; request a validated refresh |
+| `EV3:busy.renderer_unavailable` | Device loss or recovery prevents drawing or picking; report display availability separately from committed receipts |
 
 ## 11. Conformance tests
 
@@ -485,7 +486,7 @@ outcome; [render contract](../../../../../research/jumbling/render-contract.md),
 | CT-RPI-11 | Reused instance IDs, reopened views, camera changes and replaced maps discard delayed picks; an unrelated layout edit preserves an unchanged query (RPI.24, RPI.25) | synthetic |
 | CT-RPI-12 | Explicitly requested stale resolution carries a visible-explanation reason; passive stale picking is quiet; off-lattice partial answers stay distinct (RPI.23, RPI.25) | source |
 | CT-RPI-13 | The native ID pass and drawing pass share camera, viewport and clipping; non-interactive reference objects cannot be selected (RPI.24) | windows |
-| CT-RPI-14 | Exact vertices at exact camera poses test declared chart properties; intervening float poses cannot create exact verdicts (RPI.29, RPI.30, RPI.34) | synthetic |
+| CT-RPI-14 | At exact camera poses an exact region test or a theorem decides declared chart properties, and a vertex test only refutes them; intervening float poses cannot create exact verdicts (RPI.29, RPI.30, RPI.34) | synthetic |
 | CT-RPI-15 | Recommended LQ7 refuses recursion, unbounded loops, allocation, big integers and effects before shader generation (RPI.32, RPI.33) | source |
 | CT-RPI-16 | CPU reference fixtures test float32 evaluation and stated precision against exact or interval values outside the declared singular neighbourhood (RPI.33 to RPI.36) | synthetic |
 | CT-RPI-17 | GPU readbacks agree with exact or interval expectations and the CPU reference on the admitted domain, using the recorded exclusion and error rule (RPI.35) | windows |
@@ -518,5 +519,6 @@ outcome; [render contract](../../../../../research/jumbling/render-contract.md),
 | Renderer interface and H-09 | Plan ceilings and accounting are unsettled (RPI.50 [O]); backend signatures, support reports and resource lifetime rules are unsettled (RPI.55 [O]). The renderer line fixes them before its feature freeze. |
 | Picking policy D-5 | Multi-layer disambiguation awaits the owner when design work resumes (RPI.27 [O]). Identity resolution and stale-reply handling do not depend on its answer. |
 | Renderer selection and evidence | No candidate is selected. H-06 chart costs, LX-7, product fault tests and E2 with program views still need evidence for the matching candidate (RPI.60 to RPI.63). |
-| DT-L1 open obligations | No use of the visible pose class off the lattice (RPI.26). Dependencies on R2-E1, R2-E2, R2-E3 and R2-E4 are named at RPI.12, RPI.30, RPI.35, RPI.38, RPI.45 and RPI.56; their mathematical review remains open under overview section 8. |
+| DT-L1 obligations | Round 3 cleared them (overview section 8). Dependencies on R2-E1, R2-E2, R2-E3 and R2-E4 are named at RPI.12, RPI.30, RPI.35, RPI.38, RPI.45 and RPI.56, and RPI.30 carries round 3's correction. |
+| EV3.12 | A derived value imported without a session ancestor has no base revision, while partition EV3 asks a displayed derived state for one. The options are an explicit comparison base with no claim that it produced the value, or a research-reference plan whose base is a digest. The second needs the partition's display contract clarified. Chapter 04 and this chapter leave it open. |
 | Source differences to reconcile | The old stack and process choices in V02 and V11 and the dated schedule/design work in the experiment documents are superseded as the briefing records. Their surviving revision and gate contracts are used here (RPI.9, RPI.24, RPI.51 to RPI.63). The render header lacks KN0.1's menu-order field; the language envelope retains the full IdentityBlock without changing that format (RPI.6, RPI.8). Partition 4.1's derived-state base-revision wording is read as the display context, consistent with INV-1 and KN2.12, not a session revision on the derived value (RPI.7). |

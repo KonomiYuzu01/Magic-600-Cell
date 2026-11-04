@@ -283,8 +283,8 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 - **RTE.34 [D]** Transfer size, logical memory charge and stored size stay separate (KN7.9, PS1.6, PS1.7). The pose-ID
   array's `u32le-base64` carrier has 944,640 characters before its other fields (source arithmetic, Round 3 item 3);
   neither that text nor the render bundle is the logical exact-state charge. KN7.9 counts KN1 array bytes and each
-  pose entry's canonical exact-key length. LG4.7 and DET.18/DET.24 use broader "canonical encoding" wording; this
-  chapter uses KN7.9's specific unit. No route may substitute allocator bytes, JSON bytes or physical sharing for it.
+  pose entry's canonical exact-key length, and LG4.7, DET.18 and DET.24 use that unit. No route may substitute allocator
+  bytes, JSON bytes or physical sharing for it.
 
 ## 12. Experiment records and common conditions
 
@@ -387,7 +387,8 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 
 - **RTE.45 [P LQ18]** The must-refuse corpus is frozen before a run. It includes selection by largest N_c, search
   followed by rebuilding from base parts, the F2 and F5 solve over ν and shipped corrections, workspace laundering,
-  state-based choice between two words and flow through a module call (partition LX-3, DT-L1 R2-E3, DET.50). It runs
+  state-based choice between two words, flow through a module call, a stop-selected preview, refusal-driven selection, a
+  one-item pick and accumulation across runs (partition LX-3, DT-L1 R2-E3, R3-M3, DET.50, BND.52). It runs
   under capability separation, static labels and additional run-time labels. RT2 and RT4 also identify the variant
   whose approved-subset checker refuses dynamic code and binds approval to executed bytes. A label mode off in LX-1
   is a cost baseline, not a successful flow-control variant. Expected registry codes and the allowed-tool denominator
@@ -615,8 +616,8 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
   and feeds step 2. No difference is a sample result for the tested requests only, which the report says; the amendment
   stays open to the owner. This rule feeds the contract decision, not an automatic amendment.
 - **RTE.66 [D]** Replaying the already recorded exact rotation or menu letter remains DET.33's different test. It
-  does not recompute the chooser and cannot establish fresh-request agreement. LX-9 uses no visible pose class off
-  the lattice. Its R2-E2 dependency is named and remains subject to overview section 8's mathematical review.
+  does not recompute the chooser and cannot establish fresh-request agreement. LX-9 reads no labels off the lattice.
+  Its R2-E2 dependency is named, and R3-M2 leaves LX-9 standing.
 
 ## 22. Source differences and limits
 
@@ -724,8 +725,7 @@ Open mechanisms and dependencies:
   wording and instruction/logical-meter distinction are reconciled explicitly. KN7.9's precise logical-memory unit
   still needs alignment in the broader LG4.7 and DET.18/DET.24 wording; no other chapter is edited here.
 - **DT-L1 obligations, RTE.12 to RTE.16, RTE.24 to RTE.27, RTE.45, RTE.61, RTE.64 to RTE.66.** Uses of R2-E2 and
-  R2-E3 are named. Their mathematical review remains unavailable under overview section 8. No clause relies on the
-  visible pose class off the lattice or treats that missing review as completed.
+  R2-E3 are named. Round 3 cleared the obligations (overview section 8), and RTE.45 carries its added cases.
 - **Content review and phase collection, RTE.69.** The integrator and Astra still review this candidate's content;
   chapter 12 collects conformance by phase and chapter 13 owns final error spelling. Passing a structure check proves
   neither content acceptance nor any experiment result.

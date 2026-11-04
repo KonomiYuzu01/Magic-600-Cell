@@ -75,7 +75,7 @@ A5](../../../../../research/jumbling/state-contract.md), [DT-M1](../../../../pro
 ```text
 operation model_info(identity: IdentityBlock) -> ModelInfo
   effect:  pure
-  errors:  input.unknown_model
+  errors:  KN1:input.unknown_model
 ```
 
 ### Canonical IDs
@@ -101,25 +101,47 @@ operation model_info(identity: IdentityBlock) -> ModelInfo
 
 ### The identity tower
 
-- **KN1.7 [D]** Each puzzle has a tower of levels, joined by exact maps with named kernels (DT-L1 M3, R2-E2). The maps go
-  one way, from a finer level to a coarser one.
+- **KN1.7 [D]** Each puzzle has identity levels, joined by exact maps with named kernels (DT-L1 M3, R2-E2, note N1). The
+  maps go one way, from a finer level to a coarser one. The name "tower" stays, but the levels form a partial order, not
+  a chain: pose → sticker class → region class → {coset → tree data and heights; shape}. Labels stand beside the sticker
+  class and position beside the region class, on the lattice.
 
-| Level | Jumbling puzzle | 600-cell-Full |
-| --- | --- | --- |
-| Pose | g_A for every piece: the state of record | Not held |
-| Visible pose class | g_A·Stab_A, where Stab_A is the set of s in K⁺ that map Ā₀ onto itself and each sticker region of A onto itself | Not held |
-| Labels | π of state contract A3, defined on the lattice only | The state of record |
-| Position | Derived from labels | Derived from labels |
+  The definitions come from note N1:
+
+  - R_A is the set of s in SO(4) with s(Ā₀) = Ā₀. S_A is the set of s in R_A that map each sticker region of A onto
+    itself. S_A is normal in R_A, and R_A/S_A is the **frame group** of A. This chapter's first draft called S_A
+    "Stab_A" and the sticker class "visible pose class". S_A must not be read as R_A: with R_A, 39,530 labels of a solved
+    state differ.
+  - A **gauge** is a pair γ = (σ, t), where σ permutes the pieces and t_A in SO(4) carries Ā₀ onto the reference region
+    of σA. It acts on the right: (X·γ)[A] = X[σA]·t_A. 𝒢 is the group of all gauges. 𝒢_R is its subgroup with σ = id and
+    t_A in R_A, and 𝒢_S the subgroup with σ = id and t_A in S_A.
+
+| Level | Jumbling puzzle | Equal when | Defined | 600-cell-Full |
+| --- | --- | --- | --- | --- |
+| Pose | g_A for every piece: the state of record | X = Y | Always | Not held |
+| Sticker class | g_A·S_A | Y = X·γ with γ in 𝒢_S | Always | Not held |
+| Labels | π of state contract A3 | As the sticker class (N1, Corollary 3) | On the lattice only | The state of record |
+| Region class | g_A·R_A, which is A's posed region | Y = X·γ with γ in 𝒢_R | Always | Not held |
+| Position | The chamber, derived from labels | As the region class | On the lattice only | Derived from labels |
+| Coset | g_A·K⁺ | Equal cosets; a quotient, not a gauge | Always | Not held |
+| Tree data, heights | Functions of the coset | Equal values; a quotient, not a gauge | Always; they determine the coset and the lattice test only on Γ(Λ) | Not held |
+| Shape | The set of posed regions | Y = X·γ with γ in 𝒢 | Always | Not held |
 
 | Map | Defined on | Kernel | What it preserves |
 | --- | --- | --- | --- |
-| Pose to visible pose class | Every pose | Stab_A | On lattice configurations with equal labels: posed regions, admissibility and inside sets at every later prefix, N, labels (label-lift lemma, A5). Off the lattice this chapter relies on nothing (overview section 8). |
-| Visible pose class to labels | Lattice configurations only | None beyond the first map, on the lattice | ν, the sticker test |
-| Labels to position | Every labelled state | Sticker orientation within a slot | Which piece sits where |
+| Pose to sticker class | Every pose | S_A | Labelled posed stickers at every later prefix, and everything at a coarser level (KN1.15) |
+| Sticker class to labels | Lattice configurations only | None (N1, Corollary 3) | ν, the sticker test. A3's orientation is pose-level, and labels do not read it |
+| Sticker class to region class | Every class | The frame group R_A/S_A | Each piece's posed region |
+| Labels to position | Every labelled state | The frame group R_A/S_A | Which piece sits where |
+| Region class to coset | Every class | The place within the domain | The domain. No transfer: two states with equal cosets can have different shapes |
+| Coset to tree data and heights | Every coset | Depends on the menu: an injection only on Γ(Λ) | Tree positions, heights |
+| Region class to shape | Every class | Which piece fills which region | Occupied regions, admissibility of every word, N, Φ (KN1.15) |
 
 - **KN1.8 [D]** Digests name their level. `Digest<labels>` is the digest of the int32 label array, the existing
   `state_hash`. `Digest<poses>` is J1's digest over poses. KN1 normalises the byte conventions once (default 4). A
-  digest of one level never compares with a digest of another.
+  digest of one level never compares with a digest of another. Off the lattice, pose is the only stored level. A
+  sticker-class digest, the least exact key in g_A·S_A with at most 12 products per piece, is optional and does not exist
+  yet.
 - **KN1.9 [D]** A projection to a coarser level is an explicit call. Off the lattice it returns a typed partial result
   that says how many pieces are off:
 
@@ -127,14 +149,16 @@ operation model_info(identity: IdentityBlock) -> ModelInfo
   operation project(state: StateRef, to: Level) -> Partial<LevelValue>
     effect:  read a snapshot
     cost:    linear in pieces
-    errors:  input.level_not_held
+    errors:  KN1:input.level_not_held
   ```
 
 - **KN1.10 [D]** No operation lifts a value from a coarser level to a finer one. The pose digest of a lift is not
   determined (ENG-0J section 7).
-- **KN1.11 [D]** Predicates, goals and protection checks are typed by the level they read (LG2). Protection is the
-  exception to any reading by visibility: it is pose-based inside Jumble and label-based in 600-cell-Full, and a verdict
-  carries its level and never crosses over (A3, A5, DT-L1 M3).
+- **KN1.11 [D]** Predicates, goals and protection checks are typed by the level they read (LG2). Protection is two
+  predicates. Inside Jumble the verdict is pose-level: m_A(w) = 1. In 600-cell-Full it is label-level, which on a lattice
+  configuration reads X[A]⁻¹·m_A(w)·X[A] ∈ S_A. Both are invariant under 𝒢_R, because S_A is normal in R_A (N1, B.5). A
+  verdict carries its level and never crosses over (A3, A5, DT-L1 M3). A comparison with a stored literal pose is
+  pose-level only.
 
 ### Derived models and claim transport
 
@@ -143,7 +167,38 @@ operation model_info(identity: IdentityBlock) -> ModelInfo
 - **KN1.13 [D]** The registry records a derived model's map and the claims the map preserves. A claim moves to or from it
   only along a map that preserves the claim's subject. For example, Lemma 13 of the retained theory needs cost-preserving
   automorphisms that keep the goal, the protection and the data that lifts a path, and the family maps Γ(Y) of stage 19
-  transfer legality claims only (DT-L1 M3).
+  transfer legality and shape-level claims (N1, B.7, which corrects DT-L1 M3's "legality claims only").
+
+### Transfer between classes
+
+- **KN1.14 [D]** Gauge transfer (N1, Theorem 1). Let X be any configuration, on or off the lattice, γ = (σ, t) a gauge,
+  Z = X·γ, and classes exact. Then a word w is admissible from X exactly when it is admissible from Z, w(Z) = w(X)·γ, and
+  each piece's left multiplier satisfies m_A(w; Z) = m_{σA}(w; X). Two corollaries follow:
+
+  - For γ in 𝒢_S the labelled posed sticker regions of X and Z agree at every later prefix.
+  - On lattice configurations, π(X) = π(Y) exactly when X[A] lies in Y[A]·S_A for every piece.
+
+  A5's label-lift lemma is the case σ = id on the lattice. Stage 19's transfer is the same step off the lattice. Note N1
+  stands at (theorem, producer) under chapter 06 until a model review reads it, and the engine test is CT-KN2-06.
+- **KN1.15 [D]** What reads at which level (N1, B.4). A function has a level when it is constant on that level's classes.
+  Piece-indexed functions transform by σ at shape level.
+
+| Reads at this level | Functions |
+| --- | --- |
+| Pose only | The pose table; the pose digest; the moved count; the orientation index; the journal; `v`; reachability; label and retained checkpoints, through their reachability clause; budgeted `uncertain`; pose groups |
+| Sticker class | Labelled posed stickers. On the lattice: labels, ν, the sticker test and the label digest |
+| Region class | Each piece's posed region, lattice flag, domain, tree positions and heights; inside sets and straddlers as sets of pieces; left multipliers |
+| Shape | Occupied regions; admissibility of every word; N, N_c, In_c, Out_c, F_c; Φ, q_t, H; the off count; multisets of heights by type; anything defined only from these, such as the repair list |
+
+- **KN1.16 [D]** Exact transport. A claim at a level moves along that level's subgroup with no re-run. The reused leaf is
+  the conjunction of the source leaf, Theorem 1 and the checked relation Z = X·γ (N1, B.7; chapter 06). Legality and
+  shape-level claims (q, n, Φ, H) transfer. If a goal set is invariant under a subgroup of 𝒢, the distance in letters to
+  that goal is constant on the subgroup's orbits (N1, Corollary 4).
+- **KN1.17 [D]** What does not transfer. Reachability, and label and retained checkpoints through their reachability
+  clause, do not move along any gauge: a solved state with one centre turned by a third-turn of A4₀ passes the sticker
+  test and is unreachable in J(A4₀) (N1, B.5). Digest, journal, moved count and orientation can differ inside a class. A
+  different class does not mean a later twist separates two states. Only the three gauge groups give transfer: equal
+  cosets or equal heights give none. A class is never equality (KN1.6).
 
 ## 3. KN2: exact engines
 
@@ -158,7 +213,7 @@ operation model_info(identity: IdentityBlock) -> ModelInfo
   operation open_snapshot(at: RevisionRef | current) -> Snapshot
     effect:  read a snapshot
     cost:    declared from the journal distance to the nearest checkpoint, resident or not (KN7.8)
-    errors:  stale.revision_gone, input.unknown_session
+    errors:  KN2:stale.revision_gone, KN4:input.unknown_session
   operation close_snapshot(s: Snapshot) -> nothing
   ```
 
@@ -222,7 +277,7 @@ operation model_info(identity: IdentityBlock) -> ModelInfo
   operation derive(base: StateRef, word: Word) -> Derived | Refused
     effect:  read a snapshot
     cost:    the word's exact length times the per-letter cost of the puzzle
-    errors:  budget.*, input.identity_mismatch
+    errors:  budget.*, KN1:input.identity_mismatch
 
   Derived = {
     ref:          DerivedRef       # digest, level, identity block
@@ -285,7 +340,7 @@ query workspace_records(kind, filter) -> Page<WorkspaceRecord>
 query receipt(command: CommandId) -> Receipt
   effect:  read a snapshot
   cost:    linear in the page returned, flat in history (R-13)
-  errors:  stale.revision_gone, input.*
+  errors:  KN2:stale.revision_gone, input.*
 ```
 
 - **KN4.4 [D]** Workspace records change only through workspace commands. Each stored word, macro and workspace record
@@ -390,7 +445,7 @@ query receipt(command: CommandId) -> Receipt
   operation commit(preview: PreviewId, token: UserActionToken) -> Receipt
     caller:  the shell only
     lane:    commit
-    errors:  auth.token_invalid, stale.*, protection.*, busy.commit_in_flight, consistency.*, unknown_outcome.*
+    errors:  KN5:auth.token_invalid, stale.*, protection.*, KN5:busy.commit_in_flight, consistency.*, unknown_outcome.*
   ```
 
 - **KN5.15 [D]** The token is single-use and never persisted (V03.5). It carries an authenticator from a per-launch secret
@@ -531,7 +586,7 @@ query receipt(command: CommandId) -> Receipt
   differ (INV-9). A 600-cell-Full state counts as 1,039,200 bytes of labels (source). A pose state counts as its pose IDs
   (708,480 bytes, source) plus its table entries.
 - **KN7.10 [B]** A budget that ends cuts the job off, with that budget's code. A wall-clock safety stop also cuts it off,
-  with the code `resource_limit.safety_stop`, because a `budget` code promises that the same key stops at the same place
+  with the code `KN7:resource_limit.safety_stop`, because a `budget` code promises that the same key stops at the same place
   and a clock cannot promise that. That run reads incomplete and not reproducible (INV-10).
 - **KN7.11 [B]** "Empty", "not found within budget" and "not run" are distinct results (default 6).
 
@@ -571,11 +626,11 @@ these needs:
 | CT-KN1-04 | An enumeration of the API finds no lift from a coarser level to a finer one | source |
 | CT-KN1-05 | `Digest<labels>` equals the oracle's state hash and `Digest<poses>` equals J1's digest on every fixture | source |
 | CT-KN2-01 | The J1 harness and the 600-cell-Full oracle (O01 to O07) pass through the kernel API | source |
-| CT-KN2-02 | Heights and domain IDs equal the library and `trees.py` on ENG-0J item 8's states and the H6030 witness | source |
+| CT-KN2-02 | Heights and domain IDs equal the library and `trees.py` on ENG-0J item 8's states and the H6030 witness. A free-mode case: the Cayley rotation ω = (2,0,0) at cap 0 reads heights (0,0) and lies outside K⁺, and its domain ID comes from an exact coset test, not from tree positions | source |
 | CT-KN2-03 | Protecting centre piece 0: refused at pose level inside Jumble, passes at label level after the crossing | source |
 | CT-KN2-04 | A blocked, invalid or uncertain word leaves every digest unchanged | source |
 | CT-KN2-05 | A scan finds no float on a decision path outside the sites of INV-4 | source |
-| CT-KN2-06 | The label-lift lemma as a property test on J1 fixtures. A lead, not a proof. | source |
+| CT-KN2-06 | Gauge transfer (KN1.14) as a conformance test of the engine on J1 fixtures, with S, R and σ ≠ id cases, on and off the lattice. Note N1 proves the statement; this test checks the engine against it | source |
 | CT-KN2-07 | The recorded literal words of 672,417, 871,582 and 2,352,984 letters, and the 13,231,266 letters of the stage 18 lattice phase as one stream, pass through the replay interface in chunks (KN2.10, LB5.13, CT-LB5-09) | source |
 | CT-KN3-01 | Sign tests at the state contract's small margins decide exactly | source |
 | CT-KN3-02 | Synthetic pose entries beyond 2^64 and a 6,775-digit integer round-trip exactly. No record reaches 2^64, so the pose entries are built for the test | synthetic |
@@ -614,4 +669,6 @@ these needs:
 - **LQ21.** What a provenance block holds (KN5.9): chapter 07.
 - **EN3, EN4.** Section 9.
 - **H-08 open point 5.** The availability protocol's plan check (KN5.8).
-- **DT-L1's open obligations.** The rows of the tower off the lattice (overview section 8).
+- **Open after note N1.** Whether the same word language implies the same shape; reachability of sticker classes in
+  J(I_a); an exact certificate for Lemma R; a bridge lemma with its own ID, if a goal wants "some member of Z's sticker
+  class is reachable". Nothing in this chapter depends on them.

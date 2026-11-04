@@ -96,8 +96,8 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
   operation reproduce(record: RunRecord) -> JobResult | not_run(reason: Error) | refused(Error)
     effect:  read a snapshot; seeded randomness; use a granted file, as required by the recorded computation
     cost:    the recorded deterministic budget under its recorded cost table
-    errors:  input.repro_input_missing, input.repro_key_mismatch, capability.grant_mismatch,
-             budget.*, consistency.reproducibility_mismatch
+    errors:  LG4:input.repro_input_missing, LG4:input.repro_key_mismatch, LG3:capability.grant_mismatch,
+             budget.*, LG4:evidence.reproducibility_mismatch
   ```
 
 ## 2. Deterministic evaluation
@@ -156,7 +156,7 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
 | --- | --- | --- |
 | `steps` | Abstract interpreter work under the versioned metering contract of DET.20 | Native instruction count, optimization and processor speed |
 | `kernel_cost` | The exact integer cost each admitted kernel call declares from its inputs, under the pinned cost table | Cache hits, eviction and transport cost |
-| `memory` | Logical bytes: canonical encoded lengths of the values charged to the run (KN7.9) | Resident memory, pointer size, allocator layout and physical sharing |
+| `memory` | KN7.9's logical units: array bytes in the KN1 digest convention, plus each pose entry's canonical exact-key length | Resident memory, pointer size, allocator layout, stored text form and physical sharing |
 | `output` | Logical size of results, records and plans; the precise counting rule is open in DET.24 | Compression ratio, terminal speed and transport packet sizes |
 | `safety_stop` | Optional host deadline, outside the deterministic key | No exact replay promise applies when it stops a run |
 
@@ -188,8 +188,8 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
   only to reconstruct values and IPC do not buy or consume extra kernel work. Chunking retains the same literal-letter
   work and total declared cost. Cancellation boundaries keep KN7.6's declared batch chunks; they do not define a new
   deterministic budget in seconds.
-- **DET.24 [O]** LP1's accounting specification fixes logical memory lifetimes and output units. KN7.9 fixes canonical
-  encoded size, including pinned snapshots and derived states, but leaves alias accounting and release points
+- **DET.24 [O]** LP1's accounting specification fixes logical memory lifetimes and output units. KN7.9 fixes the
+  logical unit, including pinned snapshots and derived states, but leaves alias accounting and release points
   unstated. Options are deterministic logical ownership or a conservative lifetime extending to a declared scope;
   host garbage collection cannot decide exhaustion. For output the choices include canonical uncompressed byte size
   or another explicitly versioned logical-size table. Both cover results, records, traces and plans, including output
@@ -210,9 +210,10 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
 - **DET.27 [D]** A run starts only with finite, explicit deterministic limits accepted for it, following default 6.
   The host exposes the granted limits, units, cost table identity and amount used as data. The exact expanded length
   and puzzle cost of a word are available before a run (KN5.10). Presets resolve to concrete limits in the record;
-  neither a machine-speed estimate nor a later preset edit changes an existing key.
+  neither a machine-speed estimate nor a later preset edit changes an existing key. A program that reads the amount
+  used after reading state reads a state-derived value (BND.44).
 - **DET.28 [O]** No source supplies numeric presets, profile ceilings or a logical recursion rule. LP1 specifies them
-  with chapter 02 and the host; chapter 07 determines any capability-dependent ceilings. Recursion can use a separate
+  with chapter 02 and the host; chapter 07 adds no capability-dependent ceiling (BND.62). Recursion can use a separate
   logical depth guard or a bounded logical stack charged to memory. Either records its limit and counting rule in the
   run's parameters, retains step metering, and refuses before the host stack fails. Preset values and any overhead
   figures require evidence under overview 3.5; none is measured here. A host may impose a lower physical safety limit,
@@ -264,15 +265,16 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
 - **DET.37 [D]** A module declares capabilities and the host grants them per profile and per run (LG3, BM3). A grant is
   scoped to the operation and resource; a callee or child receives no broader grant than the caller can pass. The
   following table separates fixed sandbox rules from chapter 07's policy. `grant` means an explicit scoped host grant,
-  subject to declared effects; it supplies no ambient access. Boundary-sensitive cells remain `policy, chapter 07`.
+  subject to declared effects; it supplies no ambient access. Chapter 07 section 8 fills the boundary-sensitive rows, and
+  it splits the solving column by author class.
 
 | Capability | Solving | Tool authoring | Research |
 | --- | --- | --- | --- |
-| Snapshot read | policy, chapter 07 | policy, chapter 07 | grant for a pinned input; row policy, chapter 07 |
-| Derived state | policy, chapter 07 | policy, chapter 07 | grant for immutable kernel values |
-| View change | policy, chapter 07 | policy, chapter 07 | policy, chapter 07 |
-| Workspace change | policy, chapter 07 | policy, chapter 07 | policy, chapter 07 |
-| Prepare a preview | policy, chapter 07 | policy, chapter 07 | policy, chapter 07; interim solving-session transfer barred |
+| Snapshot read | chapter 07 section 8 | chapter 07 section 8 | grant for a pinned input; rows as in chapter 07 section 8 |
+| Derived state | chapter 07 section 8 | chapter 07 section 8 | grant for immutable kernel values |
+| View change | chapter 07 section 8 | chapter 07 section 8 | chapter 07 section 8 |
+| Workspace change | chapter 07 section 8 | chapter 07 section 8 | chapter 07 section 8 |
+| Prepare a preview | chapter 07 section 8 | chapter 07 section 8 | chapter 07 section 8; interim solving-session transfer barred |
 | Granted file | grant with named resource and rights | grant with named resource and rights | grant with named resource and rights |
 | Clock | explicit grant; non-reproducible | explicit grant; non-reproducible | explicit grant; non-reproducible |
 | Seeded randomness | grant with sealed seed and pinned generator | grant with sealed seed and pinned generator | grant with sealed seed and pinned generator |
@@ -353,7 +355,8 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
 - **DET.50 [D]** LX-3 also compares the approximate display fields of DET.32 at chapter 10's declared precision and
   checks refusal and false-refusal cases under the forms of flow control (partition LX-3, DT-L1 R2-E2, R2-E3). Its
   must-refuse corpus includes selection by largest cap value, search followed by rebuilding from base parts, the F2 and
-  F5 correction solve, workspace laundering, a state-based choice between two words and flow through a module call.
+  F5 correction solve, workspace laundering, a state-based choice between two words, flow through a module call, a
+  stop-selected preview, refusal-driven selection, a one-item pick and accumulation across runs (BND.52).
   The host-subset variant refuses dynamic code and binds static approval to the executed bytes. Counts of harmless
   tools refused are returned to LQ21; this chapter sets no acceptable count or policy ruling.
 - **DET.51 [D]** Chapter 11 owns LX-3's decision rule, experiment card and relation to LQ9, LQ18 and LQ21. No LX-3 or
@@ -361,8 +364,7 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
   containment, route-equivalent metering and display agreement remain unverified. LX-1 supplies cost leads; LX-2 tests
   placement faults; LX-9 tests fresh input-map choice. None is replaced by a document structure check. Windows-first
   product scope stays the 2 October decision: headless Linux checks of platform-independent layers promise no Linux
-  product build, native input, DirectX, long-session or performance result. DT-L1 R2-E1 to R2-E4's mathematical review
-  and the off-lattice obligation remain open under overview section 8.
+  product build, native input, DirectX, long-session or performance result.
 
 ## 8. Added errors
 
@@ -373,19 +375,19 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
 
 | Code | Meaning |
 | --- | --- |
-| `input.repro_input_missing` | Required source, module, snapshot, file bytes or a recorded implementation identity is unavailable; reproduction is not run. |
-| `input.repro_key_mismatch` | Supplied bytes, versions, identity or parameters disagree with the requested key; admission is refused. |
-| `consistency.reproducibility_mismatch` | Two admitted executions of a supported key disagree in exact payload bytes or deterministic coverage. |
-| `budget.steps_exhausted` | The abstract step allowance ends at the recorded boundary. |
-| `budget.kernel_cost_exhausted` | The declared kernel cost allowance cannot admit further work. |
-| `budget.memory_exhausted` | The deterministic logical memory allowance ends. |
-| `budget.output_exhausted` | The deterministic logical output allowance ends. |
-| `capability.denied` | The requested operation has no effective grant or is barred by the fixed sandbox rules or chapter 07 policy. |
-| `capability.grant_mismatch` | A requested resource, right, module or profile differs from its effective grant. |
-| `resource_limit.recursion_exhausted` | The recorded logical recursion or stack bound ends under DET.28's selected rule. |
-| `resource_limit.host_exhausted` | Physical host resources or a host safety mechanism end the run; deterministic coverage is not promised. |
-| `consistency.cache_entry_mismatch` | A cached value fails its recorded input or content checks and is refused as a reusable entry. |
-| `consistency.runtime_failed` | The runtime dies; KN7.13's error and isolation rules apply. |
+| `LG4:input.repro_input_missing` | Required source, module, snapshot, file bytes or a recorded implementation identity is unavailable; reproduction is not run. |
+| `LG4:input.repro_key_mismatch` | Supplied bytes, versions, identity or parameters disagree with the requested key; admission is refused. |
+| `LG4:evidence.reproducibility_mismatch` | Two admitted executions of a supported key disagree in exact payload bytes or deterministic coverage. |
+| `KN7:budget.steps` | The abstract step allowance ends at the recorded boundary. |
+| `KN7:budget.kernel_cost` | The declared kernel cost allowance cannot admit further work. |
+| `KN7:budget.memory` | The deterministic logical memory allowance ends. |
+| `KN7:budget.output` | The deterministic logical output allowance ends. |
+| `LG3:capability.not_granted` | The requested operation has no effective grant or is barred by the fixed sandbox rules or chapter 07 policy. |
+| `LG3:capability.grant_mismatch` | A requested resource, right, module or profile differs from its effective grant. |
+| `KN7:resource_limit.recursion_exhausted` | Reserved: the recorded logical recursion or stack bound ends under DET.28's selected rule (ERR.26). |
+| `KN7:resource_limit.host_exhausted` | Physical host resources or a host safety mechanism end the run; deterministic coverage is not promised. |
+| `LG4:input.cache_entry_mismatch` | A cached value fails its recorded input or content checks and is refused as a reusable entry. |
+| `KN7:resource_limit.runtime_lost` | The runtime dies; KN7.13's error and isolation rules apply. |
 
 ## 9. Conformance tests
 
@@ -463,9 +465,8 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
   identities, chapter 02's metering and module contract, and chapter 05's byte rules. The field obligations are fixed;
   their final encodings and compatibility mechanisms belong to those chapters. EN4 supplies the command rows and
   admission integration used by DET.35 and DET.43.
-- **Input map and open DT-L1 obligations.** DET.33, DET.34 and DET.51: LX-9, any A1 amendment, and the mathematician's
-  response to R2-E1 to R2-E4 remain open. Clauses citing R2-E2, R2-E3 or R2-E4 name those dependencies. No clause uses
-  visible pose classes off the lattice, and no source disagreement is resolved by assuming the missing review.
+- **Input map.** DET.33, DET.34 and DET.51: LX-9 and any A1 amendment remain open. Round 3 cleared DT-L1's obligations
+  (overview section 8), and clauses citing R2-E2, R2-E3 or R2-E4 name those dependencies.
 - **Historical builders.** DET.48 records the gap between the partition's no-clock builder requirement and archived
   timed producers. Their clocks and missing producer code remain reproduction limits; importing them changes no rule.
 - **Conformance and error registry.** DET.52 and DET.53: chapter 13 collects final code spelling; chapter 12 collects

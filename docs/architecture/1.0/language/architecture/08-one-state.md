@@ -115,7 +115,7 @@ open_snapshot ──► open ──► closed      closed by: close_snapshot, th
   return different revisions.
 - **ONE.17 [D]** A handle does not outlive its engine epoch. A stored reference can be opened again: `open_snapshot` resolves
   it by session, head event and digest, and a different epoch does not invalidate a read (V03.3: a restart invalidates
-  transient permissions). `stale.revision_gone` means that the store no longer holds that event.
+  transient permissions). `KN2:stale.revision_gone` means that the store no longer holds that event.
 - **ONE.18 [D]** A commit does not close a snapshot. It cancels the jobs that read the replaced revision (KN5.18), and a
   cancelled job's handles close. A handle held outside a job, by an interactive evaluation in the editor, stays readable.
   Its results keep naming their revision, and ONE.11 applies to them.
@@ -131,9 +131,9 @@ open_snapshot ──► open ──► closed      closed by: close_snapshot, th
 - **ONE.21 [D]** The base of a derivation is a snapshot or another derived state. A stored derivation names its base by
   `RevisionRef` or by digest, never by handle, so it can be recomputed later.
 - **ONE.22 [D]** A derived state keeps the level and identity block of its base. A letter of another puzzle is refused with
-  `input.identity_mismatch`. A value moves to a coarser level only by `project` (KN1.9), and nothing lifts it to a finer
+  `KN1:input.identity_mismatch`. A value moves to a coarser level only by `project` (KN1.9), and nothing lifts it to a finer
   one (KN1.10).
-- **ONE.23 [D]** Which profile may call `derive`, and how often, is the profile table's matter (KN2.6, chapter 07). A search
+- **ONE.23 [D]** Which profile may call `derive`, and how often, is the profile table's matter (KN2.6, BND.57). A search
   over twists is built from `derive`, so this row is where the boundary policy acts.
 
 ### Using one
@@ -147,7 +147,7 @@ open_snapshot ──► open ──► closed      closed by: close_snapshot, th
   operation compare(a: StateRef, b: StateRef, at: Level) -> Partial<Verdict>
     effect:  read a snapshot
     cost:    linear in pieces
-    errors:  input.level_not_held, input.identity_mismatch
+    errors:  KN1:input.level_not_held, KN1:input.identity_mismatch
   ```
 
   Off the lattice a comparison at the labels level returns a typed partial result, as `project` does. Digests of two levels
@@ -179,7 +179,8 @@ open_snapshot ──► open ──► closed      closed by: close_snapshot, th
   afterwards changes what is committed or journalled (R-10, KN5.9).
 - **ONE.32 [D]** A program receives a preview's public fields: its ID, base, literal digest, identity block, effect,
   protection verdict and provenance. It never receives the witness as something it could hand back, and it never receives
-  a token. This differs from 0.4, where `preview()` returned a token to its caller.
+  a token. This differs from 0.4, where `preview()` returned a token to its caller. In the solving profile chapter 07
+  narrows the fields a program may use (BND.42, BND.43).
 - **ONE.33 [B]** A preview that conflicts with protection is still built, with a verdict that says so, because the charter's S4
   shows the effect on protection before a commit. Its commit is refused. A word refused at a prefix builds no preview: the
   receipt gives the first refused prefix (ENG-0J section 4).
@@ -190,7 +191,8 @@ open_snapshot ──► open ──► closed      closed by: close_snapshot, th
   (DT-M1).
 - **ONE.36 [D]** A word a program hands to the solver goes to a draft or to a preview, and it keeps its provenance either way
   (KN4.4). A write to a draft is a workspace change: it happens only inside a command the solver invokes, as one undoable
-  action (default 16). Whether a given author class may do this in a solving session is chapter 07's matter.
+  action (default 16). While no solver-tool solving preview is enabled, a solver's own tool does not write to a draft of a
+  solving session (BND.58).
 - **ONE.37 [D]** The float motion of a drag or a turn preview is display (INV-4). It carries no witness and cannot be committed.
   The letter it realises goes through `twist.apply`.
 
@@ -248,13 +250,13 @@ each step's failure leaves the state unchanged, except where the table says othe
 
 | Step | Who | Check or action | On failure |
 | --- | --- | --- | --- |
-| 1 | Shell | The key-down is non-repeating and outside a text field, and a fresh preview is presented (DT-M1 C4) | The state is untouched and the reason shows: `stale.no_fresh_preview` |
+| 1 | Shell | The key-down is non-repeating and outside a text field, and a fresh preview is presented (DT-M1 C4) | The state is untouched and the reason shows: `KN5:stale.no_fresh_preview` |
 | 2 | Shell | Mints the token, bound to the presented preview (KN5.14, ONE.41) | |
-| 3 | Command layer | The token's authenticator is valid, and the token is unused (KN5.15) | `auth.token_invalid` if the authenticator fails; `stale.token_used` if the token was seen before |
-| 4 | Command layer | Admission to the commit lane (KN5.17) | `busy.commit_in_flight` |
-| 5 | Engine | The token's preview is the pending preview, with the same literal digest | `stale.preview_replaced` if it names another preview; `stale.token_mismatch` if a genuine token's row, arguments, digest or identity differ |
-| 6 | Engine | The identity block and the base revision equal the current ones | `stale.revision_changed` |
-| 7 | Engine | The head's full-state hash equals the preview's start digest | `consistency.state_hash_mismatch`, because equal revisions with unequal digests mean the engine is wrong |
+| 3 | Command layer | The token's authenticator is valid, and the token is unused (KN5.15) | `KN5:auth.token_invalid` if the authenticator fails; `KN5:stale.token_used` if the token was seen before |
+| 4 | Command layer | Admission to the commit lane (KN5.17) | `KN5:busy.commit_in_flight` |
+| 5 | Engine | The token's preview is the pending preview, with the same literal digest | `KN5:stale.preview_replaced` if it names another preview; `KN5:stale.token_mismatch` if a genuine token's row, arguments, digest or identity differ |
+| 6 | Engine | The identity block and the base revision equal the current ones | `KN5:stale.revision_changed` |
+| 7 | Engine | The head's full-state hash equals the preview's start digest | `KN5:consistency.state_hash_mismatch`, because equal revisions with unequal digests mean the engine is wrong |
 | 8 | Engine | Protection is rechecked, at its level (KN1.11) | `protection.*` |
 | 9 | Engine, store | Adopts the end state of its own preview object. One durable transaction writes the journal event, the receipt and the workspace changes that must agree (KN5.16, R-06) | `unknown_outcome.*` if the outcome cannot be established (KN5.23) |
 | 10 | Engine | Cancels the jobs on the replaced revision, publishes the new bundle, returns the receipt | Never reported as failed once step 9 is durable (R-02) |
@@ -319,8 +321,7 @@ each step's failure leaves the state unchanged, except where the table says othe
 - **ONE.58 [B]** Recovery restores an interrupted episode as on, or rolls back to its last committed revision, never to a half-crossed
   state (ENG-0J section 4, KN4.5).
 
-These clauses are about lattice configurations only. Nothing here relies on the visible pose class off the lattice
-(overview section 8).
+These clauses are about lattice configurations only, where labels are defined (KN1.7).
 
 ## 10. The view model and the adopted bundle
 
@@ -417,21 +418,21 @@ Chapter 01's section 9 lists the kernel's needs. This chapter adds these:
 
 ## 15. Errors this chapter adds
 
-Chapter 13 owns the final spelling. `input.level_not_held` and `busy.commit_in_flight` are chapter 01's codes; this
+Chapter 13 owns the final spelling. `KN1:input.level_not_held` and `KN5:busy.commit_in_flight` are chapter 01's codes; this
 chapter reuses them.
 
 | Code | Raised when | Continuation |
 | --- | --- | --- |
-| `stale.revision_changed` | A preview's base differs from the current revision at commit | Preview again |
-| `stale.preview_replaced` | The token names a preview that is no longer the pending one | Review the preview on screen |
-| `stale.no_fresh_preview` | The commit key is pressed with no fresh preview presented | Preview the draft |
-| `stale.epoch_changed` | A handle or a preview of an earlier engine epoch is used | Open a new snapshot or preview again |
-| `stale.token_used` | A single-use token is seen a second time | Press the commit key once on the preview on screen |
-| `stale.token_mismatch` | A genuine token's row, arguments, digest or identity differ from what it names | Review the preview on screen |
-| `auth.token_invalid` | A token fails its authenticator | Renew the link to the engine, then preview again |
-| `capability.commit_row_refused` | A call from the runtime names a commit row | Offer the action to the solver |
-| `consistency.state_hash_mismatch` | Equal revisions have unequal digests | Internal failure: stop and report |
-| `unknown_outcome.read_only_recovery` | A proposal or a commit arrives during read-only recovery | Wait for the recovery to end |
+| `KN5:stale.revision_changed` | A preview's base differs from the current revision at commit | Preview again |
+| `KN5:stale.preview_replaced` | The token names a preview that is no longer the pending one | Review the preview on screen |
+| `KN5:stale.no_fresh_preview` | The commit key is pressed with no fresh preview presented | Preview the draft |
+| `KN2:stale.epoch_changed` | A handle or a preview of an earlier engine epoch is used | Open a new snapshot or preview again |
+| `KN5:stale.token_used` | A single-use token is seen a second time | Press the commit key once on the preview on screen |
+| `KN5:stale.token_mismatch` | A genuine token's row, arguments, digest or identity differ from what it names | Review the preview on screen |
+| `KN5:auth.token_invalid` | A token fails its authenticator | Renew the link to the engine, then preview again |
+| `KN5:capability.commit_row_refused` | A call from the runtime names a commit row | Offer the action to the solver |
+| `KN5:consistency.state_hash_mismatch` | Equal revisions have unequal digests | Internal failure: stop and report |
+| `KN5:unknown_outcome.read_only_recovery` | A proposal or a commit arrives during read-only recovery | Wait for the recovery to end |
 
 ## 16. Conformance tests
 
@@ -480,4 +481,6 @@ CT-KN5-01 is the preview-swap test itself. CT-ONE-04 extends it to the gap betwe
   and ONE.41 (on screen means presented).
 - **A reading of the partition.** ONE.12 reads section 8.3's "shows the stale state" under rule 3, and ONE.61 reads "holds no puzzle
   copy". If the owner reads either differently, the partition or the clause changes.
-- **DT-L1's open obligations.** Nothing in this chapter rests on them (section 9).
+- **EV3.12.** How a display states the base of a derived value imported without a session ancestor. This chapter adds
+  nothing to it: an imported value stays a derived value with no revision (KN2.14), and the display contract is the open
+  question, shared with chapter 10.

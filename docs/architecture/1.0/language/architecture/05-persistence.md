@@ -71,7 +71,7 @@ R2-E3 and the persistence and evidence-storage Fix first items;
   UTF-8 bytes followed by its ascending piece IDs as signed little-endian int32. The key uses J1's JSON spacing,
   including its spaces. `candidate/store.py`, `canonical_digest`, makes the little-endian convention explicit. It is
   not the digest of the store JSON, a pose-ID array, or `poses.f32`. A labels digest never substitutes for a poses
-  digest, and no digest for the visible pose class off the lattice is assumed (overview section 8).
+  digest. Off the lattice, pose is the only stored level until a sticker-class digest exists (KN1.8).
 - **PS1.7 [B]** Binary arrays retain their declared type, shape and byte order (render contract section 3;
   ENG-0J store section). The render contract uses little-endian int32 pose indices and lattice indices, and float32
   matrices for drawing. The store uses `u32le-base64` for pose IDs and menu-letter codes, with `encoding`, `count`,
@@ -120,12 +120,12 @@ R2-E3 and the persistence and evidence-storage Fix first items;
 operation read_record(bytes: Bytes, format: FormatRef, limits: LimitsRef) -> StoredValue | RecordedInput
   effect:  read a granted file, or a command-layer query
   cost:    stored and decoded bytes, parsed values and declared verification work
-  errors:  input.persistence_format, input.persistence_version, input.noncanonical_value,
-           resource_limit.persistence_size, consistency.persistence_digest
+  errors:  PS1:input.persistence_format, PS2:input.persistence_version, PS1:input.noncanonical_value,
+           PS1:resource_limit.persistence_size, PS1:input.digest_mismatch
 operation write_record(value: StoredValue, format: FormatRef, limits: LimitsRef) -> Bytes
   effect:  export to a granted file, or a workspace command
   cost:    canonical bytes and declared compression work
-  errors:  input.persistence_version, resource_limit.persistence_size, evidence.scope_not_immutable
+  errors:  PS2:input.persistence_version, PS1:resource_limit.persistence_size, PS1:evidence.scope_not_immutable
 ```
 
 ## 2. PS1: format catalogue
@@ -196,7 +196,7 @@ operation write_record(value: StoredValue, format: FormatRef, limits: LimitsRef)
 
 - **PS1.15 [D]** The manifest and lockfile retain the chapter 02 meanings; their stored fields below follow partition
   LG5, LB6, BM2 and INV-10. A display name alone never resolves a dependency. The principle record's content belongs
-  to chapter 03; keeping it as manifest data relies on DT-L1 R2-E4 and is subject to overview section 8.
+  to chapter 03; keeping it as manifest data relies on DT-L1 R2-E4, with the additions of R3-M4 (LB6.2).
 
 | Module manifest field | Stored value and validation |
 | --- | --- |
@@ -311,8 +311,8 @@ operation write_record(value: StoredValue, format: FormatRef, limits: LimitsRef)
 operation expand_stored_word(word: StoredWord, bound: Budget) -> LiteralWordStream
   effect:  pure, plus granted reads for digest-pinned parts
   cost:    exact expanded length in the word's alphabet and the declared memory/output charge
-  errors:  input.identity_mismatch, input.noncanonical_value, resource_limit.word_expansion,
-           resource_limit.persistence_size, capability.provenance_incompatible
+  errors:  KN1:input.identity_mismatch, PS1:input.noncanonical_value, PS1:resource_limit.word_expansion,
+           PS1:resource_limit.persistence_size, PS1:capability.provenance_incompatible
 ```
 
 ## 5. PS1: bindings and other workspace forms
@@ -451,21 +451,27 @@ operation expand_stored_word(word: StoredWord, bound: Budget) -> LiteralWordStre
 ## 8. PS1: evidence and existing carriers
 
 - **PS1.35 [D]** An `EvidenceEnvelope` has the identity and scope fields below under either LQ10 envelope option
-  (partition section 13; DT-L1 M2, R2-E1). A stored claim's scope is an immutable input digest. Transient check
-  context from 0.4 state C is never persisted as evidence: revision, current role, goal and protection context do
-  not become a durable permission. Chapter 06 owns claims, statement IDs, scope, basis, checks and every ordering
+  (partition section 13; DT-L1 M2, R2-E1, R3-M1). Every scope field of a stored claim is immutable, and none is
+  revision-bound context. A scope need not hold an input digest: a theorem and a bound on D[k] have none (EVD.10).
+  Transient check context from 0.4 state C is never persisted as evidence: revision, current role, goal and protection
+  context do not become a durable permission. Chapter 06 owns claims, statement IDs, scope, basis, checks and every ordering
   rule. The envelope retains the data those rules need; it does not define a parallel evidence model.
 
 | Common envelope field | Stored value and validation |
 | --- | --- |
 | Format/version and payload form | Envelope schema and explicit facts/judgements variant under the decided LQ10 option |
 | Identity | Model, puzzle, menu identity and order digest, contract revision; chapter 01 identity vocabulary |
-| Statement and scope references | Chapter 06 statement ID and typed scope; every digest states its level or content role |
-| Immutable inputs | Input digest(s), source/module digests, declared family/alphabet/bounds or admitted-domain parameters covered by the statement |
+| Statement and scope references | Chapter 06 statement ID and typed scope; every digest states its level or content role, at least as fine as the subject level (EVD.11) |
+| Statement form and negation pair | Chapter 06 statement form, and the statement it negates where it has one (EVD.9) |
+| Subject level | The identity level the statement is about |
+| Immutable inputs | Input digest(s) where the statement has them, source/module digests, declared family/alphabet/bounds or admitted-domain parameters covered by the statement |
+| Scope-membership evidence | The evidence that the object lies in the scope, kept apart from the claim itself (EVD.13) |
+| Search record | Completeness or closure of a search, stored apart from the job outcome (EVD.13) |
+| Premise class | The class of each premise, with its statement ID (EVD.13) |
 | Sources and original labels | Source content digests, record/field locations and labels preserved word for word, with stage and source version |
 | Attribution | Author, reproducer, scope setter and review class when recorded; absence stays absent |
 | Engineering evidence class | Source/fixture, synthetic, windows, performance or human where applicable; separate from mathematical basis/check |
-| Certificate/check dependencies | Kind, certificate byte digest, checker source digest, report/trace references and recorded check mode |
+| Certificate/check dependencies | Kind, certificate byte digest, checker source digest, report/trace references, recorded check mode, and the tool digest of each check with the declared common base (EVD.13) |
 | Reachability reference | Named-puzzle reachability envelope when the input is a derived state; raw pose validation does not establish it |
 
 - **PS1.36 [P LQ10]** Under LQ10's recommendation, the payload stores facts and derives judgements
@@ -606,8 +612,8 @@ operation expand_stored_word(word: StoredWord, bound: Budget) -> LiteralWordStre
 operation migrate_record(input: RecordedInput, target: FormatRef, converter: ConverterRef) -> MigrationResult
   effect:  granted file reads and writes, or an invoked workspace/import command
   cost:    complete validation, conversion, replay and output charges
-  errors:  input.persistence_version, input.identity_mismatch, resource_limit.persistence_size,
-           consistency.persistence_digest, capability.provenance_incompatible
+  errors:  PS2:input.persistence_version, KN1:input.identity_mismatch, PS1:resource_limit.persistence_size,
+           PS1:input.digest_mismatch, PS1:capability.provenance_incompatible
 ```
 
 ## 10. PS3: path B import of 0.4
@@ -720,12 +726,12 @@ operation migrate_record(input: RecordedInput, target: FormatRef, converter: Con
   word. **156 of the 417 JSON files** have no top-level `format` key, and 146 have none at any depth (source evidence,
   DT-L1 R3-E2). Coverage checks enumerate every actual (format, field, value), including absent-format cases, and
   require an exact mapping or an explicit unmapped entry. Corpus membership and file digests accompany that report.
-  Chapter 06 defines field, value and the enumeration rule (DT-L1 R3-E3).
+  EVD.48 defines field, value and the enumeration rule (DT-L1 R3-E3).
 - **PS3.12 [O]** Chapter 06 and EN4 fix dispatch for ambiguous absent-format records. Options are an explicit
   manifest/source-digest discriminator for a table entry, or retaining the ambiguous record wholly as recorded
   until a format-specific checker identifies it. Both keep the absent key and original bytes. An inferred format
   is a separate recorded interpretation, never a rewrite of the source. No source gives a complete discriminator
-  table for those records yet.
+  table for those records yet, and until one exists the second option applies by default (EVD.53).
 - **PS3.13 [D]** The following format-specific field views supplement the catalogue without renaming research
   formats (defaults 3 and 20; partition 10.3). They retain original fields and their exact byte reference; an
   absent field stays absent. They are not replacement schemas that force different family members into one
@@ -792,13 +798,13 @@ operation migrate_record(input: RecordedInput, target: FormatRef, converter: Con
 operation import_archive(input: GrantedFiles, table: ImportTableRef, limits: LimitsRef) -> ImportReport
   effect:  read granted files; publication only through an invoked import command
   cost:    stored/decoded bytes, mapped fields, exact checks and declared replay work
-  errors:  resource_limit.persistence_size, consistency.persistence_digest, input.persistence_format,
-           input.checkpoint_replay, consistency.source_changed, busy.legacy_session_locked,
-           unknown_outcome.import_publication
+  errors:  PS1:resource_limit.persistence_size, PS1:input.digest_mismatch, PS1:input.persistence_format,
+           PS3:input.checkpoint_replay, PS3:input.source_preservation_unverified, PS3:busy.legacy_session_locked,
+           PS3:unknown_outcome.import_publication
 operation export_check_bundle(envelopes: List<EvidenceEnvelopeRef>, limits: LimitsRef) -> CheckBundle
   effect:  write granted files
   cost:    envelope/member bytes and declared verification work
-  errors:  resource_limit.persistence_size, evidence.scope_not_immutable, consistency.persistence_digest
+  errors:  PS1:resource_limit.persistence_size, PS1:evidence.scope_not_immutable, PS1:input.digest_mismatch
 ```
 
 ## 12. Relation to the migration format freeze
@@ -864,8 +870,8 @@ sets a storage cap or substitutes for DT-J1 X3. The stage 18 admission figure of
 bound, not a chosen product admission bound.
 
 This chapter's evidence is source only. The conformance tests below are requirements; none exists or ran as part of
-this writing task. DT-L1 R2-E1, R2-E3 and R2-E4 dependencies are named where used, pending the mathematician's answer
-under overview section 8. No field or migration here depends on the visible pose class off the lattice.
+this writing task. DT-L1 R2-E1, R2-E3 and R2-E4 dependencies are named where used, as round 3 corrected them (overview
+section 8). No field or migration here depends on labels off the lattice.
 
 ## 14. Error codes added by this chapter
 
@@ -875,18 +881,18 @@ under overview section 8. No field or migration here depends on the visible pose
 
 | Code | Meaning |
 | --- | --- |
-| `input.persistence_format` | Unknown carrier, invalid declared field structure, unsupported dimension or missing required format information for an active read |
-| `input.persistence_version` | Unsupported data version/source edition or unavailable migration path; original may remain recorded |
-| `input.noncanonical_value` | Exact value, part graph or byte profile violates the selected format's rules |
-| `resource_limit.persistence_size` | A shared stored/decoded/cumulative size or parsing bound would be exceeded |
-| `resource_limit.word_expansion` | Exact expanded word length exceeds its declared admission bound; length is retained in the refusal |
-| `consistency.persistence_digest` | Stored, decoded, input, state, member or recorded dependency digest disagrees |
-| `evidence.scope_not_immutable` | Attempt to persist an envelope claim with only transient scope/context |
-| `capability.provenance_incompatible` | Required provenance form, label or dependency cannot justify a policy-gated use |
-| `input.checkpoint_replay` | A checkpoint's own path, labels or pre/post checks cannot be verified |
-| `consistency.source_changed` | Source-copy preservation conditions fail or watch coverage is inconclusive; nothing is published |
-| `busy.legacy_session_locked` | The 0.4 session lock cannot be acquired without writing or creating source data |
-| `unknown_outcome.import_publication` | Pointer-switch outcome cannot be authoritatively reconciled; recover before retry |
+| `PS1:input.persistence_format` | Unknown carrier, invalid declared field structure, unsupported dimension or missing required format information for an active read |
+| `PS2:input.persistence_version` | Unsupported data version/source edition or unavailable migration path; original may remain recorded |
+| `PS1:input.noncanonical_value` | Exact value, part graph or byte profile violates the selected format's rules |
+| `PS1:resource_limit.persistence_size` | A shared stored/decoded/cumulative size or parsing bound would be exceeded |
+| `PS1:resource_limit.word_expansion` | Exact expanded word length exceeds its declared admission bound; length is retained in the refusal |
+| `PS1:input.digest_mismatch` | Stored, decoded, input, state, member or recorded dependency digest disagrees |
+| `PS1:evidence.scope_not_immutable` | Attempt to persist a claim with revision-bound context in its scope (EVD.58) |
+| `PS1:capability.provenance_incompatible` | Required provenance form, label or dependency cannot justify a policy-gated use |
+| `PS3:input.checkpoint_replay` | A checkpoint's own path, labels or pre/post checks cannot be verified |
+| `PS3:input.source_preservation_unverified` | Source-copy preservation conditions fail or watch coverage is inconclusive; nothing is published |
+| `PS3:busy.legacy_session_locked` | The 0.4 session lock cannot be acquired without writing or creating source data |
+| `PS3:unknown_outcome.import_publication` | Pointer-switch outcome cannot be authoritatively reconciled; recover before retry |
 
 ## 15. Conformance tests
 
@@ -971,12 +977,12 @@ structural acceptance check verifies this chapter's shape only. It implements no
 - **LP1/chapter 07 provenance version, open PS1.34.** Independent nested version versus containing-schema version;
   a common block able to retain both LQ21 forms before a conditional data-core freeze.
 - **Chapter 06/EN4 absent-format dispatch, open PS3.12.** Source-discriminated mappings versus wholly recorded
-  ambiguous inputs; complete corpus coverage/mapping table still to be produced.
+  ambiguous inputs, the second by default until a discriminator table exists (EVD.53); complete corpus coverage/mapping
+  table still to be produced.
 - **EN4 archive carrier, open PS3.16.** Digest-named members versus non-materialising archive resolution, with
   member safety, expansion limits and independent-check packaging.
 - **EN3/EN4 kernel/store interfaces.** Final checkpoint, action/revision and migration-format packet fields
   (PS1.16, PS1.29, PS2.13). ENG-0J leaves the effect of restore/import on stored exit records to the chain-validity
   rules; no fresh lift from labels is assumed.
-- **DT-L1 open obligations and source discrepancies.** The mathematician's R2-E1 to R2-E4 answer remains pending
-  wherever those cards are cited. The off-lattice visible pose class is unused. Section 13 records the migration
-  amendments, the serializer differences and the recorded word lengths.
+- **Source discrepancies.** Section 13 records the migration amendments, the serializer differences and the recorded
+  word lengths. Round 3 cleared DT-L1's obligations (overview section 8).
