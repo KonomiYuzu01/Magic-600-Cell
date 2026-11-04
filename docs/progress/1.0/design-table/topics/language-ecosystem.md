@@ -2865,3 +2865,15 @@ Three of these change something a round had settled, and the owner sees them wit
   history, and the import README carries the current one. The corpus manifest and every total are unchanged.
 
 New requirements: CT-KN1-06, CT-KN5-12, CT-ONE-28 and CT-EVD-23, which makes 373 in all. No test exists yet.
+
+### Scoped verification
+
+One round ran on `3e3bf96e`, read-only, with Astra at the fast tier (`20261104T053645Z-2d8c9814` under `work/reviews/`). It
+checked two things only: whether each of the five major findings is fixed, and whether the fix delta from `7927cb30` adds
+a new blocker or major.
+
+The verdict is a pass, with no finding. C600-A-01, C600-A-02, C600-A-03, B-01 and B-02 are each fixed, and the delta adds
+no blocker or major. So the full text has no open blocker or major, which is the review half of LP0's acceptance.
+
+This is document evidence only. It reads the text, runs nothing, and proves no conformance test passes: none exists yet.
+The other half of LP0's acceptance, the owner's acceptance of the ADR drafts, is open.

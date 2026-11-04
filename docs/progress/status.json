@@ -126,8 +126,8 @@
       {"id": "partition", "title": "Ecosystem partition and owner question list", "weight": 1, "done": true, "evidence": "docs/architecture/1.0/language/ecosystem-partition.md"},
       {"id": "architecture", "title": "Architecture document drafted", "weight": 3, "done": true, "evidence": "f7bb5d3f"},
       {"id": "adr-drafts", "title": "ADR drafts written", "weight": 2, "done": true, "evidence": "683c863a"},
-      {"id": "glossary", "title": "Glossary entries for every language term", "weight": 1, "done": false, "evidence": null},
-      {"id": "astra-review", "title": "Astra review with no open blocker or major", "weight": 2, "done": false, "evidence": null},
+      {"id": "glossary", "title": "Glossary entries for every language term", "weight": 1, "done": true, "evidence": "docs/architecture/1.0/language/architecture/04-environment.md"},
+      {"id": "astra-review", "title": "Astra review with no open blocker or major", "weight": 2, "done": true, "evidence": "docs/progress/1.0/design-table/topics/language-ecosystem.md"},
       {"id": "owner-answers", "title": "Owner answers to LQ1 to LQ21", "weight": 2, "done": false, "evidence": null},
       {"id": "adr-acceptance", "title": "Owner accepts the ADR drafts that need no spike evidence", "weight": 1, "done": false, "evidence": null}
      ]}
