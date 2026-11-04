@@ -1890,7 +1890,7 @@ Both are cleared.
   Corollaries 2 to 4). The lattice is needed for one step only: deriving a turn in place from equal labels. The full
   text relies on what B.7 lists and on nothing B.7 rules out. Under N2's own grades the note's status is (theorem,
   producer) until a model review reads it. The transfer step itself is the reviewed stage 19 lemma. No person has
-  reviewed either, and the owner requires none (3 November 2026). CT-KN2-06 stays as an engine conformance test.
+  reviewed either. CT-KN2-06 stays as an engine conformance test.
 - **The mathematician's answer to R2-E1 to R2-E4.** R3-M1 to R3-M4 give it. What the revised partition adopted from
   those cards stands, except for the corrections below.
 

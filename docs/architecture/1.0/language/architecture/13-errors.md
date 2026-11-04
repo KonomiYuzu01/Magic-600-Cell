@@ -174,10 +174,10 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
 | `OUTSIDE_CERTIFIED_DOMAIN(k)` | LB5.4; partition 8.1 and 10.3. Completed rejection of membership in the stated D[k], with that scope. It says nothing about reachability or solvability. |
 
 - **ERR.22 [D]** `input.lb5_outside_certified_domain`, in chapter 03's first text, misclassified its own completed
-  membership answer. It has left the error registry. Its withdrawn prefixed spelling, `LB5:input.outside_certified_domain`,
-  is recorded here only to prevent future allocation as an error. Section 6 records that withdrawal as a removal,
-  not a code substitution. A cut-off membership job returns unknown membership, never this completed rejection
-  (LB5.4, INV-5, default 6).
+  membership answer. It has left the error registry. Its withdrawn prefixed spelling,
+  `LB5:input.outside_certified_domain`, is recorded here only to prevent future allocation as an error. Section 6
+  records that withdrawal as a removal, not a code substitution. A cut-off membership job returns unknown membership,
+  never this completed rejection (LB5.4, INV-5, default 6).
 
 ## 5. Registry by source
 
@@ -479,11 +479,11 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
 ## 6. Reconciliation
 
 - **ERR.28 [D]** The following table has one row per concrete spelling the drafts first used, including prefix-only
-  changes. Each of its first two cells holds one code. The chapters now use the registry codes, so the table is a record of
-  that migration, not a second set of runtime aliases. Reserved rows wait for their named decisions. The outside-domain
-  row records a withdrawn spelling, removed from `errors:` as ERR.22 specifies. Wildcards require no individual rows. Generic Round 3 codes
-  retained alongside more specific chapter codes keep their original scopes; their existence does not merge distinct
-  failures.
+  changes. Each of its first two cells holds one code. The chapters now use the registry codes, so the table is a
+  record of that migration, not a second set of runtime aliases. Reserved rows wait for their named decisions. The
+  outside-domain row records a withdrawn spelling, removed from `errors:` as ERR.22 specifies. Wildcards require no
+  individual rows. Generic Round 3 codes retained alongside more specific chapter codes keep their original scopes;
+  their existence does not merge distinct failures.
 
 | Spelling first used | Registry code | What changed |
 | --- | --- | --- |

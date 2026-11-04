@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-04] update | The language: architecture document and ADR drafts
+After the owner confirmed the direction of the ecosystem partition, the [architecture document](../architecture/1.0/language/architecture/00-overview.md) and its [twelve ADR drafts](../architecture/1.0/language/adr/README.md) were written, with round 3 of [DT-L1](../progress/1.0/design-table/topics/language-ecosystem.md) applied. All of it is a draft for the owner: no ADR is accepted, nothing is frozen, no owner question LQ1 to LQ21 is answered, and no spike has run.
+
 ## [2026-11-03] update | The full CI checks run as five parallel shards
 At the owner's request, a full Windows CI run now splits the 60 checks into five time-balanced shards on parallel runners (about 14 minutes of checks each, bounded by the longest test, against about 66 minutes in one job), after a plan job that chooses the mode; a final `headless` job passes only when the plan and every shard passed (`tools/ci/run_headless.py --shard`).
 

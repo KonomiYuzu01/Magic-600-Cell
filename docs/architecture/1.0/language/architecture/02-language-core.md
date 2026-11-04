@@ -511,7 +511,7 @@ Tests of open mechanisms use the selected option's contract and cannot decide th
 | CT-LG2-09 | Unknown cannot pass as false, an off-lattice projection cannot pass as unknown, and a goal cannot silently weaken its required level | source |
 | CT-LG2-10 | Goal fixtures check the sourced implication chain and the checkpoint implications; equal labels do not require equal poses and a label checkpoint supplies no retained word | source |
 | CT-LG2-11 | No execution, derivation, protection or proposal binding accepts a WordEqualityKey as a LiteralWord | source |
-| CT-LG2-12 | R-11's operations accept the validated word domain; on jumbling fixtures the chosen key preserves admissible starts and end digests, while literal prefix protection and peak height stay unchanged | source |
+| CT-LG2-12 | R-11's operations accept the validated word domain; on jumbling fixtures that meet LG2.14's four hypotheses the chosen key preserves admissible starts and end digests, while literal prefix protection and peak height stay unchanged | source |
 | CT-LG2-13 | A same-cap inverse pair at a straddling cap retains its domain test in the key; the empty word cannot substitute for its literal witness | source |
 | CT-LG2-14 | A compressed word computes an exact length beyond machine-integer range without expansion; streaming positions and letters equal an independently expanded small fixture | source |
 | CT-LG3-01 | The function and import call graph preserves transitive effects and capability requirements, including higher-order and generic calls | source |

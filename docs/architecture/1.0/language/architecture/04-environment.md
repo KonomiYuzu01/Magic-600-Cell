@@ -439,8 +439,9 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
   source-commit-pinned lemmas. A long word is a digest and positions until expanded. The decomposition is generated
   from the checked IR before lowering, from its call graph and kernel calls, and the hand-checkable instance has a
   matching headless fixture (partition INV-12, LG4; DT-L1 M6, R2-E4). A generated decomposition gives structure, not
-  reasons: the reasons are the hand-written parts of LB6.2 (DT-L1 R3-M4). A fixture pass is source evidence for that instance. It does not prove a
-  universal lemma or record a human comprehension result. KN6 trace links use the checker's own output.
+  reasons: the reasons are the hand-written parts of LB6.2 (DT-L1 R3-M4). A fixture pass is source evidence for that
+  instance. It does not prove a universal lemma or record a human comprehension result. KN6 trace links use the
+  checker's own output.
 
 - **EV5.5 [D]** A fork inherits no evidence (default 18). An explanation of a fork retains links to cited statements
   and their scope, but it cannot label the changed module as certified because its parent was checked. Reusing an

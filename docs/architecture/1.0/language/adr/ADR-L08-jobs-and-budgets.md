@@ -91,4 +91,5 @@ result exists. CT-DET-01 to CT-DET-24 are requirements only. Existing research r
 Accepting this record accepts ADR-L08.1 to ADR-L08.9 and the [D] clauses they cite.
 
 The owner may overrule these integrator additions: the cost table revision and the kernel and checker identities in the
-key (DET.2, DET.3), and the two new lanes of KN7.2, which EN4 also has to confirm.
+key (DET.2, DET.3), the rule that the key fixes every input a program can consult (DET.4), and the two new lanes of
+KN7.2, which EN4 also has to confirm.

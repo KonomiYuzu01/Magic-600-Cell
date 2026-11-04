@@ -30,12 +30,14 @@ state is, what else may look like a state, and how any of it can become real.
   ONE.30). It is never adopted. It becomes real only when the solver plays its word through `propose` and the engine
   replays that word at the current revision (ONE.26). A derived state with no word can be compared and displayed, and
   nothing more (ONE.27).
-- **ADR-L01.5** The preview is the single exception: the one state-like value a commit can adopt. - The engine builds it
-  and owns its immutable witness (KN5.9, ONE.31). - A proposal never carries a state or a digest for the engine to adopt
-  (KN5.13). - At most one preview is pending (KN5.11, ONE.38). - When the state revision moves the engine discards the
-  preview, and the draft stays (ONE.40). - The token binds to the preview of the newest frame reported as presented
-  (ONE.41). - At step 9 the engine adopts its own object, so that step needs no trust in the language (ONE.44). - A
-  preview is not durable (ONE.43).
+- **ADR-L01.5** The preview is the single exception: the one state-like value a commit can adopt.
+  - The engine builds it and owns its immutable witness (KN5.9, ONE.31).
+  - A proposal never carries a state or a digest for the engine to adopt (KN5.13).
+  - At most one preview is pending (KN5.11, ONE.38).
+  - When the state revision moves the engine discards the preview, and the draft stays (ONE.40).
+  - The token binds to the preview of the newest frame reported as presented (ONE.41).
+  - At step 9 the engine adopts its own object, so that step needs no trust in the language (ONE.44).
+  - A preview is not durable (ONE.43).
 - **ADR-L01.6** Every result names the revision or derived state it read, and it is never applied to or shown against
   another (KN0.6, ONE.7, ONE.11).
 - **ADR-L01.7** The view model holds no puzzle copy. An adopted bundle is a read-only image of one revision, replaced

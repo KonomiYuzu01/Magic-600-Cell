@@ -31,8 +31,8 @@ Section 7 links the individual stage archives.
   preconditions, coverage and the meaning of an empty or negative answer. This makes partition LB1 to LB5 and INV-5
   testable without treating a library name as evidence.
 - **LB1.3 [D]** State inputs are chapter 01's `StateRef` values, and state results retain their identity, level and
-  input reference, following INV-1, INV-6 and INV-7. A library never creates a mutable puzzle copy, lifts labels to poses,
-  or supplies a committed state. Projections use chapter 01's `Partial<T>`. In particular, off-lattice labels are
+  input reference, following INV-1, INV-6 and INV-7. A library never creates a mutable puzzle copy, lifts labels to
+  poses, or supplies a committed state. Projections use chapter 01's `Partial<T>`. In particular, off-lattice labels are
   undefined; unknown evidence is a different result.
 - **LB1.4 [D]** An empty mathematical collection means exactly that collection has no members. An empty job answer
   means this only after completion and only for the named input and declared coverage. Cancellation, error, a budget
@@ -42,7 +42,8 @@ Section 7 links the individual stage archives.
   reading, no shipped function searches, minimises, ranks or selects over twists, words or caps in a solving session.
   Every such entry below carries the exact marker **research tier candidate**. The two exceptions are setup search for
   a target the solver names and the repair list at a named cap. Enumeration here neither admits a function to a base
-  tier nor promises that the research tier ships; chapter 07 records the joint setting under LQ2 and LQ21.
+  tier nor promises that the research tier ships; chapter 07 records the joint setting under LQ2 and LQ21. BND.64 states
+  the rule the marker serves.
 - **LB1.6 [D]** Pure algebra is not a boundary exemption. Generic elimination over F2 and F5, the current ν and the
   correction rows compose into a correction selector (DT-L1 R2-E3, fix-first 17). Calls, branches, stored words and
   preview outcomes use chapter 07's provenance mechanism, with its form left to LQ21. Under flow labels the mechanism
