@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-04] decision | Stage 16 certificates renamed so a Windows checkout is clean
+The owner approved renaming the six stage 16 certificates `PX-<run>.json` to `PX-<run>-cert.json` with their blobs unchanged, because each differed only in case from its run record `px-<run>.json` and a Windows checkout kept one file for both and showed six modified paths; the research stays stopped and the review wrapper is unchanged, since a real implement run on the unfixed base was accepted. A worktree that still holds the pairs takes this merge by running `git checkout --` on the six old `PX-*` paths before the merge and on the six `px-*` paths after it.
+
 ## [2026-11-04] update | The language: Astra review of the full text
 The full review ran in three parallel shards at the fast tier: five major and seven minor findings, no blocker, all adopted and applied to the [architecture document](../architecture/1.0/language/architecture/00-overview.md) and the [ADR drafts](../architecture/1.0/language/adr/README.md), with the record in [DT-L1](../progress/1.0/design-table/topics/language-ecosystem.md#astra-review-of-the-full-text). A scoped verification of the fixes passed with no finding. Everything stays a draft for the owner: no ADR is accepted, and no owner question LQ1 to LQ21 is answered.
 
