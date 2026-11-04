@@ -25,7 +25,8 @@ revision cannot serve that.
 - **ADR-L11.2** The renderer adopts each engine revision bundle without waiting for program output (RPI.2). An engine
   bundle and a program publication are separate atomic installations (RPI.9, RPI.10).
 - **ADR-L11.3** `ViewNode` and `DisplayPlan` are declarative (RPI.5, RPI.6). A derived state is displayed only by a plan
-  naming its derivation and base revision (RPI.7).
+  naming its derivation and base revision (RPI.7). A value imported with no session ancestor states lineage `imported`,
+  and its plan base is a comparison base that claims nothing (EV3.12, ONE.21).
 - **ADR-L11.4** A view does work only when visible and only for changed data (RPI.11). It exposes its base revision and
   status (RPI.13), and it has no workspace-write effect (RPI.14).
 - **ADR-L11.5** Display primitives are a stated inventory (RPI.15). A backend reports support or a typed refusal for
@@ -55,7 +56,6 @@ Open whatever the owner answers:
 - Multi-layer pick disambiguation, a product decision for the design line (RPI.27).
 - Which chart properties have exact checkers (RPI.34), and the precision rule (RPI.36).
 - Plan limits and the backend interface's signatures (RPI.50, RPI.55).
-- How a derived value imported from raw data, with no session ancestor, is displayed (EV3.12).
 
 Conditional on an owner question:
 

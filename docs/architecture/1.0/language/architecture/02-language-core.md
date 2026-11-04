@@ -592,8 +592,8 @@ Open mechanisms and dependencies:
 - **Source reconciliations.** R-11's normal-form wording is used with default 10's literal execution rule
   (LG2.13 to LG2.15). State contract A5 amends section 5's retained-checkpoint-only handoff and A3's checkpoint wording
   while retaining exact pose equality (LG2.10, LG2.11). Partition 4.1's derived-state base revision is lineage, not a
-  session revision assigned to that value, following INV-1 and KN2.12 (LG2.12, LG4.11). H-08's separate workspace-undo
-  description is read with DT-M1 Q4 (a)'s one durable action order (LG3.5). None is a new mechanics rule.
+  session revision assigned to that value, following INV-1 and KN2.12 (ONE.21, LG2.12, LG4.11). H-08's separate
+  workspace-undo description is read with DT-M1 Q4 (a)'s one durable action order (LG3.5). None is a new mechanics rule.
 - **Other chapter contracts.** Chapters 03, 04, 05, 06, 07, 09 and 10 supply the definitions routed in LG2.12 and LG5.2.
   Chapter 05 finalizes digest bytes, chapter 09 capability grants and external-input replay, and chapter 13 final error
   spelling. This chapter supplies no schema and assumes no unpublished clause numbers.

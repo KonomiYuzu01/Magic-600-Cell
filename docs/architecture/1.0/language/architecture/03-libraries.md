@@ -355,8 +355,8 @@ Its mathematical configurations and captured reviews establish only their stated
 - **LB5.11 [D]** The mathematical event calculus of stage 15 applies to admissible words, but its stored
   `macro-certificate/1` checker accepts descending macros ending in a jumble (stage 16 README, section 2.6). A release
   alone, such as SJ-E1, uses letter-by-letter checking and is not forced into that format. The partition's stage 15
-  row remains covered with this restriction. The format inventory also includes `pstar2/2`, written by
-  `15-lowering-machine/scripts/pstar2.py`; the partition's `pstar2-*` shorthand does not spell that name.
+  row states this restriction. The format inventory also includes `pstar2/2`, written by
+  `15-lowering-machine/scripts/pstar2.py`, and the row names it.
 - **LB5.12 [D]** Stage 18 checks retain three separate gates: exact admitted length and expanded hash; composed
   strict′ check; complete twist-by-twist replay from the actual prior end (stage 18 README, section 3.3). A chunked
   replay counts as complete only when all word spans concatenate, their boundary digests chain and the final digest
@@ -374,44 +374,62 @@ Its mathematical configurations and captured reviews establish only their stated
 
 ## 8. LB6: built-in tools and PrincipleRecord
 
-- **LB6.1 [B]** Every built-in tool ships viewable source and a `PrincipleRecord` (INV-12). The record states the exact
+- **LB6.1 [D]** Every built-in tool ships viewable source and a `PrincipleRecord` (INV-12). The record states the exact
   function and domain, the meaning of empty and negative answers, its lemma or certificate with evidence, one small
-  instance on the real geometry that a person can check by hand, and the decomposition into base parts. A tool's
-  displayed claims can be traced to those primitives and evidence. An abstract toy geometry alone cannot be its
-  hand-checkable instance.
+  instance on the real geometry whose steps a person can check by hand from named givens, and the decomposition into
+  base parts. A tool's displayed claims can be traced to those primitives and evidence. An abstract toy geometry alone
+  cannot be this instance. A digest is never a step.
 - **LB6.2 [D]** The record is data in the module manifest. Its instance runs as a headless fixture, the decomposition
   is generated from the typed IR before lowering, from the call graph and kernel calls, and its justification resolves
-  to an `EvidenceEnvelope` (partition LB6; DT-L1 R2-E4). The record is bound to the module digest. Chapter 02 defines the
-  manifest and IR; chapter 05 their stored forms; chapter 06 the envelope's meaning. A generated decomposition gives
-  structure, not reasons: the floor's call graph is two set sizes and a subtraction, and its reason is the invariance of
-  In_c and Out_c (DT-L1 R3-M4). So the record also holds what a person writes by hand. The conceptual content is:
+  to `EvidenceEnvelope` references where evidence exists (partition LB6; DT-L1 R2-E4). The record is bound to the module
+  digest, its lockfile closure, the model identity and its statement IDs, and a changed decomposition marks the
+  hand-written parts stale. Chapter 02 defines the manifest and IR; chapter 05 their stored forms; chapter 06 the
+  envelope's meaning. A generated decomposition gives structure, not reasons: the floor's call graph is two set sizes and
+  a subtraction, and its reason is the invariance of In_c and Out_c (DT-L1 R3-M4). So the record also holds what a person
+  writes by hand. The conceptual content is:
 
   ```text
   PrincipleRecord = {
-    specification:  function, domain, empty-answer meaning, negative-answer scope
-    justification:  lemma or certificate reference, evidence-envelope reference
+    specification:  function or declared procedure; inputs, parameters and budget; output type; puzzle, menu and
+                    level; domain; tie rule; empty-answer meaning; negative-answer scope
+    justification:  a list of arguments, each a lemma, a per-output certificate kind, a replay or "by definition",
+                    with an evidence-envelope reference where one exists
     instance:       real-geometry input, expected claims, headless fixture reference
     decomposition:  generated IR call graph with library entries and kernel calls
     by hand:
-      step map:     decomposition nodes to lemma steps
-      reason:       the invariant or reason, by statement ID
-      failure:      an example of what breaks when a hypothesis is dropped
+      step map:     a relation between nodes and (statement ID, step label), reporting the unmapped items on both sides
+      reason:       the statement ID and a short proof idea in glossary terms at or below the record's level
+      failure:      per hypothesis: a concrete counterexample, a weaker conclusion or "necessity open"
       not meant:    what an empty or negative answer does not mean
-      derivation:   a written hand derivation of the instance, with its step count
+      givens:       the facts the instance reads from named leaf calls or certificates
+      steps:        what a person verifies from the givens, with the step count
       prerequisites: glossary terms and earlier records (bar M6)
-      leaf specs:   a specification for each opaque kernel leaf
+      leaf specs:   a specification for each opaque kernel leaf, naming the oracle test that covers it
   }
   ```
 
-  These are content requirements, not storage keys. The fixture names model identity and the level it checks. Its
-  claims and checker trace resolve through their recorded digests. The decomposition names transitive calls and their
-  effects; it cannot conceal a kernel call behind a hand-written description. Higher-order calls over-approximate. A
-  fixture proves numbers, and the written derivation is what lets a person check them by hand.
+  These are content requirements, not storage keys. Every part admits a typed "none, because ...": a check has no empty
+  answer, and a definition has no hypothesis. The domain lies inside the cited statement's scope, or the record names the
+  part outside it and what the answer means there. As a working definition, the principle of a tool is the statement
+  named in `reason`, with its hypotheses. Prerequisite records form a DAG, and each prerequisite term sits at or below
+  the record's level. The fixture names model identity and the level it checks. Its claims and checker trace resolve
+  through their recorded digests. The decomposition names transitive calls and their effects; it cannot conceal a kernel
+  call behind a hand-written description. Higher-order calls over-approximate, and such an edge is marked "may call". A
+  fixture pass shows that the module reproduced the expected claims at that input. The expected claims come from the
+  written derivation, never from the module's own output. Any ceiling on the step count is the owner's (EV5.12).
+
+  The floor shows the split. After 40 twists of seed 7101, cap 30 has 840 cut cells covered inside, 737 outside and none
+  aligned (`research/jumbling/manual/02-descent.md`). Those are givens, read from named leaves. A person checks
+  840 + 737 = 1,577, 840 − 737 = 103 and, for the twist that brings the cap to its floor, 1,577 − 103 = 1,474 and
+  30,286 − 1,474 = 28,812. Nobody checks 840 itself. The floor statement in `research/jumbling/theory/open-problems.md`
+  has no stage-qualified name yet, and it needs one before it serves as evidence (EVD.2).
+
   Admission of an incomplete record has `errors: LB6:evidence.principle_record_incomplete`.
 - **LB6.3 [D]** A fork inherits no evidence (default 18). It can retain source references as references, but its new
-  module digest has no inherited pass, cost approval or principle check. Any claim asserted for it needs its own scope
-  and check under chapter 06, and its statement counts as unchanged only under an identical statement ID. Every built-in declares chapter 07's `BoundaryClass` under BM5, reviewed when it ships.
-  A class declaration and a `PrincipleRecord` are separate obligations.
+  module digest has no inherited pass, cost approval or record. Any claim asserted for it needs its own scope and check
+  under chapter 06, and its statement counts as unchanged only under an identical statement ID. Every built-in declares
+  chapter 07's `BoundaryClass` under BM5, reviewed when it ships. A class declaration and a `PrincipleRecord` are separate
+  obligations.
 - **LB6.4 [P LQ5]** Under LQ5's recommendation every tool above the kernel is written in the language, using LB1 to
   LB5, while exact engines and independent checkers remain kernel code. Under the native-tool or per-tool alternatives,
   the implementation backing changes; viewable source, the exact specification, real-geometry instance, evidence and
@@ -448,11 +466,10 @@ Its mathematical configurations and captured reviews establish only their stated
   and settles neither LQ5 nor the implementation route.
 - **LB6.7 [D]** H-08's `view.recommendations`, `target.next.activate`, `object.actions`, `structure.find` and any
   macro-comparison mode that selects a solving target or word require a separate content definition and a ruling of the
-  joint setting (partition section 11; BND.65; DT-L1 M5, R2-E3). Such a selector is a research tier candidate, with no candidate
+  joint setting (partition section 11; BND.65; DT-L1 M5, R2-E3). Such a selector is a research tier candidate, with no
   admitted BM5 class or `PrincipleRecord` at this stage. The static inspector versions in the table above do not
   include that selection. A research runner, correction solver or WC-PLAN is also a research tier candidate, outside
-  this solving-tool table. Understanding labels or competence checks do not themselves grant a preview capability;
-  LQ2 and LQ14 decide any gate.
+  this solving-tool table. Competence results do not themselves grant a preview capability; LQ2 and LQ14 decide any gate.
 
 ## 9. LB7: user modules
 
@@ -466,9 +483,10 @@ Its mathematical configurations and captured reviews establish only their stated
   reference gets fresh exact analysis and a fresh engine preview; its stored result never replaces that preview
   (default 14, KN5; solving workflow section 4.1).
 - **LB7.3 [D]** Stored words, macros and workspace records retain the provenance field through storage and import
-  (BM2, DT-L1 R2-E3). A fork is a forked built-in for chapter 07's authorship mechanism and inherits no evidence
-  (default 18). Local authorship is recorded provenance, not proof that the solver understood or independently invented
-  an algorithm. Chapter 07 decides the assistance classes and flows; chapter 09 decides what each module can reach.
+  (BM2, DT-L1 R2-E3). A fork is a forked built-in for chapter 07's author-class mechanism and inherits no evidence
+  (default 18). A local author class is recorded provenance, not proof that the solver understood or independently
+  invented an algorithm. Chapter 07 decides the assistance classes and flows; chapter 09 decides what each module can
+  reach.
 - **LB7.4 [P LQ12]** Under LQ12's recommendation, sharing uses local files the solver chooses, with content digests,
   and has no registry or network. A later curated registry or signed-package option changes distribution, not the
   need to check identity, evidence, provenance and granted capabilities. Network/process access is not granted to
@@ -517,10 +535,10 @@ Its mathematical configurations and captured reviews establish only their stated
 | CT-LB5-07 | One search key repeats coverage and stop reason; a budget, clock or error stop yields no negative. A reduced negative cannot leave its family without a matching reduction lemma. | source |
 | CT-LB5-08 | A complete D[k] rejection yields `OUTSIDE_CERTIFIED_DOMAIN(k)` only. Changing k or a reachability promise changes the applicable scope; neither rejection nor a budget stop means unreachable. | source |
 | CT-LB5-09 | Stream the recorded 672,417, 871,582 and 2,352,984-letter cases through length/admission checks. Any newly completed replay has its own check record; import does not claim the historical third gate completed. | source |
-| CT-LB6-01 | Each shipped tool has all PrincipleRecord parts, resolving source/evidence digests and a runnable real-geometry fixture. Regeneration of the decomposition accounts for transitive library and kernel calls. | source |
+| CT-LB6-01 | Each shipped tool has all PrincipleRecord parts, resolving source/evidence digests and a runnable real-geometry fixture. A part that does not exist reads a typed none. A domain outside the cited scope is named. Regeneration of the decomposition accounts for transitive library and kernel calls, and a changed decomposition marks the hand parts stale. Expected claims come from the written derivation, not from the module's output. | source |
 | CT-LB6-02 | A changed module digest or fork receives no inherited evidence pass. Original references remain references and cannot certify the fork's behavior. | source |
 | CT-LB6-03 | The tool's declared BM5 class is reviewed against its exact entry definition. LX-3's correction solve, state-based target selection and storage-laundering cases are refused according to chapter 07's selected mechanism and sinks. | source |
-| CT-LB6-04 | A person can check the tool's small real-geometry instance by hand and relate it to the generated decomposition; the owner sets the human-test form and any learning gate under LQ14. | human |
+| CT-LB6-04 | A person can check the steps of the tool's small real-geometry instance by hand from its named givens and relate them to the generated decomposition; the owner sets the human-test form and any learning gate under LQ14. | human |
 | CT-LB7-01 | Workspace views cannot write records; an invoked workspace command is undoable. Save/load and import preserve provenance and cannot turn research output into an interim solving preview. | source |
 | CT-LB7-02 | The same module runs only with chapter 09's grants and chapter 07's profile policy; local storage, a fork or a binding grants no token or extra capability. | source |
 
@@ -561,7 +579,7 @@ partition. No candidate list or conformance requirement is an owner answer.
 | LQ11 Recording | LB7.1, LB7.2 | Reused words need fresh checks and explicit commits. Chapter 04 decides recording/playback form; this chapter consumes those objects. |
 | LQ12 Module sharing | LB7.4 | Identity, provenance and grant checks stay. Distribution may change. |
 | LQ13 Syntax | LB1.2, LB6.2 | Conceptual contracts stay. Concrete function/module syntax is chapter 02's work after the decision. |
-| LQ14 Understanding gates | LB6.1, LB6.7, CT-LB6-04 | A checkable principle stays required. Whether competence guides or gates capabilities remains open. |
+| LQ14 Learning gates | LB6.1, LB6.7, CT-LB6-04 | A principle record stays required. Whether competence guides or gates capabilities remains open. |
 | LQ15 Formal proofs | LB5.5, LB6.2 | A certificate check establishes only its actual scope. A proof-assistant link can add evidence under chapter 06; none is assumed here. |
 | LQ16 Product cut | LB5.1, LB6.5 | The full catalogue records the requested scope. Shipping extent, including research, remains the owner's decision. |
 | LQ17 Name | Introduction, LB1.2 | Entry concepts stay. Working language name and extension are not fixed interfaces here. |
@@ -586,7 +604,7 @@ Further dependencies and source differences:
 | DT-L1 obligations | Round 3 cleared them (overview section 8). LB1.1, LB1.6, LB1.7, LB3.1, LB4.2, LB5.6, LB5.9 and LB6.2 cite the relevant cards, and LB3.1, LB4.2, LB5.6, LB6.2 and LB6.3 carry round 3's corrections. |
 | EN3, EN4 and LP1 | Public J1 API before binding (default 12), named observation and mode rows, workspace queries/commands, lanes and manifest/effect contracts; LB1.2, LB3.9, LB6.5, LB7.2. Chapter 01's pending interfaces are not asserted delivered. |
 | Recorded word lengths | LB5.13 and KN2.10 carry the figures of DT-L1 R3-E4, and the partition is corrected. ENG-0J's "672,417 on record" stays as written in that packet; EN3 should cite the longer figures when it next changes it. Streaming behaviour is unchanged. |
-| Stage 15 certificate scope and format shorthand | LB5.11: the partition's general MC wording needs the terminal-jumble/descent restriction for `macro-certificate/1`; the actual two-level run name is `pstar2/2`, beyond its `pstar2-*` shorthand. The coverage rows retain both subjects. |
+| Stage 15 certificate scope and format name | LB5.11: the partition's stage 15 row now states the terminal-jumble/descent restriction for `macro-certificate/1` and names `pstar2/2`. The coverage rows retain both subjects. |
 | Stage 18 replay claims | LB5.12: the archive's section 3.3 corrects its earlier blanket twist-by-twist description. Composition and complete replay stay separate; four words' third gate is unfinished. The shortened-chain totals withdrawn in its section 3.4 are not reused. |
 | Historical restoration theory | LB3.2, LB3.3, LB5.5: `theory/restoration.md` still lists retained-group sufficiency and phase-L membership as open and earlier lens-word content as a product take-away; A5 and DT-J1 now govern checkpoints and shipped correction content. Its early height-boundedness question is superseded by stage 10's unboundedness, retained in the archive and research data. Its float centroid cover selector is replaced by DT-J1's exact covers query. Its method-selected caps and words remain research tier candidate entries. |
 | Historical workflow/command recommendations | LB2.5, LB6.7: `solving-workflow.md` describes suggested next targets and H-08 contains recommendation rows; the interim policy admits no method-selected target. They stay catalogue leads under the interim reading (BND.65), not shipped solving behavior. |

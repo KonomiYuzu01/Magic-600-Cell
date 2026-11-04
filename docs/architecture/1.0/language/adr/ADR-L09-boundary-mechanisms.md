@@ -39,8 +39,8 @@ Every option the owner might choose needs them.
 - **ADR-L09.3 Profiles (BM3).** There are three profiles: solving, tool authoring and research. A profile belongs to a
   run, the host sets it, and a program cannot raise it (BND.17, BND.34). Research output never becomes a preview in a
   solving session (BND.61).
-- **ADR-L09.4 Labelled records (BM4).** A solve record states which assistance classes were used. The host computes the
-  summary from the journal and the run records, and no program writes it (BND.35).
+- **ADR-L09.4 Labelled records (BM4).** A solve record states which assistance classes the system recorded. The host
+  computes the summary from the journal and the run records, and no program writes it (BND.35).
 - **ADR-L09.5 Boundary classes (BM5).** Each built-in tool declares its class, and the review checks the tool's entry
   and rows against that class (BND.27, BND.37). A class grants nothing by itself.
 - **ADR-L09.6 Policy as data.** The policy table is versioned data outside the kernel. No program can change it, and its
@@ -82,7 +82,8 @@ Conditional on an owner question:
   a wrong rule inside the checker would be a migration of saved tools.
 - A check on programs cannot replace them. For programs without limits, Rice's theorem rules out a general test, and a
   budget does not change the deeper fact of BND.8 (BND.9).
-- Honest labels need no proof of intent. A record can say what a solve used without claiming who understood what.
+- Honest labels need no proof of intent. A record can say what the system recorded about a solve without claiming who
+  understood what.
 
 ## Alternatives considered
 
@@ -102,8 +103,8 @@ Conditional on an owner question:
   runtime leaves no label (BND.13, BND.49, BND.76).
 - No form of flow control closes every channel (BND.46, BND.77). A determined user can rebuild any search from base
   parts (BND.78).
-- The owner of a local install can change the table or the program. The boundary is an honest description of what a
-  solve used, on a tool that ships no solver (BND.82).
+- The owner of a local install can change the table or the program. The boundary describes what the system recorded
+  about a solve and says what it cannot record (BND.82).
 - Every built-in tool needs a class, a review and a principle record before it ships (INV-12, BND.27, BND.63). No tool
   has those yet.
 

@@ -49,8 +49,8 @@ the integrator and not yet by a reviewer. No flow check, label cost or refusal c
   named, and hot-cold signals. A headless test asserts that no view-model field holds a value for a twist the solver did
   not release (DT-J1 fix-first 6).
 - **BND.5 [B]** Execution belongs to the solver (INV-3, charter S4, R-18, KN5.14). One deliberate action, a key press or
-  a click, commits one previewed operation. A held key never repeats a commit. Nothing commits in the background.
-  Program views and the camera need no such action, because they change no puzzle state.
+  a click, commits one previewed operation or one live twist (ONE.46). A held key never repeats a commit. Nothing commits
+  in the background. Program views and the camera need no such action, because they change no puzzle state.
 - **BND.6 [D]** This chapter owns `Profile`, `AuthorClass`, `ProvenanceBlock`, `BoundaryClass`, the declassifiers, the
   policy table and the option sets (overview, section 2). Chapter 02 owns the checker's rules, chapter 09 the sandbox and
   the fixed rows of the grant table, chapter 05 the stored form of the provenance field and chapter 11 what each route
@@ -161,7 +161,8 @@ These are the facts every option faces. They come from DT-L1 M5 and R2-E3 as R3-
   the strength of the checker and the interpreter (overview, section 7).
 - **BND.23 [D]** A word the solver types or picks has `producer: manual` and `author: own`. A word entered by a program
   has that program's block. A 0.4 macro enters with `author: own`, `producer: import(...)`, `depends: not_recorded` and
-  its captured source digest in `legacy`, and it gains no exception by that (PS1.33).
+  its captured source digest in `legacy`, and it gains no exception by that (PS1.33). The field reads how the word
+  entered, not who thought of it (BND.20).
 - **BND.24 [D]** A word built from parts cites the parts' blocks and carries the join of what they record. Copying,
   saving, exporting and re-importing keep the block (PS1.32). A value chosen through a state-derived branch does not lose
   its label because its letters came from an own macro.
@@ -272,10 +273,10 @@ These exist under every option, so the policy can be set later without a redesig
   }
   ```
 
-- **BND.35 [D]** A solve record states which assistance classes were used. The host computes `AssistanceSummary` from the
-  journal's provenance blocks and the run records. No program writes it, and recomputing it from the same journal gives
-  the same bytes. A view tool leaves no journal row, so its class comes from the run records. A word the solver retyped
-  appears as the solver's word (BND.13).
+- **BND.35 [D]** A solve record states which assistance classes the system recorded. The host computes
+  `AssistanceSummary` from the journal's provenance blocks and the run records. No program writes it, and recomputing it
+  from the same journal gives the same bytes. A view tool leaves no journal row, so its class comes from the run
+  records. A word the solver retyped appears as the solver's word (BND.13).
 - **BND.36 [O]** Whether labels are shown during a solve or only in records is LQ2 (BND.74, question 6). The summary
   exists either way.
 
@@ -507,10 +508,10 @@ the order implies nothing.
 
 | Set | What a solver's own tool may do in a solving session | How "themselves", "base tools" and "understanding" are read | For | Against |
 | --- | --- | --- | --- | --- |
-| BS1 Provenance | Prepare a preview of any word it computes; the solver commits each one; BM2 records what the preview may depend on (under capability separation, only whether the program read the state) | Authored or forked locally | Simple; most freedom; honest labels | Base tools and understanding are not checked; a copied solver counts after a trivial fork; the line rests on labels |
-| BS2 Base tier | As BS1, but in the solving profile the tool may call only the base tier: an enumerated list of shipped functions, each with a recorded definition and a boundary ruling. The list follows rule 6, plus exact application and composition of named words. It ships no function that searches, minimises, ranks or selects over twists, words or caps. The solver may build such a function from base parts. The research tier runs in the research profile on derived states. | Authorship, plus a capability boundary enforced with either form of flow control; building from base parts is the solver's own development | Matches the principle's wording: the program ships no solver, and the solver builds one from base parts; research stays free | A determined user can rebuild any search; understanding is not checked; every listed function needs the mathematician's ruling, shipped tables and theorem-backed facts included; listed functions compose into forbidden outputs (BND.11), so flow control must also cover what a tool shows, or the list must leave such parts out |
-| BS3 Understanding | As BS2. In addition, the capability to prepare solving previews opens per principle, after the solver passes the competence check on that principle's record | Authorship, base tier and competence checks | Closest to "while understanding its principle"; ties into the learning path | Gating conflicts with soft disclosure unless the checks only label; checks can be gamed; a check shows competence on a task, not understanding (BND.72); writing the checks is substantial work |
-| BS4 Named targets | A solver's own tool may prepare previews only for a target the solver names, which extends the 2 October setup-search allowance to own tools; flow control checks that the target came from the solver. Anything else runs in the research profile. | Authorship; naming the target is the solver's own act | Smallest step from 2 October; easy to explain; enforceable with either form: flow labels check that the target came from the solver, and under capability separation the tool reads no state and reaches it only through the shipped setup search | Restricts assistance more than the principle requires; "named target" needs a definition per tool kind |
+| BS1 Provenance | Prepare a preview of any word it computes; the solver commits each one; BM2 records what the preview may depend on (under capability separation, only whether the program read the state) | Author class (BND.18): created or forked locally. It records how the bytes arrived, not who thought of them. | Simple; most freedom; honest labels | Base tools and understanding are not checked; a copied solver counts after a trivial fork; the line rests on labels |
+| BS2 Base tier | As BS1, but in the solving profile the tool may call only the base tier: an enumerated list of shipped functions, each with a recorded definition and a boundary ruling. The list follows rule 6, plus exact application and composition of named words. It ships no function that searches, minimises, ranks or selects over twists, words or caps. The solver may build such a function from base parts. A research tier (ready-made search, strategies), if LQ16 ships one, runs in the research profile on derived states. | Author class as in BS1, plus a capability boundary enforced with either form of flow control; building from base parts is the solver's own development | Matches the principle's wording: the solving profile ships no solver, and the solver builds one from base parts; research stays free | A determined user can rebuild any search; understanding is not checked; every listed function needs the mathematician's ruling, shipped tables and theorem-backed facts included; listed functions compose into forbidden outputs (BND.11), so flow control must also cover what a tool shows, or the list must leave such parts out |
+| BS3 Understanding | As BS2. In addition, the capability to prepare solving previews opens per principle, after the solver passes the competence check on that principle's record | Author class as in BS1, base tier and competence checks | Closest to "while understanding its principle"; ties into the learning path | Gating conflicts with soft disclosure unless the checks only label; checks can be gamed; a check shows competence on a task, not understanding (BND.72); writing the checks is substantial work |
+| BS4 Named targets | A solver's own tool may prepare previews only for a target the solver names, which extends the 2 October setup-search allowance to own tools; flow control checks that the target came from the solver. Anything else runs in the research profile. | Author class as in BS1; naming the target is the solver's own act | Smallest step from 2 October; easy to explain; enforceable with either form: flow labels check that the target came from the solver, and under capability separation the tool reads no state and reaches it only through the shipped setup search | Restricts assistance more than the principle requires; "named target" needs a definition per tool kind |
 
 - **BND.67 [D]** What each set writes into the policy table:
 
@@ -542,11 +543,11 @@ the order implies nothing.
   the solver names and the repair list at a named cap. Research-profile output never becomes a preview in a solving
   session. No solver-tool solving preview is enabled until the boundary is set.
 - **BND.70 [D]** The integrator's leaning, for discussion only: build BM1 to BM5 in any case, with the form LQ21 chooses,
-  and start the joint discussion from BS2 with the flow rule available. The program then ships no solver, the solver may
-  build one from base parts, and the line rests on capabilities and flow control rather than on guessing what a program
-  computes. It does not gate learning. This is not a decision, and it presets neither LQ21 nor the route. Round 3's
-  corrections weaken one reason for it: labels alone leave the stop channel open, so BS2 with flow labels also needs a fix
-  of BND.51.
+  and start the joint discussion from BS2 with the flow rule available. The solving profile then ships no solver, the
+  solver may build one from base parts, and the line rests on capabilities and flow control rather than on guessing what
+  a program computes. It does not gate learning. This is not a decision, and it presets neither LQ21 nor the route.
+  Round 3's corrections weaken one reason for it: labels alone leave the stop channel open, so BS2 with flow labels also
+  needs a fix of BND.51.
 - **BND.71 [P LQ2]** The joint setting. The round table explains BS1 to BS4 and the facts of section 2 to the owner in
   plain language. The owner and the integrator go through the questions of section 12. The result is a versioned policy
   table and an owner decision record. It comes before LP6 (PHS.38), and LQ21 comes earlier, before LP2. LX-3's counts
@@ -555,12 +556,13 @@ the order implies nothing.
 ## 12. Understanding and the questions for the joint setting
 
 - **BND.72 [D]** EV5 can supply the means of understanding. It cannot certify understanding (R3-M4). A principle record
-  gives the specification, the reason, the failure of a dropped hypothesis and a hand derivation. A competence check shows
-  that a person completed a task. Neither shows what they understood, so "understanding" in BND.3 stays a promise the
-  solver makes. This holds under every option.
+  gives the specification, the reason, the failure of a dropped hypothesis and the derivation of an instance. A
+  competence check records that a task was completed in this install, with the help used inside the program. Neither
+  shows what anyone understood, so "understanding" in BND.3 stays outside what the software can establish; how the
+  boundary treats that is the joint setting's question. This holds under every option.
 - **BND.73 [P LQ14]** Under LQ14's recommendation, competence checks guide and do not lock (EV5.8). If the owner selects
-  BS3, the check gates the capability to prepare solving previews per principle (EV5.9). That is a change of LQ14's answer
-  and of chapter 04, and it needs the owner's word. No learning result grants a capability until then.
+  BS3, the check gates the capability to prepare solving previews per principle (EV5.9), as LQ14 foresees; that needs the
+  owner's word. No learning result grants a capability until then.
 - **BND.74 [O]** The questions for the joint setting, from the partition, then those round 3 added:
   1. Does "assists solving" exclude a tool whose single preview completes the puzzle?
   2. Is a tool written by another person treated as built-in, as own, or as a class of its own? When, if ever, does an
@@ -594,7 +596,8 @@ the order implies nothing.
   mathematics (INV-5), and a claim's strength never grants a capability.
 - **BND.82 [D]** The owner of a local install can change the policy table or the program. A record can name the policy
   identity it ran under. Nothing can stop a person from changing their own copy, and this project does not try. The
-  boundary is an honest description of what a solve used, on a tool that ships no solver.
+  boundary describes what the system recorded about a solve, and says what it cannot record. Under the interim reading,
+  nothing shipped in the solving profile chooses a solving word by itself.
 
 ## 14. Errors
 

@@ -223,8 +223,8 @@ The design keeps the part that must be right for the puzzle to stay correct smal
 
 Two consequences follow:
 
-- A bug in the language can make a tool lie. It cannot corrupt a session, commit a word the solver did not see, or turn a
-  claim into a proved one.
+- A bug in the language can make a tool lie, and a bug in the word function can show a wrong word. It cannot corrupt a
+  session, commit a word the solver did not see, or change a stored claim.
 - The boundary mechanisms that rest on the checker or the interpreter (flow control, BM2) are only as strong as those
   parts. Their limits are stated in chapter 07.
 

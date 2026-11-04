@@ -259,7 +259,8 @@ operation model_info(identity: IdentityBlock) -> ModelInfo
   (ENG-0J section 4).
 - **KN2.9 [B]** Nothing is reused from an earlier revision: no certificate, seed, hole count or pose-table index. A
   composed fast path is trusted only after an agreement test against per-twist replay, and every replay test states which
-  check it ran (ENG-0J section 4).
+  check it ran (ENG-0J section 4). This is a rule on what an engine computation takes as input. A cached read result with
+  equal inputs is a separate case, and a permission is never revived (R-08, ONE.10).
 - **KN2.10 [D]** Words of any recorded length must work. The longest literal word stored flat has 2,352,984 letters
   (stage 18 lattice phase, step 14), and the 53 words of that phase hold 13,231,266 letters in one stream. Stage 18's
   admission bound is 10⁷ letters per word (partition 10.3). Composed words go further: 166,788,405 letters checked by
@@ -540,7 +541,8 @@ query receipt(command: CommandId) -> Receipt
 
 - **KN7.3 [B]** A job's outcome is completed, cancelled, cut off or error. Each result is bound to its input digest, its
   parameters and what it covered. The view model reads a result only after its digest matches the shown revision. An
-  empty list comes only from a completed job and names its cap and revision (ENG-0J section 4).
+  equal digest after an undo is a match (R-08, ONE.10). An empty list comes only from a completed job and names its cap
+  and revision (ENG-0J section 4).
 
   ```text
   JobResult = {

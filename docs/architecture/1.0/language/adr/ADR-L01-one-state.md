@@ -43,6 +43,9 @@ state is, what else may look like a state, and how any of it can become real.
 - **ADR-L01.7** The view model holds no puzzle copy. An adopted bundle is a read-only image of one revision, replaced
   whole, and nothing decides from it (ONE.59 to ONE.61). The renderer draws no uncommitted state as the session state,
   with two named exceptions, each drawn as what it is (ONE.62).
+- **ADR-L01.8** A live twist is the one commit with no preview: an immediate complete operation that the solver's key
+  names and the active protection gates (ONE.46, ONE.47). This reads charter S4 with solving workflow 4.1 and DT-M1 C4,
+  and the owner confirms it (ONE.78).
 
 ## What this record does not decide
 
@@ -96,7 +99,7 @@ counterexample above comes from note N1, which stands at (theorem, producer) unt
 
 ## What the owner accepts
 
-Accepting this record accepts ADR-L01.1 to ADR-L01.7 and the [D] clauses they cite.
+Accepting this record accepts ADR-L01.1 to ADR-L01.8 and the [D] clauses they cite.
 
 New integrator rules the owner may overrule (chapter 08, section 17):
 
@@ -106,5 +109,5 @@ New integrator rules the owner may overrule (chapter 08, section 17):
 - ONE.40: the engine discards a preview when the state revision moves.
 - ONE.41: on screen means presented.
 
-Two clauses read the partition, and the owner may read it differently: ONE.12 ("shows the stale state") and ONE.61
-("holds no puzzle copy").
+Four clauses read the sources, and the owner may read them differently: ONE.12 ("shows the stale state"), ONE.21 with
+EV3.12 (the base of an imported value), ONE.61 ("holds no puzzle copy") and ONE.78 (charter S4 for a live twist).

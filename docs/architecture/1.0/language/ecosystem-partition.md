@@ -1,6 +1,6 @@
 # The language's ecosystem: partition and owner questions
 
-Status: **draft for the owner, step 1 of the language kickoff of 3 November 2026, revised after rounds 1 to 3 of the
+Status: **draft for the owner, step 1 of the language kickoff of 3 November 2026, revised after rounds 1 to 4 of the
 round table. Not accepted.** Nothing on this page is an ADR, a frozen architecture or a chosen syntax. The page divides
 the ecosystem of the project's own language into components with boundaries. It also maps every capability the kickoff
 names to a component and lists the decisions the owner takes. The owner confirmed the direction, and the full text
@@ -37,7 +37,8 @@ and contracts, then source and test evidence, then the wiki.
 
 ### 1.2 Invariants
 
-Every component below is built on these twelve invariants. Each restates a binding source. None is a new decision.
+Every component below is built on these twelve invariants. INV-1 to INV-11 each restate a binding source, and none is a
+new decision. INV-12 is a proposal built on the owner's 3 November principle: no owner text names a principle record.
 
 - **INV-1 One mechanics, one authoritative state.**
   - Each session has exactly one authoritative puzzle state. The engine owns it and the session store records it.
@@ -59,6 +60,8 @@ Every component below is built on these twelve invariants. Each restates a bindi
 - **INV-3 Execution only by the solver's action.**
   - A program can at most prepare a preview. Only an explicit user action commits it.
   - The commit takes one action on a fresh preview (charter S4, DT-M1 C4), and key repeat never repeats a commit (R-18).
+  - A live twist has no preview: it is an immediate complete operation under the active protection, taken by one explicit
+    solver action (solving workflow 4.1, DT-M1 C4; chapter 08 reads charter S4 for it).
   - The commit names the preview on screen. The shell mints the user-action token from a non-repeating key-down and
     binds it to that preview's ID and to the digest of its literal letters, together with the model identity, the menu
     identity, the menu-order digest and the contract revision. The token never binds a normal form (4.1). The engine
@@ -107,14 +110,18 @@ Every component below is built on these twelve invariants. Each restates a bindi
     build (section 12), so it is owner question LQ21.
   - The owner and the integrator set the policy together.
   - Until then, built-in tools keep the 2 October boundary and the 17 October exception.
-- **INV-12 Understanding is a deliverable.**
+- **INV-12 The means of understanding are a deliverable.**
   - Every built-in tool ships with viewable source and a principle record:
     - an exact specification: the function, its domain, and what an empty or negative answer means;
     - the lemma or certificate it rests on, with its evidence;
-    - one small instance on the real geometry that a person can check by hand;
-    - its decomposition into base parts.
-  - Every result can be traced to the primitives and the evidence it rests on.
-  - The 3 November principle presumes this understanding.
+    - one small instance on the real geometry whose steps a person can check by hand from named givens;
+    - its decomposition into base parts;
+    - the parts a person writes: a step map, the reason, the failure of a dropped hypothesis, what an answer does not
+      mean, the derivation of the instance, the prerequisites and the leaf specifications.
+  - Every result the runtime produces can be traced to primitives and evidence. An imported result traces to its stored
+    bytes and source label, and the trace says that its producer is absent.
+  - The 3 November principle presumes that a solver understands their tool's principle. The program can supply only the
+    means.
 
 ## 2. The partition at a glance
 
@@ -211,7 +218,7 @@ entry.
 | LB3 Jumbling library | Menus (A4₀ ⊆ Λ, I_a). Admissibility classes and certificates; straddlers; blocked twists. N, D and Φ; heights and n₂, n₄, n₆, branches and domains through the icosian tree (LB1; the per-revision batch is KN2's); units; clean steps; excursion along a word. ν over F2 and F5, and the 36 corrections; solving for a correction combination is research tier only (section 11). The three separate end tests: retained checkpoint, label checkpoint, sticker test. The Jumble on and off rules. Protection verdicts that carry their level: pose-based inside Jumble, label-based in 600-cell-Full, never crossing over. The repair list at a cap the solver names (17 October). Shown facts follow DT-J1 rule 6. |
 | LB4 Representations library | Exact geometry and display geometry. Charts with a declared domain, inverse and loss. A chart's declared properties are decided exactly at exact camera poses (the identity or an element of K⁺): domain by an exact region test (KN3's polytope operations), injectivity by a theorem or an exact region test, and section membership on the posed vertices, to which convexity reduces it. A per-vertex test can refute a region property and cannot establish one (DT-L1 R3-M2). Between those poses, whether a point lies in the chart's domain is a display decision that decides nothing (INV-4). Per-object layouts are evaluated per revision; how projection charts are evaluated is LQ7 (8.5). Projections: perspective, stereographic, local chart, Hopf rings, two hemispheres. True sections, slabs and clips, decided exactly and then drawn. Atlases; trees; cell complexes with dimension-tagged incidence; state graphs. Declared properties checked separately: homomorphism, injectivity, embedding, isometry. Linked selection across representations by canonical ID. |
 | LB5 Research library | Restricted search with deterministic budgets. A search record names its family, alphabet, bounds, beam, seed and stop reason. A negative result is scoped to its declared search, with closure-set certificates where they exist. Search reductions such as minimality and dynamic targets are recorded as lemmas, so a reduced search's negative reaches its full family only through the lemma. Strategies, selectors and ranks, with checked strict decrease. Theorem schemas: hypotheses decided on an instance and the conclusion replayed. Conditional models: regional profiles, quotients, partial actions. Admitted domains, with rejection outside them. Family recognition by exact matching. Experiment branches and run records. Certificate builders. Replay and import of the research formats (10.3) through PS3's import table. |
-| LB6 Built-in tools | The tools 1.0 ships, written with LB1 to LB5 where possible. Each is viewable and forkable, ships its principle record (INV-12) as data in its module manifest and declares its boundary class (BM5). The record's hand-checkable instance runs as a headless fixture, its decomposition is generated from the IR's call graph and kernel calls, and its lemma or certificate resolves to an evidence envelope. A fork inherits no evidence. |
+| LB6 Built-in tools | The tools 1.0 ships, written with LB1 to LB5 where possible. Each is viewable and forkable, ships its principle record (INV-12) as data in its module manifest and declares its boundary class (BM5). The record's instance, whose steps a person can check by hand from named givens, runs as a headless fixture. Its decomposition is generated from the IR's call graph and kernel calls, and its lemma or certificate resolves to an evidence envelope. A person writes what a generated graph cannot give: a step map, the reason, the failure of a dropped hypothesis, what an answer does not mean, the derivation, the prerequisites and the leaf specifications. A fork inherits no evidence. |
 | LB7 User modules | The solver's tools, macros, recipes, layouts and bindings, and forks of built-in tools, in a local workspace. |
 
 ## 6. EV: the environment
@@ -222,7 +229,7 @@ entry.
 | EV2 Debugger, replay and profiler | Stepping through the IR and inspecting values. Deterministic replay of a run from its record. The provenance graph of a result, expanded down to primitives on demand; a long step is cited by word digest and positions. A step-through of the independent checker's per-claim trace. A cost and budget profile. Read-only travel through the journal. |
 | EV3 Source and UI linkage | Declarative views, panels, controls and overlays as view-model nodes ("code grows into UI"). Program output carries its base revision and shows the stale state (charter D2) until it is recomputed. A derived state appears only through a display plan that names its derivation and base revision. Picking returns a display instance, which maps to a canonical ID and a source location. Round trip only for declared parts: parameters, layouts and defaults. The relationship strip's statements are typed relations of the same grammar, so code, strip and theory book share one grammar. Each relation carries its level and is computed per revision, never per frame (R-19), and "none: off the lattice" is a value distinct from "unknown". The strip's data contract can join EN3's view-model fields now; its design waits for the design line. |
 | EV4 Commands, bindings, macros, recording | A command the language defines becomes a command-table entry and appears in the palette (charter E5). Bindings follow DT-M1: (key, context) maps to a command ID with absolute arguments, and a key bound to a kernel command row dispatches without the interpreter. Portable layers hold physical key codes only, with prefix-code checks and checks per layout. Only camera, list-movement and preview-scrub keys repeat. Macros are words with model and menu identity, in one macro base for both puzzles. A recording stores command IDs, arguments and canonical IDs, never pixels, and can be turned into source. |
-| EV5 Docs, explanations, learning path | Reference docs generated from source. The principle record of each built-in tool, with a provenance view down to primitives and stage-qualified lemmas. The learning path: use tools, change a parameter, save layouts and bindings, compose recipes and macros, write tools, maintain modules and evidence. Competence checks with soft disclosure. Terms from the glossary, checked by script (charter bar M1). The glossary first gains an entry for every language term: position, pose, sticker, word, recipe, certificate, menu, the evidence labels, the jumbling terms, and "twist" for each puzzle. The mathematician oversees this component. |
+| EV5 Docs, explanations, learning path | Reference docs generated from source. The principle record of each built-in tool, with a provenance view down to primitives and stage-qualified lemmas. The learning path: use tools and read their results, change a parameter, save layouts and bindings, compose recipes and macros, read a principle record and state your tool's principle, write tools, maintain modules and evidence. Competence checks with soft disclosure. Terms from the glossary, checked by script (charter bar M1). The glossary first gains an entry for every language term: position, pose, sticker, word, recipe, certificate, menu, the evidence labels, the jumbling terms, and "twist" for each puzzle. The mathematician oversees this component. |
 
 ## 7. PS: persistence and exchange
 
@@ -286,14 +293,16 @@ Provenance travels with the evidence as data: author, reproducer, scope setter a
 them per theorem.
 
 Existing labels map onto these fields without loss only by format, not by word. The same word means different things in
-different records, and 156 of the 417 JSON files of stages 14 to 19 have no top-level `format` key, while 146 have none
-at any depth (DT-L1 R3-E2). The import table of PS3 maps by (format, field, value), and the full text gives the mapping.
+different records. Of the 417 `.json` files of stages 14 to 19, 156 have no top-level `format` key and 146 have none at
+any depth; counted with the 80 `.json.gz` files, 232 of 497 records have no top-level `format` (DT-L1 R3-E2). The import
+table of PS3 maps by (format, field, value), and the full text gives the mapping.
 
-- The research labels map directly: proved, certificate, computed, measured (an exact computation on finite inputs) and
-  open.
-- The stage 14 to 18 labels map directly: computed, lead, reported and conditional. "Reported" (a program that is not
-  committed) is a replayability fact and stays visible.
-- The command layer's states map directly: verified, recorded, unknown and unchecked.
+These label families all go through that table, and a word can map differently by format:
+
+- The research labels: proved, certificate, computed, measured (an exact computation on finite inputs) and open.
+- The stage 14 to 18 labels: computed, lead, reported and conditional. "Reported" (a program that is not committed) is a
+  replayability fact and stays visible.
+- The command layer's states: verified, recorded, unknown and unchecked.
 - The 0.4 macro-certificate states:
   - states A and B map onto the fields as recorded claims until the 1.0 engine re-verifies them;
   - state C's context (state, orbit, role, protection set, goal) is a check context, held in memory and never
@@ -461,7 +470,7 @@ Stages 14 to 18, from their directories under `research/jumbling/restoration/`:
 | Stage | Techniques | Formats | What the language must express | Components |
 | --- | --- | --- | --- | --- |
 | 14 Blocking structure | Exact locality values Δ(c,d) in Q(√5); the precedence peel T3P with its tests; unlock levels as a greatest fixed point; plateau certificates; lemma chains; letter-by-letter replay without caches | The `t3p-*/1` family (certificate, check, scan, pairs, plus, levels, locality, chain); replay rows (letter, applied, n₂, n₄, n₆, maximum height, Φ, off, digest) | Q(√5) values; fixed points; certificates with exact key sets; observables per letter | LB1, LB3, LB5, KN6 |
-| 15 Lowering machine | Chronological macro certificates (Theorem MC: one certificate per admissible word); the release structure as an AND/OR graph; a good-set controller; the declared search P* (families, exhaustive depth, beam); closure-set negative certificates; termination | `macro-certificate/1` (claims supports, delta, phi, digests, excursion, F, D), `macro-check/1`, the `pstar-*` and `pstar2-*` records | Φ and excursion along words; certificates recomputed claim by claim; search records; scoped negatives | LB3, LB5, KN6, 8.1 |
+| 15 Lowering machine | Chronological macro certificates (Theorem MC: one certificate per admissible word; the stored `macro-certificate/1` format accepts only descending macros ending in a jumble); the release structure as an AND/OR graph; a good-set controller; the declared search P* (families, exhaustive depth, beam); closure-set negative certificates; termination | `macro-certificate/1` (claims supports, delta, phi, digests, excursion, F, D), `macro-check/1`, the `pstar-*` records, `pstar2-stop/1` and `pstar2/2` | Φ and excursion along words; certificates recomputed claim by claim; search records; scoped negatives | LB3, LB5, KN6, 8.1 |
 | 16 Six jams | Retained transport (Theorem X) with reductions; the budget ledger B = D − F; cover tests; conjugated releases; schema bounds; results that depend on the route; negatives over a stated alphabet; minimality and dynamic targets as search reductions | `s16-*/1` records, `jams.json`, whole-descent `macro-certificate/1` runs; about 61 records without a `format` key | Theorem schemas; results tied to their route; reductions recorded as lemmas; import of records without a format key | LB5, PS3 |
 | 17 Routing in the driver | The routing family RR (routing words, helpers, releases, five tail forms); reduced searches gated against brute force; repeated macros bounded by Φ/2 | `s16-rr/1`, `s16-pxrr/1`, `s16-transport/1`; the RR word language | Word languages as values; gates comparing a reduced search with brute force | LB5, KN6 |
 | 18 Tail completion | Whole-cap steps X W V′ W⁻¹; hole profiles; a static plan theorem with a layered integral flow; a group lift; the WC-PLAN rule with exact length admission at most 10⁷; Schreier tables and Jordan witnesses; obstructions; provenance per theorem | `steps.json` with per-step word files; `r22b10/1` and `/2`, `runner-run/3`, `literal-lattice/1`, `lattice-phase-play/1` | Integral flows; the permutation-group toolkit; chunked, chain-verified replay of words up to 10⁷ letters; provenance as data; conditional entries | LB1, LB5, KN6, 8.1 |
@@ -480,9 +489,9 @@ Needs shared by every stage:
 ## 11. The boundary for tools a solver develops: option sets
 
 The principle (owner, 3 November 2026): a tool the solver develops themselves, through the built-in base tools and while
-understanding its principle, that assists solving does not count as the program outputting a solution. The owner and the
-integrator set the exact boundary together. Until then, built-in tools keep the 2 October boundary and the 17 October
-exception.
+understanding its principle, that assists solving does not count as the program outputting a solution by itself. The
+owner and the integrator set the exact boundary together. Until then, built-in tools keep the 2 October boundary and the
+17 October exception.
 
 **The facts every option faces** (DT-L1 M5):
 
@@ -549,7 +558,7 @@ exception.
   - There are three profiles: solving, tool authoring and research.
   - Each grants a set of capabilities and attaches a label.
   - Research on derived states never changes the session state.
-- **BM4 Labelled records.** A solve record states which assistance classes were used.
+- **BM4 Labelled records.** A solve record states which assistance classes the system recorded.
 - **BM5 Boundary classes.**
   - Each built-in tool declares its class under the 2 October boundary, and the class is reviewed when the tool ships.
   - The classes are tracking, analysis, checking, protection, view aid, setup search for a named target, and the repair
@@ -559,10 +568,10 @@ exception.
 
 | Set | What a solver's own tool may do in a solving session | How "themselves", "base tools" and "understanding" are read | For | Against |
 | --- | --- | --- | --- | --- |
-| BS1 Provenance | Prepare a preview of any word it computes; the solver commits each one; BM2 records what the preview may depend on (under capability separation, only whether the program read the state) | Authored or forked locally (BM2) | Simple; most freedom; honest labels | Base tools and understanding are not checked; a copied solver counts after a trivial fork; the line rests on labels |
-| BS2 Base tier | As BS1, but in the solving profile the tool may call only the base tier. The base tier is an enumerated list of shipped functions, each with a recorded definition and a boundary ruling. It follows DT-J1 rule 6 (static facts shown per cap or for what the solver names; no selection by the method; no target the program picks; no existence answer), plus exact application and composition of named words. It ships no function that searches, minimises, ranks or selects over twists, words or caps. The solver may build such a function from base parts. The shipped research tier (ready-made search, strategies) runs in the research profile on derived states. | Authorship, plus a capability boundary (LG3) enforced with either form of flow control (BM2); building from base parts is the solver's own development | Matches the principle's wording: the program ships no solver, and the solver builds one from base parts; research stays free | A determined user can rebuild any search from base parts; understanding is not checked; every listed function needs the mathematician's ruling, including shipped tables (certified setup tables, seeds, the 36 corrections) and static facts that a theorem turns into answers about twists; listed functions compose into forbidden outputs (the F2 and F5 solve over ν), so flow control must also cover what a tool shows, or the list must leave such parts out |
-| BS3 Understanding | As BS2. In addition, the capability to prepare solving previews opens per principle, after the solver passes the competence check on that principle's record (INV-12) | Authorship, base tier and competence checks | Closest to "while understanding its principle"; ties into the learning path | Gating conflicts with soft disclosure unless the checks only label; checks can be gamed; writing the checks is substantial work |
-| BS4 Named targets | A solver's own tool may prepare previews only for a target the solver names, which extends the 2 October setup-search allowance to own tools; flow control (BM2) checks that the target came from the solver. Anything else runs in the research profile. | Authorship; naming the target is the solver's own act | Smallest step from 2 October; easy to explain; enforceable with either form: flow labels check that the target came from the solver, and under capability separation the tool reads no state and reaches it only through the shipped setup search for the named target | Restricts assistance more than the principle requires; "named target" needs a definition per tool kind |
+| BS1 Provenance | Prepare a preview of any word it computes; the solver commits each one; BM2 records what the preview may depend on (under capability separation, only whether the program read the state) | Author class (BM2): created or forked locally. It records how the bytes arrived, not who thought of them. | Simple; most freedom; honest labels | Base tools and understanding are not checked; a copied solver counts after a trivial fork; the line rests on labels |
+| BS2 Base tier | As BS1, but in the solving profile the tool may call only the base tier. The base tier is an enumerated list of shipped functions, each with a recorded definition and a boundary ruling. It follows DT-J1 rule 6 (static facts shown per cap or for what the solver names; no selection by the method; no target the program picks; no existence answer), plus exact application and composition of named words. It ships no function that searches, minimises, ranks or selects over twists, words or caps. The solver may build such a function from base parts. A research tier (ready-made search, strategies), if LQ16 ships one, runs in the research profile on derived states. | Author class as in BS1, plus a capability boundary (LG3) enforced with either form of flow control (BM2); building from base parts is the solver's own development | Matches the principle's wording: the solving profile ships no solver, and the solver builds one from base parts; research stays free | A determined user can rebuild any search from base parts; understanding is not checked; every listed function needs the mathematician's ruling, including shipped tables (certified setup tables, seeds, the 36 corrections) and static facts that a theorem turns into answers about twists; listed functions compose into forbidden outputs (the F2 and F5 solve over ν), so flow control must also cover what a tool shows, or the list must leave such parts out |
+| BS3 Understanding | As BS2. In addition, the capability to prepare solving previews opens per principle, after the solver passes the competence check on that principle's record (INV-12) | Author class as in BS1, base tier and competence checks | Closest to "while understanding its principle"; ties into the learning path | Gating conflicts with soft disclosure unless the checks only label; checks can be gamed; writing the checks is substantial work |
+| BS4 Named targets | A solver's own tool may prepare previews only for a target the solver names, which extends the 2 October setup-search allowance to own tools; flow control (BM2) checks that the target came from the solver. Anything else runs in the research profile. | Author class as in BS1; naming the target is the solver's own act | Smallest step from 2 October; easy to explain; enforceable with either form: flow labels check that the target came from the solver, and under capability separation the tool reads no state and reaches it only through the shipped setup search for the named target | Restricts assistance more than the principle requires; "named target" needs a definition per tool kind |
 
 Questions for the joint setting of the boundary:
 
@@ -585,9 +594,10 @@ Questions for the joint setting of the boundary:
 - No solver-tool solving preview is enabled until the boundary is set.
 
 **Integrator's leaning, for discussion only.** Build BM1 to BM5 in any case, with the form of flow control that LQ21
-chooses. Start the joint discussion from BS2 with the flow rule available. The program then ships no solver, while the
-solver may build one from base parts, and the line rests on capabilities and flow control rather than on guessing what a
-program computes. It does not gate learning. This is not a decision, and it presets neither LQ21 nor the route.
+chooses. Start the joint discussion from BS2 with the flow rule available. The solving profile then ships no solver,
+while the solver may build one from base parts, and the line rests on capabilities and flow control rather than on
+guessing what a program computes. It does not gate learning. This is not a decision, and it presets neither LQ21 nor the
+route.
 
 ## 12. Implementation route and engine language
 
@@ -777,7 +787,8 @@ section 16.
 - **LQ16 The language's 1.0 cut.** Recommended: 1.0 ships the five layers as partitioned here, including the research
   library and the checkers for the research archives (in scope since 3 November); module sharing and formal proofs come
   after 1.0. Alternatives: a smaller cut without the research library (this conflicts with the 3 November scope); or a
-  larger one.
+  larger one. The cut also settles whether the theory book, limited to what the interface shows (EV5.11), covers the
+  language's libraries.
 - **LQ17 Name.** Recommended: keep "C600 Script" with the extension `.c6s` as a working name until the syntax test; the
   owner names the language. Alternatives: name it now.
 - **LQ18 Evidence spikes in this stage.** Recommended: allow LX-1 to LX-9 as experiment code under `work/experiments/`,
@@ -920,3 +931,23 @@ question. Each is corrected in place, and this section keeps the change visible.
 | LX-3 | Six must-refuse cases | Ten | R3-M3 |
 | Default 10, LP2 | The key's property stated without conditions | Four hypotheses | R3-M2 |
 | LP2 | Label-lift property test as a lead | A conformance test; the lemma is proved at status (theorem, producer) until a model review reads it | N1 |
+
+### Corrected after round 3
+
+A check of the text against its sources and the mathematician's round 4 made these corrections. None changes this page's
+structure, and LQ16 gains one sentence. The cards are in
+[DT-L1, round 4](../../../progress/1.0/design-table/topics/language-ecosystem.md#round-4).
+
+| Where | First text | Now | Card |
+| --- | --- | --- | --- |
+| 1.2 | Each invariant restates a binding source | INV-12 is a proposal built on the owner's principle; no owner text names a principle record | R4-M19 |
+| INV-3 | Every commit is one action on a fresh preview | A live twist has no preview: an immediate complete operation under the active protection, taken by one explicit solver action | Source check |
+| INV-12 | Titled "Understanding is a deliverable"; a record of four parts; every result traces to primitives | Titled "The means of understanding are a deliverable"; the parts a person writes are listed; a runtime result traces to primitives and evidence, and an imported one stops at its stored bytes and says its producer is absent | R4-M10, R4-M13, R4-M17 |
+| 8.1 | 156 of the 417 JSON files; the label families "map directly" | The bases are named (417 `.json` files; 497 records with the 80 `.json.gz` files, 232 without a top-level `format`), and every family goes through the (format, field, value) table | Source check |
+| 10.3, stage 15 row | One certificate per admissible word; `pstar2-*` records | The stored `macro-certificate/1` accepts only descending macros ending in a jumble; the two formats are spelled out as `pstar2-stop/1` and `pstar2/2` | Source check |
+| Section 11, the principle | "outputting a solution" | "outputting a solution by itself", as the owner wrote it | R4-M55 |
+| BM4 | Which assistance classes were used | Which assistance classes the system recorded: a retyped word looks like the solver's own | R4-M11 |
+| BS1 to BS4, integrator's leaning | "Authorship"; "the program ships no solver"; "the shipped research tier" | Author class, which records how bytes arrived; "the solving profile ships no solver"; a research tier if LQ16 ships one | R4-M11, R4-M15 |
+| LB6 | The instance; generated parts | The instance's steps are checked from named givens, and the parts a person writes are named | R4-M1, R4-M17 |
+| EV5 | Six learning steps | Seven: step 1 includes reading results, and a step for reading a principle record comes before writing tools | R4-M45, R4-M47 |
+| LQ16 | Nothing on the theory book | The cut also settles whether the theory book covers the language's libraries | R4-M49 |

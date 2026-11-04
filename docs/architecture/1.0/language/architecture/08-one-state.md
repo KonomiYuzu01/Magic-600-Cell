@@ -129,7 +129,11 @@ open_snapshot ──► open ──► closed      closed by: close_snapshot, th
 - **ONE.20 [B]** `derive` applies a word with the same exact kernels and returns an immutable value, or the first refused
   prefix with its outcome and certificates (KN2.11). A refusal changes nothing.
 - **ONE.21 [D]** The base of a derivation is a snapshot or another derived state. A stored derivation names its base by
-  `RevisionRef` or by digest, never by handle, so it can be recomputed later.
+  `RevisionRef` or by digest, never by handle, so it can be recomputed later. Following the chain back gives the value's
+  lineage: the revision of its root snapshot, or, for a value imported under KN2.14, that import's digest and no
+  revision. Lineage is a fact about the value and gives it no session revision. A display plan has its own base, the
+  revision the display computation read (RPI.6), and the two can differ. A plan showing a value with no session ancestor
+  uses its base as an explicit comparison base, which claims nothing about how the value was produced (EV3.12).
 - **ONE.22 [D]** A derived state keeps the level and identity block of its base. A letter of another puzzle is refused with
   `KN1:input.identity_mismatch`. A value moves to a coarser level only by `project` (KN1.9), and nothing lifts it to a finer
   one (KN1.10).
@@ -275,6 +279,12 @@ each step's failure leaves the state unchanged, except where the table says othe
   pieces is allowed only inside a reviewed complete draft, so only inside a preview.
 - **ONE.48 [D]** No interpreter stands on this path. A key bound to a kernel row dispatches without the runtime (default 15), and a
   key bound to a language-defined command can at most reach a preview.
+- **ONE.78 [D]** Charter S4 says that before commit "a turn or macro" shows its full collateral effect, while ONE.46
+  gives a live twist no preview. This chapter follows solving workflow 4.1 and DT-M1 C4, which keep draft and live input
+  apart: S4's preview applies to a turn entered as a draft step, to a macro and to any word; a live twist shows nothing
+  first, because the solver's key names the one letter and the active protection still gates it. This reading of S4 is
+  the integrator's, and it waits for the owner's confirmation. If the owner reads S4 as covering every turn,
+  `twist.apply` gains a preview and ONE.46 changes.
 
 ### What a commit does to everything else
 
@@ -479,8 +489,6 @@ CT-KN5-01 is the preview-swap test itself. CT-ONE-04 extends it to the gap betwe
 - **New integrator rules the owner may overrule.** ONE.3 (no commit row for the runtime at all), ONE.4 (a token on every commit
   row), ONE.34 (previews only inside a solver's command), ONE.40 (the engine discards a preview when the state revision moves)
   and ONE.41 (on screen means presented).
-- **A reading of the partition.** ONE.12 reads section 8.3's "shows the stale state" under rule 3, and ONE.61 reads "holds no puzzle
-  copy". If the owner reads either differently, the partition or the clause changes.
-- **EV3.12.** How a display states the base of a derived value imported without a session ancestor. This chapter adds
-  nothing to it: an imported value stays a derived value with no revision (KN2.14), and the display contract is the open
-  question, shared with chapter 10.
+- **Readings of the sources.** ONE.12 reads section 8.3's "shows the stale state" under rule 3, ONE.21 and EV3.12 read
+  partition EV3's base revision for an imported value, ONE.61 reads "holds no puzzle copy", and ONE.78 reads charter S4
+  for a live twist. If the owner reads any of them differently, the source or the clause changes.

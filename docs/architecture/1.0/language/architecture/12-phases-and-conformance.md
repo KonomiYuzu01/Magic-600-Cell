@@ -711,7 +711,7 @@ Every owner question is still open. The matrix in PHS.38 describes required futu
 | Owner question | Clauses and remaining decision |
 | --- | --- |
 | LQ1 | PHS.38, PHS.60: one language/profiles or an explicit separate-research/product-only arrangement with LP5 scope/adapters stated |
-| LQ2 | PHS.7, PHS.38/PHS.39, PHS.56/PHS.58: joint policy, author classes, declassifiers, display sinks, shipped research-profile exposure and any understanding gate, before LP6 |
+| LQ2 | PHS.7, PHS.38/PHS.39, PHS.56/PHS.58: joint policy, author classes, declassifiers, display sinks, shipped research-profile exposure and any competence gate, before LP6 |
 | LQ3 | PHS.38/PHS.40, PHS.49: evidence model; judgements storage needs its settled rules before the format gate |
 | LQ4 | PHS.30, PHS.38: branches versus research sessions and finish/cancel for pinned jobs, with chapter 08's invariant lifecycles preserved |
 | LQ5 | PHS.22, PHS.38/PHS.55: language/native/per-tool backing and native decomposition if required; the loop and principle obligations remain |

@@ -147,7 +147,7 @@ are source evidence counted from Git blobs. The worked examples cite research re
   an instance only through an AND node with the instance's membership check.
 - **EVD.18 [D]** A claim about a pinned input reaches another revision only by a re-run at that revision or by an exact
   transport that a lemma justifies. Offered elsewhere, it is refused with `EVD:evidence.scope_mismatch`. Exact transport
-  along a gauge is the reused leaf of EVD.4, with the gauge theorem and the checked relation Z = X·γ (KN1.13). A result on
+  along a gauge is the reused leaf of EVD.4, with the gauge theorem and the checked relation Z = X·γ (KN1.16). A result on
   a derived state keeps that state's reachability claim (KN2.13).
 
 ## 4. The order on evidence
@@ -268,8 +268,9 @@ Non-domination forces a = a′, so Sat(a) = Sat(b), and antichains then give a =
 - **EVD.35 [D]** A ceiling of the product is not a declared limit, so it reads row 6, matching the boundary between the
   `budget` and `resource_limit` categories (ERR.16).
 - **EVD.36 [D]** A display phrase carries the claim's scope. A mapped word without its scope text overstates the claim, and
-  a scope that cannot be typed keeps the row recorded (R3-E3). Row 2's word already says "finite". Row 3's word cannot be
-  shown without its phrase.
+  a scope that cannot be typed keeps the row recorded (R3-E3). Every row prints its scope in an explanation, row 2
+  included: "finite instance" alone hides "three letters of family R only". Row 3's word cannot be shown without its
+  phrase. The `claim` field is never a display word.
 - **EVD.37 [D]** A conditional refutation is a conditional neg S. S itself reads open, and no further Claim value is needed.
 
   ```text
@@ -329,7 +330,9 @@ Non-domination forces a = a′, so Sat(a) = Sat(b), and antichains then give a =
   - An existence statement is refuted only by a proof or a complete certificate.
   - A mixed statement is refuted only by a witness x plus a complete negative at x.
 - **EVD.43 [P LQ3]** A negative is proved only for its declared set, by a completed exhaustive search, by a closure-set
-  certificate or by a theorem. The floor lemma and the all-word exclusions on record are negatives proved by a theorem.
+  certificate or by a theorem. The floor lemma (`research/jumbling/theory/open-problems.md`) and the all-word exclusions
+  on record are negatives proved by a theorem. The floor lemma needs a stage-qualified name before it serves as evidence
+  (EVD.2).
   - A cut-off search reads open and keeps its search record.
   - A job that did not complete yields no negative claim (KN7.4). A witness it found counts once it is checked.
   - Offered as a negative anyway, it is refused with `EVD:evidence.negative_without_completion`.
