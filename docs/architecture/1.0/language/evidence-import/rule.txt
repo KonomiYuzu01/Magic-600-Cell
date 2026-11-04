@@ -1,0 +1,9 @@
+Source: Git HEAD blobs of research/jumbling/restoration/14-* to 19-*, read with git cat-file, so both files of a case pair are read.
+A record is a .json, .json.gz, .jsonl or .jsonl.gz blob. The .ia16.gz word files hold no fields.
+The format of a leaf is the innermost enclosing string key `format`. A leaf with none gets the synthetic format path:<stage>/<path without .json or .gz, digit runs as #>, case kept.
+A field is the key path from the record root, with [] for list items and <k> for keys that are numbers, digests or state names.
+Class S, enumerated string: the last key is in the label lexicon, or the value starts with PASS, FAIL, pass, fail, UNKNOWN or INVALID or holds not_claimed.
+In addition the value has at most 80 characters, is no digest, number, word code or path, and its (format, field) has at most 32 distinct values. A null under a lexicon key counts.
+Class B, verdict boolean: the last key names a check, a job's end, a search's coverage, a letter's outcome or a claim (regex in the script). Its value is true or false.
+Not triples: prose fields (scope, limits, not_claimed and the like), kept word for word and counted; payload booleans, counted by last key; numbers.
+Mapping: first matching rule over format|field=value in rules.txt. Mapped means at least one field of 8.1 is set; rec means recorded word for word, with the reason.

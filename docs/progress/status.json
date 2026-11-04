@@ -1,9 +1,9 @@
 {
   "schema": 2,
-  "updated": "2026-10-27",
-  "current": "2.3",
+  "updated": "2026-11-04",
+  "current": "1.0-lp0",
   "paid_api_ceiling_usd": 100,
-  "tracks": [{"id": "0.4.1", "title": "0.4.1"}, {"id": "stage-2", "title": "Stage 2"}, {"id": "migration", "title": "1.0 migration (path B)"}, {"id": "jumbling", "title": "1.0 jumbling puzzle"}],
+  "tracks": [{"id": "0.4.1", "title": "0.4.1"}, {"id": "stage-2", "title": "Stage 2"}, {"id": "migration", "title": "1.0 migration (path B)"}, {"id": "jumbling", "title": "1.0 jumbling puzzle"}, {"id": "language", "title": "1.0 language"}],
   "steps": [
     {"id": "0.4.1-1", "track": "0.4.1", "title": "Reproducible identity and harness", "status": "done", "acceptance": "A fresh clone passes the backend regressions, runs every other test without a missing-directory error, leaves git status empty, builds with an identity that is independent of the checkout path and line-ending setting and binds every harness file, and prints that identity without compiling.", "acceptance_source": "docs/wiki/concepts/build-identity-v2.md", "blocker": null,
      "items": [
@@ -120,6 +120,16 @@
       {"id": "bulk", "title": "Bulk: why the words that lower N get longer", "weight": 1, "done": false, "evidence": null},
       {"id": "card8", "title": "Card 8: the six jams of two-level P* (descents outside its families, or a negative certificate with excursion)", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/136"},
       {"id": "rr-driver", "title": "Routing releases in the driver (P***): family RR, checks, runs from the nine stops of P**", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/137"}
+     ]},
+    {"id": "1.0-lp0", "track": "language", "title": "Language contracts", "status": "in_progress", "acceptance": "Astra review in at least two shards with no open blocker or major; the owner accepts the ADR drafts that need no spike evidence: every draft except the form of flow control in ADR 6, ADR 7 and ADR 12, which follow the route inside LP1.", "acceptance_source": "docs/architecture/1.0/language/ecosystem-partition.md", "blocker": null,
+     "items": [
+      {"id": "partition", "title": "Ecosystem partition and owner question list", "weight": 1, "done": true, "evidence": "docs/architecture/1.0/language/ecosystem-partition.md"},
+      {"id": "architecture", "title": "Architecture document drafted", "weight": 3, "done": true, "evidence": "f7bb5d3f"},
+      {"id": "adr-drafts", "title": "ADR drafts written", "weight": 2, "done": true, "evidence": "683c863a"},
+      {"id": "glossary", "title": "Glossary entries for every language term", "weight": 1, "done": true, "evidence": "docs/architecture/1.0/language/architecture/04-environment.md"},
+      {"id": "astra-review", "title": "Astra review with no open blocker or major", "weight": 2, "done": true, "evidence": "docs/progress/1.0/design-table/topics/language-ecosystem.md"},
+      {"id": "owner-answers", "title": "Owner answers to LQ1 to LQ21", "weight": 2, "done": false, "evidence": null},
+      {"id": "adr-acceptance", "title": "Owner accepts the ADR drafts that need no spike evidence", "weight": 1, "done": false, "evidence": null}
      ]}
   ]
 }

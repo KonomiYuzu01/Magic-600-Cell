@@ -21,6 +21,7 @@ Status: **recorded, not started.** On 7 October 2026 the owner asked whether Rus
 - The 1.0 charter leaves the engine language open: the engine is re-implemented or wrapped and proven equal to 0.4 by the differential oracle (charter section 4).
 - The Rust-only boundary was dropped on 29 September 2026 so that Godot and Blender fit; Rust itself was not ruled out.
 - The GUI language follows the stage 2.4 renderer selection: C# for Godot, C++ for Qt, and C++ or Rust for the bare Direct3D 12 path ([renderer-candidates](../decisions/renderer-candidates.md)).
+- Since the owner's decision of 3 November 2026 the engineering line develops the project's own language first, and this question became owner question LQ8 of its draft [architecture document](../../architecture/1.0/language/architecture/11-route-and-spikes.md). Spikes LX-5 and LX-6 feed LQ8, and no spike has run. The choice of engine language comes before the language's route (LQ9).
 
 ## Proposal
 

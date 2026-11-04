@@ -1,0 +1,87 @@
+P1@@Stated absence: this part was not replayed or re-executed here; true can mean not done. 19/README.md:93-94
+P2@@Reused, not recertified: true means no new certificate.
+P3@@The premises stay hypotheses and are named in the record: a conditional claim.
+P4@@The uniform guard fails on this instance: a refutation inside a record whose status says complete.
+P5@@Stated as not established: stays open.
+P6@@Exhaustive negative over the record's declared set; read with its scope text.
+P7@@The inventory of the declared set is not complete, so no negative stands on it.
+P8@@The declared set was covered in full.
+P9@@Actual replay of the named part.
+P10@@Fresh exact check of the named part.
+P11@@Reused from an earlier pinned result.
+P12@@Checked by the reviewer's own program.
+P13@@A check of the named part; the key does not say replay, so the mode reads as fresh exact audit (inferred from the name).
+L1@@Limit of the claim: kept word for word with the scope text; no field of 8.1 takes it.
+L2@@No carrier covers a straddler: a negative for level 1 only. 16/scripts/release.py:100-106
+H1@@The reachability of this state is open (LG2 discipline 4; 4.1); a claim of its own, apart from the record's other claims. 19/README.md:90-92
+T1@@Row of an exhausted declared family: a scoped negative, not an obstacle to descent; budget is the ledger F-D, no resource. 14/scripts/t3p.py:557-638; 15/README.md:127-129
+T2@@A witness with F-D<0, certified by t3p-certificate/1. 14/scripts/t3p.py:557-638
+T3@@Chain stop: no round in the scan family at the chain's end. 14/scripts/t3p.py:636-638
+F1@@The family as declared was searched exhaustively. 15/README.md:212
+F2@@Family R not exhausted: the flag is depth<=2, so false at depth 3 even with no truncated target. 15/scripts/pstar.py:285
+F3@@Stop search of R without a beam, exhausted as declared. 15/scripts/pstar2.py:115-118
+F4@@This target's search was not cut by the beam: a fact of the search record. 15/scripts/pstar.py:275-283
+F5@@Exact reductions of the unbeamed search: the negative reaches family R only through them (LB5). 15/README.md:240-246
+F6@@Prose description of the beam: scope text of the search record. 15/scripts/pstar.py:287
+R1@@Stop of the declared search with R under a beam: not a negative certificate for R. 15/README.md:212-214
+R2@@Two-level stop: a negative certificate for the five families as declared only. 15/README.md:236-242
+R3@@Final stop of P** or P***: R unbeamed, X1, X2, minimal X3, RR; minimal X3 through its lemma. 16/scripts/pxrun.py:92-100; 17/scripts/pxrr.py:98-120
+R4@@Segment stop inside a run; the next segment follows, so no negative. 16/scripts/pxrun.py:1-8
+R5@@Mid-run snapshot in the repository; the run went on (7305 shows two steps; 15/README.md:208). 15/scripts/pstar.py:925
+R6@@First write left in place: the record states no outcome. That the integrator stopped this run by hand is only in the README, a separate fact (EVD.47). 17/README.md:151; 17/scripts/pxrr.py:54
+E1@@Beam search that ran to its depth: not exhaustive although the word says exhausted. 14/scripts/retained_search.py:107-148
+E2@@Second pass: the earlier best word replayed, no new search. 14/scripts/retained_search.py:250-262
+E3@@Prediction of the calculus, compared with the replay: not a result.
+K1@@Per-letter or per-case engine outcome (KN2); the check comes from the enclosing record.
+K2@@Per-grip exact certificate kind inside a reviewer's record.
+C1@@The enumeration of the declared set finished (False when limited). 16/scripts/routing.py:89-133
+C2@@macro.py check: the certificate's own program re-verifies, so producer; replay is actual. 15/README.md:414
+C3@@t3p.py check: the scan's own program re-evaluates each round. 14/scripts/t3p.py:398-407
+U1@@Sticker sense, not pose identity. docs/progress/1.0/jumbling-handoff/research-data.md:33
+U2@@Phase not run: 8.4 keeps empty, not found and not run apart, and 8.1 has no value for not run.
+U3@@The runner's own ladder and names, read with config.mode. tutorial/07-records.md:196,237-240
+U4@@Run parameter or source identity: reproducibility key, not evidence.
+U5@@The run checked its model files.
+V1@@A failed review attempt: no verdict.
+V2@@Review of a conditional statement; the premises are named.
+V3@@Model review of a written proof in an assigned scope; the claim needs the record's scope text. 19/README.md:32-34
+V4@@Symbolic part reviewed, arithmetic reused.
+V5@@Scoped re-verification that closes a finding.
+V6@@Review finding and its workflow state: verified means the finding is real, so it speaks against the claim.
+V7@@Publication integrity of the archive, not a mathematical claim.
+V8@@One word holds two claims (a finite result and a general proof candidate); a reader must split it.
+V9@@Positive exact result of the producer.
+V10@@Producer finished; reviews pending.
+V11@@Proof derived and submitted; no review yet.
+V12@@Conditional on the parent review the text names.
+V13@@Actual replay by the producer's program.
+V14@@A reviewer's exact program: model review with a fresh audit; KN6 stays reserved for a 1.0 checker. 19/README.md:32-34
+V15@@Producer's own audit: a PASS with no reviewer named in its format.
+J1@@The job finished; the word says nothing about the result.
+J2@@The declared set was covered, and the stop names it.
+J3@@Rejected by a necessary condition at this window.
+D1@@Discriminator or title, not a verdict.
+D2@@Run mode parameter.
+D3@@Decoder rule text.
+D4@@Expected result of a test on a synthetic input.
+M1@@Method fact of the check: belongs to the run record.
+Z1@@Predicate of the instance; the record's check covers it, kept word for word.
+X1@@Recorded claim until the 1.0 engine re-verifies it. Partition 8.1; 10_V1_ARCHITECTURE.md:306-307
+X2@@Check context: memory only, never persisted, no import row. 10_V1_ARCHITECTURE.md:308
+X3@@Preview token: a permission, outside the evidence fields (INV-5). 10_V1_ARCHITECTURE.md:309
+X4@@Engine checked this result at this revision; memory state, H-08. command-table.md:21
+X5@@Carried from a record, not re-verified: claim keeps its source word. command-table.md:21
+X6@@A conclusion lacks evidence: a property of a result, never an error. 10_V1_ARCHITECTURE.md:526-531
+X7@@Not evaluated: no check ran. command-table.md:21
+X8@@The author's proof. restoration/README.md:172
+X9@@Exact computation with a replayable record. restoration/README.md:173
+X10@@Exact, by the script named. research-data.md:13-14; 14/README.md:11
+X11@@A result on finite inputs (exact computation). restoration/README.md:173
+X12@@Not settled. restoration/README.md:174
+X13@@An indication, not a result. 16/README.md:12; 17/README.md:17
+X14@@Computed by an analyst's own uncommitted program: a replayability fact that stays visible. 18/README.md:11-12
+X15@@The condition is named. 18/README.md:12
+Y1@@Producer can emit this value; it does not occur in the corpus. Cut off by a CPU or step limit: reads open (8.4).
+Y2@@Producer can emit this value; it does not occur in the corpus. Target reached: a positive result of the run.
+Y3@@Producer can emit this value; not in the corpus. Beam-limited stop: not a negative certificate.
+Y4@@Producer can emit this value; not in the corpus. Replay disagreed with the prediction: an error of the run.

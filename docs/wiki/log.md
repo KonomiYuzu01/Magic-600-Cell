@@ -5,6 +5,15 @@ Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 ## [2026-11-04] decision | Stage 16 certificates renamed so a Windows checkout is clean
 The owner approved renaming the six stage 16 certificates `PX-<run>.json` to `PX-<run>-cert.json` with their blobs unchanged, because each differed only in case from its run record `px-<run>.json` and a Windows checkout kept one file for both and showed six modified paths; the research stays stopped and the review wrapper is unchanged, since a real implement run on the unfixed base was accepted. A worktree that still holds the pairs takes this merge by running `git checkout --` on the six old `PX-*` paths before the merge and on the six `px-*` paths after it.
 
+## [2026-11-04] update | The language: Astra review of the full text
+The full review ran in three parallel shards at the fast tier: five major and seven minor findings, no blocker, all adopted and applied to the [architecture document](../architecture/1.0/language/architecture/00-overview.md) and the [ADR drafts](../architecture/1.0/language/adr/README.md), with the record in [DT-L1](../progress/1.0/design-table/topics/language-ecosystem.md#astra-review-of-the-full-text). A scoped verification of the fixes passed with no finding. Everything stays a draft for the owner: no ADR is accepted, and no owner question LQ1 to LQ21 is answered.
+
+## [2026-11-04] update | The language: round 4 on what lets a user understand a principle
+The mathematician's check of the explanations, source tracing and learning path, with its follow-up, is applied to the [architecture document](../architecture/1.0/language/architecture/00-overview.md) and recorded in [DT-L1](../progress/1.0/design-table/topics/language-ecosystem.md#round-4). It stays a draft for the owner: no ADR is accepted, no owner question LQ1 to LQ21 is answered, and the glossary rows it adds are proposals.
+
+## [2026-11-04] update | The language: architecture document and ADR drafts
+After the owner confirmed the direction of the ecosystem partition, the [architecture document](../architecture/1.0/language/architecture/00-overview.md) and its [twelve ADR drafts](../architecture/1.0/language/adr/README.md) were written, with round 3 of [DT-L1](../progress/1.0/design-table/topics/language-ecosystem.md) applied. All of it is a draft for the owner: no ADR is accepted, nothing is frozen, no owner question LQ1 to LQ21 is answered, and no spike has run.
+
 ## [2026-11-03] update | The full CI checks run as five parallel shards
 At the owner's request, a full Windows CI run now splits the 60 checks into five time-balanced shards on parallel runners (about 14 minutes of checks each, bounded by the longest test, against about 66 minutes in one job), after a plan job that chooses the mode; a final `headless` job passes only when the plan and every shard passed (`tools/ci/run_headless.py --shard`).
 
