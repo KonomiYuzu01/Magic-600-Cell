@@ -55,8 +55,9 @@ Reading paths:
 
 ### 3.1 Clauses and their status
 
-Normative statements are numbered clauses: `KN5.7` is clause 7 of component KN5. Pillars and routes use `EVD` (evidence),
-`BND` (boundary), `ONE` (one state), `DET` (determinism), `RPI` (renderer and platform independence) and `RTE` (routes).
+Normative statements are numbered clauses: `KN5.7` is clause 7 of component KN5. Pillars and the later chapters use `EVD`
+(evidence), `BND` (boundary), `ONE` (one state), `DET` (determinism), `RPI` (renderer and platform independence), `RTE`
+(routes), `PHS` (phases) and `ERR` (the error registry).
 
 Each clause starts with one status tag. The tag says what would have to change for the clause to change.
 
