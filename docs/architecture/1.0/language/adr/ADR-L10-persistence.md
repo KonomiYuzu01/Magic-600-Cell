@@ -80,7 +80,7 @@ Conditional on an owner question:
   as an edition (PS2.6).
 - Long words need their own storage. The longest literal word stored flat has 2,352,984 letters, and that is about 649
   million characters as J1 rows against 4.7 MB of `ia16` chunks (R3-E4, arithmetic on the record).
-- Path identity has already failed once. On Windows six case pairs collapse, and a checkout walk misses six records
+- Path identity has already failed once. On Windows six case pairs collapsed, and a checkout walk missed six records
   (R3-E2).
 
 ## Alternatives considered

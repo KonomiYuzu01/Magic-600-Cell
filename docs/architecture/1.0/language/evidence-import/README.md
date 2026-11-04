@@ -21,14 +21,21 @@ Run this from the repository root, with Python 3 and Git:
 python docs/architecture/1.0/language/evidence-import/extract_labels.py
 ```
 
-- The script reads the corpus from Git blobs at HEAD, never from a checkout. On Windows six pairs of names under
-  `16-six-jams/results/runs/` differ only in case, so a walk of the checkout would miss six records (DT-L1 R3-E2).
+- The script reads the corpus from Git blobs at HEAD, never from a checkout. At the commit named below, six pairs of
+  names under `16-six-jams/results/runs/` differed only in case, so a walk of a Windows checkout would miss six records
+  (DT-L1 R3-E2).
 - It writes only the two generated files of this folder. It changes no research file.
 - The table on record was made at Git HEAD `7927cb30fb66398315426d8ca17a48ee3874b2d6`. The corpus manifest has SHA-256
   `e2b388befa1671be67219b23c4a565c003c8ae960bd0aa69e07ddb030a669702`.
 - `corpus-labels.json` has SHA-256 `6fcd45325a8789736534d53cd336297a0718c3c4386bb9da5af21fbb0ac13a68`. A run at a later
   HEAD changes the `head` field, and it changes the case-pair and working-tree fields if the checkout differs. The manifest
   digest is what identifies the corpus.
+- The table on record keeps the paths of that commit. On 4 November 2026 the owner approved renaming the six
+  certificates of those pairs to `PX-<run>-cert.json`, with their blobs unchanged ([wiki log](../../../../wiki/log.md)).
+  A run after the rename, at Git HEAD `8af824a4fc8835ebd8c2bd1760a548d9241f4af8`, gives manifest SHA-256
+  `00693f6c3b4c1f04c30f0fd15744c21be155da50c28b9c66c4b4511797aac35d` and no case pairs. Its 411 rows and its totals equal
+  the table on record. Only the `head`, manifest, case-pair and working-tree fields differ, and the `.md` byte count,
+  because the stage 16 README gained its rename note.
 
 ## What it says
 
