@@ -1,0 +1,235 @@
+{
+  "edits": [
+    {
+      "base_sha256": "2a33c5550dca683602ebbdd3b171eeac8457d37b88b3e62cf52079fddbbc74aa",
+      "kind": "body",
+      "module": "S",
+      "replacements": [
+        {
+          "delete_hex": "2020202072657475726e20313b",
+          "insert": "    return exact_add(1, 2585);",
+          "offset": 232
+        }
+      ],
+      "result_sha256": "f6d80e5923ae5029b09046bdafcbea67c287e5c5487403ab5530f2591ce8347c"
+    },
+    {
+      "base_sha256": "2a33c5550dca683602ebbdd3b171eeac8457d37b88b3e62cf52079fddbbc74aa",
+      "kind": "signature",
+      "module": "S",
+      "replacements": [
+        {
+          "delete_hex": "666e206578706f727465642829202d3e20496e74",
+          "insert": "fn exported() -> Text",
+          "offset": 178
+        },
+        {
+          "delete_hex": "2020202072657475726e20313b",
+          "insert": "    return \"edited\";",
+          "offset": 232
+        }
+      ],
+      "result_sha256": "3ba1848292bf9a2aa23be25e973bf17a9bab6659b73ba19e27ffcf46aef41a4a"
+    },
+    {
+      "base_sha256": "2a33c5550dca683602ebbdd3b171eeac8457d37b88b3e62cf52079fddbbc74aa",
+      "kind": "completion",
+      "module": "S",
+      "replacements": [
+        {
+          "delete_hex": "",
+          "insert": "fn completion_point() -> Int effects [] charge [1, 0, 0, 0] {\n    return exact_",
+          "offset": 23305
+        }
+      ],
+      "result_sha256": "c9ea9c2de6d7d754bec3009286b3c34d5953a2f2c882097c0a73b77edb20edcb"
+    },
+    {
+      "base_sha256": "2a33c5550dca683602ebbdd3b171eeac8457d37b88b3e62cf52079fddbbc74aa",
+      "kind": "syntax_break",
+      "module": "S",
+      "replacements": [
+        {
+          "delete_hex": "3b",
+          "insert": "",
+          "offset": 244
+        }
+      ],
+      "result_sha256": "b7111ae45935460a7ba9dc91bc6808debb9076a5ce06d9a4ec4b6bea4ca6bfc1"
+    },
+    {
+      "base_sha256": "127f866371fcdabcd2ed8d3a84df5adea1153a9fe3e4f54833625b85539c329a",
+      "kind": "body",
+      "module": "M",
+      "replacements": [
+        {
+          "delete_hex": "2020202072657475726e20313b",
+          "insert": "    return exact_add(1, 3056);",
+          "offset": 232
+        }
+      ],
+      "result_sha256": "eebfd54e98f28976064b4992504f1b9a43e5be6fcf89125d642ee056846ea24c"
+    },
+    {
+      "base_sha256": "127f866371fcdabcd2ed8d3a84df5adea1153a9fe3e4f54833625b85539c329a",
+      "kind": "signature",
+      "module": "M",
+      "replacements": [
+        {
+          "delete_hex": "666e206578706f727465642829202d3e20496e74",
+          "insert": "fn exported() -> Text",
+          "offset": 178
+        },
+        {
+          "delete_hex": "2020202072657475726e20313b",
+          "insert": "    return \"edited\";",
+          "offset": 232
+        }
+      ],
+      "result_sha256": "ab451290275fd2a3aadeda30e07d694dfcdee3439fd7d428b75d499ac57cd6d1"
+    },
+    {
+      "base_sha256": "127f866371fcdabcd2ed8d3a84df5adea1153a9fe3e4f54833625b85539c329a",
+      "kind": "completion",
+      "module": "M",
+      "replacements": [
+        {
+          "delete_hex": "",
+          "insert": "fn completion_point() -> Int effects [] charge [1, 0, 0, 0] {\n    return exact_",
+          "offset": 129694
+        }
+      ],
+      "result_sha256": "92e89bed4ee1ecf41d62d2408aa0795c53970d7b7ea66abc39310783ab82d5db"
+    },
+    {
+      "base_sha256": "127f866371fcdabcd2ed8d3a84df5adea1153a9fe3e4f54833625b85539c329a",
+      "kind": "syntax_break",
+      "module": "M",
+      "replacements": [
+        {
+          "delete_hex": "3b",
+          "insert": "",
+          "offset": 244
+        }
+      ],
+      "result_sha256": "6768635af883f3fb03ed10edc4c51c84ba115f830a56dd3873bef0cf2842d1e2"
+    },
+    {
+      "base_sha256": "0197cea59717d117aef3d71b983d041196dcff7723e6c6a3afa3bfe58cdecd6d",
+      "kind": "body",
+      "module": "L",
+      "replacements": [
+        {
+          "delete_hex": "2020202072657475726e20313b",
+          "insert": "    return exact_add(1, 231);",
+          "offset": 232
+        }
+      ],
+      "result_sha256": "fe2111aa18f6cddf6f8f1afcd292b4dfa66914c766fb552b77cfde15eb952deb"
+    },
+    {
+      "base_sha256": "0197cea59717d117aef3d71b983d041196dcff7723e6c6a3afa3bfe58cdecd6d",
+      "kind": "signature",
+      "module": "L",
+      "replacements": [
+        {
+          "delete_hex": "666e206578706f727465642829202d3e20496e74",
+          "insert": "fn exported() -> Text",
+          "offset": 178
+        },
+        {
+          "delete_hex": "2020202072657475726e20313b",
+          "insert": "    return \"edited\";",
+          "offset": 232
+        }
+      ],
+      "result_sha256": "2c1a9127cdfe6499cd118f0f50ff4fb47071fd77ac2578354370d4210f4fa1c1"
+    },
+    {
+      "base_sha256": "0197cea59717d117aef3d71b983d041196dcff7723e6c6a3afa3bfe58cdecd6d",
+      "kind": "completion",
+      "module": "L",
+      "replacements": [
+        {
+          "delete_hex": "",
+          "insert": "fn completion_point() -> Int effects [] charge [1, 0, 0, 0] {\n    return exact_",
+          "offset": 640941
+        }
+      ],
+      "result_sha256": "e52f917401091e0efc50c077debb85bed13d2b30aa2d3bcd95f5b15d00b6c3e3"
+    },
+    {
+      "base_sha256": "0197cea59717d117aef3d71b983d041196dcff7723e6c6a3afa3bfe58cdecd6d",
+      "kind": "syntax_break",
+      "module": "L",
+      "replacements": [
+        {
+          "delete_hex": "3b",
+          "insert": "",
+          "offset": 244
+        }
+      ],
+      "result_sha256": "d9578dfe38691633b49d03f8a85bcd5454112558457683f0e79f734a824bc966"
+    },
+    {
+      "base_sha256": "22582a09f166eb7d52c0ebe1f6b05e794e1422c07fba483975d4c95a1911ccd6",
+      "kind": "body",
+      "module": "W00",
+      "replacements": [
+        {
+          "delete_hex": "2020202072657475726e20313b",
+          "insert": "    return exact_add(1, 9545);",
+          "offset": 234
+        }
+      ],
+      "result_sha256": "3dc06208da14bd2ea3fa51f43ec26708d8579c7637996e95ccf3f223f4c82272"
+    },
+    {
+      "base_sha256": "22582a09f166eb7d52c0ebe1f6b05e794e1422c07fba483975d4c95a1911ccd6",
+      "kind": "signature",
+      "module": "W00",
+      "replacements": [
+        {
+          "delete_hex": "666e206578706f727465642829202d3e20496e74",
+          "insert": "fn exported() -> Text",
+          "offset": 180
+        },
+        {
+          "delete_hex": "2020202072657475726e20313b",
+          "insert": "    return \"edited\";",
+          "offset": 234
+        }
+      ],
+      "result_sha256": "f5ed1863b2c04d65fdf6ac67f58c7a4b925874bae762d24f570f2c9bcb83df03"
+    },
+    {
+      "base_sha256": "22582a09f166eb7d52c0ebe1f6b05e794e1422c07fba483975d4c95a1911ccd6",
+      "kind": "completion",
+      "module": "W00",
+      "replacements": [
+        {
+          "delete_hex": "",
+          "insert": "fn completion_point() -> Int effects [] charge [1, 0, 0, 0] {\n    return exact_",
+          "offset": 52694
+        }
+      ],
+      "result_sha256": "82fe850535f876dab611756043ba47220bf01ca4bb98a0b9a6f756e6d6cd882e"
+    },
+    {
+      "base_sha256": "22582a09f166eb7d52c0ebe1f6b05e794e1422c07fba483975d4c95a1911ccd6",
+      "kind": "syntax_break",
+      "module": "W00",
+      "replacements": [
+        {
+          "delete_hex": "3b",
+          "insert": "",
+          "offset": 246
+        }
+      ],
+      "result_sha256": "6cbb6bc0fe4e39a15cc948ad6dcc4c9434c28eb5d49ef34d5aad6c09859e89ce"
+    }
+  ],
+  "reset_between_edits": true,
+  "schema": "lx4-edits-0",
+  "seed": 2026110551
+}
