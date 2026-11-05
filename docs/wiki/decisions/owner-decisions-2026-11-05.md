@@ -3,7 +3,7 @@ id: owner-decisions-2026-11-05
 type: decision
 status: verified
 visibility: public
-summary: Owner decisions of 5 November 2026 - the language walkthrough is confirmed as understood; the nine language experiments and the remaining work run as far as they can now, the questions page is then updated, and everything goes into one pull request; after the owner's answers the architecture is written and then frozen; Codex Astra took more of the experiment and architecture work while the owner's subscription reset lasted, and the work then returned to the original workflow. No language question is answered and no ADR is accepted by these messages.
+summary: Owner decisions of 5 November 2026 - the language walkthrough is confirmed as understood; the nine language experiments and the remaining work run as far as they can now, the questions page is then updated, and everything goes into one pull request; after the owner's answers the architecture is written and then frozen; Codex Astra took more of the experiment and architecture work while the owner's subscription reset lasted, and the work then returned to the original workflow; the reviewed draft stays uncommitted and is reviewed together with the final architecture. No language question is answered and no ADR is accepted by these messages.
 related: [owner-decisions-2026-11-03, owner-decisions-2026-10-02, renderer-candidates]
 supersedes: []
 claims:
@@ -13,6 +13,7 @@ claims:
   - {id: architecture-after-answers, evidence_kind: decision, checked_at: 2026-11-05}
   - {id: astra-takes-more, evidence_kind: decision, checked_at: 2026-11-05}
   - {id: original-workflow-restored, evidence_kind: decision, checked_at: 2026-11-05}
+  - {id: draft-waits-for-final-candidate, evidence_kind: decision, checked_at: 2026-11-05}
 ---
 
 # Owner decisions, 5 November 2026: experiments, one pull request, then the freeze
@@ -31,6 +32,9 @@ The owner gave these decisions in chat messages in Chinese on 5 November 2026. T
 4. **Astra takes more.** The integrator directs Codex Astra to do more of the experiment and architecture work, because
    a subscription reset of the owner's is about to expire. Decision 5 ended this the same day.
 5. **Back to the original workflow.** The owner has used the reset, and the work returns to the original workflow.
+6. **The draft waits for the final architecture.** The review of the draft text used both verification rounds and left
+   three major findings in a draft reference checker. The owner chose not to commit the draft now: it is reviewed together
+   with the final architecture.
 
 ## Integrator readings (the owner may change them)
 
@@ -49,6 +53,8 @@ The owner gave these decisions in chat messages in Chinese on 5 November 2026. T
   `AGENTS.md` gives it: plan checks and full reviews of critical-path, behaviour, contract and design work, the gate
   rulings, escalations, joint attacks and milestone audits. The integrator writes the architecture. Work already done
   under decision 4 stands, with its reviews as recorded.
+- Decision 6 grants no exception to the review rules. The integrator fixes the three findings in the final candidate, each
+  with a stored control, and that candidate gets its own full review before any of the text is committed.
 
 ## Effect
 
