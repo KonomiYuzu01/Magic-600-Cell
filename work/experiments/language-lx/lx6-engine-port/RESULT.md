@@ -6,7 +6,7 @@
 | Owner allowance | `docs/wiki/decisions/owner-decisions-2026-11-05.md`, decision 2, and this implementation packet |
 | Time box | what can be done now; one wrapper call of at most two hours |
 | Frozen candidate | Base `1e7d0074df96cbeb05f55282cf8f6c03fbf4a4ff`; candidate SHA-256 `2bc30f5ebbce03f6e814223637c9cfb437f4fddd1cd387061ecbb80b3111ce6f` |
-| Source and input digests | Per-file source hashes and build flags: `CANDIDATE.json`; frozen reference, asset, specification and compressed-case hashes: `INPUTS.json` |
+| Source and input digests | Per-file source hashes and build flags: `CANDIDATE.json`; frozen reference, asset, specification and compressed-case hashes: `INPUTS.json`. `check.py` and `measure.py` changed after the oracle run, to make the check leave every file unchanged: their entries in `CANDIDATE.json` are the first run's digests, and `HARNESS.json` pins the bytes that run now, which `measure.py` verifies |
 | Oracle input manifest | `work/experiments/language-lx/inputs/MANIFEST-oracle.json`, SHA-256 `eba3c43f476396ecebee1f3c28dff0e4fee68e131fe7ef278e69734205343612` |
 | Exported model SHA-256 | `223edad95f991ea1ada8ed3d464b21909979f0122aa837fc9e3d7e3541949e01` |
 | Rust executable SHA-256 | `14030e03922cc32225287bb34e20a9227adaf06d9422a153441c7bb7fdc1ce72` (generated and removed) |

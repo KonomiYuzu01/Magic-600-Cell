@@ -31,10 +31,17 @@ def prepare_frozen():
         raise ValueError("Frozen candidate identity differs")
     if set(candidate["sources"]) != set(SOURCE_NAMES):
         raise ValueError("Frozen candidate source set differs")
+    harness = json.loads((HERE / "HARNESS.json").read_bytes())
     for name, digest in candidate["sources"].items():
-        # This packet changes only these two harness scripts; the Rust sources stay frozen.
-        if name not in ("check.py", "measure.py") and sha((HERE / name).read_bytes()) != digest:
+        # The Rust port stays frozen. These two scripts changed after the oracle run; the frozen
+        # identity keeps their first digests, and HARNESS.json pins the bytes that run now.
+        if name not in harness and sha((HERE / name).read_bytes()) != digest:
             raise ValueError("Frozen candidate source differs: " + name)
+    if set(harness) != {"check.py", "measure.py"}:
+        raise ValueError("Harness pin set differs")
+    for name, digest in harness.items():
+        if sha((HERE / name).read_bytes()) != digest:
+            raise ValueError("Harness source differs: " + name)
     model_sha = export()
     if model_sha != candidate["exported_model_sha256"]:
         raise ValueError("Frozen exported-model digest differs")
