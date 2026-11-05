@@ -1,0 +1,2617 @@
+{
+  "candidate_sha256": "228d5064db49c6f47217d06850cea41a16a5436817f3216fc0ac996d0649a2ce",
+  "decider": "owner",
+  "decision": "open",
+  "experiment": "E-2.4-L2",
+  "format": "LX2-placement-results-1",
+  "generators": 1200,
+  "journal_negative_controls": {
+    "changed_interior_hash_rejected": true,
+    "truncated_journal_rejected": true
+  },
+  "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+  "not_run_here": [
+    "RTE.42 condition 3",
+    "RTE.42 condition 4",
+    "first interactive frame startup",
+    "shell placement"
+  ],
+  "provenance_bytes": 2836,
+  "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+  "runs": [
+    {
+      "completed_tail_commands": [
+        "commit runtime preview",
+        "undo",
+        "preview final_word",
+        "commit final preview"
+      ],
+      "condition_1": true,
+      "condition_2": true,
+      "conditions_1_and_2": true,
+      "control": "inside_engine/control",
+      "durable_prefix_intact": true,
+      "durable_receipt_before_fault": {
+        "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+        "revision": 1,
+        "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "status": "committed"
+      },
+      "fault": "control",
+      "final_live_state": {
+        "pending": null,
+        "receipts": [
+          {
+            "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "revision": 1,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "revision": 2,
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "revision": 3,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "revision": 4,
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "status": "committed"
+          }
+        ],
+        "revision": 4,
+        "slots": 259800,
+        "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f"
+      },
+      "hash_equal_control": true,
+      "initial": {
+        "pending": null,
+        "receipts": [],
+        "revision": 0,
+        "slots": 259800,
+        "state_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6"
+      },
+      "job_terminated": true,
+      "journal": {
+        "bytes": 12255,
+        "errors": [],
+        "replay_state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+        "rows": [
+          {
+            "kind": "commit",
+            "previous_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 1,
+            "row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              1,
+              2,
+              -3
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 2,
+            "row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "word": [
+              7,
+              -11,
+              1200
+            ]
+          },
+          {
+            "kind": "undo",
+            "previous_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 3,
+            "row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              -1200,
+              11,
+              -7
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 4,
+            "row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "word": [
+              600,
+              -1200,
+              23,
+              1
+            ]
+          }
+        ],
+        "sha256": "694a2791eb26c7f8bd488218ad6fa0c1fd7d16b514098a5fa114a5ff7e607c0a",
+        "valid": true
+      },
+      "journal_equal_control": true,
+      "live_receipt_retained": true,
+      "live_state_matches_journal": true,
+      "native_failure_observed": "none",
+      "observation": "runtime_ended",
+      "outcome": {
+        "code": "completed",
+        "status": "ok"
+      },
+      "pending_preview_retained": true,
+      "placement": "inside_engine",
+      "receipts_match_returns": true,
+      "runtime_prefix": {
+        "check_word": {
+          "legal": true,
+          "letters": 3,
+          "moved_slots": 13204,
+          "net_sha256": "25471bbe48dd4a74b42962c58739dd4669f275ed54d962ea36203cee0784cc2d"
+        },
+        "labels_bytes": 1039200,
+        "labels_sha256": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "pose_bytes": 869952,
+        "pose_sha256": "0d3068ad1aca38646ef4f858b4f98de9eb78c6a54f2fce6128e5642933bc9fb3",
+        "preview": {
+          "base_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+          "base_revision": 1,
+          "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+          "target_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+          "word_sha256": "00765b14997afdb943bcf92f08d78411f67d6cb7c5751c26fc4e75b511638757"
+        },
+        "runtime_commit_refusal": "capability.denied"
+      },
+      "session_open": true,
+      "typed_outcome": true,
+      "unexecuted_tail_commands": []
+    },
+    {
+      "completed_tail_commands": [
+        "commit runtime preview",
+        "undo",
+        "preview final_word",
+        "commit final preview"
+      ],
+      "condition_1": true,
+      "condition_2": true,
+      "conditions_1_and_2": true,
+      "control": "inside_engine/control",
+      "durable_prefix_intact": true,
+      "durable_receipt_before_fault": {
+        "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+        "revision": 1,
+        "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "status": "committed"
+      },
+      "fault": "allocation_metered",
+      "final_live_state": {
+        "pending": null,
+        "receipts": [
+          {
+            "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "revision": 1,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "revision": 2,
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "revision": 3,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "revision": 4,
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "status": "committed"
+          }
+        ],
+        "revision": 4,
+        "slots": 259800,
+        "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f"
+      },
+      "hash_equal_control": true,
+      "initial": {
+        "pending": null,
+        "receipts": [],
+        "revision": 0,
+        "slots": 259800,
+        "state_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6"
+      },
+      "job_terminated": true,
+      "journal": {
+        "bytes": 12255,
+        "errors": [],
+        "replay_state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+        "rows": [
+          {
+            "kind": "commit",
+            "previous_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 1,
+            "row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              1,
+              2,
+              -3
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 2,
+            "row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "word": [
+              7,
+              -11,
+              1200
+            ]
+          },
+          {
+            "kind": "undo",
+            "previous_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 3,
+            "row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              -1200,
+              11,
+              -7
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 4,
+            "row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "word": [
+              600,
+              -1200,
+              23,
+              1
+            ]
+          }
+        ],
+        "sha256": "694a2791eb26c7f8bd488218ad6fa0c1fd7d16b514098a5fa114a5ff7e607c0a",
+        "valid": true
+      },
+      "journal_equal_control": true,
+      "live_receipt_retained": true,
+      "live_state_matches_journal": true,
+      "native_failure_observed": "none",
+      "observation": "runtime_ended",
+      "outcome": {
+        "budget": "memory_bytes",
+        "code": "budget.memory_bytes",
+        "limit": 1048576,
+        "status": "error",
+        "used": 1048576
+      },
+      "pending_preview_retained": true,
+      "placement": "inside_engine",
+      "receipts_match_returns": true,
+      "runtime_prefix": {
+        "check_word": {
+          "legal": true,
+          "letters": 3,
+          "moved_slots": 13204,
+          "net_sha256": "25471bbe48dd4a74b42962c58739dd4669f275ed54d962ea36203cee0784cc2d"
+        },
+        "labels_bytes": 1039200,
+        "labels_sha256": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "pose_bytes": 869952,
+        "pose_sha256": "0d3068ad1aca38646ef4f858b4f98de9eb78c6a54f2fce6128e5642933bc9fb3",
+        "preview": {
+          "base_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+          "base_revision": 1,
+          "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+          "target_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+          "word_sha256": "00765b14997afdb943bcf92f08d78411f67d6cb7c5751c26fc4e75b511638757"
+        },
+        "runtime_commit_refusal": "capability.denied"
+      },
+      "session_open": true,
+      "typed_outcome": true,
+      "unexecuted_tail_commands": []
+    },
+    {
+      "completed_tail_commands": [
+        "commit runtime preview",
+        "undo",
+        "preview final_word",
+        "commit final preview"
+      ],
+      "condition_1": true,
+      "condition_2": true,
+      "conditions_1_and_2": true,
+      "control": "inside_engine/control",
+      "durable_prefix_intact": true,
+      "durable_receipt_before_fault": {
+        "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+        "revision": 1,
+        "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "status": "committed"
+      },
+      "fault": "recursion_metered",
+      "final_live_state": {
+        "pending": null,
+        "receipts": [
+          {
+            "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "revision": 1,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "revision": 2,
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "revision": 3,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "revision": 4,
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "status": "committed"
+          }
+        ],
+        "revision": 4,
+        "slots": 259800,
+        "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f"
+      },
+      "hash_equal_control": true,
+      "initial": {
+        "pending": null,
+        "receipts": [],
+        "revision": 0,
+        "slots": 259800,
+        "state_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6"
+      },
+      "job_terminated": true,
+      "journal": {
+        "bytes": 12255,
+        "errors": [],
+        "replay_state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+        "rows": [
+          {
+            "kind": "commit",
+            "previous_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 1,
+            "row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              1,
+              2,
+              -3
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 2,
+            "row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "word": [
+              7,
+              -11,
+              1200
+            ]
+          },
+          {
+            "kind": "undo",
+            "previous_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 3,
+            "row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              -1200,
+              11,
+              -7
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 4,
+            "row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "word": [
+              600,
+              -1200,
+              23,
+              1
+            ]
+          }
+        ],
+        "sha256": "694a2791eb26c7f8bd488218ad6fa0c1fd7d16b514098a5fa114a5ff7e607c0a",
+        "valid": true
+      },
+      "journal_equal_control": true,
+      "live_receipt_retained": true,
+      "live_state_matches_journal": true,
+      "native_failure_observed": "none",
+      "observation": "runtime_ended",
+      "outcome": {
+        "budget": "recursion",
+        "code": "budget.recursion",
+        "limit": 64,
+        "status": "error",
+        "used": 64
+      },
+      "pending_preview_retained": true,
+      "placement": "inside_engine",
+      "receipts_match_returns": true,
+      "runtime_prefix": {
+        "check_word": {
+          "legal": true,
+          "letters": 3,
+          "moved_slots": 13204,
+          "net_sha256": "25471bbe48dd4a74b42962c58739dd4669f275ed54d962ea36203cee0784cc2d"
+        },
+        "labels_bytes": 1039200,
+        "labels_sha256": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "pose_bytes": 869952,
+        "pose_sha256": "0d3068ad1aca38646ef4f858b4f98de9eb78c6a54f2fce6128e5642933bc9fb3",
+        "preview": {
+          "base_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+          "base_revision": 1,
+          "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+          "target_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+          "word_sha256": "00765b14997afdb943bcf92f08d78411f67d6cb7c5751c26fc4e75b511638757"
+        },
+        "runtime_commit_refusal": "capability.denied"
+      },
+      "session_open": true,
+      "typed_outcome": true,
+      "unexecuted_tail_commands": []
+    },
+    {
+      "completed_tail_commands": [
+        "commit runtime preview",
+        "undo",
+        "preview final_word",
+        "commit final preview"
+      ],
+      "condition_1": true,
+      "condition_2": true,
+      "conditions_1_and_2": true,
+      "control": "inside_engine/control",
+      "durable_prefix_intact": true,
+      "durable_receipt_before_fault": {
+        "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+        "revision": 1,
+        "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "status": "committed"
+      },
+      "fault": "loop_metered",
+      "final_live_state": {
+        "pending": null,
+        "receipts": [
+          {
+            "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "revision": 1,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "revision": 2,
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "revision": 3,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "revision": 4,
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "status": "committed"
+          }
+        ],
+        "revision": 4,
+        "slots": 259800,
+        "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f"
+      },
+      "hash_equal_control": true,
+      "initial": {
+        "pending": null,
+        "receipts": [],
+        "revision": 0,
+        "slots": 259800,
+        "state_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6"
+      },
+      "job_terminated": true,
+      "journal": {
+        "bytes": 12255,
+        "errors": [],
+        "replay_state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+        "rows": [
+          {
+            "kind": "commit",
+            "previous_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 1,
+            "row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              1,
+              2,
+              -3
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 2,
+            "row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "word": [
+              7,
+              -11,
+              1200
+            ]
+          },
+          {
+            "kind": "undo",
+            "previous_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 3,
+            "row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              -1200,
+              11,
+              -7
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 4,
+            "row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "word": [
+              600,
+              -1200,
+              23,
+              1
+            ]
+          }
+        ],
+        "sha256": "694a2791eb26c7f8bd488218ad6fa0c1fd7d16b514098a5fa114a5ff7e607c0a",
+        "valid": true
+      },
+      "journal_equal_control": true,
+      "live_receipt_retained": true,
+      "live_state_matches_journal": true,
+      "native_failure_observed": "none",
+      "observation": "runtime_ended",
+      "outcome": {
+        "budget": "instructions",
+        "code": "budget.instructions",
+        "limit": 100000,
+        "status": "error",
+        "used": 100000
+      },
+      "pending_preview_retained": true,
+      "placement": "inside_engine",
+      "receipts_match_returns": true,
+      "runtime_prefix": {
+        "check_word": {
+          "legal": true,
+          "letters": 3,
+          "moved_slots": 13204,
+          "net_sha256": "25471bbe48dd4a74b42962c58739dd4669f275ed54d962ea36203cee0784cc2d"
+        },
+        "labels_bytes": 1039200,
+        "labels_sha256": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "pose_bytes": 869952,
+        "pose_sha256": "0d3068ad1aca38646ef4f858b4f98de9eb78c6a54f2fce6128e5642933bc9fb3",
+        "preview": {
+          "base_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+          "base_revision": 1,
+          "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+          "target_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+          "word_sha256": "00765b14997afdb943bcf92f08d78411f67d6cb7c5751c26fc4e75b511638757"
+        },
+        "runtime_commit_refusal": "capability.denied"
+      },
+      "session_open": true,
+      "typed_outcome": true,
+      "unexecuted_tail_commands": []
+    },
+    {
+      "completed_tail_commands": [],
+      "condition_1": false,
+      "condition_2": false,
+      "conditions_1_and_2": false,
+      "control": "inside_engine/control",
+      "durable_prefix_intact": true,
+      "durable_receipt_before_fault": {
+        "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+        "revision": 1,
+        "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "status": "committed"
+      },
+      "fault": "allocation_native",
+      "final_live_state": null,
+      "hash_equal_control": false,
+      "initial": {
+        "pending": null,
+        "receipts": [],
+        "revision": 0,
+        "slots": 259800,
+        "state_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6"
+      },
+      "job_terminated": true,
+      "journal": {
+        "bytes": 3060,
+        "errors": [],
+        "replay_state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "rows": [
+          {
+            "kind": "commit",
+            "previous_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 1,
+            "row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              1,
+              2,
+              -3
+            ]
+          }
+        ],
+        "sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+        "valid": true
+      },
+      "journal_equal_control": false,
+      "live_receipt_retained": false,
+      "live_state_matches_journal": null,
+      "native_failure_observed": "allocator_exhaustion",
+      "observation": "engine_process_died",
+      "outcome": null,
+      "pending_preview_retained": false,
+      "placement": "inside_engine",
+      "receipts_match_returns": null,
+      "runtime_prefix": {
+        "check_word": {
+          "legal": true,
+          "letters": 3,
+          "moved_slots": 13204,
+          "net_sha256": "25471bbe48dd4a74b42962c58739dd4669f275ed54d962ea36203cee0784cc2d"
+        },
+        "labels_bytes": 1039200,
+        "labels_sha256": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "pose_bytes": 869952,
+        "pose_sha256": "0d3068ad1aca38646ef4f858b4f98de9eb78c6a54f2fce6128e5642933bc9fb3",
+        "preview": {
+          "base_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+          "base_revision": 1,
+          "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+          "target_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+          "word_sha256": "00765b14997afdb943bcf92f08d78411f67d6cb7c5751c26fc4e75b511638757"
+        },
+        "runtime_commit_refusal": "capability.denied"
+      },
+      "session_open": false,
+      "typed_outcome": false,
+      "unexecuted_tail_commands": [
+        "commit runtime preview",
+        "undo",
+        "preview final_word",
+        "commit final preview"
+      ]
+    },
+    {
+      "completed_tail_commands": [],
+      "condition_1": false,
+      "condition_2": false,
+      "conditions_1_and_2": false,
+      "control": "inside_engine/control",
+      "durable_prefix_intact": true,
+      "durable_receipt_before_fault": {
+        "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+        "revision": 1,
+        "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "status": "committed"
+      },
+      "fault": "recursion_native",
+      "final_live_state": null,
+      "hash_equal_control": false,
+      "initial": {
+        "pending": null,
+        "receipts": [],
+        "revision": 0,
+        "slots": 259800,
+        "state_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6"
+      },
+      "job_terminated": true,
+      "journal": {
+        "bytes": 3060,
+        "errors": [],
+        "replay_state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "rows": [
+          {
+            "kind": "commit",
+            "previous_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 1,
+            "row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              1,
+              2,
+              -3
+            ]
+          }
+        ],
+        "sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+        "valid": true
+      },
+      "journal_equal_control": false,
+      "live_receipt_retained": false,
+      "live_state_matches_journal": null,
+      "native_failure_observed": "stack_overflow",
+      "observation": "engine_process_died",
+      "outcome": null,
+      "pending_preview_retained": false,
+      "placement": "inside_engine",
+      "receipts_match_returns": null,
+      "runtime_prefix": {
+        "check_word": {
+          "legal": true,
+          "letters": 3,
+          "moved_slots": 13204,
+          "net_sha256": "25471bbe48dd4a74b42962c58739dd4669f275ed54d962ea36203cee0784cc2d"
+        },
+        "labels_bytes": 1039200,
+        "labels_sha256": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "pose_bytes": 869952,
+        "pose_sha256": "0d3068ad1aca38646ef4f858b4f98de9eb78c6a54f2fce6128e5642933bc9fb3",
+        "preview": {
+          "base_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+          "base_revision": 1,
+          "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+          "target_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+          "word_sha256": "00765b14997afdb943bcf92f08d78411f67d6cb7c5751c26fc4e75b511638757"
+        },
+        "runtime_commit_refusal": "capability.denied"
+      },
+      "session_open": false,
+      "typed_outcome": false,
+      "unexecuted_tail_commands": [
+        "commit runtime preview",
+        "undo",
+        "preview final_word",
+        "commit final preview"
+      ]
+    },
+    {
+      "completed_tail_commands": [
+        "commit runtime preview",
+        "undo",
+        "preview final_word",
+        "commit final preview"
+      ],
+      "condition_1": true,
+      "condition_2": false,
+      "conditions_1_and_2": false,
+      "control": "inside_engine/control",
+      "durable_prefix_intact": true,
+      "durable_receipt_before_fault": {
+        "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+        "revision": 1,
+        "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "status": "committed"
+      },
+      "fault": "loop_native",
+      "final_live_state": {
+        "pending": null,
+        "receipts": [
+          {
+            "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "revision": 1,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "revision": 2,
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "revision": 3,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "revision": 4,
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "status": "committed"
+          }
+        ],
+        "revision": 4,
+        "slots": 259800,
+        "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f"
+      },
+      "hash_equal_control": true,
+      "initial": {
+        "pending": null,
+        "receipts": [],
+        "revision": 0,
+        "slots": 259800,
+        "state_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6"
+      },
+      "job_terminated": false,
+      "journal": {
+        "bytes": 12255,
+        "errors": [],
+        "replay_state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+        "rows": [
+          {
+            "kind": "commit",
+            "previous_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 1,
+            "row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              1,
+              2,
+              -3
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 2,
+            "row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "word": [
+              7,
+              -11,
+              1200
+            ]
+          },
+          {
+            "kind": "undo",
+            "previous_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 3,
+            "row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              -1200,
+              11,
+              -7
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 4,
+            "row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "word": [
+              600,
+              -1200,
+              23,
+              1
+            ]
+          }
+        ],
+        "sha256": "694a2791eb26c7f8bd488218ad6fa0c1fd7d16b514098a5fa114a5ff7e607c0a",
+        "valid": true
+      },
+      "journal_equal_control": true,
+      "live_receipt_retained": true,
+      "live_state_matches_journal": true,
+      "native_failure_observed": "watchdog_expired_thread_running",
+      "observation": "runtime_thread_still_running",
+      "outcome": null,
+      "pending_preview_retained": true,
+      "placement": "inside_engine",
+      "receipts_match_returns": true,
+      "runtime_prefix": {
+        "check_word": {
+          "legal": true,
+          "letters": 3,
+          "moved_slots": 13204,
+          "net_sha256": "25471bbe48dd4a74b42962c58739dd4669f275ed54d962ea36203cee0784cc2d"
+        },
+        "labels_bytes": 1039200,
+        "labels_sha256": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "pose_bytes": 869952,
+        "pose_sha256": "0d3068ad1aca38646ef4f858b4f98de9eb78c6a54f2fce6128e5642933bc9fb3",
+        "preview": {
+          "base_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+          "base_revision": 1,
+          "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+          "target_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+          "word_sha256": "00765b14997afdb943bcf92f08d78411f67d6cb7c5751c26fc4e75b511638757"
+        },
+        "runtime_commit_refusal": "capability.denied"
+      },
+      "session_open": true,
+      "typed_outcome": false,
+      "unexecuted_tail_commands": []
+    },
+    {
+      "completed_tail_commands": [],
+      "condition_1": false,
+      "condition_2": false,
+      "conditions_1_and_2": false,
+      "control": "inside_engine/control",
+      "durable_prefix_intact": true,
+      "durable_receipt_before_fault": {
+        "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+        "revision": 1,
+        "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "status": "committed"
+      },
+      "fault": "forced_kill",
+      "final_live_state": null,
+      "hash_equal_control": false,
+      "initial": {
+        "pending": null,
+        "receipts": [],
+        "revision": 0,
+        "slots": 259800,
+        "state_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6"
+      },
+      "job_terminated": true,
+      "journal": {
+        "bytes": 3060,
+        "errors": [],
+        "replay_state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "rows": [
+          {
+            "kind": "commit",
+            "previous_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 1,
+            "row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              1,
+              2,
+              -3
+            ]
+          }
+        ],
+        "sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+        "valid": true
+      },
+      "journal_equal_control": false,
+      "live_receipt_retained": false,
+      "live_state_matches_journal": null,
+      "native_failure_observed": "os_forced_kill",
+      "observation": "engine_process_died",
+      "outcome": null,
+      "pending_preview_retained": false,
+      "placement": "inside_engine",
+      "receipts_match_returns": null,
+      "runtime_prefix": {
+        "check_word": {
+          "legal": true,
+          "letters": 3,
+          "moved_slots": 13204,
+          "net_sha256": "25471bbe48dd4a74b42962c58739dd4669f275ed54d962ea36203cee0784cc2d"
+        },
+        "labels_bytes": 1039200,
+        "labels_sha256": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "pose_bytes": 869952,
+        "pose_sha256": "0d3068ad1aca38646ef4f858b4f98de9eb78c6a54f2fce6128e5642933bc9fb3",
+        "preview": {
+          "base_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+          "base_revision": 1,
+          "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+          "target_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+          "word_sha256": "00765b14997afdb943bcf92f08d78411f67d6cb7c5751c26fc4e75b511638757"
+        },
+        "runtime_commit_refusal": "capability.denied"
+      },
+      "session_open": false,
+      "typed_outcome": false,
+      "unexecuted_tail_commands": [
+        "commit runtime preview",
+        "undo",
+        "preview final_word",
+        "commit final preview"
+      ]
+    },
+    {
+      "completed_tail_commands": [
+        "commit runtime preview",
+        "undo",
+        "preview final_word",
+        "commit final preview"
+      ],
+      "condition_1": true,
+      "condition_2": true,
+      "conditions_1_and_2": true,
+      "control": "own_process/control",
+      "durable_prefix_intact": true,
+      "durable_receipt_before_fault": {
+        "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+        "revision": 1,
+        "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "status": "committed"
+      },
+      "fault": "control",
+      "final_live_state": {
+        "pending": null,
+        "receipts": [
+          {
+            "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "revision": 1,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "revision": 2,
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "revision": 3,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "revision": 4,
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "status": "committed"
+          }
+        ],
+        "revision": 4,
+        "slots": 259800,
+        "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f"
+      },
+      "hash_equal_control": true,
+      "initial": {
+        "pending": null,
+        "receipts": [],
+        "revision": 0,
+        "slots": 259800,
+        "state_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6"
+      },
+      "job_terminated": true,
+      "journal": {
+        "bytes": 12255,
+        "errors": [],
+        "replay_state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+        "rows": [
+          {
+            "kind": "commit",
+            "previous_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 1,
+            "row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              1,
+              2,
+              -3
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 2,
+            "row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "word": [
+              7,
+              -11,
+              1200
+            ]
+          },
+          {
+            "kind": "undo",
+            "previous_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 3,
+            "row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              -1200,
+              11,
+              -7
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 4,
+            "row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "word": [
+              600,
+              -1200,
+              23,
+              1
+            ]
+          }
+        ],
+        "sha256": "694a2791eb26c7f8bd488218ad6fa0c1fd7d16b514098a5fa114a5ff7e607c0a",
+        "valid": true
+      },
+      "journal_equal_control": true,
+      "live_receipt_retained": true,
+      "live_state_matches_journal": true,
+      "native_failure_observed": "none",
+      "observation": "runtime_ended",
+      "outcome": {
+        "code": "completed",
+        "status": "ok"
+      },
+      "pending_preview_retained": true,
+      "placement": "own_process",
+      "receipts_match_returns": true,
+      "runtime_prefix": {
+        "check_word": {
+          "legal": true,
+          "letters": 3,
+          "moved_slots": 13204,
+          "net_sha256": "25471bbe48dd4a74b42962c58739dd4669f275ed54d962ea36203cee0784cc2d"
+        },
+        "labels_bytes": 1039200,
+        "labels_sha256": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "pose_bytes": 869952,
+        "pose_sha256": "0d3068ad1aca38646ef4f858b4f98de9eb78c6a54f2fce6128e5642933bc9fb3",
+        "preview": {
+          "base_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+          "base_revision": 1,
+          "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+          "target_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+          "word_sha256": "00765b14997afdb943bcf92f08d78411f67d6cb7c5751c26fc4e75b511638757"
+        },
+        "runtime_commit_refusal": "capability.denied"
+      },
+      "session_open": true,
+      "typed_outcome": true,
+      "unexecuted_tail_commands": []
+    },
+    {
+      "completed_tail_commands": [
+        "commit runtime preview",
+        "undo",
+        "preview final_word",
+        "commit final preview"
+      ],
+      "condition_1": true,
+      "condition_2": true,
+      "conditions_1_and_2": true,
+      "control": "own_process/control",
+      "durable_prefix_intact": true,
+      "durable_receipt_before_fault": {
+        "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+        "revision": 1,
+        "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "status": "committed"
+      },
+      "fault": "allocation_metered",
+      "final_live_state": {
+        "pending": null,
+        "receipts": [
+          {
+            "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "revision": 1,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "revision": 2,
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "revision": 3,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "revision": 4,
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "status": "committed"
+          }
+        ],
+        "revision": 4,
+        "slots": 259800,
+        "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f"
+      },
+      "hash_equal_control": true,
+      "initial": {
+        "pending": null,
+        "receipts": [],
+        "revision": 0,
+        "slots": 259800,
+        "state_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6"
+      },
+      "job_terminated": true,
+      "journal": {
+        "bytes": 12255,
+        "errors": [],
+        "replay_state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+        "rows": [
+          {
+            "kind": "commit",
+            "previous_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 1,
+            "row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              1,
+              2,
+              -3
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 2,
+            "row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "word": [
+              7,
+              -11,
+              1200
+            ]
+          },
+          {
+            "kind": "undo",
+            "previous_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 3,
+            "row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              -1200,
+              11,
+              -7
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 4,
+            "row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "word": [
+              600,
+              -1200,
+              23,
+              1
+            ]
+          }
+        ],
+        "sha256": "694a2791eb26c7f8bd488218ad6fa0c1fd7d16b514098a5fa114a5ff7e607c0a",
+        "valid": true
+      },
+      "journal_equal_control": true,
+      "live_receipt_retained": true,
+      "live_state_matches_journal": true,
+      "native_failure_observed": "none",
+      "observation": "runtime_ended",
+      "outcome": {
+        "budget": "memory_bytes",
+        "code": "budget.memory_bytes",
+        "limit": 1048576,
+        "status": "error",
+        "used": 1048576
+      },
+      "pending_preview_retained": true,
+      "placement": "own_process",
+      "receipts_match_returns": true,
+      "runtime_prefix": {
+        "check_word": {
+          "legal": true,
+          "letters": 3,
+          "moved_slots": 13204,
+          "net_sha256": "25471bbe48dd4a74b42962c58739dd4669f275ed54d962ea36203cee0784cc2d"
+        },
+        "labels_bytes": 1039200,
+        "labels_sha256": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "pose_bytes": 869952,
+        "pose_sha256": "0d3068ad1aca38646ef4f858b4f98de9eb78c6a54f2fce6128e5642933bc9fb3",
+        "preview": {
+          "base_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+          "base_revision": 1,
+          "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+          "target_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+          "word_sha256": "00765b14997afdb943bcf92f08d78411f67d6cb7c5751c26fc4e75b511638757"
+        },
+        "runtime_commit_refusal": "capability.denied"
+      },
+      "session_open": true,
+      "typed_outcome": true,
+      "unexecuted_tail_commands": []
+    },
+    {
+      "completed_tail_commands": [
+        "commit runtime preview",
+        "undo",
+        "preview final_word",
+        "commit final preview"
+      ],
+      "condition_1": true,
+      "condition_2": true,
+      "conditions_1_and_2": true,
+      "control": "own_process/control",
+      "durable_prefix_intact": true,
+      "durable_receipt_before_fault": {
+        "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+        "revision": 1,
+        "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "status": "committed"
+      },
+      "fault": "recursion_metered",
+      "final_live_state": {
+        "pending": null,
+        "receipts": [
+          {
+            "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "revision": 1,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "revision": 2,
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "revision": 3,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "revision": 4,
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "status": "committed"
+          }
+        ],
+        "revision": 4,
+        "slots": 259800,
+        "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f"
+      },
+      "hash_equal_control": true,
+      "initial": {
+        "pending": null,
+        "receipts": [],
+        "revision": 0,
+        "slots": 259800,
+        "state_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6"
+      },
+      "job_terminated": true,
+      "journal": {
+        "bytes": 12255,
+        "errors": [],
+        "replay_state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+        "rows": [
+          {
+            "kind": "commit",
+            "previous_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 1,
+            "row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              1,
+              2,
+              -3
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 2,
+            "row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "word": [
+              7,
+              -11,
+              1200
+            ]
+          },
+          {
+            "kind": "undo",
+            "previous_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 3,
+            "row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              -1200,
+              11,
+              -7
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 4,
+            "row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "word": [
+              600,
+              -1200,
+              23,
+              1
+            ]
+          }
+        ],
+        "sha256": "694a2791eb26c7f8bd488218ad6fa0c1fd7d16b514098a5fa114a5ff7e607c0a",
+        "valid": true
+      },
+      "journal_equal_control": true,
+      "live_receipt_retained": true,
+      "live_state_matches_journal": true,
+      "native_failure_observed": "none",
+      "observation": "runtime_ended",
+      "outcome": {
+        "budget": "recursion",
+        "code": "budget.recursion",
+        "limit": 64,
+        "status": "error",
+        "used": 64
+      },
+      "pending_preview_retained": true,
+      "placement": "own_process",
+      "receipts_match_returns": true,
+      "runtime_prefix": {
+        "check_word": {
+          "legal": true,
+          "letters": 3,
+          "moved_slots": 13204,
+          "net_sha256": "25471bbe48dd4a74b42962c58739dd4669f275ed54d962ea36203cee0784cc2d"
+        },
+        "labels_bytes": 1039200,
+        "labels_sha256": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "pose_bytes": 869952,
+        "pose_sha256": "0d3068ad1aca38646ef4f858b4f98de9eb78c6a54f2fce6128e5642933bc9fb3",
+        "preview": {
+          "base_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+          "base_revision": 1,
+          "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+          "target_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+          "word_sha256": "00765b14997afdb943bcf92f08d78411f67d6cb7c5751c26fc4e75b511638757"
+        },
+        "runtime_commit_refusal": "capability.denied"
+      },
+      "session_open": true,
+      "typed_outcome": true,
+      "unexecuted_tail_commands": []
+    },
+    {
+      "completed_tail_commands": [
+        "commit runtime preview",
+        "undo",
+        "preview final_word",
+        "commit final preview"
+      ],
+      "condition_1": true,
+      "condition_2": true,
+      "conditions_1_and_2": true,
+      "control": "own_process/control",
+      "durable_prefix_intact": true,
+      "durable_receipt_before_fault": {
+        "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+        "revision": 1,
+        "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "status": "committed"
+      },
+      "fault": "loop_metered",
+      "final_live_state": {
+        "pending": null,
+        "receipts": [
+          {
+            "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "revision": 1,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "revision": 2,
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "revision": 3,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "revision": 4,
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "status": "committed"
+          }
+        ],
+        "revision": 4,
+        "slots": 259800,
+        "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f"
+      },
+      "hash_equal_control": true,
+      "initial": {
+        "pending": null,
+        "receipts": [],
+        "revision": 0,
+        "slots": 259800,
+        "state_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6"
+      },
+      "job_terminated": true,
+      "journal": {
+        "bytes": 12255,
+        "errors": [],
+        "replay_state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+        "rows": [
+          {
+            "kind": "commit",
+            "previous_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 1,
+            "row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              1,
+              2,
+              -3
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 2,
+            "row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "word": [
+              7,
+              -11,
+              1200
+            ]
+          },
+          {
+            "kind": "undo",
+            "previous_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 3,
+            "row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              -1200,
+              11,
+              -7
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 4,
+            "row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "word": [
+              600,
+              -1200,
+              23,
+              1
+            ]
+          }
+        ],
+        "sha256": "694a2791eb26c7f8bd488218ad6fa0c1fd7d16b514098a5fa114a5ff7e607c0a",
+        "valid": true
+      },
+      "journal_equal_control": true,
+      "live_receipt_retained": true,
+      "live_state_matches_journal": true,
+      "native_failure_observed": "none",
+      "observation": "runtime_ended",
+      "outcome": {
+        "budget": "instructions",
+        "code": "budget.instructions",
+        "limit": 100000,
+        "status": "error",
+        "used": 100000
+      },
+      "pending_preview_retained": true,
+      "placement": "own_process",
+      "receipts_match_returns": true,
+      "runtime_prefix": {
+        "check_word": {
+          "legal": true,
+          "letters": 3,
+          "moved_slots": 13204,
+          "net_sha256": "25471bbe48dd4a74b42962c58739dd4669f275ed54d962ea36203cee0784cc2d"
+        },
+        "labels_bytes": 1039200,
+        "labels_sha256": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "pose_bytes": 869952,
+        "pose_sha256": "0d3068ad1aca38646ef4f858b4f98de9eb78c6a54f2fce6128e5642933bc9fb3",
+        "preview": {
+          "base_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+          "base_revision": 1,
+          "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+          "target_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+          "word_sha256": "00765b14997afdb943bcf92f08d78411f67d6cb7c5751c26fc4e75b511638757"
+        },
+        "runtime_commit_refusal": "capability.denied"
+      },
+      "session_open": true,
+      "typed_outcome": true,
+      "unexecuted_tail_commands": []
+    },
+    {
+      "completed_tail_commands": [
+        "commit runtime preview",
+        "undo",
+        "preview final_word",
+        "commit final preview"
+      ],
+      "condition_1": true,
+      "condition_2": true,
+      "conditions_1_and_2": true,
+      "control": "own_process/control",
+      "durable_prefix_intact": true,
+      "durable_receipt_before_fault": {
+        "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+        "revision": 1,
+        "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "status": "committed"
+      },
+      "fault": "allocation_native",
+      "final_live_state": {
+        "pending": null,
+        "receipts": [
+          {
+            "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "revision": 1,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "revision": 2,
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "revision": 3,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "revision": 4,
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "status": "committed"
+          }
+        ],
+        "revision": 4,
+        "slots": 259800,
+        "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f"
+      },
+      "hash_equal_control": true,
+      "initial": {
+        "pending": null,
+        "receipts": [],
+        "revision": 0,
+        "slots": 259800,
+        "state_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6"
+      },
+      "job_terminated": true,
+      "journal": {
+        "bytes": 12255,
+        "errors": [],
+        "replay_state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+        "rows": [
+          {
+            "kind": "commit",
+            "previous_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 1,
+            "row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              1,
+              2,
+              -3
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 2,
+            "row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "word": [
+              7,
+              -11,
+              1200
+            ]
+          },
+          {
+            "kind": "undo",
+            "previous_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 3,
+            "row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              -1200,
+              11,
+              -7
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 4,
+            "row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "word": [
+              600,
+              -1200,
+              23,
+              1
+            ]
+          }
+        ],
+        "sha256": "694a2791eb26c7f8bd488218ad6fa0c1fd7d16b514098a5fa114a5ff7e607c0a",
+        "valid": true
+      },
+      "journal_equal_control": true,
+      "live_receipt_retained": true,
+      "live_state_matches_journal": true,
+      "native_failure_observed": "allocator_exhaustion",
+      "observation": "runtime_ended",
+      "outcome": {
+        "code": "runtime.died",
+        "status": "error"
+      },
+      "pending_preview_retained": true,
+      "placement": "own_process",
+      "receipts_match_returns": true,
+      "runtime_prefix": {
+        "check_word": {
+          "legal": true,
+          "letters": 3,
+          "moved_slots": 13204,
+          "net_sha256": "25471bbe48dd4a74b42962c58739dd4669f275ed54d962ea36203cee0784cc2d"
+        },
+        "labels_bytes": 1039200,
+        "labels_sha256": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "pose_bytes": 869952,
+        "pose_sha256": "0d3068ad1aca38646ef4f858b4f98de9eb78c6a54f2fce6128e5642933bc9fb3",
+        "preview": {
+          "base_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+          "base_revision": 1,
+          "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+          "target_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+          "word_sha256": "00765b14997afdb943bcf92f08d78411f67d6cb7c5751c26fc4e75b511638757"
+        },
+        "runtime_commit_refusal": "capability.denied"
+      },
+      "session_open": true,
+      "typed_outcome": true,
+      "unexecuted_tail_commands": []
+    },
+    {
+      "completed_tail_commands": [
+        "commit runtime preview",
+        "undo",
+        "preview final_word",
+        "commit final preview"
+      ],
+      "condition_1": true,
+      "condition_2": true,
+      "conditions_1_and_2": true,
+      "control": "own_process/control",
+      "durable_prefix_intact": true,
+      "durable_receipt_before_fault": {
+        "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+        "revision": 1,
+        "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "status": "committed"
+      },
+      "fault": "recursion_native",
+      "final_live_state": {
+        "pending": null,
+        "receipts": [
+          {
+            "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "revision": 1,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "revision": 2,
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "revision": 3,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "revision": 4,
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "status": "committed"
+          }
+        ],
+        "revision": 4,
+        "slots": 259800,
+        "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f"
+      },
+      "hash_equal_control": true,
+      "initial": {
+        "pending": null,
+        "receipts": [],
+        "revision": 0,
+        "slots": 259800,
+        "state_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6"
+      },
+      "job_terminated": true,
+      "journal": {
+        "bytes": 12255,
+        "errors": [],
+        "replay_state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+        "rows": [
+          {
+            "kind": "commit",
+            "previous_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 1,
+            "row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              1,
+              2,
+              -3
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 2,
+            "row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "word": [
+              7,
+              -11,
+              1200
+            ]
+          },
+          {
+            "kind": "undo",
+            "previous_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 3,
+            "row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              -1200,
+              11,
+              -7
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 4,
+            "row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "word": [
+              600,
+              -1200,
+              23,
+              1
+            ]
+          }
+        ],
+        "sha256": "694a2791eb26c7f8bd488218ad6fa0c1fd7d16b514098a5fa114a5ff7e607c0a",
+        "valid": true
+      },
+      "journal_equal_control": true,
+      "live_receipt_retained": true,
+      "live_state_matches_journal": true,
+      "native_failure_observed": "stack_overflow",
+      "observation": "runtime_ended",
+      "outcome": {
+        "code": "runtime.died",
+        "status": "error"
+      },
+      "pending_preview_retained": true,
+      "placement": "own_process",
+      "receipts_match_returns": true,
+      "runtime_prefix": {
+        "check_word": {
+          "legal": true,
+          "letters": 3,
+          "moved_slots": 13204,
+          "net_sha256": "25471bbe48dd4a74b42962c58739dd4669f275ed54d962ea36203cee0784cc2d"
+        },
+        "labels_bytes": 1039200,
+        "labels_sha256": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "pose_bytes": 869952,
+        "pose_sha256": "0d3068ad1aca38646ef4f858b4f98de9eb78c6a54f2fce6128e5642933bc9fb3",
+        "preview": {
+          "base_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+          "base_revision": 1,
+          "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+          "target_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+          "word_sha256": "00765b14997afdb943bcf92f08d78411f67d6cb7c5751c26fc4e75b511638757"
+        },
+        "runtime_commit_refusal": "capability.denied"
+      },
+      "session_open": true,
+      "typed_outcome": true,
+      "unexecuted_tail_commands": []
+    },
+    {
+      "completed_tail_commands": [
+        "commit runtime preview",
+        "undo",
+        "preview final_word",
+        "commit final preview"
+      ],
+      "condition_1": true,
+      "condition_2": true,
+      "conditions_1_and_2": true,
+      "control": "own_process/control",
+      "durable_prefix_intact": true,
+      "durable_receipt_before_fault": {
+        "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+        "revision": 1,
+        "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "status": "committed"
+      },
+      "fault": "loop_native",
+      "final_live_state": {
+        "pending": null,
+        "receipts": [
+          {
+            "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "revision": 1,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "revision": 2,
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "revision": 3,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "revision": 4,
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "status": "committed"
+          }
+        ],
+        "revision": 4,
+        "slots": 259800,
+        "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f"
+      },
+      "hash_equal_control": true,
+      "initial": {
+        "pending": null,
+        "receipts": [],
+        "revision": 0,
+        "slots": 259800,
+        "state_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6"
+      },
+      "job_terminated": true,
+      "journal": {
+        "bytes": 12255,
+        "errors": [],
+        "replay_state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+        "rows": [
+          {
+            "kind": "commit",
+            "previous_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 1,
+            "row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              1,
+              2,
+              -3
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 2,
+            "row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "word": [
+              7,
+              -11,
+              1200
+            ]
+          },
+          {
+            "kind": "undo",
+            "previous_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 3,
+            "row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              -1200,
+              11,
+              -7
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 4,
+            "row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "word": [
+              600,
+              -1200,
+              23,
+              1
+            ]
+          }
+        ],
+        "sha256": "694a2791eb26c7f8bd488218ad6fa0c1fd7d16b514098a5fa114a5ff7e607c0a",
+        "valid": true
+      },
+      "journal_equal_control": true,
+      "live_receipt_retained": true,
+      "live_state_matches_journal": true,
+      "native_failure_observed": "watchdog_kill",
+      "observation": "runtime_ended",
+      "outcome": {
+        "code": "runtime.watchdog_killed",
+        "status": "error"
+      },
+      "pending_preview_retained": true,
+      "placement": "own_process",
+      "receipts_match_returns": true,
+      "runtime_prefix": {
+        "check_word": {
+          "legal": true,
+          "letters": 3,
+          "moved_slots": 13204,
+          "net_sha256": "25471bbe48dd4a74b42962c58739dd4669f275ed54d962ea36203cee0784cc2d"
+        },
+        "labels_bytes": 1039200,
+        "labels_sha256": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "pose_bytes": 869952,
+        "pose_sha256": "0d3068ad1aca38646ef4f858b4f98de9eb78c6a54f2fce6128e5642933bc9fb3",
+        "preview": {
+          "base_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+          "base_revision": 1,
+          "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+          "target_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+          "word_sha256": "00765b14997afdb943bcf92f08d78411f67d6cb7c5751c26fc4e75b511638757"
+        },
+        "runtime_commit_refusal": "capability.denied"
+      },
+      "session_open": true,
+      "typed_outcome": true,
+      "unexecuted_tail_commands": []
+    },
+    {
+      "completed_tail_commands": [
+        "commit runtime preview",
+        "undo",
+        "preview final_word",
+        "commit final preview"
+      ],
+      "condition_1": true,
+      "condition_2": true,
+      "conditions_1_and_2": true,
+      "control": "own_process/control",
+      "durable_prefix_intact": true,
+      "durable_receipt_before_fault": {
+        "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+        "revision": 1,
+        "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "status": "committed"
+      },
+      "fault": "forced_kill",
+      "final_live_state": {
+        "pending": null,
+        "receipts": [
+          {
+            "journal_row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "revision": 1,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "revision": 2,
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "revision": 3,
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "status": "committed"
+          },
+          {
+            "journal_row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "revision": 4,
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "status": "committed"
+          }
+        ],
+        "revision": 4,
+        "slots": 259800,
+        "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f"
+      },
+      "hash_equal_control": true,
+      "initial": {
+        "pending": null,
+        "receipts": [],
+        "revision": 0,
+        "slots": 259800,
+        "state_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6"
+      },
+      "job_terminated": true,
+      "journal": {
+        "bytes": 12255,
+        "errors": [],
+        "replay_state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+        "rows": [
+          {
+            "kind": "commit",
+            "previous_hash": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 1,
+            "row_sha256": "602bec05e882416bc539f4d8b176232ace4e33e862734c0af7d955853dc5bdd5",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              1,
+              2,
+              -3
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 2,
+            "row_sha256": "8e1d39b8c79e1c179922b3525086f0cdbd2f9998340d384ad2741f3053649fca",
+            "state_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "word": [
+              7,
+              -11,
+              1200
+            ]
+          },
+          {
+            "kind": "undo",
+            "previous_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 3,
+            "row_sha256": "c7fbd0417de93d95ca4128930117e35630d82d82d910a147a3c2e2298bfcbcec",
+            "state_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "word": [
+              -1200,
+              11,
+              -7
+            ]
+          },
+          {
+            "kind": "commit",
+            "previous_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+            "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+            "revision": 4,
+            "row_sha256": "5e989ad2c6cdde4b766244384e7603e85bf6315df5d1a2ebf39e87bd97c8e6cb",
+            "state_hash": "4b4560de3f0f62c77ebf053e5a15969dd735ca69fe272113fa60a351d971f17f",
+            "word": [
+              600,
+              -1200,
+              23,
+              1
+            ]
+          }
+        ],
+        "sha256": "694a2791eb26c7f8bd488218ad6fa0c1fd7d16b514098a5fa114a5ff7e607c0a",
+        "valid": true
+      },
+      "journal_equal_control": true,
+      "live_receipt_retained": true,
+      "live_state_matches_journal": true,
+      "native_failure_observed": "os_forced_kill",
+      "observation": "runtime_ended",
+      "outcome": {
+        "code": "runtime.died",
+        "status": "error"
+      },
+      "pending_preview_retained": true,
+      "placement": "own_process",
+      "receipts_match_returns": true,
+      "runtime_prefix": {
+        "check_word": {
+          "legal": true,
+          "letters": 3,
+          "moved_slots": 13204,
+          "net_sha256": "25471bbe48dd4a74b42962c58739dd4669f275ed54d962ea36203cee0784cc2d"
+        },
+        "labels_bytes": 1039200,
+        "labels_sha256": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+        "pose_bytes": 869952,
+        "pose_sha256": "0d3068ad1aca38646ef4f858b4f98de9eb78c6a54f2fce6128e5642933bc9fb3",
+        "preview": {
+          "base_hash": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+          "base_revision": 1,
+          "provenance_sha256": "e833a4f4da49457b0b37bdcaff255c97ff5a2516cd5e8383509b20b851814305",
+          "target_hash": "03612607a4963b3a34d5b3fe3f5701d9544140bf7b197a29ec957d440571d593",
+          "word_sha256": "00765b14997afdb943bcf92f08d78411f67d6cb7c5751c26fc4e75b511638757"
+        },
+        "runtime_commit_refusal": "capability.denied"
+      },
+      "session_open": true,
+      "typed_outcome": true,
+      "unexecuted_tail_commands": []
+    }
+  ],
+  "slice_results": {
+    "inside_engine": false,
+    "own_process": true
+  },
+  "slots": 259800,
+  "transfer_checks": [
+    {
+      "placement": "inside_engine",
+      "rows": [
+        {
+          "reply_bytes": 1039200,
+          "reply_sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+          "request_bytes": 21,
+          "row": "read_labels",
+          "samples": 1,
+          "series": 0
+        },
+        {
+          "reply_bytes": 869952,
+          "reply_sha256": "0d3068ad1aca38646ef4f858b4f98de9eb78c6a54f2fce6128e5642933bc9fb3",
+          "request_bytes": 26,
+          "row": "read_pose_bundle",
+          "samples": 1,
+          "series": 0
+        },
+        {
+          "reply_bytes": 126,
+          "reply_sha256": "0b94616eb19f863e003279b5b8b73ed29c9614500b2af990861bec7406791ad6",
+          "request_bytes": 40,
+          "row": "check_word",
+          "samples": 1,
+          "series": 0
+        },
+        {
+          "reply_bytes": 347,
+          "reply_sha256": "ed17c3cf64a6851012c11a4e2728f7c3b5d927dc9ff9903a9d7d296c80c55fa0",
+          "request_bytes": 2887,
+          "row": "preview",
+          "samples": 1,
+          "series": 0
+        },
+        {
+          "reply_bytes": 1039200,
+          "reply_sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+          "request_bytes": 21,
+          "row": "read_labels",
+          "samples": 100,
+          "series": 1
+        },
+        {
+          "reply_bytes": 869952,
+          "reply_sha256": "0d3068ad1aca38646ef4f858b4f98de9eb78c6a54f2fce6128e5642933bc9fb3",
+          "request_bytes": 26,
+          "row": "read_pose_bundle",
+          "samples": 100,
+          "series": 1
+        },
+        {
+          "reply_bytes": 126,
+          "reply_sha256": "0b94616eb19f863e003279b5b8b73ed29c9614500b2af990861bec7406791ad6",
+          "request_bytes": 40,
+          "row": "check_word",
+          "samples": 100,
+          "series": 1
+        },
+        {
+          "reply_bytes": 347,
+          "reply_sha256": "ed17c3cf64a6851012c11a4e2728f7c3b5d927dc9ff9903a9d7d296c80c55fa0",
+          "request_bytes": 2887,
+          "row": "preview",
+          "samples": 100,
+          "series": 1
+        },
+        {
+          "reply_bytes": 1039200,
+          "reply_sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+          "request_bytes": 21,
+          "row": "read_labels",
+          "samples": 100,
+          "series": 2
+        },
+        {
+          "reply_bytes": 869952,
+          "reply_sha256": "0d3068ad1aca38646ef4f858b4f98de9eb78c6a54f2fce6128e5642933bc9fb3",
+          "request_bytes": 26,
+          "row": "read_pose_bundle",
+          "samples": 100,
+          "series": 2
+        },
+        {
+          "reply_bytes": 126,
+          "reply_sha256": "0b94616eb19f863e003279b5b8b73ed29c9614500b2af990861bec7406791ad6",
+          "request_bytes": 40,
+          "row": "check_word",
+          "samples": 100,
+          "series": 2
+        },
+        {
+          "reply_bytes": 347,
+          "reply_sha256": "ed17c3cf64a6851012c11a4e2728f7c3b5d927dc9ff9903a9d7d296c80c55fa0",
+          "request_bytes": 2887,
+          "row": "preview",
+          "samples": 100,
+          "series": 2
+        },
+        {
+          "reply_bytes": 1039200,
+          "reply_sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+          "request_bytes": 21,
+          "row": "read_labels",
+          "samples": 100,
+          "series": 3
+        },
+        {
+          "reply_bytes": 869952,
+          "reply_sha256": "0d3068ad1aca38646ef4f858b4f98de9eb78c6a54f2fce6128e5642933bc9fb3",
+          "request_bytes": 26,
+          "row": "read_pose_bundle",
+          "samples": 100,
+          "series": 3
+        },
+        {
+          "reply_bytes": 126,
+          "reply_sha256": "0b94616eb19f863e003279b5b8b73ed29c9614500b2af990861bec7406791ad6",
+          "request_bytes": 40,
+          "row": "check_word",
+          "samples": 100,
+          "series": 3
+        },
+        {
+          "reply_bytes": 347,
+          "reply_sha256": "ed17c3cf64a6851012c11a4e2728f7c3b5d927dc9ff9903a9d7d296c80c55fa0",
+          "request_bytes": 2887,
+          "row": "preview",
+          "samples": 100,
+          "series": 3
+        }
+      ]
+    },
+    {
+      "placement": "own_process",
+      "rows": [
+        {
+          "reply_bytes": 1039200,
+          "reply_sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+          "request_bytes": 21,
+          "row": "read_labels",
+          "samples": 1,
+          "series": 0
+        },
+        {
+          "reply_bytes": 869952,
+          "reply_sha256": "0d3068ad1aca38646ef4f858b4f98de9eb78c6a54f2fce6128e5642933bc9fb3",
+          "request_bytes": 26,
+          "row": "read_pose_bundle",
+          "samples": 1,
+          "series": 0
+        },
+        {
+          "reply_bytes": 126,
+          "reply_sha256": "0b94616eb19f863e003279b5b8b73ed29c9614500b2af990861bec7406791ad6",
+          "request_bytes": 40,
+          "row": "check_word",
+          "samples": 1,
+          "series": 0
+        },
+        {
+          "reply_bytes": 347,
+          "reply_sha256": "ed17c3cf64a6851012c11a4e2728f7c3b5d927dc9ff9903a9d7d296c80c55fa0",
+          "request_bytes": 2887,
+          "row": "preview",
+          "samples": 1,
+          "series": 0
+        },
+        {
+          "reply_bytes": 1039200,
+          "reply_sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+          "request_bytes": 21,
+          "row": "read_labels",
+          "samples": 100,
+          "series": 1
+        },
+        {
+          "reply_bytes": 869952,
+          "reply_sha256": "0d3068ad1aca38646ef4f858b4f98de9eb78c6a54f2fce6128e5642933bc9fb3",
+          "request_bytes": 26,
+          "row": "read_pose_bundle",
+          "samples": 100,
+          "series": 1
+        },
+        {
+          "reply_bytes": 126,
+          "reply_sha256": "0b94616eb19f863e003279b5b8b73ed29c9614500b2af990861bec7406791ad6",
+          "request_bytes": 40,
+          "row": "check_word",
+          "samples": 100,
+          "series": 1
+        },
+        {
+          "reply_bytes": 347,
+          "reply_sha256": "ed17c3cf64a6851012c11a4e2728f7c3b5d927dc9ff9903a9d7d296c80c55fa0",
+          "request_bytes": 2887,
+          "row": "preview",
+          "samples": 100,
+          "series": 1
+        },
+        {
+          "reply_bytes": 1039200,
+          "reply_sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+          "request_bytes": 21,
+          "row": "read_labels",
+          "samples": 100,
+          "series": 2
+        },
+        {
+          "reply_bytes": 869952,
+          "reply_sha256": "0d3068ad1aca38646ef4f858b4f98de9eb78c6a54f2fce6128e5642933bc9fb3",
+          "request_bytes": 26,
+          "row": "read_pose_bundle",
+          "samples": 100,
+          "series": 2
+        },
+        {
+          "reply_bytes": 126,
+          "reply_sha256": "0b94616eb19f863e003279b5b8b73ed29c9614500b2af990861bec7406791ad6",
+          "request_bytes": 40,
+          "row": "check_word",
+          "samples": 100,
+          "series": 2
+        },
+        {
+          "reply_bytes": 347,
+          "reply_sha256": "ed17c3cf64a6851012c11a4e2728f7c3b5d927dc9ff9903a9d7d296c80c55fa0",
+          "request_bytes": 2887,
+          "row": "preview",
+          "samples": 100,
+          "series": 2
+        },
+        {
+          "reply_bytes": 1039200,
+          "reply_sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+          "request_bytes": 21,
+          "row": "read_labels",
+          "samples": 100,
+          "series": 3
+        },
+        {
+          "reply_bytes": 869952,
+          "reply_sha256": "0d3068ad1aca38646ef4f858b4f98de9eb78c6a54f2fce6128e5642933bc9fb3",
+          "request_bytes": 26,
+          "row": "read_pose_bundle",
+          "samples": 100,
+          "series": 3
+        },
+        {
+          "reply_bytes": 126,
+          "reply_sha256": "0b94616eb19f863e003279b5b8b73ed29c9614500b2af990861bec7406791ad6",
+          "request_bytes": 40,
+          "row": "check_word",
+          "samples": 100,
+          "series": 3
+        },
+        {
+          "reply_bytes": 347,
+          "reply_sha256": "ed17c3cf64a6851012c11a4e2728f7c3b5d927dc9ff9903a9d7d296c80c55fa0",
+          "request_bytes": 2887,
+          "row": "preview",
+          "samples": 100,
+          "series": 3
+        }
+      ]
+    }
+  ]
+}
