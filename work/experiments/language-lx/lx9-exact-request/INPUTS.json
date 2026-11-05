@@ -1,0 +1,270 @@
+{
+  "axes": [
+    [
+      1,
+      0,
+      0
+    ],
+    [
+      -1,
+      0,
+      0
+    ],
+    [
+      0,
+      1,
+      0
+    ],
+    [
+      0,
+      -1,
+      0
+    ],
+    [
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      -1
+    ]
+  ],
+  "b_requests": [
+    {
+      "name": "identity",
+      "wire": "LX9B1|C|0:0|0:0|0:0\n"
+    },
+    {
+      "name": "dyadic_nonmember",
+      "wire": "LX9B1|C|3:3|0:0|0:0\n"
+    },
+    {
+      "name": "menu_third_turn",
+      "wire": "LX9B1|C|1:0|1:0|1:0\n"
+    },
+    {
+      "name": "quarter_tie_x",
+      "wire": "LX9B1|C|1:0|0:0|0:0\n"
+    },
+    {
+      "name": "quarter_tie_y",
+      "wire": "LX9B1|C|0:0|1:0|0:0\n"
+    },
+    {
+      "name": "half_x",
+      "wire": "LX9B1|H|1:0|0:0|0:0\n"
+    },
+    {
+      "name": "half_y",
+      "wire": "LX9B1|H|0:0|1:0|0:0\n"
+    },
+    {
+      "name": "half_mixed",
+      "wire": "LX9B1|H|1:0|2:0|3:0\n"
+    },
+    {
+      "name": "outside_half_window",
+      "wire": "LX9B1|C|64:0|0:0|0:0\n"
+    },
+    {
+      "name": "inside_half_window",
+      "wire": "LX9B1|C|128:0|0:0|0:0\n"
+    },
+    {
+      "name": "negative_mixed",
+      "wire": "LX9B1|C|-3:2|1:1|-1:3\n"
+    }
+  ],
+  "binary64_ingress": [
+    {
+      "bits": "0000000000000000",
+      "name": "positive_zero",
+      "valid": true
+    },
+    {
+      "bits": "8000000000000000",
+      "name": "negative_zero",
+      "valid": true
+    },
+    {
+      "bits": "0000000000000001",
+      "name": "smallest_subnormal",
+      "valid": true
+    },
+    {
+      "bits": "7fefffffffffffff",
+      "name": "largest_finite",
+      "valid": true
+    },
+    {
+      "bits": "bff8000000000000",
+      "name": "negative_finite",
+      "valid": true
+    },
+    {
+      "bits": "7ff0000000000000",
+      "name": "positive_inf",
+      "valid": false
+    },
+    {
+      "bits": "fff0000000000000",
+      "name": "negative_inf",
+      "valid": false
+    },
+    {
+      "bits": "7ff8000000000000",
+      "name": "quiet_nan",
+      "valid": false
+    },
+    {
+      "bits": "7ff0000000000001",
+      "name": "signaling_nan",
+      "valid": false
+    },
+    {
+      "bits": "000000000000000",
+      "name": "malformed_bits",
+      "valid": false
+    }
+  ],
+  "default_grid_requests": [
+    {
+      "half": false,
+      "name": "small_cayley_below",
+      "target": [
+        1073741824,
+        1074279,
+        0,
+        0
+      ]
+    },
+    {
+      "half": false,
+      "name": "small_cayley_above",
+      "target": [
+        4294967296,
+        4297117,
+        0,
+        0
+      ]
+    },
+    {
+      "half": false,
+      "name": "near_quarter_below",
+      "target": [
+        2147483648,
+        2017209879,
+        0,
+        0
+      ]
+    },
+    {
+      "half": false,
+      "name": "near_quarter_above",
+      "target": [
+        4294967296,
+        4034419759,
+        0,
+        0
+      ]
+    },
+    {
+      "half": true,
+      "name": "half_axes_below",
+      "target": [
+        0,
+        4294967296,
+        277382105,
+        0
+      ]
+    },
+    {
+      "half": true,
+      "name": "half_axes_above",
+      "target": [
+        0,
+        2147483648,
+        138691053,
+        0
+      ]
+    }
+  ],
+  "degree_bits": "4051e429cc698771",
+  "degree_literal": "71.56505117707799",
+  "invalid_wire": [
+    {
+      "name": "signed_zero",
+      "wire": "LX9B1|C|-0:0|0:0|0:0\n"
+    },
+    {
+      "name": "nonreduced",
+      "wire": "LX9B1|C|2:1|0:0|0:0\n"
+    },
+    {
+      "name": "zero_exponent",
+      "wire": "LX9B1|C|0:1|0:0|0:0\n"
+    },
+    {
+      "name": "negative_exponent",
+      "wire": "LX9B1|C|1:-1|0:0|0:0\n"
+    },
+    {
+      "name": "leading_zero",
+      "wire": "LX9B1|C|01:0|0:0|0:0\n"
+    },
+    {
+      "name": "plus_sign",
+      "wire": "LX9B1|C|+1:0|0:0|0:0\n"
+    },
+    {
+      "name": "nan",
+      "wire": "LX9B1|C|NaN|0:0|0:0\n"
+    },
+    {
+      "name": "infinity",
+      "wire": "LX9B1|C|Infinity|0:0|0:0\n"
+    },
+    {
+      "name": "half_zero",
+      "wire": "LX9B1|H|0:0|0:0|0:0\n"
+    },
+    {
+      "name": "half_scale",
+      "wire": "LX9B1|H|2:0|0:0|0:0\n"
+    },
+    {
+      "name": "half_sign",
+      "wire": "LX9B1|H|-1:0|0:0|0:0\n"
+    },
+    {
+      "name": "half_fraction",
+      "wire": "LX9B1|H|1:1|0:0|0:0\n"
+    },
+    {
+      "name": "unknown_branch",
+      "wire": "LX9B1|X|1:0|0:0|0:0\n"
+    },
+    {
+      "name": "missing_newline",
+      "wire": "LX9B1|C|1:0|0:0|0:0"
+    },
+    {
+      "name": "extra_field",
+      "wire": "LX9B1|C|1:0|0:0|0:0|0:0\n"
+    },
+    {
+      "name": "wrong_menu",
+      "wire": "LX9B1|M|0000000000000000000000000000000000000000000000000000000000000000|0000000000000000000000000000000000000000000000000000000000000000|0\n"
+    }
+  ],
+  "menu_identities": [
+    "fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c",
+    "5a0429d2946fbf58b495d8f300e24a3fa164b1d9518ce4a5c3f4ef0a40625c3c"
+  ],
+  "menu_source": "research/jumbling/fixtures/wj-I_a.json:menu",
+  "radian_bits": "3ff3fc176b7a8560",
+  "radians_per_degree_bits": "3f91df46a2529d39",
+  "reorder_request": "LX9B1|C|1:0|0:0|0:0\n"
+}

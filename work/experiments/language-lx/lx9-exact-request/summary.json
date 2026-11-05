@@ -1,0 +1,10 @@
+{
+  "case_axes": 6,
+  "case_semantics": 2,
+  "decider": "owner",
+  "decision": "open",
+  "exceptional_angles": 152,
+  "largest_deciding_refinement_bits": 64,
+  "largest_nondeciding_tie_probe_bits": 256,
+  "menu_self_selections": 60
+}

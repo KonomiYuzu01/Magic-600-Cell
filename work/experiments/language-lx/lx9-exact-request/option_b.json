@@ -1,0 +1,1587 @@
+[
+  {
+    "bound_drag_choice": {
+      "distance_squared_Q5": [
+        0,
+        0,
+        1
+      ],
+      "index": 0,
+      "menu_identity": "fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c",
+      "menu_order": "5a0429d2946fbf58b495d8f300e24a3fa164b1d9518ce4a5c3f4ef0a40625c3c",
+      "operation": "drag",
+      "request_sha256": "89680c9eefd5b1505dffdb53b84f21553a64a1b9867c84a76bd0ef6336e5215b",
+      "ties": [
+        0
+      ]
+    },
+    "direct_menu": 0,
+    "distance_squared": [
+      0,
+      0,
+      1
+    ],
+    "drag_index": 0,
+    "drag_ties": [
+      0
+    ],
+    "free_direct_matrix": [
+      [
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          0,
+          1
+        ]
+      ]
+    ],
+    "free_quantised_matrix": [
+      [
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          0,
+          1
+        ]
+      ]
+    ],
+    "free_variants_differ": false,
+    "name": "identity",
+    "quantised_key": [
+      1,
+      0,
+      0,
+      0,
+      "C"
+    ],
+    "wire_sha256": "89680c9eefd5b1505dffdb53b84f21553a64a1b9867c84a76bd0ef6336e5215b"
+  },
+  {
+    "bound_drag_choice": {
+      "distance_squared_Q5": [
+        72,
+        0,
+        73
+      ],
+      "index": 0,
+      "menu_identity": "fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c",
+      "menu_order": "5a0429d2946fbf58b495d8f300e24a3fa164b1d9518ce4a5c3f4ef0a40625c3c",
+      "operation": "drag",
+      "request_sha256": "3d09cd8b213bbd6c544c839a4b78f0487f8642684bbd0d0ad19a901c8d5c8fd8",
+      "ties": [
+        0
+      ]
+    },
+    "direct_menu": "refused",
+    "distance_squared": [
+      72,
+      0,
+      73
+    ],
+    "drag_index": 0,
+    "drag_ties": [
+      0
+    ],
+    "free_direct_matrix": [
+      [
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          55,
+          0,
+          73
+        ],
+        [
+          -48,
+          0,
+          73
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          48,
+          0,
+          73
+        ],
+        [
+          55,
+          0,
+          73
+        ]
+      ]
+    ],
+    "free_quantised_matrix": [
+      [
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          4,
+          0,
+          5
+        ],
+        [
+          -3,
+          0,
+          5
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          5
+        ],
+        [
+          4,
+          0,
+          5
+        ]
+      ]
+    ],
+    "free_variants_differ": true,
+    "name": "dyadic_nonmember",
+    "quantised_key": [
+      3,
+      1,
+      0,
+      0,
+      "C"
+    ],
+    "wire_sha256": "3d09cd8b213bbd6c544c839a4b78f0487f8642684bbd0d0ad19a901c8d5c8fd8"
+  },
+  {
+    "bound_drag_choice": {
+      "distance_squared_Q5": [
+        0,
+        0,
+        1
+      ],
+      "index": 2,
+      "menu_identity": "fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c",
+      "menu_order": "5a0429d2946fbf58b495d8f300e24a3fa164b1d9518ce4a5c3f4ef0a40625c3c",
+      "operation": "drag",
+      "request_sha256": "040439cd3e69201f41cb2af0043171ae50ec05f003056623a57f9cdcfcecdfeb",
+      "ties": [
+        2
+      ]
+    },
+    "direct_menu": 2,
+    "distance_squared": [
+      0,
+      0,
+      1
+    ],
+    "drag_index": 2,
+    "drag_ties": [
+      2
+    ],
+    "free_direct_matrix": [
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ]
+    ],
+    "free_quantised_matrix": [
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ]
+    ],
+    "free_variants_differ": false,
+    "name": "menu_third_turn",
+    "quantised_key": [
+      1,
+      1,
+      1,
+      1,
+      "C"
+    ],
+    "wire_sha256": "040439cd3e69201f41cb2af0043171ae50ec05f003056623a57f9cdcfcecdfeb"
+  },
+  {
+    "bound_drag_choice": {
+      "distance_squared_Q5": [
+        9,
+        -3,
+        2
+      ],
+      "index": 15,
+      "menu_identity": "fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c",
+      "menu_order": "5a0429d2946fbf58b495d8f300e24a3fa164b1d9518ce4a5c3f4ef0a40625c3c",
+      "operation": "drag",
+      "request_sha256": "2c5464b266673e1bea5498a8c36b2039766b4b5fb66001554b8db117fd1ba5f9",
+      "ties": [
+        15,
+        29,
+        40,
+        43
+      ]
+    },
+    "direct_menu": "refused",
+    "distance_squared": [
+      9,
+      -3,
+      2
+    ],
+    "drag_index": 15,
+    "drag_ties": [
+      15,
+      29,
+      40,
+      43
+    ],
+    "free_direct_matrix": [
+      [
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          -1,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ]
+    ],
+    "free_quantised_matrix": [
+      [
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          -1,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ]
+    ],
+    "free_variants_differ": false,
+    "name": "quarter_tie_x",
+    "quantised_key": [
+      1,
+      1,
+      0,
+      0,
+      "C"
+    ],
+    "wire_sha256": "2c5464b266673e1bea5498a8c36b2039766b4b5fb66001554b8db117fd1ba5f9"
+  },
+  {
+    "bound_drag_choice": {
+      "distance_squared_Q5": [
+        9,
+        -3,
+        2
+      ],
+      "index": 20,
+      "menu_identity": "fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c",
+      "menu_order": "5a0429d2946fbf58b495d8f300e24a3fa164b1d9518ce4a5c3f4ef0a40625c3c",
+      "operation": "drag",
+      "request_sha256": "2dcdf8f611a289fe9d19f34b9362a1358bb6bfb679893a186a1f9450b2e17647",
+      "ties": [
+        20,
+        36,
+        48,
+        58
+      ]
+    },
+    "direct_menu": "refused",
+    "distance_squared": [
+      9,
+      -3,
+      2
+    ],
+    "drag_index": 20,
+    "drag_ties": [
+      20,
+      36,
+      48,
+      58
+    ],
+    "free_direct_matrix": [
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          -1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ]
+    ],
+    "free_quantised_matrix": [
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          -1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ]
+    ],
+    "free_variants_differ": false,
+    "name": "quarter_tie_y",
+    "quantised_key": [
+      1,
+      0,
+      1,
+      0,
+      "C"
+    ],
+    "wire_sha256": "2dcdf8f611a289fe9d19f34b9362a1358bb6bfb679893a186a1f9450b2e17647"
+  },
+  {
+    "bound_drag_choice": {
+      "distance_squared_Q5": [
+        0,
+        0,
+        1
+      ],
+      "index": 11,
+      "menu_identity": "fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c",
+      "menu_order": "5a0429d2946fbf58b495d8f300e24a3fa164b1d9518ce4a5c3f4ef0a40625c3c",
+      "operation": "drag",
+      "request_sha256": "ecc2411cff8d606c520bdf21084773ad6e20bf82482b768b661ca533a239bc24",
+      "ties": [
+        11
+      ]
+    },
+    "direct_menu": 11,
+    "distance_squared": [
+      0,
+      0,
+      1
+    ],
+    "drag_index": 11,
+    "drag_ties": [
+      11
+    ],
+    "free_direct_matrix": [
+      [
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          -1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          -1,
+          0,
+          1
+        ]
+      ]
+    ],
+    "free_quantised_matrix": [
+      [
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          -1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          -1,
+          0,
+          1
+        ]
+      ]
+    ],
+    "free_variants_differ": false,
+    "name": "half_x",
+    "quantised_key": [
+      1,
+      -1,
+      0,
+      0,
+      "H"
+    ],
+    "wire_sha256": "ecc2411cff8d606c520bdf21084773ad6e20bf82482b768b661ca533a239bc24"
+  },
+  {
+    "bound_drag_choice": {
+      "distance_squared_Q5": [
+        0,
+        0,
+        1
+      ],
+      "index": 1,
+      "menu_identity": "fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c",
+      "menu_order": "5a0429d2946fbf58b495d8f300e24a3fa164b1d9518ce4a5c3f4ef0a40625c3c",
+      "operation": "drag",
+      "request_sha256": "745dc20a41da7a9a730dcaaf570d7dc04c11a19a8dd295704d6359714378dee7",
+      "ties": [
+        1
+      ]
+    },
+    "direct_menu": 1,
+    "distance_squared": [
+      0,
+      0,
+      1
+    ],
+    "drag_index": 1,
+    "drag_ties": [
+      1
+    ],
+    "free_direct_matrix": [
+      [
+        [
+          -1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          -1,
+          0,
+          1
+        ]
+      ]
+    ],
+    "free_quantised_matrix": [
+      [
+        [
+          -1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          -1,
+          0,
+          1
+        ]
+      ]
+    ],
+    "free_variants_differ": false,
+    "name": "half_y",
+    "quantised_key": [
+      1,
+      0,
+      -1,
+      0,
+      "H"
+    ],
+    "wire_sha256": "745dc20a41da7a9a730dcaaf570d7dc04c11a19a8dd295704d6359714378dee7"
+  },
+  {
+    "bound_drag_choice": {
+      "distance_squared_Q5": [
+        45,
+        -15,
+        14
+      ],
+      "index": 25,
+      "menu_identity": "fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c",
+      "menu_order": "5a0429d2946fbf58b495d8f300e24a3fa164b1d9518ce4a5c3f4ef0a40625c3c",
+      "operation": "drag",
+      "request_sha256": "82299bf5dd0cd0ca6a6047b617a5c7fc271d5deeb88038e98f1f48ed99cb5367",
+      "ties": [
+        25
+      ]
+    },
+    "direct_menu": "refused",
+    "distance_squared": [
+      45,
+      -15,
+      14
+    ],
+    "drag_index": 25,
+    "drag_ties": [
+      25
+    ],
+    "free_direct_matrix": [
+      [
+        [
+          -6,
+          0,
+          7
+        ],
+        [
+          2,
+          0,
+          7
+        ],
+        [
+          3,
+          0,
+          7
+        ]
+      ],
+      [
+        [
+          2,
+          0,
+          7
+        ],
+        [
+          -3,
+          0,
+          7
+        ],
+        [
+          6,
+          0,
+          7
+        ]
+      ],
+      [
+        [
+          3,
+          0,
+          7
+        ],
+        [
+          6,
+          0,
+          7
+        ],
+        [
+          2,
+          0,
+          7
+        ]
+      ]
+    ],
+    "free_quantised_matrix": [
+      [
+        [
+          -1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ]
+    ],
+    "free_variants_differ": true,
+    "name": "half_mixed",
+    "quantised_key": [
+      1,
+      0,
+      -1,
+      -1,
+      "H"
+    ],
+    "wire_sha256": "82299bf5dd0cd0ca6a6047b617a5c7fc271d5deeb88038e98f1f48ed99cb5367"
+  },
+  {
+    "bound_drag_choice": {
+      "distance_squared_Q5": [
+        8,
+        0,
+        4097
+      ],
+      "index": 11,
+      "menu_identity": "fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c",
+      "menu_order": "5a0429d2946fbf58b495d8f300e24a3fa164b1d9518ce4a5c3f4ef0a40625c3c",
+      "operation": "drag",
+      "request_sha256": "7c5805b970ee83f117a4ca9e8cd00c6adddcec2fa03c47109a344a193b5ccbf9",
+      "ties": [
+        11
+      ]
+    },
+    "direct_menu": "refused",
+    "distance_squared": [
+      8,
+      0,
+      4097
+    ],
+    "drag_index": 11,
+    "drag_ties": [
+      11
+    ],
+    "free_direct_matrix": [
+      [
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          -4095,
+          0,
+          4097
+        ],
+        [
+          -128,
+          0,
+          4097
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          128,
+          0,
+          4097
+        ],
+        [
+          -4095,
+          0,
+          4097
+        ]
+      ]
+    ],
+    "free_quantised_matrix": [
+      [
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          -1,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ]
+    ],
+    "free_variants_differ": true,
+    "name": "outside_half_window",
+    "quantised_key": [
+      1,
+      1,
+      0,
+      0,
+      "C"
+    ],
+    "wire_sha256": "7c5805b970ee83f117a4ca9e8cd00c6adddcec2fa03c47109a344a193b5ccbf9"
+  },
+  {
+    "bound_drag_choice": {
+      "distance_squared_Q5": [
+        8,
+        0,
+        16385
+      ],
+      "index": 11,
+      "menu_identity": "fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c",
+      "menu_order": "5a0429d2946fbf58b495d8f300e24a3fa164b1d9518ce4a5c3f4ef0a40625c3c",
+      "operation": "drag",
+      "request_sha256": "48f8b73197c3bb13838f1f41fa14f094f648751f3edf5768d54549c83c6f9fe7",
+      "ties": [
+        11
+      ]
+    },
+    "direct_menu": "refused",
+    "distance_squared": [
+      8,
+      0,
+      16385
+    ],
+    "drag_index": 11,
+    "drag_ties": [
+      11
+    ],
+    "free_direct_matrix": [
+      [
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          -16383,
+          0,
+          16385
+        ],
+        [
+          -256,
+          0,
+          16385
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          256,
+          0,
+          16385
+        ],
+        [
+          -16383,
+          0,
+          16385
+        ]
+      ]
+    ],
+    "free_quantised_matrix": [
+      [
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          -1,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1
+        ],
+        [
+          -1,
+          0,
+          1
+        ]
+      ]
+    ],
+    "free_variants_differ": true,
+    "name": "inside_half_window",
+    "quantised_key": [
+      1,
+      -1,
+      0,
+      0,
+      "H"
+    ],
+    "wire_sha256": "48f8b73197c3bb13838f1f41fa14f094f648751f3edf5768d54549c83c6f9fe7"
+  },
+  {
+    "bound_drag_choice": {
+      "distance_squared_Q5": [
+        396,
+        -140,
+        117
+      ],
+      "index": 58,
+      "menu_identity": "fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c",
+      "menu_order": "5a0429d2946fbf58b495d8f300e24a3fa164b1d9518ce4a5c3f4ef0a40625c3c",
+      "operation": "drag",
+      "request_sha256": "7ef6ce9396d5418eb7900551c2a02f714f46c1255e01fab52f0d611b939742fa",
+      "ties": [
+        58
+      ]
+    },
+    "direct_menu": "refused",
+    "distance_squared": [
+      396,
+      -140,
+      117
+    ],
+    "drag_index": 58,
+    "drag_ties": [
+      58
+    ],
+    "free_direct_matrix": [
+      [
+        [
+          83,
+          0,
+          117
+        ],
+        [
+          -32,
+          0,
+          117
+        ],
+        [
+          76,
+          0,
+          117
+        ]
+      ],
+      [
+        [
+          -64,
+          0,
+          117
+        ],
+        [
+          43,
+          0,
+          117
+        ],
+        [
+          88,
+          0,
+          117
+        ]
+      ],
+      [
+        [
+          -4,
+          0,
+          9
+        ],
+        [
+          -8,
+          0,
+          9
+        ],
+        [
+          1,
+          0,
+          9
+        ]
+      ]
+    ],
+    "free_quantised_matrix": [
+      [
+        [
+          2,
+          0,
+          3
+        ],
+        [
+          -1,
+          0,
+          3
+        ],
+        [
+          2,
+          0,
+          3
+        ]
+      ],
+      [
+        [
+          -1,
+          0,
+          3
+        ],
+        [
+          2,
+          0,
+          3
+        ],
+        [
+          2,
+          0,
+          3
+        ]
+      ],
+      [
+        [
+          -2,
+          0,
+          3
+        ],
+        [
+          -2,
+          0,
+          3
+        ],
+        [
+          1,
+          0,
+          3
+        ]
+      ]
+    ],
+    "free_variants_differ": true,
+    "name": "negative_mixed",
+    "quantised_key": [
+      2,
+      -1,
+      1,
+      0,
+      "C"
+    ],
+    "wire_sha256": "7ef6ce9396d5418eb7900551c2a02f714f46c1255e01fab52f0d611b939742fa"
+  }
+]

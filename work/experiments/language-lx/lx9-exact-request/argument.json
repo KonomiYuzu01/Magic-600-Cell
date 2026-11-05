@@ -1,0 +1,129 @@
+{
+  "angles_modulo_360": 152,
+  "degree_upper_bound": 16,
+  "fixed_field_conductor": 1440,
+  "fixed_field_degree": 384,
+  "identically_zero_coefficients": [
+    "0",
+    "0",
+    "0"
+  ],
+  "largest_deciding_bits": 16,
+  "orders": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    8,
+    9,
+    10,
+    12,
+    15,
+    16,
+    18,
+    20,
+    24,
+    30,
+    32,
+    36,
+    40,
+    48,
+    60
+  ],
+  "radical_guard_cases": [
+    {
+      "coefficients": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
+      "q": "2",
+      "turns": "1/8",
+      "zero": true
+    },
+    {
+      "coefficients": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "q": "1",
+      "turns": "1/4",
+      "zero": false
+    },
+    {
+      "coefficients": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
+      "q": "7",
+      "turns": "1/4",
+      "zero": false
+    },
+    {
+      "coefficients": [
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
+      "q": "5",
+      "turns": "1/4",
+      "zero": true
+    }
+  ]
+}
