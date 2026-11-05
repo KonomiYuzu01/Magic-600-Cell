@@ -55,7 +55,7 @@ outputs live under LX-1's `build/` and are removed. No corpus, candidate or harn
 | rt1-own | In-memory AST variant replaces every Flow construction and join in the checker and executor with one empty Flow singleton. Type/effect traversal and source dispatch remain; there is no label inference or propagation. The independent coarse read-state flag remains. |
 | rt2-py | Replaces Analysis initialization with a structural call/effect scan and empty annotations. The original AST approval, renderer, bytecodes and bridge execute; no static label pass runs. |
 | rt2-node | Replaces analyze with a reachable-operation/effect scan and empty annotations. Original approved JavaScript and unmodified V8 run through the original bridge. |
-| rt3-wasm | Skips label analysis; emits the existing constant-field path with every label field zero, no mask joins and no metadata imports. Keeps inert ABI slots and provenance handles. Local Wasm hashes are retained per program; these modules are not relabelled as the originals. |
+| rt3-wasm | Skips label analysis; emits the existing constant-field path with every label field zero, no mask joins and no metadata imports. Keeps inert ABI slots and provenance handles. Local Wasm hashes are retained per program; these modules are not relabelled as the originals. It also omits the original adapter's per-program `modules.json` read and compiled-artifact comparison, since these modules have no frozen artifact: see the correction under Timing and equality. |
 | rt4-pyhost | The capability cell already skips static analysis. Erases state/computed tag argument expressions and replaces Library knowledge/make label unions with empty labels while retaining read-state; original rendered Python bytecodes execute. |
 
 All five use a local Host that removes observational labels, including preview's label unions.
@@ -200,6 +200,14 @@ executed step where available and per kernel call. `timings.json` retains ordere
 and smoke runs. Times are whole-workload elapsed divided by counts, not isolated call latency.
 The timer and child lifecycle are documented there. D6 conditions were not controlled; other
 work shares the machine. All measurements are weak leads and no slow result rejects anything.
+
+**Correction after review (finding LX1-001).** RT3's labelled cells read and parse `modules.json`
+and compare the compiled artifact for every program, inside the timed span. Its `labels_off` cell
+does neither. A read-only probe of the Full workload saw 18 reads, 7,688,034 bytes in all, in each
+labelled mode and none in `labels_off`. RT3's `labels_off` timing therefore cannot be compared with
+its labelled cells: any difference mixes artifact loading and comparison with label work, and
+their shares were not measured. Compare only RT3's `static_only` with its `run_time`. RT3's counts,
+kernel calls, bytes and result hashes are unaffected. The review found this in RT3 only.
 
 For original static/runtime cells, each exact payload hash and full run key matches every
 corresponding stored summary repeat (256 program observations, 2,560 stored-repeat comparisons).
