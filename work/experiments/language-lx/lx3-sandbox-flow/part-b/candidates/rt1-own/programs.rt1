@@ -1,0 +1,815 @@
+(rt1
+  (input "caps" Targets)
+  (input "target" Target)
+  (input "word" Word)
+  (input "words" Words)
+  (run "r1"
+    (kernel "n" Ints "counts")
+    (calc "i" Int "argmax_first" (ref "n"))
+    (calc "t" Target "index" (ref "caps") (ref "i"))
+    (preview "receipt" Receipt (ref "word") (ref "t"))
+  )
+)
+(rt1
+  (input "caps" Targets)
+  (input "target" Target)
+  (input "word" Word)
+  (input "words" Words)
+  (run "r1"
+    (kernel "n" Ints "counts")
+    (calc "rank" Ints "rank_desc_indices" (ref "n"))
+    (calc "i" Int "index" (ref "rank") (lit Int 0))
+    (calc "t" Target "index" (ref "caps") (ref "i"))
+    (preview "receipt" Receipt (ref "word") (ref "t"))
+  )
+)
+(rt1
+  (input "caps" Targets)
+  (input "target" Target)
+  (input "word" Word)
+  (input "words" Words)
+  (run "r1"
+    (calc "scores" Ints "identity" (lit Ints []))
+    (for "w" Word (ref "words")
+      (kernel "s" Int "score" (ref "w"))
+      (calc "scores" Ints "append" (ref "scores") (ref "s"))
+    )
+    (calc "i" Int "argmin_first" (ref "scores"))
+    (calc "chosen" Word "index" (ref "words") (ref "i"))
+    (calc "rebuilt" Word "concat" (lit Word []) (ref "chosen"))
+    (preview "receipt" Receipt (ref "rebuilt") (ref "target"))
+  )
+)
+(rt1
+  (input "caps" Targets)
+  (input "target" Target)
+  (input "word" Word)
+  (input "words" Words)
+  (run "r1"
+    (calc "scores" Ints "identity" (lit Ints []))
+    (for "w" Word (ref "words")
+      (kernel "s" Int "score" (ref "w"))
+      (calc "scores" Ints "append" (ref "scores") (ref "s"))
+    )
+    (calc "i" Int "argmin_first" (ref "scores"))
+    (calc "chosen" Word "index" (ref "words") (ref "i"))
+    (workspace_put "selected_index" (ref "i"))
+  )
+  (run "r2"
+    (workspace_get "i" Int "selected_index")
+    (calc "rebuilt" Word "index" (ref "words") (ref "i"))
+    (preview "receipt" Receipt (ref "rebuilt") (ref "target"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (kernel "nu" Ints "nu2")
+    (calc "coeff" Ints "linear_solve_mod" (lit Matrix [[1,0],[0,1]]) (ref "nu") (lit Int 2))
+    (calc "correction" Word "combine_corrections" (lit Words [["a"],["b"]]) (ref "coeff"))
+    (preview "receipt" Receipt (ref "correction") (ref "target"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (kernel "nu" Ints "nu5")
+    (calc "coeff" Ints "linear_solve_mod" (lit Matrix [[1,0],[0,1]]) (ref "nu") (lit Int 5))
+    (calc "correction" Word "combine_corrections" (lit Words [["c"],["d"]]) (ref "coeff"))
+    (preview "receipt" Receipt (ref "correction") (ref "target"))
+  )
+)
+(rt1
+  (input "caps" Targets)
+  (input "target" Target)
+  (input "word" Word)
+  (input "words" Words)
+  (run "r1"
+    (kernel "n" Ints "counts")
+    (calc "i" Int "argmax_first" (ref "n"))
+    (calc "w" Word "index" (ref "words") (ref "i"))
+    (workspace_put "saved" (ref "w"))
+  )
+  (run "r2"
+    (workspace_get "w" Word "saved")
+    (calc "renamed" Word "identity" (ref "w"))
+    (workspace_put "renamed" (ref "renamed"))
+    (preview "receipt" Receipt (ref "renamed") (ref "target"))
+  )
+)
+(rt1
+  (input "legacy" Word)
+  (input "target" Target)
+  (run "r1"
+    (workspace_put "legacy" (ref "legacy"))
+  )
+  (run "r2"
+    (workspace_get "w" Word "legacy")
+    (preview "receipt" Receipt (ref "w") (ref "target"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (kernel "n" Ints "counts")
+    (calc "n0" Int "index" (ref "n") (lit Int 0))
+    (calc "test" Bool "gt" (ref "n0") (lit Int 0))
+    (if (ref "test")
+      (then
+        (preview "receipt" Receipt (lit Word ["a"]) (ref "target"))
+      )
+      (else
+        (preview "receipt" Receipt (lit Word ["b"]) (ref "target"))
+      )
+    )
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (kernel "bits" Ints "bits")
+    (calc "b" Int "index" (ref "bits") (lit Int 1))
+    (calc "test" Bool "eq" (ref "b") (lit Int 1))
+    (if (ref "test")
+      (then
+        (calc "choice" Word "identity" (lit Word ["a"]))
+      )
+      (else
+        (calc "choice" Word "identity" (lit Word ["b"]))
+      )
+    )
+    (preview "receipt" Receipt (ref "choice") (ref "target"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (module "selector" (params) Word
+    (kernel "n" Ints "nu2")
+    (calc "v" Int "index" (ref "n") (lit Int 0))
+    (calc "b" Bool "eq" (ref "v") (lit Int 1))
+    (if (ref "b")
+      (then
+        (return (lit Word ["a"]))
+      )
+      (else
+        (return (lit Word ["b"]))
+      )
+    )
+  )
+  (run "r1"
+    (call "w" Word "selector")
+    (preview "receipt" Receipt (ref "w") (ref "target"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (module "copy" (params ("x" Word)) Word
+    (return (ref "x"))
+  )
+  (module "selector" (params) Word
+    (kernel "n" Ints "nu2")
+    (calc "v" Int "index" (ref "n") (lit Int 0))
+    (calc "b" Bool "eq" (ref "v") (lit Int 1))
+    (if (ref "b")
+      (then
+        (return (lit Word ["a"]))
+      )
+      (else
+        (return (lit Word ["b"]))
+      )
+    )
+  )
+  (run "r1"
+    (call "selected" Word "selector")
+    (call "copied" Word "copy" (ref "selected"))
+    (preview "receipt" Receipt (ref "copied") (ref "target"))
+  )
+)
+(rt1
+  (input "caps" Targets)
+  (input "target" Target)
+  (input "word" Word)
+  (input "words" Words)
+  (run "r1"
+    (for "w" Word (ref "words")
+      (preview "receipt" Receipt (ref "w") (ref "target"))
+      (kernel "s" Int "score" (ref "w"))
+      (calc "done" Bool "eq" (ref "s") (lit Int 0))
+      (if (ref "done")
+        (then
+          (stop "requested")
+        )
+        (else
+        )
+      )
+    )
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (kernel "bits" Ints "bits")
+    (calc "b" Int "index" (ref "bits") (lit Int 0))
+    (calc "test" Bool "eq" (ref "b") (lit Int 1))
+    (if (ref "test")
+      (then
+        (stop "requested")
+      )
+      (else
+      )
+    )
+    (preview "receipt" Receipt (ref "word") (ref "target"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (preview "receipt" Receipt (lit Word ["d"]) (ref "target"))
+    (kernel "outcome" Record "preview_outcome" (ref "receipt"))
+    (calc "field" Text "field" (ref "outcome") (lit Text "code"))
+    (calc "test" Bool "eq" (ref "field") (lit Text "KN2:protection.piece_would_move"))
+    (if (ref "test")
+      (then
+        (preview "receipt" Receipt (lit Word ["a"]) (ref "target"))
+      )
+      (else
+        (preview "receipt" Receipt (lit Word ["b"]) (ref "target"))
+      )
+    )
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (preview "receipt" Receipt (lit Word ["c"]) (ref "target"))
+    (kernel "outcome" Record "preview_outcome" (ref "receipt"))
+    (calc "field" Bool "field" (ref "outcome") (lit Text "protected"))
+    (calc "test" Bool "eq" (ref "field") (lit Bool false))
+    (if (ref "test")
+      (then
+        (preview "receipt" Receipt (lit Word ["a"]) (ref "target"))
+      )
+      (else
+        (preview "receipt" Receipt (lit Word ["b"]) (ref "target"))
+      )
+    )
+  )
+)
+(rt1
+  (input "caps" Targets)
+  (input "pick0" Int)
+  (input "target" Target)
+  (input "word" Word)
+  (input "words" Words)
+  (run "r1"
+    (kernel "n" Ints "counts")
+    (calc "i" Int "argmax_first" (ref "n"))
+    (calc "t" Target "index" (ref "caps") (ref "i"))
+    (calc "one" Targets "singleton" (ref "t"))
+    (pick "chosen" Target (ref "one") "pick0")
+    (preview "receipt" Receipt (ref "word") (ref "chosen"))
+  )
+)
+(rt1
+  (input "pick0" Int)
+  (input "target" Target)
+  (run "r1"
+    (kernel "nu" Ints "nu2")
+    (calc "w" Word "combine_corrections" (lit Words [["a"],["b"]]) (ref "nu"))
+    (calc "one" Words "singleton" (ref "w"))
+    (pick "chosen" Word (ref "one") "pick0")
+    (preview "receipt" Receipt (ref "chosen") (ref "target"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (preview "receipt" Receipt (lit Word ["a"]) (ref "target"))
+    (kernel "bits" Ints "bits")
+    (calc "bit" Int "index" (ref "bits") (lit Int 0))
+    (calc "test" Bool "eq" (ref "bit") (lit Int 1))
+    (if (ref "test")
+      (then
+        (stop "requested")
+      )
+      (else
+      )
+    )
+    (preview "receipt" Receipt (lit Word ["b"]) (ref "target"))
+  )
+  (run "r2"
+    (preview "receipt" Receipt (lit Word ["a"]) (ref "target"))
+    (kernel "bits" Ints "bits")
+    (calc "bit" Int "index" (ref "bits") (lit Int 1))
+    (calc "test" Bool "eq" (ref "bit") (lit Int 1))
+    (if (ref "test")
+      (then
+        (stop "requested")
+      )
+      (else
+      )
+    )
+    (preview "receipt" Receipt (lit Word ["b"]) (ref "target"))
+  )
+  (run "r3"
+    (preview "receipt" Receipt (lit Word ["a"]) (ref "target"))
+    (kernel "bits" Ints "bits")
+    (calc "bit" Int "index" (ref "bits") (lit Int 2))
+    (calc "test" Bool "eq" (ref "bit") (lit Int 1))
+    (if (ref "test")
+      (then
+        (stop "requested")
+      )
+      (else
+      )
+    )
+    (preview "receipt" Receipt (lit Word ["b"]) (ref "target"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (kernel "bits" Ints "bits")
+    (calc "bit" Int "index" (ref "bits") (lit Int 0))
+    (calc "test" Bool "eq" (ref "bit") (lit Int 1))
+    (if (ref "test")
+      (then
+        (stop "requested")
+      )
+      (else
+      )
+    )
+    (preview "receipt" Receipt (lit Word ["b"]) (ref "target"))
+  )
+  (run "r2"
+    (kernel "bits" Ints "bits")
+    (calc "bit" Int "index" (ref "bits") (lit Int 1))
+    (calc "test" Bool "eq" (ref "bit") (lit Int 1))
+    (if (ref "test")
+      (then
+        (stop "requested")
+      )
+      (else
+      )
+    )
+    (preview "receipt" Receipt (lit Word ["b"]) (ref "target"))
+  )
+  (run "r3"
+    (kernel "bits" Ints "bits")
+    (calc "bit" Int "index" (ref "bits") (lit Int 2))
+    (calc "test" Bool "eq" (ref "bit") (lit Int 1))
+    (if (ref "test")
+      (then
+        (stop "requested")
+      )
+      (else
+      )
+    )
+    (preview "receipt" Receipt (lit Word ["b"]) (ref "target"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (kernel "v" Ints "counts")
+    (return (ref "v"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (kernel "v" Ints "floors")
+    (return (ref "v"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (kernel "v" Bools "blocked")
+    (return (ref "v"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (kernel "v" State "snapshot")
+    (return (ref "v"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (kernel "n" Ints "counts")
+    (calc "rows" Rows "zip" (lit Targets ["c0","c1","c2"]) (ref "n"))
+    (return (ref "rows"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (kernel "n" Ints "counts")
+    (calc "sum" Int "sum" (ref "n"))
+    (return (ref "sum"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (kernel "f" Ints "floors")
+    (calc "z" Int "count_equal" (ref "f") (lit Int 0))
+    (return (ref "z"))
+  )
+)
+(rt1
+  (input "word" Word)
+  (run "r1"
+    (calc "n" Int "length" (ref "word"))
+    (return (ref "n"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (calc "n" Int "add" (lit Int 9007199254740993) (lit Int 7))
+    (return (ref "n"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (calc "n" Int "mod_dot" (lit Ints [1,2]) (lit Ints [3,1]) (lit Int 5))
+    (return (ref "n"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (kernel "v" Ints "counts")
+    (calc "coords" Rows "indexed_points" (ref "v"))
+    (publish (lit Record {"exact_properties":{"values":[2,6,6]},"kind":"points","object_ids":["c0","c1","c2"],"order":[0,1,2]}) (ref "coords"))
+    (return (lit Text "published"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (kernel "v" Ints "floors")
+    (calc "coords" Rows "indexed_points" (ref "v"))
+    (publish (lit Record {"exact_properties":{"values":[0,2,2]},"kind":"points","object_ids":["c0","c1","c2"],"order":[0,1,2]}) (ref "coords"))
+    (return (lit Text "published"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (run "r1"
+    (kernel "n" Ints "counts")
+    (calc "v" Int "index" (ref "n") (lit Int 1))
+    (calc "xy" Rows "point" (lit Int 1) (ref "v"))
+    (publish (lit Record {"exact_properties":{"value":6},"kind":"points","object_ids":["c1"],"order":[0]}) (ref "xy"))
+    (return (lit Text "published"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (kernel "check" Record "word_check" (ref "word"))
+    (publish (lit Record {"exact_properties":{"word":["a"]},"kind":"word_path","object_ids":["slot0","slot1"],"order":[0,1]}) (lit Rows [[0,1],[1,0]]))
+    (return (lit Text "published"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (publish (lit Record {"exact_properties":{"fraction":{"denominator":3,"numerator":1}},"kind":"reference","object_ids":["origin","third"],"order":[0,1]}) (lit Rows [[0,0],[{"denominator":3,"numerator":1},1]]))
+    (return (lit Text "published"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (kernel "check" Record "word_check" (ref "word"))
+    (return (ref "check"))
+  )
+)
+(rt1
+  (input "word" Word)
+  (run "r1"
+    (calc "inverse" Word "inverse" (ref "word"))
+    (return (ref "inverse"))
+  )
+)
+(rt1
+  (input "left" Word)
+  (input "right" Word)
+  (run "r1"
+    (calc "combined" Word "concat" (ref "left") (ref "right"))
+    (return (ref "combined"))
+  )
+)
+(rt1
+  (input "word" Word)
+  (run "r1"
+    (kernel "check" Record "word_check" (ref "word"))
+    (return (ref "check"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (return (lit Text "Named setup: c1; labels: é / é / ν."))
+  )
+)
+(rt1
+  (input "word" Word)
+  (run "r1"
+    (kernel "check" Record "word_check" (ref "word"))
+    (return (ref "check"))
+  )
+)
+(rt1
+  (input "word" Word)
+  (run "r1"
+    (kernel "check" Record "word_check" (ref "word"))
+    (return (ref "check"))
+  )
+)
+(rt1
+  (input "word" Word)
+  (run "r1"
+    (kernel "check" Record "word_check" (ref "word"))
+    (return (ref "check"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (preview "receipt" Receipt (ref "word") (ref "target"))
+    (return (lit Text "requested"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (kernel "n" Ints "counts")
+    (emit (ref "n"))
+    (preview "receipt" Receipt (ref "word") (ref "target"))
+    (return (lit Text "requested"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (run "r1"
+    (kernel "setups" Words "setup" (ref "target"))
+    (return (ref "setups"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (run "r1"
+    (kernel "setups" Words "setup" (ref "target"))
+    (return (ref "setups"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (run "r1"
+    (kernel "setups" Words "setup" (ref "target"))
+    (return (ref "setups"))
+  )
+)
+(rt1
+  (input "pick0" Int)
+  (input "target" Target)
+  (run "r1"
+    (kernel "setups" Words "setup" (ref "target"))
+    (pick "w" Word (ref "setups") "pick0")
+    (preview "receipt" Receipt (ref "w") (ref "target"))
+    (return (lit Text "requested"))
+  )
+)
+(rt1
+  (input "pick0" Int)
+  (input "target" Target)
+  (run "r1"
+    (kernel "n" Ints "counts")
+    (emit (ref "n"))
+    (kernel "setups" Words "setup" (ref "target"))
+    (pick "w" Word (ref "setups") "pick0")
+    (preview "receipt" Receipt (ref "w") (ref "target"))
+    (return (lit Text "requested"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (kernel "nu" Ints "nu2")
+    (calc "coef" Ints "linear_solve_mod" (lit Matrix [[1,0],[0,1]]) (ref "nu") (lit Int 2))
+    (calc "w" Word "combine_corrections" (lit Words [["a"],["b"]]) (ref "coef"))
+    (return (ref "w"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (kernel "nu" Ints "nu5")
+    (calc "coef" Ints "linear_solve_mod" (lit Matrix [[1,0],[0,1]]) (ref "nu") (lit Int 5))
+    (calc "w" Word "combine_corrections" (lit Words [["c"],["d"]]) (ref "coef"))
+    (return (ref "w"))
+  )
+)
+(rt1
+  (input "caps" Targets)
+  (input "target" Target)
+  (input "word" Word)
+  (input "words" Words)
+  (run "r1"
+    (calc "scores" Ints "identity" (lit Ints []))
+    (for "w" Word (ref "words")
+      (kernel "s" Int "score" (ref "w"))
+      (calc "scores" Ints "append" (ref "scores") (ref "s"))
+    )
+    (calc "i" Int "argmin_first" (ref "scores"))
+    (calc "chosen" Word "index" (ref "words") (ref "i"))
+    (return (ref "chosen"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (kernel "nu" Ints "nu2")
+    (workspace_put "research_nu" (ref "nu"))
+    (workspace_get "saved" Ints "research_nu")
+    (return (ref "saved"))
+  )
+)
+(rt1
+  (input "target" Target)
+  (input "word" Word)
+  (run "r1"
+    (kernel "nu" Ints "nu2")
+    (calc "w" Word "combine_corrections" (lit Words [["a"],["b"]]) (ref "nu"))
+    (preview "receipt" Receipt (ref "w") (ref "target"))
+    (return (lit Text "captured"))
+  )
+)
+(rt1
+  (run "r1"
+    (ambient "leak" Text "clock" "clock_probe")
+    (emit (ref "leak"))
+    (return (ref "leak"))
+  )
+)
+(rt1
+  (run "r1"
+    (ambient "leak" Text "file" "file_probe")
+    (emit (ref "leak"))
+    (return (ref "leak"))
+  )
+)
+(rt1
+  (run "r1"
+    (ambient "leak" Text "network" "network_probe")
+    (emit (ref "leak"))
+    (return (ref "leak"))
+  )
+)
+(rt1
+  (run "r1"
+    (ambient "leak" Text "process" "process_probe")
+    (emit (ref "leak"))
+    (return (ref "leak"))
+  )
+)
+(rt1
+  (run "r1"
+    (tick)
+    (tick)
+    (tick)
+  )
+)
+(rt1
+  (run "r1"
+    (kernel "a" Ints "counts")
+    (kernel "b" Ints "counts")
+  )
+)
+(rt1
+  (run "r1"
+    (retain "a" Bytes 16)
+    (retain "b" Bytes 16)
+  )
+)
+(rt1
+  (run "r1"
+    (emit (lit Text "abcd"))
+    (emit (lit Text "abcd"))
+  )
+)
+(rt1
+  (run "r1"
+    (kernel "n" Ints "counts")
+  )
+)
+(rt1
+  (run "r1"
+    (kernel "n" Ints "counts")
+  )
+)
+(rt1
+  (module "recurse" (params) Int
+    (call "result" Int "recurse")
+    (return (ref "result"))
+  )
+  (run "r1"
+    (call "result" Int "recurse")
+  )
+)
+(rt1
+  (run "r1"
+    (for "i" Int (lit Ints [0,1,2,3,4,5,6,7,8,9])
+      (tick)
+    )
+  )
+)
+(rt1
+  (run "r1"
+    (kernel "batch" Rows "batch_check" (lit Words [["a"],["b"],["c"]]))
+  )
+)
+(rt1
+  (run "r1"
+    (for "i" Int (lit Ints [0,1,2,3,4,5,6,7,8,9])
+      (tick)
+    )
+  )
+)
+(rt1
+  (run "r1"
+    (for "i" Int (lit Ints [0,1,2,3,4,5,6,7,8,9])
+      (tick)
+    )
+  )
+)
+(rt1
+  (run "r1"
+    (kernel "a" Ints "counts")
+    (kernel "b" Ints "counts")
+    (return (ref "b"))
+  )
+)
+(rt1
+  (run "r1"
+    (tick)
+  )
+)
+(rt1
+  (run "r1"
+    (tick)
+  )
+)
+(rt1
+  (run "r1"
+    (dynamic (lit Text "constant arithmetic"))
+    (return (lit Int 2))
+  )
+)
+(rt1
+  (module "constant" (params) Int
+    (return (lit Int 1))
+  )
+  (run "r1"
+    (call "n" Int "constant")
+    (return (ref "n"))
+  )
+)
