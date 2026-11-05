@@ -41,7 +41,17 @@ Time box for every row: "what can be done now", at most one wrapper call of two 
 | E-2.4-LE | PS1.38 | PS1.35 to PS1.38 | Facts-option envelopes for the stage 14 to 19 corpus | LQ3 and chapter 06 for the judgement option | source |
 
 Folders: `lx1-cost/`, `lx2-placement/`, `lx3-sandbox-flow/`, `lx4-editor/`, `lx5-arithmetic/`, `lx6-engine-port/`,
-`lx7-charts/`, `lx8-surfaces/`, `lx9-input-map/`, `envelope-facts/`.
+`lx7-charts/`, `lx8-surfaces/`, `lx9-input-map/`, `lx9-exact-request/`, `envelope-facts/`.
+
+Follow-ups beside the frozen records:
+
+- `lx3-sandbox-flow/recheck/` reproduces two review findings with new controls and probes. Its results stay outside the
+  frozen counts.
+- `lx3-sandbox-flow/linux-comparison/` holds twenty-run Windows and Linux comparisons for rt1-own, rt2-py and rt4-pyhost.
+- `lx3-sandbox-flow/review-notes.md` corrects a frozen report and records what the reviews found.
+- `lx9-exact-request/` follows the EN1 check of LX-9. Its Python fixtures also pass on WSL CPython 3.14.4; the default-grid
+  Rust enumeration did not run there, because WSL has no Rust toolchain:
+  `wsl.exe --exec python3 -B work/experiments/language-lx/lx9-exact-request/check.py --python-only`.
 
 ## Checks at a later commit
 
