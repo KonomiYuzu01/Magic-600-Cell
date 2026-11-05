@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-05] decision | The language: back to the original workflow
+The owner has used the subscription reset, so Astra's wider role in the experiment and architecture work ends and `AGENTS.md` assigns the models again ([decision](decisions/owner-decisions-2026-11-05.md)). Work already done under that role stands, and the other decisions of the day are unchanged.
+
 ## [2026-11-05] decision | The language: experiments, one pull request, then the freeze
 The owner confirmed the five-batch walkthrough of the language architecture as understood and allowed the nine experiments LX-1 to LX-9 and the remaining work to run as far as they can now, with the questions page updated afterwards; after the owner's answers the architecture is written and then frozen, all in one pull request, and Codex Astra takes more of the experiment and architecture work ([decision](decisions/owner-decisions-2026-11-05.md)). No LQ beyond that allowance is answered, no ADR is accepted and no gate is relaxed.
 
