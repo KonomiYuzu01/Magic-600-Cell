@@ -1,4 +1,4 @@
-# LX-3 neutral corpus v1
+# LX-3 neutral corpus v2
 
 This JSON is an **analysis notation, never a proposed language syntax or product
 IR**. There is no parser, interpreter, renderer or candidate here. A later packet
