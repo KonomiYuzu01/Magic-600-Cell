@@ -1,24 +1,24 @@
 {
   "algorithm": "SHA-256",
   "change_rule": "Any later file change requires a new corpus version before a new candidate run; retain the prior freeze and evidence.",
-  "content_sha256": "02c6236606e15a543719982ce729c654035e5bcef6f7b702f5be61b5aa0ce8bf",
-  "corpus_version": "lx3-neutral-v1",
+  "content_sha256": "a4a4c13c8ed8902dbb1a20c4c558293376049a63349f90645af53e24c0457826",
+  "corpus_version": "lx3-neutral-v2",
   "decision": "open",
   "files": {
-    "FREEZE.json": "a733c2177e0da6823d89ccd030df1efe590b409bc87ff59e0b5ece0fd624190c",
-    "RESULT.md": "42cd859757412de79be5a6479f00def210d21bdd19c070eec50a816912b2aa6e",
-    "allowed-tools.json": "77db0559f50e4063663d1a0b5c89c573e862b3d0f9b5d8b4f6b9072783dcbaaf",
-    "approval.json": "f7dbb11e1caddb1e3eaa06c8b1f16b48fee3a0b5fd12249b1b58f06ecf14da32",
-    "budgets.json": "6bcd4016b9ca3d1f0a30ed94dc5b7150facbb23878cc9b70bf3ccc6c1aca0595",
-    "check_corpus.py": "1f5d4b47fb240259ae5dd14e9572afcc7b152e7bdc7ef3dcc686a599fedff7ea",
-    "fixture.json": "0ec93de2af589a6b37fe34492629d871d920c5f192eae5a0da4bc6889b02a5e5",
+    "FREEZE.json": "8f49b1431e34258754cc9a284b58bcb71949a84e3b226b98d762e74a6c30a07f",
+    "RESULT.md": "280bc90d00bb9a54c5e7949b256f33f59e6c60dc36fedaea8e3fb86b2fd7015f",
+    "allowed-tools.json": "336d213fb5c29322ecda19439a83ab30e77c0cc66cdfbe66d504c7cf7a993e95",
+    "approval.json": "fdb92e6e3f98b28452f7483697def526ad62740c5c61c802b735e0452700fa5b",
+    "budgets.json": "0bce03cb73ef8026822d80f5b092ab1e340287a6950506629db4ec1a5f0e177e",
+    "check_corpus.py": "22bdf6599b9f45184a4e953c76bff458f6198d9c884ea9c610c0e9d991780adb",
+    "fixture.json": "fe6ea2966f4747d9fe02f22faf47810419abd34dcece4ecdf2cf355247a2cbd9",
     "kernel-stub.md": "66fa0efd2fad3fdfbf56632872561b31396efbefad26601384b16296da60cd0f",
-    "keys.json": "fde6ccf1f1813c6df3cce3e172471409601f254f6235e4b41e7b228a5fdff99e",
-    "must-refuse.json": "a3f70489b6e0768fd51bc04f148b354cd5acb2b6b6a1b1cc139af4b23c8c24ed",
+    "keys.json": "b72e0de5131db55a15c4c83eca136a35907ef686420bc2cf9e8c18a8419d380c",
+    "must-refuse.json": "8e36484b3827485934c02a3d48a33837c2a63cd51f0ef67c52cf4a959e8cbee1",
     "notation.md": "405acdb412e2600ede017304bea9057eeb7f4ff1c5e3390716518d07fecb304f",
-    "planted.json": "8b68c9c75cee072dbdab8f080ff308be058141535164707f705b017b6ba74aca",
-    "policy.json": "7150e2de7d62832f7fd476a2db824268a010a42c67f63f7536d8ae67157ba04a",
-    "profile.json": "b8f5c3993abee7bf19f7f5aeaa85529e58ed552f47786f31d9e5c887ab9c2580"
+    "planted.json": "573e9c9ee0560e405eb308484b2c494c42f4113167a88520fe91e58fadeeead3",
+    "policy.json": "a37359588187aee69bf3432e95d76872cc0260bbf64620557617789a7eb063d7",
+    "profile.json": "b46ec428c9fb44612ae5312ff56a4c615796a0d4b9343b8300d7a004f5338e74"
   },
   "self_hash_rule": "FREEZE.json entry hashes canonical compact JSON of this manifest with that entry null; all other entries hash raw bytes."
 }

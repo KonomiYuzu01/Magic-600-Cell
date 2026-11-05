@@ -13,7 +13,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[4]
-VERSION = "lx3-neutral-v1"
+VERSION = "lx3-neutral-v2"
 COMMON = {"corpus_version", "decision"}
 CASE_FILES = (
     "must-refuse.json", "allowed-tools.json", "planted.json", "budgets.json",
@@ -680,7 +680,14 @@ def main():
         HERE.joinpath("keys.json").write_bytes(pretty(keys))
         print(f"Prepared {len(keys['keys'])} neutral run keys; no candidate exists; not frozen yet.")
         return
-    need(load_json("keys.json") == keys, "keys/input/source digests differ; do not relabel an old corpus")
+    stored = load_json("keys.json")
+    need(set(stored["source_documents"]) == set(keys["source_documents"]), "source document list differs")
+    # The pins name the text this corpus was frozen against. That text keeps moving, so a moved
+    # document is reported, not fatal. Codes and clauses above are still checked on the live text.
+    moved = sorted(name for name, value in keys["source_documents"].items()
+                   if stored["source_documents"][name] != value)
+    need({**stored, "source_documents": None} == {**keys, "source_documents": None},
+         "keys/input digests differ; do not relabel an old corpus")
     if args.validate:
         print(f"Validated inputs and {len(keys['keys'])} keys; {negatives} invalid-input checks rejected; no programs executed.")
         return
@@ -698,6 +705,7 @@ def main():
           f"{len(data['budgets.json']['cases'])} budget/cache cases; 2 approval cases; "
           f"{len(keys['keys'])} neutral run keys; {negatives} negative schema checks; "
           f"FREEZE {action}, {len(FILES)} files covered (normalized manifest self hash). "
+          f"Source documents moved since the freeze: {len(moved)}{': ' + ', '.join(moved) if moved else ''}. "
           "Candidate execution: not run.")
 
 

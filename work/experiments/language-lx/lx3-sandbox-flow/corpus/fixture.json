@@ -1,5 +1,5 @@
 {
-  "corpus_version": "lx3-neutral-v1",
+  "corpus_version": "lx3-neutral-v2",
   "decision": "open",
   "id": "lx3-fixed-fake-data-v1",
   "kind": "synthetic; not an engine, registered model, or alternate Full profile",

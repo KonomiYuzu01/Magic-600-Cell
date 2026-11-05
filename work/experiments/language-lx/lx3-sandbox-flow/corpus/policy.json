@@ -1,5 +1,5 @@
 {
-  "corpus_version": "lx3-neutral-v1",
+  "corpus_version": "lx3-neutral-v2",
   "decision": "open",
   "id": "lx3-interim-analysis-policy-v1",
   "scope": "Frozen experiment conditions only; no product policy, author admission, route, syntax or BS option is selected.",

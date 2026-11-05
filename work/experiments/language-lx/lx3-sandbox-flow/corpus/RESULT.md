@@ -1,7 +1,7 @@
 # E-2.4-L3 part A: neutral inputs before candidates
 
 - LX card: LX-3, chapter 11 RTE.44 to RTE.46; CT-RTE-05 and CT-RTE-06.
-- Experiment ID: E-2.4-L3, part A; corpus `lx3-neutral-v1`.
+- Experiment ID: E-2.4-L3, part A; corpus `lx3-neutral-v2`.
 - Owner allowance: `docs/wiki/decisions/owner-decisions-2026-11-05.md`, decision 2;
   the assigned corpus-only implementation packet. No new installation or cost.
 - Time box: **what can be done now; one wrapper call of at most two hours**.
@@ -20,6 +20,20 @@
   access, unrefused case, wrong code, crash, hang and timeout failures; no omitted
   case becomes a pass.
 - Decision: **open**. Decider: **owner**. LQ2, LQ9, LQ21 and BS1 to BS4 remain open.
+
+## Version 2: same cases, new source pins
+
+Version 1 was frozen against the text at `1e7d0074`. Commit `f73443b8` then changed 4 of its
+pinned source documents (`07-boundary.md`, `11-route-and-spikes.md`, `13-errors.md`, `ecosystem-partition.md`), so its plain check
+refused before any candidate existed. That edit closed text gaps: none of it changes an RTE.45 family,
+an expected code or the denominator.
+
+Version 2 changes three things and nothing else: the version string; the source pins, which now name the
+text at `f73443b8`; and the plain check, which now reports a moved source document instead of refusing,
+because the chapters keep changing. Case, fixture, policy, profile, notation and stub content is unchanged.
+Codes and clauses are still checked against the live text, and any corpus file change still needs a new
+version. No candidate had run when this was done, so no observed result influenced it. Version 1's manifest
+`content_sha256` was `02c6236606e15a543719982ce729c654035e5bcef6f7b702f5be61b5aa0ce8bf`; its files stay in Git history.
 
 ## Contents and fixed scope
 
