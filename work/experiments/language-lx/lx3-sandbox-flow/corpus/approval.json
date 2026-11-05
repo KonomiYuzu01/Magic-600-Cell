@@ -1,0 +1,135 @@
+{
+  "corpus_version": "lx3-neutral-v1",
+  "decision": "open",
+  "cases": [
+    {
+      "id": "S01",
+      "kind": "dynamic_evaluation",
+      "clauses": [
+        "RTE.24",
+        "RTE.45",
+        "LG3.12",
+        "DET.36"
+      ],
+      "program": {
+        "inputs": {},
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "tool_authoring",
+            "author": "own",
+            "boundary_class": null,
+            "invocation": "command",
+            "body": [
+              {
+                "op": "dynamic",
+                "source": {
+                  "type": "Text",
+                  "value": "constant arithmetic"
+                }
+              },
+              {
+                "op": "return",
+                "value": {
+                  "type": "Int",
+                  "value": 2
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "host_mutation": {
+        "operation": "attempt dynamic execution",
+        "approval_scope": "all source and transitive module bytes"
+      },
+      "expected_code": "LG3:capability.not_granted",
+      "code_gap": "dynamic_code",
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending_preview",
+        "workspace"
+      ],
+      "variants": [
+        "approved_subset_byte_bound"
+      ]
+    },
+    {
+      "id": "S02",
+      "kind": "dependency_substitution",
+      "clauses": [
+        "RTE.24",
+        "RTE.45",
+        "LG3.12",
+        "DET.36"
+      ],
+      "program": {
+        "inputs": {},
+        "modules": {
+          "constant": {
+            "parameters": {},
+            "result": "Int",
+            "body": [
+              {
+                "op": "return",
+                "value": {
+                  "type": "Int",
+                  "value": 1
+                }
+              }
+            ]
+          }
+        },
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "tool_authoring",
+            "author": "own",
+            "boundary_class": null,
+            "invocation": "command",
+            "body": [
+              {
+                "op": "call",
+                "as": "n",
+                "type": "Int",
+                "module": "constant",
+                "args": []
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "n"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "host_mutation": {
+        "operation": "after approval replace constant body return 1 with return 2; retain approved digest",
+        "approval_scope": "all source and transitive module bytes"
+      },
+      "expected_code": "LG5:input.module_digest_mismatch",
+      "code_gap": null,
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending_preview",
+        "workspace"
+      ],
+      "variants": [
+        "approved_subset_byte_bound"
+      ]
+    }
+  ]
+}

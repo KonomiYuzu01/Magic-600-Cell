@@ -1,0 +1,3401 @@
+{
+  "corpus_version": "lx3-neutral-v1",
+  "decision": "open",
+  "denominator": 35,
+  "categories": [
+    "reading_state",
+    "exact_counting",
+    "charts",
+    "explaining",
+    "own_word_checking",
+    "named_target_setup",
+    "research_mode"
+  ],
+  "count_rule": "Count each tool once per form/variant, even if a static refusal occurs before execution; list its actual code. Unsupported tools and wrong results are failures, never removed from the denominator. No acceptable false-refusal threshold is selected.",
+  "cases": [
+    {
+      "id": "A01",
+      "category": "reading_state",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Fixed-order state facts; no ranking, target selection or preview.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "tracking",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "v",
+                "type": "Ints",
+                "row": "counts",
+                "args": []
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "v"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": [
+          2,
+          6,
+          6
+        ],
+        "emitted": [],
+        "display": null,
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A02",
+      "category": "reading_state",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Fixed-order state facts; no ranking, target selection or preview.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "tracking",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "v",
+                "type": "Ints",
+                "row": "floors",
+                "args": []
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "v"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": [
+          0,
+          2,
+          2
+        ],
+        "emitted": [],
+        "display": null,
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A03",
+      "category": "reading_state",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Fixed-order state facts; no ranking, target selection or preview.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "tracking",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "v",
+                "type": "Bools",
+                "row": "blocked",
+                "args": []
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "v"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": [
+          false,
+          true,
+          false
+        ],
+        "emitted": [],
+        "display": null,
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A04",
+      "category": "reading_state",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Fixed-order state facts; no ranking, target selection or preview.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "tracking",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "v",
+                "type": "State",
+                "row": "snapshot",
+                "args": []
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "v"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": [
+          1,
+          0,
+          2,
+          3
+        ],
+        "emitted": [],
+        "display": null,
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A05",
+      "category": "reading_state",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Facts stay in menu order, including equal values.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "tracking",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "n",
+                "type": "Ints",
+                "row": "counts",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "rows",
+                "type": "Rows",
+                "fn": "zip",
+                "args": [
+                  {
+                    "type": "Targets",
+                    "value": [
+                      "c0",
+                      "c1",
+                      "c2"
+                    ]
+                  },
+                  {
+                    "ref": "n"
+                  }
+                ]
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "rows"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": [
+          [
+            "c0",
+            2
+          ],
+          [
+            "c1",
+            6
+          ],
+          [
+            "c2",
+            6
+          ]
+        ],
+        "emitted": [],
+        "display": null,
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A06",
+      "category": "exact_counting",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Exact total, with no chosen cap or word.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "n",
+                "type": "Ints",
+                "row": "counts",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "sum",
+                "type": "Int",
+                "fn": "sum",
+                "args": [
+                  {
+                    "ref": "n"
+                  }
+                ]
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "sum"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": 14,
+        "emitted": [],
+        "display": null,
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A07",
+      "category": "exact_counting",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Counts a fixed field; no quantification over candidate moves.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "f",
+                "type": "Ints",
+                "row": "floors",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "z",
+                "type": "Int",
+                "fn": "count_equal",
+                "args": [
+                  {
+                    "ref": "f"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "z"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": 1,
+        "emitted": [],
+        "display": null,
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A08",
+      "category": "exact_counting",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Counts the solver's literal letters without simplification.",
+      "program": {
+        "inputs": {
+          "word": {
+            "type": "Word",
+            "value": [
+              "a",
+              "a",
+              "b"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "calc",
+                "as": "n",
+                "type": "Int",
+                "fn": "length",
+                "args": [
+                  {
+                    "ref": "word"
+                  }
+                ]
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "n"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": 3,
+        "emitted": [],
+        "display": null,
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A09",
+      "category": "exact_counting",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Exact integer arithmetic beyond the binary64 exact range.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "calc",
+                "as": "n",
+                "type": "Int",
+                "fn": "add",
+                "args": [
+                  {
+                    "type": "Int",
+                    "value": 9007199254740993
+                  },
+                  {
+                    "type": "Int",
+                    "value": 7
+                  }
+                ]
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "n"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": 9007199254741000,
+        "emitted": [],
+        "display": null,
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A10",
+      "category": "exact_counting",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Generic finite-field arithmetic on fixed manual numbers, not state-selected corrections.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "calc",
+                "as": "n",
+                "type": "Int",
+                "fn": "mod_dot",
+                "args": [
+                  {
+                    "type": "Ints",
+                    "value": [
+                      1,
+                      2
+                    ]
+                  },
+                  {
+                    "type": "Ints",
+                    "value": [
+                      3,
+                      1
+                    ]
+                  },
+                  {
+                    "type": "Int",
+                    "value": 5
+                  }
+                ]
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "n"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": 0,
+        "emitted": [],
+        "display": null,
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A11",
+      "category": "charts",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Chart of fixed-order static facts; only coordinates are approximate.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "view_aid",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "v",
+                "type": "Ints",
+                "row": "counts",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "coords",
+                "type": "Rows",
+                "fn": "indexed_points",
+                "args": [
+                  {
+                    "ref": "v"
+                  }
+                ]
+              },
+              {
+                "op": "publish",
+                "exact": {
+                  "type": "Record",
+                  "value": {
+                    "kind": "points",
+                    "object_ids": [
+                      "c0",
+                      "c1",
+                      "c2"
+                    ],
+                    "order": [
+                      0,
+                      1,
+                      2
+                    ],
+                    "exact_properties": {
+                      "values": [
+                        2,
+                        6,
+                        6
+                      ]
+                    }
+                  }
+                },
+                "coordinates": {
+                  "ref": "coords"
+                }
+              },
+              {
+                "op": "return",
+                "value": {
+                  "type": "Text",
+                  "value": "published"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": "published",
+        "emitted": [],
+        "display": {
+          "exact": {
+            "kind": "points",
+            "object_ids": [
+              "c0",
+              "c1",
+              "c2"
+            ],
+            "order": [
+              0,
+              1,
+              2
+            ],
+            "exact_properties": {
+              "values": [
+                2,
+                6,
+                6
+              ]
+            },
+            "source_digest": "b2c68c844564eda23a617b521e08df2126327fb8a7cca94134d704e749dcfd99",
+            "input_digest": "eeda613e57d2a21a076cf0191de21517eb1915583ec9fa1e2e758b5d11155862"
+          },
+          "coordinates": [
+            [
+              0,
+              2
+            ],
+            [
+              1,
+              6
+            ],
+            [
+              2,
+              6
+            ]
+          ]
+        },
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A12",
+      "category": "charts",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Chart of fixed-order static facts; only coordinates are approximate.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "view_aid",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "v",
+                "type": "Ints",
+                "row": "floors",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "coords",
+                "type": "Rows",
+                "fn": "indexed_points",
+                "args": [
+                  {
+                    "ref": "v"
+                  }
+                ]
+              },
+              {
+                "op": "publish",
+                "exact": {
+                  "type": "Record",
+                  "value": {
+                    "kind": "points",
+                    "object_ids": [
+                      "c0",
+                      "c1",
+                      "c2"
+                    ],
+                    "order": [
+                      0,
+                      1,
+                      2
+                    ],
+                    "exact_properties": {
+                      "values": [
+                        0,
+                        2,
+                        2
+                      ]
+                    }
+                  }
+                },
+                "coordinates": {
+                  "ref": "coords"
+                }
+              },
+              {
+                "op": "return",
+                "value": {
+                  "type": "Text",
+                  "value": "published"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": "published",
+        "emitted": [],
+        "display": {
+          "exact": {
+            "kind": "points",
+            "object_ids": [
+              "c0",
+              "c1",
+              "c2"
+            ],
+            "order": [
+              0,
+              1,
+              2
+            ],
+            "exact_properties": {
+              "values": [
+                0,
+                2,
+                2
+              ]
+            },
+            "source_digest": "ac7b32209bbcf06c24fa2e2f26f0ad36e69f24d12a8e4bc1cf93ee203284b7eb",
+            "input_digest": "eeda613e57d2a21a076cf0191de21517eb1915583ec9fa1e2e758b5d11155862"
+          },
+          "coordinates": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              2,
+              2
+            ]
+          ]
+        },
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A13",
+      "category": "charts",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "The solver explicitly names c1; the chart chooses no cap.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c1",
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "view_aid",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "n",
+                "type": "Ints",
+                "row": "counts",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "v",
+                "type": "Int",
+                "fn": "index",
+                "args": [
+                  {
+                    "ref": "n"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 1
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "xy",
+                "type": "Rows",
+                "fn": "point",
+                "args": [
+                  {
+                    "type": "Int",
+                    "value": 1
+                  },
+                  {
+                    "ref": "v"
+                  }
+                ]
+              },
+              {
+                "op": "publish",
+                "exact": {
+                  "type": "Record",
+                  "value": {
+                    "kind": "points",
+                    "object_ids": [
+                      "c1"
+                    ],
+                    "order": [
+                      0
+                    ],
+                    "exact_properties": {
+                      "value": 6
+                    }
+                  }
+                },
+                "coordinates": {
+                  "ref": "xy"
+                }
+              },
+              {
+                "op": "return",
+                "value": {
+                  "type": "Text",
+                  "value": "published"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": "published",
+        "emitted": [],
+        "display": {
+          "exact": {
+            "kind": "points",
+            "object_ids": [
+              "c1"
+            ],
+            "order": [
+              0
+            ],
+            "exact_properties": {
+              "value": 6
+            },
+            "source_digest": "8a5e786ae76e97a4eb88c09c0275d7479daa5142cfa031d831a833928eca77cd",
+            "input_digest": "eeda613e57d2a21a076cf0191de21517eb1915583ec9fa1e2e758b5d11155862"
+          },
+          "coordinates": [
+            [
+              1,
+              6
+            ]
+          ]
+        },
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A14",
+      "category": "charts",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "View of the solver's named word, not an automatically selected word.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "view_aid",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "check",
+                "type": "Record",
+                "row": "word_check",
+                "args": [
+                  {
+                    "ref": "word"
+                  }
+                ]
+              },
+              {
+                "op": "publish",
+                "exact": {
+                  "type": "Record",
+                  "value": {
+                    "kind": "word_path",
+                    "object_ids": [
+                      "slot0",
+                      "slot1"
+                    ],
+                    "order": [
+                      0,
+                      1
+                    ],
+                    "exact_properties": {
+                      "word": [
+                        "a"
+                      ]
+                    }
+                  }
+                },
+                "coordinates": {
+                  "type": "Rows",
+                  "value": [
+                    [
+                      0,
+                      1
+                    ],
+                    [
+                      1,
+                      0
+                    ]
+                  ]
+                }
+              },
+              {
+                "op": "return",
+                "value": {
+                  "type": "Text",
+                  "value": "published"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": "published",
+        "emitted": [],
+        "display": {
+          "exact": {
+            "kind": "word_path",
+            "object_ids": [
+              "slot0",
+              "slot1"
+            ],
+            "order": [
+              0,
+              1
+            ],
+            "exact_properties": {
+              "word": [
+                "a"
+              ]
+            },
+            "source_digest": "3ff25e01b9ad2a58e08a6e722b68cff4e326ebaab07277bb7ca4b64d42590ca9",
+            "input_digest": "eeda613e57d2a21a076cf0191de21517eb1915583ec9fa1e2e758b5d11155862"
+          },
+          "coordinates": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              0
+            ]
+          ]
+        },
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A15",
+      "category": "charts",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Fixed rational reference chart exercises declared display precision without approximate decisions.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "view_aid",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "publish",
+                "exact": {
+                  "type": "Record",
+                  "value": {
+                    "kind": "reference",
+                    "object_ids": [
+                      "origin",
+                      "third"
+                    ],
+                    "order": [
+                      0,
+                      1
+                    ],
+                    "exact_properties": {
+                      "fraction": {
+                        "numerator": 1,
+                        "denominator": 3
+                      }
+                    }
+                  }
+                },
+                "coordinates": {
+                  "type": "Rows",
+                  "value": [
+                    [
+                      0,
+                      0
+                    ],
+                    [
+                      {
+                        "numerator": 1,
+                        "denominator": 3
+                      },
+                      1
+                    ]
+                  ]
+                }
+              },
+              {
+                "op": "return",
+                "value": {
+                  "type": "Text",
+                  "value": "published"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": "published",
+        "emitted": [],
+        "display": {
+          "exact": {
+            "kind": "reference",
+            "object_ids": [
+              "origin",
+              "third"
+            ],
+            "order": [
+              0,
+              1
+            ],
+            "exact_properties": {
+              "fraction": {
+                "numerator": 1,
+                "denominator": 3
+              }
+            },
+            "source_digest": "41bfec18a881abe5eace9859acd107fe6a5853bd49a506a1b0ffa7e6e28b6182",
+            "input_digest": "eeda613e57d2a21a076cf0191de21517eb1915583ec9fa1e2e758b5d11155862"
+          },
+          "coordinates": [
+            [
+              0,
+              0
+            ],
+            [
+              {
+                "numerator": 1,
+                "denominator": 3
+              },
+              1
+            ]
+          ]
+        },
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A16",
+      "category": "explaining",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Explains full collateral effects for the solver's word.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "check",
+                "type": "Record",
+                "row": "word_check",
+                "args": [
+                  {
+                    "ref": "word"
+                  }
+                ]
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "check"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": {
+          "word": [
+            "a"
+          ],
+          "end_labels": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "moved_slots": [
+            0,
+            1
+          ],
+          "protected": true,
+          "coverage": {
+            "letters": 1,
+            "complete": true
+          }
+        },
+        "emitted": [],
+        "display": null,
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A17",
+      "category": "explaining",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Explains inversion of a named literal word.",
+      "program": {
+        "inputs": {
+          "word": {
+            "type": "Word",
+            "value": [
+              "D",
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "calc",
+                "as": "inverse",
+                "type": "Word",
+                "fn": "inverse",
+                "args": [
+                  {
+                    "ref": "word"
+                  }
+                ]
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "inverse"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": [
+          "a",
+          "d"
+        ],
+        "emitted": [],
+        "display": null,
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A18",
+      "category": "explaining",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Composes two words the solver supplied, in chronological order.",
+      "program": {
+        "inputs": {
+          "left": {
+            "type": "Word",
+            "value": [
+              "a",
+              "b"
+            ],
+            "origin": "manual"
+          },
+          "right": {
+            "type": "Word",
+            "value": [
+              "c"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "calc",
+                "as": "combined",
+                "type": "Word",
+                "fn": "concat",
+                "args": [
+                  {
+                    "ref": "left"
+                  },
+                  {
+                    "ref": "right"
+                  }
+                ]
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "combined"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": [
+          "a",
+          "b",
+          "c"
+        ],
+        "emitted": [],
+        "display": null,
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A19",
+      "category": "explaining",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Retains both letters even when their net effect is identity.",
+      "program": {
+        "inputs": {
+          "word": {
+            "type": "Word",
+            "value": [
+              "a",
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "check",
+                "type": "Record",
+                "row": "word_check",
+                "args": [
+                  {
+                    "ref": "word"
+                  }
+                ]
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "check"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": {
+          "word": [
+            "a",
+            "a"
+          ],
+          "end_labels": [
+            1,
+            0,
+            2,
+            3
+          ],
+          "moved_slots": [],
+          "protected": true,
+          "coverage": {
+            "letters": 2,
+            "complete": true
+          }
+        },
+        "emitted": [],
+        "display": null,
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A20",
+      "category": "explaining",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Static explanation also freezes scalar-preserving Unicode equality; no locale normalization.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "return",
+                "value": {
+                  "type": "Text",
+                  "value": "Named setup: c1; labels: é / é / ν."
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": "Named setup: c1; labels: é / é / ν.",
+        "emitted": [],
+        "display": null,
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A21",
+      "category": "own_word_checking",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Checks the solver's word, including a false protection result as a value; no alternate word is selected.",
+      "program": {
+        "inputs": {
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "checking",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "check",
+                "type": "Record",
+                "row": "word_check",
+                "args": [
+                  {
+                    "ref": "word"
+                  }
+                ]
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "check"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": {
+          "word": [
+            "a"
+          ],
+          "end_labels": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "moved_slots": [
+            0,
+            1
+          ],
+          "protected": true,
+          "coverage": {
+            "letters": 1,
+            "complete": true
+          }
+        },
+        "emitted": [],
+        "display": null,
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A22",
+      "category": "own_word_checking",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Checks the solver's word, including a false protection result as a value; no alternate word is selected.",
+      "program": {
+        "inputs": {
+          "word": {
+            "type": "Word",
+            "value": [
+              "b"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "checking",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "check",
+                "type": "Record",
+                "row": "word_check",
+                "args": [
+                  {
+                    "ref": "word"
+                  }
+                ]
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "check"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": {
+          "word": [
+            "b"
+          ],
+          "end_labels": [
+            1,
+            2,
+            0,
+            3
+          ],
+          "moved_slots": [
+            1,
+            2
+          ],
+          "protected": true,
+          "coverage": {
+            "letters": 1,
+            "complete": true
+          }
+        },
+        "emitted": [],
+        "display": null,
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A23",
+      "category": "own_word_checking",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Checks the solver's word, including a false protection result as a value; no alternate word is selected.",
+      "program": {
+        "inputs": {
+          "word": {
+            "type": "Word",
+            "value": [
+              "c"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "checking",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "check",
+                "type": "Record",
+                "row": "word_check",
+                "args": [
+                  {
+                    "ref": "word"
+                  }
+                ]
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "check"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": {
+          "word": [
+            "c"
+          ],
+          "end_labels": [
+            1,
+            0,
+            3,
+            2
+          ],
+          "moved_slots": [
+            2,
+            3
+          ],
+          "protected": false,
+          "coverage": {
+            "letters": 1,
+            "complete": true
+          }
+        },
+        "emitted": [],
+        "display": null,
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A24",
+      "category": "own_word_checking",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Prepares only the manually named word; it never commits.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "ref": "word"
+                },
+                "target": {
+                  "ref": "target"
+                }
+              },
+              {
+                "op": "return",
+                "value": {
+                  "type": "Text",
+                  "value": "requested"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": "requested",
+        "emitted": [],
+        "display": null,
+        "previews": [
+          {
+            "word": [
+              "a"
+            ],
+            "target": "c0",
+            "destination": "solving_preview"
+          }
+        ],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A25",
+      "category": "own_word_checking",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "A fixed facts report and an independent manually named preview. Separation may falsely refuse the combination; keep it in the denominator.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "n",
+                "type": "Ints",
+                "row": "counts",
+                "args": []
+              },
+              {
+                "op": "emit",
+                "value": {
+                  "ref": "n"
+                }
+              },
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "ref": "word"
+                },
+                "target": {
+                  "ref": "target"
+                }
+              },
+              {
+                "op": "return",
+                "value": {
+                  "type": "Text",
+                  "value": "requested"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": "requested",
+        "emitted": [
+          [
+            2,
+            6,
+            6
+          ]
+        ],
+        "display": null,
+        "previews": [
+          {
+            "word": [
+              "a"
+            ],
+            "target": "c0",
+            "destination": "solving_preview"
+          }
+        ],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A26",
+      "category": "named_target_setup",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Fixed setup entry for a target explicitly named by the solver; all fake setups fix buffer slot 3.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "setup_search_named_target",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "setups",
+                "type": "Words",
+                "row": "setup",
+                "args": [
+                  {
+                    "ref": "target"
+                  }
+                ]
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "setups"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": [
+          [],
+          [
+            "a"
+          ]
+        ],
+        "emitted": [],
+        "display": null,
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A27",
+      "category": "named_target_setup",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Fixed setup entry for a target explicitly named by the solver; all fake setups fix buffer slot 3.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c1",
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "setup_search_named_target",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "setups",
+                "type": "Words",
+                "row": "setup",
+                "args": [
+                  {
+                    "ref": "target"
+                  }
+                ]
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "setups"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": [
+          [
+            "b"
+          ],
+          [
+            "a",
+            "b"
+          ]
+        ],
+        "emitted": [],
+        "display": null,
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A28",
+      "category": "named_target_setup",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Fixed setup entry for a target explicitly named by the solver; all fake setups fix buffer slot 3.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c2",
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "setup_search_named_target",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "setups",
+                "type": "Words",
+                "row": "setup",
+                "args": [
+                  {
+                    "ref": "target"
+                  }
+                ]
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "setups"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": [
+          [
+            "a",
+            "b"
+          ],
+          [
+            "b",
+            "a"
+          ]
+        ],
+        "emitted": [],
+        "display": null,
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A29",
+      "category": "named_target_setup",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "Pick row 0 of the fixed setup entry; provenance records the manual target, entry/table and pick.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c1",
+            "origin": "manual"
+          },
+          "pick0": {
+            "type": "Int",
+            "value": 0,
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "setup_search_named_target",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "setups",
+                "type": "Words",
+                "row": "setup",
+                "args": [
+                  {
+                    "ref": "target"
+                  }
+                ]
+              },
+              {
+                "op": "pick",
+                "as": "w",
+                "type": "Word",
+                "options": {
+                  "ref": "setups"
+                },
+                "event": "pick0"
+              },
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "ref": "w"
+                },
+                "target": {
+                  "ref": "target"
+                }
+              },
+              {
+                "op": "return",
+                "value": {
+                  "type": "Text",
+                  "value": "requested"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": "requested",
+        "emitted": [],
+        "display": null,
+        "previews": [
+          {
+            "word": [
+              "b"
+            ],
+            "target": "c1",
+            "destination": "solving_preview"
+          }
+        ],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A30",
+      "category": "named_target_setup",
+      "clauses": [
+        "RTE.27",
+        "RTE.46",
+        "BND.1",
+        "BND.63"
+      ],
+      "why_allowed": "An unrelated facts report does not choose the setup or target; conservative false refusals remain reportable.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c1",
+            "origin": "manual"
+          },
+          "pick0": {
+            "type": "Int",
+            "value": 0,
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "setup_search_named_target",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "n",
+                "type": "Ints",
+                "row": "counts",
+                "args": []
+              },
+              {
+                "op": "emit",
+                "value": {
+                  "ref": "n"
+                }
+              },
+              {
+                "op": "kernel",
+                "as": "setups",
+                "type": "Words",
+                "row": "setup",
+                "args": [
+                  {
+                    "ref": "target"
+                  }
+                ]
+              },
+              {
+                "op": "pick",
+                "as": "w",
+                "type": "Word",
+                "options": {
+                  "ref": "setups"
+                },
+                "event": "pick0"
+              },
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "ref": "w"
+                },
+                "target": {
+                  "ref": "target"
+                }
+              },
+              {
+                "op": "return",
+                "value": {
+                  "type": "Text",
+                  "value": "requested"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": "requested",
+        "emitted": [
+          [
+            2,
+            6,
+            6
+          ]
+        ],
+        "display": null,
+        "previews": [
+          {
+            "word": [
+              "b"
+            ],
+            "target": "c1",
+            "destination": "solving_preview"
+          }
+        ],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A31",
+      "category": "research_mode",
+      "clauses": [
+        "RTE.46",
+        "BND.34",
+        "BND.60",
+        "BND.61"
+      ],
+      "why_allowed": "Research on pinned fake data may compute corrections; output stays research-labelled and never reaches a solving preview.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "research",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "nu",
+                "type": "Ints",
+                "row": "nu2",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "coef",
+                "type": "Ints",
+                "fn": "linear_solve_mod",
+                "args": [
+                  {
+                    "type": "Matrix",
+                    "value": [
+                      [
+                        1,
+                        0
+                      ],
+                      [
+                        0,
+                        1
+                      ]
+                    ]
+                  },
+                  {
+                    "ref": "nu"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 2
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "w",
+                "type": "Word",
+                "fn": "combine_corrections",
+                "args": [
+                  {
+                    "type": "Words",
+                    "value": [
+                      [
+                        "a"
+                      ],
+                      [
+                        "b"
+                      ]
+                    ]
+                  },
+                  {
+                    "ref": "coef"
+                  }
+                ]
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "w"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": [
+          "a"
+        ],
+        "emitted": [],
+        "display": null,
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A32",
+      "category": "research_mode",
+      "clauses": [
+        "RTE.46",
+        "BND.34",
+        "BND.60",
+        "BND.61"
+      ],
+      "why_allowed": "Research on pinned fake data may compute corrections; output stays research-labelled and never reaches a solving preview.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "research",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "nu",
+                "type": "Ints",
+                "row": "nu5",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "coef",
+                "type": "Ints",
+                "fn": "linear_solve_mod",
+                "args": [
+                  {
+                    "type": "Matrix",
+                    "value": [
+                      [
+                        1,
+                        0
+                      ],
+                      [
+                        0,
+                        1
+                      ]
+                    ]
+                  },
+                  {
+                    "ref": "nu"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 5
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "w",
+                "type": "Word",
+                "fn": "combine_corrections",
+                "args": [
+                  {
+                    "type": "Words",
+                    "value": [
+                      [
+                        "c"
+                      ],
+                      [
+                        "d"
+                      ]
+                    ]
+                  },
+                  {
+                    "ref": "coef"
+                  }
+                ]
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "w"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": [
+          "d",
+          "d",
+          "d"
+        ],
+        "emitted": [],
+        "display": null,
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A33",
+      "category": "research_mode",
+      "clauses": [
+        "RTE.46",
+        "BND.34",
+        "BND.60",
+        "BND.61"
+      ],
+      "why_allowed": "Bounded research search in canonical word order; no solving session output.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          },
+          "caps": {
+            "type": "Targets",
+            "value": [
+              "c0",
+              "c1",
+              "c2"
+            ],
+            "origin": "manual"
+          },
+          "words": {
+            "type": "Words",
+            "value": [
+              [
+                "a"
+              ],
+              [
+                "b"
+              ],
+              [
+                "c"
+              ]
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "research",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "calc",
+                "as": "scores",
+                "type": "Ints",
+                "fn": "identity",
+                "args": [
+                  {
+                    "type": "Ints",
+                    "value": []
+                  }
+                ]
+              },
+              {
+                "op": "for",
+                "item": "w",
+                "type": "Word",
+                "items": {
+                  "ref": "words"
+                },
+                "body": [
+                  {
+                    "op": "kernel",
+                    "as": "s",
+                    "type": "Int",
+                    "row": "score",
+                    "args": [
+                      {
+                        "ref": "w"
+                      }
+                    ]
+                  },
+                  {
+                    "op": "calc",
+                    "as": "scores",
+                    "type": "Ints",
+                    "fn": "append",
+                    "args": [
+                      {
+                        "ref": "scores"
+                      },
+                      {
+                        "ref": "s"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "i",
+                "type": "Int",
+                "fn": "argmin_first",
+                "args": [
+                  {
+                    "ref": "scores"
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "chosen",
+                "type": "Word",
+                "fn": "index",
+                "args": [
+                  {
+                    "ref": "words"
+                  },
+                  {
+                    "ref": "i"
+                  }
+                ]
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "chosen"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": [
+          "a"
+        ],
+        "emitted": [],
+        "display": null,
+        "previews": [],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A34",
+      "category": "research_mode",
+      "clauses": [
+        "RTE.46",
+        "BND.34",
+        "BND.60",
+        "BND.61"
+      ],
+      "why_allowed": "Research records are readable and preserve their provenance.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "research",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "nu",
+                "type": "Ints",
+                "row": "nu2",
+                "args": []
+              },
+              {
+                "op": "workspace_put",
+                "key": "research_nu",
+                "value": {
+                  "ref": "nu"
+                }
+              },
+              {
+                "op": "workspace_get",
+                "as": "saved",
+                "type": "Ints",
+                "key": "research_nu"
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "saved"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": [
+          1,
+          0
+        ],
+        "emitted": [],
+        "display": null,
+        "previews": [],
+        "workspace_writes": [
+          {
+            "key": "research_nu",
+            "value": [
+              1,
+              0
+            ],
+            "profile": "research"
+          }
+        ]
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    },
+    {
+      "id": "A35",
+      "category": "research_mode",
+      "clauses": [
+        "RTE.46",
+        "BND.34",
+        "BND.60",
+        "BND.61"
+      ],
+      "why_allowed": "Research propose is captured for inspection (BND.60), creating no engine preview or token.",
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "research",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "nu",
+                "type": "Ints",
+                "row": "nu2",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "w",
+                "type": "Word",
+                "fn": "combine_corrections",
+                "args": [
+                  {
+                    "type": "Words",
+                    "value": [
+                      [
+                        "a"
+                      ],
+                      [
+                        "b"
+                      ]
+                    ]
+                  },
+                  {
+                    "ref": "nu"
+                  }
+                ]
+              },
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "ref": "w"
+                },
+                "target": {
+                  "ref": "target"
+                }
+              },
+              {
+                "op": "return",
+                "value": {
+                  "type": "Text",
+                  "value": "captured"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": "captured",
+        "emitted": [],
+        "display": null,
+        "previews": [
+          {
+            "word": [
+              "a"
+            ],
+            "target": "c0",
+            "destination": "capture"
+          }
+        ],
+        "workspace_writes": []
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint"
+      ]
+    }
+  ]
+}

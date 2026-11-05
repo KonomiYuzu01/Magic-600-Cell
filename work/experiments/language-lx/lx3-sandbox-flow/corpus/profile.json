@@ -1,0 +1,144 @@
+{
+  "corpus_version": "lx3-neutral-v1",
+  "decision": "open",
+  "id": "lx3-exact-payload-v1",
+  "canonical_json": {
+    "encoding": "UTF-8 without BOM",
+    "key_order": "Unicode scalar ascending",
+    "separators": [
+      ",",
+      ":"
+    ],
+    "trailing_newline": false,
+    "unicode": "preserve scalar sequence; no normalization; reject surrogates",
+    "numbers": "JSON integers only; no floats, NaN or Infinity",
+    "exact_rational": "object with integer numerator and positive denominator, reduced by gcd",
+    "literal_words": "arrays of menu letters, chronological source-to-destination order; no cancellation or sorting"
+  },
+  "exact_payload_fields": [
+    "outcome",
+    "code",
+    "context",
+    "input_identities",
+    "coverage",
+    "budgets",
+    "value",
+    "words",
+    "certificates",
+    "checker_reports",
+    "traces",
+    "stop"
+  ],
+  "exact_payload_shape": {
+    "outcome": [
+      "completed",
+      "refused",
+      "cut_off",
+      "cancelled",
+      "error",
+      "not_run"
+    ],
+    "code": "registered active code or null for completed",
+    "context": "exact typed data; no translated diagnostic text",
+    "input_identities": "expanded neutral key digest and candidate run-key digest, immutable input/model/menu/level/contract identities",
+    "coverage": "ordered examined set, total set, complete boolean; partial is never an absence claim",
+    "budgets": "units and granted/used steps, kernel_cost, memory peak, output; child ledger if present",
+    "value": "typed exact returned value or null",
+    "words": "all returned literal words, in output order",
+    "certificates": "exact included certificates; empty array when none",
+    "checker_reports": "exact reports and their input/checker identities; empty array when none",
+    "traces": "Ordered exact output/workspace/preview observations including host-built provenance; candidate source mapping is pinned separately; empty array when none",
+    "stop": "reason, run id, neutral instruction path and loop index or null; translated source span stays outside comparison"
+  },
+  "hash_rule": "SHA-256 of canonical JSON exact payload bytes, including value AND stop, coverage and all deterministic counters; compare within each full candidate/form key, never equate different keys.",
+  "display": {
+    "exact_fields": [
+      "kind",
+      "object_ids",
+      "order",
+      "source_digest",
+      "input_digest",
+      "exact_properties"
+    ],
+    "approximate_fields": {
+      "coordinates": {
+        "absolute_tolerance": {
+          "numerator": 1,
+          "denominator": 1000000
+        },
+        "relative_tolerance": {
+          "numerator": 0,
+          "denominator": 1
+        },
+        "unit": "fixture coordinate",
+        "domain": "finite coordinates in [-16,16]"
+      }
+    },
+    "rule": "same shape and exact/non-numeric fields; compare each approximate coordinate to the frozen rational reference and pairwise across runs; reject nonfinite values; no tolerance on exact integers"
+  },
+  "excluded_fields": [
+    "wall_clock_time",
+    "elapsed_seconds",
+    "cpu_seconds",
+    "machine",
+    "host",
+    "platform",
+    "user_name",
+    "physical_paths",
+    "working_directory",
+    "locale",
+    "timings",
+    "diagnostic_text",
+    "transport_framing",
+    "compression_metadata",
+    "process_id",
+    "per_launch_handles",
+    "job_id",
+    "preview_id",
+    "command_receipts",
+    "session_local_revision_refs",
+    "cache_diagnostics"
+  ],
+  "default_budgets": {
+    "steps": 10000,
+    "kernel_cost": 10000,
+    "memory": 65536,
+    "output": 65536
+  },
+  "units": {
+    "steps": "neutral-charge-v1",
+    "kernel_cost": "fake-kernel-cost-v1",
+    "memory": "logical-byte-v1",
+    "output": "canonical-uncompressed-byte-v1"
+  },
+  "meter": {
+    "scope": "Experiment-only counting fixture, not the LP1 metering decision or a proposed IR.",
+    "steps": "One charge before each executed instruction; each for-loop test (including final false test) costs one, its body instructions cost normally; if costs one plus executed body; call and return each cost one. Calc constituent charges follow notation.md: each scalar arithmetic/comparison or collection visit is a continuation, with integer limb weight. Flow-label bookkeeping is included in those logical charges, never an unmetered host instruction count. The four isolated budget probes use only tick/retain/emit/kernel.",
+    "kernel_cost": "Row table in fixture.json; precharge each logical call once; cache reconstruction, eviction and transport never add charges.",
+    "memory": "Inputs are pinned source bytes. A retain instruction creates a logical byte array of its declared size; each handle (including alias) counts in full to end of run. Snapshot retains 32 logical bytes (16 label bytes plus 16 fake exact pose-key bytes). Other bound values use canonical JSON byte length. Check before binding/growing; failed allocations do not increase used memory. Recursion uses a 16-byte logical frame per call in the recursion probe.",
+    "output": "Before emit/publish/capture/workspace output or a top-level return, charge canonical uncompressed JSON byte length of the emitted/returned value. A module return is internal and incurs no output charge. Terminal outcome uses a separate fixed 2048-byte reserved envelope; it cannot carry uncharged user output. Retained partial output remains charged.",
+    "admission": "Equal-to-limit is allowed; failed instruction step stays charged if its later resource check fails. Check order: interrupt at continuation, steps, kernel_cost, memory, output. A failed resource charge is not added to that counter.",
+    "lifetime": "Conservative retention until run end; no host GC or physical sharing changes charges.",
+    "recursion": "For the probe only, logical frames use memory allowance; no reserved recursion code is activated."
+  },
+  "comparison_runs": {
+    "Windows": 10,
+    "headless_Linux": 10
+  },
+  "nonreproducible": [
+    "by_user cancellation",
+    "wall-clock safety stop",
+    "runtime loss",
+    "host exhaustion"
+  ],
+  "decisions": {
+    "LQ2": "open",
+    "LQ9": "open",
+    "LQ21": "open",
+    "BS1": "open",
+    "BS2": "open",
+    "BS3": "open",
+    "BS4": "open",
+    "LP1_metering": "open"
+  }
+}
