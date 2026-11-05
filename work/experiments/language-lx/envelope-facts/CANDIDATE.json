@@ -1,0 +1,26 @@
+[
+ {
+  "path": "work/experiments/language-lx/envelope-facts/corpus.py",
+  "sha256": "3faf5ff591cee0ae18c8839a4f9fd54343ff0344e4e4a630eb160182958b9ca7"
+ },
+ {
+  "path": "work/experiments/language-lx/envelope-facts/envelopes.py",
+  "sha256": "6a5e8836465afe28dc67c0500abffae4a7511dc83ea49fa44a0e62c39bef254c"
+ },
+ {
+  "path": "work/experiments/language-lx/envelope-facts/display.py",
+  "sha256": "df7a532368aae141af5acfe53b3a5052c140ca697bfcb21f4db883ba79af5c52"
+ },
+ {
+  "path": "work/experiments/language-lx/envelope-facts/check.py",
+  "sha256": "b89f218b8bcc77ab17e34d86e954ad62e355ade67e3843aa33317309a4d42c2f"
+ },
+ {
+  "path": "work/experiments/language-lx/envelope-facts/envelope_model.md",
+  "sha256": "8b77c5fd75ff8339ccd8c5e5861ebc859ecad419403043aa850fccb3cece6be6"
+ },
+ {
+  "path": "work/experiments/language-lx/envelope-facts/CARD.md",
+  "sha256": "db8b4c6e0c7e4a83afe9c086dc73da2740bd968a0ada150c34b1c1b1adcd94ca"
+ }
+]

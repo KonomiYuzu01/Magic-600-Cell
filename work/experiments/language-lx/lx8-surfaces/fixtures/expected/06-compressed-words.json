@@ -1,0 +1,248 @@
+{
+  "ir_version": "lx8-ir-0",
+  "edition": "lx8-0",
+  "module": "compressed_witness",
+  "requires": [],
+  "imports": [],
+  "declarations": [
+    {
+      "kind": "function",
+      "name": "large_word",
+      "params": [],
+      "result": "CompressedWord<Full,Retained>",
+      "declared_effects": [],
+      "effects": [],
+      "charges": {
+        "steps": "12",
+        "kernel": "0",
+        "memory": "0",
+        "output": "0"
+      },
+      "metadata": null,
+      "bindings": [
+        {
+          "name": "literal",
+          "type": "Word<Full,Retained>",
+          "value": {
+            "op": "literal.word",
+            "type": "Word<Full,Retained>",
+            "effects": [],
+            "charges": {
+              "steps": "1",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "letters": [
+              "1",
+              "-1",
+              "7"
+            ],
+            "expanded_length": "3"
+          }
+        },
+        {
+          "name": "long_word",
+          "type": "CompressedWord<Full,Retained>",
+          "value": {
+            "op": "call",
+            "type": "CompressedWord<Full,Retained>",
+            "effects": [],
+            "charges": {
+              "steps": "1",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "target": "repeat",
+            "args": [
+              {
+                "op": "ref",
+                "type": "Word<Full,Retained>",
+                "effects": [],
+                "charges": {
+                  "steps": "0",
+                  "kernel": "0",
+                  "memory": "0",
+                  "output": "0"
+                },
+                "name": "literal",
+                "expanded_length": "3"
+              },
+              {
+                "op": "literal.int",
+                "type": "Int",
+                "effects": [],
+                "charges": {
+                  "steps": "1",
+                  "kernel": "0",
+                  "memory": "0",
+                  "output": "0"
+                },
+                "value": "100000000000000000000000000000000000000000000000000000000000000000000000000000000"
+              }
+            ],
+            "expanded_length": "300000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        },
+        {
+          "name": "tail",
+          "type": "CompressedWord<Full,Retained>",
+          "value": {
+            "op": "call",
+            "type": "CompressedWord<Full,Retained>",
+            "effects": [],
+            "charges": {
+              "steps": "1",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "target": "repeat",
+            "args": [
+              {
+                "op": "literal.word",
+                "type": "Word<Full,Retained>",
+                "effects": [],
+                "charges": {
+                  "steps": "1",
+                  "kernel": "0",
+                  "memory": "0",
+                  "output": "0"
+                },
+                "letters": [
+                  "-7",
+                  "3"
+                ],
+                "expanded_length": "2"
+              },
+              {
+                "op": "literal.int",
+                "type": "Int",
+                "effects": [],
+                "charges": {
+                  "steps": "1",
+                  "kernel": "0",
+                  "memory": "0",
+                  "output": "0"
+                },
+                "value": "2"
+              }
+            ],
+            "expanded_length": "4"
+          }
+        }
+      ],
+      "body": {
+        "op": "call",
+        "type": "CompressedWord<Full,Retained>",
+        "effects": [],
+        "charges": {
+          "steps": "1",
+          "kernel": "0",
+          "memory": "0",
+          "output": "0"
+        },
+        "target": "join",
+        "args": [
+          {
+            "op": "ref",
+            "type": "CompressedWord<Full,Retained>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "long_word",
+            "expanded_length": "300000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          },
+          {
+            "op": "ref",
+            "type": "CompressedWord<Full,Retained>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "tail",
+            "expanded_length": "4"
+          }
+        ],
+        "expanded_length": "300000000000000000000000000000000000000000000000000000000000000000000000000000004"
+      }
+    },
+    {
+      "kind": "function",
+      "name": "menu_repeat",
+      "params": [],
+      "result": "CompressedWord<Jumble,MenuA>",
+      "declared_effects": [],
+      "effects": [],
+      "charges": {
+        "steps": "12",
+        "kernel": "0",
+        "memory": "0",
+        "output": "0"
+      },
+      "metadata": null,
+      "bindings": [],
+      "body": {
+        "op": "call",
+        "type": "CompressedWord<Jumble,MenuA>",
+        "effects": [],
+        "charges": {
+          "steps": "1",
+          "kernel": "0",
+          "memory": "0",
+          "output": "0"
+        },
+        "target": "repeat",
+        "args": [
+          {
+            "op": "literal.word",
+            "type": "Word<Jumble,MenuA>",
+            "effects": [],
+            "charges": {
+              "steps": "1",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "letters": [
+              {
+                "grip": "2",
+                "rotation": "spin"
+              },
+              {
+                "grip": "2",
+                "rotation": "unspin"
+              },
+              {
+                "grip": "5",
+                "rotation": "identity"
+              }
+            ],
+            "expanded_length": "3"
+          },
+          {
+            "op": "literal.int",
+            "type": "Int",
+            "effects": [],
+            "charges": {
+              "steps": "1",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "value": "3"
+          }
+        ],
+        "expanded_length": "9"
+      }
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "candidate_sha256": "2bc30f5ebbce03f6e814223637c9cfb437f4fddd1cd387061ecbb80b3111ce6f",
+  "cases": [
+    {
+      "case": "O01",
+      "case_sha256": "c9eab13f822e97d903ed43368ff7acd0b8893c7937f140a87badfd804b0e5b2d",
+      "compare_exit": 0,
+      "comparison": {
+        "case_id": "O01",
+        "omitted_fields": [],
+        "status": "equal",
+        "steps": 2400
+      },
+      "trace_bytes": 4458448,
+      "trace_sha256": "f2c14bfeffadcb4bf7ac2bcb2c86a0b04e8a4d59a5e55025254a3170c6e771e1"
+    },
+    {
+      "case": "O02",
+      "case_sha256": "63171842b1c44682352949849c1089af0e35cd25f4e9c6c9f702fb69712c75b1",
+      "compare_exit": 0,
+      "comparison": {
+        "case_id": "O02",
+        "omitted_fields": [],
+        "status": "equal",
+        "steps": 500
+      },
+      "trace_bytes": 928748,
+      "trace_sha256": "0d9d1f0b06f31e0221eff309ef4ec08d3ce9b2724e07aed31ddc64aacae99a73"
+    },
+    {
+      "case": "O03",
+      "case_sha256": "a852d5b4c4a2fbb60704b8cc23e29faa4732c4319ce5c53419c72147438971a2",
+      "compare_exit": 0,
+      "comparison": {
+        "case_id": "O03",
+        "omitted_fields": [],
+        "status": "equal",
+        "steps": 210
+      },
+      "trace_bytes": 149876,
+      "trace_sha256": "d5c8674cb48aaab4c8755889a3ffdfc098071252436b53736018fd00802c62fd"
+    },
+    {
+      "case": "O04",
+      "case_sha256": "8a83b1f4168a8e2e257ebf9e3c555da18698aaee05fd803c65a9fd1fe0eaea3b",
+      "compare_exit": 0,
+      "comparison": {
+        "case_id": "O04",
+        "omitted_fields": [],
+        "status": "equal",
+        "steps": 25
+      },
+      "trace_bytes": 47888,
+      "trace_sha256": "2781da156ce116654b2edc7f0c3f021b79290ac394870f7cc0e433d1d3729e59"
+    },
+    {
+      "case": "O05",
+      "case_sha256": "fb314838a07b02a50d52b80f9eaec5a6444196eb6465f8167e159216951392f9",
+      "compare_exit": 0,
+      "comparison": {
+        "case_id": "O05",
+        "omitted_fields": [],
+        "status": "equal",
+        "steps": 50
+      },
+      "trace_bytes": 95428,
+      "trace_sha256": "70f4387855a766473fc39351a1e0d5d2aed0efbc9595276acc05426d5463e3f0"
+    },
+    {
+      "case": "O06",
+      "case_sha256": "48698f712d3e91907d24407cd7791c1c34659a6f7654f6b3ed1d5c0b65d156a7",
+      "compare_exit": 0,
+      "comparison": {
+        "case_id": "O06",
+        "omitted_fields": [],
+        "status": "equal",
+        "steps": 6
+      },
+      "trace_bytes": 7489,
+      "trace_sha256": "b6b882f13efc24f3bdc2aa9cd087c876f0bfbd7dc8e7505470c73300ed47c6f2"
+    },
+    {
+      "case": "O07",
+      "case_sha256": "9a6778deac3dc98a85f553b88a861c5270f011d3c52df9221432794ed6fbaf77",
+      "compare_exit": 0,
+      "comparison": {
+        "case_id": "O07",
+        "omitted_fields": [],
+        "status": "equal",
+        "steps": 10
+      },
+      "trace_bytes": 4008,
+      "trace_sha256": "76bde3dea914617653479c19571057114c3fe0604b88ce0803cf4f06b469e606"
+    }
+  ],
+  "comparator_negative_control": {
+    "compare_exit": 1,
+    "field": "state_hash",
+    "index": 8,
+    "kind": "deliberately corrupted trace copy"
+  },
+  "exported_model_sha256": "223edad95f991ea1ada8ed3d464b21909979f0122aa837fc9e3d7e3541949e01",
+  "first_difference": null,
+  "status": "equal"
+}

@@ -1,0 +1,60 @@
+{
+  "format": "lx7-manifest-v1",
+  "candidate": "lx7-r1",
+  "experiment_id": "E-2.4-L7",
+  "decision": "open",
+  "decider": "owner",
+  "evidence_class": [
+    "source",
+    "synthetic"
+  ],
+  "device_input_sha256": "6e717aaffe71d17c0d6ce7ff55588ab759b21a90dac4054a1a22dcea6814aebc",
+  "candidate_files": {
+    "CARD.md": "264126d31d7d1928de000804ddfe8fb9600864b8290662be9817f01040b8f5bb",
+    "W3-PLAN.md": "db385f98a52cc2d26bf63bb4462ac4fc0dd9acac4a3c642b6a38b72160734231",
+    "builtin.hlsl": "b81100e0248864cff5c257dfec6c2e2eafe39bf7834dfd52f2ebcb356a8a5197",
+    "charts/bounded.chart": "6ae1434da671359b6921592a652c607020ecefcac6e5ec2c7bdb1c02807fd7fe",
+    "charts/gnomonic.chart": "1887843bbc45d2db7127c832832f7567aac7f5b14b73eacc7de74d78402ca81d",
+    "charts/perspective.chart": "371cb940c9f7d24b5806646b0571f5e3846bdeed6f4d5b3709800211f369ec7e",
+    "charts/rejected/float64.chart": "1992b5359ce985e4ad2216e2046b57005d9e1a1011b6b8ca4414195b9f068e71",
+    "charts/rejected/impure.chart": "8f7476ef1da602f2c3accd1b1a04053f906f3a160a8ed813e0bde4e6c48d8c2c",
+    "charts/rejected/recursion.chart": "3d0bc936babe7016e37db09f8728162111317918d356f44efd7c3441c1efc91d",
+    "charts/rejected/unbounded.chart": "a20507a7d1902a3b3c7f41f82d229e080bc1c9671c3395e6357fb5fff11165de",
+    "charts/stereographic.chart": "cbc23edfd4f96886c62224efcbc645fdcb708c800b76fd1035df1e3cd6a6c925",
+    "check.py": "96a656800a7d91be72237b1c3aa90e7b7bf6f0ccc2f889f08335c0d21a6e313c",
+    "device/README.md": "42b90ea8a96c8a405d9ddd8d01b14e9109215cf1c90c9200ef202ea30ddc7664",
+    "device/build.cmd": "b2761b4bf6a8754b6490ea8508ecaa5201f8ba65f4547dc0e89c17bb1508ac65",
+    "device/compare_device.py": "8e9ad504e5f824064db56455a6a46f2e932335922b44f7ae9e08a76f4c7523bd",
+    "device/main.cpp": "ed07fd4ebcbfae5be16ee7f30fc481a4a4544b295963922ccf4e187a104a09b8",
+    "device/run.py": "ecfe7efe8f8a08450f73d59fca2a050dbcfeb2e274d154934fac22d37b161dfe",
+    "freeze.py": "5b41c84e4038095b618770684f6da82107135c3f4167161f925b64baeeada408",
+    "generate_hlsl.py": "5761a4a6f2f05cfc888149c5bccf41087f65655360b2af6632108269a1f2e7c9",
+    "generated.hlsl": "1c7f922e2f53e5a106accfb746c2337ce288e83c3226393fca8dbbd33ce4fc62",
+    "make_fixtures.py": "b2ed3b44f5913603a8fb8e32d71486a9914266e17f6f0c2d275861225e01f4f9",
+    "reference.py": "a3b7aa7f389684dd7cce6eb42c22b1d87082f117e7c280fd981fd9fa18ac2654",
+    "subset.md": "fe9519845acf66d7677d4d055c8cbe17471224cff87cf427f8c08d6e05eace65",
+    "subset.py": "1a6d89b633272c321f7280d24a784c728f1860be40907fe40d0b916a2ec46f04"
+  },
+  "candidate_sha256": "07805a3bb3e3fd346e6e8740df83272d0cfb25a2cfd72aa732d2171a9674653f",
+  "inputs_files": {
+    "expectations.json": "8d5878596fa6d461b92cb49f52580e4e12136bdeadd9bb508e95514477537c21",
+    "fixtures.json": "9af41902d3b9bf2d70764df264f4ec4750c3d0e45201113bd225efb3e1875663"
+  },
+  "inputs_sha256": "bedf2f5d91e224ff0e9bd92cfde27788924960f1a768625ba53fb84986217756",
+  "synthetic_files": {
+    "cpu-records.json": "45457687a5ded31b20265bd76560c8437a6d4fff70b701bdc7d41ee51136c6a0",
+    "cpu-summary.json": "aab7d4ee2b61acd3d5c24826752b87eef0670e2e94d2592807978bcba86f26e6"
+  },
+  "synthetic_sha256": "417777ef7cb7c59686300f6ebe6c98e6e26af4955d0d5c6f343ba79e2a0e7657",
+  "upstream_files": {
+    "assets/mesh.json": "357fb767272d8e08caa8220903d4f3fc687be47c771b96b170f2cff4ac6ddb03",
+    "assets/mesh_vertices.f32": "696f82b56ba7562126a6fc158936cdfe837c594ba666b9b342815bde66a7f4df",
+    "docs/architecture/1.0/language/adr/ADR-L11-display-plans.md": "fd45a8db26dae5fcda93cd1ee0abdb11b3f2951e5c0345130857c2eab1028132",
+    "docs/architecture/1.0/language/architecture/10-renderer-platform.md": "1b27ffb958776c8789529b54dd4fb66617563e7fe0b89407be7652d16a24b514",
+    "docs/architecture/1.0/language/architecture/11-route-and-spikes.md": "966044efca4c32fa9e669a64f6dbaacb780f8a9b0285eb025d082d128cc77545",
+    "docs/wiki/decisions/owner-decisions-2026-11-05.md": "fd3dd1cf4593d57dd46b19181389b277b71158bc210adfd70614007291880cff",
+    "research/jumbling/render-contract.md": "83efe58f3463a5a515b6d66d490ed19efbd4ac53f209483670adbf6a6d0cf5b0",
+    "work/experiments/renderer-sb/probe/shaders/geometry.hlsl": "1f9a18dc2c994b038963968ce79eddfb744209e9534f801b2ad190e0d7e36e7c"
+  },
+  "upstream_sha256": "1ac8beb331b6b7261840ebf4a77eac2890e1f002ece0853dfaca760d30c2ad3c"
+}

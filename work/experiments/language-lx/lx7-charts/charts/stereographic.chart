@@ -1,0 +1,4 @@
+# North-pole rational map; no claim that arbitrary inputs lie on S3.
+den = 1.0 - w
+exclude(den, 0.000244140625)
+output(x / den, y / den, z / den)

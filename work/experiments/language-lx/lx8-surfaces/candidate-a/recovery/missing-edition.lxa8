@@ -1,0 +1,9 @@
+module draft requires [];
+
+fn broken() -> Int effects [] charge [12, 0, 0, 0] {
+    return 123;
+}
+
+fn recovered() -> Int effects [] charge [12, 0, 0, 0] {
+    return 99;
+}

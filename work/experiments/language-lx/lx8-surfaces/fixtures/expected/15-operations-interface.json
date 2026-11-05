@@ -1,0 +1,251 @@
+{
+  "ir_version": "lx8-ir-0",
+  "edition": "lx8-0",
+  "module": "operation_records",
+  "requires": [],
+  "imports": [],
+  "declarations": [
+    {
+      "kind": "function",
+      "name": "describe_outcome",
+      "params": [
+        {
+          "name": "outcome",
+          "type": "Outcome<Full>"
+        },
+        {
+          "name": "error",
+          "type": "TypedError<Full>"
+        },
+        {
+          "name": "proposal",
+          "type": "Proposal<Full>"
+        },
+        {
+          "name": "preview",
+          "type": "Preview<Full>"
+        },
+        {
+          "name": "receipt",
+          "type": "Receipt<Full>"
+        }
+      ],
+      "result": "Text",
+      "declared_effects": [],
+      "effects": [],
+      "charges": {
+        "steps": "12",
+        "kernel": "0",
+        "memory": "0",
+        "output": "0"
+      },
+      "metadata": null,
+      "bindings": [],
+      "body": {
+        "op": "call",
+        "type": "Text",
+        "effects": [],
+        "charges": {
+          "steps": "1",
+          "kernel": "0",
+          "memory": "0",
+          "output": "0"
+        },
+        "target": "outcome_text",
+        "args": [
+          {
+            "op": "ref",
+            "type": "Outcome<Full>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "outcome"
+          },
+          {
+            "op": "ref",
+            "type": "TypedError<Full>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "error"
+          },
+          {
+            "op": "ref",
+            "type": "Proposal<Full>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "proposal"
+          },
+          {
+            "op": "ref",
+            "type": "Preview<Full>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "preview"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "function",
+      "name": "describe_controls",
+      "params": [
+        {
+          "name": "panel",
+          "type": "Panel<Full,Labels>"
+        },
+        {
+          "name": "control",
+          "type": "Control<Full,Labels>"
+        },
+        {
+          "name": "overlay",
+          "type": "Overlay<Full,Labels>"
+        },
+        {
+          "name": "instance",
+          "type": "DisplayInstance<Full,Labels>"
+        },
+        {
+          "name": "command",
+          "type": "Command<Full>"
+        },
+        {
+          "name": "binding",
+          "type": "Binding<Full>"
+        },
+        {
+          "name": "recording",
+          "type": "Recording<Full>"
+        }
+      ],
+      "result": "Text",
+      "declared_effects": [],
+      "effects": [],
+      "charges": {
+        "steps": "12",
+        "kernel": "0",
+        "memory": "0",
+        "output": "0"
+      },
+      "metadata": null,
+      "bindings": [],
+      "body": {
+        "op": "call",
+        "type": "Text",
+        "effects": [],
+        "charges": {
+          "steps": "1",
+          "kernel": "0",
+          "memory": "0",
+          "output": "0"
+        },
+        "target": "interface_text",
+        "args": [
+          {
+            "op": "ref",
+            "type": "Panel<Full,Labels>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "panel"
+          },
+          {
+            "op": "ref",
+            "type": "Control<Full,Labels>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "control"
+          },
+          {
+            "op": "ref",
+            "type": "Overlay<Full,Labels>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "overlay"
+          },
+          {
+            "op": "ref",
+            "type": "DisplayInstance<Full,Labels>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "instance"
+          },
+          {
+            "op": "ref",
+            "type": "Command<Full>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "command"
+          },
+          {
+            "op": "ref",
+            "type": "Binding<Full>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "binding"
+          },
+          {
+            "op": "ref",
+            "type": "Recording<Full>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "recording"
+          }
+        ]
+      }
+    }
+  ]
+}

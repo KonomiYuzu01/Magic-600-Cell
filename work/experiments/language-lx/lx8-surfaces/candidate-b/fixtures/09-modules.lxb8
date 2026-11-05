@@ -1,0 +1,6 @@
+edition: "lx8-0"
+module module_client requires []
+use helpers from "e9ea4b6cad9a2528a9c2b06b0ca85ab96228b568437071abac14f72977d1869f"
+
+function length(witness: Word<Full,Retained>) returns Cost<Full,Generators> using [] charge [12, 0, 0, 0]:
+    yield helpers_length(witness)

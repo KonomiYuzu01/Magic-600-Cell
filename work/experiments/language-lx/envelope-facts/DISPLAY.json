@@ -1,0 +1,349 @@
+{
+ "adversarial_checks": 31,
+ "collision_examples": [
+  {
+   "facts": {
+    "covered": "absent",
+    "form": "finite",
+    "grade": null,
+    "job": "not_run",
+    "membership": false,
+    "mode": null,
+    "scope": "one_instance",
+    "search": "budget",
+    "shape": "empty"
+   },
+   "outcome": "EF:collision.not_run_vs_budget"
+  },
+  {
+   "facts": {
+    "covered": "same",
+    "form": "existence",
+    "grade": [
+     "exact",
+     "producer"
+    ],
+    "job": "completed",
+    "membership": true,
+    "mode": null,
+    "scope": "one_instance",
+    "search": "absent",
+    "shape": "negative"
+   },
+   "outcome": "EF:collision.existence_refutation_basis"
+  },
+  {
+   "facts": {
+    "covered": "same",
+    "form": "finite",
+    "grade": [
+     "exact",
+     "producer"
+    ],
+    "job": "not_run",
+    "membership": true,
+    "mode": null,
+    "scope": "one_instance",
+    "search": "absent",
+    "shape": "positive"
+   },
+   "outcome": "EF:collision.not_run_vs_support"
+  },
+  {
+   "facts": {
+    "covered": "absent",
+    "form": "finite",
+    "grade": [
+     "theorem",
+     "producer"
+    ],
+    "job": "error",
+    "membership": true,
+    "mode": null,
+    "scope": "one_instance",
+    "search": "absent",
+    "shape": "negative"
+   },
+   "outcome": "EF:collision.negative_job_without_completion"
+  }
+ ],
+ "collisions": [
+  "EF:collision.not_run_vs_budget: EVD.32 row 5 versus EVD.47 row 7",
+  "EF:collision.existence_refutation_basis: EVD.32 row 1/I7 versus EVD.42",
+  "EF:collision.not_run_vs_support: EVD.32 rows 1-4 versus EVD.47 row 7",
+  "EF:collision.negative_job_without_completion: EVD.32 row 1 versus EVD.43"
+ ],
+ "combinations": 8749440,
+ "counts": {
+  "EF:collision.existence_refutation_basis": 1600,
+  "EF:collision.negative_job_without_completion": 28500,
+  "EF:collision.not_run_vs_budget": 146120,
+  "EF:collision.not_run_vs_support": 123000,
+  "EF:inconsistency.missing_mixed_refutation_witness": 73200,
+  "EF:inconsistency.missing_search_record": 89040,
+  "EF:inconsistency.unknown_cutoff_reason": 146120,
+  "EVD:evidence.inconsistent_fields:I4": 17300,
+  "EVD:evidence.inconsistent_fields:I6": 36600,
+  "EVD:evidence.inconsistent_fields:I7a": 179640,
+  "EVD:evidence.inconsistent_fields:I7b": 729120,
+  "EVD:evidence.inconsistent_fields:I7c": 1093680,
+  "EVD:evidence.negative_without_completion:I5": 1923480,
+  "word:conditional": 339550,
+  "word:finite instance": 201250,
+  "word:incomplete": 1572120,
+  "word:not found within budget": 876720,
+  "word:open": 997300,
+  "word:proved": 154700,
+  "word:refuted": 20400
+ },
+ "decider": "owner",
+ "decision": "open",
+ "digest_encoding": "one outcome-index byte per lexicographic product tuple; mode last",
+ "domain_order": [
+  "shape",
+  "grade",
+  "scope",
+  "form",
+  "covered",
+  "search",
+  "job",
+  "membership",
+  "mode"
+ ],
+ "domains": {
+  "covered": [
+   "absent",
+   "same",
+   "narrower",
+   "domain"
+  ],
+  "form": [
+   null,
+   "finite",
+   "universal",
+   "existence",
+   "mixed_forall",
+   "mixed_exists"
+  ],
+  "grade": [
+   null,
+   [
+    "theorem",
+    "none"
+   ],
+   [
+    "theorem",
+    "producer"
+   ],
+   [
+    "theorem",
+    "independent"
+   ],
+   [
+    "theorem",
+    "model"
+   ],
+   [
+    "theorem",
+    "human"
+   ],
+   [
+    "theorem",
+    "formal"
+   ],
+   [
+    "certificate",
+    "none"
+   ],
+   [
+    "certificate",
+    "producer"
+   ],
+   [
+    "certificate",
+    "independent"
+   ],
+   [
+    "certificate",
+    "model"
+   ],
+   [
+    "certificate",
+    "human"
+   ],
+   [
+    "certificate",
+    "formal"
+   ],
+   [
+    "exhaustive",
+    "none"
+   ],
+   [
+    "exhaustive",
+    "producer"
+   ],
+   [
+    "exhaustive",
+    "independent"
+   ],
+   [
+    "exhaustive",
+    "model"
+   ],
+   [
+    "exhaustive",
+    "human"
+   ],
+   [
+    "exhaustive",
+    "formal"
+   ],
+   [
+    "exact",
+    "none"
+   ],
+   [
+    "exact",
+    "producer"
+   ],
+   [
+    "exact",
+    "independent"
+   ],
+   [
+    "exact",
+    "model"
+   ],
+   [
+    "exact",
+    "human"
+   ],
+   [
+    "exact",
+    "formal"
+   ],
+   [
+    "sample",
+    "none"
+   ],
+   [
+    "sample",
+    "producer"
+   ],
+   [
+    "sample",
+    "independent"
+   ],
+   [
+    "sample",
+    "model"
+   ],
+   [
+    "sample",
+    "human"
+   ],
+   [
+    "sample",
+    "formal"
+   ]
+  ],
+  "job": [
+   null,
+   "completed",
+   "cancelled",
+   "cut_off",
+   "error",
+   "not_run",
+   "not_stated"
+  ],
+  "membership": [
+   false,
+   true
+  ],
+  "mode": [
+   null,
+   "transport",
+   "audit",
+   "replay",
+   "not_replayed"
+  ],
+  "scope": [
+   "one_instance",
+   "search_set",
+   "admitted_domain",
+   "every_reachable"
+  ],
+  "search": [
+   "absent",
+   "closed",
+   "budget",
+   "limit",
+   "wall",
+   "resource",
+   "other"
+  ],
+  "shape": [
+   "empty",
+   "positive",
+   "negative",
+   "both",
+   "premise",
+   "failed"
+  ]
+ },
+ "evidence_class": "synthetic",
+ "format": "ps1.38-display-probe/1",
+ "limitations": [
+  "bounded shapes only; no arbitrary EVD graph conformance",
+  "typed EF outcomes diagnose missing facts/open rules, not new chapter-06 error codes",
+  "source payload, source IDs and names are opaque to the word function",
+  "evidence-threshold and invalid-pair decisions remain open"
+ ],
+ "node_level_cases": 504,
+ "node_level_counts": {
+  "EF:collision.not_run_vs_budget": 4,
+  "EF:inconsistency.unknown_cutoff_reason": 4,
+  "EVD:evidence.inconsistent_fields:I4": 84,
+  "word:conditional": 84,
+  "word:finite instance": 42,
+  "word:incomplete": 20,
+  "word:not found within budget": 24,
+  "word:open": 32,
+  "word:proved": 42,
+  "word:refuted": 168
+ },
+ "outcomes": [
+  "word:open",
+  "word:finite instance",
+  "word:proved",
+  "word:conditional",
+  "word:refuted",
+  "word:not found within budget",
+  "word:incomplete",
+  "EVD:evidence.inconsistent_fields:I1",
+  "EVD:evidence.inconsistent_fields:I2",
+  "EVD:evidence.inconsistent_fields:I3",
+  "EVD:evidence.inconsistent_fields:I4",
+  "EVD:evidence.negative_without_completion:I5",
+  "EVD:evidence.inconsistent_fields:I6",
+  "EVD:evidence.inconsistent_fields:I7a",
+  "EVD:evidence.inconsistent_fields:I7b",
+  "EVD:evidence.inconsistent_fields:I7c",
+  "EF:inconsistency.missing_search_record",
+  "EF:inconsistency.unknown_cutoff_reason",
+  "EF:inconsistency.missing_mixed_refutation_witness",
+  "EF:collision.not_run_vs_budget",
+  "EF:collision.existence_refutation_basis",
+  "EF:collision.not_run_vs_support",
+  "EF:collision.negative_job_without_completion"
+ ],
+ "outcomes_sha256": "aa2e7c4d6fddd115df1ca07af7bc05e329eaa99cf4ffe28261d73ed9cde03790",
+ "scope_phrase_templates": {
+  "admitted_domain": "on the named admitted domain",
+  "every_reachable": "for every reachable state of the named puzzle",
+  "one_instance": "for the pinned finite input",
+  "search_set": "for the declared family, alphabet and bounds"
+ },
+ "threshold": "trial U0; no LQ3 answer"
+}

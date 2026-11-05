@@ -1,0 +1,18 @@
+{
+  "ir_version": "lx8-ir-0",
+  "exports": {
+    "length": {
+      "params": [
+        "Word<Full,Retained>"
+      ],
+      "result": "Cost<Full,Generators>",
+      "effects": [],
+      "charges": {
+        "steps": "2",
+        "kernel": "0",
+        "memory": "0",
+        "output": "0"
+      }
+    }
+  }
+}

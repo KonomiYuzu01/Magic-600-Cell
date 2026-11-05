@@ -1,0 +1,616 @@
+{
+  "build_digests": {
+    "dotnet_assembly": "7a82b0bc6bd9bc52b1fe4b12b9f4e3ac3568c1ef77dba1be3b94fa4ea71da9fa",
+    "node_source": "36e78bd80fd40551be999be11577f2a598246acb68775d524063e8ea937e9f42",
+    "rust_executable": "9f4a5c8cfa5db510cb77b3bdaad986066efdfda948c0340008282380d6bb890c"
+  },
+  "build_removed": true,
+  "candidates": {
+    "dotnet": {
+      "actual_bytes": 2198909,
+      "actual_sha256": "529252f51f3699be09c5d5a7a66fd6864f88e666cfd393ebd0a3f780d126d18b",
+      "by_size": {
+        "10000000-letters": {
+          "cases": 1,
+          "different": 0,
+          "equal": 1
+        },
+        "13231266-letters": {
+          "cases": 1,
+          "different": 0,
+          "equal": 1
+        },
+        "22500-bit": {
+          "cases": 70,
+          "different": 0,
+          "equal": 70
+        },
+        "2352984-letters": {
+          "cases": 1,
+          "different": 0,
+          "equal": 1
+        },
+        "2^256": {
+          "cases": 70,
+          "different": 0,
+          "equal": 70
+        },
+        "2^64": {
+          "cases": 70,
+          "different": 0,
+          "equal": 70
+        },
+        "672417-letters": {
+          "cases": 1,
+          "different": 0,
+          "equal": 1
+        },
+        "6775-digit": {
+          "cases": 70,
+          "different": 0,
+          "equal": 70
+        },
+        "871582-letters": {
+          "cases": 1,
+          "different": 0,
+          "equal": 1
+        },
+        "empty-stream": {
+          "cases": 1,
+          "different": 0,
+          "equal": 1
+        },
+        "length-166788405": {
+          "cases": 22,
+          "different": 0,
+          "equal": 22
+        },
+        "limb-boundaries": {
+          "cases": 88,
+          "different": 0,
+          "equal": 88
+        },
+        "pell-22493-bit": {
+          "cases": 4,
+          "different": 0,
+          "equal": 4
+        },
+        "pell-22495-bit": {
+          "cases": 4,
+          "different": 0,
+          "equal": 4
+        },
+        "pell-256-bit": {
+          "cases": 4,
+          "different": 0,
+          "equal": 4
+        },
+        "pell-3030-bit": {
+          "cases": 4,
+          "different": 0,
+          "equal": 4
+        },
+        "pell-64-bit": {
+          "cases": 4,
+          "different": 0,
+          "equal": 4
+        },
+        "pose-nc-22504-bit": {
+          "cases": 35,
+          "different": 0,
+          "equal": 35
+        },
+        "pose-nc-260-bit": {
+          "cases": 35,
+          "different": 0,
+          "equal": 35
+        },
+        "pose-nc-3022-bit": {
+          "cases": 35,
+          "different": 0,
+          "equal": 35
+        },
+        "pose-nc-70-bit": {
+          "cases": 35,
+          "different": 0,
+          "equal": 35
+        },
+        "random-1-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-1024-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-22500-bit": {
+          "cases": 88,
+          "different": 0,
+          "equal": 88
+        },
+        "random-256-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-3036-bit": {
+          "cases": 88,
+          "different": 0,
+          "equal": 88
+        },
+        "random-31-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-32-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-33-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-63-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-64-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-65-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-96-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "recorded-length-sum": {
+          "cases": 2,
+          "different": 0,
+          "equal": 2
+        }
+      },
+      "difference_count": 0,
+      "differing_case_ids": [],
+      "expected_sha256": "529252f51f3699be09c5d5a7a66fd6864f88e666cfd393ebd0a3f780d126d18b",
+      "extra_lines": 0,
+      "first_differences": [],
+      "status": "exact"
+    },
+    "node": {
+      "actual_bytes": 2198909,
+      "actual_sha256": "529252f51f3699be09c5d5a7a66fd6864f88e666cfd393ebd0a3f780d126d18b",
+      "by_size": {
+        "10000000-letters": {
+          "cases": 1,
+          "different": 0,
+          "equal": 1
+        },
+        "13231266-letters": {
+          "cases": 1,
+          "different": 0,
+          "equal": 1
+        },
+        "22500-bit": {
+          "cases": 70,
+          "different": 0,
+          "equal": 70
+        },
+        "2352984-letters": {
+          "cases": 1,
+          "different": 0,
+          "equal": 1
+        },
+        "2^256": {
+          "cases": 70,
+          "different": 0,
+          "equal": 70
+        },
+        "2^64": {
+          "cases": 70,
+          "different": 0,
+          "equal": 70
+        },
+        "672417-letters": {
+          "cases": 1,
+          "different": 0,
+          "equal": 1
+        },
+        "6775-digit": {
+          "cases": 70,
+          "different": 0,
+          "equal": 70
+        },
+        "871582-letters": {
+          "cases": 1,
+          "different": 0,
+          "equal": 1
+        },
+        "empty-stream": {
+          "cases": 1,
+          "different": 0,
+          "equal": 1
+        },
+        "length-166788405": {
+          "cases": 22,
+          "different": 0,
+          "equal": 22
+        },
+        "limb-boundaries": {
+          "cases": 88,
+          "different": 0,
+          "equal": 88
+        },
+        "pell-22493-bit": {
+          "cases": 4,
+          "different": 0,
+          "equal": 4
+        },
+        "pell-22495-bit": {
+          "cases": 4,
+          "different": 0,
+          "equal": 4
+        },
+        "pell-256-bit": {
+          "cases": 4,
+          "different": 0,
+          "equal": 4
+        },
+        "pell-3030-bit": {
+          "cases": 4,
+          "different": 0,
+          "equal": 4
+        },
+        "pell-64-bit": {
+          "cases": 4,
+          "different": 0,
+          "equal": 4
+        },
+        "pose-nc-22504-bit": {
+          "cases": 35,
+          "different": 0,
+          "equal": 35
+        },
+        "pose-nc-260-bit": {
+          "cases": 35,
+          "different": 0,
+          "equal": 35
+        },
+        "pose-nc-3022-bit": {
+          "cases": 35,
+          "different": 0,
+          "equal": 35
+        },
+        "pose-nc-70-bit": {
+          "cases": 35,
+          "different": 0,
+          "equal": 35
+        },
+        "random-1-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-1024-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-22500-bit": {
+          "cases": 88,
+          "different": 0,
+          "equal": 88
+        },
+        "random-256-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-3036-bit": {
+          "cases": 88,
+          "different": 0,
+          "equal": 88
+        },
+        "random-31-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-32-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-33-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-63-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-64-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-65-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-96-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "recorded-length-sum": {
+          "cases": 2,
+          "different": 0,
+          "equal": 2
+        }
+      },
+      "difference_count": 0,
+      "differing_case_ids": [],
+      "expected_sha256": "529252f51f3699be09c5d5a7a66fd6864f88e666cfd393ebd0a3f780d126d18b",
+      "extra_lines": 0,
+      "first_differences": [],
+      "status": "exact"
+    },
+    "rust": {
+      "actual_bytes": 2198909,
+      "actual_sha256": "529252f51f3699be09c5d5a7a66fd6864f88e666cfd393ebd0a3f780d126d18b",
+      "by_size": {
+        "10000000-letters": {
+          "cases": 1,
+          "different": 0,
+          "equal": 1
+        },
+        "13231266-letters": {
+          "cases": 1,
+          "different": 0,
+          "equal": 1
+        },
+        "22500-bit": {
+          "cases": 70,
+          "different": 0,
+          "equal": 70
+        },
+        "2352984-letters": {
+          "cases": 1,
+          "different": 0,
+          "equal": 1
+        },
+        "2^256": {
+          "cases": 70,
+          "different": 0,
+          "equal": 70
+        },
+        "2^64": {
+          "cases": 70,
+          "different": 0,
+          "equal": 70
+        },
+        "672417-letters": {
+          "cases": 1,
+          "different": 0,
+          "equal": 1
+        },
+        "6775-digit": {
+          "cases": 70,
+          "different": 0,
+          "equal": 70
+        },
+        "871582-letters": {
+          "cases": 1,
+          "different": 0,
+          "equal": 1
+        },
+        "empty-stream": {
+          "cases": 1,
+          "different": 0,
+          "equal": 1
+        },
+        "length-166788405": {
+          "cases": 22,
+          "different": 0,
+          "equal": 22
+        },
+        "limb-boundaries": {
+          "cases": 88,
+          "different": 0,
+          "equal": 88
+        },
+        "pell-22493-bit": {
+          "cases": 4,
+          "different": 0,
+          "equal": 4
+        },
+        "pell-22495-bit": {
+          "cases": 4,
+          "different": 0,
+          "equal": 4
+        },
+        "pell-256-bit": {
+          "cases": 4,
+          "different": 0,
+          "equal": 4
+        },
+        "pell-3030-bit": {
+          "cases": 4,
+          "different": 0,
+          "equal": 4
+        },
+        "pell-64-bit": {
+          "cases": 4,
+          "different": 0,
+          "equal": 4
+        },
+        "pose-nc-22504-bit": {
+          "cases": 35,
+          "different": 0,
+          "equal": 35
+        },
+        "pose-nc-260-bit": {
+          "cases": 35,
+          "different": 0,
+          "equal": 35
+        },
+        "pose-nc-3022-bit": {
+          "cases": 35,
+          "different": 0,
+          "equal": 35
+        },
+        "pose-nc-70-bit": {
+          "cases": 35,
+          "different": 0,
+          "equal": 35
+        },
+        "random-1-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-1024-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-22500-bit": {
+          "cases": 88,
+          "different": 0,
+          "equal": 88
+        },
+        "random-256-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-3036-bit": {
+          "cases": 88,
+          "different": 0,
+          "equal": 88
+        },
+        "random-31-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-32-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-33-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-63-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-64-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-65-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-96-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "recorded-length-sum": {
+          "cases": 2,
+          "different": 0,
+          "equal": 2
+        }
+      },
+      "difference_count": 0,
+      "differing_case_ids": [],
+      "expected_sha256": "529252f51f3699be09c5d5a7a66fd6864f88e666cfd393ebd0a3f780d126d18b",
+      "extra_lines": 0,
+      "first_differences": [],
+      "status": "exact"
+    }
+  },
+  "comparer_self_test": "pass",
+  "complete": true,
+  "decider": "owner",
+  "decision": "open",
+  "fixture_manifest_sha256": "75d464b4965c5baf4dc00bac58acf2e1aa0d3a958ca5c60c20e9f62b03e955bc",
+  "format": "lx5-check/1",
+  "pass_list": [
+    "node",
+    "dotnet",
+    "rust"
+  ],
+  "reference_self_test": "pass",
+  "rust_self_test": "Rust self-test: 512 native i128 cases, 3 SHA-256 vectors, 2904 frozen differential cases",
+  "sizes": {
+    "10000000-letters": 1,
+    "13231266-letters": 1,
+    "22500-bit": 70,
+    "2352984-letters": 1,
+    "2^256": 70,
+    "2^64": 70,
+    "672417-letters": 1,
+    "6775-digit": 70,
+    "871582-letters": 1,
+    "empty-stream": 1,
+    "length-166788405": 22,
+    "limb-boundaries": 88,
+    "pell-22493-bit": 4,
+    "pell-22495-bit": 4,
+    "pell-256-bit": 4,
+    "pell-3030-bit": 4,
+    "pell-64-bit": 4,
+    "pose-nc-22504-bit": 35,
+    "pose-nc-260-bit": 35,
+    "pose-nc-3022-bit": 35,
+    "pose-nc-70-bit": 35,
+    "random-1-bit": 264,
+    "random-1024-bit": 264,
+    "random-22500-bit": 88,
+    "random-256-bit": 264,
+    "random-3036-bit": 88,
+    "random-31-bit": 264,
+    "random-32-bit": 264,
+    "random-33-bit": 264,
+    "random-63-bit": 264,
+    "random-64-bit": 264,
+    "random-65-bit": 264,
+    "random-96-bit": 264,
+    "recorded-length-sum": 2
+  },
+  "smoke_sha256": "3863ef102c32c5cd2cc53dd461cf56ca6fdada00a6ac21da52ac58e1f577f2f5",
+  "source_manifest_sha256": "f004cae740af45839f798ddbf4cc0f1c9fcd774f9be09ad9fb9b536aedb6a1a2",
+  "started_utc": "2026-11-05T06:48:43.420184+00:00",
+  "tools": {
+    "dotnet_runtime": "10.0.12",
+    "dotnet_sdk": "10.0.401",
+    "node": "v24.21.0",
+    "platform": "win32",
+    "python": "3.15.1",
+    "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)"
+  }
+}

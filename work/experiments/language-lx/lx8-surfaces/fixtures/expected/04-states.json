@@ -1,0 +1,88 @@
+{
+  "ir_version": "lx8-ir-0",
+  "edition": "lx8-0",
+  "module": "state_difference",
+  "requires": [
+    "snapshot"
+  ],
+  "imports": [],
+  "declarations": [
+    {
+      "kind": "function",
+      "name": "compare",
+      "params": [
+        {
+          "name": "before",
+          "type": "Snapshot<Full,Labels,Witnessed>"
+        },
+        {
+          "name": "after",
+          "type": "DerivedState<Full,Labels,Witnessed>"
+        },
+        {
+          "name": "jumble",
+          "type": "Snapshot<Jumble,Poses,Witnessed>"
+        },
+        {
+          "name": "derived",
+          "type": "DerivedState<Jumble,Poses,Promised>"
+        }
+      ],
+      "result": "Difference<Full,Labels>",
+      "declared_effects": [
+        "snapshot"
+      ],
+      "effects": [
+        "snapshot"
+      ],
+      "charges": {
+        "steps": "12",
+        "kernel": "0",
+        "memory": "0",
+        "output": "0"
+      },
+      "metadata": null,
+      "bindings": [],
+      "body": {
+        "op": "call",
+        "type": "Difference<Full,Labels>",
+        "effects": [
+          "snapshot"
+        ],
+        "charges": {
+          "steps": "1",
+          "kernel": "7",
+          "memory": "0",
+          "output": "0"
+        },
+        "target": "difference",
+        "args": [
+          {
+            "op": "ref",
+            "type": "Snapshot<Full,Labels,Witnessed>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "before"
+          },
+          {
+            "op": "ref",
+            "type": "DerivedState<Full,Labels,Witnessed>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "after"
+          }
+        ]
+      }
+    }
+  ]
+}

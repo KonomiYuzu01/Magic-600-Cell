@@ -1,0 +1,52 @@
+{
+  "cases": 3374,
+  "files": {
+    "operands.tsv": {
+      "bytes": 519104,
+      "sha256": "cddbd26087f9e9fd4df642e3fa438da6477f975e6961df1f4b27077ab26c361c"
+    },
+    "pose-recipe.json": {
+      "bytes": 25824,
+      "sha256": "164caef389077ea76ffe9c784596e01d88527f315bbd6b1a6bfc6a04b6e1161d"
+    },
+    "reference.tsv.gz": {
+      "bytes": 742369,
+      "sha256": "30a0d8bfe0b5b56b348ab48041441a88554195b8c78502613c99ee9b15c048fa"
+    },
+    "word-recipes.json": {
+      "bytes": 19750,
+      "sha256": "6b67a3cad7be8da040757b242a4f069747c0a46123b187c6a8632d9290def1e2"
+    }
+  },
+  "format": "lx5-fixtures/1",
+  "operations": [
+    "add",
+    "sub",
+    "mul",
+    "div",
+    "rem",
+    "gcd",
+    "cmp",
+    "shl",
+    "shr",
+    "bits",
+    "dec",
+    "hex",
+    "rat_add",
+    "rat_mul",
+    "rat_cmp",
+    "q_add",
+    "q_mul",
+    "q_conj",
+    "q_norm",
+    "q_sign",
+    "sum",
+    "word"
+  ],
+  "reference_decoded": {
+    "bytes": 2198909,
+    "sha256": "529252f51f3699be09c5d5a7a66fd6864f88e666cfd393ebd0a3f780d126d18b"
+  },
+  "seed": 24581,
+  "values": 413
+}

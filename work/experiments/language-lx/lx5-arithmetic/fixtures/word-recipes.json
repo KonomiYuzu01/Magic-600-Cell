@@ -1,0 +1,380 @@
+{
+  "run": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/run.json",
+  "run_sha256": "829c9c52fe202079eb27951ef9ddd78fd432c9eff4edd7f663b78a438db11416",
+  "sources": [
+    {
+      "gzip_sha256": "765163f80173517efface9cdba987711c2f0319ae324ab0aee56d93ad21a2dc6",
+      "ia16_sha256": "187a76740fcd6e0db7d1e48c5faa5b999c4dd78ae6c9d8f6c06d691bd7f30990",
+      "letters": 31186,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00000.ia16.gz"
+    },
+    {
+      "gzip_sha256": "eb4f6add64d7643cad43f215a54bc9fb9387ffbb6eaa88c263567ed9ee124a7a",
+      "ia16_sha256": "fb3c2c1c39e8181dc4e70dfc914d7ea6960a5350e0678866c8c501887cd089b0",
+      "letters": 198470,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00001.ia16.gz"
+    },
+    {
+      "gzip_sha256": "d87e47e7e9f73eb5b9ca10eb3bfe09aa86384fc7664a2068b078456dc3e86bb9",
+      "ia16_sha256": "27577a9855f2ce6306b5c3b9bc1c7c10178266df7a81ca2ea99a6b27619ca513",
+      "letters": 50112,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00002.ia16.gz"
+    },
+    {
+      "gzip_sha256": "0eca7841507aacdac5be3464c6346e06d2e2d0dd35428d7a85b097c968e56a0f",
+      "ia16_sha256": "a365e98c250c8752f5f779c24c293cb594525db3989edafb2db65c975331c4e7",
+      "letters": 137164,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00003.ia16.gz"
+    },
+    {
+      "gzip_sha256": "243c0d8702022dfbae3eb1d2fe8d53cba076a84d21a1e517e233c684fe7489f2",
+      "ia16_sha256": "d3dafdd160c2aa0322ef844749d51c8688aa0bb16cda5fa573fc2354c6b08d56",
+      "letters": 248610,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00004.ia16.gz"
+    },
+    {
+      "gzip_sha256": "96a98068f835b6600cde7d3bc31bd77f2672f19f8961f07a71342c7a40d2a7b5",
+      "ia16_sha256": "37f407888673ae303056329dbf3785e7f162247b571118545e7d92a7d1733b42",
+      "letters": 134554,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00005.ia16.gz"
+    },
+    {
+      "gzip_sha256": "b32e53c2955289865661faa7ede0defc2188449d1b34e2551936118ce8830d3c",
+      "ia16_sha256": "fa79edfa56e2b3b1023a768823cb224fc8084a9428c822208a4fc43445365234",
+      "letters": 250682,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00006.ia16.gz"
+    },
+    {
+      "gzip_sha256": "006ef3063211119a33041a567dfeae9e2c796012d052431b4a39c633055909d5",
+      "ia16_sha256": "deb9b25b1627c16560d6a52789c097b7adc5eaef62deab532a39ff4010ee838e",
+      "letters": 238572,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00007.ia16.gz"
+    },
+    {
+      "gzip_sha256": "2f947a83080944bf5174456334eeabe078844737f1f46bc58d8dfb5d76c77756",
+      "ia16_sha256": "39402bf05d5290b0fe2fdb7d8587f39852313ebb7f6ee2676e5368172f491eee",
+      "letters": 245990,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00008.ia16.gz"
+    },
+    {
+      "gzip_sha256": "c9757441ff2a3ea92222c6ea41f03e1233ecd8edd26b9e151af831cedb0c2bed",
+      "ia16_sha256": "9781f689a8b3eb38eb3e22a80c8ccfc4976700a26d8324edd083462043552980",
+      "letters": 655926,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00009.ia16.gz"
+    },
+    {
+      "gzip_sha256": "6a5aaad7a0f32e16019388f506876b3a7ce75ce2533056835a0fd5479a332541",
+      "ia16_sha256": "220e147e91bf68364e19f998e00ea57b46a308bcc48354c609a60aa8355af629",
+      "letters": 205108,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00010.ia16.gz"
+    },
+    {
+      "gzip_sha256": "9177a0443ce746507fd1414446eff141483ee3ee0235775e598166e636a64c05",
+      "ia16_sha256": "e9293db22a832ce17836faf8de23599d4c6af67dc2c88b5b73d317de8fcff20c",
+      "letters": 156504,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00011.ia16.gz"
+    },
+    {
+      "gzip_sha256": "4a35b2a02860490cd32f7b8be1c77f99b8e95deaa1d9b2ececc81f99073b719b",
+      "ia16_sha256": "079b238146e6afc98c046c36ff0c4b05073076e67d11da8d268c3706f19f76de",
+      "letters": 281124,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00012.ia16.gz"
+    },
+    {
+      "gzip_sha256": "02c6909c8f6e32f078536788c35558152f391f605b8af4f360261c723fb6f46d",
+      "ia16_sha256": "e3d04a7a07a9bc8d07cc893a1c9e2436d57f47f0a59eb74af373d87d46052aaf",
+      "letters": 166880,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00013.ia16.gz"
+    },
+    {
+      "gzip_sha256": "074e0e10914cf30f461a62d2b675058e16ceb36d3657564730f45a5ace2ac916",
+      "ia16_sha256": "efc0fe73d27a32a312fcd7141671f24fd49a023043620dddc42ef4049e7fa35b",
+      "letters": 2352984,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00014.ia16.gz"
+    },
+    {
+      "gzip_sha256": "3258ea18166d0c916e8189893d0ae4c0dd05d1d48ad9fa5a7410dcb33fb0d0ef",
+      "ia16_sha256": "062fbac46618852457848b0110c3a8c5d5a0c47fe6e158ee3f282a980c1725a4",
+      "letters": 16748,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00015.ia16.gz"
+    },
+    {
+      "gzip_sha256": "365e0fb3d3ace3d206b8ccb290f8de88122b51771a6972d8dfc9e74c7b579bd3",
+      "ia16_sha256": "1a54ee92a5f619afae5ca798e11e6960ec508a9df0466b6b00ec181d7243902f",
+      "letters": 1151698,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00016.ia16.gz"
+    },
+    {
+      "gzip_sha256": "550550052867e8f404afd7b7ef249fb5d121d276bace6597b194f3fdcd5b122c",
+      "ia16_sha256": "d20b837c570ad4ce8d79db0ebdfcb1c95a8d6810a9721e00321144a0ab0131e6",
+      "letters": 250554,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00017.ia16.gz"
+    },
+    {
+      "gzip_sha256": "d7a47a9b79ee4d51634622b236e9c800290b1563b892c51dd4847f6269d179c9",
+      "ia16_sha256": "86ac22a62319e0809cec4814077bfd7b6778804293fac7e256d25bc922656b4a",
+      "letters": 251548,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00018.ia16.gz"
+    },
+    {
+      "gzip_sha256": "e67a6eed4fdecd65278309e1a5f801bfd1b1e27f10cae8536a74c65774cce511",
+      "ia16_sha256": "88b76ef4d9e928b20cc588c384a587447e8de93b5588041e52aa1a2073e9f29c",
+      "letters": 354906,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00019.ia16.gz"
+    },
+    {
+      "gzip_sha256": "b69887bc43af5823f8ba5035bbcbff5e86926e7faf3d44213969601e0463ccae",
+      "ia16_sha256": "2801f72af1210ad0f3352b2394451b04a6ea2a21a14ecb30adb4239f1029251b",
+      "letters": 573490,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00020.ia16.gz"
+    },
+    {
+      "gzip_sha256": "15ce2ed6b5623cfcdb5697d340c97b7ed4877f109a25dc81142c0fc7ba4b7bc2",
+      "ia16_sha256": "5fd8aa3715dc170af5ff768e38ab9db393351a56c88aa534dc5b287a838d46cc",
+      "letters": 301366,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00021.ia16.gz"
+    },
+    {
+      "gzip_sha256": "9173d2617bc871e58aba88aa16e7b70377bbae3587015af8353cda0b61afa975",
+      "ia16_sha256": "db9199caecdfca655a9c57155bedb0306c05c4c440752820edc074bb57a85eba",
+      "letters": 799042,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00022.ia16.gz"
+    },
+    {
+      "gzip_sha256": "32922420f7c414d900487e6479bbadf38fbcc1732081b81f1cda279b0caa2678",
+      "ia16_sha256": "6f7439086af680353396322d24d78509cd4c96a08bde2cdc916c6f9044c2d6d5",
+      "letters": 75144,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00023.ia16.gz"
+    },
+    {
+      "gzip_sha256": "6f19ce3b8ba9344b2f9fd3bbfc545ebc32b7e83c001f63dcbd966b758cfa10ee",
+      "ia16_sha256": "69052e97835198d6b8e3f20e01fc5b773164438a849a5e07733864b28b5a5365",
+      "letters": 188648,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00024.ia16.gz"
+    },
+    {
+      "gzip_sha256": "79b78df3e1448be4984a8c1fb258bbe5c03738e072cea0ea5e62c147a4da2f7c",
+      "ia16_sha256": "48e556158fd1d4a2a149be2365d58bdd097c4ea1b4dc05715cd2fad141679450",
+      "letters": 250340,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00025.ia16.gz"
+    },
+    {
+      "gzip_sha256": "242dba299ba3d29393789c1451840742004f1fb92406709c78d45a5bd2dd34f7",
+      "ia16_sha256": "f5d1fbf4cf61153238305005597e0107fca736ab62b8d63740871879e4c08487",
+      "letters": 250034,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00026.ia16.gz"
+    },
+    {
+      "gzip_sha256": "10d7908a5bad6e37cf3db6ccc561a20f17bc73fcee9b6ad862642cb25198d357",
+      "ia16_sha256": "150fdc644796285e2c7cca886df8a9d88480ba4d6221447f931330bd5b962285",
+      "letters": 286710,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00027.ia16.gz"
+    },
+    {
+      "gzip_sha256": "bb6767f348866f21bc552f3e9d4e9cd9459b4e924b0983d82aee35a0a1109bff",
+      "ia16_sha256": "ef830150e9fc456cd5ca34b1102360614d6f96ecbdbe22fe777032ef821142fe",
+      "letters": 214552,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00028.ia16.gz"
+    },
+    {
+      "gzip_sha256": "23c6c1175fad2e37fecc936154a901d2bcc970ff2d116fa4f3d5d435df2e2e56",
+      "ia16_sha256": "0858aee80a80ea9a94e329e6e663de0f80b2a54eed5329a91dde12e12499a906",
+      "letters": 430310,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00029.ia16.gz"
+    },
+    {
+      "gzip_sha256": "ace8db6b39f7c493e3fbee7808247141bd675200175a3f93dc8fd118711d27b1",
+      "ia16_sha256": "4408d1e4b275bc51bab8d105b8acd4f3f061c4f588f9941395e9e96873cd6556",
+      "letters": 931440,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00030.ia16.gz"
+    },
+    {
+      "gzip_sha256": "b11654923b0bafd2b54c40795ce8e2c90f2e80925cd4e42bef16a96853c605cd",
+      "ia16_sha256": "2e7ea1ec40c55efbe19530a9683a4577324baa24953946fed4c089a6257b2caf",
+      "letters": 236810,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00031.ia16.gz"
+    },
+    {
+      "gzip_sha256": "eca7dd1339a18f3a898ac0fd17e285c076f3e4903d61c655cbd9b63b5b33850b",
+      "ia16_sha256": "f3b84b70deb1ee2254b9bfb6a082de3df3b67c6d99390e4a1b61d2b0b90f1df4",
+      "letters": 455936,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00032.ia16.gz"
+    },
+    {
+      "gzip_sha256": "0b046c2372d26ff2736cc586282b8edaec62097538c0daba1e6cbd8caa3be1ff",
+      "ia16_sha256": "839513ad78489b7d9be4559ddbd664ff612d1c3e229e2e8ef6c0cbd960822498",
+      "letters": 239740,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00033.ia16.gz"
+    },
+    {
+      "gzip_sha256": "654b2cdb60f677336ed8422eb81d7632b6ccd33ef1fe54d8c58cc0cc15d5eb0a",
+      "ia16_sha256": "85dc75cabd391c899901762d32c05f29013508c8dd29d2540ca95f1d91829c13",
+      "letters": 604160,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00034.ia16.gz"
+    },
+    {
+      "gzip_sha256": "4a5e0d896b1e310982c8b921cf63ff68ac70685db209d6ae584a69d204cb0b4b",
+      "ia16_sha256": "ab52a7a0057d16fb757785b7e638a717cd7e253c5e1ba31f7e6761bdd1ccb209",
+      "letters": 9,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00035.ia16.gz"
+    },
+    {
+      "gzip_sha256": "30e4e6d90a0859be71896b61b7fd62511f2014a967e6642fbc6b4f8963026257",
+      "ia16_sha256": "c7cb066a20bc195afe1130cb4e522853161ff13148378c2c9cd124255dc22a61",
+      "letters": 9,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00036.ia16.gz"
+    },
+    {
+      "gzip_sha256": "3e99d4519eaee42a2424b07cde3ab23b295dbb805a4253c354389f9e2df9ce65",
+      "ia16_sha256": "4969966fd17884687f3cfa58ce2cb7e25e77088b64fc884de488d59ef0bbf7b6",
+      "letters": 9,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00037.ia16.gz"
+    },
+    {
+      "gzip_sha256": "73d69c73a6fafd3ba64d3180312a2b50f21f2a91020653de81bb5f32c01b095d",
+      "ia16_sha256": "6f966842b5997df6789387048c1bd6717349516ec698bc96a05e0a36a4af97f3",
+      "letters": 37,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00038.ia16.gz"
+    },
+    {
+      "gzip_sha256": "62eef0621b51dc617b154710c465cad856952dafb5c288cf7d622585bc68d55c",
+      "ia16_sha256": "0afbd2cea6d9e7453206943d992bd3d0311a420041072b7ff3fe43560523fbe0",
+      "letters": 37,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00039.ia16.gz"
+    },
+    {
+      "gzip_sha256": "e7f5094704e597997f331c4e1e339a71043d8f8782cdae079ee3ddaeaae140f0",
+      "ia16_sha256": "26f3e9f170fa1617c4a3bc597ef49502bd2f0b46ba41f9d3348110ead2e78cd8",
+      "letters": 85,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00040.ia16.gz"
+    },
+    {
+      "gzip_sha256": "f2ba2b392456fa64799232fb110b76972b075ce817cf15a41c90f71299d6ecb8",
+      "ia16_sha256": "98ee5376e3aad440b443941ffc587b7fd858fcc0e7966cf8544f9fbc617b954e",
+      "letters": 85,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00041.ia16.gz"
+    },
+    {
+      "gzip_sha256": "39766b4878cdeebca74b823160898679f2c116148ed82412f7a1d6e91f98e1b8",
+      "ia16_sha256": "cf79197d005e08884e1f03e80bfcfbf400ef58c48452e01670d4f2728e8ea7b3",
+      "letters": 228,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00042.ia16.gz"
+    },
+    {
+      "gzip_sha256": "f98e3fb8e1ad64db85cfd51616fa1bb01a1925c938e1f46462df0b28656a4638",
+      "ia16_sha256": "4ca720b28c8be5457d38db763191b54e417958bf26e6dd3243899f7f0ab147d1",
+      "letters": 317,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00043.ia16.gz"
+    },
+    {
+      "gzip_sha256": "64d1e3bbfc6e0ee1ff6f8a9ec88d4e4e21d20520f251b6260e9d1614c3f99ca3",
+      "ia16_sha256": "294e8e0ac63675bdac1a20d36cf51c5f2ba8a56558a17fe10b23301fd9dc5a93",
+      "letters": 332,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00044.ia16.gz"
+    },
+    {
+      "gzip_sha256": "c0a75af86bc010588d395a57a90aaee0316b21d330f84a45fee98105a386410d",
+      "ia16_sha256": "e588f602c611acbec5b1c707f0e826db2150796c3257c89d0854f6fa3cdff009",
+      "letters": 349,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00045.ia16.gz"
+    },
+    {
+      "gzip_sha256": "46da0843eede7b43c67312cfe3e2a7f6c44cb1320e0a0ffc99135290099b3fde",
+      "ia16_sha256": "311f7b4491c5a1979d7d5f2b01d2839bc27d8ff5be7a753cba932e9c3333e599",
+      "letters": 1024,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00046.ia16.gz"
+    },
+    {
+      "gzip_sha256": "fe05eb487f31d9e66f212a148babb75148a993e828f1b8bbf1854d337995a6cb",
+      "ia16_sha256": "dc9caf7e61636f3fa5c6b9fd1c8c5205c1470c94b827aac64c5a262de0061226",
+      "letters": 701,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00047.ia16.gz"
+    },
+    {
+      "gzip_sha256": "6c9f0e7dbb9f8ec5f092a2f2421d278085a65723a51489d7daa52caf2d538885",
+      "ia16_sha256": "6afdb15c445dac34b1a453eb38ba030c228e591bf1d99c5614b837fb985cf4ad",
+      "letters": 1405,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00048.ia16.gz"
+    },
+    {
+      "gzip_sha256": "f0f3d47fc84b0a28be5b11dd44a0a1150071aa550ba551672334a12fecad7b03",
+      "ia16_sha256": "bc699563484b34c0427730e172dcc18ab2b1d387d109118523b4cb7f30565596",
+      "letters": 1408,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00049.ia16.gz"
+    },
+    {
+      "gzip_sha256": "f103709cd0cd8dacc26575921445262401390e90cb5ccccb88fb7c58349dc9f6",
+      "ia16_sha256": "5b8856ea412055e87a6ff50676f4b561bf29a0ecbee7a0eb912355aa59443f9a",
+      "letters": 2557,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00050.ia16.gz"
+    },
+    {
+      "gzip_sha256": "f900782e83a038a1dc3d00607b9bc8b797a1f1205e0e01b6b1060d6bc40dd560",
+      "ia16_sha256": "86ed35f653fec4f4bf8f43992af2375c40f7764b2841e016bde43c5774969983",
+      "letters": 2816,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00051.ia16.gz"
+    },
+    {
+      "gzip_sha256": "95fe67d7234a7cfbefc98b1bbc4db28ef70c47bc7adda4930c7f1ccb0755ae2f",
+      "ia16_sha256": "aad37470f32264c69259e15fa580c222d591d52b1c53afd0ab96fe0cebf92045",
+      "letters": 2816,
+      "path": "research/jumbling/restoration/18-tail-completion/results/lattice-d1/run/words/00052.ia16.gz"
+    }
+  ],
+  "streams": [
+    {
+      "canonical_summary_sha256": "bf9b9e603a794e22a1ea489071446425e6b7f5c52e3a87c44177e473571d14dc",
+      "file": "prefix672417.ia16",
+      "ia16_sha256": "327feda52a91e8b2d066450386e27d54acb67cf03a4d65b1ed7ff20a3b18d5a3",
+      "letter_sum": 834519770,
+      "letters": 672417,
+      "recipe": "first 672417 letters of word 00014; source-derived size surrogate, not the earlier E2 witness",
+      "size": "672417-letters"
+    },
+    {
+      "canonical_summary_sha256": "5520e77dd875669902d860db6df3a4b0a94f765a6b631dec0ac53d4139aa70ad",
+      "file": "prefix871582.ia16",
+      "ia16_sha256": "794c2bd37e5c0a2d0a19ec7bfec2679e6c68932177a5ede1b0094cf4694de51b",
+      "letter_sum": 1080665731,
+      "letters": 871582,
+      "recipe": "first 871582 letters of word 00014; source-derived size surrogate, not the T6 witness",
+      "size": "871582-letters"
+    },
+    {
+      "canonical_summary_sha256": "e0e1e17db0a53c4815fad538b9bc92769a32524eb74a38870a737654cc6e7640",
+      "file": "longest.ia16",
+      "ia16_sha256": "efc0fe73d27a32a312fcd7141671f24fd49a023043620dddc42ef4049e7fa35b",
+      "letter_sum": 2919904739,
+      "letters": 2352984,
+      "recipe": "recorded word 00014 in full",
+      "size": "2352984-letters"
+    },
+    {
+      "canonical_summary_sha256": "5fb6b9f9fb8a02bc9d8a43b5a28a001fb87ab94c7663d398b54ad3a98d109b9b",
+      "file": "bound.ia16",
+      "ia16_sha256": "f7270db4ced13f38d1fe5a4380936ad029b2ed8e5eeec93a0325b59f999e0443",
+      "letter_sum": 179993643396,
+      "letters": 10000000,
+      "recipe": "xorshift32 seed 24581; shifts 13,17,5; mask 32 bits; letter = state % 36000",
+      "size": "10000000-letters"
+    },
+    {
+      "canonical_summary_sha256": "905cf6abe94184fe644da1984577d27174eb9a872e65e77a492645c244f18629",
+      "file": "lattice.ia16",
+      "ia16_sha256": "fdf6a440e56d0e6c6ad85884bf8b29ad9563a2c59d743ba0ace59ec1b0a0785f",
+      "letter_sum": 50522455286,
+      "letters": 13231266,
+      "recipe": "all 53 recorded words concatenated in step-index order, one stream",
+      "size": "13231266-letters"
+    },
+    {
+      "canonical_summary_sha256": "a5e8487b11b1ba8fb581b7e8f3a2e1af680f6575fc234d6fdd59c73e05bb32e1",
+      "file": "empty.ia16",
+      "ia16_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "letter_sum": 0,
+      "letters": 0,
+      "recipe": "empty stream control",
+      "size": "empty-stream"
+    }
+  ]
+}

@@ -1,0 +1,149 @@
+{
+  "ir_version": "lx8-ir-0",
+  "edition": "lx8-0",
+  "module": "protection_helpers",
+  "requires": [
+    "snapshot"
+  ],
+  "imports": [],
+  "declarations": [
+    {
+      "kind": "function",
+      "name": "delegated",
+      "params": [
+        {
+          "name": "snapshot",
+          "type": "Snapshot<Full,Labels,Witnessed>"
+        },
+        {
+          "name": "witness",
+          "type": "Word<Full,Retained>"
+        }
+      ],
+      "result": "Verdict<Certificate<Full,Labels>>",
+      "declared_effects": [
+        "snapshot"
+      ],
+      "effects": [
+        "snapshot"
+      ],
+      "charges": {
+        "steps": "12",
+        "kernel": "0",
+        "memory": "0",
+        "output": "0"
+      },
+      "metadata": null,
+      "bindings": [],
+      "body": {
+        "op": "call",
+        "type": "Verdict<Certificate<Full,Labels>>",
+        "effects": [
+          "snapshot"
+        ],
+        "charges": {
+          "steps": "12",
+          "kernel": "0",
+          "memory": "0",
+          "output": "0"
+        },
+        "target": "probe",
+        "args": [
+          {
+            "op": "ref",
+            "type": "Snapshot<Full,Labels,Witnessed>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "snapshot"
+          },
+          {
+            "op": "ref",
+            "type": "Word<Full,Retained>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "witness"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "function",
+      "name": "probe",
+      "params": [
+        {
+          "name": "snapshot",
+          "type": "Snapshot<Full,Labels,Witnessed>"
+        },
+        {
+          "name": "witness",
+          "type": "Word<Full,Retained>"
+        }
+      ],
+      "result": "Verdict<Certificate<Full,Labels>>",
+      "declared_effects": [
+        "snapshot"
+      ],
+      "effects": [
+        "snapshot"
+      ],
+      "charges": {
+        "steps": "12",
+        "kernel": "0",
+        "memory": "0",
+        "output": "0"
+      },
+      "metadata": null,
+      "bindings": [],
+      "body": {
+        "op": "call",
+        "type": "Verdict<Certificate<Full,Labels>>",
+        "effects": [
+          "snapshot"
+        ],
+        "charges": {
+          "steps": "1",
+          "kernel": "7",
+          "memory": "0",
+          "output": "0"
+        },
+        "target": "check_word",
+        "args": [
+          {
+            "op": "ref",
+            "type": "Snapshot<Full,Labels,Witnessed>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "snapshot"
+          },
+          {
+            "op": "ref",
+            "type": "Word<Full,Retained>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "witness"
+          }
+        ]
+      }
+    }
+  ]
+}

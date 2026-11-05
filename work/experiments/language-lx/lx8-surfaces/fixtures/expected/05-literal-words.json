@@ -1,0 +1,206 @@
+{
+  "ir_version": "lx8-ir-0",
+  "edition": "lx8-0",
+  "module": "authored_words",
+  "requires": [],
+  "imports": [],
+  "declarations": [
+    {
+      "kind": "function",
+      "name": "witness",
+      "params": [],
+      "result": "Word<Full,Retained>",
+      "declared_effects": [],
+      "effects": [],
+      "charges": {
+        "steps": "12",
+        "kernel": "0",
+        "memory": "0",
+        "output": "0"
+      },
+      "metadata": null,
+      "bindings": [
+        {
+          "name": "key",
+          "type": "WordKey<Full,Retained>",
+          "value": {
+            "op": "call",
+            "type": "WordKey<Full,Retained>",
+            "effects": [],
+            "charges": {
+              "steps": "1",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "target": "word_key",
+            "args": [
+              {
+                "op": "literal.word",
+                "type": "Word<Full,Retained>",
+                "effects": [],
+                "charges": {
+                  "steps": "1",
+                  "kernel": "0",
+                  "memory": "0",
+                  "output": "0"
+                },
+                "letters": [
+                  "1",
+                  "-1",
+                  "2",
+                  "1200",
+                  "-1200",
+                  "1"
+                ],
+                "expanded_length": "6"
+              }
+            ]
+          }
+        }
+      ],
+      "body": {
+        "op": "literal.word",
+        "type": "Word<Full,Retained>",
+        "effects": [],
+        "charges": {
+          "steps": "1",
+          "kernel": "0",
+          "memory": "0",
+          "output": "0"
+        },
+        "letters": [
+          "1",
+          "-1",
+          "2",
+          "1200",
+          "-1200",
+          "1"
+        ],
+        "expanded_length": "6"
+      }
+    },
+    {
+      "kind": "function",
+      "name": "menu_witness",
+      "params": [],
+      "result": "Word<Jumble,MenuA>",
+      "declared_effects": [],
+      "effects": [],
+      "charges": {
+        "steps": "12",
+        "kernel": "0",
+        "memory": "0",
+        "output": "0"
+      },
+      "metadata": null,
+      "bindings": [],
+      "body": {
+        "op": "literal.word",
+        "type": "Word<Jumble,MenuA>",
+        "effects": [],
+        "charges": {
+          "steps": "1",
+          "kernel": "0",
+          "memory": "0",
+          "output": "0"
+        },
+        "letters": [
+          {
+            "grip": "2",
+            "rotation": "spin"
+          },
+          {
+            "grip": "2",
+            "rotation": "unspin"
+          },
+          {
+            "grip": "5",
+            "rotation": "identity"
+          }
+        ],
+        "expanded_length": "3"
+      }
+    },
+    {
+      "kind": "function",
+      "name": "menu_cost",
+      "params": [],
+      "result": "Cost<Jumble,MenuLetters>",
+      "declared_effects": [],
+      "effects": [],
+      "charges": {
+        "steps": "12",
+        "kernel": "0",
+        "memory": "0",
+        "output": "0"
+      },
+      "metadata": null,
+      "bindings": [],
+      "body": {
+        "op": "call",
+        "type": "Cost<Jumble,MenuLetters>",
+        "effects": [],
+        "charges": {
+          "steps": "1",
+          "kernel": "0",
+          "memory": "0",
+          "output": "0"
+        },
+        "target": "word_length",
+        "args": [
+          {
+            "op": "call",
+            "type": "Word<Jumble,MenuA>",
+            "effects": [],
+            "charges": {
+              "steps": "12",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "target": "menu_witness",
+            "args": []
+          }
+        ]
+      }
+    },
+    {
+      "kind": "function",
+      "name": "recipe_note",
+      "params": [
+        {
+          "name": "recipe",
+          "type": "Recipe<Full,Retained>"
+        },
+        {
+          "name": "count",
+          "type": "Cost<Full,Generators>"
+        }
+      ],
+      "result": "Text",
+      "declared_effects": [],
+      "effects": [],
+      "charges": {
+        "steps": "12",
+        "kernel": "0",
+        "memory": "0",
+        "output": "0"
+      },
+      "metadata": null,
+      "bindings": [],
+      "body": {
+        "op": "literal.text",
+        "type": "Text",
+        "effects": [],
+        "charges": {
+          "steps": "1",
+          "kernel": "0",
+          "memory": "0",
+          "output": "0"
+        },
+        "value": "User-authored recipe; no expansion executed."
+      }
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+edition "lx8-0";
+module research_records requires [budget];
+
+fn summarize(space: SearchSpace<Jumble,Poses>, record: SearchRecord<Jumble,Poses>, strategy: Strategy<Jumble,Poses>, rank: Rank<Jumble>, budget: Budget<Jumble,MenuLetters>, run: RunRecord<Jumble>, branch: Branch<Jumble>) -> Text effects [budget] charge [12, 0, 0, 0] {
+    return research_note(record, budget);
+}

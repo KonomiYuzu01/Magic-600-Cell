@@ -1,0 +1,1665 @@
+{
+ "envelopes": [
+  {
+   "edition": "873337a419f1c74128aa177f8d89c49a64a7c1e14a4ac22749ad54bc0a36cc6e",
+   "facts": [],
+   "fields": {
+    "attribution": {
+     "reason": "EF:missing.attribution",
+     "value": null
+    },
+    "check_dependencies": {
+     "reason": "EF:missing.check_binding_and_common_base",
+     "value": null
+    },
+    "covered": {
+     "reason": "EF:missing.leaf_coverage_binding",
+     "value": null
+    },
+    "engineering_evidence": {
+     "reason": "EF:missing.engineering_evidence_class",
+     "value": null
+    },
+    "guards": {
+     "reason": "EF:missing.guard_binding",
+     "value": null
+    },
+    "identity": {
+     "reason": "EF:missing.typed_identity",
+     "value": null
+    },
+    "mapped_labels": {
+     "reason": "EF:missing.no_label_rows",
+     "value": null
+    },
+    "negation_pair": {
+     "reason": "EF:missing.negation_pair",
+     "value": null
+    },
+    "premise_classes": {
+     "reason": "EF:missing.premise_binding",
+     "value": null
+    },
+    "reachability_reference": {
+     "reason": "EF:missing.reachability_binding",
+     "value": null
+    },
+    "scope": {
+     "reason": "EF:missing.typed_scope",
+     "value": null
+    },
+    "scope_membership": {
+     "reason": "EF:missing.membership_binding",
+     "value": null
+    },
+    "search_record": {
+     "reason": "EF:missing.search_binding",
+     "value": null
+    },
+    "statement_form": {
+     "reason": "EF:missing.statement_form",
+     "value": null
+    },
+    "statement_id": {
+     "reason": "EF:missing.statement_identity",
+     "value": null
+    },
+    "subject_level": {
+     "reason": "EF:missing.subject_level",
+     "value": null
+    }
+   },
+   "format": "ps1.38-partial-facts-experiment/1",
+   "graph": {
+    "AND": [],
+    "OR": [],
+    "edges": [],
+    "leaves": []
+   },
+   "payload": "facts",
+   "reported_digests": [],
+   "scope_text": [],
+   "source": {
+    "canonical_bytes": 7668,
+    "canonical_sha256": "872eb895f772e3403e90036cb3fd570e179780f02d85fab966872d8faebb0e34",
+    "decoded_bytes": 13589,
+    "decoded_sha256": "ab36d17222bcf11d3be12a4fcc571eda6859c773ee2b3d8ff9df657c93cdd0ae",
+    "git_blob": "b34508120935b7c1f65069403eff1c94d722dbdf",
+    "path": "research/jumbling/restoration/14-blocking-structure/results/locality-summary.json",
+    "stored_bytes": 13589,
+    "stored_sha256": "ab36d17222bcf11d3be12a4fcc571eda6859c773ee2b3d8ff9df657c93cdd0ae"
+   },
+   "source_commit": "1e7d0074df96cbeb05f55282cf8f6c03fbf4a4ff",
+   "source_field_refs": {},
+   "source_format": "t3p-locality/1",
+   "stage": "14"
+  },
+  {
+   "edition": "873337a419f1c74128aa177f8d89c49a64a7c1e14a4ac22749ad54bc0a36cc6e",
+   "facts": [
+    {
+     "at": "",
+     "labels": [
+      {
+       "at": "/exhausted",
+       "row": 198
+      }
+     ],
+     "role": "source_object",
+     "table_candidates": {
+      "basis": [
+       {
+        "at": [
+         "/exhausted"
+        ],
+        "value": "exhaustive computation"
+       }
+      ],
+      "check": [
+       {
+        "at": [
+         "/exhausted"
+        ],
+        "value": "producer"
+       }
+      ],
+      "job_outcome": [
+       {
+        "at": [
+         "/exhausted"
+        ],
+        "value": "completed"
+       }
+      ],
+      "scope": [
+       {
+        "at": [
+         "/exhausted"
+        ],
+        "value": "declared search set"
+       }
+      ]
+     }
+    }
+   ],
+   "fields": {
+    "attribution": {
+     "reason": "EF:missing.attribution",
+     "value": null
+    },
+    "check_dependencies": {
+     "reason": "EF:missing.check_binding_and_common_base",
+     "value": null
+    },
+    "covered": {
+     "reason": "EF:missing.leaf_coverage_binding",
+     "value": null
+    },
+    "engineering_evidence": {
+     "reason": "EF:missing.engineering_evidence_class",
+     "value": null
+    },
+    "guards": {
+     "reason": "EF:missing.guard_binding",
+     "value": null
+    },
+    "identity": {
+     "reason": "EF:missing.typed_identity",
+     "value": null
+    },
+    "negation_pair": {
+     "reason": "EF:missing.negation_pair",
+     "value": null
+    },
+    "premise_classes": {
+     "reason": "EF:missing.premise_binding",
+     "value": null
+    },
+    "reachability_reference": {
+     "reason": "EF:missing.reachability_binding",
+     "value": null
+    },
+    "scope": {
+     "reason": "EF:missing.typed_scope",
+     "value": null
+    },
+    "scope_membership": {
+     "reason": "EF:missing.membership_binding",
+     "value": null
+    },
+    "search_record": {
+     "reason": "EF:missing.search_binding",
+     "value": null
+    },
+    "statement_form": {
+     "reason": "EF:missing.statement_form",
+     "value": null
+    },
+    "statement_id": {
+     "reason": "EF:missing.statement_identity",
+     "value": null
+    },
+    "subject_level": {
+     "reason": "EF:missing.subject_level",
+     "value": null
+    }
+   },
+   "format": "ps1.38-partial-facts-experiment/1",
+   "graph": {
+    "AND": [],
+    "OR": [],
+    "edges": [],
+    "leaves": [
+     {
+      "admission": "recorded_only",
+      "covered": {
+       "reason": "EF:missing.leaf_coverage_binding",
+       "value": null
+      },
+      "fact_group": 0,
+      "key": {
+       "reason": "EF:missing.statement_identity",
+       "value": null
+      }
+     }
+    ]
+   },
+   "payload": "facts",
+   "reported_digests": [
+    {
+     "at": "/digest",
+     "digest": "f93e461f9b1c65d5483cf3ba53db266baee71613d8a8808e091ce4a0484daad2",
+     "role": "untyped_source_digest"
+    }
+   ],
+   "scope_text": [],
+   "source": {
+    "canonical_bytes": 378,
+    "canonical_sha256": "6f6253e57c0fcba32e41a02b14b1be7e70929be5a7268cb7d677f9ca4f0880dc",
+    "decoded_bytes": 510,
+    "decoded_sha256": "26288d2397d2b86928ecc61b29d9468a50d5801ae95f9d943006ed5e214209c5",
+    "git_blob": "200c8b74f2b98a43ea7119bed2ae6fb2041acb60",
+    "path": "research/jumbling/restoration/15-lowering-machine/results/census-7304.json",
+    "stored_bytes": 510,
+    "stored_sha256": "26288d2397d2b86928ecc61b29d9468a50d5801ae95f9d943006ed5e214209c5"
+   },
+   "source_commit": "1e7d0074df96cbeb05f55282cf8f6c03fbf4a4ff",
+   "source_field_refs": {
+    "inputs": [
+     "/prefix"
+    ],
+    "search": [
+     "/exhausted"
+    ]
+   },
+   "source_format": "pstar-census/1",
+   "stage": "15"
+  },
+  {
+   "edition": "873337a419f1c74128aa177f8d89c49a64a7c1e14a4ac22749ad54bc0a36cc6e",
+   "facts": [],
+   "fields": {
+    "attribution": {
+     "reason": "EF:missing.attribution",
+     "value": null
+    },
+    "check_dependencies": {
+     "reason": "EF:missing.check_binding_and_common_base",
+     "value": null
+    },
+    "covered": {
+     "reason": "EF:missing.leaf_coverage_binding",
+     "value": null
+    },
+    "engineering_evidence": {
+     "reason": "EF:missing.engineering_evidence_class",
+     "value": null
+    },
+    "format_dispatch": {
+     "reason": "EF:missing.absent_format_dispatch",
+     "value": null
+    },
+    "guards": {
+     "reason": "EF:missing.guard_binding",
+     "value": null
+    },
+    "identity": {
+     "reason": "EF:missing.typed_identity",
+     "value": null
+    },
+    "mapped_labels": {
+     "reason": "EF:missing.no_label_rows",
+     "value": null
+    },
+    "negation_pair": {
+     "reason": "EF:missing.negation_pair",
+     "value": null
+    },
+    "premise_classes": {
+     "reason": "EF:missing.premise_binding",
+     "value": null
+    },
+    "reachability_reference": {
+     "reason": "EF:missing.reachability_binding",
+     "value": null
+    },
+    "scope": {
+     "reason": "EF:missing.typed_scope",
+     "value": null
+    },
+    "scope_membership": {
+     "reason": "EF:missing.membership_binding",
+     "value": null
+    },
+    "search_record": {
+     "reason": "EF:missing.search_binding",
+     "value": null
+    },
+    "statement_form": {
+     "reason": "EF:missing.statement_form",
+     "value": null
+    },
+    "statement_id": {
+     "reason": "EF:missing.statement_identity",
+     "value": null
+    },
+    "subject_level": {
+     "reason": "EF:missing.subject_level",
+     "value": null
+    }
+   },
+   "format": "ps1.38-partial-facts-experiment/1",
+   "graph": {
+    "AND": [],
+    "OR": [],
+    "edges": [],
+    "leaves": []
+   },
+   "payload": "facts",
+   "reported_digests": [],
+   "scope_text": [],
+   "source": {
+    "canonical_bytes": 368,
+    "canonical_sha256": "b95c2ecb6465d2ebb175c978a60c2f0ce1c477926be79c96fe2868f43d38ae11",
+    "decoded_bytes": 678,
+    "decoded_sha256": "2aaad5c1f5a1aac81ad6157ed1d4837addd053c854c772779c19e2b866aa0ba8",
+    "git_blob": "36903f8fcd1a126dfb2eb24b075170a262208b8b",
+    "path": "research/jumbling/restoration/16-six-jams/results/transport/n2-7306.json",
+    "stored_bytes": 678,
+    "stored_sha256": "2aaad5c1f5a1aac81ad6157ed1d4837addd053c854c772779c19e2b866aa0ba8"
+   },
+   "source_commit": "1e7d0074df96cbeb05f55282cf8f6c03fbf4a4ff",
+   "source_field_refs": {
+    "inputs": [
+     "/seed"
+    ]
+   },
+   "source_format": null,
+   "stage": "16"
+  },
+  {
+   "edition": "873337a419f1c74128aa177f8d89c49a64a7c1e14a4ac22749ad54bc0a36cc6e",
+   "facts": [
+    {
+     "at": "",
+     "labels": [
+      {
+       "at": "/complete",
+       "row": 284
+      }
+     ],
+     "role": "source_object",
+     "table_candidates": {
+      "basis": [
+       {
+        "at": [
+         "/complete"
+        ],
+        "value": "exhaustive computation"
+       }
+      ],
+      "check": [
+       {
+        "at": [
+         "/complete"
+        ],
+        "value": "producer"
+       }
+      ],
+      "job_outcome": [
+       {
+        "at": [
+         "/complete"
+        ],
+        "value": "completed"
+       }
+      ],
+      "scope": [
+       {
+        "at": [
+         "/complete"
+        ],
+        "value": "declared search set"
+       }
+      ]
+     }
+    }
+   ],
+   "fields": {
+    "attribution": {
+     "reason": "EF:missing.attribution",
+     "value": null
+    },
+    "check_dependencies": {
+     "reason": "EF:missing.check_binding_and_common_base",
+     "value": null
+    },
+    "covered": {
+     "reason": "EF:missing.leaf_coverage_binding",
+     "value": null
+    },
+    "engineering_evidence": {
+     "reason": "EF:missing.engineering_evidence_class",
+     "value": null
+    },
+    "guards": {
+     "reason": "EF:missing.guard_binding",
+     "value": null
+    },
+    "identity": {
+     "reason": "EF:missing.typed_identity",
+     "value": null
+    },
+    "negation_pair": {
+     "reason": "EF:missing.negation_pair",
+     "value": null
+    },
+    "premise_classes": {
+     "reason": "EF:missing.premise_binding",
+     "value": null
+    },
+    "reachability_reference": {
+     "reason": "EF:missing.reachability_binding",
+     "value": null
+    },
+    "scope": {
+     "reason": "EF:missing.typed_scope",
+     "value": null
+    },
+    "scope_membership": {
+     "reason": "EF:missing.membership_binding",
+     "value": null
+    },
+    "search_record": {
+     "reason": "EF:missing.search_binding",
+     "value": null
+    },
+    "statement_form": {
+     "reason": "EF:missing.statement_form",
+     "value": null
+    },
+    "statement_id": {
+     "reason": "EF:missing.statement_identity",
+     "value": null
+    },
+    "subject_level": {
+     "reason": "EF:missing.subject_level",
+     "value": null
+    }
+   },
+   "format": "ps1.38-partial-facts-experiment/1",
+   "graph": {
+    "AND": [],
+    "OR": [],
+    "edges": [],
+    "leaves": [
+     {
+      "admission": "recorded_only",
+      "covered": {
+       "reason": "EF:missing.leaf_coverage_binding",
+       "value": null
+      },
+      "fact_group": 0,
+      "key": {
+       "reason": "EF:missing.statement_identity",
+       "value": null
+      }
+     }
+    ]
+   },
+   "payload": "facts",
+   "reported_digests": [
+    {
+     "at": "/table_digest",
+     "digest": "ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/digest",
+     "digest": "eacffbb3e9b9d9c25c518d388178d85a4e623ea50c97d17329ebcafa29f62124",
+     "role": "untyped_source_digest"
+    }
+   ],
+   "scope_text": [],
+   "source": {
+    "canonical_bytes": 860,
+    "canonical_sha256": "ec975b72983eff0351e8224132a15771c41248a8351f421a4370d208b0872345",
+    "decoded_bytes": 952,
+    "decoded_sha256": "21fd481599de4a8af538d9e6525e4ee53af28e3e23b0485c7bda35694557bf1c",
+    "git_blob": "ff9375b1fa552e722078a99e1dca198d10d91246",
+    "path": "research/jumbling/restoration/17-routing-in-driver/results/stop-7304-438/x1.json",
+    "stored_bytes": 952,
+    "stored_sha256": "21fd481599de4a8af538d9e6525e4ee53af28e3e23b0485c7bda35694557bf1c"
+   },
+   "source_commit": "1e7d0074df96cbeb05f55282cf8f6c03fbf4a4ff",
+   "source_field_refs": {
+    "inputs": [
+     "/seed",
+     "/table_digest",
+     "/options"
+    ],
+    "search": [
+     "/complete"
+    ]
+   },
+   "source_format": "s16-transport/1",
+   "stage": "17"
+  },
+  {
+   "edition": "873337a419f1c74128aa177f8d89c49a64a7c1e14a4ac22749ad54bc0a36cc6e",
+   "facts": [],
+   "fields": {
+    "attribution": {
+     "reason": "EF:missing.attribution",
+     "value": null
+    },
+    "check_dependencies": {
+     "reason": "EF:missing.check_binding_and_common_base",
+     "value": null
+    },
+    "covered": {
+     "reason": "EF:missing.leaf_coverage_binding",
+     "value": null
+    },
+    "engineering_evidence": {
+     "reason": "EF:missing.engineering_evidence_class",
+     "value": null
+    },
+    "format_dispatch": {
+     "reason": "EF:missing.absent_format_dispatch",
+     "value": null
+    },
+    "guards": {
+     "reason": "EF:missing.guard_binding",
+     "value": null
+    },
+    "identity": {
+     "reason": "EF:missing.typed_identity",
+     "value": null
+    },
+    "mapped_labels": {
+     "reason": "EF:missing.no_label_rows",
+     "value": null
+    },
+    "negation_pair": {
+     "reason": "EF:missing.negation_pair",
+     "value": null
+    },
+    "premise_classes": {
+     "reason": "EF:missing.premise_binding",
+     "value": null
+    },
+    "reachability_reference": {
+     "reason": "EF:missing.reachability_binding",
+     "value": null
+    },
+    "scope": {
+     "reason": "EF:missing.typed_scope",
+     "value": null
+    },
+    "scope_membership": {
+     "reason": "EF:missing.membership_binding",
+     "value": null
+    },
+    "search_record": {
+     "reason": "EF:missing.search_binding",
+     "value": null
+    },
+    "statement_form": {
+     "reason": "EF:missing.statement_form",
+     "value": null
+    },
+    "statement_id": {
+     "reason": "EF:missing.statement_identity",
+     "value": null
+    },
+    "subject_level": {
+     "reason": "EF:missing.subject_level",
+     "value": null
+    }
+   },
+   "format": "ps1.38-partial-facts-experiment/1",
+   "graph": {
+    "AND": [],
+    "OR": [],
+    "edges": [],
+    "leaves": []
+   },
+   "payload": "facts",
+   "reported_digests": [],
+   "scope_text": [],
+   "source": {
+    "canonical_bytes": 22,
+    "canonical_sha256": "87df7735f10cf44a914ad0a6dce515466f5975d735c9e7f89cffeb752c894056",
+    "decoded_bytes": 26,
+    "decoded_sha256": "132ef1019379e624eb7680a2a84f4d923fe72c3bc81679520bad3aeb1e7c3110",
+    "git_blob": "4506fd6908105b93bad95912045aa0e9ae914927",
+    "path": "research/jumbling/restoration/18-tail-completion/results/d1-tail/04-91-14/winv.json",
+    "stored_bytes": 26,
+    "stored_sha256": "132ef1019379e624eb7680a2a84f4d923fe72c3bc81679520bad3aeb1e7c3110"
+   },
+   "source_commit": "1e7d0074df96cbeb05f55282cf8f6c03fbf4a4ff",
+   "source_field_refs": {},
+   "source_format": null,
+   "stage": "18"
+  },
+  {
+   "edition": "873337a419f1c74128aa177f8d89c49a64a7c1e14a4ac22749ad54bc0a36cc6e",
+   "facts": [],
+   "fields": {
+    "attribution": {
+     "reason": "EF:missing.attribution",
+     "value": null
+    },
+    "check_dependencies": {
+     "reason": "EF:missing.check_binding_and_common_base",
+     "value": null
+    },
+    "covered": {
+     "reason": "EF:missing.leaf_coverage_binding",
+     "value": null
+    },
+    "engineering_evidence": {
+     "reason": "EF:missing.engineering_evidence_class",
+     "value": null
+    },
+    "format_dispatch": {
+     "reason": "EF:missing.absent_format_dispatch",
+     "value": null
+    },
+    "guards": {
+     "reason": "EF:missing.guard_binding",
+     "value": null
+    },
+    "identity": {
+     "reason": "EF:missing.typed_identity",
+     "value": null
+    },
+    "mapped_labels": {
+     "reason": "EF:missing.no_label_rows",
+     "value": null
+    },
+    "negation_pair": {
+     "reason": "EF:missing.negation_pair",
+     "value": null
+    },
+    "premise_classes": {
+     "reason": "EF:missing.premise_binding",
+     "value": null
+    },
+    "reachability_reference": {
+     "reason": "EF:missing.reachability_binding",
+     "value": null
+    },
+    "scope": {
+     "reason": "EF:missing.typed_scope",
+     "value": null
+    },
+    "scope_membership": {
+     "reason": "EF:missing.membership_binding",
+     "value": null
+    },
+    "search_record": {
+     "reason": "EF:missing.search_binding",
+     "value": null
+    },
+    "statement_form": {
+     "reason": "EF:missing.statement_form",
+     "value": null
+    },
+    "statement_id": {
+     "reason": "EF:missing.statement_identity",
+     "value": null
+    },
+    "subject_level": {
+     "reason": "EF:missing.subject_level",
+     "value": null
+    }
+   },
+   "format": "ps1.38-partial-facts-experiment/1",
+   "graph": {
+    "AND": [],
+    "OR": [],
+    "edges": [],
+    "leaves": []
+   },
+   "payload": "facts",
+   "reported_digests": [
+    {
+     "at": "/digest",
+     "digest": "7e128820541abc82e45c683db92f38413acba6e282c00f3185585e507b4e6818",
+     "role": "untyped_source_digest"
+    }
+   ],
+   "scope_text": [],
+   "source": {
+    "canonical_bytes": 877,
+    "canonical_sha256": "931211d40b5c50add99a538cd8a79a5bff4195dadb065bd6adff32308dcb68ab",
+    "decoded_bytes": 878,
+    "decoded_sha256": "3ce009688ae7ba04f48d9717490a95a2c6aa7c709b0c6051db4a9d085093d030",
+    "git_blob": "ecff56cf767d21040e164f1d7c88de6910149965",
+    "path": "research/jumbling/restoration/19-height-depth-framework/records/entry-profile-input/unit.json",
+    "stored_bytes": 878,
+    "stored_sha256": "3ce009688ae7ba04f48d9717490a95a2c6aa7c709b0c6051db4a9d085093d030"
+   },
+   "source_commit": "1e7d0074df96cbeb05f55282cf8f6c03fbf4a4ff",
+   "source_field_refs": {},
+   "source_format": null,
+   "stage": "19"
+  },
+  {
+   "edition": "873337a419f1c74128aa177f8d89c49a64a7c1e14a4ac22749ad54bc0a36cc6e",
+   "facts": [
+    {
+     "at": "/rows/1",
+     "labels": [
+      {
+       "at": "/rows/1/applied",
+       "row": 20
+      }
+     ],
+     "role": "source_object",
+     "table_candidates": {
+      "basis": [
+       {
+        "at": [
+         "/rows/1/applied"
+        ],
+        "value": "exact computation"
+       }
+      ],
+      "scope": [
+       {
+        "at": [
+         "/rows/1/applied"
+        ],
+        "value": "one finite instance"
+       }
+      ]
+     }
+    }
+   ],
+   "fields": {
+    "attribution": {
+     "reason": "EF:missing.attribution",
+     "value": null
+    },
+    "check_dependencies": {
+     "reason": "EF:missing.check_binding_and_common_base",
+     "value": null
+    },
+    "covered": {
+     "reason": "EF:missing.leaf_coverage_binding",
+     "value": null
+    },
+    "engineering_evidence": {
+     "reason": "EF:missing.engineering_evidence_class",
+     "value": null
+    },
+    "format_dispatch": {
+     "reason": "EF:missing.absent_format_dispatch",
+     "value": null
+    },
+    "guards": {
+     "reason": "EF:missing.guard_binding",
+     "value": null
+    },
+    "identity": {
+     "reason": "EF:missing.typed_identity",
+     "value": null
+    },
+    "negation_pair": {
+     "reason": "EF:missing.negation_pair",
+     "value": null
+    },
+    "premise_classes": {
+     "reason": "EF:missing.premise_binding",
+     "value": null
+    },
+    "reachability_reference": {
+     "reason": "EF:missing.reachability_binding",
+     "value": null
+    },
+    "scope": {
+     "reason": "EF:missing.typed_scope",
+     "value": null
+    },
+    "scope_membership": {
+     "reason": "EF:missing.membership_binding",
+     "value": null
+    },
+    "search_record": {
+     "reason": "EF:missing.search_binding",
+     "value": null
+    },
+    "statement_form": {
+     "reason": "EF:missing.statement_form",
+     "value": null
+    },
+    "statement_id": {
+     "reason": "EF:missing.statement_identity",
+     "value": null
+    },
+    "subject_level": {
+     "reason": "EF:missing.subject_level",
+     "value": null
+    }
+   },
+   "format": "ps1.38-partial-facts-experiment/1",
+   "graph": {
+    "AND": [],
+    "OR": [],
+    "edges": [],
+    "leaves": [
+     {
+      "admission": "recorded_only",
+      "covered": {
+       "reason": "EF:missing.leaf_coverage_binding",
+       "value": null
+      },
+      "fact_group": 0,
+      "key": {
+       "reason": "EF:missing.statement_identity",
+       "value": null
+      }
+     }
+    ]
+   },
+   "payload": "facts",
+   "reported_digests": [
+    {
+     "at": "/rows/0/digest",
+     "digest": "895b45de8a9a83604ca8bf988a3c9a287e404e59bd22a5004703d0852b252507",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/rows/1/digest",
+     "digest": "60f6c25b27b674fda275942b13b401439a5cfdd9848948a66c97cae5a4141127",
+     "role": "untyped_source_digest"
+    }
+   ],
+   "scope_text": [],
+   "source": {
+    "canonical_bytes": 474,
+    "canonical_sha256": "adc4ee6c36f96bcac865c17a3a983d22699119e0e8cbfad9686f7cc8330a5bd3",
+    "decoded_bytes": 618,
+    "decoded_sha256": "e654c1b6e04d456a269ccc12b26dc5eb52632575ed75333a246f440ef707c7b1",
+    "git_blob": "ac85a1a46dc8d6376dc8074eaaf99a3473ba82dd",
+    "path": "research/jumbling/restoration/14-blocking-structure/results/s7307-516-14-replay.json",
+    "stored_bytes": 618,
+    "stored_sha256": "e654c1b6e04d456a269ccc12b26dc5eb52632575ed75333a246f440ef707c7b1"
+   },
+   "source_commit": "1e7d0074df96cbeb05f55282cf8f6c03fbf4a4ff",
+   "source_field_refs": {},
+   "source_format": null,
+   "stage": "14"
+  },
+  {
+   "edition": "873337a419f1c74128aa177f8d89c49a64a7c1e14a4ac22749ad54bc0a36cc6e",
+   "facts": [
+    {
+     "at": "",
+     "labels": [
+      {
+       "at": "/status",
+       "row": 281
+      },
+      {
+       "at": "/reason",
+       "row": 277
+      },
+      {
+       "at": "/complete",
+       "row": 275
+      }
+     ],
+     "role": "source_object",
+     "table_candidates": {
+      "check": [
+       {
+        "at": [
+         "/status",
+         "/reason",
+         "/complete"
+        ],
+        "value": "producer"
+       }
+      ],
+      "job_outcome": [
+       {
+        "at": [
+         "/status",
+         "/reason",
+         "/complete"
+        ],
+        "value": "not stated"
+       }
+      ]
+     }
+    },
+    {
+     "at": "/segments/0",
+     "labels": [
+      {
+       "at": "/segments/0/status",
+       "row": 279
+      }
+     ],
+     "role": "source_object",
+     "table_candidates": {
+      "basis": [
+       {
+        "at": [
+         "/segments/0/status"
+        ],
+        "value": "exact computation"
+       }
+      ],
+      "check": [
+       {
+        "at": [
+         "/segments/0/status"
+        ],
+        "value": "producer"
+       }
+      ],
+      "job_outcome": [
+       {
+        "at": [
+         "/segments/0/status"
+        ],
+        "value": "completed"
+       }
+      ],
+      "scope": [
+       {
+        "at": [
+         "/segments/0/status"
+        ],
+        "value": "declared search set"
+       }
+      ]
+     }
+    },
+    {
+     "at": "/segments/1",
+     "labels": [
+      {
+       "at": "/segments/1/status",
+       "row": 279
+      }
+     ],
+     "role": "source_object",
+     "table_candidates": {
+      "basis": [
+       {
+        "at": [
+         "/segments/1/status"
+        ],
+        "value": "exact computation"
+       }
+      ],
+      "check": [
+       {
+        "at": [
+         "/segments/1/status"
+        ],
+        "value": "producer"
+       }
+      ],
+      "job_outcome": [
+       {
+        "at": [
+         "/segments/1/status"
+        ],
+        "value": "completed"
+       }
+      ],
+      "scope": [
+       {
+        "at": [
+         "/segments/1/status"
+        ],
+        "value": "declared search set"
+       }
+      ]
+     }
+    },
+    {
+     "at": "/segments/2",
+     "labels": [
+      {
+       "at": "/segments/2/status",
+       "row": 279
+      }
+     ],
+     "role": "source_object",
+     "table_candidates": {
+      "basis": [
+       {
+        "at": [
+         "/segments/2/status"
+        ],
+        "value": "exact computation"
+       }
+      ],
+      "check": [
+       {
+        "at": [
+         "/segments/2/status"
+        ],
+        "value": "producer"
+       }
+      ],
+      "job_outcome": [
+       {
+        "at": [
+         "/segments/2/status"
+        ],
+        "value": "completed"
+       }
+      ],
+      "scope": [
+       {
+        "at": [
+         "/segments/2/status"
+        ],
+        "value": "declared search set"
+       }
+      ]
+     }
+    }
+   ],
+   "fields": {
+    "attribution": {
+     "reason": "EF:missing.attribution",
+     "value": null
+    },
+    "check_dependencies": {
+     "reason": "EF:missing.check_binding_and_common_base",
+     "value": null
+    },
+    "covered": {
+     "reason": "EF:missing.leaf_coverage_binding",
+     "value": null
+    },
+    "engineering_evidence": {
+     "reason": "EF:missing.engineering_evidence_class",
+     "value": null
+    },
+    "guards": {
+     "reason": "EF:missing.guard_binding",
+     "value": null
+    },
+    "identity": {
+     "reason": "EF:missing.typed_identity",
+     "value": null
+    },
+    "negation_pair": {
+     "reason": "EF:missing.negation_pair",
+     "value": null
+    },
+    "premise_classes": {
+     "reason": "EF:missing.premise_binding",
+     "value": null
+    },
+    "reachability_reference": {
+     "reason": "EF:missing.reachability_binding",
+     "value": null
+    },
+    "scope": {
+     "reason": "EF:missing.typed_scope",
+     "value": null
+    },
+    "scope_membership": {
+     "reason": "EF:missing.membership_binding",
+     "value": null
+    },
+    "search_record": {
+     "reason": "EF:missing.search_binding",
+     "value": null
+    },
+    "statement_form": {
+     "reason": "EF:missing.statement_form",
+     "value": null
+    },
+    "statement_id": {
+     "reason": "EF:missing.statement_identity",
+     "value": null
+    },
+    "subject_level": {
+     "reason": "EF:missing.subject_level",
+     "value": null
+    }
+   },
+   "format": "ps1.38-partial-facts-experiment/1",
+   "graph": {
+    "AND": [],
+    "OR": [],
+    "edges": [],
+    "leaves": [
+     {
+      "admission": "recorded_only",
+      "covered": {
+       "reason": "EF:missing.leaf_coverage_binding",
+       "value": null
+      },
+      "fact_group": 1,
+      "key": {
+       "reason": "EF:missing.statement_identity",
+       "value": null
+      }
+     },
+     {
+      "admission": "recorded_only",
+      "covered": {
+       "reason": "EF:missing.leaf_coverage_binding",
+       "value": null
+      },
+      "fact_group": 2,
+      "key": {
+       "reason": "EF:missing.statement_identity",
+       "value": null
+      }
+     },
+     {
+      "admission": "recorded_only",
+      "covered": {
+       "reason": "EF:missing.leaf_coverage_binding",
+       "value": null
+      },
+      "fact_group": 3,
+      "key": {
+       "reason": "EF:missing.statement_identity",
+       "value": null
+      }
+     }
+    ]
+   },
+   "payload": "facts",
+   "reported_digests": [
+    {
+     "at": "/table_digest",
+     "digest": "ac127dc3488832b1d1b75a043d63e84b75addd1f4e73fe7e961407aea2ff0980",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/digest",
+     "digest": "eacffbb3e9b9d9c25c518d388178d85a4e623ea50c97d17329ebcafa29f62124",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/start/digest",
+     "digest": "0e245c04814a958fc67fb934c190a3a415c25c9ba2c6a96caedaac122065d814",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/segments/0/end/digest",
+     "digest": "0e245c04814a958fc67fb934c190a3a415c25c9ba2c6a96caedaac122065d814",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/segments/1/end/digest",
+     "digest": "3eeff5c57c2345ea9ec8fae397e4a08b66bd3a3d0ee9e4ed8f08b599c52f82aa",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/segments/2/end/digest",
+     "digest": "eacffbb3e9b9d9c25c518d388178d85a4e623ea50c97d17329ebcafa29f62124",
+     "role": "untyped_source_digest"
+    }
+   ],
+   "scope_text": [],
+   "source": {
+    "canonical_bytes": 5293,
+    "canonical_sha256": "e750a9de5ca8b600ffef85b5bf083d09d85f2b260fc09ce6c85c4163abfbba69",
+    "decoded_bytes": 11168,
+    "decoded_sha256": "fbf044609ffe2f13c369bf875c78f3473b4f43456fd08e07a23438a0e3eff8fe",
+    "git_blob": "806cc70c5f617c03ee74371367dc2a6a61923c2a",
+    "path": "research/jumbling/restoration/17-routing-in-driver/results/runs/pxrr-7304.json",
+    "stored_bytes": 11168,
+    "stored_sha256": "fbf044609ffe2f13c369bf875c78f3473b4f43456fd08e07a23438a0e3eff8fe"
+   },
+   "source_commit": "1e7d0074df96cbeb05f55282cf8f6c03fbf4a4ff",
+   "source_field_refs": {
+    "inputs": [
+     "/seed",
+     "/table_digest",
+     "/options",
+     "/options/start",
+     "/start"
+    ],
+    "search": [
+     "/options/procedure/families",
+     "/segments/0/families",
+     "/segments/0/stop",
+     "/segments/1/families",
+     "/segments/1/stop",
+     "/segments/2/families",
+     "/complete"
+    ]
+   },
+   "source_format": "s16-pxrr/1",
+   "stage": "17"
+  },
+  {
+   "edition": "873337a419f1c74128aa177f8d89c49a64a7c1e14a4ac22749ad54bc0a36cc6e",
+   "facts": [
+    {
+     "at": "",
+     "labels": [
+      {
+       "at": "/status",
+       "row": 12
+      },
+      {
+       "at": "/new_1929_suffix_replay",
+       "row": 10
+      },
+      {
+       "at": "/prior_proofs_unchanged",
+       "row": 11
+      }
+     ],
+     "role": "source_object",
+     "table_candidates": {
+      "check": [
+       {
+        "at": [
+         "/status"
+        ],
+        "value": "model review"
+       }
+      ],
+      "check_mode": [
+       {
+        "at": [
+         "/status"
+        ],
+        "value": "fresh exact audit"
+       },
+       {
+        "at": [
+         "/prior_proofs_unchanged"
+        ],
+        "value": "reused through exact transport"
+       },
+       {
+        "at": [
+         "/new_1929_suffix_replay"
+        ],
+        "value": "stated: not replayed"
+       }
+      ]
+     }
+    }
+   ],
+   "fields": {
+    "attribution": {
+     "reason": "EF:missing.attribution",
+     "value": null
+    },
+    "check_dependencies": {
+     "reason": "EF:missing.check_binding_and_common_base",
+     "value": null
+    },
+    "covered": {
+     "reason": "EF:missing.leaf_coverage_binding",
+     "value": null
+    },
+    "engineering_evidence": {
+     "reason": "EF:missing.engineering_evidence_class",
+     "value": null
+    },
+    "guards": {
+     "reason": "EF:missing.guard_binding",
+     "value": null
+    },
+    "identity": {
+     "reason": "EF:missing.typed_identity",
+     "value": null
+    },
+    "negation_pair": {
+     "reason": "EF:missing.negation_pair",
+     "value": null
+    },
+    "premise_classes": {
+     "reason": "EF:missing.premise_binding",
+     "value": null
+    },
+    "reachability_reference": {
+     "reason": "EF:missing.reachability_binding",
+     "value": null
+    },
+    "scope": {
+     "reason": "EF:missing.typed_scope",
+     "value": null
+    },
+    "scope_membership": {
+     "reason": "EF:missing.membership_binding",
+     "value": null
+    },
+    "search_record": {
+     "reason": "EF:missing.search_binding",
+     "value": null
+    },
+    "statement_form": {
+     "reason": "EF:missing.statement_form",
+     "value": null
+    },
+    "statement_id": {
+     "reason": "EF:missing.statement_identity",
+     "value": null
+    },
+    "subject_level": {
+     "reason": "EF:missing.subject_level",
+     "value": null
+    }
+   },
+   "format": "ps1.38-partial-facts-experiment/1",
+   "graph": {
+    "AND": [],
+    "OR": [],
+    "edges": [],
+    "leaves": []
+   },
+   "payload": "facts",
+   "reported_digests": [
+    {
+     "at": "/candidate_sha256",
+     "digest": "e098796f1843f04e4482a0a69f30dada774b2f3af0e9a8ff72529bda82baa256",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/frozen_inputs/0/sha256",
+     "digest": "e098796f1843f04e4482a0a69f30dada774b2f3af0e9a8ff72529bda82baa256",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/frozen_inputs/1/sha256",
+     "digest": "aeff80f76b496fcb67c13d9903f138c6d6451fbef31dea258cd664163256d7d2",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/frozen_inputs/2/sha256",
+     "digest": "fd704b6654bab0e9d8a34406d50a88ec923e84d41962e235aa7c3dbef643f1be",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/frozen_inputs/3/sha256",
+     "digest": "8c9ff44662f0591fb6875e6e22c2d34f138ab9654f5884af338d64b627173ca8",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/frozen_inputs/4/sha256",
+     "digest": "40d90a463aca52b6917f600be8a82787838bdc962628c2482280dbfc6386bf46",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/frozen_inputs/5/sha256",
+     "digest": "c69df63665764f10122824d739952e5b94ccea40002afb8d957850ee137235bd",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/frozen_inputs/6/sha256",
+     "digest": "1d390540f4992000f41e9eb05390c82227af96599ab107e1f7e40fff49d81a8c",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/frozen_inputs/7/sha256",
+     "digest": "fb494413d31b1ca663b8b8cf7d7b7cf0bc380a1020e9f526a203f89cb0e675b0",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/frozen_inputs/8/sha256",
+     "digest": "e6db2d841b6eda9c77bea402ae78d91fead6d3601e45592628289f294dc2f382",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/frozen_inputs/8/source_spans/0/text_sha256",
+     "digest": "3450895ff962a96cf1ef7cc615d21b4c339f1982a6363b7ca5e35f854e983219",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/frozen_inputs/9/sha256",
+     "digest": "fb400a2cd762962f9308f092d6157b84f822150673e1a9b9c51ddd76c1ad72fc",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/frozen_inputs/10/sha256",
+     "digest": "e2128c7be5abb4b9a190efc3ff7923d61826673988ce4ff0adeb9752cb0eca78",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/frozen_inputs/10/source_spans/0/text_sha256",
+     "digest": "833cc0285c8b446622b8d12961e68479b8229359fb2e8c2dab5bcb589d83233e",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/frozen_inputs/10/source_spans/1/text_sha256",
+     "digest": "f5e702986958f8259a540548df76d4653944cb0222b0e7dd11cc37e18782a159",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/frozen_inputs/10/source_spans/2/text_sha256",
+     "digest": "777fcb87eb9c8a9f5213a70790c9195809b0fd44a1380038ac199b5f70eae9c3",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/frozen_inputs/10/source_spans/3/text_sha256",
+     "digest": "3fc1583c8b8c183f7b9d36d255bd062c75eeb8cc51fb37d49aede2271639c30c",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/frozen_inputs/11/sha256",
+     "digest": "25d00279f65a74eebfab77b6c69acf0d7687d4f0ff4a9bee6029807bee841812",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/frozen_inputs/11/source_spans/0/text_sha256",
+     "digest": "6e562e92535ea3955bb56a7f1a21496de7380230d9e8cbf65a8bab138a74a333",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/frozen_inputs/11/source_spans/1/text_sha256",
+     "digest": "572ef8816b4180184c5e5a2ab7baef3e11ea5d3c16aab4bc09cb9e49cd01a2e7",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/frozen_inputs/12/sha256",
+     "digest": "319b9136e63524f5dafb19d76701331a1a3f037fa95e353401481b6633f7b152",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/frozen_inputs/12/source_spans/0/text_sha256",
+     "digest": "693a9013cd12b2d14c1ea7e336cb3dce6d9caf6d28866a12f2acad0657c08091",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/frozen_inputs/13/sha256",
+     "digest": "87e72c1fc264f3b33450ee638c4a9a12cdc81a55bb535033fba62d08097240f2",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/frozen_inputs/14/sha256",
+     "digest": "388aaefd515314b7eedaf544d60d98855af9d2984d3d9488b8e5a5da18fb1806",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/reused_fresh_seed/receipt_sha256",
+     "digest": "aeff80f76b496fcb67c13d9903f138c6d6451fbef31dea258cd664163256d7d2",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/reused_fresh_seed/exactX",
+     "digest": "052d47cd58a668e18b7dc121d9ef642a408969db2c03f30707a12707bf99e3db",
+     "role": "untyped_source_digest"
+    }
+   ],
+   "scope_text": [
+    {
+     "at": "/scope",
+     "value": "Height-bound delta only. Reuses reviewed domain, recognizer, length and reachable-lattice theorem. No pointwise optimality claim for the entire fixed-k ceiling."
+    }
+   ],
+   "source": {
+    "canonical_bytes": 5138,
+    "canonical_sha256": "62cea2ad0cfe40cdee8d52bc0e313dcf8a664ad2ed9b33efa06f7276f239cff5",
+    "decoded_bytes": 5139,
+    "decoded_sha256": "f263f819bc8bfa0d03ed40ce436dd17a1ce3b4844772da42c18995ef21174916",
+    "git_blob": "3cb4a9090bfac1a59d49075a5d83a0a17e8f6c3f",
+    "path": "research/jumbling/restoration/19-height-depth-framework/records/high-no-overshoot-independent-verified.json",
+    "stored_bytes": 5139,
+    "stored_sha256": "f263f819bc8bfa0d03ed40ce436dd17a1ce3b4844772da42c18995ef21174916"
+   },
+   "source_commit": "1e7d0074df96cbeb05f55282cf8f6c03fbf4a4ff",
+   "source_field_refs": {
+    "checks": [
+     "/candidate_sha256"
+    ]
+   },
+   "source_format": "high-no-overshoot-independent-height-delta/1",
+   "stage": "19"
+  },
+  {
+   "edition": "873337a419f1c74128aa177f8d89c49a64a7c1e14a4ac22749ad54bc0a36cc6e",
+   "facts": [
+    {
+     "at": "",
+     "labels": [
+      {
+       "at": "/reachability",
+       "row": 109
+      }
+     ],
+     "role": "reachability",
+     "table_candidates": {
+      "scope": [
+       {
+        "at": [
+         "/reachability"
+        ],
+        "value": "one finite instance"
+       }
+      ]
+     }
+    },
+    {
+     "at": "/construction_home_maps/0",
+     "labels": [
+      {
+       "at": "/construction_home_maps/0/complete_home_vertex_set_map",
+       "row": 108
+      }
+     ],
+     "role": "source_object",
+     "table_candidates": {}
+    },
+    {
+     "at": "/construction_home_maps/1",
+     "labels": [
+      {
+       "at": "/construction_home_maps/1/complete_home_vertex_set_map",
+       "row": 108
+      }
+     ],
+     "role": "source_object",
+     "table_candidates": {}
+    },
+    {
+     "at": "/construction_home_maps/2",
+     "labels": [
+      {
+       "at": "/construction_home_maps/2/complete_home_vertex_set_map",
+       "row": 108
+      }
+     ],
+     "role": "source_object",
+     "table_candidates": {}
+    }
+   ],
+   "fields": {
+    "attribution": {
+     "reason": "EF:missing.attribution",
+     "value": null
+    },
+    "check_dependencies": {
+     "reason": "EF:missing.check_binding_and_common_base",
+     "value": null
+    },
+    "covered": {
+     "reason": "EF:missing.leaf_coverage_binding",
+     "value": null
+    },
+    "engineering_evidence": {
+     "reason": "EF:missing.engineering_evidence_class",
+     "value": null
+    },
+    "format_dispatch": {
+     "reason": "EF:missing.absent_format_dispatch",
+     "value": null
+    },
+    "guards": {
+     "reason": "EF:missing.guard_binding",
+     "value": null
+    },
+    "identity": {
+     "reason": "EF:missing.typed_identity",
+     "value": null
+    },
+    "negation_pair": {
+     "reason": "EF:missing.negation_pair",
+     "value": null
+    },
+    "premise_classes": {
+     "reason": "EF:missing.premise_binding",
+     "value": null
+    },
+    "reachability_reference": {
+     "reason": "EF:missing.reachability_binding",
+     "value": null
+    },
+    "scope": {
+     "reason": "EF:missing.typed_scope",
+     "value": null
+    },
+    "scope_membership": {
+     "reason": "EF:missing.membership_binding",
+     "value": null
+    },
+    "search_record": {
+     "reason": "EF:missing.search_binding",
+     "value": null
+    },
+    "statement_form": {
+     "reason": "EF:missing.statement_form",
+     "value": null
+    },
+    "statement_id": {
+     "reason": "EF:missing.statement_identity",
+     "value": null
+    },
+    "subject_level": {
+     "reason": "EF:missing.subject_level",
+     "value": null
+    }
+   },
+   "format": "ps1.38-partial-facts-experiment/1",
+   "graph": {
+    "AND": [],
+    "OR": [],
+    "edges": [],
+    "leaves": []
+   },
+   "payload": "facts",
+   "reported_digests": [
+    {
+     "at": "/reference_digest",
+     "digest": "f3fc88372815b7297a6d62baf806a49265c3f0f439276e6b86844ef96c61cadd",
+     "role": "untyped_source_digest"
+    },
+    {
+     "at": "/input_digest",
+     "digest": "3448b69a300452741f0e6c72216d8fb7034f78cf7ce1059297863d781e7ff943",
+     "role": "untyped_source_digest"
+    }
+   ],
+   "scope_text": [],
+   "source": {
+    "canonical_bytes": 4994,
+    "canonical_sha256": "338dd2ff65cae86bf8125133a7b31fa8b2364718e01c59ce49cb1efa679440f6",
+    "decoded_bytes": 4995,
+    "decoded_sha256": "ae77da7e8c02cbd5dd7edf74f2a46c4aa68ddd8321059ab6aeb79ed07139153e",
+    "git_blob": "bba3727061bf63da468c4f27ea83084d1ad04601",
+    "path": "research/jumbling/restoration/19-height-depth-framework/records/profile-family-validation-matching-certificate.json",
+    "stored_bytes": 4995,
+    "stored_sha256": "ae77da7e8c02cbd5dd7edf74f2a46c4aa68ddd8321059ab6aeb79ed07139153e"
+   },
+   "source_commit": "1e7d0074df96cbeb05f55282cf8f6c03fbf4a4ff",
+   "source_field_refs": {},
+   "source_format": null,
+   "stage": "19"
+  }
+ ],
+ "selection": "smallest envelope per stage, then K1/R6/P11/H1 examples; not representative of sizes"
+}

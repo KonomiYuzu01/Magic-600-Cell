@@ -1,0 +1,3 @@
+# Affine projective coordinates on the patch w != 0.
+exclude(w, 0.000244140625)
+output(x / w, y / w, z / w)

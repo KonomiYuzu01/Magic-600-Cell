@@ -1,0 +1,112 @@
+{
+  "ir_version": "lx8-ir-0",
+  "edition": "lx8-0",
+  "module": "protection_status",
+  "requires": [],
+  "imports": [],
+  "declarations": [
+    {
+      "kind": "function",
+      "name": "status",
+      "params": [
+        {
+          "name": "verdict",
+          "type": "Verdict<Certificate<Full,Labels>>"
+        }
+      ],
+      "result": "Text",
+      "declared_effects": [],
+      "effects": [],
+      "charges": {
+        "steps": "12",
+        "kernel": "0",
+        "memory": "0",
+        "output": "0"
+      },
+      "metadata": null,
+      "bindings": [],
+      "body": {
+        "op": "match.verdict",
+        "type": "Text",
+        "effects": [],
+        "charges": {
+          "steps": "1",
+          "kernel": "0",
+          "memory": "0",
+          "output": "0"
+        },
+        "subject": {
+          "op": "ref",
+          "type": "Verdict<Certificate<Full,Labels>>",
+          "effects": [],
+          "charges": {
+            "steps": "0",
+            "kernel": "0",
+            "memory": "0",
+            "output": "0"
+          },
+          "name": "verdict"
+        },
+        "arms": [
+          {
+            "tag": "yes",
+            "binder": {
+              "name": "proof",
+              "type": "Certificate<Full,Labels>"
+            },
+            "body": {
+              "op": "literal.text",
+              "type": "Text",
+              "effects": [],
+              "charges": {
+                "steps": "1",
+                "kernel": "0",
+                "memory": "0",
+                "output": "0"
+              },
+              "value": "supported"
+            }
+          },
+          {
+            "tag": "no",
+            "binder": {
+              "name": "counterexample",
+              "type": "Certificate<Full,Labels>"
+            },
+            "body": {
+              "op": "literal.text",
+              "type": "Text",
+              "effects": [],
+              "charges": {
+                "steps": "1",
+                "kernel": "0",
+                "memory": "0",
+                "output": "0"
+              },
+              "value": "refuted"
+            }
+          },
+          {
+            "tag": "unknown",
+            "binder": {
+              "name": "reason",
+              "type": "Text"
+            },
+            "body": {
+              "op": "ref",
+              "type": "Text",
+              "effects": [],
+              "charges": {
+                "steps": "0",
+                "kernel": "0",
+                "memory": "0",
+                "output": "0"
+              },
+              "name": "reason"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

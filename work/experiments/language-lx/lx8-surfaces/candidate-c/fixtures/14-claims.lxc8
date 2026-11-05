@@ -1,0 +1,5 @@
+@edition("lx8-0");
+@module(claim_context, []);
+
+fn scope(claim: Claim<Full,Labels>, premise: Premise<Full,Labels>, domain: Domain<Full,Labels>, reachability: Reachability<Full,Theorem>, evidence: Evidence<Full,Labels>, certificate: Certificate<Full,Labels>, goal: Goal<Full,Labels>) : Scope<Full,Labels> ! [] @ [12, 0, 0, 0] =
+    (claim |> claim_scope(premise, domain, reachability));

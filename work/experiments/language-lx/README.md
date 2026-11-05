@@ -43,6 +43,20 @@ Time box for every row: "what can be done now", at most one wrapper call of two 
 Folders: `lx1-cost/`, `lx2-placement/`, `lx3-sandbox-flow/`, `lx4-editor/`, `lx5-arithmetic/`, `lx6-engine-port/`,
 `lx7-charts/`, `lx8-surfaces/`, `lx9-input-map/`, `envelope-facts/`.
 
+## Checks at a later commit
+
+Some experiments pin chapters, cards or decision pages by digest, so their `check.py` refuses to run once those documents
+move: an old result cannot be relabelled. `verify_frozen.py` reproduces such a check at the commit it was frozen on. It makes a
+temporary local clone, lays the committed folder over it, runs the check there, fails if the check changed a file of the
+folder, and removes the clone:
+
+```text
+python work/experiments/language-lx/verify_frozen.py <folder>
+```
+
+The frozen commit must stay reachable, so the branch that carries these experiments merges with a merge commit, never a
+squash. `envelope-facts/` also reads Git objects at that commit.
+
 ## Machine
 
 Owner's laptop: AMD Ryzen 9 7945HX, 32 logical processors, about 32 GB RAM, RTX 4070 Laptop GPU (8 GB), Windows 11 Home

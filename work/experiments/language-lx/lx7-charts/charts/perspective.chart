@@ -1,0 +1,4 @@
+# Built-in 4D-to-3D map, with experimental missing-coverage handling.
+den = d - w
+exclude(den, 0.000244140625)
+output((d * x) / den, (d * y) / den, (d * z) / den)

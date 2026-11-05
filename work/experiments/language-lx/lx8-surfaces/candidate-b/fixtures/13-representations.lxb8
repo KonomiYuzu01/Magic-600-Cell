@@ -1,0 +1,5 @@
+edition: "lx8-0"
+module representation_inputs requires []
+
+function relations(graph: Graph<Full,Labels>, layout: Layout<Full,Labels>, projection: Projection<Jumble,Poses,Labels>, complex: CellComplex<Full,Labels,D2>, section: Section<Full,Labels>, atlas: Atlas<Full,Labels>, action: Action<Full,Labels>, embedding: Embedding<Full,Labels>, tree: Tree<Full,Labels>, states: StateGraph<Jumble,Poses>) returns Relation<Full,Labels> using [] charge [12, 0, 0, 0]:
+    yield representation(graph, layout, projection, complex)

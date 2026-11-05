@@ -1,0 +1,89 @@
+{
+  "ir_version": "lx8-ir-0",
+  "edition": "lx8-0",
+  "module": "macro_workspace",
+  "requires": [
+    "workspace"
+  ],
+  "imports": [],
+  "declarations": [
+    {
+      "kind": "command",
+      "name": "remember",
+      "params": [
+        {
+          "name": "witness",
+          "type": "Word<Full,Retained>"
+        },
+        {
+          "name": "scope",
+          "type": "Scope<Full,Labels>"
+        }
+      ],
+      "result": "Receipt<Full>",
+      "declared_effects": [
+        "workspace"
+      ],
+      "effects": [
+        "workspace"
+      ],
+      "charges": {
+        "steps": "2",
+        "kernel": "9",
+        "memory": "0",
+        "output": "1"
+      },
+      "metadata": {
+        "row": "macro.save",
+        "kind": "workspace",
+        "contexts": [
+          "macro_base"
+        ],
+        "permits": [
+          "save_word"
+        ]
+      },
+      "bindings": [],
+      "body": {
+        "op": "call",
+        "type": "Receipt<Full>",
+        "effects": [
+          "workspace"
+        ],
+        "charges": {
+          "steps": "1",
+          "kernel": "7",
+          "memory": "0",
+          "output": "0"
+        },
+        "target": "save_word",
+        "args": [
+          {
+            "op": "ref",
+            "type": "Word<Full,Retained>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "witness"
+          },
+          {
+            "op": "ref",
+            "type": "Scope<Full,Labels>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "scope"
+          }
+        ]
+      }
+    }
+  ]
+}

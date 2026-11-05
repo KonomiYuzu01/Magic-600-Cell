@@ -1,0 +1,5 @@
+@edition("lx8-0");
+@module(macro_workspace, [workspace]);
+
+cmd remember(witness: Word<Full,Retained>, scope: Scope<Full,Labels>) : Receipt<Full> ! [workspace] @ [2, 9, 0, 1] with ("macro.save", workspace, [macro_base], [save_word]) =
+    (witness |> save_word(scope));

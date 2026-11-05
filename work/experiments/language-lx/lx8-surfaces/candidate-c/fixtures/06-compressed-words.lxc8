@@ -1,0 +1,11 @@
+@edition("lx8-0");
+@module(compressed_witness, []);
+
+fn large_word() : CompressedWord<Full,Retained> ! [] @ [12, 0, 0, 0] =
+    bind literal <- word[+1, -1, +7] in
+    bind long_word <- (literal |> repeat(100000000000000000000000000000000000000000000000000000000000000000000000000000000)) in
+    bind tail <- (word[-7, +3] |> repeat(2)) in
+    (long_word |> join(tail));
+
+fn menu_repeat() : CompressedWord<Jumble,MenuA> ! [] @ [12, 0, 0, 0] =
+    (menu[2:spin, 2:unspin, 5:identity] |> repeat(3));

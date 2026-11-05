@@ -1,0 +1,4337 @@
+{
+  "format": "lx7-exact-expectations-v1",
+  "cases": [
+    {
+      "id": "builtin_perspective/identity/base-61",
+      "coverage": 0,
+      "point": [
+        "989855744/1686138713",
+        "217106312/1686138713",
+        "852667115/3372277426"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-364",
+      "coverage": 0,
+      "point": [
+        "1083021936/1727996213",
+        "860985289/6911984852",
+        "331708915/6911984852"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-1194",
+      "coverage": 0,
+      "point": [
+        "999643962/1569851413",
+        "330578180/1569851413",
+        "536716333/6279405652"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-7030",
+      "coverage": 0,
+      "point": [
+        "500977319/757477044",
+        "92653423/378738522",
+        "626446837/48478530816"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-7149",
+      "coverage": 0,
+      "point": [
+        "499821981/756497944",
+        "712408185/3025991776",
+        "331708915/12103967104"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-7829",
+      "coverage": 0,
+      "point": [
+        "252358045/376175197",
+        "692831749/3009401576",
+        "27525093/3231320337362714624"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-8131",
+      "coverage": 0,
+      "point": [
+        "247463936/365316747",
+        "756182527/2922533976",
+        "25763825/3138046962092212224"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-9642",
+      "coverage": 0,
+      "point": [
+        "53763868/88953211",
+        "331708915/7294163302",
+        "493843393/3647081651"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-9896",
+      "coverage": 0,
+      "point": [
+        "94646148/158165983",
+        "331708915/6959303252",
+        "406757092/1739825813"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-9911",
+      "coverage": 0,
+      "point": [
+        "2344554272/3818868351",
+        "-3139803/341706555734884352",
+        "536716333/7637736702"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-9925",
+      "coverage": 0,
+      "point": [
+        "1140601806/1839156863",
+        "1715543/61561736",
+        "536716333/7356627452"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-12129",
+      "coverage": 0,
+      "point": [
+        "1005693468/1681012063",
+        "331708915/6724048252",
+        "974747319/3362024126"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-12516",
+      "coverage": 0,
+      "point": [
+        "1021531074/1698812513",
+        "566626501/13590500104",
+        "453387565/1698812513"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-13902",
+      "coverage": 0,
+      "point": [
+        "496280565/829209719",
+        "480053677/13267355504",
+        "269632065/829209719"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-14417",
+      "coverage": 0,
+      "point": [
+        "494927872/816225819",
+        "410014777/13059613104",
+        "176279079/544150546"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-15263",
+      "coverage": 0,
+      "point": [
+        "494927872/851364469",
+        "331708915/6810915752",
+        "580089121/1702728938"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-15903",
+      "coverage": 0,
+      "point": [
+        "999643962/1677843613",
+        "331708915/13422748904",
+        "550724408/1677843613"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-16705",
+      "coverage": 0,
+      "point": [
+        "989855744/1659295163",
+        "25763825/3563309229747994624",
+        "611764510/1659295163"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-16745",
+      "coverage": 0,
+      "point": [
+        "16777216/27842457",
+        "8589935/445479312",
+        "3166738/9280819"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-18155",
+      "coverage": 0,
+      "point": [
+        "1979711488/3818868351",
+        "1160178242/3818868351",
+        "653678818/3818868351"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-20370",
+      "coverage": 0,
+      "point": [
+        "629361495121068032/1062849512067698781",
+        "72036846795751424/1062849512067698781",
+        "44521216928645120/1062849512067698781"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-21420",
+      "coverage": 0,
+      "point": [
+        "3981066064/7715433377",
+        "2072062536/7715433377",
+        "1555651466/7715433377"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-21443",
+      "coverage": 0,
+      "point": [
+        "1979711488/3818868351",
+        "1033476686/3818868351",
+        "780380315/3818868351"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-22347",
+      "coverage": 0,
+      "point": [
+        "16260316928/31280471433",
+        "929840000/3475607937",
+        "5212864288/31280471433"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-25584",
+      "coverage": 0,
+      "point": [
+        "3959422976/7745110877",
+        "2368752060/7745110877",
+        "1385663498/7745110877"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-25645",
+      "coverage": 0,
+      "point": [
+        "265712378014859264/531424756026989303",
+        "164219285206466560/531424756026989303",
+        "101493100727238656/531424756026989303"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-26144",
+      "coverage": 0,
+      "point": [
+        "2329599188/3818868351",
+        "331708915/7637736702",
+        "331708915/7637736702"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-26930",
+      "coverage": 0,
+      "point": [
+        "4725498328/7703521077",
+        "256965119/15407042154",
+        "331708915/7703521077"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-28606",
+      "coverage": 0,
+      "point": [
+        "3158336080/5251888443",
+        "663417830/15755665329",
+        "566626501/15755665329"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-29271",
+      "coverage": 0,
+      "point": [
+        "9571799392/15622943529",
+        "410014777/15622943529",
+        "506806165/31245887058"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/base-30446",
+      "coverage": 0,
+      "point": [
+        "328438570412933120/531424756032276703",
+        "-12074527/2125699024129106812",
+        "-6037293/1062849512064553406"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/perspective-boundary-0",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "builtin_perspective/identity/perspective-boundary-1",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "builtin_perspective/identity/perspective-boundary-2",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "builtin_perspective/identity/perspective-boundary-3",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "builtin_perspective/identity/perspective-boundary-4",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "builtin_perspective/identity/perspective-boundary-5",
+      "coverage": 0,
+      "point": [
+        "-989855744/409625",
+        "494927872/409625",
+        "-247463936/409625"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/perspective-boundary-6",
+      "coverage": 0,
+      "point": [
+        "989855744/409625",
+        "-494927872/409625",
+        "247463936/409625"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/perspective-boundary-7",
+      "coverage": 0,
+      "point": [
+        "-30208/25",
+        "15104/25",
+        "-7552/25"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/perspective-boundary-8",
+      "coverage": 0,
+      "point": [
+        "30208/25",
+        "-15104/25",
+        "7552/25"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/north-boundary-0",
+      "coverage": 0,
+      "point": [
+        "59/18",
+        "-59/36",
+        "59/72"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/north-boundary-1",
+      "coverage": 0,
+      "point": [
+        "120832/36839",
+        "-60416/36839",
+        "30208/36839"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/north-boundary-2",
+      "coverage": 0,
+      "point": [
+        "120832/36889",
+        "-60416/36889",
+        "30208/36889"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/north-boundary-3",
+      "coverage": 0,
+      "point": [
+        "60416/18407",
+        "-30208/18407",
+        "15104/18407"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/north-boundary-4",
+      "coverage": 0,
+      "point": [
+        "60416/18457",
+        "-30208/18457",
+        "15104/18457"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/north-boundary-5",
+      "coverage": 0,
+      "point": [
+        "989855744/301580263",
+        "-494927872/301580263",
+        "247463936/301580263"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/north-boundary-6",
+      "coverage": 0,
+      "point": [
+        "989855744/302399513",
+        "-494927872/302399513",
+        "247463936/302399513"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/north-boundary-7",
+      "coverage": 0,
+      "point": [
+        "30208/9191",
+        "-15104/9191",
+        "7552/9191"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/north-boundary-8",
+      "coverage": 0,
+      "point": [
+        "30208/9241",
+        "-15104/9241",
+        "7552/9241"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/equator-boundary-0",
+      "coverage": 0,
+      "point": [
+        "1/2",
+        "-1/4",
+        "1/8"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/equator-boundary-1",
+      "coverage": 0,
+      "point": [
+        "120832/241639",
+        "-60416/241639",
+        "30208/241639"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/equator-boundary-2",
+      "coverage": 0,
+      "point": [
+        "120832/241689",
+        "-60416/241689",
+        "30208/241689"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/equator-boundary-3",
+      "coverage": 0,
+      "point": [
+        "60416/120807",
+        "-30208/120807",
+        "15104/120807"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/equator-boundary-4",
+      "coverage": 0,
+      "point": [
+        "60416/120857",
+        "-30208/120857",
+        "15104/120857"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/equator-boundary-5",
+      "coverage": 0,
+      "point": [
+        "989855744/1979301863",
+        "-494927872/1979301863",
+        "247463936/1979301863"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/equator-boundary-6",
+      "coverage": 0,
+      "point": [
+        "989855744/1980121113",
+        "-494927872/1980121113",
+        "247463936/1980121113"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/equator-boundary-7",
+      "coverage": 0,
+      "point": [
+        "30208/60391",
+        "-15104/60391",
+        "7552/60391"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/equator-boundary-8",
+      "coverage": 0,
+      "point": [
+        "30208/60441",
+        "-15104/60441",
+        "7552/60441"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/zero",
+      "coverage": 0,
+      "point": [
+        "0",
+        "0",
+        "0"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/signed-range",
+      "coverage": 0,
+      "point": [
+        "494927872/17",
+        "-494927872/17",
+        "59/34"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/subnormal",
+      "coverage": 0,
+      "point": [
+        "59/24263210776001317977990861480641417318506692608",
+        "-59/24263210776001317977990861480641417318506692608",
+        "59/2892400118827976939438684163170029797376"
+      ]
+    },
+    {
+      "id": "builtin_perspective/identity/overflow",
+      "coverage": 0,
+      "point": [
+        "590489954460976550849721965458426429440",
+        "59/34",
+        "-59/34"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-61",
+      "coverage": 0,
+      "point": [
+        "-989855744/2273284263",
+        "-217106312/2273284263",
+        "-852667115/4546568526"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-364",
+      "coverage": 0,
+      "point": [
+        "-361007312/743808921",
+        "-860985289/8925707052",
+        "-331708915/8925707052"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-1194",
+      "coverage": 0,
+      "point": [
+        "-999643962/2389571563",
+        "-330578180/2389571563",
+        "-536716333/9558286252"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-7030",
+      "coverage": 0,
+      "point": [
+        "-500977319/1222234444",
+        "-92653423/611117222",
+        "-27236819/3401000192"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-7149",
+      "coverage": 0,
+      "point": [
+        "-166607327/407737848",
+        "-79156465/543650464",
+        "-331708915/19571416704"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-7829",
+      "coverage": 0,
+      "point": [
+        "-252358045/613680547",
+        "-692831749/4909444376",
+        "-27525093/5271475759112781824"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-8131",
+      "coverage": 0,
+      "point": [
+        "-247463936/624538997",
+        "-756182527/4996311976",
+        "-25763825/5364749134383284224"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-9642",
+      "coverage": 0,
+      "point": [
+        "-2204318588/4271764301",
+        "-331708915/8543528602",
+        "-493843393/4271764301"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-9896",
+      "coverage": 0,
+      "point": [
+        "-347035876/739865721",
+        "-331708915/8878388652",
+        "-58108156/317085309"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-9911",
+      "coverage": 0,
+      "point": [
+        "-2344554272/4099977601",
+        "9419409/1100579356914221056",
+        "-31571549/482350306"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-9925",
+      "coverage": 0,
+      "point": [
+        "-380200602/706755371",
+        "-410014777/16962128904",
+        "-536716333/8481064452"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-12129",
+      "coverage": 0,
+      "point": [
+        "-1005693468/2278410913",
+        "-331708915/9113643652",
+        "-974747319/4556821826"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-12516",
+      "coverage": 0,
+      "point": [
+        "-340510358/753536821",
+        "-566626501/18084883704",
+        "-453387565/2260610463"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-13902",
+      "coverage": 0,
+      "point": [
+        "-496280565/1150501769",
+        "-480053677/18408028304",
+        "-269632065/1150501769"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-14417",
+      "coverage": 0,
+      "point": [
+        "-494927872/1163485669",
+        "-410014777/18615770704",
+        "-528837237/2326971338"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-15263",
+      "coverage": 0,
+      "point": [
+        "-494927872/1128347019",
+        "-331708915/9026776152",
+        "-580089121/2256694038"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-15903",
+      "coverage": 0,
+      "point": [
+        "-999643962/2281579363",
+        "-331708915/18252634904",
+        "-550724408/2281579363"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-16705",
+      "coverage": 0,
+      "point": [
+        "-989855744/2300127813",
+        "-25763825/4939486866727501824",
+        "-611764510/2300127813"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-16745",
+      "coverage": 0,
+      "point": [
+        "-16777216/39266407",
+        "-8589935/628262512",
+        "-9500214/39266407"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-18155",
+      "coverage": 0,
+      "point": [
+        "-1979711488/4099977601",
+        "-1160178242/4099977601",
+        "-653678818/4099977601"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-20370",
+      "coverage": 0,
+      "point": [
+        "-629361495121068032/1062849512051175331",
+        "-72036846795751424/1062849512051175331",
+        "-44521216928645120/1062849512051175331"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-21420",
+      "coverage": 0,
+      "point": [
+        "-3981066064/8122258527",
+        "-690687512/2707419509",
+        "-1555651466/8122258527"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-21443",
+      "coverage": 0,
+      "point": [
+        "-1979711488/4099977601",
+        "-1033476686/4099977601",
+        "-780380315/4099977601"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-22347",
+      "coverage": 0,
+      "point": [
+        "-16260316928/32070296183",
+        "-8368560000/32070296183",
+        "-5212864288/32070296183"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-25584",
+      "coverage": 0,
+      "point": [
+        "-3959422976/8092581027",
+        "-34329740/117283783",
+        "-1385663498/8092581027"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-25645",
+      "coverage": 0,
+      "point": [
+        "-265712378014859264/531424756032447753",
+        "-23459897886638080/75917822290349679",
+        "-101493100727238656/531424756032447753"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-26144",
+      "coverage": 0,
+      "point": [
+        "-2329599188/4099977601",
+        "-331708915/8199955202",
+        "-331708915/8199955202"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-26930",
+      "coverage": 0,
+      "point": [
+        "-4725498328/8134170827",
+        "-256965119/16268341654",
+        "-331708915/8134170827"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-28606",
+      "coverage": 0,
+      "point": [
+        "-411956880/692161673",
+        "-663417830/15919718479",
+        "-80946643/2274245497"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-29271",
+      "coverage": 0,
+      "point": [
+        "-9571799392/16052440279",
+        "-410014777/16052440279",
+        "-506806165/32104880558"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/base-30446",
+      "coverage": 0,
+      "point": [
+        "-328438570412933120/531424756027160353",
+        "12074527/2125699024108641412",
+        "6037293/1062849512054320706"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/perspective-boundary-0",
+      "coverage": 0,
+      "point": [
+        "-1/4",
+        "1/8",
+        "-1/16"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/perspective-boundary-1",
+      "coverage": 0,
+      "point": [
+        "-120832/483353",
+        "60416/483353",
+        "-30208/483353"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/perspective-boundary-2",
+      "coverage": 0,
+      "point": [
+        "-120832/483303",
+        "60416/483303",
+        "-30208/483303"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/perspective-boundary-3",
+      "coverage": 0,
+      "point": [
+        "-60416/241689",
+        "30208/241689",
+        "-15104/241689"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/perspective-boundary-4",
+      "coverage": 0,
+      "point": [
+        "-60416/241639",
+        "30208/241639",
+        "-15104/241639"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/perspective-boundary-5",
+      "coverage": 0,
+      "point": [
+        "-989855744/3959832601",
+        "494927872/3959832601",
+        "-247463936/3959832601"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/perspective-boundary-6",
+      "coverage": 0,
+      "point": [
+        "-989855744/3959013351",
+        "494927872/3959013351",
+        "-247463936/3959013351"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/perspective-boundary-7",
+      "coverage": 0,
+      "point": [
+        "-30208/120857",
+        "15104/120857",
+        "-7552/120857"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/perspective-boundary-8",
+      "coverage": 0,
+      "point": [
+        "-30208/120807",
+        "15104/120807",
+        "-7552/120807"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/north-boundary-0",
+      "coverage": 0,
+      "point": [
+        "-59/218",
+        "59/436",
+        "-59/872"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/north-boundary-1",
+      "coverage": 0,
+      "point": [
+        "-120832/446489",
+        "60416/446489",
+        "-30208/446489"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/north-boundary-2",
+      "coverage": 0,
+      "point": [
+        "-120832/446439",
+        "60416/446439",
+        "-30208/446439"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/north-boundary-3",
+      "coverage": 0,
+      "point": [
+        "-60416/223257",
+        "30208/223257",
+        "-15104/223257"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/north-boundary-4",
+      "coverage": 0,
+      "point": [
+        "-60416/223207",
+        "30208/223207",
+        "-15104/223207"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/north-boundary-5",
+      "coverage": 0,
+      "point": [
+        "-989855744/3657842713",
+        "494927872/3657842713",
+        "-247463936/3657842713"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/north-boundary-6",
+      "coverage": 0,
+      "point": [
+        "-989855744/3657023463",
+        "494927872/3657023463",
+        "-247463936/3657023463"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/north-boundary-7",
+      "coverage": 0,
+      "point": [
+        "-30208/111641",
+        "15104/111641",
+        "-7552/111641"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/north-boundary-8",
+      "coverage": 0,
+      "point": [
+        "-30208/111591",
+        "15104/111591",
+        "-7552/111591"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/equator-boundary-0",
+      "coverage": 0,
+      "point": [
+        "-1/2",
+        "1/4",
+        "-1/8"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/equator-boundary-1",
+      "coverage": 0,
+      "point": [
+        "-120832/241689",
+        "60416/241689",
+        "-30208/241689"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/equator-boundary-2",
+      "coverage": 0,
+      "point": [
+        "-120832/241639",
+        "60416/241639",
+        "-30208/241639"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/equator-boundary-3",
+      "coverage": 0,
+      "point": [
+        "-60416/120857",
+        "30208/120857",
+        "-15104/120857"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/equator-boundary-4",
+      "coverage": 0,
+      "point": [
+        "-60416/120807",
+        "30208/120807",
+        "-15104/120807"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/equator-boundary-5",
+      "coverage": 0,
+      "point": [
+        "-989855744/1980121113",
+        "494927872/1980121113",
+        "-247463936/1980121113"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/equator-boundary-6",
+      "coverage": 0,
+      "point": [
+        "-989855744/1979301863",
+        "494927872/1979301863",
+        "-247463936/1979301863"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/equator-boundary-7",
+      "coverage": 0,
+      "point": [
+        "-30208/60441",
+        "15104/60441",
+        "-7552/60441"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/equator-boundary-8",
+      "coverage": 0,
+      "point": [
+        "-30208/60391",
+        "15104/60391",
+        "-7552/60391"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/zero",
+      "coverage": 0,
+      "point": [
+        "0",
+        "0",
+        "0"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/signed-range",
+      "coverage": 0,
+      "point": [
+        "-247463936/21",
+        "247463936/21",
+        "-59/84"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/subnormal",
+      "coverage": 0,
+      "point": [
+        "-59/59944403093650315004448010716878795728075358208",
+        "59/59944403093650315004448010716878795728075358208",
+        "-59/7145929705339707732730866756067132440576"
+      ]
+    },
+    {
+      "id": "builtin_perspective/central-inversion/overflow",
+      "coverage": 0,
+      "point": [
+        "-239007838710395270582030319352220221440",
+        "-59/84",
+        "59/84"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-61",
+      "coverage": 0,
+      "point": [
+        "989855744/1686138713",
+        "217106312/1686138713",
+        "852667115/3372277426"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-364",
+      "coverage": 0,
+      "point": [
+        "1083021936/1727996213",
+        "860985289/6911984852",
+        "331708915/6911984852"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-1194",
+      "coverage": 0,
+      "point": [
+        "999643962/1569851413",
+        "330578180/1569851413",
+        "536716333/6279405652"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-7030",
+      "coverage": 0,
+      "point": [
+        "500977319/757477044",
+        "92653423/378738522",
+        "626446837/48478530816"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-7149",
+      "coverage": 0,
+      "point": [
+        "499821981/756497944",
+        "712408185/3025991776",
+        "331708915/12103967104"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-7829",
+      "coverage": 0,
+      "point": [
+        "252358045/376175197",
+        "692831749/3009401576",
+        "27525093/3231320337362714624"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-8131",
+      "coverage": 0,
+      "point": [
+        "247463936/365316747",
+        "756182527/2922533976",
+        "25763825/3138046962092212224"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-9642",
+      "coverage": 0,
+      "point": [
+        "53763868/88953211",
+        "331708915/7294163302",
+        "493843393/3647081651"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-9896",
+      "coverage": 0,
+      "point": [
+        "94646148/158165983",
+        "331708915/6959303252",
+        "406757092/1739825813"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-9911",
+      "coverage": 0,
+      "point": [
+        "2344554272/3818868351",
+        "-3139803/341706555734884352",
+        "536716333/7637736702"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-9925",
+      "coverage": 0,
+      "point": [
+        "1140601806/1839156863",
+        "1715543/61561736",
+        "536716333/7356627452"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-12129",
+      "coverage": 0,
+      "point": [
+        "1005693468/1681012063",
+        "331708915/6724048252",
+        "974747319/3362024126"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-12516",
+      "coverage": 0,
+      "point": [
+        "1021531074/1698812513",
+        "566626501/13590500104",
+        "453387565/1698812513"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-13902",
+      "coverage": 0,
+      "point": [
+        "496280565/829209719",
+        "480053677/13267355504",
+        "269632065/829209719"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-14417",
+      "coverage": 0,
+      "point": [
+        "494927872/816225819",
+        "410014777/13059613104",
+        "176279079/544150546"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-15263",
+      "coverage": 0,
+      "point": [
+        "494927872/851364469",
+        "331708915/6810915752",
+        "580089121/1702728938"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-15903",
+      "coverage": 0,
+      "point": [
+        "999643962/1677843613",
+        "331708915/13422748904",
+        "550724408/1677843613"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-16705",
+      "coverage": 0,
+      "point": [
+        "989855744/1659295163",
+        "25763825/3563309229747994624",
+        "611764510/1659295163"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-16745",
+      "coverage": 0,
+      "point": [
+        "16777216/27842457",
+        "8589935/445479312",
+        "3166738/9280819"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-18155",
+      "coverage": 0,
+      "point": [
+        "1979711488/3818868351",
+        "1160178242/3818868351",
+        "653678818/3818868351"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-20370",
+      "coverage": 0,
+      "point": [
+        "629361495121068032/1062849512067698781",
+        "72036846795751424/1062849512067698781",
+        "44521216928645120/1062849512067698781"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-21420",
+      "coverage": 0,
+      "point": [
+        "3981066064/7715433377",
+        "2072062536/7715433377",
+        "1555651466/7715433377"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-21443",
+      "coverage": 0,
+      "point": [
+        "1979711488/3818868351",
+        "1033476686/3818868351",
+        "780380315/3818868351"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-22347",
+      "coverage": 0,
+      "point": [
+        "16260316928/31280471433",
+        "929840000/3475607937",
+        "5212864288/31280471433"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-25584",
+      "coverage": 0,
+      "point": [
+        "3959422976/7745110877",
+        "2368752060/7745110877",
+        "1385663498/7745110877"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-25645",
+      "coverage": 0,
+      "point": [
+        "265712378014859264/531424756026989303",
+        "164219285206466560/531424756026989303",
+        "101493100727238656/531424756026989303"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-26144",
+      "coverage": 0,
+      "point": [
+        "2329599188/3818868351",
+        "331708915/7637736702",
+        "331708915/7637736702"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-26930",
+      "coverage": 0,
+      "point": [
+        "4725498328/7703521077",
+        "256965119/15407042154",
+        "331708915/7703521077"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-28606",
+      "coverage": 0,
+      "point": [
+        "3158336080/5251888443",
+        "663417830/15755665329",
+        "566626501/15755665329"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-29271",
+      "coverage": 0,
+      "point": [
+        "9571799392/15622943529",
+        "410014777/15622943529",
+        "506806165/31245887058"
+      ]
+    },
+    {
+      "id": "perspective/identity/base-30446",
+      "coverage": 0,
+      "point": [
+        "328438570412933120/531424756032276703",
+        "-12074527/2125699024129106812",
+        "-6037293/1062849512064553406"
+      ]
+    },
+    {
+      "id": "perspective/identity/perspective-boundary-0",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "perspective/identity/perspective-boundary-1",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "perspective/identity/perspective-boundary-2",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "perspective/identity/perspective-boundary-3",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "perspective/identity/perspective-boundary-4",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "perspective/identity/perspective-boundary-5",
+      "coverage": 0,
+      "point": [
+        "-989855744/409625",
+        "494927872/409625",
+        "-247463936/409625"
+      ]
+    },
+    {
+      "id": "perspective/identity/perspective-boundary-6",
+      "coverage": 0,
+      "point": [
+        "989855744/409625",
+        "-494927872/409625",
+        "247463936/409625"
+      ]
+    },
+    {
+      "id": "perspective/identity/perspective-boundary-7",
+      "coverage": 0,
+      "point": [
+        "-30208/25",
+        "15104/25",
+        "-7552/25"
+      ]
+    },
+    {
+      "id": "perspective/identity/perspective-boundary-8",
+      "coverage": 0,
+      "point": [
+        "30208/25",
+        "-15104/25",
+        "7552/25"
+      ]
+    },
+    {
+      "id": "perspective/identity/north-boundary-0",
+      "coverage": 0,
+      "point": [
+        "59/18",
+        "-59/36",
+        "59/72"
+      ]
+    },
+    {
+      "id": "perspective/identity/north-boundary-1",
+      "coverage": 0,
+      "point": [
+        "120832/36839",
+        "-60416/36839",
+        "30208/36839"
+      ]
+    },
+    {
+      "id": "perspective/identity/north-boundary-2",
+      "coverage": 0,
+      "point": [
+        "120832/36889",
+        "-60416/36889",
+        "30208/36889"
+      ]
+    },
+    {
+      "id": "perspective/identity/north-boundary-3",
+      "coverage": 0,
+      "point": [
+        "60416/18407",
+        "-30208/18407",
+        "15104/18407"
+      ]
+    },
+    {
+      "id": "perspective/identity/north-boundary-4",
+      "coverage": 0,
+      "point": [
+        "60416/18457",
+        "-30208/18457",
+        "15104/18457"
+      ]
+    },
+    {
+      "id": "perspective/identity/north-boundary-5",
+      "coverage": 0,
+      "point": [
+        "989855744/301580263",
+        "-494927872/301580263",
+        "247463936/301580263"
+      ]
+    },
+    {
+      "id": "perspective/identity/north-boundary-6",
+      "coverage": 0,
+      "point": [
+        "989855744/302399513",
+        "-494927872/302399513",
+        "247463936/302399513"
+      ]
+    },
+    {
+      "id": "perspective/identity/north-boundary-7",
+      "coverage": 0,
+      "point": [
+        "30208/9191",
+        "-15104/9191",
+        "7552/9191"
+      ]
+    },
+    {
+      "id": "perspective/identity/north-boundary-8",
+      "coverage": 0,
+      "point": [
+        "30208/9241",
+        "-15104/9241",
+        "7552/9241"
+      ]
+    },
+    {
+      "id": "perspective/identity/equator-boundary-0",
+      "coverage": 0,
+      "point": [
+        "1/2",
+        "-1/4",
+        "1/8"
+      ]
+    },
+    {
+      "id": "perspective/identity/equator-boundary-1",
+      "coverage": 0,
+      "point": [
+        "120832/241639",
+        "-60416/241639",
+        "30208/241639"
+      ]
+    },
+    {
+      "id": "perspective/identity/equator-boundary-2",
+      "coverage": 0,
+      "point": [
+        "120832/241689",
+        "-60416/241689",
+        "30208/241689"
+      ]
+    },
+    {
+      "id": "perspective/identity/equator-boundary-3",
+      "coverage": 0,
+      "point": [
+        "60416/120807",
+        "-30208/120807",
+        "15104/120807"
+      ]
+    },
+    {
+      "id": "perspective/identity/equator-boundary-4",
+      "coverage": 0,
+      "point": [
+        "60416/120857",
+        "-30208/120857",
+        "15104/120857"
+      ]
+    },
+    {
+      "id": "perspective/identity/equator-boundary-5",
+      "coverage": 0,
+      "point": [
+        "989855744/1979301863",
+        "-494927872/1979301863",
+        "247463936/1979301863"
+      ]
+    },
+    {
+      "id": "perspective/identity/equator-boundary-6",
+      "coverage": 0,
+      "point": [
+        "989855744/1980121113",
+        "-494927872/1980121113",
+        "247463936/1980121113"
+      ]
+    },
+    {
+      "id": "perspective/identity/equator-boundary-7",
+      "coverage": 0,
+      "point": [
+        "30208/60391",
+        "-15104/60391",
+        "7552/60391"
+      ]
+    },
+    {
+      "id": "perspective/identity/equator-boundary-8",
+      "coverage": 0,
+      "point": [
+        "30208/60441",
+        "-15104/60441",
+        "7552/60441"
+      ]
+    },
+    {
+      "id": "perspective/identity/zero",
+      "coverage": 0,
+      "point": [
+        "0",
+        "0",
+        "0"
+      ]
+    },
+    {
+      "id": "perspective/identity/signed-range",
+      "coverage": 0,
+      "point": [
+        "494927872/17",
+        "-494927872/17",
+        "59/34"
+      ]
+    },
+    {
+      "id": "perspective/identity/subnormal",
+      "coverage": 0,
+      "point": [
+        "59/24263210776001317977990861480641417318506692608",
+        "-59/24263210776001317977990861480641417318506692608",
+        "59/2892400118827976939438684163170029797376"
+      ]
+    },
+    {
+      "id": "perspective/identity/overflow",
+      "coverage": 0,
+      "point": [
+        "590489954460976550849721965458426429440",
+        "59/34",
+        "-59/34"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-61",
+      "coverage": 0,
+      "point": [
+        "-989855744/2273284263",
+        "-217106312/2273284263",
+        "-852667115/4546568526"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-364",
+      "coverage": 0,
+      "point": [
+        "-361007312/743808921",
+        "-860985289/8925707052",
+        "-331708915/8925707052"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-1194",
+      "coverage": 0,
+      "point": [
+        "-999643962/2389571563",
+        "-330578180/2389571563",
+        "-536716333/9558286252"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-7030",
+      "coverage": 0,
+      "point": [
+        "-500977319/1222234444",
+        "-92653423/611117222",
+        "-27236819/3401000192"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-7149",
+      "coverage": 0,
+      "point": [
+        "-166607327/407737848",
+        "-79156465/543650464",
+        "-331708915/19571416704"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-7829",
+      "coverage": 0,
+      "point": [
+        "-252358045/613680547",
+        "-692831749/4909444376",
+        "-27525093/5271475759112781824"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-8131",
+      "coverage": 0,
+      "point": [
+        "-247463936/624538997",
+        "-756182527/4996311976",
+        "-25763825/5364749134383284224"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-9642",
+      "coverage": 0,
+      "point": [
+        "-2204318588/4271764301",
+        "-331708915/8543528602",
+        "-493843393/4271764301"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-9896",
+      "coverage": 0,
+      "point": [
+        "-347035876/739865721",
+        "-331708915/8878388652",
+        "-58108156/317085309"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-9911",
+      "coverage": 0,
+      "point": [
+        "-2344554272/4099977601",
+        "9419409/1100579356914221056",
+        "-31571549/482350306"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-9925",
+      "coverage": 0,
+      "point": [
+        "-380200602/706755371",
+        "-410014777/16962128904",
+        "-536716333/8481064452"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-12129",
+      "coverage": 0,
+      "point": [
+        "-1005693468/2278410913",
+        "-331708915/9113643652",
+        "-974747319/4556821826"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-12516",
+      "coverage": 0,
+      "point": [
+        "-340510358/753536821",
+        "-566626501/18084883704",
+        "-453387565/2260610463"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-13902",
+      "coverage": 0,
+      "point": [
+        "-496280565/1150501769",
+        "-480053677/18408028304",
+        "-269632065/1150501769"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-14417",
+      "coverage": 0,
+      "point": [
+        "-494927872/1163485669",
+        "-410014777/18615770704",
+        "-528837237/2326971338"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-15263",
+      "coverage": 0,
+      "point": [
+        "-494927872/1128347019",
+        "-331708915/9026776152",
+        "-580089121/2256694038"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-15903",
+      "coverage": 0,
+      "point": [
+        "-999643962/2281579363",
+        "-331708915/18252634904",
+        "-550724408/2281579363"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-16705",
+      "coverage": 0,
+      "point": [
+        "-989855744/2300127813",
+        "-25763825/4939486866727501824",
+        "-611764510/2300127813"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-16745",
+      "coverage": 0,
+      "point": [
+        "-16777216/39266407",
+        "-8589935/628262512",
+        "-9500214/39266407"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-18155",
+      "coverage": 0,
+      "point": [
+        "-1979711488/4099977601",
+        "-1160178242/4099977601",
+        "-653678818/4099977601"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-20370",
+      "coverage": 0,
+      "point": [
+        "-629361495121068032/1062849512051175331",
+        "-72036846795751424/1062849512051175331",
+        "-44521216928645120/1062849512051175331"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-21420",
+      "coverage": 0,
+      "point": [
+        "-3981066064/8122258527",
+        "-690687512/2707419509",
+        "-1555651466/8122258527"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-21443",
+      "coverage": 0,
+      "point": [
+        "-1979711488/4099977601",
+        "-1033476686/4099977601",
+        "-780380315/4099977601"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-22347",
+      "coverage": 0,
+      "point": [
+        "-16260316928/32070296183",
+        "-8368560000/32070296183",
+        "-5212864288/32070296183"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-25584",
+      "coverage": 0,
+      "point": [
+        "-3959422976/8092581027",
+        "-34329740/117283783",
+        "-1385663498/8092581027"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-25645",
+      "coverage": 0,
+      "point": [
+        "-265712378014859264/531424756032447753",
+        "-23459897886638080/75917822290349679",
+        "-101493100727238656/531424756032447753"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-26144",
+      "coverage": 0,
+      "point": [
+        "-2329599188/4099977601",
+        "-331708915/8199955202",
+        "-331708915/8199955202"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-26930",
+      "coverage": 0,
+      "point": [
+        "-4725498328/8134170827",
+        "-256965119/16268341654",
+        "-331708915/8134170827"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-28606",
+      "coverage": 0,
+      "point": [
+        "-411956880/692161673",
+        "-663417830/15919718479",
+        "-80946643/2274245497"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-29271",
+      "coverage": 0,
+      "point": [
+        "-9571799392/16052440279",
+        "-410014777/16052440279",
+        "-506806165/32104880558"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/base-30446",
+      "coverage": 0,
+      "point": [
+        "-328438570412933120/531424756027160353",
+        "12074527/2125699024108641412",
+        "6037293/1062849512054320706"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/perspective-boundary-0",
+      "coverage": 0,
+      "point": [
+        "-1/4",
+        "1/8",
+        "-1/16"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/perspective-boundary-1",
+      "coverage": 0,
+      "point": [
+        "-120832/483353",
+        "60416/483353",
+        "-30208/483353"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/perspective-boundary-2",
+      "coverage": 0,
+      "point": [
+        "-120832/483303",
+        "60416/483303",
+        "-30208/483303"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/perspective-boundary-3",
+      "coverage": 0,
+      "point": [
+        "-60416/241689",
+        "30208/241689",
+        "-15104/241689"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/perspective-boundary-4",
+      "coverage": 0,
+      "point": [
+        "-60416/241639",
+        "30208/241639",
+        "-15104/241639"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/perspective-boundary-5",
+      "coverage": 0,
+      "point": [
+        "-989855744/3959832601",
+        "494927872/3959832601",
+        "-247463936/3959832601"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/perspective-boundary-6",
+      "coverage": 0,
+      "point": [
+        "-989855744/3959013351",
+        "494927872/3959013351",
+        "-247463936/3959013351"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/perspective-boundary-7",
+      "coverage": 0,
+      "point": [
+        "-30208/120857",
+        "15104/120857",
+        "-7552/120857"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/perspective-boundary-8",
+      "coverage": 0,
+      "point": [
+        "-30208/120807",
+        "15104/120807",
+        "-7552/120807"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/north-boundary-0",
+      "coverage": 0,
+      "point": [
+        "-59/218",
+        "59/436",
+        "-59/872"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/north-boundary-1",
+      "coverage": 0,
+      "point": [
+        "-120832/446489",
+        "60416/446489",
+        "-30208/446489"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/north-boundary-2",
+      "coverage": 0,
+      "point": [
+        "-120832/446439",
+        "60416/446439",
+        "-30208/446439"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/north-boundary-3",
+      "coverage": 0,
+      "point": [
+        "-60416/223257",
+        "30208/223257",
+        "-15104/223257"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/north-boundary-4",
+      "coverage": 0,
+      "point": [
+        "-60416/223207",
+        "30208/223207",
+        "-15104/223207"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/north-boundary-5",
+      "coverage": 0,
+      "point": [
+        "-989855744/3657842713",
+        "494927872/3657842713",
+        "-247463936/3657842713"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/north-boundary-6",
+      "coverage": 0,
+      "point": [
+        "-989855744/3657023463",
+        "494927872/3657023463",
+        "-247463936/3657023463"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/north-boundary-7",
+      "coverage": 0,
+      "point": [
+        "-30208/111641",
+        "15104/111641",
+        "-7552/111641"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/north-boundary-8",
+      "coverage": 0,
+      "point": [
+        "-30208/111591",
+        "15104/111591",
+        "-7552/111591"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/equator-boundary-0",
+      "coverage": 0,
+      "point": [
+        "-1/2",
+        "1/4",
+        "-1/8"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/equator-boundary-1",
+      "coverage": 0,
+      "point": [
+        "-120832/241689",
+        "60416/241689",
+        "-30208/241689"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/equator-boundary-2",
+      "coverage": 0,
+      "point": [
+        "-120832/241639",
+        "60416/241639",
+        "-30208/241639"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/equator-boundary-3",
+      "coverage": 0,
+      "point": [
+        "-60416/120857",
+        "30208/120857",
+        "-15104/120857"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/equator-boundary-4",
+      "coverage": 0,
+      "point": [
+        "-60416/120807",
+        "30208/120807",
+        "-15104/120807"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/equator-boundary-5",
+      "coverage": 0,
+      "point": [
+        "-989855744/1980121113",
+        "494927872/1980121113",
+        "-247463936/1980121113"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/equator-boundary-6",
+      "coverage": 0,
+      "point": [
+        "-989855744/1979301863",
+        "494927872/1979301863",
+        "-247463936/1979301863"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/equator-boundary-7",
+      "coverage": 0,
+      "point": [
+        "-30208/60441",
+        "15104/60441",
+        "-7552/60441"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/equator-boundary-8",
+      "coverage": 0,
+      "point": [
+        "-30208/60391",
+        "15104/60391",
+        "-7552/60391"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/zero",
+      "coverage": 0,
+      "point": [
+        "0",
+        "0",
+        "0"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/signed-range",
+      "coverage": 0,
+      "point": [
+        "-247463936/21",
+        "247463936/21",
+        "-59/84"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/subnormal",
+      "coverage": 0,
+      "point": [
+        "-59/59944403093650315004448010716878795728075358208",
+        "59/59944403093650315004448010716878795728075358208",
+        "-59/7145929705339707732730866756067132440576"
+      ]
+    },
+    {
+      "id": "perspective/central-inversion/overflow",
+      "coverage": 0,
+      "point": [
+        "-239007838710395270582030319352220221440",
+        "-59/84",
+        "59/84"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-61",
+      "coverage": 0,
+      "point": [
+        "33554432/55365953",
+        "7359536/55365953",
+        "14451985/55365953"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-364",
+      "coverage": 0,
+      "point": [
+        "36712608/57040253",
+        "634477/4960022",
+        "5622185/114080506"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-1194",
+      "coverage": 0,
+      "point": [
+        "33886236/50714461",
+        "11206040/50714461",
+        "9096887/101428922"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-7030",
+      "coverage": 0,
+      "point": [
+        "8491141/12129642",
+        "1570397/6064821",
+        "10617743/776297088"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-7149",
+      "coverage": 0,
+      "point": [
+        "8471559/12110060",
+        "2414943/9688048",
+        "1124437/38752192"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-7829",
+      "coverage": 0,
+      "point": [
+        "8554510/12027109",
+        "11742911/48108436",
+        "466527/51656039820427264"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-8131",
+      "coverage": 0,
+      "point": [
+        "8388608/11592771",
+        "12816653/46371084",
+        "436675/49790572315017216"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-9642",
+      "coverage": 0,
+      "point": [
+        "74722664/121724075",
+        "1124437/24344815",
+        "16740454/121724075"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-9896",
+      "coverage": 0,
+      "point": [
+        "35291784/57513437",
+        "5622185/115026874",
+        "725704/3027023"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-9911",
+      "coverage": 0,
+      "point": [
+        "79476416/128595543",
+        "-53217/5753267204128768",
+        "9096887/128595543"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-9925",
+      "coverage": 0,
+      "point": [
+        "2034972/3236141",
+        "6949403/245946716",
+        "9096887/122973358"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-12129",
+      "coverage": 0,
+      "point": [
+        "34091304/55160887",
+        "5622185/110321774",
+        "16521141/55160887"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-12516",
+      "coverage": 0,
+      "point": [
+        "34628172/55872905",
+        "9603839/223491620",
+        "3073814/11174581"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-13902",
+      "coverage": 0,
+      "point": [
+        "16823070/27128591",
+        "8136503/217028728",
+        "9140070/27128591"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-14417",
+      "coverage": 0,
+      "point": [
+        "16777216/26609235",
+        "6949403/212873880",
+        "2987781/8869745"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-15263",
+      "coverage": 0,
+      "point": [
+        "16777216/28014781",
+        "5622185/112059124",
+        "9832019/28014781"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-15903",
+      "coverage": 0,
+      "point": [
+        "33886236/55034149",
+        "5622185/220136596",
+        "18668624/55034149"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-16705",
+      "coverage": 0,
+      "point": [
+        "33554432/54292211",
+        "436675/58295817668132864",
+        "20737780/54292211"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-16745",
+      "coverage": 0,
+      "point": [
+        "33554432/53628603",
+        "8589935/429028824",
+        "6333476/17876201"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-18155",
+      "coverage": 0,
+      "point": [
+        "67108864/128595543",
+        "39328076/128595543",
+        "22158604/128595543"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-20370",
+      "coverage": 0,
+      "point": [
+        "21334287970205696/36028797019294437",
+        "2441927010025472/36028797019294437",
+        "1509193794191360/36028797019294437"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-21420",
+      "coverage": 0,
+      "point": [
+        "134951392/260298953",
+        "70239408/260298953",
+        "52733948/260298953"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-21443",
+      "coverage": 0,
+      "point": [
+        "67108864/128595543",
+        "35033108/128595543",
+        "26453570/128595543"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-22347",
+      "coverage": 0,
+      "point": [
+        "551197184/1057945329",
+        "31520000/117549481",
+        "4775872/28593117"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-25584",
+      "coverage": 0,
+      "point": [
+        "134217728/261486053",
+        "80296680/261486053",
+        "46971644/261486053"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-25645",
+      "coverage": 0,
+      "point": [
+        "9007199254740992/18014398509372815",
+        "1113351086145536/3602879701874563",
+        "3440444092448768/18014398509372815"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-26144",
+      "coverage": 0,
+      "point": [
+        "78969464/128595543",
+        "5622185/128595543",
+        "5622185/128595543"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-26930",
+      "coverage": 0,
+      "point": [
+        "160186384/259822461",
+        "4355341/259822461",
+        "11244370/259822461"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-28606",
+      "coverage": 0,
+      "point": [
+        "107062240/177863283",
+        "22488740/533589849",
+        "19207678/533589849"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-29271",
+      "coverage": 0,
+      "point": [
+        "324467776/528280977",
+        "13898806/528280977",
+        "8589935/528280977"
+      ]
+    },
+    {
+      "id": "stereographic/identity/base-30446",
+      "coverage": 0,
+      "point": [
+        "11133510861455360/18014398509584311",
+        "-204653/36028797019168622",
+        "-102327/18014398509584311"
+      ]
+    },
+    {
+      "id": "stereographic/identity/perspective-boundary-0",
+      "coverage": 0,
+      "point": [
+        "-25/9",
+        "25/18",
+        "-25/36"
+      ]
+    },
+    {
+      "id": "stereographic/identity/perspective-boundary-1",
+      "coverage": 0,
+      "point": [
+        "-102400/36889",
+        "51200/36889",
+        "-25600/36889"
+      ]
+    },
+    {
+      "id": "stereographic/identity/perspective-boundary-2",
+      "coverage": 0,
+      "point": [
+        "-102400/36839",
+        "51200/36839",
+        "-25600/36839"
+      ]
+    },
+    {
+      "id": "stereographic/identity/perspective-boundary-3",
+      "coverage": 0,
+      "point": [
+        "-51200/18457",
+        "25600/18457",
+        "-12800/18457"
+      ]
+    },
+    {
+      "id": "stereographic/identity/perspective-boundary-4",
+      "coverage": 0,
+      "point": [
+        "-51200/18407",
+        "25600/18407",
+        "-12800/18407"
+      ]
+    },
+    {
+      "id": "stereographic/identity/perspective-boundary-5",
+      "coverage": 0,
+      "point": [
+        "-838860800/302399513",
+        "419430400/302399513",
+        "-209715200/302399513"
+      ]
+    },
+    {
+      "id": "stereographic/identity/perspective-boundary-6",
+      "coverage": 0,
+      "point": [
+        "-838860800/301580263",
+        "419430400/301580263",
+        "-209715200/301580263"
+      ]
+    },
+    {
+      "id": "stereographic/identity/perspective-boundary-7",
+      "coverage": 0,
+      "point": [
+        "-25600/9241",
+        "12800/9241",
+        "-6400/9241"
+      ]
+    },
+    {
+      "id": "stereographic/identity/perspective-boundary-8",
+      "coverage": 0,
+      "point": [
+        "-25600/9191",
+        "12800/9191",
+        "-6400/9191"
+      ]
+    },
+    {
+      "id": "stereographic/identity/north-boundary-0",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "stereographic/identity/north-boundary-1",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "stereographic/identity/north-boundary-2",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "stereographic/identity/north-boundary-3",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "stereographic/identity/north-boundary-4",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "stereographic/identity/north-boundary-5",
+      "coverage": 0,
+      "point": [
+        "-33554432/16385",
+        "16777216/16385",
+        "-8388608/16385"
+      ]
+    },
+    {
+      "id": "stereographic/identity/north-boundary-6",
+      "coverage": 0,
+      "point": [
+        "33554432/16385",
+        "-16777216/16385",
+        "8388608/16385"
+      ]
+    },
+    {
+      "id": "stereographic/identity/north-boundary-7",
+      "coverage": 0,
+      "point": [
+        "-1024",
+        "512",
+        "-256"
+      ]
+    },
+    {
+      "id": "stereographic/identity/north-boundary-8",
+      "coverage": 0,
+      "point": [
+        "1024",
+        "-512",
+        "256"
+      ]
+    },
+    {
+      "id": "stereographic/identity/equator-boundary-0",
+      "coverage": 0,
+      "point": [
+        "1/2",
+        "-1/4",
+        "1/8"
+      ]
+    },
+    {
+      "id": "stereographic/identity/equator-boundary-1",
+      "coverage": 0,
+      "point": [
+        "4096/8191",
+        "-2048/8191",
+        "1024/8191"
+      ]
+    },
+    {
+      "id": "stereographic/identity/equator-boundary-2",
+      "coverage": 0,
+      "point": [
+        "4096/8193",
+        "-2048/8193",
+        "1024/8193"
+      ]
+    },
+    {
+      "id": "stereographic/identity/equator-boundary-3",
+      "coverage": 0,
+      "point": [
+        "2048/4095",
+        "-1024/4095",
+        "512/4095"
+      ]
+    },
+    {
+      "id": "stereographic/identity/equator-boundary-4",
+      "coverage": 0,
+      "point": [
+        "2048/4097",
+        "-1024/4097",
+        "512/4097"
+      ]
+    },
+    {
+      "id": "stereographic/identity/equator-boundary-5",
+      "coverage": 0,
+      "point": [
+        "33554432/67092479",
+        "-16777216/67092479",
+        "8388608/67092479"
+      ]
+    },
+    {
+      "id": "stereographic/identity/equator-boundary-6",
+      "coverage": 0,
+      "point": [
+        "33554432/67125249",
+        "-16777216/67125249",
+        "8388608/67125249"
+      ]
+    },
+    {
+      "id": "stereographic/identity/equator-boundary-7",
+      "coverage": 0,
+      "point": [
+        "1024/2047",
+        "-512/2047",
+        "256/2047"
+      ]
+    },
+    {
+      "id": "stereographic/identity/equator-boundary-8",
+      "coverage": 0,
+      "point": [
+        "1024/2049",
+        "-512/2049",
+        "256/2049"
+      ]
+    },
+    {
+      "id": "stereographic/identity/zero",
+      "coverage": 0,
+      "point": [
+        "0",
+        "0",
+        "0"
+      ]
+    },
+    {
+      "id": "stereographic/identity/signed-range",
+      "coverage": 0,
+      "point": [
+        "33554432",
+        "-33554432",
+        "2"
+      ]
+    },
+    {
+      "id": "stereographic/identity/subnormal",
+      "coverage": 0,
+      "point": [
+        "1/356811923176489970264571492362373784095686656",
+        "-1/356811923176489970264571492362373784095686656",
+        "1/42535295865117307932921825928971026432"
+      ]
+    },
+    {
+      "id": "stereographic/identity/overflow",
+      "coverage": 0,
+      "point": [
+        "680564693277057719623408366969033850880",
+        "2",
+        "-2"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-61",
+      "coverage": 0,
+      "point": [
+        "-33554432/78851775",
+        "-7359536/78851775",
+        "-2890397/15770355"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-364",
+      "coverage": 0,
+      "point": [
+        "-12237536/25725825",
+        "-14592971/154354950",
+        "-1124437/30870990"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-1194",
+      "coverage": 0,
+      "point": [
+        "-33886236/83503267",
+        "-11206040/83503267",
+        "-9096887/167006534"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-7030",
+      "coverage": 0,
+      "point": [
+        "-8491141/21424790",
+        "-1570397/10712395",
+        "-10617743/1371186560"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-7149",
+      "coverage": 0,
+      "point": [
+        "-2823853/7148124",
+        "-1341635/9530832",
+        "-5622185/343109952"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-7829",
+      "coverage": 0,
+      "point": [
+        "-8554510/21527323",
+        "-11742911/86109292",
+        "-466527/92459148255428608"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-8131",
+      "coverage": 0,
+      "point": [
+        "-8388608/21961661",
+        "-12816653/87846644",
+        "-436675/94324615760838656"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-9642",
+      "coverage": 0,
+      "point": [
+        "-74722664/146711381",
+        "-5622185/146711381",
+        "-16740454/146711381"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-9896",
+      "coverage": 0,
+      "point": [
+        "-11763928/25568097",
+        "-5622185/153408582",
+        "-13788376/76704291"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-9911",
+      "coverage": 0,
+      "point": [
+        "-79476416/139839913",
+        "159651/18768995406577664",
+        "-9096887/139839913"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-9925",
+      "coverage": 0,
+      "point": [
+        "-12888156/24243683",
+        "-6949403/290924196",
+        "-535111/8556594"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-12129",
+      "coverage": 0,
+      "point": [
+        "-34091304/79056841",
+        "-5622185/158113682",
+        "-16521141/79056841"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-12516",
+      "coverage": 0,
+      "point": [
+        "-11542724/26114941",
+        "-9603839/313379292",
+        "-15369070/78344823"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-13902",
+      "coverage": 0,
+      "point": [
+        "-16823070/39980273",
+        "-8136503/319842184",
+        "-9140070/39980273"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-14417",
+      "coverage": 0,
+      "point": [
+        "-16777216/40499629",
+        "-6949403/323997032",
+        "-8963343/40499629"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-15263",
+      "coverage": 0,
+      "point": [
+        "-16777216/39094083",
+        "-5622185/156376332",
+        "-9832019/39094083"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-15903",
+      "coverage": 0,
+      "point": [
+        "-33886236/79183579",
+        "-5622185/316734316",
+        "-18668624/79183579"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-16705",
+      "coverage": 0,
+      "point": [
+        "-33554432/79925517",
+        "-436675/85819370407723008",
+        "-60460/233019"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-16745",
+      "coverage": 0,
+      "point": [
+        "-33554432/80589125",
+        "-1717987/128942600",
+        "-19000428/80589125"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-18155",
+      "coverage": 0,
+      "point": [
+        "-67108864/139839913",
+        "-39328076/139839913",
+        "-22158604/139839913"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-20370",
+      "coverage": 0,
+      "point": [
+        "-21334287970205696/36028797018633499",
+        "-2441927010025472/36028797018633499",
+        "-1509193794191360/36028797018633499"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-21420",
+      "coverage": 0,
+      "point": [
+        "-134951392/276571959",
+        "-23413136/92190653",
+        "-52733948/276571959"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-21443",
+      "coverage": 0,
+      "point": [
+        "-67108864/139839913",
+        "-35033108/139839913",
+        "-26453570/139839913"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-22347",
+      "coverage": 0,
+      "point": [
+        "-551197184/1089538319",
+        "-283680000/1089538319",
+        "-176707264/1089538319"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-25584",
+      "coverage": 0,
+      "point": [
+        "-134217728/275384859",
+        "-26765560/91794953",
+        "-46971644/275384859"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-25645",
+      "coverage": 0,
+      "point": [
+        "-9007199254740992/18014398509591153",
+        "-5566755430727680/18014398509591153",
+        "-3440444092448768/18014398509591153"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-26144",
+      "coverage": 0,
+      "point": [
+        "-78969464/139839913",
+        "-5622185/139839913",
+        "-5622185/139839913"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-26930",
+      "coverage": 0,
+      "point": [
+        "-160186384/277048451",
+        "-4355341/277048451",
+        "-11244370/277048451"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-28606",
+      "coverage": 0,
+      "point": [
+        "-64237344/108030395",
+        "-4497748/108030395",
+        "-19207678/540151975"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-29271",
+      "coverage": 0,
+      "point": [
+        "-324467776/545460847",
+        "-13898806/545460847",
+        "-8589935/545460847"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/base-30446",
+      "coverage": 0,
+      "point": [
+        "-1590501551636480/2573485501339951",
+        "204653/36028797018759314",
+        "102327/18014398509379657"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/perspective-boundary-0",
+      "coverage": 0,
+      "point": [
+        "-25/109",
+        "25/218",
+        "-25/436"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/perspective-boundary-1",
+      "coverage": 0,
+      "point": [
+        "-102400/446489",
+        "51200/446489",
+        "-25600/446489"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/perspective-boundary-2",
+      "coverage": 0,
+      "point": [
+        "-102400/446439",
+        "51200/446439",
+        "-25600/446439"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/perspective-boundary-3",
+      "coverage": 0,
+      "point": [
+        "-51200/223257",
+        "25600/223257",
+        "-12800/223257"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/perspective-boundary-4",
+      "coverage": 0,
+      "point": [
+        "-51200/223207",
+        "25600/223207",
+        "-12800/223207"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/perspective-boundary-5",
+      "coverage": 0,
+      "point": [
+        "-838860800/3657842713",
+        "419430400/3657842713",
+        "-209715200/3657842713"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/perspective-boundary-6",
+      "coverage": 0,
+      "point": [
+        "-838860800/3657023463",
+        "419430400/3657023463",
+        "-209715200/3657023463"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/perspective-boundary-7",
+      "coverage": 0,
+      "point": [
+        "-25600/111641",
+        "12800/111641",
+        "-6400/111641"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/perspective-boundary-8",
+      "coverage": 0,
+      "point": [
+        "-25600/111591",
+        "12800/111591",
+        "-6400/111591"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/north-boundary-0",
+      "coverage": 0,
+      "point": [
+        "-1/4",
+        "1/8",
+        "-1/16"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/north-boundary-1",
+      "coverage": 0,
+      "point": [
+        "-4096/16385",
+        "2048/16385",
+        "-1024/16385"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/north-boundary-2",
+      "coverage": 0,
+      "point": [
+        "-4096/16383",
+        "2048/16383",
+        "-1024/16383"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/north-boundary-3",
+      "coverage": 0,
+      "point": [
+        "-2048/8193",
+        "1024/8193",
+        "-512/8193"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/north-boundary-4",
+      "coverage": 0,
+      "point": [
+        "-2048/8191",
+        "1024/8191",
+        "-512/8191"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/north-boundary-5",
+      "coverage": 0,
+      "point": [
+        "-33554432/134234113",
+        "16777216/134234113",
+        "-8388608/134234113"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/north-boundary-6",
+      "coverage": 0,
+      "point": [
+        "-33554432/134201343",
+        "16777216/134201343",
+        "-8388608/134201343"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/north-boundary-7",
+      "coverage": 0,
+      "point": [
+        "-1024/4097",
+        "512/4097",
+        "-256/4097"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/north-boundary-8",
+      "coverage": 0,
+      "point": [
+        "-1024/4095",
+        "512/4095",
+        "-256/4095"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/equator-boundary-0",
+      "coverage": 0,
+      "point": [
+        "-1/2",
+        "1/4",
+        "-1/8"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/equator-boundary-1",
+      "coverage": 0,
+      "point": [
+        "-4096/8193",
+        "2048/8193",
+        "-1024/8193"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/equator-boundary-2",
+      "coverage": 0,
+      "point": [
+        "-4096/8191",
+        "2048/8191",
+        "-1024/8191"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/equator-boundary-3",
+      "coverage": 0,
+      "point": [
+        "-2048/4097",
+        "1024/4097",
+        "-512/4097"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/equator-boundary-4",
+      "coverage": 0,
+      "point": [
+        "-2048/4095",
+        "1024/4095",
+        "-512/4095"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/equator-boundary-5",
+      "coverage": 0,
+      "point": [
+        "-33554432/67125249",
+        "16777216/67125249",
+        "-8388608/67125249"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/equator-boundary-6",
+      "coverage": 0,
+      "point": [
+        "-33554432/67092479",
+        "16777216/67092479",
+        "-8388608/67092479"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/equator-boundary-7",
+      "coverage": 0,
+      "point": [
+        "-1024/2049",
+        "512/2049",
+        "-256/2049"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/equator-boundary-8",
+      "coverage": 0,
+      "point": [
+        "-1024/2047",
+        "512/2047",
+        "-256/2047"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/zero",
+      "coverage": 0,
+      "point": [
+        "0",
+        "0",
+        "0"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/signed-range",
+      "coverage": 0,
+      "point": [
+        "-33554432/3",
+        "33554432/3",
+        "-2/3"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/subnormal",
+      "coverage": 0,
+      "point": [
+        "-1/1070435769529469910793714477087121352287059968",
+        "1/1070435769529469910793714477087121352287059968",
+        "-1/127605887595351923798765477786913079296"
+      ]
+    },
+    {
+      "id": "stereographic/central-inversion/overflow",
+      "coverage": 0,
+      "point": [
+        "-226854897759019239874469455656344616960",
+        "-2/3",
+        "2/3"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-61",
+      "coverage": 0,
+      "point": [
+        "33554432/11742911",
+        "7359536/11742911",
+        "14451985/11742911"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-364",
+      "coverage": 0,
+      "point": [
+        "36712608/10068611",
+        "14592971/20137222",
+        "5622185/20137222"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-1194",
+      "coverage": 0,
+      "point": [
+        "11295412/5464801",
+        "11206040/16394403",
+        "9096887/32788806"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-7030",
+      "coverage": 0,
+      "point": [
+        "8491141/4647574",
+        "1570397/2323787",
+        "10617743/297444736"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-7149",
+      "coverage": 0,
+      "point": [
+        "8471559/4667156",
+        "12074715/18668624",
+        "5622185/74674496"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-7829",
+      "coverage": 0,
+      "point": [
+        "8554510/4750107",
+        "11742911/19000428",
+        "155509/6800518072500224"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-8131",
+      "coverage": 0,
+      "point": [
+        "8388608/5184445",
+        "12816653/20737780",
+        "87335/4453404344582144"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-9642",
+      "coverage": 0,
+      "point": [
+        "74722664/12493653",
+        "5622185/12493653",
+        "16740454/12493653"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-9896",
+      "coverage": 0,
+      "point": [
+        "35291784/9595427",
+        "5622185/19190854",
+        "13788376/9595427"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-9911",
+      "coverage": 0,
+      "point": [
+        "79476416/5622185",
+        "-159651/754596897095680",
+        "9096887/5622185"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-9925",
+      "coverage": 0,
+      "point": [
+        "38664468/5622185",
+        "6949403/22488740",
+        "9096887/11244370"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-12129",
+      "coverage": 0,
+      "point": [
+        "11363768/3982659",
+        "5622185/23895954",
+        "5507047/3982659"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-12516",
+      "coverage": 0,
+      "point": [
+        "34628172/11235959",
+        "1371977/6420548",
+        "15369070/11235959"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-13902",
+      "coverage": 0,
+      "point": [
+        "5607690/2141947",
+        "8136503/51406728",
+        "3046690/2141947"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-14417",
+      "coverage": 0,
+      "point": [
+        "16777216/6945197",
+        "6949403/55561576",
+        "8963343/6945197"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-15263",
+      "coverage": 0,
+      "point": [
+        "16777216/5539651",
+        "5622185/22158604",
+        "9832019/5539651"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-15903",
+      "coverage": 0,
+      "point": [
+        "11295412/4024905",
+        "1124437/9659772",
+        "18668624/12074715"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-16705",
+      "coverage": 0,
+      "point": [
+        "33554432/12816653",
+        "436675/13761776369795072",
+        "20737780/12816653"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-16745",
+      "coverage": 0,
+      "point": [
+        "33554432/13480261",
+        "8589935/107842088",
+        "19000428/13480261"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-18155",
+      "coverage": 0,
+      "point": [
+        "67108864/5622185",
+        "39328076/5622185",
+        "22158604/5622185"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-20370",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "gnomonic/identity/base-21420",
+      "coverage": 0,
+      "point": [
+        "134951392/8136503",
+        "70239408/8136503",
+        "52733948/8136503"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-21443",
+      "coverage": 0,
+      "point": [
+        "67108864/5622185",
+        "35033108/5622185",
+        "5290714/1124437"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-22347",
+      "coverage": 0,
+      "point": [
+        "551197184/15796495",
+        "56736000/3159299",
+        "176707264/15796495"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-25584",
+      "coverage": 0,
+      "point": [
+        "134217728/6949403",
+        "80296680/6949403",
+        "46971644/6949403"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-25645",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "gnomonic/identity/base-26144",
+      "coverage": 0,
+      "point": [
+        "78969464/5622185",
+        "1",
+        "1"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-26930",
+      "coverage": 0,
+      "point": [
+        "160186384/8612995",
+        "4355341/8612995",
+        "2248874/1722599"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-28606",
+      "coverage": 0,
+      "point": [
+        "321186720/3281063",
+        "22488740/3281063",
+        "19207678/3281063"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-29271",
+      "coverage": 0,
+      "point": [
+        "324467776/8589935",
+        "13898806/8589935",
+        "1"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/base-30446",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "gnomonic/identity/perspective-boundary-0",
+      "coverage": 0,
+      "point": [
+        "25/59",
+        "-25/118",
+        "25/236"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/perspective-boundary-1",
+      "coverage": 0,
+      "point": [
+        "102400/241689",
+        "-51200/241689",
+        "25600/241689"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/perspective-boundary-2",
+      "coverage": 0,
+      "point": [
+        "102400/241639",
+        "-51200/241639",
+        "25600/241639"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/perspective-boundary-3",
+      "coverage": 0,
+      "point": [
+        "51200/120857",
+        "-25600/120857",
+        "12800/120857"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/perspective-boundary-4",
+      "coverage": 0,
+      "point": [
+        "51200/120807",
+        "-25600/120807",
+        "12800/120807"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/perspective-boundary-5",
+      "coverage": 0,
+      "point": [
+        "838860800/1980121113",
+        "-419430400/1980121113",
+        "209715200/1980121113"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/perspective-boundary-6",
+      "coverage": 0,
+      "point": [
+        "838860800/1979301863",
+        "-419430400/1979301863",
+        "209715200/1979301863"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/perspective-boundary-7",
+      "coverage": 0,
+      "point": [
+        "25600/60441",
+        "-12800/60441",
+        "6400/60441"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/perspective-boundary-8",
+      "coverage": 0,
+      "point": [
+        "25600/60391",
+        "-12800/60391",
+        "6400/60391"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/north-boundary-0",
+      "coverage": 0,
+      "point": [
+        "1/2",
+        "-1/4",
+        "1/8"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/north-boundary-1",
+      "coverage": 0,
+      "point": [
+        "4096/8193",
+        "-2048/8193",
+        "1024/8193"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/north-boundary-2",
+      "coverage": 0,
+      "point": [
+        "4096/8191",
+        "-2048/8191",
+        "1024/8191"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/north-boundary-3",
+      "coverage": 0,
+      "point": [
+        "2048/4097",
+        "-1024/4097",
+        "512/4097"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/north-boundary-4",
+      "coverage": 0,
+      "point": [
+        "2048/4095",
+        "-1024/4095",
+        "512/4095"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/north-boundary-5",
+      "coverage": 0,
+      "point": [
+        "33554432/67125249",
+        "-16777216/67125249",
+        "8388608/67125249"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/north-boundary-6",
+      "coverage": 0,
+      "point": [
+        "33554432/67092479",
+        "-16777216/67092479",
+        "8388608/67092479"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/north-boundary-7",
+      "coverage": 0,
+      "point": [
+        "1024/2049",
+        "-512/2049",
+        "256/2049"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/north-boundary-8",
+      "coverage": 0,
+      "point": [
+        "1024/2047",
+        "-512/2047",
+        "256/2047"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/equator-boundary-0",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "gnomonic/identity/equator-boundary-1",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "gnomonic/identity/equator-boundary-2",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "gnomonic/identity/equator-boundary-3",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "gnomonic/identity/equator-boundary-4",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "gnomonic/identity/equator-boundary-5",
+      "coverage": 0,
+      "point": [
+        "33554432/16385",
+        "-16777216/16385",
+        "8388608/16385"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/equator-boundary-6",
+      "coverage": 0,
+      "point": [
+        "-33554432/16385",
+        "16777216/16385",
+        "-8388608/16385"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/equator-boundary-7",
+      "coverage": 0,
+      "point": [
+        "1024",
+        "-512",
+        "256"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/equator-boundary-8",
+      "coverage": 0,
+      "point": [
+        "-1024",
+        "512",
+        "-256"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/zero",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "gnomonic/identity/signed-range",
+      "coverage": 0,
+      "point": [
+        "33554432",
+        "-33554432",
+        "2"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/subnormal",
+      "coverage": 0,
+      "point": [
+        "1/356811923176489970264571492362373784095686656",
+        "-1/356811923176489970264571492362373784095686656",
+        "1/42535295865117307932921825928971026432"
+      ]
+    },
+    {
+      "id": "gnomonic/identity/overflow",
+      "coverage": 0,
+      "point": [
+        "680564693277057719623408366969033850880",
+        "2",
+        "-2"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-61",
+      "coverage": 0,
+      "point": [
+        "33554432/11742911",
+        "7359536/11742911",
+        "14451985/11742911"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-364",
+      "coverage": 0,
+      "point": [
+        "36712608/10068611",
+        "14592971/20137222",
+        "5622185/20137222"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-1194",
+      "coverage": 0,
+      "point": [
+        "11295412/5464801",
+        "11206040/16394403",
+        "9096887/32788806"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-7030",
+      "coverage": 0,
+      "point": [
+        "8491141/4647574",
+        "1570397/2323787",
+        "10617743/297444736"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-7149",
+      "coverage": 0,
+      "point": [
+        "8471559/4667156",
+        "12074715/18668624",
+        "5622185/74674496"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-7829",
+      "coverage": 0,
+      "point": [
+        "8554510/4750107",
+        "11742911/19000428",
+        "155509/6800518072500224"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-8131",
+      "coverage": 0,
+      "point": [
+        "8388608/5184445",
+        "12816653/20737780",
+        "87335/4453404344582144"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-9642",
+      "coverage": 0,
+      "point": [
+        "74722664/12493653",
+        "5622185/12493653",
+        "16740454/12493653"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-9896",
+      "coverage": 0,
+      "point": [
+        "35291784/9595427",
+        "5622185/19190854",
+        "13788376/9595427"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-9911",
+      "coverage": 0,
+      "point": [
+        "79476416/5622185",
+        "-159651/754596897095680",
+        "9096887/5622185"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-9925",
+      "coverage": 0,
+      "point": [
+        "38664468/5622185",
+        "6949403/22488740",
+        "9096887/11244370"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-12129",
+      "coverage": 0,
+      "point": [
+        "11363768/3982659",
+        "5622185/23895954",
+        "5507047/3982659"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-12516",
+      "coverage": 0,
+      "point": [
+        "34628172/11235959",
+        "1371977/6420548",
+        "15369070/11235959"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-13902",
+      "coverage": 0,
+      "point": [
+        "5607690/2141947",
+        "8136503/51406728",
+        "3046690/2141947"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-14417",
+      "coverage": 0,
+      "point": [
+        "16777216/6945197",
+        "6949403/55561576",
+        "8963343/6945197"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-15263",
+      "coverage": 0,
+      "point": [
+        "16777216/5539651",
+        "5622185/22158604",
+        "9832019/5539651"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-15903",
+      "coverage": 0,
+      "point": [
+        "11295412/4024905",
+        "1124437/9659772",
+        "18668624/12074715"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-16705",
+      "coverage": 0,
+      "point": [
+        "33554432/12816653",
+        "436675/13761776369795072",
+        "20737780/12816653"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-16745",
+      "coverage": 0,
+      "point": [
+        "33554432/13480261",
+        "8589935/107842088",
+        "19000428/13480261"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-18155",
+      "coverage": 0,
+      "point": [
+        "67108864/5622185",
+        "39328076/5622185",
+        "22158604/5622185"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-20370",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "gnomonic/central-inversion/base-21420",
+      "coverage": 0,
+      "point": [
+        "134951392/8136503",
+        "70239408/8136503",
+        "52733948/8136503"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-21443",
+      "coverage": 0,
+      "point": [
+        "67108864/5622185",
+        "35033108/5622185",
+        "5290714/1124437"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-22347",
+      "coverage": 0,
+      "point": [
+        "551197184/15796495",
+        "56736000/3159299",
+        "176707264/15796495"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-25584",
+      "coverage": 0,
+      "point": [
+        "134217728/6949403",
+        "80296680/6949403",
+        "46971644/6949403"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-25645",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "gnomonic/central-inversion/base-26144",
+      "coverage": 0,
+      "point": [
+        "78969464/5622185",
+        "1",
+        "1"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-26930",
+      "coverage": 0,
+      "point": [
+        "160186384/8612995",
+        "4355341/8612995",
+        "2248874/1722599"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-28606",
+      "coverage": 0,
+      "point": [
+        "321186720/3281063",
+        "22488740/3281063",
+        "19207678/3281063"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-29271",
+      "coverage": 0,
+      "point": [
+        "324467776/8589935",
+        "13898806/8589935",
+        "1"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/base-30446",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "gnomonic/central-inversion/perspective-boundary-0",
+      "coverage": 0,
+      "point": [
+        "25/59",
+        "-25/118",
+        "25/236"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/perspective-boundary-1",
+      "coverage": 0,
+      "point": [
+        "102400/241689",
+        "-51200/241689",
+        "25600/241689"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/perspective-boundary-2",
+      "coverage": 0,
+      "point": [
+        "102400/241639",
+        "-51200/241639",
+        "25600/241639"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/perspective-boundary-3",
+      "coverage": 0,
+      "point": [
+        "51200/120857",
+        "-25600/120857",
+        "12800/120857"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/perspective-boundary-4",
+      "coverage": 0,
+      "point": [
+        "51200/120807",
+        "-25600/120807",
+        "12800/120807"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/perspective-boundary-5",
+      "coverage": 0,
+      "point": [
+        "838860800/1980121113",
+        "-419430400/1980121113",
+        "209715200/1980121113"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/perspective-boundary-6",
+      "coverage": 0,
+      "point": [
+        "838860800/1979301863",
+        "-419430400/1979301863",
+        "209715200/1979301863"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/perspective-boundary-7",
+      "coverage": 0,
+      "point": [
+        "25600/60441",
+        "-12800/60441",
+        "6400/60441"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/perspective-boundary-8",
+      "coverage": 0,
+      "point": [
+        "25600/60391",
+        "-12800/60391",
+        "6400/60391"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/north-boundary-0",
+      "coverage": 0,
+      "point": [
+        "1/2",
+        "-1/4",
+        "1/8"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/north-boundary-1",
+      "coverage": 0,
+      "point": [
+        "4096/8193",
+        "-2048/8193",
+        "1024/8193"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/north-boundary-2",
+      "coverage": 0,
+      "point": [
+        "4096/8191",
+        "-2048/8191",
+        "1024/8191"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/north-boundary-3",
+      "coverage": 0,
+      "point": [
+        "2048/4097",
+        "-1024/4097",
+        "512/4097"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/north-boundary-4",
+      "coverage": 0,
+      "point": [
+        "2048/4095",
+        "-1024/4095",
+        "512/4095"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/north-boundary-5",
+      "coverage": 0,
+      "point": [
+        "33554432/67125249",
+        "-16777216/67125249",
+        "8388608/67125249"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/north-boundary-6",
+      "coverage": 0,
+      "point": [
+        "33554432/67092479",
+        "-16777216/67092479",
+        "8388608/67092479"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/north-boundary-7",
+      "coverage": 0,
+      "point": [
+        "1024/2049",
+        "-512/2049",
+        "256/2049"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/north-boundary-8",
+      "coverage": 0,
+      "point": [
+        "1024/2047",
+        "-512/2047",
+        "256/2047"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/equator-boundary-0",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "gnomonic/central-inversion/equator-boundary-1",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "gnomonic/central-inversion/equator-boundary-2",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "gnomonic/central-inversion/equator-boundary-3",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "gnomonic/central-inversion/equator-boundary-4",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "gnomonic/central-inversion/equator-boundary-5",
+      "coverage": 0,
+      "point": [
+        "33554432/16385",
+        "-16777216/16385",
+        "8388608/16385"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/equator-boundary-6",
+      "coverage": 0,
+      "point": [
+        "-33554432/16385",
+        "16777216/16385",
+        "-8388608/16385"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/equator-boundary-7",
+      "coverage": 0,
+      "point": [
+        "1024",
+        "-512",
+        "256"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/equator-boundary-8",
+      "coverage": 0,
+      "point": [
+        "-1024",
+        "512",
+        "-256"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/zero",
+      "coverage": 1,
+      "point": null
+    },
+    {
+      "id": "gnomonic/central-inversion/signed-range",
+      "coverage": 0,
+      "point": [
+        "33554432",
+        "-33554432",
+        "2"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/subnormal",
+      "coverage": 0,
+      "point": [
+        "1/356811923176489970264571492362373784095686656",
+        "-1/356811923176489970264571492362373784095686656",
+        "1/42535295865117307932921825928971026432"
+      ]
+    },
+    {
+      "id": "gnomonic/central-inversion/overflow",
+      "coverage": 0,
+      "point": [
+        "680564693277057719623408366969033850880",
+        "2",
+        "-2"
+      ]
+    }
+  ]
+}

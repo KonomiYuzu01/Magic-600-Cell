@@ -1,0 +1,47 @@
+{
+  "decider": "owner",
+  "decision": "open",
+  "documents": [
+    {
+      "bytes": 9519,
+      "document": "dotnet distribution LICENSE.txt",
+      "sha256": "7f6839a61ce892b79c6549e2dc5a81fdbd240a0b260f8881216b45b7fda8b45d",
+      "status": "inspected locally"
+    },
+    {
+      "bytes": 96177,
+      "document": "dotnet distribution ThirdPartyNotices.txt",
+      "sha256": "1271701f435f7fe4aa81dc7e273ca80b6391b73580ee20b35a956052c95de4cf",
+      "status": "inspected locally"
+    },
+    {
+      "bytes": 1512520,
+      "document": "Rust standard library COPYRIGHT-library.html",
+      "sha256": "68129500b616d5838629e68f55ff3aed5e096dacf60ce9eb41bbe599a563afa6",
+      "status": "inspected locally"
+    },
+    {
+      "bytes": 15380909,
+      "document": "Rust compiler COPYRIGHT.html",
+      "sha256": "5b0c93fc4e6d4b072eaa521b1762d1e746f4c368f65e81a0e5308e2772dac85e",
+      "status": "inspected locally"
+    }
+  ],
+  "format": "lx5-licence-evidence/1",
+  "node_core_notice": "no standalone core licence in inspected Node installation root",
+  "tools": {
+    "dotnet_runtime": "10.0.12",
+    "dotnet_sdk": "10.0.401",
+    "node": "v24.21.0",
+    "platform": "win32",
+    "python": "3.15.1",
+    "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)"
+  },
+  "unfetched_crates": [
+    "num-bigint",
+    "dashu",
+    "ibig",
+    "malachite",
+    "rug"
+  ]
+}
