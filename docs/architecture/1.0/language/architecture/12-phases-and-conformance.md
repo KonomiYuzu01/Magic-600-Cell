@@ -90,7 +90,7 @@ Sources: [the partition](../ecosystem-partition.md), sections 12 to 17 and INV-1
 | ADR 11 | Display plans and user charts | [`ADR-L11`](../adr/ADR-L11-display-plans.md) exists as a proposal |
 | ADR 12 | Implementation route and runtime placement | [`ADR-L12`](../adr/ADR-L12-route.md) exists as a proposal; follows evidence |
 | Evidence import table | Default 20's versioned table, enumeration rule and recorded inferences | [`evidence-import/`](../evidence-import/README.md) exists with `corpus-labels.json`, `corpus-labels.md`, `extract_labels.py`, `rules.txt`, `refs.txt`, `ext.txt`, `rule.txt`; draft, with V14, P13, K1 and H1 ruled on by EVD.52 |
-| Glossary | An entry for every language term before use; default 8 | Existing [`terms.json`](../../../../progress/1.0/glossary/terms.json), [`glossary.md`](../../../../progress/1.0/glossary/glossary.md), diagrams and [`build.py`](../../../../progress/1.0/glossary/build.py); EV5.14's additions and changes are proposed, not integrated |
+| Glossary | Proposed entries for every language term in chapter 04 section 6; integrate into `terms.json` at LP1 before any LP2 parser or library text uses a term (default 8) | Existing [`terms.json`](../../../../progress/1.0/glossary/terms.json), [`glossary.md`](../../../../progress/1.0/glossary/glossary.md), diagrams and [`build.py`](../../../../progress/1.0/glossary/build.py); chapter 04 section 6 holds EV5.14's proposed additions and changes, not yet integrated |
 | Owner answers | Answers or explicitly accepted decision procedures as specified in section 9 | LQ1 to LQ21 are all open |
 
 - **PHS.10 [D]** LP0's acceptance decomposes partition LP0 as follows. The inventory check supports the review; it
@@ -125,7 +125,8 @@ Sources: [the partition](../ecosystem-partition.md), sections 12 to 17 and INV-1
 | Identity and accounting specification | Canonical IDs and level-qualified digests, normalised bytes, metering and logical resource units; KN1.8, KN7.7 to KN7.10, LG4.8, chapter 09 |
 | Language-neutral data core | Chapter 05's formats and complete path B coverage under LQ10; provenance and evidence-envelope alternatives kept explicit |
 | Final H-08 input | Runtime needs reconciled with EN4's command rows, program/view lanes and undo during jobs; KN5 and KN7.2 |
-| Renderer handoff | Display-plan primitives and their support/evidence requirements, including the presented-preview report; RPI.57 and ONE.41, conditional on LQ20 |
+| Renderer handoff | Display-plan primitives and their support/evidence requirements under RPI.57, conditional on LQ20; ONE.41's presented-preview report goes to the renderer line under either option (RPI.66) |
+| Glossary integration | Chapter 04 section 6's reviewed entries integrated into `terms.json` with EV5.15's build evidence before any LP2 parser or library text uses a term |
 
 - **PHS.14 [P LQ18]** If spikes are allowed, each starts with the experiment protocol's card, including the question,
   decision, method, kill criteria and evidence class. Chapter 11 owns the routes, spike protocols and decision rules;
@@ -227,7 +228,7 @@ Sources: [the partition](../ecosystem-partition.md), sections 12 to 17 and INV-1
 | Editor services | Recovery, completion, diagnostics, navigation and version separation of EV1 |
 | Debugger and replay | EV2's read-only stepping, replay, checker traces and budget profile |
 | Linkage and authoring actions | EV3 source linkage and declared editable data; EV4 bindings, macros and semantic recording |
-| First edition of docs and learning | EV5 reference generation, principle explanations, learning path and integrated glossary additions, under the mathematician's oversight |
+| First edition of docs and learning | EV5 reference generation, principle explanations, learning path and the glossary entries integrated at LP1, under the mathematician's oversight |
 
 - **PHS.27 [O]** The owner must set the non-author protocol and success criteria before LP4's human acceptance
   (EV5.12). The LX-4/editor bars from DT-L1 Round 3 are unmeasured proposals whose adoption belongs to the owner and
@@ -367,7 +368,10 @@ completed applicable language products + design-system ADR + migration/renderer/
   for LQ8. LX-9's reference-platform part is independent; its engine-candidate part follows LX-6. LX-1, LX-2 and LX-4
   follow LQ8's host choice. Then the applicable LX-1 to LX-5 evidence feeds LQ9 and LQ21 together, before the deferred
   ADR acceptances and LP1 gates. LX-8 feeds LQ13 before the parser. This is partition section 12's order; chapter 11
-  defines the spike decision rules, including no speed threshold where Round 3 supplies none.
+  defines the spike decision rules, including no speed threshold where Round 3 supplies none. LX-2's conditions 3 and 4
+  (RTE.42) and LX-4's protocol (RTE.51 step 8, RTE.53) require a renderer candidate that presents frames, with the
+  renderer gate and E2 measured in the same run. Under the recommended order LQ9 waits for a renderer candidate;
+  a changed candidate requires matching reruns under RTE.37.
 - **PHS.43 [D]** If LQ18 forbids spikes before the architecture freeze, LP1 delivers interfaces that hold under
   every route and both flow-control forms. Spike-dependent route/flow commitments remain open at those rulings.
   After the gates, the allowed spikes run in PHS.42's dependency order, and LQ8/LQ9/LQ21 and their remaining ADR
@@ -440,11 +444,11 @@ completed applicable language products + design-system ADR + migration/renderer/
 | EN1, conditional input-map amendment | LP1, or the deferred pre-LP2 evidence interval: if LX-9 finds different chosen rotations, EN1's Astra check and the owner's state-contract amendment before relying on the changed input map | Chapter 11's LX-9 counterexample and the exact request/drag representation described by KN3.4; sampled agreement is no proof of universal agreement | Dependent phase waits; tell the owner; nothing cut or contract amended implicitly |
 | EN3 | LP1: final jumbling command rows; view-model fields including relation data; jumbling interface specification. `docs/progress/1.0/jumbling-interfaces.md` does not exist on this branch. LP2: exact observation rows needed by the API | KN2.4's batch fields and level/identity contracts; EV3.8's relation data; ONE.8/ONE.25's dependency/comparison needs, without prescribing interface appearance | Dependent LP1/LP2 waits; tell the owner; nothing cut |
 | EN4 | LP1: final H-08; six-layer interfaces; migration-format packet; KN7.2's program and view lanes; undo while a job runs; KN5.8's availability protocol. LP3: frozen command table | Kernel query/overlay rows; revision/dependency fields; preview/token and receipt rules; provenance field; byte, limit and migration requirements from PS2.13 | Dependent LP1/LP3 waits; tell the owner; nothing cut |
-| Renderer line | LP1: feature support/constraints and LQ20 handoff disposition; actual device for LX-7 correctness and owner-machine timings if allowed. LP3: selected/frozen renderer for the on-screen half. LP6: matching product gate evidence under renderer-candidates | RPI.57/RPI.58 primitives, source maps and atomic publication; ONE.41 presented-preview report; selected LQ7 chart obligations and LX-7 report before its feature freeze under LQ20 | Dependent LP1/on-screen LP3/LP6 waits; tell the owner; nothing cut |
+| Renderer line | LP1: feature support/constraints and LQ20 handoff disposition; actual device for LX-7 correctness and owner-machine timings if allowed; a renderer candidate presenting frames for LX-2 (RTE.42 conditions 3 and 4) and LX-4 (RTE.51 step 8, RTE.53), with the renderer gate and E2 in the same run and reruns under RTE.37 when the candidate changes. Under the recommended order LQ9 waits for that candidate. LP3: selected/frozen renderer for the on-screen half. LP6: matching product gate evidence under renderer-candidates | RPI.57/RPI.58 primitives, source maps and atomic publication under LQ20; ONE.41 presented-preview report under either LQ20 option (RPI.66); selected LQ7 chart obligations and LX-7 report before its feature freeze under LQ20 | Dependent LP1/on-screen LP3/LP6 waits; tell the owner; nothing cut |
 | Mathematical research | LP0/LP1: recorded definitions, proofs, certificates, input identities and open obligations; the mathematician's oversight of EV5. LP5: repository stage 14 to 19 results and checkable archive inputs. Nothing new is searched | Expressible exact types, scopes, conditional claims, independent checker/import contracts, derived states and run records; reports of missing producer dependencies | Dependent phase waits; tell the owner; nothing cut or research restarted |
 | Session and migration | LP1: path B targets/contracts and data core. LP2: session store below the language, never opened by its runtime. LP6: transactional importer, locked-copy/WAL handling, source preservation, replay/publication/recovery | KN4 query/command boundary; literal words and identity/digest conventions; PS1 data/provenance/envelope fields; complete checkpoint, key and preference conversion coverage | Dependent LP1/LP2/LP6 waits; tell the owner; nothing cut |
 | Design line | LQ19 determines when its accepted design-system ADR can be available; it conditions LP2 under the first alternative and the deferred LP4 part/LP6 under the recommendation. Closed until language development is complete under the owner's reading | Completed language behaviour, command/data contracts, principle and learning requirements; no DT-J2 to DT-J4 work is opened here | Dependent phase waits; tell the owner; nothing cut and design not resumed by default |
-| Glossary | LP0: every language term under default 8; mathematician review of EV5.14. LP1: one meaning per puzzle/alphabet before the data core freezes. LP4: integrated additions and build evidence under EV5.15 | Owning definitions, learning prerequisites, reviewed term changes and locally reproducible diagram inputs; existing `glossary/build.py` tooling | Dependent LP0/LP1/LP4 waits; tell the owner; nothing cut |
+| Glossary | LP0: proposed entries in chapter 04 section 6 under default 8; mathematician review of EV5.14. LP1: one meaning per puzzle/alphabet before the data core freezes; integration into `terms.json` with EV5.15 build evidence before any LP2 parser or library text uses a term. LP4: docs and learning use the integrated glossary | Owning definitions, learning prerequisites, reviewed term changes and locally reproducible diagram inputs; existing `glossary/build.py` tooling | Dependent LP0/LP1/LP4 waits; tell the owner; nothing cut |
 | 600-cell-Full and J1 oracles | LP1 allowed LX-6: O01 to O07 reference observations. LP2: candidate adapter through `tools/oracle/`, public J1 API and `research/jumbling/differential/` comparisons, W-J fixtures, journals and H6030; LP3/LP6: matching step/replay comparisons | API-bound candidate observations, full collateral, refusal stability, identity/menu-order binding and new language cases; no changed reference to fit the candidate | Dependent LP1/LP2/LP3/LP6 waits; tell the owner; nothing cut |
 
 - **PHS.54 [D]** The existing oracle case names are O01 every generator/inverse, O02 chronological chain, O03 stars,
@@ -734,7 +738,7 @@ Every owner question is still open. The matrix in PHS.38 describes required futu
 
 | Open dependency or mechanism | Clauses and what settles it |
 | --- | --- |
-| Content review | PHS.9/PHS.10: integrator supplies the glossary integration; Astra reviews the assembled current candidate |
+| Content review | PHS.9/PHS.10: integrator supplies proposed glossary entries in chapter 04 section 6 at LP0 and integrates them into `terms.json` at LP1 before any LP2 parser or library text uses a term; Astra reviews the assembled current candidate |
 | Status of note N1 | PHS.12/PHS.19/PHS.32/PHS.48: N1 stands at (theorem, producer) until a model review reads it, and its transfer step is the reviewed stage 19 lemma; no person has reviewed either |
 | Import-table dispatch | PHS.9/PHS.31/PHS.49: EVD.52 rules on V14, P13, K1 and H1 with their limits. Records with no format key stay wholly recorded until a discriminator table exists (EVD.53, PS3.12) |
 | EN3/EN4 and H-08 | PHS.16/PHS.20/PHS.53/PHS.55/PHS.69: missing jumbling interfaces, final rows/fields, undo, lanes, availability, dependency freshness, layer contracts and migration packet |
@@ -746,5 +750,5 @@ Every owner question is still open. The matrix in PHS.38 describes required futu
 | Session and migration product evidence | PHS.35/PHS.36/PHS.49/PHS.53/PHS.70: amended path B contracts and matching product importer/native recovery checks, without transferring historical probe passes |
 | Design-system ADR | PHS.28/PHS.36/PHS.44 to PHS.47: closed design line and owner LQ19 decision; no DT-J2 to DT-J4 work opened |
 | Research availability and scope | PHS.31 to PHS.33/PHS.59: archive inputs and independent checks; missing required dependencies wait; research remains stopped and global coverage remains open |
-| Glossary integration and production evidence | PHS.9/PHS.26/PHS.53: reviewed additions, one term per concept and puzzle/alphabet cost units, existing tooling and EV5.15 diagram evidence |
+| Glossary integration and production evidence | PHS.9/PHS.26/PHS.53: chapter 04 section 6's proposed entries integrated into `terms.json` at LP1 before any LP2 parser or library text uses a term, with reviewed additions, one term per concept and puzzle/alphabet cost units, existing tooling and EV5.15 diagram evidence |
 | Test implementation | PHS.61 to PHS.67: future implementation supplies every CT test and matching evidence |

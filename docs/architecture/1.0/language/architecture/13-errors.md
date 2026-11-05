@@ -472,7 +472,7 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
 
 | Code | Form | Meaning | Retry | Rule source | Used by |
 | --- | --- | --- | --- | --- | --- |
-| `EVD:evidence.premise_unmet` | refusal | Cited premise is not held for the required statement and scope. | | Partition 8.1; Round 3 | 06 EVD.17, EVD.58 |
+| `EVD:evidence.premise_unmet` | refusal | A discharge, or an operation that needs the premise established, finds it not held for the required statement and scope. An unresolved premise stored or evaluated is no error (EVD.26). | | Partition 8.1; Round 3 | 06 EVD.17, EVD.58 |
 | `EVD:evidence.scope_mismatch` | refusal | Claim is offered outside its immutable scope. | | Partition 8.1; Round 3 | 06 EVD.18, EVD.58 |
 | `EVD:evidence.inconsistent_fields` | refusal | Stored evidence fields admit no display-word result under the selected model. | | Partition section 13; Round 3 | 06 EVD.40, EVD.58 |
 | `EVD:evidence.negative_without_completion` | refusal | Negative conclusion offered from a job that did not complete its declared coverage. | | KN7.4; Round 3 | 06 EVD.40, EVD.43, EVD.58 |

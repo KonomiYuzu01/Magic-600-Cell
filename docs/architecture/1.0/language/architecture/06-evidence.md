@@ -163,7 +163,7 @@ conformance test exists yet.
 ## 3. The evidence graph
 
 - **EVD.15 [D]** Evidence is an AND/OR graph over keys. A *leaf* is one piece of support with its grade. An AND node
-  needs all its children, which are the parts of one argument. An OR node has one child per independent argument. Each key
+  needs all its children, which are the parts of one argument, and it has at least one (I8). An OR node has one child per independent argument. Each key
   has one OR node. A *premise* is a node that holds when it is assumed or when a claim with the identical key holds.
 - **EVD.16 [D]** Arguments are immutable. A new record enters as a new node or a new OR child, and it changes nothing
   that was stored.
@@ -205,7 +205,7 @@ conformance test exists yet.
   are ordered by less distrust and more assumptions. val is the least solution of:
   - val(leaf q) = {ω : q ∉ D};
   - val(premise p) = {ω : p ∈ T} ∪ val(C), with C the claim with the identical key, if one exists;
-  - AND is ∩, and the empty AND is every scenario;
+  - AND is ∩ over its children, of which there is at least one (EVD.15, I8);
   - OR is ∪, and the empty OR is ∅.
 
   The system is monotone on a finite lattice, so the least solution exists (Knaster-Tarski) and is reached by iteration from
@@ -270,6 +270,11 @@ Non-domination forces a = a′, so Sat(a) = Sat(b), and antichains then give a =
 
   stands₀ does not read Ref, so there is no circularity through negation. Both are one pass of unit propagation, and stands₀
   implies stands₁. The exact alternative form can be exponential and is computed lazily, for display.
+- **EVD.60 [D]** Nothing stands without support. In every alternative (L, Π) of every val, L ∪ Π is not empty: a leaf
+  gives ({q}, ∅), a premise gives (∅, {p}) or what its claim has, and AND and OR keep this, because an AND has a child.
+  So (P, ∅) lies in no val, and under the empty threshold stands₀ holds of nothing. Whatever stands₀ rests on at least one
+  leaf whose grade passes the threshold, since T is empty at ω₀ and every well-founded derivation ends in leaves. An AND
+  with no children would hold in every scenario and would prove any statement above it, so I8 refuses it.
 - **EVD.31 [D]** A failed check removes its leaf from val and refutes nothing. The claim reads as it would without that
   support.
 
@@ -280,7 +285,7 @@ Non-domination forces a = a′, so Sat(a) = Sat(b), and antichains then give a =
 
 | Row | Condition | Word | Claim field |
 | --- | --- | --- | --- |
-| 0 | Any inconsistency I1 to I7 in Reach(S) | typed inconsistency | none |
+| 0 | Any inconsistency I1 to I8 in Reach(S) | typed inconsistency | none |
 | 1 | stands₀(neg S) | refuted | refuted |
 | 2 | stands₀(S), and the covered set is one finite instance or a declared search set | finite instance | proved |
 | 3 | stands₀(S), and the covered set is an admitted domain or every reachable state | proved, with a mandatory scope phrase ("proved on D[k], for reachable inputs") | proved |
@@ -324,7 +329,7 @@ Non-domination forces a = a′, so Sat(a) = Sat(b), and antichains then give a =
 
 ### Inconsistencies
 
-- **EVD.40 [D]** Row 0 reads the following. I1 to I4, I6 and I7 read `EVD:evidence.inconsistent_fields`, and I5 reads
+- **EVD.40 [D]** Row 0 reads the following. I1 to I4 and I6 to I8 read `EVD:evidence.inconsistent_fields`, and I5 reads
   `EVD:evidence.negative_without_completion`.
 
 | Case | Inconsistency |
@@ -336,6 +341,7 @@ Non-domination forces a = a′, so Sat(a) = Sat(b), and antichains then give a =
 | I5 | A negative or exhaustive leaf whose search record says complete = no, or says complete = yes with job outcome cancelled, cut off, error or not run |
 | I6 | A refuting leaf on a universal statement with no scope-membership fact |
 | I7 | (a) A leaf of basis certificate, exhaustive computation or exact computation in an argument of a universal statement, or of a mixed statement with outer quantifier universal, whose `covered` is not identical to the statement's `covers` and `input`. In a reused leaf (EVD.4) the source leaf is compared after the transport lemma's checked relation. (b) A leaf of basis exhaustive computation or exact computation whose `covered` is neither one_instance nor search_set. (c) A statement of form finite whose `covers` is not one_instance. |
+| I8 | An AND node with no children (EVD.15) |
 
   A leaf is in an argument of S when it is the direct child of S's OR node, or a child of an AND node under it. A child
   reached through a premise or another key belongs to that key's statement.
@@ -533,9 +539,9 @@ here", and S₄ is neg E₃.
 
 | Code | Raised when |
 | --- | --- |
-| `EVD:evidence.premise_unmet` | A premise is cited with no claim of the identical key (EVD.17) |
+| `EVD:evidence.premise_unmet` | A discharge is requested, or an operation needs the premise established, and no claim of the identical key holds it (EVD.17). A premise left unresolved raises nothing: it stays a free atom and the statement reads conditional (EVD.26) |
 | `EVD:evidence.scope_mismatch` | A claim is offered outside its immutable scope (EVD.18) |
-| `EVD:evidence.inconsistent_fields` | Row 0 reads I1 to I4, I6 or I7 (EVD.40) |
+| `EVD:evidence.inconsistent_fields` | Row 0 reads I1 to I4 or I6 to I8 (EVD.40) |
 | `EVD:evidence.negative_without_completion` | Row 0 reads I5, or a negative is offered from a job that did not complete its declared coverage (EVD.40, EVD.43) |
 
   Other chapters' evidence rows stay theirs: `KN6:evidence.*`, `LB5:evidence.reduction_scope_mismatch`,
@@ -556,8 +562,8 @@ No conformance test exists yet.
 | CT-EVD-05 | A sample leaf never moves a statement from rows 5 to 7 into rows 1 to 4, for 𝒰 ⊆ 𝒰₀, and with the same inert leaves neither does a job outcome. Two records that differ only in job outcome, on an exhaustive leaf with matching `covered` and complete = yes, read row 7 under not stated and row 2 under completed; with complete = no both read row 0 (EVD.41, Theorem D (b), (b1)) | source |
 | CT-EVD-06 | A record that adds no edge into Reach(S) changes no word (Theorem D (a)) | source |
 | CT-EVD-07 | A pure child cycle reads open with a diagnostic, and a circular discharge stays conditional (EVD.26) | source |
-| CT-EVD-08 | Discharge by an identical key succeeds; an equivalent statement under another ID is refused until a bridge lemma exists, and a proof for D[7] does not discharge D[9] | source |
-| CT-EVD-09 | Each of I1 to I7 raises its code, and "not stated" does not (EVD.40, EVD.41) | source |
+| CT-EVD-08 | Discharge by an identical key succeeds; an equivalent statement under another ID is refused until a bridge lemma exists, and a proof for D[7] does not discharge D[9]. A statement resting on a theorem leaf and an unresolved premise stores and evaluates as conditional with no error, and requesting that premise's discharge with no matching claim raises `EVD:evidence.premise_unmet` (EVD.26, EVD.58) | source |
+| CT-EVD-09 | Each of I1 to I8 raises its code, and "not stated" does not. A universal statement whose OR holds one AND with no children reads row 0 under every threshold, never proved, and a supported theorem keeps its word (EVD.40, EVD.41, EVD.60) | source |
 | CT-EVD-10 | A scope digest coarser than the subject level is refused with the solved and centre-0-turned pair (EVD.11) | synthetic |
 | CT-EVD-11 | A universal is refuted by one checked counterexample with membership, and not without it; an existence statement is not refuted by a cut-off search; a mixed statement with outer quantifier universal needs a witness and a complete negative, and one with outer quantifier existential a proof or a complete certificate (EVD.42) | source |
 | CT-EVD-12 | E1, E2 and E3 give the words of section 9 from their records | source |

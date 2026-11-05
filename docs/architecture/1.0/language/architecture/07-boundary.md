@@ -162,7 +162,9 @@ These are the facts every option faces. They come from DT-L1 M5 and R2-E3 as R3-
 - **BND.23 [D]** A word the solver types or picks has `producer: manual` and `author: own`. A word entered by a program
   has that program's block. A 0.4 macro enters with `author: own`, `producer: import(...)`, `depends: not_recorded` and
   its captured source digest in `legacy`, and it gains no exception by that (PS1.33). The field reads how the word
-  entered, not who thought of it (BND.20).
+  entered, not who thought of it (BND.20). The required `profile` value for words with no run remains open under
+  PS1.34 and must be fixed before any conditional migration-format freeze. A pick from an `imported` tool's list
+  raises the open author-class question in BND.55 and BND.74, questions 2 and 9.
 - **BND.24 [D]** A word built from parts cites the parts' blocks and carries the join of what they record. Copying,
   saving, exporting and re-importing keep the block (PS1.32). A value chosen through a state-derived branch does not lose
   its label because its letters came from an own macro.
@@ -424,7 +426,10 @@ R3-M3 showed that DT-L1's "one bit per run" is false. This section gives what re
   that a pick declassifies the solver's *choice* and not the *option set*. The picked word keeps the join of the list's
   labels, unless the list is a fixed entry (setup search, repair list) or a fixed object set such as any cap on the map.
   The alternative, a pick clearing everything, needs a separate way to close the one-item case. This changes nothing in
-  the interim, because no solver tool previews. It is a rule the owner may change.
+  the interim, because no solver tool previews. It is a rule the owner may change. The author-class case also stays
+  open: BND.23 gives a picked word `author: own`, while `PickRecord.list` records the list's producer only by digest.
+  A pick from an `imported` tool's list therefore reads as own. How that class relates to the list's producer is for
+  the joint setting's questions 2 and 9 (BND.74), not settled by retaining the list's flow labels.
 
 ## 8. Profiles and capabilities
 
@@ -569,7 +574,8 @@ the order implies nothing.
 - **BND.74 [O]** The questions for the joint setting, from the partition, then those round 3 added:
   1. Does "assists solving" exclude a tool whose single preview completes the puzzle?
   2. Is a tool written by another person treated as built-in, as own, or as a class of its own? When, if ever, does an
-     edited fork or import become own?
+     edited fork or import become own? How should a pick from an `imported` tool's list be classified when BND.23
+     gives the word `author: own` and `PickRecord.list` records the list's producer only by digest?
   3. Is the flow rule switched on, and which author classes does it admit?
   4. Which display sinks does flow control check: previews only, or also what a tool shows for the solver to retype?
      This also fills BND.59.
@@ -577,7 +583,8 @@ the order implies nothing.
   6. Are labels shown during a solve, or only in records?
   7. Is the research profile part of the shipped product?
   8. Which fix of BND.51 does the policy use, if the form is flow labels?
-  9. Does the pick rule of BND.55 stand?
+  9. Does the pick rule of BND.55 stand? How does retaining the list's flow labels interact with BND.23's `author: own`
+     for a pick from an `imported` tool's list, whose producer is recorded only by digest in `PickRecord.list`?
   10. Does the practice copy count as a solving session (BND.15)?
 
 ## 13. Limits

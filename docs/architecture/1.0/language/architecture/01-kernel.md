@@ -359,9 +359,10 @@ query receipt(command: CommandId) -> Receipt
   Other branches can be viewed and compared, and programs cannot change them. Under LQ4's alternative, solving sessions
   have no branches and research uses separate sessions; the query rows above stay the same.
 - **KN4.7 [P LQ10]** One word commit is one journal row that cites the literal letters by digest, and the letters are
-  stored as `ia16` chunks. As J1 rows a word of 2,352,984 letters would take about 649 million characters at 276 per
-  row, against 4,705,968 raw bytes (arithmetic, DT-L1 R3-E4). The word encoding belongs to the data core, so the owner
-  decides it under LQ10.
+  stored as `ia16` chunks for menu-letter words only. These chunks decode in the pinned menu order, never as retained
+  generator IDs (PS3.13); 600-cell-Full words use the recipe form (PS1.22). As J1 rows a word of 2,352,984 letters would
+  take about 649 million characters at 276 per row, against 4,705,968 raw bytes (arithmetic, DT-L1 R3-E4). The word
+  encoding belongs to the data core, so the owner decides it under LQ10.
 - **KN4.8 [D]** A stored delta between two jumbling revisions carries the pose-ID remap, or the revision carries its
   full pose-ID array. Moved pairs alone do not rebuild the next revision, because `_compact` reorders the pose table
   after a commit and remaps every pose ID, so unmoved pieces can change ID (`research/jumbling/sim/state.py:385-397`,

@@ -225,6 +225,9 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 - **RTE.29 [P LQ18]** Under LQ18's recommendation, the permitted spikes are experiment code under `work/experiments/`
   and never product code. They may start in LP0 and supply decisions inside LP1 before its freeze gates. This is the
   acyclic order of partition sections 12 and 14; a listed independent start needs its own frozen experiment inputs.
+  LX-2 and LX-4 need a renderer candidate that presents frames for the renderer gate and E2 in the same run. Under
+  the recommended order LQ9 therefore waits for a renderer candidate. If that candidate changes, the affected runs
+  must be repeated for it under RTE.37; earlier results cannot be relabelled.
 
 | Work or decision | Waits for | Feeds or constrains |
 | --- | --- | --- |
@@ -237,8 +240,8 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 | LX-9 engine-candidate comparison | LX-6 candidate | Same contract question; no assumed outcome |
 | LQ8 | LX-5 and LX-6 under its recommendation | Host for LX-1, LX-2 and LX-4 |
 | LX-1 | LQ8 and frozen experiment versions of the three LP3 tools | LQ9, LQ21 and LX-2's call mix |
-| LX-2 | LQ8, its placements and LX-1's call mix | LQ9; uses LX-4's echo bar without waiting for an LX-4 pass |
-| LX-4 | LQ8 and its generated module/edit fixtures | LQ9 and the later EV1 acceptance |
+| LX-2 | LQ8, its placements, LX-1's call mix and a renderer candidate presenting frames for RTE.42 conditions 3 and 4 | LQ9; uses LX-4's echo bar without waiting for an LX-4 pass |
+| LX-4 | LQ8, its generated module/edit fixtures and a renderer candidate presenting frames for RTE.51 step 8 and RTE.53 | LQ9 and the later EV1 acceptance |
 | LQ9 and LQ21 together | LX-1 to LX-5 under the recommendations | Form of flow control in ADR 6, ADR 7 and ADR 12; LP1's route interfaces |
 | LP1 freeze gates and sign-off | Their full packets, including route decisions and LQ10's data-core prerequisites | Chapter 12's conditions before LP2 |
 | LP2 parser and checker/IR | Applicable freeze exit, LQ13 for parser and LQ21 for checker/IR | LP3's implemented closed loop |
@@ -307,6 +310,9 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
   one by relabelling the report. The card lists excluded timing, host and path fields where canonical payloads are
   compared. Fresh isolated fixture data is used; experiment code remains under `work/experiments/` and is never product
   code. This is a requirement on a permitted future run, not a request to create those files in this stage.
+- **RTE.70 [B]** Each card names the tools and dependencies it uses. Already installed tools are used at pinned
+  versions and recorded with the run. RTE.1 grants no installation; adding a third-party source outside
+  `tools/toolchain.lock.json` needs the owner's approval first (`AGENTS.md`, "Ask the owner").
 
 ## 13. LX-1: interpreter cost
 
@@ -318,6 +324,7 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 | Decision it feeds | LQ9 route and placement; LQ21 label cost; LX-2's kernel-call mix |
 | Hypothesis | None established; the partition expects bulk work in kernel batches, not per-sticker interpreter calls |
 | Method | Freeze experiment versions of the Full, jumbling and representations tools and one input set by digest; run labels off, static only and with run-time labels; name the executed form and report the counters below |
+| Effort report | Work to build each slice, in person or agent hours, with what was reused (RTE.9); a lead that sets no estimate |
 | Time box | Owner sets it before the run |
 | Kill criteria | Stop and retain a candidate run whose output, identity, accounting or source binding fails its frozen checks; reaching the time box leaves the comparison incomplete; a slow observation alone does not reject a route |
 | Evidence class | source for work counts and headless cost leads; timing outside the owner-machine protocol is only a lead |
@@ -718,7 +725,7 @@ Open mechanisms and dependencies:
   the corresponding runs. Chapter 04's EV1.10/EV2.12 coordinate and stepping choices remain its dependencies.
 - **EN3 and EN4, RTE.2, RTE.21, RTE.29.** Chapter 01's final batch/query rows, program/view lanes, availability,
   undo during jobs and provenance-bearing proposals are still handoffs, not delivered runtime interfaces.
-- **Renderer precision and measurement, RTE.36, RTE.51, RTE.59 to RTE.61.** RPI.36's metric and singular exclusions,
+- **Renderer precision and measurement, RTE.36, RTE.42, RTE.51, RTE.59 to RTE.61.** RPI.36's metric and singular exclusions,
   selected candidate/device, frozen W3 inputs, owner-pinned PresentMon and recorded conditions precede judgement.
   Charter E3's 3 s remains proposed. No installation or renderer selection is authorized here.
 - **Source wording, RTE.34 and RTE.67.** The pose payload, old long-word example, wiki timing venue, GPU/headless

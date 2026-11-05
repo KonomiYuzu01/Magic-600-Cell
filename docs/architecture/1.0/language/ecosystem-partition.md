@@ -574,15 +574,19 @@ owner and the integrator set the exact boundary together. Until then, built-in t
 | BS3 Understanding | As BS2. In addition, the capability to prepare solving previews opens per principle, after the solver passes the competence check on that principle's record (INV-12) | Author class as in BS1, base tier and competence checks | Closest to "while understanding its principle"; ties into the learning path | Gating conflicts with soft disclosure unless the checks only label; checks can be gamed; writing the checks is substantial work |
 | BS4 Named targets | A solver's own tool may prepare previews only for a target the solver names, which extends the 2 October setup-search allowance to own tools; flow control (BM2) checks that the target came from the solver. Anything else runs in the research profile. | Author class as in BS1; naming the target is the solver's own act | Smallest step from 2 October; easy to explain; enforceable with either form: flow labels check that the target came from the solver, and under capability separation the tool reads no state and reaches it only through the shipped setup search for the named target | Restricts assistance more than the principle requires; "named target" needs a definition per tool kind |
 
-Questions for the joint setting of the boundary:
+Questions for the joint setting of the boundary (**[O]**, LQ2):
 
 - Does "assists solving" exclude a tool whose single preview completes the puzzle?
 - Is a tool written by another person treated as built-in, as own, or as a class of its own?
+  How should a pick from an `imported` tool's list be classified when BND.23 gives the word `author: own` and
+  `PickRecord.list` records the list's producer only by digest (chapter 07, BND.74 question 2)?
 - Is the flow rule switched on, and which author classes does it admit?
 - Which display sinks does flow control check: previews only, or also what a tool shows for the solver to retype?
 - Do shipped tables and theorem-backed static facts count as static facts?
 - Are labels shown during a solve, or only in records?
 - Is the research profile part of the shipped product?
+- Does the pick rule stand (chapter 07, BND.55 and BND.74 question 9)? How does retaining the list's flow labels
+  interact with `author: own` on a pick from an `imported` tool's list, whose producer is recorded only by digest?
 
 **Interim reading until the joint setting.** This is the integrator's reading; the owner may change it.
 
@@ -836,7 +840,8 @@ The integrator takes these defaults unless the owner overrules them.
    claim.
 7. Picking returns display instances that map to canonical IDs. Pixels never identify objects.
 8. Library and documentation terms come from the glossary, checked by script (charter bar M1). Every language term gets
-   a glossary entry first.
+   a glossary entry first. The proposed entries live in chapter 04 section 6; integration into `terms.json` happens at
+   LP1 before any LP2 parser or library text uses a term.
 9. The end predicates stay separate: retained checkpoint, label checkpoint and sticker test. There is no single "solved".
    Goals are predicates typed by their level of the identity tower.
 10. Every word has one normal form (R-11), used only as an equality key: free reduction for 600-cell-Full words, and

@@ -239,8 +239,9 @@ propose ─► building ─► ready ─► presented ─► committed
 - **ONE.41 [D]** **On screen means presented.** The shell binds the token to the preview of the newest frame the renderer
   adapter has reported as presented. It never binds the newest preview it has received. Between those two moments the
   screen still shows the older preview, so binding the newer one would commit a word the solver has not seen. E2's fix binds
-  "the preview it adopted"; this clause closes the gap between adoption and the frame. The report is a new item for the
-  renderer line (LQ20).
+  "the preview it adopted"; this clause closes the gap between adoption and the frame. The report is an open item for the
+  renderer line whichever option LQ20 takes, because LP3 acceptance needs it (RPI.66). The rest of the handoff stays
+  conditional on LQ20.
 - **ONE.42 [O]** The token proves which preview was on screen. It cannot prove that the solver had time to read it. A program
   that replaces a shown preview one frame before the chord leaves that gap open. This is KN5.12's question, for the design
   line. The options are: (a) only a solver action ends a shown preview; (b) a program may replace it, and the commit key
@@ -427,7 +428,7 @@ Chapter 01's section 9 lists the kernel's needs. This chapter adds these:
 | `Base` with declared dependencies on every result | EN3, EN4 | ONE.8 |
 | `compare` as a kernel row | EN3, EN4 | ONE.25 |
 | A row that switches the active line, if LQ4 is accepted | EN4 | ONE.75 |
-| A report of the preview shown by the newest presented frame | Renderer line, through LQ20's handoff | ONE.41 |
+| A report of the preview shown by the newest presented frame | Renderer line, under either LQ20 option | ONE.41, RPI.66 |
 
 ## 15. Errors this chapter adds
 
@@ -487,7 +488,8 @@ CT-KN5-01 is the preview-swap test itself. CT-ONE-04 extends it to the gap betwe
 - **LQ4.** Branches and pinned jobs (section 13, ONE.19).
 - **LQ6 and the design line.** Where a derived state may appear inside Global and Local, and how it looks (ONE.62, ONE.65).
 - **LQ9.** Where the runtime runs. Every clause here must hold in each placement (ONE.69).
-- **LQ20.** The presented-frame report is a new item for the renderer line's handoff (ONE.41).
+- **LQ20.** The presented-frame report remains an open renderer-line item under either option (ONE.41, RPI.66);
+  the rest of the handoff stays conditional.
 - **KN5.12.** Whether a program may replace a shown preview, and the options of ONE.42.
 - **EN3, EN4.** Section 14.
 - **New integrator rules the owner may overrule.** ONE.3 (no commit row for the runtime at all), ONE.4 (a token on every commit

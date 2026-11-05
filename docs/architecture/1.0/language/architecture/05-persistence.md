@@ -446,7 +446,9 @@ operation expand_stored_word(word: StoredWord, bound: Budget) -> LiteralWordStre
   any conditional migration-format freeze. Options are an independently versioned nested block or a block version
   tied to each containing schema with an explicit mapping. Either records the form, preserves old labels and can
   represent the common obligations in PS1.32 without waiting for LQ21's answer. The data-core packet cannot claim
-  this obligation closed using only a prose promise to add labels later.
+  this obligation closed using only a prose promise to add labels later. The required `ProvenanceBlock.profile` value
+  for words with no run, including imported 0.4 macros and hand-typed words (BND.17, BND.23), must also be fixed before
+  that freeze. Its value remains open; BND.21's `unknown` fallback for a missing field does not settle it.
 
 ## 8. PS1: evidence and existing carriers
 
@@ -490,8 +492,8 @@ operation expand_stored_word(word: StoredWord, bound: Budget) -> LiteralWordStre
 | Versions/digests of the functions for the partial order, summaries and display words | Version of the evidence model and functions that gave the saved judgement its meaning |
 | Optional derived caches with all recorded inputs; facts remain available for recomputation | Original label text and underlying references retained so the import cannot become lossy |
 
-- **PS1.37 [D]** An envelope rejects a dangling dependency, contradictory identity/scope or failed content digest
-  instead of silently strengthening its evidence (INV-5, INV-7; partition 8.1, DT-L1 M2 and R2-E1). A source label
+- **PS1.37 [D]** An envelope rejects a dangling dependency, contradictory identity/scope, failed content digest or AND
+  node with no children (EVD.40, I8) instead of silently strengthening its evidence (INV-5, INV-7; partition 8.1, DT-L1 M2 and R2-E1). A source label
   such as `measured`, `reported` or `passed` is data to interpret through PS3's table, not an evidence verdict by
   spelling. A job outcome is separate from basis and check; a cut-off job yields no negative claim, while a checked
   witness can still support its own claim (KN7.4).

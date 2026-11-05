@@ -663,6 +663,9 @@ Abbreviations follow the mathematician's list (partition, contract, DT-J1, tex, 
 3. P-M4: "Sharing no code with the program that found it" is too strong: the checker shares no search or construction code with the finder, but both use the same exact simulator and model files, tested separately (`research/jumbling/restoration/13-tutorial-runner/scripts/check_run.py:38-43`).
 4. P-M5: "One key press for every change" should read "one deliberate action (a key press or a click) for every commit" (charter S4). A held key never repeats a commit; program views and the camera need no such action.
 5. P-M5: "Where each previewed move came from, indirect choices included" needs a language that tracks data and branches: an own interpreter can, a borrowed runtime only if modified (partition, I2). A retyped or file-carried word loses the record.
+   **Correction, 5 November 2026:** Words carried through the program's own workspace or saved files keep the record
+   (BND.32, BND.47, CT-BND-03). Words retyped by hand, carried by hand or computed outside the runtime carry no label
+   (BND.76). A record stripped from a file reads as `unknown`, never `own` (BND.21).
 
 ## Outcome
 
@@ -1719,6 +1722,8 @@ A scenario is ω = (D, T): D is a down-set of distrusted grades, T a set of assu
 - OR = ∪ (the empty OR is ∅)
 
 Each statement key has one OR node. The system is monotone on a finite lattice, so the least solution exists (Knaster-Tarski) and is reached by iteration from ∅ (Kleene). Every val is an up-set of Ω.
+
+**Correction, 5 November 2026:** The freeze audit found that an empty AND holds in every scenario, so a statement whose OR contains one would read proved with no support. Chapter 06 now refuses an AND node with no children (EVD.15, I8, EVD.60). The proofs here hold for the graphs that remain.
 
 ##### C.4 Summaries
 

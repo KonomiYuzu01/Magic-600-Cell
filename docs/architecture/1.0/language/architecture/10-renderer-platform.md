@@ -443,7 +443,11 @@ outcome; [render contract](../../../../../research/jumbling/render-contract.md),
 - **RPI.59 [D]** Under LQ20's no-handoff alternative, display plans fit the frozen renderer as it is (partition LQ20).
   RPI.17 reports unsupported content. A user-chart proposal cannot reopen that freeze implicitly. If LQ7 and the frozen
   feature list cannot both be satisfied, the integrator returns the conflict and evidence to the owner; this chapter
-  selects neither a renderer nor an exception.
+  selects neither a renderer nor an exception. ONE.41's presented-frame report remains an open renderer-line item
+  under either option (RPI.66).
+- **RPI.66 [O]** The presented-frame report goes to the renderer line whichever option LQ20 takes: LP3's acceptance
+  needs to bind the presented preview (ONE.41). Delivery of this item remains open; the rest of RPI.57/RPI.58's handoff
+  stays conditional on LQ20.
 - **RPI.60 [B]** The renderer remains unselected. Its selection gate stays the one in renderer-candidates: all 259,800
   sticker slots at full detail, the most complex turn animation and camera workload, average at least 30 fps and
   p99 frame time at most 33.3 ms, native resolution and no frame generation, on the owner's RTX 4070 Laptop GPU with
