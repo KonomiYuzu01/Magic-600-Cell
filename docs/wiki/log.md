@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-06] decision | The language: the owner's answers to LQ1 to LQ21
+The owner answered the questions page ([decision](decisions/owner-decisions-2026-11-06.md)). Sixteen answers take the recommendation; the other five choose free views everywhere, a shader language for users, unattended playback of view and workspace steps, export of proof obligations to Lean, and the name 600 Cell Script (`.6cs`). The charter is amended on D8 and on the order of the stage 2.5 exit; no ADR is accepted and nothing is frozen.
+
 ## [2026-11-05] decision | The language: the draft waits for the final architecture
 The review of the draft text used both verification rounds and left three major findings in a draft reference checker, so the owner chose not to commit the draft now ([decision](decisions/owner-decisions-2026-11-05.md)). The findings are fixed in the final candidate, which gets its own full review.
 
