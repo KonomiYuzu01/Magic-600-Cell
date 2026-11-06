@@ -3,7 +3,7 @@ id: owner-decisions-2026-11-06
 type: decision
 status: verified
 visibility: public
-summary: Owner decisions of 6 November 2026 - the owner answered the language questions LQ1 to LQ21 on the questions page. Sixteen answers take the recommendation. Five do not - free views everywhere, which lifts charter D8's limit to two views; a shader language for users; unattended playback of view and workspace steps in a recording; export of proof obligations to Lean; and the name 600 Cell Script with the extension .6cs. The answer to LQ19 amends the charter so that LP2 to LP5 may start after both freeze rulings. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, so the freeze rulings follow that evidence. No ADR is accepted and nothing is frozen by these answers.
+summary: Owner decisions of 6 November 2026 - the owner answered the language questions LQ1 to LQ21 on the questions page. Sixteen answers take the recommendation. Five do not - free views everywhere, which lifts charter D8's limit to two views; a shader language for users; unattended playback of view and workspace steps in a recording; export of proof obligations to Lean; and the name 600 Cell Script with the extension .6cs. The answer to LQ19 amends the charter so that LP2 to LP5 may start after both freeze rulings. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, so the freeze rulings follow that evidence. No ADR is accepted and nothing is frozen by these answers. Follow-up answers of the same day choose exact requests for the A1 input question, confirm that a live twist has no preview, set who writes evidence fields and where tool words are refused, and allow a big-integer crate and Linux tools in WSL for the experiments.
 related: [owner-decisions-2026-11-05, owner-decisions-2026-11-03, owner-decisions-2026-10-22-dt-m1, owner-decisions-2026-10-03, owner-decisions-2026-10-02-design, owner-decisions-2026-10-02-scope, renderer-candidates]
 supersedes: []
 claims:
@@ -15,6 +15,11 @@ claims:
   - {id: language-name, evidence_kind: decision, checked_at: 2026-11-06}
   - {id: theory-research-in-repository, evidence_kind: decision, checked_at: 2026-11-06}
   - {id: charter-order-amended, evidence_kind: decision, checked_at: 2026-11-06}
+  - {id: a1-exact-request-direction, evidence_kind: decision, checked_at: 2026-11-06}
+  - {id: live-twist-no-preview, evidence_kind: decision, checked_at: 2026-11-06}
+  - {id: evidence-field-writers, evidence_kind: decision, checked_at: 2026-11-06}
+  - {id: tool-words-refused-at-preview, evidence_kind: decision, checked_at: 2026-11-06}
+  - {id: experiment-crate-and-wsl-allowance, evidence_kind: decision, checked_at: 2026-11-06}
 ---
 
 # Owner decisions, 6 November 2026: the answers to the language questions
@@ -94,12 +99,41 @@ records the answers in English.
   in place of the generated projection stage.
 - **LQ18:** the allowance of 5 November stands as LQ18's answer.
 
+## Follow-up answers, the same day
+
+The integrator put seven questions and two defaults to the owner in chat. The owner answered in one message: option B for
+the first question, and agreement with the rest.
+
+8. **The A1 request form (LX-9): option B.** A fresh rotation request becomes an exact request read by its bytes: a dyadic
+   Cayley vector, an explicit half-turn form or a bound menu letter. A menu drag compares its candidates exactly in
+   Q(√5) under a recorded menu order. The owner chose the direction; state contract A1 changes through its own process,
+   EN1's Astra check of the amendment text and then the owner.
+9. **The readings of decisions 4 and 5 are confirmed.** The theory book, proofs and research records stay out of the
+   software and live in the repository, and the research library and the archive checkers stay in 1.0. The export of
+   proof obligations is in 1.0, Lean does not ship with the software, and formal proofs themselves come after 1.0.
+10. **Live twists (ONE.78).** Charter S4's preview applies to a turn entered as a draft step, to a macro and to any word.
+    A live twist shows nothing first, as solving workflow 4.1 and DT-M1 C4 say, so `twist.apply` gains no preview.
+11. **Who writes evidence records: option A.** Each field has a named writer. Only the kernel writes the independent
+    checker value. A theorem basis cites a record pinned to a commit. Model and human review cite a digested review
+    record. A user program writes at most exact computation with the check producer, and anything higher comes only
+    through a certificate the kernel can check.
+12. **Tool words through macros: option A.** The check sits at the point of use, as in BND.61. In a solving session a word
+    whose record block or any part says that the solver's tool computed it is refused at preview, whatever route it
+    took. The bytes stay readable, and hand-entered words and imported 0.4 macros (`producer: import`) are not affected.
+13. **Big-integer crates.** LX-5 may fetch a `num-bigint` class crate once the integrator has checked its licence. This is
+    experiment code, and a copyleft licence still needs the owner.
+14. **Linux tools in WSL.** One installation of Rust, Node and .NET in WSL is allowed for the Linux legs of LX-2, LX-5,
+    LX-6 and the LX-9 follow-up.
+15. **Decisive timing and foreground windows.** The owner says when the machine is free. LX-2 and LX-4 run on the existing
+    renderer candidates first and run again if the renderer changes.
+
 ## What these answers do not settle
 
 - LQ8, LQ9, LQ13 and LQ21 chose to wait for their evidence, and LQ2's option set waits for the joint setting. The freeze
   rulings need LQ8, LQ9 and LQ21 first, so the freeze follows the decisive experiment runs.
-- The questions the page left for the chat stay open: the A1 input question from LX-9, the live twist preview (ONE.78), the
-  "proved" threshold, big-integer crates, the Linux tools in WSL, and the owner's windows for decisive timing.
+- Option B leaves two things for the amendment text: what free mode does with an exact request (the rotation R(ω) as
+  named, or the nearest point of A1's rational grid), and what produces the request bytes from a gesture.
+- The "proved" threshold stays open, and so do the owner's windows for decisive timing and foreground runs.
 - No ADR is accepted, nothing is frozen and no renderer is selected. The owner accepts ADRs and signs off after both
   rulings.
 
@@ -111,4 +145,5 @@ records the answers in English.
   LQ19 is decided.
 - Unchanged: the model identities and mathematical contracts, the protection rules, the review rules, the evidence kinds,
   the renderer selection gate, the human-solve boundary for built-in tools and the design-line hold.
+- Superseded in part: ONE.78's wait for the owner's reading of charter S4, which decision 10 answers.
 - Next: the architecture text is finished from these answers and reviewed as one final candidate.
