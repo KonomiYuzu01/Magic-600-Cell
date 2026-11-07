@@ -41,9 +41,8 @@ Section 7 links the individual stage archives.
 - **LB1.5 [D]** The catalogues enumerate entries and make no boundary ruling (partition section 11). Under its interim
   reading, no shipped function searches, minimises, ranks or selects over twists, words or caps in a solving session.
   Every such entry below carries the exact marker **research tier candidate**. The two exceptions are setup search for
-  a target the solver names and the repair list at a named cap. Enumeration here neither admits a function to a base
-  tier nor promises that the research tier ships; chapter 07 records the joint setting under LQ2 and LQ21. BND.64 states
-  the rule the marker serves.
+  a target the solver names and the repair list at a named cap. Enumeration here does not admit a function to a base
+  tier; chapter 07 records the joint setting under LQ2 and LQ21. BND.64 states the rule the marker serves.
 - **LB1.6 [D]** Pure algebra is not a boundary exemption. Generic elimination over F2 and F5, the current ν and the
   correction rows compose into a correction selector (DT-L1 R2-E3, fix-first 17). Calls, branches, stored words and
   preview outcomes use chapter 07's provenance mechanism, with its form left to LQ21. Under flow labels the mechanism
@@ -70,7 +69,7 @@ Section 7 links the individual stage archives.
 | Permutation groups | Permutations of an explicit finite set | pure, budgets | Library code | Orbits, stabilisers, cycle types, Schreier tables and primitivity tests. A failed group-membership test concerns this group. Extracting a puzzle word by a Schreier search is a research tier candidate. |
 | Literal words | Full signed generators; jumbling menu letters | pure | Library code | Concatenation, inverse, conjugate, commutator and powers construct words. Construction alone checks no state. `errors: LB1:input.incompatible_alphabet`. |
 | Word equality keys | Same alphabet and identity as the word | pure | Library code | Free reduction for Full; domain-preserving merging for jumbling. Keys do not replace executed letters (LB1.9). |
-| Trace equality keys | Words and a stated independence relation | pure, budgets | Library code | A global canonical key for interchangeable orders; a search for a least word is a research tier candidate. The precise convention is open in LB1.10. |
+| Trace equality keys | Words and a pinned independence relation | pure, budgets | Library code | LB1.10's least topological word recognizes commuting swaps only. Searching for a least solving word remains a research tier candidate. |
 | Straight-line programs | Words | pure, budgets | Library code; application through KN2.4 `replay` | Exact expanded length and cost without full expansion, lazy expansion and chunk iteration. Empty expansion is a zero-letter word, subject to the word's alphabet contract. |
 | Exact matching and integral flows | Explicit bipartite graphs and networks | pure, budgets | Library code over KN3 integers | Matching and integral feasible flows, with the matched objects, demands and capacities. Failure concerns this graph or network. Using a flow to choose a solving plan is a research tier candidate. |
 | Big integers and symbolic bounds | Exact scalar values | pure, budgets | Library code over KN3 | Binomials, products, recurrences and digit counts; a bound does not imply that its word was expanded or replayed. |
@@ -82,11 +81,29 @@ Section 7 links the individual stage archives.
   deleting it would lose that restriction. A key must preserve admissibility and the end digest at every tested state.
   Preview, Strict protection, peak height and commit use the literal word, including intermediate states. The inverse
   of an admitted word is admitted from its end; a constructed conjugate gets no admissibility guarantee.
-- **LB1.10 [O]** The global convention for trace equality keys needs the LP1 interface specification. Options include
-  a least topological word under a fixed alphabet order or a canonical dependency graph. The independence relation and
-  the equality represented must be stated with either option. Stage 16's local commuting rule retains representatives
-  of traces and is explicitly not a normal form (its README, section 2.6); it cannot supply this convention. Neither
-  option changes literal execution or turns minimality and dynamic-target reductions into word identities.
+- **LB1.10 [D]** The proposed `trace-key/1` uses the lexicographically least topological word. For literal occurrences
+  i < j, add a dependency edge i -> j when their letters are not independent. Repeatedly emit the least available
+  letter under the fixed alphabet order, removing its outgoing edges; break ties between identical occurrences by
+  their original position. Full letters use LG2.23's signed-generator order. Jumbling literal letters use `(grip,
+  menu-item)` order, with natural integer comparison and the pinned menu-order digest. This is a finite ordering
+  algorithm, not a search for a solving word. It retains every occurrence, including identity letters and their
+  domain tests. It performs no cancellation or same-cap merge. Word-key normalization is not a preprocessing step.
+
+  For the retained jumbling geometry, distinct grips c and d are independent exactly when the exact Δ(c,d) of stage
+  14 `PROOFS.md`, L1, is at most zero. Its L10 and stage 16 `PROOFS.md`, R2, justify equal partial domains and ends
+  under each adjacent swap. Same-grip letters are dependent, even if one is identity. The contract identifier is
+  `jumble-locality/1`; its model-bound relation digest covers the symmetric off-diagonal pairs in ascending `(c,d)`
+  order. The product key implementation must regenerate that table from the pinned model and exact formula; a
+  caller cannot declare more independence. For Full, `full-disjoint-support/1` admits a pair only when the two
+  generators' complete labelled-slot supports from the pinned model are disjoint, regardless of sign. It is a
+  conservative commuting relation. No support inference from a rendered subset or one observed state is allowed.
+
+  Equal trace keys recognize exactly sequences related by these adjacent independent swaps under the same header.
+  This is sound but incomplete for equality of puzzle actions. LG2.23 supplies compatibility and version rules;
+  a trace key has its own type and cannot substitute for a word key or a literal word. With a < b < c, b independent
+  of a and c, and a dependent on c, both `bca` and `cab` normalize to `bca`: the edge c -> a remains. Their word keys
+  remain different. `abc` is another trace. The audit's local adjacent-order rule accepts both `bca` and `cab` and
+  therefore cannot implement this key. Neither key uses stage 16's minimality or dynamic-target reductions.
 - **LB1.11 [D]** Expanded length and cost are available before checking, previewing or running a compressed word
   (default 10, KN2.10). Exceeding an admission bound refuses that operation with its exact length. Chunking transports
   one operation and creates no new commit or protection boundary. Admission limits are scoped to the consuming entry;
@@ -229,18 +246,21 @@ Section 7 links the individual stage archives.
   axis of cell c, the centre piece's 8 vertices stay at least 0.2296 from the axis while its centroid lies on it. Between
   exact poses, domain membership is a display decision that decides nothing. A precision agreement test does not
   establish injectivity, domain validity or an inverse. A property checked on a finite set is scoped to that set.
-- **LB4.3 [P LQ7]** If LQ7's recommendation is accepted, user projection charts use chapter 10's chart subset and its
-  CPU reference evaluator and portable HLSL path. This chapter defines no subset of its own. Under built-in-only
-  charts, the same entry contracts apply to the parameterised built-ins and user projection evaluation is absent.
-  Under a user shader language, chapter 10 must supply its separate admission and precision contract. Exact property
-  checks remain required in each case.
+- **LB4.3 [B]** Users write shader stages (owner, 6 November 2026, LQ7). [D] User charts are stage modules under
+  chapter 10's contract, RPI.68 to RPI.80, with its CPU reference evaluator and portable HLSL path. Parameterised
+  built-in charts stay. Admission separates safety from established properties: `admit_chart` keeps `not_established`,
+  and LB4.2's exact property checks retain their scope. This chapter defines no stage contract of its own.
 - **LB4.4 [D]** Per-object layouts evaluate per revision, and picking maps a display instance to its canonical ID
   through chapter 10's source map (default 7; partition section 8.5, DT-L1 R2-E2). A chart inverse never identifies the
   picked object. A layout filter cannot alter the mechanically analysed set (INV-6, INV-8).
 
 ## 6. LB5: research library
 
-- **LB5.1 [D]** These entries cover partition LB5. A computed state is a kernel-derived value with its reachability
+- **LB5.1 [B]** The research library and the research-archive checkers are in 1.0 (owner, 6 November 2026, LQ16).
+  The theory book, proofs and stage research records live in the repository and stay out of the shipped software
+  (owner, 6 November 2026, decision 9).
+
+  [D] These entries cover partition LB5. A computed state is a kernel-derived value with its reachability
   claim in a named puzzle (INV-1). Each entry which searches or selects over twists, words or caps is a research tier
   candidate. Its implementation or a theorem about its termination does not admit it in a solving session.
 
@@ -283,15 +303,25 @@ Section 7 links the individual stage archives.
   legality along prefixes and shape-level claims such as q, n, Φ and H (N1, B.7). It can permute which physical piece
   occupies a region, so it supplies no sticker-goal or reachability transport. Reference indices are counted separately from distinct fibres. Exact transport, fresh
   audit and actual replay remain distinct check modes (DT-L1 R2-E1); chapter 06 defines their evidence reading.
-- **LB5.7 [P LQ4]** With LQ4's recommendation, experiment branches are engine-owned journal branches and a job on a
-  digest-pinned input may finish after a commit. Under its alternatives, research uses separate sessions or the pinned
-  job is cancelled. All options retain immutable derived states. A result reaches a newer revision only by rerunning
-  it or by an exact transport with a matching lemma (KN7.5, DT-L1 R2-E1).
-- **LB5.8 [O]** The producer-dependent checks in the stage 19 archive need a per-claim implementation plan from LP1's
-  KN6 and import specifications. Options are a new independent exact checker for a self-contained recorded claim, or
-  retaining a claim as recorded where an unbundled dependency prevents that check. A captured review is never renamed
-  as a new check. Section 7 retains all archive rows and section 10 requires checkable certificates to keep checking;
-  no absent producer is assumed to exist. This dependency does not authorise restarting the stopped research.
+- **LB5.7 [B]** Experiment branches are engine-owned journal branches and a research job on a digest-pinned input
+  finishes after a commit (owner, 6 November 2026, LQ4). Derived states remain immutable values. A result reaches a
+  newer revision only by rerunning it or by an exact transport with a matching lemma (KN7.5, DT-L1 R2-E1).
+- **LB5.8 [D]** LB5.14 to LB5.17 are LP1's source-only claim/checker/dependency plan for stages 14 to 19. They distinguish
+  an existing research checking path from an independent KN6 implementation still owed. Self-contained witness data
+  can feed a new checker without the producer; a missing immutable input or absent independent checker gives an
+  explicit unavailable outcome, retaining the original record. A captured review is never renamed as a new check.
+  This plan preserves every catalogue promise and authorizes neither a research restart nor a new experiment.
+- **LB5.18 [B]** 1.0 exports proof obligations to Lean (owner, 6 November 2026, LQ15). Lean is not shipped, and formal
+  proofs themselves come after 1.0 (owner, 6 November 2026, decision 9).
+
+  [D] `research.obligation.export` is an overlay row of kind `file`, writing through a granted file capability. A
+  language-side translator takes a typed Statement (PS1.46) and writes Lean 4 source over a restricted, versioned
+  vocabulary, using the `c600-proof-obligation-draft` descriptor of PS1.45. An untranslatable statement refuses with
+  `LB5:input.obligation_untranslatable` and writes nothing. The translation prelude lives in the repository, outside
+  the shipped software. Programs gain no process or network access (default 2). Lean is neither a runtime dependency
+  nor an allowlisted tool; a project check that runs it needs the owner. Export promotes no claim and touches no
+  commit gate (RTE.28). There is no return path in 1.0: no proof-record import row or format and no new check mode.
+  `formal proof` remains in EVD.3's enumeration with no writer in 1.0; imports cannot assert it (EVD.47).
 
 ## 7. Coverage of restoration and the research
 
@@ -352,6 +382,8 @@ Its mathematical configurations and captured reviews establish only their stated
   check record remains importable even when no fresh check can run. Its label is preserved through chapter 05's table
   keyed by format, field and value, with unmapped values retained word for word as recorded (default 20, DT-L1 R2-E1).
   Formatless records keep their source identity; no fabricated format is inserted to make a claim checkable.
+  LB5.14's preflight and LB5.15's matrix apply before any fresh check. A research script called `check`, or a record
+  called `independent`, does not establish KN6 independence; its transitive imports and every checked claim matter.
 - **LB5.11 [D]** The mathematical event calculus of stage 15 applies to admissible words, but its stored
   `macro-certificate/1` checker accepts descending macros ending in a jumble (stage 16 README, section 2.6). A release
   alone, such as SJ-E1, uses letter-by-letter checking and is not forced into that format. The partition's stage 15
@@ -372,6 +404,104 @@ Its mathematical configurations and captured reviews establish only their stated
   is a fact of its own, and no length here implies a new replay result. Chapter 01's streaming contract covers all of
   them (KN2.10).
 
+### 7.4 Claim, checker and dependency plan
+
+- **LB5.14 [D]** A fresh-check request first resolves a claim, not a file's overall `passed` label. Its plan row names
+  the record digest and field path, EVD's statement and scope, the requested check kind, the checker source digest
+  or `not_implemented`, and required immutable inputs with their digests and roles. Dependencies include full start
+  tables, literal words, menu identity and order, model files, exact arithmetic/tree conventions, prior certificates
+  and any theorem premises the claim uses. Follow them transitively, recording each edge. A historical filename or
+  a successful import does not resolve a dependency. Public/source correspondence uses S19's `IMPORT-MANIFEST.json`
+  and PS3; its original-source digest is never tested against sanitized public bytes.
+
+  `check_availability` is library preflight data, not a fabricated KN6 `CheckReport`. It returns
+  `ready(checker_digest, inputs)` only when all inputs resolve and the checker meets KN6.2 and KN6.5, or
+  `unavailable(reasons, dependencies)` with every known blocker. Reasons are `claim_unmapped`, `dependency_missing`,
+  `dependency_mismatch`, `no_independent_checker`, `unsupported_claim` and `historical_check_incomplete`. A missing
+  checker is not named with an invented digest. `ready` itself is not a pass. A real invocation can subsequently
+  yield KN6's pass, fail or not_applicable; interruption follows KN7, with coverage and no completed negative.
+  Import preserves the original record, label, scope and check mode in all these cases. No unavailable result adds
+  an evidence-support leaf or refutes the mathematical claim. New checks attach new leaves to their exact subjects.
+
+  The path prefixes in the next two tables are repository-relative: S14 =
+  `research/jumbling/restoration/14-blocking-structure`, S15 = `research/jumbling/restoration/15-lowering-machine`,
+  S16 = `research/jumbling/restoration/16-six-jams`, S17 = `research/jumbling/restoration/17-routing-in-driver`,
+  S18 = `research/jumbling/restoration/18-tail-completion`, S19 =
+  `research/jumbling/restoration/19-height-depth-framework`. T12 = `research/jumbling/restoration/12-low-height`,
+  T13 = `research/jumbling/restoration/13-tutorial-runner`. Paths beginning `records/` in the S19 table are under S19.
+
+- **LB5.15 [D]** The source-only walk of stages 14 to 18 gives the following plan. Existing paths below describe
+  research programs, not new runs or completed KN6 qualification. The shared replay dependency chain is S14
+  `scripts/replay_word.py -> blockmap.py -> research/jumbling/theory/restore.py`, `trees.py`, `research/jumbling/sim/`
+  and `research/jumbling/exact.py`, with NumPy and the pinned model data. `restore.py` also contains restoration
+  construction; importing it is not proof of separation from producer code. S15 `scripts/macro.py` imports S14
+  `t3p.py`, which contains both `check` and `scan`. S16 `common.py` imports S15 `pstar.py`; S17 builds on that chain.
+  A KN6 implementation must call exact engines directly, remove these producer/search dependencies and pass mutation
+  gates. It cannot simply relabel those programs. The source tables in S14 `results/sources.json` and S16 `jams.json`
+  are present in T13 in this packet's source tree; their contents and named identities still need validation per run.
+
+| Claim family and recorded input | Existing checking path and required dependencies | Fresh independent check owed; unavailable outcome |
+| --- | --- | --- |
+| S14 W3/W5, T3P/T3P+ rounds, P0 to P4 and chain effects: `results/s7304-w3-certificate.json`, `s7304-w5-certificate.json`, `s*-t3p-scan.certificate.json`, `sources.json` | `scripts/t3p.py check` recomputes helper images, precedence, moved sets and changes, then replays. Needs the source table, prefix, helpers, unit, items and exact locality/model data; `scripts/test_t3p.py` contains the research mutation gate. | Separate finite predicate and literal-replay checker, recomputing P0 to P4 and every claimed prefix. Changed helper, precedence or start digest must fail. Until separated and gated: `no_independent_checker`; absent table/word: `dependency_missing`. |
+| S14 locality, holder/co-held facts and greatest-fixed-point levels: `results/locality-summary.json`, `*-levels.json`, the block/coheld records | `scripts/locality.py`, `levels.py`, `blockmap.py`, `coheld.py`; exact Δ and complete labels from the table. `levels.py` imports `t3p.load_input`. Optional `.npz` label caches are accelerators, not independent evidence. | Recompute exact relation/holder sets from the model and table, and the stated finite operator to its fixed point. The observed histogram is not a global theorem. `no_independent_checker` until that kernel path exists. |
+| S14 literal chronological observables and successful retained/peel words: `*-replay.json` and words in the search records | `scripts/replay_word.py` applies every letter and recomputes heights without incremental tree/label caches. Requires table, word, pinned I_a order, model and tree arithmetic. It does not check completeness of the search that found the word. | Preserve this replay coverage in a KN6 implementation without importing construction code. Missing word/table gives `dependency_missing`; otherwise current product request gives `no_independent_checker`. |
+| S15 `macro-certificate/1`, including R01, support, height/branch changes, excursion and end digest | `scripts/macro.py check --replay`, `test_macro.py`, S14 exact state/row helpers. Needs certificate `table_digest`, prefix, every macro and allowance; `independent_replay` recomputes heights but shares imports with construction. | Separate Theorem MC claim checks and literal replay; mutate each claim and the input table. A release without a final jumble is `unsupported_claim` for this kind and uses the literal checker instead (LB5.11). Current KN6 path: `no_independent_checker`. |
+| S15 P*, two-level P*, `pstar2/2`, beamed and unbeamed stop records | `pstar.py`, `pstar2.py` are producers/searchers, not independent certificates of their own coverage. Chosen words use the preceding macro row; a bounded negative also needs alphabet, exact start, family, depth, beam/pruning rules and complete coverage. | Independent finite coverage checker or a separately justified exhaustive enumeration with all reduction premises; none is supplied by a selected word's replay. `no_independent_checker` for that negative. A beam, clock or incomplete stop keeps its limited outcome. |
+| S16 jam/descent witnesses and P** chains; pure release SJ-E1 | `jams.json` binds table, chain and start macros. Descents use S15 macro checking; releases use `macro.apply_checked` letter by letter, as S16 README 2.6 requires. Full background and actual prior endpoint are required. | Independent literal/effect checking and MC checking only for admitted MC shapes. `no_independent_checker` until separated; missing chain or wrong start gives `dependency_missing` or `dependency_mismatch`. |
+| S16 transport, routing, T1 and leaf/alphabet negatives; local commuting reductions | `transport.py`, `routing.py`, `release.py`, `t1.py`, `test_six_jams.py`; tests compare recorded finite inputs. Completeness also needs the exact bounds, all shards, target rule, beam/relevance exclusions and reduction lemmas in `PROOFS.md`. Some helper producers were never committed (README 3). | Keep finite gate results and reported outputs. No independent exhaustive-coverage checker is supplied. `no_independent_checker`, plus `dependency_missing` if a required historical helper/history is absent. Local reduction is not LB1.10's normal form. |
+| S17 RR canonical words, five tails, P*** and separate stops: `s16-rr/1`, `s16-pxrr/1`, `results/stop-7304-438/` | `scripts/test_rr.py` compares `rr.py` to brute-force tails and unreduced words on its named gate inputs; `pxrr.py` uses S14 to S16. Chosen descent certificates use S15. Counts combine only matching disjoint pair/shard scopes. | Keep canonicalization/tail agreement separate from a run's negative and from chosen-word replay. No independent coverage checker exists here: `no_independent_checker`; absent bounds or complete shard set adds `dependency_missing`. |
+| S18 exact expanded length/hash and composed strict′: both `results/d1-tail/steps.json` and `results/rule-stop/steps.json` | `scripts/replay_tail.py precheck` resolves X, W, V, W-inverse, unit and hashes; it calls T12 `scripts/slp_apply.py --unit`, which imports `buffer` and `screen` and their construction code. Needs actual preceding end, not only a matching profile. | Independent expansion/hash checker and separately scoped composed-contract checker. The latter is not literal replay. Existing product qualification: `no_independent_checker`; any missing part or mismatching hash adds the corresponding dependency blocker. |
+| S18 complete literal replay and chunk chaining | T12 `scripts/round22/stepchk.py --require-strict` and S18 `scripts/chunk_verify.py` (through `chunk_prep.py`), with every chunk word, start/end table and result. `stepchk.py` imports `buffer`. S18 README 3.3 records which gates finished. | Separate KN6 letter replay plus complete span/digest-chain validation. T6 steps 1 to 3 retain recorded replay; step 4 and the three rule stages retain `historical_check_incomplete` for gate 3. Starting a new complete check requires a fresh checker and grants; import never completes one. |
+| S18 whole-cap negatives, static WC-PLAN, layered flow, group factors, Schreier/Jordan witnesses and entry conditions | `scripts/wholecap.py`, `wc_prep.py`, `wc_t1.py`, `PROOFS.md` and `results/wholecap/`; imports include T12 `screen`, `buffer`, exact group/model data. A plan also needs every hole demand, action, factor witness and join at the actual endpoint. | Independent finite flow/group/certificate predicates and their mutation gates are owed; existence of a static plan is not its built or replayed word. `no_independent_checker`; conditional entry membership remains conditional, with no invented completed run. |
+| S18 `r22b10/1`, `r22b10/2`, `runner-run/3`, `literal-lattice/1`, `lattice-phase-play/1` and the lattice-d1 run | T13 `scripts/check_run.py` calls `check_contracts.py` and `check_lattice.py` and imports `restore`, `rim`, `sim`, `trees`. Requires run/phase records, full tables, flat `ia16` words, menu order and supporting seed/correction libraries. `results/lattice-d1/check.jsonl` is a captured result. | Preserve each version's scope and all completed recorded gates. Separate KN6 replay/contract checks from the runner and construction imports; until then `no_independent_checker`. A missing attempt is required only if the requested claim uses it, never to replay a complete stored word. |
+
+- **LB5.16 [D]** Stage 19 has no executable checker or producer in its archive. The following are planned checker
+  obligations, not names of implemented programs. Full tables and explicit words permit new exact checks without
+  the historical producer; review receipts alone do not. A reusable independent checker must rebuild its inputs
+  from these immutable data and the pinned model, without trusting the receipt's flags. All rows currently have
+  `no_independent_checker` for a fresh KN6 request, and additionally `dependency_missing` for any required unresolved
+  input. The source README's mathematical source is `a2ebb4cccd6b60d7527c001ef3b2cbc56b179249`; archive byte identity
+  follows its manifest. The distinctions below preserve LB5.9's coverage rather than reducing it.
+
+| Claim and available source records | Required inputs and source-only dependency finding | Independent checking plan and limits |
+| --- | --- | --- |
+| Public archive integrity and import labels | `IMPORT-MANIFEST.json`; every named stored blob and its decoded bytes; `evidence-import/corpus-labels.json` and its Git-blob corpus identity (paths there are relative to `docs/architecture/1.0/language/`). | PS3 checks stored and uncompressed digests independently of mathematical checks. Original source hashes remain separate. A missing blob is `dependency_missing`; a changed byte is `dependency_mismatch`. Matching hashes do not prove any archived claim. |
+| Complete pose-table validity, regional matching Γ(Y), synthetic bijection and prefix transport | `records/irregularity-descent-source-end-table.json.gz`, `profile-family-validation-input-table.json.gz`, `profile-family-validation-end-table.json.gz`, `profile-family-validation-matching-certificate.json`, `profile-family-validation-results.json.gz`; exact home regions, type IDs, gauges and every full pose. | Check all rows, bijection, type preservation and exact region identities; replay the stored nine letters and their inverse and verify every collateral row. This is a finite supplied matching certificate; a general practical matcher was not built. Synthetic reachability remains unknown and sticker-goal transport is refused. |
+| A/C/E compact and A/D/C/E cleanup, full backgrounds, frontier progress and height | `records/TYPE_HEIGHT_THREE_BLOCK_WITNESS.md`, `type-lex-trimmed-macro.json`, its end table, `type-lex-independent-282-13-end-table.json.gz`, `type-lex-recovery-transfer-joined-table.json.gz`, `type-lex-recovery-transfer-full-replay.json` and initial table. | Independent literal replay from each actual start, complete q/height/off vectors and digests. Five/nine-letter frontier exits with q16 remaining do not pass the sticker goal. No substitution of compact for cleanup background. |
+| Exact local q11 distance 3 and all first-A variants | `records/type-lex-trimmed-independent-results.json` contains the target, holder/straddler claims and witness; it cites absent `type-lex-successor-base-cache.npz` and other historical successor records. Source pose tables are retained. | Recompute complete exact holder/cut facts and the bounded lower-bound argument, not just the three-letter upper witness. Rebuild cache-derived inputs from source tables for a new check; replaying the old audit verbatim is unavailable when its dependencies are absent. This is not optimal restoration depth. |
+| Indexed references and reused checks | `records/REGIONAL_PROFILE_DESCENT_THEOREM.md`, `profile-family-review-sol-receipt.json`, `profile-family-review-astra-results.json` and their cited reference/transport records. | Check each cited endpoint/transport against its own source and scope; 73 indices do not establish 73 distinct fibres or 73 new replays. Missing reference material leaves that claim unavailable without blocking unrelated complete witnesses. |
+| R3, S and R_L on stored blocks; fixed-length bound | `records/type-height-weight-results.json`, `type-weight-independent-review.json`, `type-lex-independent-weight-review.json`, `type-lex-trimmed-independent-results.json`, `type-height-weight-proof.md`; complete type counts and block q vectors. `type-height-weight-inputs.json` is cited but absent. | Recompute finite integer weights and inequalities from explicit data, with type counts independently checked against the model. D is length 4 and q-neutral, so use S, not the length-3 strict lemma. The universal bound retains selector, length and invariant-domain premises. Missing arithmetic source can be replaced only by an explicitly new derivation/check with pinned inputs, never a fabricated historical file. |
+| Height-dependent cost, C_36 and upper-bound induction | `records/CONTROLLED_TYPE_HEIGHT_BOUND.md`, `controlled-type-height-independent-review-receipt.json`, `UPPER_BOUND_INDUCTION.md`, `records/evidence/upper-bound-induction-evidence.json`; declared recurrence, parameters and transition hypotheses. | A new exact arithmetic instance checker verifies the recurrence calculation and each supplied transition. It cannot establish global macro availability or closure. Written proofs and captured reviews remain their original evidence kinds. |
+| Guarded and prefix-complete pump language, exact return and distance profile | `records/GUARDED_OPTIMAL_RETURN.md`, `PREFIX_COMPLETE_OPTIMAL_RETURN.md`, its review, `RESTORATION_DEPTH_PROFILE.md`, `records/evidence/guarded-pump-prefix-code.json`, `prefix-complete-optimal-decoder.json.gz`, `prefix-catalogue-independent-verified.json`; stage 10 pump/guard lemmas, full background, exact decoder branches and seed words. | Check finite decoder/guard certificates and supplied words against the pinned model; retain the induction and metric hypotheses. A recognizable target pose alone is not the complete input family. Missing historical arrays or source programs cannot be treated as a rerun of their audit. |
+| Regional high restoration and no overshoot | `records/REGIONAL_HIGH_RESTORATION.md`, `HIGH_NO_OVERSHOOT_RESTORATION.md`, `regional-high-independent-seed-verified.json`, `regional-high-independent-premise-verified.json`, `regional-high-transfer-audit.json`, `high-no-overshoot-independent-verified.json`; previous row plus reachable-lattice sticker theorem. | Check finite seed/prefix/support/height obligations and exact arithmetic separately from the theorem's reachability promise. The no-overshoot receipt states no new suffix replay; keep that mode. Full restoration at peak H is scoped to the guarded regional family, not arbitrary high states or shortest word length. |
+| Restricted low tails, prepared native cores, b07, entry extension and profile joins | `records/tail-coverage-completion-manifest.json`, `tail-coverage-short-core-chain.json`, `tail-coverage-six-stage-static-suffix.json.gz`, `tail-coverage-input/`, `entry-profile-input/`, `entry-profile-transfer-independent-check.json`, `records/evidence/native-profile-chain-independent-verified.json`, `b07-profile-independent-verified.json` and the corresponding review documents. | Check core words, Bad sets, capacities, group-action/Jordan certificates, flow constraints, SAFE profiles and each exact join. Rebuild preparations at actual endpoints; equal profiles do not validate replay of the next stored word. The mathematical existence/bound check is separate from gate-3 literal replay. Unbundled group arrays or witness programs make the dependent claim unavailable until independent inputs can be reconstructed. |
+| B10/B11, lattice sticker cost, ν/correction ranks and height-2 sharpening | `records/tail-coverage-lattice-sticker-cost.json`, `tail-coverage-lattice-sticker-cost.md`, `lattice-library-height-audit.json`, `lattice-library-height-independent-review.json`, `records/evidence/lattice-sticker-cost-independent-verified.json`; exact counts/lengths and pinned seed, correction and group certificates from earlier stages. | Check finite binomial/integer arithmetic, F2/F5 rows and each supplied word separately. Reuse a theorem only with matching scope and premises. B11's 6,775 digits are a symbolic bound, not an expanded replay. The older coarse height bound is not substituted for the later scoped audit. |
+| D[k] admission and U(h,k), E(h,k) | `records/CONTINUOUS_FRAMEWORK_CANDIDATE.md`, `continuous-framework-independent-initial-result.json`, `continuous-framework-independent-verified.json`, final review; k, exact input, all legal prefixes and the three branch contracts above. | No general independent admission implementation exists. A complete finite checker must enumerate the declared radius and test the branches exactly; only its exhaustive rejection may return `OUTSIDE_CERTIFIED_DOMAIN(k)`. A cut-off is unknown; an unavailable checker is unavailable, never that rejection. Sticker synthesis still needs the separate reachability promise. |
+| Additional finite sigma/tau, strict-continuation, transport, short-window, depth and nonraising claims | `records/HEIGHT_DEPTH_COROLLARIES.md`, `RESTORATION_DEPTH_PROFILE.md`, and the named `records/evidence/sigma*`, `tau*`, `seed*`, `px3-7304*` records; full source tables/words, exact menu and the recorded finite alphabet or lower-bound premises. | Split positive words from finite negatives and metric lemmas. Replay supplied words independently; check every member/obstruction for a claimed finite exclusion. Missing complete histories, caches or classifiers leave that exclusion unavailable. A failed transported word family does not prove that all words fail. |
+| Remaining global availability, entrance bounds, all low tails and universal quantitative restoration | S19 README, Remaining obligations; prior rows' conditional claims and source proofs. | No independent checker or certificate of these unresolved universal claims exists. `unsupported_claim` for a requested global certificate, with no new support leaf. Retain the open obligations; no library plan silently drops them or restarts research. |
+
+- **LB5.17 [D]** The tables are the family-level checking plan. The per-record, per-claim dependency and
+  digest-resolved leaf inventory now exists as a draft in [the claim matrix](../claim-matrix/README.md), CX.19 and
+  CX.22, over the pinned corpus. FR-B08 remains partial: EN4 still owes typed statement/scope/input bindings, and
+  KN6 still owes the named independent checkers and their mutation gates. Missing data or replacement certificates
+  and unresolved premises remain explicit obligations in those rows. An unmatched claim still returns
+  `unavailable([claim_unmapped], ...)` and stays recorded. The owner alone can reduce promised coverage; an
+  unavailable result does not reduce it. Implementation must preserve the historical gate/mode distinctions in
+  CT-LB5-01 to CT-LB5-06. The draft inventory and its source checks establish no fresh mathematical check.
+
+  For example, a request to reproduce the archived trimmed q11 audit requiring
+  `type-lex-successor-base-cache.npz` finds that dependency absent from S19. Preflight returns
+  `unavailable([dependency_missing, no_independent_checker], [that source reference])`; it preserves the captured
+  `PASS_SHORTENED_THREE_BLOCK_WITNESS_AND_Q11_DEPTH3` string and adds no new check. A new checker could instead
+  rebuild the exact data from full tables under a new checker identity. It must say that it did so, rather than
+  presenting its work as a rerun of the missing producer. The self-contained matching witness similarly remains
+  available as data while a fresh check returns `no_independent_checker` until its implementation exists.
+
+  The differential harness is a separate source: `research/jumbling/differential/README.md` compares engines, and
+  `references/README.md` permits research imports that KN6 excludes. J1-against-J1 coverage cannot supply a new KN6
+  certificate pass or a candidate-engine result. Its recorded missing R22B-34 negative-control words are another
+  `dependency_missing` case, not a passing mutation gate. No research program was executed for this dependency walk.
+
 ## 8. LB6: built-in tools and PrincipleRecord
 
 - **LB6.1 [D]** Every built-in tool ships viewable source and a `PrincipleRecord` (INV-12). The record states the exact
@@ -380,7 +510,8 @@ Its mathematical configurations and captured reviews establish only their stated
   base parts. A tool's displayed claims can be traced to those primitives and evidence. An abstract toy geometry alone
   cannot be this instance. A digest is never a step.
 - **LB6.2 [D]** The record is data in the module manifest. Its instance runs as a headless fixture, the decomposition
-  is generated from the typed IR before lowering, from the call graph and kernel calls, and its justification resolves
+  is generated from the typed IR before executor lowering, or from RTE.80's checked host contract for an admitted
+  non-IR RT4 tool, from the call graph and kernel calls, and its justification resolves
   to `EvidenceEnvelope` references where evidence exists (partition LB6; DT-L1 R2-E4). The record is bound to the module
   digest, its lockfile closure, the model identity and its statement IDs, and a changed decomposition marks the
   hand-written parts stale. Chapter 02 defines the manifest and IR; chapter 05 their stored forms; chapter 06 the
@@ -395,7 +526,7 @@ Its mathematical configurations and captured reviews establish only their stated
     justification:  a list of arguments, each a lemma, a per-output certificate kind, a replay or "by definition",
                     with an evidence-envelope reference where one exists
     instance:       real-geometry input, expected claims, headless fixture reference
-    decomposition:  generated IR call graph with library entries and kernel calls
+    decomposition:  generated checked call graph with library entries and kernel calls; IR or RTE.80 contract identity
     by hand:
       step map:     a relation between nodes and (statement ID, step label), reporting the unmapped items on both sides
       reason:       the statement ID and a short proof idea in glossary terms at or below the record's level
@@ -430,11 +561,9 @@ Its mathematical configurations and captured reviews establish only their stated
   under chapter 06, and its statement counts as unchanged only under an identical statement ID. Every built-in declares
   chapter 07's `BoundaryClass` under BM5, reviewed when it ships. A class declaration and a `PrincipleRecord` are separate
   obligations.
-- **LB6.4 [P LQ5]** Under LQ5's recommendation every tool above the kernel is written in the language, using LB1 to
-  LB5, while exact engines and independent checkers remain kernel code. Under the native-tool or per-tool alternatives,
-  the implementation backing changes; viewable source, the exact specification, real-geometry instance, evidence and
-  reviewed boundary declaration remain required by INV-12 and BM5. The generation of a decomposition for any native
-  body needs the contract in LB6.6.
+- **LB6.4 [B]** Every tool above the kernel is written in the language, with viewable and forkable source, while exact
+  engines and independent checkers remain kernel code (owner, 6 November 2026, LQ5). [D] The exact specification,
+  real-geometry instance, evidence and reviewed boundary declaration remain required by INV-12 and BM5.
 - **LB6.5 [D]** The following are candidate built-in tools, derived from H-08's named rows, DT-J1's Outcome and the
   solving workflow. No candidate has a `PrincipleRecord` yet. The class is a candidate BM5 class, not an admission
   ruling. A row that combines several commands gives their common tool data; it does not let language code execute
@@ -459,17 +588,19 @@ Its mathematical configurations and captured reviews establish only their stated
 
   The candidate list supplies no completed fixture, timing, human understanding result or product implementation.
 
-- **LB6.6 [O]** LQ5's native-tool alternative has no specified way to generate a tool's decomposition from its body.
-  The owner and LP1 must choose language wrappers whose meaningful work appears in the typed IR, or an audited native
-  call description with a defined check against the implementation. INV-12 still requires decomposition; the IR-only
-  mechanism of DT-L1 R2-E4 cannot describe an opaque native body. This dependency is conditional on that alternative
-  and settles neither LQ5 nor the implementation route.
+- **LB6.6 [P LQ9]** A non-IR RT4 language tool has a generated host decomposition meeting RTE.80's body,
+  transitive-call, effect and source-binding checks. A wrapper naming an opaque tool body is insufficient.
+  RT4 that lowers to the common IR uses LB6.2 without the host replacement.
+  An IR route makes the non-IR RT4 admission arm inapplicable, not the PrincipleRecord requirement. The owner still
+  selects LQ9 after its evidence; LP1 owes the chosen adapter and its CT-LB6-05 evidence before admitting a tool.
+  A graph missing a derived call/effect or bound to different source returns `LB6:evidence.decomposition_mismatch`.
 - **LB6.7 [D]** H-08's `view.recommendations`, `target.next.activate`, `object.actions`, `structure.find` and any
   macro-comparison mode that selects a solving target or word require a separate content definition and a ruling of the
   joint setting (partition section 11; BND.65; DT-L1 M5, R2-E3). Such a selector is a research tier candidate, with no
   admitted BM5 class or `PrincipleRecord` at this stage. The static inspector versions in the table above do not
   include that selection. A research runner, correction solver or WC-PLAN is also a research tier candidate, outside
-  this solving-tool table. Competence results do not themselves grant a preview capability; LQ2 and LQ14 decide any gate.
+  this solving-tool table. Competence results do not themselves grant a preview capability. Competence checks guide
+  and do not lock (owner, 6 November 2026, LQ14); LQ2's joint setting decides any capability gate.
 
 ## 9. LB7: user modules
 
@@ -487,10 +618,9 @@ Its mathematical configurations and captured reviews establish only their stated
   (default 18). A local author class is recorded provenance, not proof that the solver understood or independently
   invented an algorithm. Chapter 07 decides the assistance classes and flows; chapter 09 decides what each module can
   reach.
-- **LB7.4 [P LQ12]** Under LQ12's recommendation, sharing uses local files the solver chooses, with content digests,
-  and has no registry or network. A later curated registry or signed-package option changes distribution, not the
-  need to check identity, evidence, provenance and granted capabilities. Network/process access is not granted to
-  running programs by this chapter (default 2).
+- **LB7.4 [B]** Sharing in 1.0 uses local files the solver chooses, with content digests and no registry or network
+  (owner, 6 November 2026, LQ12). [D] Identity, evidence, provenance and granted capabilities are still checked.
+  Network/process access is not granted to running programs by this chapter (default 2).
 - **LB7.5 [D]** No solver-tool solving preview is enabled before the joint boundary setting (partition section 11's
   interim reading). Forking a tool, composing its base calls, using a research record or passing a principle fixture
   cannot bypass that setting. Under either LQ21 mechanism, chapter 07 controls preview and display sinks and chapter 09
@@ -511,7 +641,7 @@ Its mathematical configurations and captured reviews establish only their stated
 | CT-LB1-03 | Inverse, conjugate, commutator and powers construct words without state access; application checks each prefix. An inverse returns an admitted path to its start. | source |
 | CT-LB1-04 | Straight-line length equals streamed expansion length on small fixtures; huge symbolic bounds compute without expansion. Admission refuses an oversized expansion before allocation and creates no new operation boundary. | source |
 | CT-LB1-05 | Fixed points satisfy their finite operator; matching and integral-flow witnesses satisfy every edge/demand constraint; small brute-force instances agree on infeasibility. | source |
-| CT-LB1-06 | Under the convention selected in LB1.10, equivalent traces receive one key, including stage 16's bca/cab counterexample. A local commuting representative is not accepted as the key. | source |
+| CT-LB1-06 | LB1.10 maps bca/cab to bca, retains the c-before-a dependency, and keeps both distinct from abc. Word keys remain separate. Identity-domain tokens survive; changed key/relation versions refuse comparison. | source |
 | CT-LB2-01 | Retained word/star recipes from the oracle preserve chronological full-label effects, exact frames and collateral; filtering out another orbit changes no reported mechanical support. | source |
 | CT-LB2-02 | A word with identity net effect and moving intermediate prefixes passes Net and fails Strict for the relevant captured lock. An incomplete prefix check never returns safe. | source |
 | CT-LB2-03 | Recipe chunking preserves the total admission bound and the whole operation; an oversized recipe is refused without silent splitting. Named work-sheet reuse invalidates the old preview. | source |
@@ -526,19 +656,24 @@ Its mathematical configurations and captured reviews establish only their stated
 | CT-LB4-01 | At exact camera poses, declared domain is decided by an exact region test and section membership on the posed vertices, including boundary cases. A chart whose vertices all pass and whose domain fails at an interior point is refused. Homomorphism, injectivity, embedding and isometry each require their own check. | source |
 | CT-LB4-02 | Between exact camera poses, approximate domain decisions reach only display data. Replacing them changes no admissibility, protection, digest or exact claim. | synthetic |
 | CT-LB4-03 | Multiple display instances map to the correct canonical IDs and levels; chart inverse values cannot identify a pick. Layout filters preserve the mechanically analysed set. | source |
+| CT-LB4-04 | A user chart follows RPI.68 to RPI.80's stage-module admission and CPU/GPU definition binding; admission alone leaves `admit_chart` at `not_established`. Built-in charts remain available and exact property claims still need LB4.2's checks. | source |
 | CT-LB5-01 | Stage 14: import every `t3p-*/1` kind and check W3/W5 certificates, P0 to P4, locality and fixed-point levels; changed helper sets, precedence or input digest fail; replay rows preserve chronological observables. | source |
 | CT-LB5-02 | Stage 15: the R01 `macro-certificate/1` and other corpus certificates reproduce their supports, changes and digests. Tampered claims fail. P*'s beam stop and the unbeamed stop retain different scopes; `pstar2/2` imports. | source |
 | CT-LB5-03 | Stage 16: jam words and whole-descent certificates chain from their exact tables. Reduced transport matches small unreduced cases without promoting that test to a lemma; SJ-E1 remains a release check. Leaf/alphabet negatives retain scope. | source |
 | CT-LB5-04 | Stage 17: RR canonical-word and five-tail gates agree with brute force on its recorded gate inputs. `s16-rr/1`, `s16-pxrr/1` and separate stop records retain every bound; bounded stops do not refute all words. | source |
 | CT-LB5-05 | Stage 18: both `steps.json` forms, R22B-10 versions and lattice/runner records import. Recheck the archive's completed gates and mutation controls; T6 step 4 and incomplete rule replays remain missing their third gate. A shortened stored chain is not accepted without rechecking its changed input. | source |
-| CT-LB5-06 | Stage 19: stored/uncompressed manifest digests, full reference tables and checkable certificates still check. Check R3/S block decrease and R_L's length premises; frontier exits fail the sticker goal. Indexed references are not asserted distinct fibres; Γ(Y) preserves legal prefixes without transporting sticker goals. The synthetic cycle retains unknown reachability. Missing producer dependencies are reported. | source |
+| CT-LB5-06 | Stage 19: stored/uncompressed manifest digests, full reference tables and checkable certificates still check. Check R3/S block decrease and R_L's length premises; frontier exits fail the sticker goal. Indexed references are not asserted distinct fibres; Γ(Y) preserves legal prefixes without transporting sticker goals. The synthetic cycle retains unknown reachability. LB5.14 to LB5.17 preflight missing dependencies/checkers explicitly; import and unavailable outcomes add no fresh check. | source |
 | CT-LB5-07 | One search key repeats coverage and stop reason; a budget, clock or error stop yields no negative. A reduced negative cannot leave its family without a matching reduction lemma. | source |
 | CT-LB5-08 | A complete D[k] rejection yields `OUTSIDE_CERTIFIED_DOMAIN(k)` only. Changing k or a reachability promise changes the applicable scope; neither rejection nor a budget stop means unreachable. | source |
 | CT-LB5-09 | Stream the recorded 672,417, 871,582 and 2,352,984-letter cases through length/admission checks. Any newly completed replay has its own check record; import does not claim the historical third gate completed. | source |
+| CT-LB5-10 | Validate LB5.15/LB5.16's draft claim matrix over the pinned Git-blob corpus: every claim has a checker/dependency row or an explicit unavailable reason. Missing, wrong and complete immutable inputs stay distinct; no constructor/search import enters the independent checker and no historical unfinished gate becomes passed. Inventory coverage does not discharge typed bindings, checker qualification or mutation gates. | source |
+| CT-LB5-11 | `research.obligation.export` requires a file grant and writes only the restricted versioned obligation vocabulary; an untranslatable Statement gives `LB5:input.obligation_untranslatable` and writes nothing. Export changes no evidence grade or commit gate, launches no process, uses no network and offers no proof-record return path. The prelude and Lean stay outside the shipped software. | source |
+| CT-LB5-12 | The 1.0 package includes the research library and research-archive checkers; the theory book, proofs and stage research records remain in the repository and outside the shipped software. | source |
 | CT-LB6-01 | Each shipped tool has all PrincipleRecord parts, resolving source/evidence digests and a runnable real-geometry fixture. A part that does not exist reads a typed none. A domain outside the cited scope is named. Regeneration of the decomposition accounts for transitive library and kernel calls, and a changed decomposition marks the hand parts stale. Expected claims come from the written derivation, not from the module's output. | source |
 | CT-LB6-02 | A changed module digest or fork receives no inherited evidence pass. Original references remain references and cannot certify the fork's behavior. | source |
 | CT-LB6-03 | The tool's declared BM5 class is reviewed against its exact entry definition. LX-3's correction solve, state-based target selection and storage-laundering cases are refused according to chapter 07's selected mechanism and sinks. | source |
-| CT-LB6-04 | A person can check the steps of the tool's small real-geometry instance by hand from its named givens and relate them to the generated decomposition; the owner sets the human-test form and any learning gate under LQ14. | human |
+| CT-LB6-04 | A person can check the steps of the tool's small real-geometry instance by hand from its named givens and relate them to the generated decomposition; the owner sets the human-test form. Competence checks guide without locking; any capability gate waits for the LQ2 joint setting. | human |
+| CT-LB6-05 | RTE.80 and RTE.81: an indirect helper's transitive kernel call, effect and exact source digest appear in a generated decomposition. Omitted targets/effects and changed bodies refuse admission. The host replacement is inapplicable on IR routes, whose own decomposition still checks. | source |
 | CT-LB7-01 | Workspace views cannot write records; an invoked workspace command is undoable. Save/load and import preserve provenance and cannot turn research output into an interim solving preview. | source |
 | CT-LB7-02 | The same module runs only with chapter 09's grants and chapter 07's profile policy; local storage, a fork or a binding grants no token or extra capability. | source |
 
@@ -552,50 +687,37 @@ Its mathematical configurations and captured reviews establish only their stated
 | Code | Meaning and clause |
 | --- | --- |
 | `LB1:input.incompatible_alphabet` | Word composition/application uses incompatible puzzle alphabets or pinned letter meanings; LB1.3, LB1.9. |
+| `LB1:input.key_contract_mismatch` | Keys have different kinds, versions, identities, alphabet orders or independence contracts; no equality/order result is returned; LG2.23, LB1.10. |
 | `LB2:protection.incomplete_coverage` | The requested protection assurance cannot cover the whole executed prefix; no safe verdict is issued; LB2.3. |
 | `KN2:consistency.fixed_nu_nonzero` | A reachable I_a result has a nonzero coordinate that A5 fixes at zero; LB3's ν entry. |
 | `LB4:type.approximate_property_input` | An approximate display value is supplied where an exact chart-property input is required; LB4.1, LB4.2. |
 | `LB5:evidence.reduction_scope_mismatch` | A reduction lemma is offered for another family, alphabet, hypothesis set or conclusion; it cannot transport this negative; LB5.3. |
+| `LB5:input.obligation_untranslatable` | A Statement uses something outside the versioned obligation vocabulary; nothing is written; LB5.18. |
 | `LB6:evidence.principle_record_incomplete` | A proposed shipped tool lacks a required record part or a resolving evidence/fixture reference; LB6.1, LB6.2. |
+| `LB6:evidence.decomposition_mismatch` | A tool's submitted decomposition omits a derived call/effect or names different source/build inputs; LB6.6, RTE.80, RTE.81. |
 | `LB7:capability.module_grant_missing` | A module's requested entry effect lacks the host grant required by chapter 09; LB7.1, LB7.5. |
 
 ## 12. Open items
 
-Every LQ remains open. The following are the interfaces each answer touches here; alternatives are still those in the
-partition. No candidate list or conformance requirement is an owner answer.
+The owner answered LQ1 to LQ21 on 6 November 2026. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set
+waits for the joint setting. No candidate list or conformance requirement is an owner answer.
 
 | Owner question | Clauses | What stays; what can change |
 | --- | --- | --- |
-| LQ1 Language/profile split | LB1.1, LB5.1, LB7.1 | Exact model identities and evidence stay shared. A separate or excluded research language changes LB5's host and integration; this text does not decide that split. |
 | LQ2 Human-solve boundary | LB1.5, LB1.6, LB3.5, LB6.7, LB7.5 | Entry definitions, execution gates and principle records stay. The joint setting chooses permitted calls, author classes, sinks and option set. |
-| LQ3 Evidence model | LB1.4, LB5.5, LB6.2 | Scope and the distinction from permission stay. Chapter 06 supplies the selected representation, evidence order and labels. |
-| LQ4 Branches and pinned jobs | LB5.7 | Immutable derived values stay. Branch placement and whether pinned jobs survive a commit change. |
-| LQ5 Built-in implementation | LB6.4, LB6.6 | Viewable source, principles and boundary review stay. Native/per-tool backing changes the decomposition mechanism. |
-| LQ6 Research views | LB4.1, LB7.1 | Representation data and canonical IDs stay. Where a research representation may be hosted belongs to chapters 07 and 10. |
-| LQ7 User charts | LB4.2, LB4.3 | Exact property scope stays. Built-ins alone, the chart subset or user shaders change projection evaluation and its gate. |
-| LQ8 Engine language | LB1.1, LB3.1 | Exact API behavior and oracle agreement stay. Numeric implementations and batch backing can change. |
-| LQ9 Runtime route/placement | LB1.6, LB6.2, LB7.5 | Library contracts and no commit token stay. Chapter 11 chooses the host and supported provenance implementation with LQ21. |
-| LQ10 Data-core freeze | LB1.7, LB5.9 to LB5.12, LB7.3 | Source bytes, scope and labels remain distinguishable. Chapter 05 decides envelope storage and freeze timing; DT-L1 R2-E1 is explicitly relied on for the import mechanism. |
-| LQ11 Recording | LB7.1, LB7.2 | Reused words need fresh checks and explicit commits. Chapter 04 decides recording/playback form; this chapter consumes those objects. |
-| LQ12 Module sharing | LB7.4 | Identity, provenance and grant checks stay. Distribution may change. |
-| LQ13 Syntax | LB1.2, LB6.2 | Conceptual contracts stay. Concrete function/module syntax is chapter 02's work after the decision. |
-| LQ14 Learning gates | LB6.1, LB6.7, CT-LB6-04 | A principle record stays required. Whether competence guides or gates capabilities remains open. |
-| LQ15 Formal proofs | LB5.5, LB6.2 | A certificate check establishes only its actual scope. A proof-assistant link can add evidence under chapter 06; none is assumed here. |
-| LQ16 Product cut | LB5.1, LB6.5 | The full catalogue records the requested scope. Shipping extent, including research, remains the owner's decision. |
-| LQ17 Name | Introduction, LB1.2 | Entry concepts stay. Working language name and extension are not fixed interfaces here. |
-| LQ18 Spikes | LB1.1, LB4.3, LB6.7 | Requirements remain unmeasured. Whether and when LX experiments run belongs to chapter 11; none is authorised by this chapter. |
-| LQ19 Gates | LB5.8, LB6.6 | These are draft interface dependencies. Implementation timing and the charter amendment remain the owner's decision (DT-L1 E6). |
-| LQ20 Renderer handoff | LB4.1, LB4.3 | Renderer-independent representation contracts stay. Chapter 10 and the renderer line decide the handoff and available primitives. |
-| LQ21 Flow-control form | LB1.6, LB6.7, LB7.3, LB7.5 | The correction-solve composition and storage provenance problem remain under either form. Labels and capability separation change which combinations can run. |
+| LQ8 Engine language | LB1.1, LB3.1 | [B] The choice waits for LX-5 and LX-6 (owner, 6 November 2026, LQ8). |
+| LQ9 Runtime route/placement | LB1.6, LB6.2, LB7.5 | [B] The choice waits for LX-1 to LX-5 together with LQ21 (owner, 6 November 2026, LQ9). |
+| LQ13 Syntax | LB1.2, LB6.2 | [B] The choice waits for LX-8 before LP2's parser (owner, 6 November 2026, LQ13). |
+| LQ21 Flow-control form | LB1.6, LB6.7, LB7.3, LB7.5 | [B] The choice waits for LX-1 and LX-3 together with LQ9 (owner, 6 November 2026, LQ21). |
 
 The clauses tagged [O] identify unresolved mechanisms or dependencies:
 
 | Clause | Open dependency and deciding work |
 | --- | --- |
-| LB1.10 | LP1 chooses and specifies the global trace-key convention and its independence relation. |
 | LB3.9 | EN3/LP1 packages total N, seams, D, units, Φ and chronological observations into named exact kernel results or library aggregation. |
-| LB5.8 | LP1's KN6/PS3 specification separates self-contained stage 19 checks from claims with unbundled producer dependencies. |
-| LB6.6 | If the owner chooses native built-ins under LQ5, the owner and LP1 specify their checkable generated decomposition. |
+
+LB1.10 and LB5.14 to LB5.17 now specify the draft key and checking plans. Their implementations and conformance
+remain owed. LB6.6 remains conditional on the owner's LQ9 choice; no host adapter is admitted by this draft.
 
 Further dependencies and source differences:
 

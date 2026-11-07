@@ -1,7 +1,7 @@
 # ADR-L05: the evidence model and certificates
 
 Status: **Proposed.** Not accepted. The owner accepts or rejects it ([`AGENTS.md`](../../../../../AGENTS.md), "Ask the
-owner"). Its Decision is itself a proposal under LQ3, so accepting this record and answering LQ3 are one step.
+owner"). The owner answered LQ3 on 6 November 2026; the answer accepted no ADR.
 
 Rests on: partition INV-5 and section 8.1; [chapter 06](../architecture/06-evidence.md); [chapter
 01](../architecture/01-kernel.md) KN6; [the label table](../evidence-import/README.md). Round table: DT-L1 M1, M2,
@@ -20,7 +20,8 @@ states, how results combine, and what can never be inferred.
 
 ## Decision
 
-Under LQ3's recommendation:
+The owner chose separate fields and computed words (owner, 6 November 2026, LQ3). The clauses below give the draft
+mechanisms for that model.
 
 - **ADR-L05.1** A claim keeps four questions apart: claim, scope, basis and check. How the job ended is a separate fact,
   and it is not evidence (EVD.1 to EVD.3, EVD.5).
@@ -46,24 +47,29 @@ Under LQ3's recommendation:
   kind. It recomputes without caches, it shares no search or construction code with the producer, and it uses the
   kernel's exact engines and model files, which the oracles test separately. Its report enters the graph as one leaf
   (EVD.46, KN6.1 to KN6.6).
+  EVD.64 names the writers: only the kernel writes the independent-checker value. The host writes theorem basis with
+  a commit-pinned record and model or human review with a digested review record. A user program writes at most exact
+  computation with check producer; anything higher needs a certificate the kernel can check
+  (owner, 6 November 2026, decision 11).
 - **ADR-L05.9** Labels on record map by (format, field, value), never by word. A value that depends on a sibling field
   stays recorded until a whole-record rule maps it, and a recorded claim reads open (EVD.48 to EVD.52).
 - **ADR-L05.10** Evidence never grants anything, and no policy row reads a word (INV-5, EVD.56, BND.81). The model is
   pure library code over data, so a bug in it can give a wrong word and cannot change a session (EVD.54).
+  The envelope in EVD.55 stores facts and derives judgements (owner, 6 November 2026, LQ10). LB5.18 exports proof
+  obligations to Lean (owner, 6 November 2026, LQ15). In 1.0 there is no proof-record import or writer for `formal proof`
+  (EVD.47, EVD.64, RTE.28). Lean is neither shipped nor a runtime dependency, and formal proofs come after 1.0
+  (owner, 6 November 2026, decision 9).
 
 ## What this record does not decide
 
-Open whatever the owner answers:
+The owner answered LQ1 to LQ21 on 6 November 2026. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set
+waits for the joint setting.
+
+Open mechanisms:
 
 - The content of the invalid-pairs table, which starts empty (EVD.21).
 - Records with no `format` key (EVD.53, PS3.12). Until a discriminator table exists they stay wholly recorded.
-
-Conditional on an owner question:
-
-- **LQ3:** the whole Decision above. The alternatives are one claim axis with the five words plus refuted and open, or
-  one linear scale. LQ3 also decides whether to raise the threshold above 𝒰₀ (EVD.29).
-- **LQ10:** whether the envelope stores facts and derives judgements, or stores judgements (EVD.55, PS1.36).
-- **LQ15:** whether formal proofs enter 1.0. The check value exists either way (EVD.3, RTE.28).
+- The "proved" threshold above 𝒰₀ (EVD.29). The owner has not set a higher threshold.
 
 ## Why
 
@@ -81,8 +87,8 @@ Conditional on an owner question:
 
 | Alternative | Why it was turned down |
 | --- | --- |
-| One claim axis, five words plus refuted and open (LQ3) | Simple to show. It merges basis and check, so it cannot say why two "proved" results differ. It stays open as LQ3's alternative |
-| One linear scale (LQ3) | Forces an order on incomparable grades. It stays open as LQ3's alternative |
+| One claim axis, five words plus refuted and open (LQ3) | Rejected alternative of LQ3 (owner, 6 November 2026). Simple to show. It merges basis and check, so it cannot say why two "proved" results differ |
+| One linear scale (LQ3) | Rejected alternative of LQ3 (owner, 6 November 2026). Forces an order on incomparable grades |
 | Combine arguments by the strongest | Undefined on incomparable arguments (EVD.27) |
 | Count independent samples towards a proof | No number of samples entails a universal statement (EVD.27, EVD.44) |
 | Map labels by their word | Seven words have more than one mapping (EVD.50) |
@@ -95,18 +101,21 @@ Conditional on an owner question:
   and it costs extra lemmas.
 - Much of the record stays recorded for now: 89 of the 387 triples have a reason and no mapping (EVD.49). They read
   open.
-- The envelope's size is unknown until the experiment of PS1.38 runs.
+- PS1.38's source experiment, which one Sol review sampled without a finding on it, reports 497 partial envelopes and
+  no complete typed envelope. Its recorded sizes describe that partial metadata; the size of a complete typed envelope
+  remains unknown.
 
 ## Evidence
 
 Classes: source, and proofs in the text. Theorems A to D are proved in chapter 06 from the mathematician's note N2. No
 person has reviewed them. The label counts are source evidence counted from Git blobs, and `corpus-labels.json` and its
-README give the production command. CT-EVD-01 to CT-EVD-23 are requirements only. No kernel checker in this design has
+README give the production command. CT-EVD-01 to CT-EVD-30 are requirements only. No kernel checker in this design has
 been built, though the research has its own checkers on record.
 
 ## What the owner accepts
 
-Accepting this record, with LQ3's recommendation, accepts ADR-L05.1 to ADR-L05.10 and the clauses they cite.
+Accepting this record accepts ADR-L05.1 to ADR-L05.10 and the clauses they cite. LQ3, LQ10 and LQ15 were answered on
+6 November 2026; those answers accepted no ADR and left the "proved" threshold open.
 
 The owner may overrule these integrator additions: the empty start of the invalid-pairs table (EVD.21), the default for
 records with no `format` key (EVD.53), the import values "not run", "not stated" and "stated: not replayed" (EVD.47),

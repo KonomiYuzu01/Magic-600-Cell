@@ -5,7 +5,8 @@ Status: **draft for the owner. Not accepted.** Conventions are in [the overview]
 This chapter describes stored data, its byte boundaries and its passage between versions. Chapters 02, 04, 06, 07
 and 09 define the meanings of modules, bindings and recordings, evidence, provenance and reproducibility. This chapter
 records those meanings without choosing source syntax, a runtime, an evidence order or a boundary policy. The format
-tables describe logical fields. Unassigned wire names and versions remain open.
+tables describe logical fields. The [EN4 format packet](../format-packet/README.md) assigns candidate wire fields,
+identifiers, profiles and limits for the language-neutral core. These are drafts, not a freeze or an owner answer.
 
 Sources: [the partition](../ecosystem-partition.md), sections 7, 8.1, 10.3, 11, 13 and defaults 3, 4, 11, 13, 20;
 [chapter 01](01-kernel.md); [DT-L1](../../../../progress/1.0/design-table/topics/language-ecosystem.md), M2, R2-E1,
@@ -14,6 +15,7 @@ R2-E3 and the persistence and evidence-storage Fix first items;
 [DT-M1](../../../../progress/1.0/design-table/topics/command-keyboard-model.md);
 [migration decision of 2 October](../../../../wiki/decisions/owner-decisions-2026-10-02-migration.md),
 [its 3 October amendment](../../../../wiki/decisions/owner-decisions-2026-10-03-migration.md),
+[the owner decisions of 6 November](../../../../wiki/decisions/owner-decisions-2026-11-06.md),
 [migration options](../../../../progress/1.0/migration-options.md),
 [exporter re-plan](../../../../progress/1.0/migration-exporter-proposal.md) and
 [probe report](../../../../progress/1.0/migration-probe-results.md);
@@ -49,22 +51,22 @@ R2-E3 and the persistence and evidence-storage Fix first items;
 | Stage 19 public archive | The captured public bytes; its JSON production uses compact separators and `ensure_ascii=False` | JSON over 250,000 bytes uses `gzip.compress(data, compresslevel=9, mtime=0)`; stored, uncompressed and original-source digests are distinct | Stage 19 `PUBLICATION.md` and `IMPORT-MANIFEST.json`; source evidence for the threshold |
 | Earlier research records | The bytes identified by that stage's manifest, including original spacing and line endings | The stage's recorded stored and uncompressed digests; no reserialization before checking either | Restoration index, each `IMPORT-MANIFEST.json` |
 
-- **PS1.3 [O]** LP1's KN1 normalisation specifies the canonical profile for new formats. The existing choices are the
-  retained JSON profile and the jumbling store profile; their Unicode escaping and terminal LF differ. The decision
-  also fixes string ordering and escaping, treatment of noncanonical but parseable input, and canonical finite display
-  numbers. Options for such input are refusal, or an explicit conversion retaining the original bytes. Neither option
-  changes the old profiles in PS1.2. No source fixes a universal JSON canonicalisation standard for the new formats.
+- **PS1.3 [D]** The candidate profile for new core records is `c600-json-1` in FP.5: scalar-sorted keys, literal
+  Unicode, compact separators, UTF-8 without BOM and exactly one terminal LF. Duplicate keys, lone surrogates and
+  noncanonical bytes refuse active reading; explicit conversion retains the original bytes. FP.6 gives finite
+  display numbers a separate typed bit encoding. This is the EN4 draft for KN1 normalisation, not an adopted
+  universal JSON standard. PS1.2's retained no-LF and prototype LF profiles remain distinct and have byte vectors.
 - **PS1.4 [B]** Decision fields contain exact values, never floats (INV-4). The store's Q(√5) entry is the integer
   triple `[a,b,d]` for `(a+b√5)/d`, with positive `d` and `gcd(a,b,d)=1`; matrices retain their ordered entries
   (`candidate/store.py`, `check_q5`, `check_matrix`; ENG-0J store section). Its integers are JSON integer tokens of
   arbitrary precision. Reading them through a binary floating-point number is invalid even when the JSON parser
   otherwise accepts the file. Existing decimal-string fields, such as `primitive_count`, keep their representation.
-- **PS1.5 [O]** New big integers and rationals need a wire encoding in LP1's byte profile. Options are arbitrary-size
-  JSON integer tokens, as in the jumbling store, or explicitly typed decimal strings, as used for retained counts.
-  Canonical integer text has an optional minus sign, digits without leading zeroes and zero written as `0`.
-  Rational options are a reduced numerator/positive-denominator pair, or the existing Q(√5) triple with `b=0`.
-  Either choice preserves exact sign and reduced value. A parser's machine-integer or decimal-conversion limit becomes
-  an explicit read resource limit, never rounding. This choice cannot change the encoding of an existing format.
+- **PS1.5 [D]** New `Int`/`Nat` fields use canonical decimal strings; free exact values use the typed `int`, `rat`
+  and `q5` wrappers of FP.6. Rationals have reduced numerator and positive denominator. Canonical integer text has
+  no leading zeroes or plus sign, and zero is `0`, never `-0`. New JSON integer tokens are limited to the exact
+  53-bit range; large exact values never pass through floats. The shared digit limit is 10,000 and has a generated
+  6,775-digit round-trip vector. A host parser ceiling cannot round or silently change it. Existing formats keep
+  their own integer tokens and decimal-string fields (PS1.4).
 - **PS1.6 [D]** Every state digest carries its level (KN1.8, default 4). `Digest<labels>` is SHA-256 of all labels in
   canonical slot order as signed little-endian int32, as in `core.state_hash`. `Digest<poses>` follows J1's exact
   `State.digest`: group non-identity pieces by exact pose, sort groups by the JSON matrix key, then hash each key's
@@ -82,16 +84,17 @@ R2-E3 and the persistence and evidence-storage Fix first items;
   [`.gitattributes`](../../../../../.gitattributes) disables text conversion. New source and architecture text is
   UTF-8 with LF; existing captured bytes retain their declared profile. Checkout conversion is not a digest
   normalisation step. A reader that receives changed bytes reports a mismatch instead of accepting the old digest.
-- **PS1.9 [O]** A deterministic gzip setting for new formats still needs its complete LP1 profile. Both existing
-  deterministic producers set `mtime=0`; their compression levels differ. Options are reuse of the level-5 log
-  profile or the level-9 archive profile with a declared threshold. The profile also pins the gzip header, filename
-  field and compressor/version needed for identical stored bytes across platforms. A zero timestamp alone does not
-  establish that identity. Historical `encode_export` in `log_io.py` omits `mtime=0`; existing downloads keep their
-  captured stored digest and their separate decoded digest.
+- **PS1.9 [D]** New records use `c600-gzip-stored-1` (FP.7): fixed header, zero mtime, no optional fields,
+  deterministic 65,535-byte DEFLATE stored blocks, CRC32 and size trailer. This candidate chooses portable literal
+  blocks rather than a platform compressor version; it provides no compression saving. Records over 250,000 decoded
+  bytes use gzip, smaller ones raw. A compressing successor needs its own profile and vectors. Existing level-5 logs,
+  level-9 archives and timestamped `encode_export` downloads keep their captured stored and separate decoded digests.
 - **PS1.10 [B]** Readers and writers use one limits table, with each write limit at most its read limit (R-01).
   A limit is checked before allocation, expansion or publication that would exceed it. Compression never bypasses
   the decoded limit. The following table distinguishes compatibility limits from limits that have not been chosen.
   Its existing values are source evidence from the named files, not new measurements or product capacity claims.
+  FP.9 is the single candidate read/write resource table; the table here records the compatibility obligations
+  and the independent EN3 admission dependency that it must not replace.
 
 | Profile and unit | Write limit | Read/admission limit | Source or decision still needed |
 | --- | --- | --- | --- |
@@ -106,15 +109,15 @@ R2-E3 and the persistence and evidence-storage Fix first items;
 | Experimental store named-part nesting, depth | At most 64 | 64 | `candidate/store.py`, `_check_parts`; applies to that existing carrier |
 | Checking, previewing or replaying a menu word, expanded menu letters | At most the X3 admission bound | The same X3 admission bound | Value open; DT-J1 X3 and EN3, PS1.21 |
 | Legacy preference validation, characters in `core.canonical(prefs)` | At most 500,000 | 500,000 in the compatibility validator | `session.py`, `_validated_prefs`; this is a character count, not a UTF-8 byte count |
-| New JSON, source, graph and binary record profiles | At most each recorded read limit | Open: stored bytes, decoded bytes, integer digits, nesting, graph nodes/edges and array dimensions | PS1.11; LP1 and EN4 |
-| Path B package and independent-check bundle | At most each recorded read limit | Open: per-member and cumulative bytes, members, events and replay cost | PS1.11; exporter Q2 and EN4; no inherited interactive-log cap |
+| New JSON, source, graph and binary record profiles | Equal to each FP.9 read limit | `c600-limits-draft-1`: FP.9 | PS1.11; trial resource budgets, not measured capacity |
+| Path B package and independent-check bundle | Equal to each FP.9 read limit | FP.9 per-member and cumulative bytes, members, events and replay cost | PS1.11; no inherited interactive-log cap |
 
-- **PS1.11 [O]** EN4 and LP1 set the open rows of PS1.10 from a declared corpus and resource-budget analysis.
-  Options are separate interactive and archival profiles, or one shared profile sized for both. Each has finite
-  stored, expanded and cumulative bounds, applied by both reader and writer, including to gzip and referenced parts.
-  No measurement here selects values. The old log limits cannot silently become limits on the complete path B
-  archive, and the archive cannot raise a recipe's semantic ceiling. An over-limit write preserves the source and
-  returns a typed refusal; it never truncates or silently splits an operation (default 10, V05.2).
+- **PS1.11 [D]** FP.9 assigns `c600-limits-draft-1`, with equal read/write bounds for new records and archives,
+  and retains the compatibility limits separately. Its analysis cites the PS1.38 corpus and labels the unmeasured
+  memory/performance assumptions. Counts are checked before allocation or expansion, including cumulative gzip,
+  graph and replay work. The old log cap is not a path B archive cap, and the archive cannot raise a recipe's
+  semantic ceiling or replace EN3's X3 bound. An over-limit write preserves the source and returns a typed refusal;
+  it never truncates or silently splits an operation (default 10, V05.2). The trial values still need review.
 
 ```text
 operation read_record(bytes: Bytes, format: FormatRef, limits: LimitsRef) -> StoredValue | RecordedInput
@@ -132,27 +135,31 @@ operation write_record(value: StoredValue, format: FormatRef, limits: LimitsRef)
 
 - **PS1.12 [D]** Existing format identifiers and versions are reused without renaming (partition default 3).
   The catalogue distinguishes a legacy input, an experimental carrier and a proposed logical record. A slash in an
-  existing identifier is part of that identifier. The data-core column describes LQ10's recommended scope only;
-  nothing in this catalogue freezes a format.
+  existing identifier is part of that identifier. The source extension is `.6cs` (owner, 6 November 2026, decision 6).
+  The `c600-` descriptors, including `c600-source-draft`, stay until the format freeze; the name changes no module
+  identity bytes. The data-core column follows the scope chosen in LQ10; nothing in this catalogue freezes a format.
 
-| Format | Identifier | Version | Writer | Reader | Data core under recommended LQ10 |
+| Format | Identifier | Version | Writer | Reader | Data core under LQ10 |
 | --- | --- | --- | --- | --- | --- |
-| Source | Unassigned; working extension under LQ17 | Source edition | Authoring environment | Chapter 02 front end | No |
-| Module manifest | Unassigned | Data schema plus source edition reference | Module authoring command | Chapters 02, 03, 09 | No |
-| Lockfile | Unassigned | Data schema | Local module resolver | Chapters 02, 09 | No |
-| Word and macro | Unassigned outer carrier; existing menu-word fields retained | Data schema | Workspace word commands, importer | Kernel replay, macro tools, exporter | Yes |
+| Source | Source bytes: PS1.14; descriptor `c600-source-draft` (FP.4); extension `.6cs` | Source edition | Authoring environment | Chapter 02 front end | No |
+| Module manifest | `c600-module-draft` (reserved; FP.4) | Data schema plus source edition reference | Module authoring command | Chapters 02, 03, 09 | No |
+| Lockfile | `c600-lock-draft` (reserved; FP.4) | Data schema | Local module resolver | Chapters 02, 09 | No |
+| Word and macro | `c600-word-draft`, `c600-macro-draft` (FP.4) | Data schema | Workspace word commands, importer | Kernel replay, macro tools, exporter | Yes |
 | Recipe | Existing `word` and `star` steps in the carriers below | Carrier's schema | Workspace commands, importer | Exact engine, oracle adapter | Yes |
-| Macro set and protection set | Unassigned outer carriers | Data schema | Workspace commands, importer | Session command layer | Yes |
-| Binding and key map | Unassigned | Data schema | Key-map commands, importer | Chapter 04, command layer | Yes |
-| Layout and declared tool parameters | Unassigned | Data schema | Invoked workspace commands | Chapters 04, 10 | No; their provenance field is in the core |
-| Filter | Unassigned outer carrier | Data schema | Filter commands, importer | Filter evaluator | Yes |
-| Preference | Unassigned outer carrier | Data schema | Preference commands, importer | Session and workspace commands | Yes |
-| Checkpoint and replay path | Unassigned outer carrier; migration member `session/checkpoint-paths.json` | Data schema | Session store, importer | Recovery and replay checker | Yes |
-| Recording | Unassigned | Data schema | Chapter 04 recorder | Recording converter and gated playback | No |
-| Run record | Unassigned | Data schema, editions and ReproKey references | Job completion/store command | Reproducer, independent checker | No; referenced envelopes use the core |
-| Workspace record | Unassigned | Data schema | Workspace commands, importer | Workspace queries | Provenance field only, plus the core payload kinds above |
-| Evidence envelope | Unassigned | Data schema and evidence-function editions | Checkers, producers, importer | Chapter 06, independent checker | Identity, immutable scope and selected payload |
-| Import table | Unassigned | Mapping-table version | Reviewed import-table author | Research importer, coverage checker | Envelope's mapping dependency; packet fixes its boundary |
+| Macro set and protection set | `c600-macro-set-draft`, `c600-protection-set-draft` | Data schema | Workspace commands, importer | Session command layer | Yes |
+| Binding and key map | `c600-binding-draft`, `c600-key-map-draft` | Data schema | Key-map commands, importer | Chapter 04, command layer | Yes |
+| Layout and declared tool parameters | `c600-layout-draft` (reserved; FP.4) | Data schema | Invoked workspace commands | Chapters 04, 10 | No; their provenance field is in the core |
+| Filter | `c600-filter-draft` | Data schema | Filter commands, importer | Filter evaluator | Yes |
+| Preference | `c600-preferences-draft` | Data schema | Preference commands, importer | Session and workspace commands | Yes |
+| Checkpoint and replay path | `c600-checkpoint-draft`, `c600-replay-path-draft`; member `session/checkpoint-paths.json` | Data schema | Session store, importer | Recovery and replay checker | Yes |
+| Recording | `c600-recording-draft` (reserved; FP.4) | Data schema | Chapter 04 recorder | Recording converter and gated playback | No |
+| Playback state | `c600-playback-draft` (FP.37) | Data schema | Command layer (PS1.44) | Playback and recovery | No |
+| Proof-obligation export | `c600-proof-obligation-draft` (PS1.45) | Export schema and vocabulary version | LB5.18 translator through a granted file capability | External Lean 4 tooling | No |
+| Run record | `c600-run-draft` (reserved; FP.4) | Data schema, editions and ReproKey references | Job completion/store command | Reproducer, independent checker | No; referenced envelopes use the core |
+| Workspace record | `c600-workspace-draft` | Data schema | Workspace commands, importer | Workspace queries | Provenance field only, plus the core payload kinds above |
+| Pick record | `c600-pick-draft` (FP.38) | Data schema | Workspace commands (BND.54) | Provenance adapter (BND.84, BND.85) | Yes |
+| Evidence envelope | `c600-evidence-draft` | Data schema and evidence-function editions | EVD.64's named writers, enforced by EVD.65; imports obey EVD.47 | Chapter 06, independent checker | Identity, immutable scope and facts payload |
+| Import table | `c600-import-table-draft` | Mapping-table version | Reviewed import-table author | Research importer, coverage checker | Envelope's mapping dependency; packet fixes its boundary |
 | Retained session exchange | `C600-STUDIO-SESSION-v1` | v1 | Existing 0.4 exporter | Compatibility reader | Existing input to migration |
 | Retained preview certificate | `C600-STUDIO-CERTIFICATE-v1` | v1 | Existing 0.4 preview | Compatibility reader, independent checker | Existing evidence input; no permission |
 | Experimental jumbling section | `magic600-jumbling-store/1` | 1 | Experimental store; future store adapter | Store/recovery checker | Word, checkpoint and evidence portions only |
@@ -172,13 +179,13 @@ operation write_record(value: StoredValue, format: FormatRef, limits: LimitsRef)
 | Research publication manifest | `IMPORT-MANIFEST.json`; stage 19 header `sanitized-research-archive/1` | Per manifest | Archive preparation | Integrity checker/importer | Source-byte dependency |
 | Stage 19 proofs, tables and receipts | Each original header, including absent headers; no umbrella rename | As captured | Archived research producer/reviewer | Independent checker/importer | Archived inputs |
 
-- **PS1.13 [O]** LP1 and EN4 assign the unassigned identifiers, schema versions and extension/unknown-field rules.
-  Options are independent versioned records inside a session container, or versioned sections of that container with
-  independently exportable envelopes. Both retain all logical fields below and all existing identifiers. The
-  experimental session wrapper is evidence about a prototype, not a selected 1.0 container. Default 11 keeps every
-  format here in prose until the ADRs are accepted; this chapter adds nothing under `schemas/`.
-  EN4 also reconciles the old exporter draft's proposed manifest `format=c600migrate`, `format_version=1` with the
-  re-plan's working name `C600-MIGRATE-draft`. These are draft spellings, not an authorised alias between versions.
+- **PS1.13 [D]** FP.4/FP.10/FP.11 assign independent version-1 draft records, their wire fields and unknown-field
+  outcomes. FP.4 supplies the identifiers now listed in the catalogue; language-dependent payloads remain
+  outside the data-core freeze. Unknown ordinary fields refuse active read; optional extensions are preserved
+  and cannot alter required meaning, while unknown required extensions or versions refuse activation. FP.24 uses
+  `C600-MIGRATE-draft` with `format_version=1`; `c600migrate` is a different draft input requiring an explicit
+  converter, not an alias. No experimental session wrapper becomes the product container. Default 11 keeps this
+  specification in prose; nothing is added under `schemas/`.
 
 ## 3. PS1: source, modules and workspace data
 
@@ -247,7 +254,7 @@ operation write_record(value: StoredValue, format: FormatRef, limits: LimitsRef)
 | Start digest | Digest and level of the input at which it was recorded; an origin, not a certificate for later states |
 | Named parts | Optional named literal parts, `same_as` and `inverse_of` relations, with their pinned definitions |
 | Exact expanded length | Big integer counting letters in the declared alphabet, computed before expansion |
-| Content references | Digests for external parts and any optional stored flat expansion; their agreement is checked |
+| Content references | Under JI.18's flat draft, mandatory literal chunk references plus optional pinned annotation definitions; their agreement is checked |
 | Provenance field | Versioned block from chapter 07, retained on every copy and conversion |
 
 | Macro field | Stored value and validation |
@@ -258,15 +265,17 @@ operation write_record(value: StoredValue, format: FormatRef, limits: LimitsRef)
 | Metadata/evidence references | Recorded origins, full collateral claims and certificate digests, with their scope |
 | Provenance field | The macro's and payload's labels remain attached through copying, renaming and import |
 
-- **PS1.19 [D]** Expansion of named parts checks referential closure, rejects cycles, computes exact lengths before
-  producing letters, and preserves chronological order (DT-J1 E3; KN2.10). `inverse_of` reverses the expanded letters
-  and inverts each against the pinned alphabet. `same_as` means the pinned part's same literal sequence. A stored
-  flat expansion, if present, must agree with the parts. These checks prevent a short record from concealing
-  unbounded expansion work; the operation is admitted against its expanded cost before replay.
-- **PS1.20 [O]** EN3 chooses flat storage with named annotations, or a closed referenced-part representation, as
-  DT-J1 E3 explicitly leaves open. Both give the same expanded letters, big-integer length and content dependencies;
-  a missing referenced part refuses expansion. The choice fixes the word byte digest profile and streaming protocol.
-  It does not impose a mathematical length cap.
+- **PS1.19 [D]** Under JI.18's flat draft, stored menu words carry all literal chunks. Named parts are annotations
+  over half-open spans; they never generate replay letters. FP.13 encodes JI.21's local and pinned targets. Admission
+  checks closure, rejects cycles and compares `same_as` and `inverse_of` with the actual literal spans under the
+  pinned menu. A language/source part graph may expand lazily, but its exact length and expanded cost are checked
+  before producing the stored word. Retaining that graph does not admit or store its expanded word.
+- **PS1.20 [O]** JI.18 recommends flat ia16 storage with named annotations; FP.13 gives its draft wire form. The
+  carrier's adoption stays open for EN3 and the format-freeze ruling. Under that form, chunks are mandatory and
+  storage budgets count every literal byte, even when a small source graph generates them. A closed referenced-part
+  alternative would need its own reviewed byte profile, closure/expansion rules and streaming vectors. Either form
+  preserves chronology, exact length,
+  dependencies and pre-replay admission; neither imposes a mathematical length cap.
 - **PS1.21 [B]** A word has no type-level length cap, while expansion beyond DT-J1 X3's bound is refused with its
   exact length reported (DT-J1 E3; KN2.10). A word containing a jumble letter is refused while Jumble is off
   (DT-J1 E1). Storing a word does not establish that every prefix is admissible at any later revision. Checking,
@@ -389,18 +398,97 @@ operation expand_stored_word(word: StoredWord, bound: Budget) -> LiteralWordStre
 | Label-crossing certificate | Pose digest, labels digest, ν=0, C5 convention, certificate-program SHA-256 and contract revision; exact exit pose state retained |
 | Recovery/dependencies | Durable store dependencies and applicable recorded assistance; no preview or user-action token |
 
-- **PS1.30 [P LQ11]** A recording stores the chapter 04 command sequence in the form below. Under LQ11's
-  recommendation, conversion produces either one macro for one commit, or stepwise playback with one explicit
-  user action per commit. Under its alternative, view and workspace steps may play unattended; commit permission
-  remains absent under INV-3. Neither option records screen coordinates as object identity.
+- **PS1.30 [D]** A recording stores EV4.10's ordered `RecordedStep` values in the form below. Its three uses are
+  conversion to a word draft or source for one complete preview and one user commit, stepwise playback with one
+  user action per commit, and unattended playback after one starting user action. View and workspace steps may
+  play unattended; commits stay manual (owner, 6 November 2026, LQ11; owner, 6 November 2026, decision 3).
+  EV4.17 to EV4.23 govern eligibility, outcomes, recovery and conversion. No stored field grants commit permission
+  under INV-3, and no screen coordinate identifies an object.
 
 | Recording field | Stored value and validation |
 | --- | --- |
 | Format/version, source identity and edition | Recorder contract and optional generated-source dependency |
-| Ordered commands | Command IDs and absolute typed arguments, with canonical IDs and fixing identities |
+| Ordered steps | EV4.10's RecordedStep values in invocation order, including refusals and unresolved terminal outcomes under EV4.11 |
 | Revision bindings | Recorded revisions and immutable input digests; a process-bound revision is historical context, not a live grant |
 | Word and workspace references | Exact content references and their provenance fields |
-| Outcome linkage | Durable receipt/event references where an action actually committed; no reusable token |
+| Outcome linkage | Each step's originating invocation and terminal receipt reference, or explicit absence; missing knowledge follows EV4.19 |
+
+| RecordedStep field | Stored value and validation |
+| --- | --- |
+| `row` | Stable command-table row ID, distinct from the invocation's CommandId |
+| `arguments` | Resolved canonical arguments with canonical object identities; no token and no operation preview ID (KN5.9). A `FilterPreviewRef` argument stays as recorded for EV4.14's check |
+| `word` | WordRef or none; operation.execute retains the word behind its original preview, never that preview ID |
+| `depends` | Ordered List<RevisionRef> of the revisions the step read, retained as recorded dependencies |
+| `module` | Digest<source> for an overlay step, or none; no substitution by another module with the same name |
+| `action` | ActionNumber or none, naming the durable action the invocation took (LI.9); undo/redo conversion matches this number to the recorded hint.target |
+| `command` | The originating invocation's CommandId under KN5.21 |
+| `request` | Digest<request> binding that original invocation; it cannot authorize a new one |
+| `outcome` | Terminal receipt reference or none, preserving KN5.21's actual status and EV4.19's unknown-outcome treatment |
+
+  These are versioned data fields under PS1.1 and PS1.13. The common byte profile, exact-number encodings and
+  digest roles apply; optional absence is explicit. A replayed child has a new command/request binding and its
+  receipt is tracked by PS1.44, without overwriting the captured invocation. Capture excludes `recording.*`.
+
+- **PS1.44 [D]** `PlaybackState` is a durable workspace record in PS1.16's carrier, outside the undo order, with
+  FP.37's wire form. Its payload has this shape; `Nat`, digests, references and receipts retain their existing byte
+  contracts under PS1.3, PS1.5, PS1.13 and KN5.21:
+
+  ```text
+  PlaybackState = {
+    playback:  PlaybackId
+    recording: Digest<recording>
+    step:      Nat                                   # next step
+    pending:   { command: CommandId, request: Digest<request> } | none
+    actions:   List<{ recorded: ActionNumber, played: ActionNumber }>   # sorted by recorded; each recorded once
+    status:    running | waiting(step) | stopped(PlaybackStop) | finished
+    last:      Receipt?
+  }
+  PlaybackStop = code(Code) | outcome(refused | failed | cancelled | unknown_outcome)
+  ```
+
+  The command layer writes `pending` durably before dispatch, including a shell manual-step action. Cursor,
+  pending, status and last receipt are updated together in a recoverable write; the cursor creates no undo target.
+  Recovery looks up the pending command/request through KN5.23 before continuation, reconciles a known receipt
+  at most once and stops on `unknown_outcome` without a fresh retry (EV4.19, EV4.20). An explicit `from`
+  follows EV4.22's table after pending reconciliation; an unrelated invocation cannot move the cursor. The recording
+  digest prevents a saved cursor from silently applying to edited recording bytes.
+  `actions` holds one entry for each played step that took a durable action: the step's recorded `action`
+  (EV4.10) and the action number the played step took. Undo and redo steps enter it like any other step, and the
+  entry is saved with the cursor. EV4.18 reads it before an undo or redo.
+  `stopped(code)` carries a stop with a code of its own. `stopped(outcome)` carries EV4.19's typed child outcome;
+  any code that outcome has stays in the unchanged receipt in `last`, and no code is invented for it.
+
+- **PS1.45 [D]** `c600-proof-obligation-draft` is the export format for LB5.18's `research.obligation.export`
+  (owner, 6 November 2026, LQ15; owner, 6 November 2026, decision 4; owner, 6 November 2026, decision 9).
+  It carries a typed statement (PS1.46) and its Lean 4 source over a restricted, versioned vocabulary, with the
+  statement and translation dependency
+  pins. Text is UTF-8/LF and its source bytes retain their digest; the export is outside the language-neutral data
+  core. An untranslatable statement refuses with `LB5:input.obligation_untranslatable` and writes nothing. Export
+  uses a granted file capability and supplies no process or network access (default 2).
+
+  1.0 has no return format or proof-record import row and adds no check mode. `formal proof` remains in EVD.3
+  with no writer in 1.0 (EVD.64); imports cannot assert it (EVD.47). Export promotes no claim and touches no commit
+  gate (RTE.28). A failed Lean run is no refutation and enters no record. The translation prelude lives in the
+  repository outside the shipped software. Lean is neither shipped nor a runtime dependency and is not on the
+  allowlist; a project check that runs it needs the owner.
+- **PS1.46 [D]** Export reads one typed statement: a chapter 06 `Statement` (section 2, EVD.8, EVD.9) whose StatementId
+  has FP.19's typed form. Its bytes must resolve and carry the body `{hypotheses:[Prop],conclusion:Prop}`. A named ID
+  has no body to translate, so it refuses with `LB5:input.obligation_untranslatable`. The body uses vocabulary
+  `c600-obligation-vocabulary-draft-1`:
+
+  ```text
+  Sort = Nat | Int | Rat | named(name)
+  Term = var(name) | nat(n) | int(n) | rat(n, d) | sym(name, args)
+  Prop = true | false | eq(a, b) | le(a, b) | lt(a, b) | not(p) | and(p, q) | or(p, q) | implies(p, q)
+       | forall(name, sort, p) | exists(name, sort, p) | pred(name, args)
+  ```
+
+  `sym`, `pred` and `named` names come from a versioned symbol table. Each row maps a name to a Lean identifier of the
+  translation prelude, with its arity, and the table's digest is among the export's pins. Premises and guards arrive
+  as hypotheses of the body, and each becomes a named hypothesis of the Lean statement. A name outside the table, a
+  wrong arity or a form outside the vocabulary refuses with the same code and writes nothing. The output states the
+  theorem with no proof (`by sorry`). The `obligations` vectors of `format-packet/` hold a supported statement with
+  its exact Lean text and the refusals.
 
 - **PS1.31 [D]** A `RunRecord` stores the inputs and result of chapter 09's `ReproKey`, using the following fields
   (partition section 13, INV-10, KN7.3). It records an incomplete result without turning its stop reason into a
@@ -442,17 +530,17 @@ operation expand_stored_word(word: StoredWord, bound: Budget) -> LiteralWordStre
   a policy-gated use that it cannot justify; it does not downgrade to an unlabelled word. A switch of forms is a
   recorded migration, not a label reset. 0.4 macros enter labelled as the solver's own, imported, with the captured
   source digest. That records their import origin and grants no research-to-solving exception.
-- **PS1.34 [O]** LP1 and chapter 07 fix the provenance field's initial wire version and compatibility rules before
-  any conditional migration-format freeze. Options are an independently versioned nested block or a block version
-  tied to each containing schema with an explicit mapping. Either records the form, preserves old labels and can
-  represent the common obligations in PS1.32 without waiting for LQ21's answer. The data-core packet cannot claim
-  this obligation closed using only a prose promise to add labels later. The required `ProvenanceBlock.profile` value
-  for words with no run, including imported 0.4 macros and hand-typed words (BND.17, BND.23), must also be fixed before
-  that freeze. Its value remains open; BND.21's `unknown` fallback for a missing field does not settle it.
+- **PS1.34 [D]** FP.17 assigns independent nested provenance version 1, with explicit form and contract/checker
+  pins, complete field spellings and compatibility outcomes under both LQ21 forms. H9/BND.23 fixes the required
+  no-run `profile` as the explicit value `none`, only for manual/import producers. Hand-typed words have empty flow
+  labels or `read_state(no)`; imported 0.4 macros keep `depends: not_recorded` and the source digest. Missing fields
+  still read `unknown`, never this explicit no-run value. FP.18's four complete examples fabricate neither a run
+  nor permission. Unknown versions/forms are preserved and cannot justify policy-gated use; changing form is a
+  recorded migration retaining the old block. This storage draft decides no LQ21 policy or BND.74 question.
 
 ## 8. PS1: evidence and existing carriers
 
-- **PS1.35 [D]** An `EvidenceEnvelope` has the identity and scope fields below under either LQ10 envelope option
+- **PS1.35 [D]** An `EvidenceEnvelope` has the identity and scope fields below under LQ10's facts envelope
   (partition section 13; DT-L1 M2, R2-E1, R3-M1). Every scope field of a stored claim is immutable, and none is
   revision-bound context. A scope need not hold an input digest: a theorem and a bound on D[k] have none (EVD.10).
   Transient check context from 0.4 state C is never persisted as evidence: revision, current role, goal and protection
@@ -461,7 +549,7 @@ operation expand_stored_word(word: StoredWord, bound: Budget) -> LiteralWordStre
 
 | Common envelope field | Stored value and validation |
 | --- | --- |
-| Format/version and payload form | Envelope schema and explicit facts/judgements variant under the decided LQ10 option |
+| Format/version and payload form | Envelope schema and explicit facts form under LQ10; derived caches name all fact inputs and function editions |
 | Identity | Model, puzzle, menu identity and order digest, contract revision; chapter 01 identity vocabulary |
 | Statement and scope references | Chapter 06 statement ID and typed scope; every digest states its level or content role, at least as fine as the subject level (EVD.11) |
 | Statement form and negation pair | Chapter 06 statement form, and the statement it negates where it has one (EVD.9) |
@@ -478,26 +566,26 @@ operation expand_stored_word(word: StoredWord, bound: Budget) -> LiteralWordStre
 | Certificate/check dependencies | Kind, certificate byte digest, checker source digest, report/trace references, recorded check mode, and the tool digest of each check with the declared common base (EVD.13) |
 | Reachability reference | Named-puzzle reachability envelope when the input is a derived state; raw pose validation does not establish it |
 
-- **PS1.36 [P LQ10]** Under LQ10's recommendation, the payload stores facts and derives judgements
-  (DT-L1 R2-E1). Its fields are in the left column below. Their meaning is checked by chapter 06; no numerical
-  evidence ranking is introduced here. Under the judgement alternative the right column freezes only after LQ3
-  and chapter 06's composition rules are settled. In either form original labels and immutable scope survive.
+- **PS1.36 [D]** The payload stores facts and derives judgements (owner, 6 November 2026, LQ10; DT-L1 R2-E1).
+  Its fields are below. Their meaning is checked by chapter 06; no numerical evidence ranking is introduced here.
+  Original labels and immutable scope survive. Field writers are EVD.64's, enforced at the record sink by EVD.65;
+  retaining a field is no permission for a program or import to assert it.
 
-| Facts payload, recommended LQ10 | Judgements payload, alternative LQ10 |
-| --- | --- |
-| Leaf facts, their source labels and scope/statement references | Chapter 06 claim values, with named premises where conditional |
-| AND/OR nodes and edges, preserving the distinction between one argument's inputs and independent arguments | Scope, basis and check fields, and the composition structure needed to justify the stored judgement |
-| Certificate, exact-computation, exhaustive-set, sample and proof-source facts, as actually present | Stored summaries/judgements under the accepted chapter 06 order and rules |
-| Check identity, result and mode: reused exact transport, fresh exact audit or actual replay, without inventing an order between modes | Checks and their modes remain distinct facts; state D still supplies no evidence |
-| Versions/digests of the functions for the partial order, summaries and display words | Version of the evidence model and functions that gave the saved judgement its meaning |
-| Optional derived caches with all recorded inputs; facts remain available for recomputation | Original label text and underlying references retained so the import cannot become lossy |
+| Facts payload |
+| --- |
+| Leaf facts, their source labels and scope/statement references |
+| AND/OR nodes and edges, preserving the distinction between one argument's inputs and independent arguments |
+| Certificate, exact-computation, exhaustive-set, sample and proof-source facts, as actually present |
+| Check identity, result and mode: reused exact transport, fresh exact audit or actual replay, without inventing an order between modes |
+| Versions/digests of the functions for the partial order, summaries and display words |
+| Optional derived caches with all recorded inputs; facts remain available for recomputation |
 
 - **PS1.37 [D]** An envelope rejects a dangling dependency, contradictory identity/scope, failed content digest or AND
   node with no children (EVD.40, I8) instead of silently strengthening its evidence (INV-5, INV-7; partition 8.1, DT-L1 M2 and R2-E1). A source label
   such as `measured`, `reported` or `passed` is data to interpret through PS3's table, not an evidence verdict by
   spelling. A job outcome is separate from basis and check; a cut-off job yields no negative claim, while a checked
   witness can still support its own claim (KN7.4).
-- **PS1.38 [P LQ10]** The facts-option envelope experiment constructs envelopes for the stage 14 to 19 corpus and
+- **PS1.38 [D]** The facts-envelope experiment constructs envelopes for the stage 14 to 19 corpus and
   reports node counts and bytes against the baseline of **497 records, 13,412,769 bytes at Git HEAD**: 417 `.json`
   files and 80 `.json.gz` files counted as stored, with no JSONL (partition section 13; DT-L1 R3-E2, source evidence
   counted there; the earlier 13,387,282 came from a Windows checkout in which six case pairs collapse). The corpus is
@@ -505,9 +593,13 @@ operation expand_stored_word(word: StoredWord, bound: Budget) -> LiteralWordStre
   (default 13). The report counts leaf/AND/OR nodes and edges, separates canonical uncompressed bytes from stored
   compressed bytes, and accounts for shared dependencies and unmapped labels. It reports original records and
   envelopes under the same inclusion rule. It also enumerates all stored-field combinations admitted by the
-  chosen model: each gives exactly one display word or a typed inconsistency. No size or timing result exists for
-  this experiment here. The judgement option instead needs its lossless mapping and composition tests after LQ3;
-  authorisation of experiments in this stage remains LQ18.
+  chosen model: each gives exactly one display word or a typed inconsistency. The unreviewed source experiment in
+  `work/experiments/language-lx/envelope-facts/RESULT.md` now reports 497 partial envelopes and zero complete typed
+  envelopes: 15,210 fact bundles, 11,467 incomplete leaf slots, no AND/OR nodes or edges, and 10,424,730 canonical
+  metadata bytes. Its complete accounting, serializer pins and display collisions are retained there; those bytes
+  are not the FP.7 profile and establish no complete lossless typed mapping. FP.33 states the evidence limits.
+  No timing result is claimed. Experiment code is allowed (owner, 6 November 2026, LQ18); these first-pass results
+  do not establish a complete typed mapping or decide any waiting question.
 - **PS1.39 [D]** The following tables retain the fields of existing carriers (default 3). They document input
   compatibility, not an instruction to extend a v1 file with new language fields or to treat it as the complete
   migration package. Additional language data uses a versioned enclosing record under PS1.13.
@@ -574,7 +666,7 @@ operation expand_stored_word(word: StoredWord, bound: Budget) -> LiteralWordStre
   before using a decoded value. An unknown/newer version is refused for execution, activation or evidence reuse;
   its original bytes may remain recorded. Treating it as the nearest known version would violate INV-7.
 - **PS2.3 [D]** A migration is one-way and recorded (partition PS2). The following record follows from the need to
-  identify both the saved meaning and its conversion. Its field spellings remain subject to PS1.13.
+  identify both the saved meaning and its conversion. FP.29 assigns its candidate field spellings under PS1.13.
 
 | Migration-record field | Stored value and validation |
 | --- | --- |
@@ -593,11 +685,10 @@ operation expand_stored_word(word: StoredWord, bound: Budget) -> LiteralWordStre
   alphabet, literal order, identities, part definitions and expanded length, recorded start digest and provenance.
   A changed equality-key algorithm can be re-derived and versioned; it never changes the executed letters. Relinking
   a named part to a newer definition is a changed word requiring a different content identity.
-- **PS2.6 [P LQ10]** Under the facts option, changing the partial-order, summary or display-word function is an
+- **PS2.6 [D]** Changing the partial-order, summary or display-word function is an
   edition with a recorded note (partition section 13; DT-L1 R2-E1). It records old and new function editions/digests,
   unchanged fact-input digest and the resulting derived-output digests or inconsistencies. The old interpretation
-  stays reproducible. Under the judgement option, a changed evidence model requires a recorded data migration of
-  its saved judgements as well; it cannot silently recompute them under a new order.
+  stays reproducible. This follows the facts envelope chosen by the owner (owner, 6 November 2026, LQ10).
 - **PS2.7 [B]** Artefact reuse requires equality of all recorded inputs, checked after the build (R-08). For stored
   compiled modules this includes source, manifest/lockfile, edition and compiler/IR dependencies defined by chapter
   02. For derived evidence it includes fact graph, mapping table and function versions. For replay it includes
@@ -608,9 +699,10 @@ operation expand_stored_word(word: StoredWord, bound: Budget) -> LiteralWordStre
   exact transport justified by the relevant chapter 06 lemma. Import does not create such a transport. Caches fail
   closed when a recorded input or function version is unavailable.
 - **PS2.9 [D]** Future extension/unknown-field handling cannot discard a label, a protection requirement, a literal
-  part or a claim dependency while reporting successful preservation (INV-5, INV-7, BM2). PS1.13 leaves the precise
-  compatible-extension mechanism open. Until that mechanism is specified for a version, an uninterpretable record
-  remains recorded or is refused rather than partially activated.
+  part or a claim dependency while reporting successful preservation (INV-5, INV-7, BM2). FP.10 gives the candidate
+  extension mechanism: unknown optional inert data is preserved, unknown required extensions refuse active use,
+  and changes to required meaning need a new version. An uninterpretable record remains recorded or is refused
+  rather than partially activated.
 
 ```text
 operation migrate_record(input: RecordedInput, target: FormatRef, converter: ConverterRef) -> MigrationResult
@@ -636,14 +728,14 @@ operation migrate_record(input: RecordedInput, target: FormatRef, converter: Con
   items 4 to 6; DT-M1 K6). The report names every target's converted, recorded or refused outcome. The ordinary
   `C600-STUDIO-SESSION-v1` head-chain export is insufficient for these targets because it omits checkpoints and
   carries workspace data only as untyped preferences. The re-plan reuses the older exporter draft's ZIP layout and
-  field inventory with its recorded changes. Its manifest spelling remains open under PS1.13. The package is a
+  field inventory with its recorded changes. Its candidate manifest spelling is fixed by PS1.13/FP.24. The package is a
   migration carrier around existing data. The reused draft's member checks exclude absolute/traversal paths,
   links, duplicates and encrypted entries; PS1.10 and PS1.11 give the shared limits obligation. The following tables
   give its fields and target conversion checks without silently changing session v1.
 
 | Path B draft manifest field | Stored value and validation |
 | --- | --- |
-| `format`, `format_version` | Explicit supported draft identity/version; final spelling requires the EN4 reconciliation |
+| `format`, `format_version` | Candidate `C600-MIGRATE-draft`, integer 1; FP.24 distinguishes the older exporter spelling |
 | `producer` | Producer name/version/source identity; the re-plan moves production to the 1.0 importer |
 | `model_id` | Exact retained model; disagreement refuses import |
 | `created_utc` | Recorded creation metadata, separate from replay inputs and evidence strength |
@@ -687,7 +779,7 @@ operation migrate_record(input: RecordedInput, target: FormatRef, converter: Con
   stops import (migration-options item 4). The fresh-session case omits an empty `workspace/macros.json` and imports
   zero macros, rather than using exchange validators to invent a nonempty library (migration-options item 6).
 - **PS3.7 [D]** Imported certificate states obey partition PS3 and 8.1 (DT-L1 R2-E1). The following lifetimes remain
-  separate under both envelope options. A recorded certificate never enables a commit or bypasses protection.
+  separate. A recorded certificate never enables a commit or bypasses protection.
 
 | 0.4 state | Import treatment | What can change it |
 | --- | --- | --- |
@@ -721,7 +813,7 @@ operation migrate_record(input: RecordedInput, target: FormatRef, converter: Con
 | Source selector | Exact format identifier or explicit absent-format case; stage/source identity when an ambiguous case needs it |
 | Field selector | Precise source field location, including nested fields, with no match by display label alone |
 | Value | Original value with case and text unchanged |
-| Target facts or judgement | Chapter 06 interpretation under the selected LQ10 option, without inventing evidence for omitted fields |
+| Target facts | Chapter 06 interpretation under LQ10's facts envelope, without inventing evidence for omitted fields |
 | Scope and prerequisites | Required input digests/levels, declared family/bounds and check dependencies for that interpretation |
 | Unmapped outcome | Original field/value, source digest and reason retained as recorded |
 
@@ -731,11 +823,12 @@ operation migrate_record(input: RecordedInput, target: FormatRef, converter: Con
   DT-L1 R3-E2). Coverage checks enumerate every actual (format, field, value), including absent-format cases, and
   require an exact mapping or an explicit unmapped entry. Corpus membership and file digests accompany that report.
   EVD.48 defines field, value and the enumeration rule (DT-L1 R3-E3).
-- **PS3.12 [O]** Chapter 06 and EN4 fix dispatch for ambiguous absent-format records. Options are an explicit
-  manifest/source-digest discriminator for a table entry, or retaining the ambiguous record wholly as recorded
-  until a format-specific checker identifies it. Both keep the absent key and original bytes. An inferred format
-  is a separate recorded interpretation, never a rewrite of the source. No source gives a complete discriminator
-  table for those records yet, and until one exists the second option applies by default (EVD.53).
+- **PS3.12 [D]** FP.22 uses an explicit manifest/source-byte-digest/JSON-pointer discriminator for absent-format
+  mappings. An exact match with its prerequisites may produce the table's facts; no match stays recorded/unmapped
+  and conflicting matches stay recorded/ambiguous. A filename or status word cannot identify the format. Absence
+  and original bytes remain intact, with any interpretation recorded separately. The complete typed discriminator
+  table is still an integration dependency; without it records remain recorded under EVD.53. This fixes dispatch,
+  not the missing mathematical interpretations.
 - **PS3.13 [D]** The following format-specific field views supplement the catalogue without renaming research
   formats (defaults 3 and 20; partition 10.3). They retain original fields and their exact byte reference; an
   absent field stays absent. They are not replacement schemas that force different family members into one
@@ -784,12 +877,11 @@ operation migrate_record(input: RecordedInput, target: FormatRef, converter: Con
   path and overwrites one. The **six pairs** of case-only names are source evidence from stage 19 `PUBLICATION.md`.
   An incomplete checkout is reported as missing input; a filename collision cannot be treated as equal content
   or silently removed from a coverage denominator.
-- **PS3.16 [O]** EN4 chooses the physical carrier for research archive and independent-check bundle members.
-  Options are digest-named members with a source-name manifest, or an archive reader that keeps original names as
-  metadata and resolves by content without materialising them. Either accepts case-only names and checks both
-  stored/uncompressed digests. The member framing, traversal/duplicate-member checks and cumulative expansion
-  bounds belong to that choice and PS1.11. Path B retains its reused draft ZIP layout from PS3.3; this open item
-  selects no replacement for that carrier.
+- **PS3.16 [D]** FP.23 chooses digest-named ZIP STORE members with original names kept in a source-name manifest.
+  It fixes framing, header fields, traversal/duplicate checks, stored/decoded digest boundaries and FP.9 cumulative
+  limits. Case-only source names stay distinct metadata and are never extraction paths. Path B keeps PS3.3's ZIP
+  paths with FP.24's candidate manifest, rather than adopting the research bundle's object paths. The carrier is
+  a draft and executes no archived producer.
 - **PS3.17 [D]** Independent-check exports include the evidence envelope, original-label mapping version, exact input
   tables/words/certificates or their available digest-pinned bytes, and the checker identity plus the instructions
   and dependencies needed to check them (partition PS3, KN6). A bundle manifest records member digests and missing
@@ -813,41 +905,52 @@ operation export_check_bundle(envelopes: List<EvidenceEnvelopeRef>, limits: Limi
 
 ## 12. Relation to the migration format freeze
 
-- **PS2.10 [P LQ10]** If the owner accepts LQ10's recommendation and the gate passes, the migration format freeze
-  fixes only the language-neutral data core: words/recipes, macro/protection sets, filters/preferences,
-  checkpoints with replay paths, bindings/key maps, the provenance field of words/macros/workspace records and
-  the envelope's identity, immutable scope and facts payload (partition section 13; DT-L1 R2-E1).
+- **PS2.10 [B]** When its gate passes, the migration format freeze fixes only the language-neutral data core:
+  words/recipes, macro/protection sets, filters/preferences, checkpoints with replay paths, bindings/key maps,
+  the provenance field of words/macros/workspace records and
+  the envelope's identity, immutable scope and facts payload (owner, 6 November 2026, LQ10; partition section 13;
+  DT-L1 R2-E1).
   It fixes the selected byte profiles, identifiers, versions, limits and lossless import mappings needed to read
-  that core. Source syntax, IR and module formats freeze later and evolve through recorded editions. No part of
-  this chapter is a freeze ruling.
-- **PS2.11 [P LQ10]** Under the judgement alternative, the same core targets are candidates for the freeze, but the
-  envelope waits for LQ3 and chapter 06's order, composition and label-mapping rules (DT-L1 M2). Under the
-  syntax-also alternative, source editions/syntax join the freeze and need their own specification and evidence;
-  the IR and module formats are not implicitly settled. Under the language-data-out alternative, migration targets
-  a separately versioned interim format with recorded later conversion to language records. No alternative permits
-  a lossy mapping, loss of provenance, changed word meaning or omission of a path B target without an explicit
-  owner scope decision.
-- **PS2.12 [P LQ19]** The recommended position is both Astra freeze rulings at LP1's exit, then the owner's
-  sign-off, with an owner-approved charter amendment allowing LP2 to LP5 before the design-system ADR (partition
-  LQ19). Under its first alternative LP2 waits for that ADR after the design line resumes at LP1's exit. Freezing
-  after LP3 instead requires the owner's further charter-order change. Until such a decision, the charter's whole
-  stage 2.5 exit still precedes implementation. Nothing here resumes the design line or sets a day count.
-- **PS2.13 [D]** EN4's migration-format packet is requested to contain the following fields and evidence, following
-  partition LP1, section 13 and the [EN4 handoff](../../../../progress/1.0/replan-2026-10-22.md). This is a request
-  to that packet, not a claim that EN4 has delivered it. Its ruling belongs to Astra and its sign-off to the owner.
+  that core. Source syntax, IR and module formats freeze later and evolve through recorded editions. A lossy
+  mapping, loss of provenance, changed word meaning or omission of a path B target needs an explicit owner scope
+  decision. No part of this chapter is a freeze ruling.
+- **PS2.11 [B] Withdrawn.** The owner chose the facts envelope and language-neutral core, removing these alternatives (owner, 6 November 2026, LQ10).
+- **PS2.12 [B]** Both Astra freeze rulings sit at LP1's exit, then the owner signs off and LP2 to LP5 may start
+  before the design-system ADR (owner, 6 November 2026, LQ19; owner, 6 November 2026, decision 7). LQ8, LQ9 and LQ21
+  need their evidence first, so the rulings follow the decisive runs. Language development is complete when LP2
+  to LP5 are done apart from LP4's editor look; the design line resumes then. Its design-system ADR conditions
+  LP4's editor look and LP6. The charter's stage 2.5 exit retains all three parts in this amended order for the
+  language line; no gate is relaxed. Nothing here resumes the design line or sets a day count.
+- **PS2.13 [D]** EN4's candidate [format packet](../format-packet/README.md) supplies the following fields and
+  reference vectors, following partition LP1, section 13 and the [EN4 handoff](../../../../progress/1.0/replan-2026-10-22.md).
+  FP.35 and closure/manifests/p3.json record its open integration dependencies, including the typed corpus mapping,
+  EN3 word/admission rules and alias pins. Delivery of this draft is not freeze readiness. Its ruling belongs to
+  Astra and its sign-off to the owner.
 
 | Requested packet item | Needed content | Clauses/dependency |
 | --- | --- | --- |
-| Candidate identity and scope | Exact source/candidate digests; LQ10 variant; LQ19 ordering and owner authorisations | PS2.10 to PS2.12 |
-| Format inventory | Every path B target and core format, identifiers/versions, wire fields and optional/unknown-field rules | PS1.12, PS1.13, PS3.3 |
-| Byte and digest profiles | Canonical JSON/numbers, pinned text bytes, binary types/order, gzip framing and each digest level/role | PS1.1 to PS1.9; KN1 normalisation |
-| Shared limits | One read/write table including archive members, decompression, expanded words and graph bounds | PS1.10, PS1.11; R-01 |
-| Provenance | Versioned common field and both LQ21 forms/compatibility outcomes; no laundering across file/workspace boundaries | PS1.32 to PS1.34; chapter 07 |
-| Evidence envelope and import table | Immutable scope, original labels/source digests, facts/judgements variant and mapping/coverage reports | PS1.35 to PS1.38, PS3.10 to PS3.14; chapter 06 |
-| 0.4 conversion and replay | Recipe oracle equality, protection preservation, every offered checkpoint path, key-word and alias conversions | PS3.3 to PS3.8 |
-| Source preservation and publication | Amended locked-copy contract, guard/watch rules, generation/recovery protocol and matching evidence references | PS3.1, PS3.2, PS3.9 |
-| Editions and recovery | One-way migration records, retained originals, forward-version refusals and meaning-preservation proof | PS2.1 to PS2.9 |
-| Conformance and open dependencies | Tests for the current candidate, evidence classes, all remaining open choices; no structural check substituted for content review | Section 15 and section 16 |
+| Candidate identity and scope | Exact source/candidate digests; LQ10's facts core; LQ19's amended ordering and owner authorisations | PS2.10 to PS2.12; FP.1 to FP.3 |
+| Format inventory | Every path B target and core format, identifiers/versions, wire fields and optional/unknown-field rules | PS1.12, PS1.13, PS3.3; FP.4, FP.10 to FP.16, FP.24 |
+| Byte and digest profiles | Canonical JSON/numbers, pinned text bytes, binary types/order, gzip framing and each digest level/role | PS1.1 to PS1.9; KN1 normalisation; FP.5 to FP.8 |
+| Shared limits | One read/write table including archive members, decompression, expanded words and graph bounds | PS1.10, PS1.11; R-01; FP.9 |
+| Provenance | Versioned common field and both LQ21 forms/compatibility outcomes; no laundering across file/workspace boundaries | PS1.32 to PS1.34; chapter 07; FP.17, FP.18 |
+| Evidence envelope and import table | Immutable scope, original labels/source digests, facts payload, EVD.64's field writers and mapping/coverage reports | PS1.35 to PS1.38, PS3.10 to PS3.14; chapter 06; FP.19 to FP.22, FP.33 |
+| 0.4 conversion and replay | Recipe oracle equality, protection preservation, every offered checkpoint path, key-word and alias conversions | PS3.3 to PS3.8; FP.25, FP.26 |
+| Source preservation and publication | Amended locked-copy contract, guard/watch rules, generation/recovery protocol and matching evidence references | PS3.1, PS3.2, PS3.9; FP.27, FP.28 |
+| Editions and recovery | One-way migration records, retained originals, forward-version refusals and meaning-preservation proof | PS2.1 to PS2.9; FP.29 to FP.32 |
+| Conformance and open dependencies | Tests for the current candidate, evidence classes, all remaining open choices; no structural check substituted for content review | Section 15 and section 16; FP.34, FP.35 |
+
+- **PS1.43 [D]** FP.30 to FP.32 encode HANDOFF H11's durable exit lineage. Exact exit poses, the crossing's
+  before/after positions and certificate are retained. The append-only action chain records head changes separately
+  from the mechanical event tree. Position and current Context are separate (H11); exit and entry have their own
+  before/after and entry binds its derivation. Workspace actions join the chain with equal Position and an inverse.
+  One transaction stores the transition, command/request/admission/receipt bindings, new RevisionRef and any void
+  facts. FP.36 retains durable outcome lookup after undo and epoch loss. Reset/import/restore void prior exits
+  durably, including inactive branches. Recovery derives validity
+  from committed actions, selected parent path and voids, then replays retained moves from the stored poses. Equal
+  labels never select or revive an exit; an incomplete crossing transaction leaves the complete before position.
+  This storage proposal consumes H11 and does not change A5's refusals. Branches follow the engine-owned journal
+  policy chosen by the owner (owner, 6 November 2026, LQ4).
 
 ## 13. Source differences and evidence limits
 
@@ -858,8 +961,8 @@ report instead confine SQLite recovery/opening to the copy. Its stage 5 writer a
 probe report's MPR-06 decision without attribution. PS3.1 and PS3.2 use the amended contracts.
 
 The older exporter draft's 0.4.1 vehicle, live-export option and head-chain-only checkpoint treatment are superseded
-by path B and the checkpoint-path additions. Its proposed manifest spelling differs from the re-plan's working
-format name, left for EN4 under PS1.13. Its existing ZIP layout remains the referenced package proposal.
+by path B and the checkpoint-path additions. FP.24 distinguishes its old manifest spelling from the candidate
+`C600-MIGRATE-draft`. Its existing ZIP layout remains the referenced package proposal.
 
 The retained JSON serializer, prototype store serializer and stage 19 publication serializer are different byte
 profiles, as PS1.2 records. `encode_export` also differs from deterministic `encode_log` in gzip timestamp and byte
@@ -873,8 +976,8 @@ step's incomplete literal replay from composed checks. Those are source records,
 sets a storage cap or substitutes for DT-J1 X3. The stage 18 admission figure of 10⁷ letters is likewise a research
 bound, not a chosen product admission bound.
 
-This chapter's evidence is source only. The conformance tests below are requirements; none exists or ran as part of
-this writing task. DT-L1 R2-E1, R2-E3 and R2-E4 dependencies are named where used, as round 3 corrected them (overview
+The chapter remains a draft. FP.34 now supplies source/reference byte and conversion checks and synthetic durable-lineage
+checks for this candidate. The broader conformance tests below remain requirements, not a report that they all ran. DT-L1 R2-E1, R2-E3 and R2-E4 dependencies are named where used, as round 3 corrected them (overview
 section 8). No field or migration here depends on labels off the lattice.
 
 ## 14. Error codes added by this chapter
@@ -897,11 +1000,13 @@ section 8). No field or migration here depends on labels off the lattice.
 | `PS3:input.source_preservation_unverified` | Source-copy preservation conditions fail or watch coverage is inconclusive; nothing is published |
 | `PS3:busy.legacy_session_locked` | The 0.4 session lock cannot be acquired without writing or creating source data |
 | `PS3:unknown_outcome.import_publication` | Pointer-switch outcome cannot be authoritatively reconciled; recover before retry |
+| `LB5:input.obligation_untranslatable` | Forwarded from LB5.18: a statement is outside the versioned export vocabulary; PS1.45 writes nothing |
 
 ## 15. Conformance tests
 
-These are requirements for LP1 and later phases, with the class meanings of overview section 3.4. The packet's
-structural acceptance check verifies this chapter's shape only. It implements none of these tests.
+These are requirements for LP1 and later phases, with the class meanings of overview section 3.4. The closure check
+verifies shape and invokes FP.34's narrower reference vectors. Those vectors cover parts of these requirements;
+they do not establish full cross-platform, importer or mechanical conformance.
 
 | Test | Checks | Class |
 | --- | --- | --- |
@@ -913,26 +1018,32 @@ structural acceptance check verifies this chapter's shape only. It implements no
 | CT-PS1-06 | Gzip vectors use the selected complete deterministic header/compressor profile; stored and decoded digests are separately checked | source |
 | CT-PS1-07 | R-01 each limits-table row round-trips at its boundary and refuses one unit above; cumulative gzip/part expansion cannot bypass it | source |
 | CT-PS1-08 | Catalogue preserves existing identifiers and fields; unknown/newer format data cannot activate under an older version | source |
-| CT-PS1-09 | `same_as` and `inverse_of` expand to identical pinned literal letters/lengths/end digests; dangling and cyclic parts are refused before expansion | source |
-| CT-PS1-10 | A small part graph with enormous exact length can be retained within storage budget and is refused before replay beyond X3's bound, without truncation | source |
+| CT-PS1-09 | Under the flat draft, mandatory chunks retain the literal word; same_as and inverse_of annotations match their pinned spans, generate no letters, and dangling/cyclic targets refuse admission (FP.13) | source |
+| CT-PS1-10 | A small source/program graph may be archived within its own budget; its expanded stored menu word requires all literal chunks and refuses PS1:resource_limit.persistence_size above storage limits. A stored word above X3 refuses PS1:resource_limit.word_expansion before replay, without truncation | source |
 | CT-PS1-11 | Reversed I_a item order, another contract/model and jumble letters with Jumble off are refused without reinterpretation | source |
 | CT-PS1-12 | Recipe normalisation preserves literal prefixes; 100,000-letter chunking cannot exceed the 3,000,000-primitive total or change Strict protection | source |
 | CT-PS1-13 | Binding/key-map round-trip preserves absolute objects/words; duplicates, non-prefix codes and unsupported layout conversions are reported | source |
 | CT-PS1-14 | Every checkpoint carries a verifiable own path; A5 exit poses/certificate and resumed retained moves reproduce the poses and labels digests | source |
-| CT-PS1-15 | Recording round-trip retains commands/arguments/pins/provenance; all commit playback needs a new explicit action and token | source |
+| CT-PS1-15 | PS1.30 recording round-trip retains every RecordedStep field, canonical arguments, word/action references, revisions, module and receipt bindings, and provenance; all commit playback needs a new explicit action and token | source |
 | CT-PS1-16 | RunRecord reproduces chapter 09 key inputs and exact result bytes; cut-off and safety-stopped runs never gain a negative claim | source |
 | CT-PS1-17 | State-derived word survives workspace save/read, rename, source conversion and file round-trip with its labels, under both LQ21 forms | source |
 | CT-PS1-18 | A legacy/unsupported provenance block stays recorded and cannot be read as an unlabelled solving word; 0.4 origin remains own, imported | source |
-| CT-PS1-19 | Both envelope variants reject transient-only scope and keep every digest's level, original source label and check mode | source |
-| CT-PS1-20 | Facts-option graph experiment reports nodes/edges and stored/decoded bytes against its digest-pinned stage 14 to 19 baseline | source |
+| CT-PS1-19 | The facts envelope rejects transient-only scope and keeps every digest's level, original source label and check mode | source |
+| CT-PS1-20 | Facts-envelope graph experiment reports nodes/edges and stored/decoded bytes against its digest-pinned stage 14 to 19 baseline | source |
 | CT-PS1-21 | Every admitted stored-field combination gives exactly one derived display word or typed inconsistency under each recorded function edition | source |
 | CT-PS1-22 | Optional jumbling section is absent for never-on sessions; interrupted episodes recover on or at the last committed revision, with no half crossing | source |
 | CT-PS1-23 | Legacy certificate IDs use the original pre-diagnostic field set; imported timing/context fields cannot upgrade A/B or recreate C/D | source |
+| CT-PS1-24 | PS1.30: recorded completed, committed, refused, failed and cancelled receipts round-trip unchanged; a missing terminal stays absent and stops play/conversion under EV4.19. No token or operation preview ID is stored, and a playback child's new binding never replaces the captured invocation | source |
+| CT-PS1-25 | PS1.44: crash after pending is saved before dispatch, after a durable child completes before cursor advance, and during a manual continuation. Reopen performs outcome lookup first, advances each known success at most once, stops unknown outcomes without retry, saves explicit from and never offers the cursor as an undo target | synthetic |
+| CT-PS1-26 | PS1.45, PS1.46: a supported typed statement exports pinned Lean 4 source and vocabulary through a granted file capability; an unsupported symbol or a named statement gives LB5:input.obligation_untranslatable and writes nothing. No proof-record return format/import row, check mode, process/network grant or evidence promotion appears | source |
+| CT-PS1-27 | PS1.12, PS1.36: the catalogue's envelope writer resolves to EVD.64. A program or imported record cannot use storage to assert a forbidden basis/check or formal proof; permitted facts round-trip with their source and check dependencies and violations retain EVD.65's code | source |
 | CT-PS2-01 | Migration record binds source/target/converter and all versions; injected validation/write failure leaves old bytes and active generation recoverable | source |
 | CT-PS2-02 | Edition change preserves stored literal word, alphabet, identities, part pins, length and provenance; changed referenced content is not silently relinked | source |
 | CT-PS2-03 | Facts-function edition change retains old facts and interpretation, records new outputs/inconsistencies and invalidates stale derived caches | source |
 | CT-PS2-04 | R-08 inputs changed during build/conversion cause reuse refusal even if cached output hashes match; check occurs after build | source |
 | CT-PS2-05 | Newer schema/edition, unavailable extension rules and missing provenance versions cannot partially activate a record | source |
+| CT-PS2-06 | PS1.12, PS2.10: the source extension is .6cs while c600-source-draft and the other c600- descriptors remain until freeze; the freeze inventory covers every path B data-core target and facts envelope but excludes syntax, IR, module semantics, recordings and proof-obligation export | source |
+| CT-PS2-07 | PS2.12, PS2.13: both rulings and owner sign-off precede LP2 to LP5; evidence-dependent choices precede the rulings, and the design-system ADR still conditions LP4's editor look and LP6. The packet states the facts core and amended order without treating this draft as either ruling | source |
 | CT-PS3-01 | Path B fixture matrix: guarded, locked database/WAL copy includes WAL-only commits, never uses `immutable=1`, and never opens source SQLite | source |
 | CT-PS3-02 | Every oracle fixture recipe has the same replay hash after path B conversion, with exact word/star semantics and full collateral | source |
 | CT-PS3-03 | F10/F11: abandoned-branch checkpoints verify by their own paths; exchanged labels with recomputed hashes fail; separate captured preferences restore correctly | source |
@@ -948,45 +1059,33 @@ structural acceptance check verifies this chapter's shape only. It implements no
 
 ## 16. Open items
 
-- **LQ1, LQ16.** Product/research partition and shipped cut affect which consumers exist, without silently changing
-  archived format meanings (PS1.12, PS3.13, PS3.17).
-- **LQ2, LQ14, LQ21.** Chapter 07 owns policy, competence gates if any, display sinks and the choice of flow form.
-  Common provenance survives either form; its version/compatibility still needs LP1 (PS1.15, PS1.32 to PS1.34).
+The owner answered LQ1 to LQ21 on 6 November 2026. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set
+waits for the joint setting.
+
+- **LQ2, LQ21.** Chapter 07 owns the joint option set, competence capability gates if any, display sinks and the
+  choice of flow form. LQ21 is decided with LQ9 on LX-1's label cost and LX-3's refusal counts before the freeze rulings.
+  Common provenance survives either form; FP.17/FP.18 specify candidate version/compatibility (PS1.15, PS1.32 to PS1.34).
   Built-in tools keep the 2 October boundary and 17 October repair-list exception until the joint setting.
-- **LQ3, LQ10, LQ15.** Evidence model and envelope choice, proof dependencies and exact lossless mapping
-  (PS1.35 to PS1.38, PS2.6, PS2.10, PS2.11, PS3.7, PS3.10 to PS3.14). Chapter 06 defines the model. Facts defer
-  function judgements; saved judgements wait for their rules. No proof-assistant integration is selected here.
-- **LQ4.** Branch and pinned-job choices affect checkpoint/run lifecycles, as chapters 01 and 08 define them
-  (PS1.29, PS1.31, PS2.8). The old migration archive does not become live 0.4 undo under either choice.
-- **LQ5, LQ8, LQ9.** Built-in implementation, engine language, route and placement affect module/IR dependencies and
-  exact codecs; recorded inputs remain explicit (PS1.4 to PS1.7, PS1.15, PS1.31, PS2.7).
-- **LQ6, LQ7, LQ20.** Layout/chart consumers and renderer handoff belong to chapters 04 and 10. Stored parameters and
-  the existing render contract retain their boundaries (PS1.27, PS1.41); no design-line topic is reopened.
-- **LQ11.** Recording playback/conversion option (PS1.30); neither option stores permission for a commit.
-- **LQ12.** Module sharing choice affects packaging (PS1.15, PS3.17). 1.0's no-network rule remains in force.
-- **LQ13, LQ17.** Source syntax/header spelling and language name/extension (PS1.13, PS1.14, PS2.1). No concrete
-  syntax or final extension is fixed by this chapter.
-- **LQ18, LQ19.** Experiment authorisation and freeze/implementation order (PS1.38, PS2.12). Astra rules at the
-  applicable gates and the owner signs off; this draft answers neither question.
-- **LP1 byte profile, open PS1.3.** New JSON canonicalisation, Unicode/terminal-newline policy, finite display-number
-  encoding and handling of noncanonical input, separate from old profiles.
-- **LP1 number encoding, open PS1.5.** New arbitrary-size integer and rational wire forms and explicit parser limits.
-- **LP1 gzip profile, open PS1.9.** Compression level/threshold, full header and compressor identity for new formats.
-- **EN4/LP1 resource profiles, open PS1.11.** All unchosen read/write and cumulative limits in PS1.10, including
-  archive expansion and graph bounds; exporter Q2 remains unresolved here.
-- **LP1/EN4 format framing, open PS1.13.** New identifiers/versions, container versus independent records and
-  unknown-field handling. Chapters 02 and 04 supply module, binding and recording meanings.
-- **EN3 word carrier, open PS1.20.** Flat versus referenced named parts; DT-J1 X3 supplies the separate replay bound
-  (PS1.21). No existing research length substitutes for its result.
-- **LP1/chapter 07 provenance version, open PS1.34.** Independent nested version versus containing-schema version;
-  a common block able to retain both LQ21 forms before a conditional data-core freeze.
-- **Chapter 06/EN4 absent-format dispatch, open PS3.12.** Source-discriminated mappings versus wholly recorded
-  ambiguous inputs, the second by default until a discriminator table exists (EVD.53); complete corpus coverage/mapping
-  table still to be produced.
-- **EN4 archive carrier, open PS3.16.** Digest-named members versus non-materialising archive resolution, with
-  member safety, expansion limits and independent-check packaging.
-- **EN3/EN4 kernel/store interfaces.** Final checkpoint, action/revision and migration-format packet fields
-  (PS1.16, PS1.29, PS2.13). ENG-0J leaves the effect of restore/import on stored exit records to the chain-validity
-  rules; no fresh lift from labels is assumed.
+- **LQ8, LQ9.** Engine language, route and placement affect module/IR dependencies and exact codecs; recorded inputs
+  remain explicit (PS1.4 to PS1.7, PS1.15, PS1.31, PS2.7). LX-5/LX-6 feed LQ8, then LX-1 to LX-5 feed LQ9 with LQ21.
+  First-pass results in `work/experiments/language-lx/` are leads; decisive runs wait for the owner's window
+  (owner, 6 November 2026, decision 15).
+- **LQ13.** Source syntax and header spelling wait for LX-8's human test before LP2 builds the parser
+  (PS1.13, PS1.14, PS2.1). The source-preparation result is no human learnability result.
+- **Candidate wire draft review.** FP.5 to FP.10 now specify JSON, exact/display numbers, gzip, shared limits and
+  unknown-field rules (PS1.3, PS1.5, PS1.9, PS1.11, PS1.13). FP.17/FP.18 specify independent provenance version 1
+  and no-run values (PS1.34). These are engineering drafts, not unresolved owner choices or an accepted freeze.
+- **EN3 word carrier and admission.** FP.13 consumes JI.18's flat ia16 working form; EN3 still pins DT-J1
+  X3's replay admission bound (PS1.20, PS1.21). A storage/chunk limit cannot replace X3.
+- **Typed corpus interpretation.** FP.22 fixes absent-format dispatch (PS3.12); complete statement/scope,
+  coverage and checker bindings and a reviewed typed mapping table still need the integrator/chapter 06. The
+  PS1.38 experiment stays partial; EVD.62 records draft corrections to its four collisions without rerunning it.
+  Derived judgements need those complete facts and chapter 06's versioned functions; the owner's evidence model is settled.
+- **Archive carrier and alias pins.** FP.23 fixes digest-named research ZIP members (PS3.16); FP.24 keeps path B's
+  paths. FP.15 pins the current alias identity under its own profile; the integrator refreshes it after p7-table.
+  Untranslatable keys remain reported.
+- **EN3/EN4 reconciliation.** FP.30 to FP.32 store H11's exit/void/action facts. EN3 and p2b reconcile their
+  transition/command rules and H13 traces with these durable fields. The candidate's source identity, requirement
+  rows, checks and external commands are in FP.1/FP.34/FP.35 and closure/manifests/p3.json.
 - **Source discrepancies.** Section 13 records the migration amendments, the serializer differences and the recorded
   word lengths. Round 3 cleared DT-L1's obligations (overview section 8).

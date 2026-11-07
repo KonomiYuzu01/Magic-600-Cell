@@ -27,28 +27,37 @@ The runtime therefore needs a defined place: which layers it may use, how, and w
   revision, so a burst of twists queues no view work (LG4.11, RPI.12).
 - **ADR-L02.4** A command the language defines is an overlay row of kind `view`, `workspace` or `query`, or `file` with
   a granted capability, never `commit` or `app` (KN5.3). It reaches the engine as data (KN5.5). Its availability comes
-  from two stored tables, the static verdict and kernel-row availability, so answering it runs no language code (KN5.7).
+  from two stored tables, the static verdict and kernel-row availability, so answering it runs no language code
+  (KN5.7, LI.18 to LI.21). H15.6 distinguishes static argument bindings from computed arguments' row-level hints;
+  invocation still checks actual arguments. The availability generation is advisory, never a grant or a lane reservation.
 - **ADR-L02.5** The kernel never calls the language. No kernel operation takes a callback, and no table the kernel reads
   holds code (KN0.7).
 - **ADR-L02.6** A running job never delays a commit, an undo or a key bound to a kernel row (KN7.12). A commit goes
-  ahead at once and cancels the jobs that read the replaced revision (KN5.18, ONE.45). A runtime that dies ends its jobs
-  as `error`, the journal and state hash stay unchanged and the shell stays responsive (KN7.13, DET.43).
+  ahead at once and cancels the jobs that read the replaced revision (KN5.18, ONE.45), except digest-pinned research
+  jobs, which finish under KN7.5 (owner, 6 November 2026, LQ4). A runtime that dies ends its jobs
+  as `error`, the journal and state hash stay unchanged and the shell stays responsive (KN7.13, DET.43). LI.28 owns
+  the job-to-receipt mapping; LI.29/LI.30 own payload loss and outcome lookup. No refresh failure rewrites a terminal
+  success, and missing terminal proof is not inferred from a frame.
 - **ADR-L02.7** Placement stays open. The runtime may run in the engine process, in a process of its own or in the shell
   process, and every clause above must hold in each. The shell process is admitted only if it passes LX-2's
   fault-injection run (ONE.69).
 
 ## What this record does not decide
 
-Open whatever the owner answers:
+The owner answered LQ1 to LQ21 on 6 November 2026. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set
+waits for the joint setting.
 
-- The availability protocol between the command layer and the engine, which needs its own Astra plan check before the
-  architecture freeze (KN5.8), including the form of the generation event (KN5.25).
+Open mechanisms:
+
+- Review and implementation of the availability protocol now drafted in KN5.8/KN5.25 and LI.18 to LI.21,
+  including `availability_changed` and full-table refresh after a gap or epoch change. The required Astra plan check
+  and final contract review remain freeze inputs; a written protocol is not a frozen transport.
 - The binding between runtime and engine, including zero-copy snapshot access (RTE.7).
 
-Conditional on an owner question:
+Waiting owner questions:
 
-- **LQ9:** the placement itself, decided with the route on LX-1 to LX-5 under the recommendation (RTE.21, RTE.23). That
-  decision is recorded in [ADR-L12](ADR-L12-route.md).
+- **LQ9:** the placement itself, decided with the route on LX-1 to LX-5 and with LQ21 (RTE.21, RTE.23). That decision
+  will be recorded in [ADR-L12](ADR-L12-route.md).
 - **LQ21:** what a program may read while it prepares a preview, under the two forms of flow control
   ([ADR-L06](ADR-L06-effects-and-flow.md)).
 
@@ -78,19 +87,24 @@ Conditional on an owner question:
 - A view can lag. It then shows its designed stale state and names its base revision (ONE.12, RPI.13).
 - A display refresh can fail after a commit. The report says "applied, display out of date", and it never invites a
   retry (KN5.22, R-02).
-- Two new lanes, program and view, are needed. EN4 must confirm them (KN7.2).
+- KN7.2 and LI.22 to LI.25 now draft six lane admissions, including program and view. H15.5 supplies the reconciled
+  target binding for view/latest-wins work. [H-08 CM.1](../../../../progress/1.0/command-table.md) supplies the
+  integrated final table candidate with 174 commands and `final: true`, including its lane targets. That flag
+  records the supplied delta, not approval. Current-candidate review, runtime/engine binding implementation and
+  matching evidence remain owed.
 - Tools see only what query rows and snapshots offer. A need the rows do not meet becomes a new row and a review of it,
   not a side door.
 
 ## Evidence
 
-Class: source. Nothing has been measured. No program runs today, so this record has no latency figure, and the charter's
-E2 test stays the decisive check. Active program views also enter that test (RPI.62). LX-2 tests faults and
-responsiveness on the owner's machine (RTE.42), and it has not run.
+Classes: source and synthetic. LX-2's headless slice ran; its record is
+`work/experiments/language-lx/lx2-placement/RESULT.md`. It establishes no complete LX-2 pass, product latency or
+placement decision (RTE.82). The charter's E2 test stays the decisive check. Active program views also enter that test
+(RPI.62). Decisive responsiveness runs wait for the owner's window (owner, 6 November 2026, decision 15).
 
 ## What the owner accepts
 
 Accepting this record accepts ADR-L02.1 to ADR-L02.7 and the [D] clauses they cite. It does not choose a placement.
 
-The owner may overrule these integrator additions: the two new lanes of KN7.2, which EN4 also has to confirm, and the
-availability generation of KN5.25.
+The owner may overrule these integrator additions: the program and view lanes of KN7.2 and the availability generation
+of KN5.25. EN4's definitions are now drafted; neither this description nor that draft accepts them.

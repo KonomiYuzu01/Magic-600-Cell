@@ -1,0 +1,414 @@
+{
+  "packet": "p7-data",
+  "assumes": [
+    {
+      "item": "LQ10",
+      "assumed": "PS2.10 recommendation: language-neutral data core, facts payload, H10 ia16 menu chunks; not a decision.",
+      "if_other": "Judgements wait for LQ3 and lossless saved-judgement mapping; syntax-also adds a separately reviewed syntax/edition specification; language-data-out needs a versioned interim target and recorded later conversion (FP.3)."
+    },
+    {
+      "item": "LQ3",
+      "assumed": "No threshold, evidence order or judgement model is selected; facts and missing interpretations remain recorded.",
+      "if_other": "After an owner choice, pin the EVD.14 functions and rederive caches; a judgement payload additionally needs its complete mapping and composition vectors."
+    },
+    {
+      "item": "LQ21",
+      "assumed": "H9 storage works under both flow labels and capability separation, without selecting a policy.",
+      "if_other": "Keep the original form/version and migrate explicitly; missing dependencies never become an empty label set or read_state:no. BND.74 remains open."
+    },
+    {
+      "item": "LQ11",
+      "assumed": "No playback option is selected; recording is outside the core freeze.",
+      "if_other": "Either playback form needs its own recording payload and new explicit authority for each commit; data stores no permission."
+    },
+    {
+      "item": "LQ12",
+      "assumed": "No module-sharing option is selected; module payloads are outside this candidate.",
+      "if_other": "Later packaging follows the selected sharing option, while source bytes, content dependencies and provenance remain preserved."
+    },
+    {
+      "item": "LQ19",
+      "assumed": "No gate ordering or implementation-start approval is assumed.",
+      "if_other": "The owner may change charter order; the candidate still needs Astra ruling and subsequent owner sign-off."
+    },
+    {
+      "item": "LQ4",
+      "assumed": "H11 durable branch lineage is representable; no branch-policy option is selected.",
+      "if_other": "If solving-session branches are disallowed, their commands are absent; the same exit/void/recovery representation works on the sole active path."
+    },
+    {
+      "item": "H8",
+      "assumed": "Text is Unicode scalars without normalization; canonical uncompressed bytes are the output charge.",
+      "if_other": "Any changed text/accounting contract needs revised byte vectors and reconciliation with p4."
+    },
+    {
+      "item": "H9",
+      "assumed": "Explicit required profile:none for manual/import with no producing run; manual own empty dependencies, imported 0.4 own/not_recorded.",
+      "if_other": "A changed no-run type needs a provenance-version conversion and chapter-07 reconciliation; missing fields still read unknown."
+    },
+    {
+      "item": "H10",
+      "assumed": "JI.18/H15.14 flat expanded ia16 chunks are mandatory for stored menu words; named annotations generate no letters. EN3 still supplies X3.",
+      "if_other": "A referenced-part carrier needs revised payloads and streaming vectors; it must preserve chronological letters and pre-expansion admission."
+    },
+    {
+      "item": "H11",
+      "assumed": "H11/H15 transitions separate Position and Context, entry and exit, workspace actions, entrance bindings and durable command/admission/receipt records; monotone voids remain.",
+      "if_other": "An owner change needs reconciled transition/recovery vectors and a new reviewed format candidate; no label equality substitutes for lineage."
+    },
+    {
+      "item": "H12",
+      "assumed": "FP.15 pins en4-2026-11-05.1 / 7272ed98220957ff3cde29b382c004d32dbe3c8e528aa54ffd0656947e8c5754 using the alias table declared canonical_form, excluding content_digest and terminal LF.",
+      "if_other": "After p7-table lands, the integrator refreshes the table version/digest/profile in FP.15, candidate.json and the alias vectors before combined checks; an unmatched pin refuses conversion."
+    },
+    {
+      "item": "H15.12 / LQ15",
+      "assumed": "The four stored envelope collisions get draft corrections under an explicit trial U0 in synthetic vectors; all six check grades are archived without qualifying a live checker.",
+      "if_other": "A different owner threshold or live formal-proof choice changes admission/word results through a pinned edition; rederive them from preserved facts rather than silently rewriting stored grades."
+    }
+  ],
+  "owner_items": [
+    {
+      "item": "LQ3",
+      "why": "Evidence model, threshold and saved judgement meaning belong to the owner."
+    },
+    {
+      "item": "LQ10",
+      "why": "Freeze scope, envelope option and core word encoding remain owner choices."
+    },
+    {
+      "item": "LQ11",
+      "why": "Recording playback option remains open."
+    },
+    {
+      "item": "LQ12",
+      "why": "Module sharing remains open."
+    },
+    {
+      "item": "LQ19",
+      "why": "Gate/charter order and implementation start remain owner decisions."
+    },
+    {
+      "item": "LQ21 / BND.74",
+      "why": "Flow form and boundary policy are not decided by a storage profile."
+    },
+    {
+      "item": "migration-format-freeze",
+      "why": "Astra gives the separate ruling; the owner signs afterwards. This packet is a draft."
+    },
+    {
+      "item": "LQ15",
+      "why": "Archiving formal_proof does not decide whether a proof-assistant checker is live in 1.0."
+    }
+  ],
+  "handoff_changes": [],
+  "new_error_codes": [],
+  "new_requirements": [
+    {
+      "id": "CT-FP-06",
+      "phase": "LP1",
+      "class": "synthetic"
+    },
+    {
+      "id": "CT-FP-07",
+      "phase": "LP1",
+      "class": "source"
+    },
+    {
+      "id": "CT-FP-08",
+      "phase": "LP1",
+      "class": "source"
+    },
+    {
+      "id": "CT-FP-09",
+      "phase": "LP1",
+      "class": "source"
+    },
+    {
+      "id": "CT-EVD-24",
+      "phase": "LP1",
+      "class": "synthetic"
+    },
+    {
+      "id": "CT-EVD-25",
+      "phase": "LP1",
+      "class": "source"
+    }
+  ],
+  "findings": {
+    "RA1-04": {
+      "status": "closed",
+      "clauses": [
+        "FP.30",
+        "FP.31"
+      ],
+      "vectors": {
+        "branch_switch_keeps_preferences": {
+          "given": "branch_switch_keeps_preferences: {\"actions\":[{\"action\":\"exit\",\"head\":\"X\"},{\"action\":\"workspace\",\"preferences\":\"B\"},{\"action\":\"undo\",\"target\":0},{\"action\":\"branch\",\"head\":\"X\",\"path\":[{\"direction\":\"redo\",\"target\":0}]}],\"observe\":[\"head\",\"mode\",\"preferences\",\"protection\",\"state_revision\",\"workspace_revision\",\"valid_exit\"]}",
+          "expected": "branch_switch_keeps_preferences: {\"head\":\"X\",\"mode\":\"jumble_off\",\"preferences\":\"B\",\"protection\":\"A\",\"state_revision\":3,\"valid_exit\":\"X\",\"workspace_revision\":1}",
+          "clause": "FP.31"
+        }
+      }
+    },
+    "RA1-05": {
+      "status": "closed",
+      "clauses": [
+        "FP.31",
+        "FP.32"
+      ],
+      "vectors": {
+        "entry_exit_root_undo_redo": {
+          "given": "entry_exit_root_undo_redo: {\"actions\":[{\"action\":\"exit\",\"head\":\"X\"},{\"action\":\"retained_move\",\"head\":\"M\"},{\"action\":\"entry\",\"entrance\":\"exit_root\",\"head\":\"J\"},{\"action\":\"undo\",\"target\":2},{\"action\":\"redo\",\"target\":2}],\"observe\":[\"head\",\"mode\",\"entrance\",\"state_revision\",\"valid_exit\"]}; entry_exit_root_undo: {\"actions\":[{\"action\":\"exit\",\"head\":\"X\"},{\"action\":\"retained_move\",\"head\":\"M\"},{\"action\":\"entry\",\"entrance\":\"exit_root\",\"head\":\"J\"},{\"action\":\"undo\",\"target\":2}],\"observe\":[\"head\",\"mode\",\"valid_exit\",\"state_revision\"]}",
+          "expected": "entry_exit_root_undo_redo: {\"entrance\":\"exit_root\",\"head\":\"J\",\"mode\":\"jumble_on\",\"state_revision\":5,\"valid_exit\":null}; entry_exit_root_undo: {\"head\":\"M\",\"mode\":\"jumble_off\",\"state_revision\":4,\"valid_exit\":\"X\"}",
+          "clause": "FP.31"
+        },
+        "entry_solved_witness_undo_redo": {
+          "given": "entry_solved_witness_undo_redo: {\"actions\":[{\"action\":\"import\",\"head\":\"Y\"},{\"action\":\"entry\",\"entrance\":\"solved_witness\",\"head\":\"J\"},{\"action\":\"undo\",\"target\":1},{\"action\":\"redo\",\"target\":1}],\"observe\":[\"head\",\"mode\",\"entrance\",\"state_revision\",\"valid_exit\"]}; entry_solved_witness_undo: {\"actions\":[{\"action\":\"import\",\"head\":\"Y\"},{\"action\":\"entry\",\"entrance\":\"solved_witness\",\"head\":\"J\"},{\"action\":\"undo\",\"target\":1}],\"observe\":[\"head\",\"mode\",\"state_revision\",\"valid_exit\"]}",
+          "expected": "entry_solved_witness_undo_redo: {\"entrance\":\"solved_witness\",\"head\":\"J\",\"mode\":\"jumble_on\",\"state_revision\":4,\"valid_exit\":null}; entry_solved_witness_undo: {\"head\":\"Y\",\"mode\":\"jumble_off\",\"state_revision\":3,\"valid_exit\":null}",
+          "clause": "FP.31"
+        }
+      }
+    },
+    "RA1-06": {
+      "status": "closed",
+      "clauses": [
+        "FP.31",
+        "FP.36"
+      ],
+      "vectors": {
+        "notification_loss_then_restart": {
+          "given": "notification_loss_then_restart: {\"actions\":[{\"action\":\"exit\",\"command\":\"exit-C\",\"head\":\"X\"},{\"action\":\"undo\",\"target\":0}],\"lookup\":\"exit-C\",\"observe\":[\"head\",\"state_revision\",\"lookup\",\"lookup_state_revision\"]}",
+          "expected": "notification_loss_then_restart: {\"head\":\"P\",\"lookup\":\"committed\",\"lookup_state_revision\":1,\"state_revision\":2}",
+          "clause": "FP.36"
+        },
+        "admission_then_proven_rollback": {
+          "given": "admission_then_proven_rollback: {\"actions\":[{\"action\":\"rollback\",\"command\":\"rollback-C\",\"proved\":true}],\"lookup\":\"rollback-C\",\"observe\":[\"head\",\"committed_transactions\",\"lookup\",\"lookup_error\"]}; admission_without_proof: {\"actions\":[{\"action\":\"rollback\",\"command\":\"rollback-C\",\"proved\":false}],\"lookup\":\"rollback-C\",\"observe\":[\"head\",\"committed_transactions\",\"lookup\"]}",
+          "expected": "admission_then_proven_rollback: {\"committed_transactions\":0,\"head\":\"P\",\"lookup\":\"failed\",\"lookup_error\":\"KN5:resource_limit.engine_lost\"}; admission_without_proof: {\"committed_transactions\":0,\"head\":\"P\",\"lookup\":\"unknown_outcome\"}",
+          "clause": "FP.36"
+        }
+      }
+    },
+    "RA1-07": {
+      "status": "closed",
+      "clauses": [
+        "FP.31",
+        "PS1.43"
+      ],
+      "vectors": {
+        "workspace_action_in_chain": {
+          "given": "workspace_action_in_chain: {\"actions\":[{\"action\":\"exit\",\"head\":\"X\"},{\"action\":\"workspace\",\"protection\":\"B\"},{\"action\":\"retained_move\",\"head\":\"M\"},{\"action\":\"undo\",\"target\":2},{\"action\":\"undo\",\"target\":1}],\"observe\":[\"head\",\"mode\",\"protection\",\"state_revision\",\"workspace_revision\",\"protection_revision\",\"valid_exit\",\"committed_transactions\"]}; crossing_protection_inverse: {\"actions\":[{\"action\":\"exit\",\"crossing_protection\":\"B\",\"head\":\"X\"},{\"action\":\"workspace\",\"preferences\":\"C\"},{\"action\":\"undo\",\"target\":0}],\"observe\":[\"head\",\"preferences\",\"protection\",\"state_revision\",\"workspace_revision\"]}",
+          "expected": "workspace_action_in_chain: {\"committed_transactions\":5,\"head\":\"X\",\"mode\":\"jumble_off\",\"protection\":\"A\",\"protection_revision\":2,\"state_revision\":3,\"valid_exit\":\"X\",\"workspace_revision\":2}; crossing_protection_inverse: {\"head\":\"P\",\"preferences\":\"C\",\"protection\":\"A\",\"state_revision\":2,\"workspace_revision\":3}",
+          "clause": "FP.31"
+        }
+      }
+    },
+    "RS3-01": {
+      "status": "closed",
+      "clauses": [
+        "EVD.32",
+        "EVD.33",
+        "EVD.47",
+        "EVD.62"
+      ],
+      "vectors": {
+        "not_run_budget_stop_row7": {
+          "given": "not_run_budget_stop_row7: {\"own_job\":\"not_run\",\"search\":{\"complete\":\"no\",\"job\":\"not_run\",\"stop\":{\"kind\":\"deterministic_budget\"}},\"shape\":\"empty\",\"threshold\":\"trial_U0\"}",
+          "expected": "not_run_budget_stop_row7: {\"code\":null,\"grade\":{\"basis\":\"exact_computation\",\"check\":\"producer\"},\"producing_job\":\"not_run\",\"row\":7,\"search\":{\"complete\":\"no\",\"job\":\"not_run\",\"stop\":{\"kind\":\"deterministic_budget\"}},\"word\":\"open\"}",
+          "clause": "EVD.62"
+        },
+        "not_run_declared_limit_row7": {
+          "given": "not_run_declared_limit_row7: {\"own_job\":\"not_run\",\"search\":{\"complete\":\"no\",\"job\":\"not_run\",\"stop\":{\"kind\":\"declared_limit\"}},\"shape\":\"empty\",\"threshold\":\"trial_U0\"}",
+          "expected": "not_run_declared_limit_row7: {\"code\":null,\"grade\":{\"basis\":\"exact_computation\",\"check\":\"producer\"},\"producing_job\":\"not_run\",\"row\":7,\"search\":{\"complete\":\"no\",\"job\":\"not_run\",\"stop\":{\"kind\":\"declared_limit\"}},\"word\":\"open\"}",
+          "clause": "EVD.62"
+        }
+      }
+    },
+    "RS3-02": {
+      "status": "closed",
+      "clauses": [
+        "EVD.30",
+        "EVD.40",
+        "EVD.42",
+        "EVD.62"
+      ],
+      "vectors": {
+        "refutation_basis_row0": {
+          "given": "refutation_basis_row0: {\"form\":\"existence\",\"own_job\":\"completed\",\"scope\":\"search_set\",\"shape\":\"negative\",\"threshold\":\"trial_U0\"}; eligible_theorem: {\"complete_certificate\":true,\"form\":\"existence\",\"grade\":{\"basis\":\"theorem\",\"check\":\"producer\"},\"own_job\":\"completed\",\"scope\":\"search_set\",\"shape\":\"negative\",\"threshold\":\"trial_U0\"}; eligible_certificate: {\"complete_certificate\":true,\"form\":\"existence\",\"grade\":{\"basis\":\"certificate\",\"check\":\"producer\"},\"own_job\":\"completed\",\"scope\":\"search_set\",\"shape\":\"negative\",\"threshold\":\"trial_U0\"}",
+          "expected": "refutation_basis_row0: {\"code\":\"EVD:evidence.inconsistent_fields\",\"grade\":{\"basis\":\"exact_computation\",\"check\":\"producer\"},\"producing_job\":\"completed\",\"row\":0,\"search\":null,\"word\":\"typed inconsistency\"}; eligible_theorem: {\"code\":null,\"grade\":{\"basis\":\"theorem\",\"check\":\"producer\"},\"producing_job\":\"completed\",\"row\":1,\"search\":null,\"word\":\"refuted\"}; eligible_certificate: {\"code\":null,\"grade\":{\"basis\":\"certificate\",\"check\":\"producer\"},\"producing_job\":\"completed\",\"row\":1,\"search\":null,\"word\":\"refuted\"}",
+          "clause": "EVD.62"
+        }
+      }
+    },
+    "RS3-03": {
+      "status": "closed",
+      "clauses": [
+        "EVD.30",
+        "EVD.33",
+        "EVD.41",
+        "EVD.47",
+        "EVD.61",
+        "EVD.62"
+      ],
+      "vectors": {
+        "own_not_run_support_inert": {
+          "given": "own_not_run_support_inert: {\"own_job\":\"not_run\",\"shape\":\"positive\",\"threshold\":\"trial_U0\"}",
+          "expected": "own_not_run_support_inert: {\"code\":null,\"grade\":{\"basis\":\"exact_computation\",\"check\":\"producer\"},\"producing_job\":\"not_run\",\"row\":7,\"search\":null,\"word\":\"open\"}",
+          "clause": "EVD.62"
+        },
+        "other_job_support_counts": {
+          "given": "other_job_support_counts: {\"other_job\":\"not_run\",\"own_job\":\"completed\",\"shape\":\"positive\",\"threshold\":\"trial_U0\"}",
+          "expected": "other_job_support_counts: {\"code\":null,\"grade\":{\"basis\":\"exact_computation\",\"check\":\"producer\"},\"producing_job\":\"completed\",\"row\":2,\"search\":null,\"word\":\"finite instance\"}",
+          "clause": "EVD.62"
+        }
+      }
+    },
+    "RS3-04": {
+      "status": "closed",
+      "clauses": [
+        "EVD.40",
+        "EVD.41",
+        "EVD.43",
+        "EVD.62"
+      ],
+      "vectors": {
+        "negative_error_job": {
+          "given": "negative_error_job: {\"grade\":{\"basis\":\"theorem\",\"check\":\"producer\"},\"own_job\":\"error\",\"shape\":\"negative\",\"threshold\":\"trial_U0\"}; positive_error: {\"own_job\":\"error\",\"shape\":\"positive\",\"threshold\":\"trial_U0\"}",
+          "expected": "negative_error_job: {\"code\":\"EVD:evidence.negative_without_completion\",\"grade\":{\"basis\":\"theorem\",\"check\":\"producer\"},\"producing_job\":\"error\",\"row\":0,\"search\":null,\"word\":\"typed inconsistency\"}; positive_error: {\"code\":null,\"grade\":{\"basis\":\"exact_computation\",\"check\":\"producer\"},\"producing_job\":\"error\",\"row\":2,\"search\":null,\"word\":\"finite instance\"}",
+          "clause": "EVD.62"
+        },
+        "negative_cancelled_job": {
+          "given": "negative_cancelled_job: {\"grade\":{\"basis\":\"theorem\",\"check\":\"producer\"},\"own_job\":\"cancelled\",\"shape\":\"negative\",\"threshold\":\"trial_U0\"}; positive_cancelled: {\"own_job\":\"cancelled\",\"shape\":\"positive\",\"threshold\":\"trial_U0\"}",
+          "expected": "negative_cancelled_job: {\"code\":\"EVD:evidence.negative_without_completion\",\"grade\":{\"basis\":\"theorem\",\"check\":\"producer\"},\"producing_job\":\"cancelled\",\"row\":0,\"search\":null,\"word\":\"typed inconsistency\"}; positive_cancelled: {\"code\":null,\"grade\":{\"basis\":\"exact_computation\",\"check\":\"producer\"},\"producing_job\":\"cancelled\",\"row\":2,\"search\":null,\"word\":\"finite instance\"}",
+          "clause": "EVD.62"
+        },
+        "negative_cut_off_non_search": {
+          "given": "negative_cut_off_non_search: {\"grade\":{\"basis\":\"theorem\",\"check\":\"producer\"},\"own_job\":\"cut_off\",\"shape\":\"negative\",\"threshold\":\"trial_U0\"}; positive_cut_off: {\"own_job\":\"cut_off\",\"shape\":\"positive\",\"threshold\":\"trial_U0\"}",
+          "expected": "negative_cut_off_non_search: {\"code\":\"EVD:evidence.negative_without_completion\",\"grade\":{\"basis\":\"theorem\",\"check\":\"producer\"},\"producing_job\":\"cut_off\",\"row\":0,\"search\":null,\"word\":\"typed inconsistency\"}; positive_cut_off: {\"code\":null,\"grade\":{\"basis\":\"exact_computation\",\"check\":\"producer\"},\"producing_job\":\"cut_off\",\"row\":2,\"search\":null,\"word\":\"finite instance\"}",
+          "clause": "EVD.62"
+        }
+      }
+    },
+    "RS3-05": {
+      "status": "closed",
+      "clauses": [
+        "FP.19",
+        "FP.20",
+        "EVD.3"
+      ],
+      "vectors": {
+        "grade_round_trip": {
+          "given": "grade_human_review: {\"grade\":{\"basis\":\"theorem\",\"check\":\"human_review\"},\"shape\":\"positive\",\"threshold\":\"trial_U0\"}; grade_formal_proof: {\"grade\":{\"basis\":\"theorem\",\"check\":\"formal_proof\"},\"shape\":\"positive\",\"threshold\":\"trial_U0\"}",
+          "expected": "grade_human_review: {\"code\":null,\"grade\":{\"basis\":\"theorem\",\"check\":\"human_review\"},\"producing_job\":null,\"row\":2,\"search\":null,\"word\":\"finite instance\"}; grade_formal_proof: {\"code\":null,\"grade\":{\"basis\":\"theorem\",\"check\":\"formal_proof\"},\"producing_job\":null,\"row\":2,\"search\":null,\"word\":\"finite instance\"}",
+          "clause": "FP.19"
+        }
+      }
+    },
+    "RS3-06": {
+      "status": "closed",
+      "clauses": [
+        "FP.19",
+        "FP.20",
+        "EVD.61"
+      ],
+      "vectors": {
+        "leaf_completed_job": {
+          "given": "leaf_completed_job: {\"grade\":{\"basis\":\"theorem\",\"check\":\"producer\"},\"own_job\":\"completed\",\"shape\":\"negative\",\"threshold\":\"trial_U0\"}",
+          "expected": "leaf_completed_job: {\"code\":null,\"grade\":{\"basis\":\"theorem\",\"check\":\"producer\"},\"producing_job\":\"completed\",\"row\":1,\"search\":null,\"word\":\"refuted\"}",
+          "clause": "FP.20"
+        },
+        "leaf_incomplete_job": {
+          "given": "leaf_incomplete_job: {\"grade\":{\"basis\":\"theorem\",\"check\":\"producer\"},\"own_job\":\"error\",\"shape\":\"negative\",\"threshold\":\"trial_U0\"}",
+          "expected": "leaf_incomplete_job: {\"code\":\"EVD:evidence.negative_without_completion\",\"grade\":{\"basis\":\"theorem\",\"check\":\"producer\"},\"producing_job\":\"error\",\"row\":0,\"search\":null,\"word\":\"typed inconsistency\"}",
+          "clause": "FP.20"
+        },
+        "leaf_unrelated_job": {
+          "given": "leaf_unrelated_job: {\"other_job\":\"error\",\"own_job\":\"completed\",\"shape\":\"positive\",\"threshold\":\"trial_U0\"}; explicit_absent_job: {\"shape\":\"positive\",\"threshold\":\"trial_U0\"}",
+          "expected": "leaf_unrelated_job: {\"code\":null,\"grade\":{\"basis\":\"exact_computation\",\"check\":\"producer\"},\"producing_job\":\"completed\",\"row\":2,\"search\":null,\"word\":\"finite instance\"}; explicit_absent_job: {\"code\":null,\"grade\":{\"basis\":\"exact_computation\",\"check\":\"producer\"},\"producing_job\":null,\"row\":2,\"search\":null,\"word\":\"finite instance\"}",
+          "clause": "FP.20"
+        }
+      }
+    },
+    "RS3-07": {
+      "status": "closed",
+      "clauses": [
+        "FP.13"
+      ],
+      "vectors": {
+        "relation_target_forms": {
+          "given": "relation_local: {\"case\":\"local\"}; relation_part: {\"case\":\"part\"}; relation_ref: {\"case\":\"ref\"}; relation_missing: {\"case\":\"missing\"}; relation_cycle: {\"case\":\"cycle\"}; relation_changed_inverse: {\"case\":\"changed_inverse\"}; relation_missing_part: {\"case\":\"missing_part\"}",
+          "expected": "relation_local: \"accepted\"; relation_part: \"accepted\"; relation_ref: \"accepted\"; relation_missing: \"PS1:input.persistence_format\"; relation_cycle: \"PS1:input.persistence_format\"; relation_changed_inverse: \"PS1:input.noncanonical_value\"; relation_missing_part: \"PS1:input.persistence_format\"",
+          "clause": "FP.13"
+        }
+      }
+    },
+    "RS3-08": {
+      "status": "closed",
+      "clauses": [
+        "PS1.18",
+        "PS1.19",
+        "PS1.20",
+        "FP.13"
+      ],
+      "vectors": {
+        "menu_word_chunks": {
+          "given": "relation_missing_chunks: {\"case\":\"missing_chunks\"}; graph_is_not_expanded_storage: {\"graph_bytes\":80,\"letters\":\"2147483649\"}",
+          "expected": "relation_missing_chunks: \"PS1:input.persistence_format\"; graph_is_not_expanded_storage: {\"expanded_word\":\"PS1:resource_limit.persistence_size\",\"source_graph\":\"accepted\"}",
+          "clause": "FP.13"
+        }
+      }
+    },
+    "RS3-09": {
+      "status": "closed",
+      "clauses": [
+        "FP.15"
+      ],
+      "vectors": {
+        "alias_identity_profile": {
+          "given": "alias_identity_profile: {\"legacy_id\":\"after\",\"pin\":{\"content_digest\":\"7272ed98220957ff3cde29b382c004d32dbe3c8e528aa54ffd0656947e8c5754\",\"profile\":\"SHA-256 of UTF-8 JSON of this entire object except content_digest; keys sorted recursively, separators comma and colon, ensure_ascii=false, no whitespace or trailing newline; array order retained.\",\"version\":\"en4-2026-11-05.1\"}}; alias_lf_rejected: {\"append_lf\":true,\"legacy_id\":\"after\",\"pin\":{\"content_digest\":\"7272ed98220957ff3cde29b382c004d32dbe3c8e528aa54ffd0656947e8c5754\",\"profile\":\"SHA-256 of UTF-8 JSON of this entire object except content_digest; keys sorted recursively, separators comma and colon, ensure_ascii=false, no whitespace or trailing newline; array order retained.\",\"version\":\"en4-2026-11-05.1\"}}; alias_version_rejected: {\"legacy_id\":\"after\",\"pin\":{\"content_digest\":\"7272ed98220957ff3cde29b382c004d32dbe3c8e528aa54ffd0656947e8c5754\",\"profile\":\"SHA-256 of UTF-8 JSON of this entire object except content_digest; keys sorted recursively, separators comma and colon, ensure_ascii=false, no whitespace or trailing newline; array order retained.\",\"version\":\"wrong\"}}",
+          "expected": "alias_identity_profile: {\"arguments\":{\"phase\":\"cleanup\"},\"command\":\"view.forecast.select\",\"requires\":[]}; alias_lf_rejected: \"PS1:input.digest_mismatch\"; alias_version_rejected: \"PS1:input.digest_mismatch\"",
+          "clause": "FP.15"
+        }
+      }
+    },
+    "X-PIN": {
+      "status": "closed",
+      "clauses": [
+        "FP.1"
+      ],
+      "vectors": {
+        "chapter_pin_moves": {
+          "given": "chapter_pin_moves: {\"actual\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"frozen\":false,\"recorded\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"relative\":\"docs/architecture/1.0/language/architecture/01-kernel.md\"}; frozen_chapter_pin: {\"actual\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"frozen\":true,\"recorded\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"relative\":\"docs/architecture/1.0/language/architecture/01-kernel.md\"}; packet_pin_fatal: {\"actual\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"frozen\":false,\"recorded\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"relative\":\"docs/architecture/1.0/language/format-packet/README.md\"}; vectors_pin_fatal: {\"actual\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"frozen\":false,\"recorded\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"relative\":\"docs/architecture/1.0/language/format-packet/vectors.json\"}",
+          "expected": "chapter_pin_moves: \"chapter_moved\"; frozen_chapter_pin: \"PS1:input.digest_mismatch\"; packet_pin_fatal: \"PS1:input.digest_mismatch\"; vectors_pin_fatal: \"PS1:input.digest_mismatch\"",
+          "clause": "FP.1"
+        }
+      }
+    },
+    "X-E1": {
+      "status": "closed",
+      "clauses": [
+        "EVD.3",
+        "EVD.63"
+      ],
+      "vectors": {
+        "e1_unqualified": {
+          "given": "E1 a2 uses macro.py check --replay and a3 uses replay_word.py; CX.18 records construction imports and no KN6.2/KN6.5 qualification.",
+          "expected": "Both paths keep (exact computation, producer), remain unqualified for KN6, and no source-digest-only change upgrades either to independent_checker. A higher LQ3 threshold is not promised to retain finite instance.",
+          "clause": "EVD.63"
+        }
+      }
+    }
+  },
+  "outside_sandbox_commands": [
+    "python -B work/experiments/language-lx/envelope-facts/check.py",
+    "python -B docs/architecture/1.0/language/closure/check_closure.py --all",
+    "tools/.venv/engine/Scripts/python.exe -B tests/test_oracle.py",
+    "python -B docs/architecture/1.0/language/closure/check_p7.py --all"
+  ],
+  "integration_dependencies": [
+    "Refresh the FP.15 alias version/digest/profile, candidate input digest and alias vectors after p7-table lands; retain the alias identity profile.",
+    "Index CT-FP-06 to CT-FP-09 and CT-EVD-24/25 in chapter 12; reconcile the completed H11 forms with p7-layers and run H13 traces.",
+    "Review the current assembled candidate; obtain the separate Astra migration-format-freeze ruling and owner sign-off before freezing.",
+    "Before freeze refresh all candidate/input chapter pins and set frozen:true. No owner LQ, numeric X3 bound or complete corpus mapping is supplied by this packet."
+  ],
+  "evidence_limits": "Focused reference/source and synthetic vectors only. The envelope experiment was read, not rerun; its frozen result remains unchanged. No importer, product persistence, independent KN6 checker, Windows durability, performance or accepted threshold is claimed."
+}

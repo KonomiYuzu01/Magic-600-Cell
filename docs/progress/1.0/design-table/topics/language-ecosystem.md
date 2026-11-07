@@ -2882,3 +2882,9 @@ no blocker or major. So the full text has no open blocker or major, which is the
 
 This is document evidence only. It reads the text, runs nothing, and proves no conformance test passes: none exists yet.
 The other half of LP0's acceptance, the owner's acceptance of the ADR drafts, is open.
+
+**Correction, 6 November 2026:** The language is named 600 Cell Script, with source extension `.6cs`, and the owner
+answered LQ1 to LQ21. The [decision page](../../../../wiki/decisions/owner-decisions-2026-11-06.md) records those answers;
+the architecture chapters carry them. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set waits for the
+joint setting. The original items above, including the working name and the earlier unanswered status, stay as written.
+No ADR is accepted and nothing is frozen.

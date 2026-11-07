@@ -14,8 +14,10 @@ The kickoff asks for options and the evidence each needs, with no preset conclus
 language decides where the interpreter normally lives, because direct access to snapshots and kernels favours one host
 (RTE.19). The route decides how much of the language the project builds and how much it borrows.
 
-The form of flow control is linked too, because it changes what each route must build (LQ21, RTE.24). None of the
-evidence exists. No spike has run, and spikes run only if the owner allows them (LQ18).
+The form of flow control is linked too, because it changes what each route must build (LQ21, RTE.24). LX-1 to LX-9 ran
+as far as they can now under the allowance (owner, 6 November 2026, LQ18). Their first-pass results and limits are
+recorded under `work/experiments/language-lx/` (RTE.82). No result decides LQ8, LQ9, LQ13 or LQ21; decisive runs wait
+for the owner's window (owner, 6 November 2026, decision 15).
 
 ## Options
 
@@ -26,8 +28,8 @@ evidence exists. No spike has run, and spikes run only if the owner allows them 
 | RT3 Hybrid | Own syntax, checker and IR lowered to an existing VM, such as WebAssembly with fuel metering | Own discipline with a mature sandbox and metering | Two layers; source mapping; target limits; the front end stays hard to reverse (RTE.14) |
 | RT4 Host-language library | The language as a typed library in the engine language or Python | Fastest start; all host tooling | No static effect discipline without a separate checker; hard sandbox; users learn the host language; tied to the engine choice; no typed IR by definition (RTE.6) |
 
-Candidate-specific licence, speed and enforcement results do not exist yet (RTE.11). The engine language options are in
-RTE.17, and placement options are in RTE.21.
+First-pass candidate records supply scoped evidence and leads; they select no route or placement (RTE.11,
+RTE.82). The engine language options are in RTE.17, and placement options are in RTE.21.
 
 ## Decision
 
@@ -37,13 +39,21 @@ No route, engine language or placement is decided here. These points hold under 
 - **ADR-L12.2** A route change keeps the language-neutral data core and the meaning of saved work (RTE.3).
 - **ADR-L12.3** Each candidate is judged against one obligation inventory, and a borrowed tool, library, VM fuel or
   sandbox counts only for the part demonstrated (RTE.4, RTE.5).
+  The owner chose user shader programs (owner, 6 November 2026, LQ7) and free views everywhere
+  (owner, 6 November 2026, LQ6). RPI.68 to RPI.83 give the draft vertex and fragment stage contract and free-view
+  workload. The project's pipeline checks and compiles stage modules of 600 Cell Script to portable HLSL; raw shader
+  upload has no path (RPI.68, RPI.78).
 - **ADR-L12.4** Each placement meets KN7.12, KN7.13 and every rule of chapter 08, and a runtime fault ends its jobs,
   never the session (RTE.21, RTE.22).
 - **ADR-L12.5** The portability boundary holds under every engine language (RTE.17).
 - **ADR-L12.6** Evidence classes stay separate. Oracle equality is source evidence, and performance figures count only
   from the owner's machine (RTE.20, RTE.36).
 
-The order of the choices is proposed under LQ8, LQ9, LQ18 and LQ21:
+Proof obligations export to Lean (owner, 6 November 2026, LQ15). Lean is neither shipped nor a runtime dependency;
+formal proofs come after 1.0 (owner, 6 November 2026, decision 9). 1.0 has no proof-record import or writer for
+`formal proof` (EVD.47, EVD.64, LB5.18, RTE.28).
+
+LQ8, LQ9 and LQ21 wait for their evidence (RTE.18, RTE.23, RTE.26). For the decisive runs, the dependencies are:
 
 1. LX-5 and LX-6 feed LQ8, the engine language.
 2. LX-3, LX-7, LX-8 and LX-9 do not wait for LQ8. LX-9's run on the engine candidate follows LX-6.
@@ -59,27 +69,27 @@ The order of the choices is proposed under LQ8, LQ9, LQ18 and LQ21:
 | LX-4 Editor latency | LQ9 | RTE.47 to RTE.53. The bars are proposals, and none is a measured result |
 | LX-5 Exact arithmetic | LQ8 | RTE.54, RTE.55. A copyleft dependency needs the owner |
 | LX-6 Engine language | LQ8 | RTE.56 to RTE.58 |
-| LX-7 User charts | LQ7 | RTE.59 to RTE.61 |
+| LX-7 User stages | LQ7's safety and renderer contract | RTE.59 to RTE.61, RTE.83. Earlier compute-subset results do not establish the vertex and fragment drawing pipeline |
 | LX-8 Syntax learnability | LQ13 | RTE.62, RTE.63. No rule exists until the owner sets the protocol |
 | LX-9 Input-map determinism | INV-10 | RTE.64 to RTE.66 |
 
 ## What this record does not decide
 
-Open whatever the owner answers:
+The owner answered LQ1 to LQ21 on 6 November 2026. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set
+waits for the joint setting.
+
+Open mechanisms:
 
 - How RT4 meets the saved-program contract (RTE.6).
 - The binding, ABI and buffer-lifetime protocol between host and kernel (RTE.7).
 
-Conditional on an owner question:
+Waiting owner questions:
 
-- **LQ8:** the engine language. The alternatives are deciding Rust now, or keeping the exact Python and NumPy reference
-  as the 1.0 engine. Neither supplies a passing spike (RTE.18).
-- **LQ9:** the route and placement. The alternatives decide now for an own interpreter or an embedded runtime, and
-  neither waives the rules above (RTE.23).
-- **LQ21:** flow labels or capability separation, with [ADR-L06](ADR-L06-effects-and-flow.md).
-- **LQ15:** whether a proof assistant has any place in 1.0 (RTE.28). It is a separate question from the route.
-- **LQ18:** whether the spikes may run before the freeze. Under its alternative they run after LP1's gates and before
-  LP2, and the frozen interfaces must hold under every route and both forms (RTE.29, RTE.31).
+- **LQ8:** the engine language, on LX-5 and LX-6 (RTE.18).
+- **LQ9:** the route and placement, on LX-1 to LX-5 and with LQ21 (RTE.23).
+- **LQ13:** syntax, on LX-8 before LP2 builds the parser (RTE.62, RTE.63).
+- **LQ21:** flow labels or capability separation, on LX-1 and LX-3 with LQ9, with
+  [ADR-L06](ADR-L06-effects-and-flow.md).
 
 ## Why
 
@@ -92,25 +102,30 @@ Conditional on an owner question:
 
 | Alternative | Why it was turned down |
 | --- | --- |
-| Choosing a route now | The kickoff asks for no preset conclusion, and no evidence exists. It stays open under LQ9 |
+| Choosing a route now | The kickoff asks for no preset conclusion, and decisive evidence is still owed. The owner chose to wait (owner, 6 November 2026, LQ9) |
 | Deciding the route before the engine language | The interpreter's host normally follows the engine, so the route's evidence would have to be collected twice |
-| A proof assistant as the language | A separate question (LQ15). It would add a research front end and an adapter to the common identities |
+| A proof assistant as the language | Rejected alternative of LQ15 (owner, 6 November 2026). It would add a research front end and an adapter to the common identities |
 
 ## Consequences
 
-- Nothing can be built until the choices are made, and LP1 carries that weight.
+- LP2 to LP5 wait for both LP1 freeze rulings and the owner's sign-off (owner, 6 November 2026, decision 7). Experiment
+  code is allowed before them (owner, 6 November 2026, LQ18).
 - Spikes cost effort and owner time. LX-4's protocol alone is about three hours of foreground time at one second per
   sample (RTE.52), and that is source arithmetic.
 - A spike can fail to separate the routes. Its report still counts, and negative results stay on record (RTE.37).
-- Charter stage 2.5's order stays until the owner changes it (RTE.32).
+- The amended charter order in RTE.32 keeps every gate: the design-system ADR conditions LP4's editor look and LP6,
+  after the language's development is complete (owner, 6 November 2026, decision 7).
 
 ## Evidence
 
-None yet. No spike has run. The wiki question proposes Rust, and its spike has not run either. CT-RTE-01 to CT-RTE-20
-are requirements on candidates and spike records only.
+First-pass LX-1 to LX-9 records are the `RESULT.md` files under `work/experiments/language-lx/` (RTE.82). Source,
+synthetic and actual Windows/DirectX evidence stay separate under RTE.36; function timings and headless work establish
+no performance, native-input or foreground-window pass. LX-7's earlier compute-subset record does not establish the
+new drawing-stage contract (RTE.83). No result decides LQ8, LQ9, LQ13 or LQ21. CT-RTE-01 to CT-RTE-23, with CT-RTE-20 withdrawn, are
+requirements on candidates and spike records only.
 
 ## What the owner accepts
 
-Nothing at LP0. At LP1, with the spike reports, this record gains a route, an engine language and a placement, and the
-owner accepts or rejects it with [ADR-L07](ADR-L07-typed-ir.md) and the form of flow control. If the owner answers LQ8,
+Nothing at LP0. At LP1, with the spike reports, this record gains a route, an engine language and a placement. After
+both LP1 rulings the owner accepts or rejects it with [ADR-L07](ADR-L07-typed-ir.md) and the form of flow control. If the owner answers LQ8,
 LQ9 or LQ21 sooner, the record changes to say so, and the rules of the Decision section still apply.

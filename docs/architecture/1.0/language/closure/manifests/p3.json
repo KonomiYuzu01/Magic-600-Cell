@@ -1,0 +1,252 @@
+{
+  "packet": "p3",
+  "assumes": [
+    {
+      "item": "LQ10",
+      "assumed": "PS2.10 recommendation: language-neutral data core, facts payload, H10 ia16 menu chunks; not a decision.",
+      "if_other": "Judgements wait for LQ3 and lossless saved-judgement mapping; syntax-also adds a separately reviewed syntax/edition specification; language-data-out needs a versioned interim target and recorded later conversion (FP.3)."
+    },
+    {
+      "item": "LQ3",
+      "assumed": "No threshold, evidence order or judgement model is selected; facts and missing interpretations remain recorded.",
+      "if_other": "After an owner choice, pin the EVD.14 functions and rederive caches; a judgement payload additionally needs its complete mapping and composition vectors."
+    },
+    {
+      "item": "LQ21",
+      "assumed": "H9 storage works under both flow labels and capability separation, without selecting a policy.",
+      "if_other": "Keep the original form/version and migrate explicitly; missing dependencies never become an empty label set or read_state:no. BND.74 remains open."
+    },
+    {
+      "item": "LQ11",
+      "assumed": "No playback option is selected; recording is outside the core freeze.",
+      "if_other": "Either playback form needs its own recording payload and new explicit authority for each commit; data stores no permission."
+    },
+    {
+      "item": "LQ12",
+      "assumed": "No module-sharing option is selected; module payloads are outside this candidate.",
+      "if_other": "Later packaging follows the selected sharing option, while source bytes, content dependencies and provenance remain preserved."
+    },
+    {
+      "item": "LQ19",
+      "assumed": "No gate ordering or implementation-start approval is assumed.",
+      "if_other": "The owner may change charter order; the candidate still needs Astra ruling and subsequent owner sign-off."
+    },
+    {
+      "item": "LQ4",
+      "assumed": "H11 durable branch lineage is representable; no branch-policy option is selected.",
+      "if_other": "If solving-session branches are disallowed, their commands are absent; the same exit/void/recovery representation works on the sole active path."
+    },
+    {
+      "item": "H8",
+      "assumed": "Text is Unicode scalars without normalization; canonical uncompressed bytes are the output charge.",
+      "if_other": "Any changed text/accounting contract needs revised byte vectors and reconciliation with p4."
+    },
+    {
+      "item": "H9",
+      "assumed": "Explicit required profile:none for manual/import with no producing run; manual own empty dependencies, imported 0.4 own/not_recorded.",
+      "if_other": "A changed no-run type needs a provenance-version conversion and chapter-07 reconciliation; missing fields still read unknown."
+    },
+    {
+      "item": "H10",
+      "assumed": "JI.18/H15.14 flat expanded ia16 chunks are mandatory for stored menu words; named annotations generate no letters. EN3 still supplies X3.",
+      "if_other": "A referenced-part carrier needs revised payloads and streaming vectors; it must preserve chronological letters and pre-expansion admission."
+    },
+    {
+      "item": "H11",
+      "assumed": "H11/H15 transitions separate Position and Context, entry and exit, workspace actions, entrance bindings and durable command/admission/receipt records; monotone voids remain.",
+      "if_other": "An owner change needs reconciled transition/recovery vectors and a new reviewed format candidate; no label equality substitutes for lineage."
+    },
+    {
+      "item": "H12",
+      "assumed": "FP.15 pins en4-2026-11-05.1 / 7272ed98220957ff3cde29b382c004d32dbe3c8e528aa54ffd0656947e8c5754 using the alias table declared canonical_form, excluding content_digest and terminal LF.",
+      "if_other": "After p7-table lands, the integrator refreshes the table version/digest/profile in FP.15, candidate.json and the alias vectors before combined checks; an unmatched pin refuses conversion."
+    }
+  ],
+  "owner_items": [
+    {
+      "item": "LQ3",
+      "why": "Evidence model, threshold and saved judgement meaning belong to the owner."
+    },
+    {
+      "item": "LQ10",
+      "why": "Freeze scope, envelope option and core word encoding remain owner choices."
+    },
+    {
+      "item": "LQ11",
+      "why": "Recording playback option remains open."
+    },
+    {
+      "item": "LQ12",
+      "why": "Module sharing remains open."
+    },
+    {
+      "item": "LQ19",
+      "why": "Gate/charter order and implementation start remain owner decisions."
+    },
+    {
+      "item": "LQ21 / BND.74",
+      "why": "Flow form and boundary policy are not decided by a storage profile."
+    },
+    {
+      "item": "migration-format-freeze",
+      "why": "Astra gives the separate ruling; the owner signs afterwards. This packet is a draft."
+    },
+    {
+      "item": "LQ15",
+      "why": "Archiving formal_proof does not decide whether a proof-assistant checker is live in 1.0."
+    }
+  ],
+  "handoff_changes": [],
+  "new_error_codes": [],
+  "new_requirements": [
+    {
+      "id": "CT-FP-01",
+      "phase": "LP1",
+      "class": "source"
+    },
+    {
+      "id": "CT-FP-02",
+      "phase": "LP1",
+      "class": "source"
+    },
+    {
+      "id": "CT-FP-03",
+      "phase": "LP1",
+      "class": "source"
+    },
+    {
+      "id": "CT-FP-04",
+      "phase": "LP1",
+      "class": "synthetic"
+    },
+    {
+      "id": "CT-FP-05",
+      "phase": "LP1",
+      "class": "source"
+    }
+  ],
+  "findings": {
+    "FR-C02": {
+      "status": "partial",
+      "clauses": [
+        "PS1.3",
+        "PS1.5",
+        "PS1.9",
+        "PS1.11",
+        "PS1.13",
+        "PS1.34",
+        "PS2.13",
+        "PS3.12",
+        "PS3.16",
+        "FP.1",
+        "FP.9",
+        "FP.19",
+        "FP.35"
+      ],
+      "why_open": "Draft profiles, fields, carrier and reference vectors are supplied. H15 reconciles the transition/evidence forms; JI.18 supplies the flat draft and FP.15 pins the current aliases. Complete typed corpus interpretations, the numeric X3 bound, refreshed aliases after p7-table, assembled review and freeze remain outstanding. All PS2.13 rows retain their evidence limits.",
+      "who": "Integrator/chapter-06 owner for typed corpus mappings and combined review; EN3 for X3; integrator for the p7-table alias refresh; owner after Astra for freeze.",
+      "vectors": {
+        "json-terminal-newline": {
+          "given": "{\"z\":1,\"a\":\"?\"} encoded by retained, prototype and c600-json-1 profiles.",
+          "expected": "Retained hex 7b2261223a225c7530306539222c227a223a317d without LF; prototype/new hex 7b2261223a22c3a9222c227a223a317d0a with LF. Each expected SHA-256 is recomputed in vectors.json.",
+          "clause": "FP.5"
+        },
+        "number-canonical": {
+          "given": "Int 18446744073709551617; rational -7/3; 10**6774+7 (6775 digits); decimal -0 and rational 2/4.",
+          "expected": "The three canonical values round-trip exactly without floats; -0 and 2/4 give PS1:input.noncanonical_value. The large value has 6786 canonical bytes and SHA-256 b8204d1f903b8f5cd37d1b973c4cc5f834471e0e61ca20980d1b0b523d054f68.",
+          "clause": "FP.6"
+        },
+        "gzip-deterministic": {
+          "given": "ASCII abc under c600-gzip-stored-1.",
+          "expected": "Stored hex 1f8b08000000000000ff010300fcff616263c241243503000000; SHA-256 f31b3021082ff798b6d0b88824263adf13c8b2d7a2c6b16fd256619ab7d08da9; strict and independent gzip decoders return abc.",
+          "clause": "FP.7"
+        },
+        "shared-limit-boundary": {
+          "given": "Each of the 24 FP.9 rows with attempted count equal to its maximum M, then M+1; concrete pairs are stored in vectors.json.",
+          "expected": "Every M is accepted and every M+1 returns PS1:resource_limit.persistence_size, including integer digits 10000/10001 and archive decoded bytes 4294967296/4294967297; no large allocation is claimed.",
+          "clause": "FP.9"
+        },
+        "unknown-field": {
+          "given": "Known record plus extra:true; unknown optional extension future.note; same required extension; version 2.",
+          "expected": "Ordinary extra field: PS1:input.persistence_format; optional extension: accepted and byte-preserved; required extension and version 2: PS2:input.persistence_version.",
+          "clause": "FP.10"
+        },
+        "provenance-both-forms": {
+          "given": "The four complete examples.json records, then missing profile or unknown form; fixture pins are deliberately not accepted policy contracts.",
+          "expected": "Complete blocks store own/manual/none with [] or read_state:no, and own/import/none with not_recorded. All policy uses refuse PS1:capability.provenance_incompatible; missing profile reads unknown, never an invented run.",
+          "clause": "FP.17"
+        },
+        "word-round-trip": {
+          "given": "Menu pairs (0,0),(0,59),(1,0),(599,59), plus 524289 copies of (0,0) and final (599,59) across the actual chunk boundary.",
+          "expected": "Small word hex 00003b003c009f8c and digest aae010cbc077b96d4469d4d75c85b3fcefaa3297328a269bdb4032b8333131fc; large chunks contain 1048576 and 4 bytes and decode to the identical pairs; changed menu order is KN1:input.identity_mismatch.",
+          "clause": "FP.13"
+        },
+        "conversion-replay": {
+          "given": "Retained [1,-1], noncommuting [1,3], and word [3] followed by orbit-22 node-0 star with omitted sign; full retained assets.",
+          "expected": "Oracle expansion digest b15348c8f462384c01e83b6d499c6faf3f96808f5aa07c6bab4b65b36b4445d4, count 2. [1,3] yields labels digest e454e587ced7ace762b11371d4e4ca37841141db893edc6644ca8ac0e8a4b9f3 over 259800 labels. Star sign becomes +1; all original/converted prefixes, full states and net digests agree.",
+          "clause": "FP.26"
+        }
+      }
+    },
+    "PLAN-03": {
+      "status": "closed",
+      "clauses": [
+        "PS1.34",
+        "BND.23",
+        "FP.17",
+        "FP.18"
+      ],
+      "why_open": "",
+      "who": "",
+      "vectors": {
+        "hand-typed-word": {
+          "given": "examples.json manual_flow and manual_capability records with producer manual, author own, profile none.",
+          "expected": "Storage-valid with labels=[] or read_state=no, parts=[], pick=null, declassified=[], legacy=null; no run fabricated and policy use refuses PS1:capability.provenance_incompatible.",
+          "clause": "FP.18"
+        },
+        "imported-macro": {
+          "given": "examples.json imported_flow and imported_capability records from exact retained [{\"kind\":\"word\",\"moves\":[1,-1]}] source bytes.",
+          "expected": "Both are own/import/none with depends not_recorded and matching captured source digest in producer.origin and legacy.source; no producing run, inferred state read or permission.",
+          "clause": "FP.18"
+        }
+      }
+    },
+    "FR-K06": {
+      "status": "closed",
+      "clauses": [
+        "PS1.43",
+        "FP.30",
+        "FP.31",
+        "FP.32",
+        "FP.36"
+      ],
+      "why_open": "",
+      "who": "",
+      "vectors": {
+        "exit-record-durable": {
+          "given": "Synthetic exit P->X with separate Position/Context, exact poses/certificate and durable admission/receipt, then retained X->M; FP.31 adds workspace and both entry forms.",
+          "expected": "Recovery gives jumble_off, head M, valid exit X, stored pose root f7cb4e2a4639cbfee2b94f1cfbe8704fcab96df069f38d16e53e776869243872 and replay_from_exit. Undo/redo of M keeps root X; undo of the crossing returns head P and jumble_on.",
+          "clause": "FP.30"
+        },
+        "void-event-durable": {
+          "given": "After crossing X, restore/import/reset commits a break and its void; selecting branch X again has the same labels.",
+          "expected": "Recovery retains head X but exit validity is null, voided=true and resume=KN5:input.jumble_on_labels_only (no alternative retained witness supplied). The old exit bytes remain but equal labels cannot resurrect it.",
+          "clause": "FP.32"
+        },
+        "recovery-durable": {
+          "given": "A crossing transaction marked uncommitted; separately a committed crossing followed by an uncommitted restore+void transaction.",
+          "expected": "Incomplete crossing recovers jumble_on/head P with zero committed transactions; incomplete restore recovers jumble_off/head X, valid exit X, voided=false, one committed transaction. No half crossing/void survives.",
+          "clause": "FP.32"
+        }
+      }
+    }
+  },
+  "outside_sandbox_commands": [
+    "python -B work/experiments/language-lx/envelope-facts/check.py",
+    "python -B docs/architecture/1.0/language/closure/check_closure.py --all",
+    "tools/.venv/engine/Scripts/python.exe -B tests/test_oracle.py",
+    "python -B docs/architecture/1.0/language/closure/check_p7.py --all"
+  ],
+  "review_status": "Independent review and Astra freeze ruling are not performed by this implementation packet; no network or new review-ledger writes are authorized.",
+  "evidence_limits": "No importer, Windows/DirectX, power-loss, performance or tariff evidence. CT-FP checks are reference/source and synthetic only."
+}

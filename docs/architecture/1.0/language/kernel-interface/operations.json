@@ -1,0 +1,334 @@
+{
+  "format": "c600-kernel-interface-annex-draft-1",
+  "status": "draft; not accepted or frozen; no route, engine language, syntax or LQ selected",
+  "sources": [
+    "docs/architecture/1.0/language/architecture/00-overview.md",
+    "docs/architecture/1.0/language/architecture/01-kernel.md",
+    "docs/architecture/1.0/language/architecture/02-language-core.md",
+    "docs/architecture/1.0/language/architecture/03-libraries.md",
+    "docs/architecture/1.0/language/architecture/07-boundary.md",
+    "docs/architecture/1.0/language/architecture/08-one-state.md",
+    "docs/architecture/1.0/language/architecture/09-determinism.md",
+    "docs/architecture/1.0/language/architecture/10-renderer-platform.md",
+    "docs/architecture/1.0/language/architecture/11-route-and-spikes.md",
+    "docs/architecture/1.0/language/closure/findings.json",
+    "docs/architecture/1.0/language/closure/HANDOFF.md",
+    "docs/architecture/1.0/language/closure/manifests/p1.json",
+    "docs/architecture/1.0/language/closure/manifests/p2b.json",
+    "docs/architecture/1.0/language/contract-vectors/README.md",
+    "docs/architecture/1.0/language/contract-vectors/vectors.json",
+    "docs/architecture/1.0/language/contract-vectors/check_vectors.py",
+    "docs/architecture/1.0/language/renderer-feature-matrix.md",
+    "docs/progress/1.0/layer-interfaces.md",
+    "docs/progress/1.0/jumbling-interfaces.md",
+    "docs/progress/1.0/command-table.md",
+    "docs/progress/1.0/command-table.json",
+    "docs/progress/1.0/command-rows-jumbling.json",
+    "docs/progress/1.0/command-rows-language.json",
+    "docs/wiki/decisions/owner-decisions-2026-11-05.md",
+    "docs/wiki/decisions/owner-decisions-2026-11-06.md",
+    "work/experiments/language-lx/README.md"
+  ],
+  "common": {
+    "context": "KI.3 Context; invocation services use LI.5; continuations keep the admitted command/job and row identity",
+    "binding": "KI.3 Binding on every state-dependent payload; KN0.4 partials and KN0.5 verdicts are never coerced",
+    "ownership": "KI.4 and KI.5 apply to every buffer; payloads immutable, cursors private; explicitly borrowed inputs and newly owning results",
+    "admission": "No runtime commit/app registration. Effective grants and current gates apply; LI.7 distinguishes refused from post-admission failed. Missing production resource descriptors prevent admission under DET.54.",
+    "outcome": "KN5.21 Receipt plus KN7.3 JobResult for jobs. Exact payload and host envelope stay separate under DET.6. LI.28 maps cut-off to cancelled(budget). Live polling is host work; reproducible runtime consumers use captured permitted terminals as declared inputs or their own serial child at a fixed continuation (KI.3).",
+    "stream": "KI.8 semantic schedule; KI.4 Chunk<T>; complete units only. Final summary belongs to the last admitted unit; no completion if its output charge fails.",
+    "cancellation": "KI.9: preserve admitted counters/output, release abandoned job owners; no negative claims or unplayed suffix assertions",
+    "clauses": ["KI.3", "KI.4", "KI.5", "KI.7", "KI.8", "KI.9", "LG3.4", "LG3.13", "LG3.16", "DET.54"]
+  },
+  "transfer_profiles": {
+    "kernel": {
+      "engine_isolate": "Typed request/reply inside engine process; checked host-language boundary and immutable owners still required.",
+      "runtime_process": "Request pins, scoped IDs and arguments cross runtime/engine; requested result descriptors and immutable buffers return; ownership acknowledgements cross back.",
+      "shell_process": "Same payload crosses shell/engine on an off-UI worker; runtime receives no token or session-file access."
+    },
+    "local": {
+      "engine_isolate": "No kernel/process transfer; this helper operates on already owned immutable values.",
+      "runtime_process": "No kernel/process transfer; its source values crossed only at their producing operation.",
+      "shell_process": "No kernel/process transfer; local computation remains off the UI thread."
+    },
+    "host": {
+      "engine_isolate": "Shell/adapter/engine host path carries this payload independently of the runtime isolate.",
+      "runtime_process": "Shell/adapter/engine host path bypasses the runtime process entirely.",
+      "shell_process": "Privileged shell/adapter/engine path, inaccessible to user runtime even in the same process."
+    },
+    "resource": {
+      "engine_isolate": "Local ownership bookkeeping, or typed engine owner request/acknowledgement; no raw pointer exposure.",
+      "runtime_process": "Local owner needs no transfer; engine owner uses scoped resource ID and retain/release acknowledgement across runtime/engine.",
+      "shell_process": "Local owner needs no transfer; engine owner uses the same request/acknowledgement across shell/engine."
+    },
+    "stream": {
+      "engine_isolate": "Local word streams stay local; kernel streams exchange typed continuation and immutable chunk owners inside the isolate boundary.",
+      "runtime_process": "Local word streams stay local; kernel stream ID/index and request pins cross out, chunk/summary/status return with ownership acknowledgement.",
+      "shell_process": "Local word streams stay local; kernel continuations/chunks use shell/engine transfer off the UI thread."
+    },
+    "publication": {
+      "engine_isolate": "Typed runtime request enters command service locally; the complete publication and immutable leases cross to the view-model host if separate; no backend handle returns to runtime.",
+      "runtime_process": "Complete publication, pins and admission envelope cross runtime/command/view-model boundary; Receipt returns; adapter receives host-owned data separately.",
+      "shell_process": "Command admission is still required; complete content crosses only if command/view-model host is separate; local adapter handoff remains privileged and off the UI path."
+    }
+  },
+  "requires": [
+    {"row": "kernel.snapshot.open", "owner": "EN4", "kind": "service", "why": "Resolve KN2.2 snapshot opening through the H-08 services registration; no command or mutation permission.", "clauses": ["KN2.2", "LI.11"]},
+    {"row": "kernel.snapshot.close", "owner": "EN4", "kind": "service", "why": "Register explicit snapshot close/acknowledgement; not a durable workspace or puzzle action.", "clauses": ["KN2.2", "LI.11", "KI.4"]},
+    {"row": "kernel.stream.next", "owner": "EN3/EN4", "kind": "continuation", "why": "Name the charged continuation of an already admitted stream, including its final summary; not another lane admission.", "clauses": ["KI.4", "DET.63"]},
+    {"row": "kernel.value.retain", "owner": "EN4", "kind": "service", "why": "Register charged owning aliases for buffers and derived references; no mutation of payload or state.", "clauses": ["DET.57", "DET.58", "KI.4"]},
+    {"row": "kernel.value.release", "owner": "EN4", "kind": "service", "why": "Register logical drop and remote release acknowledgement for result owners/streams/derived values.", "clauses": ["DET.58", "KI.5"]},
+    {"row": "kernel.outcome", "owner": "EN4", "kind": "service", "why": "Register the existing command/request outcome lookup; no replay or new invocation.", "clauses": ["KN5.23", "LI.30"]},
+    {"row": "kernel.job_result", "owner": "EN4", "kind": "service", "why": "Register the existing command/job result lookup; retain descriptors even after large payload release.", "clauses": ["KN4.3", "LI.14", "LI.29"]},
+    {"row": "kernel.undo_hint", "owner": "EN4", "kind": "service", "why": "Name LI.9's direction-specific action-order/target hint as a bounded shell service, without enumerating journal history.", "clauses": ["LI.9", "LI.26"]},
+    {"row": "jumble.observe", "owner": "EN3/EN4", "kind": "command", "source": "docs/progress/1.0/command-rows-jumbling.json", "why": "Resolve the delta command in the final H-08 table; bind pose/height/seam fields and aggregation under this one query.", "clauses": ["JI.7", "JI.33"]},
+    {"row": "language.publish_view", "owner": "EN4", "kind": "service", "why": "Name RPI.10 publication registration; scheduled publication finalizes its existing view invocation, not a second lane acquisition.", "clauses": ["RPI.10", "LI.25"]}
+  ],
+  "observations": [
+    {"name": "total_N", "operation": "seam_facts", "field": "summary.total_N", "choice": "explicit_batch", "why": "Complete all-scope count includes off-grip cells; no cap sum.", "clauses": ["JI.8", "KI.11"]},
+    {"name": "seams", "operation": "seam_facts", "field": "stream.items", "choice": "explicit_batch", "why": "Return the exact cells whose complete count defines N.", "clauses": ["JI.8"]},
+    {"name": "D", "operation": "prefix_observations", "field": "stream.items.D", "choice": "explicit_batch", "why": "The lowering set is evaluated at each actual supplied-letter prefix.", "clauses": ["JI.10"]},
+    {"name": "units", "operation": "units", "field": "groups", "choice": "library_aggregation", "why": "Group exact pose keys of off pieces from existing reads; no new geometric kernel.", "clauses": ["JI.9"]},
+    {"name": "F", "operation": "prefix_observations", "field": "stream.items.F", "choice": "explicit_batch", "why": "Exact foreign load uses inside classification and branches before application.", "clauses": ["JI.10"]},
+    {"name": "phi", "operation": "height_potential", "field": "phi", "choice": "library_aggregation", "why": "Piece-weighted exact sum over existing height facts.", "clauses": ["LB3.1", "JI.7"]},
+    {"name": "prefix", "operation": "prefix_observations", "field": "stream.items", "choice": "explicit_batch", "why": "One chronological batch shares replay and observation inputs without per-piece callbacks.", "clauses": ["JI.10", "JI.11"]}
+  ],
+  "binding_holes": [
+    {"route": "RT1", "status": "open", "needs": "Engine-language exact types, isolate entry, ownership and scheduler/meter mapping; placement transfer and fault contract.", "clauses": ["KI.15", "RTE.8", "RTE.21"]},
+    {"route": "RT2", "status": "open", "needs": "Approved VM subset, checked numeric/handle adapter, deterministic rooting/drop, meter/interrupt hooks and executed-byte approval; modified VM if run-time labels.", "clauses": ["KI.15", "RTE.10", "RTE.12", "RTE.24"]},
+    {"route": "RT3", "status": "open", "needs": "IR-to-VM import and memory contract, exact arithmetic, fuel/step mapping, source maps, interruption and compiled labels if selected.", "clauses": ["KI.15", "RTE.13", "LG4.14"]},
+    {"route": "RT4", "status": "open", "needs": "Checked host subset, common IR or versioned replacement/decomposition, effect/type enforcement, drop/meter mapping and modified runtime if run-time labels.", "clauses": ["KI.15", "RTE.6", "RTE.15", "LG4.14"]}
+  ],
+  "operations": [
+    {
+      "id": "open_snapshot", "rows": ["kernel.snapshot.open"], "row_use": "service", "caller": "authorized runtime or built-in host", "effect": "read snapshot", "lane": "service admission; no mutation lane",
+      "inputs": [{"name": "context", "type": "Context", "ownership": "borrow"}, {"name": "at", "type": "RevisionRef | current", "ownership": "value; current captured atomically before sealing run inputs"}],
+      "result_fields": [{"name": "snapshot", "type": "Owner<Snapshot>", "exactness": "host", "meaning": "Scoped handle pinning exact state, workspace and protection at one revision"}, {"name": "binding", "type": "Binding", "exactness": "exact", "meaning": "Resolved identity, level and immutable input digest; origin revision in host envelope"}],
+      "snapshot": "Captures at once; historical at must resolve all requested versions; no substitution of current data.",
+      "buffers": [{"name": "snapshot state and reconstruction inputs", "owner": "caller run; engine holds physical data", "lifetime": "until close_snapshot or run/epoch end; job borrows must be separately pinned", "immutable": "all captured payloads", "release": "close_snapshot"}],
+      "transfer": {"profile": "kernel", "payload": "at and Context out; scoped Snapshot ID and Binding back, no state-array transfer"},
+      "cancellation": "Cancellation before completed capture returns no owner; terminal teardown releases any staged reconstruction and handle.",
+      "accounting": {"steps": "kernel event", "kernel_cost": "declared checkpoint-distance reconstruction tariff, resident or not", "memory": "full logical snapshot plus declared reconstruction scratch", "output": "ordinary charge if Binding is returned/emitted; no state payload emitted here", "clauses": ["DET.55", "DET.57", "DET.59", "LG4.7"]},
+      "clauses": ["KN2.2", "LI.11", "KI.3", "KI.5"]
+    },
+    {
+      "id": "close_snapshot", "rows": ["kernel.snapshot.close"], "row_use": "service", "caller": "owning runtime or host", "effect": "release resource", "lane": "none",
+      "inputs": [{"name": "snapshot", "type": "Owner<Snapshot>", "ownership": "consume this owner only"}],
+      "result_fields": [{"name": "ack", "type": "ReleaseAck", "exactness": "host", "meaning": "Owner invalidated; aliases and separately pinned jobs remain valid"}],
+      "snapshot": "Does not read current state; releases the supplied revision pin.",
+      "buffers": [{"name": "snapshot owner", "owner": "caller until invalidation; bridge until last use", "lifetime": "logical lifetime ends at drop; physical lifetime follows KI.5", "immutable": "payload never changes while references remain", "release": "idempotent close acknowledgement"}],
+      "transfer": {"profile": "resource", "payload": "snapshot owner ID and close acknowledgement; no arrays"},
+      "cancellation": "If normal drop is denied, scope teardown still releases the owner without user evaluation or further debit.",
+      "accounting": {"steps": "drop on normal close; none during terminal teardown", "kernel_cost": "no new mathematical work", "memory": "release this full logical owner after admitted drop", "output": "host acknowledgement only; retaining/emitting it as a language value uses normal charges", "clauses": ["DET.55", "DET.58", "DET.59", "LG4.7"]},
+      "clauses": ["KN2.2", "LI.11", "KI.4", "KI.5"]
+    },
+    {
+      "id": "word_open", "rows": ["operation.check", "operation.preview"], "row_use": "consumer", "caller": "authorized runtime or built-in word service", "effect": "pure word expansion with budgets", "lane": "inside consumer; no new lane",
+      "inputs": [{"name": "context", "type": "Context", "ownership": "borrow"}, {"name": "source", "type": "Owner<LiteralWord | RecipeRef>", "ownership": "borrow; cursor retains charged immutable dependency closure"}, {"name": "max_chunk", "type": "PositiveNat<letters>", "ownership": "value; admission constraint on row schedule"}],
+      "result_fields": [{"name": "stream", "type": "Owner<Stream<Letter,LiteralWord>>", "exactness": "host", "meaning": "Chronological cursor; final summary supplies an owning immutable word"}, {"name": "length", "type": "Nat<alphabet letters>", "exactness": "exact", "meaning": "Expanded big-integer length known before expansion"}, {"name": "declaration", "type": "RowCostAndSchedule", "exactness": "exact", "meaning": "Pinned expansion/sizing/hash work, scratch/result bounds and positions; no endpoint-normal-form substitution"}, {"name": "summary.literal", "type": "Digest<literal word>", "exactness": "exact", "meaning": "Only after complete expansion; alphabet, identity and length accompany the digest"}],
+      "snapshot": "No puzzle read; captured macro/workspace versions are immutable source dependencies if used.",
+      "buffers": [{"name": "source, expansion cursor, chunks and final literal owner", "owner": "expanding run; chunks/final word move to caller", "lifetime": "source/cursor until stream release; each returned owner until its own release", "immutable": "source and emitted letters; cursor advances privately", "release": "release_value; terminal unwind discards unreturned results"}],
+      "transfer": {"profile": "local", "payload": "No transfer until a consuming propose/check sends the immutable literal source; no kernel callback into the expander"},
+      "cancellation": "Stop at declared expansion boundaries; incomplete letters cannot become a complete LiteralWord. Already admitted chunks remain charged until released.",
+      "accounting": {"steps": "metered length computation, then word_open; stream_next charges each chunk", "kernel_cost": "declared expansion/hash tariff or explicit constituent visits, once; no replay tariff here", "memory": "source closure, cursor and admitted result/scratch bounds", "output": "only emitted complete letter chunks/final summary; internal moves are not output", "clauses": ["DET.55", "DET.57", "DET.59", "DET.63", "LG4.6", "LG4.7"]},
+      "clauses": ["KN2.7", "KN2.10", "LB2.2", "LB2.4", "KI.13"]
+    },
+    {
+      "id": "stream_next", "rows": ["kernel.stream.next"], "row_use": "continuation", "caller": "stream owner", "effect": "continue the admitted operation", "lane": "original invocation; never reacquire",
+      "inputs": [{"name": "stream", "type": "Owner<Stream<T,Summary>>", "ownership": "borrow live cursor"}, {"name": "index", "type": "Nat", "ownership": "value; next semantic index, same index on delivery retry"}],
+      "result_fields": [{"name": "chunk", "type": "Owner<Chunk<T>>?", "exactness": "exact", "meaning": "Complete immutable items, input/parameter pins and half-open coverage; absent on denied continuation"}, {"name": "summary", "type": "Owner<Summary>?", "exactness": "exact_partial", "meaning": "Complete final summary only after its admission; partial/undefined fields explicit"}, {"name": "status", "type": "running | completed | cancelled | cut_off(Code) | error(Error)", "exactness": "host", "meaning": "KN7.3 outcome mirrored by the invocation Receipt, not a second outcome"}],
+      "snapshot": "Original stream's pinned StateRef, or no state for word expansion; never recapture current.",
+      "buffers": [{"name": "chunk, final summary and private scratch", "owner": "producer during computation; chunk/summary move to caller after validation", "lifetime": "scratch ends at continuation; returned owners until explicit release; cursor remains until stream close", "immutable": "all delivered bytes and nested borrowed references", "release": "release_value; retain_value is required to keep a nested reference after chunk release"}],
+      "transfer": {"profile": "stream", "payload": "stream ID, index and pins; typed chunk/summary/outcome and adoption acknowledgement"},
+      "cancellation": "Observe interruption before next step. No denied/unfinished chunk advances complete coverage; release scratch. Terminal descriptors retain only already admitted coverage/results.",
+      "accounting": {"steps": "one chunk event per declared continuation, not per transport packet", "kernel_cost": "its predeclared tariff share or separately quoted adaptive continuation; retry costs no extra", "memory": "live input/cursor plus new chunk and scratch; old chunks remain charged until dropped", "output": "complete canonical chunk/summary units if exposed; failed final output admission cannot report completed", "clauses": ["DET.56", "DET.57", "DET.59", "DET.63", "LG4.7", "LG4.9"]},
+      "clauses": ["JI.14", "KI.4", "KI.8", "KI.9"]
+    },
+    {
+      "id": "retain_value", "rows": ["kernel.value.retain"], "row_use": "service", "caller": "authorized runtime or host", "effect": "retain immutable resource", "lane": "none",
+      "inputs": [{"name": "value", "type": "Borrow<T>", "ownership": "borrow from a live owner, including a chunk's DerivedRef"}],
+      "result_fields": [{"name": "owner", "type": "Owner<T>", "exactness": "host", "meaning": "A distinct charged owner of the same immutable payload and reconstruction closure"}],
+      "snapshot": "Keeps the value's original input/lineage; no current read or state adoption.",
+      "buffers": [{"name": "retained value and dependency closure", "owner": "caller scope", "lifetime": "independent of borrowed source owner until release or scope end", "immutable": "entire payload and lineage", "release": "release_value; closing source does not release this alias"}],
+      "transfer": {"profile": "resource", "payload": "scoped source owner/value reference and new owning ID/adoption acknowledgement"},
+      "cancellation": "Denied admission creates no owner. Completed alias survives only in a live caller scope; terminal cleanup releases abandoned owners.",
+      "accounting": {"steps": "alias event", "kernel_cost": "no recomputation surcharge; declared size work if required", "memory": "full payload and pinned reconstruction closure, no sharing discount", "output": "no output for internal alias; ordinary bytes for an emitted value", "clauses": ["DET.55", "DET.57", "DET.58", "LG4.7"]},
+      "clauses": ["LI.13", "KI.4", "KI.5"]
+    },
+    {
+      "id": "release_value", "rows": ["kernel.value.release"], "row_use": "service", "caller": "resource owner", "effect": "release resource", "lane": "none",
+      "inputs": [{"name": "owner", "type": "Owner<Word | Stream | Chunk | Result | DerivedRef>", "ownership": "consume exactly this owner"}],
+      "result_fields": [{"name": "ack", "type": "ReleaseAck", "exactness": "host", "meaning": "Logical access invalidated; no promise of physical deallocation"}],
+      "snapshot": "No new read. Releasing an active stream cancels its unfinished work, not the caller's separately owned snapshot.",
+      "buffers": [{"name": "named owner's payload/dependencies", "owner": "caller until drop; bridge/producer until last physical use", "lifetime": "drop ends logical ownership; active producer cleanup follows KI.9", "immutable": "all surviving aliases and in-flight buffers", "release": "idempotent owner-specific acknowledgement; no arbitrary deallocation or preview deletion"}],
+      "transfer": {"profile": "resource", "payload": "owner ID and release acknowledgement; active stream closure also requests target cancellation"},
+      "cancellation": "Unfinished stream settles cancelled after cleanup; completed stream retains its success receipt. Terminal teardown needs no remaining budget. Durable receipts and engine-owned previews are not runtime resources to drop.",
+      "accounting": {"steps": "drop for normal release; no step for terminal cleanup", "kernel_cost": "no mathematical work or refund", "memory": "release this owner after admission; aliases/job pins remain charged", "output": "host acknowledgement only; prior output use remains cumulative", "clauses": ["DET.55", "DET.58", "DET.59", "LG4.7", "LG4.9"]},
+      "clauses": ["KI.4", "KI.5", "KI.9", "LI.29"]
+    },
+    {
+      "id": "propose", "rows": ["operation.preview"], "row_use": "dispatch", "caller": "solver-invoked built-in host; runtime only with effective preview grant", "effect": "prepare preview", "lane": "exclusive",
+      "inputs": [{"name": "context", "type": "Context + LI.5 invocation envelope", "ownership": "borrow"}, {"name": "base", "type": "RevisionRef", "ownership": "value; current dependencies rechecked"}, {"name": "word", "type": "Owner<LiteralWord | RecipeRef>", "ownership": "borrow then engine freezes its own witness"}, {"name": "provenance", "type": "ProvenanceBlock", "ownership": "immutable captured value"}],
+      "result_fields": [{"name": "receipt", "type": "Receipt", "exactness": "host", "meaning": "accepted/running then completed(preview_ready), or typed failure/cancellation"}, {"name": "preview", "type": "Preview", "exactness": "host", "meaning": "Engine ID, base, PreviewDeps, immutable witness and provenance; summary readable only with allowed grants"}, {"name": "preview.effect", "type": "FullEffect | JumbleEffect", "exactness": "exact", "meaning": "Full: end label digest, complete source-to-destination map/support per orbit, prefix coverage, exact length and typed cost. Jumble: pose end digest and JI.11 observations."}, {"name": "preview.protection", "type": "Verdict<Net | Strict, level, coverage>", "exactness": "exact_partial", "meaning": "Checks full operation; a conflict is displayed, not silently omitted"}],
+      "snapshot": "Engine captures base with resolved draft/read set and active protection; caller endpoint arrays are never inputs.",
+      "buffers": [{"name": "witness, checked endpoint and preview effect", "owner": "engine pending slot after success; proposal job during construction", "lifetime": "construction to pending install; pending until commit/cancel/replacement/epoch end, including runtime death", "immutable": "witness, endpoint, effect, dependency set", "release": "failed construction releases job buffers; pending lifecycle releases engine owner; caller drops summary aliases only"}],
+      "transfer": {"profile": "kernel", "payload": "base, pinned literal/recipe source and provenance out; Receipt and permitted Preview summary back, never token or mutable endpoint"},
+      "cancellation": "Before installation release staged preview and leave prior slot unchanged. After completed installation, a runtime fault does not destroy pending preview. Protection conflict remains a preview result; commit refuses it. A solving-session word whose block or any part says a solver's program computed it refuses at admission with LG3:capability.not_granted, and no preview is built (BND.84).",
+      "accounting": {"steps": "invoke for runtime; no interpreter dispatch for built-in shell path", "kernel_cost": "declared full literal replay, full collateral/protection and any not-yet-performed expansion exactly once", "memory": "job input/replay scratch and complete preview; bounded engine ownership reserved before handoff", "output": "complete permitted preview summary unit; witnesses retained under charged service ownership, never terminal reserve", "clauses": ["DET.23", "DET.55", "DET.57", "DET.59", "LG4.7", "LG4.13"]},
+      "clauses": ["KN0.8", "KN5.9", "KN5.10", "KN5.11", "KN5.26", "BND.84", "BND.85", "LI.17", "LB2.2", "LB2.3", "KI.13"]
+    },
+    {
+      "id": "read_presented", "rows": ["operation.execute"], "row_use": "host_gate", "caller": "shell/renderer adapter only", "effect": "read presentation status", "lane": "host service; no language row",
+      "inputs": [{"name": "surface", "type": "SurfaceId + device/surface epoch", "ownership": "host-scoped value"}],
+      "result_fields": [{"name": "frames", "type": "List<PresentedFrame> | unavailable(Error)", "exactness": "host", "meaning": "RM.26 confirmed FrameStamp, preview ID/literal/base or no_preview; never inferred from submission"}],
+      "snapshot": "Reports the engine preview/base actually drawn; cannot change or recapture state.",
+      "buffers": [{"name": "frame report and preview display lease", "owner": "adapter/shell, never runtime", "lifetime": "report through ordered latch update; display lease through safe retirement", "immutable": "each frame report and leased preview payload", "release": "host drops reports; RM.18 and RM.19 govern resource retirement"}],
+      "transfer": {"profile": "host", "payload": "adapter frame reports to shell and presentation gate update to engine as required by topology; no runtime payload"},
+      "cancellation": "Device loss, unavailable confirmation or no_preview clears eligibility. Delayed older reports cannot restore it; committed receipts are unchanged.",
+      "accounting": {"steps": "no language step; not a reproducible program input", "kernel_cost": "no mathematical kernel computation; bounded host service", "memory": "host report/lease and physical renderer limits", "output": "host presentation status, not language user output or a terminal-reserve channel", "clauses": ["DET.6", "DET.35", "LG4.13"]},
+      "clauses": ["RM.14", "RM.18", "RM.19", "RM.26", "ONE.41", "KI.13"]
+    },
+    {
+      "id": "commit_preview", "rows": ["operation.execute"], "row_use": "dispatch", "caller": "shell only after explicit non-repeating solver action", "effect": "commit; unavailable to language", "lane": "commit",
+      "inputs": [{"name": "context", "type": "LI.5 invocation envelope", "ownership": "host"}, {"name": "preview", "type": "PreviewId", "ownership": "borrow engine pending object"}, {"name": "token", "type": "UserActionToken", "ownership": "single-use shell/engine only; never persisted"}],
+      "result_fields": [{"name": "receipt", "type": "Receipt<CommitRecord>", "exactness": "host", "meaning": "Durable command/request/event and resulting revision, or refusal/failed/cancelled/unknown outcome"}, {"name": "receipt.pre_post", "type": "Digest<level> pair", "exactness": "exact", "meaning": "Actual full state before and after the atomic action"}],
+      "snapshot": "Recheck current PreviewDeps, presented/pending identity, literal digest, full-state hash and protection at serialization point.",
+      "buffers": [{"name": "preview witness/endpoint and revision bundle", "owner": "engine/store; no caller state input", "lifetime": "pending through durable fate, then journal/revision ownership; presentation leases retire separately", "immutable": "preview and emitted revision bundle; only engine installs new authoritative state", "release": "settle preview lifecycle after durable commit; keep durable receipt independent of transient buffers"}],
+      "transfer": {"profile": "host", "payload": "shell token and bound preview request to command/engine; durable Receipt/bundle to host; token never to runtime"},
+      "cancellation": "Before durable fate proved rollback permits cancellation; durability requires committed; uncertain fate requires outcome/recovery. Refresh failure cannot change success.",
+      "accounting": {"steps": "none in language; direct shell path", "kernel_cost": "host-declared gate/validation cost, no duplicated language tariff", "memory": "bounded engine transaction and pending/bundle ownership", "output": "host receipt and bundle; a later permitted language read incurs its own read/value/output accounting", "clauses": ["DET.6", "DET.35", "LG4.13"]},
+      "clauses": ["KN5.14", "KN5.15", "KN5.16", "KN5.22", "LI.6", "LI.8", "KI.9"]
+    },
+    {
+      "id": "outcome", "rows": ["kernel.outcome"], "row_use": "service", "caller": "host or runtime with permission to observe this command", "effect": "read receipt", "lane": "none",
+      "inputs": [{"name": "command", "type": "CommandId", "ownership": "value"}, {"name": "request", "type": "Digest<request>", "ownership": "value"}],
+      "result_fields": [{"name": "receipt", "type": "Receipt", "exactness": "host", "meaning": "Existing unchanged receipt; mismatch refused, missing proof unknown_outcome; never replay the invocation"}],
+      "snapshot": "No puzzle read; command/request record from its epoch or durable store. Policy still bars forbidden preview outcome reads.",
+      "buffers": [{"name": "receipt descriptor", "owner": "store/epoch registry; caller owns any copied language descriptor", "lifetime": "durable for committed/workspace action, epoch for transient record; copied value until release", "immutable": "terminal receipt; accepted/running are prior observations, not mutable returned buffers", "release": "release_value on caller descriptor; does not erase registry record"}],
+      "transfer": {"profile": "kernel", "payload": "command/request IDs out, permitted Receipt descriptor back; no token"},
+      "cancellation": "Cancelling lookup does not cancel or retry the original action. Its retained receipt is unchanged.",
+      "accounting": {"steps": "read_receipt for each language observation; no implicit polling loop", "kernel_cost": "declared bounded record lookup tariff", "memory": "descriptor owner if retained as language value", "output": "canonical returned/emitted descriptor bytes; host retry of same delivery adds no output", "clauses": ["DET.55", "DET.57", "DET.59", "LG4.7"]},
+      "clauses": ["KN5.21", "KN5.23", "LI.29", "LI.30", "LG3.13"]
+    },
+    {
+      "id": "undo_hint", "rows": ["kernel.undo_hint"], "row_use": "service", "caller": "shell only in this catalogue", "effect": "read action hint", "lane": "none",
+      "inputs": [{"name": "session", "type": "SessionId + EngineEpoch", "ownership": "host value"}, {"name": "direction", "type": "undo | redo", "ownership": "host value; selects the eligible target under LI.9"}],
+      "result_fields": [{"name": "hint", "type": "ActionHint | none", "exactness": "host", "meaning": "LI.9/LI.26 action-order and target hint for the requested direction, or none if no eligible target; never a reservation or token"}],
+      "snapshot": "Atomically reads durable action order and eligible target for direction; not a journal enumeration. LI.9 supplies the move/rebind/checkpoint vector with distinct undo and redo targets at order 43.",
+      "buffers": [{"name": "hint", "owner": "shell", "lifetime": "until action/replacement or discard; stale hints refused at undo/redo", "immutable": "returned guard fields", "release": "host scope release"}],
+      "transfer": {"profile": "host", "payload": "session identity and direction out; one bounded hint or none back to shell"},
+      "cancellation": "Discard hint; no effect. Concurrent action can stale it without changing the returned bytes.",
+      "accounting": {"steps": "none in language", "kernel_cost": "bounded host status query, independent of history length", "memory": "bounded host descriptor", "output": "host control data only; no user-output channel", "clauses": ["DET.6", "DET.35", "LG4.13"]},
+      "clauses": ["LI.9", "LI.26", "KN5.19", "KI.13"]
+    },
+    {
+      "id": "undo", "rows": ["session.undo"], "row_use": "dispatch", "caller": "shell only after explicit solver action", "effect": "commit inverse; unavailable to language", "lane": "commit",
+      "inputs": [{"name": "context", "type": "LI.5 invocation envelope", "ownership": "host"}, {"name": "hint", "type": "ActionHint", "ownership": "borrow"}, {"name": "token", "type": "UserActionToken", "ownership": "single-use shell/engine only"}],
+      "result_fields": [{"name": "receipt", "type": "Receipt<CommitRecord>", "exactness": "host", "meaning": "Atomic journal or workspace inverse and RevisionRef, or stale/busy/permission refusal; a workspace inverse preserves puzzle head/hash and advances its workspace records; prior committed receipt remains committed"}],
+      "snapshot": "Current head/state/protection and both hint fields checked at write boundary; the target action supplies its recorded inverse, never the caller.",
+      "buffers": [{"name": "validated inverse and new bundle", "owner": "engine/store", "lifetime": "through transaction and downstream immutable bundle leases", "immutable": "captured inputs, inverse candidate and published bundle", "release": "transaction cleanup and host bundle retirement"}],
+      "transfer": {"profile": "host", "payload": "bound hint/token request to engine; Receipt and revision bundle back; no runtime token"},
+      "cancellation": "Same durable-fate rule as commit_preview. Fence revision-bound jobs without waiting for cleanup; file jobs continue. Equal hashes do not revive old preview.",
+      "accounting": {"steps": "none in language", "kernel_cost": "declared host inverse-validation work", "memory": "bounded transaction/revision buffers", "output": "host receipt and bundle; later language observation is charged separately", "clauses": ["DET.6", "DET.35", "LG4.13"]},
+      "clauses": ["KN5.19", "KN5.20", "LI.26", "ONE.51", "ONE.53", "CM.5"]
+    },
+    {
+      "id": "stop_job", "rows": ["job.stop"], "row_use": "dispatch", "caller": "shell only; app rows unavailable to language", "effect": "request cancellation", "lane": "none",
+      "inputs": [{"name": "context", "type": "LI.5 invocation envelope", "ownership": "host"}, {"name": "job", "type": "JobId", "ownership": "value"}],
+      "result_fields": [{"name": "receipt", "type": "Receipt<Completion(kind=app)>", "exactness": "host", "meaning": "Stop request registered, not a claim that target has stopped or rolled back"}],
+      "snapshot": "Targets original command/job; no state capture.",
+      "buffers": [{"name": "stop descriptor", "owner": "host epoch registry", "lifetime": "control receipt through epoch; target owns its buffers until safe point", "immutable": "completed stop receipt", "release": "host scope/epoch; target cleanup is separate"}],
+      "transfer": {"profile": "host", "payload": "job identity and cancellation signal; target status comes separately through job_result/outcome"},
+      "cancellation": "Target later cancels, or retains completed/committed if publication won. Stop never changes a durable success into failure.",
+      "accounting": {"steps": "none in language; target stops before its next continuation when signal pending", "kernel_cost": "no refund of target's admitted work", "memory": "target memory remains live until cleanup or independently retained-owner release", "output": "bounded host control receipt; target partial output was separately charged", "clauses": ["DET.56", "DET.58", "LG4.9", "LG4.13"]},
+      "clauses": ["LI.24", "LI.28", "KN7.6", "KI.9"]
+    },
+    {
+      "id": "job_result", "rows": ["kernel.job_result"], "row_use": "service", "caller": "host or authorized runtime", "effect": "read job result", "lane": "none",
+      "inputs": [{"name": "command", "type": "CommandId", "ownership": "value"}, {"name": "job", "type": "JobId", "ownership": "value"}],
+      "result_fields": [{"name": "result", "type": "JobResult", "exactness": "exact_partial", "meaning": "Outcome, typed input digest, parameter digest, examined/applied coverage, granted/used counters and charged value references; command/job IDs are host fields"}],
+      "snapshot": "Returns original job input and coverage, never re-runs at current state.",
+      "buffers": [{"name": "descriptor and any retained value", "owner": "epoch registry descriptor; caller owns retained payload separately", "lifetime": "descriptor through epoch; payload only as long as charged owners exist", "immutable": "terminal outcome, counters and bound payload", "release": "release_value for copied/retained language owners; absent payload gives KN5:stale.result_gone"}],
+      "transfer": {"profile": "kernel", "payload": "command/job identities out; permitted descriptor and requested retained payload back"},
+      "cancellation": "Lookup cannot cancel or resume job; incomplete result remains incomplete. No uncharged coverage list in terminal reserve.",
+      "accounting": {"steps": "read_receipt and normal value access events", "kernel_cost": "declared lookup/retrieval tariff; no re-execution", "memory": "full newly owning result/coverage payload if retained", "output": "ordinary canonical bytes for returned/emitted payload; repeated transport delivery adds none", "clauses": ["DET.55", "DET.57", "DET.59", "LG4.7"]},
+      "clauses": ["KN7.3", "LI.14", "LI.28", "LI.29", "KI.9"]
+    },
+    {
+      "id": "pose_facts", "rows": ["jumble.observe"], "row_use": "batch_component", "caller": "authorized state reader", "effect": "read snapshot", "lane": "inside admitted observe query",
+      "inputs": [{"name": "context", "type": "Context", "ownership": "borrow"}, {"name": "state", "type": "StateRef<jumbling,poses>", "ownership": "borrow; job pins for async use"}],
+      "result_fields": [{"name": "poses", "type": "Array<ExactPoseKey>", "exactness": "exact", "meaning": "Canonical 4x4 Q(sqrt(5)) matrices; unbounded integer components"}, {"name": "pose_ids", "type": "Array<PoseIndex>[177120]", "exactness": "exact", "meaning": "Complete piece-to-pose map at this input only"}, {"name": "lattice", "type": "Array<Bool>[poses]", "exactness": "exact", "meaning": "Exact K+ membership per pose, not inferred from height zero"}, {"name": "binding", "type": "Binding", "exactness": "exact", "meaning": "Same input/parameter pins and complete piece/pose coverage for all arrays"}],
+      "snapshot": "Exactly state; arrays from different inputs cannot be joined.",
+      "buffers": [{"name": "pose table, piece map and membership arrays", "owner": "job then caller result owner", "lifetime": "until release_value or owning scope end", "immutable": "all arrays and their binding", "release": "release_value; job pins/scratch end on completion or cancellation"}],
+      "transfer": {"profile": "kernel", "payload": "state ref/pins out; requested exact tables and result owner back"},
+      "cancellation": "No incomplete array is a completed whole-table result; release staged arrays and job input pins.",
+      "accounting": {"steps": "kernel event and any declared continuations", "kernel_cost": "declared pose/map/membership reads once as observe decomposition", "memory": "KN7.9 exact payload plus result/scratch reservation", "output": "canonical complete result units when exposed", "clauses": ["DET.23", "DET.55", "DET.57", "DET.59", "LG4.5", "LG4.7"]},
+      "clauses": ["KN2.4", "JI.5", "JI.6", "LI.12", "KI.10"]
+    },
+    {
+      "id": "height_facts", "rows": ["jumble.observe"], "row_use": "batch_component", "caller": "authorized state reader", "effect": "read snapshot", "lane": "inside admitted observe query",
+      "inputs": [{"name": "context", "type": "Context", "ownership": "borrow"}, {"name": "state", "type": "StateRef<jumbling,poses>", "ownership": "borrow; async job pin"}],
+      "result_fields": [{"name": "by_piece", "type": "Array<{piece: PieceId, pose: ExactPoseKey, domain: DomainKey, trees, branches, left: Nat, right: Nat, h: Nat, lattice: Bool}>", "exactness": "exact", "meaning": "Complete piece-indexed join of heights and pose_ids; h is LB3.1 height, with exact domain/membership, not a free-mode height-only lattice test"}, {"name": "counts", "type": "{histogram: Map<Nat,Nat>, off: Nat, n2: Nat, n4: Nat, n6: Nat, above6: Nat, max_above6: Partial<Nat>}", "exactness": "exact_partial", "meaning": "Piece multiplicity, no maximum when above6 count is zero"}, {"name": "binding", "type": "Binding", "exactness": "exact", "meaning": "Input and canonical piece coverage shared by all fields"}],
+      "snapshot": "Exactly state; domain/coset and height validity retain the input's theory premises.",
+      "buffers": [{"name": "piece height/domain rows and histogram", "owner": "job then caller result owner", "lifetime": "until release_value or owning scope end", "immutable": "every exact row, count and binding", "release": "release_value; transient joins/scratch released by producer"}],
+      "transfer": {"profile": "kernel", "payload": "state ref/pins out; complete exact height result back"},
+      "cancellation": "Return only explicitly covered partials if output was admitted; no complete histogram or potential from missing pieces.",
+      "accounting": {"steps": "kernel event/declared batch continuations", "kernel_cost": "declared existing heights/height_counts/pose-map decomposition, each once", "memory": "piece rows, exact keys, counts and declared join scratch", "output": "complete canonical result units if exposed", "clauses": ["DET.23", "DET.55", "DET.57", "DET.59", "LG4.5", "LG4.7"]},
+      "clauses": ["KN2.4", "JI.6", "LB3.1", "KI.10"]
+    },
+    {
+      "id": "units", "rows": ["jumble.observe"], "row_use": "library_component", "caller": "authorized runtime/library", "effect": "pure aggregation of captured state facts", "lane": "inside admitted observe query or caller run",
+      "inputs": [{"name": "poses", "type": "Owner<PoseFacts>", "ownership": "borrow complete pose_facts result"}, {"name": "heights", "type": "Owner<HeightFacts>", "ownership": "borrow complete height_facts result with identical Binding"}, {"name": "selection", "type": "all_off | named PieceSet", "ownership": "value; named unit must be nonempty off pieces sharing an exact pose"}],
+      "result_fields": [{"name": "groups", "type": "Array<{members: OrderedPieceSet, pose: ExactPoseKey, domain: DomainKey, heights, branch}>", "exactness": "exact", "meaning": "Exact-pose groups in canonical piece-ID order, no preferred group; solved all_off gives completed empty table"}, {"name": "binding", "type": "Binding", "exactness": "exact", "meaning": "Same captured state and explicit selected-set coverage"}],
+      "snapshot": "Only the captured pose/height input named by both arguments; mixed bindings refused.",
+      "buffers": [{"name": "unit membership groups", "owner": "calling run", "lifetime": "inputs borrowed during grouping; output owns all returned fields until released", "immutable": "group members, keys and binding", "release": "release_value; borrowed inputs remain caller-owned"}],
+      "transfer": {"profile": "local", "payload": "Already captured facts only; physical library placement under LQ5 does not authorize a new boundary"},
+      "cancellation": "Discard unfinished grouping; no completed all_off enumeration or preferred target inferred.",
+      "accounting": {"steps": "constituent calls, visits, comparisons and return under checked library body", "kernel_cost": "only constituent exact comparison/sort tariffs; pose/height reads charged at their calls, not again", "memory": "output groups and declared library temporaries alongside borrowed inputs", "output": "canonical complete UnitTable only if emitted/returned top-level", "clauses": ["DET.23", "DET.55", "DET.57", "DET.59", "LG4.7"]},
+      "clauses": ["JI.9", "LB3.1", "KI.10"]
+    },
+    {
+      "id": "height_potential", "rows": ["jumble.observe"], "row_use": "library_component", "caller": "authorized runtime/library", "effect": "pure aggregation", "lane": "inside admitted observe query or caller run",
+      "inputs": [{"name": "heights", "type": "Owner<HeightFacts>", "ownership": "borrow complete piece-weighted result"}],
+      "result_fields": [{"name": "phi", "type": "Nat", "exactness": "exact", "meaning": "Sum over every piece of max(0,h-2), not sum over distinct poses"}, {"name": "binding", "type": "Binding", "exactness": "exact", "meaning": "Original input digest and complete piece coverage"}],
+      "snapshot": "Captured HeightFacts only; no new state read. Phi=0 does not imply on-lattice.",
+      "buffers": [{"name": "unbounded exact accumulator/result", "owner": "caller run", "lifetime": "until output is moved or released; height input borrowed", "immutable": "returned scalar and binding", "release": "release_value or deterministic scope exit"}],
+      "transfer": {"profile": "local", "payload": "No process transfer for the sum; input facts arrived through height_facts"},
+      "cancellation": "No whole-state phi if the input or sum is incomplete; release accumulator on unwind.",
+      "accounting": {"steps": "visits, tests and exact additions in pinned library order", "kernel_cost": "constituent exact arithmetic size tariffs only", "memory": "accumulator and returned scalar/binding owners", "output": "canonical completed scalar result when emitted, not each internal addition", "clauses": ["DET.55", "DET.57", "DET.59", "LG4.7"]},
+      "clauses": ["LB3.1", "JI.7", "KI.10"]
+    },
+    {
+      "id": "seam_facts", "rows": ["jumble.observe"], "row_use": "batch_component", "caller": "authorized state reader; research walk is not product grant", "effect": "read exact seams", "lane": "exclusive observe query; continuations retain it",
+      "inputs": [{"name": "context", "type": "Context", "ownership": "borrow"}, {"name": "state", "type": "StateRef<jumbling,poses>", "ownership": "borrow; job owns charged pin until terminal"}, {"name": "scope", "type": "all | named_cap(CapId)", "ownership": "value"}, {"name": "max_chunk", "type": "PositiveNat<cells>", "ownership": "value; bounded semantic schedule admission"}],
+      "result_fields": [{"name": "stream", "type": "Owner<Stream<SeamCell,SeamTotals>>", "exactness": "host", "meaning": "New exact batch; declared deterministic enumeration continuations"}, {"name": "stream.items", "type": "Array<SeamCell {domain: DomainKey, cell: ExactCutCellKey, hyperplane: ExactPlane, inside: Occupancy, outside: Occupancy, aligned: Bool, holding_caps: CertifiedCapSet}>", "exactness": "exact", "meaning": "Occupancy identifies canonical pieces or fixed core; all scope includes off-grip hyperplanes"}, {"name": "summary.total_N", "type": "Partial<Nat>", "exactness": "exact_partial", "meaning": "Complete all-scope unique mismatch count; undefined for incomplete or unjoined named-cap scope"}, {"name": "summary.counts", "type": "{on_grip_mismatches: Partial<Nat>, off_grip_mismatches: Partial<Nat>, N_c: Partial<Nat>, coverage}", "exactness": "exact_partial", "meaning": "Counts carry their scope; overlapping holding caps never double count a domain/cell"}],
+      "snapshot": "One exact state throughout enumeration; cannot join all-scope completion from a different input.",
+      "buffers": [{"name": "seam cursor, job pin, exact cell chunks and totals", "owner": "job for input/cursor/scratch; returned chunk/summary owner belongs to caller", "lifetime": "pin/scratch until job settles; stream until released; returned values until their individual release", "immutable": "exact cell data, certificates and completed totals", "release": "stream_next releases scratch; release_value drops delivered owners; KI.9 handles termination"}],
+      "transfer": {"profile": "kernel", "payload": "state/scope/pins and chunk bound out; stream descriptor, immutable exact chunks/totals and outcomes back"},
+      "cancellation": "Interrupted enumeration has explicit covered cells, no total_N; drop job pin and scratch, retain only charged delivered chunks.",
+      "accounting": {"steps": "kernel open plus stream_next semantic events", "kernel_cost": "pinned exact region/cell enumeration tariffs or metered growing continuations; cannot claim unbounded upfront cost", "memory": "state pin, canonical enumeration cursor, exact keys/geometry and next result/scratch reservation", "output": "each complete canonical SeamCell chunk and final SeamTotals unit before exposure", "clauses": ["DET.54", "DET.56", "DET.57", "DET.59", "DET.63", "LG4.7", "LG4.9"]},
+      "clauses": ["JI.7", "JI.8", "JI.14", "KI.8", "KI.11"]
+    },
+    {
+      "id": "prefix_observations", "rows": ["operation.check"], "row_use": "batch_component", "caller": "authorized state reader supplying the word", "effect": "read/replay/derive immutable prefixes", "lane": "exclusive check query; no nested lane admission",
+      "inputs": [{"name": "context", "type": "Context", "ownership": "borrow"}, {"name": "state", "type": "StateRef<jumbling,poses>", "ownership": "borrow; job pin"}, {"name": "word", "type": "Owner<LiteralWord>", "ownership": "borrow; immutable letters/identity retained by job"}, {"name": "fields", "type": "Set<PrefixField>", "ownership": "value; explicit fixed request"}, {"name": "unit", "type": "PieceSet?", "ownership": "optional named unit, never selected by service"}, {"name": "cap", "type": "CapId?", "ownership": "optional absolute named cap"}, {"name": "max_chunk", "type": "PositiveNat<letters>", "ownership": "value; admission constraint"}],
+      "result_fields": [{"name": "stream", "type": "Owner<Stream<PrefixObservation,WordObservation>>", "exactness": "host", "meaning": "Explicit batch sharing exact replay/seam/height work at each actual prefix"}, {"name": "stream.items", "type": "Array<PrefixObservation>", "exactness": "exact_partial", "meaning": "index, exact letter, before/after pose digests, application verdict/certificates, moved set, N before/after/delta, histogram delta, optional delta-u, Phi before/after/delta, maximum piece height, optional immutable prefix_state; JI.10"}, {"name": "stream.items.D", "type": "Partial<Nat> + lowered_high: Partial<OrderedPieceSet>", "exactness": "exact_partial", "meaning": "D=cardinality(lowered_high) before application; undefined(retained_letter) or outside_ia_domain as required"}, {"name": "stream.items.F", "type": "Partial<Nat> + foreign_pieces: Partial<OrderedPieceSet>", "exactness": "exact_partial", "meaning": "F=cardinality(foreign_pieces), exact branch/inside predicate before the supplied letter; never a free set"}, {"name": "summary", "type": "WordObservation", "exactness": "exact_partial", "meaning": "JI.11 start/end digests, expanded length, examined/applied ranges, first refused prefix, off counts, delta-N/histogram/u, unit size/landings, lifted starting-lattice pieces, other-off landed/unchanged/changed partition, step flag, peak including start, excursion and tameness; unplayed end and whole-word aggregates undefined"}],
+      "snapshot": "Base state plus each exact derived prefix; no live recapture, no state adoption and no output for candidate letters not supplied.",
+      "buffers": [{"name": "base/word pins, working prefix states, observation chunks and derived references", "owner": "job until delivery; chunk owns nested prefix references; retain_value creates separate caller owner", "lifetime": "scratch/pins through terminal; delivered owner until release; separately retained prefix survives chunk release", "immutable": "each completed prefix state, observations and literal letters", "release": "release_value on streams/chunks/retained prefix; job termination frees unreturned prefixes"}],
+      "transfer": {"profile": "kernel", "payload": "state, word pins/letters, fields, named objects and bound out; exact chunk/result descriptors and requested immutable data back; no mutable endpoint or token"},
+      "cancellation": "Keep examined/applied coverage separately. After one admitted row of a two-letter word, cancellation has no row 1, no final end digest or whole-word conclusion. A domain refusal is data at that prefix, not a completed application of the suffix.",
+      "accounting": {"steps": "kernel open and declared stream_next events; no interpreter loop over stickers", "kernel_cost": "replay plus requested seam/height/F/D work once in row tariff/decomposition; no double charge for shared prefix work; adaptive unbounded work needs KI.8 continuations", "memory": "base/word owners, current derived state, exact scratch, chunk and any retained prefixes", "output": "complete PrefixObservation chunks and admitted WordObservation only; retained partial output remains charged", "clauses": ["DET.23", "DET.56", "DET.57", "DET.59", "DET.63", "LG4.5", "LG4.7", "LG4.9"]},
+      "clauses": ["JI.10", "JI.11", "JI.14", "JI.32", "LB3.7", "LB3.8", "KI.8", "KI.12"]
+    },
+    {
+      "id": "publish_view", "rows": ["language.publish_view"], "row_use": "service", "caller": "runtime with view grant or host", "effect": "change view only", "lane": "view; scheduled publication finalizes existing command/job",
+      "inputs": [{"name": "context", "type": "Context + publication generation", "ownership": "borrow"}, {"name": "target", "type": "ViewId", "ownership": "value"}, {"name": "base", "type": "RevisionRef", "ownership": "value"}, {"name": "content", "type": "Owner<{nodes: List<ViewNode>, plans: List<DisplayPlan>, maps: List<SourceMap>}>", "ownership": "seal then move/copy to host lease before installation"}],
+      "result_fields": [{"name": "receipt", "type": "Receipt<Completion(kind=view_published)>", "exactness": "host", "meaning": "ViewId/installed publication digest, or superseded/replaced/budget cancellation or typed failure; never committed"}, {"name": "content", "type": "Bound publication", "exactness": "display", "meaning": "Identities, dependencies, source links and coverage exact; drawing coordinates at declared precision; no mechanical decision"}],
+      "snapshot": "Plans retain actual base/dependencies and derived subject lineage; never attach old output to new session geometry.",
+      "buffers": [{"name": "sealed nodes, plans, maps and adapter copies", "owner": "run before acceptance; host immutable lease after transfer; adapter owns device/staging copies", "lifetime": "through replacement and last safe device use, independently of producing run", "immutable": "installed content and producing source versions", "release": "caller releases remaining aliases; RM.18/RM.19 retire host/device owners safely"}],
+      "transfer": {"profile": "publication", "payload": "complete bound publication to command/view-model host via placement boundary; Receipt back; adapter receives host data separately, never runtime device handles"},
+      "cancellation": "Install none of an incomplete publication. Supersession fences old generation; release staged owners safely. Completed installation stays completed even if a later frame fails.",
+      "accounting": {"steps": "construction and publish_view events", "kernel_cost": "declared validation/encoding and source checks once", "memory": "new complete publication alongside old owners; bounded host and physical adapter reservations on handoff", "output": "whole canonical publication admitted before installation; reserve carries only bounded status", "clauses": ["DET.55", "DET.57", "DET.59", "DET.64", "LG4.7", "LG4.11"]},
+      "clauses": ["RPI.1", "RPI.10", "RPI.13", "LI.25", "RM.18", "RM.19", "KI.5"]
+    }
+  ]
+}

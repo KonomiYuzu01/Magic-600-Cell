@@ -1,0 +1,235 @@
+{
+  "packet": "p7-reg",
+  "assumes": [
+    {
+      "item": "Closure HANDOFF H7, H11 and H15",
+      "assumed": "Use the integrator's reconciled working forms for source ranges, lineage, receipt mapping, contextual forms and the 23 final error codes. They are drafts, not owner decisions.",
+      "if_other": "Reconcile the consuming descriptions with a revised shared contract. Preserve existing code meanings under ERR.5 and do not infer a model, policy or ADR decision."
+    },
+    {
+      "item": "LG4.8 and closure H6",
+      "assumed": "Describe the uniform logical-step draft lp1-exec-draft-1, its accounting contracts and H6's retained predicate/size agreement. Recorded exact counters remain in reproduction.",
+      "if_other": "A fixed-weight schedule needs a different execution identity and compatibility treatment. A change to the exact payload needs an explicit versioned contract; neither alternative is silently selected here."
+    },
+    {
+      "item": "RM.11 to RM.13 and ERR.25",
+      "assumed": "The current renderer draft uses fixed plan ceilings plus the existing output allowance. KN7:budget.display_plan_limit remains reserved, and production limits and measurements remain owed.",
+      "if_other": "A separately declared plan allowance needs its own deterministic units and contract before that reserved row can be activated. Fixed ceilings still cannot be reported as exhausted job allowances."
+    },
+    {
+      "item": "LQ4",
+      "assumed": "Branch-path and void-exit rows describe JI.27/JI.28 and H11 under the working branch form. They supply no branch UI or permission to revive a void exit.",
+      "if_other": "Without branches the branch operation is unavailable; the exit/entry, restore and recovery constraints remain. A pinned-job policy change alters lifetimes, not the meaning of these codes."
+    },
+    {
+      "item": "LQ5 and LQ9",
+      "assumed": "LB6:evidence.decomposition_mismatch describes the conditional native/non-IR tool admission draft. ADR-L07 describes the common IR only under its applicable routes.",
+      "if_other": "An IR route uses the common checked-IR obligations; non-IR RT4 still needs its equivalent execution and decomposition evidence. This packet chooses no route or implementation language."
+    },
+    {
+      "item": "LQ6, LQ7 and LQ20",
+      "assumed": "ADR-L11 keeps the current chart and renderer-handoff recommendations conditional, with the retained view-placement and design questions open.",
+      "if_other": "Built-in-only charts, a user-shader alternative or compatibility with a frozen renderer require their corresponding feature/support contracts and evidence. No renderer, view host or UX is selected here."
+    },
+    {
+      "item": "PHS.62 and PHS.71",
+      "assumed": "The 38 closure requirements keep their manifest classes/phases, except CT-EV1-08 and CT-EV2-11 are source requirements in LP4. The 401 imported and 411 combined counts describe this packet's index.",
+      "if_other": "The integrator must reconcile additions or changed definitions from the other P7 packets and recount the final combined candidate. An owner-approved phase reorder requires a fresh whole-test readiness check."
+    }
+  ],
+  "owner_items": [
+    {
+      "item": "LQ1 to LQ21; ADR-L01, ADR-L02, ADR-L07, ADR-L08 and ADR-L11",
+      "why": "All owner questions and ADR acceptance remain open. Describing a supplied technical draft answers none of them; ADR-L07 remains held for LP1 and the route choice."
+    },
+    {
+      "item": "ONE.78 and preview replacement",
+      "why": "The live-turn reading of S4 and replacement of an already presented preview retain their owner/design-line disposition; the freshness and receipt descriptions do not decide them."
+    },
+    {
+      "item": "JI.38 / EH-30",
+      "why": "Only the owner supplies the product scramble policy. KN5:input.scramble_policy_unset leaves the command unavailable without it."
+    },
+    {
+      "item": "ERR.24 / LQ2 and LQ21",
+      "why": "Both flow-refusal spellings remain reserved until the owner-selected mechanism and joint policy supply their rule and retire one before use."
+    },
+    {
+      "item": "ERR.25 and ERR.26",
+      "why": "Numeric production plan ceilings, resource measurements and the recursion guard remain open in their owning contracts. No measured default or new plan allowance is supplied."
+    },
+    {
+      "item": "LQ6, LQ7, LQ20 and DT-J2 to DT-J4",
+      "why": "View placement, chart route, renderer handoff and renderer sign-off remain reserved. Pick disambiguation and other UI/UX work stay with the closed design line."
+    }
+  ],
+  "handoff_changes": [
+    {
+      "section": "H16 / phase totals",
+      "change": "PHS.71 records the 38 known additions and updates this packet's index to 401 imported requirements, or 411 with chapter 12's ten own requirements. Final combined-wave counts remain with the integrator; no handoff form is rejected.",
+      "why": "The other five P7 worktrees are not visible here and can add or amend requirement definitions. Their results must be reconciled before final totals or full-wave closure are claimed.",
+      "who": "integrator after all P7 packets land",
+      "vectors": {
+        "combined_index": {
+          "given": "The base index has 363 imported requirements and this packet adds the 38 named closure requirements.",
+          "expected": "This index has 401 imported requirements: 353 source, 23 synthetic, 11 windows, 9 performance and 5 human. Adding ten CT-PHS source requirements gives 411. A later addition requires a recount before final totals are claimed.",
+          "clause": "PHS.71"
+        }
+      },
+      "commands": [
+        [
+          "python",
+          "-B",
+          "docs/architecture/1.0/language/closure/check_p7.py",
+          "--all"
+        ],
+        [
+          "python",
+          "-B",
+          "docs/architecture/1.0/language/closure/check_closure.py",
+          "--all"
+        ]
+      ],
+      "remaining": "Run the aggregate checks on the integrated candidate, compare defining tables with the index under CT-PHS-01, and obtain the packet's post-implementation review. Mechanical checks do not establish semantic correctness or owner acceptance."
+    }
+  ],
+  "new_error_codes": [],
+  "new_requirements": [],
+  "findings": {
+    "S2-05": {
+      "status": "closed",
+      "clauses": [
+        "ERR.9",
+        "ERR.23",
+        "CT-ERR-05"
+      ],
+      "vectors": {
+        "contextual_form_row": {
+          "given": "One renderer device is unavailable before publication acceptance, another is lost while an accepted publication is preparing, and a third is lost after that publication installed.",
+          "expected": "All use EV3:busy.renderer_unavailable for the availability failure. Before acceptance its form is refusal with refused(Error); during accepted preparation its form is stop with failed(Error) and an associated job's error(Error); after installation completed(view_published) and all committed mechanical receipts remain unchanged.",
+          "clause": "ERR.9"
+        }
+      }
+    },
+    "RS3-11": {
+      "status": "closed",
+      "clauses": [
+        "ERR.2",
+        "ERR.14",
+        "ERR.23",
+        "ERR.31",
+        "CT-ERR-12"
+      ],
+      "vectors": {
+        "registry_rows": {
+          "given": "A branch switch lacks a proved navigation path, a redo would reactivate a known void exit, and an exposed-face request has determined frames but no certified geometry/size profile.",
+          "expected": "The respective registry rows are KN4:input.branch_path_unproved (store), KN5:input.exit_record_voided (command layer), and KN2:input.exposed_geometry_unavailable (engine). Each is input/refusal with retry after_user_change, names the failed path/void/data fact and preserves the current state. None reports unverified_reference or asks for a missing frame; JI clauses remain rule sources.",
+          "clause": "ERR.23"
+        },
+        "branch_path_envelope": {
+          "given": "Target branch B has no proved journal path from the selected head; all frame correspondences are fixed.",
+          "expected": "KN4:input.branch_path_unproved, category input, origin KN4, form refusal, retry after_user_change; context names B and missing path evidence. Keep the current binding. An explicit validated restore is a separate operation under the exit-void rule.",
+          "clause": "ERR.23"
+        },
+        "void_exit_envelope": {
+          "given": "Redo targets entry E whose exit X has a durable void fact V.",
+          "expected": "KN5:input.exit_record_voided, category input, origin KN5, form refusal, retry after_user_change; context names X and V. Refuse that redo; a fresh validated crossing or solved-witness entry is separate and no frame or equal labels revive X.",
+          "clause": "ERR.23"
+        },
+        "exposed_geometry_envelope": {
+          "given": "The request names feature F and fixed exact source binding S, but its certified exposed-face mesh or size profile is absent.",
+          "expected": "KN2:input.exposed_geometry_unavailable, category input, origin KN2, form refusal, retry after_user_change; context names F, S and the absent data/profile. Report unavailable and fabricate no mesh; do not invent an unresolved correspondence.",
+          "clause": "ERR.23"
+        }
+      }
+    },
+    "RS3-12": {
+      "status": "closed",
+      "clauses": [
+        "PHS.26",
+        "PHS.62",
+        "PHS.71"
+      ],
+      "vectors": {
+        "phase_index": {
+          "given": "LP2 has its headless interpreter/kernel products but no LP4 module-activation or debugger services; CT-EV1-08 needs an old suspended run across activation and CT-EV2-11 needs stepping across a suspended kernel call.",
+          "expected": "CT-EV1-08 and CT-EV2-11 each occur once in the LP4 source column. Neither occurs in LP2, and an LP2 stub cannot discharge either whole requirement.",
+          "clause": "PHS.62"
+        }
+      }
+    },
+    "X-REG": {
+      "status": "partial",
+      "clauses": [
+        "ERR.23",
+        "ERR.31",
+        "PHS.67",
+        "PHS.71",
+        "CT-ERR-04",
+        "CT-ERR-12",
+        "CT-PHS-01"
+      ],
+      "why_open": "All 23 final code rows and all 38 requested phase/class assignments are present. The displayed totals are recomputed for this candidate only; the final full-wave totals and any additions from unseen P7 packets still require integration and recount.",
+      "who": "integrator after the other P7 packets land",
+      "vectors": {
+        "all_codes": {
+          "given": "H15.16 takes six final KN names from the eight JI proposals, reuses two existing EV3 codes, adds filter freshness, and imports 16 other codes from p2b, p4 and p5.",
+          "expected": "Exactly 23 new registry rows: EV1:input.module_not_checked, EV1:input.source_range_invalid, EV1:stale.activation_base, EV2:input.word_range_invalid, EV2:stale.debug_stop, KN1:input.unsupported_dimension, KN2:input.exposed_geometry_unavailable, KN2:input.named_object_invalid, KN2:stale.value_unavailable, KN4:input.branch_path_unproved, KN5:input.confirmation_required, KN5:input.exit_record_voided, KN5:input.overlay_dependency_missing, KN5:input.scramble_policy_unset, KN5:resource_limit.engine_lost, KN5:stale.filter_preview, KN5:stale.result_gone, LB1:input.key_contract_mismatch, LB6:evidence.decomposition_mismatch, LG4:input.generator_input, LG4:input.pointwise_failed, LG4:input.text_scalar_invalid, LG4:resource_limit.generator_exhausted. Each has code/category/origin, form, meaning, retry and rule source. JI payload/projection failures reuse EV3:input.display_bundle_mismatch and EV3:input.display_unsupported.",
+          "clause": "ERR.23"
+        },
+        "all_requirements": {
+          "given": "Index the closure manifests' 38 requirements, applying RS3-12 to the two full authoring-service tests.",
+          "expected": "LP1: CT-JI-01 through 07, CT-LI-08, CT-FP-01 through 05, CT-DET-25, CT-LB5-10, CT-LB6-05 and CT-RM-01 (16 source, 1 synthetic). LP2: CT-LI-01 through 07 and CT-DET-26 through 32 (13 source, 1 synthetic). LP3: CT-RM-02 through 06 (3 source, 2 windows). LP4: CT-EV1-08 and CT-EV2-11 (2 source). CT-FP-04 and CT-DET-28 are synthetic; CT-RM-05/06 are windows. Each ID occurs in one phase table, yielding the candidate's 401 imported and 411 combined requirements.",
+          "clause": "PHS.71"
+        },
+        "filter_freshness": {
+          "given": "A filter.apply reference was built at state 7 with a resolved filter digest F; the current state is 8 while F is unchanged, and no word preview is pending.",
+          "expected": "KN5:stale.filter_preview with category stale, origin KN5, form refusal and retry after_refresh. The submitted filter reference fails H15.4's predicate; a pending word preview or presentation cannot repair it.",
+          "clause": "ERR.23"
+        }
+      }
+    },
+    "X-P6REG": {
+      "status": "closed",
+      "clauses": [
+        "ERR.9",
+        "ERR.12",
+        "ERR.23",
+        "ERR.25",
+        "CT-ERR-05",
+        "CT-ERR-08",
+        "CT-ERR-15"
+      ],
+      "vectors": {
+        "display_ceiling_rows": {
+          "given": "A valid publication requests 100 or 101 records against a fixed count ceiling of 100; a different accepted publication needs 101 canonical bytes with 100 output bytes remaining; a third accepted preparation suffers physical allocation failure.",
+          "expected": "The fixed-ceiling check admits 100 and refuses 101 before acceptance with EV3:resource_limit.display_plan_ceiling and the field/requested/ceiling context. The output case is cut_off(KN7:budget.output) with cancelled(budget), emitting/installing none of the denied unit. Physical failure is failed(KN7:resource_limit.host_exhausted), not a deterministic cut-off. KN7:budget.display_plan_limit stays reserved.",
+          "clause": "ERR.25"
+        },
+        "span_units": {
+          "given": "Pinned source has scalars a, U+1F600, U+00E9, LF, z. Host coordinates are declared UTF-16; the requested UTF-8 ranges are [1,5) and [9,9), with invalid UTF-8 or UTF-16 offset 2 as a negative case.",
+          "expected": "The shared EV1.10 conversion gives [1,3) and EOF insertion [6,6). Interior offset 2 or an undeclared host unit gives EV1:input.source_range_invalid; a different source digest gives EV1:stale.editor_source. ERR.12 is D and no longer leaves a coordinate choice open.",
+          "clause": "ERR.12"
+        },
+        "source_navigation": {
+          "given": "A pick's installed-generation bindings are current, but its pinned producing source digest differs from the source being navigated.",
+          "expected": "EV3:stale.source_link remains the existing navigation refusal, category stale, origin EV3, retry after_refresh. The registry adds no source-navigation synonym and preserves that code's meaning.",
+          "clause": "ERR.23"
+        }
+      }
+    },
+    "X-ADR": {
+      "status": "closed",
+      "clauses": [
+        "PHS.72"
+      ],
+      "vectors": {
+        "adr_descriptions": {
+          "given": "Read ADR-L01, ADR-L02, ADR-L07, ADR-L08 and ADR-L11 after the closure has supplied KN0.8 freshness, LI receipt/availability protocols, LG4.8/DET.54 to DET.64 execution accounting, and the RM display interface.",
+          "expected": "The descriptions cite those drafts instead of saying the protocols are absent. All five statuses remain Proposed and not accepted, ADR-L07 remains held for LP1 and the route choice, and every record retains its open list and owner alternatives. There is no ADR acceptance, LQ answer, renderer choice or freeze.",
+          "clause": "PHS.72"
+        }
+      }
+    }
+  }
+}

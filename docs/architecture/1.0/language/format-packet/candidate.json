@@ -1,0 +1,213 @@
+{
+  "format": "p3-candidate-inventory-1",
+  "candidate_id": "en4-data-core-draft-1",
+  "input_commit": "384b877bbbd87290c541316d4dec8ebd87b87056",
+  "candidate": [
+    {
+      "path": "docs/architecture/1.0/language/architecture/05-persistence.md",
+      "sha256": "84f2bfb1308f05501333c7c1323bc44e07ebaab103b427b66f9d90ba00e7f07f"
+    },
+    {
+      "path": "docs/architecture/1.0/language/architecture/06-evidence.md",
+      "sha256": "73e5b305da9b3b0fd6b44f5a3852176409359693e774d3610ea8c12f0a8d87a8"
+    },
+    {
+      "path": "docs/architecture/1.0/language/architecture/07-boundary.md",
+      "sha256": "5efcf58a75309b18a13b54811533a99102d772c3e715cf502d5bb6c8cb5f5e61"
+    },
+    {
+      "path": "docs/architecture/1.0/language/format-packet/README.md",
+      "sha256": "4f4283b26b4e673c095ad126e98e8e14db5eb8fb4f247d2d06e98844a3d3689e"
+    },
+    {
+      "path": "docs/architecture/1.0/language/format-packet/check_vectors.py",
+      "sha256": "cfff47ae6f814d08a13d83ae95a1401ecf46cc97c836b7ab91c611c6885985d7"
+    },
+    {
+      "path": "docs/architecture/1.0/language/format-packet/examples.json",
+      "sha256": "49ee6ae78ce7ea024d16c909784ee19f2066f019d35513d84503b4eb415619d2"
+    },
+    {
+      "path": "docs/architecture/1.0/language/format-packet/vectors.json",
+      "sha256": "b28389e8014201524432debe339b87bf8327a6331f9f2470e5738a3b1db8461d"
+    }
+  ],
+  "candidate_sha256": "e3b23b4b58f05823c5124a3a6abd257066cecda0d530f605e827d89d894d35b9",
+  "inputs": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "0762f5e6a5f69687d6b90436bf6833b8f1e40af98cdcd15582452736659a920f"
+    },
+    {
+      "path": "assets/execution_trees.json.gz",
+      "sha256": "a820837c948eeff41df6f064d817312dcb9206ba4e2a73d0ced5ccf136ea3d20"
+    },
+    {
+      "path": "assets/manifest.json",
+      "sha256": "b5db4469f3da9ba3cdbd93806a703f594153e61b08ce32d4fcce9de9c5cc60bc"
+    },
+    {
+      "path": "assets/primitives.npz",
+      "sha256": "1fac185bef9fc6d26afd821238a56b8856024a4c3e5a9ae5c03f77bb1407d5a5"
+    },
+    {
+      "path": "core.py",
+      "sha256": "67839fc28bf4dd020b515330efcde43a2116474e9970a1d743de55c7deb2eea2"
+    },
+    {
+      "path": "docs/architecture/1.0/language/adr/ADR-L10-persistence.md",
+      "sha256": "c83a106d0dc78769876c12fa4dde6729fb0e0cf90374201eaf128b323c901cd0"
+    },
+    {
+      "path": "docs/architecture/1.0/language/architecture/01-kernel.md",
+      "sha256": "d99f62f1279e7aad21394fcef8b11075c8e012c6d15f2325ca971e3d144746cd"
+    },
+    {
+      "path": "docs/architecture/1.0/language/claim-matrix/README.md",
+      "sha256": "4b59c65f537261f334b86133c98fe24fc244cdb6a3d952b3fcc45da2d8650ed8"
+    },
+    {
+      "path": "docs/architecture/1.0/language/closure/HANDOFF.md",
+      "sha256": "b2475afb7f7103ee5636a163c7c758f435022ad8b6a3f49686537db6b015df67"
+    },
+    {
+      "path": "docs/architecture/1.0/language/closure/check_closure.py",
+      "sha256": "3f324e6da9a0948d5c65034037ceb1a1f8ec0d2bfba9d5ddcfd1a8fbdaceb399"
+    },
+    {
+      "path": "docs/architecture/1.0/language/closure/findings.json",
+      "sha256": "72f25e174a04499836343276b20d2611ba222ee8855b0fd92c3400c0764572b5"
+    },
+    {
+      "path": "docs/architecture/1.0/language/evidence-import/README.md",
+      "sha256": "e59c957a4f8233f8967020ebcc9c3c55fcd3b3e4116774e60c74d47d526e6da4"
+    },
+    {
+      "path": "docs/architecture/1.0/language/evidence-import/corpus-labels.json",
+      "sha256": "6fcd45325a8789736534d53cd336297a0718c3c4386bb9da5af21fbb0ac13a68"
+    },
+    {
+      "path": "docs/architecture/1.0/language/evidence-import/ext.txt",
+      "sha256": "34249782e6e8db35e4495d412af7ffe38ee503ecfb6adc9779165590a222212d"
+    },
+    {
+      "path": "docs/architecture/1.0/language/evidence-import/extract_labels.py",
+      "sha256": "48e412de67f60248b1a0cca40a5867127cdad937db32272ef6bcad84e3e2f0e0"
+    },
+    {
+      "path": "docs/architecture/1.0/language/evidence-import/refs.txt",
+      "sha256": "fc827aa406aa38c596fa7e5c05691d8fef16e5dbdedf9be8c85e6477e7991546"
+    },
+    {
+      "path": "docs/architecture/1.0/language/evidence-import/rule.txt",
+      "sha256": "7479eedcb35c9f39f563af85f6f9f9f56537cbfc918034b41cc5731d42d700dd"
+    },
+    {
+      "path": "docs/architecture/1.0/language/evidence-import/rules.txt",
+      "sha256": "77680aadd018f73a9e5733c5aee28d51c819bb20cc25d85cf5273edab53beca4"
+    },
+    {
+      "path": "docs/development-guide/AGENT_BRIEFING.md",
+      "sha256": "5f602e38ef60d44a417ce9545a6ee2094d7c2b7b5befb9af879c63914ac311a6"
+    },
+    {
+      "path": "docs/progress/1.0/command-aliases.json",
+      "sha256": "309939ec2591044416523c01398b6f5e037095da0e3fafd79928e6d68359a1e6"
+    },
+    {
+      "path": "docs/progress/1.0/jumbling-interfaces.md",
+      "sha256": "ee44fdd4ebbda2db88061c488e85fe2ea08791452eb4ffc956d6f81b5fdd4f69"
+    },
+    {
+      "path": "docs/progress/1.0/layer-interfaces.md",
+      "sha256": "36039a4b368e47e3ed1d40ccc8f3cfaccec135c7b0980e4a0bc87563c23a5d28"
+    },
+    {
+      "path": "docs/progress/1.0/migration-exporter-proposal.md",
+      "sha256": "b04d26c5d793ef1d36f6722bc3a6c551107c46d1c213127325ba55caffadff34"
+    },
+    {
+      "path": "docs/progress/1.0/migration-probe-results.md",
+      "sha256": "d4f24faaa4dfea9d7c3fa96f6d4c679ccbc5f03d7908bbededbe53ab68a26cbc"
+    },
+    {
+      "path": "docs/progress/1.0/oracle/README.md",
+      "sha256": "35de5cacd231d9ec5115946887c1a90467c5c21cfc9d69ebe5bbab8ab7a37a39"
+    },
+    {
+      "path": "docs/wiki/decisions/owner-decisions-2026-10-02-migration.md",
+      "sha256": "3ddf35852645dcecf96c98cbe627b58e321b065db79e28f43f61cd951b5c4ffc"
+    },
+    {
+      "path": "docs/wiki/decisions/owner-decisions-2026-10-03-migration.md",
+      "sha256": "f2ff3beefa91e76bb907e6adad2c4ac10927f0f7f5fe401d2628166415840d51"
+    },
+    {
+      "path": "log_io.py",
+      "sha256": "b0a8f9d01196bc1ba909600dcdda6a685dd64d0491a98d0249102c051967249f"
+    },
+    {
+      "path": "research/jumbling/differential/README.md",
+      "sha256": "36225f94c3635e325bd07fbcd56f9d113ceb83612409bd1588fc0a4cd0df2faf"
+    },
+    {
+      "path": "research/jumbling/differential/candidate/store.py",
+      "sha256": "2557fb16a58fcd998769f53233c815d570b2b45b054e942799c116868de6c4a3"
+    },
+    {
+      "path": "research/jumbling/restoration/18-tail-completion/README.md",
+      "sha256": "f976dc53d3dd238ed54c9bea754a3004194acbb5b464402f7e49cd921c129c27"
+    },
+    {
+      "path": "session.py",
+      "sha256": "bbac102569880c98a0454c9702e6dfdf3c6a6043a1b1c5d4f35b79cee638e3b7"
+    },
+    {
+      "path": "tools/oracle/compare.py",
+      "sha256": "79e08de66c410964b9a311a685b1432d66fee0594c6dc56bd117f4dde0538016"
+    },
+    {
+      "path": "tools/oracle/make_cases.py",
+      "sha256": "46b14acdc9e55c90cd307280b2afe6cb69442a9b6ec4d78067f970dc87d1ace8"
+    },
+    {
+      "path": "tools/oracle/replay_trace.py",
+      "sha256": "4ea366ca115aac5e9a7eca1ad565b4381c456cad2057163961b358597b3ba852"
+    },
+    {
+      "path": "work/experiments/language-lx/envelope-facts/CANDIDATE.json",
+      "sha256": "8b7f2209904d8b06d991c6064479de821c73a069116caaaecc9272465dd508c1"
+    },
+    {
+      "path": "work/experiments/language-lx/envelope-facts/DISPLAY.json",
+      "sha256": "8b1e8766648c67cac7dd4c44d9b8c3e7bfd5c48f97de38b4dca81745d020bd8e"
+    },
+    {
+      "path": "work/experiments/language-lx/envelope-facts/MANIFEST.json",
+      "sha256": "c429a84bf06e8268557ac57db0db24716b3195be5d8d3602232c41d5ced3dfa8"
+    },
+    {
+      "path": "work/experiments/language-lx/envelope-facts/RECORDS.json",
+      "sha256": "3bde5aa9a829500bc6c9b14603abe391e133606d31bf92a5dab02615fba84991"
+    },
+    {
+      "path": "work/experiments/language-lx/envelope-facts/RESULT.md",
+      "sha256": "868e8d8eac955423b6a54f9012e35f29bc9921a5e980b27ee4155820012a8660"
+    },
+    {
+      "path": "work/experiments/language-lx/envelope-facts/SUMMARY.json",
+      "sha256": "bef46146e2b467bcc08c902530833a4ba62618d5e872bdb4ccc0d5297e30ddc7"
+    }
+  ],
+  "production": {
+    "tool": "CPython 3.15.1",
+    "check": "python -B docs/architecture/1.0/language/format-packet/check_vectors.py",
+    "source_form": "Editable Markdown, Python and JSON; input bytes SHA-256 pinned above. No generated report is required."
+  },
+  "frozen": false,
+  "alias_identity": {
+    "version": "en4-2026-11-05.3",
+    "profile": "SHA-256 of UTF-8 JSON of this entire object except content_digest; keys sorted recursively, separators comma and colon, ensure_ascii=false, no whitespace or trailing newline; array order retained.",
+    "content_digest": "5ef9a34103f9411f6b11eda5d371c34f561df43bcb0cf707c6910d23e042c3c5"
+  }
+}

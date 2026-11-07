@@ -1,0 +1,364 @@
+{
+  "packet": "p5",
+  "draft_status": "All contracts remain proposals. Closed means specified in this draft, not implemented, reviewed or owner-approved.",
+  "assumes": [
+    {
+      "item": "H6 / LG2.5",
+      "assumed": "ApproxBool and display_if are the working form 1, with pure display results and the terminal consumer rule of LG2.20.",
+      "if_other": "LG2.21 uses checked display regions with named entry, branch and exit operations under lp1-exec-region-draft-1. DET.64 supplies their charges and separate vectors; LG2.20 isolation and DET.6 reproduction remain required."
+    },
+    {
+      "item": "LQ21",
+      "assumed": "Neither flow labels nor capability separation is chosen. Exactness is independently required under both.",
+      "if_other": "Selecting either form changes BND checking and provenance, not the approximate-to-exact refusals in LG2.19 to LG2.22."
+    },
+    {
+      "item": "LQ9 / RTE.6",
+      "assumed": "No route or placement is selected. Non-IR RT4 owes the conditional RTE.80 host validator and decomposition.",
+      "if_other": "An IR route, including RT4 with common-IR lowering, uses the ordinary IR decomposition; the non-IR replacement arm is not_applicable(route_uses_ir)."
+    },
+    {
+      "item": "LQ5 / LB6.6",
+      "assumed": "The language-tool recommendation remains a proposal, with PrincipleRecords required.",
+      "if_other": "Native or per-tool backings still need checked IR or the generated and validated host decomposition, plus the same source and hand-written parts."
+    },
+    {
+      "item": "H7",
+      "assumed": "SourceRange uses UTF-8 byte offsets and word positions use zero-based half-open expanded-letter ranges.",
+      "if_other": "A later approved coordinate change requires a new protocol and explicit conversion of old references, never silent reinterpretation."
+    },
+    {
+      "item": "H10 / EV2.11",
+      "assumed": "Flat literal chunks are the shared carrier proposal; named compressed occurrences can still be referenced by expanded position.",
+      "if_other": "A parts carrier must provide occurrence paths including repeat and inverse traversal, validated against the same absolute literal positions and digest."
+    },
+    {
+      "item": "EV1.13",
+      "assumed": "The atomic activation service is specified, but neither automatic nor user-triggered host requests are selected.",
+      "if_other": "Either interaction choice calls EV1.11; old runs keep their original digest and closure."
+    },
+    {
+      "item": "LQ4",
+      "assumed": "Source activation alone does not cancel an existing run. The source-version rule is independent of the still-open pinned-job policy.",
+      "if_other": "If revision replacement cancels jobs, that cancellation still applies and keeps the old executed source identity. No old stack is rewritten to the new module."
+    },
+    {
+      "item": "LQ3 / LQ10",
+      "assumed": "Chapter 06 facts and chapter 05 import identities are consumed as the working forms; no new evidence order or storage schema is defined.",
+      "if_other": "An alternate evidence model or envelope must retain source labels, missing dependencies, checker identity and unfinished gates, and adapt derived labels without claiming a fresh check."
+    },
+    {
+      "item": "LQ13",
+      "assumed": "Examples are semantic notation and no concrete syntax is chosen.",
+      "if_other": "Any chosen syntax must implement the same typed, coordinate, key and stepping contracts."
+    },
+    {
+      "item": "LQ16",
+      "assumed": "All promised research coverage is retained; unavailable is an implementation/dependency status.",
+      "if_other": "Only an explicit owner scope decision can reduce coverage; this packet makes no such reduction."
+    },
+    {
+      "item": "p4 metering / p6 display boundary",
+      "assumed": "EV2 consumes the versioned LG4/DET semantic stop contract and chapter 10 owns publish_view and SourceMap.",
+      "if_other": "The working stop fields, isolation and reproduction rule are specified by DET.56/DET.64 and LG2.20. An alternate executor must map to them; native instruction counts and a second source convention cannot replace them."
+    }
+  ],
+  "owner_items": [
+    {
+      "item": "EV1.13 [O]",
+      "why": "The activation trigger and editor appearance belong to the owner and resumed design line; the protocol selects neither."
+    },
+    {
+      "item": "LQ5 and LQ9 [P]",
+      "why": "Native/language tool backing, execution route and placement remain owner choices; the admission rules are conditional."
+    },
+    {
+      "item": "LQ21 [O]",
+      "why": "This packet does not select flow labels, capability separation or their policy."
+    },
+    {
+      "item": "LQ13 [P]",
+      "why": "No syntax, parser surface or learnability decision is made."
+    },
+    {
+      "item": "LQ3, LQ4 and LQ10 [P]",
+      "why": "Evidence representation, pinned-job policy and stored-byte freeze remain with their existing owner questions."
+    },
+    {
+      "item": "LQ16 [P]",
+      "why": "Only the owner can reduce research coverage; partial checking infrastructure is not a scope decision."
+    }
+  ],
+  "handoff_changes": [],
+  "new_error_codes": [
+    {
+      "code": "LB1:input.key_contract_mismatch",
+      "clause": "LG2.23",
+      "meaning": "Key kind, rewrite version, alphabet/identity/order or independence contract differs; comparison returns no equality or ordering."
+    },
+    {
+      "code": "LB6:evidence.decomposition_mismatch",
+      "clause": "LB6.6",
+      "meaning": "The submitted tool graph omits a derived transitive target/effect or differs from the bound source/build inputs."
+    },
+    {
+      "code": "EV1:input.source_range_invalid",
+      "clause": "EV1.10",
+      "meaning": "Invalid endpoint, absent host unit or invalid conversion on the pinned UTF-8/LF scalar boundaries."
+    },
+    {
+      "code": "EV1:input.module_not_checked",
+      "clause": "EV1.11",
+      "meaning": "Activation has no successful matching check of exactly this candidate and dependency closure."
+    },
+    {
+      "code": "EV1:stale.activation_base",
+      "clause": "EV1.11",
+      "meaning": "Atomic activation found an active digest other than the expected one."
+    },
+    {
+      "code": "EV2:input.word_range_invalid",
+      "clause": "EV2.11",
+      "meaning": "Literal endpoints or compressed occurrence path/offset disagree with the exact expansion."
+    },
+    {
+      "code": "EV2:stale.debug_stop",
+      "clause": "EV2.12",
+      "meaning": "Step names an obsolete stop or reuses its request ID with different inputs."
+    }
+  ],
+  "new_requirements": [
+    {
+      "id": "CT-LB5-10",
+      "phase": "LP1",
+      "class": "source"
+    },
+    {
+      "id": "CT-LB6-05",
+      "phase": "LP1",
+      "class": "source"
+    },
+    {
+      "id": "CT-EV1-08",
+      "phase": "LP4",
+      "class": "source"
+    },
+    {
+      "id": "CT-EV2-11",
+      "phase": "LP4",
+      "class": "source"
+    }
+  ],
+  "findings": {
+    "FR-B01": {
+      "status": "closed",
+      "clauses": [
+        "LG2.5",
+        "LG2.19",
+        "LG2.20",
+        "LG2.21",
+        "LG2.22"
+      ],
+      "vectors": {
+        "direct-comparison": {
+          "given": "x and y are Approx<p>; an ordinary if on approx_less(x,y) chooses literal words w1 or w2.",
+          "expected": "Refuse LG2:type.exactness_violation: the condition is ApproxBool. A pure display_if choosing display colours instead yields a display colour; only publish_view can consume that output.",
+          "clause": "LG2.22"
+        },
+        "helper-comparison": {
+          "given": "helper(x: Approx<p>, y: Approx<p>) is declared to return Bool and returns approx_less(x,y); it is also exported.",
+          "expected": "Refuse LG2:type.exactness_violation at the ordinary Bool return/export boundary under form 1 and form 2, and under either LQ21 mechanism.",
+          "clause": "LG2.19"
+        },
+        "captured-condition": {
+          "given": "c is the result of approx_less(x,y); a closure captures c and returns the exact deterministic budget 4 or 8 according to c.",
+          "expected": "Refuse LG2:type.exactness_violation. The capture makes the closure display-qualified; no exact budget result can leave it.",
+          "clause": "LG2.22"
+        },
+        "generic-container": {
+          "given": "id<T> preserves T; id<Box<ApproxBool>>(Box(approx_less(x,y))) is projected and used as an exact Bool in a goal.",
+          "expected": "Refuse LG2:type.exactness_violation. Substitution and the aggregate retain the display qualifier; projection cannot produce an exact Bool.",
+          "clause": "LG2.19"
+        },
+        "stored-value": {
+          "given": "A display-qualified approximate condition is saved in a typed display field, loaded by another module and decoded as an exact goal selector.",
+          "expected": "Storage preserves the qualifier. Decoding or using it as an exact goal is refused with LG2:type.exactness_violation; importing does not erase it.",
+          "clause": "LG2.19"
+        },
+        "display-budget-channel": {
+          "given": "display_if chooses pure branches with different costs; subsequent exact code attempts to reclaim the saved steps and construct an exact word.",
+          "expected": "Refuse LG2:type.exactness_violation. Display evaluation is terminal; neither its remaining grant nor its stop outcome returns to exact computation.",
+          "clause": "LG2.20"
+        }
+      }
+    },
+    "FR-B05": {
+      "status": "closed",
+      "clauses": [
+        "LG2.13",
+        "LG2.14",
+        "LG2.18",
+        "LG2.23",
+        "LB1.9",
+        "LB1.10",
+        "EV4.9"
+      ],
+      "vectors": {
+        "bca-cab-trace": {
+          "given": "One trace-key/1 fixture header has a<b<c, b independent of a and c, and a dependent on c. Literal words are bca, cab and abc.",
+          "expected": "trace_key(bca)=trace_key(cab)=bca. trace_key(abc)=abc, different from bca. word-key/1(bca) and word-key/1(cab) differ. Literal execution remains in the supplied order.",
+          "clause": "LB1.10"
+        },
+        "blocked-same-cap-inverse-pair": {
+          "given": "At a jumbling state with a straddler at grip 2, w=[(2,a),(2,inverse(a))] and e is empty, with the same pinned menu and identity.",
+          "expected": "word_key(w) contains exactly one (2,id) token with the grip-2 domain test; word_key(e) is empty and unequal. The literal pair is blocked at that state; the key denotes the same blocked partial domain; the empty word is admissible. Neither key is executable.",
+          "clause": "LG2.14"
+        },
+        "key-version-and-order": {
+          "given": "Full word [2,-2,1] under word-key/1; tokens -1,1,-2; another persisted key has identical payload but version word-key/2.",
+          "expected": "Normalize the word to [1]. Token order is -1 < 1 < -2. Comparison with word-key/2 refuses LB1:input.key_contract_mismatch; a new key must be recomputed from the original literal source.",
+          "clause": "LG2.23"
+        }
+      }
+    },
+    "FR-B06": {
+      "status": "closed",
+      "clauses": [
+        "EV1.10",
+        "EV1.11",
+        "EV1.13",
+        "EV2.11",
+        "EV2.12"
+      ],
+      "vectors": {
+        "multi-unit-characters": {
+          "given": "Pinned source has scalars a, U+1F600, U+00E9, LF, z; its host unit is utf16. Select the emoji with UTF-8 range [1,5).",
+          "expected": "Host range [1,3), scalar range [1,2). UTF-8 offset 2 or UTF-16 offset 2 returns EV1:input.source_range_invalid. A different source digest returns EV1:stale.editor_source.",
+          "clause": "EV1.10"
+        },
+        "insertion-endpoints": {
+          "given": "The same five-scalar source has 9 UTF-8 bytes and 6 UTF-16 units. Insert at [5,5) and at [9,9).",
+          "expected": "UTF-16 insertion ranges are [3,3) and [6,6), respectively. [10,10) is refused with EV1:input.source_range_invalid. No endpoint is rounded.",
+          "clause": "EV1.10"
+        },
+        "old-run-survives-activation": {
+          "given": "R runs checked module A and its locked closure; checked B is activated with expected_active=A while R is suspended. Inputs and grants remain valid.",
+          "expected": "Activation returns previous=A,new=B. R resumes with A, its old source and dependencies; a subsequent invocation binds B. Another activation expecting A returns EV1:stale.activation_base. No stack or source range is rewritten.",
+          "clause": "EV1.11"
+        },
+        "step-across-suspended-kernel-call": {
+          "given": "R at semantic call k7 receives request q. The admitted kernel call c is suspended; q is repeated before and after c completes normally. Next semantic operation is k8.",
+          "expected": "First response waiting(c) at k7 awaiting, with call-site source and no return value. Pending repeats have the same call and no extra charges. Completion/repeated q returns stopped at k8 with the completed value; k8 has not executed and k7 has dispatched exactly once.",
+          "clause": "EV2.12"
+        },
+        "word-occurrence-position": {
+          "given": "Expanded word repeat([a,b],3), length 6, with zero-based repeat iteration 1 and emitted offset 1.",
+          "expected": "The reference resolves to b at absolute [3,4), not [1,2). A claimed absolute [1,2) for that path returns EV2:input.word_range_invalid; completed cursor is [6,6).",
+          "clause": "EV2.11"
+        },
+        "missing-maps-and-terminal": {
+          "given": "A checked run has an actual contract position but no source map; another executor has no mapping to contract steps; a third run stops on its deterministic budget.",
+          "expected": "The first exposes the actual position with source=unavailable(source_map_missing). The second returns state=unavailable(step_mapping_missing) before advancing. The third returns terminal with the actual KN7 budget outcome and coverage, never stopped success.",
+          "clause": "EV2.12"
+        }
+      }
+    },
+    "FR-B07": {
+      "status": "closed",
+      "clauses": [
+        "RTE.6",
+        "RTE.80",
+        "RTE.81",
+        "LB6.2",
+        "LB6.6",
+        "EV5.4"
+      ],
+      "vectors": {
+        "rt4-transitive-effects": {
+          "given": "Non-IR RT4 tool T calls a function parameter whose sole admitted target H reads a snapshot and calls kernel leaf K. Submitted decomposition omits H->K or the snapshot effect.",
+          "expected": "Refuse LB6:evidence.decomposition_mismatch. A matching graph includes T->H marked may call, H->K, snapshot effects on T and H, and all exact source/build identities. It passes only the decomposition gate, not run grants or boundary policy.",
+          "clause": "RTE.81"
+        },
+        "inapplicable-under-ir-route": {
+          "given": "LQ9 eventually selects RT1, RT2 or RT3 with common validated IR, or an RT4 candidate lowers its tool into that IR.",
+          "expected": "The non-IR replacement arm is not_applicable(route_uses_ir). The ordinary IR decomposition from the checked pre-executor-lowering graph remains mandatory for the PrincipleRecord.",
+          "clause": "RTE.6"
+        },
+        "host-source-substitution": {
+          "given": "The host decomposition was checked for helper H at digest h1; load attempts H bytes with digest h2 and no regenerated checked graph.",
+          "expected": "Refuse LB6:evidence.decomposition_mismatch; invalidate the approval and mark the hand-written step mapping stale.",
+          "clause": "RTE.81"
+        }
+      }
+    },
+    "FR-B08": {
+      "status": "partial",
+      "clauses": [
+        "LB5.8",
+        "LB5.10",
+        "LB5.14",
+        "LB5.15",
+        "LB5.16",
+        "LB5.17",
+        "CT-LB5-06",
+        "CT-LB5-10"
+      ],
+      "why_open": "The per-record/per-claim dependency and digest-resolved leaf inventory now exists as the claim-matrix draft plan (CX.19, CX.22). FR-B08 remains partial because EN4 typed statement/scope/input bindings, KN6 independent checkers and mutation gates are still owed, with missing data, replacement certificates and unresolved premises explicit in the rows. No fresh checker or research run was performed.",
+      "who": "EN4 implements typed bindings from the pinned claim-matrix rows; KN6 implementers supply each independent checker and its mutation gate, and resolve missing inputs or replacement certificates. The integrator reviews the resulting FR-B08 closure evidence. Only the owner can reduce promised coverage.",
+      "vectors": {
+        "source-only-dependency-walk": {
+          "given": "Source walk starts at S15/scripts/macro.py check --replay, then follows its import of S14/t3p.py, which contains check and scan, and blockmap.py importing theory/restore.py. No KN6-separated checker is installed.",
+          "expected": "The research check path is recorded but not qualified as a fresh KN6 checker. check_availability returns unavailable with no_independent_checker; literal witness checking remains owed and historical records are preserved.",
+          "clause": "LB5.15"
+        },
+        "unavailable-outcome": {
+          "given": "Reproducing S19 records/type-lex-trimmed-independent-results.json requires its referenced type-lex-successor-base-cache.npz, absent from the archive, and no independent checker implementation is available.",
+          "expected": "unavailable([dependency_missing,no_independent_checker],[type-lex-successor-base-cache.npz source reference]); retain PASS_SHORTENED_THREE_BLOCK_WITNESS_AND_Q11_DEPTH3 verbatim, add no check/support leaf and do not refute the q11 claim.",
+          "clause": "LB5.17"
+        },
+        "self-contained-witness-no-checker": {
+          "given": "S19 full synthetic input/end pose tables, explicit nine-letter word and matching certificate are present, but no independent regional/matching checker is implemented.",
+          "expected": "Data remain importable; fresh check availability is unavailable([no_independent_checker],[]). No fresh pass is created and synthetic reachability remains unknown.",
+          "clause": "LB5.17"
+        },
+        "unfinished-stage18-replay": {
+          "given": "Import the S18 T6 step-4 record with composed gate evidence and no complete letter-by-letter replay.",
+          "expected": "Keep gate 3 historical_check_incomplete, with no fresh replay support leaf. Gates 1 and 2 do not imply gate 3; missing chunks do not produce a completed negative.",
+          "clause": "LB5.15"
+        },
+        "unmapped-archived-claim": {
+          "given": "A newly supplied claim outside the pinned draft inventory has no per-claim row or typed binding.",
+          "expected": "check_availability returns unavailable with claim_unmapped and preserves the field as recorded. The existing pinned inventory remains a draft plan; no fresh support leaf is created and promised research coverage is unchanged.",
+          "clause": "LB5.17"
+        }
+      }
+    }
+  },
+  "integration_follow_up": [
+    "Review the assembled candidate against the specified LG2.20 isolation/reproduction rule, LG2.21 form-2 lowering, DET.64 charges and EV2.12 positions, plus SourceMap/publish_view. H6 and H7 remain working forms, not owner decisions.",
+    "EN4 records key kind/rewrite/relation versions with stored key caches and resolves compressed occurrence paths without altering literal execution.",
+    "Add new_error_codes to chapter 13 and new_requirements to chapter 12 with final phase assignments/counts.",
+    "Use the existing FR-B08 claim-matrix draft inventory for EN4 typed bindings and KN6 checker/mutation-gate implementation. Missing inputs and unresolved premises stay open. Do not restart stopped research.",
+    "Review calls cannot run inside this offline implementation sandbox. The integrator reviews these Codex-authored drafts and obtains the applicable current-candidate review after reconciliation. Reuse the reconciliation plan check when unchanged."
+  ],
+  "integration_commands": [
+    {
+      "command": "python -B docs/architecture/1.0/language/closure/check_p7.py --all",
+      "when": "After all reconciliation packets land, including p7-render and p7-reg consumers."
+    },
+    {
+      "command": "python -B docs/architecture/1.0/language/closure/check_closure.py --all",
+      "when": "After all packet outputs and registries are reconciled."
+    },
+    {
+      "command": "python -B tools/agents/codex_review.py --kind review --packet work/reviews/packets/language-reconciliation-candidate.md --model gpt-6-astra --effort max --speed fast",
+      "when": "Outside the sandbox on the assembled candidate; the integrator supplies the packet, reviews Codex-authored changes and follows the no-self-review rule."
+    }
+  ],
+  "acceptance_command": [
+    "python",
+    "docs/architecture/1.0/language/closure/check_closure.py",
+    "--packet",
+    "p5"
+  ]
+}

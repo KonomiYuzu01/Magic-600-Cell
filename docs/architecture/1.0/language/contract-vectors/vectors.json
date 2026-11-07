@@ -1,0 +1,4802 @@
+{
+  "contract": "lp1-exec-draft-1",
+  "tariff_status": "test-only; unmeasured",
+  "output_profile": "PS1.2 retained JSON (fixture only)",
+  "tariffs": {
+    "kernel_base": 1,
+    "kernel_per_item": 2,
+    "limb_bits": 8,
+    "add_per_limb": 1,
+    "mul_per_limb_pair": 1,
+    "text_per_scalar": 1,
+    "decode_per_byte": 1,
+    "encode_per_byte": 1,
+    "rng_init_per_byte": 1,
+    "rng_block": 3,
+    "stream_setup": 1,
+    "expand_per_letter": 1,
+    "replay_per_letter": 2
+  },
+  "vectors": [
+    {
+      "id": "alias-release",
+      "clause": "DET.58",
+      "covers": [
+        [
+          "FR-K04",
+          "alias-release"
+        ]
+      ],
+      "given": {
+        "limits": {
+          "steps": 10,
+          "kernel_cost": 0,
+          "memory": 8,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "alloc",
+            "at": "a",
+            "name": "a",
+            "bytes": 4
+          },
+          {
+            "op": "alias",
+            "at": "b",
+            "source": "a",
+            "name": "b"
+          },
+          {
+            "op": "drop",
+            "at": "drop-a",
+            "name": "a"
+          },
+          {
+            "op": "alloc",
+            "at": "c",
+            "name": "c",
+            "bytes": 4
+          },
+          {
+            "op": "drop",
+            "at": "drop-b",
+            "name": "b"
+          },
+          {
+            "op": "drop",
+            "at": "drop-c",
+            "name": "c"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "used": {
+          "steps": 6,
+          "kernel_cost": 0,
+          "memory": 8,
+          "output": 0
+        },
+        "live_before_cleanup": 0,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "a",
+            1,
+            0,
+            4,
+            0,
+            0
+          ],
+          [
+            "b",
+            1,
+            0,
+            4,
+            0,
+            0
+          ],
+          [
+            "drop-a",
+            1,
+            0,
+            0,
+            0,
+            4
+          ],
+          [
+            "c",
+            1,
+            0,
+            4,
+            0,
+            0
+          ],
+          [
+            "drop-b",
+            1,
+            0,
+            0,
+            0,
+            4
+          ],
+          [
+            "drop-c",
+            1,
+            0,
+            0,
+            0,
+            4
+          ]
+        ],
+        "values": {},
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "alias-still-live",
+      "clause": "DET.58",
+      "covers": [],
+      "given": {
+        "limits": {
+          "steps": 10,
+          "kernel_cost": 0,
+          "memory": 8,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "alloc",
+            "at": "a",
+            "name": "a",
+            "bytes": 4
+          },
+          {
+            "op": "alias",
+            "at": "b",
+            "source": "a",
+            "name": "b"
+          },
+          {
+            "op": "drop",
+            "at": "drop-a",
+            "name": "a"
+          },
+          {
+            "op": "alloc",
+            "at": "c",
+            "name": "c",
+            "bytes": 5
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "cut_off",
+        "code": "KN7:budget.memory",
+        "stop": {
+          "at": "c",
+          "phase": "memory",
+          "scope": "root"
+        },
+        "used": {
+          "steps": 4,
+          "kernel_cost": 0,
+          "memory": 8,
+          "output": 0
+        },
+        "live_before_cleanup": 4,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "a",
+            1,
+            0,
+            4,
+            0,
+            0
+          ],
+          [
+            "b",
+            1,
+            0,
+            4,
+            0,
+            0
+          ],
+          [
+            "drop-a",
+            1,
+            0,
+            0,
+            0,
+            4
+          ],
+          [
+            "c",
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "values": {},
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "equal-to-limit",
+      "clause": "DET.56",
+      "covers": [
+        [
+          "FR-K04",
+          "equal-to-limit"
+        ],
+        [
+          "FR-B02",
+          "equal-to-limit"
+        ]
+      ],
+      "given": {
+        "limits": {
+          "steps": 3,
+          "kernel_cost": 5,
+          "memory": 6,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "kernel",
+            "at": "k",
+            "items": 2,
+            "result_bytes": 4,
+            "scratch": 2,
+            "name": "x"
+          },
+          {
+            "op": "drop",
+            "at": "drop",
+            "name": "x"
+          },
+          {
+            "op": "tick",
+            "at": "last"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "used": {
+          "steps": 3,
+          "kernel_cost": 5,
+          "memory": 6,
+          "output": 0
+        },
+        "live_before_cleanup": 0,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "k",
+            1,
+            5,
+            6,
+            0,
+            2
+          ],
+          [
+            "drop",
+            1,
+            0,
+            0,
+            0,
+            4
+          ],
+          [
+            "last",
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "values": {},
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "simultaneous-exhaustion",
+      "clause": "DET.56",
+      "covers": [
+        [
+          "FR-K04",
+          "simultaneous-exhaustion"
+        ]
+      ],
+      "given": {
+        "limits": {
+          "steps": 1,
+          "kernel_cost": 0,
+          "memory": 0,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "emit",
+            "at": "emit",
+            "value": "x"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "cut_off",
+        "code": "KN7:budget.kernel_cost",
+        "stop": {
+          "at": "emit",
+          "phase": "kernel_cost",
+          "scope": "root"
+        },
+        "used": {
+          "steps": 1,
+          "kernel_cost": 0,
+          "memory": 0,
+          "output": 0
+        },
+        "live_before_cleanup": 0,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "emit",
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "values": {},
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "simultaneous-memory-output",
+      "clause": "DET.56",
+      "covers": [],
+      "given": {
+        "limits": {
+          "steps": 1,
+          "kernel_cost": 3,
+          "memory": 2,
+          "output": 2
+        },
+        "trace": [
+          {
+            "op": "emit",
+            "at": "emit",
+            "value": "x"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "cut_off",
+        "code": "KN7:budget.memory",
+        "stop": {
+          "at": "emit",
+          "phase": "memory",
+          "scope": "root"
+        },
+        "used": {
+          "steps": 1,
+          "kernel_cost": 0,
+          "memory": 0,
+          "output": 0
+        },
+        "live_before_cleanup": 0,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "emit",
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "values": {},
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "step-precedence",
+      "clause": "DET.56",
+      "covers": [],
+      "given": {
+        "limits": {
+          "steps": 0,
+          "kernel_cost": 0,
+          "memory": 0,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "emit",
+            "at": "emit",
+            "value": "x"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "cut_off",
+        "code": "KN7:budget.steps",
+        "stop": {
+          "at": "emit",
+          "phase": "steps",
+          "scope": "root"
+        },
+        "used": {
+          "steps": 0,
+          "kernel_cost": 0,
+          "memory": 0,
+          "output": 0
+        },
+        "live_before_cleanup": 0,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "emit",
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "values": {},
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "nested-calls",
+      "clause": "DET.58",
+      "covers": [
+        [
+          "FR-K04",
+          "nested-calls"
+        ]
+      ],
+      "given": {
+        "limits": {
+          "steps": 5,
+          "kernel_cost": 3,
+          "memory": 34,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "call",
+            "at": "outer",
+            "body": [
+              {
+                "op": "call",
+                "at": "inner",
+                "body": [
+                  {
+                    "op": "kernel",
+                    "at": "k",
+                    "items": 1,
+                    "scratch": 2
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "used": {
+          "steps": 5,
+          "kernel_cost": 3,
+          "memory": 34,
+          "output": 0
+        },
+        "live_before_cleanup": 0,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "outer/call",
+            1,
+            0,
+            16,
+            0,
+            0
+          ],
+          [
+            "outer/inner/call",
+            1,
+            0,
+            16,
+            0,
+            0
+          ],
+          [
+            "outer/inner/k",
+            1,
+            3,
+            2,
+            0,
+            2
+          ],
+          [
+            "outer/inner/return",
+            1,
+            0,
+            0,
+            0,
+            16
+          ],
+          [
+            "outer/return",
+            1,
+            0,
+            0,
+            0,
+            16
+          ]
+        ],
+        "values": {},
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "child-allowances",
+      "clause": "DET.60",
+      "covers": [
+        [
+          "FR-K04",
+          "child-allowances"
+        ]
+      ],
+      "given": {
+        "limits": {
+          "steps": 20,
+          "kernel_cost": 20,
+          "memory": 100,
+          "output": 100
+        },
+        "trace": [
+          {
+            "op": "child",
+            "at": "c",
+            "limits": {
+              "steps": 2,
+              "kernel_cost": 99,
+              "memory": 99,
+              "output": 99
+            },
+            "body": [
+              {
+                "op": "tick",
+                "at": "a"
+              },
+              {
+                "op": "tick",
+                "at": "b"
+              }
+            ]
+          },
+          {
+            "op": "tick",
+            "at": "parent"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "used": {
+          "steps": 4,
+          "kernel_cost": 0,
+          "memory": 16,
+          "output": 0
+        },
+        "live_before_cleanup": 0,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "c/child",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "c/run/call",
+            1,
+            0,
+            16,
+            0,
+            0
+          ],
+          [
+            "c/run/a",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "c/run/b",
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "parent",
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "values": {},
+        "coverage": {},
+        "generators": {},
+        "children": [
+          {
+            "at": "c",
+            "requested": {
+              "steps": 2,
+              "kernel_cost": 99,
+              "memory": 99,
+              "output": 99
+            },
+            "effective": {
+              "steps": 2,
+              "kernel_cost": 20,
+              "memory": 99,
+              "output": 99
+            },
+            "outcome": "cut_off",
+            "code": "KN7:budget.steps",
+            "stop": {
+              "at": "c/run/b",
+              "phase": "steps",
+              "scope": "c"
+            },
+            "used": {
+              "steps": 2,
+              "kernel_cost": 0,
+              "memory": 16,
+              "output": 0
+            },
+            "returned_memory": 0,
+            "live_after_return": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "child-return-owner",
+      "clause": "DET.60",
+      "covers": [],
+      "given": {
+        "limits": {
+          "steps": 10,
+          "kernel_cost": 10,
+          "memory": 40,
+          "output": 10
+        },
+        "trace": [
+          {
+            "op": "child",
+            "at": "c",
+            "limits": {
+              "steps": 5,
+              "kernel_cost": 5,
+              "memory": 24,
+              "output": 5
+            },
+            "body": [
+              {
+                "op": "alloc",
+                "at": "a",
+                "name": "a",
+                "bytes": 4
+              }
+            ],
+            "returns": "a",
+            "as": "result"
+          },
+          {
+            "op": "drop",
+            "at": "parent-drop",
+            "name": "result"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "used": {
+          "steps": 5,
+          "kernel_cost": 0,
+          "memory": 20,
+          "output": 0
+        },
+        "live_before_cleanup": 0,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "c/child",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "c/run/call",
+            1,
+            0,
+            16,
+            0,
+            0
+          ],
+          [
+            "c/run/a",
+            1,
+            0,
+            4,
+            0,
+            0
+          ],
+          [
+            "c/run/return",
+            1,
+            0,
+            0,
+            0,
+            16
+          ],
+          [
+            "parent-drop",
+            1,
+            0,
+            0,
+            0,
+            4
+          ]
+        ],
+        "values": {},
+        "coverage": {},
+        "generators": {},
+        "children": [
+          {
+            "at": "c",
+            "requested": {
+              "steps": 5,
+              "kernel_cost": 5,
+              "memory": 24,
+              "output": 5
+            },
+            "effective": {
+              "steps": 5,
+              "kernel_cost": 5,
+              "memory": 24,
+              "output": 5
+            },
+            "outcome": "completed",
+            "code": null,
+            "stop": null,
+            "used": {
+              "steps": 3,
+              "kernel_cost": 0,
+              "memory": 20,
+              "output": 0
+            },
+            "returned_memory": 4,
+            "live_after_return": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "root-before-child",
+      "clause": "DET.60",
+      "covers": [],
+      "given": {
+        "limits": {
+          "steps": 3,
+          "kernel_cost": 10,
+          "memory": 40,
+          "output": 10
+        },
+        "trace": [
+          {
+            "op": "child",
+            "at": "c",
+            "limits": {
+              "steps": 10,
+              "kernel_cost": 10,
+              "memory": 40,
+              "output": 10
+            },
+            "body": [
+              {
+                "op": "tick",
+                "at": "a"
+              },
+              {
+                "op": "tick",
+                "at": "b"
+              }
+            ]
+          },
+          {
+            "op": "tick",
+            "at": "unreached"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "cut_off",
+        "code": "KN7:budget.steps",
+        "stop": {
+          "at": "c/run/b",
+          "phase": "steps",
+          "scope": "root"
+        },
+        "used": {
+          "steps": 3,
+          "kernel_cost": 0,
+          "memory": 16,
+          "output": 0
+        },
+        "live_before_cleanup": 16,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "c/child",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "c/run/call",
+            1,
+            0,
+            16,
+            0,
+            0
+          ],
+          [
+            "c/run/a",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "c/run/b",
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "values": {},
+        "coverage": {},
+        "generators": {},
+        "children": [
+          {
+            "at": "c",
+            "requested": {
+              "steps": 10,
+              "kernel_cost": 10,
+              "memory": 40,
+              "output": 10
+            },
+            "effective": {
+              "steps": 2,
+              "kernel_cost": 10,
+              "memory": 40,
+              "output": 10
+            },
+            "outcome": "cut_off",
+            "code": "KN7:budget.steps",
+            "stop": {
+              "at": "c/run/b",
+              "phase": "steps",
+              "scope": "root"
+            },
+            "used": {
+              "steps": 2,
+              "kernel_cost": 0,
+              "memory": 16,
+              "output": 0
+            },
+            "returned_memory": 0,
+            "live_after_return": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "dimension-before-scope",
+      "clause": "DET.60",
+      "covers": [],
+      "given": {
+        "limits": {
+          "steps": 10,
+          "kernel_cost": 10,
+          "memory": 20,
+          "output": 10
+        },
+        "trace": [
+          {
+            "op": "child",
+            "at": "c",
+            "limits": {
+              "steps": 8,
+              "kernel_cost": 2,
+              "memory": 20,
+              "output": 10
+            },
+            "body": [
+              {
+                "op": "kernel",
+                "at": "k",
+                "items": 1,
+                "result_bytes": 10,
+                "name": "x"
+              }
+            ]
+          },
+          {
+            "op": "tick",
+            "at": "parent"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "used": {
+          "steps": 4,
+          "kernel_cost": 0,
+          "memory": 16,
+          "output": 0
+        },
+        "live_before_cleanup": 0,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "c/child",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "c/run/call",
+            1,
+            0,
+            16,
+            0,
+            0
+          ],
+          [
+            "c/run/k",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "parent",
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "values": {},
+        "coverage": {},
+        "generators": {},
+        "children": [
+          {
+            "at": "c",
+            "requested": {
+              "steps": 8,
+              "kernel_cost": 2,
+              "memory": 20,
+              "output": 10
+            },
+            "effective": {
+              "steps": 8,
+              "kernel_cost": 2,
+              "memory": 20,
+              "output": 10
+            },
+            "outcome": "cut_off",
+            "code": "KN7:budget.kernel_cost",
+            "stop": {
+              "at": "c/run/k",
+              "phase": "kernel_cost",
+              "scope": "c"
+            },
+            "used": {
+              "steps": 2,
+              "kernel_cost": 0,
+              "memory": 16,
+              "output": 0
+            },
+            "returned_memory": 0,
+            "live_after_return": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "generator",
+      "clause": "DET.61",
+      "covers": [
+        [
+          "FR-K04",
+          "generator"
+        ]
+      ],
+      "given": {
+        "limits": {
+          "steps": 4,
+          "kernel_cost": 65,
+          "memory": 200,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "rng_init",
+            "at": "init",
+            "seed": "0000000000000000000000000000000000000000000000000000000000000000",
+            "path": [
+              "root"
+            ],
+            "name": "g"
+          },
+          {
+            "op": "rng_draw",
+            "at": "draw-0",
+            "generator": "g",
+            "name": "a"
+          },
+          {
+            "op": "rng_draw",
+            "at": "draw-1",
+            "generator": "g",
+            "name": "b"
+          },
+          {
+            "op": "rng_draw",
+            "at": "denied",
+            "generator": "g",
+            "name": "c"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "cut_off",
+        "code": "KN7:budget.kernel_cost",
+        "stop": {
+          "at": "denied",
+          "phase": "kernel_cost",
+          "scope": "root"
+        },
+        "used": {
+          "steps": 4,
+          "kernel_cost": 63,
+          "memory": 107,
+          "output": 0
+        },
+        "live_before_cleanup": 107,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "init",
+            1,
+            57,
+            41,
+            0,
+            0
+          ],
+          [
+            "draw-0",
+            1,
+            3,
+            33,
+            0,
+            0
+          ],
+          [
+            "draw-1",
+            1,
+            3,
+            33,
+            0,
+            0
+          ],
+          [
+            "denied",
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "values": {
+          "draw-0": "d5d5a97e52cc923a9a15a6146b7951297d9c2eb83bf5e83e5ff720802de59ea8",
+          "draw-1": "a1f13519c6ec3b21059fbfb78ef679df6cadd19039a6f7014b45dc90fc5b488a"
+        },
+        "coverage": {},
+        "generators": {
+          "g": {
+            "key": "45bf5b0d0ffb7fd089661e33f10d7dfefb17ca25b3420c186403c70a7224f6de",
+            "counter": 2
+          }
+        },
+        "children": []
+      }
+    },
+    {
+      "id": "generator-child-paths",
+      "clause": "DET.61",
+      "covers": [],
+      "given": {
+        "limits": {
+          "steps": 4,
+          "kernel_cost": 130,
+          "memory": 148,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "rng_init",
+            "at": "init-0",
+            "seed": "0000000000000000000000000000000000000000000000000000000000000000",
+            "path": [
+              "root",
+              "0"
+            ],
+            "name": "g0"
+          },
+          {
+            "op": "rng_draw",
+            "at": "draw-0",
+            "generator": "g0",
+            "name": "a"
+          },
+          {
+            "op": "rng_init",
+            "at": "init-1",
+            "seed": "0000000000000000000000000000000000000000000000000000000000000000",
+            "path": [
+              "root",
+              "1"
+            ],
+            "name": "g1"
+          },
+          {
+            "op": "rng_draw",
+            "at": "draw-1",
+            "generator": "g1",
+            "name": "b"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "used": {
+          "steps": 4,
+          "kernel_cost": 130,
+          "memory": 148,
+          "output": 0
+        },
+        "live_before_cleanup": 148,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "init-0",
+            1,
+            62,
+            41,
+            0,
+            0
+          ],
+          [
+            "draw-0",
+            1,
+            3,
+            33,
+            0,
+            0
+          ],
+          [
+            "init-1",
+            1,
+            62,
+            41,
+            0,
+            0
+          ],
+          [
+            "draw-1",
+            1,
+            3,
+            33,
+            0,
+            0
+          ]
+        ],
+        "values": {
+          "draw-0": "5c6c6a305369f2d6c62a1fdb9a2b7ec27debfab79b4a3e160b23c15c7aa4e36d",
+          "draw-1": "5255665959b0b93c2de56c375aef54a30749a3974416aa4fd0c9ed205038d000"
+        },
+        "coverage": {},
+        "generators": {
+          "g0": {
+            "key": "61acb1a52abee4e95687f7c1a293995eac1c5ba70307664e637f79e940a70540",
+            "counter": 1
+          },
+          "g1": {
+            "key": "e86382f3370f92899588d48dad48ce4a603ea2e286fc503ff4dcb78eced42cbc",
+            "counter": 1
+          }
+        },
+        "children": []
+      }
+    },
+    {
+      "id": "text-comparison",
+      "clause": "DET.62",
+      "covers": [
+        [
+          "FR-K04",
+          "text-comparison"
+        ]
+      ],
+      "given": {
+        "limits": {
+          "steps": 5,
+          "kernel_cost": 12,
+          "memory": 0,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "text_compare",
+            "at": "normalization",
+            "a": "\u00e9",
+            "b": "e\u0301"
+          },
+          {
+            "op": "text_compare",
+            "at": "scalar-order",
+            "a": "\ud800\udc00",
+            "b": "\ue000"
+          },
+          {
+            "op": "text_compare",
+            "at": "prefix",
+            "a": "a",
+            "b": "ab"
+          },
+          {
+            "op": "text_compare",
+            "at": "case",
+            "a": "A",
+            "b": "a"
+          },
+          {
+            "op": "text_compare",
+            "at": "equal",
+            "a": "\u00e9",
+            "b": "\u00e9"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "used": {
+          "steps": 5,
+          "kernel_cost": 12,
+          "memory": 0,
+          "output": 0
+        },
+        "live_before_cleanup": 0,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "normalization",
+            1,
+            3,
+            0,
+            0,
+            0
+          ],
+          [
+            "scalar-order",
+            1,
+            2,
+            0,
+            0,
+            0
+          ],
+          [
+            "prefix",
+            1,
+            3,
+            0,
+            0,
+            0
+          ],
+          [
+            "case",
+            1,
+            2,
+            0,
+            0,
+            0
+          ],
+          [
+            "equal",
+            1,
+            2,
+            0,
+            0,
+            0
+          ]
+        ],
+        "values": {
+          "normalization": 1,
+          "scalar-order": 1,
+          "prefix": -1,
+          "case": -1,
+          "equal": 0
+        },
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "decode-scalar",
+      "clause": "DET.62",
+      "covers": [],
+      "given": {
+        "limits": {
+          "steps": 1,
+          "kernel_cost": 4,
+          "memory": 16,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "text_decode",
+            "at": "decode",
+            "hex": "f0908080",
+            "name": "t"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "used": {
+          "steps": 1,
+          "kernel_cost": 4,
+          "memory": 16,
+          "output": 0
+        },
+        "live_before_cleanup": 4,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "decode",
+            1,
+            4,
+            16,
+            0,
+            12
+          ]
+        ],
+        "values": {
+          "decode": "\ud800\udc00"
+        },
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "decode-surrogate",
+      "clause": "DET.62",
+      "covers": [],
+      "given": {
+        "limits": {
+          "steps": 1,
+          "kernel_cost": 3,
+          "memory": 12,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "text_decode",
+            "at": "decode",
+            "hex": "eda080",
+            "name": "t"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "error",
+        "code": "LG4:input.text_scalar_invalid",
+        "stop": {
+          "at": "decode",
+          "phase": "effect",
+          "scope": "root"
+        },
+        "used": {
+          "steps": 1,
+          "kernel_cost": 3,
+          "memory": 12,
+          "output": 0
+        },
+        "live_before_cleanup": 12,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "decode",
+            1,
+            3,
+            12,
+            0,
+            0
+          ]
+        ],
+        "values": {},
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "approx-branch-true",
+      "clause": "DET.64",
+      "covers": [
+        [
+          "FR-B01",
+          "approx-branch-charges"
+        ]
+      ],
+      "given": {
+        "limits": {
+          "steps": 3,
+          "kernel_cost": 0,
+          "memory": 0,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "display_if",
+            "at": "display",
+            "condition": true,
+            "then": [
+              {
+                "op": "tick",
+                "at": "a"
+              },
+              {
+                "op": "tick",
+                "at": "b"
+              }
+            ],
+            "else": [
+              {
+                "op": "tick",
+                "at": "a"
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "used": {
+          "steps": 3,
+          "kernel_cost": 0,
+          "memory": 0,
+          "output": 0
+        },
+        "live_before_cleanup": 0,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "display",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "display/then/a",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "display/then/b",
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "values": {},
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "approx-branch-false",
+      "clause": "DET.64",
+      "covers": [],
+      "given": {
+        "limits": {
+          "steps": 2,
+          "kernel_cost": 0,
+          "memory": 0,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "display_if",
+            "at": "display",
+            "condition": false,
+            "then": [
+              {
+                "op": "tick",
+                "at": "a"
+              },
+              {
+                "op": "tick",
+                "at": "b"
+              }
+            ],
+            "else": [
+              {
+                "op": "tick",
+                "at": "a"
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "used": {
+          "steps": 2,
+          "kernel_cost": 0,
+          "memory": 0,
+          "output": 0
+        },
+        "live_before_cleanup": 0,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "display",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "display/else/a",
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "values": {},
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "abstract-trace-charges",
+      "clause": "DET.55",
+      "covers": [
+        [
+          "FR-B02",
+          "abstract-trace-charges"
+        ]
+      ],
+      "given": {
+        "limits": {
+          "steps": 16,
+          "kernel_cost": 6,
+          "memory": 16,
+          "output": 1
+        },
+        "trace": [
+          {
+            "op": "loop",
+            "at": "loop",
+            "count": 2,
+            "body": [
+              {
+                "op": "call",
+                "at": "f",
+                "body": [
+                  {
+                    "op": "tick",
+                    "at": "predicate"
+                  },
+                  {
+                    "op": "assert",
+                    "at": "assert",
+                    "value": true
+                  },
+                  {
+                    "op": "flow_check",
+                    "at": "flow",
+                    "value": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "op": "kernel",
+            "at": "batch",
+            "items": 2,
+            "result_bytes": 4,
+            "scratch": 2,
+            "name": "x"
+          },
+          {
+            "op": "emit",
+            "at": "emit",
+            "value": 0
+          },
+          {
+            "op": "drop",
+            "at": "drop",
+            "name": "x"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "used": {
+          "steps": 16,
+          "kernel_cost": 6,
+          "memory": 16,
+          "output": 1
+        },
+        "live_before_cleanup": 0,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "loop/test:0",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "loop/body:0/f/call",
+            1,
+            0,
+            16,
+            0,
+            0
+          ],
+          [
+            "loop/body:0/f/predicate",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "loop/body:0/f/assert",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "loop/body:0/f/flow",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "loop/body:0/f/return",
+            1,
+            0,
+            0,
+            0,
+            16
+          ],
+          [
+            "loop/test:1",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "loop/body:1/f/call",
+            1,
+            0,
+            16,
+            0,
+            0
+          ],
+          [
+            "loop/body:1/f/predicate",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "loop/body:1/f/assert",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "loop/body:1/f/flow",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "loop/body:1/f/return",
+            1,
+            0,
+            0,
+            0,
+            16
+          ],
+          [
+            "loop/test:2",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "batch",
+            1,
+            5,
+            6,
+            0,
+            2
+          ],
+          [
+            "emit",
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            "drop",
+            1,
+            0,
+            0,
+            0,
+            4
+          ]
+        ],
+        "values": {
+          "emit": "30"
+        },
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "final-loop-test",
+      "clause": "DET.55",
+      "covers": [],
+      "given": {
+        "limits": {
+          "steps": 2,
+          "kernel_cost": 0,
+          "memory": 0,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "loop",
+            "at": "loop",
+            "count": 1,
+            "body": [
+              {
+                "op": "tick",
+                "at": "body"
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "cut_off",
+        "code": "KN7:budget.steps",
+        "stop": {
+          "at": "loop/test:1",
+          "phase": "steps",
+          "scope": "root"
+        },
+        "used": {
+          "steps": 2,
+          "kernel_cost": 0,
+          "memory": 0,
+          "output": 0
+        },
+        "live_before_cleanup": 0,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "loop/test:0",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "loop/body:0/body",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "loop/test:1",
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "values": {},
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "oversized-arithmetic",
+      "clause": "DET.57",
+      "covers": [
+        [
+          "FR-B02",
+          "oversized-arithmetic"
+        ]
+      ],
+      "given": {
+        "limits": {
+          "steps": 1,
+          "kernel_cost": 120,
+          "memory": 22,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "mul",
+            "at": "mul",
+            "a": "1208925819614629174706176",
+            "b": "1208925819614629174706176",
+            "name": "x"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "cut_off",
+        "code": "KN7:budget.kernel_cost",
+        "stop": {
+          "at": "mul",
+          "phase": "kernel_cost",
+          "scope": "root"
+        },
+        "used": {
+          "steps": 1,
+          "kernel_cost": 0,
+          "memory": 0,
+          "output": 0
+        },
+        "live_before_cleanup": 0,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "mul",
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "values": {},
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "oversized-admitted",
+      "clause": "DET.57",
+      "covers": [],
+      "given": {
+        "limits": {
+          "steps": 2,
+          "kernel_cost": 121,
+          "memory": 22,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "mul",
+            "at": "mul",
+            "a": "1208925819614629174706176",
+            "b": "1208925819614629174706176",
+            "name": "x"
+          },
+          {
+            "op": "drop",
+            "at": "drop",
+            "name": "x"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "used": {
+          "steps": 2,
+          "kernel_cost": 121,
+          "memory": 22,
+          "output": 0
+        },
+        "live_before_cleanup": 0,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "mul",
+            1,
+            121,
+            22,
+            0,
+            0
+          ],
+          [
+            "drop",
+            1,
+            0,
+            0,
+            0,
+            22
+          ]
+        ],
+        "values": {
+          "mul": 1461501637330902918203684832716283019655932542976
+        },
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "arithmetic-reservation",
+      "clause": "DET.57",
+      "covers": [],
+      "given": {
+        "limits": {
+          "steps": 2,
+          "kernel_cost": 11,
+          "memory": 12,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "mul",
+            "at": "mul",
+            "a": "0",
+            "b": "1208925819614629174706176",
+            "name": "x"
+          },
+          {
+            "op": "drop",
+            "at": "drop",
+            "name": "x"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "used": {
+          "steps": 2,
+          "kernel_cost": 11,
+          "memory": 12,
+          "output": 0
+        },
+        "live_before_cleanup": 0,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "mul",
+            1,
+            11,
+            12,
+            0,
+            10
+          ],
+          [
+            "drop",
+            1,
+            0,
+            0,
+            0,
+            2
+          ]
+        ],
+        "values": {
+          "mul": 0
+        },
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "streaming",
+      "clause": "DET.63",
+      "covers": [
+        [
+          "FR-B02",
+          "streaming"
+        ]
+      ],
+      "given": {
+        "limits": {
+          "steps": 4,
+          "kernel_cost": 13,
+          "memory": 6,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "stream",
+            "at": "word",
+            "length": 5,
+            "chunk_size": 2,
+            "cursor_bytes": 2,
+            "letter_bytes": 2,
+            "name": "cursor",
+            "transport_chunks": [
+              1,
+              3,
+              1
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "cut_off",
+        "code": "KN7:budget.kernel_cost",
+        "stop": {
+          "at": "word/chunk:4",
+          "phase": "kernel_cost",
+          "scope": "root"
+        },
+        "used": {
+          "steps": 4,
+          "kernel_cost": 13,
+          "memory": 6,
+          "output": 0
+        },
+        "live_before_cleanup": 2,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "word/open",
+            1,
+            1,
+            2,
+            0,
+            0
+          ],
+          [
+            "word/chunk:0",
+            1,
+            6,
+            4,
+            0,
+            4
+          ],
+          [
+            "word/chunk:2",
+            1,
+            6,
+            4,
+            0,
+            4
+          ],
+          [
+            "word/chunk:4",
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "values": {},
+        "coverage": {
+          "word": 4
+        },
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "streaming-complete-split",
+      "clause": "DET.63",
+      "covers": [],
+      "given": {
+        "limits": {
+          "steps": 5,
+          "kernel_cost": 16,
+          "memory": 6,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "stream",
+            "at": "word",
+            "length": 5,
+            "chunk_size": 2,
+            "cursor_bytes": 2,
+            "letter_bytes": 2,
+            "name": "cursor",
+            "transport_chunks": [
+              1,
+              3,
+              1
+            ]
+          },
+          {
+            "op": "drop",
+            "at": "close",
+            "name": "cursor"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "used": {
+          "steps": 5,
+          "kernel_cost": 16,
+          "memory": 6,
+          "output": 0
+        },
+        "live_before_cleanup": 0,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "word/open",
+            1,
+            1,
+            2,
+            0,
+            0
+          ],
+          [
+            "word/chunk:0",
+            1,
+            6,
+            4,
+            0,
+            4
+          ],
+          [
+            "word/chunk:2",
+            1,
+            6,
+            4,
+            0,
+            4
+          ],
+          [
+            "word/chunk:4",
+            1,
+            3,
+            2,
+            0,
+            2
+          ],
+          [
+            "close",
+            1,
+            0,
+            0,
+            0,
+            2
+          ]
+        ],
+        "values": {},
+        "coverage": {
+          "word": 5
+        },
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "streaming-complete-coalesced",
+      "clause": "DET.63",
+      "covers": [],
+      "given": {
+        "limits": {
+          "steps": 5,
+          "kernel_cost": 16,
+          "memory": 6,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "stream",
+            "at": "word",
+            "length": 5,
+            "chunk_size": 2,
+            "cursor_bytes": 2,
+            "letter_bytes": 2,
+            "name": "cursor",
+            "transport_chunks": [
+              5
+            ]
+          },
+          {
+            "op": "drop",
+            "at": "close",
+            "name": "cursor"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "used": {
+          "steps": 5,
+          "kernel_cost": 16,
+          "memory": 6,
+          "output": 0
+        },
+        "live_before_cleanup": 0,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "word/open",
+            1,
+            1,
+            2,
+            0,
+            0
+          ],
+          [
+            "word/chunk:0",
+            1,
+            6,
+            4,
+            0,
+            4
+          ],
+          [
+            "word/chunk:2",
+            1,
+            6,
+            4,
+            0,
+            4
+          ],
+          [
+            "word/chunk:4",
+            1,
+            3,
+            2,
+            0,
+            2
+          ],
+          [
+            "close",
+            1,
+            0,
+            0,
+            0,
+            2
+          ]
+        ],
+        "values": {},
+        "coverage": {
+          "word": 5
+        },
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "output-retained-at-cutoff",
+      "clause": "DET.59",
+      "covers": [],
+      "given": {
+        "limits": {
+          "steps": 2,
+          "kernel_cost": 9,
+          "memory": 8,
+          "output": 8
+        },
+        "trace": [
+          {
+            "op": "emit",
+            "at": "first",
+            "value": "\u00e9"
+          },
+          {
+            "op": "emit",
+            "at": "denied",
+            "value": 0
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "cut_off",
+        "code": "KN7:budget.output",
+        "stop": {
+          "at": "denied",
+          "phase": "output",
+          "scope": "root"
+        },
+        "used": {
+          "steps": 2,
+          "kernel_cost": 8,
+          "memory": 8,
+          "output": 8
+        },
+        "live_before_cleanup": 0,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "first",
+            1,
+            8,
+            8,
+            8,
+            8
+          ],
+          [
+            "denied",
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "values": {
+          "first": "225c753030653922"
+        },
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "output-equality",
+      "clause": "DET.59",
+      "covers": [],
+      "given": {
+        "limits": {
+          "steps": 1,
+          "kernel_cost": 8,
+          "memory": 8,
+          "output": 8
+        },
+        "trace": [
+          {
+            "op": "emit",
+            "at": "emit",
+            "value": "\u00e9"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "used": {
+          "steps": 1,
+          "kernel_cost": 8,
+          "memory": 8,
+          "output": 8
+        },
+        "live_before_cleanup": 0,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "emit",
+            1,
+            8,
+            8,
+            8,
+            8
+          ]
+        ],
+        "values": {
+          "emit": "225c753030653922"
+        },
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "pointwise-failure",
+      "clause": "DET.55",
+      "covers": [],
+      "given": {
+        "limits": {
+          "steps": 2,
+          "kernel_cost": 0,
+          "memory": 0,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "tick",
+            "at": "predicate"
+          },
+          {
+            "op": "assert",
+            "at": "assert",
+            "value": false
+          },
+          {
+            "op": "tick",
+            "at": "unreached"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "error",
+        "code": "LG4:input.pointwise_failed",
+        "stop": {
+          "at": "assert",
+          "phase": "effect",
+          "scope": "root"
+        },
+        "used": {
+          "steps": 2,
+          "kernel_cost": 0,
+          "memory": 0,
+          "output": 0
+        },
+        "live_before_cleanup": 0,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "predicate",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "assert",
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "values": {},
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "nested-child-ledger",
+      "clause": "DET.60",
+      "covers": [],
+      "given": {
+        "limits": {
+          "steps": 20,
+          "kernel_cost": 20,
+          "memory": 100,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "child",
+            "at": "outer",
+            "limits": {
+              "steps": 10,
+              "kernel_cost": 10,
+              "memory": 60,
+              "output": 0
+            },
+            "body": [
+              {
+                "op": "child",
+                "at": "inner",
+                "limits": {
+                  "steps": 4,
+                  "kernel_cost": 4,
+                  "memory": 20,
+                  "output": 0
+                },
+                "body": [
+                  {
+                    "op": "tick",
+                    "at": "work"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "op": "tick",
+            "at": "parent"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "used": {
+          "steps": 8,
+          "kernel_cost": 0,
+          "memory": 32,
+          "output": 0
+        },
+        "live_before_cleanup": 0,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "outer/child",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "outer/run/call",
+            1,
+            0,
+            16,
+            0,
+            0
+          ],
+          [
+            "outer/run/inner/child",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "outer/run/inner/run/call",
+            1,
+            0,
+            16,
+            0,
+            0
+          ],
+          [
+            "outer/run/inner/run/work",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "outer/run/inner/run/return",
+            1,
+            0,
+            0,
+            0,
+            16
+          ],
+          [
+            "outer/run/return",
+            1,
+            0,
+            0,
+            0,
+            16
+          ],
+          [
+            "parent",
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "values": {},
+        "coverage": {},
+        "generators": {},
+        "children": [
+          {
+            "at": "outer/run/inner",
+            "requested": {
+              "steps": 4,
+              "kernel_cost": 4,
+              "memory": 20,
+              "output": 0
+            },
+            "effective": {
+              "steps": 4,
+              "kernel_cost": 4,
+              "memory": 20,
+              "output": 0
+            },
+            "outcome": "completed",
+            "code": null,
+            "stop": null,
+            "used": {
+              "steps": 3,
+              "kernel_cost": 0,
+              "memory": 16,
+              "output": 0
+            },
+            "returned_memory": 0,
+            "live_after_return": 0
+          },
+          {
+            "at": "outer",
+            "requested": {
+              "steps": 10,
+              "kernel_cost": 10,
+              "memory": 60,
+              "output": 0
+            },
+            "effective": {
+              "steps": 10,
+              "kernel_cost": 10,
+              "memory": 60,
+              "output": 0
+            },
+            "outcome": "completed",
+            "code": null,
+            "stop": null,
+            "used": {
+              "steps": 6,
+              "kernel_cost": 0,
+              "memory": 32,
+              "output": 0
+            },
+            "returned_memory": 0,
+            "live_after_return": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "display-stop-source-range",
+      "clause": "DET.56",
+      "covers": [],
+      "given": {
+        "limits": {
+          "steps": 2,
+          "kernel_cost": 0,
+          "memory": 0,
+          "output": 0
+        },
+        "source_text": "a\ud83d\ude00b",
+        "source": {
+          "source": "6fba5b2ea783ded096fc2444d540ffbdf49168df30993b155b7efb683313f110",
+          "start": 1,
+          "end": 5
+        },
+        "trace": [
+          {
+            "op": "display_if",
+            "at": "display",
+            "condition": true,
+            "then": [
+              {
+                "op": "tick",
+                "at": "a"
+              },
+              {
+                "op": "tick",
+                "at": "b"
+              }
+            ],
+            "else": []
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "cut_off",
+        "code": "KN7:budget.steps",
+        "stop": {
+          "at": "display/then/b",
+          "phase": "steps",
+          "scope": "root",
+          "source": {
+            "source": "6fba5b2ea783ded096fc2444d540ffbdf49168df30993b155b7efb683313f110",
+            "start": 1,
+            "end": 5
+          }
+        },
+        "used": {
+          "steps": 2,
+          "kernel_cost": 0,
+          "memory": 0,
+          "output": 0
+        },
+        "live_before_cleanup": 0,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "display",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "display/then/a",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "display/then/b",
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "values": {},
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "generator-alias-cursor",
+      "clause": "DET.61",
+      "covers": [],
+      "given": {
+        "limits": {
+          "steps": 4,
+          "kernel_cost": 63,
+          "memory": 148,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "rng_init",
+            "at": "init",
+            "name": "g",
+            "seed": "0000000000000000000000000000000000000000000000000000000000000000",
+            "path": [
+              "root"
+            ]
+          },
+          {
+            "op": "alias",
+            "at": "alias",
+            "source": "g",
+            "name": "h"
+          },
+          {
+            "op": "rng_draw",
+            "at": "draw-g",
+            "generator": "g",
+            "name": "a"
+          },
+          {
+            "op": "rng_draw",
+            "at": "draw-h",
+            "generator": "h",
+            "name": "b"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "used": {
+          "steps": 4,
+          "kernel_cost": 63,
+          "memory": 148,
+          "output": 0
+        },
+        "live_before_cleanup": 148,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "init",
+            1,
+            57,
+            41,
+            0,
+            0
+          ],
+          [
+            "alias",
+            1,
+            0,
+            41,
+            0,
+            0
+          ],
+          [
+            "draw-g",
+            1,
+            3,
+            33,
+            0,
+            0
+          ],
+          [
+            "draw-h",
+            1,
+            3,
+            33,
+            0,
+            0
+          ]
+        ],
+        "values": {
+          "draw-g": "d5d5a97e52cc923a9a15a6146b7951297d9c2eb83bf5e83e5ff720802de59ea8",
+          "draw-h": "d5d5a97e52cc923a9a15a6146b7951297d9c2eb83bf5e83e5ff720802de59ea8"
+        },
+        "coverage": {},
+        "generators": {
+          "g": {
+            "key": "45bf5b0d0ffb7fd089661e33f10d7dfefb17ca25b3420c186403c70a7224f6de",
+            "counter": 1
+          },
+          "h": {
+            "key": "45bf5b0d0ffb7fd089661e33f10d7dfefb17ca25b3420c186403c70a7224f6de",
+            "counter": 1
+          }
+        },
+        "children": []
+      }
+    },
+    {
+      "id": "form2-equal-limit",
+      "clause": "DET.64",
+      "covers": [
+        [
+          "S2-04",
+          "form2_equal_limit_and_one_short"
+        ]
+      ],
+      "given": {
+        "execution_contract": "lp1-exec-region-draft-1",
+        "limits": {
+          "steps": 6,
+          "kernel_cost": 0,
+          "memory": 4,
+          "output": 0
+        },
+        "source_text": "region \ud83d\ude00\npredicate\nthen_a\nthen_b\nelse_a\nexit\npublish\n",
+        "source_map": {
+          "region/display_enter": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 0,
+            "end": 48
+          },
+          "region/predicate": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 12,
+            "end": 21
+          },
+          "region/display_branch": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 12,
+            "end": 43
+          },
+          "region/display_branch/then/a": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 22,
+            "end": 28
+          },
+          "region/display_branch/then/b": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 29,
+            "end": 35
+          },
+          "region/display_branch/else/a": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 36,
+            "end": 42
+          },
+          "region/display_exit": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 0,
+            "end": 48
+          },
+          "publish": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 48,
+            "end": 55
+          }
+        },
+        "trace": [
+          {
+            "op": "display_region",
+            "at": "region",
+            "body": [
+              {
+                "op": "tick",
+                "at": "predicate"
+              },
+              {
+                "op": "display_branch",
+                "at": "display_branch",
+                "condition": true,
+                "then": [
+                  {
+                    "op": "alloc",
+                    "at": "a",
+                    "name": "colour",
+                    "bytes": 4
+                  },
+                  {
+                    "op": "tick",
+                    "at": "b"
+                  }
+                ],
+                "else": [
+                  {
+                    "op": "alloc",
+                    "at": "a",
+                    "name": "colour",
+                    "bytes": 4
+                  }
+                ]
+              }
+            ],
+            "returns": "colour",
+            "as": "colour"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "used": {
+          "steps": 6,
+          "kernel_cost": 0,
+          "memory": 4,
+          "output": 0
+        },
+        "live_before_cleanup": 4,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "region/display_enter",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "region/predicate",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "region/display_branch",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "region/display_branch/then/a",
+            1,
+            0,
+            4,
+            0,
+            0
+          ],
+          [
+            "region/display_branch/then/b",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "region/display_exit",
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "values": {},
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "form2-one-short",
+      "clause": "DET.64",
+      "covers": [
+        [
+          "S2-04",
+          "form2_equal_limit_and_one_short"
+        ]
+      ],
+      "given": {
+        "execution_contract": "lp1-exec-region-draft-1",
+        "limits": {
+          "steps": 5,
+          "kernel_cost": 0,
+          "memory": 4,
+          "output": 0
+        },
+        "source_text": "region \ud83d\ude00\npredicate\nthen_a\nthen_b\nelse_a\nexit\npublish\n",
+        "source_map": {
+          "region/display_enter": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 0,
+            "end": 48
+          },
+          "region/predicate": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 12,
+            "end": 21
+          },
+          "region/display_branch": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 12,
+            "end": 43
+          },
+          "region/display_branch/then/a": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 22,
+            "end": 28
+          },
+          "region/display_branch/then/b": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 29,
+            "end": 35
+          },
+          "region/display_branch/else/a": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 36,
+            "end": 42
+          },
+          "region/display_exit": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 0,
+            "end": 48
+          },
+          "publish": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 48,
+            "end": 55
+          }
+        },
+        "trace": [
+          {
+            "op": "display_region",
+            "at": "region",
+            "body": [
+              {
+                "op": "tick",
+                "at": "predicate"
+              },
+              {
+                "op": "display_branch",
+                "at": "display_branch",
+                "condition": true,
+                "then": [
+                  {
+                    "op": "alloc",
+                    "at": "a",
+                    "name": "colour",
+                    "bytes": 4
+                  },
+                  {
+                    "op": "tick",
+                    "at": "b"
+                  }
+                ],
+                "else": [
+                  {
+                    "op": "alloc",
+                    "at": "a",
+                    "name": "colour",
+                    "bytes": 4
+                  }
+                ]
+              }
+            ],
+            "returns": "colour",
+            "as": "colour"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "cut_off",
+        "code": "KN7:budget.steps",
+        "stop": {
+          "at": "region/display_exit",
+          "phase": "steps",
+          "scope": "root",
+          "source": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 0,
+            "end": 48
+          }
+        },
+        "used": {
+          "steps": 5,
+          "kernel_cost": 0,
+          "memory": 4,
+          "output": 0
+        },
+        "live_before_cleanup": 4,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "region/display_enter",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "region/predicate",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "region/display_branch",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "region/display_branch/then/a",
+            1,
+            0,
+            4,
+            0,
+            0
+          ],
+          [
+            "region/display_branch/then/b",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "region/display_exit",
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "values": {},
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "form2-untaken-branch",
+      "clause": "DET.64",
+      "covers": [],
+      "given": {
+        "execution_contract": "lp1-exec-region-draft-1",
+        "limits": {
+          "steps": 6,
+          "kernel_cost": 0,
+          "memory": 4,
+          "output": 0
+        },
+        "source_text": "region \ud83d\ude00\npredicate\nthen_a\nthen_b\nelse_a\nexit\npublish\n",
+        "source_map": {
+          "region/display_enter": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 0,
+            "end": 48
+          },
+          "region/predicate": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 12,
+            "end": 21
+          },
+          "region/display_branch": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 12,
+            "end": 43
+          },
+          "region/display_branch/then/a": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 22,
+            "end": 28
+          },
+          "region/display_branch/then/b": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 29,
+            "end": 35
+          },
+          "region/display_branch/else/a": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 36,
+            "end": 42
+          },
+          "region/display_exit": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 0,
+            "end": 48
+          },
+          "publish": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 48,
+            "end": 55
+          }
+        },
+        "trace": [
+          {
+            "op": "display_region",
+            "at": "region",
+            "body": [
+              {
+                "op": "tick",
+                "at": "predicate"
+              },
+              {
+                "op": "display_branch",
+                "at": "display_branch",
+                "condition": false,
+                "then": [
+                  {
+                    "op": "alloc",
+                    "at": "a",
+                    "name": "colour",
+                    "bytes": 4
+                  },
+                  {
+                    "op": "tick",
+                    "at": "b"
+                  }
+                ],
+                "else": [
+                  {
+                    "op": "alloc",
+                    "at": "a",
+                    "name": "colour",
+                    "bytes": 4
+                  }
+                ]
+              }
+            ],
+            "returns": "colour",
+            "as": "colour"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "used": {
+          "steps": 5,
+          "kernel_cost": 0,
+          "memory": 4,
+          "output": 0
+        },
+        "live_before_cleanup": 4,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "region/display_enter",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "region/predicate",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "region/display_branch",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "region/display_branch/else/a",
+            1,
+            0,
+            4,
+            0,
+            0
+          ],
+          [
+            "region/display_exit",
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "values": {},
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "form2-publication-equality",
+      "clause": "DET.64",
+      "covers": [],
+      "given": {
+        "execution_contract": "lp1-exec-region-draft-1",
+        "limits": {
+          "steps": 7,
+          "kernel_cost": 4,
+          "memory": 8,
+          "output": 4
+        },
+        "source_text": "region \ud83d\ude00\npredicate\nthen_a\nthen_b\nelse_a\nexit\npublish\n",
+        "source_map": {
+          "region/display_enter": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 0,
+            "end": 48
+          },
+          "region/predicate": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 12,
+            "end": 21
+          },
+          "region/display_branch": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 12,
+            "end": 43
+          },
+          "region/display_branch/then/a": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 22,
+            "end": 28
+          },
+          "region/display_branch/then/b": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 29,
+            "end": 35
+          },
+          "region/display_branch/else/a": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 36,
+            "end": 42
+          },
+          "region/display_exit": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 0,
+            "end": 48
+          },
+          "publish": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 48,
+            "end": 55
+          }
+        },
+        "trace": [
+          {
+            "op": "display_region",
+            "at": "region",
+            "body": [
+              {
+                "op": "tick",
+                "at": "predicate"
+              },
+              {
+                "op": "display_branch",
+                "at": "display_branch",
+                "condition": true,
+                "then": [
+                  {
+                    "op": "alloc",
+                    "at": "a",
+                    "name": "colour",
+                    "bytes": 4
+                  },
+                  {
+                    "op": "tick",
+                    "at": "b"
+                  }
+                ],
+                "else": [
+                  {
+                    "op": "alloc",
+                    "at": "a",
+                    "name": "colour",
+                    "bytes": 4
+                  }
+                ]
+              }
+            ],
+            "returns": "colour",
+            "as": "colour"
+          },
+          {
+            "op": "emit",
+            "at": "publish",
+            "value": 1.25
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "used": {
+          "steps": 7,
+          "kernel_cost": 4,
+          "memory": 8,
+          "output": 4
+        },
+        "live_before_cleanup": 4,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "region/display_enter",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "region/predicate",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "region/display_branch",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "region/display_branch/then/a",
+            1,
+            0,
+            4,
+            0,
+            0
+          ],
+          [
+            "region/display_branch/then/b",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "region/display_exit",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "publish",
+            1,
+            4,
+            4,
+            4,
+            4
+          ]
+        ],
+        "values": {
+          "publish": "312e3235"
+        },
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "form2-publication-output-cutoff",
+      "clause": "DET.64",
+      "covers": [],
+      "given": {
+        "execution_contract": "lp1-exec-region-draft-1",
+        "limits": {
+          "steps": 7,
+          "kernel_cost": 4,
+          "memory": 8,
+          "output": 3
+        },
+        "source_text": "region \ud83d\ude00\npredicate\nthen_a\nthen_b\nelse_a\nexit\npublish\n",
+        "source_map": {
+          "region/display_enter": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 0,
+            "end": 48
+          },
+          "region/predicate": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 12,
+            "end": 21
+          },
+          "region/display_branch": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 12,
+            "end": 43
+          },
+          "region/display_branch/then/a": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 22,
+            "end": 28
+          },
+          "region/display_branch/then/b": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 29,
+            "end": 35
+          },
+          "region/display_branch/else/a": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 36,
+            "end": 42
+          },
+          "region/display_exit": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 0,
+            "end": 48
+          },
+          "publish": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 48,
+            "end": 55
+          }
+        },
+        "trace": [
+          {
+            "op": "display_region",
+            "at": "region",
+            "body": [
+              {
+                "op": "tick",
+                "at": "predicate"
+              },
+              {
+                "op": "display_branch",
+                "at": "display_branch",
+                "condition": true,
+                "then": [
+                  {
+                    "op": "alloc",
+                    "at": "a",
+                    "name": "colour",
+                    "bytes": 4
+                  },
+                  {
+                    "op": "tick",
+                    "at": "b"
+                  }
+                ],
+                "else": [
+                  {
+                    "op": "alloc",
+                    "at": "a",
+                    "name": "colour",
+                    "bytes": 4
+                  }
+                ]
+              }
+            ],
+            "returns": "colour",
+            "as": "colour"
+          },
+          {
+            "op": "emit",
+            "at": "publish",
+            "value": 1.25
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "cut_off",
+        "code": "KN7:budget.output",
+        "stop": {
+          "at": "publish",
+          "phase": "output",
+          "scope": "root",
+          "source": {
+            "source": "2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430",
+            "start": 48,
+            "end": 55
+          }
+        },
+        "used": {
+          "steps": 7,
+          "kernel_cost": 0,
+          "memory": 4,
+          "output": 0
+        },
+        "live_before_cleanup": 4,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "region/display_enter",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "region/predicate",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "region/display_branch",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "region/display_branch/then/a",
+            1,
+            0,
+            4,
+            0,
+            0
+          ],
+          [
+            "region/display_branch/then/b",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "region/display_exit",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "publish",
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "values": {},
+        "coverage": {},
+        "generators": {},
+        "children": []
+      }
+    },
+    {
+      "id": "child-decode-error-releases-reservation",
+      "clause": "DET.58; DET.60",
+      "covers": [
+        [
+          "MC-05",
+          "unowned_reservation_unwind"
+        ]
+      ],
+      "given": {
+        "limits": {
+          "steps": 20,
+          "kernel_cost": 20,
+          "memory": 20,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "child",
+            "at": "c",
+            "limits": {
+              "steps": 20,
+              "kernel_cost": 20,
+              "memory": 20,
+              "output": 0
+            },
+            "body": [
+              {
+                "op": "text_decode",
+                "at": "decode",
+                "hex": "ff",
+                "name": "t"
+              }
+            ]
+          },
+          {
+            "op": "alloc",
+            "at": "parent",
+            "name": "parent",
+            "bytes": 20
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "used": {
+          "steps": 4,
+          "kernel_cost": 1,
+          "memory": 20,
+          "output": 0
+        },
+        "live_before_cleanup": 20,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "c/child",
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            "c/run/call",
+            1,
+            0,
+            16,
+            0,
+            0
+          ],
+          [
+            "c/run/decode",
+            1,
+            1,
+            4,
+            0,
+            0
+          ],
+          [
+            "parent",
+            1,
+            0,
+            20,
+            0,
+            0
+          ]
+        ],
+        "values": {},
+        "coverage": {},
+        "generators": {},
+        "children": [
+          {
+            "at": "c",
+            "requested": {
+              "steps": 20,
+              "kernel_cost": 20,
+              "memory": 20,
+              "output": 0
+            },
+            "effective": {
+              "steps": 19,
+              "kernel_cost": 20,
+              "memory": 20,
+              "output": 0
+            },
+            "outcome": "error",
+            "code": "LG4:input.text_scalar_invalid",
+            "stop": {
+              "at": "c/run/decode",
+              "phase": "effect",
+              "scope": "c"
+            },
+            "used": {
+              "steps": 2,
+              "kernel_cost": 1,
+              "memory": 20,
+              "output": 0
+            },
+            "returned_memory": 0,
+            "live_after_return": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "generator-returned-owner",
+      "clause": "DET.61",
+      "covers": [],
+      "given": {
+        "limits": {
+          "steps": 4,
+          "kernel_cost": 60,
+          "memory": 74,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "call",
+            "at": "make",
+            "slots": 0,
+            "body": [
+              {
+                "op": "rng_init",
+                "at": "init",
+                "name": "g",
+                "seed": "0000000000000000000000000000000000000000000000000000000000000000",
+                "path": [
+                  "root"
+                ]
+              }
+            ],
+            "returns": "g",
+            "as": "h"
+          },
+          {
+            "op": "rng_draw",
+            "at": "draw-h",
+            "generator": "h",
+            "name": "a"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "used": {
+          "steps": 4,
+          "kernel_cost": 60,
+          "memory": 74,
+          "output": 0
+        },
+        "live_before_cleanup": 74,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "make/call",
+            1,
+            0,
+            16,
+            0,
+            0
+          ],
+          [
+            "make/init",
+            1,
+            57,
+            41,
+            0,
+            0
+          ],
+          [
+            "make/return",
+            1,
+            0,
+            0,
+            0,
+            16
+          ],
+          [
+            "draw-h",
+            1,
+            3,
+            33,
+            0,
+            0
+          ]
+        ],
+        "values": {
+          "draw-h": "d5d5a97e52cc923a9a15a6146b7951297d9c2eb83bf5e83e5ff720802de59ea8"
+        },
+        "coverage": {},
+        "generators": {
+          "h": {
+            "key": "45bf5b0d0ffb7fd089661e33f10d7dfefb17ca25b3420c186403c70a7224f6de",
+            "counter": 1
+          }
+        },
+        "children": []
+      }
+    },
+    {
+      "id": "generator-nested-same-name",
+      "clause": "DET.61",
+      "covers": [],
+      "given": {
+        "limits": {
+          "steps": 6,
+          "kernel_cost": 121,
+          "memory": 131,
+          "output": 0
+        },
+        "trace": [
+          {
+            "op": "rng_init",
+            "at": "init",
+            "name": "g",
+            "seed": "0000000000000000000000000000000000000000000000000000000000000000",
+            "path": [
+              "root"
+            ]
+          },
+          {
+            "op": "call",
+            "at": "inner",
+            "slots": 0,
+            "body": [
+              {
+                "op": "rng_init",
+                "at": "init",
+                "name": "g",
+                "seed": "0000000000000000000000000000000000000000000000000000000000000000",
+                "path": [
+                  "other"
+                ]
+              },
+              {
+                "op": "rng_draw",
+                "at": "draw-inner",
+                "generator": "g",
+                "name": "a"
+              }
+            ]
+          },
+          {
+            "op": "rng_draw",
+            "at": "draw-outer",
+            "generator": "g",
+            "name": "b"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "stop": null,
+        "used": {
+          "steps": 6,
+          "kernel_cost": 121,
+          "memory": 131,
+          "output": 0
+        },
+        "live_before_cleanup": 74,
+        "live_after_cleanup": 0,
+        "charges": [
+          [
+            "init",
+            1,
+            57,
+            41,
+            0,
+            0
+          ],
+          [
+            "inner/call",
+            1,
+            0,
+            16,
+            0,
+            0
+          ],
+          [
+            "inner/init",
+            1,
+            58,
+            41,
+            0,
+            0
+          ],
+          [
+            "inner/draw-inner",
+            1,
+            3,
+            33,
+            0,
+            0
+          ],
+          [
+            "inner/return",
+            1,
+            0,
+            0,
+            0,
+            90
+          ],
+          [
+            "draw-outer",
+            1,
+            3,
+            33,
+            0,
+            0
+          ]
+        ],
+        "values": {
+          "inner/draw-inner": "7b2b8566c20e42dff3f64a4dd05ac27d7cce4d64a5de4d5a89d683b21d53c4a0",
+          "draw-outer": "d5d5a97e52cc923a9a15a6146b7951297d9c2eb83bf5e83e5ff720802de59ea8"
+        },
+        "coverage": {},
+        "generators": {
+          "g": {
+            "key": "45bf5b0d0ffb7fd089661e33f10d7dfefb17ca25b3420c186403c70a7224f6de",
+            "counter": 1
+          },
+          "inner/frame:g": {
+            "key": "a3568d5160d0227041925d6d87432f229a6120ba66a239acaceddd69ddacb2b6",
+            "counter": 1
+          }
+        },
+        "children": []
+      }
+    }
+  ],
+  "boundary_vectors": [
+    {
+      "id": "direct-and-helper-condition",
+      "clause": "LG2.22",
+      "covers": [
+        [
+          "S2-02",
+          "direct_and_helper_condition"
+        ]
+      ],
+      "given": {
+        "kind": "exactness_diagnostic",
+        "cases": [
+          {
+            "site": "ordinary if on approx_less(x,y) selecting literal words w1 or w2",
+            "value_type": "ApproxBool",
+            "display_control": false
+          },
+          {
+            "site": "helper returns approx_less(x,y) as ordinary Bool",
+            "value_type": "ApproxBool",
+            "display_control": false
+          },
+          {
+            "site": "closure captures approx_less(x,y) and returns exact budget 4 or 8",
+            "value_type": "Nat",
+            "display_control": true
+          },
+          {
+            "site": "direct Approx<p> operand to exact addition",
+            "value_type": "Approx",
+            "display_control": false
+          },
+          {
+            "site": "display-branch-selected Approx<p> result supplied to exact addition",
+            "value_type": "Approx",
+            "display_control": true
+          },
+          {
+            "site": "helper with Approx<p> input erases its display qualifier at an exact scalar return",
+            "value_type": "Approx",
+            "display_control": false,
+            "qualifier_erasure": true
+          }
+        ]
+      },
+      "expected": {
+        "checker_codes": [
+          "LG2:type.exactness_violation",
+          "LG2:type.exactness_violation",
+          "LG2:type.exactness_violation",
+          "LG2:type.exact_required",
+          "LG2:type.exactness_violation",
+          "LG2:type.exactness_violation"
+        ],
+        "editor_codes": [
+          "LG2:type.exactness_violation",
+          "LG2:type.exactness_violation",
+          "LG2:type.exactness_violation",
+          "LG2:type.exact_required",
+          "LG2:type.exactness_violation",
+          "LG2:type.exactness_violation"
+        ]
+      }
+    },
+    {
+      "id": "display-accounting-no-exact-continuation",
+      "clause": "LG2.20",
+      "covers": [
+        [
+          "X-H6",
+          "display_accounting_isolated"
+        ]
+      ],
+      "given": {
+        "kind": "exactness_diagnostic",
+        "cases": [
+          {
+            "site": "after form2-equal-limit, exact code reads the host counter used.steps=6",
+            "value_type": "Nat",
+            "display_control": true
+          },
+          {
+            "site": "after form2-untaken-branch, exact code reclaims the unused one of six granted steps",
+            "value_type": "Budget",
+            "display_control": true
+          },
+          {
+            "site": "after form2-publication-output-cutoff, exact code branches on KN7:budget.output",
+            "value_type": "Status",
+            "display_control": true
+          }
+        ]
+      },
+      "expected": {
+        "checker_codes": [
+          "LG2:type.exactness_violation",
+          "LG2:type.exactness_violation",
+          "LG2:type.exactness_violation"
+        ],
+        "editor_codes": [
+          "LG2:type.exactness_violation",
+          "LG2:type.exactness_violation",
+          "LG2:type.exactness_violation"
+        ]
+      }
+    },
+    {
+      "id": "pick-generation-before-source",
+      "clause": "EV3.5; RM.30; CT-ERR-12",
+      "covers": [
+        [
+          "S2-03",
+          "follow_pick_order"
+        ],
+        [
+          "S4-02",
+          "registry_pick_precedence"
+        ]
+      ],
+      "given": {
+        "kind": "follow_pick",
+        "instance": "i1",
+        "picked_bindings": {
+          "view": "v1",
+          "view_generation": 7,
+          "plan": "p1",
+          "map": "m1",
+          "plan_generation": 7,
+          "state": 12,
+          "camera": 3,
+          "viewport": [
+            640,
+            480
+          ],
+          "visibility": 1,
+          "interaction": 1,
+          "device_epoch": 1,
+          "surface_generation": 1
+        },
+        "current_bindings": {
+          "view": "v1",
+          "view_generation": 8,
+          "plan": "p1",
+          "map": "m1",
+          "plan_generation": 8,
+          "state": 12,
+          "camera": 3,
+          "viewport": [
+            640,
+            480
+          ],
+          "visibility": 1,
+          "interaction": 1,
+          "device_epoch": 1,
+          "surface_generation": 1
+        },
+        "producing_source": "a\ud83d\ude00b",
+        "target_source": "a\ud83d\ude00b",
+        "editable_draft": "a\ud83d\ude00c"
+      },
+      "expected": {
+        "code": "EV3:stale.display_pick",
+        "source_action": false
+      }
+    },
+    {
+      "id": "pick-generation-and-source-stale",
+      "clause": "EV3.5; RM.30; CT-ERR-12",
+      "covers": [
+        [
+          "S2-03",
+          "follow_pick_order"
+        ],
+        [
+          "S4-02",
+          "registry_pick_precedence"
+        ]
+      ],
+      "given": {
+        "kind": "follow_pick",
+        "instance": "i1",
+        "picked_bindings": {
+          "view": "v1",
+          "view_generation": 7,
+          "plan": "p1",
+          "map": "m1",
+          "plan_generation": 7,
+          "state": 12,
+          "camera": 3,
+          "viewport": [
+            640,
+            480
+          ],
+          "visibility": 1,
+          "interaction": 1,
+          "device_epoch": 1,
+          "surface_generation": 1
+        },
+        "current_bindings": {
+          "view": "v1",
+          "view_generation": 8,
+          "plan": "p1",
+          "map": "m1",
+          "plan_generation": 8,
+          "state": 12,
+          "camera": 3,
+          "viewport": [
+            640,
+            480
+          ],
+          "visibility": 1,
+          "interaction": 1,
+          "device_epoch": 1,
+          "surface_generation": 1
+        },
+        "producing_source": "a\ud83d\ude00b",
+        "target_source": "a\ud83d\ude00c",
+        "editable_draft": "a\ud83d\ude00c"
+      },
+      "expected": {
+        "code": "EV3:stale.display_pick",
+        "source_action": false
+      }
+    },
+    {
+      "id": "pick-source-stale",
+      "clause": "EV3.5; RM.30; CT-ERR-12",
+      "covers": [
+        [
+          "S2-03",
+          "follow_pick_order"
+        ],
+        [
+          "S4-02",
+          "registry_pick_precedence"
+        ]
+      ],
+      "given": {
+        "kind": "follow_pick",
+        "instance": "i1",
+        "picked_bindings": {
+          "view": "v1",
+          "view_generation": 7,
+          "plan": "p1",
+          "map": "m1",
+          "plan_generation": 7,
+          "state": 12,
+          "camera": 3,
+          "viewport": [
+            640,
+            480
+          ],
+          "visibility": 1,
+          "interaction": 1,
+          "device_epoch": 1,
+          "surface_generation": 1
+        },
+        "current_bindings": {
+          "view": "v1",
+          "view_generation": 7,
+          "plan": "p1",
+          "map": "m1",
+          "plan_generation": 7,
+          "state": 12,
+          "camera": 3,
+          "viewport": [
+            640,
+            480
+          ],
+          "visibility": 1,
+          "interaction": 1,
+          "device_epoch": 1,
+          "surface_generation": 1
+        },
+        "producing_source": "a\ud83d\ude00b",
+        "target_source": "a\ud83d\ude00c",
+        "editable_draft": "a\ud83d\ude00c"
+      },
+      "expected": {
+        "code": "EV3:stale.source_link",
+        "source_action": false
+      }
+    },
+    {
+      "id": "pick-producing-source-after-edit",
+      "clause": "EV3.5; RM.30; CT-ERR-12",
+      "covers": [
+        [
+          "S2-03",
+          "follow_pick_order"
+        ],
+        [
+          "S4-02",
+          "registry_pick_precedence"
+        ]
+      ],
+      "given": {
+        "kind": "follow_pick",
+        "instance": "i1",
+        "picked_bindings": {
+          "view": "v1",
+          "view_generation": 7,
+          "plan": "p1",
+          "map": "m1",
+          "plan_generation": 7,
+          "state": 12,
+          "camera": 3,
+          "viewport": [
+            640,
+            480
+          ],
+          "visibility": 1,
+          "interaction": 1,
+          "device_epoch": 1,
+          "surface_generation": 1
+        },
+        "current_bindings": {
+          "view": "v1",
+          "view_generation": 7,
+          "plan": "p1",
+          "map": "m1",
+          "plan_generation": 7,
+          "state": 12,
+          "camera": 3,
+          "viewport": [
+            640,
+            480
+          ],
+          "visibility": 1,
+          "interaction": 1,
+          "device_epoch": 1,
+          "surface_generation": 1
+        },
+        "producing_source": "a\ud83d\ude00b",
+        "target_source": "a\ud83d\ude00b",
+        "editable_draft": "a\ud83d\ude00c"
+      },
+      "expected": {
+        "code": null,
+        "source_action": true
+      }
+    },
+    {
+      "id": "source-encoding-invalid-byte",
+      "clause": "LG1.3; ERR.10; ERR.12; EV1.10",
+      "covers": [
+        [
+          "LANG-01",
+          "raw_encoding_diagnostic"
+        ]
+      ],
+      "given": {
+        "kind": "source_encoding_diagnostic",
+        "hex": "61ff62",
+        "edition": "supported-fixture",
+        "host_unit": "utf16"
+      },
+      "expected": {
+        "outcome": "rejected",
+        "diagnostic": {
+          "code": "LG1:syntax.invalid_encoding",
+          "form": "diagnostic",
+          "context": {
+            "raw_input_digest": "01ce0241d2a0e71a4fecd5a8d71157fe2787197732fc15d889cbcf36c38e3c68",
+            "byte_start": 1,
+            "byte_end": 2
+          }
+        },
+        "decoded_source": null,
+        "host_range": null
+      }
+    },
+    {
+      "id": "source-range-invalid-byte-empty-prefix",
+      "clause": "EV1.10; ERR.12",
+      "covers": [
+        [
+          "LANG-01",
+          "no_fabricated_source_range"
+        ]
+      ],
+      "given": {
+        "kind": "source_range",
+        "hex": "61ff62",
+        "range": {
+          "source": "01ce0241d2a0e71a4fecd5a8d71157fe2787197732fc15d889cbcf36c38e3c68",
+          "start": 0,
+          "end": 0
+        }
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "source-encoding-truncated-scalar",
+      "clause": "LG1.3; ERR.10; ERR.12; EV1.10",
+      "covers": [
+        [
+          "LANG-01",
+          "raw_encoding_diagnostic"
+        ]
+      ],
+      "given": {
+        "kind": "source_encoding_diagnostic",
+        "hex": "61f09f98",
+        "edition": "supported-fixture",
+        "host_unit": "scalar"
+      },
+      "expected": {
+        "outcome": "rejected",
+        "diagnostic": {
+          "code": "LG1:syntax.invalid_encoding",
+          "form": "diagnostic",
+          "context": {
+            "raw_input_digest": "39eb6d1633e9ded300c3de9ca52d43011d7f0551d7c69256a3426527156865fb",
+            "byte_start": 1,
+            "byte_end": 4
+          }
+        },
+        "decoded_source": null,
+        "host_range": null
+      }
+    },
+    {
+      "id": "source-range-truncated-scalar-empty-prefix",
+      "clause": "EV1.10; ERR.12",
+      "covers": [
+        [
+          "LANG-01",
+          "no_fabricated_source_range"
+        ]
+      ],
+      "given": {
+        "kind": "source_range",
+        "hex": "61f09f98",
+        "range": {
+          "source": "39eb6d1633e9ded300c3de9ca52d43011d7f0551d7c69256a3426527156865fb",
+          "start": 0,
+          "end": 0
+        }
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "source-range-valid-scalar",
+      "clause": "EV1.10; ERR.12",
+      "covers": [],
+      "given": {
+        "kind": "source_range",
+        "hex": "61f09f9880c3a90a7a",
+        "range": {
+          "source": "2bdfc2cb1bc371df8487eb5ba9426be60ef9a84df9e1ce5ca336b1acb86ed51d",
+          "start": 1,
+          "end": 5
+        }
+      },
+      "expected": {
+        "valid": true
+      }
+    },
+    {
+      "id": "full-straddlers-fixed-ceiling-standalone",
+      "clause": "RM.12; RM.20; RM.37; CT-ERR-08",
+      "covers": [
+        [
+          "S4-01",
+          "full_straddler_fixed_ceiling"
+        ]
+      ],
+      "given": {
+        "kind": "straddler_publication",
+        "admission": "standalone",
+        "producer_budgets": "fit",
+        "fixed_renderer_ceiling": "exceeded",
+        "full_set": [
+          {
+            "piece": 7,
+            "points": [
+              "p7a",
+              "p7b"
+            ]
+          },
+          {
+            "piece": 9,
+            "points": [
+              "p9a",
+              "p9b"
+            ]
+          }
+        ],
+        "cap_map_witness": 7,
+        "invocation": {
+          "command": "B",
+          "request": "rB",
+          "job": null,
+          "lane_generation": null
+        }
+      },
+      "expected": {
+        "code": "EV3:resource_limit.display_plan_ceiling",
+        "form": "refusal",
+        "receipt": "refused",
+        "prior_A": "pending",
+        "invocation": {
+          "command": "B",
+          "request": "rB",
+          "job": null,
+          "lane_generation": null
+        },
+        "new_admission": false,
+        "installed": false,
+        "full_set": [
+          {
+            "piece": 7,
+            "points": [
+              "p7a",
+              "p7b"
+            ]
+          },
+          {
+            "piece": 9,
+            "points": [
+              "p9a",
+              "p9b"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "full-straddlers-fixed-ceiling-scheduled",
+      "clause": "RM.12; RM.20; RM.37; CT-ERR-08",
+      "covers": [
+        [
+          "S4-01",
+          "full_straddler_fixed_ceiling"
+        ]
+      ],
+      "given": {
+        "kind": "straddler_publication",
+        "admission": "scheduled",
+        "producer_budgets": "fit",
+        "fixed_renderer_ceiling": "exceeded",
+        "full_set": [
+          {
+            "piece": 7,
+            "points": [
+              "p7a",
+              "p7b"
+            ]
+          },
+          {
+            "piece": 9,
+            "points": [
+              "p9a",
+              "p9b"
+            ]
+          }
+        ],
+        "cap_map_witness": 7,
+        "invocation": {
+          "command": "B",
+          "request": "rB",
+          "job": "jB",
+          "lane_generation": 8
+        }
+      },
+      "expected": {
+        "code": "EV3:resource_limit.display_plan_ceiling",
+        "form": "stop",
+        "receipt": "failed",
+        "prior_A": "cancelled(superseded(by: B.command))",
+        "invocation": {
+          "command": "B",
+          "request": "rB",
+          "job": "jB",
+          "lane_generation": 8
+        },
+        "new_admission": false,
+        "installed": false,
+        "full_set": [
+          {
+            "piece": 7,
+            "points": [
+              "p7a",
+              "p7b"
+            ]
+          },
+          {
+            "piece": 9,
+            "points": [
+              "p9a",
+              "p9b"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

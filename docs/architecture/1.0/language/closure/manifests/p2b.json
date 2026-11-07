@@ -1,0 +1,364 @@
+{
+  "packet": "p2b",
+  "contract": "en4-layer-interfaces/1-draft",
+  "evidence": "Source-only contract draft. Vectors specify outcomes; none is an executed 1.0 product test. P, L and named result digests in vectors are symbolic fixture identities, not measured hashes.",
+  "assumes": [
+    {
+      "item": "H3",
+      "assumed": "KN0.8 is the single word-preview freshness predicate; KN0.9 separately binds filter results. The resolved-draft digest includes versions and content of the actual read set. Every head move advances state.",
+      "if_other": "If a future row moves head without advancing state, change that row or version PreviewDeps to include its dependency before integration; never silently compare the full workspace revision instead."
+    },
+    {
+      "item": "H4",
+      "assumed": "Accepted commit and workspace invocations keep durable admissions and terminals; query, preview, view, file and app terminals are retained through their engine epoch. Unknown outcome is missing knowledge, not a guessed terminal decision.",
+      "if_other": "A longer retention policy may preserve additional terminals, but it must state their durability and cannot revive a preview/token or infer success from an output file."
+    },
+    {
+      "item": "H11",
+      "assumed": "The command path consumes H11 and JI.25-JI.30, reconciled by p7-layers: distinct entry/exit, Position/Context, workspace actions, durable outcome links and monotone voids. p7-data owns the matching FP.30-FP.32 encoding.",
+      "if_other": "If the working H11 form changes, reconcile ONE.79-ONE.82, LI.36 and FP.30-FP.32 together. A5 refusals remain unless the owner changes them."
+    },
+    {
+      "item": "KN5.12 and ONE.42",
+      "assumed": "The traces use a solver-initiated preview and no unsolicited replacement of a shown preview. They select neither of the open replacement policies.",
+      "if_other": "Solver-only replacement rejects unsolicited replacements. Timed replacement adds the owner-selected presentation-delay eligibility gate. Both retain the same token and freshness key; no delay is chosen here."
+    },
+    {
+      "item": "ONE.78",
+      "assumed": "The live-twist trace uses the integrator's immediate complete protected-turn reading of DT-M1 C4 and solving workflow 4.1, with ONE.78 explicitly marked O.",
+      "if_other": "If S4 requires preview for every turn, the resolved live letter follows propose, presentation and explicit preview commit. The transaction, receipt, identity and protection rules stay the same."
+    },
+    {
+      "item": "LQ4",
+      "assumed": "Branch services and finishing pinned jobs remain the conditional proposals KN4.6 and KN7.5. Ordinary jobs are cancelled on replaced dependencies.",
+      "if_other": "Separate research sessions remove branch-switch services, with one state per session. Cancel-pinned changes those jobs to cancelled(replaced_revision) and closes their handles. No ordinary undo or lane rule depends on accepting either proposal."
+    },
+    {
+      "item": "LQ9",
+      "assumed": "No runtime placement is selected; the service boundary is the same for all placements.",
+      "if_other": "Each selected placement must still pass token isolation, fault containment, UI responsiveness and commit-path checks. A placement choice cannot put a language callback in the engine."
+    },
+    {
+      "item": "LQ6, LQ7 and LQ20",
+      "assumed": "Plans have typed subjects and use atomic publication, without choosing a view host, chart route or renderer disposition.",
+      "if_other": "Selected hosts and feature subsets change adapter support and admission. They do not change Receipt, PreviewDeps or state authority; presented-frame evidence remains required."
+    },
+    {
+      "item": "LQ10 and LQ21",
+      "assumed": "The contract carries versioned provenance and effective grants opaquely, without choosing storage or flow-control policy.",
+      "if_other": "The selected byte format and policy must preserve those references and enforce the chosen row grants. Evidence or stored provenance never becomes commit permission."
+    },
+    {
+      "item": "LQ18 and LQ19",
+      "assumed": "No experiment or implementation authority and no new freeze ordering is inferred from this draft.",
+      "if_other": "The owner records any experiment permission or charter-order amendment; the matching evidence and gate inputs must then be assembled under that choice."
+    }
+  ],
+  "owner_items": [
+    {
+      "item": "KN5.12 / ONE.42",
+      "why": "The design line must choose shown-preview replacement policy and any presentation delay; LI.38 preserves both options."
+    },
+    {
+      "item": "ONE.78",
+      "why": "Only the owner can confirm the S4 reading for a live twist or require a preview for every turn."
+    },
+    {
+      "item": "LQ4 / KN7.5 / ONE.19 / ONE.73 to ONE.77",
+      "why": "Branch versus separate-session policy and whether pinned jobs finish remain conditional owner choices."
+    },
+    {
+      "item": "LQ6 / LQ7 / LQ20",
+      "why": "View hosts, chart scope and renderer handoff/disposition remain owner choices; no UI or renderer selection is made."
+    },
+    {
+      "item": "LQ9 / LQ10 / LQ21",
+      "why": "Runtime placement, storage scope and boundary policy need the owner's existing decision procedures; these logical interfaces choose none."
+    },
+    {
+      "item": "LQ18 / LQ19 and ADR acceptance",
+      "why": "Experiment authority, charter ordering, acceptance and freeze sign-off are absent from this source-only packet, as LI.37 records."
+    }
+  ],
+  "handoff_changes": [
+    {
+      "section": "H3",
+      "change": "The fields are unchanged. KN0.8 makes resolved-draft record versions part of draft's digest, and KN0.2 establishes that every head movement advances state.",
+      "why": "An edit followed by an edit back must not revive permission, and omitting head requires an explicit invariant on its movement. Unread workspace edits still preserve freshness."
+    },
+    {
+      "section": "H4",
+      "change": "ResultRef.digest is Digest<result>, rather than a mechanical Digest<level>; Receipt and JobResult retain command/job identity at terminal status. Transient receipt retention and unknown-outcome lookup are explicit.",
+      "why": "Queries, previews and publications are typed payloads rather than states. A lost running notification must not lose the link to the terminal JobResult. Unknown is an observation of missing proof, not a second terminal result."
+    },
+    {
+      "section": "H4 / H5",
+      "change": "Scheduled publish_view finalizes its existing command/job and view generation; a standalone publication is a new invocation. Latest-wins and view lanes have one runner and one replaceable pending request.",
+      "why": "A view must not supersede itself when publishing, and cooperative cancellation must not allow an unbounded set of replacement runners."
+    },
+    {
+      "section": "H5",
+      "change": "A workspace inverse through session.undo/session.redo returns committed with equal puzzle hashes and unchanged head/state. LI.9 ActionHint carries current order and target; both rows use slot_map=by_target.",
+      "why": "One undo entry must handle both durable action classes without inventing a mechanical move for a workspace-only inverse or using workspace as preview freshness."
+    },
+    {
+      "section": "H5",
+      "change": "Availability carries a context digest and keys entries by row plus argument digest. Non-view overlay commands use program admission; overlay views use their view admission through publication.",
+      "why": "Different argument bindings must not reuse each other's hint, and view publication must finalize its own admission without taking a competing slot."
+    }
+  ],
+  "new_error_codes": [
+    {
+      "code": "KN2:stale.value_unavailable",
+      "clause": "LI.13",
+      "meaning": "A saved derived-value reference cannot resolve its immutable reconstruction inputs; do not fabricate a state."
+    },
+    {
+      "code": "KN5:input.overlay_dependency_missing",
+      "clause": "LI.20",
+      "meaning": "An overlay's required kernel row is absent from the supplied row table."
+    },
+    {
+      "code": "KN5:input.confirmation_required",
+      "clause": "LI.26",
+      "meaning": "The normal confirm gate lacks explicit scope confirmation, including undo that releases protection."
+    },
+    {
+      "code": "KN5:stale.result_gone",
+      "clause": "LI.29",
+      "meaning": "A known terminal's result payload is no longer available; the receipt remains unchanged and the command is not rerun."
+    },
+    {
+      "code": "KN5:resource_limit.engine_lost",
+      "clause": "LI.30",
+      "meaning": "After an engine crash, complete recovery proves an accepted durable invocation rolled back without publication. Unknown recovery must not use this code."
+    }
+  ],
+  "new_requirements": [
+    {"id": "CT-LI-01", "phase": "LP2", "class": "source"},
+    {"id": "CT-LI-02", "phase": "LP2", "class": "source"},
+    {"id": "CT-LI-03", "phase": "LP2", "class": "source"},
+    {"id": "CT-LI-04", "phase": "LP2", "class": "source"},
+    {"id": "CT-LI-05", "phase": "LP2", "class": "source"},
+    {"id": "CT-LI-06", "phase": "LP2", "class": "source"},
+    {"id": "CT-LI-07", "phase": "LP2", "class": "source"},
+    {"id": "CT-LI-08", "phase": "LP1", "class": "source"}
+  ],
+  "findings": {
+    "FR-K01": {
+      "status": "partial",
+      "clauses": ["LI.3", "LI.5", "LI.11", "LI.12", "LI.13", "LI.14", "LI.15", "LI.16", "LI.18", "LI.22", "LI.26", "LI.32", "LI.33", "LI.34", "LI.35", "LI.36", "LI.37"],
+      "why_open": "The EN4 main-line contract and requested traces are supplied. The whole finding still needs the parallel EN3 interfaces, final H-08 join, language-kernel annex and current assembled-candidate review; none is visible or claimable from this worktree.",
+      "who": "p1 and p2a for their deliverables; integrator for the second wave, integration and independent review.",
+      "vectors": {
+        "live-twist": {
+          "given": "Under ONE.78's live working form, state=7, protection=2, commit lane free, legal protected retained letter resolved, valid shell token, and an analysis job j1 reads state 7.",
+          "expected": "The twist returns committed with state=8 and one durable action; j1 is fenced and cancelled(replaced_revision). No program job makes the commit busy. Under the alternative S4 reading the same letter must first complete a preview and presentation before this commit.",
+          "clause": "LI.32"
+        },
+        "word-preview-commit": {
+          "given": "Propose a legal word at state=7, workspace=10, protection=2; p becomes presented; save a keymap absent from p's read set, making workspace=11; invoke operation.execute with p's valid unused token and every other gate passing.",
+          "expected": "Proposal completes with kind=preview_ready. fresh(p)=true at workspace 11. Execute returns committed at state=8, workspace=11, with exactly one journal action and the engine-owned literal witness.",
+          "clause": "LI.33"
+        },
+        "long-query": {
+          "given": "Exclusive named-cap query c1 starts at state=7 as job j1; a distinct exclusive query c2 arrives before j1 finishes; j1 then completes its declared coverage.",
+          "expected": "c1 progresses accepted, running(j1), completed(kind=query). Its JobResult has command=c1, job=j1, outcome=completed and its original input/parameters/coverage. c2 is refused(KN7:busy.lane_full). No puzzle head or undo action changes.",
+          "clause": "LI.34"
+        },
+        "concurrent-undo": {
+          "given": "A query j1 reads state=8; action-order 12's puzzle move is the current undo target; the commit lane is free; a file export also runs; no new action precedes the inverse check.",
+          "expected": "session.undo returns committed with state=9 and the prior puzzle digest. j1 is cancelled(replaced_revision), the file export continues, and undo waits for neither job's cleanup.",
+          "clause": "LI.35"
+        },
+        "puzzle-crossing": {
+          "given": "A5 validates reachable pose state P as a label checkpoint with labels L, the shell requests Jumble off with a valid token, and commit admission/protection pass.",
+          "expected": "One committed transaction records mode=jumble_off, labels digest L, the exact exit poses P, episode/certificate, new head/revision/action and receipt. The bundle switches only after durability; P is not discarded or inferred later from L.",
+          "clause": "LI.36"
+        }
+      }
+    },
+    "FR-K02": {
+      "status": "closed",
+      "clauses": ["KN0.2", "KN0.8", "KN5.16", "ONE.39", "LI.19", "LI.33"],
+      "vectors": {
+        "unrelated-workspace-edit": {
+          "given": "Presented p has state=7, workspace=10, protection=2 and draft digest D from record d version 4. Saving an unread keymap changes only workspace to 11. p remains pending, all other gates pass.",
+          "expected": "PreviewDeps stays equal and fresh(p)=true. The refreshed availability answer is available; a valid commit is committed rather than stale and advances state to 8 while workspace stays 11.",
+          "clause": "LI.19"
+        },
+        "draft-edit": {
+          "given": "p stays pending and presented at state=7/protection=2, but its read draft record d changes from version 4 to 5. Even if the letters are edited back, the version is not 4. A genuine unused token still binds p.",
+          "expected": "The resolved-draft key differs and fresh(p)=false. Availability is unavailable(KN5:stale.revision_changed); a commit reaching step 6 is refused with that code and publishes no change.",
+          "clause": "LI.19"
+        },
+        "protection-edit": {
+          "given": "Presented pending p has state=7/protection=2; a workspace protection action advances protection to 3 while labels and p's literal digest are unchanged; a valid token still names p.",
+          "expected": "fresh(p)=false; the availability hint and commit dependency check both use the protection mismatch, with KN5:stale.revision_changed. The refused commit adds no action and leaves the current protection=3 state intact.",
+          "clause": "LI.33"
+        },
+        "undo-same-digest": {
+          "given": "p was built at state=7 and label digest L. A puzzle commit advances state to 8; undo advances it to 9 and restores digest L. A never-submitted, genuine unused token still names p.",
+          "expected": "p's PreviewDeps is unequal because 7 is not 9, so freshness is false. p was discarded; the availability gate has no fresh presented preview, and the old token fails commit step 5 with KN5:stale.preview_replaced. Equal L does not restore permission.",
+          "clause": "LI.33"
+        },
+        "equal-revision-hash-mismatch": {
+          "given": "Pending p's PreviewDeps still equals current fields and its token binding matches, but the engine's full-state hash differs from p's start hash.",
+          "expected": "Commit stops with KN5:consistency.state_hash_mismatch at step 7 and writes no action. Dependency equality is not permission to skip the independent full-state hash check.",
+          "clause": "KN5.16"
+        }
+      }
+    },
+    "FR-K03": {
+      "status": "closed",
+      "clauses": ["KN5.21", "KN5.22", "KN5.23", "KN5.24", "KN7.3", "LI.10", "LI.23", "LI.25", "LI.27", "LI.28", "LI.29", "LI.30", "LI.31"],
+      "vectors": {
+        "view-publication": {
+          "given": "View invocation cV/job jV owns view generation 4; its matching nodes, plans and source maps pass validation and dependency recheck at revision r7; no newer request exists.",
+          "expected": "One atomic installation returns completed with kind=view_published, revision=r7 and a result naming the ViewId/publication digest; command=cV and job=jV remain bound. It acquires no second view slot and makes no CommitRecord or frame-presentation claim.",
+          "clause": "LI.25"
+        },
+        "completed-query": {
+          "given": "Query cQ/job j1 completes its named-cap search of the full declared set at revision r7 and yields an empty result with complete coverage.",
+          "expected": "Receipt cQ is completed(kind=query, revision=r7) with a ResultRef for j1. JobResult cQ/j1 has outcome=completed and empty value with complete coverage, so this invocation may report an empty answer.",
+          "clause": "LI.34"
+        },
+        "ready-preview": {
+          "given": "Proposal cP finishes a legal replay and installs preview p, but no presented-frame report has arrived.",
+          "expected": "cP is completed(kind=preview_ready) with p's summary reference. p is ready, not presented; the commit chord is unavailable with KN5:stale.no_fresh_preview. Later loss or replacement of p does not change cP's terminal creation outcome.",
+          "clause": "LI.29"
+        },
+        "workspace-update": {
+          "given": "Workspace command cW updates draft record d from version 4 to 5 at workspace=10, state=7, with validated input and a successful durable transaction.",
+          "expected": "cW returns completed(kind=workspace) with workspace=11, state=7, a result naming the action and changed record, and a durable terminal in the same transaction. It returns no CommitRecord and leaves the puzzle head unchanged.",
+          "clause": "LI.10"
+        },
+        "runtime-failure": {
+          "given": "Accepted query cQ is running as j1 and its runtime dies before publishing a result; the engine stays healthy and holds a previously completed preview p.",
+          "expected": "cQ's terminal is failed(KN7:resource_limit.runtime_lost), job=j1; its JobResult has outcome=error with that code. No puzzle action is written, and p remains engine-owned and subject to its normal commit gates.",
+          "clause": "LI.28"
+        },
+        "lost-notification-lookup": {
+          "given": "cW's completed(workspace) receipt and write were durable, but notification was lost. Query cQ also completed during epoch e1. The engine restarts into e2, and only cW's durable terminal survives. Both lookups supply the original request digests.",
+          "expected": "outcome(cW,requestW) returns the original completed(workspace) without another write. outcome(cQ,requestQ) returns unknown_outcome without a rerun or a read-only freeze caused solely by the lost query. Neither lookup guesses from current state equality.",
+          "clause": "LI.30"
+        },
+        "superseded-publication": {
+          "given": "cA is still computing view V when cB is admitted for the same ViewId; cA subsequently sends its old complete plan set.",
+          "expected": "cA remains cancelled(superseded(by=cB)); its late result installs nothing. cB is the only newest pending request and starts after the old runner releases its slot. A success cA had already published before cB would instead remain completed.",
+          "clause": "LI.23"
+        },
+        "view-output-exhaustion": {
+          "given": "A running view invocation has a deterministic output allowance too small for its complete new publication; the old complete view set is still installed.",
+          "expected": "The new receipt is cancelled(budget) and JobResult.outcome is cut_off(KN7:budget.output). The terminal reserve reports that result; no partial publication is installed and the old complete set is not partly replaced.",
+          "clause": "LI.28"
+        },
+        "file-terminal": {
+          "given": "A granted file export finishes validation and atomically publishes its complete output, then its response is lost in the same healthy epoch.",
+          "expected": "outcome returns completed(kind=file) with the output digest/destination identity, without another export. If that transient terminal is lost at epoch end, lookup returns unknown_outcome even if the file still exists.",
+          "clause": "LI.30"
+        },
+        "app-stop": {
+          "given": "job.stop registers a cancellation request for running j1 through lane none; j1 has not published an effect.",
+          "expected": "The stop invocation returns completed(kind=app). It does not claim j1 has already stopped; j1 later returns cancelled(by_user). A target that durably completed first keeps its success.",
+          "clause": "LI.24"
+        },
+        "request-reuse": {
+          "given": "Command c1 already exists with request digest A; a retry or outcome lookup supplies digest B instead.",
+          "expected": "The new delivery is refused(KN5:input.command_id_reused); c1's original status and effect are unchanged and no job or publication starts.",
+          "clause": "KN5.21"
+        }
+      }
+    },
+    "FR-K06": {
+      "status": "partial",
+      "clauses": ["ONE.79", "ONE.80", "ONE.81", "ONE.82", "LI.36"],
+      "why_open": "The command-side transaction and full JI.25-JI.30 action table now share H11/H15 through p7-layers. The matching durable encoding/recovery vectors and the assembled trace still require p7-data integration and review.",
+      "who": "p7-data for durable representation, integrator for the assembled crossing/recovery trace and independent review.",
+      "vectors": {
+        "undo-across-crossing": {
+          "given": "A Jumble-off action changed mode jumble_on, episode E, head h7, pose digest P, state=31 into mode jumble_off, head h8, label digest L, state=32. The current undo hint names this crossing, and its shell token, permissions and lane pass.",
+          "expected": "One committed inverse restores mode=jumble_on, episode=E, head=h7 and pose digest=P, with state=33, a new inverse-action event and receipt. The h8 crossing is not selected as an exit on the restored head. No lift from L, old revision number or preview is reused.",
+          "clause": "ONE.81"
+        },
+        "restore-voids": {
+          "given": "Jumble is off at state=41 with a valid exit E8 and label digest L. A validated retained checkpoint restore targets earlier head h3 with the same label digest L and commits; the engine then restarts. No retained witness from solved is supplied to a subsequent Jumble-on request.",
+          "expected": "The restore receipt is committed with mode=jumble_off, head=h3, state=42 and label digest=L. E8's void fact, replacement and recovery checkpoint are durable together. Recovery keeps E8 void; the later Jumble-on request is refused(KN5:input.jumble_on_labels_only), despite equal labels.",
+          "clause": "ONE.82"
+        }
+      }
+    },
+    "FR-B04": {
+      "status": "partial",
+      "clauses": ["KN5.8", "KN5.20", "KN7.2", "LI.18", "LI.20", "LI.22", "LI.23", "LI.25", "LI.26", "LI.31"],
+      "why_open": "The layer clauses supply unified undo/redo, static/computed overlay dependencies, lane targets and contextual publication outcomes. The p7-table rows and p7-render support/disposition still need integration; this packet cannot claim their combined reconciliation complete.",
+      "who": "p2a, p6 and the integrator.",
+      "vectors": {
+        "undo-during-job": {
+          "given": "A non-pinned program job reads state=8 while the current puzzle undo hint is valid, the commit lane is free and a file job also runs.",
+          "expected": "session.undo has no not_busy gate, enters the commit lane and returns committed with state=9. The program job becomes cancelled(replaced_revision), and the file job continues. Job occupancy never changes undo into a busy refusal.",
+          "clause": "LI.26"
+        },
+        "overlay-availability": {
+          "given": "An overlay's static verdict and own grants/lane/gates pass. Its required static row/argument binding is unavailable(KN5:input.menu_word_needs_jumble_on). Separately test all required static bindings available with only an optional repair-list row busy.",
+          "expected": "The first overlay hint is unavailable(KN5:input.menu_word_needs_jumble_on); the second is available. Both are computed from stored metadata and the kernel table without executing language code, and neither reserves a lane or grants a later call.",
+          "clause": "LI.20"
+        },
+        "program-view-lanes": {
+          "given": "The declared program capacity is 2 and both slots run jobs. A third program is submitted. View cA runs for V, then cB and cC arrive for V while cA cleans up.",
+          "expected": "The third program is refused(KN7:busy.lane_full). cA is cancelled(superseded(by=cB)); cB is then cancelled(superseded(by=cC)); at most cA's runner plus pending cC exist, and no cA/cB output installs. The commit lane remains independent.",
+          "clause": "LI.23"
+        },
+        "workspace-protection-undo": {
+          "given": "The current undo target is a workspace protection-add action. Undo would release that protection, but its arguments omit the confirmation required by the direct release path.",
+          "expected": "Undo is refused(KN5:input.confirmation_required), with no inverse or revision change. With explicit confirmation and all gates passing it returns committed, leaves puzzle hashes/head unchanged and advances workspace/protection/record versions.",
+          "clause": "LI.26"
+        },
+        "none-and-commit-admission": {
+          "given": "One commit holds the session commit lane; a second new commit and two independent short none-lane read requests arrive with otherwise valid inputs.",
+          "expected": "The second commit is refused(KN5:busy.commit_in_flight) without queueing. Both none-lane reads check their own gates immediately and can complete; they do not consume a commit, exclusive or program slot.",
+          "clause": "KN7.2"
+        }
+      }
+    },
+    "FR-C01": {
+      "status": "partial",
+      "clauses": ["LI.1", "LI.37", "LI.38", "LI.40"],
+      "why_open": "All five PHS.48 input rows are walked with supplied and missing material. This isolated draft is not the final assembled input: owner records, parallel interface/table/renderer artifacts, evidence and independent current-candidate review remain absent.",
+      "who": "Integrator assembles all drafts and evidence; owner supplies open choices and sign-off; independent reviewers supply the required review and later gate ruling.",
+      "vectors": {
+        "phs48-row-walk": {
+          "given": "The candidate contains this layer draft and reconciled chapters 01/08, but no integrated p1/p2a/p3/p4/p5/p6 outputs, new owner-answer record, experiment evidence or current-candidate review.",
+          "expected": "All five PHS.48 rows remain incomplete as freeze inputs: authority/scope, architecture/interfaces, renderer feature list, decisions/evidence, and review/limitations. The EN4 main-line layer artifact is supplied, but final H-08 and the complete architecture-freeze input are not declared delivered and no go ruling is supported.",
+          "clause": "LI.37"
+        }
+      }
+    }
+  },
+  "integration_followups": [
+    "Integrate p1/p2a/p3/p4/p5/p6; reconcile their shared forms with this draft, including per-record versions, scheduled-view finalization and ActionHint order/target bindings and lane_target resolution.",
+    "Register the five new error codes in chapter 13 and reconcile freshness, terminal forms, cancellation, unknown-outcome recovery and retired receipt(command) references there and in consumers.",
+    "Index CT-LI-01 through CT-LI-08 in chapter 12 with the listed phases and source class; reconcile pending-EN4 wording in chapter 04 and ADR-L01/L02/L08 without accepting any ADR.",
+    "Write the second-wave language-kernel annex and walk H13 against the actual assembled candidate; complete the independent checker dependency matrix and the deterministic tariff contract.",
+    "Obtain or reuse a valid Astra plan check for this plan and have the integrator independently review Codex-authored changes on the current candidate. No such review was run inside this packet's no-network sandbox.",
+    "Keep ONE.42, ONE.78, KN5.12, LQ4 and the other owner items open. No freeze, renderer, product or performance result follows from the mechanical closure check."
+  ],
+  "integration_commands": [
+    {
+      "command": "python docs/progress/1.0/build_command_table.py",
+      "when": "After the actual p1 delta and p2a builder land; build the final join without --draft-without-jumbling."
+    },
+    {
+      "command": "python -B docs/progress/1.0/test_command_table.py",
+      "when": "After p2a's tests land and the real final-table integration is ready."
+    },
+    {
+      "command": "python docs/architecture/1.0/language/closure/check_closure.py --all",
+      "when": "After every packet and shared-definition reconciliation lands."
+    },
+    {
+      "command": "python tools/agents/codex_review.py --kind plan --model gpt-6-astra --effort max --speed fast --packet work/reviews/packets/en4-layers-plan.md",
+      "when": "Integrator prepares the scoped seven-part packet if no unchanged valid plan check can be reused; no packet file or review ledger is written by p2b."
+    }
+  ]
+}

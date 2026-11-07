@@ -2,12 +2,13 @@
 
 Status: **draft for the owner. Not accepted.** Nothing in this document is an ADR, a frozen architecture or a chosen
 syntax. It is the full text that the [ecosystem partition](../ecosystem-partition.md) promises in its section 17. The
-owner confirmed the partition's direction on 3 November 2026. That answered the kickoff's first step only: owner
-questions LQ1 to LQ21 stay open, and every chapter keeps them open. Accepting ADRs and freezing the architecture are the
-owner's decisions.
+owner confirmed the partition's direction on 3 November 2026 and answered LQ1 to LQ21 on 6 November 2026. LQ8, LQ9,
+LQ13 and LQ21 wait for their evidence, and LQ2's option set waits for the joint setting. Accepting ADRs and freezing the
+architecture are the owner's decisions. No ADR is accepted and nothing is frozen by these answers.
 
-"The language" means the project's own language (working name C600 Script, LQ17). "The partition" means the page linked
-above. Its IDs are used unchanged: INV-n, KNn, LGn, LBn, EVn, PSn, BMn, BSn, RTn, LX-n, LPn, LQn and its defaults 1 to 20.
+"The language" means 600 Cell Script, with source files `.6cs` (owner, 6 November 2026, LQ17). "The partition" means the
+page linked above. Its IDs are used unchanged: INV-n, KNn, LGn, LBn, EVn, PSn, BMn, BSn, RTn, LX-n, LPn, LQn and its
+defaults 1 to 20.
 
 ## 1. What this document adds
 
@@ -21,6 +22,11 @@ check:
 - for every open choice, what stays the same under each option and what changes.
 
 It describes no implementation. It presets no syntax, no implementation route and no engine language.
+
+LX-1 to LX-9 have first-pass records in `work/experiments/language-lx/` under the owner's allowance (owner,
+6 November 2026, LQ18). They do not decide LQ8, LQ9, LQ13 or LQ21; decisive runs wait for the owner's window (owner,
+6 November 2026, decision 15). For LX-9 the owner chose exact requests (owner, 6 November 2026, decision 8). KN3.4
+describes that direction as proposed state-contract amendment A6; A1 stays in force until EN1's Astra check and the owner.
 
 ## 2. Chapters
 
@@ -47,7 +53,8 @@ chapters that hold its detail.
 Reading paths:
 
 - **To see the whole:** this page, then chapter 08, then chapter 07.
-- **To decide LQ1 to LQ21:** partition section 15, then the "Open items" section at the end of each chapter.
+- **To read the answers and what waits:** the [owner's answers](../../../../wiki/decisions/owner-decisions-2026-11-06.md),
+  partition section 15 for the questions, then the "Open items" section at the end of each chapter.
 - **To build the kernel API:** chapters 01, 08, 09 and 13.
 - **To write the library:** chapters 02, 03 and 06.
 
@@ -171,6 +178,10 @@ picture shows its interfaces, not its process.
 
 This walk-through follows one action through the parts. It is informative. The chapters hold the rules.
 
+Until the joint setting enables a solver-tool preview, step 4 is refused in a solving session when the word or any
+part records output from the solver's tool (owner, 6 November 2026, decision 12; BND.84 and BND.85). The later steps
+describe the path when preview admission is permitted.
+
 1. The solver presses a key bound to a language-defined command. The shell finds the binding in its table and invokes
    the command through the command layer (KN5, EV4).
 2. The command layer admits the command in the program lane and returns a receipt at once. The runtime starts the
@@ -178,7 +189,7 @@ This walk-through follows one action through the parts. It is informative. The c
 3. The program opens a snapshot of the current revision. It reads through batch queries, and every value it receives
    names the revision and the level it came from (KN2, chapter 08).
 4. The program builds a literal word and sends a proposal: the word, the revision it read and its provenance block
-   (BM2). What the provenance block holds depends on the form of flow control (LQ21).
+   (BM2). Chapter 07 defines the stored provenance block; LQ21 still chooses the form of flow control.
 5. The engine replays the literal word at the current revision, prefix by prefix, and checks protection. It builds its
    own immutable preview object, with an ID, a witness and the digest of the literal letters (R-10, KN5).
 6. The view model adopts the preview, and the renderer draws it through the adapter. The solver sees the effect, the

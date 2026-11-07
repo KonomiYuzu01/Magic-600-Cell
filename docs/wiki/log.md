@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-07] decision | The language: the final text committed under one owner exception
+The final architecture text, its reference checkers and its vectors are committed ([review record](../architecture/1.0/language/closure/INTEGRATION.md#review-of-the-final-candidate)). The full review's 24 blocking findings and the two later majors are confirmed fixed. The last scoped round found one blocker in two sentences the integrator had added; it is fixed, no round was left to read the fix, and the owner chose to commit under an exception ([decision](decisions/owner-decisions-2026-11-06.md)). The owner's choice of A1's grid for free mode is in the text. No ADR is accepted, A6 stays proposed and nothing is frozen.
+
 ## [2026-11-06] decision | The language: the owner's answers to LQ1 to LQ21
 The owner answered the questions page ([decision](decisions/owner-decisions-2026-11-06.md)). Sixteen answers take the recommendation; the other five choose free views everywhere, a shader language for users, unattended playback of view and workspace steps, export of proof obligations to Lean, and the name 600 Cell Script (`.6cs`). The charter is amended on D8 and on the order of the stage 2.5 exit; no ADR is accepted and nothing is frozen. Follow-up answers the same day choose exact requests for the A1 input question (option B), confirm that a live twist has no preview, set who writes evidence fields and where tool words are refused, and allow a big-integer crate and Linux tools in WSL for the experiments.
 

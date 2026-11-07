@@ -1,0 +1,523 @@
+{
+  "format": "c600-command-rows-delta-1",
+  "add": [
+    {
+      "id": "jumble.on",
+      "label": "Jumble on",
+      "kind": "commit",
+      "inventory": [],
+      "gates": [
+        "model_match"
+      ],
+      "lane": "commit",
+      "preview": "none",
+      "undo": "journal",
+      "contexts": [
+        "puzzle"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "A5: replay the valid exit-root suffix or a retained word from solved; refuse labels alone. No confirmation key.",
+      "source": "ENG-0J:145-149; jumbling-interfaces.md JI.27",
+      "arguments": {
+        "revision": "RevisionRef",
+        "token": "UserActionToken"
+      }
+    },
+    {
+      "id": "jumble.off",
+      "label": "Jumble off",
+      "kind": "commit",
+      "inventory": [],
+      "gates": [
+        "model_match"
+      ],
+      "lane": "commit",
+      "preview": "none",
+      "undo": "journal",
+      "contexts": [
+        "puzzle"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "A5: exact reachable label checkpoint only; atomically retain exit poses, certificate and lineage. No confirmation key.",
+      "source": "ENG-0J:145-149; jumbling-interfaces.md JI.27",
+      "arguments": {
+        "revision": "RevisionRef",
+        "token": "UserActionToken"
+      }
+    },
+    {
+      "id": "jumble.twist.menu",
+      "label": "Apply menu twist",
+      "kind": "commit",
+      "inventory": [],
+      "gates": [
+        "model_match",
+        "protection"
+      ],
+      "lane": "commit",
+      "preview": "none",
+      "undo": "journal",
+      "contexts": [
+        "puzzle",
+        "keyboard"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Resolved absolute cap and exact pinned-menu item. Retained items dispatch by mode; jumble items require Jumble on. Current ONE.78 live-turn assumption; owner alternative adds a fresh preview.",
+      "source": "ENG-0J:145-149; jumbling-interfaces.md JI.35",
+      "arguments": {
+        "cap": "CapId",
+        "letter": "PinnedMenuLetter",
+        "revision": "RevisionRef",
+        "token": "UserActionToken"
+      }
+    },
+    {
+      "id": "jumble.twist.append",
+      "label": "Append menu twist to draft",
+      "kind": "workspace",
+      "inventory": [],
+      "gates": [
+        "model_match"
+      ],
+      "lane": "none",
+      "preview": "none",
+      "undo": "workspace",
+      "contexts": [
+        "operation",
+        "keyboard"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Resolve the same pinned letter as the live menu row into the explicitly selected draft phase; no live protection gate or journal undo.",
+      "source": "ENG-0J:145-149; jumbling-interfaces.md JI.35",
+      "arguments": {
+        "cap": "CapId",
+        "letter": "PinnedMenuLetter",
+        "draft": "ResolvedDraftRef",
+        "phase": "PhaseId"
+      }
+    },
+    {
+      "id": "jumble.survey",
+      "label": "Inspect grip status",
+      "kind": "query",
+      "inventory": [],
+      "gates": [
+        "model_match"
+      ],
+      "lane": "exclusive",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "puzzle"
+      ],
+      "repeat": false,
+      "job": true,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Certified per-grip status and explicit coverage only; no outcomes for unreleased menu items.",
+      "source": "ENG-0J:145-149; jumbling-interfaces.md JI.6",
+      "arguments": {
+        "snapshot": "StateRef",
+        "max_chunk": "PositiveNat"
+      }
+    },
+    {
+      "id": "jumble.observe",
+      "label": "Read jumbling facts",
+      "kind": "query",
+      "inventory": [],
+      "gates": [
+        "model_match"
+      ],
+      "lane": "exclusive",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "puzzle",
+        "operation"
+      ],
+      "repeat": false,
+      "job": true,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Requested rim, height, unit, cut-cell and seam facts at one input. Total N requires the all-scope seam batch, including off-grip seams. No target selection or ranking.",
+      "source": "ENG-0J:145-149; jumbling-interfaces.md JI.7",
+      "arguments": {
+        "snapshot": "StateRef",
+        "fields": "Set<JumblingFact>",
+        "scope": "all|named_cap",
+        "cap": "CapId?",
+        "sets": "PieceSets?",
+        "max_chunk": "PositiveNat"
+      }
+    },
+    {
+      "id": "jumble.straddlers",
+      "label": "Inspect named cap straddlers",
+      "kind": "query",
+      "inventory": [],
+      "gates": [
+        "model_match"
+      ],
+      "lane": "exclusive",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "puzzle"
+      ],
+      "repeat": false,
+      "job": true,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Solver-named cap only; full certified straddler set and u, cached by complete input pins. Naming does not mean hover or prefetch.",
+      "source": "ENG-0J:145-149; jumbling-interfaces.md JI.6",
+      "arguments": {
+        "snapshot": "StateRef",
+        "cap": "CapId",
+        "max_chunk": "PositiveNat"
+      }
+    },
+    {
+      "id": "jumble.certificate.inspect",
+      "label": "Inspect straddle certificate",
+      "kind": "query",
+      "inventory": [],
+      "gates": [
+        "model_match"
+      ],
+      "lane": "none",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "puzzle"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Inspect a pinned cap/piece certificate and its exact point pair; reject mismatched input. H-05 targets are grips, pieces and certificate points.",
+      "source": "ENG-0J:145-149; jumbling-interfaces.md JI.33",
+      "arguments": {
+        "snapshot": "StateRef",
+        "certificate": "CertificateRef",
+        "cap": "CapId",
+        "piece": "PieceId"
+      }
+    },
+    {
+      "id": "jumble.release.check",
+      "label": "Check released menu twist",
+      "kind": "query",
+      "inventory": [],
+      "gates": [
+        "model_match"
+      ],
+      "lane": "latest_wins",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "puzzle",
+        "operation"
+      ],
+      "repeat": false,
+      "job": true,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Only the released letter, with optional solver-named cap for delta-u. A newer release supersedes the old request. No values for untried twists.",
+      "source": "ENG-0J:145-149; jumbling-interfaces.md JI.11",
+      "arguments": {
+        "snapshot": "StateRef",
+        "letter": "PinnedMenuLetter",
+        "cap": "CapId?"
+      },
+      "lane_target": {
+        "control": "jumble.release.check"
+      }
+    },
+    {
+      "id": "jumble.covers",
+      "label": "Check covers at named cap",
+      "kind": "query",
+      "inventory": [],
+      "gates": [
+        "model_match"
+      ],
+      "lane": "exclusive",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "puzzle"
+      ],
+      "repeat": false,
+      "job": true,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Completed exact answers in both directions over every meeting cap, with coverage; no top-cap verdict, helpful twist or map mark.",
+      "source": "ENG-0J:145-149; jumbling-interfaces.md JI.12",
+      "arguments": {
+        "snapshot": "StateRef",
+        "cap": "CapId",
+        "max_chunk": "PositiveNat"
+      }
+    },
+    {
+      "id": "jumble.repair.list",
+      "label": "List repairs at named cap",
+      "kind": "query",
+      "inventory": [],
+      "gates": [
+        "model_match"
+      ],
+      "lane": "exclusive",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "puzzle"
+      ],
+      "repeat": false,
+      "job": true,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Only the owner-approved three-twist list, neutral pinned-x then cap order, with x,d,y,z and delta-N. No row selected by default, no ranking, prefetch or execution.",
+      "source": "ENG-0J:145-149; jumbling-interfaces.md JI.12",
+      "arguments": {
+        "snapshot": "StateRef",
+        "cap": "CapId",
+        "max_chunk": "PositiveNat"
+      }
+    },
+    {
+      "id": "jumble.nu",
+      "label": "Read lattice invariant",
+      "kind": "query",
+      "inventory": [],
+      "gates": [
+        "model_match"
+      ],
+      "lane": "exclusive",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "puzzle"
+      ],
+      "repeat": false,
+      "job": true,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "A5 nu under the pinned C5 convention; undefined off lattice; violated fixed I_a coordinate is a consistency error.",
+      "source": "ENG-0J:145-149; jumbling-interfaces.md JI.13",
+      "arguments": {
+        "snapshot": "StateRef"
+      }
+    },
+    {
+      "id": "jumble.corrections.check",
+      "label": "Check drafted corrections",
+      "kind": "query",
+      "inventory": [],
+      "gates": [
+        "model_match"
+      ],
+      "lane": "exclusive",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "puzzle",
+        "operation"
+      ],
+      "repeat": false,
+      "job": true,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Predict nu only for the solver-supplied correction IDs and multiplicities. Never compute a combination or reorder the catalogue.",
+      "source": "ENG-0J:145-149; jumbling-interfaces.md JI.13",
+      "arguments": {
+        "snapshot": "StateRef",
+        "catalogue": "Digest",
+        "corrections": "List<(CorrectionId,Int)>"
+      }
+    },
+    {
+      "id": "jumble.correction.lookup",
+      "label": "Read correction by ID",
+      "kind": "query",
+      "inventory": [],
+      "gates": [
+        "model_match"
+      ],
+      "lane": "none",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "macro_base",
+        "operation"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Look up a solver-specified construction in the fixed 36-item catalogue; return pinned literal word and fixed nu row. macro.add inserts it; no automatic selection.",
+      "source": "ENG-0J:145-149; jumbling-interfaces.md JI.13",
+      "arguments": {
+        "catalogue": "Digest",
+        "construction": "CorrectionId"
+      }
+    },
+    {
+      "id": "jumble.checkpoint.check",
+      "label": "Check jumbling checkpoint",
+      "kind": "query",
+      "inventory": [],
+      "gates": [
+        "model_match"
+      ],
+      "lane": "exclusive",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "puzzle"
+      ],
+      "repeat": false,
+      "job": true,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Explicit retained-checkpoint, label-checkpoint or sticker-test query with its own conclusion. Existing session.checkpoint.save stores evidence; jumble.off performs handoff.",
+      "source": "ENG-0J:145-149; jumbling-interfaces.md JI.34",
+      "arguments": {
+        "snapshot": "StateRef",
+        "test": "retained_checkpoint|label_checkpoint|sticker_test"
+      }
+    },
+    {
+      "id": "jumble.scramble",
+      "label": "Stage jumbling scramble",
+      "kind": "workspace",
+      "inventory": [],
+      "gates": [
+        "model_match"
+      ],
+      "lane": "exclusive",
+      "preview": "none",
+      "undo": "workspace",
+      "contexts": [
+        "puzzle"
+      ],
+      "repeat": false,
+      "job": true,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Unavailable until EH-30 owner policy is pinned. Stage an opaque engine-owned word with a separate hidden witness; normal fresh preview and operation.execute commit it. No per-twist solving output.",
+      "source": "ENG-0J:145-149; jumbling-interfaces.md JI.38",
+      "arguments": {
+        "policy": "ScramblePolicyRef",
+        "token": "UserActionToken"
+      }
+    }
+  ],
+  "amend": [
+    {
+      "id": "macro.add",
+      "expect": {
+        "kind": "workspace"
+      },
+      "set": {
+        "note": "Add a menu word or solver-selected correction to the current draft, retaining alphabet, model/menu/order/contract pins, exact expanded length, named spans and provenance. One workspace action; no execution. JI.18-JI.23, JI.32.",
+        "arguments": {
+          "macro": "MacroRevisionRef|WordRef|CorrectionRef",
+          "phase": "PhaseId"
+        }
+      },
+      "source": "ENG-0J:146; jumbling-interfaces.md JI.32"
+    },
+    {
+      "id": "macro.save",
+      "expect": {
+        "kind": "workspace"
+      },
+      "set": {
+        "note": "Saving does not select, insert or execute. Also stores menu words as flat ia16 payloads with optional verified named spans, exact expanded length, identity/order/contract pins, origin digest and provenance. JI.18-JI.23, JI.32.",
+        "arguments": {
+          "word": "WordRef",
+          "name": "Text"
+        }
+      },
+      "source": "ENG-0J:146; jumbling-interfaces.md JI.32"
+    },
+    {
+      "id": "operation.check",
+      "expect": {
+        "kind": "query"
+      },
+      "set": {
+        "note": "Also checks the solver-supplied menu word at the current snapshot, with optional unit and cap; returns all EH-25 fields and chronological prefix coverage. A false step flag is data, not execution refusal. JI.11, JI.32.",
+        "arguments": {
+          "draft": "ResolvedDraftRef|WordRef",
+          "snapshot": "StateRef",
+          "unit": "PieceSet?",
+          "cap": "CapId?",
+          "fields": "Set<PrefixField>",
+          "max_chunk": "PositiveNat<letters>"
+        }
+      },
+      "source": "ENG-0J:146; jumbling-interfaces.md JI.32"
+    },
+    {
+      "id": "operation.preview",
+      "expect": {
+        "kind": "query",
+        "gates": []
+      },
+      "set": {
+        "note": "Also replays the entire literal menu word prefix by prefix at current H3 dependencies into one immutable engine preview. A blocked prefix yields no preview; a false step flag or protection conflict is displayed separately. JI.11, JI.15, JI.32.",
+        "arguments": {
+          "draft": "ResolvedDraftRef|WordRef"
+        },
+        "gates": []
+      },
+      "source": "ENG-0J:146; jumbling-interfaces.md JI.32"
+    },
+    {
+      "id": "operation.execute",
+      "expect": {
+        "kind": "commit"
+      },
+      "set": {
+        "note": "Also commits a menu word or selected repair as one journal action from its presented fresh preview. Recheck H3 dependencies, literal digest, full-state hash, mode, identity and protection; adopt only the engine-owned end state. Scramble witnesses remain hidden and separate. JI.27, JI.31, JI.32.",
+        "arguments": {
+          "preview": "PreviewId",
+          "token": "UserActionToken"
+        }
+      },
+      "source": "ENG-0J:146; jumbling-interfaces.md JI.32"
+    },
+    {
+      "id": "view.preview.scrub",
+      "expect": {
+        "kind": "view",
+        "repeat": true
+      },
+      "set": {
+        "arguments": {
+          "preview": "PreviewId",
+          "prefix": "WordPosition",
+          "revision": "RevisionRef"
+        },
+        "job": true,
+        "note": "Inspect the identified retained or jumbling solver-word preview at a literal prefix position under its preview and revision pins (JI.33, H7). A cancellable view job; the newest request for this target supersedes older work. Never commit or expose hidden scramble prefixes."
+      },
+      "source": "DT-M1 C1, fix-first 2; DT-J1 O10(b); jumbling-interfaces.md JI.33; HANDOFF H15.19"
+    }
+  ]
+}

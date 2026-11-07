@@ -1,0 +1,492 @@
+{
+  "packet": "p7-layers",
+  "evidence": "Draft clause reconciliation and specified source vectors only. Closed means the owned clause side is present, subject to review. No runtime, format execution, renderer, performance or owner-approval result is claimed.",
+  "assumes": [
+    {
+      "item": "H11 / H15",
+      "assumed": "Use the integrator working forms for entry/exit, Position/Context, shared action chain, admission/receipt binding, ActionHint, filter freshness, publication and component codes. They are not owner decisions.",
+      "if_other": "Reconcile the clauses, command rows and durable format together before adoption; keep A5 refusals and current-context preservation."
+    },
+    {
+      "item": "LQ4",
+      "assumed": "Branch navigation and finishing separately pinned jobs remain conditional under JI.49 and LI.38. Normal revision-bound jobs are cancelled.",
+      "if_other": "Without branches, remove branch-switch availability and use separate research sessions; cancelling pinned jobs ends them on replacement. Undo and monotone void facts remain."
+    },
+    {
+      "item": "LQ10",
+      "assumed": "The flat ia16 draft uses FP.13 tagged annotation targets and FP.30-FP.32 for durable encoding; p7-data changes those files in parallel.",
+      "if_other": "A narrower or deferred envelope keeps literal chronology, typed pins and entry/exit evidence; no format is frozen by this packet."
+    },
+    {
+      "item": "ONE.78 / KN5.12 / ONE.42",
+      "assumed": "The existing live-turn working reading and solver-initiated preview traces remain conditional; no shown-preview replacement policy is chosen.",
+      "if_other": "Preview-every-turn routes live turns through presentation and commit; the owner-selected replacement policy may add its gate. Both keep tokens and exact freshness."
+    },
+    {
+      "item": "Other owner questions",
+      "assumed": "JI.37-JI.49 and LI.38 retain menu, scramble, renderer, boundary, placement and design alternatives; the owner_items below are carried forward without decisions.",
+      "if_other": "Apply an explicit recorded owner answer only within its scope, then revise the affected gates, pins or adapters and evidence; no UI or DT-J2-DT-J4 work starts here."
+    }
+  ],
+  "owner_items": [
+    {
+      "item": "JI.47 / menu freeze",
+      "why": "The packet reserves final twist-menu sign-off for the owner; current I_a pins are consumed only."
+    },
+    {
+      "item": "JI.38 / EH-30",
+      "why": "Only the owner chooses product scramble depth and the retained/jumble mix."
+    },
+    {
+      "item": "JI.36 / DT-M1 Q7",
+      "why": "Q7(a) remains pending EN2 XM1; only the owner can replace it with a kept alternative."
+    },
+    {
+      "item": "JI.37 / ONE.78",
+      "why": "The owner confirms whether S4 requires a preview for live turns."
+    },
+    {
+      "item": "JI.37 / ONE.42 and KN5.12",
+      "why": "Program replacement of a presented preview remains with the owner and design line; no replacement policy is enabled here."
+    },
+    {
+      "item": "JI.43 / EH-09, DT-J2-DT-J4",
+      "why": "Entry filters, layout, look, motion and repair-list presentation await owner resumption and sign-off."
+    },
+    {
+      "item": "JI.18 / LQ10",
+      "why": "The owner selects the data-core scope; choosing EN3 flat storage is not acceptance of the format freeze."
+    },
+    {
+      "item": "JI.48 / LQ1, LQ2, LQ16 and LQ21",
+      "why": "Product/research scope, callable tiers and flow policy belong to the owner and joint setting, not this interface draft."
+    },
+    {
+      "item": "JI.49 / LQ4",
+      "why": "Experiment branches and pinned-job policy are still owner alternatives."
+    },
+    {
+      "item": "JI.50 / LQ5, LQ8 and LQ9",
+      "why": "Built-in implementation, engine language and route/placement are not selected by the batch signatures."
+    },
+    {
+      "item": "JI.43 / LQ7 and LQ20",
+      "why": "The admitted feature surface, renderer selection and presentation ownership remain their existing owner decisions."
+    },
+    {
+      "item": "JI.47 / A5 change",
+      "why": "Any proposal to admit labels-only entry or revive an exit through restore would change A5. This draft keeps both refused and requests no such change."
+    },
+    {
+      "item": "KN5.12 / ONE.42",
+      "why": "The design line must choose shown-preview replacement policy and any presentation delay; LI.38 preserves both options."
+    },
+    {
+      "item": "ONE.78",
+      "why": "Only the owner can confirm the S4 reading for a live twist or require a preview for every turn."
+    },
+    {
+      "item": "LQ4 / KN7.5 / ONE.19 / ONE.73 to ONE.77",
+      "why": "Branch versus separate-session policy and whether pinned jobs finish remain conditional owner choices."
+    },
+    {
+      "item": "LQ6 / LQ7 / LQ20",
+      "why": "View hosts, chart scope and renderer handoff/disposition remain owner choices; no UI or renderer selection is made."
+    },
+    {
+      "item": "LQ9 / LQ10 / LQ21",
+      "why": "Runtime placement, storage scope and boundary policy need the owner's existing decision procedures; these logical interfaces choose none."
+    },
+    {
+      "item": "LQ18 / LQ19 and ADR acceptance",
+      "why": "Experiment authority, charter ordering, acceptance and freeze sign-off are absent from this source-only packet, as LI.37 records."
+    }
+  ],
+  "handoff_changes": [
+    {
+      "section": "H11 rules 11 and 12",
+      "change": "Clarify that transition.action classifies the effect, not the command row kind. The existing non-undoable session.checkpoint.save commit row uses action=workspace for its non-puzzle durable effect and records no eligible inverse (LI.9, JI.27).",
+      "why": "The retained checkpoint-save row changes no puzzle Position but must remain in the durable order and retain its committed receipt. The H11 action vocabulary has no checkpoint-save tag; adding a command kind or a new action tag is unnecessary. p7-data must allow explicit absence of the inverse for this existing non-undoable case.",
+      "vector": {
+        "given": "Undoable action 41 is followed by checkpoint save 42 at head h/state7/context P0/B, with all gates passing and no puzzle mutation.",
+        "expected": "Save keeps Position/Context and state7, appends sequence42/action=workspace with its checkpoint record and no eligible inverse, and retains committed(command42,request42). The next undo hint has order42/target41; it does not invert the save.",
+        "clause": "JI.27"
+      },
+      "who": "p7-data and the integrator: preserve this existing row kind while encoding its transition and absent inverse."
+    }
+  ],
+  "new_error_codes": [
+    {
+      "code": "KN5:stale.filter_preview",
+      "clause": "KN0.9",
+      "meaning": "The submitted FilterPreviewRef no longer matches epoch, identity, mode, state or resolved-filter dependencies; no word-preview slot or presentation is involved. H15.16 assigns registration to p7-reg."
+    }
+  ],
+  "new_requirements": [
+    {
+      "id": "CT-JI-08",
+      "phase": "LP1",
+      "class": "source"
+    },
+    {
+      "id": "CT-JI-09",
+      "phase": "LP1",
+      "class": "source"
+    },
+    {
+      "id": "CT-JI-10",
+      "phase": "LP1",
+      "class": "source"
+    },
+    {
+      "id": "CT-JI-11",
+      "phase": "LP1",
+      "class": "source"
+    },
+    {
+      "id": "CT-LI-09",
+      "phase": "LP2",
+      "class": "source"
+    },
+    {
+      "id": "CT-LI-10",
+      "phase": "LP2",
+      "class": "source"
+    },
+    {
+      "id": "CT-LI-11",
+      "phase": "LP2",
+      "class": "source"
+    },
+    {
+      "id": "CT-LI-12",
+      "phase": "LP2",
+      "class": "source"
+    },
+    {
+      "id": "CT-LI-13",
+      "phase": "LP2",
+      "class": "source"
+    },
+    {
+      "id": "CT-LI-14",
+      "phase": "LP2",
+      "class": "source"
+    }
+  ],
+  "findings": {
+    "RA1-01": {
+      "status": "closed",
+      "clauses": [
+        "KN5.20",
+        "LI.9",
+        "LI.26",
+        "ONE.53"
+      ],
+      "vectors": {
+        "rebind_undo_walk": {
+          "given": "The current latest workspace action is grip.rebind, which changed map A to B. Current workspace=10, map record version=4, state=7, head=h7 and puzzle hash=L. session.undo supplies the current ActionHint and valid token; gates pass.",
+          "expected": "Internal workspace dispatch restores A; Receipt.status=committed, CommitRecord.pre=post=L, head=h7 and state=7. Workspace becomes 11 and map record version 5. slot_map=by_target permits this restoration. Redo with a fresh hint restores B and advances workspace to 12/version 6.",
+          "clause": "LI.26"
+        }
+      }
+    },
+    "RA1-02": {
+      "status": "closed",
+      "clauses": [
+        "KN5.9",
+        "ONE.33",
+        "JI.32"
+      ],
+      "vectors": {
+        "conflicting_preview_then_commit": {
+          "given": "A complete mechanically admissible retained word moves a protected labelled orbit. Current dependencies are unchanged. operation.preview has all other gates passing; then an otherwise valid operation.execute request reaches the protection check.",
+          "expected": "Preview returns completed(preview_ready), with its protection field reporting the conflict. Execute is refused(KN2:protection.orbit_would_move); head and state stay unchanged. A mechanically blocked prefix instead builds no preview.",
+          "clause": "ONE.33"
+        }
+      }
+    },
+    "RA1-03": {
+      "status": "closed",
+      "clauses": [
+        "JI.15",
+        "LI.28",
+        "LI.30",
+        "KN5.24"
+      ],
+      "vectors": {
+        "budget_exhausted_query_receipt": {
+          "given": "Accepted jumble.observe cQ/job jQ exhausts its deterministic output allowance after seam coverage [0,2), before covering the full set. Its terminal notification is lost in the same engine epoch.",
+          "expected": "Receipt cQ is cancelled(budget); JobResult cQ/jQ is cut_off(KN7:budget.output), with covered=[0,2) and total_N undefined. outcome(cQ,requestQ) returns that same cancellation, not completed(query). After epoch loss with no retained transient terminal, it returns unknown_outcome.",
+          "clause": "LI.28"
+        },
+        "partial_value_within_grant": {
+          "given": "A query result type declares named-scope partial coverage as a normal result. The job completes that declared scope within every grant while the broader total remains unexamined.",
+          "expected": "JobResult.outcome=completed and Receipt.status=completed(query) may carry that typed partial value. Its uncovered total stays undefined and supplies no complete negative claim. This is not a cut_off outcome.",
+          "clause": "LI.28"
+        }
+      }
+    },
+    "RA1-04": {
+      "status": "closed",
+      "clauses": [
+        "JI.27",
+        "JI.28",
+        "ONE.79"
+      ],
+      "vectors": {
+        "crossing_on_branch_path_context": {
+          "given": "E2 recorded preferences A and protection P0. Current preferences are B and protection P1. A proved branch path crosses E2 into its off target Position; all current protection checks pass and none of these crossings recorded a protection change.",
+          "expected": "The target head/mode/episode/state are restored from that journal path; preferences remain B and protection P1. The branch transition records actual context_before/context_after=B/P1, not E2 historical A/P0. E2 supplies the exit root only if unvoided.",
+          "clause": "JI.28"
+        }
+      }
+    },
+    "RA1-05": {
+      "status": "closed",
+      "clauses": [
+        "JI.25",
+        "JI.27",
+        "JI.29",
+        "ONE.80",
+        "ONE.81"
+      ],
+      "vectors": {
+        "entry_after_retained_move": {
+          "given": "Exit E at e stores exact poses X. Retained word w leads off to head h9 and labels Lw. Entry I at h10 starts episode J at Z=replay(X,w), binding exit_root(E,e,digest(w)); E remains unvoided.",
+          "expected": "Undo I restores its own off before Position h9/Lw and pre-entry episode, not E pre-exit on-state X. Redo I validates its entrance and restores h10/J/Z. Both advance state revision with new receipts; recovery after either yields that last complete Position and actual Context.",
+          "clause": "ONE.81"
+        },
+        "entry_solved_witness": {
+          "given": "An import voided earlier exits and supplies complete retained v from solved reaching labels Lv at off head h20. New entry I records solved_witness(v), on head h21, episode J and poses Z=replay(solved,v).",
+          "expected": "I requires no ExitRecord. Undo returns off to h20/Lv and its recorded pre-entry episode; redo returns on to h21/J/Z. Recovery uses I own sides and v, never an old exit side or a pose lift of Lv.",
+          "clause": "JI.29"
+        }
+      }
+    },
+    "RA1-06": {
+      "status": "closed",
+      "clauses": [
+        "JI.27",
+        "JI.30",
+        "LI.30",
+        "ONE.80"
+      ],
+      "vectors": {
+        "outcome_lookup_after_undo": {
+          "given": "Crossing command C/request R durably committed at state revision 32. Notification was lost. Undo U then restores the earlier Position at revision 33 and the engine restarts; both durable records remain.",
+          "expected": "outcome(C,R) returns C original committed receipt and its original RevisionRef at state=32. U has a distinct command/action/receipt at state=33. No crossing is executed again and the current hash is not used to infer C outcome.",
+          "clause": "LI.30"
+        },
+        "admission_proved_rollback": {
+          "given": "Commit C has a durable admission binding command/request, but its transaction did not commit. Complete recovery proves rollback and no publication.",
+          "expected": "outcome(C,requestC) is failed(KN5:resource_limit.engine_lost). Prior Position/Context and exit validity remain; there is no transition or automatic retry. Without proof, the outcome is unknown_outcome and a possible mutation requires read-only recovery.",
+          "clause": "JI.30"
+        }
+      }
+    },
+    "RA1-07": {
+      "status": "closed",
+      "clauses": [
+        "JI.26",
+        "JI.27",
+        "LI.9",
+        "LI.36"
+      ],
+      "vectors": {
+        "exit_protection_edit_undo": {
+          "given": "Exit action 40 ends at head e/state=32/workspace=10/protection=2 with P0 and preferences B. Workspace action 41 adds P1. Retained move 42 follows. Fresh hints/tokens and all gates, including protection-release confirmation, allow undo of 42 and then 41.",
+          "expected": "41 leaves Position fixed at e/state32 and advances workspace=11/protection=3. 42 moves to m/state33. Undo43 returns e/state34, keeping P1/B and workspace11/protection3. Undo44 restores P0/B at workspace12/protection4, keeping e/state34 and equal puzzle hashes. Recovery checks consecutive Position/Context links and returns E/root P with empty suffix.",
+          "clause": "LI.36"
+        },
+        "inactive_exit_void_survives_break_undo": {
+          "given": "E1 is active and earlier E2 is inactive on another branch. Reset action R replaces the state. The solver undoes R and later selects an old branch; recovery has both void facts.",
+          "expected": "R voids both E1 and E2 in its transaction. Undo, branch selection and equal labels erase neither void. A path that would reactivate either exit is refused(KN5:input.exit_record_voided); labels-only Jumble entry is refused(KN5:input.jumble_on_labels_only).",
+          "clause": "JI.27"
+        }
+      }
+    },
+    "RA1-08": {
+      "status": "closed",
+      "clauses": [
+        "LI.9",
+        "LI.26",
+        "KN5.19",
+        "KN5.20",
+        "ONE.50"
+      ],
+      "vectors": {
+        "hint_order_42_target_41": {
+          "given": "Action 41 is undoable; non-undoable action 42 is current. session.undo carries hint={order:42,target:41} and a token bound to both fields. Compare admission before and after a separate action 43 lands, with all other gates passing.",
+          "expected": "Before 43, the hint selects 41 and its inverse can commit. After 43, the same order42/target41 hint gets refused(KN5:stale.undo_superseded), even if 41 remains eligible. No inverse or revision change is written by that refused call.",
+          "clause": "LI.9"
+        }
+      }
+    },
+    "RA1-10": {
+      "status": "closed",
+      "clauses": [
+        "KN0.9",
+        "LI.41"
+      ],
+      "vectors": {
+        "filter_apply_without_word_preview": {
+          "given": "FilterPreviewRef f belongs to the current session/epoch, identity/mode/state=7 and resolved filter F. No word preview is pending or presented. filter.apply has its other gates passing. Then the state changes to 8, or a record read by F is edited.",
+          "expected": "The first apply satisfies fresh_filter_preview and returns completed(workspace). The old f after either relevant change is refused(KN5:stale.filter_preview); no new filter action is written. An unread workspace edit alone keeps filter_fresh(f)=true. No no_fresh_preview error is used for a missing word preview.",
+          "clause": "LI.41"
+        }
+      }
+    },
+    "RA1-11": {
+      "status": "closed",
+      "clauses": [
+        "KN5.4",
+        "KN5.7",
+        "LI.20"
+      ],
+      "vectors": {
+        "two_binding_overlay": {
+          "given": "Captured availability has (K,A)=available and (K,B)=unavailable(KN2:input.named_object_invalid). K argument-independent gates and the overlay own gates/grants/static verdict pass. Compare requires entries static A, static B and computed.",
+          "expected": "Static A makes the overlay available; static B makes it unavailable(KN2:input.named_object_invalid). Computed makes it available from row-level gates without choosing either cached binding or running language code. If it later computes B, invoke refuses that argument.",
+          "clause": "LI.20"
+        }
+      }
+    },
+    "RA1-12": {
+      "status": "closed",
+      "clauses": [
+        "LI.22",
+        "LI.23",
+        "KN7.2"
+      ],
+      "vectors": {
+        "same_and_different_target": {
+          "given": "In session S, unfinished A resolves lane_target to view V. B declares {arg:view}, its view argument is V, and C declares {view:W}. Both new requests pass admission; W differs from V.",
+          "expected": "B shares S/view V with A and A becomes cancelled(superseded(by=B)); A cannot publish late. C uses S/view W and runs independently without cancelling B. A control target named V is a distinct namespace. Each resolved target participates in its request binding.",
+          "clause": "LI.22"
+        }
+      }
+    },
+    "S2-01": {
+      "status": "closed",
+      "clauses": [
+        "LI.7",
+        "LI.23",
+        "LI.25"
+      ],
+      "vectors": {
+        "scheduled_final_validation_failed": {
+          "given": "View A is pending. Scheduled B is accepted for the same target, supersedes A, then computes 5 instances under ceiling 4. Separately, standalone B arrives with the same 5-instance payload already present before admission.",
+          "expected": "Scheduled B ends failed(EV3:resource_limit.display_plan_ceiling) on its original command/job, JobResult.outcome=error; A stays cancelled(superseded(by=B)). No second lane admission or installation occurs. Standalone B is refused with the same code before acceptance and leaves A untouched.",
+          "clause": "LI.25"
+        }
+      }
+    },
+    "S2-05": {
+      "status": "closed",
+      "clauses": [
+        "LI.28",
+        "ONE.70"
+      ],
+      "vectors": {
+        "renderer_lost_after_acceptance": {
+          "given": "Publication C is running(job J) when the renderer is lost before installation. Compare the same unavailable service before acceptance and device loss after a publication was installed.",
+          "expected": "During accepted preparation C is failed(EV3:busy.renderer_unavailable) and J has outcome=error with that code/category=busy/form=stop; no installation. Before acceptance the receipt is refused and form=refusal. After installation the original completed(view_published) remains unchanged.",
+          "clause": "LI.28"
+        }
+      }
+    },
+    "RS3-07": {
+      "status": "closed",
+      "clauses": [
+        "JI.21",
+        "JI.23"
+      ],
+      "vectors": {
+        "ji23_relation": {
+          "given": "In the pinned menu, annotations ordered A/B/C span [0,1)/[1,2)/[2,3). A covers item12; B same_as and C inverse_of use relation.word={local:A}. Payload is [(0,12),(0,12),(0,45)].",
+          "expected": "Both targets resolve earlier A; the relations pass with length3, hex0c000c002d00 and digest c2ae6cf7df4e002e34b55017aa22a79d7b385830a0cf513f170586410380d309. A missing target, A-to-C forward/cyclic reference or C replaced by item12 refuses annotation admission. part/ref alternatives require pinned complete closure and never generate letters.",
+          "clause": "JI.23"
+        }
+      }
+    },
+    "RS3-11": {
+      "status": "closed",
+      "clauses": [
+        "JI.27",
+        "JI.28",
+        "JI.41",
+        "JI.45"
+      ],
+      "vectors": {
+        "branch_path_envelope": {
+          "given": "A branch switch from hA to hB has no proved path link at admission. Frames are known and the current draft D is retained.",
+          "expected": "Refused with code=KN4:input.branch_path_unproved, category=input, raising component=KN4, form=refusal, recoverable=true, retry=after_user_change. Context names hA/hB, the missing/unproved link and retained D. Head/context/root stay unchanged; supply a proved path or explicitly restore with voids, not a missing-frame remedy.",
+          "clause": "JI.45"
+        },
+        "void_exit_envelope": {
+          "given": "Redo targets crossing e/exit E, but durable void V from restore R names E. Exact frames and poses exist; draft D remains.",
+          "expected": "Refused with code=KN5:input.exit_record_voided, category=input, raising component=KN5, form=refusal, recoverable=true, retry=after_user_change. Context includes E/e, target action, V/R and D. E stays void; only a separate fresh crossing or solved-witness entry can establish new authority.",
+          "clause": "JI.45"
+        },
+        "exposed_geometry_envelope": {
+          "given": "A request for exposed_faces at exact StateRef S has known frames/IDs but no certified mesh and no admitted size profile. There is no draft.",
+          "expected": "Refused with code=KN2:input.exposed_geometry_unavailable, category=input, raising component=KN2, form=refusal, recoverable=true, retry=after_user_change. Context names exposed_faces/S, both missing prerequisites and explicit absent draft. Feature stays unavailable; no fabricated mesh/size or request for a disambiguating frame.",
+          "clause": "JI.45"
+        }
+      }
+    },
+    "X-SCRUB": {
+      "status": "closed",
+      "clauses": [
+        "JI.31",
+        "JI.33",
+        "JI.46"
+      ],
+      "vectors": {
+        "scrub_citation": {
+          "given": "The solver scrubs a jumbling preview using its PreviewId and literal position; a newer request for the same resolved target arrives while the first is unfinished. Separately a solving caller requests a hidden scramble prefix.",
+          "expected": "The command is view.preview.scrub, shared by arguments and cited by CT-JI-07; the older view job is superseded without a puzzle commit. Hidden scramble letters/prefixes remain inaccessible through scrub, entrance, receipt or generic journal queries.",
+          "clause": "JI.33"
+        }
+      }
+    }
+  },
+  "integration_followups": [
+    "Merge p7-table, p7-data, p7-lang, p7-render and p7-reg before judging cross-packet conformance. This worktree does not contain their edits.",
+    "p7-reg registers H15.16; p1 now proposes six component codes and reuses two existing EV3 codes. Register the filter code above and add CT-JI-08..11 at LP1 and CT-LI-09..14 at LP2 to chapter 12; these ten rows extend the prior requirement inventory.",
+    "p7-data must encode both entry bindings, Position/Context, workspace inverses and admission/terminal references in FP.30-FP.32 and encode JI.23 tagged relations in examples.json. Verify the combined H13 trace and the source vectors; they are specifications, not executed product tests.",
+    "Keep all owner questions and broader partial p1/p2b findings open pending their named evidence and decisions. No A5, DT-J1, menu or human-solve boundary change is requested.",
+    "The integrator reviews Codex-authored changes and arranges the required independent current-candidate review; no model call or review artifact was created in this no-network sandbox."
+  ],
+  "integration_commands": [
+    {
+      "command": "python -B docs/progress/1.0/build_command_table.py",
+      "when": "After p7-table lands, build the real joined table without --draft-without-jumbling."
+    },
+    {
+      "command": "python -B docs/progress/1.0/test_command_table.py",
+      "when": "On that combined table candidate."
+    },
+    {
+      "command": "python -B docs/architecture/1.0/language/format-packet/check_vectors.py",
+      "when": "After p7-data lands, verify the shared transition and relation carriers."
+    },
+    {
+      "command": "python -B docs/architecture/1.0/language/closure/check_closure.py --all",
+      "when": "After all reconciled candidates and earlier manifests are integrated."
+    },
+    {
+      "command": "python -B docs/architecture/1.0/language/closure/check_p7.py --all",
+      "when": "After all P7 manifests and registry/requirement updates are integrated."
+    },
+    {
+      "command": "python tools/agents/codex_review.py --kind plan --packet <scoped-plan-packet> --model gpt-6-astra --effort max --speed fast",
+      "when": "Only if no unchanged valid plan check can be reused; prepare the packet outside this implementation sandbox."
+    },
+    {
+      "command": "python tools/agents/codex_review.py --kind review --packet <scoped-review-packet> --model gpt-6-astra --effort max --speed fast",
+      "when": "Integrator prepares independent read-only EN3 review shards as JI.51 requires and runs them concurrently on the final combined candidate; Claude reviews these Codex-authored changes."
+    }
+  ]
+}

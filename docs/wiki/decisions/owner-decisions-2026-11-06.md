@@ -3,7 +3,7 @@ id: owner-decisions-2026-11-06
 type: decision
 status: verified
 visibility: public
-summary: Owner decisions of 6 November 2026 - the owner answered the language questions LQ1 to LQ21 on the questions page. Sixteen answers take the recommendation. Five do not - free views everywhere, which lifts charter D8's limit to two views; a shader language for users; unattended playback of view and workspace steps in a recording; export of proof obligations to Lean; and the name 600 Cell Script with the extension .6cs. The answer to LQ19 amends the charter so that LP2 to LP5 may start after both freeze rulings. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, so the freeze rulings follow that evidence. No ADR is accepted and nothing is frozen by these answers. Follow-up answers of the same day choose exact requests for the A1 input question, confirm that a live twist has no preview, set who writes evidence fields and where tool words are refused, and allow a big-integer crate and Linux tools in WSL for the experiments.
+summary: Owner decisions of 6 November 2026 - the owner answered the language questions LQ1 to LQ21 on the questions page. Sixteen answers take the recommendation. Five do not - free views everywhere, which lifts charter D8's limit to two views; a shader language for users; unattended playback of view and workspace steps in a recording; export of proof obligations to Lean; and the name 600 Cell Script with the extension .6cs. The answer to LQ19 amends the charter so that LP2 to LP5 may start after both freeze rulings. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, so the freeze rulings follow that evidence. No ADR is accepted and nothing is frozen by these answers. Follow-up answers of the same day choose exact requests for the A1 input question, confirm that a live twist has no preview, set who writes evidence fields and where tool words are refused, and allow a big-integer crate and Linux tools in WSL for the experiments. The owner then chose A1's grid for free mode and, on 7 November, allowed the final text to be committed under an exception for one fix that no round had read.
 related: [owner-decisions-2026-11-05, owner-decisions-2026-11-03, owner-decisions-2026-10-22-dt-m1, owner-decisions-2026-10-03, owner-decisions-2026-10-02-design, owner-decisions-2026-10-02-scope, renderer-candidates]
 supersedes: []
 claims:
@@ -88,6 +88,10 @@ records the answers in English.
   integrator reads LQ15 as the specific answer. The export of proof obligations is in 1.0. Lean is neither shipped nor a
   runtime dependency, a Lean result enters only as a record with its named check, and a failed check is still no
   refutation. Lean is not on the allowlist, so a project check that runs it needs the owner.
+- **Reading note on decision 4 (6 November 2026).** The plan check of the final text found that a Lean result has no route
+  into a record: 1.0 has no proof-record format, import row or check mode. So 1.0 has the export only (PS1.45, EVD.64),
+  `formal proof` has no writer in 1.0, and the sentence above about a Lean result applies from the later edition that adds
+  the return path, through a certificate the kernel can check. The owner may change this reading.
 - **Decision 5's note:** the theory book, proofs and stage research records stay out of the shipped software and live in the
   repository. The research library and the archive checkers stay in 1.0, as the chosen option says. The note also answers
   EV5.17: the theory book does not extend to the language's libraries.
@@ -131,11 +135,21 @@ the first question, and agreement with the rest.
 
 - LQ8, LQ9, LQ13 and LQ21 chose to wait for their evidence, and LQ2's option set waits for the joint setting. The freeze
   rulings need LQ8, LQ9 and LQ21 first, so the freeze follows the decisive experiment runs.
-- Option B leaves two things for the amendment text: what free mode does with an exact request (the rotation R(ω) as
-  named, or the nearest point of A1's rational grid), and what produces the request bytes from a gesture.
+- Option B left two things for the amendment text. For what free mode does with an exact request, the owner chose the
+  nearest point of A1's rational grid over the rotation R(ω) as named, in a side session on 6 November 2026, after this
+  page was first written. A6 stays proposed, so this settles a detail of the text and changes nothing in force. What
+  produces the request bytes from a gesture stays open.
 - The "proved" threshold stays open, and so do the owner's windows for decisive timing and foreground runs.
 - No ADR is accepted, nothing is frozen and no renderer is selected. The owner accepts ADRs and signs off after both
   rulings.
+
+## The commit exception, 7 November 2026
+
+16. **The final text is committed under an owner exception.** The last scoped round that `AGENTS.md` allows found one
+    blocker, SV2-F01: two sentences the integrator had added to FP.37 and FP.38 gave a version mismatch another refusal
+    code than FP.10. The fix follows the reviewer's suggestion and has two stored vectors, and no round was left to read
+    it. The integrator offered an exception or one more narrow Sol call, and the owner chose the exception. It covers
+    this one fix. The architecture-freeze ruling reads these clauses again, and no gate is relaxed.
 
 ## Effect
 
@@ -146,4 +160,4 @@ the first question, and agreement with the rest.
 - Unchanged: the model identities and mathematical contracts, the protection rules, the review rules, the evidence kinds,
   the renderer selection gate, the human-solve boundary for built-in tools and the design-line hold.
 - Superseded in part: ONE.78's wait for the owner's reading of charter S4, which decision 10 answers.
-- Next: the architecture text is finished from these answers and reviewed as one final candidate.
+- Next: the decisive experiment runs, LQ8, LQ9 and LQ21, then both freeze rulings and the owner's sign-off.

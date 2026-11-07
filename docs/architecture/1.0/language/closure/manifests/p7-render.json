@@ -1,0 +1,312 @@
+{
+  "packet": "p7-render",
+  "assumes": [
+    {
+      "item": "LQ7",
+      "assumed": "RM.2 drafts the recommended pure bounded compiled chart subset, conditional on admission and LX-7; no user stage is enabled.",
+      "if_other": "Built-ins-only removes F05 and retains parameterised stages; a user shader language leaves F05 unavailable until RPI.39 safety, precision and evidence contracts exist. Other rows retain their data and lifecycle."
+    },
+    {
+      "item": "LQ20",
+      "assumed": "RM.2 drafts a feature handoff before renderer freeze, with required and optional rows explicitly separated.",
+      "if_other": "Under no handoff, compare each row with the frozen support list and refuse unsupported content. Any unmet required feature returns to the owner; F23/ONE.41 remains required under either option."
+    },
+    {
+      "item": "LQ6 and RPI.44",
+      "assumed": "Existing D8 remains in force; no placement is chosen. The recommendation allows research views in a research workspace, as RM.3 records.",
+      "if_other": "Strict D8 places research content inside Global and Local; free views require an owner D8 change and matching workload evidence. Tool-authoring placement still needs the owner."
+    },
+    {
+      "item": "LQ1 and LQ16",
+      "assumed": "RM.27 describes required support for the language/product scope actually admitted, without accepting a profile arrangement or product cut.",
+      "if_other": "An owner-approved smaller scope requires an explicit changed feature list; a backend cannot silently make an included language feature optional."
+    },
+    {
+      "item": "H6 and LG2.5",
+      "assumed": "Display-only ApproxBool/display_if is the integrator working form consumed by RM.5, independently of LQ21.",
+      "if_other": "A separate display region replaces that language admission mechanism and checks every exit; publish_view remains the sole display sink and no display-to-exact conversion is added."
+    },
+    {
+      "item": "LQ2 and LQ21",
+      "assumed": "RPI.45 preserves producer policy and provenance, with no new permission from display or picking; no flow-control form is selected.",
+      "if_other": "Static labels, runtime labels or capability separation change producer admission and the boundary checker, not renderer ownership, source identity or mechanical-state separation."
+    },
+    {
+      "item": "LQ3 and LQ10",
+      "assumed": "RPI.65 consumes chapter 06 claim references; RM.6/RM.13 consume LI.16 canonical output bytes from the data-core profile without defining another profile.",
+      "if_other": "Evidence-function choices alter claim presentation inputs, not program-text authority. A different canonical storage profile changes measured canonical lengths and digests; re-pin the profile and vectors without charging compression or transport."
+    },
+    {
+      "item": "LQ4",
+      "assumed": "RPI.12 and RM.22 use declared dependencies for the current display base; no branch lifetime or transport rule is invented.",
+      "if_other": "If branches/pinned jobs are admitted, their existing branch and transport contracts supply the base and dependencies. Revision changes still cancel pending publication or mark installed output stale."
+    },
+    {
+      "item": "LQ5, LQ8 and LQ9",
+      "assumed": "RM.14 specifies portable data and host tickets without selecting built-in implementation, engine language or process placement.",
+      "if_other": "The selected binding supplies copies or immutable leases and its ABI/transport; it must preserve engine adoption independence, accounting and cancellation. No zero-copy claim follows."
+    },
+    {
+      "item": "LQ18 and LQ19",
+      "assumed": "RM.28/RM.29 use existing scoped records and the LX-7 card only; this draft performs no experiment or freeze ruling.",
+      "if_other": "The owner-selected allowance/order controls future runs and gates; pending evidence stays pending under any order."
+    },
+    {
+      "item": "RPI.50 / ERR.25",
+      "assumed": "The engineering working form uses finite fixed plan ceilings and the existing KN7.7 to KN7.10 / LI.16 output budget, with count rules in RM.11 and no measured production values.",
+      "if_other": "A separate declared per-run plan allowance needs LP1 versioned units, tariffs and registry reconciliation before KN7:budget.display_plan_limit can activate; no new budget dimension is inferred."
+    }
+  ],
+  "owner_items": [
+    {
+      "item": "LQ7",
+      "why": "Only the owner chooses built-ins, the compiled subset or a separately contracted user shader language; all remain open."
+    },
+    {
+      "item": "LQ20",
+      "why": "Only the owner chooses the feature handoff or fit-to-frozen-renderer alternative and resolves any required-feature conflict."
+    },
+    {
+      "item": "LQ6 / RPI.44 / RM.3",
+      "why": "Research and tool-authoring placement and any change to D8 are owner decisions; no UI/UX work is reopened."
+    },
+    {
+      "item": "RPI.27",
+      "why": "Pick disambiguation is a product choice reserved to the owner when the design line resumes."
+    },
+    {
+      "item": "LQ1 / LQ16 / RM.27",
+      "why": "The owner sets language scope, profiles and the product cut; support reporting cannot reduce the scope."
+    },
+    {
+      "item": "LQ2 / LQ21",
+      "why": "Boundary policy and its flow-control form remain with the owner and the existing chapter 07 process."
+    },
+    {
+      "item": "RPI.18 / RM.4",
+      "why": "Any eventual model/geometry identity change for exposed faces requires the owner and the immutable-model process; the supplied unavailable-geometry contract authorizes none."
+    },
+    {
+      "item": "RPI.60 / LQ18 / LQ19",
+      "why": "Renderer selection, experiment allowance and freeze order remain existing owner/gate decisions. This packet supplies no ruling."
+    },
+    {
+      "item": "RPI.34 / RPI.36 / RPI.39 / RPI.66 / RM.33",
+      "why": "These marked open inputs remain open: exact chart checker coverage, precision and singular handling, any user-shader safety contract, and presented-frame implementation/evidence. This draft neither chooses the owner-dependent chart option nor signs off a feature freeze."
+    }
+  ],
+  "handoff_changes": [],
+  "new_error_codes": [],
+  "new_requirements": [
+    {
+      "id": "CT-RM-07",
+      "phase": "LP3",
+      "class": "source"
+    }
+  ],
+  "findings": {
+    "S2-01": {
+      "status": "closed",
+      "scope": "Renderer-owned clauses only; p7-layers supplies the matching LI.7/LI.25 text.",
+      "clauses": [
+        "RPI.49",
+        "RPI.50",
+        "RPI.67",
+        "RM.12",
+        "RM.18",
+        "RM.20",
+        "RM.21",
+        "RM.35"
+      ],
+      "vectors": {
+        "standalone_refused_scheduled_failed": {
+          "given": "In two independent runs A is pending and the instances ceiling is 4; all other inputs fit. Standalone B submits an existing five-instance payload. Scheduled B is accepted before generating a five-instance payload.",
+          "expected": "Standalone B is refused(EV3:resource_limit.display_plan_ceiling), field instances, requested 5, ceiling 4; A stays pending. Scheduled B first cancels A as superseded, then fails with that original Error and the same counts on its original command/job/request/lane generation; LI.28 maps error(Error) to failed(Error). A stays cancelled, no second admission occurs and neither five-instance payload installs. Four instances pass this ceiling in either run.",
+          "clause": "RM.35"
+        },
+        "scheduled_invalid_or_unsupported": {
+          "given": "An accepted scheduled invocation produces a malformed descriptor, or in a separate run a valid but unsupported kind; no prior terminal has occurred.",
+          "expected": "The original invocation ends failed(EV3:input.display_plan_invalid) or failed(EV3:input.display_unsupported), respectively. No new admission, retrospective refusal, installed fragment or resurrection of superseded work occurs.",
+          "clause": "RM.35"
+        }
+      }
+    },
+    "S2-03": {
+      "status": "closed",
+      "scope": "Renderer-owned precedence and vectors; p7-lang updates EV3 to the same H15.10 form.",
+      "clauses": [
+        "RPI.21",
+        "RM.10",
+        "RM.30"
+      ],
+      "vectors": {
+        "stale_pick_before_source_link": {
+          "given": "A generation-7 instance is explicitly consumed after generation 8 replaced its map. Its producing source is a followed by U+1F600 followed by b. First request the unchanged source, then repeat with a source ending in c. Separately use a current pick with that edited source.",
+          "expected": "Both generation-7 requests return EV3:stale.display_pick before resolution/navigation, including when the source also mismatches. Only the current pick reaches the source-digest check and returns EV3:stale.source_link for the edit. Passive stale replies are dropped.",
+          "clause": "RM.10"
+        },
+        "pinned_source_after_activation": {
+          "given": "A new checked module is activated, but a current occurrence retains its pinned producing source a/U+1F600/b and EV1.10 byte range [5,6); the host requests UTF-16.",
+          "expected": "The old occurrence remains bound and selects b in the producing version at UTF-16 [3,4). Activation alone neither retargets it to c nor makes its source link stale.",
+          "clause": "RM.30"
+        }
+      }
+    },
+    "S2-05": {
+      "status": "closed",
+      "scope": "Renderer lifecycle and contextual forms; p7-reg registers the form and p7-layers owns the sole LI.28 mapping.",
+      "clauses": [
+        "RPI.64",
+        "RM.22",
+        "RM.23",
+        "RM.36"
+      ],
+      "vectors": {
+        "renderer_busy_both_sides": {
+          "given": "In one run standalone B arrives while the renderer is unavailable. In a separate run B has running(job), no earlier terminal and loses the device before installation.",
+          "expected": "Before acceptance B is refused(EV3:busy.renderer_unavailable) with form refusal and its rejection supersedes nothing. After acceptance JobResult.outcome is error(Error(code=EV3:busy.renderer_unavailable, form=stop)); LI.28 yields Receipt.status=failed(Error) for the same command/job, with no installation.",
+          "clause": "RM.36"
+        },
+        "renderer_loss_after_installation": {
+          "given": "B has completed(view_published) and its terminal is still retained when device loss occurs; picks and presentation reports from the old device epoch are in flight.",
+          "expected": "Drawing becomes unavailable, old pick/report stamps are invalid and latches clear, but B stays completed(view_published). outcome(B.command,B.request) returns that terminal without retrying or rewriting it.",
+          "clause": "RM.36"
+        }
+      }
+    },
+    "RS3-10": {
+      "status": "closed",
+      "scope": "All JI.41 producer rows are crosswalked as draft text. Geometry production, measured limits and backend implementation/evidence remain explicitly open under RM.33 and legacy FR-K05.",
+      "clauses": [
+        "RPI.15",
+        "RPI.18",
+        "RPI.57",
+        "RM.4",
+        "RM.14",
+        "RM.27",
+        "RM.33",
+        "RM.34",
+        "RM.37"
+      ],
+      "vectors": {
+        "crosswalk_coverage": {
+          "given": "Walk all 17 JI.41 rows: static geometry; exact state as floats; swept motion; grip map; blocked-grip certificates; named cut; projection; readback; domain/lattice masks; rim counts; seams; exposed faces; named filters; release/word checks; covers/repair; nu/corrections; H-05 picks.",
+          "expected": "Their matrix rows are respectively J01, J02, J03, J04, J04, J04, J05, J06, J07, J07, J08, J10, J09, J11, J09, J12, J13. All carry the defining JI clauses and adapter/lifetime bindings; J10 explicitly returns KN2:input.exposed_geometry_unavailable for absent certified geometry or size profile. No measured limits or backend pass is asserted.",
+          "clause": "RM.34"
+        },
+        "full_straddler_points": {
+          "given": "A complete named-cap straddler set has pieces 7 and 9 with two verified certificate pairs; the cap-map witness is piece 7 only.",
+          "expected": "Retain both pieces and all four points. The cap-map witness cannot replace the set. An over-ceiling payload gets EV3:resource_limit.display_plan_ceiling under RM.12/RM.20 and installs no truncated subset.",
+          "clause": "RM.37"
+        },
+        "uncertain_grip_and_cut": {
+          "given": "The survey contains 599 certified a/b entries and one uncertain entry; the named cap cut carries its exact plane and alpha=121/125.",
+          "expected": "Survey coverage remains incomplete/pending, never 600 certified statuses. The cut uses the supplied exact plane; no sticker mesh supplies its predicate.",
+          "clause": "RM.37"
+        },
+        "off_grip_seams": {
+          "given": "A complete all-scope table has one on-grip and two off-grip mismatch entries. A second enumeration stops short of full coverage.",
+          "expected": "Complete total N is 3 with the off-grip entries and distinct domain/cell identities retained. The interrupted enumeration has undefined total N, never a complete count of 1.",
+          "clause": "RM.37"
+        },
+        "named_filters_and_scoped_lists": {
+          "given": "A named piece mask has 177120 bits and the matching input/mask digest; a cover table at cap 0 has all 80 rows and a completed repair list at that input is empty.",
+          "expected": "Use only the caller's named filter and threshold, with no u ordering/filter. Preserve all 80 rows in cap-ID order. Empty repair is cap/input scoped, grants no global negative or automatic selection; a cut-off list supplies no completed negative.",
+          "clause": "RM.34"
+        },
+        "unavailable_geometry": {
+          "given": "An exposed-face request has no certified geometry or no size profile.",
+          "expected": "Return KN2:input.exposed_geometry_unavailable with no fabricated mesh/sticker ID or supported-feature claim. Geometry production, measured sizes and backend evidence remain outstanding.",
+          "clause": "RM.37"
+        },
+        "release_observations": {
+          "given": "At revision 12 release A is in flight when actual solver release B is accepted; completed checks C then D already exist. The state later becomes revision 13.",
+          "expected": "A is superseded and cannot publish late. C then D stay in tried order; B may append only on completion. The state change clears the revision-12 checks. No step flag supplies execution permission.",
+          "clause": "RM.37"
+        },
+        "nu_and_correction_observations": {
+          "given": "nu is requested off lattice while the correction catalogue contains 36 shipped rows. In a separate lattice check a fixed I_a coordinate is nonzero.",
+          "expected": "Off-lattice nu is undefined(off_lattice), never zero or old values; all 36 catalogue rows stay in fixed ID order without state filtering, lighting, reordering or suggested combinations. The lattice inconsistency is KN2:consistency.fixed_nu_nonzero and cannot be displayed as a valid state.",
+          "clause": "RM.37"
+        },
+        "jumbling_picks": {
+          "given": "A current certificate-point hit targets off-lattice piece 7 and its named grip. Separately the hit's map binding is stale.",
+          "expected": "The current hit resolves witness piece 7 with its grip and source role, no invented slot and no inside/outside certificate or commit token. An explicit stale hit returns EV3:stale.display_pick before resolution, invocation or source navigation; a passive stale hit is dropped.",
+          "clause": "RM.34"
+        },
+        "mixed_revision_arrays": {
+          "given": "A revision-12 pose index is paired with revision-13 pose and lattice arrays.",
+          "expected": "refresh_required(EV3:input.display_bundle_mismatch); no mixed revision is adopted and no mechanical receipt changes.",
+          "clause": "RM.37"
+        },
+        "supplied_correction_set": {
+          "given": "A valid lattice input has all-zero nu and the caller supplies zero multiplicity for every correction row.",
+          "expected": "The predicted nu vector is all zero under the finite-group sum. All 36 fixed catalogue rows remain in ID order; no multiplicity, combination or word is chosen, and no execution permission is created.",
+          "clause": "RM.37"
+        }
+      }
+    },
+    "X-CONSUMERS": {
+      "status": "closed",
+      "scope": "RPI.50/RPI.55 and their owned display consumers now cite defining clauses rather than the earlier H4/H7/H8 placeholders.",
+      "clauses": [
+        "RPI.10",
+        "RPI.21",
+        "RPI.50",
+        "RPI.55",
+        "RPI.67",
+        "RM.13",
+        "RM.14",
+        "RM.22",
+        "RM.36"
+      ],
+      "vectors": {
+        "rpi_consumers": {
+          "given": "An accepted publication requires 101 canonical output bytes with 100 left; fixed plan ceilings fit. Resolve the accounting and receipt references in RPI.50 and RPI.55.",
+          "expected": "RPI.50 uses KN7.7 to KN7.10 and LI.16 charging, with LI.28 as the only job-to-receipt mapping. JobResult is cut_off(KN7:budget.output), Receipt.status is cancelled(budget), no 101-byte payload is emitted or installed. RPI.55 cites KN5.21 to KN5.23, LI.7/LI.25 and LI.27 to LI.30; neither clause defines another receipt or budget.",
+          "clause": "RPI.50"
+        },
+        "lookup_and_source_owners": {
+          "given": "B installed successfully, its notification was lost, and the same-epoch terminal is retained. Resolve RPI.55's outcome and source-coordinate owners.",
+          "expected": "outcome(B.command,B.request) returns the retained completed(view_published) under KN5.23/LI.30, creating no invocation. RPI.55 cites EV1.10 for coordinates and conversion and LI.16 for output; the display boundary duplicates none of those definitions.",
+          "clause": "RPI.55"
+        }
+      }
+    }
+  },
+  "registry_reconciliation": [
+    "No new error spellings. Reconcile ERR.25 and EV3:resource_limit.display_plan_ceiling with RM.12/RM.20: standalone admission refuses, scheduled final validation fails with the original Error. Keep KN7:budget.display_plan_limit reserved.",
+    "LI.28 alone maps KN7:budget.output cut-off to cancelled(budget) for an accepted publication, and physical exhaustion to failed(KN7:resource_limit.host_exhausted).",
+    "H15.9 gives EV3:busy.renderer_unavailable primary refusal and contextual stop forms; RM.22/RM.36 consume them. H15.10 checks EV3:stale.display_pick bindings before EV3:stale.source_link. RM.34 uses H15.16's final jumbling code names."
+  ],
+  "integrator_follow_up": [
+    {
+      "task": "Verify the supplied JI.41/RM.34 crosswalk against the assembled P7 candidate and reconcile final H-08, KN5.21 to KN5.23, EV1.10, LI.16/LI.28, ADR-L11 references and chapter 13 contextual forms. Add CT-RM-01 through CT-RM-07 to chapter 12 and update counts; CT-RM-07 is declared by p7-render. Review the complete candidate.",
+      "commands": [
+        "python -B docs/architecture/1.0/language/closure/check_closure.py --all",
+        "python -B docs/architecture/1.0/language/closure/check_p7.py --all"
+      ],
+      "condition": "Only after all parallel reconciliation packets are integrated; they are not present in this worktree."
+    },
+    {
+      "task": "The integrator reviews this Codex-authored patch, prepares a seven-part current-candidate packet at the path below and obtains the required independent assembled-candidate review before commit.",
+      "commands": [
+        "python -B tools/agents/codex_review.py --kind review --packet work/reviews/packets/renderer-closure-integrated.md --model gpt-6-astra --effort max --speed fast"
+      ],
+      "condition": "Outside this no-network, four-file sandbox. The review packet must first exist and scope the assembled candidate; reuse a valid unchanged plan check or record its missing status."
+    },
+    {
+      "task": "Pin finite production limits, exact checker/precision inputs, route binding and per-candidate support reports. Implement/run CT-RM-05, CT-RM-06 and conditional LX-7 under their recorded permissions and evidence scopes.",
+      "commands": [],
+      "condition": "No implementation-specific command is available in this draft. These checks are requirements, not runs performed or authorized here."
+    }
+  ],
+  "evidence_status": "Draft/source specification and contract vectors only. The acceptance check is mechanical, not semantic review or backend conformance. No new geometry, runtime, Windows/DirectX, GPU, performance or product acceptance evidence.",
+  "acceptance_command": [
+    "python",
+    "-B",
+    "docs/architecture/1.0/language/closure/check_p7.py",
+    "--packet",
+    "p7-render"
+  ]
+}

@@ -29,8 +29,9 @@ A5](../../../../../research/jumbling/state-contract.md), [DT-M1](../../../../pro
   }
   ```
 
-- **KN0.2 [D]** A *revision reference* binds a result to one moment of one session. It extends the proposal of V03.3 with
-  the three revisions that H-08 names. EN4 fixes its final fields.
+- **KN0.2 [D]** A *revision reference* binds a result to one moment of one session. These are EN4's proposed fields,
+  shared with the layer contract (`docs/progress/1.0/layer-interfaces.md`). They describe an observation, not a
+  requirement to compare every field when checking a preview. KN0.8 defines that comparison.
 
   ```text
   RevisionRef = {
@@ -46,6 +47,12 @@ A5](../../../../../research/jumbling/state-contract.md), [DT-M1](../../../../pro
   }
   ```
 
+  Counters never decrease within an epoch. Each affected counter increases by exactly one per durable action;
+  the other counters stay unchanged. Moving `head`, changing the puzzle identity or mode, and every mechanical
+  commit, even a legal no-op, advance `state`. A workspace-only action leaves `head` and `state` alone, advances
+  `workspace`, and also advances `protection` if it changes protection. Undo advances the affected counters; it never
+  restores their old numbers. An undo of workspace data can therefore have equal puzzle hashes (LI.9, LI.26).
+
 - **KN0.3 [D]** A *state reference* is a typed choice between a revision of a session and a derived state:
   `StateRef = Snapshot | DerivedRef`. Every read call takes a `StateRef`, so a program never holds raw mutable state.
 - **KN0.4 [D]** A call that can be undefined on part of its input returns a *typed partial result*:
@@ -57,6 +64,45 @@ A5](../../../../../research/jumbling/state-contract.md), [DT-M1](../../../../pro
   picking results are never applied to a mismatched state (V03.3).
 - **KN0.7 [D]** The kernel never calls the language (partition section 2). No kernel operation takes a callback, and no
   table the kernel reads holds code. What the language needs at run time, it asks for.
+- **KN0.8 [D]** `PreviewDeps` is the single word-preview freshness key, following closure handoff H3. In the preview's owning
+  session, `fresh(p)` means exact equality between `p.deps` and these same fields read now:
+
+  ```text
+  PreviewDeps = {
+    epoch:       EngineEpoch
+    identity:    IdentityBlock
+    mode:        jumble_off | jumble_on
+    state:       Nat
+    protection:  Nat
+    draft:       Digest<resolved draft>
+  }
+  ```
+
+  The engine builds `draft` from the expanded literal word, resolved arguments and the IDs, content digests and
+  monotone versions of every workspace record read to resolve it. It retains that read set. A changed or missing
+  member fails equality; editing it back does not restore its old version. A caller-supplied literal is frozen as an
+  immutable input. An edit to an unread record changes no field of this key. `RevisionRef.workspace` is not a
+  dependency; `head` is not one either, because every move of `head` advances `state` (KN0.2). Session ownership,
+  the pending-preview ID, presentation and token validity are separate gates, not additional freshness predicates.
+
+- **KN0.9 [D]** Filter application uses H15.4's separate freshness key, bound to the submitted `FilterPreviewRef`:
+
+  ```text
+  FilterPreviewDeps = {
+    epoch:       EngineEpoch
+    identity:    IdentityBlock
+    mode:        jumble_off | jumble_on
+    state:       Nat
+    filter:      Digest<resolved filter>
+  }
+  filter_fresh(f) iff f.deps == the same fields read now
+  ```
+
+  The engine binds the filter result to its owning session and resolved filter, including the versions and content
+  digests of records read to resolve that filter. An unread workspace edit changes no dependency. Application checks
+  this reference and key at publication; it uses neither the pending word-preview slot nor presentation. A stale
+  reference returns `KN5:stale.filter_preview`. An equal state digest after undo does not restore the state revision.
+  LI.41 supplies the `fresh_filter_preview` gate; KN0.8 continues to govern word previews only.
 
 ## 2. KN1: model registry and identity
 
@@ -323,14 +369,65 @@ operation model_info(identity: IdentityBlock) -> ModelInfo
 
 - **KN3.3 [D]** Exact polytope operations live here, with the exact double description of the state contract. The small
   exact algebra above this (quaternions, the icosian order and its tree, rows over F2 and F5) is library code (LB1).
-- **KN3.4 [B]** The A1 input map turns a float request into an exact rotation, and the journal records the exact result.
-  Replay uses the recorded rotation (state contract A1). The float site stays inside this one call. Whether the choice is
-  the same under every runtime is spike LX-9. If it differs, the request becomes a dyadic Cayley vector read exactly, and
-  a drag compares its 60 candidates exactly in Q(√5); that amends the state contract (EN1's Astra check, then the owner).
+- **KN3.4 [B]** A fresh rotation request is exact bytes: a dyadic Cayley vector, an explicit half-turn form or a bound
+  menu letter; a menu drag compares candidates exactly in Q(√5) under the recorded order (owner, 6 November 2026,
+  decision 8). This wording is proposed state-contract amendment A6, not in force until EN1's Astra check of the
+  amendment text and then the owner. A1 stays the contract in force until then. The journal records the exact rotation,
+  and replay uses that recorded rotation as under A1. KN3.7 to KN3.9 give the draft request and producer rules.
 - **KN3.5 [B]** The A2 filter is an optional accelerator whose result never differs from the exact one, and the
   certificate records what it used (state contract A2, ENG-0J section 4).
 - **KN3.6 [D]** The cost of an exact operation is a function of its operands' sizes. Words of the cost unit (LG2) and bit
   lengths are both exact, so a cost never depends on the machine.
+- **KN3.7 [D]** Under proposed amendment A6, request form C names an exact dyadic Cayley vector; H names a half-turn
+  by a nonzero primitive integer axis with its first nonzero component positive; M names a menu letter by set digest,
+  order digest and index. Malformed, noncanonical or oversize bytes are refused with
+  `KN2:input.rotation_request_malformed`. Nothing is repaired or rounded.
+
+  The wire form is one ASCII line of at most 2,048 bytes, with exactly one final LF and no other whitespace. It has five
+  `|`-separated fields. The first is the grammar prefix, and a later grammar takes a new prefix:
+
+  ```text
+  LX9B1|C|m:k|m:k|m:k
+  LX9B1|H|x:0|y:0|z:0
+  LX9B1|M|<set digest>|<order digest>|<index>
+  ```
+
+  A token `m:k` is the dyadic m/2^k: m is canonical decimal of at most 1,024 magnitude bits, 0 ≤ k ≤ 1,074, m is odd
+  when k > 0, and zero is only `0:0`. No plus sign, leading zero, negative zero, decimal point, exponent, NaN or
+  infinity appears. H tokens have k = 0. Digests are 64 lowercase hexadecimal digits. The index is canonical decimal
+  with 0 ≤ index < menu length. The decoder encodes what it read and compares bytes. These byte, bit and exponent
+  limits are draft admission limits: engineering trial budgets, not measured capacities.
+
+  A request carries its binding beside those bytes, as a canonical FP.5 object:
+  `{request:Text,cap:integer,operation:{kind:free,n:Nat,d:Nat}|{kind:menu_direct}|{kind:menu_drag},menu:null|{set:Text,order:Text}}`.
+  `cap` names the cap in A1's frame, and `menu` is null exactly for `free`. These are named arguments, so LI.5's request
+  digest covers them, and the journal records them. KN3.8's request digest is the SHA-256 of the raw request bytes.
+
+  Free mode uses A1's bounded rational grid (owner, 6 November 2026). A C or H request names bounds N and D. Exact
+  comparison chooses the nearest grid point with A1's tie order: the smaller denominator, then the lexicographically
+  smaller numerators, then a Cayley point before a half-turn. A request already on the grid returns itself at distance
+  zero, so the rotation as named is the special case of bounds that contain it. Half-turn axes are candidates for an
+  H request and for a C request with ω·ω ≥ 13130. This rational test replaces A1's "within 1° of π": cot²(π/360) is
+  about 13130.56, so the window is about 1.00002° wide. Free mode compares and records the squared Frobenius distance,
+  which is exact in Q, so no comparison needs a precision cap. The trial search limit is N ≥ 0, D ≥ 1 and
+  (2N+1)³·D ≤ 2^40; bounds outside it refuse with `KN2:resource_limit.rotation_search_bound` before any search, with
+  no choice. Free mode pins no menu, so an M request there refuses with `KN2:input.menu_binding_mismatch`. Free mode is
+  research-only (JI.35), with no interactive latency bar.
+
+  The prototype in `work/experiments/language-lx/lx9-exact-request/REQUEST.md` tested this grammar, with a menu index
+  limit of 59 and a transcendental window test. Its `RESULT.md` supplies source and synthetic evidence only. The
+  float-path difference is recorded in `work/experiments/language-lx/lx9-input-map/followup/NOTE.md`; neither record
+  establishes native input or performance.
+- **KN3.8 [D]** A menu request under proposed amendment A6 binds the pinned menu's set and order digests. A differing
+  digest refuses with `KN2:input.menu_binding_mismatch`. A direct C or H request that is not exactly a menu member
+  refuses with `KN2:input.twist_off_menu`; M names a member under both digests. A menu drag takes a C or H
+  request, and M with `menu_drag` refuses with `KN2:input.rotation_request_malformed`. It scores every ordered
+  candidate by exact squared Frobenius distance in Q(√5). The smallest index wins every exact tie. Its record holds
+  the selected index, the complete tie list, the exact distance, both menu digests and the request digest.
+- **KN3.9 [D]** Under proposed amendment A6 the float site leaves the kernel. The shell's producer turns a gesture
+  into request bytes, reading binary64 bit-exactly, refusing non-finite values and canonicalising signed zero.
+  Identical gestures need not produce identical bytes. The journal records the request bytes and the exact rotation;
+  replay uses the recorded rotation, without running the producer or chooser again.
 
 ## 5. KN4: session store
 
@@ -341,11 +438,12 @@ operation model_info(identity: IdentityBlock) -> ModelInfo
 - **KN4.3 [B]** The runtime reads the store only through query rows of the command layer (INV-2).
 
 ```text
-query journal(session, from: EventId?, limit: Nat) -> Page<JournalEntry>
+query journal(session, from: EventId?, limit: Nat, cursor?) -> Page<JournalEntry>
 query revision_info(ref: RevisionRef) -> RevisionInfo
-query checkpoints(session) -> List<CheckpointInfo>
-query workspace_records(kind, filter) -> Page<WorkspaceRecord>
-query receipt(command: CommandId) -> Receipt
+query checkpoints(session, limit: Nat, cursor?) -> Page<CheckpointInfo>
+query workspace_records(kind, filter, limit: Nat, cursor?) -> Page<WorkspaceRecord>
+query outcome(command: CommandId, request: Digest<request>) -> Receipt
+query job_result(command: CommandId, job: JobId) -> JobResult
   effect:  read a snapshot
   cost:    linear in the page returned, flat in history (R-13)
   errors:  KN2:stale.revision_gone, input.*
@@ -355,14 +453,14 @@ query receipt(command: CommandId) -> Receipt
   carries its provenance field (BM2, chapter 05), so a word laundered through the workspace keeps its label.
 - **KN4.5 [B]** A session without jumbling stores exactly what it would store without jumbling support, and an interrupted
   episode recovers as on or rolls back to its last committed revision (ENG-0J section 4).
-- **KN4.6 [P LQ4]** An experiment branch is a journal branch the engine owns. Exactly one line per session is active.
-  Other branches can be viewed and compared, and programs cannot change them. Under LQ4's alternative, solving sessions
-  have no branches and research uses separate sessions; the query rows above stay the same.
-- **KN4.7 [P LQ10]** One word commit is one journal row that cites the literal letters by digest, and the letters are
+- **KN4.6 [B]** An experiment branch is a journal branch the engine owns. Exactly one line per session is active.
+  Other branches can be viewed and compared, and programs cannot change them (owner, 6 November 2026, LQ4).
+- **KN4.7 [D]** One word commit is one journal row that cites the literal letters by digest, and the letters are
   stored as `ia16` chunks for menu-letter words only. These chunks decode in the pinned menu order, never as retained
   generator IDs (PS3.13); 600-cell-Full words use the recipe form (PS1.22). As J1 rows a word of 2,352,984 letters would
   take about 649 million characters at 276 per row, against 4,705,968 raw bytes (arithmetic, DT-L1 R3-E4). The word
-  encoding belongs to the data core, so the owner decides it under LQ10.
+  encoding belongs to the language-neutral data core; syntax and IR freeze later (owner, 6 November 2026, LQ10).
+  The chunk encoding is an integrator default within that scope, not a format frozen by the answer.
 - **KN4.8 [D]** A stored delta between two jumbling revisions carries the pose-ID remap, or the revision carries its
   full pose-ID array. Moved pairs alone do not rebuild the next revision, because `_compact` reorders the pose table
   after a commit and remaps every pose ID, so unmoved pieces can change ID (`research/jumbling/sim/state.py:385-397`,
@@ -381,12 +479,17 @@ query receipt(command: CommandId) -> Receipt
     errors:  input.*, stale.*, KN2:protection.*, busy.*, consistency.*, auth.*, capability.*
   ```
 
+  `command` identifies one invocation; `row` is H-08's stable dotted command name. `propose`, `commit` and
+  `publish_view` are services of this entry, not bypasses. Their schematic signatures omit the common invocation
+  envelope of LI.5. Retried delivery is resolved by KN5.21 before attempting lane admission or consuming a token again.
+
 - **KN5.2 [B]** `invoke` returns a receipt at once (DT-M1). No engine call runs on the UI thread (R-14).
 - **KN5.3 [D]** A command the language defines is an entry in a *language overlay* of the command table (EV4). It has the
   same row fields as a kernel row. Its kind is `view`, `workspace` or `query`, or `file` with a granted file capability.
   Its kind is never `commit` or `app`. Registering any other kind is refused.
 - **KN5.4 [D]** An overlay row carries what the checker found: its static verdict, its capabilities, and the kernel rows
-  it may invoke. A row the manifest marks as optional does not count towards availability.
+  it may invoke. Required rows carry LI.20's `requires` argument-binding metadata. A row the manifest marks as optional
+  does not count towards availability.
 - **KN5.5 [D]** Overlay rows reach the engine as data. The engine never runs language code to answer for them (KN0.7).
 
 ### Availability
@@ -400,12 +503,13 @@ query receipt(command: CommandId) -> Receipt
   Availability = {
     revision:   RevisionRef
     generation: Nat        # KN5.25
-    rows:       Map<RowId, available | unavailable(Error)>
+    context:    Digest<context and effective grants>
+    rows:       Map<(RowId, Digest<args>), available | unavailable(Code)>
   }
   ```
 
 - **KN5.25 [D]** Availability reads inputs that no revision counts. A preview reaching `presented` makes a commit key
-  live (chapter 08, section 6), and a lane's admission or release changes a `not_busy` gate (KN7.1), with every revision
+  live (chapter 08, section 6), and a lane's admission or release changes admission availability (KN7.1), with every revision
   unchanged. DT-M1's sketch has the case: a check ends and Preview becomes available. So the engine numbers the tables of
   one epoch by a *generation*, which advances whenever an input of the table changes: a revision, a preview's lifecycle
   state or a lane's occupancy. A new generation replaces the last table, so one table stands for a revision at any
@@ -413,10 +517,14 @@ query receipt(command: CommandId) -> Receipt
   a keystroke still costs no engine call. Like every table it grants nothing: each row's gates run at invocation (KN5.7),
   so a table one generation old can mislead a display and never a commit. The event's form belongs to KN5.8's protocol.
 - **KN5.7 [D]** A language-defined command is available when its static verdict passes and every non-optional kernel row
-  it may invoke is available (default 17). The command layer computes this from two stored tables, so it needs no language
-  code. Availability grants nothing: each row's gates still run when the program invokes it.
-- **KN5.8 [O]** The availability protocol between the command layer and the engine needs an Astra plan check before the
-  architecture freeze (H-08 open point 5).
+  it may invoke has the hint LI.20 requires (default 17): the declared static binding, or only the argument-independent
+  gates for computed arguments. The command layer uses stored metadata and tables, with no language code. Availability
+  grants nothing: each row's gates still run on the actual arguments when the program invokes it.
+- **KN5.8 [D]** The proposed availability protocol is LI.18 to LI.21: a generation-stamped table, the argument-aware
+  `availability(row, args, revision)` hint, an advisory generation event and a full read after a missed event. Reasons
+  are registry codes. The engine evaluates kernel gates and the overlay's stored metadata without calling the
+  language. `invoke` checks again against current inputs. The protocol is supplied as a draft for H-08 open point 5;
+  its required Astra plan check and current-candidate review remain integration work, not evidence supplied here.
 
 ### Proposals and previews
 
@@ -433,6 +541,7 @@ query receipt(command: CommandId) -> Receipt
   Preview = {
     id:         PreviewId
     base:       RevisionRef
+    deps:       PreviewDeps        # KN0.8; the only freshness key
     literal:    Digest<literal word>
     identity:   IdentityBlock
     witness:    engine-owned, immutable
@@ -443,12 +552,18 @@ query receipt(command: CommandId) -> Receipt
   ```
 
   A word that conflicts with protection still gets a preview, and its `protection` field says so, because charter S4
-  shows that effect before a commit. The commit refuses it (KN5.16, ONE.33).
+  shows that effect before a commit. `operation.preview` has no `protection` admission gate: a complete admissible
+  replay returns `completed(preview_ready)` even with that conflict. `operation.execute` keeps the gate and refuses
+  the conflicting commit (KN5.16, ONE.33). A mechanically refused prefix still builds no preview.
 
+- **KN5.26 [B]** At `operation.preview` admission in a solving session, the command layer reads the word's provenance
+  block and those of its parts through the adapter, under BND.84 and BND.85 (owner, 6 November 2026, decision 12).
+  KN5.9's separate rule that a word conflicting with protection still gets a preview stands.
 - **KN5.10 [B]** The preview replays the literal word at the current revision, prefix by prefix, and shows the full effect.
   Exact length and cost are shown before any run. A program is never split silently (default 10).
-- **KN5.11 [B]** A session holds at most one pending preview. A new preview replaces it under a new ID (0.4 behaviour,
-  kept). A replaced preview cannot be committed.
+- **KN5.11 [B]** A session holds at most one pending preview. An admitted replacement, subject to KN5.12, takes
+  its place under a new ID only when construction succeeds. A refused or failed proposal leaves the old slot
+  unchanged. A replaced preview cannot be committed.
 - **KN5.12 [O]** Whether a program may replace a shown preview at all is a design-line question (DT-L1 E2). The token
   binding keeps the commit safe either way.
 - **KN5.13 [B]** A proposal never carries a state or a digest for the engine to adopt (INV-1).
@@ -456,7 +571,8 @@ query receipt(command: CommandId) -> Receipt
 ### Commit
 
 - **KN5.14 [B]** The shell mints a user-action token from a non-repeating key-down (or the equivalent explicit pointer
-  action). It binds the token to the ID of the preview on screen and the digest of its literal letters, with the model
+  action). It binds the invocation, session, epoch, row and absolute arguments, the ID of the preview on screen and
+  the digest of its literal letters, with the model
   identity, the menu identity, the menu-order digest and the contract revision. The token never binds a normal form
   (INV-3). The commit takes one action on a fresh preview (charter S4).
 
@@ -471,45 +587,78 @@ query receipt(command: CommandId) -> Receipt
 - **KN5.15 [D]** The token is single-use and never persisted (V03.5). It carries an authenticator from a per-launch secret
   that the runtime never receives. No operation available to the runtime returns a token, in any placement of the
   runtime (LQ9).
-- **KN5.16 [B]** At commit the engine rechecks the revision, the literal-letter digest, the full-state hash and protection
-  (partition KN5; `AGENTS.md`). A moved revision, or a digest that differs from what the token binds, is refused as
-  stale. A protection conflict is refused as `protection`. Equal revisions with unequal digests mean the engine is
-  wrong, and they stop as `consistency` (chapter 08, section 7). The engine then adopts the end state of its own preview
-  object. One durable transaction writes the journal event, the receipt and the workspace changes that must agree
-  (R-06).
+- **KN5.16 [B]** At commit the engine checks `fresh(p)` (KN0.8), the token's literal-letter binding, the full-state hash
+  and protection (partition KN5; `AGENTS.md`). Changed preview dependencies give `KN5:stale.revision_changed`; a token
+  binding mismatch gives `KN5:stale.token_mismatch`. A protection conflict is refused as `protection`. Equal state
+  revisions with unequal full-state hashes stop as `consistency` (chapter 08, section 7). One durable transaction
+  writes the journal event, receipt and workspace changes that must agree (R-06). Only then does the engine publish
+  the end state of its own preview object. LI.8 serializes the final rechecks with this transaction.
 - **KN5.17 [B]** A commit typed while another commit is in flight is refused as busy (DT-M1 Q6 (a)). The commit chord is one
   non-repeating chord, and key repeat never repeats a state change (R-18, DT-M1).
 - **KN5.18 [B]** A commit or undo goes ahead at once and cancels the jobs that read the revision it replaces. File jobs
-  finish (DT-M1 Q5 (a)).
+  finish (DT-M1 Q5 (a)). Pinned research jobs keep KN7.5's rule (owner, 6 November 2026, LQ4).
 
 ### Undo
 
 - **KN5.19 [B]** There is one undo key and one durable order of actions across the journal and the workspace. An undo
-  carries the action number its hint named, and it is refused as stale if another action landed first (DT-M1 Q4 (a)).
-- **KN5.20 [B]** Undo is available while a job or a program runs (charter E4; DT-M1 fix-first 3, still open in EN4).
-  `session.undo` must lose its `not_busy` gate before the runtime binds to H-08.
+  carries LI.9's `ActionHint`, and it is refused as stale if its order or target changed (DT-M1 Q4 (a)).
+- **KN5.20 [B]** Undo is available while a job or a program runs (charter E4; DT-M1 fix-first 3). `session.undo` and
+  `session.redo` are the only entries; both take `hint: ActionHint` and `token: UserActionToken`, use the commit lane
+  and have no `not_busy` gate. Both hint fields enter the request and token binding. Internal dispatch selects the
+  journal or workspace action through the same permission checks (LI.26). Both rows use `slot_map: by_target`:
+  journal actions preserve the map; workspace actions restore a map only if they recorded one. A workspace inverse
+  returns `committed` with equal puzzle hashes and unchanged head/state revision, while advancing affected workspace
+  versions. Only another commit in flight makes that lane busy. The final row metadata remains p7-table's input.
 
 ### Receipts
 
-- **KN5.21 [D]** Every invocation has a durable command ID, chosen before submission, and a request digest. The same ID
-  with different content is refused. One command ID produces at most one commit (V03.5).
+- **KN5.21 [D]** Every invocation has a command ID, chosen before submission, and a request digest (LI.5). The same ID
+  with different content is refused as `KN5:input.command_id_reused`, without changing the original invocation's
+  record. An identical retry returns that invocation's receipt; it starts no second job or effect. One command ID
+  produces at most one commit (V03.5). IDs are never reused, including across epochs; receipt retention is KN5.23.
 
   ```text
   Receipt = {
     command:  CommandId
     request:  Digest<request>
-    status:   accepted | running(JobId) | refused(Error)
-            | committed(CommitRecord) | cancelled | unknown_outcome
+    job:      JobId?              # retained in terminal receipts of jobs too
+    status:   accepted | running(JobId)
+            | committed(CommitRecord) | completed(Completion)
+            | refused(Error) | failed(Error) | cancelled(CancelReason) | unknown_outcome
   }
   CommitRecord = { event: EventId, pre: Digest<level>, post: Digest<level>, revision: RevisionRef }
+  Completion = { kind: query | preview_ready | workspace | view_published | file | app,
+                 revision: RevisionRef, result: ResultRef? }
+  ResultRef = { job: JobId?, digest: Digest<result>, covered: typed description? }
+  CancelReason = by_user | superseded(by: CommandId) | replaced_revision | budget
   ```
 
+  `accepted` and `running` are non-terminal. Each accepted invocation has exactly one terminal decision:
+  `committed` for a commit row; `completed` for every other successful kind; `failed` after acceptance with no
+  published effect; or `cancelled` before publication. `refused` is a rejection before acceptance and changes
+  nothing. `unknown_outcome` reports missing knowledge, not a second terminal decision or proof of failure.
+  `event` identifies the durable action; `revision.head` is the resulting puzzle-journal head, which need not be
+  that event after an undo. Pre and post hashes keep their levels, including across a crossing. A result digest
+  identifies the typed result payload, not a puzzle state; any state digest inside it still carries its KN1 level.
+  LI.27 to LI.31 bind completion, job results, publication and lookup.
+
 - **KN5.22 [B]** A committed command is never reported as failed. Commit outcome and display refresh are reported apart,
-  and a refresh failure after a commit shows "applied, display out of date" (R-02).
-- **KN5.23 [D]** No receipt, broken journal continuity or an incomplete recovery record means `unknown_outcome`, not proof
-  of non-execution. The session enters read-only recovery (V03.5).
+  and a refresh failure after a commit shows "applied, display out of date" (R-02). The same separation holds after
+  a workspace write, view installation or file publication completes: later notification or refresh failure cannot
+  change its terminal success. `completed(preview_ready)` records creation, not continued freshness or presentation.
+- **KN5.23 [D]** `outcome(command, request) -> Receipt` recovers a lost notification without invoking the command again.
+  Accepted commit and workspace invocations retain their admission and terminal records durably; their effects and
+  terminal receipts are written in the same transaction. Pre-admission refusals and query, preview, view, file and
+  app receipts are retained for their engine epoch. After it ends, an unsaved transient receipt is `unknown_outcome`,
+  even if a result file still exists.
+  A saved result is evidence of that result, not proof that an invocation published it. LI.30 defines lookup and
+  recovery, including a terminal receipt whose payload is no longer resident. Missing proof of a possible durable
+  session mutation, broken journal continuity or an incomplete recovery record puts the session into read-only
+  recovery (V03.5). Loss of a transient query or view receipt alone does not freeze a healthy session.
 - **KN5.24 [B]** Errors are typed with stable codes, and each category has its own continuation (H-08, V06; chapter 13).
-  The shell never merges evidence state, score and permission (charter bar M3).
+  The shell never merges evidence state, score and permission (charter bar M3). A job's terminal receipt keeps its
+  command and job IDs; `job_result(command, job)` returns KN7.3's result. LI.28 supplies the shared terminal mapping
+  for deterministic cut-off, runtime error and wall-clock safety stop, preserving each code and its coverage.
 
 ## 7. KN6: independent checkers
 
@@ -547,16 +696,18 @@ query receipt(command: CommandId) -> Receipt
 
 - **KN7.1 [B]** Long work runs as a job, never on the UI thread (R-14). Admission is atomic and is one compare-and-set per
   lane, keyed by the durable command ID, and a one-job limit cannot be bypassed by concurrent submissions (R-16, DT-M1).
-- **KN7.2 [D]** A lane is a named admission rule. DT-M1 names the commit, exclusive and latest-wins lanes. The language
-  needs two more, which EN4 confirms.
+- **KN7.2 [D]** A lane is a named admission rule. This EN4 draft confirms the `program` and `view` lanes alongside
+  DT-M1's three lanes, following closure handoff H5. It also defines `none`. LI.22 to LI.25 give their scopes,
+  replacement fences and capacity accounting. A lane reserves work, never permission to mutate the state.
 
 | Lane | Admission | Used by | On a commit or undo |
 | --- | --- | --- | --- |
-| Commit | One at a time; a second is refused as busy | Commit rows, undo | Not applicable |
-| Exclusive | One job at a time | Covers, the repair list, long checks | Cancelled if it reads the replaced revision |
-| Latest-wins | The newest request replaces an older one | Release checks | Cancelled |
-| Program (new) | A bounded number of program jobs | Language-defined commands | Cancelled if it reads the replaced revision, unless pinned (KN7.5) |
-| View (new) | One per view, latest wins, skip to the newest revision | Program views | Recomputes at the newest revision |
+| `commit` | One per session; a second gets `KN5:busy.commit_in_flight`, never a queue | Commit rows, including undo | The current transaction settles before release |
+| `exclusive` | One per session; a second gets `KN7:busy.lane_full` | Covers, repair list, long checks and file jobs assigned here | Cancelled if revision-bound, unless pinned (KN7.5); file jobs finish |
+| `latest_wins` | One runner and one newest pending request per session and resolved `lane_target` (LI.22); a newer request supersedes older unfinished work | Release checks | Revision-bound work is cancelled |
+| `program` | At most the declared positive capacity per session; an excess request gets `KN7:busy.lane_full` | Solver-invoked non-view overlay programs | Cancelled if it reads replaced dependencies, unless pinned (KN7.5); file jobs finish |
+| `view` | One runner and one newest pending request per session and resolved `lane_target` (LI.22); a newer request supersedes older unfinished work | Program views and `publish_view` | Old work is fenced off; recomputes at the newest revision |
+| `none` | No occupancy limit; another request checks its own gates immediately | Short queries, workspace edits and app controls | No background work to cancel |
 
 - **KN7.3 [B]** A job's outcome is completed, cancelled, cut off or error. Each result is bound to its input digest, its
   parameters and what it covered. The view model reads a result only after its digest matches the shown revision. An
@@ -565,6 +716,8 @@ query receipt(command: CommandId) -> Receipt
 
   ```text
   JobResult = {
+    command:  CommandId
+    job:      JobId
     outcome:  completed | cancelled | cut_off(by: Code) | error(Error)
     input:    Digest<level>
     params:   Digest
@@ -576,9 +729,9 @@ query receipt(command: CommandId) -> Receipt
 
 - **KN7.4 [B]** A job that did not complete yields no negative claim, and a witness it found counts once it is checked
   (partition 8.1, default 6).
-- **KN7.5 [P LQ4]** A job whose input is pinned by digest finishes after a commit, as file jobs do. Its result reaches a
-  newer revision only by a re-run at that revision or by an exact transport that a lemma justifies. Under LQ4's
-  alternative, pinned jobs are cancelled like the others.
+- **KN7.5 [B]** A research job whose input is pinned by digest finishes after a commit, as file jobs do (owner,
+  6 November 2026, LQ4). Its result reaches a newer revision only by a re-run at that revision or by an exact transport
+  that a lemma justifies.
 - **KN7.6 [B]** Cancellation is cooperative and phase-aware. Acknowledging a request does not guarantee it. Before commit
   the result is `cancelled` with the state unchanged; after a durable commit it is the committed receipt (V03.5). Kernel
   batches check for cancellation at chunk boundaries, and the chunk size is a declared part of each batch.
@@ -593,7 +746,7 @@ query receipt(command: CommandId) -> Receipt
     steps:        Nat       # interpreter steps
     kernel_cost:  Nat       # declared cost of kernel calls
     memory:       Nat       # logical units
-    output:       Nat       # logical units of results, records and plans
+    output:       Nat       # canonical uncompressed result/record/plan bytes (handoff H8)
     safety_stop:  Seconds?  # a machine limit, not a budget unit; never part of the reproducibility key
   }
   ```
@@ -620,13 +773,14 @@ query receipt(command: CommandId) -> Receipt
 
 ## 9. What this chapter asks of EN3 and EN4
 
-EN3 delivers the jumbling command rows, view-model fields and `jumbling-interfaces.md`. EN4 delivers the final H-08, the
-layer interfaces and the migration-format packet (re-plan of 22 October 2026). Neither has delivered yet. The language adds
-these needs:
+EN4's `docs/progress/1.0/layer-interfaces.md` now supplies a draft of the main-line service contracts, including the
+types in this chapter. It is not the later language-kernel annex or a final H-08. The parallel p1, p2a, p3 and p6 inputs
+still need integration and review. The following needs retain their owners; LI.37 walks the freeze inputs without
+declaring those other drafts delivered:
 
 | Item | Owner | Clause |
 | --- | --- | --- |
-| Undo without the `not_busy` gate; a workspace-undo command; undo of a protection row through R-05's path | EN4 | KN5.20 |
+| One undo/redo entry per direction with `ActionHint` and internal journal/workspace dispatch; protection inverses through R-05's path | EN4 | KN5.20 |
 | The revision reference's final fields | EN4 | KN0.2 |
 | The program and view lanes | EN4 | KN7.2 |
 | The language overlay of the command table and its checks in `build_command_table.py` | EN4 | KN5.3 |
@@ -657,9 +811,13 @@ these needs:
 | CT-KN3-01 | Sign tests at the state contract's small margins decide exactly | source |
 | CT-KN3-02 | Synthetic pose entries beyond 2^64 and a 6,775-digit integer round-trip exactly. No record reaches 2^64, so the pose entries are built for the test | synthetic |
 | CT-KN3-03 | The A2 filter's result equals the exact result on adversarial cases | source |
+| CT-KN3-04 | Proposed A6: canonical C/H/M requests decode exactly; malformed, noncanonical and oversize bytes refuse with `KN2:input.rotation_request_malformed`, including C=(2^1024+1,0,0). Free mode uses explicit N/D, returns a grid member at zero distance and refuses M with `KN2:input.menu_binding_mismatch`; a C request at ω·ω ≥ 13130 gets half-turn candidates, so C=(69264588888054800706886561/2^79,0,0) with N=1, D=16 gives H(1,0,0). `LX9B1|C|1:1|0:0|0:0`, C=(1/2,0,0), with N=0, D=1 gives the identity at squared distance 8/5, whose plain distance is irrational, and bounds outside the search limit give `KN2:resource_limit.rotation_search_bound` with no search | source |
+| CT-KN3-05 | Proposed A6: direct off-menu C/H requests refuse; a drag scores the whole pinned order exactly and records the winner, complete ties, distance and bindings. Reversing the menu changes its order digest, old bindings refuse with `KN2:input.menu_binding_mismatch`, and the smallest new index wins an exact tie | source |
+| CT-KN3-06 | Proposed A6: the shell producer reads finite binary64 values exactly, canonicalises signed zero and refuses non-finite input; the kernel receives only exact bytes. Replaying the recorded rotation calls neither the producer nor the chooser | source |
 | CT-KN4-01 | A runtime in any placement cannot open a session file | source |
 | CT-KN4-02 | R-06: injected failures at each write leave all of the state as before | source |
 | CT-KN4-03 | R-13: status cost is flat at 0, 50, 200 and 400 checkpoints | source |
+| CT-KN4-04 | The engine owns journal branches with exactly one active line; programs may view and compare other branches and cannot change them | source |
 | CT-KN5-01 | Preview swap: a preview replaced between its display and the commit is refused | source |
 | CT-KN5-02 | No operation in the runtime's capability table returns a token or calls `commit` | source |
 | CT-KN5-03 | R-18: a held key commits once | source |
@@ -672,6 +830,7 @@ these needs:
 | CT-KN5-10 | R-05: an enumeration of every entry point against the restriction table | source |
 | CT-KN5-11 | An undo that names a superseded action is refused as stale | source |
 | CT-KN5-12 | With `RevisionRef` held constant, a preview's creation, presentation and cancellation and a lane's admission and release each advance the generation, the commit row's availability follows chapter 08's lifecycle table, and no keystroke reaches the engine | source |
+| CT-KN5-13 | In a solving session, the BND.84/BND.85 adapter refuses words produced by the solver's tool through picks, draft insertion, composition, file round trips and restored workspace provenance, and fails closed on missing origin content. Manual words, imported 0.4 macros and a built-in-list pick pass this check; an admissible permitted word with a protection conflict still gets KN5.9's preview | source |
 | CT-KN6-01 | Every checker kind's mutation gate: tampered records and wrong start tables fail | source |
 | CT-KN6-02 | An import scan: no checker imports a producer's search or construction code | source |
 | CT-KN6-03 | The conformance corpus: the existing certificates pass under the kernel's checkers | source |
@@ -681,17 +840,26 @@ these needs:
 | CT-KN7-04 | DT-M1's XM4 with a long program job: a commit cancels jobs on the old revision, and file jobs finish | source |
 | CT-KN7-05 | R-16: concurrent invocations and a held key cannot pass a one-job limit | source |
 | CT-KN7-06 | A commit completes within charter E2 while a program job runs at full load | performance |
+| CT-KN7-07 | After a commit, a digest-pinned research job finishes on its original input. Its result cannot be applied to the new revision without a re-run or lemma-justified exact transport | source |
 
 ## 11. Open items
 
-- **LQ3, LQ10.** The form of a reachability claim and a check report inside the evidence envelope (chapters 05, 06).
-- **LQ4.** Branches (KN4.6) and pinned jobs (KN7.5).
-- **LQ8.** The engine language. Nothing in this chapter depends on it, except the exact arithmetic libraries it can use
-  (LX-5).
-- **LQ9.** Where the runtime runs. KN5.15, KN7.12 and KN7.13 must hold in each placement.
-- **LQ21.** What a provenance block holds (KN5.9): chapter 07.
+The owner answered LQ1 to LQ21 on 6 November 2026. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set
+waits for the joint setting.
+
+- **LQ2.** Chapter 07's joint setting chooses the option set; the interim boundary and KN5.26 apply meanwhile.
+- **LQ8.** [B] The engine language waits for LX-5 and LX-6 (owner, 6 November 2026, LQ8). Nothing in this chapter
+  depends on it, except the exact arithmetic libraries it can use.
+- **LQ9.** [B] Where the runtime runs, decided after LX-1 to LX-5 together with LQ21 (owner, 6 November 2026, LQ9).
+  KN5.15, KN7.12 and KN7.13 must hold in each placement.
+- **LQ13.** [B] Syntax waits for LX-8 before LP2's parser (owner, 6 November 2026, LQ13); these signatures stay neutral.
+- **LQ21.** [B] The form of flow control waits for LX-1 and LX-3 together with LQ9 (owner, 6 November 2026, LQ21).
+  Chapter 07 owns the mechanism; the stored provenance block and KN5.26 do not wait for it.
+- **Proposed A6.** KN3.4 and KN3.7 to KN3.9 need EN1's Astra check and then the owner before A1 changes. The owner chose
+  the grid for free mode, which settles that detail of the text and puts nothing in force. The draft admission and
+  search limits are trial budgets; production values remain to be established.
 - **EN3, EN4.** Section 9.
-- **H-08 open point 5.** The availability protocol's plan check (KN5.8).
+- **H-08 open point 5.** Review the supplied availability protocol (KN5.8) in the assembled candidate; no ruling is claimed.
 - **Open after note N1.** Whether the same word language implies the same shape; reachability of sticker classes in
   J(I_a); an exact certificate for Lemma R; a bridge lemma with its own ID, if a goal wants "some member of Z's sticker
   class is reachable". Nothing in this chapter depends on them.

@@ -1,0 +1,11 @@
+{
+  "format": "c600-command-rows-delta-1",
+  "add": [
+    {"id": "example.jumble.row", "label": "Example row", "kind": "commit", "inventory": [], "gates": ["confirm"], "lane": "commit",
+     "preview": "none", "undo": "journal", "contexts": ["puzzle"], "repeat": false, "job": false, "key_0_4": null,
+     "disposition": [], "note": "test fixture, never part of a table", "source": "HANDOFF.md H2"}
+  ],
+  "amend": [
+    {"id": "macro.add", "expect": {"kind": "workspace"}, "set": {"note": "test fixture amendment"}, "source": "HANDOFF.md H2"}
+  ]
+}

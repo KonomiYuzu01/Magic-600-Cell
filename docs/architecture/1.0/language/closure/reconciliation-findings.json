@@ -1,0 +1,1148 @@
+{
+ "format": "c600-reconciliation-findings-1",
+ "status": "Draft input to the reconciliation wave; nothing here is accepted or frozen.",
+ "sources": "Three reconciliation audits of the integrated drafts, and the integrator's items. Line numbers are those of the audited candidate; find current text by clause ID.",
+ "packets": {
+  "p7-table": {
+   "title": "Final command table, undo entry, gates, lane targets, services",
+   "files": [
+    "docs/progress/1.0/build_command_table.py",
+    "docs/progress/1.0/command-table.json",
+    "docs/progress/1.0/command-table.md",
+    "docs/progress/1.0/command-join.json",
+    "docs/progress/1.0/command-aliases.json",
+    "docs/progress/1.0/command-rows-jumbling.json",
+    "docs/progress/1.0/test_command_table.py",
+    "docs/architecture/1.0/language/kernel-interface"
+   ],
+   "extra_checks": [
+    "docs/progress/1.0/test_command_table.py",
+    "docs/architecture/1.0/language/kernel-interface/check_annex.py"
+   ]
+  },
+  "p7-layers": {
+   "title": "Layer and jumbling interfaces, kernel and one-state chapters",
+   "files": [
+    "docs/progress/1.0/jumbling-interfaces.md",
+    "docs/progress/1.0/layer-interfaces.md",
+    "docs/architecture/1.0/language/architecture/01-kernel.md",
+    "docs/architecture/1.0/language/architecture/08-one-state.md"
+   ]
+  },
+  "p7-data": {
+   "title": "Persistence, evidence, boundary provenance and the format packet",
+   "files": [
+    "docs/architecture/1.0/language/architecture/05-persistence.md",
+    "docs/architecture/1.0/language/architecture/06-evidence.md",
+    "docs/architecture/1.0/language/architecture/07-boundary.md",
+    "docs/architecture/1.0/language/format-packet"
+   ],
+   "extra_checks": [
+    "docs/architecture/1.0/language/format-packet/check_vectors.py"
+   ]
+  },
+  "p7-lang": {
+   "title": "Language core, libraries, environment, determinism, route chapter and contract vectors",
+   "files": [
+    "docs/architecture/1.0/language/architecture/02-language-core.md",
+    "docs/architecture/1.0/language/architecture/03-libraries.md",
+    "docs/architecture/1.0/language/architecture/04-environment.md",
+    "docs/architecture/1.0/language/architecture/09-determinism.md",
+    "docs/architecture/1.0/language/architecture/11-route-and-spikes.md",
+    "docs/architecture/1.0/language/contract-vectors"
+   ],
+   "extra_checks": [
+    "docs/architecture/1.0/language/contract-vectors/check_vectors.py"
+   ]
+  },
+  "p7-render": {
+   "title": "Renderer chapter and renderer feature matrix",
+   "files": [
+    "docs/architecture/1.0/language/architecture/10-renderer-platform.md",
+    "docs/architecture/1.0/language/renderer-feature-matrix.md"
+   ]
+  },
+  "p7-reg": {
+   "title": "Error registry, phases and conformance index, ADR descriptions",
+   "files": [
+    "docs/architecture/1.0/language/architecture/12-phases-and-conformance.md",
+    "docs/architecture/1.0/language/architecture/13-errors.md",
+    "docs/architecture/1.0/language/adr"
+   ]
+  }
+ },
+ "findings": {
+  "RA1-01": {
+   "severity": "blocker",
+   "title": "Workspace undo has two incompatible command routes",
+   "detail": "Owners: p2a and p2b under H1. CM.5 and the generated undo_dispatch send workspace actions to workspace.undo. LI.26 and KN5.20 instead require session.undo to dispatch both action classes. This also changes behavior for a recorded grip rebind: the builder permits slot_map=restore_action only on workspace.undo/workspace.redo, while session.undo is marked preserve. Thus the same hinted workspace inverse has incompatible invocation and map-restoration contracts.",
+   "counterexample": "The latest eligible action is grip.rebind. The solver presses the shared undo key. CM.5 invokes workspace.undo and restores the recorded map; LI.26 invokes session.undo, whose table metadata and validator prohibit that map-restoration behavior.",
+   "suggested_fix": "Reconcile CM.5, undo_dispatch, history-row metadata and the slot-map restriction with LI.26's single entry. Add one vector undoing a rebind through that entry: committed receipt, restored map, unchanged puzzle head/hash and advanced workspace versions.",
+   "evidence": [
+    {
+     "path": "docs/progress/1.0/command-table.md",
+     "line": 71
+    },
+    {
+     "path": "docs/progress/1.0/layer-interfaces.md",
+     "line": 219
+    },
+    {
+     "path": "docs/progress/1.0/build_command_table.py",
+     "line": 452
+    },
+    {
+     "path": "docs/progress/1.0/command-table.json",
+     "line": 55
+    }
+   ],
+   "owners": {
+    "p7-table": [
+     "rebind_undo_row"
+    ],
+    "p7-layers": [
+     "rebind_undo_walk"
+    ]
+   }
+  },
+  "RA1-02": {
+   "severity": "blocker",
+   "title": "The preview row rejects a protection conflict that the preview contract must display",
+   "detail": "Owners: p2a for the row; p2b for KN5.9/ONE.33; p1 for the delta amendment. operation.preview retains a protection gate. LI.7/LI.18 require row gates to participate in admission and availability. KN5.9 and ONE.33 explicitly require construction of a protection-conflicting preview, with refusal deferred to commit. The jumbling amendment changes only the note and therefore retains the conflicting gate.",
+   "counterexample": "An otherwise admissible complete word violates active protection. The row's gate rejects the preview, whereas KN5.9 requires completed(preview_ready) containing the protection-conflict verdict.",
+   "suggested_fix": "Remove protection as an admission gate on operation.preview while retaining its computed protection verdict and operation.execute's protection gate. Specify a vector that successfully previews the conflicting word and then refuses its commit.",
+   "evidence": [
+    {
+     "path": "docs/progress/1.0/build_command_table.py",
+     "line": 70
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/01-kernel.md",
+     "line": 482
+    },
+    {
+     "path": "docs/progress/1.0/command-rows-jumbling.json",
+     "line": 403
+    },
+    {
+     "path": "docs/progress/1.0/layer-interfaces.md",
+     "line": 154
+    }
+   ],
+   "owners": {
+    "p7-table": [
+     "conflicting_preview_row"
+    ],
+    "p7-layers": [
+     "conflicting_preview_then_commit"
+    ]
+   }
+  },
+  "RA1-03": {
+   "severity": "blocker",
+   "title": "A cut-off jumbling query has conflicting terminal receipts",
+   "detail": "Owners: p1 and p2b. JI.15 explicitly distinguishes H4 receipts from KN7 outcomes and permits a completed query carrying a cut-off observation. LI.28 and KN5.24 instead map a deterministic JobResult cut_off to cancelled(budget). No clause distinguishes an inner partial observation from the invocation's own cut-off in JI.15, so the same budget-exhausted query can be reported as success or cancellation.",
+   "counterexample": "jumble.observe exhausts its deterministic output allowance after partial seam coverage. JI.15 permits completed(query) with that cut-off observation; LI.28 requires cancelled(budget) with JobResult.outcome=cut_off(KN7:budget.output). A lost-notification lookup consequently has no unique specified receipt.",
+   "suggested_fix": "Make JI.15 use LI.28's mapping. If completed queries may contain partial typed values, explicitly distinguish those values from a JobResult cut_off. Add a budget-exhaustion vector asserting the terminal receipt, coverage and subsequent lookup.",
+   "evidence": [
+    {
+     "path": "docs/progress/1.0/jumbling-interfaces.md",
+     "line": 135
+    },
+    {
+     "path": "docs/progress/1.0/layer-interfaces.md",
+     "line": 243
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/01-kernel.md",
+     "line": 579
+    }
+   ],
+   "owners": {
+    "p7-layers": [
+     "budget_exhausted_query_receipt"
+    ]
+   }
+  },
+  "RA1-04": {
+   "severity": "major",
+   "title": "Crossing navigation does not specify how current preferences survive",
+   "detail": "Owners: p3 for FP.30/FP.31, coordinated with p1's JI.28 and p2a's join. FP.30 includes preferences in Position, and FP.31 says crossing undo uses the exit's before position and redo uses its after position. JI.28 implements branch navigation through those inverse/forward transitions, while join decision U1-015 requires current preferences to survive branch selection. There is no field-selection or merge rule reconciling these statements. Preference rollback is an inferred consequence of applying the complete stored Position, not an observed failure.",
+   "counterexample": "Exit E2 was recorded with preferences A. Current preferences are B. Selecting E2's branch requires redoing its crossing. Restoring E2.after restores A, while U1-015 requires B.",
+   "suggested_fix": "State exactly which Position fields crossing navigation restores and explicitly preserve current preferences. Add a branch-switch vector with different recorded and current preference references, including a crossing on the navigation path.",
+   "evidence": [
+    {
+     "path": "docs/architecture/1.0/language/format-packet/README.md",
+     "line": 486
+    },
+    {
+     "path": "docs/architecture/1.0/language/format-packet/README.md",
+     "line": 499
+    },
+    {
+     "path": "docs/progress/1.0/jumbling-interfaces.md",
+     "line": 262
+    },
+    {
+     "path": "docs/progress/1.0/command-join.json",
+     "line": 238
+    }
+   ],
+   "owners": {
+    "p7-data": [
+     "branch_switch_keeps_preferences"
+    ],
+    "p7-layers": [
+     "crossing_on_branch_path_context"
+    ]
+   }
+  },
+  "RA1-05": {
+   "severity": "major",
+   "title": "The durable crossing rule does not cover Jumble-on entry and its inverse",
+   "detail": "Owners: p3, consuming p1's JI.25/JI.27. FP.30 defines an exit's before as poses and after as labels; FP.31 supplies one crossing action and says its undo uses that exit's before and redo its after. JI.27 separately requires undo of a Jumble-on entry to restore its off-state and redo to restore its recorded replay result, including an entry seeded from a retained witness without an exit. The format does not identify a direction-specific rule or encode the required entrance derivation. Applying the exit-specific rule to entry would give the wrong direction; treating it as exit-only leaves entry recovery undetermined.",
+   "counterexample": "Exit E stores X; retained word w follows; jumble.on creates a new episode at replay(X,w). Undo must return to the off-state after w, not E.before's original on-state X. After an import, entry through replay(solved,v) may have no ExitRecord at all.",
+   "suggested_fix": "Distinguish entry and exit transitions, record the entrance binding or solved-witness reference, and define inverse/forward restoration from the actual entry transaction. Add entry/undo/redo/recovery vectors for both exit-root and solved-witness entry.",
+   "evidence": [
+    {
+     "path": "docs/progress/1.0/jumbling-interfaces.md",
+     "line": 254
+    },
+    {
+     "path": "docs/architecture/1.0/language/format-packet/README.md",
+     "line": 483
+    },
+    {
+     "path": "docs/architecture/1.0/language/format-packet/README.md",
+     "line": 492
+    }
+   ],
+   "owners": {
+    "p7-data": [
+     "entry_exit_root_undo_redo",
+     "entry_solved_witness_undo_redo"
+    ],
+    "p7-layers": [
+     "entry_after_retained_move"
+    ]
+   }
+  },
+  "RA1-06": {
+   "severity": "major",
+   "title": "The persistence draft cannot represent the required durable outcome lookup",
+   "detail": "Owners: p3 for encoding, consuming p2b's KN5.21/KN5.23 and p1's JI.27. Accepted commit/workspace invocations must durably retain admission, command/request binding and terminal receipt; JI.27 requires the receipt and new RevisionRef in the transition transaction. FP.11 defines exact record fields, but FP.31's transition contains no command ID, request digest, admission reference, receipt or RevisionRef, and the format inventory supplies no linked admission/receipt record. Current-state equality cannot fill this gap because outcomes must remain queryable after undo and epoch loss.",
+   "counterexample": "Command C exits Jumble, its notification is lost, the exit is undone, and the engine restarts. LI.30 requires outcome(C,requestC) to return C's original committed receipt. FP.30–32 can recover the current position but do not encode that lookup binding or terminal.",
+   "suggested_fix": "Add explicit durable admission and terminal-record references and their atomic-write relationship to the format draft, including the original revision and typed digests. Add vectors for notification loss followed by undo/restart, and admission followed by proven rollback.",
+   "evidence": [
+    {
+     "path": "docs/architecture/1.0/language/architecture/01-kernel.md",
+     "line": 569
+    },
+    {
+     "path": "docs/progress/1.0/jumbling-interfaces.md",
+     "line": 237
+    },
+    {
+     "path": "docs/architecture/1.0/language/format-packet/README.md",
+     "line": 194
+    },
+    {
+     "path": "docs/architecture/1.0/language/format-packet/README.md",
+     "line": 492
+    }
+   ],
+   "owners": {
+    "p7-data": [
+     "notification_loss_then_restart",
+     "admission_then_proven_rollback"
+    ],
+    "p7-layers": [
+     "outcome_lookup_after_undo"
+    ]
+   }
+  },
+  "RA1-07": {
+   "severity": "major",
+   "title": "The transition chain cannot include intervening workspace actions",
+   "detail": "Owners: p3 and p2b. LI.9 requires one durable action order across journal and workspace actions. FP.31 describes a gap-free append-only action chain whose before equals the previous after, but its action vocabulary omits workspace writes. Position includes preferences and protection, which workspace writes can change. Consequently an ordinary workspace edit between mechanical transitions either has no representable action or breaks the required position continuity. No separate sequence/projection rule resolves this.",
+   "counterexample": "Exit E is followed by a protection workspace edit and then a retained move. The retained move's before.protection differs from E's after.protection. Omitting the workspace action violates FP.31 continuity; inserting it has no permitted action tag.",
+   "suggested_fix": "Define how workspace actions participate in the common durable chain, including their inverse and changed-record references. Add exit → protection edit → retained move → workspace/puzzle undo → recovery vectors that check sequence continuity and unchanged exit lineage.",
+   "evidence": [
+    {
+     "path": "docs/progress/1.0/layer-interfaces.md",
+     "line": 75
+    },
+    {
+     "path": "docs/architecture/1.0/language/format-packet/README.md",
+     "line": 486
+    },
+    {
+     "path": "docs/architecture/1.0/language/format-packet/README.md",
+     "line": 492
+    }
+   ],
+   "owners": {
+    "p7-data": [
+     "workspace_action_in_chain"
+    ],
+    "p7-layers": [
+     "exit_protection_edit_undo"
+    ]
+   }
+  },
+  "RA1-08": {
+   "severity": "major",
+   "title": "Undo rows still carry one number instead of the order-and-target guard",
+   "detail": "Owners: p2a, consuming p2b's LI.9/LI.26. The layer contract distinguishes the current action-order number from the target action, particularly after a non-undoable durable action, and requires both in the hint. The builder still defines every undo/redo argument as only action:ActionNumber plus token; CM.5/CM.66 describe a single number. The request/token binding cannot be constructed from the stated row form without inventing a compound ActionNumber or an implicit lookup.",
+   "counterexample": "Action 41 is undoable. Non-undoable action 42 advances the durable order. LI.9 permits a hint with order=42 and target=41; the row's sole ActionNumber does not specify how to carry both.",
+   "suggested_fix": "Replace the scalar row argument with an explicitly defined hint containing expected order and target, and include both in request/token binding. Add a vector for order 42 targeting 41 and rejection after action 43 lands.",
+   "evidence": [
+    {
+     "path": "docs/progress/1.0/layer-interfaces.md",
+     "line": 75
+    },
+    {
+     "path": "docs/progress/1.0/layer-interfaces.md",
+     "line": 219
+    },
+    {
+     "path": "docs/progress/1.0/build_command_table.py",
+     "line": 354
+    }
+   ],
+   "owners": {
+    "p7-table": [
+     "hint_row_arguments"
+    ],
+    "p7-layers": [
+     "hint_order_42_target_41"
+    ]
+   }
+  },
+  "RA1-09": {
+   "severity": "major",
+   "title": "Jumbling argument contracts have not reached the command-row forms",
+   "detail": "Owners: p1 for the delta and p2a for builder/table integration. JI.33 requires named caps, pinned letters, snapshots, correction IDs, preview positions and other absolute arguments. The real delta declares none of their argument schemas; apply_delta defaults arguments to {}, adding only a token for commits. Existing amendments change notes only, so operation.check still carries only a draft despite JI.32's optional unit/cap inputs. This leaves LI.5's request binding and LI.19's argument-keyed availability without a complete table contract. This is independent of the excluded scrub-repeat rejection.",
+   "counterexample": "Two jumble.straddlers invocations name different caps, but the delta-derived argument schema is empty. A table consumer cannot determine their required bindings or distinct argument digests from that schema.",
+   "suggested_fix": "Populate delta argument schemas from JI.32/JI.33 and amend the affected existing schemas, rather than their notes alone. Specify two bindings of one jumbling row with different absolute arguments and distinct availability/request digests.",
+   "evidence": [
+    {
+     "path": "docs/progress/1.0/jumbling-interfaces.md",
+     "line": 306
+    },
+    {
+     "path": "docs/progress/1.0/command-rows-jumbling.json",
+     "line": 135
+    },
+    {
+     "path": "docs/progress/1.0/build_command_table.py",
+     "line": 485
+    },
+    {
+     "path": "docs/progress/1.0/build_command_table.py",
+     "line": 237
+    }
+   ],
+   "owners": {
+    "p7-table": [
+     "distinct_bindings"
+    ]
+   }
+  },
+  "RA1-10": {
+   "severity": "major",
+   "title": "Filter application still uses the newly word-specific freshness gate",
+   "detail": "Owners: p2a and p2b. The table gives filter.apply a fresh_preview gate and a FilterPreviewRef argument. CM.54 and LI.19 now define that gate through KN0.8 and require a pending presented preview. KN0.8's draft digest covers an expanded literal word and its read set. No clause maps filter.preview's predicate/count result to that word-preview object, its single pending slot or its presentation requirement. The gate's result for a valid filter preview is therefore undetermined.",
+   "counterexample": "The solver previews a filter at the unchanged current revision, then applies that FilterPreviewRef without any pending puzzle-word preview. LI.19's gate returns no_fresh_preview, but the filter path supplies no operation that could satisfy its word-preview requirements.",
+   "suggested_fix": "Define a filter-result freshness predicate bound to the submitted FilterPreviewRef, or explicitly parameterize the gate by preview kind. Add a vector applying a current filter preview while no puzzle preview exists, followed by rejection after a relevant dependency changes.",
+   "evidence": [
+    {
+     "path": "docs/progress/1.0/build_command_table.py",
+     "line": 134
+    },
+    {
+     "path": "docs/progress/1.0/build_command_table.py",
+     "line": 331
+    },
+    {
+     "path": "docs/progress/1.0/layer-interfaces.md",
+     "line": 165
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/01-kernel.md",
+     "line": 81
+    }
+   ],
+   "owners": {
+    "p7-table": [
+     "filter_gate_row"
+    ],
+    "p7-layers": [
+     "filter_apply_without_word_preview"
+    ]
+   }
+  },
+  "RA1-11": {
+   "severity": "major",
+   "title": "Overlay availability does not select an argument binding for required rows",
+   "detail": "Owner: p2b. KN5.6/LI.19 key availability by (RowId, argument digest), but KN5.4/KN5.7 and LI.20 describe overlay dependencies as required row IDs and combine their eligibility. LI.20 defers computed arguments until invocation without defining which argument-keyed entry supplies the earlier hint, or an argument-independent eligibility projection. The conjunction cannot be evaluated uniquely when bindings of a required row differ.",
+   "counterexample": "The captured table contains (K,argsA)=available and (K,argsB)=unavailable(code). An otherwise eligible overlay requires K and computes its arguments during execution. Its metadata does not say which answer participates in LI.20's conjunction.",
+   "suggested_fix": "Specify binding metadata for statically resolved dependencies and an explicit argument-independent hint rule for computed dependencies. Add the two-binding vector and state its overlay result without executing the program.",
+   "evidence": [
+    {
+     "path": "docs/architecture/1.0/language/architecture/01-kernel.md",
+     "line": 420
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/01-kernel.md",
+     "line": 436
+    },
+    {
+     "path": "docs/progress/1.0/layer-interfaces.md",
+     "line": 170
+    }
+   ],
+   "owners": {
+    "p7-layers": [
+     "two_binding_overlay"
+    ]
+   }
+  },
+  "RA1-12": {
+   "severity": "major",
+   "title": "Several view rows lack the ViewId needed to determine supersession",
+   "detail": "Owners: p2a for row metadata and p2b for lane resolution. LI.22 scopes the view lane by session/ViewId. The builder assigns view lanes to built-in view rows, but several rows provide no ViewId or declared fixed lane target: operation.phase.select carries only a phase, view.preview.scrub a preview and prefix, and multiple toggles no arguments. LI.5's common envelope supplies no view target either. Thus whether two accepted requests share a lane, supersede one another or run independently cannot be determined.",
+   "counterexample": "A publication is running for view V when operation.phase.select or view.preview.scrub arrives. Neither row states whether its lane target is V, another view or a session-wide control target, so LI.23's supersession receipt cannot be selected.",
+   "suggested_fix": "Declare a stable lane target for every built-in view row, resolved before admission and included in request binding. Add same-target and different-target vectors asserting cancellation and independent execution respectively.",
+   "evidence": [
+    {
+     "path": "docs/progress/1.0/layer-interfaces.md",
+     "line": 189
+    },
+    {
+     "path": "docs/progress/1.0/build_command_table.py",
+     "line": 35
+    },
+    {
+     "path": "docs/progress/1.0/build_command_table.py",
+     "line": 233
+    },
+    {
+     "path": "docs/progress/1.0/build_command_table.py",
+     "line": 277
+    }
+   ],
+   "owners": {
+    "p7-table": [
+     "lane_target_rows"
+    ],
+    "p7-layers": [
+     "same_and_different_target"
+    ]
+   }
+  },
+  "RA1-13": {
+   "severity": "major",
+   "title": "H-08 retains a layer-call restriction rejected by the new layer contract",
+   "detail": "Owners: p2a and p2b. command-table.md says each layer may call only the layer below it. LI.3 explicitly says the six layers are ownership boundaries, not neighbor-only call restrictions, and LI.4 specifies shell → command layer → engine with engine-coordinated store work. The old sentence remains a stale normative form and makes even the assigned command submission path ambiguous.",
+   "counterexample": "The shell submits operation.execute directly to the command layer as LI.4 requires. Those layers are not adjacent in H-08's listed six-layer table, so its neighbor-only rule does not permit that call.",
+   "suggested_fix": "Replace the adjacency sentence with a reference to LI.3/LI.4's ownership and call-path rules. The shell → command → engine → store trace should then have one stated interpretation.",
+   "evidence": [
+    {
+     "path": "docs/progress/1.0/command-table.md",
+     "line": 29
+    },
+    {
+     "path": "docs/progress/1.0/layer-interfaces.md",
+     "line": 30
+    },
+    {
+     "path": "docs/progress/1.0/layer-interfaces.md",
+     "line": 41
+    }
+   ],
+   "owners": {
+    "p7-table": [
+     "layer_call_wording"
+    ]
+   }
+  },
+  "S2-01": {
+   "severity": "blocker",
+   "title": "Scheduled publication validation conflicts with pre-acceptance refusal",
+   "detail": "Owners: p6 for RPI.49/RM.12/RM.20; p2b for LI.7/LI.25. LI.25 makes publish_view finalize the already accepted scheduled-view invocation, without another admission. LI.7 requires subsequent validation errors to be failed(Error). RPI.49 and RM.12 nevertheless require an oversized publication to be refused before acceptance, while RM.20 says invalid publication cancels no pending work. RM.17's conversion of backend refusals does not resolve these host-side validation rules. The same generated invalid plan therefore has incompatible terminal and supersession treatment.",
+   "counterexample": "A is pending. Scheduled view B is accepted and supersedes A, then computes five instances against ceiling four. LI.7/LI.25 require B to fail within its existing invocation, with A remaining cancelled. RPI.49/RM.12 require pre-acceptance refusal, and RM.20's refusal rule preserves A.",
+   "suggested_fix": "Qualify pre-acceptance validation as applying to standalone publications whose payload already exists. For scheduled views, retain the original invocation and map final validation errors to failed(original Error), without another lane admission or resurrection of superseded work. Add paired five-versus-four vectors for standalone and scheduled publication.",
+   "evidence": [
+    {
+     "path": "docs/progress/1.0/layer-interfaces.md",
+     "line": 214
+    },
+    {
+     "path": "docs/progress/1.0/layer-interfaces.md",
+     "line": 64
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/10-renderer-platform.md",
+     "line": 411
+    },
+    {
+     "path": "docs/architecture/1.0/language/renderer-feature-matrix.md",
+     "line": 198
+    }
+   ],
+   "owners": {
+    "p7-layers": [
+     "scheduled_final_validation_failed"
+    ],
+    "p7-render": [
+     "standalone_refused_scheduled_failed"
+    ]
+   }
+  },
+  "S2-02": {
+   "severity": "blocker",
+   "title": "Direct approximate conditions have two prescribed diagnostics",
+   "detail": "Owner: p5. LG2.22 explicitly assigns LG2:type.exactness_violation to an approximate comparison used as an ordinary if condition. EV1.4 assigns LG2:type.exact_required to an approximate value at an exact decision site, and diagnose lists that narrower code. No precedence or translation rule distinguishes these overlapping cases. This prevents a single expected diagnostic for the first H13 admission step.",
+   "counterexample": "Diagnose an ordinary if on approx_less(x,y), with x and y approximate, selecting two exact words. LG2.22 requires exactness_violation; EV1.4 describes the same input as exact_required.",
+   "suggested_fix": "Define one diagnostic precedence and make EV1 forward it. The smallest change preserving LG2.22 is to assign ApproxBool/control-dependence misuse to exactness_violation and explicitly delimit the remaining exact_required cases. Add the direct condition and helper-return cases to one shared diagnostic vector.",
+   "evidence": [
+    {
+     "path": "docs/architecture/1.0/language/architecture/02-language-core.md",
+     "line": 256
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/04-environment.md",
+     "line": 45
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/04-environment.md",
+     "line": 56
+    }
+   ],
+   "owners": {
+    "p7-lang": [
+     "direct_and_helper_condition"
+    ]
+   }
+  },
+  "S2-03": {
+   "severity": "blocker",
+   "title": "Stale picks disagree between EV3 and the renderer",
+   "detail": "Owners: p5 for EV3.5; p6 for RM.10/RM.30. EV3.5 and its follow_pick signature use EV3:stale.source_link for a stale pick. RM.10 requires a plan/view generation mismatch to return EV3:stale.display_pick before source navigation; RM.30 supplies that exact expected outcome. Both describe consuming the same obsolete occurrence.",
+   "counterexample": "Consume a generation-7 instance after generation 8 replaces its map, with unchanged producing source bytes. EV3.5 returns stale.source_link; RM.30 returns stale.display_pick before any source action.",
+   "suggested_fix": "Update EV3.5, follow_pick and its code-table meaning to check pick bindings first with stale.display_pick, reserving stale.source_link for the subsequent source-digest mismatch. Reuse RM.30's generation-change and edited-source vectors to establish precedence.",
+   "evidence": [
+    {
+     "path": "docs/architecture/1.0/language/architecture/04-environment.md",
+     "line": 302
+    },
+    {
+     "path": "docs/architecture/1.0/language/renderer-feature-matrix.md",
+     "line": 89
+    },
+    {
+     "path": "docs/architecture/1.0/language/renderer-feature-matrix.md",
+     "line": 319
+    }
+   ],
+   "owners": {
+    "p7-lang": [
+     "follow_pick_order"
+    ],
+    "p7-render": [
+     "stale_pick_before_source_link"
+    ]
+   }
+  },
+  "S2-04": {
+   "severity": "major",
+   "title": "The retained display-region alternative lacks a charge and stop trace",
+   "detail": "Owners: p5 for LG2.21; p4 for DET.64 and contract vectors. LG2.21 retains checked display regions with terminal isolation, but DET.64 explicitly leaves their entry/branch continuations unspecified and prohibits silently reusing the existing vectors. Consequently, the requested alternative-form walk determines type refusals and the publication sink, but cannot determine charges or the cutoff position. This is an acknowledged specification gap, not an implementation failure.",
+   "counterexample": "Under form 2, enter a display region and take a branch with two continuations at a tight step limit. The text does not determine whether region entry adds a charged continuation, so it cannot identify the first denied operation.",
+   "suggested_fix": "Keep the alternative, but provide its conditional lowering to named entry/branch/exit operations and an explicit execution identity. Add one equality-limit and one one-step-short vector with source locators. This requires no owner selection of the alternative.",
+   "evidence": [
+    {
+     "path": "docs/architecture/1.0/language/architecture/02-language-core.md",
+     "line": 247
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/09-determinism.md",
+     "line": 665
+    }
+   ],
+   "owners": {
+    "p7-lang": [
+     "form2_equal_limit_and_one_short"
+    ]
+   }
+  },
+  "S2-05": {
+   "severity": "major",
+   "title": "Renderer-unavailable retains a refusal-only registry form",
+   "detail": "Owner: p6 supplies the lifecycle; the integrator owns chapter-13 reconciliation under H1. RM.22 requires renderer loss during accepted preparation to produce failed(EV3:busy.renderer_unavailable). For an associated job, LI.28 maps this to error(Error), whose reason uses ERR.9's stop form. The registry still permits only refusal for this code. The accepted-job envelope therefore needs a form rule; this concerns the meaning and occurrence of an existing code, not an absent new registration.",
+   "counterexample": "A publication has running(job) and loses its device before installation. Its receipt and JobResult are specified, but the registry offers refusal while the job-stop envelope requires stop.",
+   "suggested_fix": "Specify contextual forms for the existing code: refusal before acceptance, stop inside an accepted job's error outcome, with Receipt.status=failed. Add one device-loss vector on each side of acceptance and retain completed receipts after installation.",
+   "evidence": [
+    {
+     "path": "docs/architecture/1.0/language/renderer-feature-matrix.md",
+     "line": 213
+    },
+    {
+     "path": "docs/progress/1.0/layer-interfaces.md",
+     "line": 239
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/13-errors.md",
+     "line": 80
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/13-errors.md",
+     "line": 429
+    }
+   ],
+   "owners": {
+    "p7-layers": [
+     "renderer_lost_after_acceptance"
+    ],
+    "p7-render": [
+     "renderer_busy_both_sides"
+    ],
+    "p7-reg": [
+     "contextual_form_row"
+    ]
+   }
+  },
+  "S2-06": {
+   "severity": "major",
+   "title": "Execution summaries still describe replaced working forms as unspecified",
+   "detail": "Owner: p4 supplies the execution clauses and flagged this handoff change; the integrator must update summaries outside p4's clause ownership. Chapter 02 still labels the charge schedule open. Chapter 11 says charges, logical lifetimes, output units and recursion rules remain to be supplied, and says LG4.7/DET.18/DET.24 still need logical-memory alignment. These consumers have not incorporated LG4.8 and DET.54–DET.64's proposed schedule, owning-handle lifetimes, canonical-byte output and logical-frame rule. Implementation and production values remain legitimately open, but the proposed forms are now specified.",
+   "counterexample": "A route author following chapter 11's open-item summary is told to supply output units and logical lifetimes, although DET.59 already selects canonical uncompressed bytes and DET.58 specifies release boundaries for the working contract.",
+   "suggested_fix": "Replace the stale summaries with references to the specified draft forms, retaining executor mappings, production tariffs/limits, evidence and owner freeze as outstanding. Preserve the named alternatives and explicitly distinguish them from the current working form.",
+   "evidence": [
+    {
+     "path": "docs/architecture/1.0/language/architecture/02-language-core.md",
+     "line": 654
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/11-route-and-spikes.md",
+     "line": 747
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/11-route-and-spikes.md",
+     "line": 758
+    },
+    {
+     "path": "docs/architecture/1.0/language/closure/manifests/p4.json",
+     "line": 152
+    }
+   ],
+   "owners": {
+    "p7-lang": [
+     "stale_summaries_removed"
+    ]
+   }
+  },
+  "RS3-01": {
+   "severity": "blocker",
+   "title": "A not-run search selects both the budget result and the fallback result",
+   "detail": "Owner: integrator, chapter 06. EVD.32 row 5 accepts any incomplete search with a deterministic-budget or declared-limit stop, without excluding job:not_run. EVD.33 and EVD.47 require not_run to read row 7. With no standing support or negative/exhaustive leaf, row 0 does not resolve this conflict.",
+   "counterexample": "No support stands; SearchRecord has complete:no, stop:declared_limit, job:not_run. First-match EVD.32 returns 'not found within budget'; EVD.47 returns row 7 'open'.",
+   "suggested_fix": "Draft correction: add job != not_run to row 5's guard. Add this tuple and its deterministic_budget variant as vectors expecting row 7 when no earlier row matches. Keep the decision-list order and LQ3 open.",
+   "evidence": [
+    {
+     "path": "docs/architecture/1.0/language/architecture/06-evidence.md",
+     "line": 293
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/06-evidence.md",
+     "line": 424
+    },
+    {
+     "path": "work/experiments/language-lx/envelope-facts/RESULT.md",
+     "line": 111
+    }
+   ],
+   "owners": {
+    "p7-data": [
+     "not_run_budget_stop_row7",
+     "not_run_declared_limit_row7"
+    ]
+   }
+  },
+  "RS3-02": {
+   "severity": "blocker",
+   "title": "Row 1 bypasses the basis restriction for refuting existence",
+   "detail": "Owner: integrator, chapter 06. EVD.32 row 1 requires only stands0(neg S), while EVD.42 permits refuting an existence statement only by a proof or complete certificate. An exact-computation leaf can satisfy the threshold and I7's equal finite-search coverage without meeting that restriction.",
+   "counterexample": "E is existence over a declared finite search set. Its mutual negation has a threshold-qualified exact_computation/producer leaf with identical covered set and input, no contradictory search record, and no other inconsistency. Row 1 refutes E; EVD.42 disallows this basis.",
+   "suggested_fix": "Draft correction: make failure of EVD.42's form-specific refutation conditions an explicit admission inconsistency covered by row 0, before support/Ref propagation. Add paired vectors for the bare exact-computation argument and an eligible proof or complete certificate. Do not reorder rows or select an LQ3 threshold.",
+   "evidence": [
+    {
+     "path": "docs/architecture/1.0/language/architecture/06-evidence.md",
+     "line": 289
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/06-evidence.md",
+     "line": 343
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/06-evidence.md",
+     "line": 395
+    },
+    {
+     "path": "work/experiments/language-lx/envelope-facts/RESULT.md",
+     "line": 115
+    }
+   ],
+   "owners": {
+    "p7-data": [
+     "refutation_basis_row0"
+    ]
+   }
+  },
+  "RS3-03": {
+   "severity": "blocker",
+   "title": "Support from its own not-run job can win before row 7",
+   "detail": "Owner: integrator, chapter 06. EVD.47 requires not_run to read row 7, but support evaluation has no general rule making a leaf from its own not-run producing job inert. I5 addresses negative/exhaustive search-backed leaves only. A positive qualifying leaf can therefore reach rows 2–4. The experiment explicitly binds the job to that leaf; this is not a claim about independent historical support.",
+   "counterexample": "A positive one-instance claim has an exact_computation/producer leaf passing U0, whose own producing job is not_run. It is not a negative or exhaustive leaf. EVD.32 row 2 gives 'finite instance'; EVD.47 says row 7.",
+   "suggested_fix": "Draft correction: make support attributed to its own not-run job inert before stands0/stands* evaluation, retaining existing row-0 inconsistencies. Qualify EVD.33/EVD.47's row-7 statement as the fallback for a non-contradictory record without other standing support. Add a second vector showing that support from a different completed historical job remains usable.",
+   "evidence": [
+    {
+     "path": "docs/architecture/1.0/language/architecture/06-evidence.md",
+     "line": 290
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/06-evidence.md",
+     "line": 341
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/06-evidence.md",
+     "line": 424
+    },
+    {
+     "path": "work/experiments/language-lx/envelope-facts/RESULT.md",
+     "line": 120
+    }
+   ],
+   "owners": {
+    "p7-data": [
+     "own_not_run_support_inert",
+     "other_job_support_counts"
+    ]
+   }
+  },
+  "RS3-04": {
+   "severity": "blocker",
+   "title": "A non-search negative from an incomplete job escapes I5",
+   "detail": "Owner: integrator, chapter 06. EVD.43 requires an offered negative from an incomplete producing job to return EVD:evidence.negative_without_completion. I5 only examines leaves with search records. A search-record-free negative can consequently stand and select row 1 before the incomplete-job condition in row 6.",
+   "counterexample": "A threshold-qualified negative theorem/certificate leaf has no SearchRecord and its own producing job ended in error. With other invariants satisfied, row 1 returns 'refuted'; EVD.43 requires negative_without_completion.",
+   "suggested_fix": "Draft correction: extend I5 to an offered job-produced negative whose own producing job explicitly failed to complete, whether or not a SearchRecord exists. Keep the refusal at row 0, preserve checked positive witnesses from interrupted jobs, and add error/cancelled/non-search-cut-off vectors.",
+   "evidence": [
+    {
+     "path": "docs/architecture/1.0/language/architecture/06-evidence.md",
+     "line": 289
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/06-evidence.md",
+     "line": 341
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/06-evidence.md",
+     "line": 403
+    },
+    {
+     "path": "work/experiments/language-lx/envelope-facts/RESULT.md",
+     "line": 124
+    }
+   ],
+   "owners": {
+    "p7-data": [
+     "negative_error_job",
+     "negative_cancelled_job",
+     "negative_cut_off_non_search"
+    ]
+   }
+  },
+  "RS3-05": {
+   "severity": "blocker",
+   "title": "The evidence wire rejects check grades admitted by chapter 06",
+   "detail": "Owners: p3 for FP.19; integrator for chapter 06. EVD.3 defines six check values, including human review and formal proof. FP.19's exact Grade enumeration contains only none, producer, independent_checker and model_review, despite promising chapter-06 meanings and lossless facts. At least human_review is an unconditional conflict; representing an archived formal-proof fact does not authorize a proof-assistant implementation.",
+   "counterexample": "A complete evidence leaf with basis:theorem and check:human_review is meaningful under EVD.3 but has no valid FP.19 Grade encoding. Downgrading it to recorded-only or another check value loses its typed meaning.",
+   "suggested_fix": "Add human_review and formal_proof to the wire enumeration, preserving their existing conditional admission rules. Add round-trip vectors for both values without claiming new checks, permissions or an LQ15 decision.",
+   "evidence": [
+    {
+     "path": "docs/architecture/1.0/language/architecture/06-evidence.md",
+     "line": 47
+    },
+    {
+     "path": "docs/architecture/1.0/language/format-packet/README.md",
+     "line": 346
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/05-persistence.md",
+     "line": 457
+    }
+   ],
+   "owners": {
+    "p7-data": [
+     "grade_round_trip"
+    ]
+   }
+  },
+  "RS3-06": {
+   "severity": "major",
+   "title": "The facts wire cannot bind non-search support to its producing job",
+   "detail": "Owners: p3 for FP.19–20; integrator for chapter 06. The only typed job outcome in the wire is SearchRecord.job. A leaf with search:null has neither a producer-job reference nor an outcome binding, although EVD.32 row 6 and EVD.43 need these facts. Keeping an opaque record BlobRef preserves bytes but supplies no declared rule for recovering ownership or distinguishing an unrelated historical job.",
+   "counterexample": "Two otherwise identical search:null negative leaves come respectively from a completed job and an errored job. Their defined typed fields cannot express the distinction required to admit one and refuse the other.",
+   "suggested_fix": "Define a source-bound producing-job fact/reference independently of SearchRecord and bind each relevant leaf to it. Preserve absence explicitly. Add round-trip vectors for completed, incomplete and unrelated historical jobs, then apply the four collision corrections to the decoded facts.",
+   "evidence": [
+    {
+     "path": "docs/architecture/1.0/language/format-packet/README.md",
+     "line": 343
+    },
+    {
+     "path": "docs/architecture/1.0/language/format-packet/README.md",
+     "line": 351
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/06-evidence.md",
+     "line": 294
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/06-evidence.md",
+     "line": 404
+    }
+   ],
+   "owners": {
+    "p7-data": [
+     "leaf_completed_job",
+     "leaf_incomplete_job",
+     "leaf_unrelated_job"
+    ]
+   }
+  },
+  "RS3-07": {
+   "severity": "major",
+   "title": "FP.13 cannot name JI.21's earlier local annotation",
+   "detail": "Owners: p3 for the wire; p1 for JI.21–23. JI.21 permits same_as/inverse_of targets that are earlier annotations in the same stored word or included immutable part definitions. FP.13 provides only relation.word:Ref. It defines neither a local annotation selector nor the referenced part-definition carrier. Encoding the local case would require inventing a record, selector or self-reference rule.",
+   "counterexample": "JI.23's single word has A=[0,1), B=[1,2) same_as A and C=[2,3) inverse_of A. FP.13 cannot identify A as the relation target within that word.",
+   "suggested_fix": "Add explicit tagged targets for an earlier local annotation and a pinned included part definition, with the required ordering/closure rules. Encode JI.23 completely in examples.json and add missing-target, cycle and changed-inverse vectors.",
+   "evidence": [
+    {
+     "path": "docs/progress/1.0/jumbling-interfaces.md",
+     "line": 191
+    },
+    {
+     "path": "docs/progress/1.0/jumbling-interfaces.md",
+     "line": 209
+    },
+    {
+     "path": "docs/architecture/1.0/language/format-packet/README.md",
+     "line": 224
+    }
+   ],
+   "owners": {
+    "p7-data": [
+     "relation_target_forms"
+    ],
+    "p7-layers": [
+     "ji23_relation"
+    ]
+   }
+  },
+  "RS3-08": {
+   "severity": "major",
+   "title": "Persistence still treats flat word bytes as optional after H10's choice",
+   "detail": "Owner: p3; input from p1. Under JI.18's flat-storage working proposal, FP.13 and KN4.7 require literal menu-word chunks. PS1.18–20 still describe an optional flat expansion and an unresolved referenced-part carrier; CT-PS1-10 promises retaining a small graph with enormous expansion within the graph's storage budget. That test does not distinguish an archived program/part graph from an admitted stored flat word.",
+   "counterexample": "A tiny referenced graph expands beyond the flat payload's storage budget. CT-PS1-10 expects retention within the small graph's budget, while the chosen stored-word carrier requires all expanded literal bytes.",
+   "suggested_fix": "Update PS1.18–20 and CT-PS1-09/10 conditionally on the flat draft: literal chunks are mandatory for stored menu words; annotations never generate replay letters. Separate retention of a compressed source/program graph from admission of its expanded stored word. Keep LQ10 adoption open.",
+   "evidence": [
+    {
+     "path": "docs/progress/1.0/jumbling-interfaces.md",
+     "line": 169
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/01-kernel.md",
+     "line": 389
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/05-persistence.md",
+     "line": 252
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/05-persistence.md",
+     "line": 935
+    }
+   ],
+   "owners": {
+    "p7-data": [
+     "menu_word_chunks"
+    ]
+   }
+  },
+  "RS3-09": {
+   "severity": "major",
+   "title": "The supplied alias pin has not reached the format packet, and its digest profile differs",
+   "detail": "Owners: p3 consumer; p2a owns the supplied alias identity. H12's p2a handoff supplies version en4-2026-11-05.1 and digest 7272ed98220957ff3cde29b382c004d32dbe3c8e528aa54ffd0656947e8c5754, which recomputes correctly. FP.15 still says to be pinned and leaves command-key conversion unavailable. Additionally, its aliases.content is DigestRef(content), whose FP.8 definition hashes FP.5 bytes including LF; the alias identity explicitly excludes content_digest and the trailing LF. Merely inserting the supplied hexadecimal value leaves incompatible digest instructions.",
+   "counterexample": "The alias table's prescribed projection hashes to 7272ed98…5754. Adding FP.5's LF to that same projection produces 2f308b17410f00eb38d0fef89858561a82dcd7df99a4a6e3dbf35d6b4a55ae6b. A generic content-role verifier cannot validate the supplied alias identity by FP.8's rule.",
+   "suggested_fix": "Make FP.15 explicitly use the alias table's declared identity/profile, distinct from generic FP.5 content hashing. Insert the supplied version/digest into the packet's citations and candidate inputs, and add a conversion vector that verifies this exact alias pin.",
+   "evidence": [
+    {
+     "path": "docs/architecture/1.0/language/closure/manifests/p2a.json",
+     "line": 48
+    },
+    {
+     "path": "docs/progress/1.0/command-aliases.json",
+     "line": 5
+    },
+    {
+     "path": "docs/architecture/1.0/language/format-packet/README.md",
+     "line": 106
+    },
+    {
+     "path": "docs/architecture/1.0/language/format-packet/README.md",
+     "line": 255
+    },
+    {
+     "path": "docs/architecture/1.0/language/format-packet/README.md",
+     "line": 261
+    }
+   ],
+   "owners": {
+    "p7-data": [
+     "alias_identity_profile"
+    ]
+   }
+  },
+  "RS3-10": {
+   "severity": "major",
+   "title": "Renderer J01–J10 still await payloads already supplied by p1",
+   "detail": "Owner: p6, with p1 supplying JI.41 and the integrator reconciling the matrix. Every J row remains p1 pending. JI.41 now specifies geometry, poses, motion, complete grip/certificate/cut data, projection, readback, domain/rim/seam data, filters, release checks, covers/repair, nu/correction observations and picks. The matrix does not incorporate those bindings or provide an explicit crosswalk for all added observations. J10's genuinely outstanding geometry/size work must remain distinct from the now-delivered interface text.",
+   "counterexample": "For a complete named-cap straddler set, JI.41 requires every point pair and forbids one-witness truncation, while J04 still names a pending witness-piece payload. For nu/correction observations, no matrix row explicitly carries JI.41's undefined/off-lattice and no-filtering obligations.",
+   "suggested_fix": "Replace pending placeholders with a clause-level crosswalk: J01–J03 to geometry/poses/motion; J04 to all three grip/certificate/cut rows; J05–J06 to projection/readback; J07–J08 to domain/rim/seams; J09 to named filters and covers/repair; J10 to the explicit unavailable-geometry contract. Add explicit coverage for release checks, nu/correction observations and picks. Preserve unmeasured limits and absent backend evidence.",
+   "evidence": [
+    {
+     "path": "docs/architecture/1.0/language/renderer-feature-matrix.md",
+     "line": 36
+    },
+    {
+     "path": "docs/architecture/1.0/language/renderer-feature-matrix.md",
+     "line": 285
+    },
+    {
+     "path": "docs/progress/1.0/jumbling-interfaces.md",
+     "line": 378
+    },
+    {
+     "path": "docs/progress/1.0/jumbling-interfaces.md",
+     "line": 399
+    }
+   ],
+   "owners": {
+    "p7-render": [
+     "crosswalk_coverage"
+    ]
+   }
+  },
+  "RS3-11": {
+   "severity": "major",
+   "title": "JI reference-error meanings and raising components do not fit the registry",
+   "detail": "Owners: p1 for JI.45 and its manifest; integrator for chapter 13. ERR.14 defines unverified_reference as unresolved frame correspondence raised by the engine. JI.45 instead uses it for an unproved branch path, reactivation of a known void exit, and unavailable exposed-face geometry/size. These cannot supply ERR.14's prescribed missing-frame/correspondence data. The eight JI-prefixed proposals also need explicit originating-component mappings: ERR.2/7/8 require the raising component, whereas JI is a contract family spanning several layers. This is a meaning/layer problem, not the known absence of registry rows.",
+   "counterexample": "An exposed-face request has fully determined IDs and frames but no certified mesh or measured size profile. JI.45 returns unverified_reference; ERR.14 requires an unresolved correspondence and missing disambiguating frame. Supplying another frame cannot remedy this condition.",
+   "suggested_fix": "Reclassify the three triggers according to their actual input/evidence/unavailable conditions, and identify the originating component for each JI-prefixed proposal, retaining JI clauses as rule sources. Add one envelope vector per reference-error trigger checking category, raising layer, required data and continuation against ERR.14.",
+   "evidence": [
+    {
+     "path": "docs/architecture/1.0/language/architecture/13-errors.md",
+     "line": 26
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/13-errors.md",
+     "line": 50
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/13-errors.md",
+     "line": 115
+    },
+    {
+     "path": "docs/progress/1.0/jumbling-interfaces.md",
+     "line": 466
+    }
+   ],
+   "owners": {
+    "p7-layers": [
+     "branch_path_envelope",
+     "void_exit_envelope",
+     "exposed_geometry_envelope"
+    ],
+    "p7-reg": [
+     "registry_rows"
+    ]
+   }
+  },
+  "RS3-12": {
+   "severity": "major",
+   "title": "Two authoring-service requirements are assigned before their documented delivery phase",
+   "detail": "Owners: p5 for its manifest and requirement definitions; integrator for chapter 12. The manifest assigns CT-EV1-08 and CT-EV2-11 to LP2. Their full definitions exercise atomic module activation with a suspended run and debugger stepping across a suspended kernel call, including mappings and terminal states. PHS.26 delivers EV1 version separation and EV2 stepping in LP4; PHS.62 requires the first phase capable of the whole test, explicitly placing editor/debugger integration in LP4.",
+   "counterexample": "LP2 completes its listed interpreter/kernel products without the LP4 debugger service. CT-EV2-11 still requires duplicate step requests, suspended-call completion, source/step mappings and terminal reporting; an interpreter-only stub cannot discharge that whole requirement.",
+   "suggested_fix": "Change these two manifest phase assignments to LP4 under the current phase table. If earlier runtime checks are wanted, name narrower LP2 requirements separately while retaining the full authoring-service tests in LP4; do not assume an LQ19 reorder.",
+   "evidence": [
+    {
+     "path": "docs/architecture/1.0/language/closure/manifests/p5.json",
+     "line": 148
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/04-environment.md",
+     "line": 951
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/04-environment.md",
+     "line": 962
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/12-phases-and-conformance.md",
+     "line": 223
+    },
+    {
+     "path": "docs/architecture/1.0/language/architecture/12-phases-and-conformance.md",
+     "line": 515
+    }
+   ],
+   "owners": {
+    "p7-lang": [
+     "phase_lp4"
+    ],
+    "p7-reg": [
+     "phase_index"
+    ]
+   }
+  },
+  "X-FINAL": {
+   "severity": "blocker",
+   "title": "The command table is not final",
+   "detail": "The stored table says \"final\": false, and the delta does not build (H15.19). PHS.48 needs the final H-08 with the jumbling rows.",
+   "suggested_fix": "Build the table with the delta. The stored bytes equal a fresh build, and \"final\" is true.",
+   "owners": {
+    "p7-table": [
+     "final_build"
+    ]
+   }
+  },
+  "X-SCRUB": {
+   "severity": "major",
+   "title": "Two preview scrub rows",
+   "detail": "`jumble.preview.scrub` breaks DT-M1 fix-first 2 (forbidden repeat) and C1 (one command per purpose).",
+   "suggested_fix": "HANDOFF H15.19.",
+   "owners": {
+    "p7-table": [
+     "scrub_row"
+    ],
+    "p7-layers": [
+     "scrub_citation"
+    ]
+   }
+  },
+  "X-SERVICES": {
+   "severity": "major",
+   "title": "Annex services have no registration",
+   "detail": "The annex's `requires` list names ten rows the table lacks. Nine are services, and one is `jumble.observe`.",
+   "suggested_fix": "HANDOFF H15.17. `check_annex.py` and `requires` accept the services list.",
+   "owners": {
+    "p7-table": [
+     "services_list"
+    ]
+   }
+  },
+  "X-H6": {
+   "severity": "major",
+   "title": "The H6 ruling is not in the text",
+   "detail": "LG2.20, LG2.21 and DET.64 do not yet say that display accounting is host-observable, unavailable to exact continuations, and still part of DET.6 reproduction.",
+   "suggested_fix": "HANDOFF H6, last bullet.",
+   "owners": {
+    "p7-lang": [
+     "display_accounting_isolated"
+    ]
+   }
+  },
+  "X-E1": {
+   "severity": "major",
+   "title": "Worked example E1 calls a dependent replay independent",
+   "detail": "claim-matrix CX.18: chapter 06's E1 gives `replay_word.py` the grade (exact computation, independent checker), and says the `macro.py` path could count as independent if its tool-digest fact says so. The pinned source walk shows imports into construction code.",
+   "suggested_fix": "HANDOFF H15.18.",
+   "owners": {
+    "p7-data": [
+     "e1_unqualified"
+    ]
+   }
+  },
+  "X-LB517": {
+   "severity": "minor",
+   "title": "LB5.17 says the inventory is still owed",
+   "detail": "claim-matrix CX.19: the per-leaf inventory now exists as a draft plan.",
+   "suggested_fix": "HANDOFF H15.18. Checkers, typed bindings and the mutation gate stay owed, and FR-B08 stays partial.",
+   "owners": {
+    "p7-lang": [
+     "lb517_state"
+    ]
+   }
+  },
+  "X-PIN": {
+   "severity": "major",
+   "title": "The format packet's chapter pin fails on a moved chapter",
+   "detail": "`format-packet/check_vectors.py` exits 1 because a pinned chapter digest moved. Chapters keep moving until the freeze, and other packets edit them in this wave.",
+   "suggested_fix": "A moved chapter is reported, never fatal, until the freeze. Keep failures for the packet's own files and vectors.",
+   "owners": {
+    "p7-data": [
+     "chapter_pin_moves"
+    ]
+   }
+  },
+  "X-REG": {
+   "severity": "blocker",
+   "title": "Registry and conformance index lag the drafts",
+   "detail": "24 cited codes are unregistered and 38 requirements are not in chapter 12's index.",
+   "suggested_fix": "HANDOFF H15.16: register the 23 final codes. Index the 38 requirements in their phases. Leave the totals to the integrator if they depend on other packets.",
+   "owners": {
+    "p7-reg": [
+     "all_codes",
+     "all_requirements"
+    ]
+   }
+  },
+  "X-P6REG": {
+   "severity": "major",
+   "title": "Display ceiling and renderer registry rows",
+   "detail": "p6's reconciliation list: ERR.25 and `EV3:resource_limit.display_plan_ceiling` with fixed-ceiling RM.11 and RM.12; keep `KN7:budget.display_plan_limit` reserved; record `KN7:budget.output` as job cut-off plus H4 `cancelled(budget)`, and physical exhaustion as `failed(KN7:resource_limit.host_exhausted)`; source navigation reuses `EV3:stale.source_link`. ERR.12's span unit is answered by H7.",
+   "suggested_fix": "Amend the rows and ERR.25 and ERR.12 in chapter 13. Keep the meaning of every existing code (ERR.5).",
+   "owners": {
+    "p7-reg": [
+     "display_ceiling_rows"
+    ]
+   }
+  },
+  "X-CONSUMERS": {
+   "severity": "major",
+   "title": "H4, H7 and H8 consumers still use earlier wording",
+   "detail": "Chapter 04 has pending-EN4 wording and retired `receipt(command)` references. RPI.50 and RPI.55 still cite the earlier forms.",
+   "suggested_fix": "Replace them with citations of LI and KN5 clauses.",
+   "owners": {
+    "p7-lang": [
+     "receipt_wording"
+    ],
+    "p7-render": [
+     "rpi_consumers"
+    ]
+   }
+  },
+  "X-ADR": {
+   "severity": "major",
+   "title": "ADR descriptions lag the drafts",
+   "detail": "ADR-L01, L02, L07, L08 and L11 describe open items the drafts have since specified (LG4.8, receipts, display plans). Their status must not change.",
+   "suggested_fix": "Update the descriptions. Accept nothing. Each stays a draft and keeps its open list.",
+   "owners": {
+    "p7-reg": [
+     "adr_descriptions"
+    ]
+   }
+  }
+ }
+}

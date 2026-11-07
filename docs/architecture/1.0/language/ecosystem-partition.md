@@ -1,5 +1,10 @@
 # The language's ecosystem: partition and owner questions
 
+> Status note, 6 November 2026: the owner answered LQ1 to LQ21. The
+> [decision page](../../../wiki/decisions/owner-decisions-2026-11-06.md) records the answers, and the
+> [architecture chapters](architecture/00-overview.md) carry them. This page stays as written, as the record of what was
+> asked, including its working name and alternatives. No ADR is accepted and nothing is frozen.
+
 Status: **draft for the owner, step 1 of the language kickoff of 3 November 2026, revised after rounds 1 to 4 of the
 round table. Not accepted.** Nothing on this page is an ADR, a frozen architecture or a chosen syntax. The page divides
 the ecosystem of the project's own language into components with boundaries. It also maps every capability the kickoff
