@@ -26,8 +26,10 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
 
 - **ERR.1 [D]** This is the registry required by partition default 5. Its code form follows default 19 and DT-L1
   Round 3, item 2. The tables describe contracts for later implementation. They establish no conformance result or
-  Windows, DirectX, input, long-session or performance evidence. The owner answered LQ1 to LQ21 on 6 November 2026;
-  LQ8, LQ9, LQ13 and LQ21 wait for evidence, and LQ2's option set waits for the joint setting.
+  Windows, DirectX, input, long-session or performance evidence. The owner answered LQ1 to LQ21 on 6 November 2026 and
+  chose LQ8, LQ9 and LQ21 on 14 November 2026: the engine and the interpreter's host in Rust, route RT1 with the
+  runtime in a process of its own, and capability separation (RTE.17, RTE.21, RTE.24). LQ13 waits for its evidence,
+  and LQ2's option set waits for the joint setting.
 - **ERR.2 [D]** A stored code has the following form. Its source is the component that raises the failure, or
   `EVD` for the evidence pillar. A charter bar, contract amendment or research item belongs in Rule source, since
   several rules can support one code. The category equals the envelope's category.
@@ -207,20 +209,21 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
   An explicit value overrides only retry eligibility, never the commit or recovery gates. Used by names the drafted
   chapters and clauses, including interfaces that forward the code. `Round 3; not yet used` retains an entry from
   the advisor's first list without pretending a chapter already emits it. Reserved and retired rows are not active.
-  An unassigned flow form is marked pending LQ21; this is no fifth envelope form. Rule source always identifies a
-  requirement; a chapter's code table alone is not its justification (default 5). The 23 closure additions follow
-  H15.16's final names and the originating clauses in the closure manifests. JI clauses stay rule sources, with
-  the raising KN component in each code. JI.41's payload and projection failures reuse the existing EV3 rows.
+  The retired flow spelling is marked retired before first use; this is no fifth envelope form. Rule source always
+  identifies a requirement; a chapter's code table alone is not its justification (default 5). The 23 closure
+  additions follow H15.16's final names and the originating clauses in the closure manifests. JI clauses stay rule
+  sources, with the raising KN component in each code. JI.41's payload and projection failures reuse the existing EV3
+  rows.
   The branch-path, void-exit and exposed-geometry input refusals identify their failed input fact under ERR.14;
   none asserts an unresolved frame correspondence or requests a disambiguating frame.
   KN3 supplies arithmetic rule clauses, with no registered KN3 raising family. Rotation-request codes belong to KN2.
 
-- **ERR.24 [O]** Both `LG3:effect.flow_refused` and `LG3:capability.flow_refused` remain reserved. LQ21 retires
-  one before first use, and chapter 07 owns the rule (BND.33) and the form. Flow labels can reject a forbidden source
-  flow; capability separation rejects the combined authority. Static and run-time label variants can detect the
-  refusal at different points. LQ2 still decides permitted flows, sinks and exceptions under either mechanism
-  (BM2; LG3.12 to LG3.14; DT-L1 R2-E3). The reconciliation target for the current capability spelling is a reservation,
-  not an answer to LQ21.
+- **ERR.24 [B]** The owner selected capability separation (owner, 14 November 2026, LQ21; RTE.24).
+  `LG3:effect.flow_refused` is retired before first use and is never emitted, and `LG3:capability.flow_refused` is the
+  flow-refusal code. Chapter 07 still owns the rule (BND.33). Capability separation rejects the combined authority.
+  LQ2 still decides permitted flows, sinks and exceptions (BM2; LG3.13, LG3.14; DT-L1 R2-E3). Flow labels, static-only
+  or with run-time labels, were not selected; the retired spelling records that unselected alternative and binds
+  nothing.
 - **ERR.25 [O]** Numeric plan ceilings, production tariffs and resource measurements remain unset here. The
   working draft uses RM.11 and RM.12's fixed ceilings with `EV3:resource_limit.display_plan_ceiling`, and RM.13's
   separate existing output allowance with `KN7:budget.output`. A count equal to the fixed ceiling passes that
@@ -385,8 +388,8 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
 | --- | --- | --- | --- | --- | --- |
 | `LG3:effect.undeclared` | diagnostic | Transitive effect exceeds the allowed effect set of its declaration/context. | | LG3.2, LG3.5, LG3.6; Round 3 | 02 section 6; 04 EV1.2, EV1.4, EV3.2; 07 BND.83 |
 | `LG3:effect.view_writes_workspace` | diagnostic | View has a workspace-write effect through its body or callees. | | Default 16; LG3.5 | Round 3; not yet used as a concrete code |
-| `LG3:effect.flow_refused` | pending LQ21 | Reserved flow-label spelling; the rule (BND.33) and the form await LQ2 and LQ21. | | BM2; ERR.24; Round 3 | 02 LG3.12, LG3.14, section 6; 07 BND.83, CT-BND-24 |
-| `LG3:capability.flow_refused` | pending LQ21 | Reserved capability-separation spelling; LQ21 retires one alternative before use. | | BM2; ERR.24; Round 3 | 02 LG3.13, LG3.14, section 6; 07 BND.83, CT-BND-24 |
+| `LG3:effect.flow_refused` | refusal | Retired before first use: the flow-label spelling, not selected (LQ21; RTE.24). Never emitted; use `LG3:capability.flow_refused`. | | BM2; ERR.24; Round 3 | 02 LG3.12, LG3.14, section 6; 07 BND.83, CT-BND-24; never active; edition unassigned |
+| `LG3:capability.flow_refused` | refusal | The flow-refusal code under capability separation (LQ21; RTE.24). The rule (BND.33) is chapter 07's; LQ2 decides which flows it refuses. | | BM2; ERR.24; Round 3 | 02 LG3.13, LG3.14, section 6; 07 BND.83, CT-BND-24 |
 | `LG3:capability.not_granted` | refusal | Requested authority is absent or barred by the effective sandbox/profile. | | LG3.8, LG3.9; BND.84, BND.85; DET.37, DET.42 | 01 KN5.26; 02 section 6; 07 BND.61, BND.83 to BND.85; 09 DET.37, DET.52; Round 3 |
 | `LG3:capability.ambient_read` | refusal | Clock, file or network read requested without a grant; network remains barred in 1.0. | | INV-10; default 2; LX-3 | Round 3; not yet used as a concrete code |
 | `LG3:capability.grant_mismatch` | refusal | Resource, right, module or profile differs from the effective grant. | | DET.37, DET.40 | 07 BND.83, CT-BND-23; 09 DET.7, DET.52 |
@@ -571,7 +574,7 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
 | `capability.commit_row_refused` | `KN5:capability.commit_row_refused` | Prefix; runtime cannot invoke any commit row. |
 | `capability.debug_write_forbidden` | `EV2:capability.debug_write_forbidden` | Prefix; replay/debug sink authority is separate from general missing grants. |
 | `capability.denied` | `LG3:capability.not_granted` | Chapters 02 and 09 report the same absence of effective authority as Round 3; policy/sandbox can make the grant unavailable. |
-| `capability.flow_not_allowed` | `LG3:capability.flow_refused` | Reserved capability spelling only. Defer activation to LQ21 and chapter 07; the effect spelling also stays reserved, ERR.24. |
+| `capability.flow_not_allowed` | `LG3:capability.flow_refused` | The flow-refusal code under capability separation (LQ21; RTE.24); the effect spelling is retired, ERR.24. Chapter 07 and LQ2 set when it is emitted. |
 | `capability.grant_mismatch` | `LG3:capability.grant_mismatch` | Prefix; a present grant has the wrong scope/right/grantee/profile, distinct from absence. |
 | `capability.lb7_module_grant_missing` | `LB7:capability.module_grant_missing` | LB7 moves to the prefix; retain the module-entry admission fact. |
 | `capability.provenance_incompatible` | `PS1:capability.provenance_incompatible` | Prefix; stored provenance cannot justify a gated use under its recorded form. |
@@ -715,7 +718,7 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
 | CT-ERR-12 | Reconciliation covers every concrete chapter spelling once; equal-meaning merges retain typed context and distinct comparisons/authority facts remain distinct. Withdrawn outside-domain entries are removed, not renamed into active errors. Check H15.16's 23 closure additions, including the six final KN origins and filter freshness, plus both JI.41 forwards; branch-path, void-exit and geometry failures carry input facts, never invented missing frames. Apply RM.30 to the EV3 registry rows: old pick bindings return stale.display_pick with unchanged or changed source; only current bindings followed by a source-digest mismatch return stale.source_link, and navigation to the pinned producing bytes succeeds. | source |
 | CT-ERR-13 | Exercise all category content rules: reason and next action data, retained drafts, typed scope/level/coverage and limits; no unchecked part is safe, no failed support automatically refutes a claim, and no message selects a solving twist/correction. | source |
 | CT-ERR-14 | Kill the runtime: jobs end as error with KN7:resource_limit.runtime_lost, state and journal remain equal, and the engine preview remains usable through the normal shell gate. | source |
-| CT-ERR-15 | Reserved flow codes cannot be emitted before LQ2 and LQ21 set the rule and retire one, and plan/recursion reservations use only their settled contracts. RM.13's fixed-ceiling/output-budget draft never emits KN7:budget.display_plan_limit. | source |
+| CT-ERR-15 | `LG3:effect.flow_refused` is retired and never emitted, `LG3:capability.flow_refused` cannot be emitted before LQ2 sets the rule, and plan/recursion reservations use only their settled contracts. RM.13's fixed-ceiling/output-budget draft never emits KN7:budget.display_plan_limit. | source |
 | CT-ERR-16 | Exact-request format, menu-binding and free-search-cap failures retain their three KN2 codes, refusal form, typed failed fact and after_user_change retry. KN3 remains a rule source, never a registered raising family (ERR.23; KN3.7, KN3.8). | source |
 | CT-ERR-17 | Stage-rule diagnostics use LG2:type.stage_rule_violation; the withdrawn chart-subset row keeps its meaning and cannot emit. EV3 stage compile failures have refusal before acceptance and stop after it, quarantine refuses, raster-bound excess reports with form status before user-stage fragment work, and view open/close refusals retain their two input codes and category retries. | source |
 | CT-ERR-18 | Recording stale-step stops inherit after_refresh; identity mismatches refuse before playback and stop during it. Unknown recorded terminal outcomes stop playback and conversion, state and conversion refusals keep their own codes, and forwarded child failures retain their original identities (EV4.14, EV4.19, EV4.22, EV4.23; ERR.7, ERR.14). | source |
@@ -723,19 +726,21 @@ Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12 
 
 ## 8. Open items
 
-The owner answered LQ1 to LQ21 on 6 November 2026. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set
-waits for the joint setting. The remaining choices and mechanisms never silently change an allocated code's meaning.
+The owner answered LQ1 to LQ21 on 6 November 2026 and chose LQ8, LQ9 and LQ21 on 14 November 2026: the engine and the
+interpreter's host in Rust, route RT1 with the runtime in a process of its own, and capability separation (RTE.17,
+RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits for the joint setting.
+The remaining choices and mechanisms never silently change an allocated code's meaning.
 
 | Item | What stays fixed and what remains to decide | Clauses |
 | --- | --- | --- |
 | LQ2 option set | Execution gates and built-in boundary remain. The joint setting decides allowed flows, sinks, author classes and exceptions, so no policy refusal is enabled by this registry alone. | ERR.13, ERR.17, ERR.24 |
-| LQ8 | The engine language waits for LX-5 and LX-6's decisive evidence. The selected implementation must preserve error identity and kernel invariants. | ERR.1, ERR.7, ERR.19 |
-| LQ9 | Runtime loss never freezes a session. Route and placement decide fault containment and static/run-time adapters; unsupported execution contracts remain explicit. | ERR.9, ERR.17, ERR.19, ERR.24 |
+| LQ8 answered | The engine is written in Rust (owner, 14 November 2026, LQ8; RTE.17). The implementation must preserve error identity and kernel invariants. | ERR.1, ERR.7, ERR.19 |
+| LQ9 answered | Route RT1 with the runtime in a process of its own (owner, 14 November 2026, LQ9; RTE.21). Runtime loss never freezes a session; unsupported execution contracts remain explicit. | ERR.9, ERR.17, ERR.19, ERR.24 |
 | LQ13 | Syntax waits for LX-8's owner-set human protocol and evidence before LP2's parser. Diagnostics keep digest-bound ranges and stable codes; source and stored-edition failures stay distinct. | ERR.6, ERR.10, ERR.12; LG1 and PS2 tables |
-| LQ21 | Both flow spellings stay reserved until one is retired before use; chapter 07 decides the rule/form under the owner's selected mechanism. | ERR.17, ERR.24 |
+| LQ21 answered | Capability separation (owner, 14 November 2026, LQ21; RTE.24). `LG3:effect.flow_refused` is retired before use; chapter 07 decides the rule under the selected mechanism. | ERR.17, ERR.24 |
 | Envelope additions the owner may overrule | ERR.9's form, ERR.10's span and ERR.11's after_user_request are new D additions to V06 from Round 3. Removing one requires an explicit replacement for the diagnostic, job-stop or fresh-action distinction it serves. | ERR.8 to ERR.11 |
 | Span protocol implementation | H7 and EV1.10 now supply the draft convention and conversions; implementation and conformance remain owed. No coordinate choice is left to this registry. | ERR.12 |
-| Flow rule and form [O] | Chapter 07, LQ2 and LQ21 settle the active flow row and retire the other; no selection is implied by the reconciliation column. | ERR.24 |
+| Flow rule [O] | LQ21 settled the form (ERR.24). Chapter 07 and LQ2 settle when `LG3:capability.flow_refused` is emitted. | ERR.24 |
 | Plan-limit amounts [O] | RM.11 to RM.13 draft fixed ceilings plus the existing output allowance. Numeric production limits and measurements remain owed; a separately declared plan allowance would need its own contract before activating the reserved budget row. | ERR.25 |
 | Recursion guard [O] | DET.28 and LP1 choose the non-budget guard or logical stack/memory treatment and its count. | ERR.26 |
 | Chapters 06 and 07 | EVD.64 and EVD.65 add the field-writer refusal. Chapter 07 uses BND.83's rows and the existing not_granted code at BND.84/BND.85's preview check. Owning implementations and conformance remain owed. | ERR.21, ERR.23, ERR.24 |

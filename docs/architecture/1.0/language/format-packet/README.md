@@ -9,7 +9,7 @@ after it. No schema, importer, runtime, UI or model is changed here.
 
 - **FP.1 [D]** Candidate `en4-data-core-draft-1` consists of the files enumerated in
   `candidate.json`. That file records SHA-256 of each candidate and input file and
-  the packet input commit `384b877b`. Its inventory digest is SHA-256 of the
+  the commit the pins were read from. Its inventory digest is SHA-256 of the
   `candidate` array encoded by FP.5. It excludes itself and the closure manifest
   to avoid a self-hash cycle. The closure manifest reports ownership, not format
   identity. `check_vectors.py` verifies every recorded digest. With `frozen:false`,
@@ -336,7 +336,8 @@ use with `PS1:capability.provenance_incompatible`. Importing a valid block gives
 no permission either. Switching between flow and capability forms preserves the
 original block and records a migration; no fabricated fine-grained flow or
 `read_state:no` is inferred. The current policy must justify a use from the
-available facts, or refuse. LQ21 and BND.74 remain open.
+available facts, or refuse. LQ21 chose capability separation (owner, 14 November 2026; RTE.24); BND.74's other
+questions remain open.
 
 - **FP.18 [D]** `examples.json` contains four complete provenance blocks: a
   hand-typed word and an imported 0.4 macro in each LQ21 form. The pins are hashes
@@ -771,7 +772,8 @@ available facts, or refuse. LQ21 and BND.74 remain open.
 - **FP.35 [O]** Open dependencies are deliberately not called closed. The owner's
   answers of 6 November 2026 settle the envelope, the freeze scope, playback, module
   sharing, gate order and formal-proof use (LQ3, LQ10, LQ11, LQ12, LQ15, LQ19).
-  LQ21 and BND.74 still select policy, and EN3 pins X3. The integrator
+  LQ21 chose capability separation (owner, 14 November 2026; RTE.24); BND.74's other questions still select policy,
+  and EN3 pins X3. The integrator
   refreshes FP.15 and candidate inputs after p7-table lands and checks H11 traces.
   The integrator closes the remaining chapter-06 typed binding gaps and converts the complete corpus
   table into typed rules (or explicitly records remaining unmapped data), reviews

@@ -2888,3 +2888,9 @@ answered LQ1 to LQ21. The [decision page](../../../../wiki/decisions/owner-decis
 the architecture chapters carry them. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set waits for the
 joint setting. The original items above, including the working name and the earlier unanswered status, stay as written.
 No ADR is accepted and nothing is frozen.
+
+**Correction, 14 November 2026:** The owner chose LQ8, LQ9 and LQ21: Rust for the engine and the interpreter's host,
+route RT1 with the runtime in a process of its own, and capability separation
+([decision page](../../../../wiki/decisions/owner-decisions-2026-11-14-language-route.md)). The decisive LX-1, LX-2 and
+LX-4 runs become LP3 acceptance checks. LQ13 waits for LX-8, and LQ2's option set waits for the joint setting. The
+items above stay as written. No ADR is accepted and nothing is frozen.

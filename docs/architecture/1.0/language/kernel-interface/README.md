@@ -29,7 +29,7 @@ engine language, placement, syntax, ABI or wire format, answers no LQ, and makes
 | Jumbling payloads | JI.6, JI.7, JI.8, JI.9, JI.10, JI.11, JI.14, CM.15 | Named batches use the final table's delta and amended argument schemas; binding and tariff work remains |
 | Meter and lifetimes | DET.54, DET.55, DET.56, DET.57, DET.58, DET.59, DET.60, DET.63; LG4.7, LG4.9 | No production tariff, size ceiling or terminal capacity is supplied by this annex |
 | Semantic chunking | DET.63, LG4.6 | JI.14's maximum chunk size is an admission constraint; the row's pinned semantic schedule determines stops |
-| Provenance and grants | LG3.2, LG3.4, LG3.12, LG3.13, LG3.16; RTE.24, RTE.26, RTE.27 | Preserve both LQ21 forms and interim restrictions; a typed signature grants nothing |
+| Provenance and grants | LG3.2, LG3.4, LG3.12, LG3.13, LG3.16; RTE.24, RTE.26, RTE.27 | Capability separation is selected (LQ21; RTE.24); keep the interim restrictions; a typed signature grants nothing |
 | Presentation and publication | RPI.10, RPI.13, RM.14, RM.18, RM.19, RM.26 | Confirmed presentation differs from installation; renderer resources stay host-owned |
 
 ## Common contract
@@ -219,7 +219,9 @@ engine language, placement, syntax, ABI or wire format, answers no LQ, and makes
 ## Binding holes
 
 - **KI.15 [O]** The logical operations and release obligations above leave these concrete holes.
-  Every row waits for LQ8/LQ9 and the applicable LQ21 enforcement form. No route is preferred.
+  The owner chose route RT1 and Rust (owner, 14 November 2026, LQ8, LQ9; RTE.17, RTE.21) and capability separation
+  (LQ21; RTE.24). The RT1 row is the binding to write; RT2, RT3 and RT4 are not built and their rows record the
+  unselected alternatives.
 
 | Route | Binding still required |
 | --- | --- |

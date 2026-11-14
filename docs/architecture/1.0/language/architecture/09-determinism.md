@@ -176,8 +176,10 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
   admitted language; RT3 preserves the abstract charge points through compilation. Optimized code cannot delete
   charges that change a cut-off. Borrowed VM instructions or fuel are enforcement tools only after their mapping to
   the abstract charges is established. KN7.8's kernel charges stay the same in every route.
-- **DET.22 [O]** Whether RT2 can provide that mapping, and how RT3 preserves it, awaits LX-1, LX-3 and LQ9 in chapter
-  11. No source establishes equal step budgets across those executors. RT4 needs an admitted subset and a specified
+- **DET.22 [D]** LQ9 selected RT1, which meters the abstract execution (DET.21; owner, 14 November 2026, LQ9;
+  RTE.21); RT2, RT3 and RT4 are not built, and the sentences on them record the unselected alternatives and bind
+  nothing. Whether RT2 can provide that mapping, and how RT3 preserves it, awaited LX-1, LX-3 and LQ9 in chapter 11.
+  No source establishes equal step budgets across those executors. RT4 needs an admitted subset and a specified
   meter before it can make an equivalent promise. If a route cannot preserve the common contract, its budgeted results
   cannot claim the same key. The choices are to supply the meter, decline that route, or propose a different versioned
   execution contract for the owner's LQ9 decision. A different contract changes keys and needs chapter 05's explicit
@@ -282,10 +284,11 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
 | Network | no | no | no |
 | Process | no | no | no |
 
-- **DET.38 [D]** The table does not answer LQ2's option set or LQ21. Chapter 07 supplies `Profile`, provenance,
-  boundary classes and declassifiers. Under flow labels a grant is checked with the permitted data and control flows;
-  under capability separation, reading state-derived data and preparing previews cannot coexist except through policy-enabled
-  declassifiers, and preview outcomes are state-derived (DT-L1 R2-E3). Until the joint setting, the partition's section
+- **DET.38 [D]** The table does not answer LQ2's option set. Chapter 07 supplies `Profile`, provenance, boundary
+  classes and declassifiers. Under capability separation, the form LQ21 chose (owner, 14 November 2026; RTE.24),
+  reading state-derived data and preparing previews cannot coexist except through policy-enabled declassifiers, and
+  preview outcomes are state-derived (DT-L1 R2-E3). Flow labels, which would have checked a grant with the permitted
+  data and control flows, were not selected. Until the joint setting, the partition's section
   11 interim reading applies: research output never becomes a solving-session preview, solver-tool solving previews
   remain disabled, and built-in tools keep the 2 October boundary and the 17 October exception. A file grant preserves
   stored provenance; it cannot launder a word through storage.
@@ -310,7 +313,8 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
   a fault never rewrites a committed outcome as failure. R-14 keeps engine work off the UI thread and R-16 retains atomic
   admission, including concurrent runs and held keys. Logical exhaustion is reported with its budget name; physical
   exhaustion and a killed runtime remain incomplete errors. LX-2 owns the placement fault experiment and responsiveness
-  measurement. This chapter asserts no measured containment or latency result.
+  measurement, an LP3 acceptance check with its bars unchanged (RTE.21). This chapter asserts no measured containment
+  or latency result.
 
 ## 6. Runs that produce evidence
 
@@ -349,12 +353,13 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
   coverage and stop boundaries. It tests each budget alone and interacting limits, denied ambient access and the
   approved-subset variants. Resource enforcement in a host and equality between routes are separate assertions.
 - **DET.50 [D]** LX-3 also compares the approximate display fields of DET.32 at chapter 10's declared precision and
-  checks refusal and false-refusal cases under the forms of flow control (partition LX-3, DT-L1 R2-E2, R2-E3). Its
+  checks refusal and false-refusal cases under capability separation (partition LX-3, DT-L1 R2-E2, R2-E3; RTE.24). Its
   must-refuse corpus includes selection by largest cap value, search followed by rebuilding from base parts, the F2 and
   F5 correction solve, workspace laundering, a state-based choice between two words, flow through a module call, a
   stop-selected preview, refusal-driven selection, a one-item pick and accumulation across runs (BND.52).
   The host-subset variant refuses dynamic code and binds static approval to the executed bytes. Counts of harmless
-  tools refused are returned to LQ21; this chapter sets no acceptable count or policy ruling.
+  tools refused: LX-3's two false refusals are met by fixed enabled declassifiers or by splitting the tool, and its
+  decisive check is part of LP3 acceptance (RTE.24). This chapter sets no acceptable count or policy ruling.
 - **DET.51 [D]** Chapter 11 owns LX-3's decision rule, experiment card and relation to LQ9 and LQ21. RTE.82 records
   the first-pass spike evidence under the owner's LQ18 allowance. It supplies no product conformance result
   (overview 3.4; partition section 12). Exact portability, repeatable cut-offs, sandbox containment, route-equivalent
@@ -425,15 +430,18 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
 
 ## 10. Open items
 
-The owner answered LQ1 to LQ21 on 6 November 2026. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set
-waits for the joint setting.
+The owner answered LQ1 to LQ21 on 6 November 2026 and chose LQ8, LQ9 and LQ21 on 14 November 2026: the engine and the
+interpreter's host in Rust, route RT1 with the runtime in a process of its own, and capability separation (RTE.17,
+RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits for the joint setting.
 
-- **LQ2's option set and LQ21.** Chapter 07's capability policy and the form of flow control
-  (DET.4, DET.20, DET.37, DET.38, DET.40, DET.50). Labels and capability separation need different enforcement and can
-  refuse different harmless tools; neither changes the commit gate or permits ambient authority.
-- **LQ8, LQ9.** Engine, route and placement (DET.3, DET.8, DET.21, DET.22, DET.36, DET.43). The semantic key, sandbox
+- **LQ2's option set; LQ21 answered.** Chapter 07's capability policy (DET.4, DET.20, DET.37, DET.38, DET.40,
+  DET.50). LQ21 chose capability separation (owner, 14 November 2026, LQ21; RTE.24); neither it nor the unselected
+  labels change the commit gate or permit ambient authority.
+- **LQ8, LQ9 answered.** Engine, route and placement (DET.3, DET.8, DET.21, DET.22, DET.36, DET.43): Rust, route RT1
+  and a runtime process of its own (owner, 14 November 2026, LQ8, LQ9; RTE.17, RTE.21). The semantic key, sandbox
   boundary and exactness promise stay fixed. Metering adapters, algorithm dependencies and fault containment need
-  evidence for the selected host. No source establishes equivalence of borrowed VM fuel and abstract steps.
+  evidence for the selected host, as LP3 acceptance checks. No source establishes equivalence of borrowed VM fuel and
+  abstract steps.
 - **Draft execution contract.** DET.12, DET.14, DET.20, DET.24 and DET.26 now have recommended rules and
   reference vectors in section 11. The alternatives remain recorded. Review and owner freeze are pending;
   executor mappings, production tariffs and resource descriptors still need implementation and validation.
@@ -489,7 +497,9 @@ waits for the joint setting.
   branch, retained binding or sink required by the selected checked flow form. One check tests one fixed descriptor;
   walking a variable label set uses visits or a size tariff. Failure retains the check's admitted charge and uses
   chapter 07's selected flow refusal. Static checks cost no run-time step. The chosen flow form, policy and checked
-  insertion sites are pinned by DET.4; this clause activates neither reserved flow spelling nor an LQ21 choice.
+  insertion sites are pinned by DET.4; this clause activates neither flow spelling nor a flow-rule setting. The
+  run-time `flow_check` belongs to the unselected flow-label alternative (LQ21; RTE.24); it is recorded here and binds
+  nothing.
   Whole-state contracts remain once per revision or agreement tests (LG4.10); a run-requested check is still charged.
 
 - **DET.56 [D]** At each continuation, first observe an already pending solver/host interruption. Such a stop is

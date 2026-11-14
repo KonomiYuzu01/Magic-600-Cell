@@ -1,7 +1,8 @@
 # ADR-L07: the typed IR as the stable contract
 
-Status: **Proposed.** Not accepted. **Held for LP1: it follows the route choice** (partition section 17, PHS.10). The
-owner accepts or rejects it then ([`AGENTS.md`](../../../../../AGENTS.md), "Ask the owner").
+Status: **Proposed.** Not accepted. It follows the route choice (partition section 17, PHS.10), and the owner chose
+RT1 on 14 November 2026 (LQ9, RTE.21), so the typed IR applies. The owner accepts or rejects it after both LP1 rulings
+([`AGENTS.md`](../../../../../AGENTS.md), "Ask the owner").
 
 Rests on: partition LG4 and section 12; [chapter 02](../architecture/02-language-core.md) LG1, LG4; [chapter
 11](../architecture/11-route-and-spikes.md) sections 1 to 5. Round table: DT-L1 E4.
@@ -13,11 +14,13 @@ mean the same thing years later, whatever runs it. The keyboard, the GUI and sou
 operation means.
 
 Something has to be the contract for that meaning. Three things could be: the source text, the executor's own bytecode,
-or a typed intermediate form the project owns. Under routes RT1 to RT3 the project already has the third.
+or a typed intermediate form the project owns. Under routes RT1 to RT3 the project already has the third, and the owner
+chose RT1 (RTE.21).
 
 ## Decision
 
-Under a route that has it, which means RT1, RT2 lowered to it, or RT3:
+Under a route that has it, which means RT1, RT2 lowered to it, or RT3. The owner chose RT1, whose interpreter runs in a
+process of its own (owner, 14 November 2026, LQ9; RTE.21):
 
 - **ADR-L07.1** The typed IR is the versioned execution contract shared by source, GUI-originated operations and keys.
   It preserves types, effect requirements, literal word order, source associations and the meaning of resource charges.
@@ -44,8 +47,9 @@ Under a route that has it, which means RT1, RT2 lowered to it, or RT3:
 
 ## What this record does not decide
 
-The owner answered LQ1 to LQ21 on 6 November 2026. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set
-waits for the joint setting.
+The owner answered LQ1 to LQ21 on 6 November 2026 and chose LQ8, LQ9 and LQ21 on 14 November 2026: the engine and the
+interpreter's host in Rust, route RT1 with the runtime in a process of its own, and capability separation (RTE.17,
+RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits for the joint setting.
 
 Open mechanisms:
 
@@ -55,11 +59,13 @@ Open mechanisms:
   DET.64. The fixed-weight alternative remains recorded and needs a different execution identity and compatibility
   treatment. Production tariffs and metering evidence are still owed; no alternative is selected by this record.
 
-Waiting owner questions:
+Answered owner question:
 
-- **LQ9:** the route. RT4 has no such IR by definition. It would either lower its approved subset into the common IR, or
-  specify and verify an equivalent contract with its own compatibility and metering evidence (RTE.6, LG4.14). This
-  record takes no position between those.
+- **LQ9:** RT1, an own interpreter over this IR, in a process of its own (owner, 14 November 2026; RTE.21). RT4 has no
+  such IR by definition; its lowering or replacement contract (RTE.6, LG4.14) records the unselected alternative.
+
+Waiting owner question:
+
 - **LQ13:** the syntax. Any candidate lowers to the same IR (LG1.8).
 
 ## Why
@@ -87,8 +93,8 @@ Waiting owner questions:
 - An IR does not make the front end cheap to change. Source, diagnostics and module contracts become saved-work
   dependencies, so the front end stays the hard choice to reverse under RT1 and RT3 (RTE.9, RTE.14), and a borrowed VM
   does not remove that commitment (RTE.12).
-- The interpreter may turn out too slow for some tools. LX-1's first-pass leads do not establish product cost or select
-  a route (RTE.82).
+- The interpreter may turn out too slow for some tools. LX-1's first-pass leads do not establish product cost; its
+  decisive run is an LP3 acceptance check, and a failure reopens LQ9 (RTE.21, RTE.82).
 - GUI operations have to lower to the same forms, so a button cannot do something a program could not express.
 
 ## Evidence
@@ -96,10 +102,10 @@ Waiting owner questions:
 Class: source. No product IR, checker or interpreter is established by this record. CT-LG4 and CT-DET-25 to
 CT-DET-32 remain requirements. The abstract fixtures in `contract-vectors/` describe the draft meter; they do not
 establish product conformance or an executor mapping. LX-1 to LX-5 have first-pass records under
-`work/experiments/language-lx/`; their `RESULT.md` files keep each run's limits (RTE.82). Decisive route evidence is
-still owed, and this record selects no route.
+`work/experiments/language-lx/`; their `RESULT.md` files keep each run's limits (RTE.82). The owner chose RT1 on
+those leads (RTE.21); the decisive LX-1, LX-2 and LX-4 runs are LP3 acceptance checks.
 
 ## What the owner accepts
 
-After both LP1 rulings, with the route, accepting this record accepts ADR-L07.1 to ADR-L07.8 under the route chosen, or
-the replacement contract RT4 would need. Nothing here is accepted before them.
+After both LP1 rulings, accepting this record accepts ADR-L07.1 to ADR-L07.8 under RT1, the route the owner chose
+(RTE.21). Nothing here is accepted before them.

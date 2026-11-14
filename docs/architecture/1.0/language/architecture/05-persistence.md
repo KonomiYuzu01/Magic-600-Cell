@@ -515,7 +515,7 @@ operation expand_stored_word(word: StoredWord, bound: Budget) -> LiteralWordStre
   its labels and dependency pins. A value selected through a state-derived branch cannot become unlabelled merely
   because its literal letters came from an own macro. Chapter 07 defines propagation and sink checks.
 
-| Provenance field | Common stored obligation | Flow labels, if LQ21 chooses them | Capability separation, if LQ21 chooses it |
+| Provenance field | Common stored obligation | Flow labels (not selected; records the alternative) | Capability separation (selected: LQ21; RTE.24) |
 | --- | --- | --- | --- |
 | Version and form | Explicit block version and the form that produced it | Static or run-time flow-label contract and checker/executed-source pins | Capability-contract version and producer's recorded state-read fact |
 | Author and producer | Chapter 07 `AuthorClass`, program/module digests or an explicit manual/import origin | Same common fields | Same common fields |
@@ -916,8 +916,9 @@ operation export_check_bundle(envelopes: List<EvidenceEnvelopeRef>, limits: Limi
   decision. No part of this chapter is a freeze ruling.
 - **PS2.11 [B] Withdrawn.** The owner chose the facts envelope and language-neutral core, removing these alternatives (owner, 6 November 2026, LQ10).
 - **PS2.12 [B]** Both Astra freeze rulings sit at LP1's exit, then the owner signs off and LP2 to LP5 may start
-  before the design-system ADR (owner, 6 November 2026, LQ19; owner, 6 November 2026, decision 7). LQ8, LQ9 and LQ21
-  need their evidence first, so the rulings follow the decisive runs. Language development is complete when LP2
+  before the design-system ADR (owner, 6 November 2026, LQ19; owner, 6 November 2026, decision 7). The rulings
+  needed LQ8, LQ9 and LQ21 first (owner, 6 November 2026), and the owner answered them on 14 November 2026 (RTE.17,
+  RTE.21, RTE.24); LQ13 waits for LX-8 before LP2's parser. Language development is complete when LP2
   to LP5 are done apart from LP4's editor look; the design line resumes then. Its design-system ADR conditions
   LP4's editor look and LP6. The charter's stage 2.5 exit retains all three parts in this amended order for the
   language line; no gate is relaxed. Nothing here resumes the design line or sets a day count.
@@ -1026,7 +1027,7 @@ they do not establish full cross-platform, importer or mechanical conformance.
 | CT-PS1-14 | Every checkpoint carries a verifiable own path; A5 exit poses/certificate and resumed retained moves reproduce the poses and labels digests | source |
 | CT-PS1-15 | PS1.30 recording round-trip retains every RecordedStep field, canonical arguments, word/action references, revisions, module and receipt bindings, and provenance; all commit playback needs a new explicit action and token | source |
 | CT-PS1-16 | RunRecord reproduces chapter 09 key inputs and exact result bytes; cut-off and safety-stopped runs never gain a negative claim | source |
-| CT-PS1-17 | State-derived word survives workspace save/read, rename, source conversion and file round-trip with its labels, under both LQ21 forms | source |
+| CT-PS1-17 | State-derived word survives workspace save/read, rename, source conversion and file round-trip with its labels, under capability separation (LQ21; RTE.24) | source |
 | CT-PS1-18 | A legacy/unsupported provenance block stays recorded and cannot be read as an unlabelled solving word; 0.4 origin remains own, imported | source |
 | CT-PS1-19 | The facts envelope rejects transient-only scope and keeps every digest's level, original source label and check mode | source |
 | CT-PS1-20 | Facts-envelope graph experiment reports nodes/edges and stored/decoded bytes against its digest-pinned stage 14 to 19 baseline | source |
@@ -1059,17 +1060,19 @@ they do not establish full cross-platform, importer or mechanical conformance.
 
 ## 16. Open items
 
-The owner answered LQ1 to LQ21 on 6 November 2026. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set
-waits for the joint setting.
+The owner answered LQ1 to LQ21 on 6 November 2026 and chose LQ8, LQ9 and LQ21 on 14 November 2026: the engine and the
+interpreter's host in Rust, route RT1 with the runtime in a process of its own, and capability separation (RTE.17,
+RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits for the joint setting.
 
-- **LQ2, LQ21.** Chapter 07 owns the joint option set, competence capability gates if any, display sinks and the
-  choice of flow form. LQ21 is decided with LQ9 on LX-1's label cost and LX-3's refusal counts before the freeze rulings.
+- **LQ2, LQ21.** Chapter 07 owns the joint option set, competence capability gates if any and display sinks. LQ21
+  chose capability separation (owner, 14 November 2026, LQ21; RTE.24); LX-3's decisive check is part of LP3 acceptance.
   Common provenance survives either form; FP.17/FP.18 specify candidate version/compatibility (PS1.15, PS1.32 to PS1.34).
   Built-in tools keep the 2 October boundary and 17 October repair-list exception until the joint setting.
 - **LQ8, LQ9.** Engine language, route and placement affect module/IR dependencies and exact codecs; recorded inputs
-  remain explicit (PS1.4 to PS1.7, PS1.15, PS1.31, PS2.7). LX-5/LX-6 feed LQ8, then LX-1 to LX-5 feed LQ9 with LQ21.
-  First-pass results in `work/experiments/language-lx/` are leads; decisive runs wait for the owner's window
-  (owner, 6 November 2026, decision 15).
+  remain explicit (PS1.4 to PS1.7, PS1.15, PS1.31, PS2.7). The owner chose Rust for the engine, route RT1 and a
+  runtime process of its own (owner, 14 November 2026, LQ8, LQ9; RTE.17, RTE.21). LX-5 and LX-6 ran on 14 November
+  2026 and the owner accepted them as decisive (RTE.82); LX-1, LX-2 and LX-4 are LP3 acceptance checks with their bars
+  unchanged, and if one fails LQ9 reopens.
 - **LQ13.** Source syntax and header spelling wait for LX-8's human test before LP2 builds the parser
   (PS1.13, PS1.14, PS2.1). The source-preparation result is no human learnability result.
 - **Candidate wire draft review.** FP.5 to FP.10 now specify JSON, exact/display numbers, gzip, shared limits and

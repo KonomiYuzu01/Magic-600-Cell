@@ -1,0 +1,44 @@
+{
+  "conditions_sha256": "8d3362c3bac9b9c3b7f1b6a9f586ea262b3377816b8d505a0b6d68d0a1d1bb75",
+  "decider": "owner",
+  "decision": "open",
+  "finished_utc": "2026-11-14T18:35:28.707818+00:00",
+  "format": "lx-quiet-window/1",
+  "reading": "A run with input during it, a non-zero exit or changed conditions is a lead, not decisive evidence.",
+  "runs": [
+    {
+      "command": "python -B work/experiments/language-lx/lx5-arithmetic/measure.py --conditions work/experiments/language-lx/quiet-window/2026-11-14T1818Z/conditions.json --output work/experiments/language-lx/quiet-window/2026-11-14T1818Z/lx5-full.json",
+      "exit": 0,
+      "name": "lx5",
+      "output": "lx5-full.json",
+      "output_sha256": "d6ccc4752bdc4acc5620260c4cad4698ec0fee04068373d8c18d158b86732563",
+      "owner_input_during_run": true,
+      "seconds": 834.1,
+      "started_utc": "2026-11-14T18:19:07.555539+00:00"
+    },
+    {
+      "command": "python -I -B work/experiments/language-lx/lx5-crate/check.py --full --conditions work/experiments/language-lx/quiet-window/2026-11-14T1818Z/conditions.json --output work/experiments/language-lx/quiet-window/2026-11-14T1818Z/crate-full.json",
+      "exit": 0,
+      "name": "crate",
+      "output": "crate-full.json",
+      "output_sha256": "e8331356748e9897525d26be10b749a069503b8ed4eb2e4edbca8eda905b1e4d",
+      "owner_input_during_run": true,
+      "seconds": 113.8,
+      "started_utc": "2026-11-14T18:33:01.692901+00:00"
+    },
+    {
+      "command": "python -B work/experiments/language-lx/verify_frozen.py lx6-engine-port measure.py --conditions work/experiments/language-lx/lx6-engine-port/conditions.json --output work/experiments/language-lx/quiet-window/2026-11-14T1818Z/lx6-full.json",
+      "exit": 0,
+      "name": "lx6",
+      "output": "lx6-full.json",
+      "output_sha256": "0272e273eea14fe98f812ace6b58173bd04da835ccf2e3dda650d976fa4b726a",
+      "owner_input_during_run": true,
+      "seconds": 33.2,
+      "started_utc": "2026-11-14T18:34:55.502993+00:00"
+    }
+  ],
+  "settle_seconds": 120,
+  "settle_wait_seconds": 0,
+  "sleep": "system sleep held off for the window by an execution-state request; display left to the owner's settings",
+  "started_utc": "2026-11-14T18:19:07.549735+00:00"
+}

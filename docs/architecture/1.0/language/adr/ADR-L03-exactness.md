@@ -37,8 +37,9 @@ A language has to make the exact path the easy one, and it has to make the cross
 
 ## What this record does not decide
 
-The owner answered LQ1 to LQ21 on 6 November 2026. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set
-waits for the joint setting.
+The owner answered LQ1 to LQ21 on 6 November 2026 and chose LQ8, LQ9 and LQ21 on 14 November 2026: the engine and the
+interpreter's host in Rust, route RT1 with the runtime in a process of its own, and capability separation (RTE.17,
+RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits for the joint setting.
 
 Open mechanisms:
 
@@ -95,8 +96,10 @@ DirectX or performance evidence. LX-9's later comparisons and exact-request foll
 `work/experiments/language-lx/lx9-exact-request/RESULT.md`.
 They supply synthetic evidence for the amendment direction, with their recorded limits. The B11 figure of 6,775 digits
 and the claim that no table on record exceeds three decimal digits are source observations (KN3.2). LX-5's first-pass
-source and synthetic results are in `work/experiments/language-lx/lx5-arithmetic/RESULT.md`; they select no library or
-engine language and establish no performance pass (RTE.82). The conformance tests are requirements only.
+source and synthetic results are in `work/experiments/language-lx/lx5-arithmetic/RESULT.md`; they select no library
+and establish no performance pass (RTE.82). The engine is written in Rust (owner, 14 November 2026, LQ8; RTE.17), and
+LP2 chooses the big-integer implementation on LX-5's decisive data, whose run the owner accepted (RTE.82). The
+conformance tests are requirements only.
 
 ## What the owner accepts
 

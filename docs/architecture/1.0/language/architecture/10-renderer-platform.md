@@ -463,7 +463,8 @@ LI.7, LI.16 and LI.25 to LI.30; [jumbling interfaces](../../../../progress/1.0/j
 - **RPI.45 [D]** Display content retains the policy and provenance of its producing profile (partition section 11;
   chapters 07 and 09). Built-in tools keep the 2 October boundary and the 17 October exception until the joint setting.
   A chart or overlay cannot become a way to rank caps, choose targets or show forbidden solving output. Which display
-  sinks flow control checks stays in LQ2's option set; its form waits for LQ21 (DT-L1 R2-E3). The adapter does not
+  sinks flow control checks stays in LQ2's option set; its form is capability separation (owner, 14 November 2026,
+  LQ21; RTE.24; DT-L1 R2-E3). The adapter does not
   decide authorship, understanding, declassification or evidence labels.
 - **RPI.81 [D]** A further view has a `ViewId` in LI.22's view namespace. It shows one revision (`base`, RPI.6), keeps
   instance identity and source linkage (RPI.20 to RPI.22) and shows the host statuses of RPI.13. A further view
@@ -694,13 +695,14 @@ LI.7, LI.16 and LI.25 to LI.30; [jumbling interfaces](../../../../progress/1.0/j
 
 ## 12. Open items
 
-The owner answered LQ1 to LQ21 on 6 November 2026. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set
-waits for the joint setting.
+The owner answered LQ1 to LQ21 on 6 November 2026 and chose LQ8, LQ9 and LQ21 on 14 November 2026: the engine and the
+interpreter's host in Rust, route RT1 with the runtime in a process of its own, and capability separation (RTE.17,
+RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits for the joint setting.
 
 | Item | What remains open and where it is used |
 | --- | --- |
-| LQ2, LQ21 | The joint boundary policy, checked display sinks and form of flow control, owned by chapter 07. No new permission follows from display or picking (RPI.14, RPI.26, RPI.45; DT-L1 R2-E3). |
-| LQ8, LQ9 | Engine language and runtime placement do not change this boundary. Each chosen placement must preserve the independent adoption and fault rules (RPI.1, RPI.2, RPI.46 to RPI.54). |
+| LQ2 (LQ21 answered) | The joint boundary policy and checked display sinks, owned by chapter 07; the form is capability separation (RTE.24). No new permission follows from display or picking (RPI.14, RPI.26, RPI.45; DT-L1 R2-E3). |
+| LQ8, LQ9 (answered) | Rust and a runtime process of its own (RTE.17, RTE.21) do not change this boundary. The chosen placement must preserve the independent adoption and fault rules (RPI.1, RPI.2, RPI.46 to RPI.54). |
 | LQ13 | The surface syntax of stage modules follows the choice made after LX-8 (RPI.68). |
 | Stage numerics and weights | Error rules, the tiers they enable and RM.38's weight table (RPI.36 [O], RPI.70, RPI.71). |
 | Stage and view ceilings | Unset until a passing gate run exists (RPI.79, RPI.82). |

@@ -844,17 +844,18 @@ declaring those other drafts delivered:
 
 ## 11. Open items
 
-The owner answered LQ1 to LQ21 on 6 November 2026. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set
-waits for the joint setting.
+The owner answered LQ1 to LQ21 on 6 November 2026 and chose LQ8, LQ9 and LQ21 on 14 November 2026: the engine and the
+interpreter's host in Rust, route RT1 with the runtime in a process of its own, and capability separation (RTE.17,
+RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits for the joint setting.
 
 - **LQ2.** Chapter 07's joint setting chooses the option set; the interim boundary and KN5.26 apply meanwhile.
-- **LQ8.** [B] The engine language waits for LX-5 and LX-6 (owner, 6 November 2026, LQ8). Nothing in this chapter
+- **LQ8.** [B] Answered: the engine is written in Rust (owner, 14 November 2026, LQ8; RTE.17). Nothing in this chapter
   depends on it, except the exact arithmetic libraries it can use.
-- **LQ9.** [B] Where the runtime runs, decided after LX-1 to LX-5 together with LQ21 (owner, 6 November 2026, LQ9).
-  KN5.15, KN7.12 and KN7.13 must hold in each placement.
+- **LQ9.** [B] Answered: route RT1 with the runtime in a process of its own (owner, 14 November 2026, LQ9; RTE.21).
+  KN5.15, KN7.12 and KN7.13 hold in that placement.
 - **LQ13.** [B] Syntax waits for LX-8 before LP2's parser (owner, 6 November 2026, LQ13); these signatures stay neutral.
-- **LQ21.** [B] The form of flow control waits for LX-1 and LX-3 together with LQ9 (owner, 6 November 2026, LQ21).
-  Chapter 07 owns the mechanism; the stored provenance block and KN5.26 do not wait for it.
+- **LQ21.** [B] Answered: capability separation (owner, 14 November 2026, LQ21; RTE.24). Chapter 07 owns the
+  mechanism; the stored provenance block and KN5.26 do not depend on it.
 - **Proposed A6.** KN3.4 and KN3.7 to KN3.9 need EN1's Astra check and then the owner before A1 changes. The owner chose
   the grid for free mode, which settles that detail of the text and puts nothing in force. The draft admission and
   search limits are trial budgets; production values remain to be established.

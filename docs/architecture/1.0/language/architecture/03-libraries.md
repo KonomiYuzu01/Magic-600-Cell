@@ -42,12 +42,13 @@ Section 7 links the individual stage archives.
   reading, no shipped function searches, minimises, ranks or selects over twists, words or caps in a solving session.
   Every such entry below carries the exact marker **research tier candidate**. The two exceptions are setup search for
   a target the solver names and the repair list at a named cap. Enumeration here does not admit a function to a base
-  tier; chapter 07 records the joint setting under LQ2 and LQ21. BND.64 states the rule the marker serves.
+  tier; chapter 07 records the joint setting under LQ2, on LQ21's capability separation. BND.64 states the rule the
+  marker serves.
 - **LB1.6 [D]** Pure algebra is not a boundary exemption. Generic elimination over F2 and F5, the current ν and the
   correction rows compose into a correction selector (DT-L1 R2-E3, fix-first 17). Calls, branches, stored words and
-  preview outcomes use chapter 07's provenance mechanism, with its form left to LQ21. Under flow labels the mechanism
-  follows the dependencies; under capability separation a previewing program cannot read state-derived data or its
-  preview outcomes, apart from the policy's fixed declassifiers. A library cannot declare a declassifier.
+  preview outcomes use chapter 07's provenance mechanism, which is capability separation (owner, 14 November 2026,
+  LQ21; RTE.24): a previewing program cannot read state-derived data or its preview outcomes, apart from the policy's
+  fixed declassifiers. A library cannot declare a declassifier.
 - **LB1.7 [D]** Library contracts use exact values for decisions and chapter 01's verdicts for incomplete evidence
   (INV-4, INV-5). Pointwise contracts consume the interpreter's step budget; whole-state contracts run per revision or
   as agreement tests in CI (DT-L1 R2-E4). Chapter 09 owns budgets and grants. Chapter 05 owns all stored forms, field
@@ -588,11 +589,12 @@ Its mathematical configurations and captured reviews establish only their stated
 
   The candidate list supplies no completed fixture, timing, human understanding result or product implementation.
 
-- **LB6.6 [P LQ9]** A non-IR RT4 language tool has a generated host decomposition meeting RTE.80's body,
-  transitive-call, effect and source-binding checks. A wrapper naming an opaque tool body is insufficient.
-  RT4 that lowers to the common IR uses LB6.2 without the host replacement.
-  An IR route makes the non-IR RT4 admission arm inapplicable, not the PrincipleRecord requirement. The owner still
-  selects LQ9 after its evidence; LP1 owes the chosen adapter and its CT-LB6-05 evidence before admitting a tool.
+- **LB6.6 [B]** The owner chose route RT1, an IR route, and RT4 is not built (owner, 14 November 2026, LQ9; RTE.21).
+  The non-IR RT4 arm in this clause records the unselected alternative and binds nothing: a non-IR RT4 language tool
+  has a generated host decomposition meeting RTE.80's body, transitive-call, effect and source-binding checks, and a
+  wrapper naming an opaque tool body is insufficient. RT4 that lowers to the common IR uses LB6.2 without the host
+  replacement. An IR route makes the non-IR RT4 admission arm inapplicable, not the PrincipleRecord requirement. LP1
+  owes CT-LB6-05's evidence before admitting a tool.
   A graph missing a derived call/effect or bound to different source returns `LB6:evidence.decomposition_mismatch`.
 - **LB6.7 [D]** H-08's `view.recommendations`, `target.next.activate`, `object.actions`, `structure.find` and any
   macro-comparison mode that selects a solving target or word require a separate content definition and a ruling of the
@@ -623,8 +625,8 @@ Its mathematical configurations and captured reviews establish only their stated
   Network/process access is not granted to running programs by this chapter (default 2).
 - **LB7.5 [D]** No solver-tool solving preview is enabled before the joint boundary setting (partition section 11's
   interim reading). Forking a tool, composing its base calls, using a research record or passing a principle fixture
-  cannot bypass that setting. Under either LQ21 mechanism, chapter 07 controls preview and display sinks and chapter 09
-  controls grants. No module obtains the shell's commit token (INV-3).
+  cannot bypass that setting. Under capability separation (LQ21; RTE.24), chapter 07 controls preview and display sinks
+  and chapter 09 controls grants. No module obtains the shell's commit token (INV-3).
 
 ## 10. Conformance tests
 
@@ -699,16 +701,18 @@ Its mathematical configurations and captured reviews establish only their stated
 
 ## 12. Open items
 
-The owner answered LQ1 to LQ21 on 6 November 2026. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set
-waits for the joint setting. No candidate list or conformance requirement is an owner answer.
+The owner answered LQ1 to LQ21 on 6 November 2026 and chose LQ8, LQ9 and LQ21 on 14 November 2026: the engine and the
+interpreter's host in Rust, route RT1 with the runtime in a process of its own, and capability separation (RTE.17,
+RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits for the joint setting.
+No candidate list or conformance requirement is an owner answer.
 
 | Owner question | Clauses | What stays; what can change |
 | --- | --- | --- |
 | LQ2 Human-solve boundary | LB1.5, LB1.6, LB3.5, LB6.7, LB7.5 | Entry definitions, execution gates and principle records stay. The joint setting chooses permitted calls, author classes, sinks and option set. |
-| LQ8 Engine language | LB1.1, LB3.1 | [B] The choice waits for LX-5 and LX-6 (owner, 6 November 2026, LQ8). |
-| LQ9 Runtime route/placement | LB1.6, LB6.2, LB7.5 | [B] The choice waits for LX-1 to LX-5 together with LQ21 (owner, 6 November 2026, LQ9). |
+| LQ8 Engine language | LB1.1, LB3.1 | [B] Answered: the engine is written in Rust (owner, 14 November 2026, LQ8; RTE.17). |
+| LQ9 Runtime route/placement | LB1.6, LB6.2, LB7.5 | [B] Answered: route RT1, runtime in a process of its own (owner, 14 November 2026, LQ9; RTE.21). |
 | LQ13 Syntax | LB1.2, LB6.2 | [B] The choice waits for LX-8 before LP2's parser (owner, 6 November 2026, LQ13). |
-| LQ21 Flow-control form | LB1.6, LB6.7, LB7.3, LB7.5 | [B] The choice waits for LX-1 and LX-3 together with LQ9 (owner, 6 November 2026, LQ21). |
+| LQ21 Flow-control form | LB1.6, LB6.7, LB7.3, LB7.5 | [B] Answered: capability separation (owner, 14 November 2026, LQ21; RTE.24). |
 
 The clauses tagged [O] identify unresolved mechanisms or dependencies:
 
@@ -717,7 +721,8 @@ The clauses tagged [O] identify unresolved mechanisms or dependencies:
 | LB3.9 | EN3/LP1 packages total N, seams, D, units, Φ and chronological observations into named exact kernel results or library aggregation. |
 
 LB1.10 and LB5.14 to LB5.17 now specify the draft key and checking plans. Their implementations and conformance
-remain owed. LB6.6 remains conditional on the owner's LQ9 choice; no host adapter is admitted by this draft.
+remain owed. LB6.6's non-IR RT4 arm records the unselected alternative (LQ9; RTE.21); no host adapter is admitted by
+this draft.
 
 Further dependencies and source differences:
 

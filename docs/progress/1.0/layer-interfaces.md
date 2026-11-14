@@ -441,15 +441,16 @@ These are specified outcomes, not executed product tests. Symbolic P and L below
   interfaces are covered by LI.5 to LI.31 with their chapter-01 definitions. The exact per-row language binding,
   scheduler tariffs, byte encodings and missing checker dependencies are explicitly separate inputs. FR-K01 and
   FR-C01 therefore remain partial as whole findings; this packet does not certify final EN3/EN4 delivery.
-- **LI.38 [O]** The owner answered LQ1 to LQ21 on 6 November 2026. LQ8, LQ9, LQ13 and LQ21 wait for their evidence,
-  and LQ2's option set waits for the joint setting. The following choices stay open. Working forms support the
-  traces, never replace owner answers.
+- **LI.38 [O]** The owner answered LQ1 to LQ21 on 6 November 2026 and chose LQ8, LQ9 and LQ21 on 14 November 2026:
+  Rust, route RT1 with the runtime in a process of its own, and capability separation (language chapter 11, RTE.17,
+  RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits for the joint setting. The rows below
+  mark what stays open. Working forms support the traces, never replace owner answers.
 
 | Question | Working form used here | Change under the alternative |
 | --- | --- | --- |
 | KN5.12 / ONE.42, shown-preview replacement | Traces use a solver-initiated proposal and no unsolicited replacement of a shown preview | Solver-only replacement refuses unsolicited replacement; if timed replacement is chosen, the selected presentation delay is another eligibility gate. No delay value or default is chosen here; token and freshness contracts are identical |
-| LQ9, runtime placement | Interfaces are placement-neutral; no placement selected | Each candidate must still isolate tokens, UI and the commit path and pass its matching fault/latency checks |
-| LQ21, provenance and boundary policy | Carry opaque versioned provenance and current grants; choose no flow-control form | The data core serializes these references losslessly (owner, 6 November 2026, LQ10); the selected policy changes grant/row eligibility. Neither turns stored evidence into a token |
+| LQ9, runtime placement (answered: a process of its own, RTE.21) | Interfaces stay placement-neutral | The runtime's process must still isolate tokens, UI and the commit path and pass LX-2's fault/latency checks, now an LP3 acceptance check; a failure reopens LQ9 |
+| LQ21, provenance and boundary policy (form answered: capability separation, RTE.24) | Carry opaque versioned provenance and current grants; the enabled rules wait for LQ2's joint setting | The data core serializes these references losslessly (owner, 6 November 2026, LQ10); the selected policy changes grant/row eligibility. Neither turns stored evidence into a token |
 
   ADR acceptance remains an owner item in LI.37. This draft starts no experiment, product implementation,
   design-table topic or UI/UX work.

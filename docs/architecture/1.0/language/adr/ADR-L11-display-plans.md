@@ -68,8 +68,9 @@ views are allowed everywhere.
 
 ## What this record does not decide
 
-The owner answered LQ1 to LQ21 on 6 November 2026. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set
-waits for the joint setting.
+The owner answered LQ1 to LQ21 on 6 November 2026 and chose LQ8, LQ9 and LQ21 on 14 November 2026: the engine and the
+interpreter's host in Rust, route RT1 with the runtime in a process of its own, and capability separation (RTE.17,
+RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits for the joint setting.
 
 Open mechanisms:
 
@@ -84,7 +85,8 @@ Open mechanisms:
   Final ABI/transport, support and presentation evidence still require their own integration and review.
 - Stage numerics and ceilings: the operation tiers' error rule, the weights and the stage and view values all come
   from measurement (RPI.36, RPI.70, RPI.79, RM.38, RM.39).
-- Which display sinks flow control checks stays in LQ2's option set, and its form waits for LQ21 (RPI.45).
+- Which display sinks flow control checks stays in LQ2's option set, and its form is capability separation (owner,
+  14 November 2026, LQ21; RTE.24; RPI.45).
 - A stage's source syntax follows LQ13 (LG5.12).
 - Whether a run-time stage compiler ships is an owner item (RPI.80).
 

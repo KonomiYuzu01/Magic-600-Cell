@@ -38,14 +38,15 @@ The runtime therefore needs a defined place: which layers it may use, how, and w
   as `error`, the journal and state hash stay unchanged and the shell stays responsive (KN7.13, DET.43). LI.28 owns
   the job-to-receipt mapping; LI.29/LI.30 own payload loss and outcome lookup. No refresh failure rewrites a terminal
   success, and missing terminal proof is not inferred from a frame.
-- **ADR-L02.7** Placement stays open. The runtime may run in the engine process, in a process of its own or in the shell
-  process, and every clause above must hold in each. The shell process is admitted only if it passes LX-2's
-  fault-injection run (ONE.69).
+- **ADR-L02.7** The runtime runs in a process of its own (owner, 14 November 2026, LQ9; RTE.21). The engine-process and
+  shell-process placements are not admitted, and every clause above holds in that placement. LX-2's fault-injection
+  run is an LP3 acceptance check with its bar unchanged; if it fails, LQ9 reopens (ONE.69).
 
 ## What this record does not decide
 
-The owner answered LQ1 to LQ21 on 6 November 2026. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set
-waits for the joint setting.
+The owner answered LQ1 to LQ21 on 6 November 2026 and chose LQ8, LQ9 and LQ21 on 14 November 2026: the engine and the
+interpreter's host in Rust, route RT1 with the runtime in a process of its own, and capability separation (RTE.17,
+RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits for the joint setting.
 
 Open mechanisms:
 
@@ -54,12 +55,12 @@ Open mechanisms:
   and final contract review remain freeze inputs; a written protocol is not a frozen transport.
 - The binding between runtime and engine, including zero-copy snapshot access (RTE.7).
 
-Waiting owner questions:
+Answered owner questions:
 
-- **LQ9:** the placement itself, decided with the route on LX-1 to LX-5 and with LQ21 (RTE.21, RTE.23). That decision
-  will be recorded in [ADR-L12](ADR-L12-route.md).
-- **LQ21:** what a program may read while it prepares a preview, under the two forms of flow control
-  ([ADR-L06](ADR-L06-effects-and-flow.md)).
+- **LQ9:** the placement itself, a process of its own, with route RT1 (owner, 14 November 2026, LQ9; RTE.21). The
+  decision is recorded in [ADR-L12](ADR-L12-route.md).
+- **LQ21:** what a program may read while it prepares a preview, under capability separation (owner, 14 November 2026,
+  LQ21; RTE.24; [ADR-L06](ADR-L06-effects-and-flow.md)).
 
 ## Why
 
@@ -100,11 +101,13 @@ Waiting owner questions:
 Classes: source and synthetic. LX-2's headless slice ran; its record is
 `work/experiments/language-lx/lx2-placement/RESULT.md`. It establishes no complete LX-2 pass, product latency or
 placement decision (RTE.82). The charter's E2 test stays the decisive check. Active program views also enter that test
-(RPI.62). Decisive responsiveness runs wait for the owner's window (owner, 6 November 2026, decision 15).
+(RPI.62). The decisive LX-2 responsiveness run is an LP3 acceptance check with its bar unchanged (owner,
+14 November 2026, LQ9; RTE.21).
 
 ## What the owner accepts
 
-Accepting this record accepts ADR-L02.1 to ADR-L02.7 and the [D] clauses they cite. It does not choose a placement.
+Accepting this record accepts ADR-L02.1 to ADR-L02.7 and the [D] clauses they cite. It does not itself choose a
+placement; ADR-L02.7 restates the owner's answer (LQ9; RTE.21).
 
 The owner may overrule these integrator additions: the program and view lanes of KN7.2 and the availability generation
 of KN5.25. EN4's definitions are now drafted; neither this description nor that draft accepts them.

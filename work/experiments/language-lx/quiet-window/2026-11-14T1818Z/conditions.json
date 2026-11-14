@@ -1,0 +1,12 @@
+{
+  "cpu": "AMD Ryzen 9 7945HX with Radeon Graphics; 32 logical processors",
+  "driver_vsync": "not observed by the owner, this CPU-only run does no display work",
+  "evidence_class": "performance on the owner's machine: Windows, CPU only, no GPU or display work",
+  "frame_generation": "off",
+  "gpu": "AMD Radeon(TM) 610M (driver 32.0.11016.14003); NVIDIA GeForce RTX 4070 Laptop GPU (driver 32.0.16.1692)",
+  "overlays": "not observed by the owner, system CPU busy is checked at start",
+  "power_source": "mains",
+  "quiet_machine": "checked at start: no keyboard or mouse input for at least 120 s; system CPU busy 1.6% over 10 s (limit 10%); no busy Codex process; input during each run is recorded in window.json",
+  "vendor_performance_mode": "not observed, the owner was away and gave no reading",
+  "windows_power_mode": "power mode Best performance; power plan Balanced"
+}

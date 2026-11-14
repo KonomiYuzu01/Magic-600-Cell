@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-14] decision | The language: Rust, route RT1 in its own process, and capability separation
+The owner accepted the CPU timing runs of 14 November as decisive and chose Rust for the engine and the interpreter's host (LQ8), route RT1 with the runtime in a process of its own (LQ9) and capability separation (LQ21); the decisive LX-1, LX-2 and LX-4 runs become LP3 acceptance checks, and a failing one reopens LQ9 ([decision](decisions/owner-decisions-2026-11-14-language-route.md)). The architecture chapters and ADR drafts carry the answers; no ADR is accepted and nothing is frozen.
+
 ## [2026-11-14] decision | Codex use at its minimum
 The owner's ChatGPT quota is down to one twentieth, so Codex now runs only for gate rulings and calls the owner asks for; a code change on a critical path gets one read by a fresh Claude subagent, and the Stop gate is unregistered. Recorded in [owner-decisions-2026-11-14](decisions/owner-decisions-2026-11-14.md); as the owner authorized, the change went to `main` directly, without a pull request.
 

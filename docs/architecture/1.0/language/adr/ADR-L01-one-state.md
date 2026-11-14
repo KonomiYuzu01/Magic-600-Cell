@@ -62,15 +62,16 @@ state is, what else may look like a state, and how any of it can become real.
 
 ## What this record does not decide
 
-The owner answered LQ1 to LQ21 on 6 November 2026. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set
-waits for the joint setting.
+The owner answered LQ1 to LQ21 on 6 November 2026 and chose LQ8, LQ9 and LQ21 on 14 November 2026: the engine and the
+interpreter's host in Rust, route RT1 with the runtime in a process of its own, and capability separation (RTE.17,
+RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits for the joint setting.
 
 Open mechanisms and waiting questions:
 
 - Whether an invoked command may replace a preview already on screen (KN5.12, LG3.7, ONE.42). The token keeps the commit
   correct either way, and the choice waits for the design line.
-- Where the runtime runs (ONE.69, LQ9). LX-1 to LX-5 feed the choice with LQ21. Every clause above must hold in each
-  placement.
+- Where the runtime runs: answered, in a process of its own (owner, 14 November 2026, LQ9; RTE.21; ONE.69). Every
+  clause above holds in that placement; LX-2's fault-injection run is an LP3 acceptance check.
 - Review and implementation of the drafted freshness, receipts, history transitions and presented-frame protocol
   (KN0.8, LI.26 to LI.30, closure H11 and RM.26). Their descriptions here accept none of those drafts.
 

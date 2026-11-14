@@ -422,9 +422,9 @@ These clauses are about lattice configurations only, where labels are defined (K
 
 - **ONE.68 [B]** A turn's interval (charter E2) runs from the key through the command layer, the engine's apply, the store's durable
   transaction and the bundle's adoption to the frame. The runtime is not on it (default 15, DT-L1 E1).
-- **ONE.69 [B]** Where the runtime runs is open (owner, 6 November 2026, LQ9; LX-2). KN5.15, KN7.12, KN7.13 and every
-  clause of this chapter must hold in each placement. The shell process is admitted only if it passes LX-2's
-  fault-injection run.
+- **ONE.69 [B]** The runtime runs in a process of its own (owner, 14 November 2026, LQ9; RTE.21). The engine-process
+  and shell-process placements are not admitted. KN5.15, KN7.12, KN7.13 and every clause of this chapter hold in that
+  placement. LX-2's fault-injection run is an LP3 acceptance check with its bar unchanged; if it fails, LQ9 reopens.
 
 ## 12. Failure and recovery
 
@@ -527,11 +527,12 @@ CT-KN5-01 is the preview-swap test itself. CT-ONE-04 extends it to the gap betwe
 
 ## 17. Open items
 
-The owner answered LQ1 to LQ21 on 6 November 2026. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set
-waits for the joint setting.
+The owner answered LQ1 to LQ21 on 6 November 2026 and chose LQ8, LQ9 and LQ21 on 14 November 2026: the engine and the
+interpreter's host in Rust, route RT1 with the runtime in a process of its own, and capability separation (RTE.17,
+RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits for the joint setting.
 
 - **The design line.** Where a derived state may appear inside Global and Local, and how it looks (ONE.62, ONE.65).
-- **LQ9.** Where the runtime runs. Every clause here must hold in each placement (ONE.69).
+- **LQ9.** Answered: the runtime runs in a process of its own (owner, 14 November 2026, LQ9; RTE.21; ONE.69).
 - **Renderer-line delivery.** The handoff row is settled under LQ20; the presented-frame report still needs its matching
   renderer evidence, using the built-in chain (ONE.41, RPI.66, RPI.76).
 - **KN5.12.** Whether a program may replace a shown preview, and the options of ONE.42.

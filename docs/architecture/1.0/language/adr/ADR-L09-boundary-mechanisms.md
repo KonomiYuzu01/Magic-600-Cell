@@ -63,8 +63,9 @@ to that joint setting's BS3 choice (owner, 6 November 2026, LQ14).
 
 ## What this record does not decide
 
-The owner answered LQ1 to LQ21 on 6 November 2026. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set
-waits for the joint setting.
+The owner answered LQ1 to LQ21 on 6 November 2026 and chose LQ8, LQ9 and LQ21 on 14 November 2026: the engine and the
+interpreter's host in Rust, route RT1 with the runtime in a process of its own, and capability separation (RTE.17,
+RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits for the joint setting.
 
 **The policy.** Chapter 07 sets out four option sets: BS1 Provenance, BS2 Base tier, BS3 Understanding and BS4 Named
 targets. Each keeps BM1 to BM5, the built-in tools' 2 October boundary and the 17 October exception, and the order
@@ -73,9 +74,10 @@ chosen here.
 
 The integrator's leaning in BND.70 is for discussion only, and this record does not adopt it.
 
-The joint setting answers the ten questions of BND.74. They cover, among others, whether the flow rule is on (BND.33),
-which display sinks it checks (which also fills the gap of BND.59), which fix of BND.51 applies, whether the pick rule
-of BND.55 stands, whether the practice copy counts as a solving session (BND.15), and the edges of BND.66.
+The joint setting answers the ten questions of BND.74, of which question 8 is already answered by LQ21 (RTE.24). They
+cover, among others, whether the flow rule is on (BND.33), which display sinks it checks (which also fills the gap of
+BND.59), whether the pick rule of BND.55 stands, whether the practice copy counts as a solving session (BND.15), and
+the edges of BND.66.
 
 Waiting owner questions and the joint setting:
 
@@ -83,8 +85,9 @@ Waiting owner questions and the joint setting:
   integrator's, and it extends the 2 October boundary to everything that ships, library functions included (BND.63,
   BND.64). Decision 12 fixes the point-of-use refusal in BND.84 until that setting enables a solver-tool preview.
   The joint setting also decides whether BS3 uses competence checks as gates (BND.73). It comes before LP6 (BND.71).
-- **LQ21:** the form of flow control, which [ADR-L06](ADR-L06-effects-and-flow.md) holds for LP1. The form is how flows
-  are seen, and the flow rule is whether they are refused (BND.41).
+- **LQ21 (answered):** the form of flow control is capability separation (owner, 14 November 2026, LQ21; RTE.24),
+  which [ADR-L06](ADR-L06-effects-and-flow.md) holds. The form is how flows are seen, and the flow rule is whether they
+  are refused (BND.41); the rule still waits for LQ2's joint setting.
 
 ## Why
 

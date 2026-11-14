@@ -5,8 +5,9 @@ Status: **draft for the owner. Not accepted.** Conventions are in [the overview]
 A phase ends when its acceptance is evidenced. This chapter makes the partition's phase table checkable, connects it
 to the other engineering lines, and assigns the existing chapters' test requirements to their first runnable phase.
 It records no completed language phase, implemented conformance test or new measurement. The owner answered LQ1 to
-LQ21 on 6 November 2026. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set waits for the joint
-setting.
+LQ21 on 6 November 2026 and chose LQ8, LQ9 and LQ21 on 14 November 2026: the engine and the interpreter's host in
+Rust, route RT1 with the runtime in a process of its own, and capability separation (RTE.17, RTE.21, RTE.24). LQ13
+waits for its evidence, and LQ2's option set waits for the joint setting.
 
 Sources: [the partition](../ecosystem-partition.md), sections 12 to 17 and INV-1 to INV-12;
 [DT-L1](../../../../progress/1.0/design-table/topics/language-ecosystem.md), owner input, E4, E6, Outcome and Round 3;
@@ -87,16 +88,16 @@ Sources: [the partition](../ecosystem-partition.md), sections 12 to 17 and INV-1
 | ADR 3 | Exactness, numeric tower and algebras | [`ADR-L03`](../adr/ADR-L03-exactness.md) exists as a proposal |
 | ADR 4 | Canonical identity, identity tower and source maps | [`ADR-L04`](../adr/ADR-L04-canonical-identity.md) exists as a proposal |
 | ADR 5 | Evidence model and certificates | [`ADR-L05`](../adr/ADR-L05-evidence.md) exists as a proposal |
-| ADR 6 | Effects, capabilities and flow control | [`ADR-L06`](../adr/ADR-L06-effects-and-flow.md) exists as a proposal; flow-control form follows LP1 evidence |
+| ADR 6 | Effects, capabilities and flow control | [`ADR-L06`](../adr/ADR-L06-effects-and-flow.md) exists as a proposal; its flow-control form is capability separation (owner, 14 November 2026, LQ21; RTE.24) |
 | ADR 7 | Typed IR as stable contract | [`ADR-L07`](../adr/ADR-L07-typed-ir.md) exists as a proposal; follows the route choice |
 | ADR 8 | Jobs and deterministic budgets | [`ADR-L08`](../adr/ADR-L08-jobs-and-budgets.md) exists as a proposal |
 | ADR 9 | Boundary mechanisms, policy left to joint setting | [`ADR-L09`](../adr/ADR-L09-boundary-mechanisms.md) exists as a proposal |
 | ADR 10 | Persistence formats, data core and editions | [`ADR-L10`](../adr/ADR-L10-persistence.md) exists as a proposal |
 | ADR 11 | Display plans and user stages | [`ADR-L11`](../adr/ADR-L11-display-plans.md) exists as a proposal |
-| ADR 12 | Implementation route and runtime placement | [`ADR-L12`](../adr/ADR-L12-route.md) exists as a proposal; follows evidence |
+| ADR 12 | Implementation route and runtime placement | [`ADR-L12`](../adr/ADR-L12-route.md) exists as a proposal; follows the owner's 14 November 2026 answer (RTE.21) |
 | Evidence import table | Default 20's versioned table, enumeration rule and recorded inferences | [`evidence-import/`](../evidence-import/README.md) exists with `corpus-labels.json`, `corpus-labels.md`, `extract_labels.py`, `rules.txt`, `refs.txt`, `ext.txt`, `rule.txt`; draft, with V14, P13, K1 and H1 ruled on by EVD.52 |
 | Glossary | Proposed entries for every language term in chapter 04 section 6; integrate into `terms.json` at LP1 before any LP2 parser or library text uses a term (default 8) | Existing [`terms.json`](../../../../progress/1.0/glossary/terms.json), [`glossary.md`](../../../../progress/1.0/glossary/glossary.md), diagrams and [`build.py`](../../../../progress/1.0/glossary/build.py); chapter 04 section 6 holds EV5.14's proposed additions and changes, not yet integrated |
-| Owner answers | Answers or explicitly accepted decision procedures as specified in section 9 | [Answered on 6 November 2026](../../../../wiki/decisions/owner-decisions-2026-11-06.md); LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set waits for the joint setting |
+| Owner answers | Answers or explicitly accepted decision procedures as specified in section 9 | [Answered on 6 November 2026](../../../../wiki/decisions/owner-decisions-2026-11-06.md); LQ8, LQ9 and LQ21 were chosen on 14 November 2026 (RTE.17, RTE.21, RTE.24), LQ13 waits for its evidence, and LQ2's option set waits for the joint setting |
 
 - **PHS.10 [D]** LP0's acceptance decomposes partition LP0 as follows. The inventory check supports the review; it
   does not replace the review or the owner's acceptance.
@@ -106,14 +107,15 @@ Sources: [the partition](../ecosystem-partition.md), sections 12 to 17 and INV-1
 | Complete contracts ready for review | Inspect every inventory entry, cross-chapter owner, glossary reference and default-20 mapping or explicit unmapped row; inspect that no clause relies on more than overview section 8 allows | source |
 | Astra review with no open blocker or major | At least two independent concurrent shards review the current full proposal; the integrator records every finding's disposition and verifies closure under `AGENTS.md` | source, review record only |
 | Owner answers at their proper scope | Compare the answer record with every row of section 9, including accepted procedures and the deferred LQ2 joint setting; obtain understanding confirmation under PHS.5 | human |
-| ADR proposals ready for acceptance | Every proposal is reviewed and ready; the form of flow control in ADR 6, ADR 7 and ADR 12 is completed from LP1's evidence. The owner accepts ADRs only after both LP1 rulings (PHS.15) | human |
+| ADR proposals ready for acceptance | Every proposal is reviewed and ready; ADR 6, ADR 7 and ADR 12 are completed from the owner's 14 November 2026 answers (RTE.17, RTE.21, RTE.24). The owner accepts ADRs only after both LP1 rulings (PHS.15) | human |
 
 - **PHS.11 [D]** LP0 has no preceding language-phase dependency (partition LP0). Sources in force still bind it.
   LQ18 allowed LX-1 to LX-9 during LP0 (owner, 6 November 2026); the absence of an earlier phase gives no other
   permission.
 - **PHS.12 [D]** At LP0 exit, execution evidence and the conformance implementations remain open. LQ8, LQ9 and LQ21
-  await LP1's evidence, LQ13 awaits LX-8 before the parser, and LQ2's option set awaits the joint setting before LP6
-  (owner, 6 November 2026). The answer procedures are settled, not those choices. Note N1 keeps the status overview
+  are answered (owner, 14 November 2026; RTE.17, RTE.21, RTE.24), LQ13 awaits LX-8 before the parser, and LQ2's option
+  set awaits the joint setting before LP6 (owner, 6 November 2026). The answer procedures are settled, not those
+  last two choices. Note N1 keeps the status overview
   section 8 states, and no clause reads labels off the lattice.
 
 ## 3. LP1: interfaces and evidence
@@ -124,8 +126,8 @@ Sources: [the partition](../ecosystem-partition.md), sections 12 to 17 and INV-1
 | Product | Inspectable content |
 | --- | --- |
 | Allowed evidence spikes | LX-1 to LX-9 experiment cards, candidate/input identities, negative results and class-limited reports, in chapter 11's order; allowed by LQ18 |
-| Evidence-led decisions | LQ8 after LX-5/LX-6; then LQ9 and LQ21 after the applicable LX-1 to LX-5 evidence; LQ13 after LX-8 before LP2's parser |
-| Remaining ADR material | ADR 6's flow-control form, ADR 7's execution contract and ADR 12's route/placement, settled from LP1's evidence, for the owner's acceptance after both rulings |
+| Decisions | LQ8, LQ9 and LQ21 answered on 14 November 2026 (RTE.17, RTE.21, RTE.24); LQ13 after LX-8 before LP2's parser |
+| Remaining ADR material | ADR 6's flow-control form, ADR 7's execution contract and ADR 12's route/placement, settled by the owner's 14 November 2026 answers (RTE.17, RTE.21, RTE.24), for the owner's acceptance after both rulings |
 | Kernel interface specification | Snapshot handles, batch queries, derived states/value store, preview/token binding, receipts, availability, store query rows, independent checkers, jobs and deterministic budgets; chapter 01 and chapter 08 |
 | Identity and accounting specification | Canonical IDs and level-qualified digests, normalised bytes, metering and logical resource units; KN1.8, KN7.7 to KN7.10, LG4.8, chapter 09 |
 | Language-neutral data core | Chapter 05's formats and complete path B coverage: the data core freezes and the evidence envelope stores facts (owner, 6 November 2026, LQ10) |
@@ -141,15 +143,17 @@ Sources: [the partition](../ecosystem-partition.md), sections 12 to 17 and INV-1
   charter E2. LX-2's fault controls compare the same commands with and without the fault, rather than requiring an
   unchanged journal while intended commits occur. LX-7's GPU comparison names its actual device even when it runs
   without a window. Its correctness comparison is separate from its PresentMon gate run. [D] First-pass records of
-  LX-1 to LX-9 exist, summarised by RTE.82 at their frozen scope. None is decisive for LQ8, LQ9, LQ13 or LQ21, and the
-  decisive runs wait for the owner's window (owner, 6 November 2026, decision 15).
+  LX-1 to LX-9 exist, summarised by RTE.82 at their frozen scope. LX-5 and LX-6's decisive runs ran on 14 November
+  2026, and the owner accepted them (RTE.82). The decisive LX-1, LX-2, LX-3 and LX-4 checks are LP3 acceptance checks
+  with their bars unchanged (RTE.21, RTE.24). The remaining decisive runs, LX-7 to LX-9 and LQ13's LX-8 among them,
+  wait for the owner's window (owner, 6 November 2026, decision 15).
 - **PHS.15 [D]** LP1's acceptance makes partition LP1 checkable without requiring the unbuilt LP2 product to pass its
   future tests. Contract vectors, reference evidence and experiment results identify which assertions they support.
 
 | Acceptance item | How checked | Evidence class |
 | --- | --- | --- |
-| LQ8 answered with applicable evidence | Owner receives LX-5 exact-equality/licence report and LX-6 oracle comparison; decisive speed comparisons use the owner's machine; record the choice | source; performance for speed; human for decision |
-| LQ9 and LQ21 answered with applicable evidence | Inspect LX-1 cost leads, LX-2 placement/fault evidence, LX-3 determinism and refusal reports, LX-4 editor evidence and LX-5 constraints; present false refusals without inventing a threshold; owner chooses | source; windows for native fault/input observations; performance for timings; human for decision |
+| LQ8 answered (owner, 14 November 2026; RTE.17) | LX-5's exact-equality/licence report and LX-6's oracle comparison ran on the owner's machine and were accepted as decisive (RTE.82); LP2 chooses the big-integer implementation on LX-5's data | source; performance for speed; human for decision |
+| LQ9 and LQ21 answered (owner, 14 November 2026; RTE.21, RTE.24) | LX-1, LX-2 and LX-4 become LP3 acceptance checks with their bars unchanged, and if one fails LQ9 reopens; LX-3's decisive check is part of LP3 acceptance; false refusals are presented without inventing a threshold | source; windows for native fault/input observations; performance for timings; human for decision |
 | Architecture-freeze gate | Astra rules on the current packet, including final command table, layer interfaces and renderer feature list, under section 11 | source, gate ruling only; referenced runs keep their own classes |
 | Migration-format-freeze gate | Astra rules on EN4's complete format packet under section 11 and LQ10's answer | source, gate ruling only; referenced runs keep their own classes |
 | ADRs accepted | After both rulings the owner accepts the language ADRs, the deferred material against the actual route, placement and flow-control evidence | human |
@@ -339,8 +343,8 @@ Sources: [the partition](../ecosystem-partition.md), sections 12 to 17 and INV-1
 | LQ5 Built-in backing | A | A | A | A | A | A | A |
 | LQ6 Views | A | A | A | A | A | A | A |
 | LQ7 User stages | A | A | A | A | A | A | A |
-| LQ8 Engine language | Procedure | A, after LX-5/LX-6 | A | A | A | A | A |
-| LQ9 Route/placement | Procedure | A, after applicable spikes and LQ8 | A | A | A | A | A |
+| LQ8 Engine language | Procedure | A, answered 14 November 2026 | A | A | A | A | A |
+| LQ9 Route/placement | Procedure | A, answered 14 November 2026 | A | A | A | A | A |
 | LQ10 Data freeze | A | A | A | A | A | A | A |
 | LQ11 Recording | A | A | A | A | A | A | A |
 | LQ12 Sharing | A | A | A | A | A | A | A |
@@ -352,7 +356,7 @@ Sources: [the partition](../ecosystem-partition.md), sections 12 to 17 and INV-1
 | LQ18 Spike permission | A | A | A | A | A | A | A |
 | LQ19 Charter/freeze order | A | A | A | A | A | A | A |
 | LQ20 Renderer handoff | A | A | A | A | A | A | A |
-| LQ21 Flow-control form | Procedure | A with LQ9, after LX-1/LX-3 | A | A | A | A | A |
+| LQ21 Flow-control form | Procedure | A, answered 14 November 2026 | A | A | A | A | A |
 
 - **PHS.39 [D]** A joint LQ2 choice must also settle its edge rulings; merely naming BS1, BS2, BS3 or BS4 does not
   answer them.
@@ -377,11 +381,14 @@ completed applicable language products + design-system ADR + migration/renderer/
 - **PHS.42 [B]** Within the evidence branch, LX-5 and LX-6 feed LQ8 first. LX-3, LX-7 and LX-8 need not wait
   for LQ8. LX-9's reference-platform part is independent; its engine-candidate part follows LX-6. LX-1, LX-2 and LX-4
   follow LQ8's host choice. Then the applicable LX-1 to LX-5 evidence feeds LQ9 and LQ21 together, before the LP1
-  gates; ADR acceptance follows both rulings. LX-8 feeds LQ13 before the parser. This is partition section 12's order; chapter 11
+  gates; ADR acceptance follows both rulings. LX-8 feeds LQ13 before the parser. This is partition section 12's
+  order; LQ8, LQ9 and LQ21 are now answered (owner, 14 November 2026; RTE.17, RTE.21, RTE.24), and LX-1, LX-2 and
+  LX-4 became LP3 acceptance checks. Chapter 11
   defines the spike decision rules, including no speed threshold where Round 3 supplies none. LX-2's conditions 3 and 4
   (RTE.42) and LX-4's protocol (RTE.51 step 8, RTE.53) require a renderer candidate that presents frames, with the
-  renderer gate and E2 measured in the same run. LQ9 waits for a renderer candidate. The existing candidates run first,
-  and a changed candidate requires matching reruns under RTE.37 (owner, 6 November 2026, decision 15).
+  renderer gate and E2 measured in the same run. Their LP3 acceptance checks wait for a renderer candidate. The
+  existing candidates run first, and a changed candidate requires matching reruns under RTE.37 (owner, 6 November
+  2026, decision 15).
 - **PHS.43 [B] Withdrawn.** LQ18 allowed the spikes before the freeze (owner, 6 November 2026).
 - **PHS.44 [B]** The charter is amended to allow LP2 to LP5 after both LP1 rulings and sign-off (owner, 6 November
   2026, LQ19). The design line resumes when LP2 to LP5 are done except LP4's editor appearance. The accepted
@@ -404,7 +411,7 @@ completed applicable language products + design-system ADR + migration/renderer/
 
 | Input | What the ruling must be able to inspect | Current draft input and outstanding work |
 | --- | --- | --- |
-| Authority and scope | Owner-answer record, cut, LQ18 permission, LQ19 order/amendment, proposed ADR material | The [decision record](../../../../wiki/decisions/owner-decisions-2026-11-06.md), the [partition](../ecosystem-partition.md), PHS.9's ADR proposals and PHS.38's matrix are supplied. LQ8, LQ9, LQ13 and LQ21, LQ2's option set and the ADR acceptances remain open |
+| Authority and scope | Owner-answer record, cut, LQ18 permission, LQ19 order/amendment, proposed ADR material | The [decision record](../../../../wiki/decisions/owner-decisions-2026-11-06.md), the [partition](../ecosystem-partition.md), PHS.9's ADR proposals and PHS.38's matrix are supplied. LQ8, LQ9 and LQ21 are answered (RTE.17, RTE.21, RTE.24); LQ13, LQ2's option set and the ADR acceptances remain open |
 | Architecture and interfaces | Current chapters/ADR drafts, EN3 jumbling interfaces, EN4 layer contracts, final H-08 with its availability protocol, undo and lanes, the new view and recording rows | PHS.9's chapters/ADRs and PHS.53's identified [EN3](../../../../progress/1.0/jumbling-interfaces.md), [EN4](../../../../progress/1.0/layer-interfaces.md) and [H-08 CM.1](../../../../progress/1.0/command-table.md) drafts are supplied, including the integrated 174-command final table candidate. Review, implementation evidence and approval remain open |
 | Renderer feature list | Feature support and unresolved requirements, handoff row H-11 with the user-stage contract and the free-view workload, ONE.41's presented-preview report, existing renderer evidence at its exact scope | [Renderer feature matrix](../renderer-feature-matrix.md), RM.1 to RM.3, RM.26 and RM.38 to RM.40, supplies the proposed feature crosswalk, presented-preview protocol and stage and view fields. Adapter implementation, matching device/performance evidence and selection/sign-off remain open |
 | Decisions and evidence | Required spike cards/results; exactness/determinism/boundary contracts, the recording rules and the relevant test vectors | Chapters 07/09/11, [contract vectors](../contract-vectors/README.md) and the [format packet](../format-packet/README.md) supply draft contracts and reference vectors. RTE.82 summarises the first-pass spike records. PS1.38/FP.33 report partial source evidence only; complete typed coverage, applicable spike/product evidence and owner decisions remain open |
@@ -441,7 +448,7 @@ completed applicable language products + design-system ADR + migration/renderer/
 | EN1, input-map amendment | LP1: state-contract amendment A6 for exact rotation requests (owner, 6 November 2026, decision 8) through EN1's Astra check and then the owner, before anything relies on the changed input map | Chapter 11's LX-9 result and the exact request/drag representation of KN3.4 and KN3.7 to KN3.9; sampled agreement is no proof of universal agreement | Dependent phase waits; tell the owner; nothing cut or contract amended implicitly |
 | EN3 | LP1: [jumbling interfaces](../../../../progress/1.0/jumbling-interfaces.md), draft 5 November 2026 for ENG-0J revision 2, supplies the four layer contracts, view-model/relation fields and command delta integrated by CM.1. Current-candidate review and approval remain open. LP2: implementation and evidence for the specified exact observation rows | KN2.4's batch fields and level/identity contracts; EV3.8's relation data; ONE.8/ONE.25's dependency/comparison needs, without prescribing interface appearance | Dependent LP1/LP2 waits for the outstanding review, evidence and approval; tell the owner; nothing cut |
 | EN4 | LP1: [H-08 CM.1](../../../../progress/1.0/command-table.md) supplies the 174-command integrated candidate with `final: true`; [layer interfaces](../../../../progress/1.0/layer-interfaces.md), `en4-layer-interfaces/1-draft`, supplies six-layer contracts, undo, lanes and availability (LI.18 to LI.26). PS2.13 identifies [format candidate](../format-packet/README.md) `en4-data-core-draft-1`, with its pinned inventory in `candidate.json`. Review, complete typed coverage and matching implementation/evidence remain open; these drafts grant no approval. LP3: command-table freeze still required | Kernel query/overlay rows; revision/dependency fields; preview/token and receipt rules; provenance field; byte, limit and migration requirements from PS2.13 | Dependent LP1/LP3 waits for the outstanding review, evidence and approval; tell the owner; nothing cut |
-| Renderer line | LP1: feature support/constraints and handoff row H-11 (owner, 6 November 2026, LQ20); actual device for LX-7 correctness and owner-machine timings in the owner's window; a renderer candidate presenting frames for LX-2 (RTE.42 conditions 3 and 4) and LX-4 (RTE.51 step 8, RTE.53), with the renderer gate and E2 in the same run and reruns under RTE.37 when the candidate changes. LQ9 waits for that candidate. LP3: selected/frozen renderer for the on-screen half, with a run-time stage compile path and a way to skip a stopped frame (RPI.80). LP6: matching product gate evidence under renderer-candidates | RPI.57/RPI.58 primitives, source maps and atomic publication; the user-stage contract of RPI.68 to RPI.80 and the free-view workload of RPI.81 to RPI.83 through H-11 before its feature freeze; ONE.41 presented-preview report (RPI.66) | Dependent LP1/on-screen LP3/LP6 waits; tell the owner; nothing cut |
+| Renderer line | LP1: feature support/constraints and handoff row H-11 (owner, 6 November 2026, LQ20); actual device for LX-7 correctness and owner-machine timings in the owner's window; a renderer candidate presenting frames for LX-2 (RTE.42 conditions 3 and 4) and LX-4 (RTE.51 step 8, RTE.53), with the renderer gate and E2 in the same run and reruns under RTE.37 when the candidate changes. LP3's acceptance checks for LX-2 and LX-4 wait for that candidate (RTE.21). LP3: selected/frozen renderer for the on-screen half, with a run-time stage compile path and a way to skip a stopped frame (RPI.80). LP6: matching product gate evidence under renderer-candidates | RPI.57/RPI.58 primitives, source maps and atomic publication; the user-stage contract of RPI.68 to RPI.80 and the free-view workload of RPI.81 to RPI.83 through H-11 before its feature freeze; ONE.41 presented-preview report (RPI.66) | Dependent LP1/on-screen LP3/LP6 waits; tell the owner; nothing cut |
 | Mathematical research | LP0/LP1: recorded definitions, proofs, certificates, input identities and open obligations; the mathematician's oversight of EV5. LP5: repository stage 14 to 19 results and checkable archive inputs. Nothing new is searched | Expressible exact types, scopes, conditional claims, independent checker/import contracts, derived states and run records; reports of missing producer dependencies | Dependent phase waits; tell the owner; nothing cut or research restarted |
 | Session and migration | LP1: path B targets/contracts and data core. LP2: session store below the language, never opened by its runtime. LP6: transactional importer, locked-copy/WAL handling, source preservation, replay/publication/recovery | KN4 query/command boundary; literal words and identity/digest conventions; PS1 data/provenance/envelope fields; complete checkpoint, key and preference conversion coverage | Dependent LP1/LP2/LP6 waits; tell the owner; nothing cut |
 | Design line | Its accepted design-system ADR conditions the deferred LP4 part and LP6 (owner, 6 November 2026, LQ19). Closed until language development is complete, which is when LP2 to LP5 are done apart from LP4's editor look | Completed language behaviour, command/data contracts, principle and learning requirements; no DT-J2 to DT-J4 work is opened here | Dependent phase waits; tell the owner; nothing cut and design not resumed by default |
@@ -470,7 +477,7 @@ completed applicable language products + design-system ADR + migration/renderer/
 | Phase | Concepts and evidence explained | Owner action at or before exit |
 | --- | --- | --- |
 | LP0 | One state, exactness, identity levels, evidence versus permission, boundary limits, saved meaning, full phase order | Section 9's answers, given on 6 November 2026; review the proposed ADRs, which stay proposed; confirm understanding |
-| LP1 | Exact arithmetic and host trade-offs, route/placement faults, flow forms and false refusals, data-core losslessness, both freeze packets | Decide evidence-led LQ8/LQ9/LQ21, LQ13 by its prerequisite; after both Astra rulings accept the ADRs and sign off, naming the charter amendment |
+| LP1 | Exact arithmetic and host trade-offs, route/placement faults, flow forms and false refusals, data-core losslessness, both freeze packets | LQ8, LQ9 and LQ21 were answered on 14 November 2026; decide LQ13 by its prerequisite; after both Astra rulings accept the ADRs and sign off, naming the charter amendment |
 | LP2 | Oracle equality, typed partial results, literal-prefix checks, deterministic cut-offs, a conformance test versus a proof | Confirm understanding of the core evidence and remaining limits; no new scope decision is inferred from a pass |
 | LP3 | The three complete loops, presented-preview binding, receipts/undo, source/key equivalence and full E2 interval | Review the measured result and remaining trade-offs; a missed bar waits for correction or an explicit owner decision |
 | LP4 | How source, principles and evidence connect; replay limits; learning and transfer evidence; adopted editor bars | Set the non-author protocol and any learning-gate decision, judge its results, confirm understanding; design stays closed until the language's development is complete |
@@ -741,16 +748,17 @@ separate from the imported-component totals above.
 
 ## 19. Open items
 
-The owner answered LQ1 to LQ21 on 6 November 2026. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option
-set waits for the joint setting.
+The owner answered LQ1 to LQ21 on 6 November 2026 and chose LQ8, LQ9 and LQ21 on 14 November 2026: the engine and the
+interpreter's host in Rust, route RT1 with the runtime in a process of its own, and capability separation (RTE.17,
+RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits for the joint setting.
 
 | Owner question | Clauses and remaining decision |
 | --- | --- |
 | LQ2 | PHS.7, PHS.38/PHS.39, PHS.56/PHS.58: joint policy, author classes, declassifiers, display sinks, shipped research-profile exposure and any competence gate, before LP6 |
-| LQ8 | PHS.15, PHS.38, PHS.42: engine choice after LX-5 and LX-6's decisive evidence |
-| LQ9 | PHS.15, PHS.38, PHS.42: route/placement with its matching isolation and deterministic execution evidence, on a renderer candidate presenting frames |
+| LQ8 (answered) | PHS.15, PHS.38, PHS.42: the engine is written in Rust (owner, 14 November 2026, LQ8; RTE.17); LX-5 and LX-6 ran and were accepted as decisive (RTE.82) |
+| LQ9 (answered) | PHS.15, PHS.38, PHS.42: route RT1, runtime in a process of its own (owner, 14 November 2026, LQ9; RTE.21); LX-1, LX-2 and LX-4 are LP3 acceptance checks on a renderer candidate presenting frames, and a failure reopens LQ9 |
 | LQ13 | PHS.17/PHS.20, PHS.38/PHS.42: syntax and learnability protocol before the parser |
-| LQ21 | PHS.15, PHS.38, PHS.42: flow-control form and label variant before the checker/IR, with LQ9 |
+| LQ21 (answered) | PHS.15, PHS.38, PHS.42: capability separation (owner, 14 November 2026, LQ21; RTE.24); LX-3's decisive check is part of LP3 acceptance |
 
 | Open dependency or mechanism | Clauses and what settles it |
 | --- | --- |

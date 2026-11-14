@@ -22,8 +22,8 @@ reviewer. LX-1 has prototype cost leads, and LX-3 has first-pass refusal counts 
 counterexamples. Their records are `work/experiments/language-lx/lx1-cost/RESULT.md` and
 `work/experiments/language-lx/lx3-sandbox-flow/part-b/RESULT.md`, with the recheck in
 `work/experiments/language-lx/lx3-sandbox-flow/recheck/RESULT.md`. These are source and synthetic evidence, establish no
-product conformance or performance, and decide no flow-control form. The decisive runs wait for the owner's window
-(owner, 6 November 2026, decision 15).
+product conformance or performance. LQ21 chose capability separation (owner, 14 November 2026; RTE.24), and LX-3's
+decisive check is part of LP3 acceptance.
 
 ## 1. What binds
 
@@ -181,11 +181,12 @@ These are the facts every option faces. They come from DT-L1 M5 and R2-E3 as R3-
 
 ### Labels and sinks
 
-- **BND.25 [O]** Under flow labels, `Labels` is a set of atoms and the join of two sets is their union. A *transparent
-  entry* is a shipped function on the policy's enumerated list whose output carries only the join of its inputs: exact
-  application and composition of named words is the core of that list. Any other function adds `computed` to a word or
-  target it returns. A declassifier removes named atoms from a named output. The set below is a working set for the LX-3
-  corpus. LQ21 decides the real one, with LX-1's costs and LX-3's refusal counts.
+- **BND.25 [B]** LQ21 chose capability separation (owner, 14 November 2026, LQ21; RTE.24), so this clause records the
+  unselected alternative and binds nothing. Under flow labels, `Labels` is a set of atoms and the join of two sets is
+  their union. A *transparent entry* is a shipped function on the policy's enumerated list whose output carries only
+  the join of its inputs: exact application and composition of named words is the core of that list. Any other
+  function adds `computed` to a word or target it returns. A declassifier removes named atoms from a named output. The
+  set below is a working set for the LX-3 corpus.
 
 | Atom | Attached to |
 | --- | --- |
@@ -305,30 +306,32 @@ These exist under every option, so the policy can be set later without a redesig
 
 ## 5. Flow control: the two forms
 
-Flow control is what stops a program from reaching a preview with a word it chose from the state. It takes one of two
-forms, and LQ21 chooses. Neither is a decision of this chapter. The owner chose to decide it with LQ9 inside LP1, on
-LX-1's label cost and LX-3's refusal counts, before LP2 (owner, 6 November 2026, LQ21). The first-pass records above do
-not decide it.
+Flow control is what stops a program from reaching a preview with a word it chose from the state. It took one of two
+forms, and the owner chose capability separation (owner, 14 November 2026, LQ21; RTE.24). Flow labels, static-only or
+with run-time labels, were not selected. LX-3's two false refusals are met by fixed enabled declassifiers or by
+splitting the tool, and LX-3's decisive check is part of LP3 acceptance. The first-pass records above were leads.
 
-- **BND.38 [O]** *Flow labels* (LG3.12) follow data flow and control flow, including choices between words and targets,
-  module calls and stored values. Static labels run in the checker. Run-time labels also track executor values and branch
-  context. Approval covers exactly the source and dependency bytes executed.
-- **BND.39 [O]** *Capability separation* (LG3.13) splits programs in the solving profile. A program either reads
-  state-derived data or prepares previews, never both, apart from the declassifiers, and a program that prepares previews
-  does not read their outcomes.
+- **BND.38 [B]** LQ21 chose capability separation (owner, 14 November 2026, LQ21; RTE.24), so this clause records the
+  unselected alternative and binds nothing. *Flow labels* (LG3.12) follow data flow and control flow, including choices
+  between words and targets, module calls and stored values. Static labels run in the checker. Run-time labels also
+  track executor values and branch context. Approval covers exactly the source and dependency bytes executed.
+- **BND.39 [B]** *Capability separation* (LG3.13), the form the owner selected (owner, 14 November 2026, LQ21; RTE.24),
+  splits programs in the solving profile. A program either reads state-derived data or prepares previews, never both,
+  apart from the declassifiers, and a program that prepares previews does not read their outcomes.
 
 | Question | Static labels | Static and run-time labels | Capability separation |
 | --- | --- | --- | --- |
 | What is checked | Every possible data and control dependence, over the exact source that runs | The same, narrowed to the path taken | Which capabilities a program holds |
 | Cost per step | None | A cost per step; LX-1 has prototype leads only | None |
-| Harmless tools refused | The most among label forms; decisive counts owed (LX-3) | Fewer; decisive counts owed (LX-3) | Every tool that both reads state and previews |
+| Harmless tools refused | The most among label forms (unselected) | Fewer (unselected) | Every tool that both reads state and previews; LX-3's two false refusals are met by fixed enabled declassifiers or by splitting the tool (RTE.24) |
 | What a record can say | The labels of each previewed word and target, indirect choices included | The same, closer to the actual run | Whether the program read the state |
 | A preview's outcome | Carries `state` | Carries `state` | Not readable by a previewing program |
 | Routes (RTE.24) | RT1, RT3; RT2 and RT4 add a checker over an approved subset | RT1, RT3's compiled fields, or a modified borrowed VM | Every route |
 | The stop channel (section 6) | Stays open until a fix is chosen | Stays open until a fix is chosen | Does not arise |
 
-- **BND.40 [D]** Either form is conservative and refuses some harmless tools. Either must be fixed before LP2, because
-  checks added after the checker and IR exist would refuse tools that had been allowed to run and saved (RTE.26).
+- **BND.40 [D]** Either form is conservative and refuses some harmless tools. The form had to be fixed before LP2,
+  because checks added after the checker and IR exist would refuse tools that had been allowed to run and saved
+  (RTE.26); LQ21 fixed it (RTE.24).
 - **BND.41 [D]** Adopting either form does not switch the flow rule on. The form is how flows are seen. BND.33 is whether
   they are refused. With the flow rule off, the form still feeds records.
 - **BND.42 [D]** Preview outcomes. ONE.32 gives a program a preview's public fields, including its effect and protection
@@ -388,13 +391,14 @@ R3-M3 showed that DT-L1's "one bit per run" is false. This section gives what re
   journal and prints a word is the same as retyping.
 - **BND.50 [D]** Clock. A granted clock is an input that makes a run non-reproducible (DET.40). It gives a running program
   no new reach beyond its other reads. Nothing here adds a rule for it.
-- **BND.51 [O]** Three fixes for the stop and emission channels. None is chosen. The first two apply to flow labels. The
-  third is the other form of LQ21.
+- **BND.51 [B]** Three fixes for the stop and emission channels. The owner chose the third, capability separation
+  (owner, 14 November 2026, LQ21; RTE.24). The first two apply to flow labels; they record the unselected alternative
+  and bind nothing.
 
 | Fix | What it requires | Trade-off |
 | --- | --- | --- |
 | One preview per run | A run emits at most one preview, as its last action, on a control path with no labelled condition. The checker must prove this. | Simple to explain. Refuses a tool that decides between previewing and stopping from the state. Saves nothing for a tool that needs several steps. |
-| Stop-sensitive labels | A stop, a loop exit or the end of a run under a labelled condition raises the label of whatever preview is pending. | Keeps more tools. Needs run-time tracking or a stricter static rule, and more of the checker must be trusted. Decisive refusal counts are owed (LX-3). |
+| Stop-sensitive labels | A stop, a loop exit or the end of a run under a labelled condition raises the label of whatever preview is pending. | Keeps more tools. Needs run-time tracking or a stricter static rule, and more of the checker must be trusted. |
 | Capability separation | A previewing program reads no state. | Closes the channel with no analysis. Coarse: a solver's own tool cannot both read the state and preview, and a record says only whether a program read the state. |
 
 - **BND.52 [D]** LX-3's must-refuse corpus covers these channels (RTE.45): a stop-selected preview, refusal-driven
@@ -577,16 +581,16 @@ the order implies nothing.
   policy table starts at the 2 October boundary for everything that ships. BND.64 and rule 6 apply. The two exceptions
   are setup search for a target the solver names and the repair list at a named cap. Research-profile output never
   becomes a preview in a solving session. No solver-tool solving preview is enabled until the boundary is set.
-- **BND.70 [D]** The integrator's leaning, for discussion only: build BM1 to BM5 in any case, with the form LQ21 chooses,
-  and start the joint discussion from BS2 with the flow rule available. The solving profile then ships no solver, the
-  solver may build one from base parts, and the line rests on capabilities and flow control rather than on guessing what
-  a program computes. It does not gate learning. This is not a decision, and it presets neither LQ21 nor the route.
-  Round 3's corrections weaken one reason for it: labels alone leave the stop channel open, so BS2 with flow labels also
-  needs a fix of BND.51.
+- **BND.70 [D]** The integrator's leaning, for discussion only: build BM1 to BM5 in any case, with capability
+  separation (LQ21; RTE.24), and start the joint discussion from BS2 with the flow rule available. The solving
+  profile then ships no solver, the solver may build one from base parts, and the line rests on capabilities and flow
+  control rather than on guessing what a program computes. It does not gate learning. This is not a decision, and it
+  presets no joint-setting question. Round 3's corrections weaken one reason for it: labels alone leave the stop
+  channel open, so BS2 with flow labels would also need a fix of BND.51. Capability separation is BND.51's third fix.
 - **BND.71 [D]** The joint setting. The round table explains BS1 to BS4 and the facts of section 2 to the owner in
   plain language. The owner and the integrator go through the questions of section 12. The result is a versioned policy
-  table and an owner decision record. It comes before LP6 (PHS.38), and LQ21 comes earlier, before LP2. LX-3's counts
-  inform it, and no count decides it.
+  table and an owner decision record. It comes before LP6 (PHS.38); LQ21 was answered earlier (owner,
+  14 November 2026; RTE.24). LX-3's counts inform it, and no count decides it.
 
 ## 12. Understanding and the questions for the joint setting
 
@@ -610,7 +614,8 @@ the order implies nothing.
   6. Are labels shown during a solve, or only in records?
   7. Answered: the research profile, research library and archive checkers are in 1.0 (owner, 6 November 2026, LQ1, LQ16
      and decision 9). Individual candidate tools still need BND.63's entry reviews.
-  8. Which fix of BND.51 does the policy use, if the form is flow labels?
+  8. Answered: LQ21 chose capability separation, BND.51's third fix (owner, 14 November 2026; RTE.24), so the
+     question which fix a flow-label policy uses no longer arises.
   9. Does the pick rule of BND.55 stand? How does retaining the list's flow labels interact with BND.23's `author: own`
      for a pick from an `imported` tool's list, whose producer is recorded only by digest in `PickRecord.list`?
   10. Does the practice copy count as a solving session (BND.15)?
@@ -629,7 +634,8 @@ the order implies nothing.
 - **BND.79 [D]** Author class records how bytes arrived (BND.20), and a competence check records a task (BND.72). Neither is
   proof of authorship or understanding.
 - **BND.80 [D]** A conservative check refuses some harmless tools. LX-3's first-pass false-refusal counts and recheck
-  are finite source and synthetic leads. The decisive count stays open, and no threshold is set.
+  are finite source and synthetic leads. LX-3's decisive check is part of LP3 acceptance (RTE.24), and no threshold is
+  set.
 - **BND.81 [D]** Boundary mechanisms carry no evidence. A label, a class or a passed flow check is not a claim about the
   mathematics (INV-5), and a claim's strength never grants a capability.
 - **BND.82 [D]** The owner of a local install can change the policy table or the program. A record can name the policy
@@ -657,15 +663,16 @@ the order implies nothing.
 | --- | --- |
 | `LG3:capability.not_granted` | A capability the profile, class or policy does not grant; research output or a solver-tool word at preview admission in a solving session (BND.61, BND.84, BND.85). Shipping the research library and archive checkers grants no solving capability (BND.65) |
 | `LG3:capability.grant_mismatch` | A run reproduced under another profile or policy identity |
-| `LG3:effect.flow_refused`, `LG3:capability.flow_refused` | The flow rule, one of the two after LQ21 (ERR.24); neither is emitted before that |
+| `LG3:capability.flow_refused` | The flow rule under capability separation (LQ21; RTE.24; ERR.24); not emitted before LQ2 sets the rule |
+| `LG3:effect.flow_refused` | Retired before first use and never emitted (ERR.24) |
 | `PS1:capability.provenance_incompatible` | A stored block whose form cannot justify a gated use (PS1.33) |
 | `KN5:capability.commit_row_refused` | The runtime reaching for a commit row |
 | `LG3:effect.undeclared` | A view reaching a preview or workspace effect through a callee (LG3.5, LG3.6) |
 
 ## 15. Conformance tests
 
-The full conformance suite remains owed. Every test below runs under each form LQ21 still has open, and its case set
-follows the policy table in force. Chapter 12 assigns them to phases.
+The full conformance suite remains owed. Every test below runs under capability separation (LQ21; RTE.24), and its case
+set follows the policy table in force. Chapter 12 assigns them to phases.
 
 | Test | Checks | Class |
 | --- | --- | --- |
@@ -692,8 +699,8 @@ follows the policy table in force. Chapter 12 assigns them to phases.
 | CT-BND-21 | `AssistanceSummary` recomputed from one journal range, one set of run records and one policy gives the same bytes; two sets that differ by one view-only run give summaries with different `runs`; no program can write it; imported 0.4 macros appear as imported (BND.23, BND.35) | source |
 | CT-BND-22 | A switch of forms is a recorded migration; an older block keeps its form, and a gated use it cannot justify is refused with `PS1:capability.provenance_incompatible` | source |
 | CT-BND-23 | Every run record names the policy identity, and reproducing under another one is refused with `LG3:capability.grant_mismatch` | source |
-| CT-BND-24 | The flow code LQ21 retires is never emitted, and before LQ21 neither is (ERR.24, CT-ERR-15) | source |
-| CT-BND-25 | The false-refusal report lists every refused program on the frozen allowed list, with its code, per form and variant, and sets no threshold (RTE.46) | source |
+| CT-BND-24 | `LG3:effect.flow_refused` is retired and never emitted, and `LG3:capability.flow_refused` is not emitted before LQ2 sets the flow rule (ERR.24, CT-ERR-15) | source |
+| CT-BND-25 | The false-refusal report lists every refused program on the frozen allowed list, with its code, under capability separation, and sets no threshold (RTE.46) | source |
 | CT-BND-26 | A picked solver-tool word, for each of `own`, `forked_built_in`, `imported` and `unknown`, keeps the listed entry's block through draft insertion, composition and a file round trip. Insertion preserves the word; each later `operation.preview` in a solving session refuses it with `LG3:capability.not_granted`, including a tool block nested in `parts` (BND.58, BND.84, BND.85) | source |
 | CT-BND-27 | Restoring a workspace preserves a tool word's block and recursive parts; preview admission in a solving session refuses that restored word with `LG3:capability.not_granted` and installs no preview (BND.84, BND.85) | source |
 | CT-BND-28 | A picked word with missing origin content, including a missing nested part's origin, refuses at preview admission with `LG3:capability.not_granted`; the absence never reads as a manual word or a built-in producer (BND.21, BND.85) | source |
@@ -702,13 +709,14 @@ follows the policy table in force. Chapter 12 assigns them to phases.
 
 ## 16. Open items
 
-The owner answered LQ1 to LQ21 on 6 November 2026. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set
-waits for the joint setting.
+The owner answered LQ1 to LQ21 on 6 November 2026 and chose LQ8, LQ9 and LQ21 on 14 November 2026: the engine and the
+interpreter's host in Rust, route RT1 with the runtime in a process of its own, and capability separation (RTE.17,
+RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits for the joint setting.
 
 | Item | Clauses | What decides it |
 | --- | --- | --- |
 | LQ2's option set | BND.15, BND.19, BND.33, BND.36, BND.55, BND.59, BND.66, BND.70, BND.74 | The joint setting of the owner and the integrator, before LP6; mechanisms and the point-of-use tool-word check already stand |
-| LQ21 | BND.25, BND.38, BND.39, BND.51, BND.83 | The owner, with LQ9, inside LP1, before LP2, on LX-1 and LX-3 |
+| LQ21 (answered) | BND.25, BND.38, BND.39, BND.51, BND.83 | Capability separation (owner, 14 November 2026, LQ21; RTE.24); LX-3's decisive check is part of LP3 acceptance |
 | KN5.12, LG3.7 | BND.46 | Whether a program may replace a shown preview |
 | PS1.34 | Section 3, provenance block | The block's initial wire version, before any conditional migration-format freeze |
 

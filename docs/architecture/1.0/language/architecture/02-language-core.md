@@ -92,8 +92,9 @@ chapter 01's vocabulary. Types below name concepts, not final identifiers or con
   returns `ApproxBool`, never `Bool`. Only `display_if` branches on it, in a display expression with pure branches and
   a display result. LG2.19 to LG2.22 give the checking rules. This is an integrator proposal, not an owner decision or
   a syntax choice. Form 2, a checked display region, remains specified in LG2.21. Under both forms a float comparison
-  wrapped in an ordinary-boolean helper is refused. These exactness rules apply independently under both forms of
-  LQ21; a provenance label or capability grant cannot waive them. Display output meets chapter 10 at `publish_view`.
+  wrapped in an ordinary-boolean helper is refused. These exactness rules apply independently of the flow mechanism
+  (capability separation, LQ21; RTE.24); a provenance label or capability grant cannot waive them. Display output
+  meets chapter 10 at `publish_view`.
 - **LG2.6 [D]** Costs are exact nonnegative integers indexed by puzzle and unit (partition LG2; default 6; DT-L1
   R2-E4). Menu letters, retained generators and UI actions are distinct units. Addition, ordering and a budget argument
   require matching puzzle and unit; the checker refuses adding a menu-letter count to a generator count, or comparing
@@ -282,8 +283,8 @@ chapter 01's vocabulary. Types below name concepts, not final identifiers or con
   condition decoded as an exact goal all yield `LG2:type.exactness_violation`. Exporting that helper does not change
   the refusal. Pure display branches choosing two colours through `display_if` yield a display colour; exporting or
   storing that display value with its qualifier is admissible, subject to the other checks. A display-region version
-  of the same examples has the same permitted sink and exactness refusals. CT-LG2-05 covers both mechanisms and both
-  LQ21 alternatives; these are specified results, not executions of a checker.
+  of the same examples has the same permitted sink and exactness refusals. CT-LG2-05 covers both mechanisms under
+  capability separation (LQ21; RTE.24); these are specified results, not executions of a checker.
 
   At an exact-use site, `LG2:type.exactness_violation` takes precedence for a display condition (`ApproxBool` in
   form 1), a value computed or selected under approximate control, or qualifier erasure through LG2.19's helper,
@@ -382,19 +383,20 @@ chapter 01's vocabulary. Types below name concepts, not final identifiers or con
   executor values and branch context, allowing fewer conservative refusals at a charged cost per step. In either
   variant, approval covers exactly the source and dependency bytes executed. RT2 and RT4 need a checker over an
   approved host subset that refuses dynamic code. Run-time labels additionally require owned executor values,
-  compiled label fields or a modified borrowed VM. Chapter 07 defines the flow rule and permitted sinks.
-- **LG3.13 [D]** If LQ21 selects capability separation, a program in the solving profile either reads state-derived
-  data or prepares previews, never both apart from chapter 07's enabled declassifiers (BM2; DT-L1 R2-E3). A previewing
+  compiled label fields or a modified borrowed VM. Chapter 07 defines the flow rule and permitted sinks. This clause
+  records the unselected alternative and binds nothing (owner, 14 November 2026, LQ21; RTE.24).
+- **LG3.13 [B]** The owner selected capability separation (owner, 14 November 2026, LQ21; RTE.24): a program in the
+  solving profile either reads state-derived data or prepares previews, never both apart from chapter 07's enabled
+  declassifiers (BM2; DT-L1 R2-E3). A previewing
   program cannot read its previews' outcomes, including the end state, N and protection verdict. Call requirements and
   imported or stored provenance keep that separation across helpers, modules, workspace records and files. This form
   works in every route. It refuses a harmless own tool that both reads state and previews, and records coarser
   provenance than flow labels. It does not require labels on every executor value.
-- **LG3.14 [O]** LQ21 chooses between LG3.12 and LG3.13, including the static-only or additional run-time form of
-  labels; LQ2 chooses which flows, author classes, sinks and exceptions the policy admits. LX-1's costs and LX-3's
-  must-refuse cases and false-refusal counts inform that choice. Their first-pass records in
-  `work/experiments/language-lx/` do not settle it. The choice waits for decisive evidence before the freeze gates
-  and LP2's checker and IR (owner, 6 November 2026, LQ21); decisive runs wait for the owner's window (owner,
-  6 November 2026, decision 15). Chapter 07 owns the policy, and chapter 11 owns the route decision.
+- **LG3.14 [B]** LQ21 chose LG3.13, capability separation, over LG3.12's flow labels, static-only or with run-time
+  labels (owner, 14 November 2026, LQ21; RTE.24). LX-3's two false refusals are met by fixed enabled declassifiers or
+  by splitting the tool, and LX-3's decisive check is part of LP3 acceptance (RTE.24). LQ2 still chooses which flows,
+  author classes, sinks and exceptions the policy admits. The first-pass records in `work/experiments/language-lx/`
+  were leads, not a ruling. Chapter 07 owns the policy, and chapter 11 owns the route decision.
 - **LG3.15 [D]** Both forms retain BM1 to BM5, exactness, deterministic budgets, model identity and the engine's gates
   (partition INV-11; section 11). Neither proves authorship or understanding, detects every solving procedure or
   prevents a person retyping output. Data and branch checks do not close termination or preview-emission channels;
@@ -437,8 +439,10 @@ chapter 01's vocabulary. Types below name concepts, not final identifiers or con
   jobs use KN7's lanes and immutable inputs; they do not introduce concurrent evaluation within one run.
 - **LG4.4 [D]** The starting executor is an interpreter (partition LG4). No machine-code backend, own VM or JIT is
   introduced before measurement supports it. A borrowed executor under RT2 or RT3 still meets the semantic and resource
-  contract; its existence is not performance evidence. Chapter 11 owns route admission and the experiments. No engine
-  language or runtime placement is selected here.
+  contract; its existence is not performance evidence. That sentence records an unselected alternative and binds
+  nothing. Chapter 11 owns route admission and the experiments. The owner chose route RT1, an own interpreter over the
+  typed IR with the runtime in a process of its own, and Rust for the engine and the interpreter's host (owner,
+  14 November 2026, LQ8, LQ9; RTE.17, RTE.21).
 - **LG4.5 [D]** Whole-state operations lower to KN2.3's kernel batches (partition LG4; DT-L1 R2-E2). A program never
   walks every sticker through per-sticker interpreter calls. Projections, protection, end tests, ν and heights use the
   typed decision kernels and their oracle agreement tests (KN2.4). Small exact algebra remains library code. Lowering
@@ -501,7 +505,8 @@ chapter 01's vocabulary. Types below name concepts, not final identifiers or con
   cancellation and source associations (partition section 12). RT1's interpreter supplies them directly. RT2 needs an
   adapter and the required checker around its admitted host subset. RT3's compiler preserves them in the target VM;
   target fuel alone is insufficient unless it implements the declared logical accounting. Flow-control obligations
-  are LG3.12 or LG3.13 under the selected form.
+  are LG3.13's, capability separation (owner, 14 November 2026, LQ21; RTE.24). The RT2, RT3 and RT4 sentences record
+  unselected alternatives and bind nothing (owner, 14 November 2026, LQ9; RTE.21).
 
   RT4, if selected, must replace the IR contract with an equally versioned contract over the admitted host program:
   domain types and exactness, transitive effects and capabilities, deterministic ordering, streaming and batches,
@@ -598,7 +603,8 @@ chapter 01's vocabulary. Types below name concepts, not final identifiers or con
 | `LG4:input.ir_version_unsupported` | The executor cannot preserve the requested IR contract |
 | `LG3:effect.undeclared` | A function's transitive effects exceed its context, including a view writing workspace or preparing a preview |
 | `LG3:capability.not_granted` | A declared or inferred capability lacks the required run grant |
-| `LG3:effect.flow_refused`, `LG3:capability.flow_refused` | Reserved: the selected boundary mechanism refuses a flow or a combination of capabilities. LQ21 retires one before first use, and neither is emitted before that (ERR.24) |
+| `LG3:capability.flow_refused` | The flow-refusal code under capability separation: the boundary mechanism refuses a flow or a combination of capabilities (owner, 14 November 2026, LQ21; RTE.24; ERR.24) |
+| `LG3:effect.flow_refused` | Retired before first use and never emitted: the unselected flow-label spelling (ERR.24) |
 | `LG5:input.module_digest_mismatch` | Loaded module content differs from its expected digest |
 | `LG5:input.module_dependency_missing` | Content required by the lockfile is unavailable |
 | `LG5:input.module_contract_mismatch` | Manifest, file edition or dependency contracts do not agree |
@@ -640,7 +646,7 @@ Tests of open mechanisms use the selected option's contract and cannot decide th
 | CT-LG3-05 | Static success cannot bypass a run-time stale revision, mode, model, availability or protection refusal | source |
 | CT-LG3-06 | The flow-label variant follows data and branch choices through a module and a saved word, labels preview outcomes and binds checker approval to executed bytes; static-only and run-time variants are checked separately | source |
 | CT-LG3-07 | Capability separation refuses a state-reading preview program, preview-outcome reads and laundering through a second module or saved word; only policy-enabled fixed declassifiers cross the boundary | source |
-| CT-LG3-08 | LX-3's must-refuse cases include selection by a state fact, search then rebuild from own words, the ν correction solve and persistence laundering; false refusals are recorded for each candidate form | source |
+| CT-LG3-08 | LX-3's must-refuse cases include selection by a state fact, search then rebuild from own words, the ν correction solve and persistence laundering; false refusals are recorded under capability separation, and LX-3's two are met by fixed enabled declassifiers or by splitting the tool (RTE.24) | source |
 | CT-LG3-09 | R-12 rejected input preserves session provenance, and a fork, imported word or research result cannot acquire a new author class or solving permission by being saved | source |
 | CT-LG3-10 | A stage module admits only `pure`; direct or transitive snapshot, workspace, preview, file, randomness or other effect requests fail the stage checker | source |
 | CT-LG4-01 | Repeated runs and host collection layouts give identical result bytes and deterministic stop points for one key; admitted routes preserve the logical contract | source |
@@ -663,27 +669,28 @@ Tests of open mechanisms use the selected option's contract and cannot decide th
 
 ## 8. Open items
 
-The owner answered LQ1 to LQ21 on 6 November 2026. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set
-waits for the joint setting.
+The owner answered LQ1 to LQ21 on 6 November 2026 and chose LQ8, LQ9 and LQ21 on 14 November 2026: the engine and the
+interpreter's host in Rust, route RT1 with the runtime in a process of its own, and capability separation (RTE.17,
+RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits for the joint setting.
 
 | Owner question | Clauses and dependency |
 | --- | --- |
 | LQ2 Boundary policy | LG3.11 to LG3.16. Chapter 07 owns option sets, permitted flows, declassifiers, display sinks and author classes. |
-| LQ8 Engine language | LG1.6, LG4.4, LG4.14. [B] The choice waits for LX-5 and LX-6 (owner, 6 November 2026, LQ8). |
-| LQ9 Route and placement | LG3.12 to LG3.14, LG4.1 to LG4.14. [B] The choice waits for LX-1 to LX-5, together with LQ21 (owner, 6 November 2026, LQ9). |
+| LQ8 Engine language | LG1.6, LG4.4, LG4.14. [B] Answered: the engine is written in Rust (owner, 14 November 2026, LQ8; RTE.17). |
+| LQ9 Route and placement | LG3.12 to LG3.14, LG4.1 to LG4.14. [B] Answered: route RT1, runtime in a process of its own (owner, 14 November 2026, LQ9; RTE.21). |
 | LQ13 Syntax | LG1.1 to LG1.8. [B] The choice waits for LX-8 before LP2 builds the parser (owner, 6 November 2026, LQ13). |
-| LQ21 Flow-control form | LG3.12 to LG3.14, LG4.14. [B] The choice waits for LX-1 and LX-3 together with LQ9 (owner, 6 November 2026, LQ21). |
+| LQ21 Flow-control form | LG3.12 to LG3.14, LG4.14. [B] Answered: capability separation (owner, 14 November 2026, LQ21; RTE.24). |
 
 Open mechanisms and dependencies:
 
 - **Approximate comparison and control flow (LG2.5, [D]).** The draft recommends H6 form 1, specifies form 2 and
-  records exactness vectors in LG2.22. LP2 still owes checker execution; LQ21 remains independent and open.
+  records exactness vectors in LG2.22. LP2 still owes checker execution; LQ21 (answered) remains independent of it.
 - **Canonical jumbling keys (LG2.18, [D]).** The draft specifies adjacent merging with retained domain tests and
   versions in LG2.23. LB1.10 separately specifies trace equality. Implementations and their conformance are still owed.
 - **Invoked preview replacement (LG3.7, [O]).** KN5.12 remains unresolved. Either permission keeps binding to the shown
   preview; reactive views have no preview effect under LG3.6.
-- **Flow-control choice and policy (LG3.14, [O]).** LQ21 and LQ2 decide the mechanism and enabled rules using the named
-  spike evidence. The choice is not made by selecting a syntax or host runtime.
+- **Flow-control policy (LG3.14, [B]; enabled rules [O]).** LQ21 chose capability separation (RTE.24); LQ2 still
+  decides the enabled rules. The choice was not made by selecting a syntax or host runtime.
 - **Deterministic charge schedule (LG4.8, [D]; DET.22, DET.28 [O]).** DET.54 to DET.64 specify the draft operations,
   input-size tariff form, owning-handle lifetimes, canonical-byte output and logical frames. LG2.21 supplies the
   distinct display-region lowering. The weighted-step alternative remains separate. Executor mappings, production

@@ -103,8 +103,8 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
   it runs no user program or user callback. Program execution remains outside the UI thread and off the kernel-key
   dispatch path. Whether a linked service meets the latency bars is LX-4 in chapter 11. Its first-pass headless
   function timings are leads only (`work/experiments/language-lx/lx4-editor/RESULT.md`), with no presented-frame
-  measurement or gate result. Decisive foreground runs wait for the owner's window (owner, 6 November 2026,
-  decision 15), and this chapter supplies no substitute timing target.
+  measurement or gate result. The decisive LX-4 run is an LP3 acceptance check with its bars unchanged (owner,
+  14 November 2026, LQ9; RTE.21), and this chapter supplies no substitute timing target.
 
 - **EV1.10 [D]** The proposed editor protocol consumes `SourceRange` from [the working handoff](../closure/HANDOFF.md),
   H7: absolute UTF-8 byte offsets on scalar boundaries, half-open, bound to the exact source digest. Check
@@ -145,8 +145,8 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
 
 - **EV1.13 [O]** Whether the host requests EV1.11 automatically after a check or only through an explicit user action
   is an interaction choice for the owner and the resumed design line. Neither trigger is selected here. Both call
-  the same atomic service and preserve old runs; widgets, prompts and editor appearance remain open. LQ9 changes
-  where the service is hosted, not its version-binding contract.
+  the same atomic service and preserve old runs; widgets, prompts and editor appearance remain open. The runtime's
+  placement (LQ9; RTE.21) changes where the service is hosted, not its version-binding contract.
 
 ## 2. EV2: debugger, replay and profiler
 
@@ -281,6 +281,8 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
   operations optimized away or fused at the native level. RT4 with IR uses the same map; non-IR RT4 owes equivalent
   declared host boundaries and mappings under RTE.6. Host bytecode instructions, VM fuel and source lines cannot stand
   in for semantic steps. This is a route admission requirement, not evidence that a candidate already supplies it.
+  The RT2, RT3 and RT4 sentences record unselected alternatives and bind nothing (owner, 14 November 2026, LQ9;
+  RTE.21).
 
 ## 3. EV3: source and UI linkage
 
@@ -514,7 +516,7 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
 
 - **EV4.16 [D]** Saving a word, recording it or turning it into source preserves the chapter 07 provenance reference;
   it cannot make research output into a solving preview or change an imported word into an own word by format
-  conversion (BM2; DT-L1 R2-E3, fix-first item 18). Flow-label detail versus capability separation stays LQ21. Under
+  conversion (BM2; DT-L1 R2-E3, fix-first item 18). LQ21 chose capability separation (RTE.24). Under
   the interim policy of partition section 11 no solver-tool solving preview is enabled before the joint setting.
   Built-in tools retain the 2 October boundary and the 17 October named-cap repair-list exception (INV-11). Showing
   a result or recording a solver's pick grants no new declassifier.
@@ -964,8 +966,8 @@ in the owning chapters.
 | Boundary class | L6 | A shipped tool's reviewed class under the human-solve boundary. | Chapter 07; partition BM5 |
 | Declassifier | L6 | A fixed policy-enabled entry that permits a named information flow; programs cannot declare one. | Chapter 07; partition BM2 |
 | Flow rule | L6, not learner-facing unless LQ2 turns it on | A policy switch: when on, in the solving profile, a preview's word and target may depend on the state or computed results only through declassifiers. | Chapter 07 BND.33 |
-| Flow label | L6 | The provenance information following permitted data and control dependencies if LQ21 selects labels. | Chapter 07; partition LQ21 |
-| Capability separation | L6 | LQ21's alternative separating state-reading programs from preview-preparing programs. | Chapter 07; partition BM2 |
+| Flow label | L6 | The provenance information following permitted data and control dependencies; not selected, since LQ21 chose capability separation (RTE.24). | Chapter 07; partition LQ21 |
+| Capability separation | L6 | LQ21's selected mechanism (owner, 14 November 2026; RTE.24), separating state-reading programs from preview-preparing programs. | Chapter 07; partition BM2 |
 | Solving session | L2 | A session whose journal can stand as a solve record; every ordinary session is one. | Chapter 07 BND.14 |
 | Solve record | L2 | The journal of a solve, read as its record, with the assistance the system recorded. | Chapter 07 BND.14, BND.35 (the mathematician's reading; the term is used and never defined) |
 | Sink | L6 | A place a labelled value can reach: a preview, a draft, a display, a workspace, a file or a record. | Chapter 07 BND.26 |
@@ -1159,16 +1161,18 @@ the unresolved protocols named in their checks.
 
 ## 9. Open items
 
-The owner answered LQ1 to LQ21 on 6 November 2026. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set
-waits for the joint setting. This table records the remaining choices and what decides them.
+The owner answered LQ1 to LQ21 on 6 November 2026 and chose LQ8, LQ9 and LQ21 on 14 November 2026: the engine and the
+interpreter's host in Rust, route RT1 with the runtime in a process of its own, and capability separation (RTE.17,
+RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits for the joint setting.
+This table records the remaining choices and what decides them.
 
 | Question | What stays fixed and what the answer changes | Clauses |
 | --- | --- | --- |
 | LQ2, solver-developed tools | The execution gate and built-in boundary stay; the joint policy decides admitted preview and display flows and any BS3 competence gate. | EV4.16, EV5.9, EV5.16 |
-| LQ8, engine language | LX-5 and LX-6 decide the engine language; library adapters, the checker host and LX-4's implementation follow it. Decisive runs wait for the owner's window (decision 15). | EV1.9, EV2.7 |
-| LQ9, route and placement | LX-1 to LX-5 feed the choice together with LQ21; transport, fault containment, IR stepping and source mappings need that choice. First-pass records are leads, not a ruling. | EV1.9, EV1.11, EV2.12, EV4.5 |
+| LQ8, engine language (answered) | The engine is written in Rust (owner, 14 November 2026, LQ8; RTE.17); library adapters, the checker host and LX-4's implementation follow it. LX-5 and LX-6 ran on 14 November 2026 and the owner accepted them as decisive (RTE.82). | EV1.9, EV2.7 |
+| LQ9, route and placement (answered) | Route RT1 with the runtime in a process of its own (owner, 14 November 2026, LQ9; RTE.21). The decisive LX-1, LX-2 and LX-4 runs are LP3 acceptance checks with their bars unchanged; if one fails, LQ9 reopens. | EV1.9, EV1.11, EV2.12, EV4.5 |
 | LQ13, syntax | LX-8's human learnability test decides the edition's syntax before LP2 builds the parser; source preparation has run, but the human test has not. | EV1.2, EV1.6, EV1.10, EV5.12 |
-| LQ21, flow control | LX-1's label cost and LX-3's refusal counts decide labels versus capability separation with LQ9; provenance survives either choice. | EV1.4, EV2.2, EV4.16 |
+| LQ21, flow control (answered) | Capability separation (owner, 14 November 2026, LQ21; RTE.24); LX-3's decisive check is part of LP3 acceptance. Provenance survives the choice. | EV1.4, EV2.2, EV4.16 |
 
 The clauses tagged `[O]` leave these specific contracts unsettled:
 
@@ -1194,5 +1198,5 @@ Other dependencies and differences in the sources remain visible:
 | DT-L1 rounds 2 and 3 | Round 3 answered R2-E1 to R2-E4 (overview section 8). Every use here names its card, and EV3.8, EV3.9, EV5.3 and EV5.4 carry round 3's corrections. | EV2.5, EV2.6, EV2.10, EV3.8, EV3.9, EV4.9, EV4.16, EV5.3, EV5.4, EV5.10, EV5.13, EV5.14 |
 | EN3 and EN4 | Relationship data uses RPI.5/RPI.65; LI.3 and LI.31 specify layer ownership and publication. LI.14, LI.18 to LI.30 and KN5.21/KN5.23 supply query, availability, lane, undo and outcome contracts. Final row reconciliation, implementation and conformance remain owed. | EV1.8, EV2.8, EV3.8, EV4.1 to EV4.15 |
 | Other chapters | Chapter 02 owns checker and IR services; 03 principle records; 05 bytes and versioning; 06 evidence meaning; 07 and 09 policy and grants; 08 lifecycles; 10 display linkage; 13 error spellings. | EV1 to EV5 |
-| LX-4, LX-8 and chapter 12 | First-pass headless function timings and syntax preparation are recorded in work/experiments/language-lx/lx4-editor/RESULT.md and lx8-surfaces/RESULT.md. They establish neither presented-frame latency nor human comprehension; decisive foreground runs wait for decision 15's window and the human test needs the owner's protocol. | EV1.9, EV5.12; CT-EV1-06, CT-EV5-03, CT-EV5-05 |
+| LX-4, LX-8 and chapter 12 | First-pass headless function timings and syntax preparation are recorded in work/experiments/language-lx/lx4-editor/RESULT.md and lx8-surfaces/RESULT.md. They establish neither presented-frame latency nor human comprehension; LX-4's decisive run is an LP3 acceptance check with its bars unchanged (RTE.21), and the human test needs the owner's protocol. | EV1.9, EV5.12; CT-EV1-06, CT-EV5-03, CT-EV5-05 |
 | Design line | The owner's 3 November hold still covers the editor's appearance, the strip's design and DT-J2 to DT-J4. This data chapter reopens none of them. | EV1.12, EV3.13, EV5.11 |
