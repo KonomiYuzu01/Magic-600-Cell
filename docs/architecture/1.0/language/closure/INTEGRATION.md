@@ -74,6 +74,12 @@ found three new majors: S3V1-F01, S3V1-F02 and S3V1-F03 (SV1-EVD-01 is the same 
   "closed" means specified in draft: nothing has been implemented, and no conformance test exists to run.
 - KN5.12 and ONE.42 stay with the owner and the design line. ONE.78 is answered (owner, 6 November 2026, decision 10).
 
+**Correction, 14 November 2026:** The owner chose LQ8, LQ9 and LQ21: Rust for the engine and the interpreter's host,
+route RT1 with the runtime in a process of its own, and capability separation (RTE.17, RTE.21, RTE.24;
+[decision page](../../../../wiki/decisions/owner-decisions-2026-11-14-language-route.md)). KI.15 now names RT1's binding
+as the one to write, and FR-B03 stays partial until that binding exists. LQ13 waits for LX-8, and LQ2's option set waits
+for the joint setting. The list above stays as written for this candidate.
+
 ## Review of the earlier candidate
 
 This section records the review of the candidate as it stood before the owner's answers. Its review allowance ended with
