@@ -33,7 +33,7 @@ Full record: `docs/wiki/decisions/owner-decisions-2026-09-29.md`.
 
 ## 3. Critical paths
 
-A change here needs a Codex plan check and a valid Codex review of the current candidate before commit. The machine-readable list used by the Stop hook is `tools/agents/critical_paths.json`.
+Under `AGENTS.md` "Codex minimum" (owner, 14 November 2026) a code change here gets one read by a fresh Claude subagent on a smaller model before commit, and no Codex call. The machine-readable list is `tools/agents/critical_paths.json`; the Stop hook that reads it is unregistered until the owner lifts the minimum.
 
 - `core.py`, `session.py`, `session_lock.py`, `log_io.py`, `engine_process.py`, `server.py`
 - `work/experiments/magic600-04/adapter.py`
@@ -76,6 +76,7 @@ In a Linux or cloud session, run only headless checks and list the Windows check
 
 ## 6. Team protocol quick reference
 
+- Codex minimum (owner, 14 November 2026; `AGENTS.md`): no Codex call except a gate ruling or one the owner asks for; a critical-path code change gets one read by a fresh Claude subagent on a smaller model; escalations and joint attacks go to the Fable solver and a fresh Claude subagent. The points below apply only to the Codex calls that remain.
 - Packet: `templates/problem-packet.md` (seven parts). Replies: `adopt`, `reject_with_evidence`, `needs_verification`, stored as `{"<finding id>": "<reply>"}` in `work/reviews/<call-id>/dispositions.json`.
 - Plan check: `python tools/agents/codex_review.py --kind plan --packet <file>`
 - Review: `python tools/agents/codex_review.py --kind review --packet <file>`
@@ -85,11 +86,11 @@ In a Linux or cloud session, run only headless checks and list the Windows check
 - Astra (`--model gpt-6-astra`): plan checks and full reviews of critical-path, behaviour, contract and design/ADR changes; escalations, joint attacks, milestone audits. Sol: everything else.
 - Gate rulings: `--model gpt-6-astra --effort ultra --gate day7-go-no-go|migration-format-freeze|architecture-freeze`.
 - `--speed fast` (owner, 4 October 2026): every plan check, review and verification round, critical paths included, and mechanical checks. Standard tier: gates, joint attacks and escalations only.
-- Codex first: give every separable part to Codex; Claude plans, integrates and reviews. Full reviews of critical-path changes run as at least two concurrent shards; other full reviews may run as one. Screening packets for 0.4.1 step 4: `docs/progress/0.4.1/packets/`.
+- Codex first (off under the Codex minimum): give every separable part to Codex; Claude plans, integrates and reviews. Full reviews of critical-path changes run as at least two concurrent shards; other full reviews may run as one. Screening packets for 0.4.1 step 4: `docs/progress/0.4.1/packets/`.
 - Pair implementation: `python tools/agents/codex_review.py --kind implement --packet <file>` (packet with an `implement-contract` block), then review and apply `changes.patch`, then `--cleanup <call-id>`. No commits, tags or pushes in the repository while a call runs. On Windows the sandbox enforces the filesystem boundary but not a network firewall.
 - Escalate after three failed effective iterations (Codex diagnosis), then two more (Fable solver: the `fable-solver` subagent). Joint attack: same clean packet, sealed answers, an experiment decides.
 - API team: role cards in `templates/roles/`. It may run on OpenAI models; the owner confirms provider, models and budget before each run.
-- Claude subscription is Max 5x: send broad read-only searches and routine diff reading to subagents, keep Opus for planning and integration, and give heavy reviews to Codex. When usage runs low, record progress and stop; never switch models to keep writing code.
+- Claude subscription is Max 5x: send broad read-only searches and routine diff reading to subagents, keep Opus for planning and integration, and keep reviews small, since Codex is at its minimum. When usage runs low, record progress and stop; never switch models to keep writing code.
 
 ## 7. Tools quick reference
 
@@ -113,5 +114,5 @@ In a Linux or cloud session, run only headless checks and list the Windows check
 - Do not claim Windows/DirectX, input, long-session or performance results from headless runs.
 - Do not install from hooks or at application startup; do not install anything outside the verified allowlist.
 - Do not call `codex exec` directly for project work, rely on inherited model defaults, or use `resume`.
-- Do not commit a critical change without a valid review of the current candidate or an explicit owner exception.
+- Do not commit a code change on a critical path without the fresh Claude subagent read that the Codex minimum requires, or an explicit owner exception.
 - Do not redistribute Microsoft Managed DirectX DLLs.

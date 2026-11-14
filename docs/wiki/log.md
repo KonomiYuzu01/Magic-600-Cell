@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-14] decision | Codex use at its minimum
+The owner's ChatGPT quota is down to one twentieth, so Codex now runs only for gate rulings and calls the owner asks for; a code change on a critical path gets one read by a fresh Claude subagent, and the Stop gate is unregistered. Recorded in [owner-decisions-2026-11-14](decisions/owner-decisions-2026-11-14.md); as the owner authorized, the change went to `main` directly, without a pull request.
+
 ## [2026-11-04] decision | Stage 16 certificates renamed so a Windows checkout is clean
 The owner approved renaming the six stage 16 certificates `PX-<run>.json` to `PX-<run>-cert.json` with their blobs unchanged, because each differed only in case from its run record `px-<run>.json` and a Windows checkout kept one file for both and showed six modified paths; the research stays stopped and the review wrapper is unchanged, since a real implement run on the unfixed base was accepted. A worktree that still holds the pairs takes this merge by running `git checkout --` on the six old `PX-*` paths before the merge and on the six `px-*` paths after it.
 

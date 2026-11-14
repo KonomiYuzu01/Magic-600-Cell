@@ -32,9 +32,17 @@ Shared rules for every agent and person working on Magic 600 Cell. Codex reads t
 
 ## Team protocol
 
+Codex minimum (owner decision, 14 November 2026; it overrides every other Codex rule in this file, `CLAUDE.md`, the briefing and the guides until the owner lifts it):
+- The owner's ChatGPT subscription quota is down to one twentieth. Keep Codex use at its minimum in all work.
+- No Codex call by default: no plan check, candidate review, verification round, review shard, screening or pair implementation, critical paths included.
+- Codex runs only for a gate ruling (one call per gate, at most one scoped re-check, then the owner decides) or a call the owner asks for. Such a call follows the model, effort, speed and packet rules below.
+- A code change on a critical path (not rule text, documentation or wiki pages) gets one read by a fresh Claude subagent on a smaller model before commit. Give it the diff and the acceptance check, not the author's conclusion. All other work relies on the checks this file lists for the changed area.
+- Escalations and joint attacks use the Fable solver and a fresh Claude subagent instead of Codex.
+- No commit, merge or pull request waits for a Codex review. The commit message or pull request body names the checks that ran.
+
 Roles:
 - Claude Opus is the main-worktree integrator unless the owner explicitly assigns another integrator. Only the integrator edits the main worktree, merges results and commits. Delegated implementation is confined to packet-owned worktrees.
-- Codex is the independent reviewer and, under "Pair implementation", a co-implementer. The default model is GPT-6.1 Sol (`gpt-6.1-sol`) for routine plan checks and reviews, scoped verification rounds and mechanical checks. Codex Astra (`gpt-6-astra`) is the senior reviewer: it gives the final ruling at three gates (the stage 2.4 day-7 go/no-go, the migration format freeze and the 1.0 architecture freeze), and it runs the plan check and the full review for critical-path changes, behaviour or contract changes and substantive design or ADR decisions, escalation diagnoses, joint attacks and milestone audits. Codex works read-only unless a packet assigns it a separate worktree, allowed files, an acceptance check and a stop condition, and it never commits to the main worktree.
+- Codex is the independent reviewer and, under "Pair implementation", a co-implementer, both only within "Codex minimum" above. The default model is GPT-6.1 Sol (`gpt-6.1-sol`) for routine plan checks and reviews, scoped verification rounds and mechanical checks. Codex Astra (`gpt-6-astra`) is the senior reviewer: it gives the final ruling at three gates (the stage 2.4 day-7 go/no-go, the migration format freeze and the 1.0 architecture freeze), and it runs the plan check and the full review for critical-path changes, behaviour or contract changes and substantive design or ADR decisions, escalation diagnoses, joint attacks and milestone audits. Codex works read-only unless a packet assigns it a separate worktree, allowed files, an acceptance check and a stop condition, and it never commits to the main worktree.
 - Fable is the solver. It joins only on escalation or for a joint attack, for analysis and review unless a packet assigns it an isolated worktree.
 - The owner decides scope, taste, UX, releases and the items under "Ask the owner". Agreement between models never replaces an owner decision.
 
@@ -52,13 +60,13 @@ Packets and replies:
 - The integrator answers each finding with `adopt`, `reject_with_evidence` or `needs_verification`.
 - After two proposer/reviewer rounds without new evidence, stop exchanging positions and design an adjudicating experiment.
 
-When review is required:
+When review is required (suspended under "Codex minimum"; it returns when the owner lifts the minimum):
 - A non-trivial task gets a plan check before implementation and a review of the current candidate before commit. Both are mandatory for critical paths, behaviour or contract changes, and substantive design or ADR decisions. Pure spelling, formatting and mechanically provable generated-file syncs are exempt; record the reason.
 - Owner-dictated rule text is exempt from Codex review: when the owner states a rule change in `AGENTS.md`, `CLAUDE.md`, the briefing or the guides, the integrator writes it, records the owner decision in the wiki, runs the agent-rules checks and merges under "Merging". A change that widens an agent's own authority is still written by the owner. Code, hooks, the wrapper, the installer and lockfiles keep the normal review rules.
 - An unchanged approved plan may reuse its plan check. The final review must cover the current candidate, not an earlier diff.
 - Critical paths are listed in `docs/development-guide/AGENT_BRIEFING.md`.
 
-Review rounds (keep reviews few and decisive):
+Review rounds (keep reviews few and decisive; under "Codex minimum" they apply only to gate rulings and calls the owner asks for):
 - Review a finished candidate once: after the implementation is complete and its checks pass, not after each step. Batch related changes into one candidate.
 - Only `blocker` and `major` findings block a commit. `minor` and `nit` findings never start another round: fix them in the same pass when the fix is trivial and local, otherwise record them as deferred.
 - After fixing blocking findings, run a scoped verification review of the current candidate: it checks only whether each blocking finding is fixed and whether the fix introduces a new `blocker` or `major`. Do not request another full review.
@@ -67,13 +75,13 @@ Review rounds (keep reviews few and decisive):
 - Every packet states the acceptance check and what is out of scope, and the reviewer stays within it.
 - Spend spare subscription quota on parallelism, not on more serial rounds: every full review of a critical-path change runs as at least two independent shards run concurrently (split by files or by concern), and the blocking findings of every shard are resolved before commit. Other full reviews may run as one shard. Paid API calls still reserve budget first.
 
-Risk tiers (owner decision, 2 October 2026):
+Risk tiers (owner decision, 2 October 2026; their Codex calls are suspended under "Codex minimum"):
 - Critical paths (briefing section 3) keep every rule above.
 - Other code and tools: no plan check unless the change alters behaviour or a contract; one Sol review with `--speed fast` of the finished candidate; no verification round for findings below `major`.
 - Documentation, wiki and progress pages that record owner decisions or measured results: no Codex review; run the wiki and agent-rules checks.
 - Process budget: in each working week at least 70% of the commits are experiment code, measurements or product content, and at most 30% are governance or documentation. The integrator reports the split in the milestone summary. When governance exceeds 30%, new governance work stops until the split recovers, except fixes to a broken check, hook or wrapper.
 
-Pair implementation (Claude and Codex write code together):
+Pair implementation (Claude and Codex write code together; off under "Codex minimum" unless the owner asks):
 - Enabled: Codex writes code only through the wrapper's `--kind implement`, which creates the packet's worktree and branch itself, runs Codex there in the workspace-write sandbox, rejects any change outside the allowed files and any commit, ref, Git config, hook or link change, and runs the acceptance check in the same sandbox. The wrapper never merges.
 - The Windows sandbox available without administrator rights enforces the filesystem boundary (so a push to a local repository fails) but not a network firewall. Git transports are off in the default configuration Codex and the acceptance check receive, but a process can override that, so pushes over the network and other network use are only instructed away. Firewall isolation needs the elevated backend, which is an owner decision.
 - While an implementation call runs, nobody commits, tags or pushes in the repository: any ref change invalidates the run.
@@ -82,7 +90,7 @@ Pair implementation (Claude and Codex write code together):
 - No one reviews their own code. Claude reviews Codex-authored changes, and a separate Codex call reviews Claude-authored ones. A Codex-authored critical-path change also gets a review from the other Codex model.
 - Codex never commits to the main worktree or pushes. The integrator reviews `changes.patch`, applies it to the main worktree and removes the finished worktree with `--cleanup`. The review rules above apply to the merged candidate.
 
-Escalation (an effective iteration is hypothesis, change, verification and judgement):
+Escalation (an effective iteration is hypothesis, change, verification and judgement; under "Codex minimum" a fresh Claude subagent takes the other model's place):
 - Same problem after three effective iterations: independent diagnosis by the other model.
 - The same fix idea twice, or a regression: escalate early.
 - Two more failed iterations after the reviewer's instructions: escalate to the solver.
@@ -127,7 +135,7 @@ A checksum or signature mismatch blocks the installation until it is investigate
 See `docs/DEVELOPMENT.md`, `docs/RUNTIME_PROVENANCE.md` and `DIRECTX.md` for build, provenance and dependency details.
 
 Merging (the owner is not a merge button):
-- The integrator merges its own pull request, without asking, when all of these hold: the checks this file lists for the changed area pass on the final head and are listed in the PR body; the review rules above are met (a valid review of the current candidate with no open `blocker` or `major`, or a recorded exemption); the PR contains nothing under "Ask the owner"; and the branch merges cleanly into the current base.
+- The integrator merges its own pull request, without asking, when all of these hold: the checks this file lists for the changed area pass on the final head and are listed in the PR body; the review rules above are met (a valid review of the current candidate with no open `blocker` or `major`, a recorded exemption, or the read that "Codex minimum" requires where it applies); the PR contains nothing under "Ask the owner"; and the branch merges cleanly into the current base.
 - Batch work: one pull request per finished task or milestone, not per commit or per fix. Follow-up fixes to an open pull request go to the same branch.
 - The owner is asked only for pull requests that contain an "Ask the owner" item, that need an owner exception to the review rule, or that the owner marked for their own sign-off. Ask once, in two or three lines, never for a routine merge.
 - After merging, the integrator reports what landed in a short summary. When a merged change touches an approval input (`tools/toolchain/approval_inputs.json`), the summary ends with `python tools/toolchain/bootstrap.py approve`. Batch approval-input changes so the owner approves once per milestone.
