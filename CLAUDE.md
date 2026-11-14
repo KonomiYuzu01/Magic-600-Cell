@@ -7,7 +7,7 @@ Claude Code instructions for Magic 600 Cell. Shared rules and the team protocol 
 
 ## Owner requirements and where they live
 
-- Claude Opus is the main developer and calls Codex often: `AGENTS.md` "Team protocol" and "Calling Codex" below.
+- Claude Opus is the main developer. Codex use is at its minimum: `AGENTS.md` "Codex minimum" (owner, 14 November 2026) and "Calling Codex" below.
 - Every formal non-software output is made with local tools: `AGENTS.md` "Tools, skills and outputs".
 - Missing tools and skills are installed automatically from the reviewed allowlist: `AGENTS.md` "Tools, skills and outputs" and "Tools and skills" below.
 - The agent-team dialogue mode and the API-team mode are kept: `AGENTS.md` "Team protocol". API-team runs, including runs on OpenAI models, start only after the owner confirms provider, models and budget.
@@ -15,10 +15,10 @@ Claude Code instructions for Magic 600 Cell. Shared rules and the team protocol 
 ## Working loop
 
 1. Orient: read the SessionStart summary, `docs/wiki/index.md` and the recent wiki log. Restate the goal and the acceptance check.
-2. Plan: for a non-trivial task, run a Codex plan check.
-3. Implement in small steps, splitting separable work with Codex under `AGENTS.md` "Pair implementation". Run the checks that `AGENTS.md` lists for the changed area.
-4. Review: run one Codex review of the finished candidate (parallel shards for a large one), fix the blocking findings, then run scoped verification rounds within the limits of `AGENTS.md` "Review rounds". Answer every finding; defer minor ones.
-5. Record: link the wrapper-owned call record, record the finding dispositions and update the affected wiki pages. Do not duplicate usage or billing entries. Commit a critical change only after a valid review or an explicit owner exception.
+2. Plan: for a non-trivial task, write the plan and its acceptance check. There is no Codex plan check under `AGENTS.md` "Codex minimum".
+3. Implement in small steps. Run the checks that `AGENTS.md` lists for the changed area.
+4. Review: a code change on a critical path gets one read by a fresh Claude subagent on a smaller model; fix what blocks and defer minor points. No Codex review unless `AGENTS.md` "Codex minimum" allows the call.
+5. Record: update the affected wiki pages; after a Codex call, link the wrapper-owned call record and record the finding dispositions. Do not duplicate usage or billing entries. Commit a critical-path code change only after the read in step 4 or an explicit owner exception, and name the checks that ran.
 6. Merge: merge your own pull request when `AGENTS.md` "Merging" allows it; otherwise ask the owner once, briefly.
 
 In the main session, keep the development workbench brief current at each plan step and milestone: `python tools/workbench/brief.py --goal "..." --step "..." --doing "..." --why "..." --waiting-for "..."` (omitted fields keep their value). Write it yourself in plain language; never call a model to summarize. Subagents never run it.
@@ -31,10 +31,11 @@ To put a question, a decision or an image pick in front of the owner, run `pytho
 
 Tick a progress checklist item only with evidence (a commit sha, a pull request URL of this repository, or a repository-relative test or result path): `python tools/workbench/progress.py done <step> <item> --evidence <ref>`. Never edit `docs/progress/status.json` by hand and never estimate progress. Parallel work gets its own track: add tracks, steps and items with `progress.py track`, `step` and `item`, and set the status-line step with `progress.py current`.
 
-Use the `codex-dialogue`, `wiki` and `toolchain` skills for these steps, and the owner's workflow skills (`investigate-first`, `lean-build`, `migration`, `safe-refactor`, `surgical-patch`, `verify-and-stop`) when a task matches them.
+Use the `wiki` and `toolchain` skills for these steps, the `codex-dialogue` skill only for a Codex call that `AGENTS.md` "Codex minimum" allows, and the owner's workflow skills (`investigate-first`, `lean-build`, `migration`, `safe-refactor`, `surgical-patch`, `verify-and-stop`) when a task matches them.
 
 ## Calling Codex
 
+- Call Codex only as `AGENTS.md` "Codex minimum" allows: a gate ruling or a call the owner asks for.
 - Use the wrapper for every automated call. It passes the model (`gpt-6.1-sol` by default; `gpt-6-astra` when `AGENTS.md` assigns Astra, and always with `--gate`), the effort and the speed tier explicitly, uses a fixed read-only policy for plan checks and reviews, ignores the user Codex config (its sandbox mode, MCP servers and plugins; sign-in must use the default file-backed store), accepts no arbitrary CLI passthrough, and rejects a run whose reported model, effort or sandbox differs from the request or whose speed tier was dropped.
 - Plan check: `python tools/agents/codex_review.py --kind plan --packet <file>`
 - Review: `python tools/agents/codex_review.py --kind review --packet <file>`
@@ -47,7 +48,7 @@ Use the `codex-dialogue`, `wiki` and `toolchain` skills for these steps, and the
 
 - SessionStart (`.claude/hooks/session_start.py`) injects a bounded local summary. It never calls models, installs tools, uses the network or reads personal data.
 - PreToolUse (`.claude/hooks/install_guard.py`) lets an exact `bootstrap.py install` or `install-skill` command, run from the project root, proceed without a prompt only when the installer, every script it runs and its lockfiles match the owner-approved revision; otherwise the command asks the owner. The hook never imports repository code.
-- Stop (`.claude/hooks/stop_gate.py`) is the bounded completion gate:
+- Stop (`.claude/hooks/stop_gate.py`) is unregistered in `.claude/settings.json` under `AGENTS.md` "Codex minimum" (owner, 14 November 2026), because it asks for a Codex review of every critical-path change; the script and `tests/test_stop_gate.py` stay so it can be registered again. Registered, it is the bounded completion gate:
   - It permits at most two automatic continuations per session.
   - It never re-blocks when `stop_hook_active` is true.
   - It excludes generated review records from its candidate identity.

@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-14] decision | Codex use at its minimum
+The owner's ChatGPT quota is down to one twentieth, so Codex now runs only for gate rulings and calls the owner asks for; a code change on a critical path gets one read by a fresh Claude subagent, and the Stop gate is unregistered. Recorded in [owner-decisions-2026-11-14](decisions/owner-decisions-2026-11-14.md); as the owner authorized, the change went to `main` directly, without a pull request.
+
 ## [2026-11-07] decision | The language: the final text committed under one owner exception
 The final architecture text, its reference checkers and its vectors are committed ([review record](../architecture/1.0/language/closure/INTEGRATION.md#review-of-the-final-candidate)). The full review's 24 blocking findings and the two later majors are confirmed fixed. The last scoped round found one blocker in two sentences the integrator had added; it is fixed, no round was left to read the fix, and the owner chose to commit under an exception ([decision](decisions/owner-decisions-2026-11-06.md)). The owner's choice of A1's grid for free mode is in the text. No ADR is accepted, A6 stays proposed and nothing is frozen.
 

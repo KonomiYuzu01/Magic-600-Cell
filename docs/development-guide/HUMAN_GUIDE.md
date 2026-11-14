@@ -15,6 +15,7 @@ This guide is for the owner and any person working on the project. Agents follow
 
 **What the agents do on their own**
 - Claude Opus plans, edits, runs checks and commits. It is the only agent that changes the main worktree.
+- Since 14 November 2026 Codex use is at its minimum, because your ChatGPT quota is down to one twentieth: Codex runs only for the gate rulings and when you ask, and a code change on a critical path gets one read by a fresh Claude subagent instead. The next three points describe the rules that return when you lift the minimum.
 - Codex reviews every non-trivial plan and every candidate change, read-only, at `max` effort. GPT-6.1 Sol handles routine work. Codex Astra reviews critical, behaviour, contract and design changes, handles escalations and audits, and gives the three final rulings: the stage 2.4 day-7 go/no-go, the migration format freeze and the 1.0 architecture freeze.
 - Each candidate gets one full review and at most two short verification rounds; remaining blockers come to you as a decision. Every plan check and review runs on the fast tier; only the three final rulings, joint attacks and escalations use the standard tier.
 - Codex also writes code alongside Claude, each packet in its own sandboxed worktree; Claude reviews and merges, and no one reviews their own code. On Windows without administrator setup the sandbox blocks file writes outside the worktree but not network access.
@@ -35,7 +36,7 @@ This guide is for the owner and any person working on the project. Agents follow
 
 **Budgets**
 - Paid API use is capped cumulatively at USD 100, then 150, then 300. Agents stop and ask before a ceiling is raised. Subscription usage never switches to paid API automatically.
-- Your Claude plan is Max 5x. Agents keep Opus for planning and integration, hand broad searches to subagents, and give heavy reviews to Codex (which uses your ChatGPT plan).
+- Your Claude plan is Max 5x. Agents keep Opus for planning and integration, hand broad searches to subagents, and keep reviews small; Codex, which uses your ChatGPT plan, is at its minimum.
 
 **Stopping a loop**
 - Press Esc in Claude Code to interrupt. The project's Stop hook blocks a stop at most twice per session and then lets the agent stop honestly as "inconclusive".
@@ -78,6 +79,8 @@ Prerequisites you install yourself: 64-bit CPython 3.11 or later, Git for Window
 7. Optional: open `docs/wiki` as an Obsidian vault to browse the wiki. The `.obsidian/` folder is ignored by Git.
 
 ## 4. Daily loop with Claude and Codex
+
+Under the Codex minimum of 14 November 2026, steps 3 and 5 below do not run: there is no Codex plan check or review, a code change on a critical path gets one read by a fresh Claude subagent, and escalations go to Fable.
 
 1. Start a session. Claude reads the session summary, the briefing and the wiki index.
 2. Give the task in your own words. Say what "done" means if you can.
