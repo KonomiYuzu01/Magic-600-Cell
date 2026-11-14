@@ -1,23 +1,23 @@
 {
   "format": "p3-candidate-inventory-1",
   "candidate_id": "en4-data-core-draft-1",
-  "input_commit": "384b877bbbd87290c541316d4dec8ebd87b87056",
+  "input_commit": "f5d3ebf58ace83acbda7aeec723155699607cf30",
   "candidate": [
     {
       "path": "docs/architecture/1.0/language/architecture/05-persistence.md",
-      "sha256": "84f2bfb1308f05501333c7c1323bc44e07ebaab103b427b66f9d90ba00e7f07f"
+      "sha256": "db55fab01b366425854c2f1863ec439da7513b069c9f769df905dc9f318e9ad6"
     },
     {
       "path": "docs/architecture/1.0/language/architecture/06-evidence.md",
-      "sha256": "73e5b305da9b3b0fd6b44f5a3852176409359693e774d3610ea8c12f0a8d87a8"
+      "sha256": "972b22f0dec414e09eb8d53195a8fd8cff5d7879f024fc42df568ea202cf7837"
     },
     {
       "path": "docs/architecture/1.0/language/architecture/07-boundary.md",
-      "sha256": "5efcf58a75309b18a13b54811533a99102d772c3e715cf502d5bb6c8cb5f5e61"
+      "sha256": "421d77e4e885ca72047b176af8b7de909868931f19f3c9b6c56c50d016e4055e"
     },
     {
       "path": "docs/architecture/1.0/language/format-packet/README.md",
-      "sha256": "4f4283b26b4e673c095ad126e98e8e14db5eb8fb4f247d2d06e98844a3d3689e"
+      "sha256": "94fc86ad31a1e931dc9bebdec3d6f72066ff933bbd80f00ccf0e70704f1e05fd"
     },
     {
       "path": "docs/architecture/1.0/language/format-packet/check_vectors.py",
@@ -32,11 +32,11 @@
       "sha256": "b28389e8014201524432debe339b87bf8327a6331f9f2470e5738a3b1db8461d"
     }
   ],
-  "candidate_sha256": "e3b23b4b58f05823c5124a3a6abd257066cecda0d530f605e827d89d894d35b9",
+  "candidate_sha256": "51d44f16dc767de6f633d95de41054009cc882851d22c03c04ea179a9b6d8c1d",
   "inputs": [
     {
       "path": "AGENTS.md",
-      "sha256": "0762f5e6a5f69687d6b90436bf6833b8f1e40af98cdcd15582452736659a920f"
+      "sha256": "9b21d4852b0a6094cfcc6e32752100c73d145cde50771b2b81edd5a0ce9ba65e"
     },
     {
       "path": "assets/execution_trees.json.gz",
@@ -56,11 +56,11 @@
     },
     {
       "path": "docs/architecture/1.0/language/adr/ADR-L10-persistence.md",
-      "sha256": "c83a106d0dc78769876c12fa4dde6729fb0e0cf90374201eaf128b323c901cd0"
+      "sha256": "72aa54a51d2adc11c0164ba1d67d08b3e1350984b61efbf0749b4a09c56a0df4"
     },
     {
       "path": "docs/architecture/1.0/language/architecture/01-kernel.md",
-      "sha256": "d99f62f1279e7aad21394fcef8b11075c8e012c6d15f2325ca971e3d144746cd"
+      "sha256": "4c833d33f552283b69ac72b4962c75fae922755b0d731f8fed4d3ca2fc1e2601"
     },
     {
       "path": "docs/architecture/1.0/language/claim-matrix/README.md",
@@ -108,7 +108,7 @@
     },
     {
       "path": "docs/development-guide/AGENT_BRIEFING.md",
-      "sha256": "5f602e38ef60d44a417ce9545a6ee2094d7c2b7b5befb9af879c63914ac311a6"
+      "sha256": "b2a8810626c9c799d551cd878fa78c986ac82e459c08c167e53ee3e72f8faf9b"
     },
     {
       "path": "docs/progress/1.0/command-aliases.json",
@@ -120,7 +120,7 @@
     },
     {
       "path": "docs/progress/1.0/layer-interfaces.md",
-      "sha256": "36039a4b368e47e3ed1d40ccc8f3cfaccec135c7b0980e4a0bc87563c23a5d28"
+      "sha256": "2357120991e699db7c677a42aafa87fc08ad6e435b20b652d43ab1113ad62281"
     },
     {
       "path": "docs/progress/1.0/migration-exporter-proposal.md",
