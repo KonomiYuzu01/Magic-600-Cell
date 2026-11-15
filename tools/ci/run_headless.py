@@ -109,6 +109,8 @@ CHECKS += LANGUAGE_DOCS_CHECKS + [
     [_LANGUAGE + "contract-vectors/check_vectors.py"],
     [_LANGUAGE + "claim-matrix/check_matrix.py"],
     [_LANGUAGE + "kernel-interface/check_annex.py"],
+    # The Rust workspace of the language (LP2): cargo test --locked --offline in rust/.
+    ["tests/test_language_rust.py"],
 ]
 
 TIME_LIMIT_SECONDS = 1200
@@ -203,6 +205,7 @@ SECONDS = {
     "tests/test_stop_gate.py": 16, "tests/test_checkout_bytes.py": 15,
     "tests/test_print_identity.py": 14, "tests/test_b412_fixture.py": 13,
     "tests/test_log_workflow.py": 13, "tests/test_core.py": 12,
+    "tests/test_language_rust.py": 60,  # an estimate until a CI run measures it
 }
 DEFAULT_SECONDS = 5
 # Parallel Windows jobs for a full run; the longest check (about 14 minutes) bounds the gain.

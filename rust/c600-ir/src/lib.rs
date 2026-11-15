@@ -1,0 +1,454 @@
+//! The typed IR draft `c600-ir-draft-1` of 600 Cell Script (LP2, milestone M1).
+//!
+//! The crate holds data and short constructors only. The checker (`c600-check`) and the later interpreter depend
+//! on it and not on each other. The IR is a draft: it changes freely until the IR freeze (chapter 12, PHS.49).
+//! Until the parser exists (milestone M7), tests build it by hand with [`build`]; a hand lowering is no evidence
+//! for the parser.
+
+#![forbid(unsafe_code)]
+
+use std::collections::BTreeSet;
+
+/// The IR draft this crate defines.
+pub const IR_VERSION: &str = "c600-ir-draft-1";
+/// The exactness and execution contract that the checker and the IR advertise: form 1 of LG2.5 (DET.54, LG2.21).
+pub const EXEC_CONTRACT: &str = "lp1-exec-draft-1";
+/// The identity of form 2 (LG2.21). Form 2 stays on record and is not built, so a program pinned to it is refused.
+pub const FORM2_EXEC_CONTRACT: &str = "lp1-exec-region-draft-1";
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Program {
+    pub ir_version: String,
+    pub exec_contract: String,
+    pub modules: Vec<Module>,
+}
+
+impl Program {
+    /// A program pinned to this crate's IR draft and contract.
+    pub fn new(modules: Vec<Module>) -> Self {
+        Program { ir_version: IR_VERSION.into(), exec_contract: EXEC_CONTRACT.into(), modules }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Module {
+    pub name: String,
+    /// The capabilities the module declares (LG3.9). A declaration requests authority and never supplies it.
+    pub capabilities: BTreeSet<Capability>,
+    pub functions: Vec<Function>,
+}
+
+impl Module {
+    pub fn declaring(mut self, capabilities: &[Capability]) -> Self {
+        self.capabilities.extend(capabilities.iter().copied());
+        self
+    }
+}
+
+/// A view is reactive and has no workspace or preview effect (LG3.5, LG3.6); a command is invoked by the solver.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FnKind {
+    Helper,
+    View,
+    Command,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Function {
+    pub name: String,
+    pub kind: FnKind,
+    pub exported: bool,
+    pub params: Vec<Param>,
+    pub result: QTy,
+    /// An effect annotation. It restricts what checks successfully and cannot erase an inferred effect (LG3.2).
+    pub effects: Option<EffectBound>,
+    pub body: Expr,
+}
+
+impl Function {
+    pub fn exported(mut self) -> Self {
+        self.exported = true;
+        self
+    }
+
+    pub fn with_effects(mut self, effects: EffectBound) -> Self {
+        self.effects = Some(effects);
+        self
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Param {
+    pub name: String,
+    pub ty: QTy,
+}
+
+/// A base type with LG2.19's display qualifier. `Approx<p>` and `ApproxBool` carry it by definition.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct QTy {
+    pub ty: Ty,
+    pub display: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Ty {
+    Unit,
+    Bool,
+    Nat,
+    Int,
+    Text,
+    Word,
+    Target,
+    Budget,
+    Status,
+    Colour,
+    /// `Approx<p>`: an approximate scalar of precision p.
+    Approx(u32),
+    /// The result of an approximate comparison (LG2.19).
+    ApproxBool,
+    Record(Vec<(String, QTy)>),
+    Fn(Box<FnTy>),
+    /// A preview receipt (BND.42).
+    Receipt,
+    /// A generic type parameter; substitution preserves the qualifier (LG2.19).
+    Var(String),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FnTy {
+    pub params: Vec<QTy>,
+    pub result: QTy,
+    pub effects: EffectBound,
+}
+
+/// Effects, capability requirements and effect variables of a function type (LG3.1, LG3.2).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct EffectBound {
+    pub effects: BTreeSet<Effect>,
+    pub capabilities: BTreeSet<Capability>,
+    pub vars: BTreeSet<String>,
+}
+
+/// LG3.1's effect families. Pure is the empty set. There is no commit effect (LG3.4).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Effect {
+    ReadSnapshot,
+    ChangeView,
+    ChangeWorkspace,
+    PreparePreview,
+    GrantedFile,
+    SeededRandomness,
+    Budgets,
+}
+
+/// Capabilities (LG3.8). Network, process and session-file access are never granted in 1.0.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Capability {
+    File,
+    Clock,
+    Randomness,
+    Network,
+    Process,
+    SessionFile,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Lit {
+    Unit,
+    Bool(bool),
+    Nat(u64),
+    Int(i64),
+    Text(String),
+    Word(String),
+    Target(String),
+    /// A status tag, such as a budget outcome code.
+    Tag(String),
+    Colour(String),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Prim {
+    /// Exact arithmetic and comparison on `Nat`, `Int` or `Budget`.
+    ExactAdd,
+    ExactLess,
+    ExactEq,
+    /// Short-circuit exact booleans (LG2.20).
+    And,
+    Or,
+    Not,
+    /// Explicit exact-to-approximate conversion; it names the precision (LG2.19, CT-LG2-04).
+    ToApprox(u32),
+    /// An attempted scalar conversion back to exact. It exists to be refused (LG2.19, LG2.22).
+    ToExact,
+    ApproxAdd,
+    ApproxLess,
+    ApproxAnd,
+    ApproxNot,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Callee {
+    Fn {
+        module: Option<String>,
+        name: String,
+    },
+    Value(Box<Expr>),
+    /// A callable the lowering could not resolve; never admitted as exact or pure (LG2.19, LG3.2).
+    Unresolved {
+        name: String,
+        result: QTy,
+    },
+}
+
+/// The fields of a preview receipt. Under capability separation a previewing program in the solving profile
+/// receives only the ID and the base (BND.42).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ReceiptField {
+    Id,
+    Base,
+    Effect,
+    Protection,
+    EndState,
+    N,
+    Error,
+}
+
+/// Exact sinks that approximate control cannot steer (CT-LG2-05).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ExactRole {
+    Budget,
+    Goal,
+    Evidence,
+}
+
+/// Display accounting: the host's observations of a display evaluation (LG2.20).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Accounting {
+    UsedSteps,
+    UnusedSteps,
+    Status,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Expr {
+    Lit(Lit),
+    Var(String),
+    FnRef {
+        module: Option<String>,
+        name: String,
+    },
+    Let {
+        name: String,
+        value: Box<Expr>,
+        body: Box<Expr>,
+    },
+    If {
+        cond: Box<Expr>,
+        then: Box<Expr>,
+        els: Box<Expr>,
+    },
+    Match {
+        scrutinee: Box<Expr>,
+        arms: Vec<(Lit, Expr)>,
+        default: Box<Expr>,
+    },
+    /// Form 1's display conditional: an `ApproxBool` condition and lazy pure display branches (LG2.20).
+    DisplayIf {
+        cond: Box<Expr>,
+        then: Box<Expr>,
+        els: Box<Expr>,
+    },
+    Call {
+        callee: Callee,
+        args: Vec<Expr>,
+    },
+    /// A closure; its captures are the free variables of its body (LG2.19).
+    Closure {
+        params: Vec<Param>,
+        result: QTy,
+        body: Box<Expr>,
+    },
+    Prim {
+        op: Prim,
+        args: Vec<Expr>,
+    },
+    Record(Vec<(String, Expr)>),
+    Field {
+        value: Box<Expr>,
+        field: String,
+    },
+    ReadSnapshot {
+        query: String,
+        ty: Ty,
+    },
+    PublishView {
+        value: Box<Expr>,
+    },
+    WriteWorkspace {
+        record: String,
+        ty: QTy,
+        value: Box<Expr>,
+    },
+    /// Prepare a literal-word preview (KN5.9); it returns a receipt and never commits (LG3.4).
+    Propose {
+        word: Box<Expr>,
+        target: Box<Expr>,
+    },
+    ReadReceipt {
+        receipt: Box<Expr>,
+        field: ReceiptField,
+    },
+    UseExact {
+        role: ExactRole,
+        value: Box<Expr>,
+    },
+    Accounting(Accounting),
+    /// A fixed declassifier of chapter 07, identified by its ID. A program cannot declare one (LG3.11).
+    Declassified {
+        id: String,
+        ty: Ty,
+    },
+    FileRead {
+        path: String,
+        ty: Ty,
+    },
+    FileWrite {
+        path: String,
+        value: Box<Expr>,
+    },
+    RandomDraw,
+    ReadClock,
+}
+
+/// Short constructors for hand-built IR.
+pub mod build {
+    use super::*;
+
+    /// The precision the hand lowerings use.
+    pub const P: u32 = 53;
+
+    pub fn exact(ty: Ty) -> QTy {
+        QTy { ty, display: false }
+    }
+    pub fn display(ty: Ty) -> QTy {
+        QTy { ty, display: true }
+    }
+    pub fn approx() -> Ty {
+        Ty::Approx(P)
+    }
+    pub fn param(name: &str, ty: QTy) -> Param {
+        Param { name: name.into(), ty }
+    }
+    pub fn var(name: &str) -> Expr {
+        Expr::Var(name.into())
+    }
+    pub fn unit() -> Expr {
+        Expr::Lit(Lit::Unit)
+    }
+    pub fn nat(n: u64) -> Expr {
+        Expr::Lit(Lit::Nat(n))
+    }
+    pub fn word(w: &str) -> Expr {
+        Expr::Lit(Lit::Word(w.into()))
+    }
+    pub fn target(t: &str) -> Expr {
+        Expr::Lit(Lit::Target(t.into()))
+    }
+    pub fn colour(c: &str) -> Expr {
+        Expr::Lit(Lit::Colour(c.into()))
+    }
+    pub fn tag(t: &str) -> Lit {
+        Lit::Tag(t.into())
+    }
+    pub fn let_(name: &str, value: Expr, body: Expr) -> Expr {
+        Expr::Let { name: name.into(), value: Box::new(value), body: Box::new(body) }
+    }
+    pub fn if_(cond: Expr, then: Expr, els: Expr) -> Expr {
+        Expr::If { cond: Box::new(cond), then: Box::new(then), els: Box::new(els) }
+    }
+    pub fn display_if(cond: Expr, then: Expr, els: Expr) -> Expr {
+        Expr::DisplayIf { cond: Box::new(cond), then: Box::new(then), els: Box::new(els) }
+    }
+    pub fn match_(scrutinee: Expr, arms: Vec<(Lit, Expr)>, default: Expr) -> Expr {
+        Expr::Match { scrutinee: Box::new(scrutinee), arms, default: Box::new(default) }
+    }
+    pub fn prim(op: Prim, args: Vec<Expr>) -> Expr {
+        Expr::Prim { op, args }
+    }
+    pub fn to_approx(e: Expr) -> Expr {
+        prim(Prim::ToApprox(P), vec![e])
+    }
+    pub fn approx_less(a: Expr, b: Expr) -> Expr {
+        prim(Prim::ApproxLess, vec![a, b])
+    }
+    pub fn exact_add(a: Expr, b: Expr) -> Expr {
+        prim(Prim::ExactAdd, vec![a, b])
+    }
+    pub fn call(name: &str, args: Vec<Expr>) -> Expr {
+        Expr::Call { callee: Callee::Fn { module: None, name: name.into() }, args }
+    }
+    pub fn call_in(module: &str, name: &str, args: Vec<Expr>) -> Expr {
+        Expr::Call { callee: Callee::Fn { module: Some(module.into()), name: name.into() }, args }
+    }
+    pub fn call_value(f: Expr, args: Vec<Expr>) -> Expr {
+        Expr::Call { callee: Callee::Value(Box::new(f)), args }
+    }
+    pub fn fn_ref(name: &str) -> Expr {
+        Expr::FnRef { module: None, name: name.into() }
+    }
+    pub fn closure(params: Vec<Param>, result: QTy, body: Expr) -> Expr {
+        Expr::Closure { params, result, body: Box::new(body) }
+    }
+    pub fn record(fields: Vec<(&str, Expr)>) -> Expr {
+        Expr::Record(fields.into_iter().map(|(n, e)| (n.to_string(), e)).collect())
+    }
+    pub fn field(value: Expr, name: &str) -> Expr {
+        Expr::Field { value: Box::new(value), field: name.into() }
+    }
+    pub fn read_snapshot(query: &str, ty: Ty) -> Expr {
+        Expr::ReadSnapshot { query: query.into(), ty }
+    }
+    pub fn publish_view(value: Expr) -> Expr {
+        Expr::PublishView { value: Box::new(value) }
+    }
+    pub fn write_workspace(record: &str, ty: QTy, value: Expr) -> Expr {
+        Expr::WriteWorkspace { record: record.into(), ty, value: Box::new(value) }
+    }
+    pub fn propose(word: Expr, target: Expr) -> Expr {
+        Expr::Propose { word: Box::new(word), target: Box::new(target) }
+    }
+    pub fn read_receipt(receipt: Expr, field: ReceiptField) -> Expr {
+        Expr::ReadReceipt { receipt: Box::new(receipt), field }
+    }
+    pub fn use_exact(role: ExactRole, value: Expr) -> Expr {
+        Expr::UseExact { role, value: Box::new(value) }
+    }
+    pub fn bound(effects: &[Effect], vars: &[&str]) -> EffectBound {
+        EffectBound {
+            effects: effects.iter().copied().collect(),
+            capabilities: BTreeSet::new(),
+            vars: vars.iter().map(|v| v.to_string()).collect(),
+        }
+    }
+    pub fn fn_ty(params: Vec<QTy>, result: QTy, effects: EffectBound) -> Ty {
+        Ty::Fn(Box::new(FnTy { params, result, effects }))
+    }
+    pub fn function(kind: FnKind, name: &str, params: Vec<Param>, result: QTy, body: Expr) -> Function {
+        Function { name: name.into(), kind, exported: false, params, result, effects: None, body }
+    }
+    pub fn helper(name: &str, params: Vec<Param>, result: QTy, body: Expr) -> Function {
+        function(FnKind::Helper, name, params, result, body)
+    }
+    pub fn view(name: &str, params: Vec<Param>, result: QTy, body: Expr) -> Function {
+        function(FnKind::View, name, params, result, body)
+    }
+    pub fn command(name: &str, params: Vec<Param>, result: QTy, body: Expr) -> Function {
+        function(FnKind::Command, name, params, result, body)
+    }
+    pub fn module(name: &str, functions: Vec<Function>) -> Module {
+        Module { name: name.into(), capabilities: BTreeSet::new(), functions }
+    }
+    pub fn program(modules: Vec<Module>) -> Program {
+        Program::new(modules)
+    }
+}

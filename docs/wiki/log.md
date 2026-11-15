@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-15] update | The language: LP2 plan and the first checker over the IR draft
+LP2's [plan](../progress/1.0/language-lp2-plan.md) sets eight milestones, and its first, M1, adds the Rust workspace `rust/` with the IR draft `c600-ir-draft-1` and a checker for exactness, effects, capabilities, views and capability separation, tested against the two frozen exactness vectors and the M1 parts of CT-LG2-04, CT-LG2-05 and CT-LG3-01 to CT-LG3-04 and CT-LG3-07; CI runs it through `tests/test_language_rust.py`. Until LQ2 sets the flow rule the checker records the separation form but never emits `LG3:capability.flow_refused`, and it refuses an own tool's preview in a solving session as not granted, as chapter 07's interim table says.
+
 ## [2026-11-15] update | CI runs the language checkers
 The Windows CI job now runs the eight language checkers, so drift against the frozen migration format packet, whose pins cover the briefing and several `docs/progress/1.0/` pages and fail on any mismatch (FP.1), shows on the pull request that causes it; the five that read Markdown in the documentation trees also run in the light checks of a documentation-only pull request (`tools/ci/run_headless.py`).
 

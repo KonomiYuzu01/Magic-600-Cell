@@ -1,0 +1,8 @@
+[package]
+name = "c600-ir"
+description = "The typed IR draft c600-ir-draft-1 of 600 Cell Script (LP2)"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
