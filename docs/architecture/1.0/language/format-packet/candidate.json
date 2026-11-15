@@ -1,11 +1,11 @@
 {
   "format": "p3-candidate-inventory-1",
   "candidate_id": "en4-data-core-draft-1",
-  "input_commit": "a80a8bf931b0da1e03caca39bdea901b6fd3050d",
+  "input_commit": "5035318a6452e30987701a48327a90f9aaabb743",
   "candidate": [
     {
       "path": "docs/architecture/1.0/language/architecture/05-persistence.md",
-      "sha256": "f29c0687e3fb9c072ce2b034e98d7ebb1016f893a26fd985dc643ea9dbecad14"
+      "sha256": "c53fc41935f45b491c73a63a0c960bd8161b99baf1d4b23722f24d30d961e39b"
     },
     {
       "path": "docs/architecture/1.0/language/architecture/06-evidence.md",
@@ -17,11 +17,11 @@
     },
     {
       "path": "docs/architecture/1.0/language/format-packet/README.md",
-      "sha256": "7554b853d11ada2b5e358aaebbd007a8c4b2eff7d52c5ed8d6310828c2b1806c"
+      "sha256": "fdcd3ebb2a163261fe4d9af91d1a36dbda98555d8a01bac71f7af40c61e5cdac"
     },
     {
       "path": "docs/architecture/1.0/language/format-packet/check_vectors.py",
-      "sha256": "78bd38c13706d12db6af1799b18f1a564cc4d88e6e32bd972f3e15c0164ef662"
+      "sha256": "56443ff91c5d354bdd42c0f24198b7f8ce81be23f474971d914cdc9ba4c562a3"
     },
     {
       "path": "docs/architecture/1.0/language/format-packet/examples.json",
@@ -29,10 +29,10 @@
     },
     {
       "path": "docs/architecture/1.0/language/format-packet/vectors.json",
-      "sha256": "9748048eaab68b18a27bffe39cb0fd4611a23b282dfc77f95f72759cce7830ca"
+      "sha256": "44d55ebd09e64246cf00e99a1d408eb251c869ef7bc9abcb88e593fb3fb207cc"
     }
   ],
-  "candidate_sha256": "3dec01e452745e8304f9453ca894664ee4cb2e26f14d41723dd3d380a1a406f8",
+  "candidate_sha256": "2e90983bb9df562a2871f7bd78e68283bae70fccc46ca911c3cdd0267b319d25",
   "inputs": [
     {
       "path": "AGENTS.md",
