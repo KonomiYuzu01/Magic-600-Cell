@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-15] update | CI runs the language checkers
+The Windows CI job now runs the eight language checkers, so drift against the frozen migration format packet, whose pins cover the briefing and several `docs/progress/1.0/` pages and fail on any mismatch (FP.1), shows on the pull request that causes it; the five that read Markdown in the documentation trees also run in the light checks of a documentation-only pull request (`tools/ci/run_headless.py`).
+
 ## [2026-11-15] decision | The language: LP1 signed, architecture and migration format frozen
 After both Astra freeze rulings went go, the owner confirmed understanding and signed LP1: ADR-L01 to ADR-L12 are accepted, the language architecture and the migration format are frozen, LP2 to LP5 may start, and state-contract amendment A6 is accepted ([decision](decisions/owner-decisions-2026-11-15-freeze.md)). The design-system ADR, LQ13, LQ2's option set and the LP3 acceptance runs stay open.
 

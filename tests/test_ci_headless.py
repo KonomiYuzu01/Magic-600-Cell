@@ -54,6 +54,14 @@ class SelectChecksTests(unittest.TestCase):
         self.assertTrue(all(check in rh.CHECKS for check in rh.LIGHT_CHECKS))
         self.assertIn(["tests/test_ci_headless.py"], rh.LIGHT_CHECKS)
 
+    def test_the_frozen_format_packet_is_checked_on_documentation_changes(self):
+        # Every pin mismatch is fatal (FP.1), and the packet pins Markdown in the documentation trees.
+        packet = json.loads((ROOT / "docs/architecture/1.0/language/format-packet/candidate.json").read_bytes())
+        self.assertTrue([item["path"] for item in packet["inputs"] if item["path"].startswith(rh.DOCS_ONLY_TREES)])
+        self.assertIn(["docs/architecture/1.0/language/format-packet/check_vectors.py"], rh.LIGHT_CHECKS)
+        for check in rh.LANGUAGE_DOCS_CHECKS:
+            self.assertTrue((ROOT / check[0]).is_file(), check)
+
     def test_repository_literals_name_the_audited_readers(self):
         literals = rh.full_check_literals()
         self.assertIn("docs/progress/1.0/jumbling-midstage.md", literals)
