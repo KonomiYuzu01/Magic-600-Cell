@@ -1,23 +1,23 @@
 {
   "format": "p3-candidate-inventory-1",
   "candidate_id": "en4-data-core-draft-1",
-  "input_commit": "5035318a6452e30987701a48327a90f9aaabb743",
+  "input_commit": "a5b24fe96015e540006f62d8cbd56a3db6d6e1d1",
   "candidate": [
     {
       "path": "docs/architecture/1.0/language/architecture/05-persistence.md",
-      "sha256": "c53fc41935f45b491c73a63a0c960bd8161b99baf1d4b23722f24d30d961e39b"
+      "sha256": "d1f917da923124ce6493b57ecc76cd8073715c4f3faaf2be9989f6d42e5f3971"
     },
     {
       "path": "docs/architecture/1.0/language/architecture/06-evidence.md",
-      "sha256": "972b22f0dec414e09eb8d53195a8fd8cff5d7879f024fc42df568ea202cf7837"
+      "sha256": "705d3a920e63b4931523b32e5558dc8fe94ffcbad8306bfd7d574665a0db7957"
     },
     {
       "path": "docs/architecture/1.0/language/architecture/07-boundary.md",
-      "sha256": "421d77e4e885ca72047b176af8b7de909868931f19f3c9b6c56c50d016e4055e"
+      "sha256": "c1cb037d7c1eb923d023c4cc99173b9db14daea3bf36b651b07f689a9c03f2d6"
     },
     {
       "path": "docs/architecture/1.0/language/format-packet/README.md",
-      "sha256": "fdcd3ebb2a163261fe4d9af91d1a36dbda98555d8a01bac71f7af40c61e5cdac"
+      "sha256": "ecc35eb81608a1aafaf091ed825c87218ed305ef0603cbc14d7008c8e70b8b0c"
     },
     {
       "path": "docs/architecture/1.0/language/format-packet/check_vectors.py",
@@ -32,7 +32,7 @@
       "sha256": "44d55ebd09e64246cf00e99a1d408eb251c869ef7bc9abcb88e593fb3fb207cc"
     }
   ],
-  "candidate_sha256": "2e90983bb9df562a2871f7bd78e68283bae70fccc46ca911c3cdd0267b319d25",
+  "candidate_sha256": "661e01ebc197b9eedf0246f41b7d5b317bd95059937a0efcb5dd434da1726952",
   "inputs": [
     {
       "path": "AGENTS.md",
@@ -56,15 +56,15 @@
     },
     {
       "path": "docs/architecture/1.0/language/adr/ADR-L10-persistence.md",
-      "sha256": "72aa54a51d2adc11c0164ba1d67d08b3e1350984b61efbf0749b4a09c56a0df4"
+      "sha256": "404d7aa94794e20470ce75a455165138aaac63dfd922fc1cbf0668bbac4bfbdc"
     },
     {
       "path": "docs/architecture/1.0/language/architecture/01-kernel.md",
-      "sha256": "4c833d33f552283b69ac72b4962c75fae922755b0d731f8fed4d3ca2fc1e2601"
+      "sha256": "fdd5348f4d251a756a1890343a4a80adf1cd89522e802face6e0d42af8919a68"
     },
     {
       "path": "docs/architecture/1.0/language/claim-matrix/README.md",
-      "sha256": "4b59c65f537261f334b86133c98fe24fc244cdb6a3d952b3fcc45da2d8650ed8"
+      "sha256": "a858c09717ec68245d948aff502a0be986455c3baee8396d4bb35dc263f08907"
     },
     {
       "path": "docs/architecture/1.0/language/closure/HANDOFF.md",
@@ -80,7 +80,7 @@
     },
     {
       "path": "docs/architecture/1.0/language/evidence-import/README.md",
-      "sha256": "e59c957a4f8233f8967020ebcc9c3c55fcd3b3e4116774e60c74d47d526e6da4"
+      "sha256": "41bceb0105b9994d475e5a78e92c3d4b05de7aa948ff097ce217711f7fbdde59"
     },
     {
       "path": "docs/architecture/1.0/language/evidence-import/corpus-labels.json",
@@ -108,7 +108,7 @@
     },
     {
       "path": "docs/development-guide/AGENT_BRIEFING.md",
-      "sha256": "b2a8810626c9c799d551cd878fa78c986ac82e459c08c167e53ee3e72f8faf9b"
+      "sha256": "97c8e5c0fb0cbf5a4e8d3ee655c9c379cc3cfa326924386b57e6aa5b29c26d45"
     },
     {
       "path": "docs/progress/1.0/command-aliases.json",
@@ -120,7 +120,7 @@
     },
     {
       "path": "docs/progress/1.0/layer-interfaces.md",
-      "sha256": "2357120991e699db7c677a42aafa87fc08ad6e435b20b652d43ab1113ad62281"
+      "sha256": "9007f33cece174e434d43ab0367edd1cba6cf02068403e41e2aaa1da11982a7e"
     },
     {
       "path": "docs/progress/1.0/migration-exporter-proposal.md",
@@ -204,7 +204,7 @@
     "check": "python -B docs/architecture/1.0/language/format-packet/check_vectors.py",
     "source_form": "Editable Markdown, Python and JSON; input bytes SHA-256 pinned above. No generated report is required."
   },
-  "frozen": false,
+  "frozen": true,
   "alias_identity": {
     "version": "en4-2026-11-05.3",
     "profile": "SHA-256 of UTF-8 JSON of this entire object except content_digest; keys sorted recursively, separators comma and colon, ensure_ascii=false, no whitespace or trailing newline; array order retained.",
