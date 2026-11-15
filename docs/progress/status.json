@@ -134,7 +134,7 @@
     {"id": "1.0-lp2", "track": "language", "title": "Language headless core (LP2)", "status": "in_progress", "acceptance": "PHS.19's nine acceptance items have evidence on one candidate and the 248 tests that chapter 12 section 15.3 indexes run whole; the owner confirms understanding of the core evidence and its limits (PHS.56).", "acceptance_source": "docs/progress/1.0/language-lp2-plan.md", "blocker": null,
      "items": [
       {"id": "plan", "title": "LP2 plan with acceptance checks and stop condition", "weight": 1, "done": true, "evidence": "docs/progress/1.0/language-lp2-plan.md"},
-      {"id": "m1-checker-ir", "title": "Typed IR draft and checker (M1)", "weight": 3, "done": false, "evidence": null},
+      {"id": "m1-checker-ir", "title": "Typed IR draft and checker (M1)", "weight": 3, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/149"},
       {"id": "m2-interpreter", "title": "Interpreter and reference meter (M2)", "weight": 3, "done": false, "evidence": null},
       {"id": "m3-runtime-boundary", "title": "Run-time boundary and stored provenance (M3)", "weight": 1, "done": false, "evidence": null},
       {"id": "m4-kernel-full", "title": "Kernel API and 600-cell-Full candidate adapter (M4)", "weight": 4, "done": false, "evidence": null},
