@@ -1,0 +1,24 @@
+{
+  "algorithm": "SHA-256",
+  "change_rule": "Any later file change requires a new corpus version before a new candidate run; retain the prior freeze and evidence.",
+  "content_sha256": "c4aa5b09430d8e5dbe02c63686b4fb400b36e7e7faf82dc42113491efe1e28c7",
+  "corpus_version": "lx3-neutral-v2",
+  "decision": "open",
+  "files": {
+    "FREEZE.json": "aaa363a7e2e61f97a30ec76f473b0574fd5c5514349542dd0413febf3e0f723a",
+    "RESULT.md": "280bc90d00bb9a54c5e7949b256f33f59e6c60dc36fedaea8e3fb86b2fd7015f",
+    "allowed-tools.json": "336d213fb5c29322ecda19439a83ab30e77c0cc66cdfbe66d504c7cf7a993e95",
+    "approval.json": "fdb92e6e3f98b28452f7483697def526ad62740c5c61c802b735e0452700fa5b",
+    "budgets.json": "0bce03cb73ef8026822d80f5b092ab1e340287a6950506629db4ec1a5f0e177e",
+    "check_corpus.py": "22bdf6599b9f45184a4e953c76bff458f6198d9c884ea9c610c0e9d991780adb",
+    "fixture.json": "fe6ea2966f4747d9fe02f22faf47810419abd34dcece4ecdf2cf355247a2cbd9",
+    "kernel-stub.md": "66fa0efd2fad3fdfbf56632872561b31396efbefad26601384b16296da60cd0f",
+    "keys.json": "d7a93624489d14909044c6dbccd3c1037c01bea822dbbe157aa24b5b7157a2bf",
+    "must-refuse.json": "8e36484b3827485934c02a3d48a33837c2a63cd51f0ef67c52cf4a959e8cbee1",
+    "notation.md": "626858c5b0c6f0f6383e1a5a1794acd0d2e4c23848c0c4b366a510f1ed505d4a",
+    "planted.json": "573e9c9ee0560e405eb308484b2c494c42f4113167a88520fe91e58fadeeead3",
+    "policy.json": "a37359588187aee69bf3432e95d76872cc0260bbf64620557617789a7eb063d7",
+    "profile.json": "b46ec428c9fb44612ae5312ff56a4c615796a0d4b9343b8300d7a004f5338e74"
+  },
+  "self_hash_rule": "FREEZE.json entry hashes canonical compact JSON of this manifest with that entry null; all other entries hash raw bytes."
+}

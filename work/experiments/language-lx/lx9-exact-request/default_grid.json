@@ -1,0 +1,128 @@
+[
+  {
+    "complete_candidates": 35937000,
+    "half_turns_eligible": false,
+    "largest_score_operand_bits": 100,
+    "name": "small_cayley_below",
+    "pruned_candidates": 71875,
+    "pruning_kept_global_winner": true,
+    "target_integer_quaternion": [
+      1073741824,
+      1074279,
+      0,
+      0
+    ],
+    "winner": [
+      1000,
+      1,
+      0,
+      0,
+      "C"
+    ]
+  },
+  {
+    "complete_candidates": 35937000,
+    "half_turns_eligible": false,
+    "largest_score_operand_bits": 104,
+    "name": "small_cayley_above",
+    "pruned_candidates": 71875,
+    "pruning_kept_global_winner": true,
+    "target_integer_quaternion": [
+      4294967296,
+      4297117,
+      0,
+      0
+    ],
+    "winner": [
+      999,
+      1,
+      0,
+      0,
+      "C"
+    ]
+  },
+  {
+    "complete_candidates": 35937000,
+    "half_turns_eligible": false,
+    "largest_score_operand_bits": 92,
+    "name": "near_quarter_below",
+    "pruned_candidates": 106721,
+    "pruning_kept_global_winner": true,
+    "target_integer_quaternion": [
+      2147483648,
+      2017209879,
+      0,
+      0
+    ],
+    "winner": [
+      16,
+      15,
+      0,
+      0,
+      "C"
+    ]
+  },
+  {
+    "complete_candidates": 35937000,
+    "half_turns_eligible": false,
+    "largest_score_operand_bits": 94,
+    "name": "near_quarter_above",
+    "pruned_candidates": 106721,
+    "pruning_kept_global_winner": true,
+    "target_integer_quaternion": [
+      4294967296,
+      4034419759,
+      0,
+      0
+    ],
+    "winner": [
+      17,
+      16,
+      0,
+      0,
+      "C"
+    ]
+  },
+  {
+    "complete_candidates": 35972936,
+    "half_turns_eligible": true,
+    "largest_score_operand_bits": 92,
+    "name": "half_axes_below",
+    "pruned_candidates": 107810,
+    "pruning_kept_global_winner": true,
+    "target_integer_quaternion": [
+      0,
+      4294967296,
+      277382105,
+      0
+    ],
+    "winner": [
+      1,
+      -16,
+      -1,
+      0,
+      "H"
+    ]
+  },
+  {
+    "complete_candidates": 35972936,
+    "half_turns_eligible": true,
+    "largest_score_operand_bits": 90,
+    "name": "half_axes_above",
+    "pruned_candidates": 107810,
+    "pruning_kept_global_winner": true,
+    "target_integer_quaternion": [
+      0,
+      2147483648,
+      138691053,
+      0
+    ],
+    "winner": [
+      1,
+      -15,
+      -1,
+      0,
+      "H"
+    ]
+  }
+]

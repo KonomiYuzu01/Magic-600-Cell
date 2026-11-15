@@ -663,6 +663,9 @@ Abbreviations follow the mathematician's list (partition, contract, DT-J1, tex, 
 3. P-M4: "Sharing no code with the program that found it" is too strong: the checker shares no search or construction code with the finder, but both use the same exact simulator and model files, tested separately (`research/jumbling/restoration/13-tutorial-runner/scripts/check_run.py:38-43`).
 4. P-M5: "One key press for every change" should read "one deliberate action (a key press or a click) for every commit" (charter S4). A held key never repeats a commit; program views and the camera need no such action.
 5. P-M5: "Where each previewed move came from, indirect choices included" needs a language that tracks data and branches: an own interpreter can, a borrowed runtime only if modified (partition, I2). A retyped or file-carried word loses the record.
+   **Correction, 5 November 2026:** Words carried through the program's own workspace or saved files keep the record
+   (BND.32, BND.47, CT-BND-03). Words retyped by hand, carried by hand or computed outside the runtime carry no label
+   (BND.76). A record stripped from a file reads as `unknown`, never `own` (BND.21).
 
 ## Outcome
 
@@ -1719,6 +1722,8 @@ A scenario is ω = (D, T): D is a down-set of distrusted grades, T a set of assu
 - OR = ∪ (the empty OR is ∅)
 
 Each statement key has one OR node. The system is monotone on a finite lattice, so the least solution exists (Knaster-Tarski) and is reached by iteration from ∅ (Kleene). Every val is an up-set of Ω.
+
+**Correction, 5 November 2026:** The freeze audit found that an empty AND holds in every scenario, so a statement whose OR contains one would read proved with no support. Chapter 06 now refuses an AND node with no children (EVD.15, I8, EVD.60). The proofs here hold for the graphs that remain.
 
 ##### C.4 Summaries
 
@@ -2877,3 +2882,15 @@ no blocker or major. So the full text has no open blocker or major, which is the
 
 This is document evidence only. It reads the text, runs nothing, and proves no conformance test passes: none exists yet.
 The other half of LP0's acceptance, the owner's acceptance of the ADR drafts, is open.
+
+**Correction, 6 November 2026:** The language is named 600 Cell Script, with source extension `.6cs`, and the owner
+answered LQ1 to LQ21. The [decision page](../../../../wiki/decisions/owner-decisions-2026-11-06.md) records those answers;
+the architecture chapters carry them. LQ8, LQ9, LQ13 and LQ21 wait for their evidence, and LQ2's option set waits for the
+joint setting. The original items above, including the working name and the earlier unanswered status, stay as written.
+No ADR is accepted and nothing is frozen.
+
+**Correction, 14 November 2026:** The owner chose LQ8, LQ9 and LQ21: Rust for the engine and the interpreter's host,
+route RT1 with the runtime in a process of its own, and capability separation
+([decision page](../../../../wiki/decisions/owner-decisions-2026-11-14-language-route.md)). The decisive LX-1, LX-2 and
+LX-4 runs become LP3 acceptance checks. LQ13 waits for LX-8, and LQ2's option set waits for the joint setting. The
+items above stay as written. No ADR is accepted and nothing is frozen.

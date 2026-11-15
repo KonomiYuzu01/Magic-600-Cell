@@ -1,6 +1,6 @@
 # Stage 2.0 charter
 
-Status: **signed by the owner on 3 October 2026, as written** ([owner-decisions-2026-10-03](../../wiki/decisions/owner-decisions-2026-10-03.md)). This signature is the exit of stage 2.0. The file keeps its name `charter-2.0-draft.md` so that existing links stay valid. Sections marked **Owner** are written or chosen by the owner; agents only collect inputs for them. Schedule and limits: [stage-2-experiment-protocol](stage-2-experiment-protocol.md) section 5.
+Status: **signed by the owner on 3 October 2026, as written** ([owner-decisions-2026-10-03](../../wiki/decisions/owner-decisions-2026-10-03.md)). This signature is the exit of stage 2.0. The owner amended it on 6 November 2026 ([owner-decisions-2026-11-06](../../wiki/decisions/owner-decisions-2026-11-06.md)): D8 and the order of the stage 2.5 exit, in the dated notes at those items. The file keeps its name `charter-2.0-draft.md` so that existing links stay valid. Sections marked **Owner** are written or chosen by the owner; agents only collect inputs for them. Schedule and limits: [stage-2-experiment-protocol](stage-2-experiment-protocol.md) section 5.
 
 ## 1. Purpose
 
@@ -52,6 +52,7 @@ Owner input of 2 October 2026, translated from the owner's notes and clarificati
 - **Learning and reward.** The skill is learned level by level, as in a game with generous rewards for real progress (visual, optionally sound); the steps of the solving workflow are the levels. The mathematical language of the tool is part of what the user learns, introduced step by step. The interface itself does not look like a game (anti-goal 7). The structure is always the reward; real content (a diagram, a theory note, the solver's macro saved as a template) unlocks at only three occasions (first checked insertion with the solver's own macro, first completed block, first exactly completed orbit) plus one quiet whole-puzzle moment, always small, in place and never modal; undo withdraws a current achievement but keeps unlocked explanations and saved macros. Learning is measured by competence checks on fixture tasks and by local in-situ metrics on real solving; keys open by soft disclosure and the command palette always offers every command (owner design decisions of 2 October 2026: [owner-decisions-2026-10-02-design](../../wiki/decisions/owner-decisions-2026-10-02-design.md)).
 - **Owner design requirements.**
   - The Global and Local views are redesigned from scratch; the 0.4 views are not a baseline. There is no third view: both are visible and linked, and residual and operation summaries are embedded in them (D8).
+    _Amended by the owner, 6 November 2026 ([owner-decisions-2026-11-06](../../wiki/decisions/owner-decisions-2026-11-06.md)): free views are allowed everywhere, so "There is no third view" no longer binds. The rest of this item stands._
   - High-quality graphics replace most text. Text that remains is short, uses glossary terms and is reviewed by a person. Trial budgets of free sentences per whole screen: about 20 words while solving, 50 in opened inspection, 80 in an opened learning panel (set by G6; errors and the theory book exempt).
   - Several themes share one design language of high quality that is efficient in use and compatible with the engineering: renderer budget, picking and legibility. Users can tune their own comfortable experience; Taste Lab and Look Lab data can inform the presets. A scene (solving, inspecting, celebrating) may have its own look. 1.0 ships two authored theme families, each with the three scene looks; commands, keys, layout anchors, glyph and status meanings and motion meanings are fixed across families.
   - The owner's own interests and nexus points belong in the design; the metaphor and the mathematics hold them together. They are collected as annotated reference pairs and nexus cards (interest, bridge to the project, product place).
@@ -110,6 +111,7 @@ Owner input of 2 October 2026, translated from the owner's notes and clarificati
   - D6 Typography includes a face that sets mathematical notation correctly.
   - D7 A learning path takes a user from the first turn to a full orbit-first solve, level by level, with each level tied to a step of the [solving workflow](solving-workflow.md).
   - D8 Global and Local are redesigned and each answers one question: Local, does this piece match its target here; Global, how do these two places relate. They are the only two views, visible together and linked to one context and revision.
+    _Amended by the owner, 6 November 2026 ([owner-decisions-2026-11-06](../../wiki/decisions/owner-decisions-2026-11-06.md)): free views are allowed everywhere, so "They are the only two views" no longer binds. Global and Local stay visible together and linked._
 
   **Interaction and art.**
   - A1 Every motion has a meaning recorded in the motion table (H-03); no motion is decoration only.
@@ -147,6 +149,8 @@ Chosen path: **option B**, a 1.0 importer reading a locked copy of the 0.4 datab
 | 2.3 | Manifesto, finalist preset, palette, motion table and hardest-screen wireframes approved | 12 |
 | 2.4 | Renderer selected or failure recorded (day 14); vertical slice passes the gate (day 15); living test exit (day 19) | 14–19 |
 | 2.5 | Architecture freeze and migration format freeze gate rulings; design-system ADR accepted | 20 |
+
+_Amended by the owner, 6 November 2026 ([owner-decisions-2026-11-06](../../wiki/decisions/owner-decisions-2026-11-06.md)): the 2.5 exit keeps its three parts, and their order changes for the language line. LP2 to LP5 of the language may start after both gate rulings and the owner's sign-off. The language's development counts as complete when LP2 to LP5 are done apart from LP4's editor look. The design line resumes then, and its design-system ADR is the condition for LP4's editor look and for LP6._
 
 ## 9. Signature
 

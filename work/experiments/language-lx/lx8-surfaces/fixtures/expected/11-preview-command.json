@@ -1,0 +1,105 @@
+{
+  "ir_version": "lx8-ir-0",
+  "edition": "lx8-0",
+  "module": "explicit_preview",
+  "requires": [
+    "preview"
+  ],
+  "imports": [],
+  "declarations": [
+    {
+      "kind": "command",
+      "name": "prepare",
+      "params": [
+        {
+          "name": "base",
+          "type": "Revision<Full,Off>"
+        },
+        {
+          "name": "witness",
+          "type": "Word<Full,Retained>"
+        },
+        {
+          "name": "provenance",
+          "type": "Provenance"
+        }
+      ],
+      "result": "Receipt<Full>",
+      "declared_effects": [
+        "preview"
+      ],
+      "effects": [
+        "preview"
+      ],
+      "charges": {
+        "steps": "12",
+        "kernel": "0",
+        "memory": "0",
+        "output": "0"
+      },
+      "metadata": {
+        "row": "operation.preview",
+        "kind": "query",
+        "contexts": [
+          "operation"
+        ],
+        "permits": [
+          "prepare_preview"
+        ]
+      },
+      "bindings": [],
+      "body": {
+        "op": "call",
+        "type": "Receipt<Full>",
+        "effects": [
+          "preview"
+        ],
+        "charges": {
+          "steps": "1",
+          "kernel": "7",
+          "memory": "0",
+          "output": "0"
+        },
+        "target": "prepare_preview",
+        "args": [
+          {
+            "op": "ref",
+            "type": "Revision<Full,Off>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "base"
+          },
+          {
+            "op": "ref",
+            "type": "Word<Full,Retained>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "witness"
+          },
+          {
+            "op": "ref",
+            "type": "Provenance",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "provenance"
+          }
+        ]
+      }
+    }
+  ]
+}

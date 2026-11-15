@@ -171,3 +171,9 @@ Mirror of the design side in [stage-2-experiment-protocol](stage-2-experiment-pr
 | H-03 | Motion table | day 11 | day 12 | W5 turn duration and easing | open |
 | H-04 | Layout specification | day 6 | day 12 | window structure, UI-over-3D compositing, input routing | open |
 | H-05 | Pointing needs from the core flows | day 4 | day 8 | picking design and the `pick` probe | open |
+
+**Language line gives**
+
+| ID | Item | First version | Final | Used for | Status |
+|---|---|---|---|---|---|
+| H-11 | Display-plan primitives, the user-stage contract and the free-view workload (owner, 6 November 2026, LQ20) | [renderer-feature-matrix](../../architecture/1.0/language/renderer-feature-matrix.md) and chapter 10, draft, not accepted | before the renderer feature-list freeze | the renderer feature list frozen in 2.5 | open |

@@ -1,0 +1,1178 @@
+{
+  "corpus_version": "lx3-neutral-v2",
+  "decision": "open",
+  "budget_fields": [
+    "steps",
+    "kernel_cost",
+    "memory",
+    "output"
+  ],
+  "non_budget_cases": [
+    "safety_stop",
+    "interruption",
+    "runtime_loss",
+    "missing_declaration",
+    "host_ceiling"
+  ],
+  "repetition_rule": "Deterministic cases and cache variants compare exact payloads. Cancellation, deadlines and runtime loss require their actual typed reason and truthful partial coverage, never the 20-run identical-cutoff promise. All current cases are specifications, not results.",
+  "cases": [
+    {
+      "id": "B01",
+      "kind": "steps",
+      "clauses": [
+        "DET.18",
+        "DET.20",
+        "DET.24",
+        "DET.29",
+        "DET.49",
+        "LG4.7"
+      ],
+      "program": {
+        "inputs": {},
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "tool_authoring",
+            "author": "own",
+            "boundary_class": null,
+            "invocation": "command",
+            "body": [
+              {
+                "op": "tick"
+              },
+              {
+                "op": "tick"
+              },
+              {
+                "op": "tick"
+              }
+            ]
+          }
+        ]
+      },
+      "limits": {
+        "steps": 2,
+        "kernel_cost": 10000,
+        "memory": 65536,
+        "output": 65536
+      },
+      "host": {},
+      "expected": {
+        "outcome": "cut_off",
+        "code": "KN7:budget.steps",
+        "value": null,
+        "used": {
+          "steps": 2,
+          "kernel_cost": 0,
+          "memory": 0,
+          "output": 0
+        },
+        "stop": "r1/body/2:before_step",
+        "coverage": {
+          "examined": [
+            0,
+            1
+          ],
+          "total": [
+            0,
+            1,
+            2
+          ],
+          "complete": false
+        }
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending_preview"
+      ]
+    },
+    {
+      "id": "B02",
+      "kind": "kernel_cost",
+      "clauses": [
+        "DET.18",
+        "DET.20",
+        "DET.24",
+        "DET.29",
+        "DET.49",
+        "LG4.7"
+      ],
+      "program": {
+        "inputs": {},
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "tool_authoring",
+            "author": "own",
+            "boundary_class": null,
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "a",
+                "type": "Ints",
+                "row": "counts",
+                "args": []
+              },
+              {
+                "op": "kernel",
+                "as": "b",
+                "type": "Ints",
+                "row": "counts",
+                "args": []
+              }
+            ]
+          }
+        ]
+      },
+      "limits": {
+        "steps": 10000,
+        "kernel_cost": 5,
+        "memory": 65536,
+        "output": 65536
+      },
+      "host": {},
+      "expected": {
+        "outcome": "cut_off",
+        "code": "KN7:budget.kernel_cost",
+        "value": null,
+        "used": {
+          "steps": 2,
+          "kernel_cost": 3,
+          "memory": 7,
+          "output": 0
+        },
+        "stop": "r1/body/1:before_kernel",
+        "coverage": {
+          "examined": [
+            0
+          ],
+          "total": [
+            0,
+            1
+          ],
+          "complete": false
+        }
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending_preview"
+      ]
+    },
+    {
+      "id": "B03",
+      "kind": "memory",
+      "clauses": [
+        "DET.18",
+        "DET.20",
+        "DET.24",
+        "DET.29",
+        "DET.49",
+        "LG4.7"
+      ],
+      "program": {
+        "inputs": {},
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "tool_authoring",
+            "author": "own",
+            "boundary_class": null,
+            "invocation": "command",
+            "body": [
+              {
+                "op": "retain",
+                "as": "a",
+                "type": "Bytes",
+                "bytes": 16
+              },
+              {
+                "op": "retain",
+                "as": "b",
+                "type": "Bytes",
+                "bytes": 16
+              }
+            ]
+          }
+        ]
+      },
+      "limits": {
+        "steps": 10000,
+        "kernel_cost": 10000,
+        "memory": 31,
+        "output": 65536
+      },
+      "host": {},
+      "expected": {
+        "outcome": "cut_off",
+        "code": "KN7:budget.memory",
+        "value": null,
+        "used": {
+          "steps": 2,
+          "kernel_cost": 0,
+          "memory": 16,
+          "output": 0
+        },
+        "stop": "r1/body/1:before_memory",
+        "coverage": {
+          "examined": [
+            0
+          ],
+          "total": [
+            0,
+            1
+          ],
+          "complete": false
+        }
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending_preview"
+      ]
+    },
+    {
+      "id": "B04",
+      "kind": "output",
+      "clauses": [
+        "DET.18",
+        "DET.20",
+        "DET.24",
+        "DET.29",
+        "DET.49",
+        "LG4.7"
+      ],
+      "program": {
+        "inputs": {},
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "tool_authoring",
+            "author": "own",
+            "boundary_class": null,
+            "invocation": "command",
+            "body": [
+              {
+                "op": "emit",
+                "value": {
+                  "type": "Text",
+                  "value": "abcd"
+                }
+              },
+              {
+                "op": "emit",
+                "value": {
+                  "type": "Text",
+                  "value": "abcd"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "limits": {
+        "steps": 10000,
+        "kernel_cost": 10000,
+        "memory": 65536,
+        "output": 11
+      },
+      "host": {},
+      "expected": {
+        "outcome": "cut_off",
+        "code": "KN7:budget.output",
+        "value": null,
+        "used": {
+          "steps": 2,
+          "kernel_cost": 0,
+          "memory": 0,
+          "output": 6
+        },
+        "stop": "r1/body/1:before_output",
+        "coverage": {
+          "examined": [
+            0
+          ],
+          "total": [
+            0,
+            1
+          ],
+          "complete": false
+        }
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending_preview"
+      ]
+    },
+    {
+      "id": "B05",
+      "kind": "interacting_limits",
+      "clauses": [
+        "DET.18",
+        "DET.20",
+        "DET.24",
+        "DET.29",
+        "DET.49",
+        "LG4.7"
+      ],
+      "program": {
+        "inputs": {},
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "tool_authoring",
+            "author": "own",
+            "boundary_class": null,
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "n",
+                "type": "Ints",
+                "row": "counts",
+                "args": []
+              }
+            ]
+          }
+        ]
+      },
+      "limits": {
+        "steps": 1,
+        "kernel_cost": 2,
+        "memory": 65536,
+        "output": 65536
+      },
+      "host": {},
+      "expected": {
+        "outcome": "cut_off",
+        "code": "KN7:budget.kernel_cost",
+        "value": null,
+        "used": {
+          "steps": 1,
+          "kernel_cost": 0,
+          "memory": 0,
+          "output": 0
+        },
+        "stop": "r1/body/0:before_kernel",
+        "coverage": {
+          "examined": [],
+          "total": [
+            0
+          ],
+          "complete": false
+        }
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending_preview"
+      ]
+    },
+    {
+      "id": "B06",
+      "kind": "interacting_limits",
+      "clauses": [
+        "DET.18",
+        "DET.20",
+        "DET.24",
+        "DET.29",
+        "DET.49",
+        "LG4.7"
+      ],
+      "program": {
+        "inputs": {},
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "tool_authoring",
+            "author": "own",
+            "boundary_class": null,
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "n",
+                "type": "Ints",
+                "row": "counts",
+                "args": []
+              }
+            ]
+          }
+        ]
+      },
+      "limits": {
+        "steps": 0,
+        "kernel_cost": 0,
+        "memory": 65536,
+        "output": 65536
+      },
+      "host": {},
+      "expected": {
+        "outcome": "cut_off",
+        "code": "KN7:budget.steps",
+        "value": null,
+        "used": {
+          "steps": 0,
+          "kernel_cost": 0,
+          "memory": 0,
+          "output": 0
+        },
+        "stop": "r1/body/0:before_step",
+        "coverage": {
+          "examined": [],
+          "total": [
+            0
+          ],
+          "complete": false
+        }
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending_preview"
+      ]
+    },
+    {
+      "id": "B07",
+      "kind": "recursion_memory",
+      "clauses": [
+        "DET.18",
+        "DET.20",
+        "DET.24",
+        "DET.29",
+        "DET.49",
+        "LG4.7"
+      ],
+      "program": {
+        "inputs": {},
+        "modules": {
+          "recurse": {
+            "parameters": {},
+            "result": "Int",
+            "body": [
+              {
+                "op": "call",
+                "as": "result",
+                "type": "Int",
+                "module": "recurse",
+                "args": []
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "result"
+                }
+              }
+            ]
+          }
+        },
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "tool_authoring",
+            "author": "own",
+            "boundary_class": null,
+            "invocation": "command",
+            "body": [
+              {
+                "op": "call",
+                "as": "result",
+                "type": "Int",
+                "module": "recurse",
+                "args": []
+              }
+            ]
+          }
+        ]
+      },
+      "limits": {
+        "steps": 10000,
+        "kernel_cost": 10000,
+        "memory": 48,
+        "output": 65536
+      },
+      "host": {},
+      "expected": {
+        "outcome": "cut_off",
+        "code": "KN7:budget.memory",
+        "value": null,
+        "used": {
+          "steps": 4,
+          "kernel_cost": 0,
+          "memory": 48,
+          "output": 0
+        },
+        "stop": "r1/recurse:before_frame_4",
+        "coverage": {
+          "examined": [
+            0,
+            1,
+            2
+          ],
+          "total": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "complete": false
+        }
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending_preview"
+      ]
+    },
+    {
+      "id": "B08",
+      "kind": "interruption",
+      "clauses": [
+        "DET.18",
+        "DET.20",
+        "DET.24",
+        "DET.29",
+        "DET.49",
+        "LG4.7"
+      ],
+      "program": {
+        "inputs": {},
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "tool_authoring",
+            "author": "own",
+            "boundary_class": null,
+            "invocation": "command",
+            "body": [
+              {
+                "op": "for",
+                "item": "i",
+                "type": "Int",
+                "items": {
+                  "type": "Ints",
+                  "value": [
+                    0,
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9
+                  ]
+                },
+                "body": [
+                  {
+                    "op": "tick"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "limits": {
+        "steps": 10000,
+        "kernel_cost": 10000,
+        "memory": 65536,
+        "output": 65536
+      },
+      "host": {
+        "event": "cancel",
+        "at": "r1/body/0:loop_continuation/1"
+      },
+      "expected": {
+        "outcome": "cancelled",
+        "code": "KN7:cancelled.by_user",
+        "value": null,
+        "used": null,
+        "stop": "first loop continuation after body tick",
+        "coverage": {
+          "examined": [
+            0
+          ],
+          "total": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "complete": false
+        }
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending_preview"
+      ]
+    },
+    {
+      "id": "B09",
+      "kind": "interruption",
+      "clauses": [
+        "DET.18",
+        "DET.20",
+        "DET.24",
+        "DET.29",
+        "DET.49",
+        "LG4.7"
+      ],
+      "program": {
+        "inputs": {},
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "tool_authoring",
+            "author": "own",
+            "boundary_class": null,
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "batch",
+                "type": "Rows",
+                "row": "batch_check",
+                "args": [
+                  {
+                    "type": "Words",
+                    "value": [
+                      [
+                        "a"
+                      ],
+                      [
+                        "b"
+                      ],
+                      [
+                        "c"
+                      ]
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "limits": {
+        "steps": 10000,
+        "kernel_cost": 10000,
+        "memory": 65536,
+        "output": 65536
+      },
+      "host": {
+        "event": "cancel",
+        "at": "r1/body/0:chunk/1"
+      },
+      "expected": {
+        "outcome": "cancelled",
+        "code": "KN7:cancelled.by_user",
+        "value": null,
+        "used": null,
+        "stop": "after first kernel word chunk",
+        "coverage": {
+          "examined": [
+            0
+          ],
+          "total": [
+            0,
+            1,
+            2
+          ],
+          "complete": false
+        }
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending_preview"
+      ]
+    },
+    {
+      "id": "B10",
+      "kind": "safety_stop",
+      "clauses": [
+        "DET.18",
+        "DET.20",
+        "DET.24",
+        "DET.29",
+        "DET.49",
+        "LG4.7"
+      ],
+      "program": {
+        "inputs": {},
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "tool_authoring",
+            "author": "own",
+            "boundary_class": null,
+            "invocation": "command",
+            "body": [
+              {
+                "op": "for",
+                "item": "i",
+                "type": "Int",
+                "items": {
+                  "type": "Ints",
+                  "value": [
+                    0,
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9
+                  ]
+                },
+                "body": [
+                  {
+                    "op": "tick"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "limits": {
+        "steps": 10000,
+        "kernel_cost": 10000,
+        "memory": 65536,
+        "output": 65536
+      },
+      "host": {
+        "event": "deadline",
+        "safety_stop_ms": 1
+      },
+      "expected": {
+        "outcome": "cut_off",
+        "code": "KN7:resource_limit.safety_stop",
+        "value": null,
+        "used": null,
+        "stop": "host deadline observed; no exact cross-platform position promise",
+        "coverage": {
+          "examined": null,
+          "total": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "complete": false
+        }
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending_preview"
+      ]
+    },
+    {
+      "id": "B11",
+      "kind": "runtime_loss",
+      "clauses": [
+        "DET.18",
+        "DET.20",
+        "DET.24",
+        "DET.29",
+        "DET.49",
+        "LG4.7"
+      ],
+      "program": {
+        "inputs": {},
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "tool_authoring",
+            "author": "own",
+            "boundary_class": null,
+            "invocation": "command",
+            "body": [
+              {
+                "op": "for",
+                "item": "i",
+                "type": "Int",
+                "items": {
+                  "type": "Ints",
+                  "value": [
+                    0,
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9
+                  ]
+                },
+                "body": [
+                  {
+                    "op": "tick"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "limits": {
+        "steps": 10000,
+        "kernel_cost": 10000,
+        "memory": 65536,
+        "output": 65536
+      },
+      "host": {
+        "event": "runtime_loss",
+        "at": "after admission"
+      },
+      "expected": {
+        "outcome": "error",
+        "code": "KN7:resource_limit.runtime_lost",
+        "value": null,
+        "used": null,
+        "stop": "host reports runtime death; no exact position promise",
+        "coverage": {
+          "examined": null,
+          "total": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "complete": false
+        }
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending_preview"
+      ]
+    },
+    {
+      "id": "B12",
+      "kind": "cache_changes",
+      "clauses": [
+        "DET.16",
+        "DET.23",
+        "DET.46",
+        "DET.49"
+      ],
+      "program": {
+        "inputs": {},
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "tool_authoring",
+            "author": "own",
+            "boundary_class": null,
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "a",
+                "type": "Ints",
+                "row": "counts",
+                "args": []
+              },
+              {
+                "op": "kernel",
+                "as": "b",
+                "type": "Ints",
+                "row": "counts",
+                "args": []
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "b"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "limits": {
+        "steps": 10000,
+        "kernel_cost": 10000,
+        "memory": 65536,
+        "output": 65536
+      },
+      "host": {
+        "variants": [
+          {
+            "id": "cold",
+            "cache": "empty",
+            "expected_host_code": null
+          },
+          {
+            "id": "warm",
+            "cache": "valid pinned entry",
+            "expected_host_code": null
+          },
+          {
+            "id": "evicted",
+            "cache": "evict after first read",
+            "expected_host_code": null
+          },
+          {
+            "id": "poisoned",
+            "cache": "entry claims correct input but stores [99,99,99]; reject and recompute",
+            "expected_host_code": "LG4:input.cache_entry_mismatch"
+          },
+          {
+            "id": "shared",
+            "cache": "valid entry physically shared by concurrent independent runs",
+            "expected_host_code": null
+          },
+          {
+            "id": "relocated",
+            "cache": "valid captured bytes at another host lookup location",
+            "expected_host_code": null
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "completed",
+        "code": null,
+        "value": [
+          2,
+          6,
+          6
+        ],
+        "used": {
+          "steps": 3,
+          "kernel_cost": 6,
+          "memory": 14,
+          "output": 7
+        },
+        "stop": null,
+        "coverage": {
+          "examined": [
+            0,
+            1
+          ],
+          "total": [
+            0,
+            1
+          ],
+          "complete": true
+        }
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending_preview"
+      ],
+      "comparison": "All host variants share one neutral input key. Compare full exact payload, coverage, stop and used counters, not merely final value; cache diagnostics occur only in host envelope."
+    },
+    {
+      "id": "B13",
+      "kind": "missing_declaration",
+      "clauses": [
+        "DET.27",
+        "ERR.27"
+      ],
+      "program": {
+        "inputs": {},
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "tool_authoring",
+            "author": "own",
+            "boundary_class": null,
+            "invocation": "command",
+            "body": [
+              {
+                "op": "tick"
+              }
+            ]
+          }
+        ]
+      },
+      "limits": null,
+      "host": {},
+      "expected": {
+        "outcome": "refused",
+        "code": "KN7:input.budget_not_declared",
+        "value": null,
+        "used": {
+          "steps": 0,
+          "kernel_cost": 0,
+          "memory": 0,
+          "output": 0
+        },
+        "stop": "before admission",
+        "coverage": {
+          "examined": [],
+          "total": [
+            0
+          ],
+          "complete": false
+        }
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending_preview"
+      ]
+    },
+    {
+      "id": "B14",
+      "kind": "host_ceiling",
+      "clauses": [
+        "DET.27",
+        "ERR.27"
+      ],
+      "program": {
+        "inputs": {},
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "tool_authoring",
+            "author": "own",
+            "boundary_class": null,
+            "invocation": "command",
+            "body": [
+              {
+                "op": "tick"
+              }
+            ]
+          }
+        ]
+      },
+      "limits": {
+        "steps": 2,
+        "kernel_cost": 10000,
+        "memory": 65536,
+        "output": 65536
+      },
+      "host": {
+        "ceiling": {
+          "steps": 1
+        }
+      },
+      "expected": {
+        "outcome": "refused",
+        "code": "KN7:resource_limit.budget_ceiling",
+        "value": null,
+        "used": {
+          "steps": 0,
+          "kernel_cost": 0,
+          "memory": 0,
+          "output": 0
+        },
+        "stop": "before admission",
+        "coverage": {
+          "examined": [],
+          "total": [
+            0
+          ],
+          "complete": false
+        }
+      },
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending_preview"
+      ]
+    }
+  ]
+}

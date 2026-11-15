@@ -1,0 +1,23 @@
+{
+  "candidate_manifest_sha256": "a4d96e90952ca867c0dfe565a175c0edc5036d51aa4f44c0dd3886f401f0ca7e",
+  "decider": "owner",
+  "decision": "open",
+  "evidence_class": "synthetic",
+  "input_manifest_sha256": "656212223fd3ce5d35a68512ab793fc300e409683b0abb00198eef9c972c1677",
+  "linux_manifest_sha256": "832ecfbab097bdcdc61c933592edd1b038203e11c68f23c9ec6211a02e0b1495",
+  "platform": "linux",
+  "python": "3.14.4",
+  "results": {
+    "1": {
+      "raw_sha256": "f684b205f52c3c30f8f937f24c6cd848659c07dcf7fb9155b67c146cb4e13580",
+      "requests": 13600,
+      "sha256": "e48a896b88580d404ea009c5c065ee55b9c66933b7beeeac58fa88c46795ee08"
+    },
+    "2": {
+      "raw_sha256": "5daa12110ff078775ad21d5aaa6d920ab165e5d654cbf0e247f28aad6675ece3",
+      "requests": 2890,
+      "sha256": "7d056e5d924802b0b39f3687cd603317c699abb35158c3ee798e78d9f670a5ae"
+    }
+  },
+  "schema": "lx9-linux-v1"
+}

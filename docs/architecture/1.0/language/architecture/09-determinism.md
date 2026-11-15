@@ -1,11 +1,13 @@
 # Chapter 09: determinism, budgets and sandbox
 
-Status: **draft for the owner. Not accepted.** Conventions are in [the overview](00-overview.md), section 3.
+Status: **frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). Conventions are in
+[the overview](00-overview.md), section 3, and its status says what the freeze covers.
 
 This chapter defines the identity of a reproducible run and the limits on its execution. It uses `Budget`, `JobResult`,
 snapshots and kernel costs from [chapter 01](01-kernel.md). Chapter 02 owns types, effects and the IR; chapter 05 owns
-stored bytes and `RunRecord`; chapter 07 owns profiles and boundary policy. No runtime, generator algorithm or budget
-preset is selected here.
+stored bytes and `RunRecord`; chapter 07 owns profiles and boundary policy. Section 11 proposes a versioned execution
+contract and generator. It selects no runtime or budget preset, and accepts no owner question or ADR.
 
 Sources: [the partition](../ecosystem-partition.md), especially INV-4, INV-9, INV-10, sections 8.4, 9, 11 and 12 and
 defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
@@ -120,18 +122,17 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
   the clock or host entropy during execution. The generator's reference vectors cover initialization and draws; library
   operations that consume draws have a pinned order. A child receives its recorded stream, rather than a stream chosen
   by scheduling.
-- **DET.12 [O]** The generator algorithm and the stream-derivation rule have no selected source. LP1's language and
-  library specifications choose and publish them, with reference vectors. Options include a stateful generator with
-  a recorded draw order and a generator addressed by stream and counter. Both retain DET.11; the algorithm identities,
-  stream mapping and vectors change. Naming a host's default random function does not settle this item.
+- **DET.12 [D]** The draft recommends the counter-addressed generator `sha256-counter-draft-1` in DET.61, with
+  explicit stream paths and reference vectors. Its purpose here is specified reproducibility, not a measured speed
+  or statistical-quality claim. A stateful generator with a recorded draw order remains the alternative; it needs
+  its own algorithm identity, stream mapping and vectors and cannot reinterpret saved seeds under this identity.
 - **DET.13 [B]** Integer decisions use KN3's exact integers and explicit size-based costs (INV-4, KN3.1, KN3.2,
   KN3.6). Host word size cannot cause wraparound or silent narrowing. Typed fixed-width data follows KN1's byte
   conventions and chapter 02's range rules. Approximate values never convert implicitly into exact decisions.
-- **DET.14 [O]** Text equality, normalization, case handling and ordering need the language contract in chapter 02 and
-  byte rules in chapter 05. The sources specify UTF-8 source but select no Unicode comparison algorithm. Options are
-  scalar-value equality and order without implicit normalization, or explicitly versioned normalization and comparison
-  tables. Under either option there is no locale dependence, invalid input has a typed rejection, and any Unicode
-  tables affecting a result are pinned. LX-3 checks the selected rules with non-ASCII and normalization-sensitive data.
+- **DET.14 [D]** The draft consumes HANDOFF H8's scalar `Text` comparison rule; DET.62 supplies its metered
+  operations and invalid-input result. There is no implicit case folding or normalization. Explicitly versioned
+  normalization/comparison tables remain an alternative language contract, with a different version and key.
+  Chapter 05 alone defines canonical stored bytes; scalar comparison does not re-encode or normalize hashed source.
 - **DET.15 [D]** Content digests identify artifacts, and hashed sources and assets use pinned bytes (default 13,
   R-03). Chapter 05 owns normalization; a host text reader cannot change the bytes being hashed. A granted file's
   physical path serves only the host's resource lookup. Program-visible resource names are logical names. Case-only
@@ -156,8 +157,8 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
 | --- | --- | --- |
 | `steps` | Abstract interpreter work under the versioned metering contract of DET.20 | Native instruction count, optimization and processor speed |
 | `kernel_cost` | The exact integer cost each admitted kernel call declares from its inputs, under the pinned cost table | Cache hits, eviction and transport cost |
-| `memory` | KN7.9's logical units: array bytes in the KN1 digest convention, plus each pose entry's canonical exact-key length | Resident memory, pointer size, allocator layout, stored text form and physical sharing |
-| `output` | Logical size of results, records and plans; the precise counting rule is open in DET.24 | Compression ratio, terminal speed and transport packet sizes |
+| `memory` | KN7.9's state payload units plus DET.57's versioned language layout; DET.58 fixes handle lifetimes | Resident memory, pointer size, allocator layout, stored text form and physical sharing |
+| `output` | Canonical uncompressed bytes under the pinned data-core profile (DET.59; HANDOFF H8) | Compression ratio, terminal speed and transport packet sizes |
 | `safety_stop` | Optional host deadline, outside the deterministic key | No exact replay promise applies when it stops a run |
 
 - **DET.19 [D]** A budget record identifies its units, following LG2 and INV-10 (DT-L1 R2-E4). Length and puzzle cost
@@ -165,59 +166,58 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
   A kernel cost table states how these typed inputs and operand bit lengths produce its declared integer charge.
   Interpreter steps and declared kernel work are separate counters. A change of spelling cannot convert one alphabet
   or budget dimension into another.
-- **DET.20 [O]** LP1's metering specification, shared with chapter 02, defines an abstract step and its charge points.
-  The sources do not choose between one charge per IR operation and a fixed, versioned weight table over IR operations.
-  Either includes loop tests, calls, pointwise contracts and applicable run-time flow checks; none can perform
-  unbounded work between charges. Pointwise contracts are charged under LG4 (DT-L1 R2-E4). Whole-state contracts keep
-  LG4's once-per-revision or agreement-test rule. The specification also fixes exhaustion boundaries, equal-to-limit
-  admission and precedence when several limits would fail together. Both options preserve DET.5; their tables and
-  recorded stop positions differ. Tests at each boundary become part of the IR version's conformance fixtures.
+- **DET.20 [D]** The draft meter is `lp1-exec-draft-1`: one step for each semantic operation or continuation in
+  DET.55, plus a pinned input-size tariff for work delegated to a kernel. DET.56 specifies checks and exhaustion;
+  DET.57 to DET.64 specify resources, children, generators, text, streams and display branches. LG4.8 records why
+  this form is recommended and retains the weighted alternative. LG2.21 gives form 2 its separate execution identity
+  and lowering, charged by DET.64. The step schedule is semantic, not a performance
+  estimate. Pointwise predicates, loop tests, calls and applicable run-time flow checks are included; whole-state
+  contracts retain LG4.10's separate revision/agreement-test rule.
 - **DET.21 [D]** RT1 to RT3 claiming the same key use the same abstract charges, following the typed IR contract in
   partition section 12 and INV-10. RT1 meters the abstract execution; RT2 must expose equivalent metering for its
   admitted language; RT3 preserves the abstract charge points through compilation. Optimized code cannot delete
   charges that change a cut-off. Borrowed VM instructions or fuel are enforcement tools only after their mapping to
   the abstract charges is established. KN7.8's kernel charges stay the same in every route.
-- **DET.22 [O]** Whether RT2 can provide that mapping, and how RT3 preserves it, awaits LX-1, LX-3 and LQ9 in chapter
-  11. No source establishes equal step budgets across those executors. RT4 needs an admitted subset and a specified
+- **DET.22 [D]** LQ9 selected RT1, which meters the abstract execution (DET.21; owner, 14 November 2026, LQ9;
+  RTE.21); RT2, RT3 and RT4 are not built, and the sentences on them record the unselected alternatives and bind
+  nothing. Whether RT2 can provide that mapping, and how RT3 preserves it, awaited LX-1, LX-3 and LQ9 in chapter 11.
+  No source establishes equal step budgets across those executors. RT4 needs an admitted subset and a specified
   meter before it can make an equivalent promise. If a route cannot preserve the common contract, its budgeted results
   cannot claim the same key. The choices are to supply the meter, decline that route, or propose a different versioned
   execution contract for the owner's LQ9 decision. A different contract changes keys and needs chapter 05's explicit
   compatibility treatment; it cannot silently change saved runs.
-- **DET.23 [D]** Kernel costs are declared before admission and depend only on inputs, as KN7.8 requires. The run
-  accounts for each logical call once, including nested library calls that reach it. Eviction, internal retries used
-  only to reconstruct values and IPC do not buy or consume extra kernel work. Chunking retains the same literal-letter
-  work and total declared cost. Cancellation boundaries keep KN7.6's declared batch chunks; they do not define a new
-  deterministic budget in seconds.
-- **DET.24 [O]** LP1's accounting specification fixes logical memory lifetimes and output units. KN7.9 fixes the
-  logical unit, including pinned snapshots and derived states, but leaves alias accounting and release points
-  unstated. Options are deterministic logical ownership or a conservative lifetime extending to a declared scope;
-  host garbage collection cannot decide exhaustion. For output the choices include canonical uncompressed byte size
-  or another explicitly versioned logical-size table. Both cover results, records, traces and plans, including output
-  retained before a cut-off. The specification defines peak live memory, cumulative output, framing overhead and the
-  bounded space needed to emit a terminal result when an output budget ends. Both options preserve cache-independent
-  charges and produce the same stop on repeated runs under their own recorded contract.
+- **DET.23 [D]** Each logical kernel operation declares its input-dependent charge before admission (KN7.8).
+  It is charged once. An unchunked call admits its entire tariff; a declared streaming call admits the fixed semantic
+  chunks of DET.63 in order. Completed chunks partition that tariff without a per-transport-chunk surcharge.
+  A cache hit, eviction, reconstruction retry or IPC split changes no charge, continuation or coverage. A nested
+  language call exposes its constituent kernel operations; a native row either includes internal work in its tariff
+  or exposes a pinned decomposition, never both. KN7.6's cooperative interruption is checked at those boundaries.
+- **DET.24 [D]** The draft chooses deterministic owning handles with explicit release (DET.57, DET.58) and
+  HANDOFF H8's canonical uncompressed output bytes (DET.59). Each live alias is charged in full, independent of
+  physical sharing; dropping a handle releases its charge at the specified operation. Used memory is peak live
+  charge, while steps, kernel work and output are cumulative. The alternative is conservative retention to a
+  declared scope, including run end, and an alternative output-size table could replace canonical bytes. Either
+  alternative needs a distinct version and key. Host garbage collection never supplies a release boundary.
 - **DET.25 [D]** Work performed on behalf of a run remains within that run's limits, following the explicit per-job
   budget of default 6 and INV-10. A call, recursive call, checker invocation or child job cannot reset its parent's
   counters or mint an allowance. A parent that uses child results records their budgets and coverage. A genuinely
   separate, host-authorized run has its own key; consuming its result makes that immutable result a declared input.
-- **DET.26 [O]** The sources do not choose hierarchical accounting. LP1 chooses between serial children sharing a
-  meter and disjoint child allowances reserved deterministically from the parent before launch. Both conserve steps,
-  kernel work and output, count aggregate live logical memory, and record the child order or reservations. Parallel
-  child completion cannot select a winner or redistribute unused allowance by timing. Under reservations, memory
-  stays charged until a fixed logical join, and allocation, return and aggregation rules are fixed inputs. Under a
-  shared meter, the logical execution order is fixed. LX-3 compares the parent and child ledgers. This item does not
-  change R-16's admission lanes.
+- **DET.26 [D]** The draft chooses serial children sharing ancestor meters, with optional child caps and
+  deterministic unwind/return rules in DET.60. A child cannot mint an allowance, refund completed work or choose a
+  winner by completion time. The alternative is disjoint allowances reserved before launch, with memory retained
+  to fixed joins and deterministic return of unused allowance. That alternative requires another version and its
+  own vectors; it is not enabled by this draft and does not change KN7's host admission lanes.
 - **DET.27 [D]** A run starts only with finite, explicit deterministic limits accepted for it, following default 6.
   The host exposes the granted limits, units, cost table identity and amount used as data. The exact expanded length
   and puzzle cost of a word are available before a run (KN5.10). Presets resolve to concrete limits in the record;
   neither a machine-speed estimate nor a later preset edit changes an existing key. A program that reads the amount
   used after reading state reads a state-derived value (BND.44).
-- **DET.28 [O]** No source supplies numeric presets, profile ceilings or a logical recursion rule. LP1 specifies them
-  with chapter 02 and the host; chapter 07 adds no capability-dependent ceiling (BND.62). Recursion can use a separate
-  logical depth guard or a bounded logical stack charged to memory. Either records its limit and counting rule in the
-  run's parameters, retains step metering, and refuses before the host stack fails. Preset values and any overhead
-  figures require evidence under overview 3.5; none is measured here. A host may impose a lower physical safety limit,
-  whose exhaustion ends the run as an incomplete host error.
+- **DET.28 [O]** Numeric presets and ceilings remain unselected and unmeasured. Every run supplies finite
+  limits. For the draft meter, recursion uses DET.57's logical frames charged to `memory`; frame entry checks before
+  a callee executes, and DET.58 releases the frame on return. There is no independent depth budget and the reserved
+  `KN7:resource_limit.recursion_exhausted` code stays inactive. A separate explicit depth guard is the alternative,
+  requiring a versioned counting rule and recorded limit. A lower physical host limit remains an incomplete host
+  error, not a deterministic recursion stop. Chapter 07 adds no capability-dependent ceiling (BND.62).
 - **DET.29 [D]** The run record retains the resolved budget, unit and metering revisions, used counters, child ledger
   if present, deterministic stop boundary, coverage and actual stop reason, following partition PS1, 8.4 and KN7.3.
   Reproduction starts from the original inputs and counters under the recorded contract. A continuation after a
@@ -228,9 +228,9 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
   budget ended without a checked witness; it retains the covered set and is open for the unexamined part. `not run`
   has no examined set. A job that did not complete yields no negative claim, and a witness already found counts once
   checked (KN7.4). Only a deterministic budget gives coverage a reproducible scope. A clock-stopped run reads open;
-  cancellation and errors also establish no absence. Chapter 06 owns claims and display words under every LQ3 option.
+  cancellation and errors also establish no absence. Chapter 06 owns claims and display words.
 
-## 4. Display precision and the input map
+## 4. Display precision and exact input requests
 
 - **DET.31 [B]** Exact decisions remain exact at every display boundary (INV-4, KN3.1). A display coordinate or a
   comparison of approximate coordinates cannot decide legality, identity, protection, equality or evidence. Chapter 10
@@ -240,15 +240,20 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
   exact declared properties. Approximate fields carry chapter 10's precision and domain contract. LX-3 compares those
   fields across platforms at that precision. It neither requires identical float bits nor uses tolerances to weaken
   an exact field. The precision contract is pinned with the plan's producing module and inputs.
-- **DET.33 [B]** The A1 input map's float request is the site defined by KN3.4 and state contract A1. A run consuming
-  such input records the chosen exact rotation, with its identity block and base input, before using it as an exact
-  input. A menu-mode choice records the actual menu letter under its menu identity and order (INV-4). Replay uses the
-  recorded choice. It never recomputes trigonometry, nearest candidates or the choice from a recorded drag.
-- **DET.34 [D]** Fresh input-map choice remains an LX-9 obligation under KN3.4 (DT-L1 R2-E2). Replaying a recorded exact
-  choice does not establish cross-platform agreement for fresh float requests. If LX-9 finds differing choices, KN3.4
-  gives the proposed dyadic Cayley request and exact menu-candidate comparison; EN1's Astra check and then the owner
-  decide the contract amendment. This chapter uses no assumed outcome, no new rounding rule and no off-lattice visible
-  pose equivalence. Chapter 11 owns the experiment and its decision rule.
+- **DET.33 [D]** Under proposed amendment A6, a request is exact bytes: C, a dyadic Cayley vector; H, a primitive
+  integer half-turn axis; or M, a menu letter bound to its set and order digests (KN3.4, KN3.7, KN3.8; owner,
+  6 November 2026, decision 8). A run consuming it records the bytes and chosen exact rotation, with its identity
+  block and base input, before using it as an exact input. A menu-mode choice records the actual menu letter under
+  its menu identity and order (INV-4). Replay uses the recorded choice. It never recomputes trigonometry, nearest
+  candidates or the choice from a recorded drag. A6 is not in force until EN1's Astra check and then the owner.
+- **DET.34 [D]** The float site is outside the kernel, in the shell's producer (KN3.9). It reads binary64 values
+  bit-exactly, refuses non-finite values and canonicalises signed zero before producing request bytes. Identical
+  gestures need not give identical bytes. Identical bytes, operation, bounds and menu binding must give the same exact
+  choice under KN3.7 and KN3.8. Menu drags compare every ordered candidate by exact squared Frobenius distance in
+  Q(√5), with the smallest index winning an exact tie. Free mode takes the nearest point of A1's grid, the owner's
+  choice (KN3.7). LX-9's follow-up finding fed decision 8; its exact-request prototype is source and synthetic
+  evidence for its tested cases only (RTE.64 to RTE.66). Chapter 11 owns the remaining checks and amendment
+  dependency. Replaying a recorded choice establishes neither a gesture producer nor fresh-request agreement.
 
 ## 5. Sandbox and grants
 
@@ -281,19 +286,16 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
 | Network | no | no | no |
 | Process | no | no | no |
 
-- **DET.38 [D]** The table does not answer LQ2, LQ14 or LQ21. Chapter 07 supplies `Profile`, provenance, boundary classes
-  and declassifiers. Under flow labels a grant is checked with the permitted data and control flows; under capability
-  separation, reading state-derived data and preparing previews cannot coexist except through policy-enabled
-  declassifiers, and preview outcomes are state-derived (DT-L1 R2-E3). Until the joint setting, the partition's section
+- **DET.38 [D]** The table does not answer LQ2's option set. Chapter 07 supplies `Profile`, provenance, boundary
+  classes and declassifiers. Under capability separation, the form LQ21 chose (owner, 14 November 2026; RTE.24),
+  reading state-derived data and preparing previews cannot coexist except through policy-enabled declassifiers, and
+  preview outcomes are state-derived (DT-L1 R2-E3). Flow labels, which would have checked a grant with the permitted
+  data and control flows, were not selected. Until the joint setting, the partition's section
   11 interim reading applies: research output never becomes a solving-session preview, solver-tool solving previews
   remain disabled, and built-in tools keep the 2 October boundary and the 17 October exception. A file grant preserves
   stored provenance; it cannot launder a word through storage.
-- **DET.39 [P LQ1]** With the recommended single language, solving, tool authoring and research use the same types,
-  exact semantics and key format; profiles change grants and labels. If research uses a separate language, its engine
-  adapter and imported evidence meet the same identity, input and checking requirements before claiming reproduction;
-  this chapter does not confer sandbox guarantees on an external notebook. With a product-only language, the research
-  column describes no shipped language profile and research stays outside it. The product's sandbox, exactness and
-  no-network/no-process rules stay the same under all alternatives.
+- **DET.39 [D]** One language has three profiles: solving, tool authoring and research. They share types, exact
+  semantics and the key format; profiles change grants and labels (owner, 6 November 2026, LQ1; partition LQ1).
 - **DET.40 [D]** The run record stores the effective grant set, following INV-10, LG3 and partition PS1. For each grant
   it records the capability kind, rights, logical resource scope, grantee module digest, effective profile and the
   policy identity or decision used by the host. File inputs name captured content digests; randomness names DET.11's
@@ -307,14 +309,14 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
   evidence. For an evidence builder, such access is refused (section 6).
 - **DET.42 [B]** Network and process access are `no` in every profile in 1.0 (default 2, INV-10). A granted file cannot
   enable either. The host's placement, isolated-interpreter startup and engine process ownership do not give programs
-  a process capability. Local module lookup remains digest-pinned under every LQ12 option; a possible later registry
-  is no present network permission.
+  a process capability. Module sharing is local through user-chosen files with digests (owner, 6 November 2026, LQ12).
 - **DET.43 [D]** A runtime fault ends its jobs as `error` under KN7.13. The fault itself changes neither journal nor
   state hash, and the shell stays responsive. Any previously committed engine command keeps its receipt under KN5.22;
   a fault never rewrites a committed outcome as failure. R-14 keeps engine work off the UI thread and R-16 retains atomic
   admission, including concurrent runs and held keys. Logical exhaustion is reported with its budget name; physical
   exhaustion and a killed runtime remain incomplete errors. LX-2 owns the placement fault experiment and responsiveness
-  measurement. This chapter asserts no measured containment or latency result.
+  measurement, an LP3 acceptance check with its bars unchanged (RTE.21). This chapter asserts no measured containment
+  or latency result.
 
 ## 6. Runs that produce evidence
 
@@ -353,18 +355,20 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
   coverage and stop boundaries. It tests each budget alone and interacting limits, denied ambient access and the
   approved-subset variants. Resource enforcement in a host and equality between routes are separate assertions.
 - **DET.50 [D]** LX-3 also compares the approximate display fields of DET.32 at chapter 10's declared precision and
-  checks refusal and false-refusal cases under the forms of flow control (partition LX-3, DT-L1 R2-E2, R2-E3). Its
+  checks refusal and false-refusal cases under capability separation (partition LX-3, DT-L1 R2-E2, R2-E3; RTE.24). Its
   must-refuse corpus includes selection by largest cap value, search followed by rebuilding from base parts, the F2 and
   F5 correction solve, workspace laundering, a state-based choice between two words, flow through a module call, a
   stop-selected preview, refusal-driven selection, a one-item pick and accumulation across runs (BND.52).
   The host-subset variant refuses dynamic code and binds static approval to the executed bytes. Counts of harmless
-  tools refused are returned to LQ21; this chapter sets no acceptable count or policy ruling.
-- **DET.51 [D]** Chapter 11 owns LX-3's decision rule, experiment card and relation to LQ9, LQ18 and LQ21. No LX-3 or
-  conformance result exists yet (overview 3.4; partition section 12). Exact portability, repeatable cut-offs, sandbox
-  containment, route-equivalent metering and display agreement remain unverified. LX-1 supplies cost leads; LX-2 tests
-  placement faults; LX-9 tests fresh input-map choice. None is replaced by a document structure check. Windows-first
-  product scope stays the 2 October decision: headless Linux checks of platform-independent layers promise no Linux
-  product build, native input, DirectX, long-session or performance result.
+  tools refused: LX-3's two false refusals are met by fixed enabled declassifiers or by splitting the tool, and its
+  decisive check is part of LP3 acceptance (RTE.24). This chapter sets no acceptable count or policy ruling.
+- **DET.51 [D]** Chapter 11 owns LX-3's decision rule, experiment card and relation to LQ9 and LQ21. RTE.82 records
+  the first-pass spike evidence under the owner's LQ18 allowance. It supplies no product conformance result
+  (overview 3.4; partition section 12). Exact portability, repeatable cut-offs, sandbox containment, route-equivalent
+  metering and display agreement for admitted product executors remain unverified. LX-1 supplies cost leads; LX-2
+  tests placement faults; LX-9's follow-up fed the exact-request direction in decision 8. None is replaced by a
+  document structure check. Windows-first product scope stays the 2 October decision: headless Linux checks of
+  platform-independent layers promise no Linux product build, native input, DirectX, long-session or performance result.
 
 ## 8. Added errors
 
@@ -388,12 +392,16 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
 | `KN7:resource_limit.host_exhausted` | Physical host resources or a host safety mechanism end the run; deterministic coverage is not promised. |
 | `LG4:input.cache_entry_mismatch` | A cached value fails its recorded input or content checks and is refused as a reusable entry. |
 | `KN7:resource_limit.runtime_lost` | The runtime dies; KN7.13's error and isolation rules apply. |
+| `LG4:input.pointwise_failed` | An admitted pointwise assertion is false; its guarded operation has not run (DET.55). |
+| `LG4:input.generator_input` | Seed size, scalar stream path or path count/length is invalid under DET.61. |
+| `LG4:resource_limit.generator_exhausted` | An admitted draw requests a counter after the last defined block; no wraparound (DET.61). |
+| `LG4:input.text_scalar_invalid` | Invalid UTF-8 or a surrogate would enter a `Text` value (DET.62). |
 
 ## 9. Conformance tests
 
-- **DET.53 [D]** These tests are requirements for the conformance suite of chapter 12, under overview 3.4. No test in
-  this table exists yet. LX-3 uses the relevant source and synthetic cases; their inclusion here records no execution
-  or pass. Tests depending on an open accounting or text rule use that rule's selected, versioned fixtures.
+- **DET.53 [D]** These tests are requirements for the conformance suite of chapter 12, under overview 3.4. No row in
+  this table is a product conformance pass. The pure-Python draft vectors in `contract-vectors/` exercise the meter only.
+  LX-3 still needs admitted executors and matching source and synthetic cases on both platforms.
 
 | Test | Checks | Class |
 | --- | --- | --- |
@@ -412,7 +420,7 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
 | CT-DET-13 | Empty completed enumeration, deterministic cut-off without a witness and not run remain distinct; cancellation, clock stop and host errors yield no negative claim (DET.17, DET.30). | source |
 | CT-DET-14 | A checked witness survives an interrupted search; the unexamined domain remains open and a continuation has a new key (DET.29, DET.30). | source |
 | CT-DET-15 | Compare exact display fields byte for byte and approximate fields at their declared precision on both platforms; perturb a float without changing an exact decision (DET.31, DET.32). | source |
-| CT-DET-16 | Replay recorded exact A1 rotations and menu letters without invoking the float chooser; fresh requests near decision boundaries remain LX-9's separate obligation (DET.33, DET.34). | synthetic |
+| CT-DET-16 | Under proposed amendment A6, identical exact request bytes, operation, bounds and menu binding give identical choices, including exact menu ties. The shell producer refuses non-finite values and canonicalises signed zero; gesture equality promises no byte equality. Replay reads the recorded rotation or menu letter without invoking the producer or chooser (DET.33, DET.34). | synthetic |
 | CT-DET-17 | In each profile, route and placement, planted clock, environment, file, network and process access without grants is refused; no interface yields session files or a commit token (DET.10, DET.35 to DET.42). | source |
 | CT-DET-18 | File grants cannot escape their resource or rights; imports, calls and children cannot widen grants, and a saved descriptor supplies no replay authority (DET.37, DET.40 to DET.42). | source |
 | CT-DET-19 | All LX-3 must-refuse compositions and host-subset substitutions are refused under the tested policy and flow form; harmless-tool refusals are counted separately (DET.36, DET.38, DET.50). | source |
@@ -424,50 +432,284 @@ defaults 2 and 6; [chapter 01](01-kernel.md), especially KN2.15, KN3.4 and KN7;
 
 ## 10. Open items
 
-- **LQ1.** One language and three profiles, a separate research language, or a product-only language (DET.37, DET.39,
-  DET.44). Exact imported evidence and product sandbox rules stay fixed; executor coverage and shipped profiles change.
-- **LQ2, LQ14, LQ21.** Chapter 07's capability policy, any competence-dependent grant and the form of flow control
-  (DET.4, DET.20, DET.37, DET.38, DET.40, DET.50). Labels and capability separation need different enforcement and can
-  refuse different harmless tools; neither changes the commit gate or permits ambient authority.
-- **LQ3, LQ10.** Evidence output and its stored form in chapters 05 and 06 (DET.5, DET.29, DET.30, DET.48). The key pins
-  the producing rules under each option; the envelope's facts or judgements and their bytes can differ. No cut-off
-  becomes a proved negative under either option.
-- **LQ4.** Pinned research jobs after a commit (KN7.5; DET.4, DET.17, DET.29). Finishing and cancellation are the two
-  alternatives; immutable-input identity stays fixed. Cancellation adds no reproducible stop promise. Chapter 08 owns
-  result transport and branch lifecycles.
-- **LQ5, LQ16.** Built-in implementation and the shipped research cut (DET.3, DET.21, DET.39, DET.44). Native and language
-  tools can use different execution paths; each path's declared charges and identity remain recorded. These clauses
-  do not settle which tools or research profiles ship.
-- **LQ7, LQ20.** User charts and the renderer handoff (DET.31, DET.32). Chapter 10 supplies the precision contracts;
-  a generated chart stage and built-in charts can produce different plans. Exact identity and the declared-precision
-  comparison remain the same.
-- **LQ8, LQ9.** Engine, route and placement (DET.3, DET.8, DET.21, DET.22, DET.36, DET.43). The semantic key, sandbox
+The owner answered LQ1 to LQ21 on 6 November 2026 and chose LQ8, LQ9 and LQ21 on 14 November 2026: the engine and the
+interpreter's host in Rust, route RT1 with the runtime in a process of its own, and capability separation (RTE.17,
+RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits for the joint setting.
+
+- **LQ2's option set; LQ21 answered.** Chapter 07's capability policy (DET.4, DET.20, DET.37, DET.38, DET.40,
+  DET.50). LQ21 chose capability separation (owner, 14 November 2026, LQ21; RTE.24); neither it nor the unselected
+  labels change the commit gate or permit ambient authority.
+- **LQ8, LQ9 answered.** Engine, route and placement (DET.3, DET.8, DET.21, DET.22, DET.36, DET.43): Rust, route RT1
+  and a runtime process of its own (owner, 14 November 2026, LQ8, LQ9; RTE.17, RTE.21). The semantic key, sandbox
   boundary and exactness promise stay fixed. Metering adapters, algorithm dependencies and fault containment need
-  evidence for the selected host. No source establishes equivalence of borrowed VM fuel and abstract steps.
-- **LQ12.** Module sharing (DET.7, DET.15, DET.42). Local file exchange and possible later distribution options retain
-  content identity; default 2 supplies no network access in 1.0.
-- **LQ18, LQ19.** Permission and ordering of spikes and freeze gates (DET.12, DET.20, DET.22, DET.24, DET.26, DET.28,
-  DET.51). Chapter 11 owns decision rules and chapter 12 owns phase gates. Deferring experiments leaves these contracts
-  unverified; it supplies no pass or architecture-freeze authorization.
-- **Generator and streams [O].** DET.12: stateful draws or counter-addressed generation; LP1's library specification
-  selects the algorithm, derivation rule and reference vectors.
-- **Unicode semantics [O].** DET.14: scalar-value rules or pinned normalization and comparison tables; chapters 02 and
-  05 fix equality, order, invalid-input handling and byte identity.
-- **Abstract meter [O].** DET.20: operation counts or weighted IR charges, including boundary and exhaustion rules;
-  LP1 fixes the contract. DET.22: LX-1, LX-3 and LQ9 establish whether each executor can preserve it.
-- **Logical resources [O].** DET.24: ownership and release rules, alias accounting, output units and terminal-result
-  space; LP1's accounting specification makes the repeatable charge fixtures possible.
-- **Child accounting [O].** DET.26: serial shared meter or deterministic reservations; LP1 fixes conservation,
-  aggregation and return rules before concurrent children claim reproducibility.
-- **Limits and recursion [O].** DET.28: explicit depth or a logical stack, numeric presets and ceilings; LP1, chapter
-  02 and chapter 07 supply their respective rules. There are no measured preset values in this chapter.
+  evidence for the selected host, as LP3 acceptance checks. No source establishes equivalence of borrowed VM fuel and
+  abstract steps.
+- **Draft execution contract.** DET.12, DET.14, DET.20, DET.24 and DET.26 now have recommended rules and
+  reference vectors in section 11. The alternatives remain recorded. Review and owner freeze are pending;
+  executor mappings, production tariffs and resource descriptors still need implementation and validation.
+- **Limits and recursion [O].** DET.28 keeps presets and ceilings open. The draft uses logical frames; a separate
+  depth guard is an alternative contract, not an additional silently enabled limit.
 - **Kernel and storage specifications.** DET.1 to DET.7, DET.19, DET.29 and DET.40 need LP1's kernel API and cost table
   identities, chapter 02's metering and module contract, and chapter 05's byte rules. The field obligations are fixed;
   their final encodings and compatibility mechanisms belong to those chapters. EN4 supplies the command rows and
   admission integration used by DET.35 and DET.43.
-- **Input map.** DET.33, DET.34 and DET.51: LX-9 and any A1 amendment remain open. Round 3 cleared DT-L1's obligations
-  (overview section 8), and clauses citing R2-E2, R2-E3 or R2-E4 name those dependencies.
+- **Exact requests and the producer.** DET.33, DET.34 and DET.51: proposed amendment A6 waits for EN1's Astra check
+  and then the owner. The owner chose the free-mode grid (KN3.7), and KN3.9's producer detail remains subject to that
+  review and the owner's ruling. RTE.82 records the finite experiment evidence; product and native-input checks remain
+  owed. Round 3 cleared DT-L1's obligations (overview section 8), and clauses citing R2-E2, R2-E3 or R2-E4 name those
+  dependencies.
 - **Historical builders.** DET.48 records the gap between the partition's no-clock builder requirement and archived
   timed producers. Their clocks and missing producer code remain reproduction limits; importing them changes no rule.
 - **Conformance and error registry.** DET.52 and DET.53: chapter 13 collects final code spelling; chapter 12 collects
-  the required tests. LX-3, LX-2 and LX-9 have no result here.
+  the required tests. RTE.82 records the first-pass LX-3, LX-2 and LX-9 results and what they leave unrun.
+
+## 11. LP1 draft execution contract
+
+- **DET.54 [D]** `lp1-exec-draft-1` names the following semantic contract, subject to review and owner freeze. It is
+  neither source syntax nor a serialized IR. A checked module pins its lowering to these operations, the operation
+  order, source map, logical layouts and all native row declarations. A native row declares its exact meaning,
+  input-size tariff, logical result/scratch bounds, continuations and coverage rule. A row lacking any of these is
+  not admitted. A library body uses its constituent operations; an opaque native row uses its declared tariff.
+  Executors cannot choose between the two decompositions for one key. The unit identities in DET.1's `budgets` pin
+  this contract, layout and output profile; `ir_version` pins the lowering and `kernel_cost_table` pins every tariff.
+  These are values of existing semantic fields, not new KN1 identities or wire fields. Chapter 05 (PS1.31, PS2.1 to
+  PS2.9) owns encoding, unsupported-version refusal and recorded conversion. A changed stop rule creates a new key;
+  old bytes and old run meaning are retained. No old or LX-3 experiment key is silently assigned this contract.
+
+- **DET.55 [D]** Evaluate operands left to right in the checked operation order, then attempt their consumer.
+  Each operation below costs one step. A failed step executes nothing. Successful step admission precedes DET.56's
+  remaining checks. A literal loads one scalar or one reference; it cannot copy an arbitrarily large value for one
+  step. A variable-size operation either expands into these continuations or invokes a pinned size-priced row.
+  There is no unmetered loop, recursive call, collection walk, hash, comparison, encoding or big-integer operation.
+  Input sizes are retained metadata constructed with the value; computing new size metadata uses the same rules.
+
+| IR family (LG4.2) | Semantic operations and continuations | Additional charge and effect boundary |
+| --- | --- | --- |
+| Values and exact computation | `value` constructs a scalar/header, `visit` reads or fills one declared slot, `alias` retains a value, `drop` releases it; arithmetic/comparison invokes a named row or checked library body | A handle's logical payload uses DET.57. Native variable-size work has the input-size kernel tariff; all exact integers, including small ones, use the same pinned rule |
+| Calls and control flow | `call`, `return`, `branch`/tag match, `loop_test`, and one `visit` per yielded element; generic specialization itself is static | Argument operations precede `call`; frame memory is checked at call. Every loop test, including the final false test, costs one. `return` costs one, including an implicit return. Tail-call elimination preserves both events |
+| State and checks | `kernel` for each snapshot open/query, projection, derivation, independent check or batch; `drop` for a close | Charge the row once, including its result/scratch reservation, before entry. A separately opened snapshot has a separate full charge. Nested native work is included or decomposed as DET.23 states |
+| Words and recipes | `value`/`visit` construct parts, `word_open` creates the expansion cursor, `chunk` advances a declared semantic batch | Compressed structure and cursor stay live. DET.63 prices expansion and replay, preserves chronological positions, and meters size-dependent key computation separately |
+| Commands and receipts | `invoke` one permitted row, `read_receipt` one immutable result | Argument construction, any kernel work and canonical output unit are charged before dispatch. Polling is another operation; host notifications never choose computational order or supply an ambient result |
+| View output | Ordinary construction operations, `display_if`, then `publish_view`; under LG2.21's alternative, `display_enter`, `display_branch`, `display_exit`, then publication | DET.64 charges the selected branch and the selected form's boundary operations. Publication admits the complete plan's bytes under DET.59 and has no engine adoption authority |
+| Granted input and output | `read` one declared captured-input chunk, `emit` one complete output unit, `rng_init`, `rng_draw` | Input transfer/decoding and output encoding use declared size tariffs or visits. Captured bytes have logical memory charges. A clock read remains outside reproducible execution |
+| Resource control | `assert`, `flow_check`, `child`, `scope_exit` | A predicate is evaluated normally before its one assertion/check step. Budget preflight itself adds no recursive charge. Scope exit releases that scope's handles; DET.60 governs children |
+
+  A pointwise assertion runs after its predicate and before the guarded operation. Failure is
+  `LG4:input.pointwise_failed`. An applicable run-time `flow_check` occurs after arguments and before each call,
+  branch, retained binding or sink required by the selected checked flow form. One check tests one fixed descriptor;
+  walking a variable label set uses visits or a size tariff. Failure retains the check's admitted charge and uses
+  chapter 07's selected flow refusal. Static checks cost no run-time step. The chosen flow form, policy and checked
+  insertion sites are pinned by DET.4; this clause activates neither flow spelling nor a flow-rule setting. The
+  run-time `flow_check` belongs to the unselected flow-label alternative (LQ21; RTE.24); it is recorded here and binds
+  nothing.
+  Whole-state contracts remain once per revision or agreement tests (LG4.10); a run-requested check is still charged.
+
+- **DET.56 [D]** At each continuation, first observe an already pending solver/host interruption. Such a stop is
+  outside deterministic reproduction (DET.17). With no interruption, apply the following admission algorithm:
+
+  1. Check `used.steps + 1 <= limit.steps` in every active meter, from root to innermost child. If a check fails,
+     report `KN7:budget.steps` at this operation; debit nothing. Otherwise debit one step in all active meters.
+  2. Obtain the input-derived requests `(kernel_cost, memory_reservation, output_bytes)`. Preflight these dimensions
+     in that order, and within each dimension test root before children. Test cumulative kernel/output use and live
+     memory plus the reservation. Equality is admitted; only a strict excess fails. The first failing dimension
+     and outermost failing meter determine the code and exhausted scope.
+  3. On failure, retain the step but debit none of those three requests. Execute no work, retain no new handle and
+     expose no output. On success, debit all three together before the operation's effect. Releases occur after
+     admission, so dropping or replacing an old value cannot fund its replacement early. A conservative result
+     reservation is reduced to its actual logical size after success; its high-water use remains in the peak.
+
+  A fully admitted operation that returns a domain error keeps its declared charges; no cache, error or cancellation
+  refund is available. Zero remaining allowance is not itself a stop: completion and a zero additional resource
+  request can succeed at equality. Stop position names the checked operation, dynamic call/child and loop path,
+  continuation/chunk index, failed phase and exhausted scope. Source location consumes HANDOFF H7's `SourceRange`
+  against the executed bytes, including generated operations' originating range. Never substitute current source.
+  No partially performed operation counts as a completed result or coverage increment.
+  Tariff/reservation descriptors are bounded expressions over retained size metadata and pinned constants, using
+  nonnegative addition, multiplication, minimum, maximum and ceiling division. Admission may saturate a comparison
+  at the relevant limit plus one only if the final exact comparison is preserved, including later divisions;
+  it never evaluates an unpriced user function. A more complex size computation
+  must appear as earlier metered operations. Bookkeeping is not a recursive call to its own meter.
+
+- **DET.57 [D]** `lp1-logical-layout-draft-1` extends KN7.9 to language values without changing state sizes or digest
+  bytes. These are logical payload units, not stored JSON lengths or physical memory measurements. Every owning
+  handle charges its full payload even when another handle has the same value; aliasing does not receive a discount.
+  A borrowed operand names an existing live owner and creates no owner. Retaining it, including in a closure or a
+  returned object, requires a charged owner or a move. A run's captured inputs and open snapshots are charged at
+  explicit entry operations before user computation; source and contract tables are admission metadata.
+
+| Payload | Logical layout |
+| --- | --- |
+| Boolean, fixed-width scalar, display scalar | 1 byte for Boolean; declared width in bytes for a fixed-width/display scalar |
+| Unbounded integer `n` | One sign byte plus `max(1, ceil(bit_length(abs(n))/8))` magnitude bytes |
+| Rational or Q(√5) value | Sum of its canonical exact integer components; chapter 05 owns their canonical values |
+| `Text` | Four bytes per scalar; this is neither UTF-8 storage nor output length |
+| Array/state/pose payload | KN7.9 and the declared element widths; canonical pose-key length stays KN1's convention |
+| Finite algebraic record or sequence | Four-byte variant tag, eight-byte length per variable sequence, and the sum of owned field/element payloads; repeated owned values count repeatedly |
+| Closure | Its checked code reference (32 bytes) and the owned payloads of captures in declaration order |
+| Function frame | 16 bytes plus eight bytes per argument/local/temporary slot in the checked frame layout; payload owners are charged separately |
+| Generator | 41 bytes: the 32-byte stream key, eight-byte counter and exhausted flag (DET.61) |
+
+  A kernel row also declares an input-derived logical workspace and result bound. Both coexist with its live inputs
+  at admission. Workspace is released at its declared continuation; excess result reservation is released after the
+  result size is known. If there is no finite bound computable from metered input metadata, the row must expose
+  growing/chunked continuations. Backend scratch choices do not change this declared logical reservation. Immutable
+  recursive module references are code identities, not infinitely sized value payloads. No unbounded or cyclic
+  owned payload is admitted. A checker cannot silently erase an allocation, frame or alias from this schedule.
+
+- **DET.58 [D]** Handles belong to a logical scope. `drop` releases exactly that handle after its step, while an
+  alias remains separately charged and valid. `scope_exit` and `return` release the scope's remaining owners and
+  frame after their steps. A returned owner moves to the caller without a second payload charge; returning a borrow
+  first creates a charged owner. A replacement acquires its new payload before releasing the old one. Releases have
+  no user destructor or computation; the scope maintains its charge total as owners enter and leave. Host allocation,
+  GC, cache eviction and last-use optimization are irrelevant. Ordinary calls borrow their supplied arguments and
+  share the caller's counters. Return never refunds steps, kernel cost or output.
+
+  Each meter records cumulative steps/kernel/output, peak live memory and current live charge. On any terminal
+  stop, capture counters and live charge before cleanup; then release abandoned scopes without further program
+  evaluation or charge. Abandoned scopes include admitted result/scratch reservations for which no owner was
+  installed; release those reservations in the scope and every charged ancestor too. Used `memory` is the peak,
+  not the final live charge. Cleanup cannot rescue the denied operation. The terminal record may retain a charged
+  immutable output by reference; it cannot keep an uncharged user value alive inside the reserve.
+
+- **DET.59 [D]** Output consumes HANDOFF H8's unit: the length of the complete canonical uncompressed value under
+  the pinned data-core profile of chapter 05. That profile owns number, Unicode, escaping, key order and terminal-LF
+  rules. A result, record, trace item, plan, granted-file record or top-level returned value is an output unit.
+  Nested returns are internal moves, not output. Construction/encoding work and temporary storage are metered
+  separately from the cumulative byte charge. Counts use the canonical bytes including the value's own delimiters;
+  transport framing, compression and repeated delivery of the same admitted unit add nothing. Two program emissions
+  are two units even if equal. A complete unit is admitted before publication; failure emits none of that unit and
+  keeps previously emitted units charged. A streaming API pins its sequence of complete units before execution;
+  changing transport packet sizes cannot split a unit or change a stopping point.
+  The byte length is retained metadata from metered construction, or comes from a preceding metered encoding pass.
+  Publication never performs an unpriced length-discovery pass. A fused encode/publication row is possible only
+  when its exact byte length is already available; its input-size tariff still covers the encoding work.
+
+  Before admission the host reserves a fixed terminal capacity under the pinned output profile, separate from the
+  program's output and memory limits. Its bounded schema permits only outcome/code, counters, stop locator and
+  digests of already charged coverage/results/child ledgers. It contains no arbitrary message, user text, trace,
+  plan or new coverage list. The profile supplies a capacity sufficient for the largest such status at the accepted
+  numeric/source-locator bounds; these bounds are checked before admission and included in the unit identity.
+  Rich coverage and ledger records use ordinary charged output units or deterministic re-derivation references.
+  Thus an output limit of zero still permits a terminal status and cannot be bypassed to return user data. This
+  specifies the reserve's purpose and admission rule, not a measured product byte capacity or a second byte codec.
+
+- **DET.60 [D]** A `child` operation costs one step in its ancestors, then starts a serial subrun while its parent
+  is suspended. The effective child caps are the componentwise minimum of its explicit requested caps and all
+  ancestors' remaining cumulative allowances/free live memory after that step. Record requested and effective caps.
+  An omitted cap resolves to the ancestors' remaining allowance in that dimension; the resolved cap is explicit
+  before entering the child. Omitting it creates no extra allowance.
+  No speculative or concurrent child work is admitted under this contract. Child entry/return use ordinary
+  `call`/`return` operations inside those caps, with the same frame and payload rules as any call. The child borrows
+  parent inputs; existing parent owners remain charged in the parent and root. Its local memory cap counts new
+  allocations, while each ancestor counts its own live owners plus all descendants' new allocations.
+
+  Every accepted child debit updates each ancestor once, including use by nested children; merging a ledger adds
+  nothing again. Ordinary function calls have no new allowance. On normal child return, close its frame and move
+  declared result owners to the parent without duplicating the root charge. Its ledger records local used/peak,
+  transferred live payload, outcome and stop. Unused capacity becomes available automatically; completed cumulative
+  use never returns. A failure of a child cap unwinds that child and its descendants, releases their non-returned
+  owners and resumes its parent with a typed `cut_off` result. A root limit stops the whole run. If an outer child
+  cap and an inner cap fail together, the outer child stops. Dimension precedence is DET.56, before scope precedence.
+  Emitted child output remains charged and has the same visibility rule as any output. A cut-off returns no
+  unadmitted value and no negative claim. The child's counter/ledger observation is state-derived where BND.44 applies.
+  Reading status fields uses ordinary operations. Retaining a status or ledger as a language value requires its
+  normal owner charge, and publishing it requires its output charge; the terminal carrier is no free value store.
+
+- **DET.61 [D]** The proposed generator is fully addressed; it has no host entropy or scheduling input. For
+  `sha256-counter-draft-1`, a seed is exactly 32 bytes. A stream path is a finite sequence of scalar `Text` segments.
+  Encode its segment count as unsigned 32-bit big-endian, then each segment's UTF-8 byte length as unsigned 32-bit
+  big-endian followed by those bytes, without normalization. Counts/lengths outside that range are invalid input.
+  The stream key is `SHA256(ASCII("C600-LP1-RNG") || 00 || seed || encoded_path)`. `rng_init` charges the input-byte
+  tariff and its 41-byte generator owner; its counter starts at zero. Draw `i` is the unsigned big-endian integer
+  `SHA256(stream_key || u64be(i))`, for `0 <= i < 2^64`. Each admitted `rng_draw` costs one step, the declared fixed
+  block tariff and any retained result reservation. Only a successful draw advances the counter; a denied charge
+  consumes no draw. After the last draw set the exhausted flag; another admitted request returns
+  `LG4:resource_limit.generator_exhausted`, never wraparound. Invalid seed/path data uses `LG4:input.generator_input`.
+  Each generator owner holds its own cursor. An alias copies key/counter/flag into an independent cursor at the full
+  41-unit charge; subsequent draws advance only the named owner. A borrowed argument refers to that owner's cursor,
+  and a move transfers it. Fixed-size cursor updates require no additional live memory. Repeated draws from copied
+  cursors intentionally repeat blocks; they are not automatically assigned fresh streams.
+
+  Stream assignment is fixed before execution: append the deterministic child invocation index as a decimal path
+  segment to its parent's assigned path, recursively, without drawing a new seed. Named sibling streams are
+  separate sealed paths. Re-initializing the same seed/path reproduces the same stream deliberately. A bounded
+  random-choice library uses a pinned rejection algorithm and meters every block, comparison and retry; modulo
+  reduction is not an implicit bounded draw. This block contract promises no cryptographic or statistical fitness.
+
+- **DET.62 [D]** Following HANDOFF H8, compare `Text` lexicographically by scalar value; the first unequal scalar
+  decides, and a proper prefix sorts first. Equality compares the scalar sequence without normalization or case
+  folding. A native text comparison is one step plus a tariff on both complete scalar lengths, even when an early
+  mismatch or a cache makes it cheaper physically. A lowered comparison instead uses its pinned visits and tests;
+  these are different decompositions and cannot be selected opportunistically. Invalid UTF-8 or a surrogate is
+  `LG4:input.text_scalar_invalid` before the invalid value is bound. Decoding captured bytes uses its declared
+  input-byte tariff and logical result bound. Explicit normalization/case conversion, if supplied as a library,
+  pins its tables, effects and tariffs and never changes the meaning of this comparison or source digests.
+
+- **DET.63 [D]** A streaming row pins a semantic chunk schedule determined only by immutable inputs and its row
+  revision. `word_open` costs one step and declares expanded length, total kernel tariff, expansion tariff and
+  logical cursor/workspace bounds. It does not pre-debit the chunks. Each `chunk` costs one step and preflights its
+  share of kernel work and live workspace before expanding or replaying any of its letters. The sum of chunk
+  tariffs equals the declared full tariff; setup cost, if any, belongs to `word_open`, never every transport packet.
+  A zero-length stream has only its open event. A final short chunk has its actual declared share. Expansion work
+  is included once in the chunk tariff or decomposed into explicit visits, as pinned by the row, never free.
+
+  The full tariff and its shares must be computable from the sealed call inputs before `word_open`. A later state
+  cannot change an announced share. Adaptive work without such a bound is a sequence of separately declared calls,
+  not a stream claiming that upfront total. Chunk coverage advances only on completion, in chronological literal
+  positions. A denied chunk does not expand,
+  draw randomness, allocate or advance coverage. Scratch is released after completion; input/cursor and declared
+  retained results stay live. Logical result bounds may use the current exact state's retained size metadata; the
+  schedule and bound expressions are pinned. A mid-chunk domain failure reports the row's exact prefix;
+  an asynchronous cancellation reports only its verified coverage and has no deterministic stop promise. Transport
+  may split/coalesce chunks but cannot alter this schedule, the tariff partition, literal digest, protection scope
+  or cancellation points (LG4.6, LG4.9). An executor changing semantic chunk size needs a new row identity and key.
+
+- **DET.64 [D]** Under HANDOFF H6's working `ApproxBool` form, `display_if` costs one step plus only the selected
+  branch's ordinary operations. The condition is evaluated first and charged normally. Branches remain pure display
+  expressions; chapter 02's exactness discipline applies through calls, closures, storage and exports. LG2.20 owns
+  the accounting-isolation and reproduction rule for both forms. This selects no LQ21 form.
+
+  For LG2.21's alternative `lp1-exec-region-draft-1`, `display_enter`, `display_branch` and `display_exit` each cost
+  one step under DET.56. Those boundary operations have no additional kernel tariff, allocation or output charge;
+  entry borrows inputs and exit moves/releases owners as LG2.21 specifies. Predicate evaluation and every taken
+  continuation keep their ordinary charges; the untaken branch costs nothing. Calls and closures retain DET.57's
+  charges, with no extra implicit frame for the region. A denied entry, branch or exit has DET.56's code, counters
+  and originating source locator. An admitted exit with no remaining steps does not fund the separate publication
+  step. The form-2 equality and one-short vectors are separate from form 1; no old trace or key is relabelled.
+
+  A predicate that selects a charged branch must yield the same display condition for a fixed key (`ApproxBool`
+  in form 1, LG2.21's region-local condition in form 2). Its producing library
+  must pin and implement the evaluation/rounding/comparison algorithm for that predicate across admitted executors.
+  DET.32's tolerance for rendered coordinates does not permit a different branch, charge, exact field or stop.
+  A route that establishes only approximate-coordinate tolerance has not established this predicate agreement and
+  cannot claim the same reproducibility key for the branch. This requirement neither converts approximate values
+  to exact decisions nor claims that a floating-point implementation has passed it.
+  The same restriction applies to accounting sizes: allowable coordinate variation must preserve logical sizes,
+  canonical output byte counts and unit boundaries. The pinned producer/profile must establish that property, for
+  example through a common display quantization contract supplied by chapters 05 and 10. A variable-length number
+  encoding plus coordinate tolerance alone does not establish it. No new encoding, padding rule or tolerance is
+  invented here; a candidate without that agreement remains unverified for this key.
+
+- **DET.65 [D]** The reference traces in [contract-vectors](../contract-vectors/README.md) are small synthetic
+  accounting examples with declared test tariffs, input sizes and byte profiles. The checker recomputes charges,
+  stops, counters and values without writing files. It is not a product executor, benchmark or cross-platform pass.
+  The frozen LX-3 input `work/experiments/language-lx/lx3-sandbox-flow/corpus/profile.json` remains experiment evidence,
+  not authority. This draft differs from its analysis meter: explicit handle release replaces retention to run end;
+  logical language layout replaces JSON-sized bound values; variable arithmetic uses a separate input-size kernel
+  tariff rather than limb-weighted steps; applicable flow checks are separate events rather than included
+  bookkeeping; secondary resource requests are atomic after the step; children and semantic chunks have explicit
+  rules. H7 supplies digest-bound source ranges rather than only neutral stop paths. The new vectors' declared
+  retained-JSON test profile also differs from LX-3's neutral UTF-8 profile; neither selects p3's production profile.
+  Neither that experiment's 2048-byte reserve nor its default limits are adopted as production values. Its
+  instruction, memory and output counters must not be compared as if these were the same contract (RTE.40).
+
+| Test | Checks | Class |
+| --- | --- | --- |
+| CT-DET-25 | Recompute all p4 finding-tag traces, charges, stop phases and final used counters with declared test tariffs (DET.54 to DET.65) | source |
+| CT-DET-26 | Alias/drop, replacement peaks, frame unwind, moved child results and cache-independent owning handles agree across executors (DET.57, DET.58, DET.60) | source |
+| CT-DET-27 | Exact equality admission, simultaneous failures, child/root precedence and denied secondary requests preserve the specified counters (DET.56, DET.60) | source |
+| CT-DET-28 | Oversized arithmetic and text work use operand sizes; loop tests, assertions, flow checks, calls and returns retain their operations (DET.55, DET.62) | synthetic |
+| CT-DET-29 | Generator initialization/draws and child stream paths match; denied draws do not consume the stream (DET.61) | source |
+| CT-DET-30 | Fixed semantic streaming chunks keep coverage and charges under transport splits, cold caches and cancellation boundaries (DET.63) | source |
+| CT-DET-31 | Canonical output equality boundaries, nested returns, retained partial output and terminal reserve cannot bypass byte accounting (DET.59) | source |
+| CT-DET-32 | Both display forms charge only executed branches plus their specified boundary operations; form-2 equality and one-short limits determine the exit stop and source range. LG2.20 isolation, predicate/size agreement and exact accounting reproduction hold across routes (DET.56, DET.64) | source |

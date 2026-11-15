@@ -1,7 +1,7 @@
 # ADR-L04: canonical identity, the identity tower and source maps
 
-Status: **Proposed.** Not accepted. The owner accepts or rejects it ([`AGENTS.md`](../../../../../AGENTS.md), "Ask the
-owner").
+Status: **Accepted** (owner, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)).
 
 Rests on: partition INV-6, INV-7; [chapter 01](../architecture/01-kernel.md) KN1; [chapter
 02](../architecture/02-language-core.md) LG2; [chapter 10](../architecture/10-renderer-platform.md) RPI.20 to RPI.26.
@@ -42,7 +42,11 @@ adds a further risk: what is on screen is an instance, and it must never become 
 
 ## What this record does not decide
 
-Open whatever the owner answers:
+The owner answered LQ1 to LQ21 on 6 November 2026 and chose LQ8, LQ9 and LQ21 on 14 November 2026: the engine and the
+interpreter's host in Rust, route RT1 with the runtime in a process of its own, and capability separation (RTE.17,
+RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits for the joint setting.
+
+Open mechanisms:
 
 - A complete canonical rewrite for the word key on every menu (LG2.18). The four hypotheses of default 10 bound what the
   key may claim until then.

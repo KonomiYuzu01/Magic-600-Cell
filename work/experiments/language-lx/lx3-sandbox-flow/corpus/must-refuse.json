@@ -1,0 +1,3626 @@
+{
+  "corpus_version": "lx3-neutral-v2",
+  "decision": "open",
+  "families": [
+    "largest_n_c",
+    "search_rebuild",
+    "f2_f5_solve",
+    "workspace_laundering",
+    "state_choice",
+    "module_flow",
+    "stop_selected_preview",
+    "refusal_driven_selection",
+    "one_item_pick",
+    "accumulation_across_runs"
+  ],
+  "cases": [
+    {
+      "id": "MR01",
+      "family": "largest_n_c",
+      "clauses": [
+        "RTE.45",
+        "DET.50",
+        "BND.4"
+      ],
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          },
+          "caps": {
+            "type": "Targets",
+            "value": [
+              "c0",
+              "c1",
+              "c2"
+            ],
+            "origin": "manual"
+          },
+          "words": {
+            "type": "Words",
+            "value": [
+              [
+                "a"
+              ],
+              [
+                "b"
+              ],
+              [
+                "c"
+              ]
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "n",
+                "type": "Ints",
+                "row": "counts",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "i",
+                "type": "Int",
+                "fn": "argmax_first",
+                "args": [
+                  {
+                    "ref": "n"
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "t",
+                "type": "Target",
+                "fn": "index",
+                "args": [
+                  {
+                    "ref": "caps"
+                  },
+                  {
+                    "ref": "i"
+                  }
+                ]
+              },
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "ref": "word"
+                },
+                "target": {
+                  "ref": "t"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "flow": "N_c -> argmax (ties by fixed cap order) -> preview target c1.",
+      "expected_code": "LG3:capability.not_granted",
+      "code_gap": "flow_code_reserved",
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending preview at the refused operation",
+        "provenance of existing workspace records"
+      ],
+      "forms": {
+        "capability_separation": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.25",
+            "RTE.27",
+            "BND.39"
+          ],
+          "reason": "The program combines a state-derived read, including stored provenance or a preview outcome, with a solving preview; transitive capability separation must deny that use."
+        },
+        "static_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        },
+        "static_runtime_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        }
+      }
+    },
+    {
+      "id": "MR02",
+      "family": "largest_n_c",
+      "clauses": [
+        "RTE.45",
+        "DET.50",
+        "BND.4"
+      ],
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          },
+          "caps": {
+            "type": "Targets",
+            "value": [
+              "c0",
+              "c1",
+              "c2"
+            ],
+            "origin": "manual"
+          },
+          "words": {
+            "type": "Words",
+            "value": [
+              [
+                "a"
+              ],
+              [
+                "b"
+              ],
+              [
+                "c"
+              ]
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "n",
+                "type": "Ints",
+                "row": "counts",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "rank",
+                "type": "Ints",
+                "fn": "rank_desc_indices",
+                "args": [
+                  {
+                    "ref": "n"
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "i",
+                "type": "Int",
+                "fn": "index",
+                "args": [
+                  {
+                    "ref": "rank"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "t",
+                "type": "Target",
+                "fn": "index",
+                "args": [
+                  {
+                    "ref": "caps"
+                  },
+                  {
+                    "ref": "i"
+                  }
+                ]
+              },
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "ref": "word"
+                },
+                "target": {
+                  "ref": "t"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "flow": "N_c -> descending rank -> first target; equal maxima cannot make this a fixed-order facts tool.",
+      "expected_code": "LG3:capability.not_granted",
+      "code_gap": "flow_code_reserved",
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending preview at the refused operation",
+        "provenance of existing workspace records"
+      ],
+      "forms": {
+        "capability_separation": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.25",
+            "RTE.27",
+            "BND.39"
+          ],
+          "reason": "The program combines a state-derived read, including stored provenance or a preview outcome, with a solving preview; transitive capability separation must deny that use."
+        },
+        "static_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        },
+        "static_runtime_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        }
+      }
+    },
+    {
+      "id": "MR03",
+      "family": "search_rebuild",
+      "clauses": [
+        "RTE.45",
+        "DET.50",
+        "BND.11",
+        "BND.24",
+        "BND.57"
+      ],
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          },
+          "caps": {
+            "type": "Targets",
+            "value": [
+              "c0",
+              "c1",
+              "c2"
+            ],
+            "origin": "manual"
+          },
+          "words": {
+            "type": "Words",
+            "value": [
+              [
+                "a"
+              ],
+              [
+                "b"
+              ],
+              [
+                "c"
+              ]
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "calc",
+                "as": "scores",
+                "type": "Ints",
+                "fn": "identity",
+                "args": [
+                  {
+                    "type": "Ints",
+                    "value": []
+                  }
+                ]
+              },
+              {
+                "op": "for",
+                "item": "w",
+                "type": "Word",
+                "items": {
+                  "ref": "words"
+                },
+                "body": [
+                  {
+                    "op": "kernel",
+                    "as": "s",
+                    "type": "Int",
+                    "row": "score",
+                    "args": [
+                      {
+                        "ref": "w"
+                      }
+                    ]
+                  },
+                  {
+                    "op": "calc",
+                    "as": "scores",
+                    "type": "Ints",
+                    "fn": "append",
+                    "args": [
+                      {
+                        "ref": "scores"
+                      },
+                      {
+                        "ref": "s"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "i",
+                "type": "Int",
+                "fn": "argmin_first",
+                "args": [
+                  {
+                    "ref": "scores"
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "chosen",
+                "type": "Word",
+                "fn": "index",
+                "args": [
+                  {
+                    "ref": "words"
+                  },
+                  {
+                    "ref": "i"
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "rebuilt",
+                "type": "Word",
+                "fn": "concat",
+                "args": [
+                  {
+                    "type": "Word",
+                    "value": []
+                  },
+                  {
+                    "ref": "chosen"
+                  }
+                ]
+              },
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "ref": "rebuilt"
+                },
+                "target": {
+                  "ref": "target"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "flow": "Search a/b/c on derived fake states, select a, then copy literal letters from base parts; rebuilding retains dependence. Interim derive restrictions may deny before the final sink; report that layer.",
+      "expected_code": "LG3:capability.not_granted",
+      "code_gap": "flow_code_reserved",
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending preview at the refused operation",
+        "provenance of existing workspace records"
+      ],
+      "forms": {
+        "capability_separation": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.25",
+            "RTE.27",
+            "BND.39"
+          ],
+          "reason": "The program combines a state-derived read, including stored provenance or a preview outcome, with a solving preview; transitive capability separation must deny that use."
+        },
+        "static_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        },
+        "static_runtime_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        }
+      }
+    },
+    {
+      "id": "MR04",
+      "family": "search_rebuild",
+      "clauses": [
+        "RTE.45",
+        "DET.50",
+        "BND.24",
+        "BND.61"
+      ],
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          },
+          "caps": {
+            "type": "Targets",
+            "value": [
+              "c0",
+              "c1",
+              "c2"
+            ],
+            "origin": "manual"
+          },
+          "words": {
+            "type": "Words",
+            "value": [
+              [
+                "a"
+              ],
+              [
+                "b"
+              ],
+              [
+                "c"
+              ]
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "research",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "calc",
+                "as": "scores",
+                "type": "Ints",
+                "fn": "identity",
+                "args": [
+                  {
+                    "type": "Ints",
+                    "value": []
+                  }
+                ]
+              },
+              {
+                "op": "for",
+                "item": "w",
+                "type": "Word",
+                "items": {
+                  "ref": "words"
+                },
+                "body": [
+                  {
+                    "op": "kernel",
+                    "as": "s",
+                    "type": "Int",
+                    "row": "score",
+                    "args": [
+                      {
+                        "ref": "w"
+                      }
+                    ]
+                  },
+                  {
+                    "op": "calc",
+                    "as": "scores",
+                    "type": "Ints",
+                    "fn": "append",
+                    "args": [
+                      {
+                        "ref": "scores"
+                      },
+                      {
+                        "ref": "s"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "i",
+                "type": "Int",
+                "fn": "argmin_first",
+                "args": [
+                  {
+                    "ref": "scores"
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "chosen",
+                "type": "Word",
+                "fn": "index",
+                "args": [
+                  {
+                    "ref": "words"
+                  },
+                  {
+                    "ref": "i"
+                  }
+                ]
+              },
+              {
+                "op": "workspace_put",
+                "key": "selected_index",
+                "value": {
+                  "ref": "i"
+                }
+              }
+            ]
+          },
+          {
+            "id": "r2",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "workspace_get",
+                "as": "i",
+                "type": "Int",
+                "key": "selected_index"
+              },
+              {
+                "op": "calc",
+                "as": "rebuilt",
+                "type": "Word",
+                "fn": "index",
+                "args": [
+                  {
+                    "ref": "words"
+                  },
+                  {
+                    "ref": "i"
+                  }
+                ]
+              },
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "ref": "rebuilt"
+                },
+                "target": {
+                  "ref": "target"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "flow": "Research search -> saved index -> rebuild from a fresh public word table -> solving preview. Persisted index still has research/state provenance.",
+      "expected_code": "LG3:capability.not_granted",
+      "code_gap": null,
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending preview at the refused operation",
+        "provenance of existing workspace records"
+      ],
+      "forms": {
+        "capability_separation": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.25",
+            "RTE.27",
+            "BND.39"
+          ],
+          "reason": "The program combines a state-derived read, including stored provenance or a preview outcome, with a solving preview; transitive capability separation must deny that use."
+        },
+        "static_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        },
+        "static_runtime_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        }
+      }
+    },
+    {
+      "id": "MR05",
+      "family": "f2_f5_solve",
+      "clauses": [
+        "RTE.45",
+        "DET.50",
+        "BND.11",
+        "BND.65"
+      ],
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "nu",
+                "type": "Ints",
+                "row": "nu2",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "coeff",
+                "type": "Ints",
+                "fn": "linear_solve_mod",
+                "args": [
+                  {
+                    "type": "Matrix",
+                    "value": [
+                      [
+                        1,
+                        0
+                      ],
+                      [
+                        0,
+                        1
+                      ]
+                    ]
+                  },
+                  {
+                    "ref": "nu"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 2
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "correction",
+                "type": "Word",
+                "fn": "combine_corrections",
+                "args": [
+                  {
+                    "type": "Words",
+                    "value": [
+                      [
+                        "a"
+                      ],
+                      [
+                        "b"
+                      ]
+                    ]
+                  },
+                  {
+                    "ref": "coeff"
+                  }
+                ]
+              },
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "ref": "correction"
+                },
+                "target": {
+                  "ref": "target"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "flow": "Generic F2 elimination of the read nu against shipped identity correction rows -> chronological correction combination -> preview. No search primitive is needed.",
+      "expected_code": "LG3:capability.not_granted",
+      "code_gap": "flow_code_reserved",
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending preview at the refused operation",
+        "provenance of existing workspace records"
+      ],
+      "forms": {
+        "capability_separation": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.25",
+            "RTE.27",
+            "BND.39"
+          ],
+          "reason": "The program combines a state-derived read, including stored provenance or a preview outcome, with a solving preview; transitive capability separation must deny that use."
+        },
+        "static_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        },
+        "static_runtime_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        }
+      }
+    },
+    {
+      "id": "MR06",
+      "family": "f2_f5_solve",
+      "clauses": [
+        "RTE.45",
+        "DET.50",
+        "BND.11",
+        "BND.65"
+      ],
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "nu",
+                "type": "Ints",
+                "row": "nu5",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "coeff",
+                "type": "Ints",
+                "fn": "linear_solve_mod",
+                "args": [
+                  {
+                    "type": "Matrix",
+                    "value": [
+                      [
+                        1,
+                        0
+                      ],
+                      [
+                        0,
+                        1
+                      ]
+                    ]
+                  },
+                  {
+                    "ref": "nu"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 5
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "correction",
+                "type": "Word",
+                "fn": "combine_corrections",
+                "args": [
+                  {
+                    "type": "Words",
+                    "value": [
+                      [
+                        "c"
+                      ],
+                      [
+                        "d"
+                      ]
+                    ]
+                  },
+                  {
+                    "ref": "coeff"
+                  }
+                ]
+              },
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "ref": "correction"
+                },
+                "target": {
+                  "ref": "target"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "flow": "Generic F5 elimination of the read nu against shipped identity correction rows -> chronological correction combination -> preview. No search primitive is needed.",
+      "expected_code": "LG3:capability.not_granted",
+      "code_gap": "flow_code_reserved",
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending preview at the refused operation",
+        "provenance of existing workspace records"
+      ],
+      "forms": {
+        "capability_separation": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.25",
+            "RTE.27",
+            "BND.39"
+          ],
+          "reason": "The program combines a state-derived read, including stored provenance or a preview outcome, with a solving preview; transitive capability separation must deny that use."
+        },
+        "static_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        },
+        "static_runtime_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        }
+      }
+    },
+    {
+      "id": "MR07",
+      "family": "workspace_laundering",
+      "clauses": [
+        "RTE.45",
+        "DET.50",
+        "BND.24",
+        "BND.32"
+      ],
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          },
+          "caps": {
+            "type": "Targets",
+            "value": [
+              "c0",
+              "c1",
+              "c2"
+            ],
+            "origin": "manual"
+          },
+          "words": {
+            "type": "Words",
+            "value": [
+              [
+                "a"
+              ],
+              [
+                "b"
+              ],
+              [
+                "c"
+              ]
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "tool_authoring",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "n",
+                "type": "Ints",
+                "row": "counts",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "i",
+                "type": "Int",
+                "fn": "argmax_first",
+                "args": [
+                  {
+                    "ref": "n"
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "w",
+                "type": "Word",
+                "fn": "index",
+                "args": [
+                  {
+                    "ref": "words"
+                  },
+                  {
+                    "ref": "i"
+                  }
+                ]
+              },
+              {
+                "op": "workspace_put",
+                "key": "saved",
+                "value": {
+                  "ref": "w"
+                }
+              }
+            ]
+          },
+          {
+            "id": "r2",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "workspace_get",
+                "as": "w",
+                "type": "Word",
+                "key": "saved"
+              },
+              {
+                "op": "calc",
+                "as": "renamed",
+                "type": "Word",
+                "fn": "identity",
+                "args": [
+                  {
+                    "ref": "w"
+                  }
+                ]
+              },
+              {
+                "op": "workspace_put",
+                "key": "renamed",
+                "value": {
+                  "ref": "renamed"
+                }
+              },
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "ref": "renamed"
+                },
+                "target": {
+                  "ref": "target"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "flow": "Authoring fixture state -> saved word -> rename/copy -> solving preview. Workspace reads and writes preserve all parts of provenance.",
+      "expected_code": "LG3:capability.not_granted",
+      "code_gap": "flow_code_reserved",
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending preview at the refused operation",
+        "provenance of existing workspace records"
+      ],
+      "forms": {
+        "capability_separation": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.25",
+            "RTE.27",
+            "BND.39"
+          ],
+          "reason": "The program combines a state-derived read, including stored provenance or a preview outcome, with a solving preview; transitive capability separation must deny that use."
+        },
+        "static_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        },
+        "static_runtime_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        }
+      }
+    },
+    {
+      "id": "MR08",
+      "family": "workspace_laundering",
+      "clauses": [
+        "RTE.45",
+        "DET.50",
+        "BND.21",
+        "BND.32",
+        "BND.83"
+      ],
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "legacy": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "unknown"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "tool_authoring",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "workspace_put",
+                "key": "legacy",
+                "value": {
+                  "ref": "legacy"
+                }
+              }
+            ]
+          },
+          {
+            "id": "r2",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "workspace_get",
+                "as": "w",
+                "type": "Word",
+                "key": "legacy"
+              },
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "ref": "w"
+                },
+                "target": {
+                  "ref": "target"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "flow": "An unreadable/missing provenance block is unknown, never own; storing and loading cannot justify a gated use.",
+      "expected_code": "PS1:capability.provenance_incompatible",
+      "code_gap": null,
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending preview at the refused operation",
+        "provenance of existing workspace records"
+      ],
+      "forms": {
+        "capability_separation": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.26",
+            "BND.21",
+            "BND.32",
+            "BND.83"
+          ],
+          "reason": "Unknown stored provenance cannot justify this gated use under either mechanism; the active provenance refusal applies without inventing a state-read history."
+        },
+        "static_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.26",
+            "BND.21",
+            "BND.32",
+            "BND.83"
+          ],
+          "reason": "Unknown stored provenance cannot justify this gated use under either mechanism; the active provenance refusal applies without inventing a state-read history."
+        },
+        "static_runtime_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.26",
+            "BND.21",
+            "BND.32",
+            "BND.83"
+          ],
+          "reason": "Unknown stored provenance cannot justify this gated use under either mechanism; the active provenance refusal applies without inventing a state-read history."
+        }
+      }
+    },
+    {
+      "id": "MR09",
+      "family": "state_choice",
+      "clauses": [
+        "RTE.45",
+        "DET.50",
+        "BND.24",
+        "BND.38"
+      ],
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "n",
+                "type": "Ints",
+                "row": "counts",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "n0",
+                "type": "Int",
+                "fn": "index",
+                "args": [
+                  {
+                    "ref": "n"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "test",
+                "type": "Bool",
+                "fn": "gt",
+                "args": [
+                  {
+                    "ref": "n0"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "op": "if",
+                "test": {
+                  "ref": "test"
+                },
+                "then": [
+                  {
+                    "op": "preview",
+                    "as": "receipt",
+                    "type": "Receipt",
+                    "word": {
+                      "type": "Word",
+                      "value": [
+                        "a"
+                      ]
+                    },
+                    "target": {
+                      "ref": "target"
+                    }
+                  }
+                ],
+                "else": [
+                  {
+                    "op": "preview",
+                    "as": "receipt",
+                    "type": "Receipt",
+                    "word": {
+                      "type": "Word",
+                      "value": [
+                        "b"
+                      ]
+                    },
+                    "target": {
+                      "ref": "target"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flow": "A state-conditioned branch chooses between two manually supplied constant words; both branches have valid words.",
+      "expected_code": "LG3:capability.not_granted",
+      "code_gap": "flow_code_reserved",
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending preview at the refused operation",
+        "provenance of existing workspace records"
+      ],
+      "forms": {
+        "capability_separation": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.25",
+            "RTE.27",
+            "BND.39"
+          ],
+          "reason": "The program combines a state-derived read, including stored provenance or a preview outcome, with a solving preview; transitive capability separation must deny that use."
+        },
+        "static_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        },
+        "static_runtime_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        }
+      }
+    },
+    {
+      "id": "MR10",
+      "family": "state_choice",
+      "clauses": [
+        "RTE.45",
+        "DET.50",
+        "BND.24",
+        "BND.38"
+      ],
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "bits",
+                "type": "Ints",
+                "row": "bits",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "b",
+                "type": "Int",
+                "fn": "index",
+                "args": [
+                  {
+                    "ref": "bits"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 1
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "test",
+                "type": "Bool",
+                "fn": "eq",
+                "args": [
+                  {
+                    "ref": "b"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 1
+                  }
+                ]
+              },
+              {
+                "op": "if",
+                "test": {
+                  "ref": "test"
+                },
+                "then": [
+                  {
+                    "op": "calc",
+                    "as": "choice",
+                    "type": "Word",
+                    "fn": "identity",
+                    "args": [
+                      {
+                        "type": "Word",
+                        "value": [
+                          "a"
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "else": [
+                  {
+                    "op": "calc",
+                    "as": "choice",
+                    "type": "Word",
+                    "fn": "identity",
+                    "args": [
+                      {
+                        "type": "Word",
+                        "value": [
+                          "b"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "ref": "choice"
+                },
+                "target": {
+                  "ref": "target"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "flow": "Branch-dependent assignment survives the join and reaches a later preview.",
+      "expected_code": "LG3:capability.not_granted",
+      "code_gap": "flow_code_reserved",
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending preview at the refused operation",
+        "provenance of existing workspace records"
+      ],
+      "forms": {
+        "capability_separation": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.25",
+            "RTE.27",
+            "BND.39"
+          ],
+          "reason": "The program combines a state-derived read, including stored provenance or a preview outcome, with a solving preview; transitive capability separation must deny that use."
+        },
+        "static_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        },
+        "static_runtime_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        }
+      }
+    },
+    {
+      "id": "MR11",
+      "family": "module_flow",
+      "clauses": [
+        "RTE.45",
+        "DET.50",
+        "BND.38",
+        "LG3.2"
+      ],
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {
+          "selector": {
+            "parameters": {},
+            "result": "Word",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "n",
+                "type": "Ints",
+                "row": "nu2",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "v",
+                "type": "Int",
+                "fn": "index",
+                "args": [
+                  {
+                    "ref": "n"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "b",
+                "type": "Bool",
+                "fn": "eq",
+                "args": [
+                  {
+                    "ref": "v"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 1
+                  }
+                ]
+              },
+              {
+                "op": "if",
+                "test": {
+                  "ref": "b"
+                },
+                "then": [
+                  {
+                    "op": "return",
+                    "value": {
+                      "type": "Word",
+                      "value": [
+                        "a"
+                      ]
+                    }
+                  }
+                ],
+                "else": [
+                  {
+                    "op": "return",
+                    "value": {
+                      "type": "Word",
+                      "value": [
+                        "b"
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "call",
+                "as": "w",
+                "type": "Word",
+                "module": "selector",
+                "args": []
+              },
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "ref": "w"
+                },
+                "target": {
+                  "ref": "target"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "flow": "Read occurs inside a callee; its returned word keeps the conditional state dependence.",
+      "expected_code": "LG3:capability.not_granted",
+      "code_gap": "flow_code_reserved",
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending preview at the refused operation",
+        "provenance of existing workspace records"
+      ],
+      "forms": {
+        "capability_separation": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.25",
+            "RTE.27",
+            "BND.39"
+          ],
+          "reason": "The program combines a state-derived read, including stored provenance or a preview outcome, with a solving preview; transitive capability separation must deny that use."
+        },
+        "static_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        },
+        "static_runtime_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        }
+      }
+    },
+    {
+      "id": "MR12",
+      "family": "module_flow",
+      "clauses": [
+        "RTE.45",
+        "DET.50",
+        "BND.38",
+        "LG3.2"
+      ],
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {
+          "selector": {
+            "parameters": {},
+            "result": "Word",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "n",
+                "type": "Ints",
+                "row": "nu2",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "v",
+                "type": "Int",
+                "fn": "index",
+                "args": [
+                  {
+                    "ref": "n"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "b",
+                "type": "Bool",
+                "fn": "eq",
+                "args": [
+                  {
+                    "ref": "v"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 1
+                  }
+                ]
+              },
+              {
+                "op": "if",
+                "test": {
+                  "ref": "b"
+                },
+                "then": [
+                  {
+                    "op": "return",
+                    "value": {
+                      "type": "Word",
+                      "value": [
+                        "a"
+                      ]
+                    }
+                  }
+                ],
+                "else": [
+                  {
+                    "op": "return",
+                    "value": {
+                      "type": "Word",
+                      "value": [
+                        "b"
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "copy": {
+            "parameters": {
+              "x": "Word"
+            },
+            "result": "Word",
+            "body": [
+              {
+                "op": "return",
+                "value": {
+                  "ref": "x"
+                }
+              }
+            ]
+          }
+        },
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "call",
+                "as": "selected",
+                "type": "Word",
+                "module": "selector",
+                "args": []
+              },
+              {
+                "op": "call",
+                "as": "copied",
+                "type": "Word",
+                "module": "copy",
+                "args": [
+                  {
+                    "ref": "selected"
+                  }
+                ]
+              },
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "ref": "copied"
+                },
+                "target": {
+                  "ref": "target"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "flow": "A second identity wrapper cannot hide the first module's dependency or reduce its transitive effects.",
+      "expected_code": "LG3:capability.not_granted",
+      "code_gap": "flow_code_reserved",
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending preview at the refused operation",
+        "provenance of existing workspace records"
+      ],
+      "forms": {
+        "capability_separation": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.25",
+            "RTE.27",
+            "BND.39"
+          ],
+          "reason": "The program combines a state-derived read, including stored provenance or a preview outcome, with a solving preview; transitive capability separation must deny that use."
+        },
+        "static_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        },
+        "static_runtime_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        }
+      }
+    },
+    {
+      "id": "MR13",
+      "family": "stop_selected_preview",
+      "clauses": [
+        "RTE.45",
+        "DET.50",
+        "BND.46",
+        "BND.51"
+      ],
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          },
+          "caps": {
+            "type": "Targets",
+            "value": [
+              "c0",
+              "c1",
+              "c2"
+            ],
+            "origin": "manual"
+          },
+          "words": {
+            "type": "Words",
+            "value": [
+              [
+                "a"
+              ],
+              [
+                "b"
+              ],
+              [
+                "c"
+              ]
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "for",
+                "item": "w",
+                "type": "Word",
+                "items": {
+                  "ref": "words"
+                },
+                "body": [
+                  {
+                    "op": "preview",
+                    "as": "receipt",
+                    "type": "Receipt",
+                    "word": {
+                      "ref": "w"
+                    },
+                    "target": {
+                      "ref": "target"
+                    }
+                  },
+                  {
+                    "op": "kernel",
+                    "as": "s",
+                    "type": "Int",
+                    "row": "score",
+                    "args": [
+                      {
+                        "ref": "w"
+                      }
+                    ]
+                  },
+                  {
+                    "op": "calc",
+                    "as": "done",
+                    "type": "Bool",
+                    "fn": "eq",
+                    "args": [
+                      {
+                        "ref": "s"
+                      },
+                      {
+                        "type": "Int",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  {
+                    "op": "if",
+                    "test": {
+                      "ref": "done"
+                    },
+                    "then": [
+                      {
+                        "op": "stop",
+                        "reason": "requested"
+                      }
+                    ],
+                    "else": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flow": "Preview each public word before testing it; state-dependent stop leaves the successful a pending. Fixed list and constant words do not close termination.",
+      "expected_code": "LG3:capability.not_granted",
+      "code_gap": "stop_emission",
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending preview at the refused operation",
+        "provenance of existing workspace records"
+      ],
+      "forms": {
+        "capability_separation": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.25",
+            "RTE.27",
+            "BND.39"
+          ],
+          "reason": "The program combines a state-derived read, including stored provenance or a preview outcome, with a solving preview; transitive capability separation must deny that use."
+        },
+        "static_labels": {
+          "expected_to_catch": false,
+          "clauses": [
+            "RTE.25",
+            "BND.46",
+            "BND.47",
+            "BND.51"
+          ],
+          "reason": "Data and ordinary branch labels do not close termination/emission or accumulated observations. No BND.51 fix is selected; a miss still fails this frozen case."
+        },
+        "static_runtime_labels": {
+          "expected_to_catch": false,
+          "clauses": [
+            "RTE.25",
+            "BND.46",
+            "BND.47",
+            "BND.51"
+          ],
+          "reason": "Data and ordinary branch labels do not close termination/emission or accumulated observations. No BND.51 fix is selected; a miss still fails this frozen case."
+        }
+      }
+    },
+    {
+      "id": "MR14",
+      "family": "stop_selected_preview",
+      "clauses": [
+        "RTE.45",
+        "DET.50",
+        "BND.47",
+        "BND.51"
+      ],
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "bits",
+                "type": "Ints",
+                "row": "bits",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "b",
+                "type": "Int",
+                "fn": "index",
+                "args": [
+                  {
+                    "ref": "bits"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "test",
+                "type": "Bool",
+                "fn": "eq",
+                "args": [
+                  {
+                    "ref": "b"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 1
+                  }
+                ]
+              },
+              {
+                "op": "if",
+                "test": {
+                  "ref": "test"
+                },
+                "then": [
+                  {
+                    "op": "stop",
+                    "reason": "requested"
+                  }
+                ],
+                "else": []
+              },
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "ref": "word"
+                },
+                "target": {
+                  "ref": "target"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "flow": "A state-dependent early stop decides whether the following constant preview is emitted, although the preview lies outside the branch.",
+      "expected_code": "LG3:capability.not_granted",
+      "code_gap": "stop_emission",
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending preview at the refused operation",
+        "provenance of existing workspace records"
+      ],
+      "forms": {
+        "capability_separation": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.25",
+            "RTE.27",
+            "BND.39"
+          ],
+          "reason": "The program combines a state-derived read, including stored provenance or a preview outcome, with a solving preview; transitive capability separation must deny that use."
+        },
+        "static_labels": {
+          "expected_to_catch": false,
+          "clauses": [
+            "RTE.25",
+            "BND.46",
+            "BND.47",
+            "BND.51"
+          ],
+          "reason": "Data and ordinary branch labels do not close termination/emission or accumulated observations. No BND.51 fix is selected; a miss still fails this frozen case."
+        },
+        "static_runtime_labels": {
+          "expected_to_catch": false,
+          "clauses": [
+            "RTE.25",
+            "BND.46",
+            "BND.47",
+            "BND.51"
+          ],
+          "reason": "Data and ordinary branch labels do not close termination/emission or accumulated observations. No BND.51 fix is selected; a miss still fails this frozen case."
+        }
+      }
+    },
+    {
+      "id": "MR15",
+      "family": "refusal_driven_selection",
+      "clauses": [
+        "RTE.45",
+        "DET.50",
+        "BND.42",
+        "BND.43"
+      ],
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "type": "Word",
+                  "value": [
+                    "d"
+                  ]
+                },
+                "target": {
+                  "ref": "target"
+                }
+              },
+              {
+                "op": "kernel",
+                "as": "outcome",
+                "type": "Record",
+                "row": "preview_outcome",
+                "args": [
+                  {
+                    "ref": "receipt"
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "field",
+                "type": "Text",
+                "fn": "field",
+                "args": [
+                  {
+                    "ref": "outcome"
+                  },
+                  {
+                    "type": "Text",
+                    "value": "code"
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "test",
+                "type": "Bool",
+                "fn": "eq",
+                "args": [
+                  {
+                    "ref": "field"
+                  },
+                  {
+                    "type": "Text",
+                    "value": "KN2:protection.piece_would_move"
+                  }
+                ]
+              },
+              {
+                "op": "if",
+                "test": {
+                  "ref": "test"
+                },
+                "then": [
+                  {
+                    "op": "preview",
+                    "as": "receipt",
+                    "type": "Receipt",
+                    "word": {
+                      "type": "Word",
+                      "value": [
+                        "a"
+                      ]
+                    },
+                    "target": {
+                      "ref": "target"
+                    }
+                  }
+                ],
+                "else": [
+                  {
+                    "op": "preview",
+                    "as": "receipt",
+                    "type": "Receipt",
+                    "word": {
+                      "type": "Word",
+                      "value": [
+                        "b"
+                      ]
+                    },
+                    "target": {
+                      "ref": "target"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flow": "A protected probe is refused. Its error category/protection outcome controls a later word; separation exposes only a fixed acknowledgement and must refuse the outcome read.",
+      "expected_code": "LG3:capability.not_granted",
+      "code_gap": "flow_code_reserved",
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending preview at the refused operation",
+        "provenance of existing workspace records"
+      ],
+      "forms": {
+        "capability_separation": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.25",
+            "RTE.27",
+            "BND.39"
+          ],
+          "reason": "The program combines a state-derived read, including stored provenance or a preview outcome, with a solving preview; transitive capability separation must deny that use."
+        },
+        "static_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        },
+        "static_runtime_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        }
+      }
+    },
+    {
+      "id": "MR16",
+      "family": "refusal_driven_selection",
+      "clauses": [
+        "RTE.45",
+        "DET.50",
+        "BND.42",
+        "BND.43"
+      ],
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "type": "Word",
+                  "value": [
+                    "c"
+                  ]
+                },
+                "target": {
+                  "ref": "target"
+                }
+              },
+              {
+                "op": "kernel",
+                "as": "outcome",
+                "type": "Record",
+                "row": "preview_outcome",
+                "args": [
+                  {
+                    "ref": "receipt"
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "field",
+                "type": "Bool",
+                "fn": "field",
+                "args": [
+                  {
+                    "ref": "outcome"
+                  },
+                  {
+                    "type": "Text",
+                    "value": "protected"
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "test",
+                "type": "Bool",
+                "fn": "eq",
+                "args": [
+                  {
+                    "ref": "field"
+                  },
+                  {
+                    "type": "Bool",
+                    "value": false
+                  }
+                ]
+              },
+              {
+                "op": "if",
+                "test": {
+                  "ref": "test"
+                },
+                "then": [
+                  {
+                    "op": "preview",
+                    "as": "receipt",
+                    "type": "Receipt",
+                    "word": {
+                      "type": "Word",
+                      "value": [
+                        "a"
+                      ]
+                    },
+                    "target": {
+                      "ref": "target"
+                    }
+                  }
+                ],
+                "else": [
+                  {
+                    "op": "preview",
+                    "as": "receipt",
+                    "type": "Receipt",
+                    "word": {
+                      "type": "Word",
+                      "value": [
+                        "b"
+                      ]
+                    },
+                    "target": {
+                      "ref": "target"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "flow": "A protected probe is refused. Its error category/protection outcome controls a later word; separation exposes only a fixed acknowledgement and must refuse the outcome read.",
+      "expected_code": "LG3:capability.not_granted",
+      "code_gap": "flow_code_reserved",
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending preview at the refused operation",
+        "provenance of existing workspace records"
+      ],
+      "forms": {
+        "capability_separation": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.25",
+            "RTE.27",
+            "BND.39"
+          ],
+          "reason": "The program combines a state-derived read, including stored provenance or a preview outcome, with a solving preview; transitive capability separation must deny that use."
+        },
+        "static_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        },
+        "static_runtime_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        }
+      }
+    },
+    {
+      "id": "MR17",
+      "family": "one_item_pick",
+      "clauses": [
+        "RTE.45",
+        "DET.50",
+        "BND.55"
+      ],
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          },
+          "caps": {
+            "type": "Targets",
+            "value": [
+              "c0",
+              "c1",
+              "c2"
+            ],
+            "origin": "manual"
+          },
+          "words": {
+            "type": "Words",
+            "value": [
+              [
+                "a"
+              ],
+              [
+                "b"
+              ],
+              [
+                "c"
+              ]
+            ],
+            "origin": "manual"
+          },
+          "pick0": {
+            "type": "Int",
+            "value": 0,
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "n",
+                "type": "Ints",
+                "row": "counts",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "i",
+                "type": "Int",
+                "fn": "argmax_first",
+                "args": [
+                  {
+                    "ref": "n"
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "t",
+                "type": "Target",
+                "fn": "index",
+                "args": [
+                  {
+                    "ref": "caps"
+                  },
+                  {
+                    "ref": "i"
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "one",
+                "type": "Targets",
+                "fn": "singleton",
+                "args": [
+                  {
+                    "ref": "t"
+                  }
+                ]
+              },
+              {
+                "op": "pick",
+                "as": "chosen",
+                "type": "Target",
+                "options": {
+                  "ref": "one"
+                },
+                "event": "pick0"
+              },
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "ref": "word"
+                },
+                "target": {
+                  "ref": "chosen"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "flow": "A computed singleton target list plus a real recorded pick still reflects the program's option set.",
+      "expected_code": "LG3:capability.not_granted",
+      "code_gap": "flow_code_reserved",
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending preview at the refused operation",
+        "provenance of existing workspace records"
+      ],
+      "forms": {
+        "capability_separation": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.25",
+            "RTE.27",
+            "BND.39"
+          ],
+          "reason": "The program combines a state-derived read, including stored provenance or a preview outcome, with a solving preview; transitive capability separation must deny that use."
+        },
+        "static_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        },
+        "static_runtime_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        }
+      }
+    },
+    {
+      "id": "MR18",
+      "family": "one_item_pick",
+      "clauses": [
+        "RTE.45",
+        "DET.50",
+        "BND.55"
+      ],
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "pick0": {
+            "type": "Int",
+            "value": 0,
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "nu",
+                "type": "Ints",
+                "row": "nu2",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "w",
+                "type": "Word",
+                "fn": "combine_corrections",
+                "args": [
+                  {
+                    "type": "Words",
+                    "value": [
+                      [
+                        "a"
+                      ],
+                      [
+                        "b"
+                      ]
+                    ]
+                  },
+                  {
+                    "ref": "nu"
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "one",
+                "type": "Words",
+                "fn": "singleton",
+                "args": [
+                  {
+                    "ref": "w"
+                  }
+                ]
+              },
+              {
+                "op": "pick",
+                "as": "chosen",
+                "type": "Word",
+                "options": {
+                  "ref": "one"
+                },
+                "event": "pick0"
+              },
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "ref": "chosen"
+                },
+                "target": {
+                  "ref": "target"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "flow": "A state-selected correction is the only option. A manual click does not clear list provenance or turn it into a fixed declassifier.",
+      "expected_code": "LG3:capability.not_granted",
+      "code_gap": "flow_code_reserved",
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending preview at the refused operation",
+        "provenance of existing workspace records"
+      ],
+      "forms": {
+        "capability_separation": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.25",
+            "RTE.27",
+            "BND.39"
+          ],
+          "reason": "The program combines a state-derived read, including stored provenance or a preview outcome, with a solving preview; transitive capability separation must deny that use."
+        },
+        "static_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        },
+        "static_runtime_labels": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.24",
+            "BND.38",
+            "LG3.12"
+          ],
+          "reason": "Data, branch, module and persisted dependencies must reach the gated word/target; the interim policy denies the resulting use."
+        }
+      }
+    },
+    {
+      "id": "MR19",
+      "family": "accumulation_across_runs",
+      "clauses": [
+        "RTE.45",
+        "DET.50",
+        "BND.47",
+        "BND.51"
+      ],
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "type": "Word",
+                  "value": [
+                    "a"
+                  ]
+                },
+                "target": {
+                  "ref": "target"
+                }
+              },
+              {
+                "op": "kernel",
+                "as": "bits",
+                "type": "Ints",
+                "row": "bits",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "bit",
+                "type": "Int",
+                "fn": "index",
+                "args": [
+                  {
+                    "ref": "bits"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "test",
+                "type": "Bool",
+                "fn": "eq",
+                "args": [
+                  {
+                    "ref": "bit"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 1
+                  }
+                ]
+              },
+              {
+                "op": "if",
+                "test": {
+                  "ref": "test"
+                },
+                "then": [
+                  {
+                    "op": "stop",
+                    "reason": "requested"
+                  }
+                ],
+                "else": []
+              },
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "type": "Word",
+                  "value": [
+                    "b"
+                  ]
+                },
+                "target": {
+                  "ref": "target"
+                }
+              }
+            ]
+          },
+          {
+            "id": "r2",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "type": "Word",
+                  "value": [
+                    "a"
+                  ]
+                },
+                "target": {
+                  "ref": "target"
+                }
+              },
+              {
+                "op": "kernel",
+                "as": "bits",
+                "type": "Ints",
+                "row": "bits",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "bit",
+                "type": "Int",
+                "fn": "index",
+                "args": [
+                  {
+                    "ref": "bits"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 1
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "test",
+                "type": "Bool",
+                "fn": "eq",
+                "args": [
+                  {
+                    "ref": "bit"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 1
+                  }
+                ]
+              },
+              {
+                "op": "if",
+                "test": {
+                  "ref": "test"
+                },
+                "then": [
+                  {
+                    "op": "stop",
+                    "reason": "requested"
+                  }
+                ],
+                "else": []
+              },
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "type": "Word",
+                  "value": [
+                    "b"
+                  ]
+                },
+                "target": {
+                  "ref": "target"
+                }
+              }
+            ]
+          },
+          {
+            "id": "r3",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "type": "Word",
+                  "value": [
+                    "a"
+                  ]
+                },
+                "target": {
+                  "ref": "target"
+                }
+              },
+              {
+                "op": "kernel",
+                "as": "bits",
+                "type": "Ints",
+                "row": "bits",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "bit",
+                "type": "Int",
+                "fn": "index",
+                "args": [
+                  {
+                    "ref": "bits"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 2
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "test",
+                "type": "Bool",
+                "fn": "eq",
+                "args": [
+                  {
+                    "ref": "bit"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 1
+                  }
+                ]
+              },
+              {
+                "op": "if",
+                "test": {
+                  "ref": "test"
+                },
+                "then": [
+                  {
+                    "op": "stop",
+                    "reason": "requested"
+                  }
+                ],
+                "else": []
+              },
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "type": "Word",
+                  "value": [
+                    "b"
+                  ]
+                },
+                "target": {
+                  "ref": "target"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "flow": "Three separately invoked runs with public indexes 0,1,2 expose bits [1,0,1] through which constant preview survives. The host observer records each run; each run remains in the corpus and receives no automatic action.",
+      "expected_code": "LG3:capability.not_granted",
+      "code_gap": "stop_emission",
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending preview at the refused operation",
+        "provenance of existing workspace records"
+      ],
+      "forms": {
+        "capability_separation": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.25",
+            "RTE.27",
+            "BND.39"
+          ],
+          "reason": "The program combines a state-derived read, including stored provenance or a preview outcome, with a solving preview; transitive capability separation must deny that use."
+        },
+        "static_labels": {
+          "expected_to_catch": false,
+          "clauses": [
+            "RTE.25",
+            "BND.46",
+            "BND.47",
+            "BND.51"
+          ],
+          "reason": "Data and ordinary branch labels do not close termination/emission or accumulated observations. No BND.51 fix is selected; a miss still fails this frozen case."
+        },
+        "static_runtime_labels": {
+          "expected_to_catch": false,
+          "clauses": [
+            "RTE.25",
+            "BND.46",
+            "BND.47",
+            "BND.51"
+          ],
+          "reason": "Data and ordinary branch labels do not close termination/emission or accumulated observations. No BND.51 fix is selected; a miss still fails this frozen case."
+        }
+      }
+    },
+    {
+      "id": "MR20",
+      "family": "accumulation_across_runs",
+      "clauses": [
+        "RTE.45",
+        "DET.50",
+        "BND.47",
+        "BND.51"
+      ],
+      "program": {
+        "inputs": {
+          "target": {
+            "type": "Target",
+            "value": "c0",
+            "origin": "manual"
+          },
+          "word": {
+            "type": "Word",
+            "value": [
+              "a"
+            ],
+            "origin": "manual"
+          }
+        },
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "bits",
+                "type": "Ints",
+                "row": "bits",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "bit",
+                "type": "Int",
+                "fn": "index",
+                "args": [
+                  {
+                    "ref": "bits"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "test",
+                "type": "Bool",
+                "fn": "eq",
+                "args": [
+                  {
+                    "ref": "bit"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 1
+                  }
+                ]
+              },
+              {
+                "op": "if",
+                "test": {
+                  "ref": "test"
+                },
+                "then": [
+                  {
+                    "op": "stop",
+                    "reason": "requested"
+                  }
+                ],
+                "else": []
+              },
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "type": "Word",
+                  "value": [
+                    "b"
+                  ]
+                },
+                "target": {
+                  "ref": "target"
+                }
+              }
+            ]
+          },
+          {
+            "id": "r2",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "bits",
+                "type": "Ints",
+                "row": "bits",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "bit",
+                "type": "Int",
+                "fn": "index",
+                "args": [
+                  {
+                    "ref": "bits"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 1
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "test",
+                "type": "Bool",
+                "fn": "eq",
+                "args": [
+                  {
+                    "ref": "bit"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 1
+                  }
+                ]
+              },
+              {
+                "op": "if",
+                "test": {
+                  "ref": "test"
+                },
+                "then": [
+                  {
+                    "op": "stop",
+                    "reason": "requested"
+                  }
+                ],
+                "else": []
+              },
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "type": "Word",
+                  "value": [
+                    "b"
+                  ]
+                },
+                "target": {
+                  "ref": "target"
+                }
+              }
+            ]
+          },
+          {
+            "id": "r3",
+            "profile": "solving",
+            "author": "built_in",
+            "boundary_class": "analysis",
+            "invocation": "command",
+            "body": [
+              {
+                "op": "kernel",
+                "as": "bits",
+                "type": "Ints",
+                "row": "bits",
+                "args": []
+              },
+              {
+                "op": "calc",
+                "as": "bit",
+                "type": "Int",
+                "fn": "index",
+                "args": [
+                  {
+                    "ref": "bits"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 2
+                  }
+                ]
+              },
+              {
+                "op": "calc",
+                "as": "test",
+                "type": "Bool",
+                "fn": "eq",
+                "args": [
+                  {
+                    "ref": "bit"
+                  },
+                  {
+                    "type": "Int",
+                    "value": 1
+                  }
+                ]
+              },
+              {
+                "op": "if",
+                "test": {
+                  "ref": "test"
+                },
+                "then": [
+                  {
+                    "op": "stop",
+                    "reason": "requested"
+                  }
+                ],
+                "else": []
+              },
+              {
+                "op": "preview",
+                "as": "receipt",
+                "type": "Receipt",
+                "word": {
+                  "type": "Word",
+                  "value": [
+                    "b"
+                  ]
+                },
+                "target": {
+                  "ref": "target"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "flow": "Three separately invoked runs with public indexes 0,1,2 expose bits [1,0,1] through emission versus the existing pending preview. The host observer records each run; each run remains in the corpus and receives no automatic action.",
+      "expected_code": "LG3:capability.not_granted",
+      "code_gap": "stop_emission",
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending preview at the refused operation",
+        "provenance of existing workspace records"
+      ],
+      "forms": {
+        "capability_separation": {
+          "expected_to_catch": true,
+          "clauses": [
+            "RTE.25",
+            "RTE.27",
+            "BND.39"
+          ],
+          "reason": "The program combines a state-derived read, including stored provenance or a preview outcome, with a solving preview; transitive capability separation must deny that use."
+        },
+        "static_labels": {
+          "expected_to_catch": false,
+          "clauses": [
+            "RTE.25",
+            "BND.46",
+            "BND.47",
+            "BND.51"
+          ],
+          "reason": "Data and ordinary branch labels do not close termination/emission or accumulated observations. No BND.51 fix is selected; a miss still fails this frozen case."
+        },
+        "static_runtime_labels": {
+          "expected_to_catch": false,
+          "clauses": [
+            "RTE.25",
+            "BND.46",
+            "BND.47",
+            "BND.51"
+          ],
+          "reason": "Data and ordinary branch labels do not close termination/emission or accumulated observations. No BND.51 fix is selected; a miss still fails this frozen case."
+        }
+      }
+    }
+  ]
+}

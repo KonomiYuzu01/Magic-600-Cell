@@ -1,0 +1,178 @@
+{
+  "acceptance": "passed",
+  "archives": {
+    "windows-pure-step1.tsv.gz": {
+      "bytes": 397131,
+      "raw_bytes": 1234909,
+      "raw_sha256": "8df4955dd83286f27c4083b5270fd1a1c04bd45df7c9149aab134010116ac15c",
+      "sha256": "d57b782ca1aa4fdd64dc12ea032d0d07a2f174689135ddf4e3125010c65d6675"
+    },
+    "windows-pure-step2.tsv.gz": {
+      "bytes": 38131,
+      "raw_bytes": 193786,
+      "raw_sha256": "7fcf9e3d5780dca6134e42d4026aab82506d07b8cfc54b93e7cfe4e8c4c790c2",
+      "sha256": "a1d4fba87cdb73881312651c5f8c7547d92159adbcd511af9a8b1ffbd339ed0e"
+    },
+    "windows-reference-step1.tsv.gz": {
+      "bytes": 397131,
+      "raw_bytes": 1234909,
+      "raw_sha256": "8df4955dd83286f27c4083b5270fd1a1c04bd45df7c9149aab134010116ac15c",
+      "sha256": "d57b782ca1aa4fdd64dc12ea032d0d07a2f174689135ddf4e3125010c65d6675"
+    },
+    "windows-reference-step2.tsv.gz": {
+      "bytes": 38131,
+      "raw_bytes": 193786,
+      "raw_sha256": "7fcf9e3d5780dca6134e42d4026aab82506d07b8cfc54b93e7cfe4e8c4c790c2",
+      "sha256": "a1d4fba87cdb73881312651c5f8c7547d92159adbcd511af9a8b1ffbd339ed0e"
+    },
+    "windows-rust-step1.tsv.gz": {
+      "bytes": 397160,
+      "raw_bytes": 1234909,
+      "raw_sha256": "7435b83c7e95b178e2dc1b949384dbdcaa1933f2cfd45dd8b41fab73a65f4ec7",
+      "sha256": "2a297c2af5c87ca38c131b3f04ef072b03bb81e2e95e54d19f7c0e239c639243"
+    },
+    "windows-rust-step2.tsv.gz": {
+      "bytes": 38140,
+      "raw_bytes": 193786,
+      "raw_sha256": "5ca501ce180776e65fb8e3aff9b5c24b458f0d8a3fad8b941cbe5ae975d7e4a6",
+      "sha256": "fb005dcc179eb62d2092b3b5987705a444cd877684a0e1de5017e524ae72348f"
+    }
+  },
+  "candidate_manifest_sha256": "a4d96e90952ca867c0dfe565a175c0edc5036d51aa4f44c0dd3886f401f0ca7e",
+  "decider": "owner",
+  "decision": "open",
+  "difference_table_sha256": "2701d3478ef9771249e31669430ec62e2c59f3bddc8e020b51176d7befe2824c",
+  "elapsed_seconds_lead_only": 12.448,
+  "evidence_class": "synthetic",
+  "input_manifest_sha256": "656212223fd3ce5d35a68512ab793fc300e409683b0abb00198eef9c972c1677",
+  "schema": "lx9-windows-v1",
+  "steps": {
+    "1": {
+      "comparisons": {
+        "pure/rust": {
+          "parameters": 0,
+          "rotation": 0,
+          "target": 888
+        },
+        "reference/pure": {
+          "parameters": 0,
+          "rotation": 0,
+          "target": 0
+        },
+        "reference/rust": {
+          "parameters": 0,
+          "rotation": 0,
+          "target": 888
+        }
+      },
+      "controls": {
+        "pure": {
+          "control": {
+            "naive_target_differences": 0,
+            "pure_parameter_differences": 0,
+            "pure_target_differences": 0,
+            "requests": 13600
+          },
+          "implementation": "CPython",
+          "platform": "win32",
+          "python": "3.15.1"
+        },
+        "reference": {
+          "control": {
+            "naive_target_differences": 888,
+            "pure_parameter_differences": 0,
+            "pure_target_differences": 0,
+            "requests": 13600
+          },
+          "implementation": "CPython",
+          "numpy": "2.3.5",
+          "platform": "win32",
+          "python": "3.14.7"
+        },
+        "rust_fma_vs_reference": {
+          "parameters": 0,
+          "rotation": 0,
+          "target": 0
+        },
+        "rust_score_controls": {
+          "mismatches": 0,
+          "requests_each_mode": 13600
+        }
+      },
+      "raw_result_sha256": {
+        "pure": "8df4955dd83286f27c4083b5270fd1a1c04bd45df7c9149aab134010116ac15c",
+        "reference": "8df4955dd83286f27c4083b5270fd1a1c04bd45df7c9149aab134010116ac15c",
+        "rust": "7435b83c7e95b178e2dc1b949384dbdcaa1933f2cfd45dd8b41fab73a65f4ec7",
+        "rust-fma": "8df4955dd83286f27c4083b5270fd1a1c04bd45df7c9149aab134010116ac15c"
+      },
+      "requests": 13600
+    },
+    "2": {
+      "comparisons": {
+        "pure/rust": {
+          "parameters": 0,
+          "rotation": 0,
+          "target": 948
+        },
+        "reference/pure": {
+          "parameters": 0,
+          "rotation": 0,
+          "target": 0
+        },
+        "reference/rust": {
+          "parameters": 0,
+          "rotation": 0,
+          "target": 948
+        }
+      },
+      "controls": {
+        "pure": {
+          "control": {
+            "naive_target_differences": 0,
+            "pure_parameter_differences": 0,
+            "pure_target_differences": 0,
+            "requests": 2104
+          },
+          "implementation": "CPython",
+          "platform": "win32",
+          "python": "3.15.1"
+        },
+        "reference": {
+          "control": {
+            "naive_target_differences": 948,
+            "pure_parameter_differences": 0,
+            "pure_target_differences": 0,
+            "requests": 2104
+          },
+          "implementation": "CPython",
+          "numpy": "2.3.5",
+          "platform": "win32",
+          "python": "3.14.7"
+        },
+        "rust_fma_vs_reference": {
+          "parameters": 0,
+          "rotation": 0,
+          "target": 0
+        },
+        "rust_score_controls": {
+          "mismatches": 0,
+          "requests_each_mode": 2104
+        }
+      },
+      "raw_result_sha256": {
+        "pure": "7fcf9e3d5780dca6134e42d4026aab82506d07b8cfc54b93e7cfe4e8c4c790c2",
+        "reference": "7fcf9e3d5780dca6134e42d4026aab82506d07b8cfc54b93e7cfe4e8c4c790c2",
+        "rust": "5ca501ce180776e65fb8e3aff9b5c24b458f0d8a3fad8b941cbe5ae975d7e4a6",
+        "rust-fma": "7fcf9e3d5780dca6134e42d4026aab82506d07b8cfc54b93e7cfe4e8c4c790c2"
+      },
+      "requests": 2104
+    }
+  },
+  "versions": {
+    "numpy": "2.3.5",
+    "pure_python": "3.15.1",
+    "reference_python": "3.14.7",
+    "rust_host": "x86_64-pc-windows-msvc",
+    "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)"
+  }
+}

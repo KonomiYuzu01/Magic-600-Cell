@@ -1,0 +1,502 @@
+{
+ "version": 1,
+ "source": "Freeze-readiness audits of 1e7d0074 and the plan check of the closure wave. Line numbers are those of the audited text. FR-C03 and FR-C04 were fixed in f73443b8 and passed a scoped check, so they have no owner here.",
+ "packets": {
+  "p1": {
+   "title": "EN3 jumbling interfaces",
+   "files": [
+    "docs/progress/1.0/jumbling-interfaces.md",
+    "docs/progress/1.0/command-rows-jumbling.json"
+   ]
+  },
+  "p2a": {
+   "title": "EN4 final command table",
+   "files": [
+    "docs/progress/1.0/command-table.md",
+    "docs/progress/1.0/command-table.json",
+    "docs/progress/1.0/build_command_table.py",
+    "docs/progress/1.0/test_command_table.py",
+    "docs/progress/1.0/command-aliases.json",
+    "docs/progress/1.0/command-join.json"
+   ],
+   "extra_checks": [
+    "docs/progress/1.0/test_command_table.py"
+   ]
+  },
+  "p2b": {
+   "title": "EN4 layer interfaces and reconciled kernel and state text",
+   "files": [
+    "docs/progress/1.0/layer-interfaces.md",
+    "docs/architecture/1.0/language/architecture/01-kernel.md",
+    "docs/architecture/1.0/language/architecture/08-one-state.md"
+   ]
+  },
+  "p3": {
+   "title": "EN4 migration format packet",
+   "files": [
+    "docs/architecture/1.0/language/format-packet",
+    "docs/architecture/1.0/language/architecture/05-persistence.md",
+    "docs/architecture/1.0/language/architecture/07-boundary.md"
+   ],
+   "extra_checks": [
+    "docs/architecture/1.0/language/format-packet/check_vectors.py"
+   ]
+  },
+  "p4": {
+   "title": "LP1 deterministic execution contract",
+   "files": [
+    "docs/architecture/1.0/language/architecture/09-determinism.md",
+    "docs/architecture/1.0/language/architecture/02-language-core.md",
+    "docs/architecture/1.0/language/architecture/11-route-and-spikes.md",
+    "docs/architecture/1.0/language/contract-vectors"
+   ],
+   "extra_checks": [
+    "docs/architecture/1.0/language/contract-vectors/check_vectors.py"
+   ]
+  },
+  "p5": {
+   "title": "LP1 language contracts",
+   "files": [
+    "docs/architecture/1.0/language/architecture/02-language-core.md",
+    "docs/architecture/1.0/language/architecture/03-libraries.md",
+    "docs/architecture/1.0/language/architecture/04-environment.md",
+    "docs/architecture/1.0/language/architecture/11-route-and-spikes.md"
+   ]
+  },
+  "p6": {
+   "title": "Renderer feature matrix",
+   "files": [
+    "docs/architecture/1.0/language/architecture/10-renderer-platform.md",
+    "docs/architecture/1.0/language/renderer-feature-matrix.md"
+   ]
+  }
+ },
+ "findings": {
+  "FR-K01": {
+   "severity": "blocker",
+   "title": "Deliver the final EN3/EN4 interfaces before requesting a go ruling",
+   "detail": "Verified: PHS.15–16 require final command and layer contracts. Chapter 01 explicitly says EN3 and EN4 have not delivered them; H-08 remains its first, pending-2.2 version, and jumbling-interfaces.md is absent. The chapters supply requirements for these deliverables, not a completed freeze input. Closing this requires EN3's four-layer jumbling specification and EN4's reconciled H-08, including query/overlay rows, revision fields, availability protocol, admission lanes and undo during jobs. Owners: EN3, EN4 and the integrator. Answering the language questions or accepting the ADR drafts alone cannot close this gap.",
+   "counterexample": "A freeze based solely on the current chapters would leave KN5.8's availability protocol and KN7.2's program/view lanes awaiting EN4 confirmation, although PHS.16 explicitly makes those mandatory LP1 inputs.",
+   "suggested_experiment": "Before the gate, trace a live twist, word preview/commit, long query, concurrent undo and puzzle crossing through the delivered contracts, checking that every boundary has specified arguments, outcomes, revisions and ownership.",
+   "evidence": [
+    "docs/architecture/1.0/language/architecture/12-phases-and-conformance.md:144",
+    "docs/architecture/1.0/language/architecture/01-kernel.md:622",
+    "docs/progress/1.0/command-table.md:3",
+    "docs/architecture/1.0/language/architecture/12-phases-and-conformance.md:441"
+   ],
+   "owners": {
+    "p1": [
+     "jumbling-four-layers",
+     "puzzle-crossing",
+     "jumble-live-twist"
+    ],
+    "p2b": [
+     "live-twist",
+     "word-preview-commit",
+     "long-query",
+     "concurrent-undo",
+     "puzzle-crossing"
+    ]
+   }
+  },
+  "FR-K02": {
+   "severity": "major",
+   "title": "Use one freshness predicate for availability and commit",
+   "detail": "Verified contradiction: ONE.39 provisionally preserves a preview across unrelated workspace edits, but commit step 6 requires equality of the base revision with the current revision. Preview.base is a RevisionRef, which includes workspace. Consequently, the freshness rule and commit procedure describe different acceptance conditions. The freeze needs one comparison rule. EN4 and the integrator should settle the already-assigned freshness question, then apply that rule consistently to the preview structure, H-08 gate, availability and commit checks. This needs a contract decision, not an experiment result or a new owner scope decision.",
+   "counterexample": "Contract trace, not executed: create a preview at state=7, workspace=10, protection=2; save an unrelated keymap, raising workspace to 11. ONE.39 still calls the preview fresh, while step 6's full RevisionRef equality rejects it.",
+   "suggested_experiment": "Add expected-outcome contract vectors for an unrelated workspace edit, a draft edit, a protection edit and an undo returning to the same state digest.",
+   "evidence": [
+    "docs/architecture/1.0/language/architecture/08-one-state.md:231",
+    "docs/architecture/1.0/language/architecture/08-one-state.md:265",
+    "docs/architecture/1.0/language/architecture/01-kernel.md:43"
+   ],
+   "owners": {
+    "p2b": [
+     "unrelated-workspace-edit",
+     "draft-edit",
+     "protection-edit",
+     "undo-same-digest"
+    ]
+   }
+  },
+  "FR-K03": {
+   "severity": "major",
+   "title": "Specify terminal outcomes for non-commit invocations",
+   "detail": "Verified: invoke and publish_view return Receipt, but Receipt has no successful terminal alternative for a query, preview, view, workspace or file operation. Its only explicit success terminal is committed(CommitRecord), which requires a journal event and puzzle-state hashes. JobResult separately defines completion and errors, without specifying their delivery or reconciliation with the receipt. The freeze needs that terminal protocol. The smallest closure is a kind-appropriate completion/result reference, or an explicitly defined separate result channel tied to command and job identity, including terminal failure and outcome lookup. Owners: EN4 and the integrator.",
+   "counterexample": "A successfully installed publish_view operation has no mechanical CommitRecord and is neither refused nor cancelled. The specified receipt cannot distinguish its completed installation from an invocation that remains merely accepted.",
+   "suggested_experiment": "Write protocol traces for successful view publication, completed query, ready preview, workspace update and runtime failure, including a lost notification followed by outcome lookup.",
+   "evidence": [
+    "docs/architecture/1.0/language/architecture/01-kernel.md:497",
+    "docs/architecture/1.0/language/architecture/01-kernel.md:566",
+    "docs/architecture/1.0/language/architecture/10-renderer-platform.md:118"
+   ],
+   "owners": {
+    "p2b": [
+     "view-publication",
+     "completed-query",
+     "ready-preview",
+     "workspace-update",
+     "runtime-failure",
+     "lost-notification-lookup"
+    ]
+   }
+  },
+  "FR-K04": {
+   "severity": "major",
+   "title": "Complete LP1's deterministic execution specification",
+   "detail": "Verified: the freeze inputs include an identity/accounting specification, while DET.20, DET.24 and ADR-L08 leave step charges, exhaustion boundaries, logical lifetimes, output units and child accounting unresolved for LP1. Generator and text semantics also remain explicitly unselected. The reproducibility key identifies these contracts but does not define them. Inference: implementers cannot derive one expected budget stop or result from the current specification. Close this with selected, versioned rules and reference vectors, preserving the distinction between semantic accounting and later measured presets. Owners: the integrator's LP1 language/kernel work, with EN4 carrying the corresponding persisted identities.",
+   "counterexample": "Allocate a value, create an alias, drop the original reference, then allocate another value near the memory limit. Immediate logical release and retention until scope exit are both current options; they produce different cut-offs.",
+   "suggested_experiment": "Supply contract vectors for alias/release accounting, equal-to-limit admission, simultaneous limit exhaustion, nested calls and child allowances, plus generator and text-comparison vectors. These specify future conformance without requiring the unbuilt product.",
+   "evidence": [
+    "docs/architecture/1.0/language/architecture/12-phases-and-conformance.md:125",
+    "docs/architecture/1.0/language/architecture/09-determinism.md:168",
+    "docs/architecture/1.0/language/architecture/09-determinism.md:191",
+    "docs/architecture/1.0/language/adr/ADR-L08-jobs-and-budgets.md:42"
+   ],
+   "owners": {
+    "p4": [
+     "alias-release",
+     "equal-to-limit",
+     "simultaneous-exhaustion",
+     "nested-calls",
+     "child-allowances",
+     "generator",
+     "text-comparison"
+    ]
+   }
+  },
+  "FR-K05": {
+   "severity": "major",
+   "title": "Turn the renderer inventory into a final support and ownership contract",
+   "detail": "Verified: RPI.15 supplies a semantic primitive inventory, but RPI.18 leaves additional geometry data undefined, RPI.50 leaves plan limits/accounting open, and RPI.55 explicitly requires backend signatures, support reporting and resource lifetimes before feature freeze. These remain technical closure items after LQ7/LQ20 are answered. The freeze needs a per-feature disposition and a portable interface defining data production, ownership, replacement, cancellation and refusal. The smallest closure is that contract for the admitted feature surface, including EN3's required geometry/overlay bindings. Owners: the renderer line, EN3 and the integrator. This finding does not judge pending renderer measurements.",
+   "counterexample": "RPI.17 permits a backend to report an unsupported object-layout primitive. Without the final required-support list, the inventory does not determine whether that refusal is a conforming 1.0 limitation or failure to deliver a language feature.",
+   "suggested_experiment": "Review a feature matrix mapping each admitted primitive to its producer, payload, adapter operation, limits and ownership rules; walk publication replacement and device-loss cases through it.",
+   "evidence": [
+    "docs/architecture/1.0/language/architecture/10-renderer-platform.md:147",
+    "docs/architecture/1.0/language/architecture/10-renderer-platform.md:172",
+    "docs/architecture/1.0/language/architecture/10-renderer-platform.md:392",
+    "docs/architecture/1.0/language/architecture/10-renderer-platform.md:422"
+   ],
+   "owners": {
+    "p6": [
+     "feature-matrix-complete",
+     "publication-replacement",
+     "device-loss"
+    ],
+    "p1": [
+     "jumbling-feature-rows"
+    ]
+   }
+  },
+  "FR-K06": {
+   "severity": "major",
+   "title": "Specify exit-record validity across history operations",
+   "detail": "Verified: ENG-0J explicitly leaves undo, checkpoint restore and import effects on stored exit records open. A5 states that a broken retained-move chain invalidates an exit record; chapter 08 separately specifies undo and crossing without completing the per-action lifecycle. The freeze needs to identify which exact episode/exit remains valid and which fields change atomically under each history operation. Inference: label equality cannot recover this information because different pose states can share labels. Close with EN3's transition table and EN4's persistence/recovery links and vectors. Existing A5 refusals can remain unchanged; changing them would require the owner.",
+   "counterexample": "Two recorded exits have equal labels but different exact poses. After undo or restore and restart, Jumble on must select a valid journal-linked replay root or issue A5's refusal; selecting by label digest cannot determine the correct pose state.",
+   "suggested_experiment": "Specify expected mode, head, exit-record validity and pose digest/refusal for undo/redo across crossings, restore/import that breaks the chain, and recovery after each transition.",
+   "evidence": [
+    "docs/progress/1.0/packets/engineering/ENG-0J-jumbling-backend.md:175",
+    "research/jumbling/state-contract.md:183",
+    "docs/architecture/1.0/language/architecture/08-one-state.md:313",
+    "docs/architecture/1.0/language/architecture/08-one-state.md:325"
+   ],
+   "owners": {
+    "p1": [
+     "exit",
+     "retained-move",
+     "undo",
+     "redo",
+     "branch-change",
+     "restore",
+     "import",
+     "recovery",
+     "equal-label-different-lineage"
+    ],
+    "p2b": [
+     "undo-across-crossing",
+     "restore-voids"
+    ],
+    "p3": [
+     "exit-record-durable",
+     "void-event-durable",
+     "recovery-durable"
+    ]
+   }
+  },
+  "FR-B01": {
+   "severity": "blocker",
+   "title": "Select the approximate-to-exact control-flow mechanism",
+   "detail": "Verified: LG2.5 expressly leaves approximate booleans versus a checked display region undecided and assigns the choice to LP1. LQ21 does not resolve this independent exactness requirement. The freeze packet needs rules covering both data and control dependence through functions, generics, closures, storage and exports. Otherwise accepting the exactness invariant freezes a requirement without its enforcing contract. Smallest closure: the integrator selects one mechanism and supplies acceptance/refusal vectors; coordinate the display boundary with the renderer line. This needs a technical specification, not another owner policy answer or performance experiment.",
+   "counterexample": "Illustrative: a helper compares approximate values, returns an ordinary boolean, and its caller selects an exact word or budget. Choosing capability separation alone does not define why this program must be rejected.",
+   "suggested_experiment": "Include specification vectors for direct and helper-mediated approximate comparisons, captured conditions, generic containers and stored values. Product checker execution can remain in LP2.",
+   "evidence": [
+    "docs/architecture/1.0/language/architecture/02-language-core.md:87",
+    "docs/architecture/1.0/language/architecture/12-phases-and-conformance.md:408"
+   ],
+   "owners": {
+    "p5": [
+     "direct-comparison",
+     "helper-comparison",
+     "captured-condition",
+     "generic-container",
+     "stored-value"
+    ],
+    "p4": [
+     "approx-branch-charges"
+    ]
+   }
+  },
+  "FR-B02": {
+   "severity": "blocker",
+   "title": "Freeze execution semantics and logical accounting beyond the route name",
+   "detail": "Verified: ADR-L07 leaves the operations and charge schedule to LP1; LG4.8 leaves step granularity and tariffs open. RTE.40 explicitly says LX-1 instruction counts do not supply the abstract meter. The packet therefore still needs a versioned semantic operation contract, charge/check points, variable-size costs and executor mappings sufficient to determine cut-offs. Smallest closure: the integrator specifies that contract and its boundary vectors, with EN3/EN4 supplying kernel tariffs and resource lifetimes. IR serialization may retain its later freeze. A different execution contract requires the owner’s recorded route/compatibility decision.",
+   "counterexample": "Illustrative: two admitted executors charge a library call at different granularities and exhaust the same declared budget at different iterations, producing different coverage under a supposedly identical reproducibility key.",
+   "suggested_experiment": "Supply an abstract trace with expected charges and stopping positions, including equal-to-limit, oversized arithmetic and streaming boundaries; identify each admitted executor’s mapping.",
+   "evidence": [
+    "docs/architecture/1.0/language/adr/ADR-L07-typed-ir.md:44",
+    "docs/architecture/1.0/language/architecture/02-language-core.md:359",
+    "docs/architecture/1.0/language/architecture/11-route-and-spikes.md:333"
+   ],
+   "owners": {
+    "p4": [
+     "abstract-trace-charges",
+     "equal-to-limit",
+     "oversized-arithmetic",
+     "streaming"
+    ]
+   }
+  },
+  "FR-B03": {
+   "severity": "blocker",
+   "title": "Complete the language–kernel interface rather than freezing its obligation inventory",
+   "detail": "Verified: RTE.7 supplies no binding, ABI or buffer-lifetime protocol, while LB3.9 leaves total N, seams, D, units, F and prefix observations unassigned to complete result fields or additional batches. Selecting an engine and placement settles neither gap. The freeze packet needs named typed operations/results plus ownership, immutable lifetime, transfer, cancellation and accounting rules. Smallest closure: one interface annex agreed by the integrator, EN3 and EN4, choosing existing-row aggregation or explicit new batches and a concrete binding for the selected route. Any zero-copy claim remains conditional on matching evidence.",
+   "counterexample": "Illustrative: a research tool needs total N for a state with off-grip seams. Summing the available per-cap N_c values is explicitly invalid, but the frozen caller cannot yet identify the result field or batch that supplies the missing information.",
+   "suggested_experiment": "Walk one retained workflow and one jumbling research operation through the proposed signatures, tracing exact results, snapshot ownership, cancellation and resource release without inventing additional interfaces.",
+   "evidence": [
+    "docs/architecture/1.0/language/architecture/11-route-and-spikes.md:73",
+    "docs/architecture/1.0/language/architecture/03-libraries.md:202",
+    "docs/architecture/1.0/language/architecture/12-phases-and-conformance.md:148"
+   ],
+   "owners": {
+    "p1": [
+     "jumbling-research-operation"
+    ]
+   },
+   "second_wave": "The language-kernel annex and the route binding after LQ8 and LQ9 finish this finding."
+  },
+  "FR-B04": {
+   "severity": "blocker",
+   "title": "Reconcile the actual H-08 artifact before including it in the freeze",
+   "detail": "Verified: the current command table gives session.undo a not_busy gate, whereas EV4.15 requires undo during revision-bound jobs. Its renderer boundary also forbids drawing uncommitted states, whereas EV3.4 requires identified derived-state display plans. The environment acknowledges that H-08 still needs reconciliation. Freezing both would lock incompatible contracts into the layer boundary. Smallest closure: EN4 supplies the corrected table and layer contract, including overlay availability and program/view lanes; the integrator and renderer line confirm the derived-display distinction. These implement recorded requirements and do not require a new owner scope decision.",
+   "counterexample": "Contract counterexample: an active analysis job makes undo unavailable under the existing H-08 gate, while the language contract requires that undo proceed and cancel the job.",
+   "suggested_experiment": "Audit the final table against the settled routing, repeat, undo, availability and lane rules, including an undo-during-job transition and a derived display that is never adopted as authoritative state.",
+   "evidence": [
+    "docs/progress/1.0/command-table.json:169",
+    "docs/architecture/1.0/language/architecture/04-environment.md:407",
+    "docs/progress/1.0/command-table.md:26",
+    "docs/architecture/1.0/language/architecture/04-environment.md:232"
+   ],
+   "owners": {
+    "p2a": [
+     "undo-gate-removed",
+     "renderer-wording"
+    ],
+    "p2b": [
+     "undo-during-job",
+     "overlay-availability",
+     "program-view-lanes"
+    ],
+    "p6": [
+     "derived-state-plan"
+    ]
+   }
+  },
+  "FR-B05": {
+   "severity": "major",
+   "title": "Fix the equality represented by word and trace keys",
+   "detail": "Verified: LG2.18 leaves the jumbling rewrite contract open, and LB1.10 leaves the global trace convention and independence relation open. EV4.9 nevertheless makes macro equality depend on the equality key. A conditional ruling must require these meanings to be fixed before accepting that interface: sound but incomplete key equality and trace equality must have explicit, versioned contracts. Smallest closure: the integrator specifies the supported rewrites, retained identity-domain tests, ordering and recognized equivalence, with EN4 recording any persisted key version. No new owner decision is needed unless scope or model meaning changes.",
+   "counterexample": "Illustrative: two commuting words receive different keys under adjacent-only reduction but the same key under a trace convention. An unspecified convention makes macro equality depend on which implementation supplied the key.",
+   "suggested_experiment": "Include the cited bca/cab trace case and a blocked same-cap inverse pair as contract vectors, checking key semantics separately from literal execution.",
+   "evidence": [
+    "docs/architecture/1.0/language/architecture/02-language-core.md:208",
+    "docs/architecture/1.0/language/architecture/03-libraries.md:85",
+    "docs/architecture/1.0/language/architecture/04-environment.md:369"
+   ],
+   "owners": {
+    "p5": [
+     "bca-cab-trace",
+     "blocked-same-cap-inverse-pair"
+    ]
+   }
+  },
+  "FR-B06": {
+   "severity": "major",
+   "title": "Supply the LP1 editor and debugger protocol choices",
+   "detail": "Verified: EV1.10 leaves source coordinates and host conversion open; EV1.11 leaves checked-version activation open; EV2.12 leaves execution stops, suspended calls and missing source mappings open. These are explicitly LP1 service decisions, independent of choosing concrete syntax or editor appearance. A conditional freeze must name their settled protocol or explicitly reserve those interfaces. Smallest closure: the integrator specifies ranges, activation/version transitions and route-specific stepping results, coordinating SourceMap conversion with the renderer line. The owner is needed only if this commits an interaction decision currently reserved to the design line.",
+   "counterexample": "Illustrative: a non-BMP character before a call produces different UTF-8 and UTF-16 offsets. Both services can name the correct source digest yet navigate or edit the wrong range without a shared coordinate contract.",
+   "suggested_experiment": "Specify vectors for multi-unit characters, insertion endpoints, an old run surviving module activation, and stepping across a suspended kernel call.",
+   "evidence": [
+    "docs/architecture/1.0/language/architecture/04-environment.md:102",
+    "docs/architecture/1.0/language/architecture/04-environment.md:107",
+    "docs/architecture/1.0/language/architecture/04-environment.md:207"
+   ],
+   "owners": {
+    "p5": [
+     "multi-unit-characters",
+     "insertion-endpoints",
+     "old-run-survives-activation",
+     "step-across-suspended-kernel-call"
+    ],
+    "p6": [
+     "source-map-binding"
+    ]
+   }
+  },
+  "FR-B07": {
+   "severity": "major",
+   "title": "RT4 admission does not yet account for mandatory tool decomposition",
+   "detail": "Verified: RTE.6 permits an admitted host-program contract without the common IR. LB6.2 and EV5.4 require tool decompositions generated from the typed IR before lowering. LB6.6 addresses native built-ins under LQ5, but does not define the equivalent mechanism for RT4 language tools. Inference: admitting RT4 on compatibility and metering alone can leave mandatory PrincipleRecords impossible to produce as specified. Smallest closure: extend RT4 admission to require common-IR lowering or a checked host decomposition contract covering transitive calls, effects and source identity. The integrator supplies it within the owner’s existing route decision; it is inapplicable if an IR route is selected.",
+   "counterexample": "Illustrative: an RT4 host subset supplies validated effects, deterministic accounting and source locations but no typed IR or generated call graph. It meets the stated replacement obligations yet cannot supply LB6.2’s required decomposition.",
+   "suggested_experiment": "For any non-IR RT4 candidate, trace one built-in with an indirect helper call through the proposed decomposition interface and show how omitted calls are detected.",
+   "evidence": [
+    "docs/architecture/1.0/language/architecture/11-route-and-spikes.md:67",
+    "docs/architecture/1.0/language/architecture/03-libraries.md:382",
+    "docs/architecture/1.0/language/architecture/03-libraries.md:462",
+    "docs/architecture/1.0/language/architecture/04-environment.md:446"
+   ],
+   "owners": {
+    "p5": [
+     "rt4-transitive-effects",
+     "inapplicable-under-ir-route"
+    ]
+   }
+  },
+  "FR-B08": {
+   "severity": "major",
+   "title": "Turn research coverage into an explicit independent-checking plan",
+   "detail": "Verified: the library tables cover stages 14–19 conceptually, but LB5.8 still requires a per-claim LP1 plan for producer-dependent stage 19 checks. LB5.10 and CT-LB5-06 require fresh checks to remain independent while preserving existing checkable certificates. A conditional ruling must identify which claims have self-contained inputs and which remain recorded because dependencies are absent; catalogue coverage alone cannot establish that distinction. Smallest closure: the integrator’s KN6 plan and EN4 import specification provide a claim/checker/dependency matrix and explicit unavailable outcomes. This requires no research restart or new experiment result; reducing promised coverage would require the owner.",
+   "counterexample": "Illustrative: an archived check record cites an unavailable producer dependency. Successful import preserves that record, but cannot satisfy the promised fresh independent check. Without the matrix, the freeze packet cannot distinguish this case from a self-contained replayable certificate.",
+   "suggested_experiment": "Perform a source-only dependency walk for each promised claim/checker family, recording required immutable inputs, available references and the outcome when a dependency is absent.",
+   "evidence": [
+    "docs/architecture/1.0/language/architecture/03-libraries.md:290",
+    "docs/architecture/1.0/language/architecture/03-libraries.md:350",
+    "docs/architecture/1.0/language/architecture/03-libraries.md:534"
+   ],
+   "owners": {
+    "p5": [
+     "source-only-dependency-walk",
+     "unavailable-outcome"
+    ]
+   }
+  },
+  "FR-C01": {
+   "severity": "blocker",
+   "title": "Deliver the final EN3/EN4 interface contracts before architecture freeze",
+   "detail": "The freeze requires final H-08 and layer interfaces. Verified current facts: the named jumbling-interfaces.md is absent, H-08 remains its first version with every command pending-2.2, and PHS.69 explicitly requires reconciliation of availability, workspace undo and renderer semantics. Answering LQs or accepting the language ADRs does not supply those contracts. Closure requires EN3's jumbling rows/interfaces and EN4's final H-08 and six-layer contracts, including availability, program/view lanes and undo during jobs. The integrator must assemble these with the renderer line's feature-support disposition into the candidate submitted for the ruling.",
+   "counterexample": "Even after every owner answer is recorded, submitting these same artifacts leaves the ruling dependent on an absent jumbling interface and explicitly provisional command semantics.",
+   "suggested_experiment": "Perform a document acceptance check against PHS.48: every required interface must resolve to a delivered, versioned artifact on the reviewed candidate, with the H-08 conflicts reconciled.",
+   "evidence": [
+    "docs/architecture/1.0/language/architecture/12-phases-and-conformance.md:406",
+    "docs/architecture/1.0/language/architecture/12-phases-and-conformance.md:441",
+    "docs/architecture/1.0/language/architecture/12-phases-and-conformance.md:670",
+    "docs/progress/1.0/command-table.md:7"
+   ],
+   "owners": {
+    "p2b": [
+     "phs48-row-walk"
+    ]
+   }
+  },
+  "FR-C02": {
+   "severity": "blocker",
+   "title": "Complete the wire contract before migration-format freeze",
+   "detail": "PS2.10 says the freeze fixes byte profiles, identifiers, versions, limits and lossless mappings. ADR-L10 explicitly leaves these engineering choices open regardless of the owner's answers and states that EN4's packet has not been delivered. The current logical-field tables therefore cannot serve as the frozen format. Closure requires EN4 and the integrator to supply the versioned wire fields, canonical number/JSON/gzip profiles, shared limits, unknown-field rules and provenance compatibility, plus reference byte/conversion vectors; EN3 must resolve the word carrier. This requires specification completion under the selected LQ10 scope, not a finished importer or new owner question.",
+   "counterexample": "Two implementations can currently choose the retained JSON profile without a terminal newline or the prototype profile with literal Unicode and a terminal newline. Both choices remain listed, but they produce different content identities for the same new value.",
+   "suggested_experiment": "Check the assembled prose format packet against every PS2.13 row. Require explicit encodings and expected bytes/digests for representative vectors; do not count logical field descriptions as resolved wire specifications.",
+   "evidence": [
+    "docs/architecture/1.0/language/adr/ADR-L10-persistence.md:55",
+    "docs/architecture/1.0/language/adr/ADR-L10-persistence.md:103",
+    "docs/architecture/1.0/language/architecture/05-persistence.md:445",
+    "docs/architecture/1.0/language/architecture/05-persistence.md:814"
+   ],
+   "owners": {
+    "p3": [
+     "json-terminal-newline",
+     "number-canonical",
+     "gzip-deterministic",
+     "shared-limit-boundary",
+     "unknown-field",
+     "provenance-both-forms",
+     "word-round-trip",
+     "conversion-replay"
+    ],
+    "p1": [
+     "word-carrier"
+    ]
+   }
+  },
+  "FR-C03": {
+   "severity": "major",
+   "title": "Prevent empty evidence arguments from establishing arbitrary claims",
+   "detail": "Verified by evaluating the written equations: EVD.22 makes an empty AND true in every scenario. A statement whose OR contains that node consequently satisfies stands₀ at every threshold, and EVD.32 reports it proved. None of I1–I7 rejects the absence of supporting leaves. The freeze needs a graph-admission invariant preventing unsupported arguments from establishing claims. The smallest integrator correction is to prohibit empty evidence arguments, or require qualifying support for every successful derivation, and carry that invariant into EN4's envelope validation. This is independent of who is authorized to write evidence fields.",
+   "counterexample": "Give a well-formed universal statement S scope every_reachable(puzzle), no guards, no contrary support, and S.OR = [AND([])]. There are no proof, certificate or computation leaves. Nevertheless stands₀(S) is true and row 3 returns proved, even with an empty acceptance threshold.",
+   "suggested_experiment": "Add this graph as a conformance vector. It must be refused or remain unsupported under every threshold; a genuine supported theorem must retain its normal result.",
+   "evidence": [
+    "docs/architecture/1.0/language/architecture/06-evidence.md:208",
+    "docs/architecture/1.0/language/architecture/06-evidence.md:266",
+    "docs/architecture/1.0/language/architecture/06-evidence.md:283",
+    "docs/architecture/1.0/language/architecture/06-evidence.md:330"
+   ],
+   "owners": {}
+  },
+  "FR-C04": {
+   "severity": "major",
+   "title": "Distinguish unresolved premises from failed discharge",
+   "detail": "The written contracts conflict: EVD.26 permits an unresolved premise as a free atom yielding a conditional claim, while EVD.58 raises premise_unmet whenever a premise is cited without an identical-key claim; chapter 13 classifies that result as a refusal. The inferred consequence is that a consumer following the error table rejects evidence the graph semantics explicitly permits. Before freeze, the integrator should restrict this error to attempted discharge or an operation requiring established support, while allowing unresolved premises to be stored and evaluated conditionally. No owner choice or experiment result is needed to reconcile these contracts.",
+   "counterexample": "Let S depend on a qualifying theorem leaf and Premise(p), with no claim for p. The graph rules return conditional on p, but the stated premise_unmet trigger also matches the citation of p.",
+   "suggested_experiment": "Specify paired conformance vectors: storing/evaluating the unresolved premise returns conditional; requesting its discharge without matching support returns premise_unmet.",
+   "evidence": [
+    "docs/architecture/1.0/language/architecture/06-evidence.md:246",
+    "docs/architecture/1.0/language/architecture/06-evidence.md:536",
+    "docs/architecture/1.0/language/architecture/13-errors.md:475"
+   ],
+   "owners": {}
+  },
+  "PLAN-03": {
+   "severity": "major",
+   "title": "Assign the chapter 07 provenance reconciliation needed by P3",
+   "detail": "P3 promises every PS2.13 row, including provenance compatibility. PS1.34 explicitly requires a profile value for manual words and imported 0.4 macros that have no run. Chapter 07 currently requires profile: Profile, defines profiles for runs, and leaves this case open. No packet owns chapter 07, and the integrator's stated exception covers only chapter 13 errors. Add narrowly scoped ownership for the provenance type and no-run rule, or an explicit integrator reconciliation step before C02 can close. This can remain a conditional storage proposal without deciding the owner's boundary policy.",
+   "counterexample": "Illustrative: P3 encodes a manual word with profile=null or a new no-run variant, while chapter 07 still permits only solving, tool_authoring or research. The stored record then has no consistent typed interpretation.",
+   "suggested_experiment": "Specify complete provenance examples for a hand-typed word and an imported 0.4 macro, then validate their interpretation against both chapters and both LQ21 forms. Neither example may fabricate a producing run or grant permission.",
+   "evidence": [
+    "docs/architecture/1.0/language/architecture/05-persistence.md:445",
+    "docs/architecture/1.0/language/architecture/07-boundary.md:142",
+    "docs/architecture/1.0/language/architecture/07-boundary.md:162"
+   ],
+   "owners": {
+    "p3": [
+     "hand-typed-word",
+     "imported-macro"
+    ]
+   }
+  },
+  "EN4-JOIN": {
+   "severity": "blocker",
+   "title": "Join commands to the signed dispositions and carry DT-M1's fix-first items",
+   "detail": "H-08 final needs the C1 join: about 205 reviewed alias rows join the 268 decisions that carry a 0.4 command ID, the other 109 decisions are mapped one by one, automate and delete units get no command, and a command takes the dispositions of all its units. Fix-first items 2 to 4 of DT-M1 enter the final table. PLAN-05 asks for coverage per decision or split part and negative cases.",
+   "counterexample": "Removing one mapped split decision, or enabling repeat on macro.add, must make the build or its test fail.",
+   "suggested_experiment": "Negative builder tests: a removed mapped decision, repeat on macro.add, a missing delta, an incompatible amendment, a duplicate ID.",
+   "evidence": [
+    "docs/progress/1.0/design-table/topics/command-keyboard-model.md:822"
+   ],
+   "owners": {
+    "p2a": [
+     "coverage-per-decision",
+     "forbidden-repeat",
+     "missing-row",
+     "undo-admission"
+    ]
+   }
+  }
+ }
+}

@@ -1,23 +1,31 @@
 # Chapter 07: the human-solve boundary
 
-Status: **draft for the owner. Not accepted.** Conventions are in [the overview](00-overview.md), section 3.
+Status: **frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). Conventions are in
+[the overview](00-overview.md), section 3, and its status says what the freeze covers.
 
 This chapter says how the language and its runtime carry the human-solve boundary. It states what binds, what software
 can and cannot establish, the mechanisms that exist under every option, and the option sets the owner and the integrator
-start from when they set the exact boundary together. It sets no policy. Every policy choice below is an option, a
-proposal the owner can overrule, or an open item. Until the joint setting, built-in tools keep the 2 October boundary
-and the 17 October exception.
+start from when they set the exact boundary together. The option set stays open. Until the joint setting, built-in tools
+keep the 2 October boundary and the 17 October exception, and BND.84 refuses solver-tool words at preview admission
+(owner, 6 November 2026, LQ2 and decision 12).
 
 Sources: [owner, 2 October 2026](../../../../wiki/decisions/owner-decisions-2026-10-02.md),
 [owner, 17 October 2026](../../../../wiki/decisions/owner-decisions-2026-10-17-repair-pairs.md),
 [owner, 3 November 2026](../../../../wiki/decisions/owner-decisions-2026-11-03.md),
+[owner, 6 November 2026](../../../../wiki/decisions/owner-decisions-2026-11-06.md),
 [DT-J1](../../../../progress/1.0/design-table/topics/jumble-solver-aids.md),
 [jumbling observation](../../../../progress/1.0/jumbling-observation.md),
 [DT-L1](../../../../progress/1.0/design-table/topics/language-ecosystem.md) (M5, R2-E3, R3-M3, R3-M4),
 [the partition](../ecosystem-partition.md), sections 8.2 and 11, and chapters 01, 02, 03, 05, 08, 09 and 11.
 
-Evidence: nothing in this chapter has run. The mathematics of section 2 is the mathematician's round 3 record, read by
-the integrator and not yet by a reviewer. No flow check, label cost or refusal count exists (LX-1 and LX-3 have not run).
+Evidence: the mathematics of section 2 is the mathematician's round 3 record, read by the integrator and not yet by a
+reviewer. LX-1 has prototype cost leads, and LX-3 has first-pass refusal counts and additional persisted-taint
+counterexamples. Their records are `work/experiments/language-lx/lx1-cost/RESULT.md` and
+`work/experiments/language-lx/lx3-sandbox-flow/part-b/RESULT.md`, with the recheck in
+`work/experiments/language-lx/lx3-sandbox-flow/recheck/RESULT.md`. These are source and synthetic evidence, establish no
+product conformance or performance. LQ21 chose capability separation (owner, 14 November 2026; RTE.24), and LX-3's
+decisive check is part of LP3 acceptance.
 
 ## 1. What binds
 
@@ -93,7 +101,7 @@ These are the facts every option faces. They come from DT-L1 M5 and R2-E3 as R3-
 - **BND.15 [O]** Whether the charter's clearly labelled practice copy of the full model counts as a solving session is
   open. If it does, one policy covers it. If it does not, it can be the place where a solver tries their own tool's
   previews before the joint setting has admitted them in a solve. Until the owner answers, the practice copy is treated
-  as a solving session, which is the reading that widens nothing. LQ1, LQ2 and LQ4 touch this.
+  as a solving session, which is the reading that widens nothing. LQ2's joint setting decides this.
 
   ```text
   Profile = solving | tool_authoring | research
@@ -105,9 +113,8 @@ These are the facts every option faces. They come from DT-L1 M5 and R2-E3 as R3-
 | `tool_authoring` | Fixtures and pinned inputs | Writing and testing a tool |
 | `research` | Pinned inputs and derived states | Search, experiments and the research library |
 
-- **BND.16 [P LQ1]** Profiles differ only in the capabilities they grant and the label they attach. Types, exact
-  semantics and the run-record format are the same in all three. Under LQ1's alternatives, a separate research language
-  or a product-only language removes the `research` row from the product (DET.39).
+- **BND.16 [B]** Profiles differ only in the capabilities they grant and the label they attach. Types, exact
+  semantics and the run-record format are the same in all three (owner, 6 November 2026, LQ1).
 - **BND.17 [D]** A profile belongs to a run. The host sets it when it admits the run, from the place the run starts:
   a command in a solving session, the tool editor, or a research workspace. A program cannot set, raise or change it. The
   effective profile and the policy identity are complete inputs of the run (DET.4, DET.40). The kernel knows no profile:
@@ -143,7 +150,7 @@ These are the facts every option faces. They come from DT-L1 M5 and R2-E3 as R3-
     block:        block version; form that produced it; checker or capability-contract pins,
     author:       AuthorClass | unknown,
     producer:     program(module: Digest<source>, entry) | manual | import(origin: Digest<bytes>),
-    profile:      Profile,
+    profile:      Profile | none,  # none only for manual or import; no producing run
     depends:      Labels | read_state(yes | no) | not_recorded,
     parts:        List<Digest<provenance>>,
     pick:         PickRecord?,
@@ -162,18 +169,26 @@ These are the facts every option faces. They come from DT-L1 M5 and R2-E3 as R3-
 - **BND.23 [D]** A word the solver types or picks has `producer: manual` and `author: own`. A word entered by a program
   has that program's block. A 0.4 macro enters with `author: own`, `producer: import(...)`, `depends: not_recorded` and
   its captured source digest in `legacy`, and it gains no exception by that (PS1.33). The field reads how the word
-  entered, not who thought of it (BND.20).
+  entered, not who thought of it (BND.20). Under the storage proposal in closure/HANDOFF.md H9, `profile` is required:
+  `none` means no program run produced the value, and is allowed only for `manual` or `import(...)`. A hand-typed
+  word has empty dependency labels under flow labels, or `read_state(no)` under capability separation. An imported
+  0.4 macro has `profile: none` and `depends: not_recorded` under either form; no run or state-read fact is invented.
+  Missing fields still read `unknown` under BND.21, never as `none` or an empty label set. PS1.34 and format-packet
+  FP.17/FP.18 give the independent wire version and complete examples. This grants no permission and settles no
+  boundary policy. BND.85 keeps a picked entry's block in `parts`. A pick from an `imported` tool's list
+  raises the open author-class question in BND.55 and BND.74, questions 2 and 9.
 - **BND.24 [D]** A word built from parts cites the parts' blocks and carries the join of what they record. Copying,
   saving, exporting and re-importing keep the block (PS1.32). A value chosen through a state-derived branch does not lose
   its label because its letters came from an own macro.
 
 ### Labels and sinks
 
-- **BND.25 [O]** Under flow labels, `Labels` is a set of atoms and the join of two sets is their union. A *transparent
-  entry* is a shipped function on the policy's enumerated list whose output carries only the join of its inputs: exact
-  application and composition of named words is the core of that list. Any other function adds `computed` to a word or
-  target it returns. A declassifier removes named atoms from a named output. The set below is a working set for the LX-3
-  corpus. LQ21 decides the real one, with LX-1's costs and LX-3's refusal counts.
+- **BND.25 [B]** LQ21 chose capability separation (owner, 14 November 2026, LQ21; RTE.24), so this clause records the
+  unselected alternative and binds nothing. Under flow labels, `Labels` is a set of atoms and the join of two sets is
+  their union. A *transparent entry* is a shipped function on the policy's enumerated list whose output carries only
+  the join of its inputs: exact application and composition of named words is the core of that list. Any other
+  function adds `computed` to a word or target it returns. A declassifier removes named atoms from a named output. The
+  set below is a working set for the LX-3 corpus.
 
 | Atom | Attached to |
 | --- | --- |
@@ -197,7 +212,7 @@ These are the facts every option faces. They come from DT-L1 M5 and R2-E3 as R3-
 | `record` | Run records and evidence | The record write |
 
 - **BND.26 [D]** Every sink stores the block. Whether a sink can refuse is policy. The flow rule (BND.33) covers the two
-  preview sinks. `draft` is the same question as a preview, because a draft is a word waiting for a preview. Whether
+  preview sinks. A `draft` stores provenance for the tool-word check at preview admission (BND.84). Whether
   `display` refuses is LQ2 (BND.74, question 4). `workspace`, `file` and `record` keep labels and refuse nothing on labels
   alone, so a laundered word stays labelled and the check happens where the word is used.
 
@@ -236,13 +251,16 @@ These exist under every option, so the policy can be set later without a redesig
 
 **BM1 Execution gate.**
 
-- **BND.29 [B]** A commit needs an explicit user action on the shown preview. The shell mints the token from a
+- **BND.29 [B]** A word commit needs an explicit user action on the shown preview. The shell mints the token from a
   non-repeating key-down or click, bound to the preview's ID and the digest of its literal letters, with the model
-  identity, menu identity, menu-order digest and contract revision (KN5.14). The runtime has no commit row (ONE.3), no
-  commit effect (LG3.4) and never sees a token (ONE.32).
+  identity, menu identity, menu-order digest and contract revision (KN5.14). A commit with no preview (a live twist
+  under ONE.46 and ONE.78, a crossing under ONE.80, undo and redo) needs its own explicit user action and a token with
+  LI.6's no-preview binding. The runtime has no commit row (ONE.3), no commit effect (LG3.4) and never sees a token
+  (ONE.32).
 - **BND.30 [D]** A preview is prepared only inside a command the solver invokes, and a view has no preview effect (LG3.6,
   ONE.34). The kernel row that previews a word the solver composed is not a program, so a key bound to it passes through
-  no flow check. The word is the solver's.
+  no flow check. The word is the solver's when neither its block nor any part records the solver-tool producer of
+  BND.84. That clause still checks stored provenance at preview admission.
 
 **BM2 Provenance and flow control.**
 
@@ -290,29 +308,32 @@ These exist under every option, so the policy can be set later without a redesig
 
 ## 5. Flow control: the two forms
 
-Flow control is what stops a program from reaching a preview with a word it chose from the state. It takes one of two
-forms, and LQ21 chooses. Neither is a decision of this chapter. Under LQ21's recommendation the choice is made with LQ9
-inside LP1, on LX-1's label cost and LX-3's refusal counts, before LP2.
+Flow control is what stops a program from reaching a preview with a word it chose from the state. It took one of two
+forms, and the owner chose capability separation (owner, 14 November 2026, LQ21; RTE.24). Flow labels, static-only or
+with run-time labels, were not selected. LX-3's two false refusals are met by fixed enabled declassifiers or by
+splitting the tool, and LX-3's decisive check is part of LP3 acceptance. The first-pass records above were leads.
 
-- **BND.38 [O]** *Flow labels* (LG3.12) follow data flow and control flow, including choices between words and targets,
-  module calls and stored values. Static labels run in the checker. Run-time labels also track executor values and branch
-  context. Approval covers exactly the source and dependency bytes executed.
-- **BND.39 [O]** *Capability separation* (LG3.13) splits programs in the solving profile. A program either reads
-  state-derived data or prepares previews, never both, apart from the declassifiers, and a program that prepares previews
-  does not read their outcomes.
+- **BND.38 [B]** LQ21 chose capability separation (owner, 14 November 2026, LQ21; RTE.24), so this clause records the
+  unselected alternative and binds nothing. *Flow labels* (LG3.12) follow data flow and control flow, including choices
+  between words and targets, module calls and stored values. Static labels run in the checker. Run-time labels also
+  track executor values and branch context. Approval covers exactly the source and dependency bytes executed.
+- **BND.39 [B]** *Capability separation* (LG3.13), the form the owner selected (owner, 14 November 2026, LQ21; RTE.24),
+  splits programs in the solving profile. A program either reads state-derived data or prepares previews, never both,
+  apart from the declassifiers, and a program that prepares previews does not read their outcomes.
 
 | Question | Static labels | Static and run-time labels | Capability separation |
 | --- | --- | --- | --- |
 | What is checked | Every possible data and control dependence, over the exact source that runs | The same, narrowed to the path taken | Which capabilities a program holds |
-| Cost per step | None | A cost per step, unmeasured (LX-1) | None |
-| Harmless tools refused | The most among label forms, uncounted (LX-3) | Fewer, uncounted (LX-3) | Every tool that both reads state and previews |
+| Cost per step | None | A cost per step; LX-1 has prototype leads only | None |
+| Harmless tools refused | The most among label forms (unselected) | Fewer (unselected) | Every tool that both reads state and previews; LX-3's two false refusals are met by fixed enabled declassifiers or by splitting the tool (RTE.24) |
 | What a record can say | The labels of each previewed word and target, indirect choices included | The same, closer to the actual run | Whether the program read the state |
 | A preview's outcome | Carries `state` | Carries `state` | Not readable by a previewing program |
 | Routes (RTE.24) | RT1, RT3; RT2 and RT4 add a checker over an approved subset | RT1, RT3's compiled fields, or a modified borrowed VM | Every route |
 | The stop channel (section 6) | Stays open until a fix is chosen | Stays open until a fix is chosen | Does not arise |
 
-- **BND.40 [D]** Either form is conservative and refuses some harmless tools. Either must be fixed before LP2, because
-  checks added after the checker and IR exist would refuse tools that had been allowed to run and saved (RTE.26).
+- **BND.40 [D]** Either form is conservative and refuses some harmless tools. The form had to be fixed before LP2,
+  because checks added after the checker and IR exist would refuse tools that had been allowed to run and saved
+  (RTE.26); LQ21 fixed it (RTE.24).
 - **BND.41 [D]** Adopting either form does not switch the flow rule on. The form is how flows are seen. BND.33 is whether
   they are refused. With the flow rule off, the form still feeds records.
 - **BND.42 [D]** Preview outcomes. ONE.32 gives a program a preview's public fields, including its effect and protection
@@ -372,13 +393,14 @@ R3-M3 showed that DT-L1's "one bit per run" is false. This section gives what re
   journal and prints a word is the same as retyping.
 - **BND.50 [D]** Clock. A granted clock is an input that makes a run non-reproducible (DET.40). It gives a running program
   no new reach beyond its other reads. Nothing here adds a rule for it.
-- **BND.51 [O]** Three fixes for the stop and emission channels. None is chosen. The first two apply to flow labels. The
-  third is the other form of LQ21.
+- **BND.51 [B]** Three fixes for the stop and emission channels. The owner chose the third, capability separation
+  (owner, 14 November 2026, LQ21; RTE.24). The first two apply to flow labels; they record the unselected alternative
+  and bind nothing.
 
 | Fix | What it requires | Trade-off |
 | --- | --- | --- |
 | One preview per run | A run emits at most one preview, as its last action, on a control path with no labelled condition. The checker must prove this. | Simple to explain. Refuses a tool that decides between previewing and stopping from the state. Saves nothing for a tool that needs several steps. |
-| Stop-sensitive labels | A stop, a loop exit or the end of a run under a labelled condition raises the label of whatever preview is pending. | Keeps more tools. Needs run-time tracking or a stricter static rule, and more of the checker must be trusted. Refusal counts are unknown (LX-3). |
+| Stop-sensitive labels | A stop, a loop exit or the end of a run under a labelled condition raises the label of whatever preview is pending. | Keeps more tools. Needs run-time tracking or a stricter static rule, and more of the checker must be trusted. |
 | Capability separation | A previewing program reads no state. | Closes the channel with no analysis. Coarse: a solver's own tool cannot both read the state and preview, and a record says only whether a program read the state. |
 
 - **BND.52 [D]** LX-3's must-refuse corpus covers these channels (RTE.45): a stop-selected preview, refusal-driven
@@ -408,7 +430,8 @@ R3-M3 showed that DT-L1's "one bit per run" is false. This section gives what re
 | The solver's own pick | BND.1 ("the solver chooses") | The solver's choice among the options | See BND.55 | A `PickRecord` |
 | Admitted author class | BND.3 | A word from a class the policy admits | The class is in `admitted` | The class and the policy identity |
 
-- **BND.54 [D]** In the interim, `admitted` is empty and the first three entries serve built-in tools only (BND.69).
+- **BND.54 [D]** In the interim, `admitted` is empty and the first three entries serve built-in tools only (BND.69). FP.38 gives the
+  record's wire form.
 
   ```text
   PickRecord = {
@@ -424,7 +447,12 @@ R3-M3 showed that DT-L1's "one bit per run" is false. This section gives what re
   that a pick declassifies the solver's *choice* and not the *option set*. The picked word keeps the join of the list's
   labels, unless the list is a fixed entry (setup search, repair list) or a fixed object set such as any cap on the map.
   The alternative, a pick clearing everything, needs a separate way to close the one-item case. This changes nothing in
-  the interim, because no solver tool previews. It is a rule the owner may change.
+  the interim, because no solver tool previews. It is a rule the owner may change. The author-class case also stays
+  open: BND.23 gives a picked word `author: own`, while `PickRecord.list` records the list's producer only by digest.
+  A pick from an `imported` tool's list therefore reads as own. How that class relates to the list's producer is for
+  the joint setting's questions 2 and 9 (BND.74), not settled by retaining the list's flow labels. For a picked word,
+  BND.85 already keeps the listed entry's block in `parts` and follows the pick's origin at preview admission; that
+  requirement leaves the pick's author class and flow-label rule open.
 
 ## 8. Profiles and capabilities
 
@@ -436,39 +464,46 @@ files, clock and seeded randomness stay as DET.37 states them in every profile.
 | --- | --- | --- | --- | --- |
 | Snapshot read | The read rows its reviewed class needs | Open (BND.59) | Every read row, on a fixture or a pinned input | Every read row, on a pinned input |
 | Derived state | Only for a word or target the solver named, and inside the two exceptions | Open (BND.59) | Yes, on fixtures and pinned inputs | Yes, as immutable kernel values |
-| View change | Display plans within the tool's class; facts follow rule 6 | Open (BND.59) | Inside D8 until RPI.44 is answered | Under LQ6 (RPI.43); the output keeps its label (RPI.45) |
-| Workspace change | Inside a command the solver invokes; a word only if the solver named it or a declassifier covers it | Inside a command the solver invokes; no tool word to a draft (BND.58) | Records of the authoring workspace, labelled | Research records, labelled; no draft of a solving session |
-| Prepare a preview | A word the solver named, and the two exceptions | No, until the joint setting | Capture only (BND.60) | Capture only, or a research session under LQ4; never a solving session |
+| View change | Display plans within the tool's class; facts follow rule 6 | Further views allowed; content stays open (BND.59) | Further views within the stated resource budget (RPI.81, RPI.82) | Further views within the stated resource budget; the output keeps its label (RPI.45, RPI.81, RPI.82) |
+| Workspace change | Inside a command the solver invokes; a word only if the solver named it or a declassifier covers it | Inside a command the solver invokes; a draft keeps the word's block for BND.84 (BND.58) | Records of the authoring workspace, labelled | Research records, labelled; BND.61 checks later previews in a solving session |
+| Prepare a preview | A word the solver named, and the two exceptions | No, until the joint setting | Capture only (BND.60) | Capture only (BND.60); never a solving session |
 
-- **BND.56 [P LQ2]** The table above holds under LQ2's recommendation, which keeps the interim reading until the joint
-  setting. Each own-tool cell is what the joint setting replaces.
+Further views are allowed in every profile (owner, 6 November 2026, LQ6). They widen nothing a display may show:
+BND.59 stays open, and built-in tools keep their classes and rule 6. The resource budgets are RPI.82's.
+
+- **BND.56 [D]** The table above implements the interim reading until the joint setting (owner, 6 November 2026, LQ2),
+  with the tool-word check at preview admission (owner, 6 November 2026, decision 12). Each own-tool cell is what the
+  joint setting replaces.
 - **BND.57 [D]** A built-in tool's rows are listed by its class. `derive` is the row where the policy acts, because a search
   over twists is built from it (ONE.23). A built-in tool in a solving session calls `derive` only for what the solver
   named, or inside the two exceptions.
-- **BND.58 [P LQ2]** A draft is a word waiting for a preview. So while no solver-tool solving preview is enabled, a
-  solver's own tool does not write a word to a draft of a solving session either. Without this clause the draft would
-  bypass the interim reading. ONE.36 left the question here.
+- **BND.58 [D]** A draft is a word waiting for a preview. A tool word written to a draft keeps its block and the blocks
+  of its parts (BND.24). Insertion grants no preview: BND.84 checks the word at `operation.preview` admission in a
+  solving session, with `LG3:capability.not_granted` on refusal. ONE.36 left the question here.
 - **BND.59 [O]** The interim reading bars own-tool previews. It says nothing about what an own tool may read or show in a
   solving session. A loop over snapshot reads can select the largest N_c and show it. This gap is real, and this chapter
   does not fill it by inference, in either direction. Nothing ships to a solving session before LP6, and the joint
   setting comes first (PHS.7, PHS.38), so the gap costs nothing yet. What the interim reading does say stands: it
   authorises no shipped function that selects, and it enables no word shown for the solver to retype from a shipped tool.
   The joint setting answers this under question 4. The owner can also answer sooner by changing the interim reading.
-- **BND.60 [P LQ2]** In the tool-authoring and research profiles, `propose` goes to a capture. The word and its labels
+- **BND.60 [D]** In the tool-authoring and research profiles, `propose` goes to a capture. The word and its labels
   are recorded in the run's output for a test to read, and no engine preview exists, so no token and no commit can follow.
   This lets a solver test a tool that previews without touching a session. It is new here, and the owner may overrule it.
-- **BND.61 [D]** Research output never becomes a preview in a solving session. A proposal whose block, or any part's
-  block, has `profile: research` is refused with `LG3:capability.not_granted`, whether it arrives directly, from the
-  workspace or from a file. The bytes stay readable. A person can retype them, and that leaves no record (BND.13).
+- **BND.61 [D]** Research output never becomes a preview in a solving session. At `operation.preview` admission the
+  command layer's provenance adapter refuses a word whose block, or any part's block, has `profile: research` with
+  `LG3:capability.not_granted`, at the same point of use and with the same code as BND.84. BND.85's traversal applies,
+  whether the word arrives directly, from the workspace or from a file. The bytes stay readable. A person can retype
+  them, and that leaves no record (BND.13).
 - **BND.62 [D]** This chapter adds no capability-dependent budget ceiling (DET.28). A budget does not make a program
   non-searching (BND.9), so a ceiling would be a resource rule and not a boundary. If the joint setting wants one, it is a
   row of its own.
 
 ## 9. What ships: the interim policy table
 
-- **BND.63 [P LQ2]** Under the interim reading, the policy table starts at the 2 October boundary for everything that
-  ships, library functions included. Each class may do the following in a solving session. Chapter 03's candidates are
-  listed by their LB6.5 names. A listing admits nothing: each tool still needs its review, and none has a
+- **BND.63 [D]** Under the interim reading (owner, 6 November 2026, LQ2), the policy table starts at the 2 October
+  boundary for everything that ships, library functions included. BND.84 applies the tool-word check at preview
+  admission (owner, 6 November 2026, decision 12). Each class may do the following in a solving session. Chapter 03's
+  candidates are listed by their LB6.5 names. A listing admits nothing: each tool still needs its review, and none has a
   `PrincipleRecord` yet.
 
 | Class | May, in a solving session | Rests on | Candidate tools (LB6.5) |
@@ -481,11 +516,11 @@ files, clock and seeded randomness stay as DET.37 states them in every profile.
 | `setup_search_named_target` | Propose setups that keep the buffers fixed, for a target the solver names | BND.1 | Named-target guarded setup tool |
 | `repair_list` | List the pairs at a cap the solver names, in neutral order | BND.2 | Named-cap repair list |
 
-- **BND.64 [P LQ2]** In a solving session no shipped function searches, minimises, ranks or selects (largest, top, first)
+- **BND.64 [D]** In a solving session no shipped function searches, minimises, ranks or selects (largest, top, first)
   over twists, words or caps, none picks a target, and no shipped job starts for a cap the solver has not named. Every
   chapter 03 entry marked **research tier candidate** stays out of the solving profile. The marker is what the host's
   shipped-manifest scan reads (CT-BND-16).
-- **BND.65 [P LQ2]** The items chapter 03 left to this chapter stand as follows under the interim reading:
+- **BND.65 [D]** The items chapter 03 left to this chapter stand as follows under the interim reading:
   - the correction-combination solve (LB3.1) is not admitted;
   - the workflow's historical candidate and next-orbit suggestions (LB2.5) are not admitted;
   - H-08's `view.recommendations`, `target.next.activate`, `object.actions`, `structure.find` and any macro-comparison
@@ -493,7 +528,9 @@ files, clock and seeded randomness stay as DET.37 states them in every profile.
     own content definition first;
   - a research runner, a correction solver and WC-PLAN stay research tier candidates.
 
-  Whether any of them ships at all, in any profile, is LQ2 (question 7) and LQ16.
+  The research library and archive checkers ship in 1.0 (owner, 6 November 2026, LQ16 and decision 9). Theory research
+  stays in the repository, outside the shipped software. The named research-tier candidates still need their entry
+  reviews (BND.63); the scope decision grants none a solving capability.
 - **BND.66 [O]** Edges for the mathematician and the joint setting. These are facts rule 6 allows and that also answer a
   question about twists:
   - N_c at its floor (BND.10). Rule 6 names N_c and the floor as allowed, so they stay shown.
@@ -501,8 +538,9 @@ files, clock and seeded randomness stay as DET.37 states them in every profile.
   - Shipped tables: the certified setup tables, the seeds and the 36 corrections. The setup tables serve setup search for
     a named target. The corrections stay a static catalogue, with no view that lights, filters or reorders them by ν.
 
-  This chapter rules on none of these for a solver's own tool. For a built-in tool, DT-J1 stands. The joint setting's
-  question 5 asks whether such facts count as static facts when a tool, and not a person, reads them.
+  This chapter rules on none of these for a solver's own tool. For a built-in tool, DT-J1 stands, including when the
+  research library and archive checkers ship under LQ16 (BND.65). The joint setting's question 5 asks whether such facts
+  count as static facts when a tool, and not a person, reads them.
 
 ## 10. Option sets for the joint setting
 
@@ -512,7 +550,7 @@ the order implies nothing.
 | Set | What a solver's own tool may do in a solving session | How "themselves", "base tools" and "understanding" are read | For | Against |
 | --- | --- | --- | --- | --- |
 | BS1 Provenance | Prepare a preview of any word it computes; the solver commits each one; BM2 records what the preview may depend on (under capability separation, only whether the program read the state) | Author class (BND.18): created or forked locally. It records how the bytes arrived, not who thought of them. | Simple; most freedom; honest labels | Base tools and understanding are not checked; a copied solver counts after a trivial fork; the line rests on labels |
-| BS2 Base tier | As BS1, but in the solving profile the tool may call only the base tier: an enumerated list of shipped functions, each with a recorded definition and a boundary ruling. The list follows rule 6, plus exact application and composition of named words. It ships no function that searches, minimises, ranks or selects over twists, words or caps. The solver may build such a function from base parts. A research tier (ready-made search, strategies), if LQ16 ships one, runs in the research profile on derived states. | Author class as in BS1, plus a capability boundary enforced with either form of flow control; building from base parts is the solver's own development | Matches the principle's wording: the solving profile ships no solver, and the solver builds one from base parts; research stays free | A determined user can rebuild any search; understanding is not checked; every listed function needs the mathematician's ruling, shipped tables and theorem-backed facts included; listed functions compose into forbidden outputs (BND.11), so flow control must also cover what a tool shows, or the list must leave such parts out |
+| BS2 Base tier | As BS1, but in the solving profile the tool may call only the base tier: an enumerated list of shipped functions, each with a recorded definition and a boundary ruling. The list follows rule 6, plus exact application and composition of named words. It ships no function that searches, minimises, ranks or selects over twists, words or caps. The solver may build such a function from base parts. The research library ships in 1.0 (BND.65); its research-tier entries run in the research profile on derived states. | Author class as in BS1, plus a capability boundary enforced with either form of flow control; building from base parts is the solver's own development | Matches the principle's wording: the solving profile ships no solver, and the solver builds one from base parts; research stays free | A determined user can rebuild any search; understanding is not checked; every listed function needs the mathematician's ruling, shipped tables and theorem-backed facts included; listed functions compose into forbidden outputs (BND.11), so flow control must also cover what a tool shows, or the list must leave such parts out |
 | BS3 Understanding | As BS2. In addition, the capability to prepare solving previews opens per principle, after the solver passes the competence check on that principle's record | Author class as in BS1, base tier and competence checks | Closest to "while understanding its principle"; ties into the learning path | Gating conflicts with soft disclosure unless the checks only label; checks can be gamed; a check shows competence on a task, not understanding (BND.72); writing the checks is substantial work |
 | BS4 Named targets | A solver's own tool may prepare previews only for a target the solver names, which extends the 2 October setup-search allowance to own tools; flow control checks that the target came from the solver. Anything else runs in the research profile. | Author class as in BS1; naming the target is the solver's own act | Smallest step from 2 October; easy to explain; enforceable with either form: flow labels check that the target came from the solver, and under capability separation the tool reads no state and reaches it only through the shipped setup search | Restricts assistance more than the principle requires; "named target" needs a definition per tool kind |
 
@@ -541,20 +579,20 @@ the order implies nothing.
 
 ## 11. Interim reading and the integrator's leaning
 
-- **BND.69 [P LQ2]** The interim reading is the integrator's, and the owner may change it. The policy table starts at the
-  2 October boundary for everything that ships. BND.64 and rule 6 apply. The two exceptions are setup search for a target
-  the solver names and the repair list at a named cap. Research-profile output never becomes a preview in a solving
-  session. No solver-tool solving preview is enabled until the boundary is set.
-- **BND.70 [D]** The integrator's leaning, for discussion only: build BM1 to BM5 in any case, with the form LQ21 chooses,
-  and start the joint discussion from BS2 with the flow rule available. The solving profile then ships no solver, the
-  solver may build one from base parts, and the line rests on capabilities and flow control rather than on guessing what
-  a program computes. It does not gate learning. This is not a decision, and it presets neither LQ21 nor the route.
-  Round 3's corrections weaken one reason for it: labels alone leave the stop channel open, so BS2 with flow labels also
-  needs a fix of BND.51.
-- **BND.71 [P LQ2]** The joint setting. The round table explains BS1 to BS4 and the facts of section 2 to the owner in
+- **BND.69 [B]** The interim reading holds until the joint setting (owner, 6 November 2026, LQ2 and decision 12). The
+  policy table starts at the 2 October boundary for everything that ships. BND.64 and rule 6 apply. The two exceptions
+  are setup search for a target the solver names and the repair list at a named cap. Research-profile output never
+  becomes a preview in a solving session. No solver-tool solving preview is enabled until the boundary is set.
+- **BND.70 [D]** The integrator's leaning, for discussion only: build BM1 to BM5 in any case, with capability
+  separation (LQ21; RTE.24), and start the joint discussion from BS2 with the flow rule available. The solving
+  profile then ships no solver, the solver may build one from base parts, and the line rests on capabilities and flow
+  control rather than on guessing what a program computes. It does not gate learning. This is not a decision, and it
+  presets no joint-setting question. Round 3's corrections weaken one reason for it: labels alone leave the stop
+  channel open, so BS2 with flow labels would also need a fix of BND.51. Capability separation is BND.51's third fix.
+- **BND.71 [D]** The joint setting. The round table explains BS1 to BS4 and the facts of section 2 to the owner in
   plain language. The owner and the integrator go through the questions of section 12. The result is a versioned policy
-  table and an owner decision record. It comes before LP6 (PHS.38), and LQ21 comes earlier, before LP2. LX-3's counts
-  inform it, and no count decides it.
+  table and an owner decision record. It comes before LP6 (PHS.38); LQ21 was answered earlier (owner,
+  14 November 2026; RTE.24). LX-3's counts inform it, and no count decides it.
 
 ## 12. Understanding and the questions for the joint setting
 
@@ -563,21 +601,25 @@ the order implies nothing.
   competence check records that a task was completed in this install, with the help used inside the program. Neither
   shows what anyone understood, so "understanding" in BND.3 stays outside what the software can establish; how the
   boundary treats that is the joint setting's question. This holds under every option.
-- **BND.73 [P LQ14]** Under LQ14's recommendation, competence checks guide and do not lock (EV5.8). If the owner selects
-  BS3, the check gates the capability to prepare solving previews per principle (EV5.9), as LQ14 foresees; that needs the
-  owner's word. No learning result grants a capability until then.
+- **BND.73 [B]** Competence checks guide and do not lock (owner, 6 November 2026, LQ14; EV5.8). If the owner selects BS3,
+  the check gates the capability to prepare solving previews per principle (EV5.9); that still needs the joint setting.
+  No learning result grants a capability until then.
 - **BND.74 [O]** The questions for the joint setting, from the partition, then those round 3 added:
   1. Does "assists solving" exclude a tool whose single preview completes the puzzle?
   2. Is a tool written by another person treated as built-in, as own, or as a class of its own? When, if ever, does an
-     edited fork or import become own?
+     edited fork or import become own? How should a pick from an `imported` tool's list be classified when BND.23
+     gives the word `author: own` and `PickRecord.list` records the list's producer only by digest?
   3. Is the flow rule switched on, and which author classes does it admit?
   4. Which display sinks does flow control check: previews only, or also what a tool shows for the solver to retype?
      This also fills BND.59.
   5. Do shipped tables and theorem-backed static facts count as static facts?
   6. Are labels shown during a solve, or only in records?
-  7. Is the research profile part of the shipped product?
-  8. Which fix of BND.51 does the policy use, if the form is flow labels?
-  9. Does the pick rule of BND.55 stand?
+  7. Answered: the research profile, research library and archive checkers are in 1.0 (owner, 6 November 2026, LQ1, LQ16
+     and decision 9). Individual candidate tools still need BND.63's entry reviews.
+  8. Answered: LQ21 chose capability separation, BND.51's third fix (owner, 14 November 2026; RTE.24), so the
+     question which fix a flow-label policy uses no longer arises.
+  9. Does the pick rule of BND.55 stand? How does retaining the list's flow labels interact with BND.23's `author: own`
+     for a pick from an `imported` tool's list, whose producer is recorded only by digest in `PickRecord.list`?
   10. Does the practice copy count as a solving session (BND.15)?
 
 ## 13. Limits
@@ -593,8 +635,9 @@ the order implies nothing.
   the label says only that a solver's tool did it.
 - **BND.79 [D]** Author class records how bytes arrived (BND.20), and a competence check records a task (BND.72). Neither is
   proof of authorship or understanding.
-- **BND.80 [D]** A conservative check refuses some harmless tools. How many is unknown until LX-3 reports its false-refusal
-  count, and no threshold is set.
+- **BND.80 [D]** A conservative check refuses some harmless tools. LX-3's first-pass false-refusal counts and recheck
+  are finite source and synthetic leads. LX-3's decisive check is part of LP3 acceptance (RTE.24), and no threshold is
+  set.
 - **BND.81 [D]** Boundary mechanisms carry no evidence. A label, a class or a passed flow check is not a claim about the
   mathematics (INV-5), and a claim's strength never grants a capability.
 - **BND.82 [D]** The owner of a local install can change the policy table or the program. A record can name the policy
@@ -602,23 +645,36 @@ the order implies nothing.
   boundary describes what the system recorded about a solve, and says what it cannot record. Under the interim reading,
   nothing shipped in the solving profile chooses a solving word by itself.
 
+- **BND.84 [B]** At `operation.preview` admission in a solving session, the command layer's provenance adapter reads
+  the block of the word and of every part (BND.24). If any block has `producer: program(...)` from a solver-authored
+  module (`author` `own`, `forked_built_in`, `imported` or `unknown`), the preview is refused with
+  `LG3:capability.not_granted` (owner, 6 November 2026, decision 12). This reads stored metadata at the point of use
+  and performs no flow analysis. The kernel knows no profile; the host knows the session it serves (BND.17). A
+  hand-entered word (`producer: manual`), an imported 0.4 macro (`producer: import`) and a pick from the built-in repair
+  list (BND.2) pass this producer check. Built-in tool output keeps its existing boundary. The bytes stay readable,
+  and retyping stays unrecorded (BND.13). This rule holds until the joint setting enables a solver-tool preview.
+- **BND.85 [D]** A picked word keeps the listed entry's block in `parts`. Preview admission traverses `parts`
+  recursively and follows the pick's origin. Missing origin content reads `unknown` under BND.21 and refuses the
+  preview with `LG3:capability.not_granted`. BND.55's author-class and flow-label questions stay open.
+
 ## 14. Errors
 
 - **BND.83 [D]** This chapter adds no codes. It uses these rows of chapter 13:
 
 | Code | Used for |
 | --- | --- |
-| `LG3:capability.not_granted` | A capability the profile, class or policy does not grant, and research output proposed in a solving session (BND.61) |
+| `LG3:capability.not_granted` | A capability the profile, class or policy does not grant; research output or a solver-tool word at preview admission in a solving session (BND.61, BND.84, BND.85). Shipping the research library and archive checkers grants no solving capability (BND.65) |
 | `LG3:capability.grant_mismatch` | A run reproduced under another profile or policy identity |
-| `LG3:effect.flow_refused`, `LG3:capability.flow_refused` | The flow rule, one of the two after LQ21 (ERR.24); neither is emitted before that |
+| `LG3:capability.flow_refused` | The flow rule under capability separation (LQ21; RTE.24; ERR.24); not emitted before LQ2 sets the rule |
+| `LG3:effect.flow_refused` | Retired before first use and never emitted (ERR.24) |
 | `PS1:capability.provenance_incompatible` | A stored block whose form cannot justify a gated use (PS1.33) |
 | `KN5:capability.commit_row_refused` | The runtime reaching for a commit row |
 | `LG3:effect.undeclared` | A view reaching a preview or workspace effect through a callee (LG3.5, LG3.6) |
 
 ## 15. Conformance tests
 
-No conformance test exists yet. Every test below runs under each form LQ21 still has open, and its case set follows the
-policy table in force. Chapter 12 assigns them to phases.
+The full conformance suite remains owed. Every test below runs under capability separation (LQ21; RTE.24), and its case
+set follows the policy table in force. Chapter 12 assigns them to phases.
 
 | Test | Checks | Class |
 | --- | --- | --- |
@@ -645,26 +701,30 @@ policy table in force. Chapter 12 assigns them to phases.
 | CT-BND-21 | `AssistanceSummary` recomputed from one journal range, one set of run records and one policy gives the same bytes; two sets that differ by one view-only run give summaries with different `runs`; no program can write it; imported 0.4 macros appear as imported (BND.23, BND.35) | source |
 | CT-BND-22 | A switch of forms is a recorded migration; an older block keeps its form, and a gated use it cannot justify is refused with `PS1:capability.provenance_incompatible` | source |
 | CT-BND-23 | Every run record names the policy identity, and reproducing under another one is refused with `LG3:capability.grant_mismatch` | source |
-| CT-BND-24 | The flow code LQ21 retires is never emitted, and before LQ21 neither is (ERR.24, CT-ERR-15) | source |
-| CT-BND-25 | The false-refusal report lists every refused program on the frozen allowed list, with its code, per form and variant, and sets no threshold (RTE.46) | source |
+| CT-BND-24 | `LG3:effect.flow_refused` is retired and never emitted, and `LG3:capability.flow_refused` is not emitted before LQ2 sets the flow rule (ERR.24, CT-ERR-15) | source |
+| CT-BND-25 | The false-refusal report lists every refused program on the frozen allowed list, with its code, under capability separation, and sets no threshold (RTE.46) | source |
+| CT-BND-26 | A picked solver-tool word, for each of `own`, `forked_built_in`, `imported` and `unknown`, keeps the listed entry's block through draft insertion, composition and a file round trip. Insertion preserves the word; each later `operation.preview` in a solving session refuses it with `LG3:capability.not_granted`, including a tool block nested in `parts` (BND.58, BND.84, BND.85) | source |
+| CT-BND-27 | Restoring a workspace preserves a tool word's block and recursive parts; preview admission in a solving session refuses that restored word with `LG3:capability.not_granted` and installs no preview (BND.84, BND.85) | source |
+| CT-BND-28 | A picked word with missing origin content, including a missing nested part's origin, refuses at preview admission with `LG3:capability.not_granted`; the absence never reads as a manual word or a built-in producer (BND.21, BND.85) | source |
+| CT-BND-29 | Hand-entered words, imported 0.4 macros with `producer: import`, and a pick from the built-in repair list pass BND.84's producer check, subject to their ordinary gates. Retyping creates no inferred tool-origin record (BND.13, BND.23, BND.84) | source |
+| CT-BND-30 | A research-profile block reached through a picked origin or recursive parts refuses at the same `operation.preview` admission point with `LG3:capability.not_granted`, including output from the shipped research library; no draft, file or restored-workspace route grants a preview (BND.61, BND.65, BND.85) | source |
 
 ## 16. Open items
 
+The owner answered LQ1 to LQ21 on 6 November 2026 and chose LQ8, LQ9 and LQ21 on 14 November 2026: the engine and the
+interpreter's host in Rust, route RT1 with the runtime in a process of its own, and capability separation (RTE.17,
+RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits for the joint setting.
+
 | Item | Clauses | What decides it |
 | --- | --- | --- |
-| LQ1 | BND.15, BND.16 | The owner; a separate research language removes the research profile from the product |
-| LQ2 | BND.56 to BND.60, BND.63 to BND.66, BND.69 to BND.71, BND.74 | The joint setting of the owner and the integrator, before LP6 |
-| LQ4 | BND.15; the research-session cell of section 8 | The owner, with branches |
-| LQ6, RPI.44 | The view row of section 8 | The owner; D8 holds meanwhile |
-| LQ14 | BND.73 | The owner; a gate needs BS3 |
-| LQ16 | BND.65 | The owner, on what ships |
-| LQ21 | BND.25, BND.38, BND.39, BND.51, BND.83 | The owner, with LQ9, inside LP1, before LP2, on LX-1 and LX-3 |
+| LQ2's option set | BND.15, BND.19, BND.33, BND.36, BND.55, BND.59, BND.66, BND.70, BND.74 | The joint setting of the owner and the integrator, before LP6; mechanisms and the point-of-use tool-word check already stand |
+| LQ21 (answered) | BND.25, BND.38, BND.39, BND.51, BND.83 | Capability separation (owner, 14 November 2026, LQ21; RTE.24); LX-3's decisive check is part of LP3 acceptance |
 | KN5.12, LG3.7 | BND.46 | Whether a program may replace a shown preview |
 | PS1.34 | Section 3, provenance block | The block's initial wire version, before any conditional migration-format freeze |
 
 Additions in this chapter that the owner may overrule: BND.14 (the term "solving session"), BND.42 and BND.43 (what a
-previewing program receives), BND.55 (the pick rule), BND.58 (no tool word to a draft), BND.60 (capture in the
-non-solving profiles) and BND.62 (no capability-dependent ceiling).
+previewing program receives), BND.55 (the pick rule), BND.58 (a draft keeps the word's block for preview admission),
+BND.60 (capture in the non-solving profiles), BND.62 (no capability-dependent ceiling) and BND.85 (origin traversal).
 
 The label atoms of BND.25 are a working set. The gap of BND.59 is the owner's to see: the interim reading does not say
 what an own tool may show in a solving session.

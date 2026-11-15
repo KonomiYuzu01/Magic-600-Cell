@@ -1,0 +1,21 @@
+{
+  "decider": "owner",
+  "decision": "open",
+  "files": {
+    "research/jumbling/exact.py": "763dc7803c82971d76520c53cfb2a492e230e901dcf9cfa6a8fbdf34308bc7a6",
+    "research/jumbling/sim/__init__.py": "ee479dbd6ef7d7cbc9ecdf9f9b316584b7e8efa8e2ce711cb698324c6e6d10e9",
+    "research/jumbling/sim/kernel.py": "97076ffce3bdf9f10f69d221234750898fc43848a6fafc24a1c23d1b681e143c",
+    "research/jumbling/sim/kplus.py": "122b4b65e6508fb02be195759635b2c94d4ca86a30b240c069c00e7eb60e8a5d",
+    "research/jumbling/sim/twists.py": "d55f00f366a26f05c584cbc7e5f9e4dac7bd6ae5ea6058d21b74f4e61b68e4cb",
+    "work/experiments/language-lx/lx9-input-map/CARD.md": "e8dee64a927aa9e8d4a4dcf0d6d8d0911deb6d133eb14a18563e0452c7d0e978",
+    "work/experiments/language-lx/lx9-input-map/check.py": "16012ac65b8b60dc20a52df097a13b4f3c5c472254ea4a9b8f9c9d8f11cb9b7a",
+    "work/experiments/language-lx/lx9-input-map/common.py": "d404b99ce6ba77a8c343b3e87bfa246a24fc4bc460aefc17390250440cd663f3",
+    "work/experiments/language-lx/lx9-input-map/compare_legs.py": "381375317457529fb205b4f2f9e3fdd69e632f2d0158b5d46cca7bebfca7509f",
+    "work/experiments/language-lx/lx9-input-map/linux_leg.py": "8542ce32bc9bd34ee5f9be570dd16d2d6f2574875b5f904d5f86c6f825a82833",
+    "work/experiments/language-lx/lx9-input-map/make_requests.py": "e10f515df05e253b18b49a51fef5e5d1f329b9c8c4eab69ddeee5b32eb9da5f4",
+    "work/experiments/language-lx/lx9-input-map/pure_input_map.py": "f1ad599cb36a2a5e69ac36fbba4e032d067463f3ca419157f43185e03a8bb572",
+    "work/experiments/language-lx/lx9-input-map/run_leg.py": "7105a8d25337a714d24ed419f11589cb3461e7077d016f1ca137877791803549",
+    "work/experiments/language-lx/lx9-input-map/rust_input_map.rs": "3481db84e20864619fa2f7d2306a72c64f5890d582337174f3e01a52da906f81"
+  },
+  "schema": "lx9-candidate-v1"
+}

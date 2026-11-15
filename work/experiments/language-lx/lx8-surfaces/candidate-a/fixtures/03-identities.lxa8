@@ -1,0 +1,6 @@
+edition "lx8-0";
+module orbit_identity requires [];
+
+fn describe(model: Model<Full>, cell: Cell<Full>, grip: Grip<Full>, cap: Cap<Full>, generator: Generator<Full>, menu_source: Menu<Jumble>, letter: MenuLetter<Jumble,MenuA>, piece: Piece<Full,Labels>, sticker: Sticker<Full,Labels>, slot: Slot<Full,Labels>, position: Position<Full,Labels>, pose: Pose<Jumble,Poses>, sticker_class: StickerClass<Jumble,Labels>, region_class: RegionClass<Jumble,Regions>, orbit: Orbit<Full,Labels>, level: Level<Labels>) -> Text effects [] charge [12, 0, 0, 0] {
+    return describe_identity(piece, position);
+}

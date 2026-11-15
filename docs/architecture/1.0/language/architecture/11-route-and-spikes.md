@@ -1,10 +1,16 @@
 # Chapter 11: implementation routes and spikes
 
-Status: **draft for the owner. Not accepted.** Conventions are in [the overview](00-overview.md), section 3.
+Status: **frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). Conventions are in
+[the overview](00-overview.md), section 3, and its status says what the freeze covers.
 
 This chapter gives the obligations of each implementation route and the evidence needed to choose a route, an engine
-language and a runtime placement. It supplies proposed experiment cards and decision rules. Nothing has been measured,
-no language spike has run, and this chapter authorizes no run. The owner questions remain open.
+language and a runtime placement. It supplies experiment cards and decision rules. LX-1 to LX-9 ran as far as the
+owner's allowance permits; RTE.82 records their evidence and limits. LX-5 and LX-6 ran decisively on 14 November 2026,
+and the owner chose LQ8, LQ9 and LQ21 that day: the engine and the interpreter's host in Rust (RTE.17), route RT1 with
+the runtime in a process of its own (RTE.21), and capability separation (RTE.24). The decisive LX-1 to LX-4 checks
+are LP3 acceptance checks. LQ13 still waits for LX-8. This chapter starts no run. No ADR is accepted and nothing is
+frozen.
 
 Sources: [the partition](../ecosystem-partition.md), especially INV-1 to INV-12, sections 8.4, 11, 12, 14 and defaults
 1 to 20; [DT-L1](../../../../progress/1.0/design-table/topics/language-ecosystem.md), E1, E3, E4, R2-E3 and Round 3,
@@ -25,8 +31,9 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 
 - **RTE.1 [B]** The owner requested ecosystem and architecture before implementation, with subscription quota only
   (DT-L1, Owner input; owner, 3 November 2026, as recorded in the briefing). This text chooses no route, engine language,
-  placement, syntax or form of flow control. LQ18 is the permission boundary for every spike below. It supplies no
-  permission for an API-team run, new cost or tool installation.
+  placement, syntax or form of flow control; it records the owner's choices of 14 November 2026 (RTE.17, RTE.21,
+  RTE.24). The owner allowed LX-1 to LX-9 as experiment code (owner,
+  6 November 2026, LQ18). That allowance supplies no permission for an API-team run, new cost or tool installation.
 - **RTE.2 [D]** Every route is a client of the same chapter 01 kernel interface and chapter 08 state lifecycles
   (partition sections 9 and 12). It preserves model and level identity, literal chronological execution, exact
   decisions, complete collateral effects and independent checking. It has no mechanics of its own. No route receives
@@ -40,7 +47,9 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
   uses one of three terms. **By construction** means the route's definition includes the component, with its
   implementation and conformance still to prove. **Must be built** includes an adapter or restriction around a
   borrowed component. **Needs a modified host** identifies the executor ownership required by BM2; a library wrapper
-  around ordinary values and branches does not supply it (DT-L1 R2-E3). No cell is a result or a cost estimate.
+  around ordinary values and branches does not supply it (DT-L1 R2-E3). No cell is a result or a cost estimate. LQ9
+  selected RT1 and LQ21 capability separation (RTE.21, RTE.24): the RT1 column and the capability-separation row
+  apply, and the other columns and the label rows record the alternatives.
 
 | Requirement | Contract | RT1 | RT2 | RT3 | RT4 |
 | --- | --- | --- | --- | --- | --- |
@@ -58,31 +67,62 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 | Streaming of literal and compressed long words | KN2.10, LG4.6, LB5.13 | must be built | must be built | must be built | must be built |
 | Static flow labels, if selected | LG3.12, BM2 | by construction | must be built | by construction | must be built |
 | Run-time flow labels, if selected | LG3.12, BM2 | by construction | needs a modified host | by construction | needs a modified host |
-| Capability separation, if selected | LG3.13, BM2 | must be built | must be built | must be built | must be built |
+| Capability separation (selected, RTE.24) | LG3.13, BM2 | must be built | must be built | must be built | must be built |
 
 - **RTE.5 [D]** Host tooling, a numeric library, VM fuel or a sandbox supplies only the part demonstrated against this
   inventory (LG4.14, DET.21, partition section 12). A candidate's report identifies the implementation of each row,
   the admitted source subset and the remaining gaps. In particular, a host editor does not establish EV1's domain
   diagnostics, and host integers do not establish the whole KN3 tower. The independent kernel gates remain the same.
-- **RTE.6 [O]** RT4 does not contain RT1 to RT3's typed IR by definition. LG4.14 requires an equally versioned
-  contract over its admitted host programs. LP1 and the owner's LQ9 decision must settle its admission: either lower
-  the approved subset into the common validated IR, or specify and verify an equivalent host-program contract and
-  validator. The latter needs its own compatibility and metering evidence; host annotations and conventions alone
-  are insufficient. The common tests below apply to the shared IR where one exists, and to the stated equivalent
-  obligations under a separately admitted replacement. This text defines neither validator.
+- **RTE.6 [D]** Conditional on LQ9 selecting RT4, admission requires either lowering the approved host subset into
+  the common validated typed IR, including LB6.2's generated decomposition before lowering to an executor, or a
+  checked host-program contract satisfying RTE.80 and RTE.81. The latter owes compatible types, exactness, effects,
+  accounting, stops and source linkage under LG4.14, and a generated decomposition for every tool's PrincipleRecord.
+  Host annotations, metering and source locations without that decomposition are insufficient. RT4 admission remains
+  unproved until its validator and conformance evidence exist. LQ9 selected RT1, an IR route (RTE.21), so the
+  non-IR replacement clause is inapplicable and records the unselected alternative; the ordinary IR decomposition
+  obligation remains.
+
+- **RTE.80 [B]** LQ9 selected RT1 (owner, 14 November 2026, LQ9; RTE.21), so no non-IR RT4 candidate is admitted.
+  This clause records the unselected alternative and binds nothing. A non-IR RT4 candidate supplies a versioned host
+  decomposition contract. Its validator consumes
+  exactly the admitted source bytes, generated bodies if any, locked dependency closure, host/subset and adapter
+  versions and executable artifact digest. It generates a graph of entry points, transitive library calls, kernel
+  leaves, effects and required capabilities. Every node and edge names its source digest and EV1.10 range or an
+  explicit generated origin; no edge silently borrows the current editor draft. A higher-order or generic call has
+  every possible target in the admitted subset, with over-approximations marked `may call`. Targets outside that
+  checked set, unresolved imports, dynamic code and unmodelled native calls refuse admission.
+
+  The validator derives calls and effects from the body, rather than trusting an author's graph. It checks that
+  each declared edge set contains the derived targets and that effects include the transitive union, including
+  recursive components. An opaque kernel leaf names its specification and oracle gate; it is not a way to hide
+  tool code. It binds the resulting graph digest to the approval and verifies the same artifact at load. Changed
+  source, dependencies, call resolution or effects invalidate approval and mark LB6.2's hand-written mapping stale.
+  Stored source and build digests follow chapter 05. Generation supplies structure only, never a lemma or a human
+  understanding result. RT4 with common-IR lowering uses LB6.2 directly instead of this replacement.
+
+- **RTE.81 [D]** Under RT1 (RTE.21) only this gate's IR arm applies; its non-IR RT4 arm records the unselected
+  alternative. Admission evidence includes a tool `T` calling a function parameter whose sole admitted target
+  is helper `H`; `H` reads a snapshot and invokes a kernel leaf `K`. The generated graph contains `T -> H -> K`,
+  marking the indirect edge `may call`, and both T and H carry the snapshot effect. Removing H, K or that effect from
+  the submitted decomposition yields LB6.6's `LB6:evidence.decomposition_mismatch`. Replacing H's bytes without a new checked
+  graph yields the same refusal. A complete matching graph permits only this admission gate to pass; run grants and
+  boundary checks still apply. A host unable to enumerate the possible target set is refused, not admitted with an
+  unknown edge. CT-LB6-05 is the required mutation gate. Under RT1, RT2 or RT3 its non-IR RT4 arm returns
+  `not_applicable(route_uses_ir)` and the IR arm still checks transitive calls. No candidate has run this gate.
 - **RTE.7 [O]** The sources motivate a common host by zero-copy access but give no binding, ABI or buffer-lifetime
-  protocol. LP1's interfaces, LQ8 and LQ9 settle it. Same-process read-only access can avoid a transport boundary;
-  another process needs transfer or a separately specified read-only sharing mechanism. A different host language
-  needs a checked language boundary as well. Each option preserves snapshot immutability, logical memory charges and
-  kernel-only mutation. LX-1 and LX-2 report actual bytes and transfers; no route or placement is presumed zero-copy.
+  protocol. LQ8 and LQ9 are answered (RTE.17, RTE.21): engine and runtime share the Rust language but not a process,
+  so no language boundary is needed, and the runtime reaches snapshots through transfer or a separately specified
+  read-only sharing mechanism. LP1's interfaces specify which. Either preserves snapshot immutability, logical memory
+  charges and kernel-only mutation. LX-1 and LX-2 report actual bytes and transfers; nothing is presumed zero-copy.
 
 ## 2. RT1: own language
 
-- **RTE.8 [D]** RT1 owns the parser, checker, typed IR and interpreter, normally in the engine language (partition
-  section 12). It supplies direct control over domain types, exactness, effects, determinism, budget checks and source
-  diagnostics. Under flow labels it also owns the checker and executor values; under capability separation it enforces
-  LG3.13 instead. It adds the largest implementation effort, including the editor and debugger services. Its speed
-  remains unmeasured. LG4.4 starts with an interpreter and introduces no own VM, JIT or machine-code backend before
+- **RTE.8 [D]** LQ9 selected RT1 (RTE.21). RT1 owns the parser, checker, typed IR and interpreter, normally in the
+  engine language (partition section 12), which is Rust (RTE.17). It supplies direct control over domain types,
+  exactness, effects, determinism, budget checks and source diagnostics. Under capability separation, the selected form
+  (RTE.24), it enforces LG3.13; under flow labels, the recorded alternative, it would also own the checker and executor
+  values. It adds the largest implementation effort, including the editor and debugger services. Its speed remains
+  unmeasured. LG4.4 starts with an interpreter and introduces no own VM, JIT or machine-code backend before
   measurement supports one.
 - **RTE.9 [D]** RT1's front end is the difficult choice to reverse: source, diagnostics, module contracts and source
   associations become saved-work dependencies (partition section 12, DT-L1 E4). Choosing a borrowed surface syntax
@@ -92,13 +132,16 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 
 ## 3. RT2: embedded runtime
 
+LQ9 selected RT1 (RTE.21). Sections 3 to 5 record the alternatives and bind nothing.
+
 - **RTE.10 [D]** RT2 embeds an existing scripting runtime with a domain library (partition section 12). Its candidates
   are **Luau, Lua 5.4, a JavaScript engine, CPython or a restricted subset, Rhai, a WebAssembly VM**. The partition
   identifies existing VMs, docs and editors as possible reuse and a faster start as an expectation. Domain types,
   effects, exactness and evidence discipline still need the checker and adapter of LG4.14. Host numeric semantics
   cannot introduce float decisions or integer overflow. No candidate here is selected or demonstrated compliant.
-- **RTE.11 [O]** The repository supplies no candidate-specific licence, speed or enforcement result for this list.
-  For each named candidate, LX-2, LX-3 and LX-5 must answer: which host facilities can the approved subset reach, can
+- **RTE.11 [D]** RTE.82 records stand-in results for some named candidates; none is admitted as a product host, and
+  LQ9 selected RT1 (RTE.21). The questions below bind only a later route change. For each named candidate, LX-2,
+  LX-3 and LX-5 must answer: which host facilities can the approved subset reach, can
   dynamic code be refused with approval bound to executed bytes, can all limits and interrupts be enforced, do exact
   results repeat, and what are the dependency and modification licence obligations? The partition calls CPython's
   sandboxing and determinism hard; this is a risk to test, not a demonstrated escape or impossibility. No licence,
@@ -136,40 +179,56 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 
 ## 6. LQ8: engine language and interpreter host
 
-- **RTE.17 [O]** LQ8 chooses the engine language. The following are its options, not outcomes. The portability
-  boundary is invariant under all of them: engine, session store, command layer and view model remain free of
-  Windows-only code, with runtime, libraries and checkers runnable headless on Linux (INV-9, RPI.51 to RPI.53).
+- **RTE.17 [B]** LQ8 is answered: the engine, the session store, the command layer and the interpreter's host are
+  written in Rust (owner, 14 November 2026, LQ8). The owner first chose to wait for LX-5 and LX-6 (owner, 6 November
+  2026, LQ8) and chose Rust on their decisive runs of 14 November 2026 (RTE.82). The table keeps the recorded options;
+  the third binds nothing. The portability boundary is invariant: engine, session store, command layer and view
+  model remain free of Windows-only code, with runtime, libraries and checkers runnable headless on Linux (INV-9,
+  RPI.51 to RPI.53).
 
 | LQ8 option | What changes | What remains to prove |
 | --- | --- | --- |
-| Decide after LX-5 and LX-6 | Compare exact arithmetic dependencies and the engine hot path before choosing the host; no language is presumed | Oracle equality, arithmetic correctness, dependency terms and owner-machine timings for the selected candidate |
-| Decide Rust now | Adopt the wiki question's proposed portable engine, store and command layer, with a narrow boundary to the GUI | Its expected benefits and costs remain proposals; correctness and measured performance still need their checks |
+| Decide after LX-5 and LX-6 (chosen on 6 November 2026; it led to Rust) | Compare exact arithmetic dependencies and the engine hot path before choosing the host; no language is presumed | Oracle equality, arithmetic correctness, dependency terms and owner-machine timings for the selected candidate |
+| Rust (selected on 14 November 2026) | Adopt the wiki question's proposed portable engine, store and command layer, with a narrow boundary to the GUI | Its expected benefits and costs remain proposals; correctness and measured performance still need their checks |
 | Keep the exact Python and NumPy reference as the 1.0 engine | Wrap the reference behind the new interfaces rather than presuming a port | The new interface, lifecycle, limits and end-to-end bars still need verification; 0.4 timings do not prove them |
 
-- **RTE.18 [P LQ8]** Under LQ8's recommendation, LX-5 and LX-6 feed the engine decision before the route is selected.
-  Choosing Rust now or keeping Python and NumPy resolves the host earlier; it supplies no passing spike or product
-  evidence. The wiki's Rust proposal expects speed, memory safety, type-level invariants and a PyO3 transition path,
-  and records costs in the extra GUI boundary, compilation and reading burden. Those are the proposal's expectations.
-  Its deferred spike has not run, and none is treated as a measured benefit here.
-- **RTE.19 [D]** The interpreter's host normally follows the engine language to permit direct snapshot and kernel
-  access (partition section 12). With another host, the binding must preserve the same identity, immutable lifetimes,
-  exact values, declared charges and typed results through RTE.7's boundary. The report separates binding overhead
-  from interpreter and kernel work. Neither choice makes the runtime depend on the renderer's language. The GUI
-  language follows renderer selection in the wiki proposal; engine and runtime portability remain separate obligations.
+- **RTE.18 [D]** LX-5 and LX-6 fed the engine decision before the route was selected (RTE.82). On the same inputs in
+  the pinned engine environment, the Rust port is 2.3 to 7.2 times faster than NumPy at applying a generator, applying
+  a long word and composing macros, with equal output digests. NumPy is 15 times faster at the net effect, where it
+  uses a warmed star cache the port lacks, so that row is no like-for-like comparison; the port adds the cache before
+  any net-effect claim. LP2 chooses the big-integer implementation on LX-5's rows: `num-bigint` was exact and about
+  3.4 times faster in total than the experiment's own limbs, with gcd and sign hot spots on random 22,500-bit inputs,
+  and the own limbs are no audited library. A product dependency needs the owner's approval (RTE.70). The wiki's Rust
+  proposal also expects memory safety, type-level invariants and a PyO3 transition path, and records costs in the
+  extra GUI boundary, compilation and reading burden; those remain its expectations. Whole-engine correctness and
+  product performance still need their checks.
+- **RTE.19 [D]** The interpreter's host follows the engine language (partition section 12): both are Rust (RTE.17).
+  Because the runtime runs in a process of its own (RTE.21), snapshot and kernel access crosses a process boundary,
+  not a language boundary. The binding preserves the same identity, immutable lifetimes, exact values, declared
+  charges and typed results through RTE.7's boundary, and the report separates transfer overhead from interpreter and
+  kernel work. Neither choice makes the runtime depend on the renderer's language. The GUI language follows renderer
+  selection in the wiki proposal; engine and runtime portability remain separate obligations.
 - **RTE.20 [D]** The wiki question proposes comparison on "the same headless machine". DT-L1 E4 and Round 3 item 4,
   LX-6, narrow its use: oracle equality is source evidence, cloud or headless timing is a lead only, and the decisive
   speed comparison uses the same inputs against NumPy in the pinned engine environment on the owner's machine, by the
-  B4-12 method. There is no speed threshold. Both results go to LQ8 with LX-5. The earlier schedule sets no time box.
+  B4-12 method. There is no speed threshold. The decisive run took place on 14 November 2026, and both results went
+  to LQ8 with LX-5 (RTE.82).
 
 ## 7. LQ9: runtime placement
 
-- **RTE.21 [O]** LQ9 chooses placement with the route. Each option must satisfy KN7.12, KN7.13 and every rule of
-  chapter 08. LX-2 decides fault containment and responsiveness; co-location or a process boundary is no proof.
+- **RTE.21 [B]** LQ9 is answered: route RT1, an own interpreter over the typed IR, with the runtime in a process of
+  its own (owner, 14 November 2026, LQ9). The engine-process and shell-process placements are not admitted, and RT2,
+  RT3 and RT4 are not built; the table below and the route rows elsewhere keep them as the record of the
+  alternatives, and they bind nothing. The owner chose on RTE.82's leads, together with LQ21, instead of waiting for
+  decisive LX-1, LX-2 and LX-4 runs, which need the Rust host, experiment versions of the LP3 tools and a renderer
+  candidate. Those runs are LP3 acceptance checks with their bars unchanged (RTE.38 to RTE.53); if one fails, LQ9
+  reopens with that evidence. The placement must satisfy KN7.12, KN7.13 and every rule of chapter 08. LX-2's
+  decisive run judges its fault containment and responsiveness; a process boundary alone is no proof.
 
 | Placement | What it gives and costs | What KN7.13 and chapter 08 require it to demonstrate |
 | --- | --- | --- |
 | Isolate inside the engine process | Direct access can avoid IPC; user execution shares the engine's physical resource and failure domain | Limits, no-kernel-call loops and the forced runtime kill cannot end the engine session or change its journal; snapshots cannot hold commit locks |
-| Process of its own | A separate runtime failure domain; extra startup, transfer and round trips at LX-1's call mix | Runtime death ends jobs with typed outcomes, while the engine, store, pending engine preview and shell continue; no second process opens session files |
+| Process of its own (selected) | A separate runtime failure domain; extra startup, transfer and round trips at LX-1's call mix | Runtime death ends jobs with typed outcomes, while the engine, store, pending engine preview and shell continue; no second process opens session files |
 | Shell process | Can share the authoring host; user execution shares the window and renderer's crash and memory domain | Execution stays off the UI thread and kernel-key path; faults and forced kill leave the session and shell usable; admitted only if LX-2's fault run passes |
 
 - **RTE.22 [D]** A runtime fault ends its jobs, never the session (KN7.13, ONE.70, DET.43). A previously durable
@@ -177,16 +236,25 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
   available after runtime death, and runtime handles end with the run. Program output becomes stale under ONE.11 and
   ONE.12; the adopted engine bundle continues without waiting for it (ONE.64). No placement permits old output over a
   new state, a raw state to commit, direct session-file access or token access.
-- **RTE.23 [P LQ9]** Under LQ9's recommendation, placement and route follow LX-1 to LX-5 and are decided with LQ21
-  inside LP1. Choosing an own or embedded interpreter now reduces the route alternatives; it does not waive LX-2's
-  condition on shell placement or KN7.13 for any placement. A placement that cannot survive the forced runtime kill
-  fails the proposed LX-2 rule, even if ordinary cooperative cancellation works.
+- **RTE.23 [D]** The owner decided placement and route together with LQ21 on RTE.82's leads, before LP1's freeze
+  gates (owner, 14 November 2026, LQ9 and LQ21). The choice does not waive KN7.13 for the selected placement. A
+  placement that cannot survive the forced runtime kill fails the proposed LX-2 rule, even if ordinary cooperative
+  cancellation works. LX-2's first pass met conditions 1 and 2 for seven injected faults in the separate process on
+  its stand-in candidate; that is a lead, not a pass (RTE.82).
 
 ## 8. Flow control across routes
 
-- **RTE.24 [O]** LQ21 selects flow labels or capability separation, including static-only or additional run-time
-  labels. Chapter 07 owns the rule, policy, provenance and declassifiers. This table records the implementation
-  consequences in partition section 12 and LG3.12 to LG3.14 (DT-L1 R2-E3); it selects none.
+- **RTE.24 [B]** LQ21 is answered: capability separation (owner, 14 November 2026, LQ21). A program either reads
+  state or prepares previews, apart from the fixed declassifiers that LQ2's joint setting enables; a tool that needs
+  both uses such a declassifier or is split into a reading tool and a previewing tool. The owner first chose to wait
+  for LX-1's cost leads and LX-3's refusal counts, together with LQ9 (owner, 6 November 2026, LQ21). On LX-3's RT1
+  stand-in, capability separation refused all 20 must-refuse cases with the expected code and falsely refused 2 of
+  the 35 allowed tools, A25 and A30, which read state and prepare previews from independent manual or fixed setup
+  data. Both label forms refused 16 of 20 with no false refusal and left MR13, MR14, MR19 and MR20 unrefused
+  (RTE.82). LX-3's remaining checks are LP3 acceptance checks: admitted-executor and platform coverage, the
+  execution-contract mapping and product sandbox admission. Chapter 07 owns the rule, policy, provenance and
+  declassifiers. This table records the implementation consequences in partition section 12 and LG3.12 to LG3.14
+  (DT-L1 R2-E3). Only the RT1 row's capability-separation cell binds; the other cells record the alternatives.
 
 | Route | Static labels | Run-time labels in addition to static checks | Capability separation |
 | --- | --- | --- | --- |
@@ -201,64 +269,69 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
   declassifiers, and a previewing program cannot read preview outcomes (LG3.13). Flow labels record dependencies more
   finely; separation records only whether the program read state. Neither proves authorship or understanding or
   closes termination, preview-emission or manual-retyping channels (DT-L1 R2-E3).
-- **RTE.26 [D]** LQ21 precedes LP2's checker and IR under either LQ18 order (partition sections 12 and 14). Adding
-  the checks afterwards would refuse saved tools that had been allowed to run (DT-L1 R2-E3). Stored words, macros and
-  workspace records keep BM2 provenance under either form (KN4.4; PS1.32 to PS1.34). The choice changes checking and
-  execution, not the kernel's user-action gate or independent evidence checking.
+- **RTE.26 [D]** LQ21 precedes LP1's freeze gates and LP2's checker and IR (owner, 6 November 2026, LQ21); the
+  owner answered it on 14 November 2026, before both. Adding the checks afterwards would refuse saved tools that had
+  been allowed to run (DT-L1 R2-E3). Stored words, macros and workspace records keep BM2 provenance under capability
+  separation as under any form (KN4.4; PS1.32 to PS1.34). The choice changes checking and execution, not the
+  kernel's user-action gate or independent evidence checking.
 - **RTE.27 [O]** LQ2's joint setting decides which author classes and display sinks the flow rule covers and which
-  fixed declassifiers it enables. LQ21 decides the mechanism, not those permissions. Until that setting, partition
-  section 11's interim reading and LG3.16 apply: built-in tools keep the 2 October boundary and 17 October repair-list
-  exception, research output never becomes a solving-session preview, and solver-tool solving previews remain disabled.
-  These are the conditions for constructing LX-3's allowed-tool and must-refuse lists; an experiment does not answer LQ2.
+  fixed declassifiers it enables. LQ21 chose the mechanism (RTE.24), not those permissions. Until that setting,
+  partition section 11's interim reading and LG3.16 apply: built-in tools keep the 2 October boundary and 17 October
+  repair-list exception, research output never becomes a solving-session preview, and solver-tool solving previews
+  remain disabled. These are the conditions for constructing LX-3's allowed-tool and must-refuse lists; an experiment
+  does not answer LQ2.
 
-## 9. LQ15: formal proofs
+## 9. Proof-obligation export to Lean
 
-- **RTE.28 [P LQ15]** The recommendation uses certificates and independent checkers in 1.0, with no proof assistant
-  as the language and a proof-assistant link left to 1.x (partition LQ15). Lean 4 as the research language would add
-  a separate research front end and an adapter to the common identities, exact kernels and stored evidence. Exporting
-  proof obligations to Lean instead would add an export and checked-return path. Either alternative needs its own
-  specification and evidence; neither changes the commit gate or promotes a claim merely because it was exported.
-  Chapter 06 owns the meaning of a formal-proof check. This chapter chooses no alternative or proof protocol.
+- **RTE.28 [D]** Proof obligations export to Lean in 1.0 (owner, 6 November 2026, LQ15 and decisions 4 and 9).
+  LB5.18's `research.obligation.export` writes Lean 4 source through a granted file capability, using a restricted,
+  versioned vocabulary and the `c600-proof-obligation-draft` format (PS1.45). The translation prelude lives in the
+  repository, outside the shipped software. Lean is neither shipped nor a runtime dependency and is not on the
+  allowlist; a project check that runs it needs the owner. There is no proof-record import row, proof-record format
+  or return path in 1.0, and no new check mode. Chapter 06 owns the meaning of a formal-proof check: `formal proof`
+  remains in EVD.3 with no writer in 1.0 (EVD.64). A later edition names a certificate the kernel can check. Export
+  promotes no claim and changes no commit gate; a failed Lean run is no refutation and enters no record.
 
 ## 10. Order of decisions and spikes
 
-- **RTE.29 [P LQ18]** Under LQ18's recommendation, the permitted spikes are experiment code under `work/experiments/`
+- **RTE.29 [B]** The permitted spikes are experiment code under `work/experiments/`
   and never product code. They may start in LP0 and supply decisions inside LP1 before its freeze gates. This is the
   acyclic order of partition sections 12 and 14; a listed independent start needs its own frozen experiment inputs.
+  LX-2 and LX-4 need a renderer candidate that presents frames for the renderer gate and E2 in the same run. Under
+  this order LQ9 waited for a renderer candidate; the owner chose it on RTE.82's leads instead and made the decisive
+  LX-1, LX-2 and LX-4 runs LP3 acceptance checks (RTE.21). LX-5 and LX-6 ran decisively in the owner's window of
+  14 November 2026. LX-2 and LX-4 use the existing renderer candidates first and run again if the renderer changes
+  (owner, 6 November 2026, LQ8, LQ9, LQ18, LQ21 and decision 15). RTE.37 prevents relabelling earlier results for a
+  changed candidate.
 
 | Work or decision | Waits for | Feeds or constrains |
 | --- | --- | --- |
-| Owner's LQ18 allowance and each complete experiment card | LP0 direction; owner-set time box and scope | Permission for the named experiments only |
-| LX-5 and LX-6 | Their allowed cards and frozen arithmetic/oracle fixtures | LQ8 |
-| LX-3 | Its frozen candidate, key, policy and corpora; does not wait for LQ8 | LQ9 and LQ21; later changes of candidate require matching evidence |
-| LX-7 | Its chart and renderer candidates and precision contract; does not wait for LQ8 | LQ7 and LQ20's feature handoff before renderer freeze |
+| Owner's LQ18 allowance and each complete experiment card | Allowance granted; each run retains its frozen card, scope and time box | Permission for the named experiments only |
+| LX-5 and LX-6 | Their allowed cards and frozen arithmetic/oracle fixtures; decisive runs on 14 November 2026 | LQ8, answered (RTE.17); LP2's big-integer choice |
+| LX-3 | Its frozen candidate, key, policy and corpora; does not wait for LQ8 | LQ9 and LQ21, answered (RTE.21, RTE.24); LP3 acceptance; later changes of candidate require matching evidence |
+| LX-7 | Its stage and renderer candidates, safety contract and precision contract; does not wait for LQ8 | User-stage and free-view feature handoff before renderer freeze (RPI.79, RTE.83) |
 | LX-8 | LQ13's owner-set human protocol and equivalent IR candidates; does not wait for LQ8 | LQ13 before LP2's parser |
 | LX-9 reference comparisons | Frozen requests and exact bisectors; do not wait for LQ8 | INV-10 and any EN1 contract-amendment packet |
 | LX-9 engine-candidate comparison | LX-6 candidate | Same contract question; no assumed outcome |
-| LQ8 | LX-5 and LX-6 under its recommendation | Host for LX-1, LX-2 and LX-4 |
-| LX-1 | LQ8 and frozen experiment versions of the three LP3 tools | LQ9, LQ21 and LX-2's call mix |
-| LX-2 | LQ8, its placements and LX-1's call mix | LQ9; uses LX-4's echo bar without waiting for an LX-4 pass |
-| LX-4 | LQ8 and its generated module/edit fixtures | LQ9 and the later EV1 acceptance |
-| LQ9 and LQ21 together | LX-1 to LX-5 under the recommendations | Form of flow control in ADR 6, ADR 7 and ADR 12; LP1's route interfaces |
+| LQ8, answered: Rust (RTE.17) | LX-5 and LX-6, decisive on 14 November 2026 | Host for LX-1, LX-2 and LX-4 |
+| LX-1 | LQ8 and frozen experiment versions of the three LP3 tools | LP3 acceptance for LQ9 and LQ21 (RTE.21, RTE.24) and LX-2's call mix |
+| LX-2 | LQ8, the selected placement (RTE.21), LX-1's call mix and a renderer candidate presenting frames for RTE.42 conditions 3 and 4 | LP3 acceptance for LQ9; uses LX-4's echo bar without waiting for an LX-4 pass |
+| LX-4 | LQ8, its generated module/edit fixtures and a renderer candidate presenting frames for RTE.51 step 8 and RTE.53 | LP3 acceptance for LQ9 and the later EV1 acceptance |
+| LQ9 and LQ21 together, answered: RT1 in a process of its own, and capability separation (RTE.21, RTE.24) | RTE.82's leads and the decisive LX-5 and LX-6 runs | Form of flow control in ADR 6, ADR 7 and ADR 12; LP1's route interfaces |
 | LP1 freeze gates and sign-off | Their full packets, including route decisions and LQ10's data-core prerequisites | Chapter 12's conditions before LP2 |
 | LP2 parser and checker/IR | Applicable freeze exit, LQ13 for parser and LQ21 for checker/IR | LP3's implemented closed loop |
 | LP3 end-to-end E2 measurement | LP2, final H-08 and renderer freeze for its on-screen half | Decisive product responsiveness with the three tools' views active |
+| LP3 acceptance: decisive LX-1, LX-2 and LX-4 runs and LX-3's remaining checks | The Rust host, LP2's implemented tools and a renderer candidate presenting frames | A failing LX-1, LX-2 or LX-4 run reopens LQ9 (RTE.21); a failing LX-3 check goes to the owner (RTE.24) |
 
-- **RTE.30 [P LQ18]** The pre-LP2 cards use experiment versions of the LP3 tools and interfaces. They do not require
+- **RTE.30 [D]** The pre-LP2 cards use experiment versions of the LP3 tools and interfaces. They do not require
   LP3's product implementation to exist first (partition LP1 and LP3, stage 2 protocol's cheapest-artifact principle).
   Their results are scoped to those frozen candidates. Completing a spike neither completes LP2 nor supplies LP3's
   end-to-end evidence. The rule and numeric echo bars can be shared before a measurement, so LX-2 and LX-4 form no cycle.
-- **RTE.31 [P LQ18]** Under LQ18's alternative, no spike runs before the architecture freeze. The same spike dependency
-  order moves after LP1's gates and before LP2, with LQ8, LQ9 and LQ21 then decided from it; LQ13 still precedes the
-  parser. The frozen interfaces must hold under every RT1 to RT4 route and both forms of flow control, including
-  RTE.6's RT4 obligation, provenance carriers, immutable snapshot lifetimes and deterministic budgets. Unverified
-  compatibility remains an explicit freeze-packet dependency. If a later candidate requires an incompatible interface,
-  it needs the applicable reviewed owner decision; deferral supplies no implicit amendment or passing evidence.
-- **RTE.32 [B]** The signed charter's stage 2.5 exit includes the architecture-freeze ruling, migration-format-freeze
-  ruling and accepted design-system ADR before implementation. The earlier schedule is set aside by the 3 November
-  owner decision; no gate is relaxed. LQ19's recommendation would allow LP2 to LP5 after the two rulings through an
-  owner-approved charter amendment. Its alternatives change that order. Until the owner decides, chapter 12 must keep
-  the charter's whole exit as a prerequisite. This chapter grants no early product implementation.
+- **RTE.31 [B] Withdrawn.** The owner allowed pre-freeze experiment code, so deferred spikes no longer define an order (owner, 6 November 2026, LQ18).
+- **RTE.32 [B]** The charter is amended: both freeze rulings sit at LP1's exit, and LP2 to LP5 may start after those
+  rulings and the owner's sign-off (owner, 6 November 2026, LQ19 and decision 7). The language's development is complete
+  when LP2 to LP5 are done apart from LP4's editor look. The design line resumes then, and its design-system ADR
+  conditions LP4's editor look and LP6. The earlier schedule stays set aside (owner, 3 November 2026); no gate is relaxed.
 
 ## 11. Figures the experiments use
 
@@ -288,12 +361,11 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 
 ## 12. Experiment records and common conditions
 
-- **RTE.35 [P LQ18]** Each section below is an experiment card under stage 2 protocol sections 1 and 2. Before a run,
+- **RTE.35 [D]** Each section below is an experiment card under stage 2 protocol sections 1 and 2. Before a run,
   its ledger entry receives that protocol's experiment ID as well as its LX identifier, owner-set time box, frozen
   candidate/build identities, source and input digests, method and kill criteria. Each run records its result and the
-  adopted, rejected or open decision with its decider. The present result of every card is **not run** and its decision
-  is **open**. A reached time box leaves the observed evidence and unfinished items; it is no pass. Under LQ18's
-  alternative, these cards remain specifications until the post-freeze allowance.
+  adopted, rejected or open decision with its decider. RTE.82 records the first-pass results; the choices waiting on
+  their evidence remain open. A reached time box leaves the observed evidence and unfinished items; it is no pass.
 - **RTE.36 [B]** Evidence classes stay separate under `AGENTS.md` and overview 3.4. Source or synthetic runs never
   establish actual Windows/DirectX, native input, long-session or performance results. Performance figures count only
   from the owner's machine. Where the cards require the renderer gate, they retain all 259,800 slots at full detail,
@@ -301,16 +373,40 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
   no frame generation and peak VRAM at most about 7 GB on the owner's RTX 4070 Laptop GPU (8 GB). These are thresholds
   from renderer-candidates and RPI.60, not measured results. Its recorded power, discrete-GPU, driver, display and
   repeat-run conditions remain part of the gate.
-- **RTE.37 [P LQ18]** A spike leaves its frozen card, inputs or digest manifest, editable experiment source, production
+- **RTE.37 [D]** A spike leaves its frozen card, inputs or digest manifest, editable experiment source, production
   commands, tool versions, raw observations and report, including negative results (stage 2 protocol). A report names
   its evidence class and exact source/build scope. Results on another candidate do not become evidence for a changed
   one by relabelling the report. The card lists excluded timing, host and path fields where canonical payloads are
   compared. Fresh isolated fixture data is used; experiment code remains under `work/experiments/` and is never product
-  code. This is a requirement on a permitted future run, not a request to create those files in this stage.
+  code. This is a requirement on a permitted run; this chapter starts no run.
+- **RTE.70 [B]** Each card names the tools and dependencies it uses. Already installed tools are used at pinned
+  versions and recorded with the run. RTE.1 grants no installation; adding a third-party source outside
+  `tools/toolchain.lock.json` needs the owner's approval first (`AGENTS.md`, "Ask the owner").
+
+- **RTE.82 [D]** LX-1 to LX-9 ran as far as they can now under the owner's allowance (owner, 6 November 2026,
+  LQ18). The records below are first passes and leads, limited to their frozen candidates, except LX-5's and LX-6's
+  timing. Those ran in the owner's window of 14 November 2026, and the owner accepted them as decisive with the input
+  recorded during the runs (`work/experiments/language-lx/quiet-window/2026-11-14T1818Z/RESULT.md`). The owner chose
+  LQ8, LQ9 and LQ21 that day (RTE.17, RTE.21, RTE.24); no record decides LQ13. The decisive LX-1, LX-2 and LX-4 runs
+  are LP3 acceptance checks; LX-2 and LX-4 use the existing renderer candidates first and run again if the renderer
+  changes (owner, 6 November 2026, decision 15). RTE.36's evidence classes and RTE.37's source/build scope apply to
+  every row.
+
+| Spike | Record | Evidence class | What it showed | Still not run or established |
+| --- | --- | --- | --- | --- |
+| LX-1 | `work/experiments/language-lx/lx1-cost/RESULT.md` | source, synthetic; sandbox timing leads | 39 runnable prototype workload/mode cells, six declared not-run cells; comparable summary and cross-mode observable hashes agree. RT3 labels-off timing includes a different artifact-loading path and cannot measure label cost. | The Rust host (RTE.17), frozen real LP3 tools, real pose traffic, scale contrast and decisive E2, now LP3 acceptance checks (RTE.21). |
+| LX-2 | `work/experiments/language-lx/lx2-placement/RESULT.md` | source, synthetic; sandbox timing leads | The separate process met conditions 1 and 2 for seven injected faults on this candidate. The shared-host native allocation, recursion, loop and forced-kill cases fail. | Conditions 3 and 4, first-frame startup, Linux and the decisive call-mix/renderer integration, now LP3 acceptance checks (RTE.21); the shell placement is not admitted. |
+| LX-3 | `work/experiments/language-lx/lx3-sandbox-flow/corpus/RESULT.md`, `work/experiments/language-lx/lx3-sandbox-flow/part-b/RESULT.md`, its five `candidates/*/RESULT.md` records, and `work/experiments/language-lx/lx3-sandbox-flow/recheck/RESULT.md` | source, synthetic | Frozen corpus, controls and five stand-in candidates ran; failed flow forms, false refusals, unsupported cells and bench defects remain recorded. Recheck reproduced additional persisted-taint escapes outside the frozen counts. | Complete admitted-executor/platform coverage, the current execution-contract mapping and product sandbox admission, now LP3 acceptance checks; the owner chose capability separation (RTE.24). |
+| LX-4 | `work/experiments/language-lx/lx4-editor/RESULT.md` | source, synthetic; function timing leads | Python/Rust front ends agree on the frozen stand-in inputs; 50 function jobs completed smoke and three 100-sample series. No input-to-frame bar was judged. | Frozen three-tool corpus, actual editor/renderer integration, foreground input/frame correlation, W3, E2 and the full decisive series, now LP3 acceptance checks (RTE.21). |
+| LX-5 | `work/experiments/language-lx/lx5-arithmetic/RESULT.md`, `work/experiments/language-lx/lx5-crate/RESULT.md` and `work/experiments/language-lx/quiet-window/2026-11-14T1818Z/RESULT.md` | source, synthetic; decisive owner-machine timing (14 November 2026) | Node, .NET, own Rust limbs and `num-bigint` 0.5.1 each matched all 3,374 exact cases. Large words were streamed; 166,788,405 was length arithmetic only. Sums of the 190 row medians: .NET 136.6 ms, `num-bigint` 340.7 ms, own limbs 1,145.8 ms, Node 1,410.1 ms. `num-bigint`'s gcd and sign rows on random 22,500-bit inputs are its hot spots. | Linux leg and dependency approval; no speed threshold; the experiment's own limbs are no audited general-purpose library. |
+| LX-6 | `work/experiments/language-lx/lx6-engine-port/RESULT.md` and `work/experiments/language-lx/quiet-window/2026-11-14T1818Z/RESULT.md` | source; synthetic controls; decisive owner-machine timing (14 November 2026) | All 3,201 required O01 to O07 steps equal the frozen oracle; the corrupted-trace control fails as expected. With equal output digests, the Rust port is 2.3, 5.1 and 7.2 times faster than NumPy at applying a generator, applying a long word and composing macros; NumPy is 15.2 times faster at the net effect with a warmed star cache the port lacks. | A net-effect comparison with the cache in the port and the Linux correctness leg; no whole-engine or end-to-end E2 result. |
+| LX-7 | `work/experiments/language-lx/lx7-charts/RESULT.md` | source, synthetic; windows for the later named-device comparison; no performance | `lx7-r1` accepted four sources and refused 18; its compute readback has 496 records. Finite device/CPU differences are at most one binary32 ULP, with exact/float coverage disagreements retained. | Product precision verdict, the re-scoped safety set, vertex and fragment stages in a drawing pipeline and W3's combined gate (RTE.83). |
+| LX-8 | `work/experiments/language-lx/lx8-surfaces/RESULT.md` | source | 17 programs in three spellings give 51 matching IR comparisons; 48 broken drafts and 45 semantic controls were checked. No syntax is ranked. | Owner-set protocol and human run; source equivalence is no learnability result. |
+| LX-9 | `work/experiments/language-lx/lx9-input-map/RESULT.md`, its `followup/NOTE.md`, and `work/experiments/language-lx/lx9-exact-request/RESULT.md` | source, synthetic | Six signed-axis requests share one differing float event across platforms. The exact-request follow-up reproduced its stored cases, exact ties and menu bindings; its two free-mode meanings differ. | A6's EN1/owner amendment process, full default-grid Linux replay and a specified/tested gesture producer; no native-input or universal agreement claim. |
 
 ## 13. LX-1: interpreter cost
 
-- **RTE.38 [P LQ18]** LX-1's experiment card uses DT-L1 E4 and Round 3 item 4. Its decision questions are LQ9 and LQ21.
+- **RTE.38 [D]** LX-1's experiment card uses DT-L1 E4 and Round 3 item 4. Its decision questions are LQ9 and LQ21.
 
 | Field | Card |
 | --- | --- |
@@ -318,27 +414,29 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 | Decision it feeds | LQ9 route and placement; LQ21 label cost; LX-2's kernel-call mix |
 | Hypothesis | None established; the partition expects bulk work in kernel batches, not per-sticker interpreter calls |
 | Method | Freeze experiment versions of the Full, jumbling and representations tools and one input set by digest; run labels off, static only and with run-time labels; name the executed form and report the counters below |
+| Effort report | Work to build each slice, in person or agent hours, with what was reused (RTE.9); a lead that sets no estimate |
 | Time box | Owner sets it before the run |
 | Kill criteria | Stop and retain a candidate run whose output, identity, accounting or source binding fails its frozen checks; reaching the time box leaves the comparison incomplete; a slow observation alone does not reject a route |
 | Evidence class | source for work counts and headless cost leads; timing outside the owner-machine protocol is only a lead |
 | Cannot show | Product responsiveness, a route pass, equal instruction counts across routes or LP3's charter E2 result |
 | Product left behind | Frozen three-tool corpus, per-row call mix, transfer counts and the series report for LQ9/LQ21 and LX-2 |
 
-- **RTE.39 [P LQ18]** Proposed decision rule, DT-L1 Round 3 item 4, LX-1: for each route and flow-label mode, run the
+- **RTE.39 [D]** Proposed decision rule, DT-L1 Round 3 item 4, LX-1: for each route and flow-label mode, run the
   three LP3 tools on one frozen input set listed by digest. Report per tool steps, kernel calls by row, bytes crossing
   the kernel boundary, and time per step and per call as median and p99 of three series of 100 runs. A step is one
   instruction of the route's executed form, which the report names. Step counts are never compared across routes.
   The result is a lead for LQ9 and LQ21. No LX-1 figure passes or fails a route or stands in for charter E2. The
   decisive check is LP3's end-to-end E2 measurement on the owner's machine.
-- **RTE.40 [O]** LX-1's executed-instruction counter is distinct from DET.20's abstract budget meter and LG4.8's
-  charge schedule. LP1 must fix the latter and verify each admitted route's mapping (DET.21, DET.22). The options
-  remain operation counts or a fixed weight table; a route that cannot preserve the common meter supplies one, is
-  declined, or proposes a different versioned contract to LQ9. This chapter compares no raw instruction counts as
-  equivalent work and claims no established cross-route budget mapping.
+- **RTE.40 [D]** LX-1's executed-instruction counter is distinct from DET.20's abstract budget meter and LG4.8's
+  charge schedule. The draft `lp1-exec-draft-1` contract and its reference traces are in DET.54 to DET.65 and
+  `contract-vectors/`. They do not reinterpret LX-1 counts or the frozen LX-3 analysis meter as semantic charges.
+  RTE.71 requires a mapping for each admitted route; none is established here. A route that cannot preserve the
+  common meter supplies one, is declined, or proposes a different versioned contract for the owner's LQ9 decision
+  and chapter 05's compatibility treatment. The weighted alternative stays recorded in LG4.8.
 
 ## 14. LX-2: placement and faults
 
-- **RTE.41 [P LQ18]** LX-2's experiment card uses DT-L1 E1, E4, R2-E3 and Round 3 item 4. It feeds LQ9.
+- **RTE.41 [D]** LX-2's experiment card uses DT-L1 E1, E4, R2-E3 and Round 3 item 4. It feeds LQ9.
 
 | Field | Card |
 | --- | --- |
@@ -352,7 +450,7 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 | Cannot show | Containment for untested hosts or faults, a general process-isolation proof, or an accepted E3 budget |
 | Product left behind | Fault/control traces, journal and hash comparisons, call/transfer measurements, three startup records and the placement report |
 
-- **RTE.42 [P LQ18]** Proposed decision rule, DT-L1 Round 3 item 4, LX-2: on the owner's machine, on a frozen
+- **RTE.42 [D]** Proposed decision rule, DT-L1 Round 3 item 4, LX-2: on the owner's machine, on a frozen
   candidate with fresh isolated data and a session open, inject allocation to its limit, recursion to its limit, a
   loop with no kernel call and a forced kill. A placement passes only if every fault satisfies all four conditions:
   (1) journal rows and state hash afterwards equal a control run of the same commands without the fault;
@@ -371,7 +469,7 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 
 ## 15. LX-3: sandbox, determinism and refusals
 
-- **RTE.44 [P LQ18]** LX-3's experiment card uses partition 8.4 and LX-3, DET.49 to DET.51 and DT-L1 Round 3 item 4.
+- **RTE.44 [D]** LX-3's experiment card uses partition 8.4 and LX-3, DET.49 to DET.51 and DT-L1 Round 3 item 4.
 
 | Field | Card |
 | --- | --- |
@@ -385,7 +483,7 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 | Cannot show | All-program safety, authorship, understanding, absence of covert channels, product latency or an acceptable false-refusal threshold |
 | Product left behind | Digest-frozen refusal and allowed-tool corpora, canonical result hashes, per-form refusal lists and reproducibility/enforcement counterexamples |
 
-- **RTE.45 [P LQ18]** The must-refuse corpus is frozen before a run. It includes selection by largest N_c, search
+- **RTE.45 [D]** The must-refuse corpus is frozen before a run. It includes selection by largest N_c, search
   followed by rebuilding from base parts, the F2 and F5 solve over ν and shipped corrections, workspace laundering,
   state-based choice between two words, flow through a module call, a stop-selected preview, refusal-driven selection, a
   one-item pick and accumulation across runs (partition LX-3, DT-L1 R2-E3, R3-M3, DET.50, BND.52). It runs
@@ -393,7 +491,7 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
   whose approved-subset checker refuses dynamic code and binds approval to executed bytes. A label mode off in LX-1
   is a cost baseline, not a successful flow-control variant. Expected registry codes and the allowed-tool denominator
   are frozen with the corpus, subject to the interim boundary; no case is excused after observing its result.
-- **RTE.46 [P LQ18]** Proposed decision rule, DT-L1 Round 3 item 4, LX-3: cases and keys are frozen by digest before
+- **RTE.46 [D]** Proposed decision rule, DT-L1 Round 3 item 4, LX-3: cases and keys are frozen by digest before
   the run. Each key runs ten times on Windows and ten on headless Linux; all twenty runs give one SHA-256 over the
   canonical result bytes, comprising result value and stop reason in canonical JSON. Timing, host and path fields
   are excluded and listed on the experiment card. A display plan agrees when non-numeric fields are equal and each
@@ -407,7 +505,7 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 
 ## 16. LX-4: editor latency
 
-- **RTE.47 [P LQ18]** LX-4's experiment card uses EV1.1 to EV1.9 and all of DT-L1 Round 3 item 4, LX-4.
+- **RTE.47 [D]** LX-4's experiment card uses EV1.1 to EV1.9 and all of DT-L1 Round 3 item 4, LX-4.
 
 | Field | Card |
 | --- | --- |
@@ -421,7 +519,7 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 | Cannot show | Latency of arbitrary user views, learnability, design quality, or a pass for another candidate/build |
 | Product left behind | Deterministic module generator and digest manifest, seeded edit script, frame/input correlations, all series and a bar-by-bar report |
 
-- **RTE.48 [P LQ18]** Module sizes follow Round 3 item 4's source census: 33 research scripts range from 55 to
+- **RTE.48 [D]** Module sizes follow Round 3 item 4's source census: 33 research scripts range from 55 to
   1,034 lines, median 164, total 7,723, about 47 bytes per line. These are source counts reported in
   `docs/progress/1.0/design-table/topics/language-ecosystem.md`, not editor measurements. The sizes below are proposed
   fixtures generated from the three LP3 tools; no source syntax is chosen by their line counts.
@@ -433,7 +531,7 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 | L | 5,000 lines | Stress at about five times the largest script |
 | W | 50 modules, about 20,000 lines | About 2.6 times the total of the 33 scripts |
 
-- **RTE.49 [P LQ18]** The proposed bars are Round 3 item 4's p95 / p99 in milliseconds, measured from the key
+- **RTE.49 [D]** The proposed bars are Round 3 item 4's p95 / p99 in milliseconds, measured from the key
   message except for the stated burst endpoint. None is a measured result. Every debounce counts against its bar.
 
 | Interval | S | M | L |
@@ -447,14 +545,14 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 
   At W an edit to an exported signature has its dependents re-checked within 1,000 / 1,500 ms, p95 / p99.
 
-- **RTE.50 [P LQ18]** The reasoning is the one recorded with those bars. At the gate's 30 fps floor a key can land
+- **RTE.50 [D]** The reasoning is the one recorded with those bars. At the gate's 30 fps floor a key can land
   just after input sampling; two 33.3 ms frames give about 66.7 ms (arithmetic on the gate, not a timing). Syntax
   feedback is intended before the next key; the roughly 125 ms fast-typist gap is a common estimate, not project
   evidence. Completion uses charter E2's existing 100 ms sense of response. Diagnostics sit outside the keystroke
   path, between the usual 0.1 s and 1 s human-factors limits, which are also not project evidence. Round 3 uses p99
   about 1.5 times p95. The re-run bar applies only to a reference view of about 200 lines, one batch read of labels
   or pose IDs and a per-orbit count. Other views have only the stale-state bar; chapter 08 still governs stale data.
-- **RTE.51 [P LQ18]** The proposed protocol has these nine steps, from DT-L1 Round 3 item 4. All run on the owner's
+- **RTE.51 [D]** The proposed protocol has these nine steps, from DT-L1 Round 3 item 4. All run on the owner's
   machine.
 
   1. Freeze one candidate and its build identity. Generate the module set deterministically from the three LP3 tools
@@ -473,11 +571,11 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
   8. In the same runs capture PresentMon at W3 and script at least 100 turns per series for E2.
   9. Report median, p95, p99 and largest value for each series, showing all three series.
 
-- **RTE.52 [P LQ18]** Round 3's count is **10,800** samples: six metrics times three sizes S/M/L times two puzzles
+- **RTE.52 [D]** Round 3's count is **10,800** samples: six metrics times three sizes S/M/L times two puzzles
   times three series times 100. At one second per sample this is about three hours of foreground time, source
   arithmetic from DT-L1 Round 3 item 4, not measured duration or a schedule. W's dependent re-check, the smoke run,
   setup and repeated invalid runs are additional work. The owner agrees the window and time box; none is fixed here.
-- **RTE.53 [P LQ18]** Proposed decision rule, DT-L1 Round 3 item 4, LX-4: on the owner's machine, with one frozen
+- **RTE.53 [D]** Proposed decision rule, DT-L1 Round 3 item 4, LX-4: on the owner's machine, with one frozen
   candidate per route, the fixed module set and fixed edit script, an editor path passes when every bar holds in each
   of three series at S, M and L on both puzzles, and the renderer gate (259,800 slots, average at least 30 fps, p99
   at most 33.3 ms, peak VRAM at most about 7 GB) and charter E2 hold in the same runs. A bar missed at S or M fails the
@@ -487,7 +585,7 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 
 ## 17. LX-5: exact arithmetic
 
-- **RTE.54 [P LQ18]** LX-5's experiment card uses KN3, LB5.13 and DT-L1 Round 3 items 3 and 4.
+- **RTE.54 [D]** LX-5's experiment card uses KN3, LB5.13 and DT-L1 Round 3 items 3 and 4.
 
 | Field | Card |
 | --- | --- |
@@ -501,7 +599,7 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 | Cannot show | That synthetic entries occurred in a saved state, that the largest length was played, a general speed threshold, or owner approval of a dependency |
 | Product left behind | Exact-answer fixtures, synthetic-entry construction, per-size operation report and dependency/licence list |
 
-- **RTE.55 [P LQ18]** Proposed decision rule, DT-L1 Round 3 item 4, LX-5: use integers at 2^64, 2^256 and about
+- **RTE.55 [D]** Proposed decision rule, DT-L1 Round 3 item 4, LX-5: use integers at 2^64, 2^256 and about
   22,500 bits; synthetic pose entries built from the J1 negative control because no recorded table exceeds three
   decimal digits; literal words of 672,417 and 2,352,984 menu letters and the 10⁷ bound; 13,231,266 menu letters as
   one stream; and the 166,788,405-menu-letter length as exact length arithmetic. Every candidate's results equal
@@ -511,14 +609,14 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 
 ## 18. LX-6: engine language
 
-- **RTE.56 [P LQ18]** LX-6's experiment card is the deferred engine-language question, narrowed by DT-L1 E4 and
-  Round 3 item 4. It starts no port without LQ18's allowance.
+- **RTE.56 [D]** LX-6's experiment card is the deferred engine-language question, narrowed by DT-L1 E4 and
+  Round 3 item 4. The owner's LQ18 allowance covers experiment code only.
 
 | Field | Card |
 | --- | --- |
 | Question | Does the proposed engine hot path match the 0.4 oracle, and what is its cost against NumPy on the owner's machine? |
 | Decision it feeds | LQ8 together with LX-5; the candidate leg of LX-9 |
-| Hypothesis | The wiki proposes Rust benefits and costs; none has a measured result and the engine language remains open |
+| Hypothesis | The wiki proposes Rust benefits and costs; RTE.82 records first-pass oracle equality and the decisive speed comparison of 14 November 2026, after which the owner chose Rust (RTE.17) |
 | Method | Port permutation application and macro composition as experiment code; freeze O01 to O07 and compare through `tools/oracle/compare.py`; compare identical inputs against NumPy in the pinned engine environment by the B4-12 method |
 | Time box | Owner sets it before the run; the wiki's earlier allocation does not bind |
 | Kill criteria | Any oracle difference stops the spike until explained; retain the first differing case/step and digests; timeout leaves a partial port and report, not an accepted engine |
@@ -526,12 +624,12 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 | Cannot show | Whole-engine correctness, persistence or input correctness, end-to-end E2, or a language choice from a speed threshold |
 | Product left behind | Scoped hot-path port, oracle traces and comparison report, pinned inputs and NumPy timing comparison |
 
-- **RTE.57 [P LQ18]** Proposed decision rule, DT-L1 Round 3 item 4, LX-6: the port covers applying a permutation
+- **RTE.57 [D]** Proposed decision rule, DT-L1 Round 3 item 4, LX-6: the port covers applying a permutation
   and composing macros. O01 to O07 of `tools/oracle/` give the same state hash, net digest and expansion digest as the
   0.4 reference through `tools/oracle/compare.py`. Any difference is a demonstrated failure and stops the spike until
   explained. Speed compares the same inputs against NumPy in the pinned engine environment on the owner's machine,
-  by the B4-12 method. Cloud or headless timing is a lead only. There is no speed threshold; both results go to LQ8
-  with LX-5.
+  by the B4-12 method. Cloud or headless timing is a lead only. There is no speed threshold; both results went to
+  LQ8 with LX-5 on 14 November 2026 (RTE.17, RTE.82).
 - **RTE.58 [D]** The named oracle cases are the source cases in `tools/oracle/make_cases.py`: O01 every legal
   generator and inverse from solved; O02 a seeded chronological generator chain; O03 first, middle and last stars of
   every orbit after a seeded scramble; O04 mixed word/star recipes; O05 each mixed recipe followed by its chronological
@@ -539,44 +637,61 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
   seeded initial state. Their frozen case bytes, not just names, identify an experiment. Equality is checked at the
   required trace steps, not merely the final state (KN2.1; stage 2 protocol section 3). No oracle is run by this text.
 
-## 19. LX-7: user charts
+## 19. LX-7: user stages
 
-- **RTE.59 [P LQ18]** LX-7's experiment card uses chapter 10, particularly RPI.32 to RPI.41 and RPI.60 to RPI.62,
-  and DT-L1 Round 3 item 4. The generated chart path is LQ7's recommendation, not an accepted feature.
+- **RTE.59 [D]** LX-7's experiment card tests the user stage contract of RPI.68 to RPI.80, following the owner's
+  shader-language direction (owner, 6 November 2026, LQ7 and decision 2). RPI.35, RPI.36 and RPI.60 still govern
+  precision and the renderer gate. The `lx7-r1` compute subset is first-pass evidence only (RTE.82, RTE.83).
 
 | Field | Card |
 | --- | --- |
-| Question | Does a generated projection stage agree with its declared reference precision and meet the renderer selection gate? |
-| Decision it feeds | LQ7; LQ20's generated-stage feature handoff |
-| Hypothesis | The partition identifies per-frame vertex work as requiring GPU evaluation; it supplies no generated-stage timing |
-| Method | Freeze the admitted subset candidate, generated stage, built-in perspective stage, exact vertices/camera poses, precision and singular exclusions; run W3 and the no-window named-device comparison below |
+| Question | Does the user stage contract admit safe vertex and fragment stages, preserve display and pick rules, and meet the renderer gate for the advertised combined workload? |
+| Decision it feeds | Enablement under RPI.79 and RPI.80; the user-stage, safety-contract and free-view renderer handoff |
+| Hypothesis | The compute subset supplies translation and device leads; it establishes no drawing-pipeline safety, raster bound or combined-workload timing |
+| Method | Freeze checked vertex and fragment definitions, safety cases, built-in chain, exact vertices/camera poses, precision and singular exclusions; run the safety set, named-device reference comparisons and W3 drawing pipeline of RTE.83 |
 | Time box | Owner sets it before the run |
-| Kill criteria | A precision failure withholds chart admission; any cold run missing the whole gate fails that candidate; invalid correctness runs provide no gate result; timeout leaves unfinished comparisons open |
+| Kill criteria | A failed safety, raster-bound, pick or status check withholds user-stage enablement; a precision failure withholds chart admission; any cold run missing the whole gate fails that combination; invalid correctness runs provide no gate result; timeout leaves unfinished comparisons open |
 | Evidence class | performance for owner-machine gate runs; windows for actual Windows GPU output; source/synthetic for reference fixtures, never for a GPU result inferred without a device |
 | Cannot show | Arbitrary-chart correctness, an exact chart property from float agreement, renderer selection, or a performance pass from a no-window comparison |
-| Product left behind | Frozen chart/reference fixtures, generated-stage experiment source, named-device comparison and three-cold-run reports per stage |
+| Product left behind | Frozen stage/reference and safety fixtures, drawing-pipeline experiment source, named-device comparisons and three-cold-run reports per advertised combination with a built-in comparison |
 
-- **RTE.60 [P LQ18]** Proposed decision rule, DT-L1 Round 3 item 4, LX-7: at W3 on the owner's machine the generated
-  chart stage and built-in perspective stage each make three cold runs. A candidate passes when each of its three
-  runs meets the whole selection gate: all 259,800 slots at full detail, the most complex animation, average at least
+- **RTE.60 [D]** At W3 on the owner's machine, each advertised combination of views, vertex stage, fragment stage
+  and overdraw allowance makes three cold runs (RPI.79), with three cold built-in-chain runs for comparison.
+  A combination passes when each of its three runs meets the whole selection gate: all 259,800 slots at full detail,
+  the most complex animation, average at least
   30 fps, p99 at most 33.3 ms, PresentMon at native resolution without frame generation and peak VRAM at most about
-  7 GB. Report the difference from the built-in stage. For exact vertices and camera poses fixed before the run, GPU
-  and CPU evaluations agree within the chart's declared precision outside its declared singular neighbourhoods. That
-  comparison runs without a window, names its device and is never a gate result. The rule feeds LQ7.
+  7 GB. The raster-bound pass is included. Separately measured ceilings do not establish the combination. Report the
+  difference from the built-in chain. For exact vertices and camera poses fixed before the run, GPU and CPU
+  evaluations agree within the chart's declared precision outside its declared singular neighbourhoods. That
+  comparison runs without a window, names its device and is never a gate result. The rule conditions stage enablement;
+  it does not reconsider the owner's shader-language direction.
 - **RTE.61 [D]** RPI.35 also requires GPU comparison with exact or interval expectations; CPU agreement alone does
   not prove the chart's exact properties. RPI.36's error metric and exclusions must be settled before judging LX-7.
-  Under built-in-only LQ7, H-06 measures those built-in stages and no user chart is enabled. A user shader-language
-  alternative needs RPI.39's separate safety contract. A bare "headless" claim cannot establish GPU evaluation;
-  Round 3's device-named comparison resolves that wording in partition LX-7.
+  The safety contract is RPI.68 to RPI.80; a no-window compute comparison establishes none of its drawing-pipeline
+  checks or combined gate. A bare "headless" claim cannot establish GPU evaluation; Round 3's device-named comparison
+  resolves that wording in partition LX-7.
+
+- **RTE.83 [D]** The re-scoped LX-7 still owes a safety test set for RPI.69 to RPI.78 and vertex and fragment stages
+  in a drawing pipeline at W3. `lx7-r1`'s four accepted sources, 18 refusals and 496 readback records apply only to
+  its compute subset. They establish neither rasterization nor the user stage contract. The new safety set covers
+  forbidden operations and static bounds, checked-definition/compile identity, display-only outputs, drawing and
+  picking with the same vertex stage, coverage, host statuses, built-in commit-preview isolation, quarantine and
+  fallback. Raster-bound cases include spread versus overlapping triangles, shading samples and the ID pass, a
+  near-plane crossing and a line-only plan with repeated edges (RPI.72; RM.40). A frame over the bound runs no
+  user-stage fragment work. The advertised combination of views, vertex stage, fragment stage and overdraw allowance
+  must pass the unchanged gate together in one run, with the bound pass included (RPI.79); RTE.60 requires three cold
+  runs. No such W3 command exists yet.
+  `work/experiments/language-lx/lx7-charts/W3-PLAN.md` records the missing renderer integration; repeating its existing
+  built-in-stage command supplies no user-stage result.
 
 ## 20. LX-8: syntax learnability
 
-- **RTE.62 [P LQ18]** LX-8's experiment card uses partition LQ13 and LX-8, LG1.8 and DT-L1 Round 3 item 4.
+- **RTE.62 [D]** LX-8's experiment card uses partition LQ13 and LX-8, LG1.8 and DT-L1 Round 3 item 4.
 
 | Field | Card |
 | --- | --- |
 | Question | Which of two or three syntax candidates over one typed IR can non-authors learn and use under the owner's protocol? |
-| Decision it feeds | LQ13 before LP2 builds the parser; working name LQ17 remains the owner's choice |
+| Decision it feeds | LQ13 waits for LX-8 before LP2 builds the parser (owner, 6 November 2026, LQ13); the name is settled: 600 Cell Script, `.6cs` (LQ17 and decision 6) |
 | Hypothesis | None supplied; author or model preferences are not human evidence |
 | Method | Prepare equivalent typed operations, effects, literal order and charges under LG1.8; participants, tasks, observations and comparison are set only by the owner's protocol |
 | Time box | Owner sets it with the protocol before a run |
@@ -587,34 +702,39 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 
 - **RTE.63 [O]** No LX-8 decision rule exists until the owner sets the protocol (LQ13, DT-L1 Round 3 item 4).
   Agreement between authors or models does not replace it. Participant selection, tasks, sample plan, evaluation,
-  stopping rules and treatment of inconclusive results remain open. Choosing a syntax now removes LX-8 as a
-  prerequisite to that choice; semantic, recovery and edition obligations in LG1 remain unchanged. No concrete syntax
-  or comparison protocol is chosen here.
+  stopping rules and treatment of inconclusive results remain open. Semantic, recovery and edition obligations in
+  LG1 remain unchanged. No concrete syntax or comparison protocol is chosen here.
 
 ## 21. LX-9: input-map determinism
 
-- **RTE.64 [P LQ18]** LX-9's experiment card uses KN3.4, DET.33, DET.34, DT-L1 R2-E2 and Round 3 item 4.
+- **RTE.64 [D]** LX-9 follows the exact-request direction (owner, 6 November 2026, decision 8), written as proposed
+  amendment A6 in KN3.4 and KN3.7 to KN3.9. It is not in force until EN1's Astra check and then the owner. DET.33
+  and DET.34 separate the exact kernel request, shell producer and recorded replay. The card retains DT-L1 R2-E2's
+  fresh-choice obligation with exact bytes as its input.
 
 | Field | Card |
 | --- | --- |
-| Question | Do fresh A1 input requests and menu-mode drag choices select the same exact rotation across the reference and candidate runtimes? |
-| Decision it feeds | INV-10 conformance; EN1's Astra check and owner decision on any state-contract amendment |
-| Hypothesis | R2-E2 found non-correctly-rounded trigonometric targets on its synthetic corpus; it did not establish different chosen rotations |
-| Method | Freeze requests and exact bisectors by digest; compare target bits on Windows CPython, Linux CPython and the LX-6 engine candidate, then exact chosen-rotation keys near the bisectors |
+| Question | Do identical exact request bytes, operation, bounds and menu binding produce the same exact rotation and recorded choice data across reference and candidate runtimes? |
+| Decision it feeds | INV-10 conformance; EN1's Astra check and the owner's ruling on proposed amendment A6 |
+| Hypothesis | The float-path follow-up found different exact choices; the exact-request prototype supplies finite source/synthetic checks, not universal agreement or a gesture producer |
+| Method | Freeze C/H/M bytes, free-mode bounds, exact bisectors and ordered-menu digests; compare exact free and menu choices, complete tie lists, distances and request digests across runtimes; test malformed, noncanonical, oversize and misbound requests and shell-producer controls separately |
 | Time box | Owner sets it before the run |
-| Kill criteria | Any different chosen rotation stops an unqualified cross-runtime claim and triggers the amendment packet; target-bit differences alone continue to step 2; timeout leaves untested requests open |
+| Kill criteria | Different exact choices or recorded choice data for identical bound inputs, repaired invalid bytes or an unrefused menu-binding mismatch fail that candidate; timeout leaves untested requests open |
 | Evidence class | synthetic, on both platforms and the named candidate; no native-input or performance result |
 | Cannot show | Equality for every request from a finite sample, input latency, or an approved change to state contract A1 |
-| Product left behind | Frozen target-bit and bisector fixtures, exact-choice comparisons and, if triggered, the proposed amendment packet |
+| Product left behind | Preserved float-path findings, frozen exact-request and tie fixtures, exact-choice/refusal comparisons, producer controls and proposed amendment A6 evidence |
 
-- **RTE.65 [P LQ18]** Proposed decision rule, DT-L1 Round 3 item 4, LX-9: step 1 compares 64-bit patterns of target
-  coordinates for R2-E2's 13,600 requests on Windows CPython, Linux CPython and the LX-6 engine candidate. Step 2
-  places at least 1,000 requests within one ulp of exactly computed bisectors, including those step 1 found to differ,
-  and compares the exact key of the chosen rotation. If any chosen rotation differs between any two runtimes, the
-  request is recorded as a dyadic Cayley vector read exactly and a drag compares its 60 candidates exactly in Q(√5).
-  That amends the state contract: EN1's Astra check, then the owner. A difference in target bits alone is reported
-  and feeds step 2. No difference is a sample result for the tested requests only, which the report says; the amendment
-  stays open to the owner. This rule feeds the contract decision, not an automatic amendment.
+- **RTE.65 [D]** The former two-step protocol is history: step 1 compared target bits for 13,600 requests, and
+  step 2 compared exact choices near certified bisectors. The Windows-only report,
+  `work/experiments/language-lx/lx9-input-map/RESULT.md`, found no differing exact choice in its sample. The later
+  `work/experiments/language-lx/lx9-input-map/followup/NOTE.md` records six signed-axis requests with different exact
+  choices on Linux, all sharing one float computation.
+  That finding fed decision 8. `work/experiments/language-lx/lx9-exact-request/RESULT.md` records the exact-request
+  follow-up; it establishes its tested cases only. Under proposed amendment A6 the kernel reads C/H/M exactly,
+  refuses malformed bytes without repair, and compares menu-drag candidates exactly in Q(√5) under the recorded
+  order. Free mode takes the nearest point of A1's grid, the owner's choice (KN3.7). The shell produces
+  bytes from gestures (KN3.9); identical gestures need not give identical bytes. Candidate conformance requires equal
+  exact choices for identical bound inputs, not equal gestures. No experiment result itself amends A1.
 - **RTE.66 [D]** Replaying the already recorded exact rotation or menu letter remains DET.33's different test. It
   does not recompute the chooser and cannot establish fresh-request agreement. LX-9 reads no labels off the lattice.
   Its R2-E2 dependency is named, and R3-M2 leaves LX-9 standing.
@@ -622,19 +742,20 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 ## 22. Source differences and limits
 
 - **RTE.67 [D]** The following reconciliations delimit this chapter's use of its sources. Round 3 item 4 remains
-  proposal under LQ18; correcting a figure or identifying a missing mechanism accepts no owner option.
+  the source of experiment detail under the owner's LQ18 allowance; correcting a figure or identifying a missing
+  mechanism decides no waiting question.
 
 | Source difference | Treatment and clauses |
 | --- | --- |
 | Partition LX-2 and DT-L1 E4 use 708,480 bytes as pose IDs; Round 3 distinguishes the full pose bundle | RTE.33 and RTE.42 use 869,952 bytes at P = 2,049 with one mask. The smaller figure remains the ID array alone. |
 | Earlier E3/E4 and ENG-0J cite 672,417 as the long-word example; Round 3 R3-E4 gives longer literals and compositions | RTE.33 and RTE.55 retain the earlier regression and use 2,352,984 literal letters plus the 13,231,266-letter stream; 166,788,405 is length arithmetic. KN2.10 and LB5.13 already carry that correction. |
-| The engine-language wiki proposes headless speed comparison; partition and Round 3 count speed only on the owner's machine | RTE.20 and RTE.57 keep oracle equality as source evidence and headless timing as a lead. The deferred proposal has no result. |
+| The engine-language wiki proposes headless speed comparison; partition and Round 3 count speed only on the owner's machine | RTE.20 and RTE.57 keep oracle equality as source evidence and headless timing as a lead. RTE.82 records first-pass oracle equality and the decisive owner-machine speed comparison of 14 November 2026. |
 | Partition LX-7 calls GPU/CPU comparison headless; Round 3 requires an actual named device | RTE.60 and RTE.61 separate no-window device correctness from owner-machine gate measurements. CPU fixture preparation supplies no GPU result. |
 | Round 3 LX-1 defines executed instructions; DET.20/DET.21 require a common logical meter | RTE.39 and RTE.40 keep separate counters. A mapping remains open; raw step counts cannot establish route-equivalent budgets. |
 | KN7.9 specifies arrays plus exact keys; LG4.7 and DET.18/DET.24 use canonical-encoding language | RTE.34 uses KN7.9. The integrator must align the broader wording; render or JSON sizes do not determine logical memory. |
 | Section 12's IR promise expressly covers RT1 to RT3; the task's common obligations also include RT4 | LG4.14 and RTE.6 require a separately admitted equivalent contract or common-IR lowering. No RT4 exemption or replacement validator is assumed. |
 | B4-12 D6 records everyday conditions; the renderer gate also prescribes power and device conditions | RTE.36 and RTE.51 record conditions exactly and require the full gate for a gate claim. A differently labelled condition cannot replace it. |
-| Older experiment documents and the wiki carry a schedule; LQ19 also proposes moving part of the charter exit | RTE.32 keeps the current whole exit and the 3 November schedule hold. Time boxes await the owner; no proposed charter amendment is treated as accepted. |
+| Older experiment documents and the wiki carry a schedule; LQ19 amends part of the charter exit | RTE.32 applies the answered order (owner, 6 November 2026, LQ19 and decision 7). The 3 November schedule hold stands. The owner set the timing window of 14 November 2026; other decisive windows and time boxes await the owner. |
 
 ## 23. Errors
 
@@ -643,8 +764,9 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 ## 24. Conformance tests
 
 - **RTE.69 [D]** These are requirements on route candidates and spike records under overview 3.4, collected by phase
-  in chapter 12. No conformance test in this table exists yet. A document structure check supplies none of these
-  results. Checks involving an open mechanism use its selected, versioned contract and cannot decide it by themselves.
+  in chapter 12. RTE.82 scopes the existing first-pass observations; no product conformance pass follows from them.
+  A document structure check supplies no experiment result. Checks involving an open mechanism use its selected,
+  versioned contract and cannot decide it by themselves.
 
 | Test | Checks | Class |
 | --- | --- | --- |
@@ -663,69 +785,93 @@ engineer advisor, items 3 and 4; [the kernel](01-kernel.md); [the language core]
 | CT-RTE-13 | LX-5 uses every RTE.55 size, obtains exact Python-reference agreement, streams literal letters without silent splitting and computes the 166,788,405-letter length without claiming literal replay | source |
 | CT-RTE-14 | LX-6 identifies frozen O01 to O07 bytes and compares required state, net and expansion digests through the oracle comparator; a difference stops the spike with its case and step | source |
 | CT-RTE-15 | Report inspection rejects headless/cloud timings as performance, sampled no-difference claims as universal proofs and no-window GPU comparison as a renderer gate pass | source |
-| CT-RTE-16 | Each LX-7 stage's three cold W3 runs independently satisfy the whole unrelaxed selection gate; the report includes its built-in-stage comparison | performance |
-| CT-RTE-17 | LX-7 names the actual GPU device, frozen exact inputs, error metric and singular exclusions; device output agrees with CPU and exact/interval expectations without claiming chart-property proof | windows |
+| CT-RTE-16 | Each advertised LX-7 combination of views, vertex stage, fragment stage and overdraw allowance passes the whole unrelaxed gate together in each of three cold W3 drawing-pipeline runs, with the raster-bound pass included and built-in-chain comparisons; separate ceilings never establish the combination (RTE.60, RTE.83; RPI.79) | performance |
+| CT-RTE-17 | LX-7's drawing pipeline names the device, checked vertex/fragment definitions, frozen exact inputs, error metric and exclusions; reference comparisons, draw/pick agreement, coverage and host statuses pass without claiming chart-property proof. The commit-bound preview uses the built-in chain (RTE.61, RTE.83; RPI.74 to RPI.76) | windows |
 | CT-RTE-18 | LX-8 has the owner-set protocol and equivalent IR corpus before testing non-authors; its outcome is reported only under that protocol | human |
-| CT-RTE-19 | LX-9 retains 13,600 target-bit comparisons and at least 1,000 near-bisector exact-choice comparisons; target-bit-only differences continue to step 2 and rotation differences produce an unaccepted amendment packet | synthetic |
-| CT-RTE-20 | Under deferred spikes, the freeze packet explicitly checks every route and both flow forms against its interfaces, data/provenance carriers and metering obligations; unresolved gaps are not marked verified | source |
+| CT-RTE-19 | Under proposed amendment A6, identical C/H/M bytes, operation, free-mode bounds and menu binding give equal exact choices, tie lists, distances and request digests across runtimes; malformed/noncanonical/oversize bytes and mismatched menu bindings refuse without repair. Producer controls stay separate from recorded replay and promise no gesture-to-byte equality (RTE.64 to RTE.66) | synthetic |
+| CT-RTE-20 | Withdrawn: LQ18 allowed pre-freeze experiments, so the deferred-spike case no longer exists (owner, 6 November 2026, LQ18). | source |
+| CT-RTE-21 | Each RTE.82 summary resolves to its recorded RESULT.md, keeps its evidence class and frozen scope and retains negative/unrun cases. Only the LX-5 and LX-6 rows cite decisive timing; no summary decides LQ13 or passes the LP3 acceptance checks that LQ9 and LQ21 carry | source |
+| CT-RTE-22 | LX-7's safety set covers static stage refusals and bounds, deterministic compilation, display-only outputs, draw/pick and preview isolation, quarantine/fallback and pre-fragment raster limits, including overlapping triangles, samples, ID passes, near-plane crossings and line-only plans (RTE.83; RPI.69 to RPI.78; RM.40) | synthetic |
+| CT-RTE-23 | The 1.0 obligation export uses LB5.18's file grant and PS1.45's format; no shipped Lean dependency, proof-record import, new check mode or formal-proof writer exists, and export promotes no claim or commit authority (RTE.28; EVD.64) | source |
 
 ## 25. Open items
 
-All LQ1 to LQ21 remain open. Their contact with this chapter is listed here without answering them.
+The owner answered LQ1 to LQ21 on 6 November 2026 and chose LQ8, LQ9 and LQ21 on 14 November 2026: the engine and the
+interpreter's host in Rust, route RT1 with the runtime in a process of its own, and capability separation (RTE.17,
+RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits for the joint setting.
 
 | Owner question | Clauses and dependency |
 | --- | --- |
-| LQ1 Language/profile arrangement | RTE.2 to RTE.6, RTE.24 to RTE.27, RTE.44. A separate research language changes adapter and corpus coverage; common identity, exactness and commit boundaries stay fixed. |
-| LQ2 Joint boundary setting | RTE.24 to RTE.27, RTE.45. Chapter 07 supplies author classes, declassifiers, display sinks and the policy identity for frozen refusal corpora; no solving preview is enabled by this chapter. |
-| LQ3 Evidence model | RTE.3, RTE.29, RTE.46. Chapter 06 and chapter 05 supply canonical evidence output; the data-freeze dependency changes with LQ10's facts/judgements choice. |
-| LQ4 Branches and pinned jobs | RTE.2, RTE.21, RTE.22. Chapter 08 owns their lifecycles; either finish/cancel option keeps results on their original immutable inputs and permits no program commit. |
-| LQ5 Built-in implementation | RTE.8 to RTE.16, RTE.30, RTE.38. The three-tool experiment must identify the candidate implementation; native/per-tool alternatives change its path, not its kernel obligations. |
-| LQ6 Views | RTE.22, RTE.59 to RTE.61. Any admitted research-view workload needs its prescribed gate evidence; no extra product view or interface design is chosen here. |
-| LQ7 Charts | RTE.29, RTE.59 to RTE.61. Generated subset, built-in-only and shader-language alternatives retain their separate admission and evidence needs from chapter 10. |
-| LQ8 Engine language | RTE.17 to RTE.20, RTE.54 to RTE.58. Choose after arithmetic/engine evidence, Rust now, or the exact Python/NumPy reference; no spike has resolved the choice. |
-| LQ9 Route and placement | RTE.4 to RTE.23, RTE.29 to RTE.31, RTE.38 to RTE.58. RT1 to RT4 and all three placements remain candidates subject to the common obligations and shell fault condition. |
-| LQ10 Data core and freeze | RTE.3, RTE.26, RTE.29 to RTE.34. Chapter 05 owns formats, word encoding and lossless provenance under both flow forms; no syntax or IR is frozen here. |
-| LQ11 Recording | RTE.2, RTE.3, RTE.6. A recording uses chapter 04's command semantics and saved meaning; no route adds unattended commit. |
-| LQ12 Sharing | RTE.3, RTE.11, RTE.35 to RTE.37. Module distribution choices supply no program network/process grant; candidate dependencies and licences still need recorded review. |
-| LQ13 Syntax | RTE.9, RTE.29, RTE.62, RTE.63. LX-8 awaits the owner's human protocol, or the owner chooses now; the same semantic contract remains required. |
-| LQ14 Learning gates | RTE.27, RTE.44 to RTE.46, RTE.63. Any competence-dependent permission changes chapter 07's policy and allowed-tool corpus; neither LX-4 nor LX-8 settles it. |
-| LQ15 Formal proofs | RTE.28. No assistant, Lean 4 research language or exported obligations remain options; proof protocols and adapters are not supplied. |
-| LQ16 Product cut | RTE.2, RTE.30, RTE.38, RTE.44. Experiment coverage does not decide which tools ship or reopen the research scope. |
-| LQ17 Name | RTE.62, RTE.63. C600 Script remains a working name; no spelling, extension or concrete syntax is selected. |
-| LQ18 Spike allowance | RTE.1, RTE.29 to RTE.31, RTE.35 to RTE.65. Every card, time box and decision rule remains proposed; no experiment is run by this chapter. |
-| LQ19 Freeze order | RTE.29 to RTE.32. Chapter 12 applies the current charter exit unless the owner accepts an amendment; no earlier schedule or gate waiver is implied. |
-| LQ20 Renderer handoff | RTE.29, RTE.59 to RTE.61. Chapter 10 owns the primitives and generated-stage handoff before renderer freeze; the no-handoff alternative fits the frozen feature list. |
-| LQ21 Flow-control form | RTE.4, RTE.12 to RTE.16, RTE.24 to RTE.27, RTE.39, RTE.45, RTE.46. Static-only labels, additional run-time labels and capability separation have different costs and refusal sets; LX-1/LX-3 evidence is absent. |
+| LQ2 Option set and joint boundary setting | RTE.24 to RTE.27, RTE.45. Chapter 07 and the joint setting decide author classes, declassifiers and display sinks; each frozen refusal corpus names its policy identity. |
+| LQ8 Engine language | RTE.17 to RTE.20, RTE.54 to RTE.58. Answered: Rust (owner, 14 November 2026), on LX-5 and LX-6's decisive runs. LP2 chooses the big-integer implementation, and the port adds the net-effect star cache. |
+| LQ9 Route and placement | RTE.4 to RTE.23, RTE.29, RTE.30, RTE.38 to RTE.58. Answered: RT1 with the runtime in a process of its own (owner, 14 November 2026). RT2 to RT4 and the other two placements are records of the alternatives. The decisive LX-1, LX-2 and LX-4 runs are LP3 acceptance checks with unchanged bars; a failure reopens LQ9. |
+| LQ13 Syntax | RTE.9, RTE.29, RTE.62, RTE.63. The choice follows LX-8 before LP2's parser; the human protocol and run remain owed, and the owner decides from their evidence. |
+| LQ21 Flow-control form | RTE.4, RTE.12 to RTE.16, RTE.24 to RTE.27, RTE.39, RTE.45, RTE.46. Answered: capability separation (owner, 14 November 2026). LX-3's two false refusals are met by fixed declassifiers or split tools; its remaining checks are LP3 acceptance checks. |
 
 Open mechanisms and dependencies:
 
-- **RT4 admission [O], RTE.6.** LP1 and LQ9 choose common-IR lowering or an equally versioned host contract with an
-  equivalent validator and compatibility proof. No source supplies that validator or its accepted subset.
-- **Bindings and zero-copy access [O], RTE.7.** LP1, LQ8 and LQ9 settle ABI, immutable buffer lifetimes, transport or
-  read-only sharing and cross-host exact-value transfer. No size table demonstrates an implemented binding.
-- **Engine choice [O], RTE.17.** LX-5 and LX-6 or an explicit owner choice decide; the wiki proposal remains deferred.
-- **Placement [O], RTE.21.** LX-2 and LQ9 decide containment. A process name alone supplies no pass.
-- **Flow mechanism [O], RTE.24.** LQ21 decides the form before checker/IR construction; its policy stays separate.
+- **RT4 admission, RTE.6 and RTE.80.** Closed: LQ9 selected RT1 (RTE.21), so no RT4 candidate is admitted and these
+  clauses record the unselected alternative.
+- **Bindings and zero-copy access [O], RTE.7.** LQ8 and LQ9 are answered: engine and runtime are both Rust, in
+  separate processes. LP1 settles transfer or read-only sharing, immutable buffer lifetimes and exact-value transfer.
+  No size table demonstrates an implemented binding.
+- **Engine choice, RTE.17.** Answered: Rust. Owed: LP2's big-integer choice with any dependency approval, the port's
+  net-effect star cache, the Linux legs and whole-engine correctness.
+- **Placement, RTE.21.** Answered: a process of its own. LX-2's decisive run at LP3 acceptance judges containment; a
+  process name alone supplies no pass, and a failure reopens LQ9.
+- **Flow mechanism, RTE.24.** Answered: capability separation, before checker/IR construction; its policy stays
+  separate (RTE.27).
 - **Policy and sinks [O], RTE.27.** LQ2 and chapter 07 decide enabled flows, classes and exceptions; LX-3 cannot freeze
   an authoritative corpus without naming the policy it tests.
-- **Candidate-specific facts [O], RTE.11.** The named RT2 candidates have no verified licence, speed, sandbox or
-  determinism comparison here. Their scoped evidence and any dependency approval remain outstanding.
-- **Metering [O], RTE.40.** LG4.8 and DET.20 to DET.28 leave abstract charges, mapping, logical resource lifetimes,
-  output units and recursion rules to LP1. Instruction timing is a separate lead. Numeric presets are not selected.
+- **Candidate-specific facts, RTE.11.** RTE.82 records stand-in experiments, including failures. RT1 is selected,
+  so no RT2 host is admitted; RT1's own dependencies still owe their licence list and any approval (RTE.70).
+- **Metering [D], RTE.40; mapping and limits [O], DET.22/DET.28.** LG4.8 and DET.54 to DET.64 specify uniform
+  semantic steps, input-size tariff forms, owning-handle release, canonical-byte output, serial child accounting and
+  logical recursion frames. LG2.21 specifies the alternative display-region lowering and identity. Weighted steps,
+  conservative retention, an output-size table, disjoint child allowances and a separate depth guard remain distinct
+  alternatives under LG4.8 and DET.24/DET.26/DET.28. Executor mappings, production tariffs and limits, evidence and
+  the owner freeze remain owed. Instruction timing supplies none of those contract choices.
 - **Human protocol [O], RTE.63.** The owner fixes LX-8's participants, tasks, samples, stopping and decision rules.
-- **Shared fixtures and byte profiles, RTE.6, RTE.35 to RTE.46.** LP1, chapters 02 and 05 and chapter 13 must supply
-  the validator, canonical result encoding, source-map convention, exact error codes and digest-frozen corpora before
-  the corresponding runs. Chapter 04's EV1.10/EV2.12 coordinate and stepping choices remain its dependencies.
+- **Shared fixtures and byte profiles, RTE.6, RTE.35 to RTE.46.** DET.54 to DET.65 and the contract vectors supply
+  draft accounting forms and synthetic examples; EV1.10/EV2.12 specify coordinates and stepping. Candidate validators,
+  source/step mappings, the pinned production byte profile and error registry, and digest-frozen execution corpora
+  remain prerequisites for the corresponding runs. A reference-model pass supplies no executor evidence.
 - **EN3 and EN4, RTE.2, RTE.21, RTE.29.** Chapter 01's final batch/query rows, program/view lanes, availability,
   undo during jobs and provenance-bearing proposals are still handoffs, not delivered runtime interfaces.
-- **Renderer precision and measurement, RTE.36, RTE.51, RTE.59 to RTE.61.** RPI.36's metric and singular exclusions,
+- **Renderer precision and measurement, RTE.36, RTE.42, RTE.51, RTE.59 to RTE.61.** RPI.36's metric and singular exclusions,
   selected candidate/device, frozen W3 inputs, owner-pinned PresentMon and recorded conditions precede judgement.
-  Charter E3's 3 s remains proposed. No installation or renderer selection is authorized here.
+  RTE.83's stage safety set and combined drawing-pipeline gate remain owed. Charter E3's 3 s remains proposed.
+  No installation or renderer selection is authorized here.
+- **Exact requests, RTE.64 to RTE.66.** Proposed amendment A6 waits for EN1's Astra check and then the owner. The
+  owner chose the free-mode grid (KN3.7); KN3.9's gesture producer detail remains subject to that process. RTE.82's
+  finite prototype results supply no universal agreement, native-input result or accepted amendment.
 - **Source wording, RTE.34 and RTE.67.** The pose payload, old long-word example, wiki timing venue, GPU/headless
   wording and instruction/logical-meter distinction are reconciled explicitly. KN7.9's precise logical-memory unit
-  still needs alignment in the broader LG4.7 and DET.18/DET.24 wording; no other chapter is edited here.
+  is consumed by LG4.7 and DET.18/DET.24, with language layout and handle lifetimes in DET.57/DET.58. Physical
+  allocation and stored/output byte counts remain separate; candidate mappings and measurements remain owed.
 - **DT-L1 obligations, RTE.12 to RTE.16, RTE.24 to RTE.27, RTE.45, RTE.61, RTE.64 to RTE.66.** Uses of R2-E2 and
   R2-E3 are named. Round 3 cleared the obligations (overview section 8), and RTE.45 carries its added cases.
 - **Content review and phase collection, RTE.69.** The integrator and Astra still review this candidate's content;
   chapter 12 collects conformance by phase and chapter 13 owns final error spelling. Passing a structure check proves
   neither content acceptance nor any experiment result.
+
+- **RTE.71 [D]** Before claiming the same reproducibility key, a route supplies a checked mapping from each
+  DET.55 operation and dynamic continuation to its executed form, preserving order, source identity, charge phases,
+  logical lifetimes, child caps, semantic chunks and output units. RT1 implements the schedule in its interpreter.
+  RT2 validates the admitted host subset and instruments the schedule at its boundaries. RT3 preserves those
+  boundaries through optimization and lowering, including elided calls/allocations and final false loop tests.
+  VM fuel and native instruction counts are enforcement aids, never a substitute for this mapping. RT4 either
+  lowers to the common IR or brings RTE.6/LG4.14's checked host decomposition contract: every transitive/indirect
+  call, effect and executed-source identity is covered, including the decomposition needed by LB6.2 and EV5.4.
+  The non-IR mapping must detect an omitted helper or changed executed module and refuse admission. Equivalent
+  signatures or successful final values alone cannot establish equal budget stops. If the owner selects a different
+  contract, its distinct identity, vectors and chapter 05 compatibility treatment precede saved-run use.
+
+- **RTE.72 [D]** LP1's reference model is source evidence for a proposed schedule, not admission of any executor.
+  Integration runs `python -B docs/architecture/1.0/language/contract-vectors/check_vectors.py` and
+  `python docs/architecture/1.0/language/closure/check_closure.py --packet p4`. Subsequent LX-3 evidence must replay
+  the traces on each candidate and platform, including caches, operand-size tariffs, alias release, child ledgers,
+  both display branches and transport splits. The frozen experiment profile remains untouched. LQ8 and LQ9 were
+  answered on other evidence (RTE.17, RTE.21); these checks select neither an engine nor a route. The owner's LQ18
+  allowance and LQ19's amended order apply (owner, 6 November 2026, LQ18, LQ19 and decision 7); no check result
+  supplies either freeze ruling or sign-off.

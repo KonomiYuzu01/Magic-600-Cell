@@ -1,8 +1,8 @@
 # ADR-L09: boundary mechanisms, with the policy left to the joint setting
 
-Status: **Proposed.** Not accepted. The owner accepts or rejects it ([`AGENTS.md`](../../../../../AGENTS.md), "Ask the
-owner"). **This record fixes mechanisms only. It sets no boundary policy.** The owner and the integrator set that
-together (owner, 3 November 2026).
+Status: **Accepted** (owner, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). **This record fixes mechanisms and the interim reading. It chooses no boundary option set.** The owner and the
+integrator set that together (owner, 3 November 2026).
 
 Rests on: partition INV-3, INV-11, INV-12, section 8.2 and section 11; [chapter 07](../architecture/07-boundary.md);
 [chapter 04](../architecture/04-environment.md) EV5; the owner's records of [2
@@ -29,16 +29,25 @@ Every option the owner might choose needs them.
 
 ## Decision
 
-- **ADR-L09.1 Execution gate (BM1).** A commit needs an explicit user action on the shown preview, and the shell mints
-  the token (BND.5, BND.29). A preview is prepared only inside a command the solver invokes (BND.30). This gate does not
+The owner chose one language with three profiles (owner, 6 November 2026, LQ1), building BM1 to BM5 now while the option
+set waits for the joint setting (owner, 6 November 2026, LQ2), and soft disclosure that guides without locking, subject
+to that joint setting's BS3 choice (owner, 6 November 2026, LQ14).
+
+- **ADR-L09.1 Execution gate (BM1).** A word commit needs an explicit user action on the shown preview, a no-preview commit
+  needs its own explicit user action, and the shell mints the token (BND.5, BND.29, LI.6). A preview is prepared only inside a command the solver invokes (BND.30). This gate does not
   rest on the checker or the interpreter, so a bug in either cannot commit a word the solver did not see (BND.75).
 - **ADR-L09.2 Provenance (BM2).** The host fills a provenance block, and a program has no operation that sets a field
   (BND.22). Every preview names the program, its module digest, its author class and what it may depend on, as far as
   the form of flow control records it (BND.31). Stored words, macros and workspace records keep the block (BND.32,
   PS1.32). A missing field reads `unknown`, never `own` (BND.21).
+  A picked word keeps the listed entry's block in `parts`; preview traverses parts and the pick's origin recursively
+  and fails closed if origin content is missing (BND.85).
 - **ADR-L09.3 Profiles (BM3).** There are three profiles: solving, tool authoring and research. A profile belongs to a
   run, the host sets it, and a program cannot raise it (BND.17, BND.34). Research output never becomes a preview in a
   solving session (BND.61).
+  At preview in a solving session, BND.84's provenance adapter refuses a word whose block or any part says that a
+  solver-authored module computed it (owner, 6 November 2026, decision 12). This applies through drafts,
+  composition and files. Hand-entered words and imported 0.4 macros remain allowed by this check (BND.84).
 - **ADR-L09.4 Labelled records (BM4).** A solve record states which assistance classes the system recorded. The host
   computes the summary from the journal and the run records, the summary names those inputs, and no program writes it
   (BND.35).
@@ -54,6 +63,10 @@ Every option the owner might choose needs them.
 
 ## What this record does not decide
 
+The owner answered LQ1 to LQ21 on 6 November 2026 and chose LQ8, LQ9 and LQ21 on 14 November 2026: the engine and the
+interpreter's host in Rust, route RT1 with the runtime in a process of its own, and capability separation (RTE.17,
+RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits for the joint setting.
+
 **The policy.** Chapter 07 sets out four option sets: BS1 Provenance, BS2 Base tier, BS3 Understanding and BS4 Named
 targets. Each keeps BM1 to BM5, the built-in tools' 2 October boundary and the 17 October exception, and the order
 implies nothing. BND.67 says what each writes into the policy table, and BND.68 works five tools through them. None is
@@ -61,19 +74,20 @@ chosen here.
 
 The integrator's leaning in BND.70 is for discussion only, and this record does not adopt it.
 
-The joint setting answers the ten questions of BND.74. They cover, among others, whether the flow rule is on (BND.33),
-which display sinks it checks (which also fills the gap of BND.59), which fix of BND.51 applies, whether the pick rule
-of BND.55 stands, whether the practice copy counts as a solving session (BND.15), and the edges of BND.66.
+The joint setting answers the ten questions of BND.74, of which question 8 is already answered by LQ21 (RTE.24). They
+cover, among others, whether the flow rule is on (BND.33), which display sinks it checks (which also fills the gap of
+BND.59), whether the pick rule of BND.55 stands, whether the practice copy counts as a solving session (BND.15), and
+the edges of BND.66.
 
-Conditional on an owner question:
+Waiting owner questions and the joint setting:
 
 - **LQ2:** the option set, and whether to keep or change the interim reading (BND.69). The interim reading is the
   integrator's, and it extends the 2 October boundary to everything that ships, library functions included (BND.63,
-  BND.64). The joint setting comes before LP6 (BND.71).
-- **LQ21:** the form of flow control, which [ADR-L06](ADR-L06-effects-and-flow.md) holds for LP1. The form is how flows
-  are seen, and the flow rule is whether they are refused (BND.41).
-- **LQ14:** whether a competence check only guides, or gates a capability under BS3 (BND.73).
-- **LQ1:** that profiles differ only in capabilities and labels (BND.16).
+  BND.64). Decision 12 fixes the point-of-use refusal in BND.84 until that setting enables a solver-tool preview.
+  The joint setting also decides whether BS3 uses competence checks as gates (BND.73). It comes before LP6 (BND.71).
+- **LQ21 (answered):** the form of flow control is capability separation (owner, 14 November 2026, LQ21; RTE.24),
+  which [ADR-L06](ADR-L06-effects-and-flow.md) holds. The form is how flows are seen, and the flow rule is whether they
+  are refused (BND.41); the rule still waits for LQ2's joint setting.
 
 ## Why
 
@@ -92,7 +106,7 @@ Conditional on an owner question:
 | --- | --- |
 | Detecting solving by inspecting words or programs | Not a function of (word, state) (BND.8), and undecidable for programs in general (BND.9) |
 | Writing the boundary into the checker or the kernel | The policy would stop being data, against INV-11, and every change would be a change to the trusted core |
-| Choosing an option set now (LQ2's alternative) | The owner set this boundary as a joint decision, so the integrator does not finalise it. It stays open as LQ2's alternative |
+| Choosing an option set now | Rejected alternative of LQ2 (owner, 6 November 2026). The owner kept the option set for the joint setting |
 | Certifying understanding by a test | A competence check shows that a person completed a task (BND.72) |
 | Letting a module declare its own class or provenance | A declaration would be self-certification. The host fills both (BND.18, BND.22) |
 
@@ -112,16 +126,19 @@ Conditional on an owner question:
 ## Evidence
 
 Class: source. The limits in chapter 07, section 2, are arguments, not measurements, and no person has reviewed them.
-CT-BND-01 to CT-BND-25 are requirements only. LX-3 has not run, so the false-refusal count of each form is unknown
-(BND.80).
+CT-BND-01 to CT-BND-30 are requirements only. LX-3's first-pass corpus, candidate and recheck `RESULT.md` files are
+under `work/experiments/language-lx/lx3-sandbox-flow/`. Their recorded failures and refusal counts remain scoped to the
+prototypes; they establish no product safety or acceptable false-refusal rate and decide no option set or form
+(BND.80, RTE.82).
 
 ## What the owner accepts
 
 Accepting this record accepts ADR-L09.1 to ADR-L09.8 and the [D] clauses they cite. It accepts no option set and answers
-none of the questions of BND.74.
+none of the questions of BND.74. LQ1, LQ14 and LQ2's mechanism direction were answered on 6 November 2026. The interim
+preview refusal is also fixed (owner, 6 November 2026, decision 12). Those answers accept no ADR or boundary option set.
 
 The owner may overrule these integrator additions: the term "solving session" (BND.14), what a previewing program
 receives and the fixed acknowledgement under capability separation (BND.42, BND.43), and the absence of a
-capability-dependent budget ceiling (BND.62). The rule for drafts (BND.58) and the capture of `propose` outside the
-solving profile (BND.60) are also new, and they stand or fall with LQ2. The owner should also see BND.59: the interim
-reading does not say what an own tool may read or show in a solving session.
+capability-dependent budget ceiling (BND.62). The rule for drafts (BND.58) follows the preview refusal in BND.84;
+the capture of `propose` outside the solving profile (BND.60) remains an integrator mechanism under the interim reading.
+The owner should also see BND.59: the interim reading does not say what an own tool may read or show in a solving session.

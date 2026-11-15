@@ -1,0 +1,421 @@
+{
+  "packet": "p1",
+  "assumes": [
+    {
+      "item": "H2-H5 and H7-H9",
+      "assumed": "Use the handoff working row format, PreviewDeps, terminal receipts, lane/availability rules, positions, accounting and no-run provenance by reference (JI.2, JI.15, JI.32). These are integrator proposals, not accepted contracts.",
+      "if_other": "Reconcile row defaults, freshness comparison, terminal mappings and provenance encoding with the final EN4 definitions; do not create parallel shared types or waive A5."
+    },
+    {
+      "item": "LQ10 / PS1.20",
+      "assumed": "Flat ia16-expanded-le/1 literal payload with optional closed named annotations; data-core adoption remains conditional (JI.18-JI.23).",
+      "if_other": "A narrower envelope retains the same literal payload and pins; a deferred byte profile leaves this unaccepted. A later referenced-parts carrier must preserve expansion, big-integer length, dependencies and per-prefix semantics and receive a scoped reconciliation."
+    },
+    {
+      "item": "I_a menu at freeze",
+      "assumed": "Use the existing ENG-0J I_a identity and separate order digest as current inputs, without a new menu choice (JI.3, JI.47).",
+      "if_other": "An owner-selected different menu requires a versioned identity/order, appropriate carrier/input conventions and renewed affected evidence. Existing words cannot be relabelled."
+    },
+    {
+      "item": "DT-M1 Q7(a), pending XM1",
+      "assumed": "Four logical seat bindings, using right cosets and pinned exact representative rotations; physical keys remain G6 work (JI.36).",
+      "if_other": "If XM1 causes an owner change to axis-then-angle or palette/drag, replace only the bindings. The resolved menu row, absolute letters and journal identity remain."
+    },
+    {
+      "item": "ONE.78 / S4 live-turn reading",
+      "assumed": "Live menu twists use an explicit action token and protection without a preview; drafted turns and words use a presented preview (JI.37).",
+      "if_other": "If the owner requires a preview for every turn, the menu commit row gains fresh_preview and preview=required and receives one-letter previews."
+    },
+    {
+      "item": "EH-30",
+      "assumed": "No approved product scramble policy is supplied by this packet, so the row is unavailable (JI.38).",
+      "if_other": "An owner-approved depth and retained/jumble mix supplies the policy reference and admission costs, while the separate hidden witness and ordinary preview/execute transaction remain."
+    },
+    {
+      "item": "LQ4",
+      "assumed": "Journal branches and separately pinned research jobs follow KN4.6/KN7.5 working forms; normal revision-bound jobs cancel (JI.16, JI.28, JI.49).",
+      "if_other": "Without branches use separate research sessions and make branch change unavailable; if pinned jobs are cancelled, release their references on input replacement. Exit void facts and snapshot immutability do not change."
+    },
+    {
+      "item": "LQ2 and LQ21",
+      "assumed": "Built-in rows keep DT-J1 and the interim chapter 07 boundary. Under flow labels observations retain state dependencies; capability separation hides them from previewing solving programs (JI.48).",
+      "if_other": "The joint setting may change policy-table tiers or sinks; adjust those grants without changing exact payload semantics or inferring permissions from provenance. Neither flow form is selected here."
+    },
+    {
+      "item": "LQ1 and LQ16",
+      "assumed": "The research operation is a conformance input, not approval to ship research-tier selection (JI.16, JI.48).",
+      "if_other": "A separate research language or omitted research tier relocates/removes that product consumer; the recorded source meanings and oracle obligations stay."
+    },
+    {
+      "item": "LQ5, LQ8 and LQ9",
+      "assumed": "Named exact operations are portable contracts without an implementation language, ABI, placement or tariff selection (JI.14, JI.50).",
+      "if_other": "The selected route supplies transfer and release operations, principle/decomposition coverage, deterministic tariffs and cancellation boundaries in the second-wave annex. No zero-copy assumption survives without evidence."
+    },
+    {
+      "item": "LQ7 and LQ20",
+      "assumed": "The renderer-independent publication boundary carries JI.41 producer payloads and explicit source roles; no renderer is selected (JI.43).",
+      "if_other": "Different feature or presentation ownership changes the adapters/support matrix; identity pins, exact producers, full-state adoption and typed refusals remain."
+    }
+  ],
+  "owner_items": [
+    {
+      "item": "JI.47 / menu freeze",
+      "why": "The packet reserves final twist-menu sign-off for the owner; current I_a pins are consumed only."
+    },
+    {
+      "item": "JI.38 / EH-30",
+      "why": "Only the owner chooses product scramble depth and the retained/jumble mix."
+    },
+    {
+      "item": "JI.36 / DT-M1 Q7",
+      "why": "Q7(a) remains pending EN2 XM1; only the owner can replace it with a kept alternative."
+    },
+    {
+      "item": "JI.37 / ONE.78",
+      "why": "The owner confirms whether S4 requires a preview for live turns."
+    },
+    {
+      "item": "JI.37 / ONE.42 and KN5.12",
+      "why": "Program replacement of a presented preview remains with the owner and design line; no replacement policy is enabled here."
+    },
+    {
+      "item": "JI.43 / EH-09, DT-J2-DT-J4",
+      "why": "Entry filters, layout, look, motion and repair-list presentation await owner resumption and sign-off."
+    },
+    {
+      "item": "JI.18 / LQ10",
+      "why": "The owner selects the data-core scope; choosing EN3 flat storage is not acceptance of the format freeze."
+    },
+    {
+      "item": "JI.48 / LQ1, LQ2, LQ16 and LQ21",
+      "why": "Product/research scope, callable tiers and flow policy belong to the owner and joint setting, not this interface draft."
+    },
+    {
+      "item": "JI.49 / LQ4",
+      "why": "Experiment branches and pinned-job policy are still owner alternatives."
+    },
+    {
+      "item": "JI.50 / LQ5, LQ8 and LQ9",
+      "why": "Built-in implementation, engine language and route/placement are not selected by the batch signatures."
+    },
+    {
+      "item": "JI.43 / LQ7 and LQ20",
+      "why": "The admitted feature surface, renderer selection and presentation ownership remain their existing owner decisions."
+    },
+    {
+      "item": "JI.47 / A5 change",
+      "why": "Any proposal to admit labels-only entry or revive an exit through restore would change A5. This draft keeps both refused and requests no such change."
+    }
+  ],
+  "handoff_changes": [
+    {
+      "section": "H11",
+      "change": "This earlier refinement is now part of H11: JI.26 keeps voids across undo and branch selection; JI.25/JI.27 distinguish entry/exit, Position/Context and the common workspace/action/receipt chain.",
+      "why": "A5 says a break voids the record and refuses labels alone. Equal-label restoration or undo must not erase that durable break. A fresh witnessed entry/exit can establish a new binding."
+    },
+    {
+      "section": "H2",
+      "change": "The real jumble.on/off rows have no confirm gate; H2 shows confirm only in its illustrative row.",
+      "why": "DT-M1 C6 explicitly settles Jumble on/off as plain commands with no confirmation key; required explicit solver action tokens still apply."
+    }
+  ],
+  "new_error_codes": [
+    {
+      "code": "KN1:input.unsupported_dimension",
+      "clause": "JI.3",
+      "meaning": "Only dimension 4 is implemented in this edition; refuse another dimension before array use."
+    },
+    {
+      "code": "KN2:input.named_object_invalid",
+      "clause": "JI.9",
+      "meaning": "Invalid named cap/piece or empty, mixed-pose or lattice-containing unit argument."
+    },
+    {
+      "code": "KN5:input.scramble_policy_unset",
+      "clause": "JI.38",
+      "meaning": "No owner-approved product scramble policy reference; no construction or state change."
+    },
+    {
+      "code": "KN4:input.branch_path_unproved",
+      "clause": "JI.28",
+      "meaning": "Branch navigation lacks a proved journal path; refuse without changing the current binding."
+    },
+    {
+      "code": "KN2:input.exposed_geometry_unavailable",
+      "clause": "JI.41",
+      "meaning": "Certified exposed-face geometry or its size profile is unavailable; no fabricated render payload."
+    },
+    {
+      "code": "KN5:input.exit_record_voided",
+      "clause": "JI.27",
+      "meaning": "A history action would reactivate a voided exit binding; refuse that redo without reviving permission."
+    }
+  ],
+  "new_requirements": [
+    {
+      "id": "CT-JI-01",
+      "phase": "LP1",
+      "class": "source"
+    },
+    {
+      "id": "CT-JI-02",
+      "phase": "LP1",
+      "class": "source"
+    },
+    {
+      "id": "CT-JI-03",
+      "phase": "LP1",
+      "class": "source"
+    },
+    {
+      "id": "CT-JI-04",
+      "phase": "LP1",
+      "class": "source"
+    },
+    {
+      "id": "CT-JI-05",
+      "phase": "LP1",
+      "class": "source"
+    },
+    {
+      "id": "CT-JI-06",
+      "phase": "LP1",
+      "class": "source"
+    },
+    {
+      "id": "CT-JI-07",
+      "phase": "LP1",
+      "class": "source"
+    }
+  ],
+  "findings": {
+    "FR-K01": {
+      "status": "partial",
+      "clauses": [
+        "JI.2",
+        "JI.6",
+        "JI.17",
+        "JI.27",
+        "JI.32",
+        "JI.33",
+        "JI.35",
+        "JI.37",
+        "JI.40",
+        "JI.50"
+      ],
+      "why_open": "The EN3 four-layer draft and EN4 layer clauses are reconciled to H11/H15 by p7-layers. The p7-table command join, p7-data encoding, renderer reconciliation and combined-candidate review still need integration.",
+      "who": "p7-table, p7-data, p7-render and the integrator; independent final-candidate review after integration.",
+      "vectors": {
+        "jumbling-four-layers": {
+          "given": "A solver invokes jumble.twist.menu at on-state r=10 with cap 0, pinned item 12, matching identity, an admissible classification and no protection conflict. Command C has not run before.",
+          "expected": "Engine computes exact moved poses; store atomically writes C, its event, receipt and state revision 11; command terminal is committed; view model adopts all three pose arrays of revision 11 together. No renderer decision changes legality.",
+          "clause": "JI.27"
+        },
+        "puzzle-crossing": {
+          "given": "At on-state r=10, exact reachable X has N=0 and nu=0, frame agreement and the full A5 journal/certificate. The user invokes jumble.off with a valid action token.",
+          "expected": "Mode becomes off, state revision advances, a new crossing event e and exit E store exact X and its label certificate; the retained suffix is empty. A later jumble.on with no intervening move replays from X, not a lift of its labels.",
+          "clause": "JI.27"
+        },
+        "jumble-live-twist": {
+          "given": "Jumble is off; a live menu invocation names cap 0 and I_a item 12 with the correct pins and current action token.",
+          "expected": "Refused with KN5:input.menu_word_needs_jumble_on; no journal event, state revision or pose is changed. A seat name is never substituted for the pinned item.",
+          "clause": "JI.35"
+        },
+        "live-preview-alternative": {
+          "given": "The owner instead confirms that S4 requires a preview for every live turn; the current menu commit row has preview=none.",
+          "expected": "EN4 must set preview=required and add fresh_preview; a one-letter presented preview supplies the live menu commit. The present no-preview row is not frozen under that alternative.",
+          "clause": "JI.37"
+        },
+        "word-false-step-flag": {
+          "given": "A complete admissible menu word preview reports step=false and lifted pieces, with no protection conflict; its H3 dependencies, literal digest and full-state hash still match the presented preview.",
+          "expected": "operation.execute may commit the engine-owned end state as one journal action; step=false alone does not refuse execution. A blocked prefix instead produces no preview.",
+          "clause": "JI.32"
+        }
+      }
+    },
+    "FR-K05": {
+      "status": "partial",
+      "clauses": [
+        "JI.40",
+        "JI.41",
+        "JI.42",
+        "JI.43"
+      ],
+      "why_open": "The jumbling producer/payload/limits rows are specified. Adapter signatures, feature-support dispositions and resource-release acknowledgements are p6 work; exposed-face sizing remains unmeasured.",
+      "who": "Renderer p6 and the integrator for FR-K05; EN2 and renderer line for exposed-face production and sizing.",
+      "vectors": {
+        "jumbling-feature-rows": {
+          "given": "A proposed render bundle has pose_index from revision 8 and poses/pose_lattice from revision 9; the requested features are static geometry, state, motion, overlays and projection.",
+          "expected": "JI.41 assigns a producer, payload and limit/refusal to each feature. This mixed bundle is refused with EV3:input.display_bundle_mismatch; the view keeps no mixed frame and requests a validated refresh.",
+          "clause": "JI.41"
+        },
+        "half-turn-without-plane": {
+          "given": "A certified half-turn has angle pi and a valid moving set but the engine has supplied no oriented plane_u/plane_v.",
+          "expected": "Draw the half-turn without a swept preview; no turning direction is invented.",
+          "clause": "JI.41"
+        },
+        "mesh-unavailable": {
+          "given": "Exposed-face rendering is requested, but neither a certified exposed-face mesh nor its measured size profile exists.",
+          "expected": "Return KN2:input.exposed_geometry_unavailable; do not claim support or fabricate geometry.",
+          "clause": "JI.41"
+        },
+        "device-loss-no-state-change": {
+          "given": "The renderer loses its device after state revision 12 committed and the complete revision-12 bundle was adopted.",
+          "expected": "Release device resources and rebuild from that same bundle; head, mode, episode, exact state and committed receipt remain unchanged.",
+          "clause": "JI.42"
+        }
+      }
+    },
+    "FR-K06": {
+      "status": "closed",
+      "clauses": [
+        "JI.25",
+        "JI.26",
+        "JI.27",
+        "JI.28",
+        "JI.29",
+        "JI.30"
+      ],
+      "why_open": "",
+      "who": "",
+      "vectors": {
+        "exit": {
+          "given": "On-state revision 10 has reachable exact X, label digest L, N=0, nu=0 and valid A5 frame/C5/certificate evidence. Exit creates event e and exit E.",
+          "expected": "Off-state revision 11 records e, exact exit poses X, label digest L, certificate and E atomically; active replay root is X and suffix is empty.",
+          "clause": "JI.27"
+        },
+        "retained-move": {
+          "given": "Off-state revision 11 has active E rooted at X and empty suffix. A permitted retained menu item (0,2) commits as event m.",
+          "expected": "Revision 12 remains off; active exit is E and replay root remains X; effective suffix is [(0,2)], bound to event m and its parent e.",
+          "clause": "JI.27"
+        },
+        "undo": {
+          "given": "After retained move m, the current ActionHint names both the current order and target m; the user submits it with a valid token. E is unvoided.",
+          "expected": "A new undo action targets the pre-move head, mode stays off, the state revision advances, E remains active with root X and empty suffix. The old preview is not revived.",
+          "clause": "JI.27"
+        },
+        "redo": {
+          "given": "Following that undo, redo targets the saved retained event m with word [(0,2)], an intact parent path and no intervening action.",
+          "expected": "New redo action restores the effective suffix [(0,2)] in its original order; mode off, root X and exit E remain; revision advances despite a recurring label digest.",
+          "clause": "JI.27"
+        },
+        "branch-change": {
+          "given": "E is unvoided; two recorded off-state forks share E: branch A has retained word [(0,2)] and branch B has [(0,5)]. Navigation proves undo(A) then redo(B).",
+          "expected": "Branch B becomes active with replay root X from E and suffix [(0,5)], keeping current preferences and protection under JI.27; no label-digest lookup selects a root. Missing navigation evidence instead returns KN4:input.branch_path_unproved with no change.",
+          "clause": "JI.28"
+        },
+        "restore": {
+          "given": "Off-state has active E. A checkpoint with exactly the same labels and a saved reference to E is restored; no retained word from solved accompanies it.",
+          "expected": "Restore writes a new state event and void_exit(E) atomically. Active exit is absent, even though the labels match. The next jumble.on returns KN5:input.jumble_on_labels_only.",
+          "clause": "JI.27"
+        },
+        "import": {
+          "given": "A valid import replaces off-state labels with the same labels, carries an old exit ID E, and contains a complete retained word v from solved.",
+          "expected": "The import voids pre-break exit bindings, including E; E is not adopted. A later jumble.on uses replay(solved,v) and records that exact entrance derivation.",
+          "clause": "JI.27"
+        },
+        "recovery": {
+          "given": "A crash interrupts an exit from X at r=10. Case A has no durable crossing transaction; case B has a complete exit e/E transaction; case C has a durable restore after E.",
+          "expected": "A recovers on at the preceding committed X; B recovers off with E rooted at X; C recovers the replacement with E void. All restart in a new epoch without previews/tokens. Incomplete durability evidence enters KN5:unknown_outcome.read_only_recovery.",
+          "clause": "JI.30"
+        },
+        "equal-label-different-lineage": {
+          "given": "Two reachable stored exits E1/X and E2/Y have equal label digest L and different exact pose digests. The verified target path ends at E2 and then retained word w.",
+          "expected": "The only exit-root replay is replay(Y,w). E1 is not selected by L. After a checkpoint assignment of those labels with no retained witness, E2 is void and jumble.on returns KN5:input.jumble_on_labels_only.",
+          "clause": "JI.29"
+        },
+        "undo-redo-exit": {
+          "given": "Off-state immediately follows exit e/E from reachable exact X. Undo targets e, then redo targets that same crossing; E has no void fact.",
+          "expected": "Undo atomically restores mode on, original episode and X, with E inactive. Redo atomically restores off with the same E/root X and empty suffix. Each action advances the revision.",
+          "clause": "JI.27"
+        },
+        "void-survives-undo": {
+          "given": "Restore has durably voided E. The user then undoes the restore and returns to the exact old label digest; the session still holds void_exit(E).",
+          "expected": "E remains void. No equal-label head, undo or branch navigation erases the void fact; entry requires a retained word from solved or another valid newly established lineage.",
+          "clause": "JI.26"
+        },
+        "nu-zero-without-reachability": {
+          "given": "An imported raw lattice pose table has nu=0, but no journal from solved or a reachable exit that reaches its exact poses. The caller asks to exit Jumble using it.",
+          "expected": "Refuse with KN5:input.jumble_off_not_shown_reachable; no label checkpoint or exit record is created.",
+          "clause": "JI.27"
+        },
+        "redo-void-exit": {
+          "given": "A saved redo targets exit crossing E, but a committed restore has already written void_exit(E). The old exact pose bytes and matching labels still exist.",
+          "expected": "Refuse with KN5:input.exit_record_voided. E stays void and the state does not change. Exact content remaining in storage does not revive the session binding.",
+          "clause": "JI.27"
+        }
+      }
+    },
+    "FR-B03": {
+      "status": "partial",
+      "clauses": [
+        "JI.7",
+        "JI.8",
+        "JI.9",
+        "JI.10",
+        "JI.11",
+        "JI.14",
+        "JI.16",
+        "JI.50"
+      ],
+      "why_open": "The jumbling observation operations/results and one research walk are specified. This packet does not supply the selected-route ABI, transfer/release acknowledgements, deterministic tariffs or retained-workflow walk.",
+      "who": "Second wave: integrator, EN3 and EN4 after LQ8/LQ9, as HANDOFF H1/H13 assign the language-kernel annex.",
+      "vectors": {
+        "jumbling-research-operation": {
+          "given": "A read-only research check opens solved jumbling snapshot r and supplies [(0,12),(0,45)] in the pinned I_a menu; chunk size 1, sufficient declared budgets, all prefix fields and references requested.",
+          "expected": "seam_facts(all) at start/end returns total_N=0; units at solved is empty; replay returns two admissible rows with F=0,D=0,delta_phi=0 each, peak left height 2, excursion 0, tame=true and final pose digest solved. The first-prefix all-off pieces form one exact-pose unit; checking item45 lands it with step=true. Releasing buffers/derived refs and closing the snapshot leaves authoritative revision r unchanged.",
+          "clause": "JI.16"
+        },
+        "off-grip-total": {
+          "given": "A supplied complete seam table has three unique mismatched (domain,cut-cell) entries: one on a grip hyperplane and two off-grip.",
+          "expected": "SeamTotals is total_N=3, on_grip_mismatches=1, off_grip_mismatches=2. A named-cap-only read cannot present its count 1 as total_N.",
+          "clause": "JI.8"
+        },
+        "cancelled-prefix": {
+          "given": "The JI.16 two-letter check is cancelled after its first chunk, with one applied letter and no final chunk.",
+          "expected": "Coverage is [0,1); terminal cancellation supplies no second row or final solved claim. Job-owned buffers/handles are released, and the authoritative state is unchanged.",
+          "clause": "JI.16"
+        }
+      }
+    },
+    "FR-C02": {
+      "status": "partial",
+      "clauses": [
+        "JI.18",
+        "JI.19",
+        "JI.20",
+        "JI.21",
+        "JI.22",
+        "JI.23",
+        "JI.24"
+      ],
+      "why_open": "PS1.20 is resolved for EN3 as flat ia16 with optional verified annotations. p3 still owns the global canonical envelope, compression, framing and shared resource profiles, and LQ10 remains open.",
+      "who": "EN4 format p3 and the integrator for FR-C02; owner for LQ10; EN2 for the measured X3 admission bound.",
+      "vectors": {
+        "word-carrier": {
+          "given": "In the pinned I_a menu, ordered annotations A/B/C span [0,1)/[1,2)/[2,3). A is [(0,12)]; B same_as and C inverse_of both use relation.word={local:A}. Store flat letters, length 3, and read as chunks of 1+2 or 3 letters.",
+          "expected": "Both streams are [(0,12),(0,12),(0,45)], hex 0c000c002d00, SHA-256 c2ae6cf7df4e002e34b55017aa22a79d7b385830a0cf513f170586410380d309, expanded length 3. Chunking and annotation names do not change literal identity; menu/order pins remain required.",
+          "clause": "JI.23"
+        },
+        "missing-part": {
+          "given": "A named inverse_of annotation refers to a digest-pinned part definition that is absent from the supplied stored-word closure.",
+          "expected": "Refuse word/annotation admission with PS1:input.persistence_format before publishing a stored word or opening replay; do not fetch the part or trust an unverified expansion.",
+          "clause": "JI.20"
+        },
+        "length-before-expansion": {
+          "given": "A stored language word declares exact expanded length 100000000000000000000, and the granted replay bound is the illustrative value 100; storage limits are separately sufficient.",
+          "expected": "Report expanded length 100000000000000000000 and return PS1:resource_limit.word_expansion before expansion, or KN2:resource_limit.word_length_bound at replay admission. Do not truncate or split the operation. The illustrative bound 100 is not an X3 measurement or a mathematical limit.",
+          "clause": "JI.22"
+        }
+      }
+    }
+  },
+  "integration_required": [
+    "python docs/progress/1.0/build_command_table.py (after p2a lands, with the real delta and without --draft-without-jumbling)",
+    "python -B docs/progress/1.0/test_command_table.py (after p2a lands)",
+    "python docs/architecture/1.0/language/closure/check_closure.py --all (after all manifests land)",
+    "python tools/agents/codex_review.py --kind review --packet <scoped-packet> --model gpt-6-astra --effort max --speed fast (integrator prepares at least two concurrent EN3 review shards, read-only, with no follow-up work; Claude reviews Codex-authored changes)",
+    "Reconcile chapter 12 requirement counts and chapter 13 error entries; execute HANDOFF H13 traces on the combined text; no commands for missing runtime tests or measurements are invented."
+  ],
+  "evidence_limits": "Source-level contract and byte vectors only. No runtime implementation, research replay, performance tariff, Windows/DirectX check, measured human lattice phase, independent review or owner freeze is claimed."
+}

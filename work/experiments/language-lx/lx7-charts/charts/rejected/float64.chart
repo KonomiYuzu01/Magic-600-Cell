@@ -1,0 +1,2 @@
+# This exact decimal is not a binary32 value; implicit rounding is refused.
+output(0.1, y, z)

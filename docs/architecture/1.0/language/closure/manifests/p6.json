@@ -1,0 +1,293 @@
+{
+  "packet": "p6",
+  "assumes": [
+    {
+      "item": "LQ7",
+      "assumed": "RM.2 drafts the recommended pure bounded compiled chart subset, conditional on admission and LX-7; no user stage is enabled.",
+      "if_other": "Built-ins-only removes F05 and retains parameterised stages; a user shader language leaves F05 unavailable until RPI.39 safety, precision and evidence contracts exist. Other rows retain their data and lifecycle."
+    },
+    {
+      "item": "LQ20",
+      "assumed": "RM.2 drafts a feature handoff before renderer freeze, with required and optional rows explicitly separated.",
+      "if_other": "Under no handoff, compare each row with the frozen support list and refuse unsupported content. Any unmet required feature returns to the owner; F23/ONE.41 remains required under either option."
+    },
+    {
+      "item": "LQ6 and RPI.44",
+      "assumed": "Existing D8 remains in force; no placement is chosen. The recommendation allows research views in a research workspace, as RM.3 records.",
+      "if_other": "Strict D8 places research content inside Global and Local; free views require an owner D8 change and matching workload evidence. Tool-authoring placement still needs the owner."
+    },
+    {
+      "item": "LQ1 and LQ16",
+      "assumed": "RM.27 describes required support for the language/product scope actually admitted, without accepting a profile arrangement or product cut.",
+      "if_other": "An owner-approved smaller scope requires an explicit changed feature list; a backend cannot silently make an included language feature optional."
+    },
+    {
+      "item": "H6 and LG2.5",
+      "assumed": "Display-only ApproxBool/display_if is the integrator working form consumed by RM.5, independently of LQ21.",
+      "if_other": "A separate display region replaces that language admission mechanism and checks every exit; publish_view remains the sole display sink and no display-to-exact conversion is added."
+    },
+    {
+      "item": "LQ2 and LQ21",
+      "assumed": "RPI.45 preserves producer policy and provenance, with no new permission from display or picking; no flow-control form is selected.",
+      "if_other": "Static labels, runtime labels or capability separation change producer admission and the boundary checker, not renderer ownership, source identity or mechanical-state separation."
+    },
+    {
+      "item": "LQ3 and LQ10",
+      "assumed": "RPI.65 consumes chapter 06 claim references; RM.6/RM.13 consume LI.16 canonical output bytes from the data-core profile without defining another profile.",
+      "if_other": "Evidence-function choices alter claim presentation inputs, not program-text authority. A different canonical storage profile changes measured canonical lengths and digests; re-pin the profile and vectors without charging compression or transport."
+    },
+    {
+      "item": "LQ4",
+      "assumed": "RPI.12 and RM.22 use declared dependencies for the current display base; no branch lifetime or transport rule is invented.",
+      "if_other": "If branches/pinned jobs are admitted, their existing branch and transport contracts supply the base and dependencies. Revision changes still cancel pending publication or mark installed output stale."
+    },
+    {
+      "item": "LQ5, LQ8 and LQ9",
+      "assumed": "RM.14 specifies portable data and host tickets without selecting built-in implementation, engine language or process placement.",
+      "if_other": "The selected binding supplies copies or immutable leases and its ABI/transport; it must preserve engine adoption independence, accounting and cancellation. No zero-copy claim follows."
+    },
+    {
+      "item": "LQ18 and LQ19",
+      "assumed": "RM.28/RM.29 use existing scoped records and the LX-7 card only; this draft performs no experiment or freeze ruling.",
+      "if_other": "The owner-selected allowance/order controls future runs and gates; pending evidence stays pending under any order."
+    },
+    {
+      "item": "RPI.50 / ERR.25",
+      "assumed": "The engineering working form uses finite fixed plan ceilings and the existing KN7.7 to KN7.10 / LI.16 output budget, with count rules in RM.11 and no measured production values.",
+      "if_other": "A separate declared per-run plan allowance needs LP1 versioned units, tariffs and registry reconciliation before KN7:budget.display_plan_limit can activate; no new budget dimension is inferred."
+    }
+  ],
+  "owner_items": [
+    {
+      "item": "LQ7",
+      "why": "Only the owner chooses built-ins, the compiled subset or a separately contracted user shader language; all remain open."
+    },
+    {
+      "item": "LQ20",
+      "why": "Only the owner chooses the feature handoff or fit-to-frozen-renderer alternative and resolves any required-feature conflict."
+    },
+    {
+      "item": "LQ6 / RPI.44 / RM.3",
+      "why": "Research and tool-authoring placement and any change to D8 are owner decisions; no UI/UX work is reopened."
+    },
+    {
+      "item": "RPI.27",
+      "why": "Pick disambiguation is a product choice reserved to the owner when the design line resumes."
+    },
+    {
+      "item": "LQ1 / LQ16 / RM.27",
+      "why": "The owner sets language scope, profiles and the product cut; support reporting cannot reduce the scope."
+    },
+    {
+      "item": "LQ2 / LQ21",
+      "why": "Boundary policy and its flow-control form remain with the owner and the existing chapter 07 process."
+    },
+    {
+      "item": "RPI.18 / RM.4",
+      "why": "Any eventual model/geometry identity change for exposed faces requires the owner and the immutable-model process; the supplied unavailable-geometry contract authorizes none."
+    },
+    {
+      "item": "RPI.60 / LQ18 / LQ19",
+      "why": "Renderer selection, experiment allowance and freeze order remain existing owner/gate decisions. This packet supplies no ruling."
+    }
+  ],
+  "handoff_changes": [],
+  "new_error_codes": [],
+  "new_requirements": [
+    {
+      "id": "CT-RM-01",
+      "phase": "LP1",
+      "class": "source"
+    },
+    {
+      "id": "CT-RM-02",
+      "phase": "LP3",
+      "class": "source"
+    },
+    {
+      "id": "CT-RM-03",
+      "phase": "LP3",
+      "class": "source"
+    },
+    {
+      "id": "CT-RM-04",
+      "phase": "LP3",
+      "class": "source"
+    },
+    {
+      "id": "CT-RM-05",
+      "phase": "LP3",
+      "class": "windows"
+    },
+    {
+      "id": "CT-RM-06",
+      "phase": "LP3",
+      "class": "windows"
+    }
+  ],
+  "findings": {
+    "FR-K05": {
+      "status": "partial",
+      "clauses": [
+        "RPI.15",
+        "RPI.17",
+        "RPI.18",
+        "RPI.50",
+        "RPI.55",
+        "RPI.66",
+        "RPI.67",
+        "RM.1",
+        "RM.4",
+        "RM.6",
+        "RM.11",
+        "RM.13",
+        "RM.14",
+        "RM.18",
+        "RM.21",
+        "RM.23",
+        "RM.26",
+        "RM.27",
+        "RM.33",
+        "RM.34",
+        "RM.35",
+        "RM.36",
+        "RM.37"
+      ],
+      "why_open": "The feature matrix, portable interface, count/charge rules and lifecycle are drafted, and RM.34 now crosswalks all 17 JI.41 producer rows into J01-J13. Certified exposed-face geometry, concrete added-layout versions/size profiles, production ceiling values/H-09 measurements, chart checker/precision inputs, route binding, candidate implementations and actual presented-frame/device-loss evidence are not supplied. LQ7/LQ20 remain open; this is not a feature freeze.",
+      "who": "Integrator verifies the assembled contracts and supplies the binding annex; EN2/renderer line supply geometry, layouts and sizing; LP1/LB4 and renderer line pin limits, precision and implementations/evidence; owner answers LQ7/LQ20 and any scope/model decision.",
+      "vectors": {
+        "feature-matrix-complete": {
+          "given": "The draft table contains F01-F25 and J01-J13 with every JI.41 producer row crosswalked. A backend report for the applicable required surface omits F06 Object sheet; a standalone publication requests it.",
+          "expected": "F06 is unsupported and standalone admission refuses EV3:input.display_unsupported; the omission is an unmet required feature, not conforming optional support. JI.41's producer text is supplied, while J10 geometry/size inputs and backend evidence stay outstanding under RM.33. FR-K05 remains partial; no renderer selection or feature-freeze pass follows.",
+          "clause": "RM.34"
+        },
+        "publication-replacement": {
+          "given": "View v has generation 7 installed. Accepted command A is preparing generation 8. Command B is accepted for generation 9 before A completes; A then delivers a late ready result.",
+          "expected": "A has exactly cancelled(superseded(by: B.command)); its late resources cannot install. Generation 7 remains whole until B installs, when B has completed with Completion.kind=view_published and covered generation 9. If A had already completed first, its completed terminal would stay unchanged.",
+          "clause": "RM.21"
+        },
+        "device-loss": {
+          "given": "Device epoch 3 has a completed installed publication and one accepted pending publication B. A pick and presented-preview report are in flight. Mechanical command M has already committed. The device is lost.",
+          "expected": "B ends failed(EV3:busy.renderer_unavailable); if associated with a job, its JobResult is error(Error) with the contextual stop form under RM.22/LI.28. The completed publication and M keep their terminals. Input and presented-preview latches clear. Epoch-3 picks/reports/resources cannot be used after recovery. New resources bind immutable geometry and the latest complete engine bundle, and publications are revalidated separately.",
+          "clause": "RM.23"
+        },
+        "fixed-ceiling": {
+          "given": "A standalone publication has 5 instances already available at admission. Its pinned host/profile and backend minima give instances=4; all other counts, source data and output allowance fit.",
+          "expected": "refused(EV3:resource_limit.display_plan_ceiling) before acceptance, with field instances, requested 5, ceiling 4; no pending work is superseded and nothing installs. The same request with 4 instances passes this limit.",
+          "clause": "RM.12"
+        },
+        "output-exhausted": {
+          "given": "Accepted publication A requires 101 canonical uncompressed bytes; its run has 100 output bytes left. All fixed ceilings fit, and compression would make the transport smaller.",
+          "expected": "JobResult.outcome=cut_off(KN7:budget.output); Receipt.status=cancelled(budget). No part installs and the 101-byte publication is not emitted. The terminal reserve carries no user output; prior charges are not refunded. Compression does not change the outcome.",
+          "clause": "RM.13"
+        },
+        "presented-preview": {
+          "given": "Preview P1 is confirmed in frame 40. P2 is received and submitted in frame 41, whose presentation is still pending. The device/surface epoch is unchanged.",
+          "expected": "The newest confirmed report still names P1. ONE.41 can bind only P1 subject to engine freshness, never P2 yet. A later valid P2 report advances the latch; a delayed frame-40 report cannot roll it back. An unavailable report or device loss clears eligibility.",
+          "clause": "RM.32"
+        },
+        "rejected-replacement": {
+          "given": "A is accepted and pending. Standalone B for the same view has its payload at admission, with a dangling SourceMap reference, and is refused before acceptance.",
+          "expected": "B returns refused(EV3:input.display_plan_invalid); A is not cancelled or replaced and may still complete after its own final validation.",
+          "clause": "RM.20"
+        },
+        "optional-feature": {
+          "given": "A backend lacks F25 NVIDIA enhancements while every required feature for the admitted scope is supported.",
+          "expected": "F25 absence is a conforming optional omission; enhancements stay off by default, and correctness and selection criteria are unchanged.",
+          "clause": "RM.27"
+        }
+      }
+    },
+    "FR-B04": {
+      "status": "closed",
+      "clauses": [
+        "RPI.7",
+        "RPI.10",
+        "RM.8",
+        "RM.9",
+        "RM.24",
+        "RM.31"
+      ],
+      "why_open": "",
+      "who": "",
+      "scope": "Display side only; p2a/p2b own command-table, undo and lane reconciliation.",
+      "vectors": {
+        "derived-state-plan": {
+          "given": "Session revision 12 is adopted. A valid plan names derived kernel subject D, its derivation, lineage, level, reachability reference and display base 12, with matching immutable inputs. It is the only plan in this derived view.",
+          "expected": "Publication ends completed(view_published); host metadata identifies subject_kind=derived, subject digest D and comparison base 12. Session state remains revision 12; D gains no session revision or commit path. Picks retain D, and the derived view reports no_preview. A state revision 13 makes this state-dependent output stale instead of attaching it to revision 13.",
+          "clause": "RM.31"
+        },
+        "imported-subject": {
+          "given": "A KN2.14 imported value has no session ancestor; its plan names the import digest and explicit comparison base 12.",
+          "expected": "The host identifies a derived display with imported lineage and retains the import digest; it invents no kernel derivation or session revision, and the subject cannot be the session or engine preview.",
+          "clause": "RM.8"
+        }
+      }
+    },
+    "FR-B06": {
+      "status": "closed",
+      "clauses": [
+        "RPI.21",
+        "RPI.24",
+        "RM.10",
+        "RM.30"
+      ],
+      "why_open": "",
+      "who": "",
+      "scope": "Display SourceMap side only; EV1.10 owns source coordinates and conversion. RM.10/RM.30 consume H15.10's pick-binding precedence; p7-lang reconciles EV3.",
+      "vectors": {
+        "source-map-binding": {
+          "given": "Installed map generation 7 binds source UTF-8 bytes 61 f0 9f 98 80 62, SHA-256 6fba5b2ea783ded096fc2444d540ffbdf49168df30993b155b7efb683313f110, with EV1.10 range [5,6). The host requests UTF-16. A new draft ending in 63 has digest f2f6acee05793ab28e37f3562f442906e607a9347977cad09a2d7d682241c97a.",
+          "expected": "Following the producing source selects b at UTF-16 [3,4), or scalar [2,3). Applying that range to the new draft refuses EV3:stale.source_link; it never silently selects c. A generation-7 pick consumed after map generation 8 refuses EV3:stale.display_pick first.",
+          "clause": "RM.30"
+        },
+        "insertion-and-scalar-boundary": {
+          "given": "The same producing source bytes have an insertion range [5,5) and a separate malformed range [2,5) in a standalone payload available at admission.",
+          "expected": "Insertion converts to empty UTF-16 [3,3). The malformed range splits a UTF-8 scalar and refuses the entire publication with EV3:input.display_plan_invalid; no source map is installed.",
+          "clause": "RM.30"
+        },
+        "missing-source": {
+          "given": "A valid canonical object entry explicitly records source_missing(unavailable) and the producing source digest, with no range. The old source bytes are unavailable.",
+          "expected": "Canonical object resolution may succeed and source navigation reports source_missing(unavailable). No range or nearby new-source declaration is fabricated. A claimed range with no matching bytes instead refuses publication with EV3:input.display_plan_invalid.",
+          "clause": "RM.10"
+        }
+      }
+    }
+  },
+  "registry_reconciliation": [
+    "No new error spellings. Reconcile ERR.25 and EV3:resource_limit.display_plan_ceiling with RM.12/RM.20: standalone admission refuses, scheduled final validation fails with the original Error. Keep KN7:budget.display_plan_limit reserved.",
+    "LI.28 alone maps KN7:budget.output cut-off to cancelled(budget) for an accepted publication, and physical exhaustion to failed(KN7:resource_limit.host_exhausted).",
+    "H15.9 gives EV3:busy.renderer_unavailable primary refusal and contextual stop forms; RM.22/RM.36 consume them. H15.10 checks EV3:stale.display_pick bindings before EV3:stale.source_link. RM.34 uses H15.16's final jumbling code names."
+  ],
+  "integrator_follow_up": [
+    {
+      "task": "Verify the supplied JI.41/RM.34 crosswalk against the assembled P7 candidate and reconcile final H-08, KN5.21 to KN5.23, EV1.10, LI.16/LI.28, ADR-L11 references and chapter 13 contextual forms. Add CT-RM-01 through CT-RM-07 to chapter 12 and update counts; CT-RM-07 is declared by p7-render. Review the complete candidate.",
+      "commands": [
+        "python -B docs/architecture/1.0/language/closure/check_closure.py --all",
+        "python -B docs/architecture/1.0/language/closure/check_p7.py --all"
+      ],
+      "condition": "Only after all parallel reconciliation packets are integrated; they are not present in this worktree."
+    },
+    {
+      "task": "The integrator reviews this Codex-authored patch, prepares a seven-part current-candidate packet at the path below and obtains the required independent assembled-candidate review before commit.",
+      "commands": [
+        "python -B tools/agents/codex_review.py --kind review --packet work/reviews/packets/renderer-closure-integrated.md --model gpt-6-astra --effort max --speed fast"
+      ],
+      "condition": "Outside this no-network, four-file sandbox. The review packet must first exist and scope the assembled candidate; reuse a valid unchanged plan check or record its missing status."
+    },
+    {
+      "task": "Pin finite production limits, exact checker/precision inputs, route binding and per-candidate support reports. Implement/run CT-RM-05, CT-RM-06 and conditional LX-7 under their recorded permissions and evidence scopes.",
+      "commands": [],
+      "condition": "No implementation-specific command is available in this draft. These checks are requirements, not runs performed or authorized here."
+    }
+  ],
+  "evidence_status": "Draft/source specification only. Existing renderer records are cited at named build and workload scope. No new Windows, GPU, performance, runtime or product acceptance evidence.",
+  "tool": "CPython 3.15.1; local UTF-8 Markdown/JSON editing with LF; in-memory inspection scripts use python -B -",
+  "acceptance_command": [
+    "python",
+    "-B",
+    "docs/architecture/1.0/language/closure/check_closure.py",
+    "--packet",
+    "p6"
+  ]
+}

@@ -1,0 +1,15 @@
+edition: "lx8-0"
+module authored_words requires []
+
+function witness() returns Word<Full,Retained> using [] charge [12, 0, 0, 0]:
+    key := word_key(word[+1, -1, +2, +1200, -1200, +1])
+    yield word[+1, -1, +2, +1200, -1200, +1]
+
+function menu_witness() returns Word<Jumble,MenuA> using [] charge [12, 0, 0, 0]:
+    yield menu[2:spin, 2:unspin, 5:identity]
+
+function menu_cost() returns Cost<Jumble,MenuLetters> using [] charge [12, 0, 0, 0]:
+    yield word_length(menu_witness())
+
+function recipe_note(recipe: Recipe<Full,Retained>, count: Cost<Full,Generators>) returns Text using [] charge [12, 0, 0, 0]:
+    yield "User-authored recipe; no expansion executed."

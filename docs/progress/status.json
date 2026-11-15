@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "updated": "2026-11-04",
+  "updated": "2026-11-15",
   "current": "1.0-lp0",
   "paid_api_ceiling_usd": 100,
   "tracks": [{"id": "0.4.1", "title": "0.4.1"}, {"id": "stage-2", "title": "Stage 2"}, {"id": "migration", "title": "1.0 migration (path B)"}, {"id": "jumbling", "title": "1.0 jumbling puzzle"}, {"id": "language", "title": "1.0 language"}],
@@ -69,10 +69,10 @@
       {"id": "wj-deep-export", "title": "W-J deep state exported in the render format (handoff RH-23)", "weight": 1, "done": true, "evidence": "docs/wiki/evidence/w-j-probe-results.md"},
       {"id": "wj-deep-export-h4", "title": "W-J height-4 state bbef1c8e exported in the render format (re-plan R3)", "weight": 1, "done": true, "evidence": "docs/wiki/evidence/w-j-probe-results.md"}
      ]},
-    {"id": "2.5", "track": "stage-2", "title": "Freeze", "status": "not_started", "acceptance": "Stage 2 closes with the 2.5 freeze gates; target: working day 20, counting only the owner's working days; exit days are targets and no gate is relaxed.", "acceptance_source": "docs/wiki/decisions/owner-decisions-2026-10-02.md", "blocker": null,
+    {"id": "2.5", "track": "stage-2", "title": "Freeze", "status": "in_progress", "acceptance": "Stage 2 closes with the 2.5 freeze gates; target: working day 20, counting only the owner's working days; exit days are targets and no gate is relaxed.", "acceptance_source": "docs/wiki/decisions/owner-decisions-2026-10-02.md", "blocker": null,
      "items": [
       {"id": "architecture-freeze", "title": "1.0 architecture frozen (architecture-freeze ruling)", "weight": 1, "done": false, "evidence": null},
-      {"id": "migration-format-freeze", "title": "Migration format frozen (migration-format-freeze ruling)", "weight": 1, "done": false, "evidence": null},
+      {"id": "migration-format-freeze", "title": "Migration format frozen (migration-format-freeze ruling)", "weight": 1, "done": true, "evidence": "5ad74a96"},
       {"id": "design-system-adr", "title": "Design-system ADR accepted", "weight": 1, "done": false, "evidence": null}
      ]},
     {"id": "migration-probes", "track": "migration", "title": "Migration probes P1 to P3 on Windows", "status": "done", "acceptance": "P1 to P3 run on Windows on synthetic sessions with sanitised results; the importer starts only after a P1 strategy passes or the owner settles the conflict", "acceptance_source": "docs/progress/1.0/migration-exporter-proposal.md", "blocker": null,
@@ -129,7 +129,7 @@
       {"id": "glossary", "title": "Glossary entries for every language term", "weight": 1, "done": true, "evidence": "docs/architecture/1.0/language/architecture/04-environment.md"},
       {"id": "astra-review", "title": "Astra review with no open blocker or major", "weight": 2, "done": true, "evidence": "docs/progress/1.0/design-table/topics/language-ecosystem.md"},
       {"id": "owner-answers", "title": "Owner answers to LQ1 to LQ21", "weight": 2, "done": false, "evidence": null},
-      {"id": "adr-acceptance", "title": "Owner accepts the ADR drafts that need no spike evidence", "weight": 1, "done": false, "evidence": null}
+      {"id": "adr-acceptance", "title": "Owner accepts the ADR drafts that need no spike evidence", "weight": 1, "done": true, "evidence": "docs/wiki/decisions/owner-decisions-2026-11-15-freeze.md"}
      ]}
   ]
 }

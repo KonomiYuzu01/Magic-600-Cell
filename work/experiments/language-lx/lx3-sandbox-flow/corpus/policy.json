@@ -1,0 +1,166 @@
+{
+  "corpus_version": "lx3-neutral-v2",
+  "decision": "open",
+  "id": "lx3-interim-analysis-policy-v1",
+  "scope": "Frozen experiment conditions only; no product policy, author admission, route, syntax or BS option is selected.",
+  "basis": [
+    "RTE.24",
+    "RTE.25",
+    "RTE.26",
+    "RTE.27",
+    "BND.1",
+    "BND.4",
+    "BND.54",
+    "BND.56",
+    "BND.61",
+    "BND.69",
+    "LG3.16"
+  ],
+  "forms": [
+    "capability_separation",
+    "static_labels",
+    "static_runtime_labels"
+  ],
+  "profiles": [
+    "solving",
+    "tool_authoring",
+    "research"
+  ],
+  "admitted_author_classes": [],
+  "solver_tool_solving_preview": false,
+  "research_to_solving_preview": false,
+  "flow_rule": "observe each form against the interim policy; no activation of reserved flow codes",
+  "stop_rule": "open; no BND.51 fix is silently supplied",
+  "display_rule": "built-in fixed-order facts and named-word analysis only; own-tool display policy stays open",
+  "transparent": [
+    "identity",
+    "concat",
+    "inverse",
+    "index",
+    "field"
+  ],
+  "declassifiers": [
+    {
+      "id": "named_setup",
+      "entry": "setup",
+      "requires": [
+        "built_in",
+        "manual_target",
+        "fixed_fixture_table"
+      ],
+      "clears": [
+        "state",
+        "computed"
+      ],
+      "output": "setup words only"
+    },
+    {
+      "id": "own_pick",
+      "entry": "pick",
+      "requires": [
+        "built_in",
+        "manual_pick",
+        "fixed_object_set_or_fixed_entry"
+      ],
+      "clears": [
+        "state",
+        "computed"
+      ],
+      "output": "choice only; never clears a computed option set"
+    }
+  ],
+  "repair_exception": "BND.2 remains in force; not exercised by this fake Full-independent fixture.",
+  "grants": {
+    "solving_built_in": [
+      "reviewed snapshot reads",
+      "named-word checks",
+      "fixed named-target setup",
+      "invoked workspace command",
+      "manual-word or declassified preview",
+      "class-limited display"
+    ],
+    "tool_authoring": [
+      "pinned fixture reads",
+      "workspace records",
+      "capture preview"
+    ],
+    "research": [
+      "pinned reads",
+      "derived-state checks",
+      "research records",
+      "capture preview"
+    ],
+    "ambient": [],
+    "network": [],
+    "process": []
+  },
+  "preservation": [
+    "session.labels",
+    "session.revision",
+    "session.journal",
+    "session.protected_slots",
+    "session.preferences",
+    "session.recovery_checkpoint"
+  ],
+  "refusal_rule": "Expected code, no forbidden proposal installed, protected session fields unchanged, no planted data. Earlier permitted workspace writes and proposals are checked separately at the refused operation; they are not rolled back by inventing transactions.",
+  "form_prediction_rule": "Predictions describe the mechanism in chapter 11, not measured passes. No predicted miss is removed from the denominator. Admission refusals do not prove the deeper mechanism was exercised.",
+  "variants": [
+    {
+      "id": "source_bound",
+      "routes": [
+        "RT1",
+        "RT3"
+      ],
+      "requires": [
+        "checked bytes equal executed bytes",
+        "transitive dependency closure"
+      ]
+    },
+    {
+      "id": "approved_subset_byte_bound",
+      "routes": [
+        "RT2",
+        "RT4"
+      ],
+      "requires": [
+        "approved subset checker",
+        "dynamic code refusal",
+        "checked bytes equal executed bytes",
+        "transitive dependency closure"
+      ]
+    }
+  ],
+  "open_gaps": [
+    {
+      "id": "flow_code_reserved",
+      "status": "open",
+      "clauses": [
+        "ERR.24",
+        "BND.83"
+      ],
+      "nearest_code": "LG3:capability.not_granted",
+      "detail": "Dedicated flow spellings are reserved, not emitted. Interim prohibited uses are policy-capability denials. This does not settle future flow diagnostic identity or claim that one generic denial proves label propagation."
+    },
+    {
+      "id": "stop_emission",
+      "status": "open",
+      "clauses": [
+        "BND.46",
+        "BND.47",
+        "BND.51"
+      ],
+      "nearest_code": "LG3:capability.not_granted",
+      "detail": "No active dedicated stop/emission policy code or selected repair; keep cases and count any escape as a failure."
+    },
+    {
+      "id": "dynamic_code",
+      "status": "open",
+      "clauses": [
+        "LG3.12",
+        "DET.36"
+      ],
+      "nearest_code": "LG3:capability.not_granted",
+      "detail": "No dedicated dynamic-code registry row. The denied authority is dynamic evaluation in the approved subset."
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+edition "lx8-0";
+module granted_inputs requires [file, random];
+
+fn note(grant: FileGrant) -> Text effects [file] charge [12, 0, 0, 0] {
+    return write_note(grant, "Fixture note");
+}
+
+fn sample(stream: RandomStream) -> Int effects [random] charge [12, 0, 0, 0] {
+    return seeded_sample(stream, 17);
+}

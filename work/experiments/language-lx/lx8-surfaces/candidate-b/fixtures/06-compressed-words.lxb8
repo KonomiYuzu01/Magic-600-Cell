@@ -1,0 +1,11 @@
+edition: "lx8-0"
+module compressed_witness requires []
+
+function large_word() returns CompressedWord<Full,Retained> using [] charge [12, 0, 0, 0]:
+    literal := word[+1, -1, +7]
+    long_word := repeat(literal, 100000000000000000000000000000000000000000000000000000000000000000000000000000000)
+    tail := repeat(word[-7, +3], 2)
+    yield join(long_word, tail)
+
+function menu_repeat() returns CompressedWord<Jumble,MenuA> using [] charge [12, 0, 0, 0]:
+    yield repeat(menu[2:spin, 2:unspin, 5:identity], 3)

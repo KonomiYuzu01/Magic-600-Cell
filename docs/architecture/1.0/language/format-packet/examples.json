@@ -1,0 +1,519 @@
+{
+  "status": "synthetic storage examples; contract pins are fixtures, not accepted policies",
+  "clause": "FP.18",
+  "fixture_contracts": {
+    "flow_static": "p3 fixture flow contract 1\n",
+    "capability_separation": "p3 fixture capability contract 1\n"
+  },
+  "sources": {
+    "legacy_recipe": "[{\"kind\":\"word\",\"moves\":[1,-1]}]"
+  },
+  "recipe": {
+    "format": "c600-recipe",
+    "version": 1,
+    "identity": {
+      "puzzle": "full",
+      "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+      "menu_id": null,
+      "menu_order": null,
+      "contract_rev": null
+    },
+    "provenance": null,
+    "payload": {
+      "steps": [
+        {
+          "kind": "word",
+          "moves": [
+            1,
+            -1
+          ]
+        }
+      ],
+      "primitive_count": "2",
+      "expansion": {
+        "role": "recipe_expansion",
+        "sha256": "b15348c8f462384c01e83b6d499c6faf3f96808f5aa07c6bab4b65b36b4445d4"
+      },
+      "contract": {
+        "version": "retained-0.4",
+        "source": {
+          "role": "source",
+          "sha256": "67839fc28bf4dd020b515330efcde43a2116474e9970a1d743de55c7deb2eea2"
+        }
+      }
+    }
+  },
+  "records": {
+    "manual_flow": {
+      "format": "c600-word",
+      "version": 1,
+      "identity": {
+        "puzzle": "full",
+        "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+        "menu_id": null,
+        "menu_order": null,
+        "contract_rev": null
+      },
+      "payload": {
+        "alphabet": "signed_generators",
+        "start": {
+          "role": "labels",
+          "sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6"
+        },
+        "recipe": {
+          "format": "c600-recipe",
+          "version": 1,
+          "content": {
+            "role": "content",
+            "sha256": "42059e420b333e09c1cb589e8184762aabdf7be5dba8e74e629df6a911cf62cb"
+          }
+        }
+      },
+      "provenance": {
+        "block": {
+          "version": 1,
+          "form": "flow_static",
+          "contract": {
+            "version": "fixture-1",
+            "source": {
+              "role": "source",
+              "sha256": "1e5cc3c361ab70e2c8a2e5b2f2f03f71daef28507cc4e4e2d49f3747700d718e"
+            }
+          },
+          "checker": null
+        },
+        "author": "own",
+        "producer": {
+          "kind": "manual"
+        },
+        "profile": "none",
+        "depends": {
+          "labels": []
+        },
+        "parts": [],
+        "pick": null,
+        "declassified": [],
+        "legacy": null
+      }
+    },
+    "imported_flow": {
+      "format": "c600-macro",
+      "version": 1,
+      "identity": {
+        "puzzle": "full",
+        "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+        "menu_id": null,
+        "menu_order": null,
+        "contract_rev": null
+      },
+      "payload": {
+        "id": "fixture-macro",
+        "name": "Imported 0.4 macro",
+        "revision": "1",
+        "value": {
+          "format": "c600-recipe",
+          "version": 1,
+          "content": {
+            "role": "content",
+            "sha256": "42059e420b333e09c1cb589e8184762aabdf7be5dba8e74e629df6a911cf62cb"
+          }
+        },
+        "metadata": {},
+        "evidence": []
+      },
+      "provenance": {
+        "block": {
+          "version": 1,
+          "form": "flow_static",
+          "contract": {
+            "version": "fixture-1",
+            "source": {
+              "role": "source",
+              "sha256": "1e5cc3c361ab70e2c8a2e5b2f2f03f71daef28507cc4e4e2d49f3747700d718e"
+            }
+          },
+          "checker": null
+        },
+        "author": "own",
+        "producer": {
+          "kind": "import",
+          "origin": {
+            "role": "bytes",
+            "sha256": "f51ba77ae585ae9855a44eb584f33696312a2eaa1f94d97e3a3613eeffef9ec0"
+          }
+        },
+        "profile": "none",
+        "depends": {
+          "kind": "not_recorded"
+        },
+        "parts": [],
+        "pick": null,
+        "declassified": [],
+        "legacy": {
+          "source": {
+            "role": "bytes",
+            "sha256": "f51ba77ae585ae9855a44eb584f33696312a2eaa1f94d97e3a3613eeffef9ec0"
+          },
+          "labels": [],
+          "missing": [
+            "producing_run",
+            "dependency_history"
+          ]
+        }
+      }
+    },
+    "manual_capability": {
+      "format": "c600-word",
+      "version": 1,
+      "identity": {
+        "puzzle": "full",
+        "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+        "menu_id": null,
+        "menu_order": null,
+        "contract_rev": null
+      },
+      "payload": {
+        "alphabet": "signed_generators",
+        "start": {
+          "role": "labels",
+          "sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6"
+        },
+        "recipe": {
+          "format": "c600-recipe",
+          "version": 1,
+          "content": {
+            "role": "content",
+            "sha256": "42059e420b333e09c1cb589e8184762aabdf7be5dba8e74e629df6a911cf62cb"
+          }
+        }
+      },
+      "provenance": {
+        "block": {
+          "version": 1,
+          "form": "capability_separation",
+          "contract": {
+            "version": "fixture-1",
+            "source": {
+              "role": "source",
+              "sha256": "b709a1496263ef8e7a542ab944d7fdf2cf5e152e7ff00d44d0c0e5df5c36b01f"
+            }
+          },
+          "checker": null
+        },
+        "author": "own",
+        "producer": {
+          "kind": "manual"
+        },
+        "profile": "none",
+        "depends": {
+          "read_state": "no"
+        },
+        "parts": [],
+        "pick": null,
+        "declassified": [],
+        "legacy": null
+      }
+    },
+    "imported_capability": {
+      "format": "c600-macro",
+      "version": 1,
+      "identity": {
+        "puzzle": "full",
+        "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+        "menu_id": null,
+        "menu_order": null,
+        "contract_rev": null
+      },
+      "payload": {
+        "id": "fixture-macro",
+        "name": "Imported 0.4 macro",
+        "revision": "1",
+        "value": {
+          "format": "c600-recipe",
+          "version": 1,
+          "content": {
+            "role": "content",
+            "sha256": "42059e420b333e09c1cb589e8184762aabdf7be5dba8e74e629df6a911cf62cb"
+          }
+        },
+        "metadata": {},
+        "evidence": []
+      },
+      "provenance": {
+        "block": {
+          "version": 1,
+          "form": "capability_separation",
+          "contract": {
+            "version": "fixture-1",
+            "source": {
+              "role": "source",
+              "sha256": "b709a1496263ef8e7a542ab944d7fdf2cf5e152e7ff00d44d0c0e5df5c36b01f"
+            }
+          },
+          "checker": null
+        },
+        "author": "own",
+        "producer": {
+          "kind": "import",
+          "origin": {
+            "role": "bytes",
+            "sha256": "f51ba77ae585ae9855a44eb584f33696312a2eaa1f94d97e3a3613eeffef9ec0"
+          }
+        },
+        "profile": "none",
+        "depends": {
+          "kind": "not_recorded"
+        },
+        "parts": [],
+        "pick": null,
+        "declassified": [],
+        "legacy": {
+          "source": {
+            "role": "bytes",
+            "sha256": "f51ba77ae585ae9855a44eb584f33696312a2eaa1f94d97e3a3613eeffef9ec0"
+          },
+          "labels": [],
+          "missing": [
+            "producing_run",
+            "dependency_history"
+          ]
+        }
+      }
+    }
+  },
+  "ji23": {
+    "status": "JI.23 literal example; menu/source pins are fixtures, not replay evidence or policy authority",
+    "record": {
+      "format": "c600-word",
+      "version": 1,
+      "identity": {
+        "puzzle": "jumbling",
+        "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+        "menu_id": "989ce7bb3d9e703874af7b1fe11b388b7db927fbfd094a4b4596c2bba4d93979",
+        "menu_order": "e660bb57e0596f901c8b41967c038c1ab4ad41d30eccc96f60041c52950d00ae",
+        "contract_rev": "JI23-fixture-1"
+      },
+      "provenance": {
+        "block": {
+          "version": 1,
+          "form": "flow_static",
+          "contract": {
+            "version": "fixture-1",
+            "source": {
+              "role": "source",
+              "sha256": "1e5cc3c361ab70e2c8a2e5b2f2f03f71daef28507cc4e4e2d49f3747700d718e"
+            }
+          },
+          "checker": null
+        },
+        "author": "own",
+        "producer": {
+          "kind": "manual"
+        },
+        "profile": "none",
+        "depends": {
+          "labels": []
+        },
+        "parts": [],
+        "pick": null,
+        "declassified": [],
+        "legacy": null
+      },
+      "payload": {
+        "alphabet": "menu",
+        "start": {
+          "role": "poses",
+          "sha256": "1a673294c9380637a0ddcd9eae3085a316af70092548b66d3687f1cffa279ae4"
+        },
+        "length": "3",
+        "letters": {
+          "role": "bytes",
+          "sha256": "c2ae6cf7df4e002e34b55017aa22a79d7b385830a0cf513f170586410380d309"
+        },
+        "chunks": [
+          {
+            "stored": {
+              "role": "bytes",
+              "sha256": "c2ae6cf7df4e002e34b55017aa22a79d7b385830a0cf513f170586410380d309"
+            },
+            "decoded": {
+              "role": "bytes",
+              "sha256": "c2ae6cf7df4e002e34b55017aa22a79d7b385830a0cf513f170586410380d309"
+            },
+            "stored_bytes": "6",
+            "decoded_bytes": "6",
+            "encoding": "raw"
+          }
+        ],
+        "parts": [],
+        "annotations": [
+          {
+            "name": "A",
+            "start": "0",
+            "end": "1",
+            "relation": null
+          },
+          {
+            "name": "B",
+            "start": "1",
+            "end": "2",
+            "relation": {
+              "kind": "same_as",
+              "word": {
+                "local": "A"
+              }
+            }
+          },
+          {
+            "name": "C",
+            "start": "2",
+            "end": "3",
+            "relation": {
+              "kind": "inverse_of",
+              "word": {
+                "local": "A"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "part_ref": {
+      "format": "c600-word",
+      "version": 1,
+      "content": {
+        "role": "content",
+        "sha256": "0e4fdd939c0d5efe502f612ad184c20651efb1b136a9d7a43712b2044c0477cd"
+      }
+    },
+    "records": {
+      "0e4fdd939c0d5efe502f612ad184c20651efb1b136a9d7a43712b2044c0477cd": {
+        "format": "c600-word",
+        "version": 1,
+        "identity": {
+          "puzzle": "jumbling",
+          "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+          "menu_id": "989ce7bb3d9e703874af7b1fe11b388b7db927fbfd094a4b4596c2bba4d93979",
+          "menu_order": "e660bb57e0596f901c8b41967c038c1ab4ad41d30eccc96f60041c52950d00ae",
+          "contract_rev": "JI23-fixture-1"
+        },
+        "provenance": {
+          "block": {
+            "version": 1,
+            "form": "flow_static",
+            "contract": {
+              "version": "fixture-1",
+              "source": {
+                "role": "source",
+                "sha256": "1e5cc3c361ab70e2c8a2e5b2f2f03f71daef28507cc4e4e2d49f3747700d718e"
+              }
+            },
+            "checker": null
+          },
+          "author": "own",
+          "producer": {
+            "kind": "manual"
+          },
+          "profile": "none",
+          "depends": {
+            "labels": []
+          },
+          "parts": [],
+          "pick": null,
+          "declassified": [],
+          "legacy": null
+        },
+        "payload": {
+          "alphabet": "menu",
+          "start": {
+            "role": "poses",
+            "sha256": "1a673294c9380637a0ddcd9eae3085a316af70092548b66d3687f1cffa279ae4"
+          },
+          "length": "1",
+          "letters": {
+            "role": "bytes",
+            "sha256": "bf60e4349cace6bce0d552e8d783428db66d0d649bd9e430a3627e2ee14ac839"
+          },
+          "chunks": [
+            {
+              "stored": {
+                "role": "bytes",
+                "sha256": "bf60e4349cace6bce0d552e8d783428db66d0d649bd9e430a3627e2ee14ac839"
+              },
+              "decoded": {
+                "role": "bytes",
+                "sha256": "bf60e4349cace6bce0d552e8d783428db66d0d649bd9e430a3627e2ee14ac839"
+              },
+              "stored_bytes": "2",
+              "decoded_bytes": "2",
+              "encoding": "raw"
+            }
+          ],
+          "parts": [],
+          "annotations": []
+        }
+      }
+    },
+    "blobs": {
+      "c2ae6cf7df4e002e34b55017aa22a79d7b385830a0cf513f170586410380d309": "0c000c002d00",
+      "bf60e4349cace6bce0d552e8d783428db66d0d649bd9e430a3627e2ee14ac839": "0c00"
+    },
+    "inverse": {
+      "12": 45,
+      "45": 12
+    },
+    "menu": {
+      "menu_id": "989ce7bb3d9e703874af7b1fe11b388b7db927fbfd094a4b4596c2bba4d93979",
+      "menu_order": "e660bb57e0596f901c8b41967c038c1ab4ad41d30eccc96f60041c52950d00ae"
+    }
+  },
+  "empty_signed_word": {
+    "format": "c600-word",
+    "version": 1,
+    "identity": {
+      "puzzle": "full",
+      "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+      "menu_id": null,
+      "menu_order": null,
+      "contract_rev": null
+    },
+    "payload": {
+      "alphabet": "signed_generators",
+      "start": {
+        "role": "labels",
+        "sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6"
+      },
+      "length": "0",
+      "letters": {
+        "role": "recipe_expansion",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "provenance": {
+      "block": {
+        "version": 1,
+        "form": "flow_static",
+        "contract": {
+          "version": "fixture-1",
+          "source": {
+            "role": "source",
+            "sha256": "1e5cc3c361ab70e2c8a2e5b2f2f03f71daef28507cc4e4e2d49f3747700d718e"
+          }
+        },
+        "checker": null
+      },
+      "author": "own",
+      "producer": {
+        "kind": "manual"
+      },
+      "profile": "none",
+      "depends": {
+        "labels": []
+      },
+      "parts": [],
+      "pick": null,
+      "declassified": [],
+      "legacy": null
+    }
+  }
+}

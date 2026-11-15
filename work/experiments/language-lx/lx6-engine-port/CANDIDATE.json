@@ -1,0 +1,30 @@
+{
+  "base_commit": "1e7d0074df96cbeb05f55282cf8f6c03fbf4a4ff",
+  "candidate_sha256": "2bc30f5ebbce03f6e814223637c9cfb437f4fddd1cd387061ecbb80b3111ce6f",
+  "driver_python": "3.15.1",
+  "executable_sha256": "14030e03922cc32225287bb34e20a9227adaf06d9422a153441c7bb7fdc1ce72",
+  "exported_model_sha256": "223edad95f991ea1ada8ed3d464b21909979f0122aa837fc9e3d7e3541949e01",
+  "flags": [
+    "--edition=2021",
+    "-O",
+    "-D",
+    "warnings",
+    "-C",
+    "debuginfo=0",
+    "-C",
+    "link-arg=/Brepro"
+  ],
+  "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: x86_64-pc-windows-msvc\nrelease: 1.98.1\nLLVM version: 22.1.8",
+  "self_tests": "pass",
+  "sources": {
+    "INPUTS.json": "714dce383f5a0b66f3c85cc9f8a4a363a77547c83e97d989f1813de88fe70b3d",
+    "check.py": "1848328b90f793d90093870c83776635980b3bb3d8f96a8ffcf3edb3938f8983",
+    "engine.rs": "12831fc1c8f0c3c5e0dc7f82bced8788c640a25d79bd094d7d877cbc2e7eaf02",
+    "export_model.py": "264a5e548e689e5341fefb248dd591570ff1afd8fa83611a48e4400d1bcfe7c0",
+    "json.rs": "9ba496e270ba2ca67347cac6b6f18b17f0c4b022e7a69886fd2cb471225402b0",
+    "main.rs": "77514f08a354a1ddce7741ee3a537d4f0da81eb4a3a410d97dcf36f23185d865",
+    "measure.py": "cdbfc67e7a34ff643316130d3baa79d7323eba11e9a995a3ee2f1302f9f2fff8",
+    "run_oracle.py": "9f2ad16696411b0b97abffcc0b85f25f879d1a7ac8c3321a0d93736bfa0a9850",
+    "sha256.rs": "66c940db85b47ab7e6333c8a8bcc800afb4cf2785894f961b2794fe4ea949885"
+  }
+}

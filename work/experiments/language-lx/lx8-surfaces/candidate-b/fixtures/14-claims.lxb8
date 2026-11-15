@@ -1,0 +1,5 @@
+edition: "lx8-0"
+module claim_context requires []
+
+function scope(claim: Claim<Full,Labels>, premise: Premise<Full,Labels>, domain: Domain<Full,Labels>, reachability: Reachability<Full,Theorem>, evidence: Evidence<Full,Labels>, certificate: Certificate<Full,Labels>, goal: Goal<Full,Labels>) returns Scope<Full,Labels> using [] charge [12, 0, 0, 0]:
+    yield claim_scope(claim, premise, domain, reachability)

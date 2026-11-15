@@ -1,0 +1,5535 @@
+{
+ "format": "c600-command-aliases-1",
+ "version": "en4-2026-11-05.3",
+ "status": "draft; independent review pending",
+ "canonical_form": "SHA-256 of UTF-8 JSON of this entire object except content_digest; keys sorted recursively, separators comma and colon, ensure_ascii=false, no whitespace or trailing newline; array order retained.",
+ "bank_scoped_bindings": "No target routing scope after DT-M1 K6. Preserve the raw binding as unresolved with its original bank, command and arguments; install no active binding. Only an explicit checked rebind can enable it.",
+ "unresolved_arguments": "Stored object references resolve from captured legacy data or an explicit checked rebind; absent data stays unresolved. Invocation guards (action hint, preview, checked file and token) are acquired afresh at invocation and are never imported permission.",
+ "twist_bindings": "Resolve the exact word the 0.4 key typed under its saved cap and frame. Do not translate T3 labels by spelling; DT-M1 K2 swaps their names. Key-map replay tests need EN3 and the engine.",
+ "rows": [
+  {
+   "pattern": "after",
+   "cases": [
+    {
+     "legacy_id": "after",
+     "source_decisions": [
+      "U5-049"
+     ],
+     "target": {
+      "command": "view.forecast.select",
+      "arguments": {
+       "phase": "cleanup"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "assign-a",
+   "cases": [
+    {
+     "legacy_id": "assign-a",
+     "source_decisions": [
+      "U3-027",
+      "U6-005"
+     ],
+     "target": {
+      "command": "buffer.assign",
+      "arguments": {
+       "role": "A"
+      },
+      "requires": [
+       "position: PositionId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "assign-b",
+   "cases": [
+    {
+     "legacy_id": "assign-b",
+     "source_decisions": [
+      "U3-029",
+      "U6-005"
+     ],
+     "target": {
+      "command": "buffer.assign",
+      "arguments": {
+       "role": "B"
+      },
+      "requires": [
+       "position: PositionId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "assign-target",
+   "cases": [
+    {
+     "legacy_id": "assign-target",
+     "source_decisions": [
+      "U3-020",
+      "U6-005"
+     ],
+     "target": {
+      "command": "target.current.set",
+      "arguments": {},
+      "requires": [
+       "piece: PieceId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "destination: PositionId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "bank",
+   "cases": [
+    {
+     "legacy_id": "bank",
+     "source_decisions": [
+      "U3-003",
+      "U5-003",
+      "U6-007"
+     ],
+     "target": null,
+     "reason": "DT-M1 C7 and K6 remove switched banks. Preserve the old command and scope as unresolved; no active binding or inferred anchor."
+    }
+   ]
+  },
+  {
+   "pattern": "bank-<set>",
+   "cases": [
+    {
+     "legacy_id": "bank-A",
+     "source_decisions": [
+      "U3-041",
+      "U5-007",
+      "U6-007"
+     ],
+     "target": null,
+     "reason": "DT-M1 C7 and K6 remove switched banks. Preserve the old command and scope as unresolved; no active binding or inferred anchor."
+    },
+    {
+     "legacy_id": "bank-B",
+     "source_decisions": [
+      "U3-041",
+      "U5-007",
+      "U6-007"
+     ],
+     "target": null,
+     "reason": "DT-M1 C7 and K6 remove switched banks. Preserve the old command and scope as unresolved; no active binding or inferred anchor."
+    },
+    {
+     "legacy_id": "bank-Cycles",
+     "source_decisions": [
+      "U3-041",
+      "U6-007"
+     ],
+     "target": null,
+     "reason": "DT-M1 C7 and K6 remove switched banks. Preserve the old command and scope as unresolved; no active binding or inferred anchor."
+    },
+    {
+     "legacy_id": "bank-E",
+     "source_decisions": [
+      "U3-041",
+      "U5-007",
+      "U6-007"
+     ],
+     "target": null,
+     "reason": "DT-M1 C7 and K6 remove switched banks. Preserve the old command and scope as unresolved; no active binding or inferred anchor."
+    },
+    {
+     "legacy_id": "bank-Filter",
+     "source_decisions": [
+      "U3-041",
+      "U6-007"
+     ],
+     "target": null,
+     "reason": "DT-M1 C7 and K6 remove switched banks. Preserve the old command and scope as unresolved; no active binding or inferred anchor."
+    },
+    {
+     "legacy_id": "bank-Functions",
+     "source_decisions": [
+      "U3-041",
+      "U6-007"
+     ],
+     "target": null,
+     "reason": "DT-M1 C7 and K6 remove switched banks. Preserve the old command and scope as unresolved; no active binding or inferred anchor."
+    },
+    {
+     "legacy_id": "bank-I",
+     "source_decisions": [
+      "U3-041",
+      "U5-007",
+      "U6-007"
+     ],
+     "target": null,
+     "reason": "DT-M1 C7 and K6 remove switched banks. Preserve the old command and scope as unresolved; no active binding or inferred anchor."
+    },
+    {
+     "legacy_id": "bank-Keyboard",
+     "source_decisions": [
+      "U3-041",
+      "U6-007"
+     ],
+     "target": null,
+     "reason": "DT-M1 C7 and K6 remove switched banks. Preserve the old command and scope as unresolved; no active binding or inferred anchor."
+    },
+    {
+     "legacy_id": "bank-M",
+     "source_decisions": [
+      "U3-041",
+      "U5-007",
+      "U6-007"
+     ],
+     "target": null,
+     "reason": "DT-M1 C7 and K6 remove switched banks. Preserve the old command and scope as unresolved; no active binding or inferred anchor."
+    },
+    {
+     "legacy_id": "bank-Macro",
+     "source_decisions": [
+      "U3-041",
+      "U6-007"
+     ],
+     "target": null,
+     "reason": "DT-M1 C7 and K6 remove switched banks. Preserve the old command and scope as unresolved; no active binding or inferred anchor."
+    },
+    {
+     "legacy_id": "bank-Operation",
+     "source_decisions": [
+      "U3-041",
+      "U6-007"
+     ],
+     "target": null,
+     "reason": "DT-M1 C7 and K6 remove switched banks. Preserve the old command and scope as unresolved; no active binding or inferred anchor."
+    },
+    {
+     "legacy_id": "bank-Session",
+     "source_decisions": [
+      "U3-041",
+      "U6-007"
+     ],
+     "target": null,
+     "reason": "DT-M1 C7 and K6 remove switched banks. Preserve the old command and scope as unresolved; no active binding or inferred anchor."
+    },
+    {
+     "legacy_id": "bank-Views",
+     "source_decisions": [
+      "U3-041",
+      "U6-007"
+     ],
+     "target": null,
+     "reason": "DT-M1 C7 and K6 remove switched banks. Preserve the old command and scope as unresolved; no active binding or inferred anchor."
+    },
+    {
+     "legacy_id": "bank-Workspace",
+     "source_decisions": [
+      "U3-041",
+      "U6-007"
+     ],
+     "target": null,
+     "reason": "DT-M1 C7 and K6 remove switched banks. Preserve the old command and scope as unresolved; no active binding or inferred anchor."
+    }
+   ]
+  },
+  {
+   "pattern": "bank-activate",
+   "cases": [
+    {
+     "legacy_id": "bank-activate",
+     "source_decisions": [
+      "U5-003"
+     ],
+     "target": null,
+     "reason": "DT-M1 C7 and K6 remove switched banks. Preserve the old command and scope as unresolved; no active binding or inferred anchor."
+    }
+   ]
+  },
+  {
+   "pattern": "bank-macro-1",
+   "cases": [
+    {
+     "legacy_id": "bank-macro-1",
+     "source_decisions": [
+      "U3-044",
+      "U6-007",
+      "U6-030/1"
+     ],
+     "target": {
+      "command": "macro.select",
+      "arguments": {},
+      "legacy_parameter": {
+       "saved_bank_macro_slot": 1
+      },
+      "requires": [
+       "macro: MacroRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "bank-macro-2",
+   "cases": [
+    {
+     "legacy_id": "bank-macro-2",
+     "source_decisions": [
+      "U3-044",
+      "U6-007",
+      "U6-030/1"
+     ],
+     "target": {
+      "command": "macro.select",
+      "arguments": {},
+      "legacy_parameter": {
+       "saved_bank_macro_slot": 2
+      },
+      "requires": [
+       "macro: MacroRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "bank-next",
+   "cases": [
+    {
+     "legacy_id": "bank-next",
+     "source_decisions": [
+      "U3-042",
+      "U6-007"
+     ],
+     "target": null,
+     "reason": "DT-M1 C7 and K6 remove switched banks. Preserve the old command and scope as unresolved; no active binding or inferred anchor."
+    }
+   ]
+  },
+  {
+   "pattern": "bank-prev",
+   "cases": [
+    {
+     "legacy_id": "bank-prev",
+     "source_decisions": [
+      "U3-042",
+      "U6-007"
+     ],
+     "target": null,
+     "reason": "DT-M1 C7 and K6 remove switched banks. Preserve the old command and scope as unresolved; no active binding or inferred anchor."
+    }
+   ]
+  },
+  {
+   "pattern": "bank-previous",
+   "cases": [
+    {
+     "legacy_id": "bank-previous",
+     "source_decisions": [
+      "U3-013",
+      "U5-005",
+      "U6-007"
+     ],
+     "target": null,
+     "reason": "DT-M1 C7 and K6 remove switched banks. Preserve the old command and scope as unresolved; no active binding or inferred anchor."
+    }
+   ]
+  },
+  {
+   "pattern": "bank-rename",
+   "cases": [
+    {
+     "legacy_id": "bank-rename",
+     "source_decisions": [
+      "U5-006"
+     ],
+     "target": null,
+     "reason": "DT-M1 C7 and K6 remove switched banks. Preserve the old command and scope as unresolved; no active binding or inferred anchor."
+    }
+   ]
+  },
+  {
+   "pattern": "bank-save-name",
+   "cases": [
+    {
+     "legacy_id": "bank-save-name",
+     "source_decisions": [
+      "U5-006"
+     ],
+     "target": null,
+     "reason": "DT-M1 C7 and K6 remove switched banks. Preserve the old command and scope as unresolved; no active binding or inferred anchor."
+    }
+   ]
+  },
+  {
+   "pattern": "before",
+   "cases": [
+    {
+     "legacy_id": "before",
+     "source_decisions": [
+      "U5-049"
+     ],
+     "target": {
+      "command": "view.forecast.select",
+      "arguments": {
+       "phase": "actual"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "block-add",
+   "cases": [
+    {
+     "legacy_id": "block-add",
+     "source_decisions": [
+      "U3-035",
+      "U5-032",
+      "U6-020/1",
+      "U6-020/2"
+     ],
+     "target": {
+      "command": "block.add_home",
+      "arguments": {},
+      "requires": [
+       "positions: PositionIds; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "mode: position|exact; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "block-capture",
+   "cases": [
+    {
+     "legacy_id": "block-capture",
+     "source_decisions": [
+      "U3-035",
+      "U6-020/1",
+      "U6-020/2"
+     ],
+     "target": {
+      "command": "block.add_current",
+      "arguments": {},
+      "requires": [
+       "positions: PositionIds; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "mode: position|exact; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "revision: RevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "block-capture-position",
+   "cases": [
+    {
+     "legacy_id": "block-capture-position",
+     "source_decisions": [
+      "U3-035",
+      "U6-020/1",
+      "U6-020/2"
+     ],
+     "target": {
+      "command": "block.add_current",
+      "arguments": {},
+      "requires": [
+       "positions: PositionIds; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "mode: position|exact; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "revision: RevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "block-protect",
+   "cases": [
+    {
+     "legacy_id": "block-protect",
+     "source_decisions": [
+      "U3-040",
+      "U5-034",
+      "U6-020/1",
+      "U6-020/2"
+     ],
+     "target": {
+      "command": "protection.position.protect",
+      "arguments": {
+       "mode": "exact"
+      },
+      "requires": [
+       "position: PositionId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "block-protect-position",
+   "cases": [
+    {
+     "legacy_id": "block-protect-position",
+     "source_decisions": [
+      "U3-040",
+      "U6-020/1",
+      "U6-020/2"
+     ],
+     "target": {
+      "command": "protection.position.protect",
+      "arguments": {
+       "mode": "position"
+      },
+      "requires": [
+       "position: PositionId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "block-reference",
+   "cases": [
+    {
+     "legacy_id": "block-reference",
+     "source_decisions": [
+      "U3-034",
+      "U6-020/1",
+      "U6-020/2"
+     ],
+     "target": {
+      "command": "block.reference.set",
+      "arguments": {},
+      "requires": [
+       "block: BlockRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "reference: WordRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "block-remove",
+   "cases": [
+    {
+     "legacy_id": "block-remove",
+     "source_decisions": [
+      "U3-039",
+      "U6-020/1",
+      "U6-020/2"
+     ],
+     "target": {
+      "command": "block.remove",
+      "arguments": {},
+      "requires": [
+       "requirement: BlockRequirementRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "block-unprotect",
+   "cases": [
+    {
+     "legacy_id": "block-unprotect",
+     "source_decisions": [
+      "U3-040",
+      "U6-020/2"
+     ],
+     "target": {
+      "command": "protection.position.release",
+      "arguments": {
+       "mode": "both"
+      },
+      "requires": [
+       "position: PositionId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "block-unprotect-exact",
+   "cases": [
+    {
+     "legacy_id": "block-unprotect-exact",
+     "source_decisions": [
+      "U3-040",
+      "U6-020/1",
+      "U6-020/2"
+     ],
+     "target": {
+      "command": "protection.position.release",
+      "arguments": {
+       "mode": "exact"
+      },
+      "requires": [
+       "position: PositionId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "block-unprotect-position",
+   "cases": [
+    {
+     "legacy_id": "block-unprotect-position",
+     "source_decisions": [
+      "U3-040",
+      "U6-020/1",
+      "U6-020/2"
+     ],
+     "target": {
+      "command": "protection.position.release",
+      "arguments": {
+       "mode": "position"
+      },
+      "requires": [
+       "position: PositionId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "buffers",
+   "cases": [
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:buffers",
+     "source_decisions": [
+      "U4-045"
+     ],
+     "target": {
+      "command": "buffer.analyse",
+      "arguments": {},
+      "requires": [
+       "orbit: OrbitId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "buffers: PositionIdPair; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "target: PositionId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "camera-home",
+   "cases": [
+    {
+     "legacy_id": "camera-home",
+     "source_decisions": [
+      "U5-063"
+     ],
+     "target": {
+      "command": "view.reset",
+      "arguments": {},
+      "requires": [
+       "view: ViewId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "cancel",
+   "cases": [
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:cancel",
+     "source_decisions": [
+      "U4-040"
+     ],
+     "target": {
+      "command": "operation.preview.cancel",
+      "arguments": {},
+      "requires": [],
+      "invoke_requires": {
+       "preview": "A current engine preview bound to the presented result; no legacy preview or token survives."
+      }
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "cancel-analysis",
+   "cases": [
+    {
+     "legacy_id": "cancel-analysis",
+     "source_decisions": [
+      "U3-068",
+      "U5-047",
+      "U6-025/1",
+      "U6-025/2",
+      "U6-025/3",
+      "U6-025/4"
+     ],
+     "target": {
+      "command": "job.stop",
+      "arguments": {},
+      "requires": [
+       "job: JobId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "cancel-preview",
+   "cases": [
+    {
+     "legacy_id": "cancel-preview",
+     "source_decisions": [
+      "U3-066",
+      "U5-045",
+      "U6-025/1",
+      "U6-025/2",
+      "U6-025/3",
+      "U6-025/4"
+     ],
+     "target": {
+      "command": "operation.preview.cancel",
+      "arguments": {},
+      "requires": [],
+      "invoke_requires": {
+       "preview": "A current engine preview bound to the presented result; no legacy preview or token survives."
+      }
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "capture",
+   "cases": [
+    {
+     "legacy_id": "capture",
+     "source_decisions": [
+      "U3-046",
+      "U5-016",
+      "U6-034/1",
+      "U6-034/2",
+      "U6-034/3",
+      "U6-034/4",
+      "U6-034/5"
+     ],
+     "target": {
+      "command": "grip.rebind",
+      "arguments": {},
+      "requires": [
+       "anchor: PieceId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "map: TransportedSlotMap; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "expected_map: Digest; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "capture-apply",
+   "cases": [
+    {
+     "legacy_id": "capture-apply",
+     "source_decisions": [
+      "U5-016"
+     ],
+     "target": {
+      "command": "grip.rebind",
+      "arguments": {},
+      "requires": [
+       "anchor: PieceId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "map: TransportedSlotMap; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "expected_map: Digest; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "capture-piece",
+   "cases": [
+    {
+     "legacy_id": "capture-piece",
+     "source_decisions": [
+      "U3-047",
+      "U6-034/1",
+      "U6-034/2",
+      "U6-034/3",
+      "U6-034/4",
+      "U6-034/5"
+     ],
+     "target": {
+      "command": "grip.rebind",
+      "arguments": {},
+      "requires": [
+       "anchor: PieceId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "map: TransportedSlotMap; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "expected_map: Digest; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "center",
+   "cases": [
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:center",
+     "source_decisions": [
+      "U4-013"
+     ],
+     "target": {
+      "command": "camera.center",
+      "arguments": {},
+      "requires": [
+       "view: ViewId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "cell: CellId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "checkpoint",
+   "cases": [
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:checkpoint",
+     "source_decisions": [
+      "U4-015"
+     ],
+     "target": {
+      "command": "session.checkpoint.save",
+      "arguments": {},
+      "requires": [
+       "name: Text; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "revision: RevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ],
+      "invoke_requires": {
+       "token": "Fresh shell UserActionToken for this command and resolved arguments; never imported."
+      }
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "checkpoint",
+     "source_decisions": [
+      "U3-076",
+      "U5-073",
+      "U6-034/1",
+      "U6-034/2",
+      "U6-034/3",
+      "U6-034/4",
+      "U6-034/5"
+     ],
+     "target": {
+      "command": "session.checkpoint.save",
+      "arguments": {},
+      "requires": [
+       "name: Text; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "revision: RevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ],
+      "invoke_requires": {
+       "token": "Fresh shell UserActionToken for this command and resolved arguments; never imported."
+      }
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "cleanup-inverse",
+   "cases": [
+    {
+     "legacy_id": "cleanup-inverse",
+     "source_decisions": [
+      "U3-061",
+      "U5-038",
+      "U6-032/1",
+      "U6-032/2",
+      "U6-032/3"
+     ],
+     "target": {
+      "command": "operation.cleanup.from_prepare",
+      "arguments": {},
+      "requires": [
+       "draft: ResolvedDraftRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "close-views",
+   "cases": [
+    {
+     "legacy_id": "close-views",
+     "source_decisions": [
+      "U5-043"
+     ],
+     "target": {
+      "command": "work.surface.close",
+      "arguments": {
+       "surface": "expanded_structural_inspection"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "commit",
+   "cases": [
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:commit",
+     "source_decisions": [
+      "U4-039"
+     ],
+     "target": {
+      "command": "operation.execute",
+      "arguments": {},
+      "requires": [],
+      "invoke_requires": {
+       "preview": "A current engine preview bound to the presented result; no legacy preview or token survives.",
+       "token": "Fresh shell UserActionToken for this command and resolved arguments; never imported."
+      }
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "commit",
+     "source_decisions": [
+      "U3-065",
+      "U5-044",
+      "U6-025/1",
+      "U6-025/2",
+      "U6-025/3",
+      "U6-025/4"
+     ],
+     "target": {
+      "command": "operation.execute",
+      "arguments": {},
+      "requires": [],
+      "invoke_requires": {
+       "preview": "A current engine preview bound to the presented result; no legacy preview or token survives.",
+       "token": "Fresh shell UserActionToken for this command and resolved arguments; never imported."
+      }
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "compare-preview",
+   "cases": [
+    {
+     "legacy_id": "compare-preview",
+     "source_decisions": [
+      "U3-056",
+      "U6-025/1",
+      "U6-025/2",
+      "U6-025/3",
+      "U6-025/4"
+     ],
+     "target": {
+      "command": "view.forecast.select",
+      "arguments": {},
+      "requires": [
+       "phase: actual|prepare|macro|cleanup; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "copy-selection",
+   "cases": [
+    {
+     "legacy_id": "copy-selection",
+     "source_decisions": [
+      "U3-144",
+      "U5-068",
+      "U6-034/1",
+      "U6-034/2",
+      "U6-034/3",
+      "U6-034/4",
+      "U6-034/5"
+     ],
+     "target": {
+      "command": "object.copy",
+      "arguments": {
+       "form": "typed"
+      },
+      "requires": [
+       "object: CanonicalObjectRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "copy-selection-canonical",
+   "cases": [
+    {
+     "legacy_id": "copy-selection-canonical",
+     "source_decisions": [
+      "U3-145",
+      "U6-034/1",
+      "U6-034/2",
+      "U6-034/3",
+      "U6-034/4",
+      "U6-034/5"
+     ],
+     "target": {
+      "command": "object.copy",
+      "arguments": {
+       "form": "canonical"
+      },
+      "requires": [
+       "object: CanonicalObjectRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "cycles-after",
+   "cases": [
+    {
+     "legacy_id": "cycles-after",
+     "source_decisions": [
+      "U3-079",
+      "U6-037/1",
+      "U6-037/2"
+     ],
+     "target": {
+      "command": "view.cycle.mode",
+      "arguments": {
+       "mode": "after"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "cycles-back",
+   "cases": [
+    {
+     "legacy_id": "cycles-back",
+     "source_decisions": [
+      "U3-106",
+      "U6-037/1",
+      "U6-037/2"
+     ],
+     "target": {
+      "command": "view.cycle.page",
+      "arguments": {},
+      "requires": [
+       "result: ResultRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "page: PageId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "cycles-complete",
+   "cases": [
+    {
+     "legacy_id": "cycles-complete",
+     "source_decisions": [
+      "U3-079",
+      "U6-036"
+     ],
+     "target": {
+      "command": "view.effect.scope",
+      "arguments": {
+       "scope": "complete"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "cycles-current",
+   "cases": [
+    {
+     "legacy_id": "cycles-current",
+     "source_decisions": [
+      "U3-079",
+      "U6-037/1",
+      "U6-037/2"
+     ],
+     "target": {
+      "command": "view.cycle.mode",
+      "arguments": {
+       "mode": "current"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "cycles-macro",
+   "cases": [
+    {
+     "legacy_id": "cycles-macro",
+     "source_decisions": [
+      "U3-079",
+      "U6-036"
+     ],
+     "target": {
+      "command": "view.effect.scope",
+      "arguments": {
+       "scope": "body"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "cycles-more",
+   "cases": [
+    {
+     "legacy_id": "cycles-more",
+     "source_decisions": [
+      "U3-106",
+      "U6-037/1",
+      "U6-037/2"
+     ],
+     "target": {
+      "command": "view.cycle.page",
+      "arguments": {},
+      "requires": [
+       "result: ResultRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "page: PageId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "cycles-next",
+   "cases": [
+    {
+     "legacy_id": "cycles-next",
+     "source_decisions": [
+      "U3-105",
+      "U6-037/1",
+      "U6-037/2"
+     ],
+     "target": {
+      "command": "view.cycle.select",
+      "arguments": {},
+      "requires": [
+       "result: ResultRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "cycle: CycleId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "cycles-operation",
+   "cases": [
+    {
+     "legacy_id": "cycles-operation",
+     "source_decisions": [
+      "U3-079",
+      "U6-037/1",
+      "U6-037/2"
+     ],
+     "target": {
+      "command": "view.cycle.mode",
+      "arguments": {
+       "mode": "operation"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "cycles-previous",
+   "cases": [
+    {
+     "legacy_id": "cycles-previous",
+     "source_decisions": [
+      "U3-105",
+      "U6-037/1",
+      "U6-037/2"
+     ],
+     "target": {
+      "command": "view.cycle.select",
+      "arguments": {},
+      "requires": [
+       "result: ResultRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "cycle: CycleId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "cycles-refresh",
+   "cases": [
+    {
+     "legacy_id": "cycles-refresh",
+     "source_decisions": [
+      "U3-104",
+      "U6-037/1",
+      "U6-037/2"
+     ],
+     "target": null,
+     "reason": "Signed automatic refresh (U3-104, U6-037/2); inspection survives through explicit source and cycle selection, not a refresh command."
+    }
+   ]
+  },
+  {
+   "pattern": "cycles-steps",
+   "cases": [
+    {
+     "legacy_id": "cycles-steps",
+     "source_decisions": [
+      "U3-079",
+      "U6-036"
+     ],
+     "target": {
+      "command": "view.entry_slots",
+      "arguments": {},
+      "requires": [
+       "result: ResultRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "detail-toggle",
+   "cases": [
+    {
+     "legacy_id": "detail-toggle",
+     "source_decisions": [
+      "U3-141/1",
+      "U3-141/2",
+      "U6-021"
+     ],
+     "target": {
+      "command": "display.adaptive.toggle",
+      "arguments": {},
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "display",
+   "cases": [
+    {
+     "legacy_id": "display",
+     "source_decisions": [
+      "U3-140",
+      "U6-021"
+     ],
+     "target": {
+      "command": "display.adjust",
+      "arguments": {},
+      "requires": [
+       "view: ViewId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "settings: DisplaySettings; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "draft-undo",
+   "cases": [
+    {
+     "legacy_id": "draft-undo",
+     "source_decisions": [
+      "U5-036"
+     ],
+     "target": {
+      "command": "session.undo",
+      "arguments": {},
+      "requires": [],
+      "invoke_requires": {
+       "hint": "Fresh ActionHint from kernel.undo_hint(session, direction=undo) under LI.9 and LI.26, binding both current order and the eligible target for that direction; none supplies no invocable target, and a changed order or target is stale.",
+       "token": "Fresh shell UserActionToken for this command and resolved arguments; never imported."
+      }
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "edit-<phase>",
+   "cases": [
+    {
+     "legacy_id": "edit-cleanup",
+     "source_decisions": [
+      "U3-058",
+      "U6-024/1",
+      "U6-024/2",
+      "U6-024/3"
+     ],
+     "target": {
+      "command": "operation.phase.edit",
+      "arguments": {
+       "phase": "cleanup"
+      },
+      "requires": [
+       "word: WordRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "edit-macro",
+     "source_decisions": [
+      "U3-058",
+      "U6-024/1",
+      "U6-024/2",
+      "U6-024/3"
+     ],
+     "target": {
+      "command": "operation.phase.edit",
+      "arguments": {
+       "phase": "macro"
+      },
+      "requires": [
+       "word: WordRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "edit-prepare",
+     "source_decisions": [
+      "U3-058",
+      "U6-024/1",
+      "U6-024/2",
+      "U6-024/3"
+     ],
+     "target": {
+      "command": "operation.phase.edit",
+      "arguments": {
+       "phase": "prepare"
+      },
+      "requires": [
+       "word: WordRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "effect-body",
+   "cases": [
+    {
+     "legacy_id": "effect-body",
+     "source_decisions": [
+      "U3-079",
+      "U6-036"
+     ],
+     "target": {
+      "command": "view.effect.scope",
+      "arguments": {
+       "scope": "body"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "effect-complete",
+   "cases": [
+    {
+     "legacy_id": "effect-complete",
+     "source_decisions": [
+      "U3-079",
+      "U6-036"
+     ],
+     "target": {
+      "command": "view.effect.scope",
+      "arguments": {
+       "scope": "complete"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "effect-details",
+   "cases": [
+    {
+     "legacy_id": "effect-details",
+     "source_decisions": [
+      "U5-017"
+     ],
+     "target": {
+      "command": "view.findings",
+      "arguments": {},
+      "requires": [
+       "result: ResultRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "endgame-<parameter>",
+   "cases": [
+    {
+     "legacy_id": "endgame-q",
+     "source_decisions": [
+      "U3-091",
+      "U6-033/1",
+      "U6-033/2",
+      "U6-033/3"
+     ],
+     "target": {
+      "command": "endgame.configure",
+      "arguments": {},
+      "legacy_parameter": "q",
+      "requires": [
+       "family: FamilyId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "parameters: ExactFamilyParameters; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "endgame-r",
+     "source_decisions": [
+      "U3-091",
+      "U6-033/1",
+      "U6-033/2",
+      "U6-033/3"
+     ],
+     "target": {
+      "command": "endgame.configure",
+      "arguments": {},
+      "legacy_parameter": "r",
+      "requires": [
+       "family: FamilyId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "parameters: ExactFamilyParameters; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "endgame-x",
+     "source_decisions": [
+      "U3-089",
+      "U6-033/1",
+      "U6-033/2",
+      "U6-033/3"
+     ],
+     "target": {
+      "command": "endgame.configure",
+      "arguments": {},
+      "legacy_parameter": "x",
+      "requires": [
+       "family: FamilyId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "parameters: ExactFamilyParameters; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "endgame-y",
+     "source_decisions": [
+      "U3-089",
+      "U6-033/1",
+      "U6-033/2",
+      "U6-033/3"
+     ],
+     "target": {
+      "command": "endgame.configure",
+      "arguments": {},
+      "legacy_parameter": "y",
+      "requires": [
+       "family: FamilyId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "parameters: ExactFamilyParameters; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "endgame-check",
+   "cases": [
+    {
+     "legacy_id": "endgame-check",
+     "source_decisions": [
+      "U3-093",
+      "U6-033/1",
+      "U6-033/2",
+      "U6-033/3"
+     ],
+     "target": {
+      "command": "endgame.check",
+      "arguments": {},
+      "requires": [
+       "family: FamilyId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "parameters: ExactFamilyParameters; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "endgame-choices",
+   "cases": [
+    {
+     "legacy_id": "endgame-choices",
+     "source_decisions": [
+      "U3-088",
+      "U6-033/1",
+      "U6-033/2",
+      "U6-033/3"
+     ],
+     "target": {
+      "command": "endgame.choices",
+      "arguments": {},
+      "requires": [
+       "family: FamilyId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "position: PositionId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "endgame-details",
+   "cases": [
+    {
+     "legacy_id": "endgame-details",
+     "source_decisions": [
+      "U3-097",
+      "U6-033/1",
+      "U6-033/2",
+      "U6-033/3"
+     ],
+     "target": {
+      "command": "macro.select",
+      "arguments": {},
+      "requires": [
+       "macro: MacroRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "endgame-save",
+   "cases": [
+    {
+     "legacy_id": "endgame-save",
+     "source_decisions": [
+      "U3-095",
+      "U6-033/1",
+      "U6-033/2",
+      "U6-033/3"
+     ],
+     "target": {
+      "command": "macro.save",
+      "arguments": {},
+      "requires": [
+       "word: WordRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "name: Text; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "endgame-select-saved",
+   "cases": [
+    {
+     "legacy_id": "endgame-select-saved",
+     "source_decisions": [
+      "U3-086",
+      "U6-033/1",
+      "U6-033/2",
+      "U6-033/3"
+     ],
+     "target": {
+      "command": "macro.select",
+      "arguments": {},
+      "requires": [
+       "macro: MacroRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "export-work",
+   "cases": [
+    {
+     "legacy_id": "export-work",
+     "source_decisions": [
+      "U5-076"
+     ],
+     "target": {
+      "command": "file.log.export",
+      "arguments": {},
+      "requires": [
+       "history: JournalRangeRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "format: LogFormat; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "destination: FileRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "exportLog",
+   "cases": [
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:exportLog",
+     "source_decisions": [
+      "U4-025"
+     ],
+     "target": {
+      "command": "file.log.export",
+      "arguments": {},
+      "requires": [
+       "history: JournalRangeRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "format: LogFormat; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "destination: FileRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "filter",
+   "cases": [
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:filter",
+     "source_decisions": [
+      "U4-022"
+     ],
+     "target": {
+      "command": "filter.open",
+      "arguments": {},
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "filter",
+     "source_decisions": [
+      "U3-009",
+      "U5-048",
+      "U6-022"
+     ],
+     "target": {
+      "command": "filter.open",
+      "arguments": {},
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "filter-apply",
+   "cases": [
+    {
+     "legacy_id": "filter-apply",
+     "source_decisions": [
+      "U5-048"
+     ],
+     "target": {
+      "command": "filter.apply",
+      "arguments": {},
+      "requires": [],
+      "invoke_requires": {
+       "preview": "A submitted FilterPreviewRef validated by KN0.9 at publication; no presentation and no pending word preview dependence. Never import a legacy preview as permission."
+      }
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "filter-preview",
+   "cases": [
+    {
+     "legacy_id": "filter-preview",
+     "source_decisions": [
+      "U5-050"
+     ],
+     "target": {
+      "command": "filter.preview",
+      "arguments": {},
+      "requires": [
+       "predicate: FilterRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "revision: RevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "filter-save",
+   "cases": [
+    {
+     "legacy_id": "filter-save",
+     "source_decisions": [
+      "U5-051"
+     ],
+     "target": {
+      "command": "set.save",
+      "arguments": {},
+      "requires": [
+       "members: CanonicalObjectRefs; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "kind: identity|position; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "name: Text; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "fixture-e1",
+   "cases": [
+    {
+     "legacy_id": "fixture-e1",
+     "source_decisions": [
+      "U3-123",
+      "U5-070",
+      "U6-034/1",
+      "U6-034/2",
+      "U6-034/3",
+      "U6-034/4",
+      "U6-034/5"
+     ],
+     "target": {
+      "command": "session.practice",
+      "arguments": {},
+      "requires": [
+       "fixture: FixtureRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "session: PracticeSessionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ],
+      "invoke_requires": {
+       "token": "Fresh shell UserActionToken for this command and resolved arguments; never imported."
+      }
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "focus",
+   "cases": [
+    {
+     "legacy_id": "focus",
+     "source_decisions": [
+      "U3-016",
+      "U5-023",
+      "U6-005"
+     ],
+     "target": {
+      "command": "target.current.set",
+      "arguments": {},
+      "requires": [
+       "piece: PieceId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "destination: PositionId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "focus-apply",
+   "cases": [
+    {
+     "legacy_id": "focus-apply",
+     "source_decisions": [
+      "U5-023"
+     ],
+     "target": {
+      "command": "target.current.set",
+      "arguments": {},
+      "requires": [
+       "piece: PieceId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "destination: PositionId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "frame-toggle",
+   "cases": [
+    {
+     "legacy_id": "frame-toggle",
+     "source_decisions": [
+      "U3-141/1",
+      "U3-141/2",
+      "U6-021"
+     ],
+     "target": {
+      "command": "display.frame.toggle",
+      "arguments": {},
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "functions-toggle",
+   "cases": [
+    {
+     "legacy_id": "functions-toggle",
+     "source_decisions": [
+      "U3-017",
+      "U6-007"
+     ],
+     "target": {
+      "command": "command.find",
+      "arguments": {},
+      "requires": [
+       "query: Text; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "object: CanonicalObjectRef?; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "global",
+   "cases": [
+    {
+     "legacy_id": "global",
+     "source_decisions": [
+      "U3-021",
+      "U5-039",
+      "U6-017/1",
+      "U6-017/2"
+     ],
+     "target": {
+      "command": "view.global",
+      "arguments": {},
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "goal-*",
+   "cases": [
+    {
+     "legacy_id": "goal-block",
+     "source_decisions": [
+      "U3-030",
+      "U6-028"
+     ],
+     "target": {
+      "command": "intent.set",
+      "arguments": {
+       "intent": "block"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "goal-endgame",
+     "source_decisions": [
+      "U3-030",
+      "U6-028"
+     ],
+     "target": {
+      "command": "intent.set",
+      "arguments": {
+       "intent": "endgame"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "goal-finish-buffer",
+     "source_decisions": [
+      "U3-030",
+      "U6-028"
+     ],
+     "target": {
+      "command": "intent.set",
+      "arguments": {
+       "intent": "finish-buffer"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "goal-insert",
+     "source_decisions": [
+      "U3-030",
+      "U6-028"
+     ],
+     "target": {
+      "command": "intent.set",
+      "arguments": {
+       "intent": "insert"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "goal-orient",
+     "source_decisions": [
+      "U3-030",
+      "U6-028"
+     ],
+     "target": {
+      "command": "intent.set",
+      "arguments": {
+       "intent": "orient"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "goal-place",
+     "source_decisions": [
+      "U3-030",
+      "U6-028"
+     ],
+     "target": {
+      "command": "intent.set",
+      "arguments": {
+       "intent": "place"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "goal-prepare",
+     "source_decisions": [
+      "U3-030",
+      "U6-028"
+     ],
+     "target": {
+      "command": "intent.set",
+      "arguments": {
+       "intent": "prepare"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "grip-frame",
+   "cases": [
+    {
+     "legacy_id": "grip-frame",
+     "source_decisions": [
+      "U3-050",
+      "U6-019"
+     ],
+     "target": {
+      "command": "grip.frames",
+      "arguments": {},
+      "requires": [
+       "cap: CapId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "grip-hold",
+   "cases": [
+    {
+     "legacy_id": "grip-hold",
+     "source_decisions": [
+      "U3-057",
+      "U6-012"
+     ],
+     "target": {
+      "command": "grip.behavior.set",
+      "arguments": {
+       "behavior": "hold"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "grip-latch",
+   "cases": [
+    {
+     "legacy_id": "grip-latch",
+     "source_decisions": [
+      "U3-057",
+      "U6-012"
+     ],
+     "target": {
+      "command": "grip.behavior.set",
+      "arguments": {
+       "behavior": "latch"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "grip:N",
+   "cases": [
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:grip:0",
+     "source_decisions": [
+      "U4-041"
+     ],
+     "target": {
+      "command": "operation.preview",
+      "arguments": {},
+      "legacy_parameter": {
+       "axis": 0,
+       "inverse": false
+      },
+      "requires": [
+       "draft: ResolvedDraftRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:grip:1",
+     "source_decisions": [
+      "U4-041"
+     ],
+     "target": {
+      "command": "operation.preview",
+      "arguments": {},
+      "legacy_parameter": {
+       "axis": 1,
+       "inverse": false
+      },
+      "requires": [
+       "draft: ResolvedDraftRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:grip:2",
+     "source_decisions": [
+      "U4-041"
+     ],
+     "target": {
+      "command": "operation.preview",
+      "arguments": {},
+      "legacy_parameter": {
+       "axis": 2,
+       "inverse": false
+      },
+      "requires": [
+       "draft: ResolvedDraftRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:grip:3",
+     "source_decisions": [
+      "U4-041"
+     ],
+     "target": {
+      "command": "operation.preview",
+      "arguments": {},
+      "legacy_parameter": {
+       "axis": 3,
+       "inverse": false
+      },
+      "requires": [
+       "draft: ResolvedDraftRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:grip:4",
+     "source_decisions": [
+      "U4-041"
+     ],
+     "target": {
+      "command": "operation.preview",
+      "arguments": {},
+      "legacy_parameter": {
+       "axis": 4,
+       "inverse": false
+      },
+      "requires": [
+       "draft: ResolvedDraftRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:grip:5",
+     "source_decisions": [
+      "U4-041"
+     ],
+     "target": {
+      "command": "operation.preview",
+      "arguments": {},
+      "legacy_parameter": {
+       "axis": 5,
+       "inverse": false
+      },
+      "requires": [
+       "draft: ResolvedDraftRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:grip:6",
+     "source_decisions": [
+      "U4-041"
+     ],
+     "target": {
+      "command": "operation.preview",
+      "arguments": {},
+      "legacy_parameter": {
+       "axis": 6,
+       "inverse": false
+      },
+      "requires": [
+       "draft: ResolvedDraftRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "help",
+   "cases": [
+    {
+     "legacy_id": "help",
+     "source_decisions": [
+      "U3-143",
+      "U6-006"
+     ],
+     "target": {
+      "command": "help.open",
+      "arguments": {},
+      "requires": [
+       "topic: TermOrCommandId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "importLog",
+   "cases": [
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:importLog",
+     "source_decisions": [
+      "U4-023"
+     ],
+     "target": {
+      "command": "file.log.check",
+      "arguments": {},
+      "requires": [
+       "file: FileDigestRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "index",
+   "cases": [
+    {
+     "legacy_id": "index",
+     "source_decisions": [
+      "U3-001",
+      "U5-002",
+      "U6-002"
+     ],
+     "target": {
+      "command": "command.find",
+      "arguments": {},
+      "requires": [
+       "query: Text; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "object: CanonicalObjectRef?; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "input-draft",
+   "cases": [
+    {
+     "legacy_id": "input-draft",
+     "source_decisions": [
+      "U3-055",
+      "U6-024/1",
+      "U6-024/2",
+      "U6-024/3"
+     ],
+     "target": {
+      "command": "input.destination.set",
+      "arguments": {
+       "destination": "draft"
+      },
+      "requires": [
+       "phase: PhaseId?; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "input-live",
+   "cases": [
+    {
+     "legacy_id": "input-live",
+     "source_decisions": [
+      "U3-055",
+      "U6-024/1",
+      "U6-024/2",
+      "U6-024/3"
+     ],
+     "target": {
+      "command": "input.destination.set",
+      "arguments": {
+       "destination": "live"
+      },
+      "requires": [
+       "phase: PhaseId?; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "insert-<phase>",
+   "cases": [
+    {
+     "legacy_id": "insert-cleanup",
+     "source_decisions": [
+      "U5-015"
+     ],
+     "target": {
+      "command": "macro.add",
+      "arguments": {
+       "phase": "cleanup"
+      },
+      "requires": [
+       "macro: MacroRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "insert-macro",
+     "source_decisions": [
+      "U5-015"
+     ],
+     "target": {
+      "command": "macro.add",
+      "arguments": {
+       "phase": "macro"
+      },
+      "requires": [
+       "macro: MacroRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "insert-prepare",
+     "source_decisions": [
+      "U5-015"
+     ],
+     "target": {
+      "command": "macro.add",
+      "arguments": {
+       "phase": "prepare"
+      },
+      "requires": [
+       "macro: MacroRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "inspect-<phase>",
+   "cases": [
+    {
+     "legacy_id": "inspect-actual",
+     "source_decisions": [
+      "U3-051",
+      "U6-023"
+     ],
+     "target": {
+      "command": "view.forecast.select",
+      "arguments": {
+       "phase": "actual"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "inspect-cleanup",
+     "source_decisions": [
+      "U3-051",
+      "U6-023"
+     ],
+     "target": {
+      "command": "view.forecast.select",
+      "arguments": {
+       "phase": "cleanup"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "inspect-macro",
+     "source_decisions": [
+      "U3-051",
+      "U6-023"
+     ],
+     "target": {
+      "command": "view.forecast.select",
+      "arguments": {
+       "phase": "macro"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "inspect-prepare",
+     "source_decisions": [
+      "U3-051",
+      "U6-023"
+     ],
+     "target": {
+      "command": "view.forecast.select",
+      "arguments": {
+       "phase": "prepare"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "inverse-toggle",
+   "cases": [
+    {
+     "legacy_id": "inverse-toggle",
+     "source_decisions": [
+      "U5-012"
+     ],
+     "target": {
+      "command": "twist.inverse.toggle",
+      "arguments": {},
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "inverseGrip:N",
+   "cases": [
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:inverseGrip:0",
+     "source_decisions": [
+      "U4-041"
+     ],
+     "target": {
+      "command": "operation.preview",
+      "arguments": {},
+      "legacy_parameter": {
+       "axis": 0,
+       "inverse": true
+      },
+      "requires": [
+       "draft: ResolvedDraftRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:inverseGrip:1",
+     "source_decisions": [
+      "U4-041"
+     ],
+     "target": {
+      "command": "operation.preview",
+      "arguments": {},
+      "legacy_parameter": {
+       "axis": 1,
+       "inverse": true
+      },
+      "requires": [
+       "draft: ResolvedDraftRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:inverseGrip:2",
+     "source_decisions": [
+      "U4-041"
+     ],
+     "target": {
+      "command": "operation.preview",
+      "arguments": {},
+      "legacy_parameter": {
+       "axis": 2,
+       "inverse": true
+      },
+      "requires": [
+       "draft: ResolvedDraftRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:inverseGrip:3",
+     "source_decisions": [
+      "U4-041"
+     ],
+     "target": {
+      "command": "operation.preview",
+      "arguments": {},
+      "legacy_parameter": {
+       "axis": 3,
+       "inverse": true
+      },
+      "requires": [
+       "draft: ResolvedDraftRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:inverseGrip:4",
+     "source_decisions": [
+      "U4-041"
+     ],
+     "target": {
+      "command": "operation.preview",
+      "arguments": {},
+      "legacy_parameter": {
+       "axis": 4,
+       "inverse": true
+      },
+      "requires": [
+       "draft: ResolvedDraftRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:inverseGrip:5",
+     "source_decisions": [
+      "U4-041"
+     ],
+     "target": {
+      "command": "operation.preview",
+      "arguments": {},
+      "legacy_parameter": {
+       "axis": 5,
+       "inverse": true
+      },
+      "requires": [
+       "draft: ResolvedDraftRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:inverseGrip:6",
+     "source_decisions": [
+      "U4-041"
+     ],
+     "target": {
+      "command": "operation.preview",
+      "arguments": {},
+      "legacy_parameter": {
+       "axis": 6,
+       "inverse": true
+      },
+      "requires": [
+       "draft: ResolvedDraftRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "journal-delta",
+   "cases": [
+    {
+     "legacy_id": "journal-delta",
+     "source_decisions": [
+      "U3-109",
+      "U6-035/1",
+      "U6-035/2",
+      "U6-035/3"
+     ],
+     "target": {
+      "command": "view.journal.delta",
+      "arguments": {},
+      "requires": [],
+      "invoke_requires": {
+       "action": "The latest durable action named by the current undo/redo hint; stale hints are refused."
+      }
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "key-edit",
+   "cases": [
+    {
+     "legacy_id": "key-edit",
+     "source_decisions": [
+      "U3-120",
+      "U6-011"
+     ],
+     "target": {
+      "command": "keymap.edit",
+      "arguments": {},
+      "requires": [
+       "keymap: KeymapRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "candidate: BindingEdits; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "key-edit-advanced",
+   "cases": [
+    {
+     "legacy_id": "key-edit-advanced",
+     "source_decisions": [
+      "U3-120",
+      "U6-011"
+     ],
+     "target": {
+      "command": "keymap.edit",
+      "arguments": {},
+      "requires": [
+       "keymap: KeymapRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "candidate: BindingEdits; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "keyboard",
+   "cases": [
+    {
+     "legacy_id": "keyboard",
+     "source_decisions": [
+      "U3-011",
+      "U5-062",
+      "U6-009"
+     ],
+     "target": {
+      "command": "keyboard.toggle",
+      "arguments": {},
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "keyboard-extra",
+   "cases": [
+    {
+     "legacy_id": "keyboard-extra",
+     "source_decisions": [
+      "U3-015",
+      "U6-009"
+     ],
+     "target": {
+      "command": "keyboard.disclosure.set",
+      "arguments": {},
+      "requires": [
+       "choice: DisclosureChoice; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "keymap-export",
+   "cases": [
+    {
+     "legacy_id": "keymap-export",
+     "source_decisions": [
+      "U3-126",
+      "U6-010"
+     ],
+     "target": {
+      "command": "file.keymap.export",
+      "arguments": {},
+      "requires": [
+       "keymap: KeymapRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "destination: FileRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "keymap-import",
+   "cases": [
+    {
+     "legacy_id": "keymap-import",
+     "source_decisions": [
+      "U3-127",
+      "U6-010"
+     ],
+     "target": {
+      "command": "file.keymap.check",
+      "arguments": {},
+      "requires": [
+       "file: FileDigestRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "keys-defaults",
+   "cases": [
+    {
+     "legacy_id": "keys-defaults",
+     "source_decisions": [
+      "U5-018/1",
+      "U5-018/2"
+     ],
+     "target": {
+      "command": "keymap.defaults",
+      "arguments": {},
+      "requires": [
+       "keymap: KeymapRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "keys-edit",
+   "cases": [
+    {
+     "legacy_id": "keys-edit",
+     "source_decisions": [
+      "U5-018/1",
+      "U5-018/2"
+     ],
+     "target": {
+      "command": "keymap.edit",
+      "arguments": {},
+      "requires": [
+       "keymap: KeymapRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "candidate: BindingEdits; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "keys-export",
+   "cases": [
+    {
+     "legacy_id": "keys-export",
+     "source_decisions": [
+      "U5-018/1",
+      "U5-018/2"
+     ],
+     "target": {
+      "command": "file.keymap.export",
+      "arguments": {},
+      "requires": [
+       "keymap: KeymapRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "destination: FileRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "keys-save",
+   "cases": [
+    {
+     "legacy_id": "keys-save",
+     "source_decisions": [
+      "U5-018/1",
+      "U5-018/2"
+     ],
+     "target": {
+      "command": "keymap.save",
+      "arguments": {},
+      "requires": [
+       "candidate: CheckedBindingsRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "library-toggle",
+   "cases": [
+    {
+     "legacy_id": "library-toggle",
+     "source_decisions": [
+      "U5-010"
+     ],
+     "target": {
+      "command": "macro.base.open",
+      "arguments": {},
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "local",
+   "cases": [
+    {
+     "legacy_id": "local",
+     "source_decisions": [
+      "U3-019",
+      "U5-037",
+      "U6-017/1",
+      "U6-017/2"
+     ],
+     "target": {
+      "command": "view.local",
+      "arguments": {},
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "local-center",
+   "cases": [
+    {
+     "legacy_id": "local-center",
+     "source_decisions": [
+      "U3-060",
+      "U6-017/1",
+      "U6-017/2"
+     ],
+     "target": {
+      "command": "camera.center",
+      "arguments": {},
+      "requires": [
+       "view: ViewId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "cell: CellId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "local-center-current",
+   "cases": [
+    {
+     "legacy_id": "local-center-current",
+     "source_decisions": [
+      "U3-060",
+      "U6-017/1",
+      "U6-017/2"
+     ],
+     "target": {
+      "command": "camera.center",
+      "arguments": {},
+      "requires": [
+       "view: ViewId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "cell: CellId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "local-center-grip",
+   "cases": [
+    {
+     "legacy_id": "local-center-grip",
+     "source_decisions": [
+      "U3-060",
+      "U6-017/1",
+      "U6-017/2"
+     ],
+     "target": {
+      "command": "camera.center",
+      "arguments": {},
+      "requires": [
+       "view: ViewId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "cell: CellId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "locate-current",
+   "cases": [
+    {
+     "legacy_id": "locate-current",
+     "source_decisions": [
+      "U5-064"
+     ],
+     "target": {
+      "command": "object.locate",
+      "arguments": {},
+      "requires": [
+       "object: CanonicalObjectRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "view: ViewId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "locate-inspected",
+   "cases": [
+    {
+     "legacy_id": "locate-inspected",
+     "source_decisions": [
+      "U5-065"
+     ],
+     "target": {
+      "command": "object.locate",
+      "arguments": {},
+      "requires": [
+       "object: CanonicalObjectRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "view: ViewId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "macro-candidates",
+   "cases": [
+    {
+     "legacy_id": "macro-candidates",
+     "source_decisions": [
+      "U3-090",
+      "U6-032/1",
+      "U6-032/2",
+      "U6-032/3"
+     ],
+     "target": {
+      "command": "macro.compare",
+      "arguments": {},
+      "requires": [
+       "macros: MacroRevisionRefs; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "macro-check-library",
+   "cases": [
+    {
+     "legacy_id": "macro-check-library",
+     "source_decisions": [
+      "U3-085",
+      "U6-031/1",
+      "U6-031/2",
+      "U6-031/3",
+      "U6-031/4"
+     ],
+     "target": {
+      "command": "macro.library.check",
+      "arguments": {},
+      "requires": [
+       "macros: MacroRevisionRefs; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "macro-close",
+   "cases": [
+    {
+     "legacy_id": "macro-close",
+     "source_decisions": [
+      "U3-073",
+      "U6-030/1",
+      "U6-030/2"
+     ],
+     "target": {
+      "command": "work.surface.close",
+      "arguments": {
+       "surface": "expanded_solve"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "macro-compare",
+   "cases": [
+    {
+     "legacy_id": "macro-compare",
+     "source_decisions": [
+      "U3-083",
+      "U5-021",
+      "U6-032/1",
+      "U6-032/2",
+      "U6-032/3"
+     ],
+     "target": {
+      "command": "macro.compare",
+      "arguments": {},
+      "requires": [
+       "macros: MacroRevisionRefs; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "macro-details",
+   "cases": [
+    {
+     "legacy_id": "macro-details",
+     "source_decisions": [
+      "U3-069",
+      "U6-030/1",
+      "U6-030/2"
+     ],
+     "target": {
+      "command": "macro.select",
+      "arguments": {},
+      "requires": [
+       "macro: MacroRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "macro-export",
+   "cases": [
+    {
+     "legacy_id": "macro-export",
+     "source_decisions": [
+      "U3-092",
+      "U6-031/1",
+      "U6-031/2",
+      "U6-031/3",
+      "U6-031/4"
+     ],
+     "target": {
+      "command": "file.macro.export",
+      "arguments": {},
+      "requires": [
+       "macros: MacroRevisionRefs; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "destination: FileRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "macro-filter",
+   "cases": [
+    {
+     "legacy_id": "macro-filter",
+     "source_decisions": [
+      "U3-081",
+      "U6-031/1",
+      "U6-031/2",
+      "U6-031/3",
+      "U6-031/4"
+     ],
+     "target": {
+      "command": "macro.filter",
+      "arguments": {},
+      "requires": [
+       "query: MacroQuery; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "macro-geometry",
+   "cases": [
+    {
+     "legacy_id": "macro-geometry",
+     "source_decisions": [
+      "U3-087",
+      "U6-032/1",
+      "U6-032/2",
+      "U6-032/3"
+     ],
+     "target": {
+      "command": "macro.reference.check",
+      "arguments": {},
+      "requires": [
+       "macro: MacroRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "transform: ExactTransformRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "macro-import",
+   "cases": [
+    {
+     "legacy_id": "macro-import",
+     "source_decisions": [
+      "U3-094",
+      "U6-031/1",
+      "U6-031/2",
+      "U6-031/3",
+      "U6-031/4"
+     ],
+     "target": {
+      "command": "file.macro.check",
+      "arguments": {},
+      "requires": [
+       "file: FileDigestRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "macro-insert",
+   "cases": [
+    {
+     "legacy_id": "macro-insert",
+     "source_decisions": [
+      "U3-059",
+      "U6-030/1",
+      "U6-030/2"
+     ],
+     "target": {
+      "command": "macro.add",
+      "arguments": {},
+      "requires": [
+       "macro: MacroRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "phase: PhaseId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "macro-inverse",
+   "cases": [
+    {
+     "legacy_id": "macro-inverse",
+     "source_decisions": [
+      "U3-077",
+      "U6-032/1",
+      "U6-032/2",
+      "U6-032/3"
+     ],
+     "target": {
+      "command": "macro.variant.create",
+      "arguments": {},
+      "requires": [
+       "macro: MacroRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "transform: ExactTransformRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "macro-label",
+   "cases": [
+    {
+     "legacy_id": "macro-label",
+     "source_decisions": [
+      "U3-082",
+      "U6-031/1",
+      "U6-031/2",
+      "U6-031/3",
+      "U6-031/4"
+     ],
+     "target": {
+      "command": "macro.metadata.set",
+      "arguments": {},
+      "requires": [
+       "macro: MacroRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "metadata: MacroMetadata; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "macro-new",
+   "cases": [
+    {
+     "legacy_id": "macro-new",
+     "source_decisions": [
+      "U3-067",
+      "U5-019",
+      "U6-030/1",
+      "U6-030/2",
+      "U6-030/3"
+     ],
+     "target": {
+      "command": "macro.save",
+      "arguments": {},
+      "requires": [
+       "word: WordRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "name: Text; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "macro-notes",
+   "cases": [
+    {
+     "legacy_id": "macro-notes",
+     "source_decisions": [
+      "U5-020"
+     ],
+     "target": {
+      "command": "macro.metadata.set",
+      "arguments": {},
+      "requires": [
+       "macro: MacroRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "metadata: MacroMetadata; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "macro-pin",
+   "cases": [
+    {
+     "legacy_id": "macro-pin",
+     "source_decisions": [
+      "U3-082",
+      "U6-031/1",
+      "U6-031/2",
+      "U6-031/3",
+      "U6-031/4"
+     ],
+     "target": {
+      "command": "macro.metadata.set",
+      "arguments": {},
+      "requires": [
+       "macro: MacroRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "metadata: MacroMetadata; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "macro-replace",
+   "cases": [
+    {
+     "legacy_id": "macro-replace",
+     "source_decisions": [
+      "U3-059",
+      "U6-030/1",
+      "U6-030/2"
+     ],
+     "target": {
+      "command": "macro.replace",
+      "arguments": {},
+      "requires": [
+       "macro: MacroRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "phase: PhaseId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "macro-run-compare",
+   "cases": [
+    {
+     "legacy_id": "macro-run-compare",
+     "source_decisions": [
+      "U5-021"
+     ],
+     "target": {
+      "command": "macro.compare",
+      "arguments": {},
+      "requires": [
+       "macros: MacroRevisionRefs; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "macro-save",
+   "cases": [
+    {
+     "legacy_id": "macro-save",
+     "source_decisions": [
+      "U5-019"
+     ],
+     "target": {
+      "command": "macro.save",
+      "arguments": {},
+      "requires": [
+       "word: WordRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "name: Text; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "macro-save-notes",
+   "cases": [
+    {
+     "legacy_id": "macro-save-notes",
+     "source_decisions": [
+      "U5-020"
+     ],
+     "target": {
+      "command": "macro.metadata.set",
+      "arguments": {},
+      "requires": [
+       "macro: MacroRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "metadata: MacroMetadata; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "macro-search",
+   "cases": [
+    {
+     "legacy_id": "macro-search",
+     "source_decisions": [
+      "U3-005",
+      "U5-010",
+      "U6-030/1",
+      "U6-030/2"
+     ],
+     "target": {
+      "command": "macro.base.open",
+      "arguments": {},
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "next-activate",
+   "cases": [
+    {
+     "legacy_id": "next-activate",
+     "source_decisions": [
+      "U3-025",
+      "U5-028",
+      "U6-014"
+     ],
+     "target": {
+      "command": "target.next.activate",
+      "arguments": {},
+      "requires": [
+       "bookmark: BookmarkRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "next-clear",
+   "cases": [
+    {
+     "legacy_id": "next-clear",
+     "source_decisions": [
+      "U3-024",
+      "U5-027",
+      "U6-014"
+     ],
+     "target": {
+      "command": "target.next.clear",
+      "arguments": {},
+      "requires": [
+       "bookmark: BookmarkRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "next-locate",
+   "cases": [
+    {
+     "legacy_id": "next-locate",
+     "source_decisions": [
+      "U3-026",
+      "U5-025",
+      "U6-014"
+     ],
+     "target": {
+      "command": "object.locate",
+      "arguments": {},
+      "requires": [
+       "object: CanonicalObjectRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "view: ViewId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "next-menu",
+   "cases": [
+    {
+     "legacy_id": "next-menu",
+     "source_decisions": [
+      "U3-028",
+      "U5-030",
+      "U6-014"
+     ],
+     "target": {
+      "command": "object.actions",
+      "arguments": {},
+      "requires": [
+       "object: CanonicalObjectRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "next-pin",
+   "cases": [
+    {
+     "legacy_id": "next-pin",
+     "source_decisions": [
+      "U3-023",
+      "U5-026",
+      "U6-014"
+     ],
+     "target": {
+      "command": "target.next.set",
+      "arguments": {},
+      "requires": [
+       "piece: PieceId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "destination: PositionId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "next-replace",
+   "cases": [
+    {
+     "legacy_id": "next-replace",
+     "source_decisions": [
+      "U5-026"
+     ],
+     "target": {
+      "command": "target.next.set",
+      "arguments": {},
+      "requires": [
+       "piece: PieceId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "destination: PositionId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "next-tab",
+   "cases": [
+    {
+     "legacy_id": "next-tab",
+     "source_decisions": [
+      "U5-022"
+     ],
+     "target": {
+      "command": "work.surface.show",
+      "arguments": {
+       "surface": "next"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "operation-focus",
+   "cases": [
+    {
+     "legacy_id": "operation-focus",
+     "source_decisions": [
+      "U3-007",
+      "U6-025/1",
+      "U6-025/2",
+      "U6-025/3",
+      "U6-025/4"
+     ],
+     "target": {
+      "command": "solve.open",
+      "arguments": {},
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "operation-hide",
+   "cases": [
+    {
+     "legacy_id": "operation-hide",
+     "source_decisions": [
+      "U3-073",
+      "U6-025/1",
+      "U6-025/2",
+      "U6-025/3",
+      "U6-025/4"
+     ],
+     "target": {
+      "command": "work.surface.close",
+      "arguments": {
+       "surface": "expanded_solve"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "operation-new",
+   "cases": [
+    {
+     "legacy_id": "operation-new",
+     "source_decisions": [
+      "U3-070",
+      "U6-025/1",
+      "U6-025/2",
+      "U6-025/3",
+      "U6-025/4"
+     ],
+     "target": {
+      "command": "operation.new",
+      "arguments": {},
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "operation-reuse",
+   "cases": [
+    {
+     "legacy_id": "operation-reuse",
+     "source_decisions": [
+      "U3-071",
+      "U6-025/1",
+      "U6-025/2",
+      "U6-025/3",
+      "U6-025/4"
+     ],
+     "target": {
+      "command": "operation.reuse",
+      "arguments": {},
+      "requires": [
+       "draft: ResolvedDraftRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "orbit",
+   "cases": [
+    {
+     "legacy_id": "orbit",
+     "source_decisions": [
+      "U3-022",
+      "U5-004",
+      "U6-003"
+     ],
+     "target": {
+      "command": "orbit.switch",
+      "arguments": {},
+      "requires": [
+       "orbit: OrbitId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "orbit-activate",
+   "cases": [
+    {
+     "legacy_id": "orbit-activate",
+     "source_decisions": [
+      "U5-004"
+     ],
+     "target": {
+      "command": "orbit.switch",
+      "arguments": {},
+      "requires": [
+       "orbit: OrbitId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "orbit-following",
+   "cases": [
+    {
+     "legacy_id": "orbit-following",
+     "source_decisions": [
+      "U3-110",
+      "U6-035/1",
+      "U6-035/2",
+      "U6-035/3"
+     ],
+     "target": {
+      "command": "orbit.switch",
+      "arguments": {},
+      "requires": [
+       "orbit: OrbitId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "phase-<phase>",
+   "cases": [
+    {
+     "legacy_id": "phase-cleanup",
+     "source_decisions": [
+      "U3-054",
+      "U6-024/1",
+      "U6-024/2",
+      "U6-024/3"
+     ],
+     "target": {
+      "command": "operation.phase.select",
+      "arguments": {
+       "phase": "cleanup"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "phase-macro",
+     "source_decisions": [
+      "U3-054",
+      "U6-024/1",
+      "U6-024/2",
+      "U6-024/3"
+     ],
+     "target": {
+      "command": "operation.phase.select",
+      "arguments": {
+       "phase": "macro"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "phase-prepare",
+     "source_decisions": [
+      "U3-054",
+      "U6-024/1",
+      "U6-024/2",
+      "U6-024/3"
+     ],
+     "target": {
+      "command": "operation.phase.select",
+      "arguments": {
+       "phase": "prepare"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "phase-input",
+   "cases": [
+    {
+     "legacy_id": "phase-input",
+     "source_decisions": [
+      "U3-058",
+      "U5-033",
+      "U6-024/1",
+      "U6-024/2",
+      "U6-024/3"
+     ],
+     "target": {
+      "command": "operation.phase.edit",
+      "arguments": {},
+      "requires": [
+       "phase: PhaseId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "word: WordRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "phase-save",
+   "cases": [
+    {
+     "legacy_id": "phase-save",
+     "source_decisions": [
+      "U5-033"
+     ],
+     "target": {
+      "command": "operation.phase.edit",
+      "arguments": {},
+      "requires": [
+       "phase: PhaseId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "word: WordRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "prefix-off",
+   "cases": [
+    {
+     "legacy_id": "prefix-off",
+     "source_decisions": [
+      "U3-064",
+      "U6-024/1",
+      "U6-024/2",
+      "U6-024/3"
+     ],
+     "target": {
+      "command": "protection.policy.set",
+      "arguments": {
+       "policy": "net"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "prefix-on",
+   "cases": [
+    {
+     "legacy_id": "prefix-on",
+     "source_decisions": [
+      "U3-064",
+      "U6-024/1",
+      "U6-024/2",
+      "U6-024/3"
+     ],
+     "target": {
+      "command": "protection.policy.set",
+      "arguments": {
+       "policy": "strict"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "preview",
+   "cases": [
+    {
+     "legacy_id": "preview",
+     "source_decisions": [
+      "U3-063",
+      "U5-042",
+      "U6-025/1",
+      "U6-025/2",
+      "U6-025/3",
+      "U6-025/4"
+     ],
+     "target": {
+      "command": "operation.preview",
+      "arguments": {},
+      "requires": [
+       "draft: ResolvedDraftRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "protect",
+   "cases": [
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:protect",
+     "source_decisions": [
+      "U4-034"
+     ],
+     "target": {
+      "command": "protection.orbit.set",
+      "arguments": {},
+      "requires": [
+       "orbits: OrbitIds; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "protection",
+   "cases": [
+    {
+     "legacy_id": "protection",
+     "source_decisions": [
+      "U3-045",
+      "U5-058",
+      "U6-020/1",
+      "U6-020/2"
+     ],
+     "target": {
+      "command": "protection.orbit.set",
+      "arguments": {},
+      "requires": [
+       "orbits: OrbitIds; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "protection-clear-positions",
+   "cases": [
+    {
+     "legacy_id": "protection-clear-positions",
+     "source_decisions": [
+      "U5-059"
+     ],
+     "target": {
+      "command": "protection.position.release",
+      "arguments": {
+       "mode": "both"
+      },
+      "requires": [
+       "position: PositionId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "protection-save",
+   "cases": [
+    {
+     "legacy_id": "protection-save",
+     "source_decisions": [
+      "U5-058"
+     ],
+     "target": {
+      "command": "protection.orbit.set",
+      "arguments": {},
+      "requires": [
+       "orbits: OrbitIds; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "puzzle",
+   "cases": [
+    {
+     "legacy_id": "puzzle",
+     "source_decisions": [
+      "U3-129",
+      "U6-034/1",
+      "U6-034/2",
+      "U6-034/3",
+      "U6-034/4",
+      "U6-034/5"
+     ],
+     "target": {
+      "command": "work.surface.show",
+      "arguments": {
+       "surface": "actual_puzzle"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "puzzle-layout",
+   "cases": [
+    {
+     "legacy_id": "puzzle-layout",
+     "source_decisions": [
+      "U5-041"
+     ],
+     "target": {
+      "command": "work.layout.set",
+      "arguments": {},
+      "requires": [
+       "layout: LayoutRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "redo",
+   "cases": [
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:redo",
+     "source_decisions": [
+      "U4-028"
+     ],
+     "target": {
+      "command": "session.redo",
+      "arguments": {},
+      "requires": [],
+      "invoke_requires": {
+       "hint": "Fresh ActionHint from kernel.undo_hint(session, direction=redo) under LI.9 and LI.26, binding both current order and the eligible target for that direction; none supplies no invocable target, and a changed order or target is stale.",
+       "token": "Fresh shell UserActionToken for this command and resolved arguments; never imported."
+      }
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "redo",
+     "source_decisions": [
+      "U3-074",
+      "U5-072",
+      "U6-025/1",
+      "U6-025/2",
+      "U6-025/3",
+      "U6-025/4"
+     ],
+     "target": {
+      "command": "session.redo",
+      "arguments": {},
+      "requires": [],
+      "invoke_requires": {
+       "hint": "Fresh ActionHint from kernel.undo_hint(session, direction=redo) under LI.9 and LI.26, binding both current order and the eligible target for that direction; none supplies no invocable target, and a changed order or target is stale.",
+       "token": "Fresh shell UserActionToken for this command and resolved arguments; never imported."
+      }
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "reference",
+   "cases": [
+    {
+     "legacy_id": "reference",
+     "source_decisions": [
+      "U3-075",
+      "U5-029/1",
+      "U5-029/2",
+      "U6-027"
+     ],
+     "target": {
+      "command": "reference.set",
+      "arguments": {},
+      "requires": [
+       "word: WordRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "reference-save",
+   "cases": [
+    {
+     "legacy_id": "reference-save",
+     "source_decisions": [
+      "U5-029/1",
+      "U5-029/2"
+     ],
+     "target": {
+      "command": "reference.set",
+      "arguments": {},
+      "requires": [
+       "word: WordRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "reference-transform",
+   "cases": [
+    {
+     "legacy_id": "reference-transform",
+     "source_decisions": [
+      "U3-077",
+      "U5-029/1",
+      "U5-029/2",
+      "U5-031",
+      "U6-027"
+     ],
+     "target": {
+      "command": "macro.variant.create",
+      "arguments": {},
+      "requires": [
+       "macro: MacroRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "transform: ExactTransformRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "reset",
+   "cases": [
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:reset",
+     "source_decisions": [
+      "U4-035"
+     ],
+     "target": {
+      "command": "session.reset",
+      "arguments": {},
+      "requires": [
+       "session: SessionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ],
+      "invoke_requires": {
+       "token": "Fresh shell UserActionToken for this command and resolved arguments; never imported."
+      }
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "reset",
+     "source_decisions": [
+      "U3-080/1",
+      "U6-039/1",
+      "U6-039/2",
+      "U6-039/3",
+      "U6-039/4",
+      "U6-039/5",
+      "U6-039/6",
+      "U6-039/7"
+     ],
+     "target": {
+      "command": "session.reset",
+      "arguments": {},
+      "requires": [
+       "session: SessionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ],
+      "invoke_requires": {
+       "token": "Fresh shell UserActionToken for this command and resolved arguments; never imported."
+      }
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "reset-puzzle",
+   "cases": [
+    {
+     "legacy_id": "reset-puzzle",
+     "source_decisions": [
+      "U5-075"
+     ],
+     "target": {
+      "command": "session.reset",
+      "arguments": {},
+      "requires": [
+       "session: SessionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ],
+      "invoke_requires": {
+       "token": "Fresh shell UserActionToken for this command and resolved arguments; never imported."
+      }
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "reset-view",
+   "cases": [
+    {
+     "legacy_id": "reset-view",
+     "source_decisions": [
+      "U3-142",
+      "U6-039/1",
+      "U6-039/2",
+      "U6-039/3",
+      "U6-039/4",
+      "U6-039/5",
+      "U6-039/6",
+      "U6-039/7"
+     ],
+     "target": {
+      "command": "view.reset",
+      "arguments": {},
+      "requires": [
+       "view: ViewId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "reset-workspace",
+   "cases": [
+    {
+     "legacy_id": "reset-workspace",
+     "source_decisions": [
+      "U3-080/2",
+      "U6-039/1",
+      "U6-039/2",
+      "U6-039/3",
+      "U6-039/4",
+      "U6-039/5",
+      "U6-039/6",
+      "U6-039/7"
+     ],
+     "target": {
+      "command": "workspace.reset",
+      "arguments": {},
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "residual-details",
+   "cases": [
+    {
+     "legacy_id": "residual-details",
+     "source_decisions": [
+      "U3-107",
+      "U6-035/1",
+      "U6-035/2",
+      "U6-035/3"
+     ],
+     "target": {
+      "command": "view.residuals",
+      "arguments": {},
+      "requires": [
+       "orbit: OrbitId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "restore",
+   "cases": [
+    {
+     "legacy_id": "restore",
+     "source_decisions": [
+      "U3-078",
+      "U5-074",
+      "U6-034/1",
+      "U6-034/2",
+      "U6-034/3",
+      "U6-034/4",
+      "U6-034/5"
+     ],
+     "target": {
+      "command": "session.checkpoint.restore",
+      "arguments": {},
+      "requires": [
+       "checkpoint: CheckpointRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ],
+      "invoke_requires": {
+       "token": "Fresh shell UserActionToken for this command and resolved arguments; never imported."
+      }
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "review",
+   "cases": [
+    {
+     "legacy_id": "review",
+     "source_decisions": [
+      "U3-062",
+      "U5-040",
+      "U6-025/1",
+      "U6-025/2",
+      "U6-025/3",
+      "U6-025/4"
+     ],
+     "target": {
+      "command": "operation.check",
+      "arguments": {},
+      "requires": [
+       "draft: ResolvedDraftRef|WordRef; resolve the captured draft or pinned word from legacy data or explicit solver choice; missing data stays unresolved.",
+       "fields: Set<PrefixField>; explicitly bind the requested fields under CM.15 and JI.11 in the checked binding or solver invocation; no implicit default, missing data stays unresolved.",
+       "max_chunk: PositiveNat<letters>; explicitly bind a positive chunk limit under JI.14 in the checked binding or solver invocation; no implicit default, missing data stays unresolved."
+      ],
+      "invoke_requires": {
+       "snapshot": "Fresh StateRef acquired for this invocation through kernel.snapshot.open(current) under LI.11; pin that one immutable input for operation.check and release it after use. Never import a snapshot handle or substitute a later state."
+      }
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "review-details",
+   "cases": [
+    {
+     "legacy_id": "review-details",
+     "source_decisions": [
+      "U3-099",
+      "U6-025/1",
+      "U6-025/2",
+      "U6-025/3",
+      "U6-025/4",
+      "U6-026"
+     ],
+     "target": {
+      "command": "view.findings",
+      "arguments": {},
+      "requires": [
+       "result: ResultRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "review-locate",
+   "cases": [
+    {
+     "legacy_id": "review-locate",
+     "source_decisions": [
+      "U3-100",
+      "U6-025/1",
+      "U6-025/2",
+      "U6-025/3",
+      "U6-025/4"
+     ],
+     "target": {
+      "command": "object.locate",
+      "arguments": {},
+      "requires": [
+       "object: CanonicalObjectRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "view: ViewId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "review-reason-N",
+   "cases": [
+    {
+     "legacy_id": "review-reason-1",
+     "source_decisions": [
+      "U3-108",
+      "U6-026"
+     ],
+     "target": {
+      "command": "view.reason",
+      "arguments": {},
+      "legacy_parameter": 1,
+      "requires": [
+       "result: ResultRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "reason: ReasonId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "review-reason-2",
+     "source_decisions": [
+      "U3-108",
+      "U6-026"
+     ],
+     "target": {
+      "command": "view.reason",
+      "arguments": {},
+      "legacy_parameter": 2,
+      "requires": [
+       "result: ResultRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "reason: ReasonId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "review-reason-3",
+     "source_decisions": [
+      "U3-108",
+      "U6-026"
+     ],
+     "target": {
+      "command": "view.reason",
+      "arguments": {},
+      "legacy_parameter": 3,
+      "requires": [
+       "result: ResultRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "reason: ReasonId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "roles",
+   "cases": [
+    {
+     "legacy_id": "roles",
+     "source_decisions": [
+      "U3-031",
+      "U5-035",
+      "U6-005"
+     ],
+     "target": {
+      "command": "buffer.assign",
+      "arguments": {},
+      "requires": [
+       "role: A|B; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "position: PositionId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "roles-apply",
+   "cases": [
+    {
+     "legacy_id": "roles-apply",
+     "source_decisions": [
+      "U5-035"
+     ],
+     "target": {
+      "command": "buffer.assign",
+      "arguments": {},
+      "requires": [
+       "role: A|B; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "position: PositionId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "saveLog",
+   "cases": [
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:saveLog",
+     "source_decisions": [
+      "U4-021"
+     ],
+     "target": {
+      "command": "file.log.export",
+      "arguments": {},
+      "requires": [
+       "history: JournalRangeRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "format: LogFormat; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "destination: FileRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "scramble",
+   "cases": [
+    {
+     "legacy_id": "scramble",
+     "source_decisions": [
+      "U3-122",
+      "U6-039/1",
+      "U6-039/2",
+      "U6-039/3",
+      "U6-039/4",
+      "U6-039/5",
+      "U6-039/6",
+      "U6-039/7"
+     ],
+     "target": {
+      "command": "session.scramble",
+      "arguments": {},
+      "requires": [
+       "seed: Seed; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "length: Nat; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "phase: PhaseId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "session",
+   "cases": [
+    {
+     "legacy_id": "session",
+     "source_decisions": [
+      "U3-111",
+      "U5-069",
+      "U6-039/1",
+      "U6-039/2",
+      "U6-039/3",
+      "U6-039/4",
+      "U6-039/5",
+      "U6-039/6",
+      "U6-039/7"
+     ],
+     "target": {
+      "command": "session.report",
+      "arguments": {},
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "session-export-log",
+   "cases": [
+    {
+     "legacy_id": "session-export-log",
+     "source_decisions": [
+      "U3-116",
+      "U6-039/1",
+      "U6-039/2",
+      "U6-039/3",
+      "U6-039/4",
+      "U6-039/5",
+      "U6-039/6",
+      "U6-039/7"
+     ],
+     "target": {
+      "command": "file.log.export",
+      "arguments": {},
+      "requires": [
+       "history: JournalRangeRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "format: LogFormat; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "destination: FileRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "session-import-log",
+   "cases": [
+    {
+     "legacy_id": "session-import-log",
+     "source_decisions": [
+      "U3-117",
+      "U6-039/1",
+      "U6-039/2",
+      "U6-039/3",
+      "U6-039/4",
+      "U6-039/5",
+      "U6-039/6",
+      "U6-039/7"
+     ],
+     "target": {
+      "command": "file.log.check",
+      "arguments": {},
+      "requires": [
+       "file: FileDigestRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "session-new",
+   "cases": [
+    {
+     "legacy_id": "session-new",
+     "source_decisions": [
+      "U3-113",
+      "U6-039/1",
+      "U6-039/2",
+      "U6-039/3",
+      "U6-039/4",
+      "U6-039/5",
+      "U6-039/6",
+      "U6-039/7"
+     ],
+     "target": {
+      "command": "session.new",
+      "arguments": {},
+      "requires": [
+       "session: SessionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ],
+      "invoke_requires": {
+       "token": "Fresh shell UserActionToken for this command and resolved arguments; never imported."
+      }
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "session-report",
+   "cases": [
+    {
+     "legacy_id": "session-report",
+     "source_decisions": [
+      "U3-111",
+      "U6-039/1",
+      "U6-039/2",
+      "U6-039/3",
+      "U6-039/4",
+      "U6-039/5",
+      "U6-039/6",
+      "U6-039/7"
+     ],
+     "target": {
+      "command": "session.report",
+      "arguments": {},
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "session-resume",
+   "cases": [
+    {
+     "legacy_id": "session-resume",
+     "source_decisions": [
+      "U3-112",
+      "U6-039/1",
+      "U6-039/2",
+      "U6-039/3",
+      "U6-039/4",
+      "U6-039/5",
+      "U6-039/6",
+      "U6-039/7"
+     ],
+     "target": {
+      "command": "session.resume",
+      "arguments": {},
+      "requires": [
+       "session: SessionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "session-save-log",
+   "cases": [
+    {
+     "legacy_id": "session-save-log",
+     "source_decisions": [
+      "U3-115",
+      "U6-039/1",
+      "U6-039/2",
+      "U6-039/3",
+      "U6-039/4",
+      "U6-039/5",
+      "U6-039/6",
+      "U6-039/7"
+     ],
+     "target": {
+      "command": "file.log.export",
+      "arguments": {},
+      "requires": [
+       "history: JournalRangeRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "format: LogFormat; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "destination: FileRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "session-summary",
+   "cases": [
+    {
+     "legacy_id": "session-summary",
+     "source_decisions": [
+      "U3-121",
+      "U6-039/1",
+      "U6-039/2",
+      "U6-039/3",
+      "U6-039/4",
+      "U6-039/5",
+      "U6-039/6",
+      "U6-039/7"
+     ],
+     "target": {
+      "command": "session.completion",
+      "arguments": {},
+      "requires": [
+       "completion: CompletionRecordRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "session-timer-pause",
+   "cases": [
+    {
+     "legacy_id": "session-timer-pause",
+     "source_decisions": [
+      "U3-114",
+      "U6-039/1",
+      "U6-039/2",
+      "U6-039/3",
+      "U6-039/4",
+      "U6-039/5",
+      "U6-039/6",
+      "U6-039/7"
+     ],
+     "target": {
+      "command": "session.timer.stop",
+      "arguments": {},
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "session-timer-start",
+   "cases": [
+    {
+     "legacy_id": "session-timer-start",
+     "source_decisions": [
+      "U3-114",
+      "U6-039/1",
+      "U6-039/2",
+      "U6-039/3",
+      "U6-039/4",
+      "U6-039/5",
+      "U6-039/6",
+      "U6-039/7"
+     ],
+     "target": {
+      "command": "session.timer.start",
+      "arguments": {},
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "set-current",
+   "cases": [
+    {
+     "legacy_id": "set-current",
+     "source_decisions": [
+      "U3-018",
+      "U6-005"
+     ],
+     "target": {
+      "command": "target.current.set",
+      "arguments": {},
+      "requires": [
+       "piece: PieceId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "destination: PositionId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "sheet-save",
+   "cases": [
+    {
+     "legacy_id": "sheet-save",
+     "source_decisions": [
+      "U5-056"
+     ],
+     "target": {
+      "command": "worksheet.save",
+      "arguments": {},
+      "requires": [
+       "draft: ResolvedDraftRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "name: Text; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "sheet-use",
+   "cases": [
+    {
+     "legacy_id": "sheet-use",
+     "source_decisions": [
+      "U5-057"
+     ],
+     "target": {
+      "command": "worksheet.load",
+      "arguments": {},
+      "requires": [
+       "worksheet: WorksheetRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "solve-actions",
+   "cases": [
+    {
+     "legacy_id": "solve-actions",
+     "source_decisions": [
+      "U3-049",
+      "U6-004"
+     ],
+     "target": {
+      "command": "object.actions",
+      "arguments": {},
+      "requires": [
+       "object: CanonicalObjectRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "solve-locate-<role>",
+   "cases": [
+    {
+     "legacy_id": "solve-locate-a",
+     "source_decisions": [
+      "U3-036",
+      "U6-005"
+     ],
+     "target": {
+      "command": "object.inspect",
+      "arguments": {},
+      "legacy_parameter": "a",
+      "requires": [
+       "object: CanonicalObjectRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "solve-locate-b",
+     "source_decisions": [
+      "U3-037",
+      "U6-005"
+     ],
+     "target": {
+      "command": "object.inspect",
+      "arguments": {},
+      "legacy_parameter": "b",
+      "requires": [
+       "object: CanonicalObjectRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "solve-locate-target",
+     "source_decisions": [
+      "U3-038",
+      "U6-005"
+     ],
+     "target": {
+      "command": "object.inspect",
+      "arguments": {},
+      "legacy_parameter": "target",
+      "requires": [
+       "object: CanonicalObjectRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "solve-macros",
+   "cases": [
+    {
+     "legacy_id": "solve-macros",
+     "source_decisions": [
+      "U3-084",
+      "U6-029"
+     ],
+     "target": {
+      "command": "work.surface.show",
+      "arguments": {
+       "surface": "macros"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "solve-prepare",
+   "cases": [
+    {
+     "legacy_id": "solve-prepare",
+     "source_decisions": [
+      "U3-084",
+      "U6-029"
+     ],
+     "target": {
+      "command": "work.surface.show",
+      "arguments": {
+       "surface": "prepare"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "solve-protection",
+   "cases": [
+    {
+     "legacy_id": "solve-protection",
+     "source_decisions": [
+      "U3-084",
+      "U6-029"
+     ],
+     "target": {
+      "command": "work.surface.show",
+      "arguments": {
+       "surface": "protection"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "stop-experiment",
+   "cases": [
+    {
+     "legacy_id": "stop-experiment",
+     "source_decisions": [
+      "U5-077"
+     ],
+     "target": {
+      "command": "app.exit",
+      "arguments": {},
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "suggest",
+   "cases": [
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:suggest",
+     "source_decisions": [
+      "U4-038/2"
+     ],
+     "target": null,
+     "reason": "Signed DELETE U4-038/2 and U1-063: the insertion planner selects a solving macro; no command."
+    }
+   ]
+  },
+  {
+   "pattern": "target-capture",
+   "cases": [
+    {
+     "legacy_id": "target-capture",
+     "source_decisions": [
+      "U3-033",
+      "U6-005"
+     ],
+     "target": {
+      "command": "target.frame.set",
+      "arguments": {},
+      "requires": [
+       "position: PositionId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "frame: ExactFrameRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "target-home",
+   "cases": [
+    {
+     "legacy_id": "target-home",
+     "source_decisions": [
+      "U3-032",
+      "U6-005"
+     ],
+     "target": {
+      "command": "target.frame.set",
+      "arguments": {},
+      "requires": [
+       "position: PositionId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "frame: ExactFrameRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "toggleTools",
+   "cases": [
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:toggleTools",
+     "source_decisions": [
+      "U4-004"
+     ],
+     "target": {
+      "command": "work.surface.show",
+      "arguments": {},
+      "requires": [
+       "surface: SurfaceId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "undo",
+   "cases": [
+    {
+     "legacy_id": "NativeWorkbench.KeyAction:undo",
+     "source_decisions": [
+      "U4-027"
+     ],
+     "target": {
+      "command": "session.undo",
+      "arguments": {},
+      "requires": [],
+      "invoke_requires": {
+       "hint": "Fresh ActionHint from kernel.undo_hint(session, direction=undo) under LI.9 and LI.26, binding both current order and the eligible target for that direction; none supplies no invocable target, and a changed order or target is stale.",
+       "token": "Fresh shell UserActionToken for this command and resolved arguments; never imported."
+      }
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "undo",
+     "source_decisions": [
+      "U3-072",
+      "U5-071",
+      "U6-025/1",
+      "U6-025/2",
+      "U6-025/3",
+      "U6-025/4"
+     ],
+     "target": {
+      "command": "session.undo",
+      "arguments": {},
+      "requires": [],
+      "invoke_requires": {
+       "hint": "Fresh ActionHint from kernel.undo_hint(session, direction=undo) under LI.9 and LI.26, binding both current order and the eligible target for that direction; none supplies no invocable target, and a changed order or target is stale.",
+       "token": "Fresh shell UserActionToken for this command and resolved arguments; never imported."
+      }
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "view-down",
+   "cases": [
+    {
+     "legacy_id": "global-down",
+     "source_decisions": [
+      "U3-138",
+      "U6-017/1",
+      "U6-017/2"
+     ],
+     "target": {
+      "command": "camera.rotate",
+      "arguments": {
+       "view": "global"
+      },
+      "legacy_parameter": "down",
+      "requires": [
+       "rotation: DisplayRotation; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "local-down",
+     "source_decisions": [
+      "U3-135",
+      "U6-017/1",
+      "U6-017/2"
+     ],
+     "target": {
+      "command": "camera.rotate",
+      "arguments": {
+       "view": "local"
+      },
+      "legacy_parameter": "down",
+      "requires": [
+       "rotation: DisplayRotation; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "view-left",
+   "cases": [
+    {
+     "legacy_id": "global-left",
+     "source_decisions": [
+      "U3-138",
+      "U6-017/1",
+      "U6-017/2"
+     ],
+     "target": {
+      "command": "camera.rotate",
+      "arguments": {
+       "view": "global"
+      },
+      "legacy_parameter": "left",
+      "requires": [
+       "rotation: DisplayRotation; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "local-left",
+     "source_decisions": [
+      "U3-135",
+      "U6-017/1",
+      "U6-017/2"
+     ],
+     "target": {
+      "command": "camera.rotate",
+      "arguments": {
+       "view": "local"
+      },
+      "legacy_parameter": "left",
+      "requires": [
+       "rotation: DisplayRotation; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "view-reset",
+   "cases": [
+    {
+     "legacy_id": "global-reset",
+     "source_decisions": [
+      "U3-137",
+      "U6-017/1",
+      "U6-017/2"
+     ],
+     "target": {
+      "command": "view.reset",
+      "arguments": {
+       "view": "global"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "local-reset",
+     "source_decisions": [
+      "U3-134",
+      "U6-017/1",
+      "U6-017/2"
+     ],
+     "target": {
+      "command": "view.reset",
+      "arguments": {
+       "view": "local"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "view-right",
+   "cases": [
+    {
+     "legacy_id": "global-right",
+     "source_decisions": [
+      "U3-138",
+      "U6-017/1",
+      "U6-017/2"
+     ],
+     "target": {
+      "command": "camera.rotate",
+      "arguments": {
+       "view": "global"
+      },
+      "legacy_parameter": "right",
+      "requires": [
+       "rotation: DisplayRotation; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "local-right",
+     "source_decisions": [
+      "U3-135",
+      "U6-017/1",
+      "U6-017/2"
+     ],
+     "target": {
+      "command": "camera.rotate",
+      "arguments": {
+       "view": "local"
+      },
+      "legacy_parameter": "right",
+      "requires": [
+       "rotation: DisplayRotation; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "view-up",
+   "cases": [
+    {
+     "legacy_id": "global-up",
+     "source_decisions": [
+      "U3-138",
+      "U6-017/1",
+      "U6-017/2"
+     ],
+     "target": {
+      "command": "camera.rotate",
+      "arguments": {
+       "view": "global"
+      },
+      "legacy_parameter": "up",
+      "requires": [
+       "rotation: DisplayRotation; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "local-up",
+     "source_decisions": [
+      "U3-135",
+      "U6-017/1",
+      "U6-017/2"
+     ],
+     "target": {
+      "command": "camera.rotate",
+      "arguments": {
+       "view": "local"
+      },
+      "legacy_parameter": "up",
+      "requires": [
+       "rotation: DisplayRotation; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "view-zoom-in",
+   "cases": [
+    {
+     "legacy_id": "global-zoom-in",
+     "source_decisions": [
+      "U3-139",
+      "U6-017/1",
+      "U6-017/2"
+     ],
+     "target": {
+      "command": "camera.zoom",
+      "arguments": {
+       "view": "global"
+      },
+      "legacy_parameter": "in",
+      "requires": [
+       "scale: DisplayScale; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "local-zoom-in",
+     "source_decisions": [
+      "U3-136",
+      "U6-017/1",
+      "U6-017/2"
+     ],
+     "target": {
+      "command": "camera.zoom",
+      "arguments": {
+       "view": "local"
+      },
+      "legacy_parameter": "in",
+      "requires": [
+       "scale: DisplayScale; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "view-zoom-out",
+   "cases": [
+    {
+     "legacy_id": "global-zoom-out",
+     "source_decisions": [
+      "U3-139",
+      "U6-017/1",
+      "U6-017/2"
+     ],
+     "target": {
+      "command": "camera.zoom",
+      "arguments": {
+       "view": "global"
+      },
+      "legacy_parameter": "out",
+      "requires": [
+       "scale: DisplayScale; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    },
+    {
+     "legacy_id": "local-zoom-out",
+     "source_decisions": [
+      "U3-136",
+      "U6-017/1",
+      "U6-017/2"
+     ],
+     "target": {
+      "command": "camera.zoom",
+      "arguments": {
+       "view": "local"
+      },
+      "legacy_parameter": "out",
+      "requires": [
+       "scale: DisplayScale; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "Resolve legacy_parameter in the pinned source context before invocation; it is never an absolute object by itself."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "views",
+   "cases": [
+    {
+     "legacy_id": "views",
+     "source_decisions": [
+      "U3-130",
+      "U6-017/1",
+      "U6-017/2"
+     ],
+     "target": {
+      "command": "view.cell_views",
+      "arguments": {},
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "views-close",
+   "cases": [
+    {
+     "legacy_id": "views-close",
+     "source_decisions": [
+      "U3-132",
+      "U6-017/1",
+      "U6-017/2"
+     ],
+     "target": {
+      "command": "work.surface.close",
+      "arguments": {
+       "surface": "expanded_structural_inspection"
+      },
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "windows-hide",
+   "cases": [
+    {
+     "legacy_id": "windows-hide",
+     "source_decisions": [
+      "U3-131",
+      "U6-016"
+     ],
+     "target": {
+      "command": "work.surface.close",
+      "arguments": {},
+      "requires": [
+       "surface: SurfaceId; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "worksheet",
+   "cases": [
+    {
+     "legacy_id": "worksheet",
+     "source_decisions": [
+      "U3-102",
+      "U5-055",
+      "U6-040"
+     ],
+     "target": {
+      "command": "worksheet.compare",
+      "arguments": {},
+      "requires": [
+       "worksheet: WorksheetRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "draft: ResolvedDraftRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "worksheet-save",
+   "cases": [
+    {
+     "legacy_id": "worksheet-save",
+     "source_decisions": [
+      "U3-101",
+      "U6-040"
+     ],
+     "target": {
+      "command": "worksheet.save",
+      "arguments": {},
+      "requires": [
+       "draft: ResolvedDraftRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved.",
+       "name: Text; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "worksheet-use",
+   "cases": [
+    {
+     "legacy_id": "worksheet-use",
+     "source_decisions": [
+      "U3-103",
+      "U6-040"
+     ],
+     "target": {
+      "command": "worksheet.load",
+      "arguments": {},
+      "requires": [
+       "worksheet: WorksheetRevisionRef; resolve from the captured legacy record or explicit solver choice; missing data stays unresolved."
+      ]
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  },
+  {
+   "pattern": "workspace-fullscreen",
+   "cases": [
+    {
+     "legacy_id": "workspace-fullscreen",
+     "source_decisions": [
+      "U3-133",
+      "U6-016"
+     ],
+     "target": {
+      "command": "work.fullscreen.toggle",
+      "arguments": {},
+      "requires": []
+     },
+     "reason": "Retained purpose; the alias grants no permission, preview or automatic execution."
+    }
+   ]
+  }
+ ],
+ "content_digest": "5ef9a34103f9411f6b11eda5d371c34f561df43bcb0cf707c6910d23e042c3c5"
+}

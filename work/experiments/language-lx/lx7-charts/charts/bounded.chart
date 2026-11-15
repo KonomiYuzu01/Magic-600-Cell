@@ -1,0 +1,5 @@
+# Admission fixture only, not a fourth mathematical chart.
+a = x
+for _ in range(3):
+    a = a * 0.5
+output(a, y, z)

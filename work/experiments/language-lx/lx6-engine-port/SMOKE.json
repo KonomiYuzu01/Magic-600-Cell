@@ -1,0 +1,86 @@
+{
+  "candidate_sha256": "2bc30f5ebbce03f6e814223637c9cfb437f4fddd1cd387061ecbb80b3111ce6f",
+  "conditions": {
+    "evidence": "smoke only",
+    "machine_activity": "shared sandbox; concurrent runs possible"
+  },
+  "exported_model_sha256": "223edad95f991ea1ada8ed3d464b21909979f0122aa837fc9e3d7e3541949e01",
+  "mode": "smoke",
+  "p99_method": "nearest rank: sorted[ceil(0.99*n)-1]",
+  "series": [],
+  "smoke": {
+    "backends": {
+      "numpy": {
+        "backend": "numpy",
+        "numpy": "2.3.5",
+        "python": "3.14.7",
+        "rows": [
+          {
+            "metric": "apply_generator",
+            "ns": [
+              21800
+            ],
+            "output_sha256": "aaed8ffb1086ea94e26d02f6e48a9b48b292695f8ed964d02d3994d3f26f9b4a"
+          },
+          {
+            "metric": "apply_long_word",
+            "ns": [
+              10809800
+            ],
+            "output_sha256": "ffb7a25b74e4934cbea1b18f5b891b3c9124828421e829a20ad560d4cac7318a"
+          },
+          {
+            "metric": "compose_macros",
+            "ns": [
+              13040900
+            ],
+            "output_sha256": "408fbba99a154918375d5594b9f073df30aabb281ed1d22a9ed6007a02cc1b14"
+          },
+          {
+            "metric": "net_effect",
+            "ns": [
+              581700
+            ],
+            "output_sha256": "c20254065cc3964589a49ec7c76ff1e7e812b56783d53fe64f19ee8474aa4806"
+          }
+        ]
+      },
+      "rust": {
+        "backend": "rust",
+        "rows": [
+          {
+            "metric": "apply_generator",
+            "ns": [
+              4000
+            ],
+            "output_sha256": "aaed8ffb1086ea94e26d02f6e48a9b48b292695f8ed964d02d3994d3f26f9b4a"
+          },
+          {
+            "metric": "apply_long_word",
+            "ns": [
+              2422500
+            ],
+            "output_sha256": "ffb7a25b74e4934cbea1b18f5b891b3c9124828421e829a20ad560d4cac7318a"
+          },
+          {
+            "metric": "compose_macros",
+            "ns": [
+              2044800
+            ],
+            "output_sha256": "408fbba99a154918375d5594b9f073df30aabb281ed1d22a9ed6007a02cc1b14"
+          },
+          {
+            "metric": "net_effect",
+            "ns": [
+              6640400
+            ],
+            "output_sha256": "c20254065cc3964589a49ec7c76ff1e7e812b56783d53fe64f19ee8474aa4806"
+          }
+        ]
+      }
+    },
+    "input_sha256": "007fa386ff99d5ecd495b1f7ef82c3c59805abd7d59ec00f3a49cb95a71bd173",
+    "series": 0
+  },
+  "status": "pass"
+}

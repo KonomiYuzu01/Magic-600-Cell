@@ -1,0 +1,15 @@
+@edition("lx8-0");
+@module(authored_words, []);
+
+fn witness() : Word<Full,Retained> ! [] @ [12, 0, 0, 0] =
+    bind key <- (word[+1, -1, +2, +1200, -1200, +1] |> word_key()) in
+    word[+1, -1, +2, +1200, -1200, +1];
+
+fn menu_witness() : Word<Jumble,MenuA> ! [] @ [12, 0, 0, 0] =
+    menu[2:spin, 2:unspin, 5:identity];
+
+fn menu_cost() : Cost<Jumble,MenuLetters> ! [] @ [12, 0, 0, 0] =
+    (menu_witness() |> word_length());
+
+fn recipe_note(recipe: Recipe<Full,Retained>, count: Cost<Full,Generators>) : Text ! [] @ [12, 0, 0, 0] =
+    "User-authored recipe; no expansion executed.";

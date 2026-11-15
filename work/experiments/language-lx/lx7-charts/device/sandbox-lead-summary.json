@@ -1,0 +1,207 @@
+{
+  "format": "lx7-errors-v1",
+  "precision_decision": "open",
+  "decider": "owner",
+  "quantiles": "nearest rank, per coordinate; relative omits exact zero; ULP collapses signed zero",
+  "units": "absolute: projected coordinate units; relative: dimensionless; ULP: binary32 steps to CPU",
+  "charts": {
+    "builtin_perspective": {
+      "cases": 124,
+      "coverage": {
+        "point": 116,
+        "singular": 6,
+        "nonfinite": 2
+      },
+      "exact_coverage_disagreements": [
+        "builtin_perspective/identity/perspective-boundary-6",
+        "builtin_perspective/identity/overflow",
+        "builtin_perspective/central-inversion/overflow"
+      ],
+      "cpu_coverage_disagreements": [],
+      "exact_abs": {
+        "n": 348,
+        "min": 0.0,
+        "p50": 4.3929912927385286e-09,
+        "p95": 7.906269391187795e-07,
+        "p99": 0.51602989169305,
+        "max": 1.0320597833861
+      },
+      "exact_rel_nonzero": {
+        "n": 342,
+        "min": 0.0,
+        "p50": 3.1692098226335087e-08,
+        "p95": 2.586235434322034e-07,
+        "p99": 0.423728813559322,
+        "max": 0.423728813559322
+      },
+      "cpu_abs": {
+        "n": 348,
+        "min": 0.0,
+        "p50": 0.0,
+        "p95": 2.9802322387695312e-08,
+        "p99": 1.0,
+        "max": 2.0
+      },
+      "cpu_ulp": {
+        "n": 348,
+        "min": 0.0,
+        "p50": 0.0,
+        "p95": 1.0,
+        "p99": 1.0,
+        "max": 1.0
+      }
+    },
+    "perspective": {
+      "cases": 124,
+      "coverage": {
+        "point": 116,
+        "singular": 6,
+        "nonfinite": 2
+      },
+      "exact_coverage_disagreements": [
+        "perspective/identity/perspective-boundary-6",
+        "perspective/identity/overflow",
+        "perspective/central-inversion/overflow"
+      ],
+      "cpu_coverage_disagreements": [],
+      "exact_abs": {
+        "n": 348,
+        "min": 0.0,
+        "p50": 4.3929912927385286e-09,
+        "p95": 7.906269391187795e-07,
+        "p99": 0.51602989169305,
+        "max": 1.0320597833861
+      },
+      "exact_rel_nonzero": {
+        "n": 342,
+        "min": 0.0,
+        "p50": 3.1692098226335087e-08,
+        "p95": 2.586235434322034e-07,
+        "p99": 0.423728813559322,
+        "max": 0.423728813559322
+      },
+      "cpu_abs": {
+        "n": 348,
+        "min": 0.0,
+        "p50": 0.0,
+        "p95": 2.9802322387695312e-08,
+        "p99": 1.0,
+        "max": 2.0
+      },
+      "cpu_ulp": {
+        "n": 348,
+        "min": 0.0,
+        "p50": 0.0,
+        "p95": 1.0,
+        "p99": 1.0,
+        "max": 1.0
+      }
+    },
+    "stereographic": {
+      "cases": 124,
+      "coverage": {
+        "point": 116,
+        "singular": 7,
+        "nonfinite": 1
+      },
+      "exact_coverage_disagreements": [
+        "stereographic/identity/north-boundary-5",
+        "stereographic/identity/north-boundary-6",
+        "stereographic/identity/overflow"
+      ],
+      "cpu_coverage_disagreements": [],
+      "exact_abs": {
+        "n": 348,
+        "min": 0.0,
+        "p50": 3.7248356066154034e-09,
+        "p95": 4.074397689033792e-07,
+        "p99": 8.702758035337091e-07,
+        "max": 0.3333333333333333
+      },
+      "exact_rel_nonzero": {
+        "n": 342,
+        "min": 0.0,
+        "p50": 2.5436501478130618e-08,
+        "p95": 2.950616180896759e-07,
+        "p99": 3.3957185223698617e-07,
+        "max": 0.5
+      },
+      "cpu_abs": {
+        "n": 348,
+        "min": 0.0,
+        "p50": 0.0,
+        "p95": 1.4901161193847656e-08,
+        "p99": 5.960464477539063e-08,
+        "max": 2.384185791015625e-07
+      },
+      "cpu_ulp": {
+        "n": 348,
+        "min": 0.0,
+        "p50": 0.0,
+        "p95": 1.0,
+        "p99": 1.0,
+        "max": 1.0
+      }
+    },
+    "gnomonic": {
+      "cases": 124,
+      "coverage": {
+        "point": 104,
+        "singular": 18,
+        "nonfinite": 2
+      },
+      "exact_coverage_disagreements": [
+        "gnomonic/identity/overflow",
+        "gnomonic/central-inversion/overflow"
+      ],
+      "cpu_coverage_disagreements": [],
+      "exact_abs": {
+        "n": 312,
+        "min": 0.0,
+        "p50": 1.0691835797363926e-08,
+        "p95": 8.880868951410321e-07,
+        "p99": 7.628928898382667e-06,
+        "max": 7.628928898382667e-06
+      },
+      "exact_rel_nonzero": {
+        "n": 312,
+        "min": 0.0,
+        "p50": 1.745756605942006e-08,
+        "p95": 7.20825516200515e-08,
+        "p99": 7.360999006778001e-08,
+        "max": 7.689284475051716e-08
+      },
+      "cpu_abs": {
+        "n": 312,
+        "min": 0.0,
+        "p50": 0.0,
+        "p95": 1.1920928955078125e-07,
+        "p99": 4.76837158203125e-07,
+        "max": 7.62939453125e-06
+      },
+      "cpu_ulp": {
+        "n": 312,
+        "min": 0.0,
+        "p50": 0.0,
+        "p95": 1.0,
+        "p99": 1.0,
+        "max": 1.0
+      }
+    }
+  },
+  "evidence_class": "windows",
+  "sandbox_lead": true,
+  "device": {
+    "adapter": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "vendor_id": 4318,
+    "device_id": 10336,
+    "dedicated_video_memory": 8334082048,
+    "driver": "32.0.16.1692",
+    "software": false,
+    "shader_model": "6.2",
+    "records": 496
+  },
+  "capture_sha256": "2e6110350c331099314342551eb14dfbc9aacc05156c2710c4f352ed6831665a",
+  "performance": "not run here",
+  "chart_admission": "open"
+}

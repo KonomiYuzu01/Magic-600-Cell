@@ -1,0 +1,285 @@
+{
+  "build_digest": "cd70173c9e5ad847cfe3d30ddae92aafc4f4ecf905777edbfc49627ca8b00c4b",
+  "build_removed": true,
+  "candidate": "rust-num-bigint",
+  "complete": true,
+  "correctness": {
+    "actual_bytes": 2198909,
+    "actual_sha256": "529252f51f3699be09c5d5a7a66fd6864f88e666cfd393ebd0a3f780d126d18b",
+    "by_size": {
+      "10000000-letters": {
+        "cases": 1,
+        "different": 0,
+        "equal": 1
+      },
+      "13231266-letters": {
+        "cases": 1,
+        "different": 0,
+        "equal": 1
+      },
+      "22500-bit": {
+        "cases": 70,
+        "different": 0,
+        "equal": 70
+      },
+      "2352984-letters": {
+        "cases": 1,
+        "different": 0,
+        "equal": 1
+      },
+      "2^256": {
+        "cases": 70,
+        "different": 0,
+        "equal": 70
+      },
+      "2^64": {
+        "cases": 70,
+        "different": 0,
+        "equal": 70
+      },
+      "672417-letters": {
+        "cases": 1,
+        "different": 0,
+        "equal": 1
+      },
+      "6775-digit": {
+        "cases": 70,
+        "different": 0,
+        "equal": 70
+      },
+      "871582-letters": {
+        "cases": 1,
+        "different": 0,
+        "equal": 1
+      },
+      "empty-stream": {
+        "cases": 1,
+        "different": 0,
+        "equal": 1
+      },
+      "length-166788405": {
+        "cases": 22,
+        "different": 0,
+        "equal": 22
+      },
+      "limb-boundaries": {
+        "cases": 88,
+        "different": 0,
+        "equal": 88
+      },
+      "pell-22493-bit": {
+        "cases": 4,
+        "different": 0,
+        "equal": 4
+      },
+      "pell-22495-bit": {
+        "cases": 4,
+        "different": 0,
+        "equal": 4
+      },
+      "pell-256-bit": {
+        "cases": 4,
+        "different": 0,
+        "equal": 4
+      },
+      "pell-3030-bit": {
+        "cases": 4,
+        "different": 0,
+        "equal": 4
+      },
+      "pell-64-bit": {
+        "cases": 4,
+        "different": 0,
+        "equal": 4
+      },
+      "pose-nc-22504-bit": {
+        "cases": 35,
+        "different": 0,
+        "equal": 35
+      },
+      "pose-nc-260-bit": {
+        "cases": 35,
+        "different": 0,
+        "equal": 35
+      },
+      "pose-nc-3022-bit": {
+        "cases": 35,
+        "different": 0,
+        "equal": 35
+      },
+      "pose-nc-70-bit": {
+        "cases": 35,
+        "different": 0,
+        "equal": 35
+      },
+      "random-1-bit": {
+        "cases": 264,
+        "different": 0,
+        "equal": 264
+      },
+      "random-1024-bit": {
+        "cases": 264,
+        "different": 0,
+        "equal": 264
+      },
+      "random-22500-bit": {
+        "cases": 88,
+        "different": 0,
+        "equal": 88
+      },
+      "random-256-bit": {
+        "cases": 264,
+        "different": 0,
+        "equal": 264
+      },
+      "random-3036-bit": {
+        "cases": 88,
+        "different": 0,
+        "equal": 88
+      },
+      "random-31-bit": {
+        "cases": 264,
+        "different": 0,
+        "equal": 264
+      },
+      "random-32-bit": {
+        "cases": 264,
+        "different": 0,
+        "equal": 264
+      },
+      "random-33-bit": {
+        "cases": 264,
+        "different": 0,
+        "equal": 264
+      },
+      "random-63-bit": {
+        "cases": 264,
+        "different": 0,
+        "equal": 264
+      },
+      "random-64-bit": {
+        "cases": 264,
+        "different": 0,
+        "equal": 264
+      },
+      "random-65-bit": {
+        "cases": 264,
+        "different": 0,
+        "equal": 264
+      },
+      "random-96-bit": {
+        "cases": 264,
+        "different": 0,
+        "equal": 264
+      },
+      "recorded-length-sum": {
+        "cases": 2,
+        "different": 0,
+        "equal": 2
+      }
+    },
+    "difference_count": 0,
+    "differing_case_ids": [],
+    "expected_sha256": "529252f51f3699be09c5d5a7a66fd6864f88e666cfd393ebd0a3f780d126d18b",
+    "extra_lines": 0,
+    "first_differences": [],
+    "status": "exact"
+  },
+  "crates": {
+    "autocfg 1.5.1": "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53",
+    "num-bigint 0.5.1": "93e7820bc0a80a0238e650327316f929ba18d5be054b647490a3a6a339f3e7c0",
+    "num-integer 0.1.47": "7ce2d95d4b3734dc35aa2f45e1aa22cd416814592a4f9d9205e11affd5b8e10b",
+    "num-traits 0.2.19": "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841"
+  },
+  "decider": "owner",
+  "decision": "open",
+  "fixture_manifest_sha256": "75d464b4965c5baf4dc00bac58acf2e1aa0d3a958ca5c60c20e9f62b03e955bc",
+  "format": "lx5-crate-check/1",
+  "licences": {
+    "autocfg-1.5.1": {
+      "files": [
+        "LICENSE-APACHE",
+        "LICENSE-MIT"
+      ],
+      "license": "Apache-2.0 OR MIT"
+    },
+    "num-bigint-0.5.1": {
+      "files": [
+        "LICENSE-APACHE",
+        "LICENSE-MIT"
+      ],
+      "license": "MIT OR Apache-2.0"
+    },
+    "num-integer-0.1.47": {
+      "files": [
+        "LICENSE-APACHE",
+        "LICENSE-MIT"
+      ],
+      "license": "MIT OR Apache-2.0"
+    },
+    "num-traits-0.2.19": {
+      "files": [
+        "LICENSE-APACHE",
+        "LICENSE-MIT"
+      ],
+      "license": "MIT OR Apache-2.0"
+    }
+  },
+  "lx5_candidate_sha256": "743c96a70e8a445aa13ce4e6c6223bd8f34bbc9164083fdbd0f42da0830c2619",
+  "lx5_source_manifest_sha256": "f004cae740af45839f798ddbf4cc0f1c9fcd774f9be09ad9fb9b536aedb6a1a2",
+  "mode": "check",
+  "rust_self_test": "Rust self-test: 512 native i128 cases, 3 SHA-256 vectors, 2904 frozen differential cases",
+  "sizes": {
+    "10000000-letters": 1,
+    "13231266-letters": 1,
+    "22500-bit": 70,
+    "2352984-letters": 1,
+    "2^256": 70,
+    "2^64": 70,
+    "672417-letters": 1,
+    "6775-digit": 70,
+    "871582-letters": 1,
+    "empty-stream": 1,
+    "length-166788405": 22,
+    "limb-boundaries": 88,
+    "pell-22493-bit": 4,
+    "pell-22495-bit": 4,
+    "pell-256-bit": 4,
+    "pell-3030-bit": 4,
+    "pell-64-bit": 4,
+    "pose-nc-22504-bit": 35,
+    "pose-nc-260-bit": 35,
+    "pose-nc-3022-bit": 35,
+    "pose-nc-70-bit": 35,
+    "random-1-bit": 264,
+    "random-1024-bit": 264,
+    "random-22500-bit": 88,
+    "random-256-bit": 264,
+    "random-3036-bit": 88,
+    "random-31-bit": 264,
+    "random-32-bit": 264,
+    "random-33-bit": 264,
+    "random-63-bit": 264,
+    "random-64-bit": 264,
+    "random-65-bit": 264,
+    "random-96-bit": 264,
+    "recorded-length-sum": 2
+  },
+  "smoke_sha256": "7216d638876ae45b96613eb7b3403a372ef7e366bdc2651d8e0e1fa32e13648a",
+  "smoke_status": "exact",
+  "source_digests": {
+    "CARD.md": "dd016fc2e6179f05943dea120dcc08d2801142fadb2738b1b23d62550b869696",
+    "Cargo.lock": "daeb2cc5718eca445c6ceaa029aee1fa1da0607bde9b145357004bbe4d09627d",
+    "Cargo.toml": "34ead962a71bf0f12b047948713b847737e26ada7d98c5883eed0854adb5c352",
+    "candidate.rs": "433f23f3cc27c0c82e83aa12274b609302e9db66631a5354f65af8fe4d6445e6",
+    "check.py": "663165168f91a6fdc6f6d79b05dbc2a3b05331ecc3ba6adadbfb73dd57dbbbf9",
+    "make_candidate.py": "30e6dd1742691357c04aee14bbe8244ff247d13dab34a30e949a4577dbf82d25"
+  },
+  "started_utc": "2026-11-14T17:10:27.965371+00:00",
+  "tools": {
+    "cargo": "cargo 1.98.1 (797e8a9bc 2026-08-05)",
+    "platform": "win32",
+    "python": "3.15.1",
+    "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)"
+  }
+}

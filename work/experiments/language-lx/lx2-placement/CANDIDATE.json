@@ -1,0 +1,46 @@
+{
+  "candidate_sha256": "228d5064db49c6f47217d06850cea41a16a5436817f3216fc0ac996d0649a2ce",
+  "driver_python": "3.15.1",
+  "executable_sha256": "d9580c6d3714648f0013799e48f985f396ca4998a3479194966ffabf77c9a30f",
+  "flags": [
+    "--edition=2021",
+    "-O",
+    "-D",
+    "warnings",
+    "-C",
+    "debuginfo=0",
+    "-C",
+    "link-arg=/Brepro"
+  ],
+  "identity": {
+    "flags": [
+      "--edition=2021",
+      "-O",
+      "-D",
+      "warnings",
+      "-C",
+      "debuginfo=0"
+    ],
+    "model_sha256": "223edad95f991ea1ada8ed3d464b21909979f0122aa837fc9e3d7e3541949e01",
+    "pose_bytes": 869952,
+    "pose_sha256": "0d3068ad1aca38646ef4f858b4f98de9eb78c6a54f2fce6128e5642933bc9fb3",
+    "sources": {
+      "work/experiments/language-lx/lx2-placement/PROVENANCE.json": "f8c12feb0f27324b929165a9c312490366dbfcad379fb711158c387f6591694d",
+      "work/experiments/language-lx/lx2-placement/SCENARIO.json": "06b58debe8cba5571502e14bb42a8f3516415b9c220baeb226b60410219fbd33",
+      "work/experiments/language-lx/lx2-placement/check.py": "cecce9db8b8c8781cef67b35d03e2adb30620decaa00d187263442321c577183",
+      "work/experiments/language-lx/lx2-placement/faults.rs": "6e7bad45881a39a1f950ee6e79449e1cf03c975479fe4985d444f43820471b4a",
+      "work/experiments/language-lx/lx2-placement/kernel.rs": "7a4a809234aa49f317d61b8063cfb81633cca6a43ab38ade4994cdd627c6b784",
+      "work/experiments/language-lx/lx2-placement/main.rs": "8cde4c1903b6a7534f208c6c646341a3bb0b26f60de73019ec4eb3132cca880e",
+      "work/experiments/language-lx/lx2-placement/prepare.py": "14b3ec0cd98a7b828fdb0c11f6732ced89de0a1e209629ff912040fc49037acb",
+      "work/experiments/language-lx/lx2-placement/run.py": "a97b8a6d10d9da28747747398f962bd6c37603ffc7ed2e1b37739baf52f86f2d",
+      "work/experiments/language-lx/lx2-placement/runtime.rs": "16891d4cd702702f3ab381a3a2d2dc6f5b9fece3b0b09ab435ca2ef78c6c12c6",
+      "work/experiments/language-lx/lx2-placement/wire.rs": "d0b0e983767c3e0fe8ca1959895ac1d1fd2833b341fba03afd12790d09c1d0fa",
+      "work/experiments/language-lx/lx6-engine-port/engine.rs": "12831fc1c8f0c3c5e0dc7f82bced8788c640a25d79bd094d7d877cbc2e7eaf02",
+      "work/experiments/language-lx/lx6-engine-port/export_model.py": "264a5e548e689e5341fefb248dd591570ff1afd8fa83611a48e4400d1bcfe7c0",
+      "work/experiments/language-lx/lx6-engine-port/json.rs": "9ba496e270ba2ca67347cac6b6f18b17f0c4b022e7a69886fd2cb471225402b0",
+      "work/experiments/language-lx/lx6-engine-port/sha256.rs": "66c940db85b47ab7e6333c8a8bcc800afb4cf2785894f961b2794fe4ea949885"
+    }
+  },
+  "platform": "win32",
+  "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: x86_64-pc-windows-msvc\nrelease: 1.98.1\nLLVM version: 22.1.8"
+}

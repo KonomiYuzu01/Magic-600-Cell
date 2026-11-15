@@ -1,0 +1,6336 @@
+{
+  "candidates": {
+    "rust-num-bigint": {
+      "comparison": {
+        "actual_bytes": 1093786,
+        "actual_sha256": "54ddd476cf1fab649382bb5478f3f707b8c4a21f7ee542f7287c6d0188970492",
+        "by_size": {
+          "10000000-letters": {
+            "cases": 1,
+            "different": 0,
+            "equal": 1
+          },
+          "13231266-letters": {
+            "cases": 1,
+            "different": 0,
+            "equal": 1
+          },
+          "22500-bit": {
+            "cases": 20,
+            "different": 0,
+            "equal": 20
+          },
+          "2352984-letters": {
+            "cases": 1,
+            "different": 0,
+            "equal": 1
+          },
+          "2^256": {
+            "cases": 20,
+            "different": 0,
+            "equal": 20
+          },
+          "2^64": {
+            "cases": 20,
+            "different": 0,
+            "equal": 20
+          },
+          "672417-letters": {
+            "cases": 1,
+            "different": 0,
+            "equal": 1
+          },
+          "6775-digit": {
+            "cases": 20,
+            "different": 0,
+            "equal": 20
+          },
+          "871582-letters": {
+            "cases": 1,
+            "different": 0,
+            "equal": 1
+          },
+          "empty-stream": {
+            "cases": 1,
+            "different": 0,
+            "equal": 1
+          },
+          "length-166788405": {
+            "cases": 12,
+            "different": 0,
+            "equal": 12
+          },
+          "pell-22493-bit": {
+            "cases": 2,
+            "different": 0,
+            "equal": 2
+          },
+          "pell-22495-bit": {
+            "cases": 2,
+            "different": 0,
+            "equal": 2
+          },
+          "pell-256-bit": {
+            "cases": 2,
+            "different": 0,
+            "equal": 2
+          },
+          "pell-3030-bit": {
+            "cases": 2,
+            "different": 0,
+            "equal": 2
+          },
+          "pell-64-bit": {
+            "cases": 2,
+            "different": 0,
+            "equal": 2
+          },
+          "pose-nc-22504-bit": {
+            "cases": 20,
+            "different": 0,
+            "equal": 20
+          },
+          "pose-nc-260-bit": {
+            "cases": 20,
+            "different": 0,
+            "equal": 20
+          },
+          "pose-nc-3022-bit": {
+            "cases": 20,
+            "different": 0,
+            "equal": 20
+          },
+          "pose-nc-70-bit": {
+            "cases": 20,
+            "different": 0,
+            "equal": 20
+          },
+          "recorded-length-sum": {
+            "cases": 2,
+            "different": 0,
+            "equal": 2
+          }
+        },
+        "difference_count": 0,
+        "expected_sha256": "54ddd476cf1fab649382bb5478f3f707b8c4a21f7ee542f7287c6d0188970492",
+        "extra_lines": 0,
+        "first_differences": [],
+        "status": "exact"
+      },
+      "raw_retained": "digest; regenerate with check.py --full",
+      "raw_timing_bytes": 934202,
+      "raw_timing_sha256": "f980c8f14d232d241e560ad733b9ea50d6ae0cde7ba752c30c61bb0b28686169",
+      "rows": [
+        {
+          "case": "c0000",
+          "operation": "add",
+          "series": [
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 0
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 1
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 2
+            }
+          ],
+          "size": "2^64"
+        },
+        {
+          "case": "c0001",
+          "operation": "sub",
+          "series": [
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 0
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 1
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 2
+            }
+          ],
+          "size": "2^64"
+        },
+        {
+          "case": "c0002",
+          "operation": "mul",
+          "series": [
+            {
+              "max_ns": 200,
+              "median_ns": 200.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 0
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 200.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 1
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 200.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 2
+            }
+          ],
+          "size": "2^64"
+        },
+        {
+          "case": "c0003",
+          "operation": "div",
+          "series": [
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 0
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 1
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 2
+            }
+          ],
+          "size": "2^64"
+        },
+        {
+          "case": "c0004",
+          "operation": "rem",
+          "series": [
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 0
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 1
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 2
+            }
+          ],
+          "size": "2^64"
+        },
+        {
+          "case": "c0005",
+          "operation": "gcd",
+          "series": [
+            {
+              "max_ns": 700,
+              "median_ns": 600.0,
+              "min_ns": 500,
+              "n": 100,
+              "p99_ns": 700,
+              "series": 0
+            },
+            {
+              "max_ns": 700,
+              "median_ns": 600.0,
+              "min_ns": 600,
+              "n": 100,
+              "p99_ns": 700,
+              "series": 1
+            },
+            {
+              "max_ns": 25500,
+              "median_ns": 600.0,
+              "min_ns": 600,
+              "n": 100,
+              "p99_ns": 700,
+              "series": 2
+            }
+          ],
+          "size": "2^64"
+        },
+        {
+          "case": "c0006",
+          "operation": "cmp",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 0.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 1
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 2
+            }
+          ],
+          "size": "2^64"
+        },
+        {
+          "case": "c0007",
+          "operation": "shl",
+          "series": [
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 0
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 1
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 2
+            }
+          ],
+          "size": "2^64"
+        },
+        {
+          "case": "c0013",
+          "operation": "shr",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 1
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 2
+            }
+          ],
+          "size": "2^64"
+        },
+        {
+          "case": "c0019",
+          "operation": "bits",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 1
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 2
+            }
+          ],
+          "size": "2^64"
+        },
+        {
+          "case": "c0020",
+          "operation": "dec",
+          "series": [
+            {
+              "max_ns": 400,
+              "median_ns": 300.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 400,
+              "series": 0
+            },
+            {
+              "max_ns": 400,
+              "median_ns": 300.0,
+              "min_ns": 300,
+              "n": 100,
+              "p99_ns": 400,
+              "series": 1
+            },
+            {
+              "max_ns": 400,
+              "median_ns": 300.0,
+              "min_ns": 300,
+              "n": 100,
+              "p99_ns": 400,
+              "series": 2
+            }
+          ],
+          "size": "2^64"
+        },
+        {
+          "case": "c0021",
+          "operation": "hex",
+          "series": [
+            {
+              "max_ns": 500,
+              "median_ns": 400.0,
+              "min_ns": 300,
+              "n": 100,
+              "p99_ns": 500,
+              "series": 0
+            },
+            {
+              "max_ns": 400,
+              "median_ns": 400.0,
+              "min_ns": 300,
+              "n": 100,
+              "p99_ns": 400,
+              "series": 1
+            },
+            {
+              "max_ns": 400,
+              "median_ns": 400.0,
+              "min_ns": 300,
+              "n": 100,
+              "p99_ns": 400,
+              "series": 2
+            }
+          ],
+          "size": "2^64"
+        },
+        {
+          "case": "c0022",
+          "operation": "rat_add",
+          "series": [
+            {
+              "max_ns": 2300,
+              "median_ns": 1900.0,
+              "min_ns": 1800,
+              "n": 100,
+              "p99_ns": 2200,
+              "series": 0
+            },
+            {
+              "max_ns": 5300,
+              "median_ns": 2000.0,
+              "min_ns": 1800,
+              "n": 100,
+              "p99_ns": 4500,
+              "series": 1
+            },
+            {
+              "max_ns": 2400,
+              "median_ns": 1900.0,
+              "min_ns": 1800,
+              "n": 100,
+              "p99_ns": 2400,
+              "series": 2
+            }
+          ],
+          "size": "2^64"
+        },
+        {
+          "case": "c0023",
+          "operation": "rat_mul",
+          "series": [
+            {
+              "max_ns": 3700,
+              "median_ns": 1900.0,
+              "min_ns": 1800,
+              "n": 100,
+              "p99_ns": 3600,
+              "series": 0
+            },
+            {
+              "max_ns": 2500,
+              "median_ns": 1900.0,
+              "min_ns": 1800,
+              "n": 100,
+              "p99_ns": 2400,
+              "series": 1
+            },
+            {
+              "max_ns": 2100,
+              "median_ns": 1900.0,
+              "min_ns": 1800,
+              "n": 100,
+              "p99_ns": 2100,
+              "series": 2
+            }
+          ],
+          "size": "2^64"
+        },
+        {
+          "case": "c0024",
+          "operation": "rat_cmp",
+          "series": [
+            {
+              "max_ns": 3000,
+              "median_ns": 2800.0,
+              "min_ns": 2600,
+              "n": 100,
+              "p99_ns": 2900,
+              "series": 0
+            },
+            {
+              "max_ns": 8300,
+              "median_ns": 2800.0,
+              "min_ns": 2700,
+              "n": 100,
+              "p99_ns": 3300,
+              "series": 1
+            },
+            {
+              "max_ns": 3000,
+              "median_ns": 2800.0,
+              "min_ns": 2700,
+              "n": 100,
+              "p99_ns": 3000,
+              "series": 2
+            }
+          ],
+          "size": "2^64"
+        },
+        {
+          "case": "c0025",
+          "operation": "q_add",
+          "series": [
+            {
+              "max_ns": 9200,
+              "median_ns": 6100.0,
+              "min_ns": 6000,
+              "n": 100,
+              "p99_ns": 7100,
+              "series": 0
+            },
+            {
+              "max_ns": 10600,
+              "median_ns": 6200.0,
+              "min_ns": 6100,
+              "n": 100,
+              "p99_ns": 10400,
+              "series": 1
+            },
+            {
+              "max_ns": 10100,
+              "median_ns": 6400.0,
+              "min_ns": 6200,
+              "n": 100,
+              "p99_ns": 6900,
+              "series": 2
+            }
+          ],
+          "size": "2^64"
+        },
+        {
+          "case": "c0026",
+          "operation": "q_mul",
+          "series": [
+            {
+              "max_ns": 9800,
+              "median_ns": 7100.0,
+              "min_ns": 7000,
+              "n": 100,
+              "p99_ns": 7400,
+              "series": 0
+            },
+            {
+              "max_ns": 7600,
+              "median_ns": 7200.0,
+              "min_ns": 7000,
+              "n": 100,
+              "p99_ns": 7600,
+              "series": 1
+            },
+            {
+              "max_ns": 11100,
+              "median_ns": 7200.0,
+              "min_ns": 7000,
+              "n": 100,
+              "p99_ns": 7500,
+              "series": 2
+            }
+          ],
+          "size": "2^64"
+        },
+        {
+          "case": "c0027",
+          "operation": "q_conj",
+          "series": [
+            {
+              "max_ns": 4300,
+              "median_ns": 2100.0,
+              "min_ns": 2000,
+              "n": 100,
+              "p99_ns": 3500,
+              "series": 0
+            },
+            {
+              "max_ns": 2200,
+              "median_ns": 2100.0,
+              "min_ns": 2100,
+              "n": 100,
+              "p99_ns": 2200,
+              "series": 1
+            },
+            {
+              "max_ns": 4400,
+              "median_ns": 2200.0,
+              "min_ns": 2100,
+              "n": 100,
+              "p99_ns": 3300,
+              "series": 2
+            }
+          ],
+          "size": "2^64"
+        },
+        {
+          "case": "c0028",
+          "operation": "q_norm",
+          "series": [
+            {
+              "max_ns": 4200,
+              "median_ns": 4100.0,
+              "min_ns": 4000,
+              "n": 100,
+              "p99_ns": 4200,
+              "series": 0
+            },
+            {
+              "max_ns": 7700,
+              "median_ns": 4100.0,
+              "min_ns": 4000,
+              "n": 100,
+              "p99_ns": 6600,
+              "series": 1
+            },
+            {
+              "max_ns": 6500,
+              "median_ns": 4100.0,
+              "min_ns": 4000,
+              "n": 100,
+              "p99_ns": 6300,
+              "series": 2
+            }
+          ],
+          "size": "2^64"
+        },
+        {
+          "case": "c0029",
+          "operation": "q_sign",
+          "series": [
+            {
+              "max_ns": 1900,
+              "median_ns": 1800.0,
+              "min_ns": 1700,
+              "n": 100,
+              "p99_ns": 1900,
+              "series": 0
+            },
+            {
+              "max_ns": 1900,
+              "median_ns": 1800.0,
+              "min_ns": 1700,
+              "n": 100,
+              "p99_ns": 1900,
+              "series": 1
+            },
+            {
+              "max_ns": 1900,
+              "median_ns": 1800.0,
+              "min_ns": 1700,
+              "n": 100,
+              "p99_ns": 1900,
+              "series": 2
+            }
+          ],
+          "size": "2^64"
+        },
+        {
+          "case": "c0070",
+          "operation": "add",
+          "series": [
+            {
+              "max_ns": 5600,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 0
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 1
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 2
+            }
+          ],
+          "size": "2^256"
+        },
+        {
+          "case": "c0071",
+          "operation": "sub",
+          "series": [
+            {
+              "max_ns": 300,
+              "median_ns": 300.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 0
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 300.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 1
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 300.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 2
+            }
+          ],
+          "size": "2^256"
+        },
+        {
+          "case": "c0072",
+          "operation": "mul",
+          "series": [
+            {
+              "max_ns": 600,
+              "median_ns": 500.0,
+              "min_ns": 400,
+              "n": 100,
+              "p99_ns": 600,
+              "series": 0
+            },
+            {
+              "max_ns": 500,
+              "median_ns": 400.0,
+              "min_ns": 400,
+              "n": 100,
+              "p99_ns": 500,
+              "series": 1
+            },
+            {
+              "max_ns": 500,
+              "median_ns": 400.0,
+              "min_ns": 400,
+              "n": 100,
+              "p99_ns": 500,
+              "series": 2
+            }
+          ],
+          "size": "2^256"
+        },
+        {
+          "case": "c0073",
+          "operation": "div",
+          "series": [
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 0
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 1
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 2
+            }
+          ],
+          "size": "2^256"
+        },
+        {
+          "case": "c0074",
+          "operation": "rem",
+          "series": [
+            {
+              "max_ns": 400,
+              "median_ns": 300.0,
+              "min_ns": 300,
+              "n": 100,
+              "p99_ns": 400,
+              "series": 0
+            },
+            {
+              "max_ns": 400,
+              "median_ns": 300.0,
+              "min_ns": 300,
+              "n": 100,
+              "p99_ns": 400,
+              "series": 1
+            },
+            {
+              "max_ns": 400,
+              "median_ns": 300.0,
+              "min_ns": 300,
+              "n": 100,
+              "p99_ns": 400,
+              "series": 2
+            }
+          ],
+          "size": "2^256"
+        },
+        {
+          "case": "c0075",
+          "operation": "gcd",
+          "series": [
+            {
+              "max_ns": 2600,
+              "median_ns": 2400.0,
+              "min_ns": 2300,
+              "n": 100,
+              "p99_ns": 2600,
+              "series": 0
+            },
+            {
+              "max_ns": 2500,
+              "median_ns": 2400.0,
+              "min_ns": 2300,
+              "n": 100,
+              "p99_ns": 2500,
+              "series": 1
+            },
+            {
+              "max_ns": 4400,
+              "median_ns": 2400.0,
+              "min_ns": 2300,
+              "n": 100,
+              "p99_ns": 2500,
+              "series": 2
+            }
+          ],
+          "size": "2^256"
+        },
+        {
+          "case": "c0076",
+          "operation": "cmp",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 1
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 2
+            }
+          ],
+          "size": "2^256"
+        },
+        {
+          "case": "c0077",
+          "operation": "shl",
+          "series": [
+            {
+              "max_ns": 3200,
+              "median_ns": 400.0,
+              "min_ns": 300,
+              "n": 100,
+              "p99_ns": 400,
+              "series": 0
+            },
+            {
+              "max_ns": 500,
+              "median_ns": 300.0,
+              "min_ns": 300,
+              "n": 100,
+              "p99_ns": 400,
+              "series": 1
+            },
+            {
+              "max_ns": 4800,
+              "median_ns": 400.0,
+              "min_ns": 300,
+              "n": 100,
+              "p99_ns": 400,
+              "series": 2
+            }
+          ],
+          "size": "2^256"
+        },
+        {
+          "case": "c0083",
+          "operation": "shr",
+          "series": [
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 0
+            },
+            {
+              "max_ns": 900,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 1
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 2
+            }
+          ],
+          "size": "2^256"
+        },
+        {
+          "case": "c0089",
+          "operation": "bits",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 1
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 2
+            }
+          ],
+          "size": "2^256"
+        },
+        {
+          "case": "c0090",
+          "operation": "dec",
+          "series": [
+            {
+              "max_ns": 600,
+              "median_ns": 600.0,
+              "min_ns": 500,
+              "n": 100,
+              "p99_ns": 600,
+              "series": 0
+            },
+            {
+              "max_ns": 700,
+              "median_ns": 600.0,
+              "min_ns": 500,
+              "n": 100,
+              "p99_ns": 700,
+              "series": 1
+            },
+            {
+              "max_ns": 700,
+              "median_ns": 600.0,
+              "min_ns": 500,
+              "n": 100,
+              "p99_ns": 700,
+              "series": 2
+            }
+          ],
+          "size": "2^256"
+        },
+        {
+          "case": "c0091",
+          "operation": "hex",
+          "series": [
+            {
+              "max_ns": 700,
+              "median_ns": 600.0,
+              "min_ns": 500,
+              "n": 100,
+              "p99_ns": 700,
+              "series": 0
+            },
+            {
+              "max_ns": 800,
+              "median_ns": 600.0,
+              "min_ns": 500,
+              "n": 100,
+              "p99_ns": 800,
+              "series": 1
+            },
+            {
+              "max_ns": 900,
+              "median_ns": 600.0,
+              "min_ns": 500,
+              "n": 100,
+              "p99_ns": 700,
+              "series": 2
+            }
+          ],
+          "size": "2^256"
+        },
+        {
+          "case": "c0092",
+          "operation": "rat_add",
+          "series": [
+            {
+              "max_ns": 174800,
+              "median_ns": 6500.0,
+              "min_ns": 6300,
+              "n": 100,
+              "p99_ns": 7200,
+              "series": 0
+            },
+            {
+              "max_ns": 10000,
+              "median_ns": 6500.0,
+              "min_ns": 6300,
+              "n": 100,
+              "p99_ns": 8000,
+              "series": 1
+            },
+            {
+              "max_ns": 9500,
+              "median_ns": 6400.0,
+              "min_ns": 6200,
+              "n": 100,
+              "p99_ns": 9400,
+              "series": 2
+            }
+          ],
+          "size": "2^256"
+        },
+        {
+          "case": "c0093",
+          "operation": "rat_mul",
+          "series": [
+            {
+              "max_ns": 11700,
+              "median_ns": 8350.0,
+              "min_ns": 8100,
+              "n": 100,
+              "p99_ns": 9100,
+              "series": 0
+            },
+            {
+              "max_ns": 8800,
+              "median_ns": 8300.0,
+              "min_ns": 8100,
+              "n": 100,
+              "p99_ns": 8700,
+              "series": 1
+            },
+            {
+              "max_ns": 10600,
+              "median_ns": 8300.0,
+              "min_ns": 8100,
+              "n": 100,
+              "p99_ns": 9500,
+              "series": 2
+            }
+          ],
+          "size": "2^256"
+        },
+        {
+          "case": "c0094",
+          "operation": "rat_cmp",
+          "series": [
+            {
+              "max_ns": 137400,
+              "median_ns": 9500.0,
+              "min_ns": 9300,
+              "n": 100,
+              "p99_ns": 13800,
+              "series": 0
+            },
+            {
+              "max_ns": 10600,
+              "median_ns": 9900.0,
+              "min_ns": 9700,
+              "n": 100,
+              "p99_ns": 10500,
+              "series": 1
+            },
+            {
+              "max_ns": 13500,
+              "median_ns": 9800.0,
+              "min_ns": 9600,
+              "n": 100,
+              "p99_ns": 10000,
+              "series": 2
+            }
+          ],
+          "size": "2^256"
+        },
+        {
+          "case": "c0095",
+          "operation": "q_add",
+          "series": [
+            {
+              "max_ns": 135800,
+              "median_ns": 23850.0,
+              "min_ns": 23500,
+              "n": 100,
+              "p99_ns": 65100,
+              "series": 0
+            },
+            {
+              "max_ns": 27900,
+              "median_ns": 24300.0,
+              "min_ns": 23800,
+              "n": 100,
+              "p99_ns": 27900,
+              "series": 1
+            },
+            {
+              "max_ns": 27500,
+              "median_ns": 24100.0,
+              "min_ns": 23700,
+              "n": 100,
+              "p99_ns": 25000,
+              "series": 2
+            }
+          ],
+          "size": "2^256"
+        },
+        {
+          "case": "c0096",
+          "operation": "q_mul",
+          "series": [
+            {
+              "max_ns": 64000,
+              "median_ns": 27900.0,
+              "min_ns": 27400,
+              "n": 100,
+              "p99_ns": 62000,
+              "series": 0
+            },
+            {
+              "max_ns": 31600,
+              "median_ns": 27800.0,
+              "min_ns": 27400,
+              "n": 100,
+              "p99_ns": 30900,
+              "series": 1
+            },
+            {
+              "max_ns": 32300,
+              "median_ns": 27900.0,
+              "min_ns": 27600,
+              "n": 100,
+              "p99_ns": 31600,
+              "series": 2
+            }
+          ],
+          "size": "2^256"
+        },
+        {
+          "case": "c0097",
+          "operation": "q_conj",
+          "series": [
+            {
+              "max_ns": 9700,
+              "median_ns": 7700.0,
+              "min_ns": 7600,
+              "n": 100,
+              "p99_ns": 9600,
+              "series": 0
+            },
+            {
+              "max_ns": 8300,
+              "median_ns": 7800.0,
+              "min_ns": 7600,
+              "n": 100,
+              "p99_ns": 8000,
+              "series": 1
+            },
+            {
+              "max_ns": 10300,
+              "median_ns": 7900.0,
+              "min_ns": 7800,
+              "n": 100,
+              "p99_ns": 9400,
+              "series": 2
+            }
+          ],
+          "size": "2^256"
+        },
+        {
+          "case": "c0098",
+          "operation": "q_norm",
+          "series": [
+            {
+              "max_ns": 20200,
+              "median_ns": 16000.0,
+              "min_ns": 15700,
+              "n": 100,
+              "p99_ns": 18200,
+              "series": 0
+            },
+            {
+              "max_ns": 17400,
+              "median_ns": 16100.0,
+              "min_ns": 15800,
+              "n": 100,
+              "p99_ns": 16800,
+              "series": 1
+            },
+            {
+              "max_ns": 19200,
+              "median_ns": 16000.0,
+              "min_ns": 15700,
+              "n": 100,
+              "p99_ns": 18500,
+              "series": 2
+            }
+          ],
+          "size": "2^256"
+        },
+        {
+          "case": "c0099",
+          "operation": "q_sign",
+          "series": [
+            {
+              "max_ns": 10800,
+              "median_ns": 7000.0,
+              "min_ns": 6900,
+              "n": 100,
+              "p99_ns": 8600,
+              "series": 0
+            },
+            {
+              "max_ns": 10200,
+              "median_ns": 7100.0,
+              "min_ns": 6900,
+              "n": 100,
+              "p99_ns": 7300,
+              "series": 1
+            },
+            {
+              "max_ns": 7300,
+              "median_ns": 7100.0,
+              "min_ns": 7000,
+              "n": 100,
+              "p99_ns": 7200,
+              "series": 2
+            }
+          ],
+          "size": "2^256"
+        },
+        {
+          "case": "c0140",
+          "operation": "add",
+          "series": [
+            {
+              "max_ns": 520000,
+              "median_ns": 95000.0,
+              "min_ns": 91700,
+              "n": 100,
+              "p99_ns": 259700,
+              "series": 0
+            },
+            {
+              "max_ns": 126800,
+              "median_ns": 95200.0,
+              "min_ns": 94200,
+              "n": 100,
+              "p99_ns": 118600,
+              "series": 1
+            },
+            {
+              "max_ns": 138900,
+              "median_ns": 95250.0,
+              "min_ns": 94500,
+              "n": 100,
+              "p99_ns": 130900,
+              "series": 2
+            }
+          ],
+          "size": "22500-bit"
+        },
+        {
+          "case": "c0141",
+          "operation": "sub",
+          "series": [
+            {
+              "max_ns": 126600,
+              "median_ns": 93550.0,
+              "min_ns": 92200,
+              "n": 100,
+              "p99_ns": 98100,
+              "series": 0
+            },
+            {
+              "max_ns": 102500,
+              "median_ns": 94650.0,
+              "min_ns": 93900,
+              "n": 100,
+              "p99_ns": 99100,
+              "series": 1
+            },
+            {
+              "max_ns": 99900,
+              "median_ns": 94700.0,
+              "min_ns": 93800,
+              "n": 100,
+              "p99_ns": 99300,
+              "series": 2
+            }
+          ],
+          "size": "22500-bit"
+        },
+        {
+          "case": "c0142",
+          "operation": "mul",
+          "series": [
+            {
+              "max_ns": 579700,
+              "median_ns": 301000.0,
+              "min_ns": 296100,
+              "n": 100,
+              "p99_ns": 462500,
+              "series": 0
+            },
+            {
+              "max_ns": 369600,
+              "median_ns": 303750.0,
+              "min_ns": 301300,
+              "n": 100,
+              "p99_ns": 363700,
+              "series": 1
+            },
+            {
+              "max_ns": 371100,
+              "median_ns": 304800.0,
+              "min_ns": 303100,
+              "n": 100,
+              "p99_ns": 346300,
+              "series": 2
+            }
+          ],
+          "size": "22500-bit"
+        },
+        {
+          "case": "c0143",
+          "operation": "div",
+          "series": [
+            {
+              "max_ns": 21800,
+              "median_ns": 6300.0,
+              "min_ns": 6100,
+              "n": 100,
+              "p99_ns": 9500,
+              "series": 0
+            },
+            {
+              "max_ns": 9600,
+              "median_ns": 6500.0,
+              "min_ns": 6300,
+              "n": 100,
+              "p99_ns": 7200,
+              "series": 1
+            },
+            {
+              "max_ns": 8700,
+              "median_ns": 6300.0,
+              "min_ns": 6100,
+              "n": 100,
+              "p99_ns": 6900,
+              "series": 2
+            }
+          ],
+          "size": "22500-bit"
+        },
+        {
+          "case": "c0144",
+          "operation": "rem",
+          "series": [
+            {
+              "max_ns": 235500,
+              "median_ns": 98700.0,
+              "min_ns": 97500,
+              "n": 100,
+              "p99_ns": 129500,
+              "series": 0
+            },
+            {
+              "max_ns": 128700,
+              "median_ns": 100900.0,
+              "min_ns": 100000,
+              "n": 100,
+              "p99_ns": 127800,
+              "series": 1
+            },
+            {
+              "max_ns": 140300,
+              "median_ns": 101300.0,
+              "min_ns": 100400,
+              "n": 100,
+              "p99_ns": 123700,
+              "series": 2
+            }
+          ],
+          "size": "22500-bit"
+        },
+        {
+          "case": "c0145",
+          "operation": "gcd",
+          "series": [
+            {
+              "max_ns": 2213800,
+              "median_ns": 1621050.0,
+              "min_ns": 1592100,
+              "n": 100,
+              "p99_ns": 2186400,
+              "series": 0
+            },
+            {
+              "max_ns": 1885100,
+              "median_ns": 1652700.0,
+              "min_ns": 1638200,
+              "n": 100,
+              "p99_ns": 1748400,
+              "series": 1
+            },
+            {
+              "max_ns": 1964600,
+              "median_ns": 1657450.0,
+              "min_ns": 1635400,
+              "n": 100,
+              "p99_ns": 1879300,
+              "series": 2
+            }
+          ],
+          "size": "22500-bit"
+        },
+        {
+          "case": "c0146",
+          "operation": "cmp",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 1
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 2
+            }
+          ],
+          "size": "22500-bit"
+        },
+        {
+          "case": "c0147",
+          "operation": "shl",
+          "series": [
+            {
+              "max_ns": 215400,
+              "median_ns": 93250.0,
+              "min_ns": 92100,
+              "n": 100,
+              "p99_ns": 109400,
+              "series": 0
+            },
+            {
+              "max_ns": 115600,
+              "median_ns": 95900.0,
+              "min_ns": 94800,
+              "n": 100,
+              "p99_ns": 107800,
+              "series": 1
+            },
+            {
+              "max_ns": 160700,
+              "median_ns": 95900.0,
+              "min_ns": 94800,
+              "n": 100,
+              "p99_ns": 147300,
+              "series": 2
+            }
+          ],
+          "size": "22500-bit"
+        },
+        {
+          "case": "c0153",
+          "operation": "shr",
+          "series": [
+            {
+              "max_ns": 320100,
+              "median_ns": 92300.0,
+              "min_ns": 91400,
+              "n": 100,
+              "p99_ns": 286100,
+              "series": 0
+            },
+            {
+              "max_ns": 121800,
+              "median_ns": 94600.0,
+              "min_ns": 93900,
+              "n": 100,
+              "p99_ns": 117300,
+              "series": 1
+            },
+            {
+              "max_ns": 105100,
+              "median_ns": 94800.0,
+              "min_ns": 94000,
+              "n": 100,
+              "p99_ns": 101900,
+              "series": 2
+            }
+          ],
+          "size": "22500-bit"
+        },
+        {
+          "case": "c0159",
+          "operation": "bits",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 1
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 2
+            }
+          ],
+          "size": "22500-bit"
+        },
+        {
+          "case": "c0160",
+          "operation": "dec",
+          "series": [
+            {
+              "max_ns": 390100,
+              "median_ns": 227250.0,
+              "min_ns": 225900,
+              "n": 100,
+              "p99_ns": 376900,
+              "series": 0
+            },
+            {
+              "max_ns": 301100,
+              "median_ns": 233000.0,
+              "min_ns": 231800,
+              "n": 100,
+              "p99_ns": 285800,
+              "series": 1
+            },
+            {
+              "max_ns": 337300,
+              "median_ns": 234200.0,
+              "min_ns": 232800,
+              "n": 100,
+              "p99_ns": 332100,
+              "series": 2
+            }
+          ],
+          "size": "22500-bit"
+        },
+        {
+          "case": "c0161",
+          "operation": "hex",
+          "series": [
+            {
+              "max_ns": 203000,
+              "median_ns": 105000.0,
+              "min_ns": 104200,
+              "n": 100,
+              "p99_ns": 148200,
+              "series": 0
+            },
+            {
+              "max_ns": 135200,
+              "median_ns": 107800.0,
+              "min_ns": 107000,
+              "n": 100,
+              "p99_ns": 128300,
+              "series": 1
+            },
+            {
+              "max_ns": 243400,
+              "median_ns": 132550.0,
+              "min_ns": 108800,
+              "n": 100,
+              "p99_ns": 192500,
+              "series": 2
+            }
+          ],
+          "size": "22500-bit"
+        },
+        {
+          "case": "c0162",
+          "operation": "rat_add",
+          "series": [
+            {
+              "max_ns": 5709800,
+              "median_ns": 4835500.0,
+              "min_ns": 4528700,
+              "n": 100,
+              "p99_ns": 5589800,
+              "series": 0
+            },
+            {
+              "max_ns": 5224600,
+              "median_ns": 4821350.0,
+              "min_ns": 4712800,
+              "n": 100,
+              "p99_ns": 5214100,
+              "series": 1
+            },
+            {
+              "max_ns": 5118200,
+              "median_ns": 4824550.0,
+              "min_ns": 4778900,
+              "n": 100,
+              "p99_ns": 5106700,
+              "series": 2
+            }
+          ],
+          "size": "22500-bit"
+        },
+        {
+          "case": "c0163",
+          "operation": "rat_mul",
+          "series": [
+            {
+              "max_ns": 7498500,
+              "median_ns": 6650100.0,
+              "min_ns": 6326200,
+              "n": 100,
+              "p99_ns": 7403000,
+              "series": 0
+            },
+            {
+              "max_ns": 7102800,
+              "median_ns": 6636450.0,
+              "min_ns": 6576100,
+              "n": 100,
+              "p99_ns": 6967500,
+              "series": 1
+            },
+            {
+              "max_ns": 7094100,
+              "median_ns": 6642600.0,
+              "min_ns": 6585400,
+              "n": 100,
+              "p99_ns": 6997900,
+              "series": 2
+            }
+          ],
+          "size": "22500-bit"
+        },
+        {
+          "case": "c0164",
+          "operation": "rat_cmp",
+          "series": [
+            {
+              "max_ns": 3765000,
+              "median_ns": 3320850.0,
+              "min_ns": 3227500,
+              "n": 100,
+              "p99_ns": 3752400,
+              "series": 0
+            },
+            {
+              "max_ns": 3850100,
+              "median_ns": 3410850.0,
+              "min_ns": 3376800,
+              "n": 100,
+              "p99_ns": 3739000,
+              "series": 1
+            },
+            {
+              "max_ns": 4213100,
+              "median_ns": 3409450.0,
+              "min_ns": 3378600,
+              "n": 100,
+              "p99_ns": 3692400,
+              "series": 2
+            }
+          ],
+          "size": "22500-bit"
+        },
+        {
+          "case": "c0165",
+          "operation": "q_add",
+          "series": [
+            {
+              "max_ns": 12468200,
+              "median_ns": 11886800.0,
+              "min_ns": 11235900,
+              "n": 100,
+              "p99_ns": 12319700,
+              "series": 0
+            },
+            {
+              "max_ns": 12464000,
+              "median_ns": 11786800.0,
+              "min_ns": 11683500,
+              "n": 100,
+              "p99_ns": 12328600,
+              "series": 1
+            },
+            {
+              "max_ns": 14880900,
+              "median_ns": 11791200.0,
+              "min_ns": 11698900,
+              "n": 100,
+              "p99_ns": 14485200,
+              "series": 2
+            }
+          ],
+          "size": "22500-bit"
+        },
+        {
+          "case": "c0166",
+          "operation": "q_mul",
+          "series": [
+            {
+              "max_ns": 16168700,
+              "median_ns": 13000350.0,
+              "min_ns": 12539900,
+              "n": 100,
+              "p99_ns": 14140700,
+              "series": 0
+            },
+            {
+              "max_ns": 17035300,
+              "median_ns": 12981450.0,
+              "min_ns": 12885400,
+              "n": 100,
+              "p99_ns": 15115500,
+              "series": 1
+            },
+            {
+              "max_ns": 13818800,
+              "median_ns": 12969600.0,
+              "min_ns": 12832900,
+              "n": 100,
+              "p99_ns": 13722400,
+              "series": 2
+            }
+          ],
+          "size": "22500-bit"
+        },
+        {
+          "case": "c0167",
+          "operation": "q_conj",
+          "series": [
+            {
+              "max_ns": 3308400,
+              "median_ns": 2457500.0,
+              "min_ns": 2422600,
+              "n": 100,
+              "p99_ns": 2945700,
+              "series": 0
+            },
+            {
+              "max_ns": 2547900,
+              "median_ns": 2454300.0,
+              "min_ns": 2408600,
+              "n": 100,
+              "p99_ns": 2535500,
+              "series": 1
+            },
+            {
+              "max_ns": 3016800,
+              "median_ns": 2455650.0,
+              "min_ns": 2415600,
+              "n": 100,
+              "p99_ns": 2758700,
+              "series": 2
+            }
+          ],
+          "size": "22500-bit"
+        },
+        {
+          "case": "c0168",
+          "operation": "q_norm",
+          "series": [
+            {
+              "max_ns": 9431900,
+              "median_ns": 8843900.0,
+              "min_ns": 8765900,
+              "n": 100,
+              "p99_ns": 9098400,
+              "series": 0
+            },
+            {
+              "max_ns": 9208200,
+              "median_ns": 8834800.0,
+              "min_ns": 8734900,
+              "n": 100,
+              "p99_ns": 9188400,
+              "series": 1
+            },
+            {
+              "max_ns": 9283200,
+              "median_ns": 8840800.0,
+              "min_ns": 8756200,
+              "n": 100,
+              "p99_ns": 9188700,
+              "series": 2
+            }
+          ],
+          "size": "22500-bit"
+        },
+        {
+          "case": "c0169",
+          "operation": "q_sign",
+          "series": [
+            {
+              "max_ns": 2627600,
+              "median_ns": 2157550.0,
+              "min_ns": 2121600,
+              "n": 100,
+              "p99_ns": 2237400,
+              "series": 0
+            },
+            {
+              "max_ns": 2698600,
+              "median_ns": 2160800.0,
+              "min_ns": 2114100,
+              "n": 100,
+              "p99_ns": 2607900,
+              "series": 1
+            },
+            {
+              "max_ns": 2242200,
+              "median_ns": 2159400.0,
+              "min_ns": 2117700,
+              "n": 100,
+              "p99_ns": 2213200,
+              "series": 2
+            }
+          ],
+          "size": "22500-bit"
+        },
+        {
+          "case": "c0210",
+          "operation": "add",
+          "series": [
+            {
+              "max_ns": 118600,
+              "median_ns": 95300.0,
+              "min_ns": 94300,
+              "n": 100,
+              "p99_ns": 104200,
+              "series": 0
+            },
+            {
+              "max_ns": 114600,
+              "median_ns": 94600.0,
+              "min_ns": 93400,
+              "n": 100,
+              "p99_ns": 105800,
+              "series": 1
+            },
+            {
+              "max_ns": 109000,
+              "median_ns": 94500.0,
+              "min_ns": 93700,
+              "n": 100,
+              "p99_ns": 102400,
+              "series": 2
+            }
+          ],
+          "size": "6775-digit"
+        },
+        {
+          "case": "c0211",
+          "operation": "sub",
+          "series": [
+            {
+              "max_ns": 151200,
+              "median_ns": 94550.0,
+              "min_ns": 93600,
+              "n": 100,
+              "p99_ns": 133900,
+              "series": 0
+            },
+            {
+              "max_ns": 119500,
+              "median_ns": 93600.0,
+              "min_ns": 93100,
+              "n": 100,
+              "p99_ns": 98000,
+              "series": 1
+            },
+            {
+              "max_ns": 147700,
+              "median_ns": 93800.0,
+              "min_ns": 93300,
+              "n": 100,
+              "p99_ns": 140500,
+              "series": 2
+            }
+          ],
+          "size": "6775-digit"
+        },
+        {
+          "case": "c0212",
+          "operation": "mul",
+          "series": [
+            {
+              "max_ns": 278700,
+              "median_ns": 235500.0,
+              "min_ns": 233700,
+              "n": 100,
+              "p99_ns": 261300,
+              "series": 0
+            },
+            {
+              "max_ns": 291400,
+              "median_ns": 233800.0,
+              "min_ns": 232000,
+              "n": 100,
+              "p99_ns": 245500,
+              "series": 1
+            },
+            {
+              "max_ns": 302200,
+              "median_ns": 234100.0,
+              "min_ns": 232500,
+              "n": 100,
+              "p99_ns": 271900,
+              "series": 2
+            }
+          ],
+          "size": "6775-digit"
+        },
+        {
+          "case": "c0213",
+          "operation": "div",
+          "series": [
+            {
+              "max_ns": 8200,
+              "median_ns": 6600.0,
+              "min_ns": 6400,
+              "n": 100,
+              "p99_ns": 7400,
+              "series": 0
+            },
+            {
+              "max_ns": 8700,
+              "median_ns": 6700.0,
+              "min_ns": 6500,
+              "n": 100,
+              "p99_ns": 7200,
+              "series": 1
+            },
+            {
+              "max_ns": 9500,
+              "median_ns": 6600.0,
+              "min_ns": 6500,
+              "n": 100,
+              "p99_ns": 8800,
+              "series": 2
+            }
+          ],
+          "size": "6775-digit"
+        },
+        {
+          "case": "c0214",
+          "operation": "rem",
+          "series": [
+            {
+              "max_ns": 120800,
+              "median_ns": 100900.0,
+              "min_ns": 99800,
+              "n": 100,
+              "p99_ns": 113400,
+              "series": 0
+            },
+            {
+              "max_ns": 120900,
+              "median_ns": 100400.0,
+              "min_ns": 99300,
+              "n": 100,
+              "p99_ns": 117100,
+              "series": 1
+            },
+            {
+              "max_ns": 107000,
+              "median_ns": 100400.0,
+              "min_ns": 99300,
+              "n": 100,
+              "p99_ns": 105200,
+              "series": 2
+            }
+          ],
+          "size": "6775-digit"
+        },
+        {
+          "case": "c0215",
+          "operation": "gcd",
+          "series": [
+            {
+              "max_ns": 1453100,
+              "median_ns": 1356750.0,
+              "min_ns": 1328800,
+              "n": 100,
+              "p99_ns": 1420300,
+              "series": 0
+            },
+            {
+              "max_ns": 1582300,
+              "median_ns": 1357150.0,
+              "min_ns": 1337900,
+              "n": 100,
+              "p99_ns": 1396300,
+              "series": 1
+            },
+            {
+              "max_ns": 1612500,
+              "median_ns": 1360250.0,
+              "min_ns": 1339100,
+              "n": 100,
+              "p99_ns": 1582200,
+              "series": 2
+            }
+          ],
+          "size": "6775-digit"
+        },
+        {
+          "case": "c0216",
+          "operation": "cmp",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 1
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 2
+            }
+          ],
+          "size": "6775-digit"
+        },
+        {
+          "case": "c0217",
+          "operation": "shl",
+          "series": [
+            {
+              "max_ns": 39700,
+              "median_ns": 32700.0,
+              "min_ns": 32400,
+              "n": 100,
+              "p99_ns": 38800,
+              "series": 0
+            },
+            {
+              "max_ns": 43300,
+              "median_ns": 32700.0,
+              "min_ns": 32400,
+              "n": 100,
+              "p99_ns": 37400,
+              "series": 1
+            },
+            {
+              "max_ns": 65900,
+              "median_ns": 32600.0,
+              "min_ns": 32200,
+              "n": 100,
+              "p99_ns": 44900,
+              "series": 2
+            }
+          ],
+          "size": "6775-digit"
+        },
+        {
+          "case": "c0223",
+          "operation": "shr",
+          "series": [
+            {
+              "max_ns": 35800,
+              "median_ns": 31700.0,
+              "min_ns": 31500,
+              "n": 100,
+              "p99_ns": 34100,
+              "series": 0
+            },
+            {
+              "max_ns": 34400,
+              "median_ns": 31600.0,
+              "min_ns": 31300,
+              "n": 100,
+              "p99_ns": 33500,
+              "series": 1
+            },
+            {
+              "max_ns": 35200,
+              "median_ns": 31400.0,
+              "min_ns": 31300,
+              "n": 100,
+              "p99_ns": 35000,
+              "series": 2
+            }
+          ],
+          "size": "6775-digit"
+        },
+        {
+          "case": "c0229",
+          "operation": "bits",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 1
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 2
+            }
+          ],
+          "size": "6775-digit"
+        },
+        {
+          "case": "c0230",
+          "operation": "dec",
+          "series": [
+            {
+              "max_ns": 136300,
+              "median_ns": 107700.0,
+              "min_ns": 107100,
+              "n": 100,
+              "p99_ns": 135200,
+              "series": 0
+            },
+            {
+              "max_ns": 144300,
+              "median_ns": 107600.0,
+              "min_ns": 106900,
+              "n": 100,
+              "p99_ns": 121500,
+              "series": 1
+            },
+            {
+              "max_ns": 137900,
+              "median_ns": 107750.0,
+              "min_ns": 107000,
+              "n": 100,
+              "p99_ns": 129000,
+              "series": 2
+            }
+          ],
+          "size": "6775-digit"
+        },
+        {
+          "case": "c0231",
+          "operation": "hex",
+          "series": [
+            {
+              "max_ns": 57200,
+              "median_ns": 44300.0,
+              "min_ns": 44000,
+              "n": 100,
+              "p99_ns": 54300,
+              "series": 0
+            },
+            {
+              "max_ns": 61800,
+              "median_ns": 44400.0,
+              "min_ns": 44000,
+              "n": 100,
+              "p99_ns": 48800,
+              "series": 1
+            },
+            {
+              "max_ns": 57400,
+              "median_ns": 44300.0,
+              "min_ns": 44000,
+              "n": 100,
+              "p99_ns": 52700,
+              "series": 2
+            }
+          ],
+          "size": "6775-digit"
+        },
+        {
+          "case": "c0232",
+          "operation": "rat_add",
+          "series": [
+            {
+              "max_ns": 5942500,
+              "median_ns": 4255500.0,
+              "min_ns": 4219400,
+              "n": 100,
+              "p99_ns": 4875300,
+              "series": 0
+            },
+            {
+              "max_ns": 4859400,
+              "median_ns": 4259500.0,
+              "min_ns": 4222700,
+              "n": 100,
+              "p99_ns": 4460000,
+              "series": 1
+            },
+            {
+              "max_ns": 4734700,
+              "median_ns": 4252600.0,
+              "min_ns": 4223800,
+              "n": 100,
+              "p99_ns": 4514400,
+              "series": 2
+            }
+          ],
+          "size": "6775-digit"
+        },
+        {
+          "case": "c0233",
+          "operation": "rat_mul",
+          "series": [
+            {
+              "max_ns": 7277300,
+              "median_ns": 7036750.0,
+              "min_ns": 6978200,
+              "n": 100,
+              "p99_ns": 7174300,
+              "series": 0
+            },
+            {
+              "max_ns": 9527100,
+              "median_ns": 7034450.0,
+              "min_ns": 6791600,
+              "n": 100,
+              "p99_ns": 9379300,
+              "series": 1
+            },
+            {
+              "max_ns": 7807100,
+              "median_ns": 7037600.0,
+              "min_ns": 6979300,
+              "n": 100,
+              "p99_ns": 7748000,
+              "series": 2
+            }
+          ],
+          "size": "6775-digit"
+        },
+        {
+          "case": "c0234",
+          "operation": "rat_cmp",
+          "series": [
+            {
+              "max_ns": 3326600,
+              "median_ns": 2787500.0,
+              "min_ns": 2747800,
+              "n": 100,
+              "p99_ns": 3193600,
+              "series": 0
+            },
+            {
+              "max_ns": 3874200,
+              "median_ns": 3787150.0,
+              "min_ns": 2989300,
+              "n": 100,
+              "p99_ns": 3855800,
+              "series": 1
+            },
+            {
+              "max_ns": 2910500,
+              "median_ns": 2787550.0,
+              "min_ns": 2754700,
+              "n": 100,
+              "p99_ns": 2854600,
+              "series": 2
+            }
+          ],
+          "size": "6775-digit"
+        },
+        {
+          "case": "c0235",
+          "operation": "q_add",
+          "series": [
+            {
+              "max_ns": 9859700,
+              "median_ns": 8140500.0,
+              "min_ns": 8068800,
+              "n": 100,
+              "p99_ns": 8896900,
+              "series": 0
+            },
+            {
+              "max_ns": 11741800,
+              "median_ns": 8151900.0,
+              "min_ns": 8052000,
+              "n": 100,
+              "p99_ns": 11688700,
+              "series": 1
+            },
+            {
+              "max_ns": 11708000,
+              "median_ns": 8164550.0,
+              "min_ns": 8043600,
+              "n": 100,
+              "p99_ns": 11676100,
+              "series": 2
+            }
+          ],
+          "size": "6775-digit"
+        },
+        {
+          "case": "c0236",
+          "operation": "q_mul",
+          "series": [
+            {
+              "max_ns": 12846800,
+              "median_ns": 11973350.0,
+              "min_ns": 11883500,
+              "n": 100,
+              "p99_ns": 12584200,
+              "series": 0
+            },
+            {
+              "max_ns": 12396800,
+              "median_ns": 11958350.0,
+              "min_ns": 11823200,
+              "n": 100,
+              "p99_ns": 12317300,
+              "series": 1
+            },
+            {
+              "max_ns": 13702800,
+              "median_ns": 11960300.0,
+              "min_ns": 11865400,
+              "n": 100,
+              "p99_ns": 12866200,
+              "series": 2
+            }
+          ],
+          "size": "6775-digit"
+        },
+        {
+          "case": "c0237",
+          "operation": "q_conj",
+          "series": [
+            {
+              "max_ns": 1886700,
+              "median_ns": 1803100.0,
+              "min_ns": 1776000,
+              "n": 100,
+              "p99_ns": 1879100,
+              "series": 0
+            },
+            {
+              "max_ns": 2165600,
+              "median_ns": 1811150.0,
+              "min_ns": 1778600,
+              "n": 100,
+              "p99_ns": 2001900,
+              "series": 1
+            },
+            {
+              "max_ns": 1882400,
+              "median_ns": 1802600.0,
+              "min_ns": 1779700,
+              "n": 100,
+              "p99_ns": 1870400,
+              "series": 2
+            }
+          ],
+          "size": "6775-digit"
+        },
+        {
+          "case": "c0238",
+          "operation": "q_norm",
+          "series": [
+            {
+              "max_ns": 9418700,
+              "median_ns": 8807200.0,
+              "min_ns": 8736400,
+              "n": 100,
+              "p99_ns": 9352900,
+              "series": 0
+            },
+            {
+              "max_ns": 9274900,
+              "median_ns": 8820650.0,
+              "min_ns": 8754100,
+              "n": 100,
+              "p99_ns": 9222000,
+              "series": 1
+            },
+            {
+              "max_ns": 9522500,
+              "median_ns": 8790500.0,
+              "min_ns": 8497100,
+              "n": 100,
+              "p99_ns": 9228700,
+              "series": 2
+            }
+          ],
+          "size": "6775-digit"
+        },
+        {
+          "case": "c0239",
+          "operation": "q_sign",
+          "series": [
+            {
+              "max_ns": 2132700,
+              "median_ns": 1637250.0,
+              "min_ns": 1614900,
+              "n": 100,
+              "p99_ns": 1780000,
+              "series": 0
+            },
+            {
+              "max_ns": 1767100,
+              "median_ns": 1651500.0,
+              "min_ns": 1618500,
+              "n": 100,
+              "p99_ns": 1714300,
+              "series": 1
+            },
+            {
+              "max_ns": 1883200,
+              "median_ns": 1605350.0,
+              "min_ns": 1569100,
+              "n": 100,
+              "p99_ns": 1852800,
+              "series": 2
+            }
+          ],
+          "size": "6775-digit"
+        },
+        {
+          "case": "c0280",
+          "operation": "add",
+          "series": [
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 0
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 200.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 1
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 200.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-70-bit"
+        },
+        {
+          "case": "c0281",
+          "operation": "sub",
+          "series": [
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 0
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 1
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-70-bit"
+        },
+        {
+          "case": "c0282",
+          "operation": "mul",
+          "series": [
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 0
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 1
+            },
+            {
+              "max_ns": 500,
+              "median_ns": 200.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 500,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-70-bit"
+        },
+        {
+          "case": "c0283",
+          "operation": "div",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 1
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-70-bit"
+        },
+        {
+          "case": "c0284",
+          "operation": "rem",
+          "series": [
+            {
+              "max_ns": 200,
+              "median_ns": 200.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 0
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 200.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 1
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 200.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-70-bit"
+        },
+        {
+          "case": "c0285",
+          "operation": "gcd",
+          "series": [
+            {
+              "max_ns": 1200,
+              "median_ns": 1100.0,
+              "min_ns": 1000,
+              "n": 100,
+              "p99_ns": 1200,
+              "series": 0
+            },
+            {
+              "max_ns": 1200,
+              "median_ns": 1100.0,
+              "min_ns": 1000,
+              "n": 100,
+              "p99_ns": 1200,
+              "series": 1
+            },
+            {
+              "max_ns": 1200,
+              "median_ns": 1100.0,
+              "min_ns": 1000,
+              "n": 100,
+              "p99_ns": 1200,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-70-bit"
+        },
+        {
+          "case": "c0286",
+          "operation": "cmp",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 1
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-70-bit"
+        },
+        {
+          "case": "c0287",
+          "operation": "shl",
+          "series": [
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 0
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 1
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-70-bit"
+        },
+        {
+          "case": "c0293",
+          "operation": "shr",
+          "series": [
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 0
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 1
+            },
+            {
+              "max_ns": 700,
+              "median_ns": 200.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 500,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-70-bit"
+        },
+        {
+          "case": "c0299",
+          "operation": "bits",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 1
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-70-bit"
+        },
+        {
+          "case": "c0300",
+          "operation": "dec",
+          "series": [
+            {
+              "max_ns": 400,
+              "median_ns": 300.0,
+              "min_ns": 300,
+              "n": 100,
+              "p99_ns": 400,
+              "series": 0
+            },
+            {
+              "max_ns": 400,
+              "median_ns": 300.0,
+              "min_ns": 300,
+              "n": 100,
+              "p99_ns": 400,
+              "series": 1
+            },
+            {
+              "max_ns": 7300,
+              "median_ns": 300.0,
+              "min_ns": 300,
+              "n": 100,
+              "p99_ns": 700,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-70-bit"
+        },
+        {
+          "case": "c0301",
+          "operation": "hex",
+          "series": [
+            {
+              "max_ns": 500,
+              "median_ns": 400.0,
+              "min_ns": 300,
+              "n": 100,
+              "p99_ns": 500,
+              "series": 0
+            },
+            {
+              "max_ns": 500,
+              "median_ns": 400.0,
+              "min_ns": 300,
+              "n": 100,
+              "p99_ns": 400,
+              "series": 1
+            },
+            {
+              "max_ns": 600,
+              "median_ns": 400.0,
+              "min_ns": 300,
+              "n": 100,
+              "p99_ns": 600,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-70-bit"
+        },
+        {
+          "case": "c0302",
+          "operation": "rat_add",
+          "series": [
+            {
+              "max_ns": 2400,
+              "median_ns": 2000.0,
+              "min_ns": 1900,
+              "n": 100,
+              "p99_ns": 2200,
+              "series": 0
+            },
+            {
+              "max_ns": 2400,
+              "median_ns": 2000.0,
+              "min_ns": 1900,
+              "n": 100,
+              "p99_ns": 2100,
+              "series": 1
+            },
+            {
+              "max_ns": 2500,
+              "median_ns": 2000.0,
+              "min_ns": 1900,
+              "n": 100,
+              "p99_ns": 2300,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-70-bit"
+        },
+        {
+          "case": "c0303",
+          "operation": "rat_mul",
+          "series": [
+            {
+              "max_ns": 2300,
+              "median_ns": 2100.0,
+              "min_ns": 2000,
+              "n": 100,
+              "p99_ns": 2300,
+              "series": 0
+            },
+            {
+              "max_ns": 2300,
+              "median_ns": 2100.0,
+              "min_ns": 1900,
+              "n": 100,
+              "p99_ns": 2300,
+              "series": 1
+            },
+            {
+              "max_ns": 2500,
+              "median_ns": 2100.0,
+              "min_ns": 2000,
+              "n": 100,
+              "p99_ns": 2200,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-70-bit"
+        },
+        {
+          "case": "c0304",
+          "operation": "rat_cmp",
+          "series": [
+            {
+              "max_ns": 5200,
+              "median_ns": 2600.0,
+              "min_ns": 2500,
+              "n": 100,
+              "p99_ns": 2900,
+              "series": 0
+            },
+            {
+              "max_ns": 2800,
+              "median_ns": 2600.0,
+              "min_ns": 2500,
+              "n": 100,
+              "p99_ns": 2800,
+              "series": 1
+            },
+            {
+              "max_ns": 7600,
+              "median_ns": 2600.0,
+              "min_ns": 2500,
+              "n": 100,
+              "p99_ns": 2900,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-70-bit"
+        },
+        {
+          "case": "c0305",
+          "operation": "q_add",
+          "series": [
+            {
+              "max_ns": 7700,
+              "median_ns": 6700.0,
+              "min_ns": 6500,
+              "n": 100,
+              "p99_ns": 7000,
+              "series": 0
+            },
+            {
+              "max_ns": 11400,
+              "median_ns": 6700.0,
+              "min_ns": 6500,
+              "n": 100,
+              "p99_ns": 10800,
+              "series": 1
+            },
+            {
+              "max_ns": 7800,
+              "median_ns": 6700.0,
+              "min_ns": 6500,
+              "n": 100,
+              "p99_ns": 7700,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-70-bit"
+        },
+        {
+          "case": "c0306",
+          "operation": "q_mul",
+          "series": [
+            {
+              "max_ns": 12000,
+              "median_ns": 7900.0,
+              "min_ns": 7700,
+              "n": 100,
+              "p99_ns": 8100,
+              "series": 0
+            },
+            {
+              "max_ns": 8000,
+              "median_ns": 7800.0,
+              "min_ns": 7600,
+              "n": 100,
+              "p99_ns": 8000,
+              "series": 1
+            },
+            {
+              "max_ns": 12000,
+              "median_ns": 7800.0,
+              "min_ns": 7600,
+              "n": 100,
+              "p99_ns": 8100,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-70-bit"
+        },
+        {
+          "case": "c0307",
+          "operation": "q_conj",
+          "series": [
+            {
+              "max_ns": 2600,
+              "median_ns": 2500.0,
+              "min_ns": 2400,
+              "n": 100,
+              "p99_ns": 2600,
+              "series": 0
+            },
+            {
+              "max_ns": 2600,
+              "median_ns": 2400.0,
+              "min_ns": 2300,
+              "n": 100,
+              "p99_ns": 2600,
+              "series": 1
+            },
+            {
+              "max_ns": 2600,
+              "median_ns": 2500.0,
+              "min_ns": 2400,
+              "n": 100,
+              "p99_ns": 2600,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-70-bit"
+        },
+        {
+          "case": "c0308",
+          "operation": "q_norm",
+          "series": [
+            {
+              "max_ns": 4800,
+              "median_ns": 4600.0,
+              "min_ns": 4500,
+              "n": 100,
+              "p99_ns": 4800,
+              "series": 0
+            },
+            {
+              "max_ns": 4900,
+              "median_ns": 4600.0,
+              "min_ns": 4500,
+              "n": 100,
+              "p99_ns": 4800,
+              "series": 1
+            },
+            {
+              "max_ns": 8200,
+              "median_ns": 4600.0,
+              "min_ns": 4500,
+              "n": 100,
+              "p99_ns": 5000,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-70-bit"
+        },
+        {
+          "case": "c0309",
+          "operation": "q_sign",
+          "series": [
+            {
+              "max_ns": 2100,
+              "median_ns": 2000.0,
+              "min_ns": 1900,
+              "n": 100,
+              "p99_ns": 2100,
+              "series": 0
+            },
+            {
+              "max_ns": 5700,
+              "median_ns": 2000.0,
+              "min_ns": 1800,
+              "n": 100,
+              "p99_ns": 2100,
+              "series": 1
+            },
+            {
+              "max_ns": 2100,
+              "median_ns": 2000.0,
+              "min_ns": 1900,
+              "n": 100,
+              "p99_ns": 2100,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-70-bit"
+        },
+        {
+          "case": "c0315",
+          "operation": "add",
+          "series": [
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 0
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 1
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-260-bit"
+        },
+        {
+          "case": "c0316",
+          "operation": "sub",
+          "series": [
+            {
+              "max_ns": 400,
+              "median_ns": 300.0,
+              "min_ns": 300,
+              "n": 100,
+              "p99_ns": 400,
+              "series": 0
+            },
+            {
+              "max_ns": 400,
+              "median_ns": 300.0,
+              "min_ns": 300,
+              "n": 100,
+              "p99_ns": 400,
+              "series": 1
+            },
+            {
+              "max_ns": 400,
+              "median_ns": 300.0,
+              "min_ns": 300,
+              "n": 100,
+              "p99_ns": 400,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-260-bit"
+        },
+        {
+          "case": "c0317",
+          "operation": "mul",
+          "series": [
+            {
+              "max_ns": 500,
+              "median_ns": 500.0,
+              "min_ns": 400,
+              "n": 100,
+              "p99_ns": 500,
+              "series": 0
+            },
+            {
+              "max_ns": 500,
+              "median_ns": 500.0,
+              "min_ns": 400,
+              "n": 100,
+              "p99_ns": 500,
+              "series": 1
+            },
+            {
+              "max_ns": 900,
+              "median_ns": 500.0,
+              "min_ns": 400,
+              "n": 100,
+              "p99_ns": 800,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-260-bit"
+        },
+        {
+          "case": "c0318",
+          "operation": "div",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 1
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-260-bit"
+        },
+        {
+          "case": "c0319",
+          "operation": "rem",
+          "series": [
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 0
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 300.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 1
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 300.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-260-bit"
+        },
+        {
+          "case": "c0320",
+          "operation": "gcd",
+          "series": [
+            {
+              "max_ns": 4200,
+              "median_ns": 3700.0,
+              "min_ns": 3500,
+              "n": 100,
+              "p99_ns": 3900,
+              "series": 0
+            },
+            {
+              "max_ns": 3900,
+              "median_ns": 3600.0,
+              "min_ns": 3400,
+              "n": 100,
+              "p99_ns": 3700,
+              "series": 1
+            },
+            {
+              "max_ns": 4200,
+              "median_ns": 3600.0,
+              "min_ns": 3500,
+              "n": 100,
+              "p99_ns": 3900,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-260-bit"
+        },
+        {
+          "case": "c0321",
+          "operation": "cmp",
+          "series": [
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 1
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-260-bit"
+        },
+        {
+          "case": "c0322",
+          "operation": "shl",
+          "series": [
+            {
+              "max_ns": 400,
+              "median_ns": 400.0,
+              "min_ns": 300,
+              "n": 100,
+              "p99_ns": 400,
+              "series": 0
+            },
+            {
+              "max_ns": 400,
+              "median_ns": 400.0,
+              "min_ns": 300,
+              "n": 100,
+              "p99_ns": 400,
+              "series": 1
+            },
+            {
+              "max_ns": 500,
+              "median_ns": 400.0,
+              "min_ns": 300,
+              "n": 100,
+              "p99_ns": 400,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-260-bit"
+        },
+        {
+          "case": "c0328",
+          "operation": "shr",
+          "series": [
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 0
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 1
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-260-bit"
+        },
+        {
+          "case": "c0334",
+          "operation": "bits",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 1
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-260-bit"
+        },
+        {
+          "case": "c0335",
+          "operation": "dec",
+          "series": [
+            {
+              "max_ns": 700,
+              "median_ns": 600.0,
+              "min_ns": 500,
+              "n": 100,
+              "p99_ns": 700,
+              "series": 0
+            },
+            {
+              "max_ns": 700,
+              "median_ns": 600.0,
+              "min_ns": 500,
+              "n": 100,
+              "p99_ns": 700,
+              "series": 1
+            },
+            {
+              "max_ns": 700,
+              "median_ns": 600.0,
+              "min_ns": 500,
+              "n": 100,
+              "p99_ns": 600,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-260-bit"
+        },
+        {
+          "case": "c0336",
+          "operation": "hex",
+          "series": [
+            {
+              "max_ns": 800,
+              "median_ns": 600.0,
+              "min_ns": 500,
+              "n": 100,
+              "p99_ns": 700,
+              "series": 0
+            },
+            {
+              "max_ns": 700,
+              "median_ns": 600.0,
+              "min_ns": 500,
+              "n": 100,
+              "p99_ns": 600,
+              "series": 1
+            },
+            {
+              "max_ns": 900,
+              "median_ns": 600.0,
+              "min_ns": 500,
+              "n": 100,
+              "p99_ns": 800,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-260-bit"
+        },
+        {
+          "case": "c0337",
+          "operation": "rat_add",
+          "series": [
+            {
+              "max_ns": 7800,
+              "median_ns": 5300.0,
+              "min_ns": 5200,
+              "n": 100,
+              "p99_ns": 6100,
+              "series": 0
+            },
+            {
+              "max_ns": 5800,
+              "median_ns": 5300.0,
+              "min_ns": 5200,
+              "n": 100,
+              "p99_ns": 5600,
+              "series": 1
+            },
+            {
+              "max_ns": 8800,
+              "median_ns": 5400.0,
+              "min_ns": 5200,
+              "n": 100,
+              "p99_ns": 6300,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-260-bit"
+        },
+        {
+          "case": "c0338",
+          "operation": "rat_mul",
+          "series": [
+            {
+              "max_ns": 17000,
+              "median_ns": 8600.0,
+              "min_ns": 8400,
+              "n": 100,
+              "p99_ns": 14800,
+              "series": 0
+            },
+            {
+              "max_ns": 11700,
+              "median_ns": 8550.0,
+              "min_ns": 8300,
+              "n": 100,
+              "p99_ns": 9200,
+              "series": 1
+            },
+            {
+              "max_ns": 10400,
+              "median_ns": 8700.0,
+              "min_ns": 8500,
+              "n": 100,
+              "p99_ns": 9500,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-260-bit"
+        },
+        {
+          "case": "c0339",
+          "operation": "rat_cmp",
+          "series": [
+            {
+              "max_ns": 9100,
+              "median_ns": 7700.0,
+              "min_ns": 7500,
+              "n": 100,
+              "p99_ns": 8100,
+              "series": 0
+            },
+            {
+              "max_ns": 8400,
+              "median_ns": 7700.0,
+              "min_ns": 7500,
+              "n": 100,
+              "p99_ns": 8100,
+              "series": 1
+            },
+            {
+              "max_ns": 10600,
+              "median_ns": 7900.0,
+              "min_ns": 7600,
+              "n": 100,
+              "p99_ns": 8900,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-260-bit"
+        },
+        {
+          "case": "c0340",
+          "operation": "q_add",
+          "series": [
+            {
+              "max_ns": 24600,
+              "median_ns": 20850.0,
+              "min_ns": 20400,
+              "n": 100,
+              "p99_ns": 23800,
+              "series": 0
+            },
+            {
+              "max_ns": 23300,
+              "median_ns": 20600.0,
+              "min_ns": 20300,
+              "n": 100,
+              "p99_ns": 21600,
+              "series": 1
+            },
+            {
+              "max_ns": 25000,
+              "median_ns": 20800.0,
+              "min_ns": 20400,
+              "n": 100,
+              "p99_ns": 23900,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-260-bit"
+        },
+        {
+          "case": "c0341",
+          "operation": "q_mul",
+          "series": [
+            {
+              "max_ns": 29100,
+              "median_ns": 26800.0,
+              "min_ns": 26500,
+              "n": 100,
+              "p99_ns": 28200,
+              "series": 0
+            },
+            {
+              "max_ns": 45000,
+              "median_ns": 26700.0,
+              "min_ns": 26200,
+              "n": 100,
+              "p99_ns": 38200,
+              "series": 1
+            },
+            {
+              "max_ns": 30600,
+              "median_ns": 26800.0,
+              "min_ns": 26500,
+              "n": 100,
+              "p99_ns": 28600,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-260-bit"
+        },
+        {
+          "case": "c0342",
+          "operation": "q_conj",
+          "series": [
+            {
+              "max_ns": 7200,
+              "median_ns": 7000.0,
+              "min_ns": 6800,
+              "n": 100,
+              "p99_ns": 7200,
+              "series": 0
+            },
+            {
+              "max_ns": 7200,
+              "median_ns": 7000.0,
+              "min_ns": 6800,
+              "n": 100,
+              "p99_ns": 7100,
+              "series": 1
+            },
+            {
+              "max_ns": 7200,
+              "median_ns": 7000.0,
+              "min_ns": 6800,
+              "n": 100,
+              "p99_ns": 7200,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-260-bit"
+        },
+        {
+          "case": "c0343",
+          "operation": "q_norm",
+          "series": [
+            {
+              "max_ns": 17500,
+              "median_ns": 14900.0,
+              "min_ns": 14600,
+              "n": 100,
+              "p99_ns": 15400,
+              "series": 0
+            },
+            {
+              "max_ns": 18700,
+              "median_ns": 14800.0,
+              "min_ns": 14500,
+              "n": 100,
+              "p99_ns": 15400,
+              "series": 1
+            },
+            {
+              "max_ns": 16700,
+              "median_ns": 14900.0,
+              "min_ns": 14500,
+              "n": 100,
+              "p99_ns": 15400,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-260-bit"
+        },
+        {
+          "case": "c0344",
+          "operation": "q_sign",
+          "series": [
+            {
+              "max_ns": 6500,
+              "median_ns": 6300.0,
+              "min_ns": 6100,
+              "n": 100,
+              "p99_ns": 6500,
+              "series": 0
+            },
+            {
+              "max_ns": 11300,
+              "median_ns": 6200.0,
+              "min_ns": 6000,
+              "n": 100,
+              "p99_ns": 6400,
+              "series": 1
+            },
+            {
+              "max_ns": 9600,
+              "median_ns": 6200.0,
+              "min_ns": 6100,
+              "n": 100,
+              "p99_ns": 6400,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-260-bit"
+        },
+        {
+          "case": "c0350",
+          "operation": "add",
+          "series": [
+            {
+              "max_ns": 9500,
+              "median_ns": 6300.0,
+              "min_ns": 6100,
+              "n": 100,
+              "p99_ns": 7600,
+              "series": 0
+            },
+            {
+              "max_ns": 10100,
+              "median_ns": 6300.0,
+              "min_ns": 6200,
+              "n": 100,
+              "p99_ns": 7400,
+              "series": 1
+            },
+            {
+              "max_ns": 8000,
+              "median_ns": 6300.0,
+              "min_ns": 6100,
+              "n": 100,
+              "p99_ns": 7400,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-3022-bit"
+        },
+        {
+          "case": "c0351",
+          "operation": "sub",
+          "series": [
+            {
+              "max_ns": 6600,
+              "median_ns": 6400.0,
+              "min_ns": 6200,
+              "n": 100,
+              "p99_ns": 6500,
+              "series": 0
+            },
+            {
+              "max_ns": 6700,
+              "median_ns": 6400.0,
+              "min_ns": 6200,
+              "n": 100,
+              "p99_ns": 6600,
+              "series": 1
+            },
+            {
+              "max_ns": 6700,
+              "median_ns": 6400.0,
+              "min_ns": 6200,
+              "n": 100,
+              "p99_ns": 6600,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-3022-bit"
+        },
+        {
+          "case": "c0352",
+          "operation": "mul",
+          "series": [
+            {
+              "max_ns": 21000,
+              "median_ns": 17100.0,
+              "min_ns": 16800,
+              "n": 100,
+              "p99_ns": 19200,
+              "series": 0
+            },
+            {
+              "max_ns": 34000,
+              "median_ns": 17100.0,
+              "min_ns": 16700,
+              "n": 100,
+              "p99_ns": 25800,
+              "series": 1
+            },
+            {
+              "max_ns": 26400,
+              "median_ns": 16900.0,
+              "min_ns": 16600,
+              "n": 100,
+              "p99_ns": 24900,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-3022-bit"
+        },
+        {
+          "case": "c0353",
+          "operation": "div",
+          "series": [
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 0
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 1
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-3022-bit"
+        },
+        {
+          "case": "c0354",
+          "operation": "rem",
+          "series": [
+            {
+              "max_ns": 9700,
+              "median_ns": 6400.0,
+              "min_ns": 6200,
+              "n": 100,
+              "p99_ns": 6700,
+              "series": 0
+            },
+            {
+              "max_ns": 6700,
+              "median_ns": 6400.0,
+              "min_ns": 6100,
+              "n": 100,
+              "p99_ns": 6600,
+              "series": 1
+            },
+            {
+              "max_ns": 10100,
+              "median_ns": 6400.0,
+              "min_ns": 6200,
+              "n": 100,
+              "p99_ns": 9900,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-3022-bit"
+        },
+        {
+          "case": "c0355",
+          "operation": "gcd",
+          "series": [
+            {
+              "max_ns": 97900,
+              "median_ns": 62200.0,
+              "min_ns": 60800,
+              "n": 100,
+              "p99_ns": 93100,
+              "series": 0
+            },
+            {
+              "max_ns": 68600,
+              "median_ns": 62600.0,
+              "min_ns": 60900,
+              "n": 100,
+              "p99_ns": 68100,
+              "series": 1
+            },
+            {
+              "max_ns": 66500,
+              "median_ns": 61650.0,
+              "min_ns": 60800,
+              "n": 100,
+              "p99_ns": 66000,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-3022-bit"
+        },
+        {
+          "case": "c0356",
+          "operation": "cmp",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 1
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-3022-bit"
+        },
+        {
+          "case": "c0357",
+          "operation": "shl",
+          "series": [
+            {
+              "max_ns": 8000,
+              "median_ns": 6600.0,
+              "min_ns": 6400,
+              "n": 100,
+              "p99_ns": 7200,
+              "series": 0
+            },
+            {
+              "max_ns": 10500,
+              "median_ns": 6600.0,
+              "min_ns": 6400,
+              "n": 100,
+              "p99_ns": 6900,
+              "series": 1
+            },
+            {
+              "max_ns": 7200,
+              "median_ns": 6600.0,
+              "min_ns": 6400,
+              "n": 100,
+              "p99_ns": 7000,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-3022-bit"
+        },
+        {
+          "case": "c0363",
+          "operation": "shr",
+          "series": [
+            {
+              "max_ns": 10300,
+              "median_ns": 6500.0,
+              "min_ns": 6200,
+              "n": 100,
+              "p99_ns": 7700,
+              "series": 0
+            },
+            {
+              "max_ns": 7200,
+              "median_ns": 6500.0,
+              "min_ns": 6300,
+              "n": 100,
+              "p99_ns": 6800,
+              "series": 1
+            },
+            {
+              "max_ns": 7200,
+              "median_ns": 6500.0,
+              "min_ns": 6300,
+              "n": 100,
+              "p99_ns": 7000,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-3022-bit"
+        },
+        {
+          "case": "c0369",
+          "operation": "bits",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 1
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-3022-bit"
+        },
+        {
+          "case": "c0370",
+          "operation": "dec",
+          "series": [
+            {
+              "max_ns": 18000,
+              "median_ns": 14900.0,
+              "min_ns": 14600,
+              "n": 100,
+              "p99_ns": 15900,
+              "series": 0
+            },
+            {
+              "max_ns": 21100,
+              "median_ns": 14900.0,
+              "min_ns": 14700,
+              "n": 100,
+              "p99_ns": 21100,
+              "series": 1
+            },
+            {
+              "max_ns": 18100,
+              "median_ns": 14900.0,
+              "min_ns": 14500,
+              "n": 100,
+              "p99_ns": 15200,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-3022-bit"
+        },
+        {
+          "case": "c0371",
+          "operation": "hex",
+          "series": [
+            {
+              "max_ns": 10500,
+              "median_ns": 8500.0,
+              "min_ns": 8300,
+              "n": 100,
+              "p99_ns": 9600,
+              "series": 0
+            },
+            {
+              "max_ns": 10500,
+              "median_ns": 8500.0,
+              "min_ns": 8300,
+              "n": 100,
+              "p99_ns": 9200,
+              "series": 1
+            },
+            {
+              "max_ns": 11700,
+              "median_ns": 8500.0,
+              "min_ns": 8400,
+              "n": 100,
+              "p99_ns": 9800,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-3022-bit"
+        },
+        {
+          "case": "c0372",
+          "operation": "rat_add",
+          "series": [
+            {
+              "max_ns": 166700,
+              "median_ns": 131400.0,
+              "min_ns": 129600,
+              "n": 100,
+              "p99_ns": 143900,
+              "series": 0
+            },
+            {
+              "max_ns": 157300,
+              "median_ns": 130500.0,
+              "min_ns": 129400,
+              "n": 100,
+              "p99_ns": 143500,
+              "series": 1
+            },
+            {
+              "max_ns": 198600,
+              "median_ns": 131600.0,
+              "min_ns": 130000,
+              "n": 100,
+              "p99_ns": 185100,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-3022-bit"
+        },
+        {
+          "case": "c0373",
+          "operation": "rat_mul",
+          "series": [
+            {
+              "max_ns": 248300,
+              "median_ns": 207950.0,
+              "min_ns": 204700,
+              "n": 100,
+              "p99_ns": 239700,
+              "series": 0
+            },
+            {
+              "max_ns": 275100,
+              "median_ns": 207750.0,
+              "min_ns": 205400,
+              "n": 100,
+              "p99_ns": 258900,
+              "series": 1
+            },
+            {
+              "max_ns": 270700,
+              "median_ns": 209700.0,
+              "min_ns": 205000,
+              "n": 100,
+              "p99_ns": 261800,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-3022-bit"
+        },
+        {
+          "case": "c0374",
+          "operation": "rat_cmp",
+          "series": [
+            {
+              "max_ns": 161700,
+              "median_ns": 128600.0,
+              "min_ns": 126200,
+              "n": 100,
+              "p99_ns": 145200,
+              "series": 0
+            },
+            {
+              "max_ns": 155600,
+              "median_ns": 127800.0,
+              "min_ns": 125600,
+              "n": 100,
+              "p99_ns": 147700,
+              "series": 1
+            },
+            {
+              "max_ns": 168700,
+              "median_ns": 134600.0,
+              "min_ns": 126400,
+              "n": 100,
+              "p99_ns": 162200,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-3022-bit"
+        },
+        {
+          "case": "c0375",
+          "operation": "q_add",
+          "series": [
+            {
+              "max_ns": 476600,
+              "median_ns": 402450.0,
+              "min_ns": 395200,
+              "n": 100,
+              "p99_ns": 464400,
+              "series": 0
+            },
+            {
+              "max_ns": 455200,
+              "median_ns": 400600.0,
+              "min_ns": 394700,
+              "n": 100,
+              "p99_ns": 447900,
+              "series": 1
+            },
+            {
+              "max_ns": 446700,
+              "median_ns": 400550.0,
+              "min_ns": 394300,
+              "n": 100,
+              "p99_ns": 444600,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-3022-bit"
+        },
+        {
+          "case": "c0376",
+          "operation": "q_mul",
+          "series": [
+            {
+              "max_ns": 564300,
+              "median_ns": 495250.0,
+              "min_ns": 487100,
+              "n": 100,
+              "p99_ns": 555200,
+              "series": 0
+            },
+            {
+              "max_ns": 545400,
+              "median_ns": 493250.0,
+              "min_ns": 486300,
+              "n": 100,
+              "p99_ns": 542600,
+              "series": 1
+            },
+            {
+              "max_ns": 562600,
+              "median_ns": 498000.0,
+              "min_ns": 487900,
+              "n": 100,
+              "p99_ns": 545500,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-3022-bit"
+        },
+        {
+          "case": "c0377",
+          "operation": "q_conj",
+          "series": [
+            {
+              "max_ns": 139700,
+              "median_ns": 103500.0,
+              "min_ns": 102600,
+              "n": 100,
+              "p99_ns": 123500,
+              "series": 0
+            },
+            {
+              "max_ns": 154700,
+              "median_ns": 103950.0,
+              "min_ns": 102500,
+              "n": 100,
+              "p99_ns": 140800,
+              "series": 1
+            },
+            {
+              "max_ns": 110800,
+              "median_ns": 103850.0,
+              "min_ns": 102800,
+              "n": 100,
+              "p99_ns": 108200,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-3022-bit"
+        },
+        {
+          "case": "c0378",
+          "operation": "q_norm",
+          "series": [
+            {
+              "max_ns": 360800,
+              "median_ns": 297650.0,
+              "min_ns": 294700,
+              "n": 100,
+              "p99_ns": 325900,
+              "series": 0
+            },
+            {
+              "max_ns": 347100,
+              "median_ns": 297050.0,
+              "min_ns": 293700,
+              "n": 100,
+              "p99_ns": 321100,
+              "series": 1
+            },
+            {
+              "max_ns": 355300,
+              "median_ns": 298200.0,
+              "min_ns": 293500,
+              "n": 100,
+              "p99_ns": 343000,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-3022-bit"
+        },
+        {
+          "case": "c0379",
+          "operation": "q_sign",
+          "series": [
+            {
+              "max_ns": 91400,
+              "median_ns": 87400.0,
+              "min_ns": 86300,
+              "n": 100,
+              "p99_ns": 91400,
+              "series": 0
+            },
+            {
+              "max_ns": 116800,
+              "median_ns": 87300.0,
+              "min_ns": 86500,
+              "n": 100,
+              "p99_ns": 109000,
+              "series": 1
+            },
+            {
+              "max_ns": 108900,
+              "median_ns": 87650.0,
+              "min_ns": 86500,
+              "n": 100,
+              "p99_ns": 101800,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-3022-bit"
+        },
+        {
+          "case": "c0385",
+          "operation": "add",
+          "series": [
+            {
+              "max_ns": 122600,
+              "median_ns": 95500.0,
+              "min_ns": 94500,
+              "n": 100,
+              "p99_ns": 105200,
+              "series": 0
+            },
+            {
+              "max_ns": 125000,
+              "median_ns": 95400.0,
+              "min_ns": 94500,
+              "n": 100,
+              "p99_ns": 107100,
+              "series": 1
+            },
+            {
+              "max_ns": 122200,
+              "median_ns": 95400.0,
+              "min_ns": 94600,
+              "n": 100,
+              "p99_ns": 104500,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-22504-bit"
+        },
+        {
+          "case": "c0386",
+          "operation": "sub",
+          "series": [
+            {
+              "max_ns": 119400,
+              "median_ns": 94700.0,
+              "min_ns": 93900,
+              "n": 100,
+              "p99_ns": 100800,
+              "series": 0
+            },
+            {
+              "max_ns": 125000,
+              "median_ns": 94800.0,
+              "min_ns": 94100,
+              "n": 100,
+              "p99_ns": 107500,
+              "series": 1
+            },
+            {
+              "max_ns": 142900,
+              "median_ns": 95300.0,
+              "min_ns": 93900,
+              "n": 100,
+              "p99_ns": 129500,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-22504-bit"
+        },
+        {
+          "case": "c0387",
+          "operation": "mul",
+          "series": [
+            {
+              "max_ns": 387500,
+              "median_ns": 304900.0,
+              "min_ns": 302300,
+              "n": 100,
+              "p99_ns": 361100,
+              "series": 0
+            },
+            {
+              "max_ns": 411300,
+              "median_ns": 305100.0,
+              "min_ns": 302400,
+              "n": 100,
+              "p99_ns": 362100,
+              "series": 1
+            },
+            {
+              "max_ns": 342600,
+              "median_ns": 306100.0,
+              "min_ns": 303100,
+              "n": 100,
+              "p99_ns": 342500,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-22504-bit"
+        },
+        {
+          "case": "c0388",
+          "operation": "div",
+          "series": [
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 0
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 1
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 200.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-22504-bit"
+        },
+        {
+          "case": "c0389",
+          "operation": "rem",
+          "series": [
+            {
+              "max_ns": 111100,
+              "median_ns": 94700.0,
+              "min_ns": 93800,
+              "n": 100,
+              "p99_ns": 100100,
+              "series": 0
+            },
+            {
+              "max_ns": 125400,
+              "median_ns": 94700.0,
+              "min_ns": 93900,
+              "n": 100,
+              "p99_ns": 104100,
+              "series": 1
+            },
+            {
+              "max_ns": 107100,
+              "median_ns": 94800.0,
+              "min_ns": 93800,
+              "n": 100,
+              "p99_ns": 102600,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-22504-bit"
+        },
+        {
+          "case": "c0390",
+          "operation": "gcd",
+          "series": [
+            {
+              "max_ns": 1934300,
+              "median_ns": 1655750.0,
+              "min_ns": 1638600,
+              "n": 100,
+              "p99_ns": 1922300,
+              "series": 0
+            },
+            {
+              "max_ns": 2065800,
+              "median_ns": 1656000.0,
+              "min_ns": 1640200,
+              "n": 100,
+              "p99_ns": 1902900,
+              "series": 1
+            },
+            {
+              "max_ns": 1868900,
+              "median_ns": 1655600.0,
+              "min_ns": 1636700,
+              "n": 100,
+              "p99_ns": 1865100,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-22504-bit"
+        },
+        {
+          "case": "c0391",
+          "operation": "cmp",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 1
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-22504-bit"
+        },
+        {
+          "case": "c0392",
+          "operation": "shl",
+          "series": [
+            {
+              "max_ns": 113800,
+              "median_ns": 95950.0,
+              "min_ns": 95200,
+              "n": 100,
+              "p99_ns": 109200,
+              "series": 0
+            },
+            {
+              "max_ns": 104800,
+              "median_ns": 95950.0,
+              "min_ns": 94700,
+              "n": 100,
+              "p99_ns": 102100,
+              "series": 1
+            },
+            {
+              "max_ns": 138900,
+              "median_ns": 95700.0,
+              "min_ns": 94700,
+              "n": 100,
+              "p99_ns": 118800,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-22504-bit"
+        },
+        {
+          "case": "c0398",
+          "operation": "shr",
+          "series": [
+            {
+              "max_ns": 140600,
+              "median_ns": 94500.0,
+              "min_ns": 93800,
+              "n": 100,
+              "p99_ns": 131400,
+              "series": 0
+            },
+            {
+              "max_ns": 119000,
+              "median_ns": 94700.0,
+              "min_ns": 94000,
+              "n": 100,
+              "p99_ns": 99400,
+              "series": 1
+            },
+            {
+              "max_ns": 121700,
+              "median_ns": 94700.0,
+              "min_ns": 93900,
+              "n": 100,
+              "p99_ns": 111100,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-22504-bit"
+        },
+        {
+          "case": "c0404",
+          "operation": "bits",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 1
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-22504-bit"
+        },
+        {
+          "case": "c0405",
+          "operation": "dec",
+          "series": [
+            {
+              "max_ns": 313300,
+              "median_ns": 233700.0,
+              "min_ns": 232400,
+              "n": 100,
+              "p99_ns": 302700,
+              "series": 0
+            },
+            {
+              "max_ns": 260400,
+              "median_ns": 233400.0,
+              "min_ns": 231900,
+              "n": 100,
+              "p99_ns": 253500,
+              "series": 1
+            },
+            {
+              "max_ns": 269100,
+              "median_ns": 233400.0,
+              "min_ns": 232000,
+              "n": 100,
+              "p99_ns": 261000,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-22504-bit"
+        },
+        {
+          "case": "c0406",
+          "operation": "hex",
+          "series": [
+            {
+              "max_ns": 183100,
+              "median_ns": 155500.0,
+              "min_ns": 107300,
+              "n": 100,
+              "p99_ns": 179900,
+              "series": 0
+            },
+            {
+              "max_ns": 152500,
+              "median_ns": 107900.0,
+              "min_ns": 107200,
+              "n": 100,
+              "p99_ns": 127900,
+              "series": 1
+            },
+            {
+              "max_ns": 145600,
+              "median_ns": 108100.0,
+              "min_ns": 107300,
+              "n": 100,
+              "p99_ns": 140300,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-22504-bit"
+        },
+        {
+          "case": "c0407",
+          "operation": "rat_add",
+          "series": [
+            {
+              "max_ns": 5951000,
+              "median_ns": 4850850.0,
+              "min_ns": 4807600,
+              "n": 100,
+              "p99_ns": 5472300,
+              "series": 0
+            },
+            {
+              "max_ns": 5216900,
+              "median_ns": 4840100.0,
+              "min_ns": 4806500,
+              "n": 100,
+              "p99_ns": 5149300,
+              "series": 1
+            },
+            {
+              "max_ns": 5475700,
+              "median_ns": 4843550.0,
+              "min_ns": 4800300,
+              "n": 100,
+              "p99_ns": 5360300,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-22504-bit"
+        },
+        {
+          "case": "c0408",
+          "operation": "rat_mul",
+          "series": [
+            {
+              "max_ns": 9126600,
+              "median_ns": 6770950.0,
+              "min_ns": 6611400,
+              "n": 100,
+              "p99_ns": 9125900,
+              "series": 0
+            },
+            {
+              "max_ns": 8566600,
+              "median_ns": 6653300.0,
+              "min_ns": 6606900,
+              "n": 100,
+              "p99_ns": 7890200,
+              "series": 1
+            },
+            {
+              "max_ns": 6960300,
+              "median_ns": 6671600.0,
+              "min_ns": 6613400,
+              "n": 100,
+              "p99_ns": 6813200,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-22504-bit"
+        },
+        {
+          "case": "c0409",
+          "operation": "rat_cmp",
+          "series": [
+            {
+              "max_ns": 3706000,
+              "median_ns": 3407650.0,
+              "min_ns": 3375800,
+              "n": 100,
+              "p99_ns": 3652300,
+              "series": 0
+            },
+            {
+              "max_ns": 3778000,
+              "median_ns": 3402150.0,
+              "min_ns": 3369100,
+              "n": 100,
+              "p99_ns": 3498700,
+              "series": 1
+            },
+            {
+              "max_ns": 3880500,
+              "median_ns": 3408250.0,
+              "min_ns": 3372100,
+              "n": 100,
+              "p99_ns": 3609300,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-22504-bit"
+        },
+        {
+          "case": "c0410",
+          "operation": "q_add",
+          "series": [
+            {
+              "max_ns": 12582200,
+              "median_ns": 11874650.0,
+              "min_ns": 11788000,
+              "n": 100,
+              "p99_ns": 12270400,
+              "series": 0
+            },
+            {
+              "max_ns": 12175700,
+              "median_ns": 11859900.0,
+              "min_ns": 11744100,
+              "n": 100,
+              "p99_ns": 12081400,
+              "series": 1
+            },
+            {
+              "max_ns": 13004400,
+              "median_ns": 11881050.0,
+              "min_ns": 11771500,
+              "n": 100,
+              "p99_ns": 12356900,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-22504-bit"
+        },
+        {
+          "case": "c0411",
+          "operation": "q_mul",
+          "series": [
+            {
+              "max_ns": 13889200,
+              "median_ns": 13027350.0,
+              "min_ns": 12515300,
+              "n": 100,
+              "p99_ns": 13560100,
+              "series": 0
+            },
+            {
+              "max_ns": 13813500,
+              "median_ns": 13031300.0,
+              "min_ns": 12953200,
+              "n": 100,
+              "p99_ns": 13613600,
+              "series": 1
+            },
+            {
+              "max_ns": 17288400,
+              "median_ns": 13037250.0,
+              "min_ns": 12931100,
+              "n": 100,
+              "p99_ns": 17236100,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-22504-bit"
+        },
+        {
+          "case": "c0412",
+          "operation": "q_conj",
+          "series": [
+            {
+              "max_ns": 2556700,
+              "median_ns": 2470500.0,
+              "min_ns": 2432900,
+              "n": 100,
+              "p99_ns": 2544800,
+              "series": 0
+            },
+            {
+              "max_ns": 2862200,
+              "median_ns": 2469150.0,
+              "min_ns": 2430400,
+              "n": 100,
+              "p99_ns": 2569100,
+              "series": 1
+            },
+            {
+              "max_ns": 2634400,
+              "median_ns": 2470300.0,
+              "min_ns": 2427500,
+              "n": 100,
+              "p99_ns": 2565100,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-22504-bit"
+        },
+        {
+          "case": "c0413",
+          "operation": "q_norm",
+          "series": [
+            {
+              "max_ns": 9450400,
+              "median_ns": 8876450.0,
+              "min_ns": 8787900,
+              "n": 100,
+              "p99_ns": 9343500,
+              "series": 0
+            },
+            {
+              "max_ns": 10088700,
+              "median_ns": 8855900.0,
+              "min_ns": 8790800,
+              "n": 100,
+              "p99_ns": 9650300,
+              "series": 1
+            },
+            {
+              "max_ns": 9360800,
+              "median_ns": 8864250.0,
+              "min_ns": 8798000,
+              "n": 100,
+              "p99_ns": 9165600,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-22504-bit"
+        },
+        {
+          "case": "c0414",
+          "operation": "q_sign",
+          "series": [
+            {
+              "max_ns": 2328700,
+              "median_ns": 2168750.0,
+              "min_ns": 2134500,
+              "n": 100,
+              "p99_ns": 2324900,
+              "series": 0
+            },
+            {
+              "max_ns": 2563200,
+              "median_ns": 2169900.0,
+              "min_ns": 2129900,
+              "n": 100,
+              "p99_ns": 2382300,
+              "series": 1
+            },
+            {
+              "max_ns": 2428800,
+              "median_ns": 2169150.0,
+              "min_ns": 2134700,
+              "n": 100,
+              "p99_ns": 2293300,
+              "series": 2
+            }
+          ],
+          "size": "pose-nc-22504-bit"
+        },
+        {
+          "case": "c0420",
+          "operation": "q_sign",
+          "series": [
+            {
+              "max_ns": 1200,
+              "median_ns": 1000.0,
+              "min_ns": 900,
+              "n": 100,
+              "p99_ns": 1100,
+              "series": 0
+            },
+            {
+              "max_ns": 1100,
+              "median_ns": 1000.0,
+              "min_ns": 900,
+              "n": 100,
+              "p99_ns": 1100,
+              "series": 1
+            },
+            {
+              "max_ns": 1200,
+              "median_ns": 1000.0,
+              "min_ns": 900,
+              "n": 100,
+              "p99_ns": 1200,
+              "series": 2
+            }
+          ],
+          "size": "pell-64-bit"
+        },
+        {
+          "case": "c0423",
+          "operation": "q_norm",
+          "series": [
+            {
+              "max_ns": 1400,
+              "median_ns": 1300.0,
+              "min_ns": 1200,
+              "n": 100,
+              "p99_ns": 1400,
+              "series": 0
+            },
+            {
+              "max_ns": 1500,
+              "median_ns": 1300.0,
+              "min_ns": 1200,
+              "n": 100,
+              "p99_ns": 1400,
+              "series": 1
+            },
+            {
+              "max_ns": 1500,
+              "median_ns": 1300.0,
+              "min_ns": 1200,
+              "n": 100,
+              "p99_ns": 1400,
+              "series": 2
+            }
+          ],
+          "size": "pell-64-bit"
+        },
+        {
+          "case": "c0424",
+          "operation": "q_sign",
+          "series": [
+            {
+              "max_ns": 4200,
+              "median_ns": 3800.0,
+              "min_ns": 3700,
+              "n": 100,
+              "p99_ns": 4000,
+              "series": 0
+            },
+            {
+              "max_ns": 4400,
+              "median_ns": 3800.0,
+              "min_ns": 3700,
+              "n": 100,
+              "p99_ns": 4000,
+              "series": 1
+            },
+            {
+              "max_ns": 4400,
+              "median_ns": 3900.0,
+              "min_ns": 3700,
+              "n": 100,
+              "p99_ns": 4000,
+              "series": 2
+            }
+          ],
+          "size": "pell-256-bit"
+        },
+        {
+          "case": "c0427",
+          "operation": "q_norm",
+          "series": [
+            {
+              "max_ns": 5000,
+              "median_ns": 4200.0,
+              "min_ns": 4000,
+              "n": 100,
+              "p99_ns": 4600,
+              "series": 0
+            },
+            {
+              "max_ns": 5000,
+              "median_ns": 4200.0,
+              "min_ns": 4000,
+              "n": 100,
+              "p99_ns": 4400,
+              "series": 1
+            },
+            {
+              "max_ns": 4900,
+              "median_ns": 4200.0,
+              "min_ns": 4100,
+              "n": 100,
+              "p99_ns": 4600,
+              "series": 2
+            }
+          ],
+          "size": "pell-256-bit"
+        },
+        {
+          "case": "c0428",
+          "operation": "q_sign",
+          "series": [
+            {
+              "max_ns": 94000,
+              "median_ns": 66400.0,
+              "min_ns": 65700,
+              "n": 100,
+              "p99_ns": 92700,
+              "series": 0
+            },
+            {
+              "max_ns": 71900,
+              "median_ns": 66100.0,
+              "min_ns": 65400,
+              "n": 100,
+              "p99_ns": 70700,
+              "series": 1
+            },
+            {
+              "max_ns": 75100,
+              "median_ns": 66200.0,
+              "min_ns": 65400,
+              "n": 100,
+              "p99_ns": 72500,
+              "series": 2
+            }
+          ],
+          "size": "pell-3030-bit"
+        },
+        {
+          "case": "c0431",
+          "operation": "q_norm",
+          "series": [
+            {
+              "max_ns": 70900,
+              "median_ns": 66750.0,
+              "min_ns": 66000,
+              "n": 100,
+              "p99_ns": 70800,
+              "series": 0
+            },
+            {
+              "max_ns": 97900,
+              "median_ns": 66800.0,
+              "min_ns": 65900,
+              "n": 100,
+              "p99_ns": 82500,
+              "series": 1
+            },
+            {
+              "max_ns": 99900,
+              "median_ns": 66600.0,
+              "min_ns": 65900,
+              "n": 100,
+              "p99_ns": 77000,
+              "series": 2
+            }
+          ],
+          "size": "pell-3030-bit"
+        },
+        {
+          "case": "c0432",
+          "operation": "q_sign",
+          "series": [
+            {
+              "max_ns": 1763700,
+              "median_ns": 1718800.0,
+              "min_ns": 1698700,
+              "n": 100,
+              "p99_ns": 1762800,
+              "series": 0
+            },
+            {
+              "max_ns": 2568500,
+              "median_ns": 1709800.0,
+              "min_ns": 1632900,
+              "n": 100,
+              "p99_ns": 2172800,
+              "series": 1
+            },
+            {
+              "max_ns": 2245000,
+              "median_ns": 1727850.0,
+              "min_ns": 1705000,
+              "n": 100,
+              "p99_ns": 2176200,
+              "series": 2
+            }
+          ],
+          "size": "pell-22493-bit"
+        },
+        {
+          "case": "c0435",
+          "operation": "q_norm",
+          "series": [
+            {
+              "max_ns": 1978100,
+              "median_ns": 1720750.0,
+              "min_ns": 1700100,
+              "n": 100,
+              "p99_ns": 1799000,
+              "series": 0
+            },
+            {
+              "max_ns": 2281200,
+              "median_ns": 1716750.0,
+              "min_ns": 1644300,
+              "n": 100,
+              "p99_ns": 1772600,
+              "series": 1
+            },
+            {
+              "max_ns": 1806700,
+              "median_ns": 1718600.0,
+              "min_ns": 1704300,
+              "n": 100,
+              "p99_ns": 1777300,
+              "series": 2
+            }
+          ],
+          "size": "pell-22493-bit"
+        },
+        {
+          "case": "c0436",
+          "operation": "q_sign",
+          "series": [
+            {
+              "max_ns": 2009800,
+              "median_ns": 1721300.0,
+              "min_ns": 1695500,
+              "n": 100,
+              "p99_ns": 1984700,
+              "series": 0
+            },
+            {
+              "max_ns": 1805200,
+              "median_ns": 1716700.0,
+              "min_ns": 1696100,
+              "n": 100,
+              "p99_ns": 1803500,
+              "series": 1
+            },
+            {
+              "max_ns": 1949200,
+              "median_ns": 1719450.0,
+              "min_ns": 1699200,
+              "n": 100,
+              "p99_ns": 1807200,
+              "series": 2
+            }
+          ],
+          "size": "pell-22495-bit"
+        },
+        {
+          "case": "c0439",
+          "operation": "q_norm",
+          "series": [
+            {
+              "max_ns": 2044700,
+              "median_ns": 1716800.0,
+              "min_ns": 1691100,
+              "n": 100,
+              "p99_ns": 1796700,
+              "series": 0
+            },
+            {
+              "max_ns": 1946400,
+              "median_ns": 1720350.0,
+              "min_ns": 1699700,
+              "n": 100,
+              "p99_ns": 1926100,
+              "series": 1
+            },
+            {
+              "max_ns": 1904400,
+              "median_ns": 1717350.0,
+              "min_ns": 1698200,
+              "n": 100,
+              "p99_ns": 1805500,
+              "series": 2
+            }
+          ],
+          "size": "pell-22495-bit"
+        },
+        {
+          "case": "c3344",
+          "operation": "word",
+          "series": [
+            {
+              "max_ns": 4797400,
+              "median_ns": 4312800.0,
+              "min_ns": 4274100,
+              "n": 100,
+              "p99_ns": 4522700,
+              "series": 0
+            },
+            {
+              "max_ns": 4454800,
+              "median_ns": 4313400.0,
+              "min_ns": 4270200,
+              "n": 100,
+              "p99_ns": 4451500,
+              "series": 1
+            },
+            {
+              "max_ns": 4559200,
+              "median_ns": 4234900.0,
+              "min_ns": 4191500,
+              "n": 100,
+              "p99_ns": 4507600,
+              "series": 2
+            }
+          ],
+          "size": "672417-letters"
+        },
+        {
+          "case": "c3345",
+          "operation": "word",
+          "series": [
+            {
+              "max_ns": 6153400,
+              "median_ns": 5509100.0,
+              "min_ns": 5456600,
+              "n": 100,
+              "p99_ns": 5691400,
+              "series": 0
+            },
+            {
+              "max_ns": 8417800,
+              "median_ns": 5518150.0,
+              "min_ns": 5300000,
+              "n": 100,
+              "p99_ns": 8316300,
+              "series": 1
+            },
+            {
+              "max_ns": 6012200,
+              "median_ns": 5437200.0,
+              "min_ns": 5372800,
+              "n": 100,
+              "p99_ns": 5853000,
+              "series": 2
+            }
+          ],
+          "size": "871582-letters"
+        },
+        {
+          "case": "c3346",
+          "operation": "word",
+          "series": [
+            {
+              "max_ns": 16153500,
+              "median_ns": 14565900.0,
+              "min_ns": 14449600,
+              "n": 100,
+              "p99_ns": 15937900,
+              "series": 0
+            },
+            {
+              "max_ns": 15247900,
+              "median_ns": 14551200.0,
+              "min_ns": 13875800,
+              "n": 100,
+              "p99_ns": 14890000,
+              "series": 1
+            },
+            {
+              "max_ns": 14923500,
+              "median_ns": 14502150.0,
+              "min_ns": 14381700,
+              "n": 100,
+              "p99_ns": 14867600,
+              "series": 2
+            }
+          ],
+          "size": "2352984-letters"
+        },
+        {
+          "case": "c3347",
+          "operation": "word",
+          "series": [
+            {
+              "max_ns": 76009300,
+              "median_ns": 65107550.0,
+              "min_ns": 64609700,
+              "n": 100,
+              "p99_ns": 71740700,
+              "series": 0
+            },
+            {
+              "max_ns": 83284600,
+              "median_ns": 65093950.0,
+              "min_ns": 64654300,
+              "n": 100,
+              "p99_ns": 72324400,
+              "series": 1
+            },
+            {
+              "max_ns": 113810800,
+              "median_ns": 65222900.0,
+              "min_ns": 64342900,
+              "n": 100,
+              "p99_ns": 112391000,
+              "series": 2
+            }
+          ],
+          "size": "10000000-letters"
+        },
+        {
+          "case": "c3348",
+          "operation": "word",
+          "series": [
+            {
+              "max_ns": 146574700,
+              "median_ns": 81389450.0,
+              "min_ns": 80074400,
+              "n": 100,
+              "p99_ns": 129279000,
+              "series": 0
+            },
+            {
+              "max_ns": 90480400,
+              "median_ns": 81242900.0,
+              "min_ns": 80870900,
+              "n": 100,
+              "p99_ns": 85448300,
+              "series": 1
+            },
+            {
+              "max_ns": 109143000,
+              "median_ns": 81347150.0,
+              "min_ns": 80057500,
+              "n": 100,
+              "p99_ns": 93852400,
+              "series": 2
+            }
+          ],
+          "size": "13231266-letters"
+        },
+        {
+          "case": "c3349",
+          "operation": "word",
+          "series": [
+            {
+              "max_ns": 157700,
+              "median_ns": 56450.0,
+              "min_ns": 52700,
+              "n": 100,
+              "p99_ns": 131300,
+              "series": 0
+            },
+            {
+              "max_ns": 126400,
+              "median_ns": 53700.0,
+              "min_ns": 52600,
+              "n": 100,
+              "p99_ns": 124100,
+              "series": 1
+            },
+            {
+              "max_ns": 119300,
+              "median_ns": 53350.0,
+              "min_ns": 52100,
+              "n": 100,
+              "p99_ns": 118400,
+              "series": 2
+            }
+          ],
+          "size": "empty-stream"
+        },
+        {
+          "case": "c3350",
+          "operation": "add",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 1
+            },
+            {
+              "max_ns": 5700,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 2
+            }
+          ],
+          "size": "length-166788405"
+        },
+        {
+          "case": "c3351",
+          "operation": "sub",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 1
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 2
+            }
+          ],
+          "size": "length-166788405"
+        },
+        {
+          "case": "c3352",
+          "operation": "mul",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 1
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 2
+            }
+          ],
+          "size": "length-166788405"
+        },
+        {
+          "case": "c3353",
+          "operation": "div",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 1
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 2
+            }
+          ],
+          "size": "length-166788405"
+        },
+        {
+          "case": "c3354",
+          "operation": "rem",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 1
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 2
+            }
+          ],
+          "size": "length-166788405"
+        },
+        {
+          "case": "c3355",
+          "operation": "gcd",
+          "series": [
+            {
+              "max_ns": 400,
+              "median_ns": 300.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 400,
+              "series": 0
+            },
+            {
+              "max_ns": 400,
+              "median_ns": 300.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 400,
+              "series": 1
+            },
+            {
+              "max_ns": 400,
+              "median_ns": 300.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 400,
+              "series": 2
+            }
+          ],
+          "size": "length-166788405"
+        },
+        {
+          "case": "c3356",
+          "operation": "cmp",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 1
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 2
+            }
+          ],
+          "size": "length-166788405"
+        },
+        {
+          "case": "c3357",
+          "operation": "shl",
+          "series": [
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 0
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 1
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 100,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 2
+            }
+          ],
+          "size": "length-166788405"
+        },
+        {
+          "case": "c3363",
+          "operation": "shr",
+          "series": [
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 200,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 1
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 2
+            }
+          ],
+          "size": "length-166788405"
+        },
+        {
+          "case": "c3369",
+          "operation": "bits",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 1
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 2
+            }
+          ],
+          "size": "length-166788405"
+        },
+        {
+          "case": "c3370",
+          "operation": "dec",
+          "series": [
+            {
+              "max_ns": 200,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 200,
+              "series": 0
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 1
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 200.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 2
+            }
+          ],
+          "size": "length-166788405"
+        },
+        {
+          "case": "c3371",
+          "operation": "hex",
+          "series": [
+            {
+              "max_ns": 300,
+              "median_ns": 300.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 0
+            },
+            {
+              "max_ns": 300,
+              "median_ns": 300.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 1
+            },
+            {
+              "max_ns": 400,
+              "median_ns": 300.0,
+              "min_ns": 200,
+              "n": 100,
+              "p99_ns": 300,
+              "series": 2
+            }
+          ],
+          "size": "length-166788405"
+        },
+        {
+          "case": "c3372",
+          "operation": "sum",
+          "series": [
+            {
+              "max_ns": 900,
+              "median_ns": 800.0,
+              "min_ns": 800,
+              "n": 100,
+              "p99_ns": 900,
+              "series": 0
+            },
+            {
+              "max_ns": 900,
+              "median_ns": 800.0,
+              "min_ns": 800,
+              "n": 100,
+              "p99_ns": 900,
+              "series": 1
+            },
+            {
+              "max_ns": 900,
+              "median_ns": 800.0,
+              "min_ns": 800,
+              "n": 100,
+              "p99_ns": 900,
+              "series": 2
+            }
+          ],
+          "size": "recorded-length-sum"
+        },
+        {
+          "case": "c3373",
+          "operation": "mul",
+          "series": [
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 0
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 1
+            },
+            {
+              "max_ns": 100,
+              "median_ns": 100.0,
+              "min_ns": 0,
+              "n": 100,
+              "p99_ns": 100,
+              "series": 2
+            }
+          ],
+          "size": "recorded-length-sum"
+        }
+      ],
+      "status": "exact"
+    }
+  },
+  "check": {
+    "build_digest": "c64b18a4dfe5789a192f9e985729be28508464b63317cd6758126be9f39c7178",
+    "build_removed": true,
+    "candidate": "rust-num-bigint",
+    "complete": true,
+    "correctness": {
+      "actual_bytes": 2198909,
+      "actual_sha256": "529252f51f3699be09c5d5a7a66fd6864f88e666cfd393ebd0a3f780d126d18b",
+      "by_size": {
+        "10000000-letters": {
+          "cases": 1,
+          "different": 0,
+          "equal": 1
+        },
+        "13231266-letters": {
+          "cases": 1,
+          "different": 0,
+          "equal": 1
+        },
+        "22500-bit": {
+          "cases": 70,
+          "different": 0,
+          "equal": 70
+        },
+        "2352984-letters": {
+          "cases": 1,
+          "different": 0,
+          "equal": 1
+        },
+        "2^256": {
+          "cases": 70,
+          "different": 0,
+          "equal": 70
+        },
+        "2^64": {
+          "cases": 70,
+          "different": 0,
+          "equal": 70
+        },
+        "672417-letters": {
+          "cases": 1,
+          "different": 0,
+          "equal": 1
+        },
+        "6775-digit": {
+          "cases": 70,
+          "different": 0,
+          "equal": 70
+        },
+        "871582-letters": {
+          "cases": 1,
+          "different": 0,
+          "equal": 1
+        },
+        "empty-stream": {
+          "cases": 1,
+          "different": 0,
+          "equal": 1
+        },
+        "length-166788405": {
+          "cases": 22,
+          "different": 0,
+          "equal": 22
+        },
+        "limb-boundaries": {
+          "cases": 88,
+          "different": 0,
+          "equal": 88
+        },
+        "pell-22493-bit": {
+          "cases": 4,
+          "different": 0,
+          "equal": 4
+        },
+        "pell-22495-bit": {
+          "cases": 4,
+          "different": 0,
+          "equal": 4
+        },
+        "pell-256-bit": {
+          "cases": 4,
+          "different": 0,
+          "equal": 4
+        },
+        "pell-3030-bit": {
+          "cases": 4,
+          "different": 0,
+          "equal": 4
+        },
+        "pell-64-bit": {
+          "cases": 4,
+          "different": 0,
+          "equal": 4
+        },
+        "pose-nc-22504-bit": {
+          "cases": 35,
+          "different": 0,
+          "equal": 35
+        },
+        "pose-nc-260-bit": {
+          "cases": 35,
+          "different": 0,
+          "equal": 35
+        },
+        "pose-nc-3022-bit": {
+          "cases": 35,
+          "different": 0,
+          "equal": 35
+        },
+        "pose-nc-70-bit": {
+          "cases": 35,
+          "different": 0,
+          "equal": 35
+        },
+        "random-1-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-1024-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-22500-bit": {
+          "cases": 88,
+          "different": 0,
+          "equal": 88
+        },
+        "random-256-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-3036-bit": {
+          "cases": 88,
+          "different": 0,
+          "equal": 88
+        },
+        "random-31-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-32-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-33-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-63-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-64-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-65-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "random-96-bit": {
+          "cases": 264,
+          "different": 0,
+          "equal": 264
+        },
+        "recorded-length-sum": {
+          "cases": 2,
+          "different": 0,
+          "equal": 2
+        }
+      },
+      "difference_count": 0,
+      "differing_case_ids": [],
+      "expected_sha256": "529252f51f3699be09c5d5a7a66fd6864f88e666cfd393ebd0a3f780d126d18b",
+      "extra_lines": 0,
+      "first_differences": [],
+      "status": "exact"
+    },
+    "crates": {
+      "autocfg 1.5.1": "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53",
+      "num-bigint 0.5.1": "93e7820bc0a80a0238e650327316f929ba18d5be054b647490a3a6a339f3e7c0",
+      "num-integer 0.1.47": "7ce2d95d4b3734dc35aa2f45e1aa22cd416814592a4f9d9205e11affd5b8e10b",
+      "num-traits 0.2.19": "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841"
+    },
+    "decider": "owner",
+    "decision": "open",
+    "fixture_manifest_sha256": "75d464b4965c5baf4dc00bac58acf2e1aa0d3a958ca5c60c20e9f62b03e955bc",
+    "format": "lx5-crate-check/1",
+    "licences": {
+      "autocfg-1.5.1": {
+        "files": [
+          "LICENSE-APACHE",
+          "LICENSE-MIT"
+        ],
+        "license": "Apache-2.0 OR MIT"
+      },
+      "num-bigint-0.5.1": {
+        "files": [
+          "LICENSE-APACHE",
+          "LICENSE-MIT"
+        ],
+        "license": "MIT OR Apache-2.0"
+      },
+      "num-integer-0.1.47": {
+        "files": [
+          "LICENSE-APACHE",
+          "LICENSE-MIT"
+        ],
+        "license": "MIT OR Apache-2.0"
+      },
+      "num-traits-0.2.19": {
+        "files": [
+          "LICENSE-APACHE",
+          "LICENSE-MIT"
+        ],
+        "license": "MIT OR Apache-2.0"
+      }
+    },
+    "lx5_candidate_sha256": "743c96a70e8a445aa13ce4e6c6223bd8f34bbc9164083fdbd0f42da0830c2619",
+    "lx5_source_manifest_sha256": "f004cae740af45839f798ddbf4cc0f1c9fcd774f9be09ad9fb9b536aedb6a1a2",
+    "mode": "full",
+    "rust_self_test": "Rust self-test: 512 native i128 cases, 3 SHA-256 vectors, 2904 frozen differential cases",
+    "sizes": {
+      "10000000-letters": 1,
+      "13231266-letters": 1,
+      "22500-bit": 70,
+      "2352984-letters": 1,
+      "2^256": 70,
+      "2^64": 70,
+      "672417-letters": 1,
+      "6775-digit": 70,
+      "871582-letters": 1,
+      "empty-stream": 1,
+      "length-166788405": 22,
+      "limb-boundaries": 88,
+      "pell-22493-bit": 4,
+      "pell-22495-bit": 4,
+      "pell-256-bit": 4,
+      "pell-3030-bit": 4,
+      "pell-64-bit": 4,
+      "pose-nc-22504-bit": 35,
+      "pose-nc-260-bit": 35,
+      "pose-nc-3022-bit": 35,
+      "pose-nc-70-bit": 35,
+      "random-1-bit": 264,
+      "random-1024-bit": 264,
+      "random-22500-bit": 88,
+      "random-256-bit": 264,
+      "random-3036-bit": 88,
+      "random-31-bit": 264,
+      "random-32-bit": 264,
+      "random-33-bit": 264,
+      "random-63-bit": 264,
+      "random-64-bit": 264,
+      "random-65-bit": 264,
+      "random-96-bit": 264,
+      "recorded-length-sum": 2
+    },
+    "source_digests": {
+      "CARD.md": "dd016fc2e6179f05943dea120dcc08d2801142fadb2738b1b23d62550b869696",
+      "Cargo.lock": "daeb2cc5718eca445c6ceaa029aee1fa1da0607bde9b145357004bbe4d09627d",
+      "Cargo.toml": "34ead962a71bf0f12b047948713b847737e26ada7d98c5883eed0854adb5c352",
+      "candidate.rs": "433f23f3cc27c0c82e83aa12274b609302e9db66631a5354f65af8fe4d6445e6",
+      "check.py": "663165168f91a6fdc6f6d79b05dbc2a3b05331ecc3ba6adadbfb73dd57dbbbf9",
+      "make_candidate.py": "30e6dd1742691357c04aee14bbe8244ff247d13dab34a30e949a4577dbf82d25"
+    },
+    "started_utc": "2026-11-14T18:33:01.772466+00:00",
+    "tools": {
+      "cargo": "cargo 1.98.1 (797e8a9bc 2026-08-05)",
+      "platform": "win32",
+      "python": "3.15.1",
+      "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)"
+    }
+  },
+  "complete": true,
+  "conditions": {
+    "cpu": "AMD Ryzen 9 7945HX with Radeon Graphics; 32 logical processors",
+    "driver_vsync": "not observed by the owner, this CPU-only run does no display work",
+    "evidence_class": "performance on the owner's machine: Windows, CPU only, no GPU or display work",
+    "frame_generation": "off",
+    "gpu": "AMD Radeon(TM) 610M (driver 32.0.11016.14003); NVIDIA GeForce RTX 4070 Laptop GPU (driver 32.0.16.1692)",
+    "overlays": "not observed by the owner, system CPU busy is checked at start",
+    "power_source": "mains",
+    "quiet_machine": "checked at start: no keyboard or mouse input for at least 120 s; system CPU busy 1.6% over 10 s (limit 10%); no busy Codex process; input during each run is recorded in window.json",
+    "vendor_performance_mode": "not observed, the owner was away and gave no reading",
+    "windows_power_mode": "power mode Best performance; power plan Balanced"
+  },
+  "decider": "owner",
+  "decision": "open",
+  "evidence_class": [
+    "source",
+    "synthetic"
+  ],
+  "format": "lx5-measure/1",
+  "mode": "full",
+  "samples_per_series": 100,
+  "series": 3,
+  "source_digests": {
+    "CARD.md": "dd016fc2e6179f05943dea120dcc08d2801142fadb2738b1b23d62550b869696",
+    "Cargo.lock": "daeb2cc5718eca445c6ceaa029aee1fa1da0607bde9b145357004bbe4d09627d",
+    "Cargo.toml": "34ead962a71bf0f12b047948713b847737e26ada7d98c5883eed0854adb5c352",
+    "candidate.rs": "433f23f3cc27c0c82e83aa12274b609302e9db66631a5354f65af8fe4d6445e6",
+    "check.py": "663165168f91a6fdc6f6d79b05dbc2a3b05331ecc3ba6adadbfb73dd57dbbbf9",
+    "make_candidate.py": "30e6dd1742691357c04aee14bbe8244ff247d13dab34a30e949a4577dbf82d25"
+  },
+  "started_utc": "2026-11-14T18:33:01.772466+00:00",
+  "timing_scope": "operation on already parsed operands, including canonical output formatting; excludes startup and file input except word stream I/O",
+  "timing_status": "lead only; no decisive timing claim",
+  "warmups_per_case_per_series": 1
+}

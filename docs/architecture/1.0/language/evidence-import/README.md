@@ -1,9 +1,10 @@
 # Evidence import table: draft
 
-Status: **draft for the owner. Not accepted.** This folder holds the first version of the table that
+Status: **frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). This folder holds the first version of the table that
 [default 20](../ecosystem-partition.md) asks for: every (format, field, value) of the stage 14 to 19 research records with
 what it maps to, or the reason it stays recorded word for word. Chapter 06 and
-[chapter 05](../architecture/05-persistence.md), section 11, use it. Nothing is frozen, and four rules below still need
+[chapter 05](../architecture/05-persistence.md), section 11, use it. Four rules below still need
 the mathematician's and the main session's reading.
 
 | File | What it is |

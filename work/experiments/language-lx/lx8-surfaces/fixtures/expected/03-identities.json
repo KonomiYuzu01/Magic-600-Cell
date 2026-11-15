@@ -1,0 +1,128 @@
+{
+  "ir_version": "lx8-ir-0",
+  "edition": "lx8-0",
+  "module": "orbit_identity",
+  "requires": [],
+  "imports": [],
+  "declarations": [
+    {
+      "kind": "function",
+      "name": "describe",
+      "params": [
+        {
+          "name": "model",
+          "type": "Model<Full>"
+        },
+        {
+          "name": "cell",
+          "type": "Cell<Full>"
+        },
+        {
+          "name": "grip",
+          "type": "Grip<Full>"
+        },
+        {
+          "name": "cap",
+          "type": "Cap<Full>"
+        },
+        {
+          "name": "generator",
+          "type": "Generator<Full>"
+        },
+        {
+          "name": "menu_source",
+          "type": "Menu<Jumble>"
+        },
+        {
+          "name": "letter",
+          "type": "MenuLetter<Jumble,MenuA>"
+        },
+        {
+          "name": "piece",
+          "type": "Piece<Full,Labels>"
+        },
+        {
+          "name": "sticker",
+          "type": "Sticker<Full,Labels>"
+        },
+        {
+          "name": "slot",
+          "type": "Slot<Full,Labels>"
+        },
+        {
+          "name": "position",
+          "type": "Position<Full,Labels>"
+        },
+        {
+          "name": "pose",
+          "type": "Pose<Jumble,Poses>"
+        },
+        {
+          "name": "sticker_class",
+          "type": "StickerClass<Jumble,Labels>"
+        },
+        {
+          "name": "region_class",
+          "type": "RegionClass<Jumble,Regions>"
+        },
+        {
+          "name": "orbit",
+          "type": "Orbit<Full,Labels>"
+        },
+        {
+          "name": "level",
+          "type": "Level<Labels>"
+        }
+      ],
+      "result": "Text",
+      "declared_effects": [],
+      "effects": [],
+      "charges": {
+        "steps": "12",
+        "kernel": "0",
+        "memory": "0",
+        "output": "0"
+      },
+      "metadata": null,
+      "bindings": [],
+      "body": {
+        "op": "call",
+        "type": "Text",
+        "effects": [],
+        "charges": {
+          "steps": "1",
+          "kernel": "0",
+          "memory": "0",
+          "output": "0"
+        },
+        "target": "describe_identity",
+        "args": [
+          {
+            "op": "ref",
+            "type": "Piece<Full,Labels>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "piece"
+          },
+          {
+            "op": "ref",
+            "type": "Position<Full,Labels>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "position"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "format": "lx7-check-result-v1",
+  "status": "passed",
+  "python": "3.15.1",
+  "evidence_class": [
+    "source",
+    "synthetic"
+  ],
+  "device": "not run here",
+  "W3": "not run here",
+  "decision": "open",
+  "decider": "owner",
+  "manifest_sha256": "e7fa23382530b47718ccbbc2205eeabda7d9fdacee45357cc53abe08fc51b640",
+  "candidate_sha256": "07805a3bb3e3fd346e6e8740df83272d0cfb25a2cfd72aa732d2171a9674653f",
+  "checks": {
+    "accepted_sources": 4,
+    "refused_sources": 18,
+    "rounding_goldens": 9,
+    "vertices": 62,
+    "poses": 2,
+    "stage_cases": 496,
+    "hlsl_sha256": "1c7f922e2f53e5a106accfb746c2337ce288e83c3226393fca8dbbd33ce4fc62",
+    "cpu_exact_operation_oracle": "passed",
+    "capture_binding_refusals": "passed"
+  },
+  "dxc": {
+    "status": "passed",
+    "version": "dxcompiler.dll: 1.8 - 1.8.2502.11 (239921522); dxil.dll: 1.8(1.8.2502.11)",
+    "flags": [
+      "-T",
+      "cs_6_2",
+      "-E",
+      "main",
+      "-HV",
+      "2021",
+      "-Gis",
+      "-denorm",
+      "preserve",
+      "-O3",
+      "-Ges",
+      "-WX"
+    ],
+    "dxil_sha256": "d5a65ae5d8ffa3c264d892fdb0b79961dc239c64aa54fcb64c07d57ae30a098d"
+  },
+  "build_products_removed": true
+}

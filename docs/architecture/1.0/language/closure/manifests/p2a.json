@@ -1,0 +1,142 @@
+{
+ "packet": "p2a",
+ "assumes": [
+  {
+   "item": "ONE.78",
+   "assumed": "The current integrator reading keeps twist.apply live, protected and without a preview; CM.9 leaves confirmation with the owner.",
+   "if_other": "If S4 covers every live turn, add the fresh-preview gate and required preview to twist.apply, change its explicit builder invariant and tests, and reconcile ONE.46 with the owner-approved protocol."
+  },
+  {
+   "item": "HANDOFF H2",
+   "assumed": "H15 reconciles the real jumbling delta. The stored table has 168 commands with final=true, 152 base rows and 16 additions. The historical H2 example is adapted to explicit argument schemas only in memory.",
+   "if_other": "A changed delta form requires scoped reconciliation and a fresh build. The example never substitutes for the real delta."
+  },
+  {
+   "item": "HANDOFF H3 and H5",
+   "assumed": "Rows consume PreviewDeps freshness and the six lane names as working forms. Commits and undo are not blocked by revision-bound jobs; p2b owns admission, cancellation, availability and terminal receipts.",
+   "if_other": "Update the row gates, lane assignments and references to match p2b's reconciled contract, retaining the signed Q4(a), Q5(a) and Q6(a) behavior unless the owner changes it."
+  },
+  {
+   "item": "ONE.4",
+   "assumed": "Every commit/history row requires a fresh shell UserActionToken. H15 additions and amendments state their arguments explicitly; aliases never migrate tokens or hints as permission.",
+   "if_other": "If the owner changes the token boundary, reconcile explicit schemas, alias invocation requirements and table validation with the approved boundary."
+  },
+  {
+   "item": "DT-M1 Q3(a), Q4(a) and XM2",
+   "assumed": "Only grip.rebind installs a newly computed slot map. The shared session undo/redo entry may restore a target workspace rebind through its original validation path; camera, filter, twist and focus commands preserve the map.",
+   "if_other": "A different treatment of recorded rebind undo needs reconciliation of the durable action order, by_target slot_map metadata and XM2 trace. No incidental event may compute or apply a new map."
+  }
+ ],
+ "owner_items": [
+  {
+   "item": "ONE.78",
+   "why": "CM.9 preserves the open owner confirmation of whether S4 requires a preview for a live twist. This draft cannot settle or narrow that question."
+  }
+ ],
+ "handoff_changes": [
+  {
+   "section": "H2",
+   "change": "Rows have explicit arguments, generated decisions, by_target slot maps and action_hint on session undo/redo. View/latest_wins rows declare lane_target. Amendments retain amendment_sources. H15 requires full argument schemas; additions default only slot_map to preserve. build_table writes nothing; the CLI validates before writing --out.",
+   "why": "H15 supersedes the original H2 argument defaults. The real delta now states its pinned inputs. The old fixture is adapted only in memory, and omitted or empty schemas fail the builder."
+  },
+  {
+   "section": "H5",
+   "change": "The stored table removes not_busy. Commit rows use commit; session.resume uses exclusive; the two old busy-bearing workspace rows use none with explicit reasons. session.undo and session.redo dispatch both action classes and restore a slot map only when the target recorded one. Lane definitions and overlay registration are in the layer interfaces; H15.5 supplies the reconciled target form.",
+   "why": "This implements the row side of Q4(a), Q5(a), Q6(a) and FR-B04 without redefining H5. G6 bindings and an engine admission implementation do not exist in this packet."
+  },
+  {
+   "section": "H12",
+   "change": "Pin command-aliases.json version en4-2026-11-05.2 and its content_digest 55551b296fa7711c0868f0fb123c6b0b2236b70a7a4b64c04060cb5828d5a002. There are 210 retained-source pattern groups over 270 raw IDs, plus one deleted planner group/ID, giving 211 groups and 271 raw spellings. Canonical form is stated in that file and CM.3.",
+   "why": "DT-M1's about-205 count was an estimate. Raw spellings, source-decision lists, unresolved bank scopes and fresh invocation guards are explicit so migration does not infer permission or a current selection. p3 still needs semantic migration vectors."
+  },
+  {
+   "section": "C1 decision join",
+   "change": "All 556 decisions are explicit: 493 mapped, 63 none with reasons. Among the 377 retained user-entry decisions, six are reporting or routing obligations with no invocation: U4-010, U4-032, U4-063, U4-064, U6-047 and U6-048. Split parts are mapped by purpose, not by blindly inheriting every command in a coarse inventory row.",
+   "why": "The user-entry census includes indicators, text routing and failure readouts. Giving those a mutation command would contradict their signed purpose. The six none records are individually reviewable and do not change their redesign disposition."
+  },
+  {
+   "section": "C7 source reconciliation",
+   "change": "The signed October 3 bank requirements, particularly U6-007's explicit orbit/task sets, describe a presentation superseded by DT-M1 C7/K6 on October 22. Join reasons record the newer authority. No disposition file was edited or DELETE/AUTO decision made.",
+   "why": "The retained purposes now reach anchor selection, palette return or key-map naming; old bank IDs and scopes cannot be activated silently. The integrator should include these mappings in the semantic review."
+  },
+  {
+   "section": "atlas consumer",
+   "change": "atlas/build.py can still read commands and every field it currently consumes. atlas/template.html retains a first-version/pending-2.2 banner and does not expose decisions or lanes; its owner must update that presentation and regenerate the atlas separately.",
+   "why": "The atlas files are outside this packet. Keeping its old fields avoids a parser break, but the banner would misdescribe the new table."
+  }
+ ],
+ "new_error_codes": [],
+ "new_requirements": [],
+ "findings": {
+  "FR-B04": {
+   "status": "closed",
+   "clauses": ["CM.5", "CM.8", "CM.9", "CM.12"],
+   "why_open": "",
+   "who": "",
+   "vectors": {
+    "undo-gate-removed": {
+     "given": "Build the final table with its real delta and inspect session.undo while operation.preview is a revision-bound query job.",
+     "expected": "session.undo has gates=[], lane=commit, repeat=false, slot_map=by_target and hint:ActionHint plus token:UserActionToken. operation.preview has lane=exclusive. not_busy is absent from the gate vocabulary. Actual job cancellation remains p2b's runtime trace.",
+     "clause": "CM.5"
+    },
+    "renderer-wording": {
+     "given": "The session is at revision 7. A display plan based on revision 7 names a kernel-derived value with its own lineage, digest, level and reachability reference.",
+     "expected": "The renderer may display that identified derived value; the authoritative session head and revision remain 7. It may also display an identified engine preview. Neither display grants adoption or commit permission.",
+     "clause": "CM.8"
+    }
+   }
+  },
+  "EN4-JOIN": {
+   "status": "closed",
+   "clauses": ["CM.1", "CM.2", "CM.3", "CM.4", "CM.5", "CM.6", "CM.7", "CM.10", "CM.11", "CM.12"],
+   "why_open": "",
+   "who": "",
+   "vectors": {
+    "coverage-per-decision": {
+     "given": "Read the six signed disposition shards and each split part's own sealed inventory rows, then validate command-join.json against those records.",
+     "expected": "Exactly 556 decision IDs are covered: keep=52, redesign=486, delete=12, automate=6. Retained user-entry decisions total 377, with 268 carrying legacy IDs and 109 mapped individually. No delete or automate record has a command.",
+     "clause": "CM.2"
+    },
+    "forbidden-repeat": {
+     "given": "Copy the authored rows in memory, set macro.add.repeat=true, and call build_table with draft_without_jumbling=true.",
+     "expected": "TableError: macro.add: forbidden repeat (DT-M1 fix-first 2). No table is returned or written. The same refusal covers operation.preview, object.inspect and display.frame.toggle.",
+     "clause": "CM.6"
+    },
+    "missing-row": {
+     "given": "Remove mapped split decision U4-069/3 from an in-memory copy of the join, retaining U4-069/1 and U4-069/2, then build the draft.",
+     "expected": "TableError: missing decisions: ['U4-069/3']. Coverage of the parent unit or its other parts cannot satisfy this decision.",
+     "clause": "CM.4"
+    },
+    "undo-admission": {
+     "given": "Inspect the shared session undo/redo rows and Q4 dispatch in the built table. Change session.undo.lane to exclusive in an in-memory row copy and rebuild.",
+     "expected": "The valid rows use commit with no gates; undo_dispatch names session.undo/session.redo as its entry, lists journal/workspace classes, guards both ActionHint fields, and records KN5:stale.undo_superseded. The altered row fails with 'session.undo: commit requires commit lane'.",
+     "clause": "CM.5"
+    }
+   }
+  }
+ },
+ "remaining_verification": [
+  {"item": "Semantic review", "status": "open", "who": "Integrator and independent reviewer", "why_open": "The handwritten join and aliases are a candidate, not independently reviewed migration evidence. This implementation packet forbids network use and unowned review outputs."},
+  {"item": "Final delta and interfaces", "status": "open", "who": "Integrator with p1, p2b, p3 and p6", "why_open": "The final delta is integrated here under H15. The other reconciliation packets are unavailable in this worktree. Reconcile their signatures and overlay, refresh the format packet alias pin to en4-2026-11-05.2 and its current digest, and trace the identified derived display."},
+  {"item": "XM2", "status": "partial", "who": "EN4 router and session implementation", "why_open": "Table write permissions are tested. Actual slot-map digests across camera/filter/twist/focus events and undo of rebind require the implemented event and action paths."},
+  {"item": "XM3", "status": "partial", "who": "p2b and session implementation", "why_open": "The ActionHint argument, guard and refusal code are tested. After hint order=42,target=41, a real action 43 must still be shown to refuse that hint without changing either history."},
+  {"item": "XM4", "status": "partial", "who": "Candidate engine and owner-machine verification", "why_open": "Lanes and repeat are checked statically. B-004 concurrent key/pointer admission, cancellation, file-job completion and commit latency against typed-burst gaps need runtime fixtures and measurement."},
+  {"item": "XM5", "status": "partial", "who": "p1, G6 and engine replay implementation", "why_open": "Absolute rotation and pinned menu-letter carriers and safe alias resolution are checked. All 59 items on all input routes and equal replay hashes under two key maps still need real key maps and engine replay."},
+  {"item": "G6", "status": "partial", "who": "Binding-table and platform implementation; owner signs G6", "why_open": "Synthetic routing-class and repeat bindings are tested. No actual key table, prefix/layout conflict checker or Windows IME and held-key focus-release fixture is supplied in this packet."}
+ ],
+ "production": {
+  "tool": "CPython 3.15.1 standard library",
+  "editable_sources": ["docs/progress/1.0/build_command_table.py", "docs/progress/1.0/command-join.json", "docs/progress/1.0/command-aliases.json", "docs/progress/1.0/command-rows-jumbling.json"],
+  "input_identity": "Each join record stores source_sha256 over its decision label, signed record and source rows using the builder's canonical JSON function; alias content_digest identifies the entire versioned alias payload.",
+  "command": "python -B docs/progress/1.0/build_command_table.py",
+  "evidence_kind": "headless source/table checks only; no engine, Windows input, DirectX or performance claim"
+ },
+ "integrator_commands": [
+  "python -B docs/progress/1.0/build_command_table.py",
+  "python -B docs/progress/1.0/test_command_table.py",
+  "python -B docs/architecture/1.0/language/closure/check_closure.py --packet p2a",
+  "python -B docs/progress/1.0/atlas/build.py"
+ ],
+ "integrator_command_conditions": "The first three pass in p7-table with the real delta; rerun them if integration changes their inputs. Refresh the format packet alias pin and run both all-packet closure checks after integration. Update the atlas template outside this packet before its build. Never write the example delta into the stored table. Runtime fixture commands await their owning implementations.",
+ "notes": ["P7 reconciliation supersedes the old two-route undo, scalar guard, draft-only table and implicit delta argument forms. python -B docs/architecture/1.0/language/closure/check_closure.py --packet p2a exited 0 after these changes. No failure from another packet was observed."]
+}

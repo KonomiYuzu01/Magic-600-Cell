@@ -1,0 +1,186 @@
+{
+  "format": "c600-kernel-interface-walks-draft-1",
+  "status": "draft; not accepted or frozen; no route, engine language, syntax or LQ selected",
+  "evidence": "Specified source/synthetic contract traces only. No engine, geometry replay, renderer or timing was run. Symbolic exact values name returned fields, not missing interfaces or measured results.",
+  "ledger_rule": "resources tracks retained logical owners only; unretained host status is borrowed for the step and discarded on return. Job-private pins/scratch follow the operation contract. Authoritative session, durable journal and adopted host bundle are intentional service owners, not run leaks. Physical retirement follows KI.5 and RM.19, not this logical ledger.",
+  "walks": [
+    {
+      "id": "retained_macro",
+      "completion": "specified_complete",
+      "given": "Full session, Jumble off, epoch E, revision r7=(state=7,workspace=10,protection=2), action order 41 and label digest H0. No protected pieces or pending preview. Solver supplies the manual macro concat([+1],inverse([+1])). This built-in host workflow does not enable a read-and-preview solver program under either LQ21 form.",
+      "initial_resources": ["recipe"],
+      "input_owners": "recipe is a charged immutable captured macro at scope entry, with identity Full, manual provenance and exact expanded length 2. No user session is read by this file.",
+      "steps": [
+        {
+          "id": "r1", "operation": "open_snapshot", "status": "specified",
+          "inputs": {"context": "host read context E", "at": "r7"},
+          "result": "s0 pins r7, its full labels H0, workspace and protection. Snapshot reads never lock the later commit.",
+          "snapshot": "r7 / labels / H0", "uses": [], "creates": ["s0"], "releases": [],
+          "cancellation": "No handle escapes if capture fails; after success s0 stays until close.", "clauses": ["LI.11", "KN2.2"]
+        },
+        {
+          "id": "r2", "operation": "word_open", "status": "specified",
+          "inputs": {"context": "finite word budget and pinned expansion row", "source": "recipe", "max_chunk": 2},
+          "result": "wstream declares exact retained-generator length 2 and the fixture's one semantic chunk [0,2); its row identity pins that schedule. Length/hash/expansion are metered, not free metadata discovery.",
+          "snapshot": "none; captured manual source only", "uses": ["recipe"], "creates": ["wstream"], "releases": [],
+          "cancellation": "No literal-word owner exists before complete expansion.", "clauses": ["DET.63", "LG4.6", "KI.13"]
+        },
+        {
+          "id": "r3", "operation": "stream_next", "status": "specified",
+          "inputs": {"stream": "wstream", "index": 0},
+          "result": "letters.items=[+1,-1], coverage=[0,2), completed; literal owner w has alphabet signed retained generators, length=2 and digest W of those literal letters. W is not a normal-form digest. No separate commit/protection boundary was introduced by chunking.",
+          "snapshot": "none", "uses": ["wstream"], "creates": ["letters", "w"], "releases": [],
+          "cancellation": "A denied chunk yields neither letters nor w and cannot claim a complete macro.", "clauses": ["KN2.7", "DET.63"]
+        },
+        {"id": "r4", "operation": "release_value", "status": "specified", "inputs": {"owner": "letters"}, "result": "Chunk owner invalidated; w is a separately charged complete owner.", "snapshot": "none", "uses": ["letters"], "creates": [], "releases": ["letters"], "cancellation": "Terminal cleanup drops this owner if normal drop cannot run.", "clauses": ["KI.4", "DET.58"]},
+        {"id": "r5", "operation": "release_value", "status": "specified", "inputs": {"owner": "wstream"}, "result": "Expansion cursor and its source pin released; w still resolves all literal bytes.", "snapshot": "none", "uses": ["wstream"], "creates": [], "releases": ["wstream"], "cancellation": "Completed expansion is not changed to cancelled.", "clauses": ["KI.4", "DET.58"]},
+        {"id": "r6", "operation": "release_value", "status": "specified", "inputs": {"owner": "recipe"}, "result": "Source owner released; w owns its required immutable closure.", "snapshot": "none", "uses": ["recipe"], "creates": [], "releases": ["recipe"], "cancellation": "No user destructor executes.", "clauses": ["DET.58"]},
+        {
+          "id": "r7", "operation": "propose", "status": "specified",
+          "inputs": {"context": "command CP, request QP, operation.preview; finite declared service limits", "base": "r7", "word": "w", "provenance": {"author": "own", "producer": {"kind": "manual"}, "profile": "none", "parts": []}},
+          "result": "completed(preview_ready), engine preview p0 with literal W and deps(E,Full,jumble_off,7,2,resolved-draft digest). It checks prefixes +1 then -1 on all 259800 labels; net source-to-destination map is identity, end digest H0, net support empty in every orbit, length 2. Prefix collateral remains the complete support of generator 1, never erased by net cancellation. Net and Strict both return yes with complete [0,2) coverage for the empty protected set. Length is in retained primitives; cost retains its pinned unit, no numeric tariff asserted.",
+          "snapshot": "engine capture of r7; s0 remains unchanged", "uses": ["s0", "w"], "creates": ["p0"], "releases": [],
+          "cancellation": "Before install discard construction, keep prior pending slot; after install engine p0 survives runtime death. A protection conflict in a different input would remain a displayed verdict.", "clauses": ["KN5.9", "KN5.10", "LB2.2", "LB2.3", "LI.17"]
+        },
+        {"id": "r8", "operation": "release_value", "status": "specified", "inputs": {"owner": "w"}, "result": "Caller literal owner released; engine p0 keeps its independent immutable witness W.", "snapshot": "r7", "uses": ["w", "p0"], "creates": [], "releases": ["w"], "cancellation": "Does not cancel or mutate installed preview.", "clauses": ["KN5.9", "KI.5"]},
+        {
+          "id": "r9", "operation": "read_presented", "status": "specified",
+          "inputs": {"surface": "host surface/device epoch with confirmed frame f1"},
+          "result": "The trace assumes a confirmed PresentedFrame for p0/W/r7; shell latch now names that preview. Merely completed preview construction or frame submission would not supply this result. Device resources remain adapter-owned.",
+          "snapshot": "p0 base r7; authoritative state still r7", "uses": ["p0"], "creates": [], "releases": [],
+          "cancellation": "Unavailable presentation or device loss clears latch and leaves commit ineligible; no token is minted in that branch.", "clauses": ["RM.14", "RM.26", "ONE.41"]
+        },
+        {
+          "id": "r10", "operation": "commit_preview", "status": "specified",
+          "inputs": {"context": "new shell command C1/request Q1, operation.execute", "preview": "p0", "token": "fresh shell token from explicit non-repeating action, bound to p0/W/deps/identity/C1"},
+          "result": "All current gates pass. One durable journal event e42 and receipt committed(event=e42,pre=H0,post=H0,revision=r8) are written atomically; r8.state=8, head=e42, action_order=42. A legal identity net effect still advances state. Engine adopts its own endpoint and ends pending p0; notification is deliberately assumed lost. Journal witness stays [+1,-1].",
+          "snapshot": "current r7 rechecked at serialization; s0 still reads r7", "uses": ["p0"], "creates": [], "releases": ["p0"],
+          "cancellation": "If cancellation won before publication, proved rollback gives cancelled and r7. If durability won as here, even cancellation/refresh failure keeps committed. Unknown fate requires outcome/recovery, never a second commit.", "clauses": ["KN0.2", "KN5.16", "KN5.22", "LI.8", "KI.9"]
+        },
+        {
+          "id": "r11", "operation": "outcome", "status": "specified",
+          "inputs": {"command": "C1", "request": "Q1"},
+          "result": "Returns the same durable committed receipt e42/r8, without a new invocation, token use, lane or journal event. Host consumes the descriptor without retaining a language buffer.",
+          "snapshot": "receipt record, not a new state read", "uses": [], "creates": [], "releases": [],
+          "cancellation": "Cancelling lookup leaves committed receipt intact; changed request digest is refused.", "clauses": ["KN5.21", "LI.30"]
+        },
+        {
+          "id": "r12", "operation": "undo_hint", "status": "specified",
+          "inputs": {"session": "same session/E", "direction": "undo"},
+          "result": "ActionHint for undo is order=42,target=42 for journal event e42. It reserves nothing and grants no permission.",
+          "snapshot": "current durable action order 42", "uses": [], "creates": [], "releases": [],
+          "cancellation": "Discarding hint changes nothing; a later action makes it stale.", "clauses": ["LI.9", "LI.26"]
+        },
+        {
+          "id": "r13", "operation": "undo", "status": "specified",
+          "inputs": {"context": "new shell C2/Q2, session.undo", "hint": "order 42, target 42", "token": "fresh explicit-action token bound to both hint fields and current guards"},
+          "result": "committed inverse event e43, pre=H0,post=H0,revision=r9 with state=9,head=the r7 head,action_order=43. It does not restore state counter 7. Original receipt C1 stays committed. Old p0 and its token do not revive despite H0 equality. Any ordinary job reading replaced r8 is fenced without delaying undo; file jobs continue.",
+          "snapshot": "current r8 and journal inverse; s0 remains immutable r7", "uses": [], "creates": [], "releases": [],
+          "cancellation": "Stale hint or occupied commit lane refuses unchanged; durable-fate race follows commit_preview.", "clauses": ["KN5.20", "LI.26", "ONE.53", "CM.5"]
+        },
+        {
+          "id": "r13_redo_hint", "operation": "undo_hint", "status": "specified",
+          "inputs": {"session": "same session/E", "direction": "redo"},
+          "result": "ActionHint for redo is order=43,target=42, naming the original action undone by e43. The shell can bind it to session.redo with a fresh token under LI.26. No redo is invoked here. LI.9's separate move-40/rebind-41/checkpoint-42/undo-43 vector has undo target 40 and redo target 41, both at order 43; checkpoint 42 is excluded and both hints stale at order 44.",
+          "snapshot": "current durable action order 43", "uses": [], "creates": [], "releases": [],
+          "cancellation": "Discarding the hint changes nothing; advancing the order invalidates it even if the target remains eligible.", "clauses": ["LI.9", "LI.26"]
+        },
+        {"id": "r14", "operation": "close_snapshot", "status": "specified", "inputs": {"snapshot": "s0"}, "result": "Snapshot logical owner released; no run-owned resource or pending preview remains. Journal and r9 bundle remain owned by engine/store.", "snapshot": "releases r7, does not read r9", "uses": ["s0"], "creates": [], "releases": ["s0"], "cancellation": "Host proves safe physical retirement separately from logical release.", "clauses": ["LI.11", "KI.5"]}
+      ],
+      "final_resources": [],
+      "postcondition": "State revision 9, labels H0, one macro event and one inverse event, literal witness preserved; all run owners released; original committed receipt retained. Presentation was a premise, not evidence from a rendered frame here.",
+      "interruptions": [
+        {
+          "id": "cancel_expansion", "completion": "specified_complete", "given": "Independent preparation run RC with charged recipe and finite budget. Same literal source, declared two one-letter chunks under a different fixture row identity. No installed preview.", "initial_resources": ["rc_recipe"],
+          "steps": [
+            {"id": "rc1", "operation": "word_open", "status": "specified", "inputs": {"context": "RC", "source": "rc_recipe", "max_chunk": 1}, "result": "rc_stream length 2; no complete literal owner.", "snapshot": "none", "uses": ["rc_recipe"], "creates": ["rc_stream"], "releases": [], "cancellation": "Source and cursor belong to preparation run until unwind.", "clauses": ["DET.63"]},
+            {"id": "rc2", "operation": "stop_job", "status": "specified", "inputs": {"context": "shell stop command", "job": "RC preparation job"}, "result": "completed(app) registers interruption before first chunk; does not yet free rc_stream.", "snapshot": "none", "uses": [], "creates": [], "releases": [], "cancellation": "Request acknowledgement is not target terminal.", "clauses": ["LI.24"]},
+            {"id": "rc3", "operation": "job_result", "status": "specified", "inputs": {"command": "RC", "job": "RC preparation job"}, "result": "Target reaches next continuation and returns cancelled(by_user), coverage [0,0), no literal or preview. Its abandoned run scopes release recipe and cursor without a new step; used counters captured before cleanup.", "snapshot": "none", "uses": ["rc_recipe", "rc_stream"], "creates": [], "releases": ["rc_recipe", "rc_stream"], "cancellation": "No completed macro, negative conclusion or new action; cleanup cannot refund admitted work.", "clauses": ["DET.56", "DET.58", "KI.9"]}
+          ], "final_resources": [], "postcondition": "No pending preview, no puzzle/workspace action and no preparation-run owner."
+        }
+      ],
+      "clauses": ["KI.13", "KI.14", "LG3.16"]
+    },
+    {
+      "id": "jumbling_research",
+      "completion": "specified_complete",
+      "given": "Read-only research context at revision j31, Jumble on, exact symbolic pose input S0 with digest P0 and the JI.3 I_a pins. The supplied synthetic complete seam records below are JI.8's counterexample, not a claim of realized geometry. The caller supplies x=(0,12); assume its exact classification is admissible on S0 and the I_a accounting premises hold. S1=T_x(S0), P1=digest(S1), N1=count of all S1 mismatches, Phi0/Phi1 and F/D are exact symbolic engine outputs. No numeric value is invented for them. This trace grants no research product scope or solving preview transfer.",
+      "seam_fixture": {
+        "complete": true,
+        "scope": "all",
+        "cells": [
+          {"domain": "d0", "cell": "c0", "mismatched": true, "on_grip": true, "holding_caps": [0, 1]},
+          {"domain": "d1", "cell": "c1", "mismatched": true, "on_grip": false, "holding_caps": []},
+          {"domain": "d2", "cell": "c2", "mismatched": true, "on_grip": false, "holding_caps": []}
+        ],
+        "expected": {"total_N": 3, "on_grip_mismatches": 1, "off_grip_mismatches": 2},
+        "limit": "Counting fixture only; exact planes/occupancies are symbolic inputs, not generated engine certificates. Holding-cap overlap does not multiply the first cell."
+      },
+      "initial_resources": ["jw"],
+      "input_owners": "jw is a charged immutable one-letter literal [x], with model/menu/order/contract identity and exact length 1, captured before this run.",
+      "steps": [
+        {"id": "j1", "operation": "open_snapshot", "status": "specified", "inputs": {"context": "research read context", "at": "j31"}, "result": "js pins S0/P0 at poses level with all observation inputs; no labels projected off lattice.", "snapshot": "j31 / poses / P0", "uses": [], "creates": ["js"], "releases": [], "cancellation": "Run/epoch end releases js, never changes state.", "clauses": ["LI.11", "JI.4"]},
+        {"id": "j2", "operation": "seam_facts", "status": "specified", "inputs": {"context": "observe command JN; declared fixture schedule/bounds", "state": "js", "scope": "all", "max_chunk": 3}, "result": "seams stream with canonical (domain,cell) coverage; no total before complete enumeration. Job pin is charged alongside js.", "snapshot": "js / P0", "uses": ["js"], "creates": ["seams"], "releases": [], "cancellation": "Interrupted all-scope enumeration has total_N undefined(incomplete_coverage).", "clauses": ["JI.8", "KI.8", "KI.11"]},
+        {"id": "j3", "operation": "stream_next", "status": "specified", "inputs": {"stream": "seams", "index": 0}, "result": "Admitted complete chunk contains the three synthetic mismatch records, coverage [0,3). Final SeamTotals has total_N=3,on_grip_mismatches=1,off_grip_mismatches=2. It is completed(query), with no sum over N_c and no claim that one cap contains the off-grip cells.", "snapshot": "js / P0", "uses": ["seams"], "creates": ["cells", "totals"], "releases": [], "cancellation": "No final total if final summary output is denied, even after enumeration work.", "clauses": ["JI.8", "DET.59", "KI.11"]},
+        {"id": "j4", "operation": "release_value", "status": "specified", "inputs": {"owner": "cells"}, "result": "Cell chunk released; totals is its own charged immutable scalar record.", "snapshot": "P0", "uses": ["cells"], "creates": [], "releases": ["cells"], "cancellation": "No total is erased by dropping its separate cell owner.", "clauses": ["KI.4"]},
+        {"id": "j5", "operation": "release_value", "status": "specified", "inputs": {"owner": "seams"}, "result": "Completed cursor released; no additional seam work or output charge.", "snapshot": "P0", "uses": ["seams"], "creates": [], "releases": ["seams"], "cancellation": "Query terminal remains completed.", "clauses": ["DET.58", "LI.29"]},
+        {"id": "j6", "operation": "pose_facts", "status": "specified", "inputs": {"context": "same admitted input; subsequent observe query", "state": "js"}, "result": "pf gives canonical exact poses, all 177120 piece pose IDs and exact K+ membership at P0; arrays have one binding.", "snapshot": "js / P0", "uses": ["js"], "creates": ["pf"], "releases": [], "cancellation": "Incomplete arrays cannot count as complete input to units.", "clauses": ["JI.6", "LI.12"]},
+        {"id": "j7", "operation": "height_facts", "status": "specified", "inputs": {"context": "same pinned read context", "state": "js"}, "result": "hf gives per-piece exact domain, branches, heights and membership, sparse piece-weighted histogram and explicit undefined maximum for a zero above6 count; no assumed numeric heights.", "snapshot": "js / P0", "uses": ["js"], "creates": ["hf"], "releases": [], "cancellation": "No complete histogram from missing pieces.", "clauses": ["JI.6", "LB3.1"]},
+        {"id": "j8", "operation": "units", "status": "specified", "inputs": {"poses": "pf", "heights": "hf", "selection": "all_off"}, "result": "ug groups exactly the off pieces by equal exact pose key; members in canonical piece order, with domain/height/branch from P0. No unit is selected or ranked; equal local pose indices from another input are not join keys.", "snapshot": "captured P0 facts", "uses": ["pf", "hf"], "creates": ["ug"], "releases": [], "cancellation": "Unfinished grouping supplies no complete unit list.", "clauses": ["JI.9", "KI.10"]},
+        {"id": "j9", "operation": "height_potential", "status": "specified", "inputs": {"heights": "hf"}, "result": "ph.phi=Phi0=sum over all pieces max(0,h-2); multiplicities retained. This scalar does not certify the lattice or sticker test.", "snapshot": "captured P0 facts", "uses": ["hf"], "creates": ["ph"], "releases": [], "cancellation": "Denied addition/return exposes no complete phi.", "clauses": ["LB3.1", "KI.10"]},
+        {"id": "j10", "operation": "prefix_observations", "status": "specified", "inputs": {"context": "new operation.check JP with finite budget and one-letter schedule", "state": "js", "word": "jw", "fields": "N, heights, Phi, F, D, moved, prefix_state, certificates", "unit": null, "cap": null, "max_chunk": 1}, "result": "ps pins js and jw; only caller-supplied x is replayed. No scan of alternative letters, target selection or preview is invoked.", "snapshot": "js / P0", "uses": ["js", "jw"], "creates": ["ps"], "releases": [], "cancellation": "No prefix state is exported before a complete admitted observation.", "clauses": ["JI.10", "KI.12"]},
+        {
+          "id": "j11", "operation": "stream_next", "status": "specified",
+          "inputs": {"stream": "ps", "index": 0},
+          "result": "pc.items[0] has index=0,letter=(0,12),before=P0,after=P1,verdict=admissible(certificates),moved=the exact inside pieces, N_before=3,N_after=N1,delta_N=N1-3, histogram_delta=hist(S1)-hist(S0),delta_u=undefined(cap_not_named),Phi_before=Phi0,Phi_after=Phi1,delta_phi=Phi1-Phi0=2*(F-D),maximum_piece_height=max h in S1. foreign_pieces and lowered_high are the exact before-state predicate sets, F and D their cardinalities. prefix_state borrows immutable S1/P1 from pc. Completed WordObservation wo covers examined=applied=[0,1),end=P1,length=1; unit fields/step flag undefined(unit_not_named). Off-count and starting-off partition fields refer to exact S0/S1 sets; peak=max(start maximum,S1 maximum),excursion=max(0,Phi1-Phi0),tame=(Phi1<=Phi0). No approximate values or guessed numerics are used.",
+          "snapshot": "exact transition S0 to S1; session still S0", "uses": ["ps"], "creates": ["pc", "wo"], "releases": [],
+          "cancellation": "Output limit before this complete unit exposes no pc/wo; any earlier admitted units remain charged. Actual P1/N1 fields, not a follow-up unnamed query, supply the after-state information.", "clauses": ["JI.10", "JI.11", "KI.12", "DET.59"]
+        },
+        {"id": "j12", "operation": "retain_value", "status": "specified", "inputs": {"value": "pc.items[0].prefix_state"}, "result": "d1 is a separately charged owner of S1/P1 and its immutable reconstruction closure; it has no session revision or execution permission.", "snapshot": "derived S1 with lineage S0/jw", "uses": ["pc"], "creates": ["d1"], "releases": [], "cancellation": "Memory denial creates no d1; pc retains its borrow while live.", "clauses": ["LI.13", "DET.57", "KI.4"]},
+        {"id": "j13", "operation": "release_value", "status": "specified", "inputs": {"owner": "pc"}, "result": "pc and its nested borrow released; d1 remains valid at its full logical charge.", "snapshot": "S1/P1", "uses": ["pc", "d1"], "creates": [], "releases": ["pc"], "cancellation": "Physical sharing does not change which owner is live.", "clauses": ["DET.58", "KI.4"]},
+        {"id": "j14", "operation": "release_value", "status": "specified", "inputs": {"owner": "d1"}, "result": "Retained derived owner and its closure pin released; authoritative session was never changed.", "snapshot": "S1/P1", "uses": ["d1"], "creates": [], "releases": ["d1"], "cancellation": "No state adoption or implicit preview on drop.", "clauses": ["LI.13", "KI.4"]},
+        {"id": "j15", "operation": "release_value", "status": "specified", "inputs": {"owner": "wo"}, "result": "Word summary owner released; its completion descriptor remains queryable for the epoch.", "snapshot": "P0 to P1", "uses": ["wo"], "creates": [], "releases": ["wo"], "cancellation": "No re-execution to recover a released payload.", "clauses": ["LI.29"]},
+        {"id": "j16", "operation": "release_value", "status": "specified", "inputs": {"owner": "ps"}, "result": "Completed prefix stream cursor released; job-private pins already ended at terminal.", "snapshot": "P0", "uses": ["ps"], "creates": [], "releases": ["ps"], "cancellation": "Success receipt unchanged.", "clauses": ["KI.4", "LI.29"]},
+        {"id": "j17", "operation": "release_value", "status": "specified", "inputs": {"owner": "ug"}, "result": "Unit groups released.", "snapshot": "P0", "uses": ["ug"], "creates": [], "releases": ["ug"], "cancellation": "Scope teardown is equivalent logical release.", "clauses": ["DET.58"]},
+        {"id": "j18", "operation": "release_value", "status": "specified", "inputs": {"owner": "ph"}, "result": "Exact Phi record released.", "snapshot": "P0", "uses": ["ph"], "creates": [], "releases": ["ph"], "cancellation": "Cumulative arithmetic/output use remains.", "clauses": ["DET.58"]},
+        {"id": "j19", "operation": "release_value", "status": "specified", "inputs": {"owner": "pf"}, "result": "Pose arrays released.", "snapshot": "P0", "uses": ["pf"], "creates": [], "releases": ["pf"], "cancellation": "No mutable array escaped.", "clauses": ["KI.4"]},
+        {"id": "j20", "operation": "release_value", "status": "specified", "inputs": {"owner": "hf"}, "result": "Height/domain arrays released.", "snapshot": "P0", "uses": ["hf"], "creates": [], "releases": ["hf"], "cancellation": "No retained groups borrow these arrays.", "clauses": ["KI.4"]},
+        {"id": "j21", "operation": "release_value", "status": "specified", "inputs": {"owner": "totals"}, "result": "N=3 summary owner released after use; no total survives in the terminal reserve as free user data.", "snapshot": "P0", "uses": ["totals"], "creates": [], "releases": ["totals"], "cancellation": "Previously exposed output bytes remain charged.", "clauses": ["DET.59"]},
+        {"id": "j22", "operation": "release_value", "status": "specified", "inputs": {"owner": "jw"}, "result": "Caller word owner released after prefix job has ended.", "snapshot": "none", "uses": ["jw"], "creates": [], "releases": ["jw"], "cancellation": "Job has no remaining borrow.", "clauses": ["DET.58"]},
+        {"id": "j23", "operation": "close_snapshot", "status": "specified", "inputs": {"snapshot": "js"}, "result": "Last run-owned state pin released; session remains j31/P0 with no preview, token, commit or undo action.", "snapshot": "release P0", "uses": ["js"], "creates": [], "releases": ["js"], "cancellation": "Epoch teardown would release the same owner.", "clauses": ["LI.11", "KI.9"]}
+      ],
+      "final_resources": [],
+      "postcondition": "Both requested operations obtained named exact fields at their pinned inputs, then released their resources. All aggregation helpers have catalogue entries. Research output never reaches a solving-session preview.",
+      "interruptions": [
+        {
+          "id": "cancel_seams", "completion": "specified_complete", "given": "Independent observer at j31, one-cell semantic schedule under its own pinned fixture row identity; enough budget for one chunk. Cancellation after first on-grip record.", "initial_resources": [],
+          "steps": [
+            {"id": "sc1", "operation": "open_snapshot", "status": "specified", "inputs": {"context": "reader parent", "at": "j31"}, "result": "cs pins P0 in the caller, outside child seam-job scope.", "snapshot": "P0", "uses": [], "creates": ["cs"], "releases": [], "cancellation": "Child cancellation does not drop caller's cs.", "clauses": ["DET.60", "LI.11"]},
+            {"id": "sc2", "operation": "seam_facts", "status": "specified", "inputs": {"context": "child command SC/job SJ", "state": "cs", "scope": "all", "max_chunk": 1}, "result": "ss opens with own charged job pin.", "snapshot": "P0", "uses": ["cs"], "creates": ["ss"], "releases": [], "cancellation": "Cooperative continuation stop, no unbounded background enumeration.", "clauses": ["KI.8", "KI.9"]},
+            {"id": "sc3", "operation": "stream_next", "status": "specified", "inputs": {"stream": "ss", "index": 0}, "result": "sb contains only (d0,c0); covered=[0,1), status=running, no final total. Observing one mismatch does not establish total_N=1.", "snapshot": "P0", "uses": ["ss"], "creates": ["sb"], "releases": [], "cancellation": "Already admitted sb is a charged caller owner.", "clauses": ["JI.8", "DET.59"]},
+            {"id": "sc4", "operation": "stop_job", "status": "specified", "inputs": {"context": "shell stop invocation", "job": "SJ"}, "result": "completed(app) registers stop only; buffers remain live until acknowledgement/cleanup.", "snapshot": "P0", "uses": [], "creates": [], "releases": [], "cancellation": "No immediate target-success assertion.", "clauses": ["LI.24"]},
+            {"id": "sc5", "operation": "job_result", "status": "specified", "inputs": {"command": "SC", "job": "SJ"}, "result": "At next boundary target is cancelled; receipt cancelled(by_user), coverage [0,1), total_N undefined(incomplete_coverage). Job pin/scratch released; caller cs,sb and stream descriptor remain charged until dropped. No empty/all-scope negative claim.", "snapshot": "P0", "uses": ["cs", "ss", "sb"], "creates": [], "releases": [], "cancellation": "Revision replacement would use cancelled(replaced_revision); separately pinned jobs retain the two LQ4 alternatives.", "clauses": ["LI.28", "KN7.5", "KI.9"]},
+            {"id": "sc6", "operation": "release_value", "status": "specified", "inputs": {"owner": "sb"}, "result": "Admitted partial chunk released.", "snapshot": "P0", "uses": ["sb"], "creates": [], "releases": ["sb"], "cancellation": "Output usage not refunded.", "clauses": ["DET.58"]},
+            {"id": "sc7", "operation": "release_value", "status": "specified", "inputs": {"owner": "ss"}, "result": "Cancelled stream descriptor released.", "snapshot": "P0", "uses": ["ss"], "creates": [], "releases": ["ss"], "cancellation": "No restart.", "clauses": ["KI.4"]},
+            {"id": "sc8", "operation": "close_snapshot", "status": "specified", "inputs": {"snapshot": "cs"}, "result": "Caller pin released, authoritative state unchanged.", "snapshot": "P0", "uses": ["cs"], "creates": [], "releases": ["cs"], "cancellation": "Terminal teardown needs no extra allowance.", "clauses": ["DET.58"]}
+          ], "final_resources": [], "postcondition": "No total_N, no conclusion about remaining two cells, no leaked owner or puzzle action."
+        },
+        {
+          "id": "prefix_budget_stop", "completion": "specified_complete", "given": "Independent child check from j31 supplies [x,inverse(x)] with inverse item (0,45); one-letter semantic schedule. First row admitted; child kernel_cost remainder is strictly below the declared second-chunk request, while a step remains. Parent has allowance for cleanup. No tariff number selected.", "initial_resources": ["bw"],
+          "steps": [
+            {"id": "bc1", "operation": "open_snapshot", "status": "specified", "inputs": {"context": "reader parent", "at": "j31"}, "result": "bs pins P0.", "snapshot": "P0", "uses": [], "creates": ["bs"], "releases": [], "cancellation": "Caller pin outlives child.", "clauses": ["LI.11", "DET.60"]},
+            {"id": "bc2", "operation": "prefix_observations", "status": "specified", "inputs": {"context": "child BC/BJ", "state": "bs", "word": "bw", "fields": "N,Phi,F,D,prefix_state", "unit": null, "cap": null, "max_chunk": 1}, "result": "bp opens; expanded length 2 known and semantic schedule pinned.", "snapshot": "P0", "uses": ["bs", "bw"], "creates": ["bp"], "releases": [], "cancellation": "No uncharged full expansion or endpoint adoption.", "clauses": ["DET.63", "KI.12"]},
+            {"id": "bc3", "operation": "stream_next", "status": "specified", "inputs": {"stream": "bp", "index": 0}, "result": "bchunk contains verified row 0 for S1 with examined=applied=[0,1); no final WordObservation/end digest for the two-letter word.", "snapshot": "P0 to P1", "uses": ["bp"], "creates": ["bchunk"], "releases": [], "cancellation": "Admitted partial output remains charged.", "clauses": ["JI.11", "DET.59"]},
+            {"id": "bc4", "operation": "stream_next", "status": "specified", "inputs": {"stream": "bp", "index": 1}, "result": "Step admitted, kernel_cost preflight denied: cut_off(KN7:budget.kernel_cost), receipt cancelled(budget), coverage stays [0,1). No expansion/application/allocation/output for row 1. Capture used/peak/live before child unwind; release job-private pins/scratch, no refund. No final solved/end-state, whole-word step/tame or negative claim.", "snapshot": "P1 is last checked prefix, not full word endpoint", "uses": ["bp"], "creates": [], "releases": [], "cancellation": "If solver stop is already pending at this boundary it precedes the step: cancelled(by_user), same covered range but no failed-step debit, no reproducible stop promise. Both branches use this same catalogue continuation.", "clauses": ["DET.56", "DET.58", "DET.63", "LI.28", "KI.9"]},
+            {"id": "bc5", "operation": "job_result", "status": "specified", "inputs": {"command": "BC", "job": "BJ"}, "result": "Original input P0, word/parameter pins, cut-off code, exact covered prefix and actual counters returned; bounded terminal carries digests of already charged coverage, not a new free user payload.", "snapshot": "P0", "uses": [], "creates": [], "releases": [], "cancellation": "Reading terminal does not resume child or reset parent budget.", "clauses": ["DET.59", "DET.60", "LI.29"]},
+            {"id": "bc6", "operation": "release_value", "status": "specified", "inputs": {"owner": "bchunk"}, "result": "Last caller-held prefix chunk and borrowed S1 reference released.", "snapshot": "P1", "uses": ["bchunk"], "creates": [], "releases": ["bchunk"], "cancellation": "No retained alias was created.", "clauses": ["KI.4"]},
+            {"id": "bc7", "operation": "release_value", "status": "specified", "inputs": {"owner": "bp"}, "result": "Stopped stream descriptor released.", "snapshot": "P0", "uses": ["bp"], "creates": [], "releases": ["bp"], "cancellation": "No new work.", "clauses": ["KI.4"]},
+            {"id": "bc8", "operation": "release_value", "status": "specified", "inputs": {"owner": "bw"}, "result": "Caller literal word owner released.", "snapshot": "none", "uses": ["bw"], "creates": [], "releases": ["bw"], "cancellation": "Cumulative work stays charged.", "clauses": ["DET.58"]},
+            {"id": "bc9", "operation": "close_snapshot", "status": "specified", "inputs": {"snapshot": "bs"}, "result": "Caller snapshot released; authoritative state still j31/P0.", "snapshot": "P0", "uses": ["bs"], "creates": [], "releases": ["bs"], "cancellation": "Root-limit alternative would unwind every abandoned owner automatically.", "clauses": ["DET.58", "DET.60"]}
+          ], "final_resources": [], "postcondition": "Partial prefix observation is readable only for its exact input/coverage; every owner released; second letter and final result unclaimed."
+        }
+      ],
+      "clauses": ["JI.8", "JI.10", "JI.11", "JI.48", "KI.14"]
+    }
+  ]
+}

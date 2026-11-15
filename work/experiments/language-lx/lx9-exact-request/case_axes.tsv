@@ -1,0 +1,13 @@
+axis	semantics	winner	candidates	primary_bits	oracle_bits
+1,0,0	exact_degrees	1,1,0,0,C	432	64	64
+1,0,0	binary64_radians	1,1,0,0,C	432	64	64
+-1,0,0	exact_degrees	1,-1,0,0,C	432	64	64
+-1,0,0	binary64_radians	1,-1,0,0,C	432	64	64
+0,1,0	exact_degrees	1,0,1,0,C	432	64	64
+0,1,0	binary64_radians	1,0,1,0,C	432	64	64
+0,-1,0	exact_degrees	1,0,-1,0,C	432	64	64
+0,-1,0	binary64_radians	1,0,-1,0,C	432	64	64
+0,0,1	exact_degrees	1,0,0,1,C	432	64	64
+0,0,1	binary64_radians	1,0,0,1,C	432	64	64
+0,0,-1	exact_degrees	1,0,0,-1,C	432	64	64
+0,0,-1	binary64_radians	1,0,0,-1,C	432	64	64

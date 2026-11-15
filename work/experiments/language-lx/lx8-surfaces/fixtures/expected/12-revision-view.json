@@ -1,0 +1,163 @@
+{
+  "ir_version": "lx8-ir-0",
+  "edition": "lx8-0",
+  "module": "orbit_display",
+  "requires": [
+    "snapshot",
+    "view"
+  ],
+  "imports": [],
+  "declarations": [
+    {
+      "kind": "view",
+      "name": "orbit_view",
+      "params": [
+        {
+          "name": "snapshot",
+          "type": "Snapshot<Full,Labels,Witnessed>"
+        },
+        {
+          "name": "chart",
+          "type": "Chart<Full,Labels,P53>"
+        },
+        {
+          "name": "source",
+          "type": "SourceMap"
+        }
+      ],
+      "result": "View<Full,Labels>",
+      "declared_effects": [
+        "snapshot",
+        "view"
+      ],
+      "effects": [
+        "snapshot",
+        "view"
+      ],
+      "charges": {
+        "steps": "12",
+        "kernel": "0",
+        "memory": "0",
+        "output": "0"
+      },
+      "metadata": null,
+      "bindings": [
+        {
+          "name": "scale",
+          "type": "Approx<P53>",
+          "value": {
+            "op": "literal.approx",
+            "type": "Approx<P53>",
+            "effects": [],
+            "charges": {
+              "steps": "1",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "value": {
+              "decimal": "0.5",
+              "precision_bits": "53"
+            }
+          }
+        },
+        {
+          "name": "plan",
+          "type": "DisplayPlan<Full,Labels>",
+          "value": {
+            "op": "call",
+            "type": "DisplayPlan<Full,Labels>",
+            "effects": [
+              "snapshot"
+            ],
+            "charges": {
+              "steps": "1",
+              "kernel": "7",
+              "memory": "0",
+              "output": "0"
+            },
+            "target": "make_plan",
+            "args": [
+              {
+                "op": "ref",
+                "type": "Snapshot<Full,Labels,Witnessed>",
+                "effects": [],
+                "charges": {
+                  "steps": "0",
+                  "kernel": "0",
+                  "memory": "0",
+                  "output": "0"
+                },
+                "name": "snapshot"
+              },
+              {
+                "op": "ref",
+                "type": "Approx<P53>",
+                "effects": [],
+                "charges": {
+                  "steps": "0",
+                  "kernel": "0",
+                  "memory": "0",
+                  "output": "0"
+                },
+                "name": "scale"
+              },
+              {
+                "op": "ref",
+                "type": "Chart<Full,Labels,P53>",
+                "effects": [],
+                "charges": {
+                  "steps": "0",
+                  "kernel": "0",
+                  "memory": "0",
+                  "output": "0"
+                },
+                "name": "chart"
+              },
+              {
+                "op": "ref",
+                "type": "SourceMap",
+                "effects": [],
+                "charges": {
+                  "steps": "0",
+                  "kernel": "0",
+                  "memory": "0",
+                  "output": "0"
+                },
+                "name": "source"
+              }
+            ]
+          }
+        }
+      ],
+      "body": {
+        "op": "call",
+        "type": "View<Full,Labels>",
+        "effects": [
+          "view"
+        ],
+        "charges": {
+          "steps": "1",
+          "kernel": "0",
+          "memory": "0",
+          "output": "1"
+        },
+        "target": "publish",
+        "args": [
+          {
+            "op": "ref",
+            "type": "DisplayPlan<Full,Labels>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "plan"
+          }
+        ]
+      }
+    }
+  ]
+}

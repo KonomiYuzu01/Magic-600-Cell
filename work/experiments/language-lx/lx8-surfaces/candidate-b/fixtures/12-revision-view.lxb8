@@ -1,0 +1,7 @@
+edition: "lx8-0"
+module orbit_display requires [snapshot, view]
+
+view orbit_view(snapshot: Snapshot<Full,Labels,Witnessed>, chart: Chart<Full,Labels,P53>, source: SourceMap) returns View<Full,Labels> using [snapshot, view] charge [12, 0, 0, 0]:
+    scale := ~53"0.5"
+    plan := make_plan(snapshot, scale, chart, source)
+    yield publish(plan)

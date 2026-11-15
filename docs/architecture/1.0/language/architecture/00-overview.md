@@ -1,13 +1,26 @@
 # Language architecture: overview and conventions
 
-Status: **draft for the owner. Not accepted.** Nothing in this document is an ADR, a frozen architecture or a chosen
+Status: **frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). This document is not an ADR and chooses no
 syntax. It is the full text that the [ecosystem partition](../ecosystem-partition.md) promises in its section 17. The
-owner confirmed the partition's direction on 3 November 2026. That answered the kickoff's first step only: owner
-questions LQ1 to LQ21 stay open, and every chapter keeps them open. Accepting ADRs and freezing the architecture are the
-owner's decisions.
+owner confirmed the partition's direction on 3 November 2026, answered LQ1 to LQ21 on 6 November 2026 and chose LQ8,
+LQ9 and LQ21 on 14 November 2026: the engine and the interpreter's host in Rust, route RT1 with the runtime in a process
+of its own, and capability separation (RTE.17, RTE.21, RTE.24). After both Astra freeze rulings went go, the owner
+confirmed understanding and signed LP1 on 15 November 2026: ADR-L01 to ADR-L12 are accepted, this architecture and the
+migration format are frozen, and LP2 to LP5 may start (PHS.44, PHS.51).
 
-"The language" means the project's own language (working name C600 Script, LQ17). "The partition" means the page linked
-above. Its IDs are used unchanged: INV-n, KNn, LGn, LBn, EVn, PSn, BMn, BSn, RTn, LX-n, LPn, LQn and its defaults 1 to 20.
+The freeze covers the chapters, the [ADRs](../adr/README.md), the annexes in the language folder and the
+[format packet](../format-packet/README.md) as the rulings read them, with the status lines changed at the sign-off.
+The `status` strings inside annex data files keep the wording the rulings read; these status lines supersede them. [O]
+clauses stay open until the decision they name, and [P LQ13] clauses stay conditional on LQ13, which waits for LX-8
+before LP2's parser. LQ2's option set waits for the joint setting. Syntax and the IR freeze later (PHS.49), and the
+command table freezes at LP3 (PHS.53). A changed format, layer boundary or renderer feature follows PHS.52. The
+design-system ADR is still outstanding (PHS.44). The owner also accepted state-contract amendment A6 on 15 November
+2026: where a clause calls A6 proposed or not in force, A6 is in force; it replaces A1's input map only.
+
+"The language" means 600 Cell Script, with source files `.6cs` (owner, 6 November 2026, LQ17). "The partition" means the
+page linked above. Its IDs are used unchanged: INV-n, KNn, LGn, LBn, EVn, PSn, BMn, BSn, RTn, LX-n, LPn, LQn and its
+defaults 1 to 20.
 
 ## 1. What this document adds
 
@@ -21,6 +34,12 @@ check:
 - for every open choice, what stays the same under each option and what changes.
 
 It describes no implementation. It presets no syntax, no implementation route and no engine language.
+
+LX-1 to LX-9 have first-pass records in `work/experiments/language-lx/` under the owner's allowance (owner,
+6 November 2026, LQ18). LX-5 and LX-6 ran decisively in the owner's window of 14 November 2026, and the owner chose
+LQ8, LQ9 and LQ21 that day; the decisive LX-1, LX-2 and LX-4 runs are LP3 acceptance checks (RTE.21, RTE.82). No
+record decides LQ13. For LX-9 the owner chose exact requests (owner, 6 November 2026, decision 8). KN3.4
+describes that direction as proposed state-contract amendment A6; A1 stays in force until EN1's Astra check and the owner.
 
 ## 2. Chapters
 
@@ -47,7 +66,8 @@ chapters that hold its detail.
 Reading paths:
 
 - **To see the whole:** this page, then chapter 08, then chapter 07.
-- **To decide LQ1 to LQ21:** partition section 15, then the "Open items" section at the end of each chapter.
+- **To read the answers and what waits:** the [owner's answers](../../../../wiki/decisions/owner-decisions-2026-11-06.md),
+  partition section 15 for the questions, then the "Open items" section at the end of each chapter.
 - **To build the kernel API:** chapters 01, 08, 09 and 13.
 - **To write the library:** chapters 02, 03 and 06.
 
@@ -164,12 +184,16 @@ The runtime sits beside the path from key to frame, never on it. A key bound to 
 layer without passing through the runtime, and the renderer adopts each engine revision without waiting for a program
 (chapter 08).
 
-Where the runtime runs, in the engine process, in a process of its own or in the shell process, is open (LQ9, LX-2). The
-picture shows its interfaces, not its process.
+The runtime runs in a process of its own (owner, 14 November 2026, LQ9; RTE.21); the engine-process and shell-process
+placements are not admitted. The picture shows its interfaces, not its process.
 
 ## 5. Walk-through: a solver's own tool prepares a word
 
 This walk-through follows one action through the parts. It is informative. The chapters hold the rules.
+
+Until the joint setting enables a solver-tool preview, step 4 is refused in a solving session when the word or any
+part records output from the solver's tool (owner, 6 November 2026, decision 12; BND.84 and BND.85). The later steps
+describe the path when preview admission is permitted.
 
 1. The solver presses a key bound to a language-defined command. The shell finds the binding in its table and invokes
    the command through the command layer (KN5, EV4).
@@ -178,7 +202,8 @@ This walk-through follows one action through the parts. It is informative. The c
 3. The program opens a snapshot of the current revision. It reads through batch queries, and every value it receives
    names the revision and the level it came from (KN2, chapter 08).
 4. The program builds a literal word and sends a proposal: the word, the revision it read and its provenance block
-   (BM2). What the provenance block holds depends on the form of flow control (LQ21).
+   (BM2). Chapter 07 defines the stored provenance block; the form of flow control is capability separation (LQ21,
+   RTE.24).
 5. The engine replays the literal word at the current revision, prefix by prefix, and checks protection. It builds its
    own immutable preview object, with an ID, a witness and the digest of the literal letters (R-10, KN5).
 6. The view model adopts the preview, and the renderer draws it through the adapter. The solver sees the effect, the

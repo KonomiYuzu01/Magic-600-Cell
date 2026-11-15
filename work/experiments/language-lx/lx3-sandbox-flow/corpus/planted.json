@@ -1,0 +1,310 @@
+{
+  "corpus_version": "lx3-neutral-v2",
+  "decision": "open",
+  "cases": [
+    {
+      "id": "P01",
+      "resource": "clock",
+      "clauses": [
+        "DET.10",
+        "DET.36",
+        "DET.37",
+        "DET.42",
+        "DET.49"
+      ],
+      "plant": {
+        "logical_resource": "clock_probe",
+        "data": "LX3_CLOCK_90123",
+        "mechanism": "Synthetic host fixture trap; never access a real resource, endpoint, file outside the corpus or shell."
+      },
+      "grants": [],
+      "program": {
+        "inputs": {},
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "tool_authoring",
+            "author": "own",
+            "boundary_class": null,
+            "invocation": "command",
+            "body": [
+              {
+                "op": "ambient",
+                "as": "leak",
+                "type": "Text",
+                "resource": "clock",
+                "logical_resource": "clock_probe"
+              },
+              {
+                "op": "emit",
+                "value": {
+                  "ref": "leak"
+                }
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "leak"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected_code": "LG3:capability.ambient_read",
+      "forbidden_data": [
+        "LX3_CLOCK_90123"
+      ],
+      "forbidden_sinks": [
+        "value",
+        "context",
+        "diagnostics",
+        "display",
+        "workspace",
+        "file_output",
+        "traces"
+      ],
+      "expected_trap_calls": 0,
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending_preview",
+        "workspace",
+        "external_resources"
+      ]
+    },
+    {
+      "id": "P02",
+      "resource": "file",
+      "clauses": [
+        "DET.10",
+        "DET.36",
+        "DET.37",
+        "DET.42",
+        "DET.49"
+      ],
+      "plant": {
+        "logical_resource": "file_probe",
+        "data": "LX3_FILE_NEVER_RETURN",
+        "mechanism": "Synthetic host fixture trap; never access a real resource, endpoint, file outside the corpus or shell."
+      },
+      "grants": [],
+      "program": {
+        "inputs": {},
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "tool_authoring",
+            "author": "own",
+            "boundary_class": null,
+            "invocation": "command",
+            "body": [
+              {
+                "op": "ambient",
+                "as": "leak",
+                "type": "Text",
+                "resource": "file",
+                "logical_resource": "file_probe"
+              },
+              {
+                "op": "emit",
+                "value": {
+                  "ref": "leak"
+                }
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "leak"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected_code": "LG3:capability.ambient_read",
+      "forbidden_data": [
+        "LX3_FILE_NEVER_RETURN"
+      ],
+      "forbidden_sinks": [
+        "value",
+        "context",
+        "diagnostics",
+        "display",
+        "workspace",
+        "file_output",
+        "traces"
+      ],
+      "expected_trap_calls": 0,
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending_preview",
+        "workspace",
+        "external_resources"
+      ]
+    },
+    {
+      "id": "P03",
+      "resource": "network",
+      "clauses": [
+        "DET.10",
+        "DET.36",
+        "DET.37",
+        "DET.42",
+        "DET.49"
+      ],
+      "plant": {
+        "logical_resource": "network_probe",
+        "data": "LX3_NETWORK_NEVER_RETURN",
+        "mechanism": "Synthetic host fixture trap; never access a real resource, endpoint, file outside the corpus or shell."
+      },
+      "grants": [],
+      "program": {
+        "inputs": {},
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "tool_authoring",
+            "author": "own",
+            "boundary_class": null,
+            "invocation": "command",
+            "body": [
+              {
+                "op": "ambient",
+                "as": "leak",
+                "type": "Text",
+                "resource": "network",
+                "logical_resource": "network_probe"
+              },
+              {
+                "op": "emit",
+                "value": {
+                  "ref": "leak"
+                }
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "leak"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected_code": "LG3:capability.ambient_read",
+      "forbidden_data": [
+        "LX3_NETWORK_NEVER_RETURN"
+      ],
+      "forbidden_sinks": [
+        "value",
+        "context",
+        "diagnostics",
+        "display",
+        "workspace",
+        "file_output",
+        "traces"
+      ],
+      "expected_trap_calls": 0,
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending_preview",
+        "workspace",
+        "external_resources"
+      ]
+    },
+    {
+      "id": "P04",
+      "resource": "process",
+      "clauses": [
+        "DET.10",
+        "DET.36",
+        "DET.37",
+        "DET.42",
+        "DET.49"
+      ],
+      "plant": {
+        "logical_resource": "process_probe",
+        "data": "LX3_PROCESS_NEVER_RETURN",
+        "mechanism": "Synthetic host fixture trap; never access a real resource, endpoint, file outside the corpus or shell."
+      },
+      "grants": [],
+      "program": {
+        "inputs": {},
+        "modules": {},
+        "runs": [
+          {
+            "id": "r1",
+            "profile": "tool_authoring",
+            "author": "own",
+            "boundary_class": null,
+            "invocation": "command",
+            "body": [
+              {
+                "op": "ambient",
+                "as": "leak",
+                "type": "Text",
+                "resource": "process",
+                "logical_resource": "process_probe"
+              },
+              {
+                "op": "emit",
+                "value": {
+                  "ref": "leak"
+                }
+              },
+              {
+                "op": "return",
+                "value": {
+                  "ref": "leak"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected_code": "LG3:capability.not_granted",
+      "forbidden_data": [
+        "LX3_PROCESS_NEVER_RETURN"
+      ],
+      "forbidden_sinks": [
+        "value",
+        "context",
+        "diagnostics",
+        "display",
+        "workspace",
+        "file_output",
+        "traces"
+      ],
+      "expected_trap_calls": 0,
+      "unchanged": [
+        "session.labels",
+        "session.revision",
+        "session.journal",
+        "session.protected_slots",
+        "session.preferences",
+        "session.recovery_checkpoint",
+        "pending_preview",
+        "workspace",
+        "external_resources"
+      ]
+    }
+  ]
+}

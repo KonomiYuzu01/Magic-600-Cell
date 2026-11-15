@@ -1,0 +1,279 @@
+{
+ "packet": "p7-table",
+ "assumes": [
+  {
+   "item": "HANDOFF H15",
+   "assumed": "H15 is the integrator working form for reconciliation. The final table uses its shared undo entry, ActionHint, filter gate, lane targets, service registrations and shared scrub row.",
+   "if_other": "Reconcile the changed form in the owning packet and rebuild the table; final=true does not approve or freeze a contract."
+  },
+  {
+   "item": "ONE.78 and JI.37",
+   "assumed": "Live retained and menu twists remain protected and require no preview under the current reading; CM.9 and JI.37 keep owner confirmation open.",
+   "if_other": "If S4 covers each live turn, add fresh_preview and preview=required to both live rows, change their tests and reconcile the live protocol after the owner decision."
+  },
+  {
+   "item": "EH-30 and JI.38",
+   "assumed": "jumble.scramble requires an owner-approved policy reference and explicit action. No depth, mix or seed default is selected here.",
+   "if_other": "An approved policy changes policy and cost admission; hidden witness separation and normal preview/execute remain."
+  },
+  {
+   "item": "LQ8, LQ9 and LQ21",
+   "assumed": "The annex remains a semantic catalogue with all route, placement and grant-enforcement alternatives open. A registration grants nothing.",
+   "if_other": "The owner-selected route and enforcement form need their concrete bindings, tariffs, lifetimes and conformance evidence; the table check does not supply them."
+  }
+ ],
+ "owner_items": [
+  {
+   "item": "ONE.78",
+   "why": "CM.9 and JI.37 leave S4 live-turn preview confirmation with the owner; this packet preserves both alternatives."
+  },
+  {
+   "item": "EH-30",
+   "why": "JI.38 leaves product scramble depth and retained/jumble mix to the owner; the row selects no policy."
+  },
+  {
+   "item": "LQ8/LQ9/LQ21",
+   "why": "KI.15 leaves route, placement and enforcement selection open. Service registration does not choose them."
+  },
+  {
+   "item": "DT-M1 Q7 and G6",
+   "why": "CM.10 preserves the adopted four-seat working form pending XM1 and its recorded alternatives. Physical bindings and sign-off remain outside this packet."
+  }
+ ],
+ "handoff_changes": [
+  {
+   "section": "H2 argument defaults, refined by H15",
+   "change": "Every delta addition and amendment must carry its full nonempty argument schema. The builder no longer supplies empty arguments or a token for an omitted commit schema. It still defaults an added slot_map to preserve. The historical H2 fixture is adapted only in memory.",
+   "why": "RA1-09 requires explicit pinned inputs in the real delta. The older fixture is outside this packet and predates H15.",
+   "vector": {
+    "given": "Remove arguments from the jumble.on addition, or from the macro.add amendment set, in memory.",
+    "expected": "TableError before any output: missing required H2 fields for the addition, or an explicit argument schema required for the amendment.",
+    "clause": "CM.15"
+   }
+  }
+ ],
+ "new_error_codes": [],
+ "new_requirements": [],
+ "findings": {
+  "RA1-01": {
+   "status": "closed",
+   "clauses": [
+    "CM.5",
+    "CM.11",
+    "LI.26"
+   ],
+   "vectors": {
+    "rebind_undo_row": {
+     "given": "Action 41 recorded grip.rebind from map A to B; current ActionHint has order=42,target=41. Inspect session.undo in the final table and its join/aliases.",
+     "expected": "Only session.undo/session.redo are undo entries. Both use commit, by_target and action_hint; dispatch classes are journal and workspace. The specified workspace inverse restores A, returns committed, keeps puzzle head/hash and advances workspace versions; table tests do not execute that inverse.",
+     "clause": "CM.5"
+    }
+   }
+  },
+  "RA1-02": {
+   "status": "closed",
+   "clauses": [
+    "CM.14",
+    "KN5.9"
+   ],
+   "vectors": {
+    "conflicting_preview_row": {
+     "given": "An otherwise admissible complete word violates active protection. Inspect the final preview row and its delta amendment, then the execute row.",
+     "expected": "operation.preview has no protection gate and can report the conflict in its completed preview; operation.execute retains protection and refuses that commit. Adding the protection gate back to the preview row or delta fails TableError.",
+     "clause": "CM.14"
+    }
+   }
+  },
+  "RA1-08": {
+   "status": "closed",
+   "clauses": [
+    "CM.5",
+    "KI.13"
+   ],
+   "vectors": {
+    "hint_row_arguments": {
+     "given": "Action 41 is undoable and action 42 advanced durable order without becoming the inverse target. Bind hint order=42,target=41 and a fresh token.",
+     "expected": "Both undo rows require exactly hint:ActionHint and token:UserActionToken and action_guard=action_hint. Both numbers enter the binding. After action 43 lands the contract returns KN5:stale.undo_superseded; a scalar action schema fails the builder.",
+     "clause": "CM.5"
+    }
+   }
+  },
+  "RA1-09": {
+   "status": "closed",
+   "clauses": [
+    "CM.15",
+    "JI.32",
+    "JI.33"
+   ],
+   "vectors": {
+    "distinct_bindings": {
+     "given": "Build the real delta. Compare jumble.straddlers arguments snapshot=S7,cap=0,max_chunk=32 with snapshot=S7,cap=1,max_chunk=32; remove an argument schema in a separate negative copy.",
+     "expected": "The schema contains snapshot:StateRef,cap:CapId,max_chunk:PositiveNat. The two argument and request bindings have different digests. All 16 additions and six amendments retain explicit schemas; operation.check includes snapshot, unit, cap, fields and max_chunk. An omitted or empty schema fails before output.",
+     "clause": "CM.15"
+    }
+   }
+  },
+  "RA1-10": {
+   "status": "closed",
+   "clauses": [
+    "CM.14"
+   ],
+   "vectors": {
+    "filter_gate_row": {
+     "given": "Apply a current FilterPreviewRef with no pending word preview, then change one of its filter dependencies. Separately mutate filter.apply back to the word gate in memory.",
+     "expected": "filter.apply alone uses preview=filter and fresh_filter_preview, with no fresh_preview gate. The first contract input is fresh; the changed one returns KN5:stale.filter_preview. The old word-gate row, either gate/preview mismatch or a filter gate on macro.add fails the builder.",
+     "clause": "CM.14"
+    }
+   }
+  },
+  "RA1-12": {
+   "status": "closed",
+   "clauses": [
+    "CM.13",
+    "LI.22",
+    "LI.23"
+   ],
+   "vectors": {
+    "lane_target_rows": {
+     "given": "Inspect all view/latest_wins rows. Camera rotate and zoom name session S,view V; a third camera request names view W. Remove the release check target or name a missing argument in a copied row.",
+     "expected": "Every such row has one nonempty arg/view/control target. Rotate and zoom resolve the same (S,V), so newer admitted work supersedes unfinished work there; (S,W) is independent. Phase selection, scrub and toggles have fixed command-ID control targets. Missing or malformed targets fail the builder.",
+     "clause": "CM.13"
+    }
+   }
+  },
+  "RA1-13": {
+   "status": "closed",
+   "clauses": [
+    "LI.3",
+    "LI.4"
+   ],
+   "vectors": {
+    "layer_call_wording": {
+     "given": "The shell submits operation.execute to the command layer, which calls the engine and its coordinated store transaction.",
+     "expected": "H-08 cites LI.3/LI.4 ownership and this shell-to-command-to-engine path; it contains no neighbour-only call restriction. Results reach the view model and renderer adapter.",
+     "clause": "LI.4"
+    }
+   }
+  },
+  "X-FINAL": {
+   "status": "closed",
+   "clauses": [
+    "CM.1",
+    "CM.4",
+    "CM.12"
+   ],
+   "vectors": {
+    "final_build": {
+     "given": "Build in memory from the authored base, signed join, versioned aliases and real jumbling delta; compare encoded bytes with command-table.json.",
+     "expected": "The bytes match exactly with LF and final=true: 168 commands (152 base plus 16 additions, six amendments) and nine separate services. The Markdown row list and kind counts match; the historical fixture contributes no row.",
+     "clause": "CM.1"
+    }
+   }
+  },
+  "X-SCRUB": {
+   "status": "closed",
+   "clauses": [
+    "CM.6",
+    "CM.13",
+    "JI.33"
+   ],
+   "vectors": {
+    "scrub_row": {
+     "given": "Inspect a solver-word jumbling preview P7 at literal prefix 10 under revision R7 through view.preview.scrub; compare the final row IDs and repeat allowlist.",
+     "expected": "Only view.preview.scrub exists, with preview:PreviewId,prefix:WordPosition,revision:RevisionRef, job=true and repeat=true in its view lane. It shares the retained preview purpose and never exposes hidden scramble prefixes. The repeat allowlist remains exactly camera.rotate,camera.zoom,list.move,view.preview.scrub; a duplicate jumbling scrub row fails.",
+     "clause": "CM.6"
+    }
+   }
+  },
+  "X-SERVICES": {
+   "status": "closed",
+   "clauses": [
+    "CM.16",
+    "KI.1",
+    "KI.16"
+   ],
+   "vectors": {
+    "services_list": {
+     "given": "Resolve all ten annex requires entries against the final table; in negative copies remove kernel.snapshot.open, remove jumble.observe, or use one service ID as a command.",
+     "expected": "Nine IDs resolve in services (kernel.stream.next is a continuation); jumble.observe resolves in commands. Services have only id,kind,caller,lane,clauses,note and no command affordances. Each missing or colliding registration fails; requires cannot authorize its own missing ID.",
+     "clause": "CM.16"
+    }
+   }
+  }
+ },
+ "notes": [
+  "All finding closures below are draft text and table-level checks, subject to independent semantic review. No engine, runtime admission, inverse execution, Windows input, renderer or performance evidence is claimed.",
+  "The base rows removed by H15.1 had empty inventory arrays. T-14 remains on both session rows, U5-036 moves to session.undo in the signed join, and draft-undo and shared undo/redo aliases use those same entries. No signed source record or disposition changed.",
+  "ViewId arguments supply dynamic lane targets. Other built-in view rows use their command ID as a stable session control target; this selects no view layout or physical input.",
+  "The required p2a closure check exited 0. No failure caused by another packet was observed.",
+  "H15.16 assigns registration of KN5:stale.filter_preview to p7-reg. This packet proposes no additional error code.",
+  "The production source and input digests below identify this generated table; source decision digests remain in command-join.json. The table and annex checks operate entirely in memory."
+ ],
+ "verification": [
+  {
+   "command": "python -B docs/progress/1.0/build_command_table.py",
+   "exit": 0,
+   "result": "168 commands; final=True; commit=14, app=5, workspace=62, query=38, file=6, view=43; 9 services."
+  },
+  {
+   "command": "python -B docs/progress/1.0/test_command_table.py",
+   "exit": 0,
+   "result": "29 tests passed, including mapped split-decision removal and forbidden macro.add repeat controls."
+  },
+  {
+   "command": "python -B docs/architecture/1.0/language/kernel-interface/check_annex.py",
+   "exit": 0,
+   "result": "21 operations, 10 requires, 2 complete specified walks with 57 steps, 21 rejection controls; source/synthetic structure only."
+  },
+  {
+   "command": "python -B docs/architecture/1.0/language/closure/check_closure.py --packet p2a",
+   "exit": 0,
+   "result": "PASS, including table tests; mechanical only."
+  }
+ ],
+ "acceptance_command": "python -B docs/architecture/1.0/language/closure/check_p7.py --packet p7-table",
+ "remaining_verification": [
+  {
+   "item": "Semantic review and combined packets",
+   "status": "open",
+   "who": "Integrator and independent reviewer",
+   "why_open": "This implementation call permits no network or unowned review outputs. Review the candidate, merge the other packets, and run the all-packet checks."
+  },
+  {
+   "item": "Alias consumer pin",
+   "status": "open",
+   "who": "Integrator with p7-data",
+   "why_open": "Refresh the format packet to command-aliases.json version en4-2026-11-05.2 and content_digest 55551b296fa7711c0868f0fb123c6b0b2236b70a7a4b64c04060cb5828d5a002 under its own canonical profile. The consumer is outside this packet."
+  },
+  {
+   "item": "Atlas",
+   "status": "open",
+   "who": "Integrator",
+   "why_open": "Update its stale draft banner and table presentation, then regenerate the atlas outside this packet."
+  },
+  {
+   "item": "Runtime and route evidence",
+   "status": "open",
+   "who": "EN4 router/session implementation, selected-route implementer and G6",
+   "why_open": "XM2-XM5 event traces, stale hint refusal, target supersession, filter freshness, key-map replay and KI.15 bindings need executable implementations. Their commands cannot be specified before those harnesses exist; no such run is claimed."
+  }
+ ],
+ "integrator_commands": [
+  "python -B docs/architecture/1.0/language/closure/check_p7.py --all",
+  "python -B docs/architecture/1.0/language/closure/check_closure.py --all",
+  "python -B docs/progress/1.0/atlas/build.py"
+ ],
+ "integrator_command_conditions": "Run both all-packet checks after merging the reconciliation packets and refreshing the format packet alias pin. Update the atlas template before its build. Rebuild and rerun packet acceptance if integration changes the table inputs. Independent review remains required; no runtime or platform command can be named before its owning harness exists.",
+ "production": {
+  "tool": "CPython 3.15.1 standard library",
+  "command": "python -B docs/progress/1.0/build_command_table.py",
+  "input_digests": {
+   "docs/progress/1.0/build_command_table.py": "da375bb18d8bf8819ee9752d417a78b7bc1d88452f443f396c87b0144ddf5c41",
+   "docs/progress/1.0/command-join.json": "9f867fac4a6225bb8a4a3102417bf57ffd9dc35fd32ee39fa1a7e700108fd8a3",
+   "docs/progress/1.0/command-aliases.json": "a2fd0f24fb5f8e6abae82f8384ff706b899b8723f1e867ec9b4dfd465fdf6152",
+   "docs/progress/1.0/command-rows-jumbling.json": "5cbbf362b4f9bc93cd9aeb68d7745f268fe6ebae4303b439abae92710ba99eaa",
+   "docs/progress/1.0/inventory/top-down.json": "869e904fbf241af6b5a44168fe278454fc0001524cd48e701a9324979ed37c42"
+  },
+  "evidence_kind": "Read-only source/table checks and specified synthetic annex walks; no runtime or measurement claim."
+ }
+}

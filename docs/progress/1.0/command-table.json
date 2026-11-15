@@ -1,6 +1,13 @@
 {
- "draft": "H-08",
+ "draft": "H-08 EN4",
+ "final": true,
  "source_inventory": "inventory/top-down.json",
+ "source_join": "command-join.json",
+ "aliases": {
+  "file": "command-aliases.json",
+  "version": "en4-2026-11-05.3",
+  "content_digest": "5ef9a34103f9411f6b11eda5d371c34f561df43bcb0cf707c6910d23e042c3c5"
+ },
  "vocabularies": {
   "kind": [
    "app",
@@ -18,9 +25,9 @@
   "gates": [
    "confirm",
    "file_check",
+   "fresh_filter_preview",
    "fresh_preview",
    "model_match",
-   "not_busy",
    "protection"
   ],
   "contexts": [
@@ -32,7 +39,33 @@
    "operation",
    "puzzle",
    "solve"
+  ],
+  "lane": [
+   "commit",
+   "exclusive",
+   "latest_wins",
+   "none",
+   "program",
+   "view"
+  ],
+  "preview": [
+   "none",
+   "required",
+   "filter"
   ]
+ },
+ "undo_dispatch": {
+  "entry": {
+   "undo": "session.undo",
+   "redo": "session.redo"
+  },
+  "classes": [
+   "journal",
+   "workspace"
+  ],
+  "guard": "action_hint",
+  "stale": "KN5:stale.undo_superseded",
+  "protection": "original_permission_path_including_release_confirmation"
  },
  "commands": [
   {
@@ -43,8 +76,7 @@
     "T-08"
    ],
    "gates": [
-    "confirm",
-    "not_busy"
+    "confirm"
    ],
    "preview": "none",
    "undo": "journal",
@@ -54,8 +86,27 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "commit",
+   "arguments": {
+    "session": "SessionRef",
+    "token": "UserActionToken"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-113",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-039/2",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "session.resume",
@@ -64,9 +115,7 @@
    "inventory": [
     "T-09"
    ],
-   "gates": [
-    "not_busy"
-   ],
+   "gates": [],
    "preview": "none",
    "undo": "none",
    "contexts": [
@@ -75,13 +124,63 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": "Resume owns recovery admission; unrelated jobs do not gate a commit or undo.",
+   "lane": "exclusive",
+   "arguments": {
+    "session": "SessionRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-001",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U1-005",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U2-001",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U2-014",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U2-055",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-112",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-001",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-001",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-001",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-039/1",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "session.timer.start",
    "label": "Start timer",
-   "kind": "commit",
+   "kind": "workspace",
    "inventory": [
     "T-10"
    ],
@@ -94,13 +193,42 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {},
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-031",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U2-056",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-114",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-050/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-039/5",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "session.timer.stop",
    "label": "Stop timer",
-   "kind": "commit",
+   "kind": "workspace",
    "inventory": [
     "T-10"
    ],
@@ -113,8 +241,37 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {},
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-033",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U2-056",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-114",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-050/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-039/5",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "session.scramble",
@@ -123,9 +280,7 @@
    "inventory": [
     "T-11"
    ],
-   "gates": [
-    "not_busy"
-   ],
+   "gates": [],
    "preview": "none",
    "undo": "workspace",
    "contexts": [
@@ -134,8 +289,41 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": "stages into the operation; the commit is operation.execute"
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": "stages into the operation; the commit is operation.execute H5: atomic workspace edit in lane none; no job-wide busy gate.",
+   "lane": "none",
+   "arguments": {
+    "seed": "Seed",
+    "length": "Nat",
+    "phase": "PhaseId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-060",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U2-057",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-122",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-033",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-039/4",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "session.reset",
@@ -145,8 +333,7 @@
     "T-12"
    ],
    "gates": [
-    "confirm",
-    "not_busy"
+    "confirm"
    ],
    "preview": "none",
    "undo": "journal",
@@ -156,8 +343,40 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "commit",
+   "arguments": {
+    "session": "SessionRef",
+    "token": "UserActionToken"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-024",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-080/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-035",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-075",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-039/2",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "session.undo",
@@ -166,9 +385,7 @@
    "inventory": [
     "T-14"
    ],
-   "gates": [
-    "not_busy"
-   ],
+   "gates": [],
    "preview": "none",
    "undo": "journal",
    "contexts": [
@@ -177,8 +394,45 @@
    "repeat": false,
    "job": false,
    "key_0_4": "Commands > Undo",
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": "LI.26: dispatch journal or workspace action from ActionHint through its original permission path, including release confirmation. Restore a recorded slot map only when the target action changed it.",
+   "lane": "commit",
+   "arguments": {
+    "hint": "ActionHint",
+    "token": "UserActionToken"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "by_target",
+   "action_guard": "action_hint",
+   "decisions": [
+    {
+     "decision": "U1-017",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-072",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-027",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-036",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-071",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-025/3",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "session.redo",
@@ -187,9 +441,7 @@
    "inventory": [
     "T-14"
    ],
-   "gates": [
-    "not_busy"
-   ],
+   "gates": [],
    "preview": "none",
    "undo": "journal",
    "contexts": [
@@ -198,8 +450,41 @@
    "repeat": false,
    "job": false,
    "key_0_4": "Commands > Redo",
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": "LI.26: dispatch journal or workspace action from ActionHint through its original permission path, including release confirmation. Restore a recorded slot map only when the target action changed it.",
+   "lane": "commit",
+   "arguments": {
+    "hint": "ActionHint",
+    "token": "UserActionToken"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "by_target",
+   "action_guard": "action_hint",
+   "decisions": [
+    {
+     "decision": "U1-018",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-074",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-028",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-072",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-025/3",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "session.checkpoint.save",
@@ -208,9 +493,7 @@
    "inventory": [
     "T-15"
    ],
-   "gates": [
-    "not_busy"
-   ],
+   "gates": [],
    "preview": "none",
    "undo": "none",
    "contexts": [
@@ -219,8 +502,41 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "commit",
+   "arguments": {
+    "name": "Text",
+    "revision": "RevisionRef",
+    "token": "UserActionToken"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-020",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-076",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-015",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-073",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-034/4",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "session.checkpoint.restore",
@@ -230,8 +546,7 @@
     "T-15"
    ],
    "gates": [
-    "confirm",
-    "not_busy"
+    "confirm"
    ],
    "preview": "none",
    "undo": "journal",
@@ -241,8 +556,39 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "commit",
+   "arguments": {
+    "checkpoint": "CheckpointRef",
+    "token": "UserActionToken"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-022",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-078",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-048",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-074",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-034/4",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "session.report",
@@ -260,8 +606,41 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {},
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-016",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U1-029",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U2-054",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-111",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-069",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-039/1",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "file.log.export",
@@ -279,8 +658,72 @@
    "repeat": false,
    "job": true,
    "key_0_4": "Ctrl+Alt+O/L (Functions)",
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "exclusive",
+   "arguments": {
+    "history": "JournalRangeRef",
+    "format": "LogFormat",
+    "destination": "FileRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-036",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U1-038",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U1-048",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U1-050",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U2-058",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U2-059",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-115",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-116",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-149/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-021",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-025",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-076",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-039/6",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "file.log.check",
@@ -300,8 +743,46 @@
    "repeat": false,
    "job": true,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "exclusive",
+   "arguments": {
+    "file": "FileDigestRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-052",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U1-054",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U2-060",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-117",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-149/2",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-023",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-039/6",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "file.log.import",
@@ -312,8 +793,7 @@
    ],
    "gates": [
     "file_check",
-    "confirm",
-    "not_busy"
+    "confirm"
    ],
    "preview": "none",
    "undo": "journal",
@@ -323,8 +803,39 @@
    "repeat": false,
    "job": true,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": "keeps preferences; leaves a recovery checkpoint"
+   "disposition": [
+    "redesign"
+   ],
+   "note": "keeps preferences; leaves a recovery checkpoint",
+   "lane": "commit",
+   "arguments": {
+    "checked": "CheckedFileRef",
+    "token": "UserActionToken"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-055",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U2-061",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-118",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-149/3",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-039/6",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "file.keymap.export",
@@ -342,8 +853,31 @@
    "repeat": false,
    "job": false,
    "key_0_4": "Ctrl+Alt+E (Functions)",
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "keymap": "KeymapRevisionRef",
+    "destination": "FileRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-126",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-018/2",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-010",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "file.keymap.check",
@@ -363,8 +897,26 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "file": "FileDigestRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-127",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-010",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "file.keymap.apply",
@@ -385,8 +937,22 @@
    "repeat": false,
    "job": false,
    "key_0_4": "Ctrl+Alt+I (Functions)",
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "checked": "CheckedFileRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-128",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "solve.open",
@@ -404,8 +970,31 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {},
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "solve.open"
+   },
+   "decisions": [
+    {
+     "decision": "U3-007",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-025/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-038",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "operation.phase.select",
@@ -423,8 +1012,37 @@
    "repeat": false,
    "job": false,
    "key_0_4": "Ctrl+1/2/3",
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "phase": "PhaseId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "operation.phase.select"
+   },
+   "decisions": [
+    {
+     "decision": "U3-054",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-013/2",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-024/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-038",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "operation.phase.edit",
@@ -433,9 +1051,7 @@
    "inventory": [
     "T-22"
    ],
-   "gates": [
-    "not_busy"
-   ],
+   "gates": [],
    "preview": "none",
    "undo": "workspace",
    "contexts": [
@@ -444,8 +1060,35 @@
    "repeat": false,
    "job": false,
    "key_0_4": "F4",
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": " H5: atomic workspace edit in lane none; no job-wide busy gate.",
+   "lane": "none",
+   "arguments": {
+    "phase": "PhaseId",
+    "word": "WordRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-058",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-042",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-033",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-024/1",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "operation.cleanup.from_prepare",
@@ -463,8 +1106,30 @@
    "repeat": false,
    "job": false,
    "key_0_4": "Ctrl+Shift+I",
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "draft": "ResolvedDraftRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-061",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-038",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-032/3",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "operation.check",
@@ -483,8 +1148,55 @@
    "repeat": false,
    "job": true,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": "Also checks the solver-supplied menu word at the current snapshot, with optional unit and cap; returns all EH-25 fields and chronological prefix coverage. A false step flag is data, not execution refusal. JI.11, JI.32.",
+   "lane": "exclusive",
+   "arguments": {
+    "draft": "ResolvedDraftRef|WordRef",
+    "snapshot": "StateRef",
+    "unit": "PieceSet?",
+    "cap": "CapId?",
+    "fields": "Set<PrefixField>",
+    "max_chunk": "PositiveNat<letters>"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-062",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U2-004",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U2-035",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U2-066",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-062",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-040",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-025/2",
+     "disposition": "redesign"
+    }
+   ],
+   "amendment_sources": [
+    "ENG-0J:146; jumbling-interfaces.md JI.32"
+   ]
   },
   {
    "id": "operation.preview",
@@ -493,9 +1205,7 @@
    "inventory": [
     "T-24"
    ],
-   "gates": [
-    "protection"
-   ],
+   "gates": [],
    "preview": "none",
    "undo": "none",
    "contexts": [
@@ -504,8 +1214,49 @@
    "repeat": false,
    "job": true,
    "key_0_4": "Ctrl+Enter",
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": "Also replays the entire literal menu word prefix by prefix at current H3 dependencies into one immutable engine preview. A blocked prefix yields no preview; a false step flag or protection conflict is displayed separately. JI.11, JI.15, JI.32.",
+   "lane": "exclusive",
+   "arguments": {
+    "draft": "ResolvedDraftRef|WordRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-062",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-063",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-041",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-042",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-053",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-042",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-025/2",
+     "disposition": "redesign"
+    }
+   ],
+   "amendment_sources": [
+    "ENG-0J:146; jumbling-interfaces.md JI.32"
+   ]
   },
   {
    "id": "operation.execute",
@@ -516,8 +1267,7 @@
    ],
    "gates": [
     "fresh_preview",
-    "protection",
-    "not_busy"
+    "protection"
    ],
    "preview": "required",
    "undo": "journal",
@@ -527,8 +1277,42 @@
    "repeat": false,
    "job": false,
    "key_0_4": "Ctrl+Shift+Enter",
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": "Also commits a menu word or selected repair as one journal action from its presented fresh preview. Recheck H3 dependencies, literal digest, full-state hash, mode, identity and protection; adopt only the engine-owned end state. Scramble witnesses remain hidden and separate. JI.27, JI.31, JI.32.",
+   "lane": "commit",
+   "arguments": {
+    "preview": "PreviewId",
+    "token": "UserActionToken"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-064",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-065",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-039",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-044",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-025/3",
+     "disposition": "redesign"
+    }
+   ],
+   "amendment_sources": [
+    "ENG-0J:146; jumbling-interfaces.md JI.32"
+   ]
   },
   {
    "id": "operation.preview.cancel",
@@ -546,8 +1330,39 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "preview": "PreviewId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-065",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-066",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-040",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-045",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-025/2",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "job.stop",
@@ -565,8 +1380,34 @@
    "repeat": false,
    "job": false,
    "key_0_4": "Shift+Escape",
-   "disposition": "pending-2.2",
-   "note": "a request; acceptance is not completion"
+   "disposition": [
+    "redesign"
+   ],
+   "note": "a request; acceptance is not completion",
+   "lane": "none",
+   "arguments": {
+    "job": "JobId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-009",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-068",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-047",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-025/4",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "operation.new",
@@ -584,8 +1425,24 @@
    "repeat": false,
    "job": false,
    "key_0_4": "Ctrl+N",
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {},
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-070",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-025/1",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "operation.reuse",
@@ -603,8 +1460,26 @@
    "repeat": false,
    "job": false,
    "key_0_4": "Ctrl+Alt+R",
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "draft": "ResolvedDraftRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-071",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-025/1",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "view.forecast.select",
@@ -622,8 +1497,46 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "phase": "actual|prepare|macro|cleanup"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "view.forecast.select"
+   },
+   "decisions": [
+    {
+     "decision": "U2-007",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-051",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-056",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-049",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-023",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-025/2",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "view.cycle.mode",
@@ -641,8 +1554,33 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "mode": "current|operation|after"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "view.cycle.mode"
+   },
+   "decisions": [
+    {
+     "decision": "U2-005",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-079",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-037/1",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "view.effect.scope",
@@ -660,8 +1598,29 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "scope": "body|complete"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "view.effect.scope"
+   },
+   "decisions": [
+    {
+     "decision": "U3-079",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-036",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "view.local",
@@ -679,8 +1638,35 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {},
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "view.local"
+   },
+   "decisions": [
+    {
+     "decision": "U3-019",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-066",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-037",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-017/1",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "view.global",
@@ -698,8 +1684,35 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {},
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "view.global"
+   },
+   "decisions": [
+    {
+     "decision": "U3-021",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-065",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-039",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-017/1",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "target.next.activate",
@@ -717,8 +1730,30 @@
    "repeat": false,
    "job": false,
    "key_0_4": "Ctrl+Alt+N",
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "bookmark": "BookmarkRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-025",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-028",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-014",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "target.next.set",
@@ -736,8 +1771,31 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "piece": "PieceId",
+    "destination": "PositionId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-023",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-026",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-014",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "object.inspect",
@@ -753,11 +1811,153 @@
    "contexts": [
     "any"
    ],
-   "repeat": true,
+   "repeat": false,
    "job": false,
    "key_0_4": "Enter; Shift+click",
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "object": "CanonicalObjectRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "object.inspect"
+   },
+   "decisions": [
+    {
+     "decision": "U1-039",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U1-040",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U1-041",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U1-046",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U1-047",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U2-029",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U2-038",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U2-039",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U2-040",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U2-045",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-012",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-014",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-036",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-037",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-038",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-148/2",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-148/3",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-054",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-055",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-058/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-069/2",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-071",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-024",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-052",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-053",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-054",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-067",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-005",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-008",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-015/2",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-018/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-044",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "object.actions",
@@ -775,8 +1975,41 @@
    "repeat": false,
    "job": false,
    "key_0_4": "Shift+F10",
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "object": "CanonicalObjectRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "object.actions"
+   },
+   "decisions": [
+    {
+     "decision": "U3-028",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-049",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-030",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-004",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-014",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "object.inspect.clear",
@@ -794,8 +2027,28 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {},
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "object.inspect.clear"
+   },
+   "decisions": [
+    {
+     "decision": "U1-045",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U4-060",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "view.entry_slots",
@@ -813,8 +2066,33 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "result": "ResultRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "view.entry_slots"
+   },
+   "decisions": [
+    {
+     "decision": "U3-079",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-036",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-037/1",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "buffer.assign",
@@ -832,8 +2110,39 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "role": "A|B",
+    "position": "PositionId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-027",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-029",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-031",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-035",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-005",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "buffer.analyse",
@@ -851,8 +2160,28 @@
    "repeat": false,
    "job": true,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "exclusive",
+   "arguments": {
+    "orbit": "OrbitId",
+    "buffers": "PositionIdPair",
+    "target": "PositionId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-053",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-045",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "block.add_current",
@@ -870,8 +2199,28 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "positions": "PositionIds",
+    "mode": "position|exact",
+    "revision": "RevisionRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-035",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-020/1",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "block.add_home",
@@ -889,8 +2238,31 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "positions": "PositionIds",
+    "mode": "position|exact"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-035",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-032",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-020/1",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "intent.set",
@@ -908,8 +2280,26 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "intent": "IntentId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-030",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-028",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "view.residuals",
@@ -927,8 +2317,43 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "orbit": "OrbitId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U2-049",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U2-050",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U2-052",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-107",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-019/2",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-035/1",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "view.findings",
@@ -947,8 +2372,41 @@
    "repeat": false,
    "job": false,
    "key_0_4": "Shift+F12",
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "result": "ResultRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "view.findings"
+   },
+   "decisions": [
+    {
+     "decision": "U3-099",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-044",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-017",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-025/2",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-026",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "orbit.switch",
@@ -966,8 +2424,47 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "orbit": "OrbitId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U2-067",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-022",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-110",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-019/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-004",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-003",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-035/3",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "view.recommendations",
@@ -985,8 +2482,31 @@
    "repeat": false,
    "job": true,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": "ranking only; never grants permission or executes"
+   "disposition": [
+    "redesign"
+   ],
+   "note": "ranking only; never grants permission or executes",
+   "lane": "exclusive",
+   "arguments": {
+    "orbit": "OrbitId",
+    "block": "BlockRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-051",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U2-068",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-056",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "view.names",
@@ -1004,8 +2524,34 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "object": "CanonicalObjectRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "view.names"
+   },
+   "decisions": [
+    {
+     "decision": "U1-013",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U2-042",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-008",
+     "disposition": "keep"
+    }
+   ]
   },
   {
    "id": "macro.base.open",
@@ -1023,8 +2569,31 @@
    "repeat": false,
    "job": false,
    "key_0_4": "F3",
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {},
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "macro.base.open"
+   },
+   "decisions": [
+    {
+     "decision": "U3-005",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-010",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-030/1",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "macro.select",
@@ -1044,8 +2613,62 @@
    "repeat": false,
    "job": false,
    "key_0_4": "Ctrl+Alt+1/2",
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "macro": "MacroRevisionRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "macro.select"
+   },
+   "decisions": [
+    {
+     "decision": "U2-036",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U2-037",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-044",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-069",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-086",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-097",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-053",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-014",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-030/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-033/3",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "macro.add",
@@ -1063,8 +2686,34 @@
    "repeat": false,
    "job": false,
    "key_0_4": "Ctrl+M",
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": "Add a menu word or solver-selected correction to the current draft, retaining alphabet, model/menu/order/contract pins, exact expanded length, named spans and provenance. One workspace action; no execution. JI.18-JI.23, JI.32.",
+   "lane": "none",
+   "arguments": {
+    "macro": "MacroRevisionRef|WordRef|CorrectionRef",
+    "phase": "PhaseId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-059",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-015",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-030/2",
+     "disposition": "redesign"
+    }
+   ],
+   "amendment_sources": [
+    "ENG-0J:146; jumbling-interfaces.md JI.32"
+   ]
   },
   {
    "id": "worksheet.save",
@@ -1082,8 +2731,36 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "draft": "ResolvedDraftRef",
+    "name": "Text"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U2-064",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-101",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-056",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-040",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "worksheet.load",
@@ -1101,8 +2778,30 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "worksheet": "WorksheetRevisionRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-103",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-057",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-040",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "macro.compare",
@@ -1120,8 +2819,38 @@
    "repeat": false,
    "job": true,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "exclusive",
+   "arguments": {
+    "macros": "MacroRevisionRefs"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U2-002",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-083",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-090",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-021",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-032/1",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "endgame.configure",
@@ -1139,8 +2868,35 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "family": "FamilyId",
+    "parameters": "ExactFamilyParameters"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-089",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-091",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-046",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-033/1",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "macro.save",
@@ -1160,8 +2916,50 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": "saving does not select, insert or execute"
+   "disposition": [
+    "redesign"
+   ],
+   "note": "Saving does not select, insert or execute. Also stores menu words as flat ia16 payloads with optional verified named spans, exact expanded length, identity/order/contract pins, origin digest and provenance. JI.18-JI.23, JI.32.",
+   "lane": "none",
+   "arguments": {
+    "word": "WordRef",
+    "name": "Text"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-059",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-067",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-095",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-043",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-019",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-030/3",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-033/2",
+     "disposition": "redesign"
+    }
+   ],
+   "amendment_sources": [
+    "ENG-0J:146; jumbling-interfaces.md JI.32"
+   ]
   },
   {
    "id": "macro.variant.create",
@@ -1179,8 +2977,48 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "macro": "MacroRevisionRef",
+    "transform": "ExactTransformRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U2-048",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-077",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-053",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-029/2",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-031",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-027",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-032/2",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "protection.policy.set",
@@ -1198,8 +3036,26 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": "invalidates any open preview"
+   "disposition": [
+    "redesign"
+   ],
+   "note": "invalidates any open preview",
+   "lane": "none",
+   "arguments": {
+    "policy": "net|strict"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-064",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-024/3",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "protection.position.protect",
@@ -1217,8 +3073,31 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "position": "PositionId",
+    "mode": "position|exact"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-040",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-034",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-020/2",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "protection.position.release",
@@ -1238,8 +3117,31 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "position": "PositionId",
+    "mode": "position|exact|both"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-040",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-059",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-020/2",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "protection.orbit.unlock",
@@ -1259,8 +3161,22 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "orbit": "OrbitId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U6-020/2",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "keyboard.toggle",
@@ -1278,8 +3194,35 @@
    "repeat": false,
    "job": false,
    "key_0_4": "F9",
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {},
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "keyboard.toggle"
+   },
+   "decisions": [
+    {
+     "decision": "U3-011",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-062",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-009",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-041",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "grip.select",
@@ -1298,8 +3241,35 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "cap": "CapId",
+    "frame": "FrameRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-048",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-008",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-013/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-041",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "twist.apply",
@@ -1310,8 +3280,7 @@
     "T-60"
    ],
    "gates": [
-    "protection",
-    "not_busy"
+    "protection"
    ],
    "preview": "none",
    "undo": "journal",
@@ -1322,8 +3291,56 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": "live destination commits; draft destination edits the phase"
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": "live only; no preview (ONE.78; owner, 6 November 2026, decision 10)",
+   "lane": "commit",
+   "arguments": {
+    "cap": "CapId",
+    "rotation": "ExactRotationRef",
+    "token": "UserActionToken"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-061",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U2-025",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-053",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-148/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-061",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-011",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-013/2",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-015/1",
+     "disposition": "redesign"
+    }
+   ],
+   "amendment_sources": [
+    "Owner, 6 November 2026, decision 10; ONE.78"
+   ]
   },
   {
    "id": "twist.inverse.toggle",
@@ -1341,8 +3358,23 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {},
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "twist.inverse.toggle"
+   },
+   "decisions": [
+    {
+     "decision": "U5-012",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "input.destination.set",
@@ -1360,31 +3392,92 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "destination": "live|draft",
+    "phase": "PhaseId?"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-055",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-013/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-024/2",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
-   "id": "bank.select",
-   "label": "Select bank",
+   "id": "grip.anchor.set",
+   "label": "Choose grip anchor",
    "kind": "workspace",
    "inventory": [
     "T-54"
    ],
    "gates": [],
    "preview": "none",
-   "undo": "none",
+   "undo": "workspace",
    "contexts": [
     "any"
    ],
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": "DT-M1 C7: replaces bank.select; choosing an anchor does not apply a slot map",
+   "lane": "none",
+   "arguments": {
+    "piece": "PieceId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-003",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-041",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-042",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-003",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-007",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-007",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-034/2",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
-   "id": "grip.capture",
-   "label": "Set grips",
+   "id": "grip.rebind",
+   "label": "Apply reviewed grip map",
    "kind": "workspace",
    "inventory": [
     "T-55"
@@ -1398,27 +3491,40 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
-  },
-  {
-   "id": "bank.functions.toggle",
-   "label": "Functions bank",
-   "kind": "view",
-   "inventory": [
-    "T-56"
+   "disposition": [
+    "redesign"
    ],
-   "gates": [],
-   "preview": "none",
-   "undo": "none",
-   "contexts": [
-    "any"
-   ],
-   "repeat": false,
-   "job": false,
-   "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "note": "DT-M1 K2 and Q3(a): explicit rebind with transported slot order and frames",
+   "lane": "none",
+   "arguments": {
+    "anchor": "PieceId",
+    "map": "TransportedSlotMap",
+    "expected_map": "Digest"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "rebind",
+   "decisions": [
+    {
+     "decision": "U3-046",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-047",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-050",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-016",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-034/2",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "keymap.edit",
@@ -1438,14 +3544,42 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "keymap": "KeymapRevisionRef",
+    "candidate": "BindingEdits"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-120",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-030",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-018/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-011",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "command.find",
    "label": "Find command",
    "kind": "view",
    "inventory": [
+    "T-56",
     "T-58"
    ],
    "gates": [],
@@ -1457,8 +3591,46 @@
    "repeat": false,
    "job": false,
    "key_0_4": "F1; Ctrl+F1 back",
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "query": "Text",
+    "object": "CanonicalObjectRef?"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "command.find"
+   },
+   "decisions": [
+    {
+     "decision": "U3-001",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-017",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-089",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-002",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-002",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-007",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "camera.rotate",
@@ -1476,8 +3648,42 @@
    "repeat": true,
    "job": false,
    "key_0_4": "drag; Shift+left drag",
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "view": "ViewId",
+    "rotation": "DisplayRotation"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "arg": "view"
+   },
+   "decisions": [
+    {
+     "decision": "U3-135",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-138",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-062",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-069/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-017/2",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "filter.open",
@@ -1495,8 +3701,35 @@
    "repeat": false,
    "job": false,
    "key_0_4": "F5",
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {},
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "filter.open"
+   },
+   "decisions": [
+    {
+     "decision": "U3-009",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-022",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-048",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-022",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "filter.preview",
@@ -1514,8 +3747,52 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "predicate": "FilterRef",
+    "revision": "RevisionRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-042",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U2-009",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-009",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-022",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-024",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-031",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-077",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-050",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "filter.apply",
@@ -1525,9 +3802,9 @@
     "T-62"
    ],
    "gates": [
-    "fresh_preview"
+    "fresh_filter_preview"
    ],
-   "preview": "required",
+   "preview": "filter",
    "undo": "workspace",
    "contexts": [
     "filter"
@@ -1535,8 +3812,42 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "preview": "FilterPreviewRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-044",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-009",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-022",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-031",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-078",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-048",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "display.frame.toggle",
@@ -1554,8 +3865,31 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {},
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "display.frame.toggle"
+   },
+   "decisions": [
+    {
+     "decision": "U3-141/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-011",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-021",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "display.adaptive.toggle",
@@ -1573,8 +3907,31 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {},
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "display.adaptive.toggle"
+   },
+   "decisions": [
+    {
+     "decision": "U3-141/2",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-009",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-021",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "display.adjust",
@@ -1589,11 +3946,49 @@
    "contexts": [
     "any"
    ],
-   "repeat": true,
+   "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "view": "ViewId",
+    "settings": "DisplaySettings"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "arg": "view"
+   },
+   "decisions": [
+    {
+     "decision": "U3-140",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-005",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-007/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-007/2",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-007/3",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-021",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "view.reset",
@@ -1611,8 +4006,57 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "view": "ViewId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "arg": "view"
+   },
+   "decisions": [
+    {
+     "decision": "U3-134",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-137",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-142",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-012",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-069/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-063",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-017/2",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-018/2",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-039/3",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "structure.find",
@@ -1630,8 +4074,22 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "query": "CanonicalCellQuery"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U4-072/1",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "structure.compare",
@@ -1649,8 +4107,22 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "cells": "CellIdPair"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U4-072/2",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "structure.layer",
@@ -1668,8 +4140,23 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "cell": "CellId",
+    "layer": "Nat"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U4-074",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "view.cell_views",
@@ -1687,8 +4174,39 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {},
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "view.cell_views"
+   },
+   "decisions": [
+    {
+     "decision": "U3-130",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-065",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-066",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-068",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-017/1",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "camera.center",
@@ -1706,8 +4224,54 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "view": "ViewId",
+    "cell": "CellId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "arg": "view"
+   },
+   "decisions": [
+    {
+     "decision": "U3-060",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-013",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-059",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-062",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-069/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-070",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-017/2",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-018/2",
+     "disposition": "redesign"
+    }
+   ]
   },
   {
    "id": "set.save",
@@ -1725,8 +4289,3560 @@
    "repeat": false,
    "job": false,
    "key_0_4": null,
-   "disposition": "pending-2.2",
-   "note": null
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "members": "CanonicalObjectRefs",
+    "kind": "identity|position",
+    "name": "Text"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-057",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-037",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-051",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "operation.phase.append_twist",
+   "label": "Append resolved twist to phase",
+   "kind": "workspace",
+   "inventory": [
+    "T-52",
+    "T-60"
+   ],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "puzzle",
+    "keyboard"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": "DT-M1 C7: edits a draft only; protection is checked on the complete operation",
+   "lane": "none",
+   "arguments": {
+    "cap": "CapId",
+    "rotation": "ExactRotationRef",
+    "phase": "PhaseId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-061",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U2-025",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-053",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-148/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-061",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-011",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-013/2",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-015/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-024/1",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "workspace.reset",
+   "label": "Reset work context",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [
+    "confirm"
+   ],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": "Preserves puzzle history, personal tools and protection",
+   "lane": "none",
+   "arguments": {},
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-080/2",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-039/3",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "session.branch.select",
+   "label": "Continue recorded branch",
+   "kind": "commit",
+   "inventory": [],
+   "gates": [
+    "confirm",
+    "model_match"
+   ],
+   "preview": "none",
+   "undo": "journal",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "commit",
+   "arguments": {
+    "head": "JournalHeadRef",
+    "token": "UserActionToken"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-015",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U4-049",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "session.history",
+   "label": "Inspect recorded history",
+   "kind": "query",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {},
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-014",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U4-049",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "session.completion",
+   "label": "Read recorded completion",
+   "kind": "query",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "completion": "CompletionRecordRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-121",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-039/7",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "session.practice",
+   "label": "Open full-model practice copy",
+   "kind": "commit",
+   "inventory": [],
+   "gates": [
+    "model_match",
+    "protection",
+    "confirm"
+   ],
+   "preview": "none",
+   "undo": "journal",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": "Explicit fixture action in an isolated practice session; never startup",
+   "lane": "commit",
+   "arguments": {
+    "fixture": "FixtureRef",
+    "session": "PracticeSessionRef",
+    "token": "UserActionToken"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-067",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U2-003",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-123",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-070",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-034/5",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "file.session.backup",
+   "label": "Back up session",
+   "kind": "file",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "exclusive",
+   "arguments": {
+    "session": "SessionRef",
+    "destination": "FileRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-026",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-017",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "file.proof.export",
+   "label": "Export verified proof session",
+   "kind": "file",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "exclusive",
+   "arguments": {
+    "history": "JournalRangeRef",
+    "destination": "FileRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-034",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-018",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "file.certificate.export",
+   "label": "Export macro certificate",
+   "kind": "file",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "exclusive",
+   "arguments": {
+    "macro": "MacroRevisionRef",
+    "destination": "FileRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-032",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U4-020",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "file.macro.export",
+   "label": "Export selected macro records",
+   "kind": "file",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "exclusive",
+   "arguments": {
+    "macros": "MacroRevisionRefs",
+    "destination": "FileRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U2-032",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-092",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-031/4",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "file.macro.check",
+   "label": "Check macro library file",
+   "kind": "query",
+   "inventory": [],
+   "gates": [
+    "model_match"
+   ],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "exclusive",
+   "arguments": {
+    "file": "FileDigestRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U2-033",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-094",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-031/4",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "file.macro.import",
+   "label": "Import checked macro records",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [
+    "file_check",
+    "confirm"
+   ],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "checked": "CheckedFileRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-096",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-031/4",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "app.exit",
+   "label": "Save and leave application",
+   "kind": "app",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {},
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-003",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U2-014",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-003",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-077",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-045",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "app.reconnect",
+   "label": "Reconnect verified display",
+   "kind": "app",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "exclusive",
+   "arguments": {},
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-056",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-002",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "help.open",
+   "label": "Read contextual help",
+   "kind": "view",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "topic": "TermOrCommandId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "help.open"
+   },
+   "decisions": [
+    {
+     "decision": "U3-143",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-008",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-036",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-006",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "work.surface.show",
+   "label": "Reach work surface",
+   "kind": "view",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "surface": "SurfaceId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "work.surface.show"
+   },
+   "decisions": [
+    {
+     "decision": "U3-084",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-129",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-004",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-014",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-022",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-029",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-034/3",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "work.surface.close",
+   "label": "Leave expanded work surface",
+   "kind": "view",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": "Preserves the two baseline linked views, drafts and previews",
+   "lane": "view",
+   "arguments": {
+    "surface": "SurfaceId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "work.surface.close"
+   },
+   "decisions": [
+    {
+     "decision": "U3-073",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-131",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-132",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-043",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-016",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-025/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-030/2",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-042",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-045",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "work.layout.set",
+   "label": "Adjust workspace layout",
+   "kind": "view",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "layout": "LayoutRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "work.layout.set"
+   },
+   "decisions": [
+    {
+     "decision": "U3-010",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-006",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-068",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-041",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-042",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-046",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "work.layout.reset",
+   "label": "Recover workspace layout",
+   "kind": "view",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {},
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "work.layout.reset"
+   },
+   "decisions": [
+    {
+     "decision": "U4-067",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "work.fullscreen.toggle",
+   "label": "Toggle fullscreen",
+   "kind": "view",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {},
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "work.fullscreen.toggle"
+   },
+   "decisions": [
+    {
+     "decision": "U3-133",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-016",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "transient.close",
+   "label": "Close innermost transient",
+   "kind": "view",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": "Escape never stops a job, cancels a preview or drops a draft",
+   "lane": "view",
+   "arguments": {},
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "transient.close"
+   },
+   "decisions": [
+    {
+     "decision": "U3-013",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-017",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-005",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-046",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-007",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-043",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "list.move",
+   "label": "Move list focus",
+   "kind": "view",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": true,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "list": "ListId",
+    "entry": "EntryId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "list.move"
+   },
+   "decisions": [
+    {
+     "decision": "U4-056",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-071",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-044",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "list.row.copy",
+   "label": "Copy named result row",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "O9 row copy identifies the result and absolute object; never executes",
+   "lane": "none",
+   "arguments": {
+    "result": "ResultRef",
+    "object": "CanonicalObjectRef"
+   },
+   "source": "DT-M1 C2; DT-J1 O9",
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "camera.zoom",
+   "label": "Scale view",
+   "kind": "view",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": true,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "view": "ViewId",
+    "scale": "DisplayScale"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "arg": "view"
+   },
+   "decisions": [
+    {
+     "decision": "U3-136",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-139",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-062",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-069/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-017/2",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "view.preview.scrub",
+   "label": "Scrub identified preview",
+   "kind": "view",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": true,
+   "job": true,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Inspect the identified retained or jumbling solver-word preview at a literal prefix position under its preview and revision pins (JI.33, H7). A cancellable view job; the newest request for this target supersedes older work. Never commit or expose hidden scramble prefixes.",
+   "lane": "view",
+   "arguments": {
+    "preview": "PreviewId",
+    "prefix": "WordPosition",
+    "revision": "RevisionRef"
+   },
+   "source": "DT-M1 fix-first 2; Q10(a)",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "view.preview.scrub"
+   },
+   "decisions": [],
+   "amendment_sources": [
+    "DT-M1 C1, fix-first 2; DT-J1 O10(b); jumbling-interfaces.md JI.33; HANDOFF H15.19"
+   ]
+  },
+  {
+   "id": "view.local.configure",
+   "label": "Set Local origin and neighborhood",
+   "kind": "view",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "origin": "CellId",
+    "radius": "Nat",
+    "follow": "FollowPolicy"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "view.local.configure"
+   },
+   "decisions": [
+    {
+     "decision": "U4-069/3",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-017/2",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "display.references.set",
+   "label": "Set reference visibility",
+   "kind": "view",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "view": "ViewId",
+    "references": "ReferenceDisplaySettings"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "arg": "view"
+   },
+   "decisions": [
+    {
+     "decision": "U4-029",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "display.mode.set",
+   "label": "Set rendering presentation",
+   "kind": "view",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "view": "ViewId",
+    "mode": "DisplayMode"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "arg": "view"
+   },
+   "decisions": [
+    {
+     "decision": "U5-066",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "object.copy",
+   "label": "Copy typed object address",
+   "kind": "app",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "object": "CanonicalObjectRef",
+    "form": "typed|canonical"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U2-043",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U2-044",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U2-045",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-144",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-145",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-068",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-034/1",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "object.locate",
+   "label": "Locate named object",
+   "kind": "view",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "object": "CanonicalObjectRef",
+    "view": "ViewId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "arg": "view"
+   },
+   "decisions": [
+    {
+     "decision": "U1-041",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U1-043",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U1-049",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-026",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-100",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-057/2",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-058/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-058/2",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-059",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-025",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-064",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-065",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-014",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-025/2",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "target.current.set",
+   "label": "Set current piece and destination",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "piece": "PieceId",
+    "destination": "PositionId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-016",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-018",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-020",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-038/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-057/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-023",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-067",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-005",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "target.next.clear",
+   "label": "Clear next-work bookmark",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "bookmark": "BookmarkRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-024",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-027",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-014",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "target.frame.set",
+   "label": "Set required target frame",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "position": "PositionId",
+    "frame": "ExactFrameRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-032",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-033",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-005",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "block.reference.set",
+   "label": "Set block reference",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "block": "BlockRef",
+    "reference": "WordRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-034",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-020/1",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "block.remove",
+   "label": "Remove named block requirement",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "requirement": "BlockRequirementRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-039",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-020/1",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "protection.orbit.set",
+   "label": "Set protected orbits",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [
+    "confirm"
+   ],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "orbits": "OrbitIds"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-045",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-034",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-058",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-020/2",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "grip.behavior.set",
+   "label": "Choose held or latched grip",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "behavior": "hold|latch"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-057",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-009",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-012",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-041",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "grip.frames",
+   "label": "Inspect proper cap frames",
+   "kind": "query",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "cap": "CapId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U2-021",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-050",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-098",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-019",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "grip.rotations",
+   "label": "Inspect legal cap rotations",
+   "kind": "query",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "keep"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "cap": "CapId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-019",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U2-023",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-052",
+     "disposition": "keep"
+    }
+   ]
+  },
+  {
+   "id": "grip.members",
+   "label": "Inspect complete pieces and slots in cap",
+   "kind": "query",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "keep"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "cap": "CapId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-021",
+     "disposition": "keep"
+    }
+   ]
+  },
+  {
+   "id": "keymap.defaults",
+   "label": "Stage default bindings",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "keymap": "KeymapRevisionRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U5-018/1",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "keymap.save",
+   "label": "Save checked binding edits",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [
+    "confirm"
+   ],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "candidate": "CheckedBindingsRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U4-030",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-018/1",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "keymap.name",
+   "label": "Name saved key map",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "keymap": "KeymapRevisionRef",
+    "name": "Text"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-043",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-006",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "keyboard.disclosure.set",
+   "label": "Inspect or open disclosed keys",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "choice": "DisclosureChoice"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-015",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-009",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "filter.edit",
+   "label": "Edit work-filter predicate",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "predicate": "FilterRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-009",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-022",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-031",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-079",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "filter.preset",
+   "label": "Stage named work-filter preset",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "preset": "PresetId",
+    "object": "CanonicalObjectRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U4-026",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-060",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "filter.save",
+   "label": "Save named filter",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "predicate": "FilterRef",
+    "name": "Text"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-124",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "filter.load",
+   "label": "Load filter for review",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "filter": "SavedFilterRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U5-061",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "structure.select",
+   "label": "Select canonical structural cell",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "cell": "CellId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-037",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U2-041",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-016",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-070",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-072/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-073",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-054",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "structure.adjacency",
+   "label": "Inspect cell adjacency",
+   "kind": "query",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "cell": "CellId",
+    "radius": "Nat"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-012",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-008",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U4-047",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-073",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "structure.vertex",
+   "label": "Inspect incident cells at vertex",
+   "kind": "query",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "vertex": "VertexId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-012",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-008",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U4-075",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "structure.filter.compose",
+   "label": "Compose structural filter",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "predicate": "FilterRef",
+    "composition": "FilterComposition"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U4-076",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "macro.replace",
+   "label": "Replace phase with selected macro",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "macro": "MacroRevisionRef",
+    "phase": "PhaseId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-059",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-030/2",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "macro.metadata.set",
+   "label": "Edit macro metadata",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "macro": "MacroRevisionRef",
+    "metadata": "MacroMetadata"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U2-030",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-082",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-020",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-031/3",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "macro.filter",
+   "label": "Find macros by recorded facts",
+   "kind": "query",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "query": "MacroQuery"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U2-031",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-081",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-031/1",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "macro.library.check",
+   "label": "Check selected library effects",
+   "kind": "query",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": "Explicit inspection under U6-031/2; automated bookkeeping U3-085 contributes no command",
+   "lane": "exclusive",
+   "arguments": {
+    "macros": "MacroRevisionRefs"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U2-034",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U6-031/2",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "macro.compose",
+   "label": "Compose explicitly chosen macros",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "operands": "WordRefs",
+    "composition": "inverse|concat|conjugate|commutator"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U1-058",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U4-051",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "macro.operand.set",
+   "label": "Choose composition operand",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "operand": "OperandId",
+    "word": "WordRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U4-052",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "macro.reference.check",
+   "label": "Check selected reference variant",
+   "kind": "query",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "exclusive",
+   "arguments": {
+    "macro": "MacroRevisionRef",
+    "transform": "ExactTransformRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U2-046",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U2-047",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-087",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-032/2",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "endgame.choices",
+   "label": "Inspect chosen family's parameters",
+   "kind": "query",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "family": "FamilyId",
+    "position": "PositionId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U2-011",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U2-053",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-088",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-033/1",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "endgame.check",
+   "label": "Expand and check chosen construction",
+   "kind": "query",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": "Family and parameters chosen by the solver; signed 3 October ruling, no insertion planner",
+   "lane": "exclusive",
+   "arguments": {
+    "family": "FamilyId",
+    "parameters": "ExactFamilyParameters"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U2-013",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U2-015",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U2-017",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U2-019",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-093",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U4-046",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-033/2",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "reference.set",
+   "label": "Set explicit legal reference word",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "word": "WordRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U3-075",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-029/1",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-027",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "worksheet.compare",
+   "label": "Compare saved worksheet",
+   "kind": "query",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "exclusive",
+   "arguments": {
+    "worksheet": "WorksheetRevisionRef",
+    "draft": "ResolvedDraftRef"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U2-065",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-102",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U5-055",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-040",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "view.cycle.select",
+   "label": "Inspect named cycle",
+   "kind": "view",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "result": "ResultRef",
+    "cycle": "CycleId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "view.cycle.select"
+   },
+   "decisions": [
+    {
+     "decision": "U2-005",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-105",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-037/1",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "view.cycle.page",
+   "label": "Page cycle inspection",
+   "kind": "view",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "result": "ResultRef",
+    "page": "PageId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "view.cycle.page"
+   },
+   "decisions": [
+    {
+     "decision": "U2-005",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U3-106",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-037/1",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "view.reason",
+   "label": "Inspect named review reason",
+   "kind": "view",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "redesign"
+   ],
+   "note": null,
+   "lane": "view",
+   "arguments": {
+    "result": "ResultRef",
+    "reason": "ReasonId"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "lane_target": {
+    "control": "view.reason"
+   },
+   "decisions": [
+    {
+     "decision": "U3-108",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-026",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "view.journal.delta",
+   "label": "Inspect recorded step effect",
+   "kind": "query",
+   "inventory": [],
+   "gates": [],
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [
+    "keep",
+    "redesign"
+   ],
+   "note": null,
+   "lane": "none",
+   "arguments": {
+    "action": "ActionNumber"
+   },
+   "source": "DT-M1 C1; signed dispositions",
+   "slot_map": "preserve",
+   "decisions": [
+    {
+     "decision": "U2-051",
+     "disposition": "keep"
+    },
+    {
+     "decision": "U3-109",
+     "disposition": "redesign"
+    },
+    {
+     "decision": "U6-035/2",
+     "disposition": "redesign"
+    }
+   ]
+  },
+  {
+   "id": "jumble.on",
+   "label": "Jumble on",
+   "kind": "commit",
+   "inventory": [],
+   "gates": [
+    "model_match"
+   ],
+   "lane": "commit",
+   "preview": "none",
+   "undo": "journal",
+   "contexts": [
+    "puzzle"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "A5: replay the valid exit-root suffix or a retained word from solved; refuse labels alone. No confirmation key.",
+   "source": "ENG-0J:145-149; jumbling-interfaces.md JI.27",
+   "arguments": {
+    "revision": "RevisionRef",
+    "token": "UserActionToken"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "jumble.off",
+   "label": "Jumble off",
+   "kind": "commit",
+   "inventory": [],
+   "gates": [
+    "model_match"
+   ],
+   "lane": "commit",
+   "preview": "none",
+   "undo": "journal",
+   "contexts": [
+    "puzzle"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "A5: exact reachable label checkpoint only; atomically retain exit poses, certificate and lineage. No confirmation key.",
+   "source": "ENG-0J:145-149; jumbling-interfaces.md JI.27",
+   "arguments": {
+    "revision": "RevisionRef",
+    "token": "UserActionToken"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "jumble.twist.menu",
+   "label": "Apply menu twist",
+   "kind": "commit",
+   "inventory": [],
+   "gates": [
+    "model_match",
+    "protection"
+   ],
+   "lane": "commit",
+   "preview": "none",
+   "undo": "journal",
+   "contexts": [
+    "puzzle",
+    "keyboard"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Resolved absolute cap and exact pinned-menu item. Retained items dispatch by mode; jumble items require Jumble on. A live turn has no preview (ONE.78; owner, 6 November 2026, decision 10).",
+   "source": "ENG-0J:145-149; jumbling-interfaces.md JI.35",
+   "arguments": {
+    "cap": "CapId",
+    "letter": "PinnedMenuLetter",
+    "revision": "RevisionRef",
+    "token": "UserActionToken"
+   },
+   "slot_map": "preserve",
+   "amendment_sources": [
+    "Owner, 6 November 2026, decision 10; ONE.78"
+   ],
+   "decisions": []
+  },
+  {
+   "id": "jumble.twist.append",
+   "label": "Append menu twist to draft",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [
+    "model_match"
+   ],
+   "lane": "none",
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "operation",
+    "keyboard"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Resolve the same pinned letter as the live menu row into the explicitly selected draft phase; no live protection gate or journal undo.",
+   "source": "ENG-0J:145-149; jumbling-interfaces.md JI.35",
+   "arguments": {
+    "cap": "CapId",
+    "letter": "PinnedMenuLetter",
+    "draft": "ResolvedDraftRef",
+    "phase": "PhaseId"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "jumble.survey",
+   "label": "Inspect grip status",
+   "kind": "query",
+   "inventory": [],
+   "gates": [
+    "model_match"
+   ],
+   "lane": "exclusive",
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "puzzle"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Certified per-grip status and explicit coverage only; no outcomes for unreleased menu items.",
+   "source": "ENG-0J:145-149; jumbling-interfaces.md JI.6",
+   "arguments": {
+    "snapshot": "StateRef",
+    "max_chunk": "PositiveNat"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "jumble.observe",
+   "label": "Read jumbling facts",
+   "kind": "query",
+   "inventory": [],
+   "gates": [
+    "model_match"
+   ],
+   "lane": "exclusive",
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "puzzle",
+    "operation"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Requested rim, height, unit, cut-cell and seam facts at one input. Total N requires the all-scope seam batch, including off-grip seams. No target selection or ranking.",
+   "source": "ENG-0J:145-149; jumbling-interfaces.md JI.7",
+   "arguments": {
+    "snapshot": "StateRef",
+    "fields": "Set<JumblingFact>",
+    "scope": "all|named_cap",
+    "cap": "CapId?",
+    "sets": "PieceSets?",
+    "max_chunk": "PositiveNat"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "jumble.straddlers",
+   "label": "Inspect named cap straddlers",
+   "kind": "query",
+   "inventory": [],
+   "gates": [
+    "model_match"
+   ],
+   "lane": "exclusive",
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "puzzle"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Solver-named cap only; full certified straddler set and u, cached by complete input pins. Naming does not mean hover or prefetch.",
+   "source": "ENG-0J:145-149; jumbling-interfaces.md JI.6",
+   "arguments": {
+    "snapshot": "StateRef",
+    "cap": "CapId",
+    "max_chunk": "PositiveNat"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "jumble.certificate.inspect",
+   "label": "Inspect straddle certificate",
+   "kind": "query",
+   "inventory": [],
+   "gates": [
+    "model_match"
+   ],
+   "lane": "none",
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "puzzle"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Inspect a pinned cap/piece certificate and its exact point pair; reject mismatched input. H-05 targets are grips, pieces and certificate points.",
+   "source": "ENG-0J:145-149; jumbling-interfaces.md JI.33",
+   "arguments": {
+    "snapshot": "StateRef",
+    "certificate": "CertificateRef",
+    "cap": "CapId",
+    "piece": "PieceId"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "jumble.release.check",
+   "label": "Check released menu twist",
+   "kind": "query",
+   "inventory": [],
+   "gates": [
+    "model_match"
+   ],
+   "lane": "latest_wins",
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "puzzle",
+    "operation"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Only the released letter, with optional solver-named cap for delta-u. A newer release supersedes the old request. No values for untried twists.",
+   "source": "ENG-0J:145-149; jumbling-interfaces.md JI.11",
+   "arguments": {
+    "snapshot": "StateRef",
+    "letter": "PinnedMenuLetter",
+    "cap": "CapId?"
+   },
+   "lane_target": {
+    "control": "jumble.release.check"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "jumble.covers",
+   "label": "Check covers at named cap",
+   "kind": "query",
+   "inventory": [],
+   "gates": [
+    "model_match"
+   ],
+   "lane": "exclusive",
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "puzzle"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Completed exact answers in both directions over every meeting cap, with coverage; no top-cap verdict, helpful twist or map mark.",
+   "source": "ENG-0J:145-149; jumbling-interfaces.md JI.12",
+   "arguments": {
+    "snapshot": "StateRef",
+    "cap": "CapId",
+    "max_chunk": "PositiveNat"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "jumble.repair.list",
+   "label": "List repairs at named cap",
+   "kind": "query",
+   "inventory": [],
+   "gates": [
+    "model_match"
+   ],
+   "lane": "exclusive",
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "puzzle"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Only the owner-approved three-twist list, neutral pinned-x then cap order, with x,d,y,z and delta-N. No row selected by default, no ranking, prefetch or execution.",
+   "source": "ENG-0J:145-149; jumbling-interfaces.md JI.12",
+   "arguments": {
+    "snapshot": "StateRef",
+    "cap": "CapId",
+    "max_chunk": "PositiveNat"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "jumble.nu",
+   "label": "Read lattice invariant",
+   "kind": "query",
+   "inventory": [],
+   "gates": [
+    "model_match"
+   ],
+   "lane": "exclusive",
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "puzzle"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "A5 nu under the pinned C5 convention; undefined off lattice; violated fixed I_a coordinate is a consistency error.",
+   "source": "ENG-0J:145-149; jumbling-interfaces.md JI.13",
+   "arguments": {
+    "snapshot": "StateRef"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "jumble.corrections.check",
+   "label": "Check drafted corrections",
+   "kind": "query",
+   "inventory": [],
+   "gates": [
+    "model_match"
+   ],
+   "lane": "exclusive",
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "puzzle",
+    "operation"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Predict nu only for the solver-supplied correction IDs and multiplicities. Never compute a combination or reorder the catalogue.",
+   "source": "ENG-0J:145-149; jumbling-interfaces.md JI.13",
+   "arguments": {
+    "snapshot": "StateRef",
+    "catalogue": "Digest",
+    "corrections": "List<(CorrectionId,Int)>"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "jumble.correction.lookup",
+   "label": "Read correction by ID",
+   "kind": "query",
+   "inventory": [],
+   "gates": [
+    "model_match"
+   ],
+   "lane": "none",
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "macro_base",
+    "operation"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Look up a solver-specified construction in the fixed 36-item catalogue; return pinned literal word and fixed nu row. macro.add inserts it; no automatic selection.",
+   "source": "ENG-0J:145-149; jumbling-interfaces.md JI.13",
+   "arguments": {
+    "catalogue": "Digest",
+    "construction": "CorrectionId"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "jumble.checkpoint.check",
+   "label": "Check jumbling checkpoint",
+   "kind": "query",
+   "inventory": [],
+   "gates": [
+    "model_match"
+   ],
+   "lane": "exclusive",
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "puzzle"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Explicit retained-checkpoint, label-checkpoint or sticker-test query with its own conclusion. Existing session.checkpoint.save stores evidence; jumble.off performs handoff.",
+   "source": "ENG-0J:145-149; jumbling-interfaces.md JI.34",
+   "arguments": {
+    "snapshot": "StateRef",
+    "test": "retained_checkpoint|label_checkpoint|sticker_test"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "jumble.scramble",
+   "label": "Stage jumbling scramble",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [
+    "model_match"
+   ],
+   "lane": "exclusive",
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "puzzle"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Unavailable until EH-30 owner policy is pinned. Stage an opaque engine-owned word with a separate hidden witness; normal fresh preview and operation.execute commit it. No per-twist solving output.",
+   "source": "ENG-0J:145-149; jumbling-interfaces.md JI.38",
+   "arguments": {
+    "policy": "ScramblePolicyRef",
+    "token": "UserActionToken"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "view.open",
+   "label": "Open a view",
+   "kind": "view",
+   "inventory": [],
+   "gates": [],
+   "lane": "view",
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Opens a further view from a ViewSourceRef. Runs only inside a command the solver invoked; a view cannot open views. An open ViewId refuses with EV3:input.view_id_in_use.",
+   "source": "Owner, 6 November 2026, LQ6; RPI.83",
+   "arguments": {
+    "view": "ViewId",
+    "source": "ViewSourceRef"
+   },
+   "lane_target": {
+    "arg": "view"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "view.close",
+   "label": "Close a view",
+   "kind": "view",
+   "inventory": [],
+   "gates": [],
+   "lane": "view",
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Closes a further view. Global, Local and an unknown view refuse with EV3:input.view_not_closable.",
+   "source": "Owner, 6 November 2026, LQ6; RPI.83",
+   "arguments": {
+    "view": "ViewId"
+   },
+   "lane_target": {
+    "arg": "view"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "recording.start",
+   "label": "Start recording",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "lane": "none",
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Starts capture of resolved invocations, including refusals, excluding recording.*; a second start refuses with EV4:input.recording_state.",
+   "source": "Owner, 6 November 2026, LQ11; EV4.22",
+   "arguments": {
+    "name": "Text"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "recording.stop",
+   "label": "Stop recording",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "lane": "none",
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Ends capture and stores the recording; with no recording it refuses with EV4:input.recording_state.",
+   "source": "Owner, 6 November 2026, LQ11; EV4.22",
+   "arguments": {
+    "recording": "RecordingRef"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "recording.play",
+   "label": "Play a recording",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "lane": "program",
+   "preview": "none",
+   "undo": "none",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": true,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Plays view and workspace steps unattended and never a commit. Stops and waits for one user action at commit-lane, confirm, file_check, file, app, exclusive-lane and job rows (EV4.18, PS1.44).",
+   "source": "Owner, 6 November 2026, LQ11; EV4.22",
+   "arguments": {
+    "recording": "RecordingRef",
+    "from": "Nat?"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  },
+  {
+   "id": "recording.convert",
+   "label": "Convert a recording",
+   "kind": "workspace",
+   "inventory": [],
+   "gates": [],
+   "lane": "none",
+   "preview": "none",
+   "undo": "workspace",
+   "contexts": [
+    "any"
+   ],
+   "repeat": false,
+   "job": false,
+   "key_0_4": null,
+   "disposition": [],
+   "note": "Converts a recording to a draft or to source; a step with no form in the target refuses with EV4:input.recording_not_convertible.",
+   "source": "Owner, 6 November 2026, LQ11; EV4.23",
+   "arguments": {
+    "recording": "RecordingRef",
+    "target": "draft | source"
+   },
+   "slot_map": "preserve",
+   "decisions": []
+  }
+ ],
+ "services": [
+  {
+   "id": "kernel.snapshot.open",
+   "kind": "service",
+   "caller": "both",
+   "lane": "none",
+   "clauses": [
+    "KN2.2",
+    "LI.11"
+   ],
+   "note": "Capture one immutable input under the caller's grants and run/epoch ownership."
+  },
+  {
+   "id": "kernel.snapshot.close",
+   "kind": "service",
+   "caller": "both",
+   "lane": "none",
+   "clauses": [
+    "KN2.2",
+    "LI.11",
+    "KI.4"
+   ],
+   "note": "Release the supplied snapshot owner; no durable action."
+  },
+  {
+   "id": "kernel.stream.next",
+   "kind": "continuation",
+   "caller": "both",
+   "lane": "none",
+   "clauses": [
+    "KI.4",
+    "KI.8",
+    "DET.63"
+   ],
+   "note": "Continue the admitted stream in its original invocation and lane; no new admission."
+  },
+  {
+   "id": "kernel.value.retain",
+   "kind": "service",
+   "caller": "both",
+   "lane": "none",
+   "clauses": [
+    "LI.13",
+    "DET.57",
+    "KI.4"
+   ],
+   "note": "Create a charged owning alias of immutable data under the caller's grants."
+  },
+  {
+   "id": "kernel.value.release",
+   "kind": "service",
+   "caller": "both",
+   "lane": "none",
+   "clauses": [
+    "DET.58",
+    "KI.4",
+    "KI.5"
+   ],
+   "note": "Release the named owner; acknowledgement does not assert physical deallocation."
+  },
+  {
+   "id": "kernel.outcome",
+   "kind": "service",
+   "caller": "both",
+   "lane": "none",
+   "clauses": [
+    "KN5.23",
+    "LI.30",
+    "KI.3"
+   ],
+   "note": "Look up the permitted command/request receipt without a new invocation or replay."
+  },
+  {
+   "id": "kernel.job_result",
+   "kind": "service",
+   "caller": "both",
+   "lane": "none",
+   "clauses": [
+    "KN7.3",
+    "LI.14",
+    "LI.29"
+   ],
+   "note": "Read the permitted result for the original command/job binding; never rerun it."
+  },
+  {
+   "id": "kernel.undo_hint",
+   "kind": "service",
+   "caller": "host",
+   "lane": "none",
+   "clauses": [
+    "LI.9",
+    "LI.26"
+   ],
+   "note": "Given session/epoch and direction: undo | redo, read one ActionHint or none for that direction in the shared durable order; the hint reserves nothing and grants no permission."
+  },
+  {
+   "id": "language.publish_view",
+   "kind": "service",
+   "caller": "both",
+   "lane": "view",
+   "clauses": [
+    "RPI.10",
+    "LI.25",
+    "KI.5"
+   ],
+   "note": "Publish to the resolved ViewId under the view grant. Scheduled publication finalizes its original invocation and lane generation; standalone publication uses normal admission."
   }
  ],
  "not_commands": {
@@ -1739,7 +7855,7 @@
   "T-07": "shell window behaviour",
   "T-13": "engine event after a completing commit; the shell shows it",
   "T-59": "input routing rule (R-18), not a command",
-  "T-66": "renderer rule: show the committed state",
-  "T-72": "separate client; disposition in 2.2"
+  "T-66": "renderer rule CM.8 and ONE.62: session state, identified preview or derived display",
+  "T-72": "separate browser infrastructure deleted by signed U1-007 and U3-002; surviving purposes join individually"
  }
 }

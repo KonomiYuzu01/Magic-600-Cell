@@ -1,0 +1,192 @@
+{
+  "format": "lx7-errors-v1",
+  "precision_decision": "open",
+  "decider": "owner",
+  "quantiles": "nearest rank, per coordinate; relative omits exact zero; ULP collapses signed zero",
+  "units": "absolute: projected coordinate units; relative: dimensionless; ULP: binary32 steps to CPU",
+  "charts": {
+    "builtin_perspective": {
+      "cases": 124,
+      "coverage": {
+        "point": 116,
+        "singular": 6,
+        "nonfinite": 2
+      },
+      "exact_coverage_disagreements": [
+        "builtin_perspective/identity/perspective-boundary-6",
+        "builtin_perspective/identity/overflow",
+        "builtin_perspective/central-inversion/overflow"
+      ],
+      "cpu_coverage_disagreements": [],
+      "exact_abs": {
+        "n": 348,
+        "min": 0.0,
+        "p50": 4.166474806515165e-09,
+        "p95": 8.321817193941022e-07,
+        "p99": 0.51602989169305,
+        "max": 1.7647058823529411
+      },
+      "exact_rel_nonzero": {
+        "n": 342,
+        "min": 0.0,
+        "p50": 2.9294029238005115e-08,
+        "p95": 2.586235434322034e-07,
+        "p99": 0.423728813559322,
+        "max": 0.423728813559322
+      },
+      "cpu_abs": {
+        "n": 348,
+        "min": 0.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "max": 0.0
+      },
+      "cpu_ulp": {
+        "n": 348,
+        "min": 0.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "max": 0.0
+      }
+    },
+    "perspective": {
+      "cases": 124,
+      "coverage": {
+        "point": 116,
+        "singular": 6,
+        "nonfinite": 2
+      },
+      "exact_coverage_disagreements": [
+        "perspective/identity/perspective-boundary-6",
+        "perspective/identity/overflow",
+        "perspective/central-inversion/overflow"
+      ],
+      "cpu_coverage_disagreements": [],
+      "exact_abs": {
+        "n": 348,
+        "min": 0.0,
+        "p50": 4.166474806515165e-09,
+        "p95": 8.321817193941022e-07,
+        "p99": 0.51602989169305,
+        "max": 1.7647058823529411
+      },
+      "exact_rel_nonzero": {
+        "n": 342,
+        "min": 0.0,
+        "p50": 2.9294029238005115e-08,
+        "p95": 2.586235434322034e-07,
+        "p99": 0.423728813559322,
+        "max": 0.423728813559322
+      },
+      "cpu_abs": {
+        "n": 348,
+        "min": 0.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "max": 0.0
+      },
+      "cpu_ulp": {
+        "n": 348,
+        "min": 0.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "max": 0.0
+      }
+    },
+    "stereographic": {
+      "cases": 124,
+      "coverage": {
+        "point": 116,
+        "singular": 7,
+        "nonfinite": 1
+      },
+      "exact_coverage_disagreements": [
+        "stereographic/identity/north-boundary-5",
+        "stereographic/identity/north-boundary-6",
+        "stereographic/identity/overflow"
+      ],
+      "cpu_coverage_disagreements": [],
+      "exact_abs": {
+        "n": 348,
+        "min": 0.0,
+        "p50": 3.10106879975784e-09,
+        "p95": 3.566603654907478e-07,
+        "p99": 8.639904873358302e-07,
+        "max": 0.3333333333333333
+      },
+      "exact_rel_nonzero": {
+        "n": 342,
+        "min": 0.0,
+        "p50": 2.2411907622579032e-08,
+        "p95": 2.9375454829505543e-07,
+        "p99": 3.124494105577469e-07,
+        "max": 0.5
+      },
+      "cpu_abs": {
+        "n": 348,
+        "min": 0.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "max": 0.0
+      },
+      "cpu_ulp": {
+        "n": 348,
+        "min": 0.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "max": 0.0
+      }
+    },
+    "gnomonic": {
+      "cases": 124,
+      "coverage": {
+        "point": 104,
+        "singular": 18,
+        "nonfinite": 2
+      },
+      "exact_coverage_disagreements": [
+        "gnomonic/identity/overflow",
+        "gnomonic/central-inversion/overflow"
+      ],
+      "cpu_coverage_disagreements": [],
+      "exact_abs": {
+        "n": 312,
+        "min": 0.0,
+        "p50": 1.0284705124535048e-08,
+        "p95": 8.880868951410321e-07,
+        "p99": 7.628928898382667e-06,
+        "max": 7.628928898382667e-06
+      },
+      "exact_rel_nonzero": {
+        "n": 312,
+        "min": 0.0,
+        "p50": 1.537031037096553e-08,
+        "p95": 6.097927315096285e-08,
+        "p99": 7.360999006778001e-08,
+        "max": 7.360999006778001e-08
+      },
+      "cpu_abs": {
+        "n": 312,
+        "min": 0.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "max": 0.0
+      },
+      "cpu_ulp": {
+        "n": 312,
+        "min": 0.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "max": 0.0
+      }
+    }
+  }
+}

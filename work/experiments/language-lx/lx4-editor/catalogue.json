@@ -1,0 +1,598 @@
+{
+  "EFFECTS": [
+    "budget",
+    "clock",
+    "file",
+    "preview",
+    "random",
+    "snapshot",
+    "view",
+    "workspace"
+  ],
+  "INDICES": {
+    "alphabet": [
+      "MenuA",
+      "Retained"
+    ],
+    "claim": [
+      "Open",
+      "Promised",
+      "Refuted",
+      "Theorem",
+      "Witnessed"
+    ],
+    "dimension": [
+      "D2",
+      "D3"
+    ],
+    "level": [
+      "Labels",
+      "Poses",
+      "Regions"
+    ],
+    "mode": [
+      "Off",
+      "On"
+    ],
+    "model": [
+      "Full",
+      "Jumble"
+    ],
+    "precision": [
+      "P113",
+      "P24",
+      "P53"
+    ],
+    "unit": [
+      "Generators",
+      "MenuLetters",
+      "UIActions"
+    ]
+  },
+  "IR_VERSION": "lx8-ir-0",
+  "PRIMITIVES": {
+    "approx53": {
+      "charges": {
+        "kernel": "0",
+        "memory": "0",
+        "output": "0",
+        "steps": "1"
+      },
+      "effects": [],
+      "params": [
+        "Q5"
+      ],
+      "result": "Approx<P53>"
+    },
+    "check_goal": {
+      "charges": {
+        "kernel": "7",
+        "memory": "0",
+        "output": "0",
+        "steps": "1"
+      },
+      "effects": [
+        "snapshot"
+      ],
+      "params": [
+        "Snapshot<Full,Labels,Witnessed>",
+        "Goal<Full,Labels>"
+      ],
+      "result": "Verdict<Certificate<Full,Labels>>"
+    },
+    "check_word": {
+      "charges": {
+        "kernel": "7",
+        "memory": "0",
+        "output": "0",
+        "steps": "1"
+      },
+      "effects": [
+        "snapshot"
+      ],
+      "params": [
+        "Snapshot<Full,Labels,Witnessed>",
+        "Word<Full,Retained>"
+      ],
+      "result": "Verdict<Certificate<Full,Labels>>"
+    },
+    "claim_scope": {
+      "charges": {
+        "kernel": "0",
+        "memory": "0",
+        "output": "0",
+        "steps": "1"
+      },
+      "effects": [],
+      "params": [
+        "Claim<Full,Labels>",
+        "Premise<Full,Labels>",
+        "Domain<Full,Labels>",
+        "Reachability<Full,Theorem>"
+      ],
+      "result": "Scope<Full,Labels>"
+    },
+    "describe_identity": {
+      "charges": {
+        "kernel": "0",
+        "memory": "0",
+        "output": "0",
+        "steps": "1"
+      },
+      "effects": [],
+      "params": [
+        "Piece<Full,Labels>",
+        "Position<Full,Labels>"
+      ],
+      "result": "Text"
+    },
+    "difference": {
+      "charges": {
+        "kernel": "7",
+        "memory": "0",
+        "output": "0",
+        "steps": "1"
+      },
+      "effects": [
+        "snapshot"
+      ],
+      "params": [
+        "Snapshot<Full,Labels,Witnessed>",
+        "DerivedState<Full,Labels,Witnessed>"
+      ],
+      "result": "Difference<Full,Labels>"
+    },
+    "exact_add": {
+      "charges": {
+        "kernel": "0",
+        "memory": "0",
+        "output": "0",
+        "steps": "1"
+      },
+      "effects": [],
+      "params": [
+        "Int",
+        "Int"
+      ],
+      "result": "Int"
+    },
+    "interface_text": {
+      "charges": {
+        "kernel": "0",
+        "memory": "0",
+        "output": "0",
+        "steps": "1"
+      },
+      "effects": [],
+      "params": [
+        "Panel<Full,Labels>",
+        "Control<Full,Labels>",
+        "Overlay<Full,Labels>",
+        "DisplayInstance<Full,Labels>",
+        "Command<Full>",
+        "Binding<Full>",
+        "Recording<Full>"
+      ],
+      "result": "Text"
+    },
+    "make_plan": {
+      "charges": {
+        "kernel": "7",
+        "memory": "0",
+        "output": "0",
+        "steps": "1"
+      },
+      "effects": [
+        "snapshot"
+      ],
+      "params": [
+        "Snapshot<Full,Labels,Witnessed>",
+        "Approx<P53>",
+        "Chart<Full,Labels,P53>",
+        "SourceMap"
+      ],
+      "result": "DisplayPlan<Full,Labels>"
+    },
+    "outcome_text": {
+      "charges": {
+        "kernel": "0",
+        "memory": "0",
+        "output": "0",
+        "steps": "1"
+      },
+      "effects": [],
+      "params": [
+        "Outcome<Full>",
+        "TypedError<Full>",
+        "Proposal<Full>",
+        "Preview<Full>"
+      ],
+      "result": "Text"
+    },
+    "prepare_preview": {
+      "charges": {
+        "kernel": "7",
+        "memory": "0",
+        "output": "0",
+        "steps": "1"
+      },
+      "effects": [
+        "preview"
+      ],
+      "params": [
+        "Revision<Full,Off>",
+        "Word<Full,Retained>",
+        "Provenance"
+      ],
+      "result": "Receipt<Full>"
+    },
+    "publish": {
+      "charges": {
+        "kernel": "0",
+        "memory": "0",
+        "output": "1",
+        "steps": "1"
+      },
+      "effects": [
+        "view"
+      ],
+      "params": [
+        "DisplayPlan<Full,Labels>"
+      ],
+      "result": "View<Full,Labels>"
+    },
+    "representation": {
+      "charges": {
+        "kernel": "0",
+        "memory": "0",
+        "output": "0",
+        "steps": "1"
+      },
+      "effects": [],
+      "params": [
+        "Graph<Full,Labels>",
+        "Layout<Full,Labels>",
+        "Projection<Jumble,Poses,Labels>",
+        "CellComplex<Full,Labels,D2>"
+      ],
+      "result": "Relation<Full,Labels>"
+    },
+    "research_note": {
+      "charges": {
+        "kernel": "0",
+        "memory": "0",
+        "output": "0",
+        "steps": "1"
+      },
+      "effects": [
+        "budget"
+      ],
+      "params": [
+        "SearchRecord<Jumble,Poses>",
+        "Budget<Jumble,MenuLetters>"
+      ],
+      "result": "Text"
+    },
+    "save_word": {
+      "charges": {
+        "kernel": "7",
+        "memory": "0",
+        "output": "0",
+        "steps": "1"
+      },
+      "effects": [
+        "workspace"
+      ],
+      "params": [
+        "Word<Full,Retained>",
+        "Scope<Full,Labels>"
+      ],
+      "result": "Receipt<Full>"
+    },
+    "seeded_sample": {
+      "charges": {
+        "kernel": "0",
+        "memory": "0",
+        "output": "0",
+        "steps": "1"
+      },
+      "effects": [
+        "random"
+      ],
+      "params": [
+        "RandomStream",
+        "Int"
+      ],
+      "result": "Int"
+    },
+    "write_note": {
+      "charges": {
+        "kernel": "0",
+        "memory": "0",
+        "output": "1",
+        "steps": "1"
+      },
+      "effects": [
+        "file"
+      ],
+      "params": [
+        "FileGrant",
+        "Text"
+      ],
+      "result": "Text"
+    }
+  },
+  "TYPE_SLOTS": {
+    "Action": [
+      "model",
+      "level"
+    ],
+    "Approx": [
+      "precision"
+    ],
+    "Atlas": [
+      "model",
+      "level"
+    ],
+    "Binding": [
+      "model"
+    ],
+    "Branch": [
+      "model"
+    ],
+    "Budget": [
+      "model",
+      "unit"
+    ],
+    "Cap": [
+      "model"
+    ],
+    "Cell": [
+      "model"
+    ],
+    "CellComplex": [
+      "model",
+      "level",
+      "dimension"
+    ],
+    "Certificate": [
+      "model",
+      "level"
+    ],
+    "Chart": [
+      "model",
+      "level",
+      "precision"
+    ],
+    "Claim": [
+      "model",
+      "level"
+    ],
+    "Command": [
+      "model"
+    ],
+    "CompressedWord": [
+      "model",
+      "alphabet"
+    ],
+    "Control": [
+      "model",
+      "level"
+    ],
+    "Cost": [
+      "model",
+      "unit"
+    ],
+    "DerivedState": [
+      "model",
+      "level",
+      "claim"
+    ],
+    "Difference": [
+      "model",
+      "level"
+    ],
+    "DisplayInstance": [
+      "model",
+      "level"
+    ],
+    "DisplayPlan": [
+      "model",
+      "level"
+    ],
+    "Domain": [
+      "model",
+      "level"
+    ],
+    "Embedding": [
+      "model",
+      "level"
+    ],
+    "Evidence": [
+      "model",
+      "level"
+    ],
+    "FileGrant": [],
+    "Generator": [
+      "model"
+    ],
+    "Goal": [
+      "model",
+      "level"
+    ],
+    "Graph": [
+      "model",
+      "level"
+    ],
+    "Grip": [
+      "model"
+    ],
+    "Int": [],
+    "Layout": [
+      "model",
+      "level"
+    ],
+    "Level": [
+      "level"
+    ],
+    "Menu": [
+      "model"
+    ],
+    "MenuLetter": [
+      "model",
+      "alphabet"
+    ],
+    "Model": [
+      "model"
+    ],
+    "Orbit": [
+      "model",
+      "level"
+    ],
+    "Outcome": [
+      "model"
+    ],
+    "Overlay": [
+      "model",
+      "level"
+    ],
+    "Panel": [
+      "model",
+      "level"
+    ],
+    "Piece": [
+      "model",
+      "level"
+    ],
+    "Pose": [
+      "model",
+      "level"
+    ],
+    "Position": [
+      "model",
+      "level"
+    ],
+    "Premise": [
+      "model",
+      "level"
+    ],
+    "Preview": [
+      "model"
+    ],
+    "Projection": [
+      "model",
+      "level",
+      "level"
+    ],
+    "Proposal": [
+      "model"
+    ],
+    "Provenance": [],
+    "Q5": [],
+    "RandomStream": [],
+    "Rank": [
+      "model"
+    ],
+    "Rat": [],
+    "Reachability": [
+      "model",
+      "claim"
+    ],
+    "Receipt": [
+      "model"
+    ],
+    "Recipe": [
+      "model",
+      "alphabet"
+    ],
+    "Recording": [
+      "model"
+    ],
+    "RegionClass": [
+      "model",
+      "level"
+    ],
+    "Relation": [
+      "model",
+      "level"
+    ],
+    "Revision": [
+      "model",
+      "mode"
+    ],
+    "RunRecord": [
+      "model"
+    ],
+    "Scope": [
+      "model",
+      "level"
+    ],
+    "SearchRecord": [
+      "model",
+      "level"
+    ],
+    "SearchSpace": [
+      "model",
+      "level"
+    ],
+    "Section": [
+      "model",
+      "level"
+    ],
+    "Slot": [
+      "model",
+      "level"
+    ],
+    "Snapshot": [
+      "model",
+      "level",
+      "claim"
+    ],
+    "SourceMap": [],
+    "StateGraph": [
+      "model",
+      "level"
+    ],
+    "Sticker": [
+      "model",
+      "level"
+    ],
+    "StickerClass": [
+      "model",
+      "level"
+    ],
+    "Strategy": [
+      "model",
+      "level"
+    ],
+    "Text": [],
+    "Tree": [
+      "model",
+      "level"
+    ],
+    "TypedError": [
+      "model"
+    ],
+    "Verdict": [
+      "evidence"
+    ],
+    "View": [
+      "model",
+      "level"
+    ],
+    "Word": [
+      "model",
+      "alphabet"
+    ],
+    "WordKey": [
+      "model",
+      "alphabet"
+    ]
+  },
+  "WORD_OPERATIONS": [
+    "join",
+    "repeat",
+    "word_key",
+    "word_length"
+  ]
+}

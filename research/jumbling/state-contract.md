@@ -116,7 +116,7 @@ Acceptance for a later simulator, not for this experiment:
 
 ## 7. Amendments
 
-A1 to A4 (9 October 2026) were written from section 4 of `docs/progress/1.0/jumbling-plan.md` after its plan check and scoped re-checks; A5 (22 October 2026) from ENG-0J revision 2, as its entry says. Where an amendment and an earlier section differ, the amendment holds.
+A1 to A4 (9 October 2026) were written from section 4 of `docs/progress/1.0/jumbling-plan.md` after its plan check and scoped re-checks; A5 (22 October 2026) from ENG-0J revision 2, as its entry says. Where an amendment and an earlier section differ, the amendment holds. A6 (6 November 2026) was accepted by the owner on 15 November 2026 and holds as its own entry says.
 
 ### A1 Exact rotation domain and input map
 - **Domain.**
@@ -194,3 +194,19 @@ Written from section 8 of `docs/progress/1.0/packets/engineering/ENG-0J-jumbling
 | Reachable lattice configurations have the solved shape; corrections and retained twists act the same from each of them | Proved | stage 03 report, section 3.2; card 2, Lemma 2 |
 | Label-lift lemma | The integrator's proof above (DT-J1 M10, M17), checked by the Astra plan check of ENG-0J revision 2 | this amendment |
 | C5 convention | A definition; its inputs are under the model identity | `nucoords.py`; `assets/manifest.json` |
+
+### A6 Exact rotation requests (6 November 2026; accepted 15 November 2026)
+**Status.** Accepted (owner, 15 November 2026: `docs/wiki/decisions/owner-decisions-2026-11-15-freeze.md`). It passed EN1's Astra check, which the architecture-freeze ruling of 14 November 2026 completed, and the owner accepted it, as decision 8 of 6 November 2026 requires (`docs/wiki/decisions/owner-decisions-2026-11-06.md`). From 15 November 2026 the rule of this section that an amendment holds over an earlier section applies to A6. A6 replaces A1's input map only. A1's domain, its exact branches, its rule for menu elements and its rule that replay uses the recorded exact rotation stay.
+- **Request.** A fresh rotation request is exact bytes, read in A1's frame at the named cap, in one of three forms:
+  - C, an exact dyadic Cayley vector ω, naming R(ω);
+  - H, an explicit half-turn form: a nonzero primitive integer axis with its first nonzero component positive;
+  - M, a menu letter named by the menu's set digest, its order digest and an index.
+
+  Malformed, noncanonical or oversize bytes are refused. Nothing is repaired or rounded.
+- **Wire form.** One ASCII line of at most 2,048 bytes, with exactly one final LF and no other whitespace, in five `|`-separated fields: `LX9B1|C|m:k|m:k|m:k`, `LX9B1|H|x:0|y:0|z:0` or `LX9B1|M|<set digest>|<order digest>|<index>`. The prefix names the grammar, and a later grammar takes a new prefix. A token `m:k` is the dyadic m/2^k: m is canonical decimal of at most 1,024 magnitude bits, 0 ≤ k ≤ 1,074, m is odd when k > 0, and zero is only `0:0`. No plus sign, leading zero, negative zero, decimal point, exponent, NaN or infinity appears. H tokens have k = 0. Digests are 64 lowercase hexadecimal digits, and the index is canonical decimal with 0 ≤ index < menu length. A decoder encodes what it read and compares bytes. These are draft admission limits: engineering trial budgets, not measured capacities.
+- **Binding.** A request carries its cap and its operation beside those bytes: free with N and D, menu direct, or menu drag. A menu operation also carries both menu digests. All of these are hashed with the request and journalled. The request digest in a menu record is the SHA-256 of the raw request bytes.
+- **Free mode** (the owner's choice, 6 November 2026). A C or H request names bounds N and D. Exact comparison chooses the nearest point of A1's rational grid, with A1's tie order: the smaller denominator, then the lexicographically smaller numerators, then a Cayley point before a half-turn. A request already on the grid returns itself at distance zero, so the rotation as named is the special case of bounds that contain it. Half-turn axes are candidates for an H request and for a C request with ω·ω ≥ 13130. That rational test replaces A1's "within 1° of π": cot²(π/360) is about 13130.56, so the window is about 1.00002° wide. Free mode compares and records the squared Frobenius distance, which is exact in Q, so no comparison needs a precision cap. Bounds outside the trial search limit, N ≥ 0, D ≥ 1 and (2N+1)³·D ≤ 2^40, are refused before any search. Free mode pins no menu, so an M request is refused.
+- **Menu mode.** A request binds the pinned menu's set and order digests, and a differing digest is refused. A direct C or H request that is not exactly a menu member is refused. A drag takes a C or H request and scores every ordered candidate by exact squared Frobenius distance in Q(√5), the smallest index wins every exact tie, and the record holds the selected index, the complete tie list, the exact distance, both menu digests and the request digest.
+- **Producer.** Floating point leaves the contract. The shell's producer turns a gesture into request bytes: it reads binary64 values bit-exactly, refuses non-finite values and canonicalises signed zero. Identical gestures need not give identical bytes.
+- **Replay.** The journal records the request bytes and the exact rotation. Replay uses the recorded rotation, and neither the producer nor the chooser runs again.
+- **Clauses and evidence.** KN3.4 and KN3.7 to KN3.9 of `docs/architecture/1.0/language/architecture/01-kernel.md` hold the wire rules and refusal codes. The first-pass records are source and synthetic only: `work/experiments/language-lx/lx9-exact-request/` and `work/experiments/language-lx/lx9-input-map/followup/NOTE.md`.

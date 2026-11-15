@@ -163,6 +163,12 @@ The design track and the engineering track run in parallel and meet through numb
 | H-09 | Renderer constraints (overlay layers, text in the 3D view, transparency and sorting limits) | day 8 | S-A2 and S-D | which features stay in H-01 | open |
 | H-10 | Selected renderer | day 14 | selection | vertical slice and the framework-neutral rebuild if not Godot | open |
 
+**Language line gives**
+
+| ID | Item | First version | Final | Used by the engineering track for | Status |
+|---|---|---|---|---|---|
+| H-11 | Display-plan primitives, the user-stage contract and the free-view workload (owner, 6 November 2026, LQ20) | [renderer-feature-matrix](../../architecture/1.0/language/renderer-feature-matrix.md) and chapter 10 | before the renderer feature-list freeze | the renderer feature list | delivered 15 November 2026: frozen with the LP1 candidate ([decision](../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)) |
+
 ## 5. Schedule: about 20 working days (owner decisions, 1 and 2 October 2026)
 
 **Re-plan (owner, 22 October 2026).** The 20-day target is missed. The owner chose option B of the [re-plan](replan-2026-10-22.md): 600-cell-Full in full, and Jumble with its rules, data, interfaces, command rows and renderer feature list, its look and motion values as provisional defaults. The 2.5 freeze target moves to about stage day 34; the day count stood at 16 or more on that date ([decision](../../wiki/decisions/owner-decisions-2026-10-22.md)). The table below is the original plan.

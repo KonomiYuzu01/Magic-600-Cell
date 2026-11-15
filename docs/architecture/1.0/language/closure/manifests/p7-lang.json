@@ -1,0 +1,238 @@
+{
+  "packet": "p7-lang",
+  "assumes": [
+    {
+      "item": "H6 / LG2.20",
+      "assumed": "Display evaluation is terminal. Its host-observable accounting is unavailable to exact continuations, while deterministic fields still participate in DET.6 reproduction.",
+      "if_other": "Removing predicate or size agreement requires an explicit versioned split of the exact payload. No such split exists or is assumed."
+    },
+    {
+      "item": "H15.10 / LG2.22 / EV3.5",
+      "assumed": "LG2.22 owns exactness diagnostic precedence; EV1 forwards it. Pick bindings are checked before the source digest under RPI.24/RM.10.",
+      "if_other": "A different diagnostic or pick order needs reconciled checker/editor/renderer clauses and shared vectors. This packet proposes no alternative error code."
+    },
+    {
+      "item": "H15.11 / LG2.21",
+      "assumed": "Form 1 remains the recommendation. Form 2 is conditionally specified as lp1-exec-region-draft-1 with display_enter, display_branch and display_exit.",
+      "if_other": "Choosing form 2 changes lowering, execution identity and charges to its separate vectors; LG2.20 isolation and DET.64 agreement still apply. Weighted steps remain a separate LG4.8 alternative."
+    },
+    {
+      "item": "H15.18 / CX.19 / CX.22",
+      "assumed": "The per-leaf claim inventory exists as a draft plan. FR-B08 stays partial pending typed bindings, independent checkers, mutation gates and unresolved inputs/premises.",
+      "if_other": "New claims outside the pinned inventory require mapped rows or explicit claim_unmapped outcomes. Only the owner can reduce promised coverage."
+    },
+    {
+      "item": "PHS.26 / PHS.62",
+      "assumed": "CT-EV1-08 and CT-EV2-11 first run in LP4, where the complete editor/debugger services exist.",
+      "if_other": "An owner-approved phase reorder requires the whole-test readiness check. No narrower LP2 replacement or LQ19 answer is inferred."
+    },
+    {
+      "item": "LQ9 / LQ13 / LQ21",
+      "assumed": "No route, engine language, syntax or boundary-policy form is selected. Examples use semantic descriptors and declared synthetic tariffs.",
+      "if_other": "Any selected route and policy must supply its checked mappings, qualifiers, inserted checks and evidence under its pinned identity; different contracts need compatibility treatment."
+    },
+    {
+      "item": "H4 / H7 / H8 / LI",
+      "assumed": "Chapter 04 consumes LI and KN5 outcome/availability/undo contracts, EV1.10 source ranges and DET.59 output accounting; parallel packets reconcile their owned definitions.",
+      "if_other": "A changed shared definition must be reconciled by its owner and the integrator. No duplicate Receipt, SourceRange or byte codec is introduced."
+    }
+  ],
+  "owner_items": [
+    {
+      "item": "LQ8 / LQ9 / LG4.8 / DET.22",
+      "why": "Engine, execution route, placement and any different execution-contract choice remain unselected. Mappings and evidence are not supplied by reference vectors."
+    },
+    {
+      "item": "LQ2 / LQ21",
+      "why": "Boundary policy and flow form remain owner decisions independent of exactness; no display sink grants additional authority."
+    },
+    {
+      "item": "DET.28 / LQ10 / LQ18 / LQ19",
+      "why": "Production limits, data/architecture freeze, spike permission and freeze order remain open; test tariffs and passing mechanical checks settle none."
+    },
+    {
+      "item": "EV1.13 / LQ6 / LQ7 / LQ13 / LQ20",
+      "why": "Activation trigger, UI/UX, view/chart choices, syntax and renderer handoff remain open. The design line and DT-J2 to DT-J4 stay closed."
+    },
+    {
+      "item": "LQ16",
+      "why": "Only the owner may reduce promised research coverage; unavailable checkers and inputs do not remove requirements."
+    },
+    {
+      "item": "EV2.9 / EV4.11 / EV4.14 / LQ4 / LQ11",
+      "why": "Replay-effect sinks, recording capture, revision rebinding and pinned-job alternatives retain their existing open clauses; citing outcome lookup selects none."
+    }
+  ],
+  "handoff_changes": [],
+  "new_error_codes": [],
+  "new_requirements": [],
+  "findings": {
+    "S2-02": {
+      "status": "closed",
+      "clauses": [
+        "LG2.22",
+        "EV1.2",
+        "EV1.4",
+        "CT-EV1-02",
+        "CV.9"
+      ],
+      "vectors": {
+        "direct_and_helper_condition": {
+          "given": "approx_less(x,y) has Approx operands. Use its ApproxBool directly as an ordinary if condition selecting words, or return it from a helper declared Bool. As a control, supply an Approx scalar directly to exact addition. contract-vectors/vectors.json: direct-and-helper-condition.",
+          "expected": "Direct and helper conditions both yield LG2:type.exactness_violation in the checker and editor. Direct scalar addition yields LG2:type.exact_required; a display-control-dependent scalar instead yields exactness_violation. EV1 preserves the checker code.",
+          "clause": "LG2.22"
+        }
+      }
+    },
+    "S2-03": {
+      "status": "closed",
+      "clauses": [
+        "EV3.5",
+        "EV3.6",
+        "CT-EV3-04",
+        "CV.9"
+      ],
+      "vectors": {
+        "follow_pick_order": {
+          "given": "Instance i1 has view/plan generation 7; current bindings are generation 8. Producing source is a😀b. Test both target a😀b and edited target a😀c, then keep all bindings at generation 7 and target a😀c.",
+          "expected": "Both generation mismatches return EV3:stale.display_pick before any source action. Current bindings with target a😀c return EV3:stale.source_link. With current bindings and target a😀b navigation succeeds even if the editable draft is a😀c.",
+          "clause": "EV3.5"
+        }
+      }
+    },
+    "S2-04": {
+      "status": "closed",
+      "clauses": [
+        "LG2.21",
+        "LG4.8",
+        "DET.20",
+        "DET.55",
+        "DET.64",
+        "CT-DET-32",
+        "CV.8"
+      ],
+      "vectors": {
+        "form2_equal_limit_and_one_short": {
+          "given": "lp1-exec-region-draft-1: entry, one predicate step, a display branch selecting allocation of a four-byte display result and one further step, then exit moving that owner. Limits steps=6 (or 5), memory=4, kernel_cost=output=0; source digest 2fff1652258c8381dd15ce9d9ce9cfd5008c3c3a37d2cd38ff0da007c74dc430, region range [0,48).",
+          "expected": "At six steps the listed region completes with used=(6,0,4,0), four live bytes moved to the publication continuation and no publication. At five it returns cut_off with KN7:budget.steps at region/display_exit, phase steps, scope root and source [0,48) at that digest; used=(5,0,4,0), denied exit charges zero. Both end with zero live bytes after terminal cleanup.",
+          "clause": "DET.64"
+        },
+        "form2_publication_output": {
+          "given": "Append publication of the four-byte display scalar 1.25 under the retained-JSON fixture profile after the six-step region. Limits steps=7, kernel_cost=4, memory=8, output=4 or 3.",
+          "expected": "Output=4 completes with used=(7,4,8,4). Output=3 denies publish with KN7:budget.output, used=(7,0,4,0), source [48,55) at the same fixture digest and no output unit. LI.28 maps the cut-off to cancelled(budget); the meter defines no receipt variant.",
+          "clause": "CV.8"
+        }
+      }
+    },
+    "S2-06": {
+      "status": "closed",
+      "clauses": [
+        "LG4.8",
+        "DET.24",
+        "DET.26",
+        "DET.28",
+        "DET.54",
+        "DET.58",
+        "DET.59",
+        "RTE.40",
+        "RTE.71"
+      ],
+      "vectors": {
+        "stale_summaries_removed": {
+          "given": "A route author reads chapter 02 and chapter 11 open-item summaries for memory lifetime, output unit and recursion under lp1-exec-draft-1.",
+          "expected": "The summaries point to per-owning-handle charges and explicit release in DET.57/DET.58, canonical uncompressed output bytes in DET.59 and logical frames in DET.28. Weighted steps, conservative retention, output-size tables, disjoint child allowances and depth guards remain distinct alternatives. Executor mappings, production tariffs/limits, evidence and owner freeze remain owed.",
+          "clause": "LG4.8"
+        }
+      }
+    },
+    "RS3-12": {
+      "status": "closed",
+      "clauses": [
+        "CT-EV1-08",
+        "CT-EV2-11",
+        "EV1.11",
+        "EV2.12"
+      ],
+      "vectors": {
+        "phase_lp4": {
+          "given": "The complete activation-with-suspended-run and debugger-step-with-suspended-kernel-call requirements are assigned under PHS.26/PHS.62.",
+          "expected": "CT-EV1-08 and CT-EV2-11 both say LP4 in chapter 04 and p5.json. Neither full test is assigned to LP2 or replaced with a runtime-only stub. p7-reg owns the matching chapter-12 index update.",
+          "clause": "CT-EV2-11"
+        }
+      }
+    },
+    "X-H6": {
+      "status": "closed",
+      "clauses": [
+        "LG2.20",
+        "LG2.21",
+        "DET.6",
+        "DET.58",
+        "DET.64",
+        "CV.8",
+        "CV.9"
+      ],
+      "vectors": {
+        "display_accounting_isolated": {
+          "given": "With six granted steps, the form-2 true region uses six and the false region uses five. Later exact code attempts to read used.steps, reclaim the remaining step or branch on the display publication budget stop.",
+          "expected": "All three exact continuations refuse with LG2:type.exactness_violation. The host still records exact deterministic used counters (6 or 5 for the different branch inputs), peak memory, outcome/code and coverage under DET.6. A fixed key must preserve its predicate and charged sizes; a different branch for that same key fails reproduction even if display values agree.",
+          "clause": "LG2.20"
+        }
+      }
+    },
+    "X-LB517": {
+      "status": "closed",
+      "clauses": [
+        "LB5.17",
+        "CT-LB5-10",
+        "CX.19",
+        "CX.22"
+      ],
+      "vectors": {
+        "lb517_state": {
+          "given": "The pinned claim matrix contains the self-contained matching witness inputs and a row for the q11 audit whose historical successor cache is absent. No qualified independent checker or typed binding exists.",
+          "expected": "LB5.17 and p5.json report the inventory as an existing draft plan and FR-B08 as partial. Matching data remain available but fresh checks return no_independent_checker; q11 additionally has dependency_missing for type-lex-successor-base-cache.npz. No fresh support leaf or passed mutation gate is claimed.",
+          "clause": "LB5.17"
+        }
+      }
+    },
+    "X-CONSUMERS": {
+      "status": "closed",
+      "clauses": [
+        "EV2.8",
+        "EV4.15",
+        "KN5.8",
+        "KN5.21",
+        "KN5.23",
+        "LI.14",
+        "LI.26",
+        "LI.30"
+      ],
+      "vectors": {
+        "receipt_wording": {
+          "given": "A view publication completed, its notification was lost, and the same command/request is queried during its originating epoch. Then query an unretained transient receipt after that epoch ends.",
+          "expected": "EV2.8 uses outcome(command, request): LI.30 returns the existing completed(view_published) receipt without invocation or retry; after transient epoch loss it returns unknown_outcome. Chapter 04 cites KN5.8 and LI.18-LI.21 for supplied availability and KN5.20/LI.26 for shared undo instead of awaiting an unspecified EN4 protocol.",
+          "clause": "EV2.8"
+        }
+      }
+    }
+  },
+  "integration_follow_up": [
+    "Closures above cover p7-lang ownership only. p7-render owns the matching renderer clauses for S2-03/X-CONSUMERS; p7-reg owns the RS3-12 phase index and the outstanding ADR summaries. The integrator verifies the assembled H13 traces against those candidates.",
+    "FR-B08 remains partial in p5.json. EN4 typed bindings, KN6 independent checkers and mutation gates, missing inputs/replacement certificates and unresolved mathematical premises remain owed. No stopped research is restarted.",
+    "Executor mappings and type-checker/renderer implementations, production tariffs and output profile bounds, predicate/size agreement evidence, owner answers and freeze remain outside this packet. The reference model is not product conformance.",
+    "The integrator reviews Codex-authored changes, prepares the seven-part current-candidate review packet, and follows the no-self-review rule. This offline packet runs no wrapper, network, GPU, native or performance check."
+  ],
+  "integration_commands": [
+    "python -B docs/architecture/1.0/language/closure/check_p7.py --all",
+    "python -B docs/architecture/1.0/language/closure/check_closure.py --all",
+    "python -B tools/agents/codex_review.py --kind review --packet work/reviews/packets/language-reconciliation-candidate.md --model gpt-6-astra --effort max --speed fast"
+  ],
+  "acceptance_command": [
+    "python",
+    "-B",
+    "docs/architecture/1.0/language/closure/check_p7.py",
+    "--packet",
+    "p7-lang"
+  ]
+}

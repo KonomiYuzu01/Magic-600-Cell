@@ -1,0 +1,21 @@
+{
+  "old_binding_refused": true,
+  "order_identity": "5a0429d2946fbf58b495d8f300e24a3fa164b1d9518ce4a5c3f4ef0a40625c3c",
+  "original_index": 15,
+  "original_ties": [
+    15,
+    29,
+    40,
+    43
+  ],
+  "reordered_index": 16,
+  "reordered_order_identity": "1a87a4209a933f47a568eac9e881697614bf53e1f7411e817f5764a3a5f92a78",
+  "reordered_original_index": 43,
+  "reordered_ties": [
+    16,
+    19,
+    30,
+    44
+  ],
+  "set_identity": "fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c"
+}

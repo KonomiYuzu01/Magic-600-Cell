@@ -1,0 +1,19 @@
+edition "lx8-0";
+module authored_words requires [];
+
+fn witness() -> Word<Full,Retained> effects [] charge [12, 0, 0, 0] {
+    let key = word_key(word[+1, -1, +2, +1200, -1200, +1]);
+    return word[+1, -1, +2, +1200, -1200, +1];
+}
+
+fn menu_witness() -> Word<Jumble,MenuA> effects [] charge [12, 0, 0, 0] {
+    return menu[2:spin, 2:unspin, 5:identity];
+}
+
+fn menu_cost() -> Cost<Jumble,MenuLetters> effects [] charge [12, 0, 0, 0] {
+    return word_length(menu_witness());
+}
+
+fn recipe_note(recipe: Recipe<Full,Retained>, count: Cost<Full,Generators>) -> Text effects [] charge [12, 0, 0, 0] {
+    return "User-authored recipe; no expansion executed.";
+}

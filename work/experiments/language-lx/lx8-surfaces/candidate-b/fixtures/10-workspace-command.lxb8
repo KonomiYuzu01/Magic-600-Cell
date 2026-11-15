@@ -1,0 +1,5 @@
+edition: "lx8-0"
+module macro_workspace requires [workspace]
+
+command remember(witness: Word<Full,Retained>, scope: Scope<Full,Labels>) returns Receipt<Full> using [workspace] charge [2, 9, 0, 1] row "macro.save" kind workspace contexts [macro_base] permits [save_word]:
+    yield save_word(witness, scope)

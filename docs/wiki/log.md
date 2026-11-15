@@ -2,8 +2,29 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-15] decision | The language: LP1 signed, architecture and migration format frozen
+After both Astra freeze rulings went go, the owner confirmed understanding and signed LP1: ADR-L01 to ADR-L12 are accepted, the language architecture and the migration format are frozen, LP2 to LP5 may start, and state-contract amendment A6 is accepted ([decision](decisions/owner-decisions-2026-11-15-freeze.md)). The design-system ADR, LQ13, LQ2's option set and the LP3 acceptance runs stay open.
+
+## [2026-11-14] decision | The language: Rust, route RT1 in its own process, and capability separation
+The owner accepted the CPU timing runs of 14 November as decisive and chose Rust for the engine and the interpreter's host (LQ8), route RT1 with the runtime in a process of its own (LQ9) and capability separation (LQ21); the decisive LX-1, LX-2 and LX-4 runs become LP3 acceptance checks, and a failing one reopens LQ9 ([decision](decisions/owner-decisions-2026-11-14-language-route.md)). The architecture chapters and ADR drafts carry the answers; no ADR is accepted and nothing is frozen.
+
 ## [2026-11-14] decision | Codex use at its minimum
 The owner's ChatGPT quota is down to one twentieth, so Codex now runs only for gate rulings and calls the owner asks for; a code change on a critical path gets one read by a fresh Claude subagent, and the Stop gate is unregistered. Recorded in [owner-decisions-2026-11-14](decisions/owner-decisions-2026-11-14.md); as the owner authorized, the change went to `main` directly, without a pull request.
+
+## [2026-11-07] decision | The language: the final text committed under one owner exception
+The final architecture text, its reference checkers and its vectors are committed ([review record](../architecture/1.0/language/closure/INTEGRATION.md#review-of-the-final-candidate)). The full review's 24 blocking findings and the two later majors are confirmed fixed. The last scoped round found one blocker in two sentences the integrator had added; it is fixed, no round was left to read the fix, and the owner chose to commit under an exception ([decision](decisions/owner-decisions-2026-11-06.md)). The owner's choice of A1's grid for free mode is in the text. No ADR is accepted, A6 stays proposed and nothing is frozen.
+
+## [2026-11-06] decision | The language: the owner's answers to LQ1 to LQ21
+The owner answered the questions page ([decision](decisions/owner-decisions-2026-11-06.md)). Sixteen answers take the recommendation; the other five choose free views everywhere, a shader language for users, unattended playback of view and workspace steps, export of proof obligations to Lean, and the name 600 Cell Script (`.6cs`). The charter is amended on D8 and on the order of the stage 2.5 exit; no ADR is accepted and nothing is frozen. Follow-up answers the same day choose exact requests for the A1 input question (option B), confirm that a live twist has no preview, set who writes evidence fields and where tool words are refused, and allow a big-integer crate and Linux tools in WSL for the experiments.
+
+## [2026-11-05] decision | The language: the draft waits for the final architecture
+The review of the draft text used both verification rounds and left three major findings in a draft reference checker, so the owner chose not to commit the draft now ([decision](decisions/owner-decisions-2026-11-05.md)). The findings are fixed in the final candidate, which gets its own full review.
+
+## [2026-11-05] decision | The language: back to the original workflow
+The owner has used the subscription reset, so Astra's wider role in the experiment and architecture work ends and `AGENTS.md` assigns the models again ([decision](decisions/owner-decisions-2026-11-05.md)). Work already done under that role stands, and the other decisions of the day are unchanged.
+
+## [2026-11-05] decision | The language: experiments, one pull request, then the freeze
+The owner confirmed the five-batch walkthrough of the language architecture as understood and allowed the nine experiments LX-1 to LX-9 and the remaining work to run as far as they can now, with the questions page updated afterwards; after the owner's answers the architecture is written and then frozen, all in one pull request, and Codex Astra takes more of the experiment and architecture work ([decision](decisions/owner-decisions-2026-11-05.md)). No LQ beyond that allowance is answered, no ADR is accepted and no gate is relaxed.
 
 ## [2026-11-04] decision | Stage 16 certificates renamed so a Windows checkout is clean
 The owner approved renaming the six stage 16 certificates `PX-<run>.json` to `PX-<run>-cert.json` with their blobs unchanged, because each differed only in case from its run record `px-<run>.json` and a Windows checkout kept one file for both and showed six modified paths; the research stays stopped and the review wrapper is unchanged, since a real implement run on the unfixed base was accepted. A worktree that still holds the pairs takes this merge by running `git checkout --` on the six old `PX-*` paths before the merge and on the six `px-*` paths after it.

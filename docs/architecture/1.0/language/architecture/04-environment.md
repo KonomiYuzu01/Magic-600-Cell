@@ -1,6 +1,8 @@
 # Chapter 04: the environment
 
-Status: **draft for the owner. Not accepted.** Conventions are in [the overview](00-overview.md), section 3.
+Status: **frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). Conventions are in
+[the overview](00-overview.md), section 3, and its status says what the freeze covers.
 
 The environment connects source, checked programs, results and the solver's actions. This chapter defines services and
 data for an editor host and the shell. The editor's appearance waits for the design line. Chapter 02 owns the language
@@ -13,9 +15,11 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
 [DT-M1](../../../../progress/1.0/design-table/topics/command-keyboard-model.md) and its owner answers;
 [DT-J1](../../../../progress/1.0/design-table/topics/jumble-solver-aids.md) and its word-storage rules;
 [H-08](../../../../progress/1.0/command-table.md);
+[EN4 layer interfaces](../../../../progress/1.0/layer-interfaces.md);
 [the charter](../../../../progress/1.0/charter-2.0-draft.md), bars E5, E6, M1 to M6, D1 to D8 and S1 to S6;
 [the owner design decisions of 2 October](../../../../wiki/decisions/owner-decisions-2026-10-02-design.md);
 [the owner decisions of 3 November](../../../../wiki/decisions/owner-decisions-2026-11-03.md);
+[the owner decisions of 6 November](../../../../wiki/decisions/owner-decisions-2026-11-06.md);
 [requirements R-01 to R-19](../../../../progress/1.0/requirements-from-screening.md);
 [the glossary](../../../../progress/1.0/glossary/glossary.md),
 [its terms](../../../../progress/1.0/glossary/terms.json) and
@@ -44,7 +48,7 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
     errors:  EV1:stale.editor_source, KN1:input.identity_mismatch
   operation diagnose(source, module_context) -> { diagnostics, static_verdict, source_digest }
     effect:  pure
-    errors:  LG1:syntax.recovery_gap, LG2:type.mismatch, LG2:type.exact_required,
+    errors:  LG1:syntax.recovery_gap, LG2:type.mismatch, LG2:type.exactness_violation, LG2:type.exact_required,
              LG3:effect.undeclared, EV1:evidence.obligation_unmet, KN1:input.identity_mismatch
   ```
 
@@ -55,8 +59,11 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
 
 - **EV1.4 [D]** Diagnostics distinguish ordinary type errors, effect errors, exactness violations, unmet evidence
   obligations and model or menu identity mismatches (partition EV1, default 5). Each diagnostic has a stable typed
-  code, a source range and the relevant typed context. `LG2:type.exact_required` identifies an approximate value at an
-  exact decision site; `EV1:evidence.obligation_unmet` identifies a required claim or check that is absent. An open claim
+  code, a source range and the relevant typed context, except for ERR.10's encoding-error diagnostic, whose `span`
+  is absent. LG2.22 owns exactness diagnostic precedence and the delimited meaning of `LG2:type.exact_required`.
+  `diagnose` forwards `LG2:type.exactness_violation` unchanged for ApproxBool
+  misuse and display-dependent control/result escape, including the direct condition and helper-return cases.
+  `EV1:evidence.obligation_unmet` identifies a required claim or check that is absent. An open claim
   that the program is allowed to inspect is a value, not an error (INV-5, KN0.5). Chapter 02 defines the checks, and
   chapter 06 defines the evidence they inspect.
 
@@ -96,22 +103,52 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
 - **EV1.9 [D]** The shell may link the checker as a library to provide the data services of EV1: parse, complete,
   diagnose, hover, definition and rename (partition section 9; DT-L1 E1). Such a service reads source and checker data;
   it runs no user program or user callback. Program execution remains outside the UI thread and off the kernel-key
-  dispatch path. Whether a linked service meets the latency bars is LX-4 in chapter 11. No latency has been measured
-  here, and this chapter supplies no substitute timing target.
+  dispatch path. Whether a linked service meets the latency bars is LX-4 in chapter 11. Its first-pass headless
+  function timings are leads only (`work/experiments/language-lx/lx4-editor/RESULT.md`), with no presented-frame
+  measurement or gate result. The decisive LX-4 run is an LP3 acceptance check with its bars unchanged (owner,
+  14 November 2026, LQ9; RTE.21), and this chapter supplies no substitute timing target.
 
-- **EV1.10 [O]** LP1's editor protocol and chapter 10's source linkage must choose one source-position convention and
-  its conversion at host boundaries. Options include UTF-8 byte offsets, Unicode scalar positions and host code-unit
-  positions. The choice fixes range endpoints, insertion ranges and conversion around multi-unit characters. Under
-  every option a range is bound to exact source bytes, and a host never guesses its coordinate unit.
+- **EV1.10 [D]** The proposed editor protocol consumes `SourceRange` from [the working handoff](../closure/HANDOFF.md),
+  H7: absolute UTF-8 byte offsets on scalar boundaries, half-open, bound to the exact source digest. Check
+  `0 <= start <= end <= byte_length`; an empty range is an insertion, including at byte_length. The bytes are the
+  validated UTF-8/LF source of LG1.3, with no Unicode normalization. Both endpoints must be scalar boundaries.
+  A host declares `utf8`, `utf16` or `scalar` when it opens the document. EV1 converts both endpoints by decoding
+  those same bytes and counting the declared units from the start, without rounding a position inside a multibyte
+  scalar or surrogate pair. Coordinates in a CRLF buffer must first be mapped to the pinned LF document; hashing
+  LF bytes and counting CRLF units is refused. A digest mismatch is `EV1:stale.editor_source`; an invalid endpoint,
+  undeclared unit or non-bijective conversion is `EV1:input.source_range_invalid`.
+  Invalid UTF-8 has no `SourceRange`, including no empty range in an otherwise valid prefix. Its diagnostic uses
+  ERR.10's raw input context, outside this conversion protocol; replacement decoding cannot create a valid range.
 
-- **EV1.11 [O]** No source chooses whether a newly checked draft replaces the active version automatically or through
-  an explicit activation command. The integrator's LP1 service contract must settle the switch, including a run already
-  using the old digest, subject to LQ9's placement and the later design-line interaction. Both options preserve EV1.7:
-  each run has one pinned version, and failure to check leaves the previous valid version available.
+  For the scalars `a`, U+1F600, U+00E9, LF, `z`, the boundary triples `(utf8, utf16, scalar)` are
+  `(0,0,0), (1,1,1), (5,3,2), (7,4,3), (8,5,4), (9,6,5)`. Thus UTF-8 [1,5) selects U+1F600 and converts to UTF-16
+  [1,3); [5,5) inserts after it at [3,3); [9,9) inserts at EOF [6,6). UTF-8 offset 2 and UTF-16 offset 2 refuse.
+  Chapter 10's `SourceMap` consumes these ranges without a second coordinate convention.
+
+- **EV1.11 [D]** Checking a draft creates a candidate, without changing the active module. The service
+  `activate_module(module, expected_active_digest, candidate_digest, check_reference)` is the only switch. It checks
+  that the reference covers exactly the candidate's source, manifest, lock closure, editions, execution and checker
+  versions and that the host's activation grants still hold. An unchecked or mismatched candidate returns
+  `EV1:input.module_not_checked`. The switch atomically compares expected_active_digest (or none for an initial
+  install) and installs the whole candidate closure; a changed active digest returns `EV1:stale.activation_base`.
+  Every refusal leaves the active version intact. Success returns the previous and new digests; subsequent invocations
+  bind the new one and still check their own grants. An invocation racing activation binds wholly before or after
+  that switch, never to a mixture. Save, rename and a successful diagnostic request do not perform this switch.
+
+  A run already bound to A continues on A after activation of B. Its closure, source ranges, debugger and result stay
+  A; B does not inherit its evidence. The host retains A's required immutable bytes while the run can resume. Module
+  activation alone does not cancel it. Revision replacement can stop revision-bound runs, and revoked grants can
+  stop a run under KN7; a digest-pinned research run follows EV2.10. Restarting or rerunning creates a new invocation;
+  it is not hot replacement of A's stack.
 
 - **EV1.12 [B]** A diagnostic or refused editor action provides what happened, its reason and an available next action
   as typed data for the host (charter E6). Its code decides handling; prose is never parsed to decide a continuation
   (H-08 typed errors; partition default 5). Final messages and their presentation wait for the design line.
+
+- **EV1.13 [O]** Whether the host requests EV1.11 automatically after a check or only through an explicit user action
+  is an interaction choice for the owner and the resumed design line. Neither trigger is selected here. Both call
+  the same atomic service and preserve old runs; widgets, prompts and editor appearance remain open. The runtime's
+  placement (LQ9; RTE.21) changes where the service is hosted, not its version-binding contract.
 
 ## 2. EV2: debugger, replay and profiler
 
@@ -122,7 +159,7 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
   shell's user-action token.
 
   ```text
-  operation debug_step(run, ir_position) -> { ir_position, values, source_ranges, outcome }
+  operation debug_step(run, expected_stop, request_id) -> StepResult
     effect:  read a snapshot
     cost:    interpreter steps and declared kernel costs, under KN7
     errors:  EV2:input.replay_dependency_missing, EV2:capability.debug_write_forbidden, KN2:stale.revision_gone
@@ -181,7 +218,8 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
   They neither alter the budget nor establish product performance evidence (KN7.7 to KN7.11, overview 3.5).
 
 - **EV2.8 [B]** Journal travel reads `journal`, `revision_info`, `checkpoints` and, when needed, `workspace_records`
-  and `receipt` through KN4.3 query rows (INV-2). Opening an old snapshot changes only what the debugger inspects. It
+  through KN4.3 and LI.14 query rows (INV-2). Invocation recovery uses `outcome(command, request)` under KN5.23 and
+  LI.30, without invoking or retrying the command. Opening an old snapshot changes only what the debugger inspects. It
   does not select an active journal line, reset the session, apply an inverse word or write session files. A revision
   that is unavailable reports `KN2:stale.revision_gone`; the debugger never silently opens the current revision instead
   (KN0.6). Chapter 08 defines snapshot and branch lifecycles.
@@ -193,21 +231,60 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
   trace inspection from a complete deterministic re-execution. Unsupported effects report
   `EV2:capability.debug_write_forbidden` instead of touching the live workspace.
 
-- **EV2.10 [P LQ4]** A research run pinned by digest may finish while the solver commits or undoes. Its debugger and
-  result keep the old input; reaching the new revision requires a re-run or exact transport justified by a lemma
-  (KN7.5; DT-L1 R2-E1). Under the cancellation alternative the run ends as cancelled. Under the no-solving-branches
-  alternative the journal viewer opens research sessions separately. No option makes an old result current merely
-  because the debugger has moved its cursor.
+- **EV2.10 [B]** A research run pinned by digest may finish while the solver commits or undoes (owner, 6 November 2026,
+  LQ4). Its debugger and result keep the old input; reaching the new revision requires a re-run or exact transport
+  justified by a lemma (KN7.5; DT-L1 R2-E1). Moving the debugger's cursor does not make an old result current.
 
-- **EV2.11 [O]** Chapter 05's word references and KN6.4's trace contract must settle whether word positions use
-  zero-based half-open intervals or one-based inclusive intervals, and how a compressed part cites its expansion.
-  Each reference must make its alphabet and position convention unambiguous. Until that contract is fixed, EV2.5 and
-  EV2.6 specify the required linkage without prescribing stored endpoints.
+- **EV2.11 [D]** Word references consume H7's zero-based half-open positions in the expanded literal word. They name
+  its literal digest, identity block, alphabet and exact expanded length, with `0 <= start <= end <= length`.
+  A letter at i is [i,i+1); [length,length) is the completed cursor. These are letter positions, never source bytes,
+  chunks or equality-key tokens. A compressed reference also carries a path to the particular expansion occurrence
+  and an offset within that occurrence. The path distinguishes child occurrences, repeat iterations and inverse
+  traversals in the carrier's expansion order. Reusing one named part twice therefore gives two paths. Offsets count
+  emitted chronological letters, including the emitted order of an inverse part. The resolver checks the path and
+  offset against the absolute expanded position and literal digest, without materializing the whole word. With
+  `repeat([a,b],3)`, iteration 1, offset 1 cites b at [3,4); it does not cite the first b at [1,2).
+  Flat H10 storage has the absolute range directly; named annotations do not change it. Missing expansion content
+  gives `EV2:input.replay_dependency_missing`; an inconsistent path or endpoint gives `EV2:input.word_range_invalid`.
+  Chapter 05 owns the carrier and stored bytes, and KN6.4 supplies the checker trace rather than a fabricated path.
 
-- **EV2.12 [O]** The executable IR stop points and their mapping back to source depend on chapter 02 and LQ9. RT1 can
-  expose its evaluator steps; RT3 needs a mapping through its target VM; RT2 or RT4 needs an equivalent host mapping
-  for its admitted subset. LP1 must define step granularity, suspended-call inspection and missing-map results for the
-  chosen route. No route may turn a missing mapping into an invented source location or an unchecked execution.
+- **EV2.12 [D]** A step consumes one next semantic operation under the run's versioned LG4/DET.20 contract, stopping
+  at its next declared boundary. The service consumes that contract's position; it defines no second step counter or
+  tariff. For ordinary calls the next boundary is the callee's entry; return reaches the caller's continuation.
+  A kernel call is opaque to language stepping: inspect its call site and KN6 trace references, never its native
+  instructions or partially constructed result. DET.23 still owns admission and cost. The request names the current
+  stop and a run-local request ID. A duplicate ID returns its latest result without another advance; a different ID
+  with a stale stop returns `EV2:stale.debug_stop`. Only one advance is in flight per run.
+  A different ID naming the current awaiting stop joins that call and returns its waiting/completed result without
+  another advance. Reusing an ID with a different run or expected stop is `EV2:stale.debug_stop`.
+
+  ```text
+  StepResult = { run, module_digest, execution_contract, position, stop_id, values,
+                 source: mapped(List<SourceRange>) | unavailable(source_map_missing | source_bytes_missing),
+                 state: stopped | waiting(call_id) | terminal(run_outcome) | unavailable(step_mapping_missing) }
+  ```
+
+  `position` and any deterministic cut-off are the actual execution-contract positions. `values` contains only
+  completed immutable locals; inspection runs no getter or program callback. `source` names the executed module's
+  bytes through EV1.10. A missing source map permits inspection of the actual position with an explicit unavailable
+  source, never a range in the current draft. A missing executor-to-contract step mapping gives
+  `unavailable(step_mapping_missing)` before advancing; that route fails stepping admission. A budget refusal,
+  cancellation, safety stop or runtime failure is `terminal` with the actual KN7 outcome and coverage, not a
+  successful step or an empty negative. Repeating a terminal request changes nothing.
+
+  On dispatch of a suspended kernel call k7, return `waiting(call_id)` at k7's awaiting boundary with the call-site
+  source and no return value. Repeating the request while pending returns the same waiting call and charges nothing
+  further. The one in-flight request remains attached to that call. When it finishes, that request yields
+  `stopped` at continuation k8 with its completed result, or `terminal` if the run stopped there. It never dispatches
+  k7 again. The host reports completion without executing k8; a new request is needed to advance k8. Cancellation
+  remains bounded by the kernel contract's safe boundaries and reports the real completed coverage.
+
+  RT1 exposes these boundaries in its evaluator. RT2 and RT3 preserve them through a checked host/VM map, including
+  operations optimized away or fused at the native level. RT4 with IR uses the same map; non-IR RT4 owes equivalent
+  declared host boundaries and mappings under RTE.6. Host bytecode instructions, VM fuel and source lines cannot stand
+  in for semantic steps. This is a route admission requirement, not evidence that a candidate already supplies it.
+  The RT2, RT3 and RT4 sentences record unselected alternatives and bind nothing (owner, 14 November 2026, LQ9;
+  RTE.21).
 
 ## 3. EV3: source and UI linkage
 
@@ -221,7 +298,7 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
   command rows and typed arguments, and nodes link to their producing source (partition EV3, KN5.3 to KN5.5). A
   renderer adapter consumes display plans without calling a program. Evaluating a view grants no workspace-write
   effect; a persistent edit requires a workspace command the solver invokes (default 16). Chapter 10 owns `Chart` and
-  the chart subset; this chapter defines no renderer feature or shader.
+  the stage safety contract; this chapter defines no renderer feature or shader.
 
 - **EV3.3 [B]** Output carries the base `RevisionRef` it read, and remains identified as stale after that base is
   replaced until recomputation supplies current output (charter D2; partition 8.3). The shell adopts the engine's new
@@ -237,15 +314,21 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
 
 - **EV3.5 [D]** A pick returns the `DisplayInstance` of the adopted plan. Chapter 10's `SourceMap` resolves it to the
   canonical ID at its model and level and, for a language-produced instance, to the producing source location.
-  The shell checks the plan's base revision and the editor checks the source digest before using the result
-  (KN0.6, INV-6). A stale pick or obsolete source link returns `EV3:stale.source_link`. Missing source is explicit; the
-  host never substitutes a nearby declaration. The chain uses instance IDs without inverting a chart (partition 8.5).
+  Check RPI.24's pick bindings first, including installed plan/map and view generations, under RPI.25 and RM.10.
+  A mismatch returns `EV3:stale.display_pick` before any source action, even if the source also differs. Only after
+  those checks pass can applying a source range to a different producing digest return `EV3:stale.source_link`.
+  A newer editable draft alone does not invalidate a pick: navigation opens the producing version (EV3.6).
+  Missing source stays explicit under RM.10; the host never substitutes a nearby declaration. In RM.30's
+  generation-change case, an instance from generation 7 consumed after generation 8 returns `EV3:stale.display_pick`
+  even with unchanged source. With bindings unchanged, applying its range from `a😀b` to `a😀c` returns
+  `EV3:stale.source_link`.
+  The chain uses instance IDs without inverting a chart (partition 8.5; KN0.6, INV-6).
 
   ```text
-  operation follow_pick(instance: DisplayInstance, map: SourceMap, shown_base: RevisionRef)
+  operation follow_pick(instance: DisplayInstance, map: SourceMap, dependencies: RPI.24 pick dependencies)
       -> { canonical_id, level, source_location?, producing_module }
     effect:  pure
-    errors:  EV3:stale.source_link, KN1:input.identity_mismatch
+    errors:  EV3:stale.display_pick, EV3:stale.source_link, KN1:input.identity_mismatch
   operation edit_declared_part(source, declaration, field, value) -> { edits, source_digest }
     effect:  pure
     errors:  EV3:input.round_trip_undeclared, EV1:stale.editor_source, LG2:type.mismatch
@@ -286,19 +369,19 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
   trigger exact state analysis unless a declared analysis input actually changed. Per-frame chart evaluation remains
   chapter 10's display operation, outside this relation computation.
 
-- **EV3.11 [P LQ6]** In the solving profile program charts and overlays live inside Global and Local. Research views
-  may open in a research workspace, each with its own gate run (partition LQ6; charter D8). Under strict D8 everywhere,
-  research content must also fit those two views. Free views everywhere require an owner change to D8. In every
-  option, canonical identity, base revisions, source linkage and the absence of a program commit path stay the same.
-  No additional view is authorized by this proposal.
+- **EV3.11 [B]** Further views are allowed in every profile (owner, 6 November 2026, LQ6). Charter D8's limit to
+  Global and Local is lifted (owner, 6 November 2026, decision 1). Look and placement stay with the design line
+  under the owner's 3 November hold.
 
 - **EV3.12 [D]** A value imported under KN2.14 has no session ancestor. Its plan states lineage `imported` with the
   import's digest, and the plan's own base is an explicit comparison base with no claim that it produced the value
   (ONE.21, RPI.7). Nothing fabricates a derivation or a revision. This reading of partition EV3 is the integrator's.
 
-- **EV3.13 [D]** LQ7 determines which user charts can produce plans; LQ20 determines the renderer-line handoff.
-  Neither changes the linkage or the one-state rule (INV-1, INV-8; partition 8.5). Built-in parameterised charts can
-  use the same service contracts if generated user charts are deferred. The handoff describes data primitives only;
+- **EV3.13 [D]** User stages produce display output under chapter 10's contract, RPI.68 to RPI.80 (owner,
+  6 November 2026, LQ7). Further views keep canonical identity, base revisions and source linkage under RPI.81 to
+  RPI.83; no view gains a program commit path. Handoff row H-11 gives the renderer line RPI.15's display-plan
+  primitives, the user-stage safety contract and the free-view workload before the renderer feature-list freeze
+  (owner, 6 November 2026, LQ20). The linkage and the one-state rule remain (INV-1, INV-8; partition 8.5);
   layout, appearance, motion and interface wording wait under the owner's 3 November design-line hold.
 
 ## 4. EV4: commands, bindings, macros and recording
@@ -370,51 +453,187 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
   exact expanded length and provenance field (partition section 13, BM2; DT-J1 Outcome E1 and E3; DT-L1 R2-E3).
   Each word is typed by its alphabet. A jumble letter is refused with Jumble off. Named-part expansion is checked
   against DT-J1 X3's eventual bound, with the exact length reported before check, preview or run; this chapter sets
-  no bound. Equality uses the equality key; protection and execution use literal prefixes
+  no bound. The macro comparison's word-equivalence result uses LG2.18's versioned `WordEqualityKey`; a separately
+  requested trace comparison uses LB1.10's `TraceEqualityKey` and reports its independence contract. Neither is whole
+  macro-record equality or a decision of arbitrary partial-map equality. Unequal compatible keys mean only that the
+  selected rule did not recognize equivalence; incompatible versions refuse as `LB1:input.key_contract_mismatch`.
+  Protection and execution use literal prefixes
   (KN2.7, default 10; DT-L1 R2-E2).
   Flat storage versus references belongs to chapter 05 with EN3, without losing literal order or provenance.
 
 - **EV4.10 [D]** A `Recording` stores semantic steps: stable command IDs, resolved arguments, canonical IDs with their
-  identities, and the revisions on which the steps depend (partition EV4, LQ11). It can refer to receipts and outcomes
-  to describe what actually happened. An overlay step also identifies the module digest needed to give its command
-  meaning (LG5, INV-10). Pixels, screen coordinates and key labels cannot identify a recorded action (INV-6). A
-  recording stores no user-action token or old execution permission. Chapter 05 defines its bytes and versioning.
+  identities, and the revisions on which the steps depend (partition EV4; owner, 6 November 2026, LQ11). Each step
+  has the following shape. An overlay step identifies the module digest needed to give its command meaning
+  (LG5, INV-10). Pixels, screen coordinates and key labels cannot identify a recorded action (INV-6). A recording
+  stores no user-action token, operation preview ID (KN5.9) or old execution permission. Chapter 05 defines its bytes and versioning.
 
-- **EV4.11 [O]** The recording contract must choose between capturing every resolved invocation with its outcome,
-  refusals included, and capturing only accepted semantic actions. Chapter 05 and the integrator must settle the
-  capture point against the receipt lifecycle, including an unknown outcome. Under either choice the record cannot
-  describe a refused or unresolved command as a committed action, and reconstructing it cannot silently retry one.
+  ```text
+  RecordedStep = {
+    row:       stable command ID
+    arguments: resolved canonical arguments, with no token and no operation preview ID
+    word:      WordRef?                       # a word step (EV4.18)
+    depends:   List<RevisionRef>              # the revisions the step read
+    module:    Digest<source>?                # an overlay step
+    action:    ActionNumber?                  # the durable action it took (LI.9); EV4.23 matches undo and redo by it
+    command:   CommandId
+    request:   Digest<request>
+    outcome:   terminal receipt reference, or none
+  }
+  ```
 
-- **EV4.12 [P LQ11]** A recording becomes either a macro with one complete preview and one user commit, or a
-  step-by-step playback with one user action for each commit. It never plays commits unattended. The alternative
-  permits unattended view and workspace steps only; those still use the command layer, workspace undo and gates, and
-  never acquire the shell's commit token. The execution gate of INV-3 holds under both choices. Recording is not
-  deterministic run replay: EV2 reproduces computations without playing actions into the session.
+- **EV4.11 [D]** While recording is on, the command layer appends one step for every resolved invocation, with its
+  outcome, refusals included. `recording.*` rows are not captured. Input that never resolved to a row leaves nothing.
+  The outcome is filled from the invocation's terminal receipt under KN5.21 and KN5.23; until it is known, the step
+  has no terminal reference. The record cannot describe a refused or unresolved command as a committed action,
+  and reconstructing it never retries one. EV4.19 governs playback and conversion of these outcomes.
 
-- **EV4.13 [D]** Conversion to source names the recorded commands, absolute arguments, module and word digests, and
+- **EV4.12 [B]** A recording may play view and workspace steps unattended; a commit never plays unattended (owner,
+  6 November 2026, LQ11; owner, 6 November 2026, decision 3). The execution gate of INV-3 holds. The three uses
+  follow EV4.13's mechanism. Recording is not deterministic run replay: EV2 reproduces computations without playing
+  actions into the session.
+
+- **EV4.13 [D]** The three uses are conversion to a word draft or source for one complete preview and one user
+  commit, stepwise playback with one user action per commit, and unattended playback after one starting user action,
+  stopping for every commit. EV4.17 to EV4.23 define eligibility, outcomes, recovery, undo and conversion.
+  Conversion to source names the recorded commands, absolute arguments, module and word digests, and
   revision guards. Generated source passes the same chapter 02 checks and chapter 09 grants as typed source. A word
   assembled from it receives a fresh whole-word preview and protection check; no old receipt or certificate supplies
   permission (INV-3, defaults 14 and 18). New invocations receive new durable identities. Playback that cannot resolve
   a step reports `EV4:input.recording_step_unresolved`, preserving the record for inspection. It never replaces a missing
   canonical ID with a visual pick.
 
-- **EV4.14 [O]** Mapping recorded revisions into a new playback session is not specified by LQ11. Chapters 05 and 08
-  must choose exact historical-input playback only, or an explicit rebinding operation that checks the identity,
-  input digests, absolute objects and fresh previews in a new session. Both retain the recorded revisions and report
-  mismatches; neither silently retargets an old command. Converting steps into editable source does not settle this
-  playback mapping.
+- **EV4.14 [D]** 1.0 has no rebinding operation. Playback re-invokes each step with its recorded canonical arguments
+  against the current revision, after checking model identity and input digests. A mismatch refuses playback before
+  it starts, or stops it during playback, with `EV4:input.recording_identity_mismatch`. An unattended step whose
+  arguments name a revision that is not the current RevisionRef, every field equal (KN0.2), or a filter preview that is
+  not fresh, stops with `EV4:stale.recording_step`; a named revision that is still current plays. Recorded revisions remain dependencies;
+  they are never silently retargeted, and a recorded undo or redo target follows EV4.18's action map. Manual
+  continuation uses EV4.18's fresh guards and solver action.
 
 - **EV4.15 [B]** Puzzle and workspace actions share DT-M1 Q4 (a)'s durable undo order. An undo carries the action its
   hint named and is refused if another action superseded it; a text editor keeps its own text undo. Commit and undo
   go ahead during revision-bound jobs, cancelling those jobs as in DT-M1 Q5 (a). The debugger's journal cursor is
-  outside this action order because it writes nothing. KN5.20's EN4 fix remains a prerequisite for these services.
+  outside this action order because it writes nothing. KN5.20 and LI.26 supply the shared `session.undo` entry;
+  LI.9 supplies its action-order guard. Their implementation and conformance remain owed.
 
 - **EV4.16 [D]** Saving a word, recording it or turning it into source preserves the chapter 07 provenance reference;
   it cannot make research output into a solving preview or change an imported word into an own word by format
-  conversion (BM2; DT-L1 R2-E3, fix-first item 18). Flow-label detail versus capability separation stays LQ21. Under
+  conversion (BM2; DT-L1 R2-E3, fix-first item 18). LQ21 chose capability separation (RTE.24). Under
   the interim policy of partition section 11 no solver-tool solving preview is enabled before the joint setting.
   Built-in tools retain the 2 October boundary and the 17 October named-cap repair-list exception (INV-11). Showing
   a result or recording a solver's pick grants no new declassifier.
+
+- **EV4.17 [B]** Recorded view and workspace steps may play unattended (owner, 6 November 2026, decision 3).
+  EV4.18 and EV4.22 give the integrator's row and lane eligibility rules, including the query default beyond the
+  owner's words. That default supplies no effect permission.
+
+- **EV4.18 [D]** Playback stops and waits for one user action at commit-lane rows, rows with `confirm` or
+  `file_check`, `file` and `app` rows, exclusive-lane rows and job rows. `session.checkpoint.save` stays manual:
+  its lane is `commit` even though its durable action tag is `workspace` (LI.9). For a user step the shell fills
+  the current `revision`, the solver's `token`, a fresh preview where required and, for undo and redo, a current
+  direction-specific hint (LI.9, LI.26). A recorded `operation.execute` commit is a word step: its stored word
+  gets a fresh `operation.preview`, and the solver's one action commits it. A recorded preview ID is never reused.
+  The live one-letter word steps of EV4.23 keep ONE.78's live-twist rule.
+
+  Before an undo or redo user step the shell reads `kernel.undo_hint`. If the hint's target is not the played
+  action that PS1.44's `actions` map gives for the recorded `hint.target`, or the map has no entry for that target,
+  playback stops with `EV4:stale.recording_step` and undoes nothing. A redo's target is the original action number
+  (LI.9), so the same map serves redo.
+
+- **EV4.19 [D]** Historical outcomes control whether a step can be played or converted:
+
+  | Recorded outcome | Playback | Conversion |
+  | --- | --- | --- |
+  | `completed` | Plays if eligible under EV4.22; otherwise a user step | By EV4.23 |
+  | `committed` | User step | By EV4.23 |
+  | `refused`, `failed`, `cancelled` | Stays visible, never plays, is passed over | Left out |
+  | `accepted`, `running`, no terminal record, `unknown_outcome` | Stops at this step with `EV4:input.recording_step_outcome_unknown` | Stops at this step with the same code |
+
+  New child outcomes during playback follow this table. Each advance is reconciled at most once under EV4.20.
+
+  | New child outcome | Unattended step | User step |
+  | --- | --- | --- |
+  | `accepted`, `running` | Pending; no advance | Pending; no advance |
+  | `completed` | Advances | Advances |
+  | `committed` | Not an unattended step under EV4.18; no automatic advance | Advances |
+  | `refused`, `failed`, `cancelled`, `unknown_outcome` | Stops with that typed outcome; no automatic retry | Stops with that typed outcome; no automatic retry |
+
+  A child's code keeps its identity (ERR.7). A refusal or lost outcome never becomes a successful empty step.
+
+- **EV4.20 [D]** PS1.44's `PlaybackState` is a durable workspace record outside the undo order. Its `step` is the
+  next recorded step. The command layer writes `pending` before each dispatch. Recovery first calls
+  `kernel.outcome(command, request)` under KN5.23 and reconciles the receipt, advancing at most once. An
+  `unknown_outcome` stops playback and never makes a fresh retry. The cursor, cleared pending entry, any new
+  `actions` entry and `last` receipt are saved together when the step advances.
+
+  A manual step goes through the shell's step action: the shell chooses the command ID (KN5.21), the command layer
+  writes `pending`, then the ordinary row is submitted with the solver's token. Its receipt reconciles like a
+  played step. An ordinary invocation outside that action does not move the cursor. The solver moves the cursor
+  explicitly with `recording.play {recording, from}`, under EV4.22's table, after pending reconciliation.
+
+- **EV4.21 [D]** Each played step keeps its row's undo classification. An undoable workspace step is its own
+  action. An `undo: none` row, such as `camera.rotate` or `session.timer.start`, gives a receipt and no invented
+  undo target. A query is read-only. The cursor is never an undo target. LI.17 stages one overlay invocation as
+  one action; playback is a sequence of commands, so its completed actions remain separate, including if a later
+  step stops or fails.
+
+- **EV4.22 [D]** Capture and playback sit at the command layer: an overlay program cannot observe other invocations
+  and has no generic dispatch. `recording.start {name}` and `recording.stop {recording}` control capture.
+  Start while recording, stop with no recording, or a play or `from` that the table below does not allow is refused
+  with `EV4:input.recording_state`. `recording.play {recording, from?}` runs from the durable cursor, or the explicitly
+  recorded `from`, to the next user step or the end, and finishes. `job.stop` halts its job. Each played step is a
+  new invocation with a new durable identity (EV4.13) and its own receipt. Playback never holds the commit token.
+  RPI.14 stays true: playback is solver-invoked, not a view effect.
+
+  The eligibility table applies after EV4.19 and subject to EV4.14. Every ordinary gate still applies. In particular,
+  `filter.apply` plays only while its fresh filter preview holds; eligibility never recreates or retargets one.
+
+  | Row and lane | Unattended eligibility |
+  | --- | --- |
+  | Kind `view` or `workspace`, lane `view` or `none`, no `confirm` or `file_check` gate, no job | Eligible under the owner's rule (EV4.17), with all remaining gates checked |
+  | Kind `query`, lane `none`, no job and no `confirm` or `file_check` gate | Eligible as the integrator's default: it changes nothing |
+  | Commit lane, including `session.checkpoint.save`; `confirm` or `file_check`; `file` or `app`; exclusive lane; any job | User step under EV4.18 |
+  | Any other row/lane combination | User step; no unattended permission |
+
+  `recording.play` reads PS1.44's state for that recording after pending reconciliation. `from` = f needs
+  0 ≤ f < the number of steps. Every refusal here is `EV4:input.recording_state`.
+
+  | State when `recording.play` runs | No `from` | `from` = f |
+  | --- | --- | --- |
+  | No state for this recording | New playback at step 0 | New playback at f |
+  | A child still `accepted` or `running`, or status `running` | Refused | Refused |
+  | `waiting(step)`, or `stopped` with a code or with `refused`, `failed` or `cancelled` | Same playback, continues at `step` | f ≥ `step`: same playback, cursor to f, map kept. f < `step`: new playback at f, empty map |
+  | `stopped(outcome(unknown_outcome))` | Refused | New playback at f, empty map |
+  | `finished` | Refused | New playback at f, empty map |
+
+  A new playback replaces the recording's state record; the kernel keeps every receipt (KN5.23). Writing an unknown
+  outcome clears `pending` and leaves that receipt in `last`. A skipped step has no map entry, so a later undo of it
+  stops under EV4.18. For example, W recorded as action 10 plays as 100. `from = 0` opens a new playback with an empty
+  map, W plays as 101, the undo step's hint targets 101 and undoes it, and 100 stays applied.
+
+- **EV4.23 [D]** `recording.convert {recording, target: draft | source}` first applies EV4.19, then checks every
+  remaining step against the target. It writes nothing unless every step passes. A step with no form in that target
+  refuses the whole conversion with `EV4:input.recording_not_convertible`, naming the step and target. A word step
+  is a `committed` `operation.execute` (its stored word), `twist.apply` or `jumble.twist.menu` (its one letter).
+  The step's `action: ActionNumber?` (LI.9) matches undo and redo to their recorded `hint.target`.
+
+  | Step | Target `draft` | Target `source` |
+  | --- | --- | --- |
+  | Word step | Adds its letters to the word | Adds its letters to the word |
+  | `session.undo` or `session.redo` targeting a word step of this recording | Removes or restores that step, keeping its recorded place | The same |
+  | `session.undo` or `session.redo` targeting a non-word step of this recording | Contributes nothing | Refuses |
+  | `session.undo` or `session.redo` targeting an action outside this recording | Refuses | Refuses |
+  | `session.checkpoint.save` | Contributes nothing: its action tag is `workspace` (LI.9) | Refuses |
+  | Any other `commit` row | Refuses: the position changed in a way no letter states | Refuses |
+  | Completed `view`, `query` or `workspace` step | Contributes nothing, listed in the conversion report | A call in recorded order if an overlay row may invoke it (KN5.4) and it has no `confirm` or `file_check` gate; otherwise refuses |
+  | Completed `file` or `app` step | Contributes nothing, listed in the report | Refuses |
+
+  Workspace staging adds no letters. `macro.add(W)` followed by `operation.execute(W)` gives W exactly once.
+  Target `draft` refuses an empty word with the same code, so `camera.rotate` alone refuses. Success creates one
+  operation draft whose Macro phase holds the literal word, as one undoable workspace action. Its provenance block
+  lists each contributing word's block in `parts` (BND.24), so BND.84 reads them at preview. Target `source` keeps
+  EV4.13's fresh whole-word preview. A program-produced word carries `producer: program(...)` and is refused at
+  preview in a solving session under BND.84. A solver who wants their own word back there uses target `draft`.
 
 ## 5. EV5: docs, explanations and the learning path
 
@@ -429,8 +648,8 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
   source and module digests, edition, types, effects, capabilities, supported identities and documentation references
   needed to interpret each entry (partition EV5, LG5). An entry links to its declaration and evidence rather than
   keeping a second handwritten signature. A broken draft's reference output remains distinguished from the active
-  tool's documentation (EV1.7). Native built-ins under an LQ5 alternative still owe INV-12's viewable source and
-  principle record; the source language and generation adapter change, not that obligation.
+  tool's documentation (EV1.7). Every tool above the kernel is written in the language (owner, 6 November 2026,
+  LQ5), with INV-12's viewable source and principle record.
 
 - **EV5.3 [D]** A tool explanation consumes the `PrincipleRecord` defined in chapter 03 (INV-12). It exposes the exact
   function and domain, the meaning of an empty or negative answer, the supporting lemma or certificate with its
@@ -446,7 +665,8 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
 - **EV5.4 [D]** Explanation links use EV2's lazy provenance expansion down to primitives and stage-qualified,
   source-commit-pinned lemmas. An imported result traces to its stored bytes and source label, and the trace says that
   its producer is absent. A long word is a digest and positions until expanded. The decomposition is generated from the
-  checked IR before lowering, from its call graph and kernel calls, and the worked instance has a matching headless
+  checked IR before executor lowering, or RTE.80's checked host decomposition for a non-IR RT4 tool, from its
+  transitive call graph and kernel calls, and the worked instance has a matching headless
   fixture (partition INV-12, LG4; DT-L1 M6, R2-E4). A generated decomposition gives structure, not reasons: the reasons
   are the hand-written parts of LB6.2 (DT-L1 R3-M4). A fixture pass is source evidence for that instance. It does not
   prove a universal lemma or record a human comprehension result. KN6 trace links use the checker's own output.
@@ -471,9 +691,9 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
 | 1 Use tools and read results | Command, Availability, Revision, Base revision, Stale; Claim, Scope, Covered set, Basis, Check, evidence words, Standing, Threshold, Premise; every, some and negation (Statement form, Negation pair), Witness; empty, not found, not run (EVD.33); Unknown against None: off the lattice; Typed partial result, Verdict; Job, Budget, Job result; Reachability claim; Evidence graph on request; record parts `specification` and `not meant` | H-08 `command.find`, `object.inspect`, `view.findings`, `view.residuals`, `operation.check`, `job.stop`. `invoke` on an overlay row (chapter 01), `word` (chapter 06), `follow_pick` (EV3). Explanation and provenance view: owed | Owed. Candidate: read E3's 7302 and 7303 records (chapter 06, section 9) |
 | 2 Change a parameter | Editable parameter, new version, Fork, "a fork inherits no evidence", Diagnostic, Typed error | `edit_declared_part` (EV3), `diagnose` (EV1). Workspace command that persists it, host fork operation: owed | Owed |
 | 3 Save layouts and bindings | Layout, Workspace record, Binding with absolute arguments, Routing class, Preference, workspace undo | H-08 `keymap.edit`, `file.keymap.export`, `file.keymap.check`, `file.keymap.apply`, `grip.capture`. `edit_declared_part`. Save layout: owed | Owed |
-| 4 Compose recipes and macros | Word, Literal word, Equality key, Cost alphabet, Setup, Star, conjugate and commutator, Recipe, Macro, Macro base, Proposal, Preview, User-action token, Protection, Net and Strict, Complete effect, assistance provenance, Recording, fresh preview on reuse (LB7.2) | H-08 `macro.base.open`, `macro.select`, `macro.add`, `macro.save`, `macro.variant.create`, `macro.compare`, `operation.new`, `operation.phase.edit`, `operation.reuse`, `operation.check`, `operation.preview`, `operation.execute`, `worksheet.save`, `worksheet.load`. `propose` (chapter 01), `word_key` (chapter 02). Recording to macro: owed | Owed |
+| 4 Compose recipes and macros | Word, Literal word, Equality key, Cost alphabet, Setup, Star, conjugate and commutator, Recipe, Macro, Macro base, Proposal, Preview, User-action token, Protection, Net and Strict, Complete effect, assistance provenance, Recording, fresh preview on reuse (LB7.2) | H-08 `macro.base.open`, `macro.select`, `macro.add`, `macro.save`, `macro.variant.create`, `macro.compare`, `operation.new`, `operation.phase.edit`, `operation.reuse`, `operation.check`, `operation.preview`, `operation.execute`, `worksheet.save`, `worksheet.load`. `propose` (chapter 01), `word_key` (chapter 02). `recording.start`, `recording.stop`, `recording.play`, `recording.convert` (EV4) | Owed |
 | 5 Read a record, state your principle | Principle, Principle record, Hypothesis, Lemma, Theorem as a proof, Invariant, Counterexample, mixed statements, Decomposition, Base part, Step map, Leaf specification, Worked instance, Hand derivation, Fixture, a domain inside its lemma's scope | `hover`, `definition` (EV1). Reading a record: owed. Stating your own: owed; no data route exists, and EV5.9 leaves the map to the joint setting | Owed. Candidate: the floor instance in LB6.2 |
-| 6 Write tools | Module, Module manifest, Lockfile, language edition; exact against approximate; Identity level typing; Snapshot, State reference, Derived state; partial results and verdicts in code; budgets, jobs, Cost profile; Effect, Capability declaration, Profile, Author class, Provenance block; view nodes and overlays; boundary: KN2.5, Flow rule, Declassifier, why a preview is refused; stabiliser, coset, quotient, homomorphism, F2, F5, Q(√5), whose text depends on EV5.17 | `parse`, `complete`, `diagnose`, `hover`, `definition`, `rename` (EV1), `debug_step`, `inspect_value` (EV2), `open_snapshot`, `project`, `derive`, `propose` (chapter 01), `publish_view` (chapter 10). Create a module: owed | Owed |
+| 6 Write tools | Module, Module manifest, Lockfile, language edition; exact against approximate; Identity level typing; Snapshot, State reference, Derived state; partial results and verdicts in code; budgets, jobs, Cost profile; Effect, Capability declaration, Profile, Author class, Provenance block; view nodes and overlays; boundary: KN2.5, Flow rule, Declassifier, why a preview is refused; stabiliser, coset, quotient, homomorphism, F2, F5, Q(√5), with library explanations under LB6 and EV5.17 | `parse`, `complete`, `diagnose`, `hover`, `definition`, `rename` (EV1), `debug_step`, `inspect_value` (EV2), `open_snapshot`, `project`, `derive`, `propose` (chapter 01), `publish_view` (chapter 10). Create a module: owed | Owed |
 | 7 Maintain modules and evidence | Digest, Reproducibility key, Run record, Deterministic replay, Certificate, Check report, Per-claim trace, Grade, Alternative, Check mode, Statement ID, Statement key, Evidence envelope, Exact transport, evidence edition | `replay_run` (EV2), `reproduce` (chapter 09), `check` (chapter 01), `word` (chapter 06), `import_archive`, `export_check_bundle`, `migrate_record` (chapter 05) | Owed |
 
   Four placements may not be obvious. `specification` and `not meant` are read at step 1, because empty against not
@@ -487,16 +707,17 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
   never changes the solver's personal session, uploads metrics or equates fast work with correctness. The chapter's
   human conformance tests need the owner's protocol before they can run.
 
-- **EV5.8 [P LQ14]** Competence checks guide and do not lock functions. Keys open by soft disclosure; the palette
-  still lists every command, an expert can open all keys, and showing all keys changes no disclosure state (charter
-  E5; DT-M1 Outcome K3). A goal flow's needed keys are disclosed by its first use, with their concept terms already
-  introduced. LQ14's hard-gates alternative changes this access rule and requires the owner to reconcile it with the
-  2 October soft-disclosure decision. Capability and evidence checks continue under either choice.
+- **EV5.8 [B]** Competence checks guide and do not lock functions (owner, 6 November 2026, LQ14). Keys open by soft
+  disclosure; the palette still lists every command, an expert can open all keys, and showing all keys changes no
+  disclosure state (charter E5; DT-M1 Outcome K3). A goal flow's needed keys are disclosed by its first use, with their
+  concept terms already
+  introduced. Capability and evidence checks continue.
 
 - **EV5.9 [O]** If LQ2 selects BS3, the competence check on a principle record gates the capability to prepare solving
   previews for that principle (partition section 11). That is a capability decision, distinct from showing a key or
-  listing a command. BS1, BS2 and BS4 add no such competence gate. The owner and integrator must settle this with
-  LQ14, including what changing a principle record does to an earlier check; no source settles that validity rule.
+  listing a command. BS1, BS2 and BS4 add no such competence gate. The owner and integrator must settle this in
+  LQ2's joint setting, within LQ14's soft-disclosure rule, including what changing a principle record does to an earlier
+  check; no source settles that validity rule.
   No source defines which principle a solver's tool embodies, and any such map belongs to the joint setting. Until then
   no learning result grants a solving-preview capability.
 
@@ -514,20 +735,20 @@ E6, M5, M6, R2-E1 to R2-E4 and its Outcome;
   data contract provides relation and evidence references; it chooses no appearance, encoding token or interface
   wording. The design line remains on hold under the 3 November decision.
 
-- **EV5.17 [O]** EV5.11 limits the theory book's 1.0 scope to what the interface shows, so the mathematics of the
-  language's libraries may have no text in it. Whether a library counts as shown is the owner's call, with LQ16.
+- **EV5.17 [B]** The theory book does not extend to the language's libraries. The theory book, proofs and stage
+  research records live in the repository and stay out of the shipped software; the research library and archive
+  checkers stay in 1.0 (owner, 6 November 2026, decision 5; owner, 6 November 2026, decision 9).
 
 - **EV5.12 [O]** The owner sets the human-test form and success criteria for comprehension, fixture competence and
   transfer; the mathematician checks their mathematical content. Rubrics and the treatment of help, repeated attempts
   and changed tools are not fixed here. LQ13's LX-8 learnability test feeds syntax choice, and chapter 11 owns its
   protocol dependency. No invented pass rate, timing threshold or claimed participant result fills this gap.
 
-- **EV5.13 [P LQ3, LQ10]** Under the recommended evidence model and facts envelope, explanation labels are derived
-  by chapter 06's versioned functions over stored facts (DT-L1 R2-E1). The view exposes statement, scope, basis,
-  checks and job outcome separately. Under a judgements envelope it reads the settled stored judgements and their
-  version; under LQ3's other models the label mapping changes. Source labels and check references remain inspectable
-  in every option. The environment neither sets the evidence order nor supplies its own stronger summary. Under every
-  option an explanation shows the check beside the word, and says so where no human review or formal proof is recorded.
+- **EV5.13 [D]** Explanation labels are derived by chapter 06's versioned functions over stored facts (owner,
+  6 November 2026, LQ3; owner, 6 November 2026, LQ10; DT-L1 R2-E1). The view exposes statement, scope, basis,
+  checks and job outcome separately. Source labels and check references remain inspectable. The environment neither
+  sets the evidence order nor supplies its own stronger summary. An explanation shows the check beside the word,
+  and says so where no human review or formal proof is recorded. EVD.64 assigns no writer to `formal proof` in 1.0.
 
 ## 6. Glossary entries the language adds
 
@@ -536,15 +757,20 @@ families, with repository research sources named for the proposed jumbling summa
 works unchanged are omitted. A row marked "change" corrects or scopes an existing entry. The definitions are proposed
 glossary summaries of the owning chapter, not competing contracts.
 
+The View, Chart and Research tier rows reflect the answers of 6 November 2026. The other proposed entries retain
+their proposal wording; their settled-question references record the proposal's dependencies. Current contracts are
+in the owning chapters.
+
 - **EV5.14 [O]** The mathematician reviewed these additions and scope changes in round 4 against the theory and the
   completed chapters, and this inventory carries the corrections (DT-L1 round 4). That review read the rows owned by
   chapters 02, 05, 09 and 10 for internal consistency only. The proposed L1 to L6 levels use the existing glossary
   scale; their final placement follows the owner's learning path and DT-M1's first-use rule. Jumbling and language
   terms need a first-use order before their levels can be checked, and using the manual or the shelved tutorial for it
-  is the owner's call. Evidence words also depend on LQ3 and chapter 06, and the competence gate depends on LQ2 and
-  LQ14. The inventory carries round 3's corrections to DT-L1 R2-E1 (evidence), R2-E2 (identity levels), R2-E3 (flow
-  control) and R2-E4 (principles and partial values). The mathematician's follow-up applied EV5.10's level rule to
-  every row by hand, and its level moves and new rows are proposals too. Some rows are only partly grounded. Principle
+  is the owner's call. Evidence words use LQ3's separate fields and chapter 06; any competence capability gate waits
+  for LQ2's option set under LQ14's soft disclosure. The inventory carries round 3's corrections to DT-L1 R2-E1
+  (evidence), R2-E2 (identity levels), R2-E3 (flow control) and R2-E4 (principles and partial values). The mathematician's
+  follow-up applied EV5.10's level rule to every row by hand, and its level moves and new rows are proposals too.
+  Some rows are only partly grounded. Principle
   is the integrator's working definition (LB6.2), with no owner text. Base tool has no row, because what counts as one
   is LQ2's question. Base part's meaning is inferred. Solve record is used and never defined. Fixture is generalised
   from its uses. Revision and Statement are the mathematician's wording. Lemma, Theorem, Hypothesis, Invariant and
@@ -664,7 +890,7 @@ glossary summaries of the owning chapter, not competing contracts.
 | Proposal | L2 | A word, with a record of where it came from, submitted for a preview at a base revision. | Chapter 01 KN5.9 |
 | Preview | L2 | What the engine says will happen if you commit: the exact word and what it does, fixed at one base revision. | Chapter 01 KN5.9 |
 | User-action token | L2 | The shell's single-use authority bound to the displayed preview and its literal letters. | Chapter 01 KN5.14, KN5.15 |
-| Receipt | L2 | The command's durable identity, request digest and typed execution outcome. | Chapter 01 KN5.21 |
+| Receipt | L2 | An invocation's command identity, request digest and typed execution outcome; retention follows its kind. | Chapter 01 KN5.21, KN5.23; LI.30 |
 | Availability | L1 | Whether a command can run now, and the reason when it cannot. | Chapter 01 KN5.6, KN5.7 |
 | Claim | L2 | A typed statement with an evidence state, without conflating score or execution permission. | Chapter 06; INV-5 |
 | Statement | L2 | A precise sentence about named objects that records can support or refute. | Chapter 06 section 2 |
@@ -728,7 +954,7 @@ glossary summaries of the owning chapter, not competing contracts.
 | Fork | L2 | Your own copy of a built-in tool. It keeps a link to its origin and inherits none of the origin's evidence. | Chapter 03 LB6.3; EV5.5 |
 | Editable parameter | L2 | A value a tool's source declares editable. Changing it makes a new version of the tool with no inherited evidence. | EV3.7; chapter 03 LB6.3 |
 | Library entry | L6 | A source-addressed operation with its checked domain, effects and supporting references. | Chapter 03 |
-| Research tier | L6, not learner-facing unless LQ16 ships it | The entries that search, minimise, rank or select over twists, words or caps. They stay out of the solving profile; whether they ship is open. | Chapter 03 LB1.5; BS2 |
+| Research tier | L6 | The entries that search, minimise, rank or select over twists, words or caps. They ship in 1.0 and stay out of the solving profile. | Chapter 03 LB1.5; EV5.17; owner, 6 November 2026, LQ16 |
 | Effect | L6 | A declared and checked kind of interaction a program can perform. | Chapter 02; partition LG3 |
 | Capability declaration | L6 | A module's request for authority that the host must grant for the profile and run. | Chapters 02, 09 |
 | Typed IR | L6 | The checked intermediate representation consumed by execution and environment services. | Chapter 02; partition LG4, LQ9 |
@@ -742,8 +968,8 @@ glossary summaries of the owning chapter, not competing contracts.
 | Boundary class | L6 | A shipped tool's reviewed class under the human-solve boundary. | Chapter 07; partition BM5 |
 | Declassifier | L6 | A fixed policy-enabled entry that permits a named information flow; programs cannot declare one. | Chapter 07; partition BM2 |
 | Flow rule | L6, not learner-facing unless LQ2 turns it on | A policy switch: when on, in the solving profile, a preview's word and target may depend on the state or computed results only through declassifiers. | Chapter 07 BND.33 |
-| Flow label | L6 | The provenance information following permitted data and control dependencies if LQ21 selects labels. | Chapter 07; partition LQ21 |
-| Capability separation | L6 | LQ21's alternative separating state-reading programs from preview-preparing programs. | Chapter 07; partition BM2 |
+| Flow label | L6 | The provenance information following permitted data and control dependencies; not selected, since LQ21 chose capability separation (RTE.24). | Chapter 07; partition LQ21 |
+| Capability separation | L6 | LQ21's selected mechanism (owner, 14 November 2026; RTE.24), separating state-reading programs from preview-preparing programs. | Chapter 07; partition BM2 |
 | Solving session | L2 | A session whose journal can stand as a solve record; every ordinary session is one. | Chapter 07 BND.14 |
 | Solve record | L2 | The journal of a solve, read as its record, with the assistance the system recorded. | Chapter 07 BND.14, BND.35 (the mathematician's reading; the term is used and never defined) |
 | Sink | L6 | A place a labelled value can reach: a preview, a draft, a display, a workspace, a file or a record. | Chapter 07 BND.26 |
@@ -771,7 +997,7 @@ glossary summaries of the owning chapter, not competing contracts.
 | Strategy | L6 | A research procedure composed over a declared search space and budget. | Chapter 03; partition LB5 |
 | Descent rank | L6 | A declared quantity with stated decrease obligations on the admitted operations. | Chapter 03; partition 10.3 |
 | View-model node | L6 | The declarative node by which program content reaches the host. | Chapter 10; EV3.2 |
-| View | L1 | A presentation of information at one revision. | Chapter 10; EV3.11; charter D8 and LQ6 |
+| View | L1 | A presentation of information at one revision; further views are allowed in every profile. | Chapter 10 RPI.81 to RPI.83; EV3.11; owner, 6 November 2026, LQ6 |
 | Panel | L6 | A declared host container for view-model content and its command references. | Chapter 10; EV3.2 |
 | Control | L6 | A view-model element naming a typed command interaction. | Chapter 10; EV3.2 |
 | Overlay | L1 | Declarative information attached to a view. | Chapter 10; partition EV3 |
@@ -793,7 +1019,7 @@ glossary summaries of the owning chapter, not competing contracts.
 | Routing class | L1 | The key-routing context that separates text, list or view navigation, and global dispatch. | EV4.4; DT-M1 Outcome C2 |
 | Portable key layer | L6 | The physical-code binding data below platform character labels and IME handling. | EV4.7; DT-M1 Outcome K5 |
 | Layout | L2 | A saved arrangement of what a view shows; a program's layout can change only where its source declares it editable. | Chapters 05, 10; EV3.7 |
-| Chart | L6 | A display map governed by chapter 10's declared domain and precision. | Chapter 10; partition LQ7 |
+| Chart | L6 | A display map governed by chapter 10's declared domain and precision, with a user vertex stage checked under its stage safety contract. | Chapter 10 RPI.68 to RPI.80; owner, 6 November 2026, LQ7 |
 | Display projection | L1 | A stated map used to display the geometry, without altering its canonical objects. | Chapter 10; charter M2 |
 | Section | L6 | A declared representation of a geometric section with its exact mathematical basis. | Chapters 03, 10; partition LB4 |
 | Atlas | L6 | A collection of linked charts with their domains and object correspondences. | Chapters 03, 10; partition LB4 |
@@ -845,19 +1071,31 @@ receipts keep their KN7 and KN5 outcomes; an open or unknown evidence value is n
 | --- | --- | --- |
 | `LG1:syntax.recovery_gap` | A missing or invalid source span was recovered for editing; it supplies no executable value. | EV1.2, EV1.4 |
 | `LG2:type.mismatch` | A source expression, edit or declared parameter has an incompatible type. | EV1.4, EV1.6, EV3.7 |
-| `LG2:type.exact_required` | An approximate value reaches an exact decision site. | EV1.4 |
+| `LG2:type.exactness_violation` | Forwarded unchanged under LG2.22's precedence. | EV1.4; LG2.22 |
+| `LG2:type.exact_required` | The direct scalar case delimited by LG2.22. | EV1.4; LG2.22 |
 | `LG3:effect.undeclared` | An inferred effect is outside the declaration or the allowed view effects. | EV1.4, EV3.2 |
 | `EV1:evidence.obligation_unmet` | A required claim or check is absent for a checked operation's obligation. | EV1.4 |
 | `EV1:stale.editor_source` | An editor response or proposed edit names source bytes that are no longer its target. | EV1.1, EV1.6 |
+| `EV1:input.source_range_invalid` | A source endpoint, host unit or conversion is invalid for the pinned scalar boundaries. | EV1.10 |
+| `EV1:input.module_not_checked` | Activation lacks a successful check of exactly the proposed module and dependency closure. | EV1.11 |
+| `EV1:stale.activation_base` | Another active module digest replaced the activation request's expected digest. | EV1.11 |
 | `EV2:input.replay_dependency_missing` | A required digest, source edition, IR version or trace input cannot be resolved. | EV2.1, EV2.3, EV2.6 |
+| `EV2:input.word_range_invalid` | A literal interval or compressed occurrence path disagrees with the word's exact expansion. | EV2.11 |
+| `EV2:stale.debug_stop` | A step request names an obsolete stop or reuses its request ID with different inputs. | EV2.12 |
 | `EV2:evidence.replay_mismatch` | Replay under the stated key differs from the record's required exact comparison. | EV2.4 |
 | `EV2:capability.debug_write_forbidden` | Debugging or replay would require a live write or an unsupported effect. | EV2.1, EV2.9 |
-| `EV3:stale.source_link` | A pick or source link does not match the adopted plan's base or producing source. | EV3.5, EV3.6 |
+| `EV3:stale.display_pick` | A pick binding is stale; checked before source navigation under RPI.24, RPI.25 and RM.10. | EV3.5 |
+| `EV3:stale.source_link` | After pick bindings pass, a source range is applied to a different producing digest under RM.10. | EV3.5, EV3.6 |
 | `EV3:input.round_trip_undeclared` | The selected source part does not declare the requested round-trip edit. | EV3.7 |
 | `EV4:input.binding_conflict` | Bindings resolve to a duplicate or conflicting physical chord in a routing class. | EV4.3, EV4.7 |
 | `EV4:input.binding_prefix_conflict` | A complete command binding is also a prefix of another sequence in that class. | EV4.7 |
 | `EV4:input.binding_layout_mismatch` | Layout-dependent resolution is missing or conflicts under a declared layout. | EV4.7 |
 | `EV4:input.recording_step_unresolved` | A recorded semantic step lacks a required command, module, object or input mapping. | EV4.13, EV4.14 |
+| `EV4:stale.recording_step` | An unattended step's arguments name a revision or preview that is not current, or a current undo or redo hint does not target the played action mapped from the recorded target; no silent retargeting is allowed. | EV4.14, EV4.18 |
+| `EV4:input.recording_identity_mismatch` | Model identity or an input digest differs from the recording's; refusal before playback, stop during it. | EV4.14 |
+| `EV4:input.recording_step_outcome_unknown` | A recorded step has no known terminal outcome; playback and conversion stop at that step. | EV4.19 |
+| `EV4:input.recording_state` | Start while recording, stop with none, or a play or `from` that EV4.22's table does not allow. | EV4.22 |
+| `EV4:input.recording_not_convertible` | A step has no form in the requested target, or the draft word is empty; nothing is written. | EV4.23 |
 
 ## 8. Conformance tests
 
@@ -868,12 +1106,13 @@ the unresolved protocols named in their checks.
 | Test | Checks | Class |
 | --- | --- | --- |
 | CT-EV1-01 | EV1.1, EV1.2: an incomplete declaration yields recovered spans and completion context but no runnable module. | source |
-| CT-EV1-02 | EV1.4: fixtures for types, effects, exactness, evidence obligations and model or menu mismatches produce distinct codes and correct source ranges. | source |
+| CT-EV1-02 | EV1.4: fixtures for types, effects, exactness, evidence obligations and model or menu mismatches produce distinct codes and correct source ranges; LG2.22's direct and helper condition refusals pass through unchanged, distinct from its direct scalar exact_required case. | source |
 | CT-EV1-03 | EV1.5, EV1.6: hover and definition resolve pinned dependencies; rename changes resolved references only and refuses stale edit targets. | source |
 | CT-EV1-04 | EV1.7, EV1.8: breaking a draft leaves the old digest running; every route refuses an unchecked new digest. | source |
-| CT-EV1-05 | EV1.10: multi-unit characters, insertion ranges and end positions round-trip through the chosen coordinate convention. | synthetic |
+| CT-EV1-05 | EV1.10: multi-unit characters, insertion ranges and end positions round-trip through the chosen coordinate convention. Malformed UTF-8 (61 FF 62 and truncated 61 F0 9F 98) uses ERR.10's raw context without a span or host conversion; even [0,0) is not a valid SourceRange for either input. | synthetic |
 | CT-EV1-06 | EV1.9: parse, diagnose and completion meet the chapter 11 LX-4 bars on realistic modules once the bars and protocol are set. | performance |
 | CT-EV1-07 | EV1.12: each editor refusal exposes the event, reason and next-action data without handling that depends on English text. | source |
+| CT-EV1-08 | LP4 (PHS.26, PHS.62), EV1.11: activation atomically changes A to B for later invocations while a suspended run stays on A. A stale expected digest and an unchecked candidate refuse without changing the active version. | source |
 | CT-EV2-01 | EV2.1, EV2.8: enumeration of debugger operations and stepping over effect sites changes no journal, workspace or session digest and emits no commit. | source |
 | CT-EV2-02 | EV2.2: exact values, declared display precision, partial results and unknown verdicts stay distinct in inspection. | source |
 | CT-EV2-03 | EV2.3, EV2.4: a complete reproducible record matches its exact bytes, outcome, coverage and charges on repeated headless replays. | source |
@@ -882,16 +1121,18 @@ the unresolved protocols named in their checks.
 | CT-EV2-06 | EV2.5, EV2.11: a compressed long step resolves the cited literal positions lazily under the chosen interval convention and retains its alphabet. | source |
 | CT-EV2-07 | EV2.6: checker trace steps bind the certificate and checker digests; the debugger imports no producer construction code. | source |
 | CT-EV2-08 | EV2.7: cached and uncached runs have the same deterministic charges; elapsed seconds never change the stop step. | source |
-| CT-EV2-09 | EV2.8, EV2.10: journal travel uses query rows and leaves the active line unchanged; unavailable revisions and LQ4 cancellation remain explicit. | source |
+| CT-EV2-09 | EV2.8, EV2.10: journal travel uses query rows and leaves the active line unchanged; unavailable revisions stay explicit and a digest-pinned research run finishes on its old input across commit or undo. | source |
 | CT-EV2-10 | EV2.9: effectful replay follows the settled contract, refuses live writes and distinguishes trace inspection from complete re-execution. | source |
+| CT-EV2-11 | LP4 (PHS.26, PHS.62), EV2.12: duplicate step requests across a suspended kernel call do not redispatch or recharge it; completion stops at the continuation. Missing source and step mappings, stale stops and every terminal reason stay distinct. | source |
 | CT-EV3-01 | EV3.1, EV3.5, EV3.6: source to node to instance to canonical ID to source returns the producing digest; duplicated instances retain one canonical identity. | synthetic |
 | CT-EV3-02 | EV3.3, EV3.10: a burst of revisions adopts the newest engine bundle at once, marks old program output stale and skips obsolete view evaluations. | synthetic |
 | CT-EV3-03 | EV3.4, EV3.12: an anchored derived display names its derivation and base without acquiring a revision; an imported value's plan states lineage `imported` and claims nothing with its comparison base. | source |
-| CT-EV3-04 | EV3.5: a delayed pick from an old revision or old source returns a stale link and never selects a replacement object. | synthetic |
+| CT-EV3-04 | EV3.5: a stale pick binding returns EV3:stale.display_pick before source navigation, including when source also differs; current bindings with a mismatched source digest return EV3:stale.source_link, while navigation to the producing version survives an editable-source change. | synthetic |
 | CT-EV3-05 | EV3.7: declared parameter, layout and default edits recheck source; an arbitrary drawn part cannot be round-tripped. | source |
 | CT-EV3-06 | EV3.8 to EV3.10: an off-lattice relation is distinct from unknown; unchanged frame draws perform no relation computation. | source |
 | CT-EV3-07 | EV3.2, EV4.15: a view cannot write workspace state or make undo stale; an explicit workspace command joins the durable action order. | source |
-| CT-EV3-08 | EV3.11: the selected LQ6 policy admits only its permitted view hosts while every plan keeps identity, base and source linkage. | source |
+| CT-EV3-08 | EV3.11, EV3.13: further views are admitted in every profile under RPI.81 to RPI.83, with identity, one base revision, source linkage and no program commit path; Global and Local remain linked and cannot be closed. Hidden allocations remain charged and opening/showing a view obeys RM.39's measured ceilings. | source |
+| CT-EV3-09 | EV3.13: H-11 carries RPI.15's display primitives, the RPI.68 to RPI.80 user-stage contract and the free-view workload into the renderer feature list before its freeze; layout, appearance, motion and wording remain under the design-line hold. | source |
 | CT-EV4-01 | EV4.1, EV4.2: overlay commands appear in the palette; forbidden kinds are refused and availability uses stored tables without running programs. | source |
 | CT-EV4-02 | EV4.3, EV4.4: key capture, text, list navigation and global dispatch run in the fixed order; resolved absolute arguments survive later camera and focus changes. | synthetic |
 | CT-EV4-03 | EV4.5: a blocked interpreter leaves kernel-row key dispatch independent and undo available through KN5. | source |
@@ -899,73 +1140,65 @@ the unresolved protocols named in their checks.
 | CT-EV4-05 | EV4.4, EV4.6, EV4.7: actual Windows IME, text undo and focus loss suppress puzzle dispatch and clear held keys. | windows |
 | CT-EV4-06 | EV4.7: duplicate and prefix conflicts fail per routing class; the DT-M1 US and French layout counterexample fails under its conflicting layout. | synthetic |
 | CT-EV4-07 | EV4.8, EV4.9: rebind alone changes the applied map; both puzzles use one macro base with identity, alphabet, literal order and exact expansion length preserved. | source |
-| CT-EV4-08 | EV4.10 to EV4.14: a recording contains semantic commands, canonical IDs and revisions, converts to checked source and follows the chosen capture and rebinding contracts. | source |
-| CT-EV4-09 | EV4.12: playback under the recommendation pauses for every user commit; the alternative automates view and workspace steps only; neither stores or replays a token. | source |
-| CT-EV4-10 | EV4.13, EV4.16: recording and source conversion preserve provenance, cannot revive old permission and cannot launder research output into a solving preview. | source |
+| CT-EV4-08 | EV4.10 to EV4.14: a recording retains semantic commands, canonical arguments, identities, word and action references, revisions and receipt bindings; playback has no rebinding operation and source conversion passes the ordinary checks and grants. | source |
+| CT-EV4-09 | EV4.12, EV4.18: conversion, stepwise play and unattended play never store or replay a token; every commit, including checkpoint save, waits for a fresh solver action; operation.execute uses a new whole-word preview, and a recorded live twist uses no preview (ONE.78). | source |
+| CT-EV4-10 | EV4.13, EV4.16, EV4.23: recording and both conversions preserve provenance through parts, cannot revive old permission and cannot launder research output into a solving preview; a source-produced word is refused under BND.84 in a solving session. | source |
+| CT-EV4-11 | EV4.10, EV4.11: resolved completed, committed and refused invocations each append one semantic step; unresolved input and recording.* append none. Pending outcomes never masquerade as commits; no token or operation preview ID enters the stored arguments. | source |
+| CT-EV4-12 | EV4.17, EV4.18, EV4.22: enumerate the eligibility table across kinds, lanes, jobs and gates. Camera rotation and an eligible workspace edit play; a no-job query in lane none plays only by the default; confirm, file_check, file, app, exclusive and job rows wait. Filter freshness remains checked without retargeting. | source |
+| CT-EV4-13 | EV4.19: cover every historical and new-child outcome in both tables. Historical refused/failed/cancelled steps remain visible and are skipped; missing terminals stop play and conversion with recording_step_outcome_unknown. Only completed advances an unattended child, while completed/committed advances a user child; new refusals, failures, cancellations and unknown outcomes stop without retry. | source |
+| CT-EV4-14 | EV4.20, PS1.44: crash after pending is durable but before dispatch; after durable child completion but before cursor advance; and during a manual continuation. Outcome lookup precedes continuation, each known success advances at most once, unknown_outcome never dispatches a fresh retry, and an unrelated invocation never moves the cursor. | synthetic |
+| CT-EV4-15 | EV4.21: play an undoable workspace edit, camera.rotate and a query. Only the workspace action becomes an undo target; camera/timer rows with undo none invent none, and the cursor is never undoable. A later failure retains earlier completed actions. | source |
+| CT-EV4-16 | EV4.14: an unattended step naming a revision that is still current plays, and one naming a revision that is not current, or a filter preview that is not fresh, stops as stale; a changed model or input digest refuses before play or stops during it with recording_identity_mismatch. No canonical argument is silently retargeted. | source |
+| CT-EV4-17 | EV4.23: test both targets on the five vectors: camera only refuses an empty draft and becomes a permitted source call; macro.add(W), operation.execute(W) yields W once; W1, W2, undo W2, W3 yields W1 W3; undo of an older action refuses; jumble.on between word steps refuses. Every refusal writes nothing. | source |
+| CT-EV4-18 | EV4.23: a redo restores a word at its recorded place; undo/redo of a recorded non-word action and checkpoint save add no draft letters but refuse source. Completed non-word steps enter the draft report; source accepts only KN5.4-invocable calls without confirm/file_check and refuses file/app. A successful draft conversion is one undoable Macro-phase action retaining every contributing block. | source |
+| CT-EV4-19 | EV4.22: start while recording, stop with none and a play or from outside the table refuse with recording_state. Each table row gives its outcome after reconciliation, a rewind opens a new playback with an empty map, and W, rewind, W, undo undoes the second W only; play ends at the next user step or end, job.stop halts it, and every child has a new command/request receipt binding. | source |
+| CT-EV4-20 | EV4.18, PS1.44: record W then undo of W. In playback W takes action 100, then an ordinary macro.add(X) outside playback takes 101 and leaves the cursor. The undo step reads a hint targeting 101, so playback stops with stale.recording_step, X is not undone and W stays applied. A recorded target with no actions entry stops the same way, and redo resolves through the same map. | source |
 | CT-EV5-01 | EV5.2 to EV5.5: generated docs and principle records resolve their pinned source, domains, empty-answer meanings, instances, decomposition, evidence and the parts a person writes; a fork inherits no check. | source |
 | CT-EV5-02 | EV5.6, EV5.10, EV5.14, EV5.15, EV5.18: the integrated glossary covers chapter terms, proposed changes have been reviewed, every entry has build evidence, each sense of a homonym has its own row, flow goals need no undisclosed concept, each step's prerequisite concepts are taught before that step's task, and prerequisites form a DAG. | source |
 | CT-EV5-03 | EV5.7, EV5.8: non-authors perform isolated fixture and transfer tasks under the owner's rubric; correctness, time and help use are reported separately. | human |
 | CT-EV5-04 | EV5.8, EV5.9: ordinary soft disclosure never locks commands; if the owner chooses BS3, only the settled per-principle capability gate changes preview access. | source |
 | CT-EV5-05 | EV5.1, EV5.3, EV5.11: the mathematician reviews the principle explanations and shared grammar; people can follow a real example to its primitives and its reasons under the owner's comprehension protocol. | human |
-| CT-EV5-06 | EV5.13: each selected evidence-model and envelope option is displayed through chapter 06's rules without merging job outcome, evidence, score or permission. | source |
+| CT-EV5-06 | EV5.13: chapter 06 derives explanation words from the facts envelope, with statement, scope, basis, check and job outcome separate; source labels remain visible, no writer asserts formal proof in 1.0, and evidence, score and permission never merge. | source |
+| CT-EV5-07 | EV5.17: the 1.0 inventory includes the research library and archive checkers, excludes the repository's theory book, proofs and stage research records, and retains library explanations without extending the theory book to them. | source |
 
 ## 9. Open items
 
-The partition's owner questions remain open. This table records their effect on this chapter; it supplies no answers.
+The owner answered LQ1 to LQ21 on 6 November 2026 and chose LQ8, LQ9 and LQ21 on 14 November 2026: the engine and the
+interpreter's host in Rust, route RT1 with the runtime in a process of its own, and capability separation (RTE.17,
+RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits for the joint setting.
+This table records the remaining choices and what decides them.
 
 | Question | What stays fixed and what the answer changes | Clauses |
 | --- | --- | --- |
-| LQ1, one language or several | Digest-bound source and records stay fixed; shared versus separate research tooling changes editor coverage and the final learning steps. Capability profiles do not by themselves authorize separate product entrances. | EV1.1, EV5.2, EV5.6 |
 | LQ2, solver-developed tools | The execution gate and built-in boundary stay; the joint policy decides admitted preview and display flows and any BS3 competence gate. | EV4.16, EV5.9, EV5.16 |
-| LQ3, evidence model | Source labels and references remain traceable; diagnostic obligations and explanation summaries use the selected evidence model. | EV1.4, EV2.5, EV5.13, EV5.14 |
-| LQ4, branches and pinned jobs | Journal inspection remains read-only; branch hosts and cancellation of pinned runs follow the selected option. | EV2.8, EV2.10 |
-| LQ5, built-in implementation | Every built-in retains source and a principle record; the source language, debugger mapping and documentation adapter can differ for native tools. | EV1.7, EV2.12, EV5.2 |
-| LQ6, views and D8 | Identity, revisions and source linkage stay fixed; allowed research and solving view hosts change. | EV3.11 |
-| LQ7, user charts | Picking remains instance-based; generated charts, built-in parameterised charts or a user shader route change chapter 10's admitted plan producers. | EV3.5, EV3.13 |
-| LQ8, engine language | Service meaning and KN7 units remain; library adapters, the checker host and LX-4's implementation depend on this choice. | EV1.9, EV2.7 |
-| LQ9, route and placement | Checked versions and read-only debugging remain; transport, fault containment, IR stepping and source mappings need the selected route. | EV1.9, EV1.11, EV2.12, EV4.5 |
-| LQ10, persistence freeze | Semantic identities and provenance remain; chapter 05 fixes stored recordings, bindings and evidence facts or judgements in the chosen freeze. | EV4.7, EV4.9 to EV4.14, EV5.13 |
-| LQ11, recording playback | No unattended puzzle commit is admitted; the alternative adds unattended view and workspace playback. | EV4.10 to EV4.14 |
-| LQ12, module sharing | Modules resolve by digest; the accepted sharing scope changes dependency acquisition, not permission or replay identity. No network capability is granted here. | EV1.1, EV2.3, EV5.2 |
-| LQ13, syntax | Service operations and source identity remain; recovery structures, ranges and rename syntax follow the selected edition and LX-8. | EV1.2, EV1.6, EV1.10, EV5.12 |
-| LQ14, learning gates | Competence facts stay apart from evidence and progress; guidance versus hard access gates needs the owner's decision with LQ2. | EV5.7 to EV5.9 |
-| LQ15, formal proofs | Existing checker traces and provenance remain; a proof-assistant choice adds evidence links and learning material under chapter 06. | EV2.6, EV5.3, EV5.11 |
-| LQ16, the 1.0 cut | The named services retain their contracts; the shipped library and research coverage changes which docs, fixtures and learning material must be delivered. | EV5.2, EV5.6, EV5.17 |
-| LQ17, name | Neutral service and data meanings remain; language name and source extension stay working names. | EV1.1, EV5.2 |
-| LQ18, evidence spikes | No measurement is claimed here; permission and timing of LX-4 and LX-8 work follow chapter 11. | EV1.9, EV5.12 |
-| LQ19, freeze order | No gate is relaxed; when authoring services and the editor's design can be built depends on the charter decision and chapter 12. | EV1.11, EV3.13, EV5.11 |
-| LQ20, renderer handoff | The declarative plan boundary stays; a handoff before renderer freeze or fitting the existing feature set changes its integration work. | EV3.13 |
-| LQ21, flow control | Provenance survives storage and conversion; labels versus capability separation changes diagnostics, inspectable dependencies and preview grants. | EV1.4, EV2.2, EV4.16 |
+| LQ8, engine language (answered) | The engine is written in Rust (owner, 14 November 2026, LQ8; RTE.17); library adapters, the checker host and LX-4's implementation follow it. LX-5 and LX-6 ran on 14 November 2026 and the owner accepted them as decisive (RTE.82). | EV1.9, EV2.7 |
+| LQ9, route and placement (answered) | Route RT1 with the runtime in a process of its own (owner, 14 November 2026, LQ9; RTE.21). The decisive LX-1, LX-2 and LX-4 runs are LP3 acceptance checks with their bars unchanged; if one fails, LQ9 reopens. | EV1.9, EV1.11, EV2.12, EV4.5 |
+| LQ13, syntax | LX-8's human learnability test decides the edition's syntax before LP2 builds the parser; source preparation has run, but the human test has not. | EV1.2, EV1.6, EV1.10, EV5.12 |
+| LQ21, flow control (answered) | Capability separation (owner, 14 November 2026, LQ21; RTE.24); LX-3's decisive check is part of LP3 acceptance. Provenance survives the choice. | EV1.4, EV2.2, EV4.16 |
 
 The clauses tagged `[O]` leave these specific contracts unsettled:
 
 | Clause | Open mechanism or decision | Decides it |
 | --- | --- | --- |
-| EV1.10 | Source-range units, endpoints and host conversion | LP1 editor protocol with chapter 10 |
-| EV1.11 | Automatic promotion versus explicit activation of a checked version, including running old jobs | Integrator's LP1 service contract; LQ9; later design-line interaction |
+| EV1.13 | Automatic versus user-triggered requests to the specified activation service; editor appearance | Owner and resumed design line; no trigger chosen |
 | EV2.9 | Captured inputs and recorded-effect inspection versus isolated effect sinks for replay | Chapters 05 and 09 |
-| EV2.11 | Word interval convention and compressed expansion positions | Chapter 05 and KN6.4 trace contract |
-| EV2.12 | Executable step granularity and mappings for the selected execution route | Chapter 02, LQ9 and LP1 |
-| EV4.11 | Recording capture point, refusals and unresolved outcomes | Chapter 05 and the integrator's receipt contract |
-| EV4.14 | Historical-only playback versus explicitly checked revision rebinding | Chapters 05 and 08 |
-| EV5.9 | BS3's competence gate and validity after a principle-record change | Joint setting of LQ2 with LQ14 |
+| EV5.9 | BS3's competence gate and validity after a principle-record change | Joint setting of LQ2 under soft disclosure |
 | EV5.12 | Human-test rubrics, comprehension and transfer criteria | Owner, with the mathematician; chapter 11 for LX-8 |
-| EV5.14 | Proposed learning levels and a first-use order for jumbling and language terms | The owner's learning path; LQ3 for evidence words |
-| EV5.17 | Whether the theory book covers the language's libraries | The owner, with LQ16 |
+| EV5.14 | Proposed learning levels and a first-use order for jumbling and language terms | The owner's learning path, with chapter 06's evidence vocabulary |
 
 Other dependencies and differences in the sources remain visible:
 
 | Source or dependency | Difference or unfinished obligation | Affected clauses |
 | --- | --- | --- |
-| H-08 versus DT-M1 | H-08 retains the draft contexts and commit-only repeat validation. DT-M1 fixes routing classes, the repeat allowlist, the single undo order and the missing workspace-undo path. EN4's final table and builder checks must carry those changes, including removal of undo's `not_busy` gate. | EV4.1 to EV4.8, EV4.15 |
-| H-08 availability versus the overlay | H-08 says the command layer asks the engine; KN5.7 also needs the overlay's static table. KN5.8 leaves their protocol for the architecture plan check. The environment consumes the resulting table rather than deciding availability. | EV1.8, EV4.1, EV4.2 |
+| H-08 and DT-M1 | KN5.20, LI.9 and LI.26 specify the single durable undo order and shared entry during jobs. The table reconciliation and builder checks must match those clauses, DT-M1 routing and the repeat allowlist; runtime conformance is still owed. | EV4.1 to EV4.8, EV4.15 |
+| Availability and overlays | KN5.8 cites LI.18 to LI.21's argument-aware table, overlay conjunction and generation event. The environment consumes that draft protocol; its implementation and assembled-candidate review remain owed. | EV1.8, EV4.1, EV4.2 |
 | H-08's renderer rule versus derived-state display | The older table forbids drawing an uncommitted state. The partition and KN2.12 require explicitly identified derived display plans. ONE.62 and RPI.7 keep these plans apart from adoption of the session state, and the renderer handoff carries that line. | EV3.3 to EV3.5, EV3.12, EV3.13 |
 | Solving workflow's historical key sets versus DT-M1 | The workflow records 0.4's orbit sets as historical requirements; DT-M1 selects one default map, explicit applied anchors and solver rebinds for 1.0. Its settled rule governs bindings here. | EV4.7, EV4.8, EV5.6 |
 | Glossary versus DT-M1 and KN1 | The current twist entry equates a twist with a generator. Cap, label, piece, generator, orbit, orientation, protection-prefix and complete-effect entries need their puzzle and level scope; label-fixed centres can rotate in pose. Section 6 proposes corrections without changing the glossary. | EV2.2, EV3.9, EV4.9, EV5.14 |
 | Research block, frame and unit vocabulary | The tail's block and frame-part unit differ from a solver-declared block and an ordered sticker frame; card 6 uses unit for pieces with one exact pose. Proposed entries qualify those meanings instead of merging them, and EV5.18 lists the proposed names. | EV5.10, EV5.14, EV5.18 |
 | KN2.14 versus the display base requirement | An imported derived value need not have the snapshot ancestry from which EV3's required base revision would come. The kernel remains unchanged; ONE.21 and EV3.12 give the display contract. | EV3.4, EV3.12 |
 | DT-L1 rounds 2 and 3 | Round 3 answered R2-E1 to R2-E4 (overview section 8). Every use here names its card, and EV3.8, EV3.9, EV5.3 and EV5.4 carry round 3's corrections. | EV2.5, EV2.6, EV2.10, EV3.8, EV3.9, EV4.9, EV4.16, EV5.3, EV5.4, EV5.10, EV5.13, EV5.14 |
-| EN3 and EN4 | Relationship data joins EN3's pending view-model fields; overlay registration, query rows, lanes, receipt and availability transport, bindings and undo require EN4's final H-08. | EV1.8, EV2.8, EV3.8, EV4.1 to EV4.15 |
+| EN3 and EN4 | Relationship data uses RPI.5/RPI.65; LI.3 and LI.31 specify layer ownership and publication. LI.14, LI.18 to LI.30 and KN5.21/KN5.23 supply query, availability, lane, undo and outcome contracts. Final row reconciliation, implementation and conformance remain owed. | EV1.8, EV2.8, EV3.8, EV4.1 to EV4.15 |
 | Other chapters | Chapter 02 owns checker and IR services; 03 principle records; 05 bytes and versioning; 06 evidence meaning; 07 and 09 policy and grants; 08 lifecycles; 10 display linkage; 13 error spellings. | EV1 to EV5 |
-| LX-4, LX-8 and chapter 12 | Editor latency bars, human-test form and phased acceptance remain future requirements, with no result claimed here. | EV1.9, EV5.12; CT-EV1-06, CT-EV5-03, CT-EV5-05 |
+| LX-4, LX-8 and chapter 12 | First-pass headless function timings and syntax preparation are recorded in work/experiments/language-lx/lx4-editor/RESULT.md and lx8-surfaces/RESULT.md. They establish neither presented-frame latency nor human comprehension; LX-4's decisive run is an LP3 acceptance check with its bars unchanged (RTE.21), and the human test needs the owner's protocol. | EV1.9, EV5.12; CT-EV1-06, CT-EV5-03, CT-EV5-05 |
 | Design line | The owner's 3 November hold still covers the editor's appearance, the strip's design and DT-J2 to DT-J4. This data chapter reopens none of them. | EV1.12, EV3.13, EV5.11 |

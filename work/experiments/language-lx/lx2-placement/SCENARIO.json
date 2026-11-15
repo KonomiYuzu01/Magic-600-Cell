@@ -1,0 +1,30 @@
+{
+  "format": "LX2-placement-script-1",
+  "decision": "open",
+  "decider": "owner",
+  "baseline_word": [1, 2, -3],
+  "runtime_word": [7, -11, 1200],
+  "final_word": [600, -1200, 23, 1],
+  "command_sequence": [
+    "preview baseline_word", "commit baseline preview and retain durable receipt",
+    "runtime read_labels, read_pose_bundle, check_word, preview runtime_word",
+    "runtime attempt commit (must be refused)", "arm fault barrier", "release runtime",
+    "observe job outcome (or host death)", "inspect pending preview and prior receipt",
+    "commit runtime preview", "undo", "preview final_word", "commit final preview",
+    "inspect open session and journal; then stop fixture processes"
+  ],
+  "placements": ["inside_engine", "own_process"],
+  "faults": ["control", "allocation_metered", "recursion_metered", "loop_metered",
+             "allocation_native", "recursion_native", "loop_native", "forced_kill"],
+  "limits": {
+    "metered_memory_bytes": 1048576,
+    "allocation_chunk_bytes": 65536,
+    "metered_recursion": 64,
+    "metered_instructions": 100000,
+    "native_allocator_cumulative_bytes": 8388608,
+    "native_allocation_chunk_bytes": 1048576,
+    "runtime_thread_stack_bytes": 131072,
+    "native_recursion_frame_bytes": 4096,
+    "host_watchdog_ms": 1000
+  }
+}

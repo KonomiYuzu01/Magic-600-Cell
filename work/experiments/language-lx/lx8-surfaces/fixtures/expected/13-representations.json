@@ -1,0 +1,128 @@
+{
+  "ir_version": "lx8-ir-0",
+  "edition": "lx8-0",
+  "module": "representation_inputs",
+  "requires": [],
+  "imports": [],
+  "declarations": [
+    {
+      "kind": "function",
+      "name": "relations",
+      "params": [
+        {
+          "name": "graph",
+          "type": "Graph<Full,Labels>"
+        },
+        {
+          "name": "layout",
+          "type": "Layout<Full,Labels>"
+        },
+        {
+          "name": "projection",
+          "type": "Projection<Jumble,Poses,Labels>"
+        },
+        {
+          "name": "complex",
+          "type": "CellComplex<Full,Labels,D2>"
+        },
+        {
+          "name": "section",
+          "type": "Section<Full,Labels>"
+        },
+        {
+          "name": "atlas",
+          "type": "Atlas<Full,Labels>"
+        },
+        {
+          "name": "action",
+          "type": "Action<Full,Labels>"
+        },
+        {
+          "name": "embedding",
+          "type": "Embedding<Full,Labels>"
+        },
+        {
+          "name": "tree",
+          "type": "Tree<Full,Labels>"
+        },
+        {
+          "name": "states",
+          "type": "StateGraph<Jumble,Poses>"
+        }
+      ],
+      "result": "Relation<Full,Labels>",
+      "declared_effects": [],
+      "effects": [],
+      "charges": {
+        "steps": "12",
+        "kernel": "0",
+        "memory": "0",
+        "output": "0"
+      },
+      "metadata": null,
+      "bindings": [],
+      "body": {
+        "op": "call",
+        "type": "Relation<Full,Labels>",
+        "effects": [],
+        "charges": {
+          "steps": "1",
+          "kernel": "0",
+          "memory": "0",
+          "output": "0"
+        },
+        "target": "representation",
+        "args": [
+          {
+            "op": "ref",
+            "type": "Graph<Full,Labels>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "graph"
+          },
+          {
+            "op": "ref",
+            "type": "Layout<Full,Labels>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "layout"
+          },
+          {
+            "op": "ref",
+            "type": "Projection<Jumble,Poses,Labels>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "projection"
+          },
+          {
+            "op": "ref",
+            "type": "CellComplex<Full,Labels,D2>",
+            "effects": [],
+            "charges": {
+              "steps": "0",
+              "kernel": "0",
+              "memory": "0",
+              "output": "0"
+            },
+            "name": "complex"
+          }
+        ]
+      }
+    }
+  ]
+}

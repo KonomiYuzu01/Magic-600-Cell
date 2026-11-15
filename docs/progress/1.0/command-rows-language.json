@@ -1,0 +1,179 @@
+{
+  "format": "c600-command-rows-delta-1",
+  "add": [
+    {
+      "id": "view.open",
+      "label": "Open a view",
+      "kind": "view",
+      "inventory": [],
+      "gates": [],
+      "lane": "view",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Opens a further view from a ViewSourceRef. Runs only inside a command the solver invoked; a view cannot open views. An open ViewId refuses with EV3:input.view_id_in_use.",
+      "source": "Owner, 6 November 2026, LQ6; RPI.83",
+      "arguments": {
+        "view": "ViewId",
+        "source": "ViewSourceRef"
+      },
+      "lane_target": {
+        "arg": "view"
+      }
+    },
+    {
+      "id": "view.close",
+      "label": "Close a view",
+      "kind": "view",
+      "inventory": [],
+      "gates": [],
+      "lane": "view",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Closes a further view. Global, Local and an unknown view refuse with EV3:input.view_not_closable.",
+      "source": "Owner, 6 November 2026, LQ6; RPI.83",
+      "arguments": {
+        "view": "ViewId"
+      },
+      "lane_target": {
+        "arg": "view"
+      }
+    },
+    {
+      "id": "recording.start",
+      "label": "Start recording",
+      "kind": "workspace",
+      "inventory": [],
+      "gates": [],
+      "lane": "none",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Starts capture of resolved invocations, including refusals, excluding recording.*; a second start refuses with EV4:input.recording_state.",
+      "source": "Owner, 6 November 2026, LQ11; EV4.22",
+      "arguments": {
+        "name": "Text"
+      }
+    },
+    {
+      "id": "recording.stop",
+      "label": "Stop recording",
+      "kind": "workspace",
+      "inventory": [],
+      "gates": [],
+      "lane": "none",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Ends capture and stores the recording; with no recording it refuses with EV4:input.recording_state.",
+      "source": "Owner, 6 November 2026, LQ11; EV4.22",
+      "arguments": {
+        "recording": "RecordingRef"
+      }
+    },
+    {
+      "id": "recording.play",
+      "label": "Play a recording",
+      "kind": "workspace",
+      "inventory": [],
+      "gates": [],
+      "lane": "program",
+      "preview": "none",
+      "undo": "none",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": true,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Plays view and workspace steps unattended and never a commit. Stops and waits for one user action at commit-lane, confirm, file_check, file, app, exclusive-lane and job rows (EV4.18, PS1.44).",
+      "source": "Owner, 6 November 2026, LQ11; EV4.22",
+      "arguments": {
+        "recording": "RecordingRef",
+        "from": "Nat?"
+      }
+    },
+    {
+      "id": "recording.convert",
+      "label": "Convert a recording",
+      "kind": "workspace",
+      "inventory": [],
+      "gates": [],
+      "lane": "none",
+      "preview": "none",
+      "undo": "workspace",
+      "contexts": [
+        "any"
+      ],
+      "repeat": false,
+      "job": false,
+      "key_0_4": null,
+      "disposition": [],
+      "note": "Converts a recording to a draft or to source; a step with no form in the target refuses with EV4:input.recording_not_convertible.",
+      "source": "Owner, 6 November 2026, LQ11; EV4.23",
+      "arguments": {
+        "recording": "RecordingRef",
+        "target": "draft | source"
+      }
+    }
+  ],
+  "amend": [
+    {
+      "id": "twist.apply",
+      "expect": {
+        "note": "live only; ONE.78 assumes no preview, pending owner confirmation"
+      },
+      "set": {
+        "note": "live only; no preview (ONE.78; owner, 6 November 2026, decision 10)",
+        "arguments": {
+          "cap": "CapId",
+          "rotation": "ExactRotationRef",
+          "token": "UserActionToken"
+        }
+      },
+      "source": "Owner, 6 November 2026, decision 10; ONE.78"
+    },
+    {
+      "id": "jumble.twist.menu",
+      "expect": {
+        "note": "Resolved absolute cap and exact pinned-menu item. Retained items dispatch by mode; jumble items require Jumble on. Current ONE.78 live-turn assumption; owner alternative adds a fresh preview."
+      },
+      "set": {
+        "note": "Resolved absolute cap and exact pinned-menu item. Retained items dispatch by mode; jumble items require Jumble on. A live turn has no preview (ONE.78; owner, 6 November 2026, decision 10).",
+        "arguments": {
+          "cap": "CapId",
+          "letter": "PinnedMenuLetter",
+          "revision": "RevisionRef",
+          "token": "UserActionToken"
+        }
+      },
+      "source": "Owner, 6 November 2026, decision 10; ONE.78"
+    }
+  ]
+}
