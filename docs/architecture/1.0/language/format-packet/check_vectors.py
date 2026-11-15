@@ -85,6 +85,23 @@ def supported(header):
             type(header["version"]) is int and header["version"] == 1, VERSION)
 
 
+REF_KEYS, CONTENT_KEYS = frozenset({"format", "version", "content"}), frozenset({"role", "sha256"})
+
+
+def follow(ref, records, missing):
+    """FP.10 (migration-format-freeze ruling, MFF-02): dispatch a Ref, follow its content digest and dispatch the
+    record it resolves to; only then FP.11's Ref shape. Callers check the expected kind and the header equality
+    afterwards. A known Ref whose digest names no record gives `missing`."""
+    supported(ref)
+    content = ref.get("content")
+    require(isinstance(content, dict) and isinstance(content.get("sha256"), str), FORMAT)
+    record = records.get(content["sha256"])
+    require(record is not None, missing)
+    supported(record)
+    require(set(ref) == REF_KEYS and set(content) == CONTENT_KEYS and content["role"] == "content", FORMAT)
+    return record
+
+
 def limits_from_text():
     text = (HERE / "README.md").read_bytes().decode("utf-8")
     rows = re.findall(r"^\| ([a-z][a-z0-9_]+) \| [^|]+ \| (\d+) \| (\d+) \|$", text, re.M)
@@ -1433,11 +1450,9 @@ def playback_storage_result(given):
     payload = wrapper["payload"]
     require(set(payload) == {"id", "kind", "value", "dependencies", "action", "revision"}, FORMAT)
     value = payload["value"]
-    supported(value)
-    require(payload["kind"] == value["format"] == ident("playback"), FORMAT)
     records = {sha(canonical(record)): record for record in given["records"]}
-    record = records.get(value["content"]["sha256"])
-    require(record is not None, DIGEST)
+    record = follow(value, records, DIGEST)  # FP.10 before the expected kind (MFF-02)
+    require(payload["kind"] == value["format"] == ident("playback"), FORMAT)
     record_header(record)
     require(record["format"] == value["format"] and record["version"] == value["version"], FORMAT)
     require(record["provenance"] is None, FORMAT)
@@ -1467,10 +1482,8 @@ def playback_storage_result(given):
         require(status in ({"kind": "running"}, {"kind": "finished"}), FORMAT)
     last, command = state["last"], None
     if last is not None:
-        supported(last)
+        receipt = follow(last, records, DIGEST)
         require(last["format"] == ident("receipt"), FORMAT)
-        receipt = records.get(last["content"]["sha256"])
-        require(receipt is not None, DIGEST)
         record_header(receipt)
         require(receipt["format"] == last["format"] and receipt["version"] == last["version"], FORMAT)
         require(set(receipt["payload"]) == {"command", "request", "job", "status"}, FORMAT)
@@ -1487,10 +1500,8 @@ def pick_result(given):
     pick = block["pick"]
     require(pick is not None, PROVENANCE)
     reference = pick["record"]
-    supported(reference)
+    record = follow(reference, records, PROVENANCE)  # FP.10 before the expected kind (MFF-02)
     require(reference["format"] == ident("pick"), PROVENANCE)
-    record = records.get(reference["content"]["sha256"])
-    require(record is not None, PROVENANCE)
     record_header(record)
     require(record["format"] == reference["format"] and record["version"] == reference["version"], PROVENANCE)
     require(record["provenance"] is None, FORMAT)
@@ -1577,8 +1588,8 @@ def obligation_result(given):
             "source": source, "sha256": sha(source.encode("utf-8"))}
 
 
-# FP.24 Path B packages (migration-format-freeze ruling, MFF-01). `path_b_package` builds the synthetic
-# golden packages in memory; `path_b_read` validates one from its archive bytes alone.
+# FP.24 Path B packages (migration-format-freeze rulings, MFF-01, MFF-02 and MFF-04). `path_b_package` builds
+# the synthetic golden packages in memory; `path_b_read` validates one from its archive bytes alone.
 ZIP_DATE = (1 << 5) | 1  # DOS date 1980-01-01; the DOS time field is zero
 NAMED_MEMBERS = {"session/record.json": "session", "session/checkpoint-paths.json": "paths",
                  "workspace/macros.json": "macros", "workspace/keymap.json": "keymap",
@@ -1602,19 +1613,51 @@ def member_role(name):
     return "log" if name.startswith("logs/") and len(name) > 5 else None
 
 
-def ref_links(value, refs, blobs):
-    """Collect content Refs and BlobRefs; a bare DigestRef or Pin names bytes and is not a dependency."""
-    if isinstance(value, dict):
-        if set(value) == {"format", "version", "content"}:
-            refs.append(value)
-        elif set(value) == {"stored", "decoded", "stored_bytes", "decoded_bytes", "encoding"}:
-            blobs.append(value)
+# FP.10, FP.24 (MFF-02): a reader finds Refs by their schema position in a dispatched record, never by their
+# shape. In a path, `*` spans a list and a final `?` lets null mean no Ref. The rows are the kinds of the golden
+# family (FP.26); the reference reader refuses any other kind instead of implementing it. A bare DigestRef or Pin
+# names bytes and is not a dependency.
+REF_FIELDS = {
+    "session-record": ("head", "checkpoints.*", "preferences"),
+    "checkpoint": ("payload.root.checkpoint", "payload.root.evidence", "payload.path", "payload.preferences",
+                   "payload.episode?", "payload.exit?"),
+    "replay-path": ("payload.root?", "payload.events.*.value", "payload.events.*.preferences?"),
+    "recipe": (),
+    "preferences": ("payload.protection", "payload.conversion?"),
+    "protection-set": ("payload.origin?",),
+    "migration": ("payload.target?", "payload.checks.*"),
+    "macro-set": ("payload.entries.*", "payload.origin?"),
+    "macro": ("payload.value", "payload.evidence.*"),
+    "workspace": ("payload.value", "payload.dependencies.*"),
+    "filter": ("payload.conversion?",),
+}
+BLOCK_REFS = ("pick.record", "declassified.*.record")  # FP.17's Refs in a provenance block
+FAMILY = {ident(kind): kind for kind in REF_FIELDS}
+BLOB_KEYS = frozenset({"stored", "decoded", "stored_bytes", "decoded_bytes", "encoding"})
+
+
+def at_path(value, path):
+    """The values at a dotted schema path; `*` spans a list, and a missing step yields nothing."""
+    values = [value]
+    for step in path.split("."):
+        if step == "*":
+            values = [child for item in values if isinstance(item, list) for child in item]
         else:
-            for child in value.values():
-                ref_links(child, refs, blobs)
-    elif isinstance(value, list):
-        for child in value:
-            ref_links(child, refs, blobs)
+            values = [item[step] for item in values if isinstance(item, dict) and step in item]
+    return values
+
+
+def position_refs(record):
+    """The Refs at a dispatched record's schema positions, its provenance blocks included (FP.17)."""
+    kind = FAMILY.get(record["format"])
+    if kind is None:
+        return []
+    blocks = ("provenance", "payload.assistance") if kind == "checkpoint" else ("provenance",)
+    refs = []
+    for path in REF_FIELDS[kind] + tuple(f"{block}.{inner}" for block in blocks for inner in BLOCK_REFS):
+        optional = path.endswith("?")
+        refs.extend(ref for ref in at_path(record, path.rstrip("?")) if ref is not None or not optional)
+    return refs
 
 
 def zip_store(members):
@@ -1668,29 +1711,46 @@ def zip_read(data):
 
 
 def path_b_package(fixture, raw_copy, reference, examples, mutation=None):
-    """FP.24's synthetic golden package: `fresh-session` (F12) or `abandoned-branch` (F10). Not importer output."""
+    """FP.24's synthetic golden package: `fresh-session` (F12) or `abandoned-branch` (F10). Not importer output.
+
+    Mutations: `ref` changes the session's `head` Ref (`at:"head"`, with the head checkpoint record at
+    `record_version`) or the head checkpoint's `preferences` Ref to a separate preferences record (`at:
+    "head.preferences"`) by `ref` overrides and `remove`d fields (MFF-02); `pad` makes `session/record.json`
+    (`carrier:"named"`) or the head checkpoint's `records/` carrier (`carrier:"digest"`) exactly `bytes` long,
+    stored as `stored` if given (MFF-04); the others change members after assembly (MFF-01)."""
     identity = {"puzzle": "full", "model_id": reference.manifest["model_id"],
                 "menu_id": None, "menu_order": None, "contract_rev": None}
     block = examples["records"]["manual_capability"]["provenance"]
     stored = {}
+    mutation = mutation or {}
+    change = mutation.get("kind")
 
     def keep(record):
         raw = canonical(record)
         stored[sha(raw)] = raw
         return {"format": record["format"], "version": record["version"], "content": digest_ref("content", raw)}
 
-    def wire(kind, payload):
-        return keep({"format": ident(kind), "version": 1, "identity": identity, "payload": payload,
-                     "provenance": None if kind in {"recipe", "checkpoint", "replay-path", "migration"} else block})
+    def record_of(kind, payload, version=1):
+        return {"format": ident(kind), "version": version, "identity": identity, "payload": payload,
+                "provenance": None if kind in {"recipe", "checkpoint", "replay-path", "migration"} else block}
+
+    def wire(kind, payload, version=1):
+        return keep(record_of(kind, payload, version))
+
+    def changed(ref):
+        ref = {**ref, **mutation.get("ref", {})}
+        for field in mutation.get("remove", []):
+            del ref[field]
+        return ref
 
     def pin(text):
         return {"version": "fixture-1", "source": digest_ref("source", text.encode("utf-8"))}
 
-    def preferences(show):
+    def preferences(show, version=1):
         entry = {"name": "show_frame", "value": show, "outcome": "converted",
                  "source": digest_ref("bytes", b"show_frame=" + (b"true" if show else b"false"))}
         return wire("preferences", {"contract": pin("preferences"), "entries": [entry], "protection": protection,
-                                    "conversion": None})
+                                    "conversion": None}, version)
 
     branch = {"fresh-session": False, "abandoned-branch": True}[fixture]
     protection = wire("protection-set", {"level": "labels", "members": [{"kind": "orbit", "id": 0}], "mode": "net",
@@ -1717,19 +1777,33 @@ def path_b_package(fixture, raw_copy, reference, examples, mutation=None):
         paths[event] = wire("replay-path", {"root": None, "head": event, "events": events})
         prefs[event] = preferences(False)
     labels = {point: states[point] for point in [head] + offered}
-    if mutation and mutation["kind"] == "exchange_labels":
+    if change == "exchange_labels":
         labels[head], labels[offered[0]] = labels[offered[0]], labels[head]
     checkpoints = {}
     for point in [head] + offered:
-        checkpoints[point] = wire("checkpoint", {
+        payload, version = {
             "id": "current" if point == head else "branch-" + point,
             "name": "Current state" if point == head else "Abandoned branch",
             "mode": "jumble_off", "state": {"digest": digest_ref("labels", labels[point]), "data": blob(labels[point])},
             "root": {"kind": "solved"}, "path": paths[point], "preferences": prefs[point],
-            "episode": None, "exit": None, "assistance": block})
-    session = keep({"format": ident("session-record"), "version": 1, "head": checkpoints[head],
-                    "checkpoints": [checkpoints[point] for point in offered], "preferences": prefs[head],
-                    "attempt": None, "timer": None, "unmapped": []})
+            "episode": None, "exit": None, "assistance": block}, 1
+        if point == head and change == "ref" and mutation["at"] == "head":
+            version = mutation["record_version"]
+        elif point == head and change == "ref":
+            require(mutation["at"] == "head.preferences", FORMAT)
+            payload["preferences"] = changed(preferences(True, mutation["record_version"]))
+        elif point == head and change == "pad" and mutation["carrier"] == "digest":
+            payload["name"] += "x" * (mutation["bytes"] - len(canonical(record_of("checkpoint", payload))))
+        checkpoints[point] = wire("checkpoint", payload, version)
+    session = {"format": ident("session-record"), "version": 1, "head": checkpoints[head],
+               "checkpoints": [checkpoints[point] for point in offered], "preferences": prefs[head],
+               "attempt": None, "timer": None, "unmapped": []}
+    if change == "ref" and mutation["at"] == "head":
+        session["head"] = changed(session["head"])
+    elif change == "pad" and mutation["carrier"] == "named":
+        session["unmapped"] = [{"item": "padding", "reason": ""}]
+        session["unmapped"][0]["reason"] = "x" * (mutation["bytes"] - len(canonical(session)))
+    session = keep(session)
     conversion = wire("migration", {
         "source": {"format": "magic600-0.4-session", "version": 1, "edition": None,
                    "bytes": digest_ref("bytes", b"synthetic locked session copy")},
@@ -1761,17 +1835,22 @@ def path_b_package(fixture, raw_copy, reference, examples, mutation=None):
     members.update((f"session/checkpoints/{index}.labels", labels[point]) for index, point in enumerate(offered))
     if raw_copy:
         members["raw/session.sqlite3"] = b"synthetic raw copy; never a resolution input\n"
-    if mutation and mutation["kind"] == "drop":
+    if change == "drop":
         del members[mutation["path"]]
-    elif mutation and mutation["kind"] == "add":
+    elif change == "add":
         raw = canonical(mutation["record"])
         members[f"records/{sha(raw)}.json"] = raw
-    elif mutation and mutation["kind"] == "duplicate":
+    elif change == "duplicate":
         members[f"records/{sha(members[mutation['path']])}.json"] = members[mutation["path"]]
-    elif mutation and mutation["kind"] == "rename":
+    elif change == "rename":
         members[mutation["to"]] = members.pop(mutation["path"])
+    elif change == "pad" and "stored" in mutation:  # a carrier gzipped as FP.7's threshold alone would say
+        require(mutation["stored"] == "c600-gzip-stored-1", FORMAT)
+        carrier = ("session/record.json" if mutation["carrier"] == "named" else
+                   f"records/{checkpoints[head]['content']['sha256']}.json")
+        members[carrier] = pack_gzip(members[carrier])
     else:
-        require(not mutation or mutation["kind"] == "exchange_labels", FORMAT)
+        require(change in {None, "exchange_labels", "ref", "pad"}, FORMAT)
     entries = [{"path": name, "bytes": str(len(members[name])), "sha256": sha(members[name]), "role": member_role(name)}
                for name in sorted(members, key=lambda name: name.encode("utf-8"))]
     manifest = {"format": "C600-MIGRATE", "format_version": 1,
@@ -1824,38 +1903,45 @@ def path_b_read(data, reference):
     require(options["raw_copy"] == ("raw/session.sqlite3" in digest_of), FORMAT)
     require(options["include_logs"] == any(entry["role"] == "log" for entry in entries), FORMAT)
     # The closure: the conversion Ref and every named record member, followed through each resolved record.
-    seen, used, label_refs, blob_refs = {}, set(), {}, []
+    # FP.10 (MFF-02): the walk dispatches each Ref before following it and each resolved record before any of its
+    # fields; a record's Refs are found by schema position. Ref shapes, resolution, record headers, kinds and
+    # header equality are checked once the walk ends.
+    seen, followed = {}, []
     pending = [(manifest["conversion"], None)] + [(None, digest_of[name]) for name, role in NAMED_MEMBERS.items()
                                                   if role in RECORD_ROLES and name in digest_of]
     while pending:
         ref, key = pending.pop()
         if ref is not None:
-            supported(ref)  # FP.10: the Ref's own pair before it is followed
-            require(isinstance(ref["content"], dict) and set(ref["content"]) == {"role", "sha256"} and
-                    ref["content"]["role"] == "content", FORMAT)
-            key = ref["content"]["sha256"]
-        require(key in records, FORMAT)
-        if key not in seen:
-            name, raw = records[key]
-            record = read_canonical(raw)
-            supported(record)
-            if record["format"] != ident("session-record"):
-                record_header(record)
-                require(record["provenance"] is not None or
-                        record["format"] not in {ident("word"), ident("macro"), ident("workspace")}, FORMAT)
-            seen[key], walk = record, copy.deepcopy(record)
-            used.add(name)
-            if record["format"] == ident("checkpoint"):
-                state = walk["payload"].get("state") if isinstance(walk["payload"], dict) else None
-                require(isinstance(state, dict) and "data" in state, FORMAT)
-                label_refs[key] = state.pop("data")  # carried by its label member, not blobs/
-            refs = []
-            ref_links(walk, refs, blob_refs)
-            pending.extend((child, None) for child in refs)
-        if ref is not None:
-            require(seen[key]["format"] == ref["format"] and seen[key]["version"] == ref["version"], FORMAT)
+            supported(ref)  # the Ref's own pair before it is followed
+            content = ref.get("content")
+            key = content["sha256"] if isinstance(content, dict) and isinstance(content.get("sha256"), str) else None
+            followed.append((ref, key))
+        if key is None or key in seen or key not in records:
+            continue  # an unresolvable Ref is refused after the walk
+        record = read_canonical(records[key][1])
+        supported(record)  # the resolved record's pair before any of its fields
+        seen[key] = record
+        pending.extend((child, None) for child in position_refs(record))
+    for record in seen.values():
+        kind = FAMILY.get(record["format"])
+        require(kind is not None, FORMAT)  # FP.26: a kind outside the golden family is refused, not implemented
+        if kind != "session-record":
+            record_header(record)
+            require(record["provenance"] is not None or kind not in {"word", "macro", "workspace"}, FORMAT)
+    for ref, key in followed:  # FP.11's Ref shape and FP.24's resolution, then the header equality
+        require(key in seen and set(ref) == REF_KEYS and set(ref["content"]) == CONTENT_KEYS and
+                ref["content"]["role"] == "content", FORMAT)
+        require(seen[key]["format"] == ref["format"] and seen[key]["version"] == ref["version"], FORMAT)
     for name, kind in WORKSPACE_KINDS.items():  # retained exchange bytes are outside the golden family (FP.26)
         require(name not in digest_of or seen[digest_of[name]]["format"] == ident(kind), FORMAT)
+    used, label_refs, blob_refs = {records[key][0] for key in seen}, {}, []
+    for key, record in seen.items():
+        if record["format"] == ident("checkpoint"):
+            data = at_path(record, "payload.state.data")
+            require(len(data) == 1 and isinstance(data[0], dict) and set(data[0]) == BLOB_KEYS, FORMAT)
+            label_refs[key] = data[0]  # carried by its label member, not blobs/
+        elif record["format"] == ident("filter"):
+            blob_refs.extend(at_path(record, "payload.source"))
 
     def target(ref):
         require(isinstance(ref, dict) and isinstance(ref.get("content"), dict) and
@@ -1864,6 +1950,7 @@ def path_b_read(data, reference):
 
     decoded = sum(len(raw) for _, raw in members)
     for blob_ref in blob_refs:
+        require(isinstance(blob_ref, dict) and set(blob_ref) == BLOB_KEYS, FORMAT)
         stored_ref, decoded_ref = blob_ref["stored"], blob_ref["decoded"]
         require(isinstance(stored_ref, dict) and stored_ref.get("role") == "bytes" and
                 stored_ref.get("sha256") in blobs, FORMAT)
@@ -2164,18 +2251,26 @@ def main():
             count += 1
     golden, cases = {}, []
     for vector in vectors["path_b_packages"]:
-        given = vector["given"]
+        given, expected = vector["given"], vector["expected"]
         package = path_b_package(given["fixture"], given["raw_copy"], reference, examples, given.get("mutation"))
-        if isinstance(vector["expected"], str):
-            equal(outcome(lambda: path_b_read(package, reference)), vector["expected"], vector["id"])
+        if "package_sha256" in vector:  # a refused package pinned by the independent builder (MFF-02, MFF-04)
+            equal(sha(package), vector["package_sha256"], vector["id"] + " package")
+        if isinstance(expected, str):
+            equal(outcome(lambda: path_b_read(package, reference)), expected, vector["id"])
         else:
             equal({"package_sha256": sha(package), "package_bytes": len(package)},
-                  {key: vector["expected"][key] for key in ("package_sha256", "package_bytes")}, vector["id"] + " package")
+                  {key: expected[key] for key in ("package_sha256", "package_bytes")}, vector["id"] + " package")
             with zipfile.ZipFile(io.BytesIO(package)) as archive:
                 equal(archive.testzip(), None, vector["id"] + " independent ZIP read")
-            golden.setdefault(given["fixture"], []).append(path_b_read(package, reference))
-            equal(golden[given["fixture"]][-1], vector["expected"]["result"], vector["id"])
-            cases.append((given["fixture"], given["raw_copy"]))
+                if "carrier" in expected:  # MFF-04: a large carrier still holds its record's exact FP.5 bytes
+                    raw = archive.read(expected["carrier"])
+                    equal(len(raw), expected["carrier_bytes"], vector["id"] + " carrier bytes")
+                    read_canonical(raw)
+            result = path_b_read(package, reference)
+            equal(result, expected["result"], vector["id"])
+            if "mutation" not in given:
+                golden.setdefault(given["fixture"], []).append(result)
+                cases.append((given["fixture"], given["raw_copy"]))
         count += 1
     equal(sorted(cases), [("abandoned-branch", False), ("abandoned-branch", True), ("fresh-session", False),
                           ("fresh-session", True)], "golden Path B packages with raw_copy off and on")

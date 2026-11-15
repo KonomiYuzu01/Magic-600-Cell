@@ -114,7 +114,8 @@ keep `-draft` until their own packet, and syntax waits for LQ13.
   The overhead is 18 + 5*max(1,ceil(n/65535)) bytes. This avoids depending on a
   particular platform compressor; a compressing successor needs a new profile.
   New JSON/binary members of at most 250,000 decoded bytes are raw; larger members
-  use this gzip profile. A format vector may exercise gzip below that threshold.
+  use this gzip profile, except FP.24's Path B framing, which is never compressed
+  (MFF-04). A format vector may exercise gzip below that threshold.
   Readers check the declared encoding, size, CRC and exact profile, reject a second
   member or trailing bytes, and bound output before expansion. Old level-5 logs,
   level-9 archives and timestamped downloads retain their captured stored bytes.
@@ -203,7 +204,9 @@ profiles require their own version and evidence, not an automatic split or retry
   recorded byte-for-byte and refuses active use with `PS2:input.persistence_version`.
   Dispatch comes first: a reader checks the `format`/`version` pair of a record, and
   of each Ref before following it and then of the record it resolves to, before any
-  version-specific field, expected-Ref or header-mismatch check. An unknown pair gives
+  version-specific field, expected-Ref or header-mismatch check. A reader finds a
+  record's Refs at the schema positions of its known pair, never by their shape
+  (migration-format-freeze ruling, MFF-02). An unknown pair gives
   `PS2:input.persistence_version` even with added or missing fields; a header
   without `format` or `version` gives `PS1:input.persistence_format`; the mismatch
   outcomes of FP.11 and of each record contract apply only to known pairs. A former
@@ -511,16 +514,22 @@ questions remain open.
   through every resolved record, form the closure. Each closure record is carried
   once: by the named member that holds it, otherwise as `records/<hex>.json` with
   role `record`, where `<hex>` is the Ref's `content.sha256` and the bytes are
-  exactly the record's FP.5 bytes. A Ref resolves to the one record carrier (a
-  `records/` member or a named member above) whose entry `sha256` is its digest;
-  FP.10's dispatch, FP.5's canonical check and FP.11's format/version equality
-  follow. A checkpoint's labels `state.data` is a raw BlobRef whose carrier is its
-  label member: `session/checkpoints/head.labels` for `head` and
+  exactly the record's FP.5 bytes. A Ref is dispatched (FP.10) and then resolves to
+  the one record carrier (a `records/` member or a named member above) whose entry
+  `sha256` is its digest; FP.5's canonical check, FP.10's dispatch of the resolved
+  record and FP.11's format/version equality follow. A checkpoint's labels
+  `state.data` is a raw BlobRef whose carrier is its label member:
+  `session/checkpoints/head.labels` for `head` and
   `session/checkpoints/<i>.labels` for entry `i` of `checkpoints`, counted from 0
-  in decimal. FP.7's raw threshold does not apply to these retained uncompressed
-  members. Every other BlobRef in the closure is carried once as `blobs/<hex>` with
+  in decimal. Every other BlobRef in the closure is carried once as `blobs/<hex>` with
   role `blob`, where `<hex>` is its `stored.sha256`; its stored size and digest,
-  then its decoded size and digest under its encoding, are checked. A bare DigestRef
+  then its decoded size and digest under its encoding, are checked. Path B framing
+  is never compressed (migration-format-freeze ruling, MFF-04): `manifest.json`,
+  every record carrier, named or `records/`, and every label member hold their
+  exact bytes uncompressed at any size within FP.9's record rows, so FP.7's raw
+  threshold does not apply to them. A `blobs/` carrier holds its BlobRef's stored
+  bytes, whose encoding follows FP.7; raw, log and retained exchange members keep
+  their captured bytes. A bare DigestRef
   or Pin names bytes and is not a dependency. Raw and log members are never
   resolution inputs, so validation and replay give the same result with `raw_copy`
   true or false. A missing carrier, a second record or blob carrier of one digest,
@@ -559,11 +568,18 @@ questions remain open.
   true and false, matches each against its recorded package digest, and then, from
   the archive bytes alone, resolves every closure Ref and BlobRef, replays both
   heads and compares the preferences. Its mutation vectors refuse a missing record
-  or blob carrier, an extra, second or misnamed carrier, and exchanged labels. These
-  are synthetic packages, not importer output. The golden family holds recipe events
-  from the solved root, `jumble_off` checkpoints and workspace members that hold FP.4
+  or blob carrier, an extra, second or misnamed carrier, exchanged labels and a
+  gzipped record carrier. Its Ref vectors give `PS2:input.persistence_version` for
+  a Ref, nested or not, that names an unknown pair or resolves to one, with added
+  or missing fields or the wrong kind, and `PS1:input.persistence_format` for a
+  known pair with an added field or the wrong kind (MFF-02). Its size vectors
+  accept named and `records/` carriers of 250,000 and 250,001 bytes that hold their
+  exact FP.5 bytes (MFF-04). These packages are pinned by digest. They are synthetic
+  packages, not importer output. The golden family holds recipe events from the
+  solved root, `jumble_off` checkpoints and workspace members that hold FP.4
   records; it has no key map, logs or retained exchange bytes, and the reference
-  reader refuses shapes outside that family instead of implementing them.
+  reader follows Refs only at that family's schema positions and refuses kinds and
+  shapes outside it instead of implementing them.
 - **FP.27 [B]** Source preservation follows PS3.1/PS3.2's amended locked-copy
   contract: existing read-only engine.lock, guarded byte copy of database/WAL,
   no source SQLite open, no immutable=1, no source -shm access, no source writes.
@@ -767,10 +783,12 @@ questions remain open.
   last:null|Ref}`. `Status` is `{kind:running}`, `{kind:waiting,step:Nat}`,
   `{kind:stopped,stop:Stop}` or `{kind:finished}`. `Stop` is `{kind:code,code:Text}`
   or `{kind:outcome,outcome:refused|failed|cancelled|unknown_outcome}`, and a child's
-  code stays in the unchanged receipt in `last`, the Ref of an FP.36 receipt. FP.10's
-  refusal of an unknown format or version comes first; after it, a resolved record
-  whose `format` or `version` differs from its Ref refuses with
-  `PS1:input.persistence_format`.
+  code stays in the unchanged receipt in `last`, the Ref of an FP.36 receipt. Each of
+  `value` and `last` is checked in FP.10's order (MFF-02): the Ref's format and
+  version; its digest, where one that resolves to no record refuses with
+  `PS1:input.digest_mismatch`; the resolved record's format and version; then the
+  Ref's shape and kind and the record's `format` and `version` against the Ref, where
+  any difference refuses with `PS1:input.persistence_format`.
   `actions` is sorted by the number `recorded`, each recorded number once; unsorted or
   duplicate entries refuse with `PS1:input.noncanonical_value`.
   `c600-proof-obligation-draft` (PS1.45) is an export schema outside the data core.
@@ -782,9 +800,13 @@ questions remain open.
   `{list:DigestRef(content),fixed:Bool,options:DigestRef(content),
   chosen:DigestRef(content),target:Value}`. `chosen` digests the option and `target`
   holds the target or content it fixed. FP.17's `pick` names it, and the two `chosen`
-  fields are equal. FP.10's refusal of an unknown format or version comes first. A
-  pick whose record does not resolve, whose admitted record's `format` or `version`
-  differs from its Ref, or whose `chosen` differs, refuses policy-gated use with
+  fields are equal. The pick's Ref is checked in FP.10's order (MFF-02): the Ref's
+  format and version; its resolution; the resolved record's format and version; the
+  Ref's shape, where an added or missing field refuses with
+  `PS1:input.persistence_format`; then its kind, the record's `format` and `version`
+  against the Ref, and `chosen`. A pick whose record does not resolve, whose Ref names
+  another kind, whose admitted record's `format` or `version` differs from its Ref, or
+  whose `chosen` differs, refuses policy-gated use with
   `PS1:capability.provenance_incompatible` (BND.21, BND.85). The `picks` vectors hold
   a built-in pick under each LQ21 form.
 

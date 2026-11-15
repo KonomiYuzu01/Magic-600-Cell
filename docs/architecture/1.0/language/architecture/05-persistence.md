@@ -87,7 +87,8 @@ R2-E3 and the persistence and evidence-storage Fix first items;
 - **PS1.9 [D]** New records use `c600-gzip-stored-1` (FP.7): fixed header, zero mtime, no optional fields,
   deterministic 65,535-byte DEFLATE stored blocks, CRC32 and size trailer. This candidate chooses portable literal
   blocks rather than a platform compressor version; it provides no compression saving. Records over 250,000 decoded
-  bytes use gzip, smaller ones raw. A compressing successor needs its own profile and vectors. Existing level-5 logs,
+  bytes use gzip, smaller ones raw; FP.24's Path B framing (its manifest, record carriers and label members) is never
+  compressed (MFF-04). A compressing successor needs its own profile and vectors. Existing level-5 logs,
   level-9 archives and timestamped `encode_export` downloads keep their captured stored and separate decoded digests.
 - **PS1.10 [B]** Readers and writers use one limits table, with each write limit at most its read limit (R-01).
   A limit is checked before allocation, expansion or publication that would exceed it. Compression never bypasses
@@ -183,7 +184,8 @@ operation write_record(value: StoredValue, format: FormatRef, limits: LimitsRef)
   outcomes. FP.4 supplies the identifiers now listed in the catalogue; language-dependent payloads remain
   outside the data-core freeze. Unknown ordinary fields refuse active read; optional extensions are preserved
   and cannot alter required meaning, while unknown required extensions or versions refuse activation; FP.10
-  dispatches format and version before any version-specific check. FP.24 uses
+  dispatches format and version, of each Ref and of the record it resolves to, before any version-specific or
+  expected-kind check, and finds Refs by schema position, never by shape (MFF-02). FP.24 uses
   `C600-MIGRATE` with `format_version=1`; `c600migrate` is a different draft input requiring an explicit
   converter, not an alias. No experimental session wrapper becomes the product container. Default 11 keeps this
   specification in prose; nothing is added under `schemas/`.

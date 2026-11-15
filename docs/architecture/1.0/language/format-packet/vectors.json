@@ -15846,6 +15846,861 @@
         ]
       },
       "expected": "PS2:input.persistence_version"
+    },
+    {
+      "id": "playback-value-wrong-kind",
+      "clause": "FP.37",
+      "given": {
+        "wrapper": {
+          "format": "c600-workspace",
+          "version": 1,
+          "identity": {
+            "puzzle": "full",
+            "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+            "menu_id": null,
+            "menu_order": null,
+            "contract_rev": null
+          },
+          "provenance": {
+            "block": {
+              "version": 1,
+              "form": "flow_static",
+              "contract": {
+                "version": "fixture-1",
+                "source": {
+                  "role": "source",
+                  "sha256": "1e5cc3c361ab70e2c8a2e5b2f2f03f71daef28507cc4e4e2d49f3747700d718e"
+                }
+              },
+              "checker": null
+            },
+            "author": "own",
+            "producer": {
+              "kind": "manual"
+            },
+            "profile": "none",
+            "depends": {
+              "labels": []
+            },
+            "parts": [],
+            "pick": null,
+            "declassified": [],
+            "legacy": null
+          },
+          "payload": {
+            "id": "workspace-1",
+            "kind": "c600-playback-draft",
+            "value": {
+              "format": "c600-receipt",
+              "version": 1,
+              "content": {
+                "role": "content",
+                "sha256": "83272f066b8eff63d8fc69caf226e09d7d43f9d4d46ed074ccad19a7b023d177"
+              }
+            },
+            "dependencies": [],
+            "action": null,
+            "revision": {
+              "session": "fixture-session",
+              "epoch": "epoch-1",
+              "identity": {
+                "puzzle": "full",
+                "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+                "menu_id": null,
+                "menu_order": null,
+                "contract_rev": null
+              },
+              "mode": "retained",
+              "head": "H",
+              "state": "4",
+              "workspace": "2",
+              "protection": "1",
+              "digest": {
+                "role": "poses",
+                "sha256": "f16d05ec6b29248d2c61adb1e9263f78e4f7bace1b955014a2d17872cfe4064d"
+              }
+            }
+          }
+        },
+        "records": [
+          {
+            "format": "c600-playback-draft",
+            "version": 1,
+            "identity": {
+              "puzzle": "full",
+              "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+              "menu_id": null,
+              "menu_order": null,
+              "contract_rev": null
+            },
+            "provenance": null,
+            "payload": {
+              "playback": "playback-1",
+              "recording": {
+                "role": "content",
+                "sha256": "fb7cc2c07376dd6d6b026a13d16f4b352f00565346e5eb00632e9694c8630ee8"
+              },
+              "step": "1",
+              "pending": {
+                "command": "play-2",
+                "request": {
+                  "role": "content",
+                  "sha256": "f09b46d6161e203d5fe11ce403253ad86932527451d32a0022a67eef5f4a21bf"
+                }
+              },
+              "actions": [
+                {
+                  "recorded": "41",
+                  "played": "58"
+                }
+              ],
+              "status": {
+                "kind": "running"
+              },
+              "last": {
+                "format": "c600-receipt",
+                "version": 1,
+                "content": {
+                  "role": "content",
+                  "sha256": "c6a12ebc5dda6426118bea3fb48be5d218c20fd3181843946e61badd7889c530"
+                }
+              }
+            }
+          },
+          {
+            "format": "c600-receipt",
+            "version": 1,
+            "identity": {
+              "puzzle": "full",
+              "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+              "menu_id": null,
+              "menu_order": null,
+              "contract_rev": null
+            },
+            "provenance": null,
+            "payload": {
+              "command": "play-1",
+              "request": {
+                "role": "content",
+                "sha256": "4e39826253fcfc14cc1bd35666e3e15268afac73ec8bbd9f690cc2173bf9cd4d"
+              },
+              "job": null,
+              "status": {
+                "kind": "completed",
+                "completion": {
+                  "kind": "workspace",
+                  "revision": {
+                    "session": "fixture-session",
+                    "epoch": "epoch-1",
+                    "identity": {
+                      "puzzle": "full",
+                      "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+                      "menu_id": null,
+                      "menu_order": null,
+                      "contract_rev": null
+                    },
+                    "mode": "retained",
+                    "head": "H",
+                    "state": "4",
+                    "workspace": "2",
+                    "protection": "1",
+                    "digest": {
+                      "role": "poses",
+                      "sha256": "f16d05ec6b29248d2c61adb1e9263f78e4f7bace1b955014a2d17872cfe4064d"
+                    }
+                  },
+                  "result": null
+                }
+              }
+            }
+          }
+        ]
+      },
+      "expected": "PS1:input.persistence_format"
+    },
+    {
+      "id": "playback-value-wrong-kind-version-first",
+      "clause": "FP.37",
+      "given": {
+        "wrapper": {
+          "format": "c600-workspace",
+          "version": 1,
+          "identity": {
+            "puzzle": "full",
+            "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+            "menu_id": null,
+            "menu_order": null,
+            "contract_rev": null
+          },
+          "provenance": {
+            "block": {
+              "version": 1,
+              "form": "flow_static",
+              "contract": {
+                "version": "fixture-1",
+                "source": {
+                  "role": "source",
+                  "sha256": "1e5cc3c361ab70e2c8a2e5b2f2f03f71daef28507cc4e4e2d49f3747700d718e"
+                }
+              },
+              "checker": null
+            },
+            "author": "own",
+            "producer": {
+              "kind": "manual"
+            },
+            "profile": "none",
+            "depends": {
+              "labels": []
+            },
+            "parts": [],
+            "pick": null,
+            "declassified": [],
+            "legacy": null
+          },
+          "payload": {
+            "id": "workspace-1",
+            "kind": "c600-playback-draft",
+            "value": {
+              "format": "c600-receipt",
+              "version": 1,
+              "content": {
+                "role": "content",
+                "sha256": "0cbf2ffdbf86c632eb771b98ca71d30b40cf6337b17312a66446f331a051fa0e"
+              }
+            },
+            "dependencies": [],
+            "action": null,
+            "revision": {
+              "session": "fixture-session",
+              "epoch": "epoch-1",
+              "identity": {
+                "puzzle": "full",
+                "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+                "menu_id": null,
+                "menu_order": null,
+                "contract_rev": null
+              },
+              "mode": "retained",
+              "head": "H",
+              "state": "4",
+              "workspace": "2",
+              "protection": "1",
+              "digest": {
+                "role": "poses",
+                "sha256": "f16d05ec6b29248d2c61adb1e9263f78e4f7bace1b955014a2d17872cfe4064d"
+              }
+            }
+          }
+        },
+        "records": [
+          {
+            "format": "c600-playback-draft",
+            "version": 2,
+            "identity": {
+              "puzzle": "full",
+              "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+              "menu_id": null,
+              "menu_order": null,
+              "contract_rev": null
+            },
+            "provenance": null,
+            "payload": {
+              "playback": "playback-1",
+              "recording": {
+                "role": "content",
+                "sha256": "fb7cc2c07376dd6d6b026a13d16f4b352f00565346e5eb00632e9694c8630ee8"
+              },
+              "step": "1",
+              "pending": {
+                "command": "play-2",
+                "request": {
+                  "role": "content",
+                  "sha256": "f09b46d6161e203d5fe11ce403253ad86932527451d32a0022a67eef5f4a21bf"
+                }
+              },
+              "actions": [
+                {
+                  "recorded": "41",
+                  "played": "58"
+                }
+              ],
+              "status": {
+                "kind": "running"
+              },
+              "last": {
+                "format": "c600-receipt",
+                "version": 1,
+                "content": {
+                  "role": "content",
+                  "sha256": "c6a12ebc5dda6426118bea3fb48be5d218c20fd3181843946e61badd7889c530"
+                }
+              }
+            }
+          },
+          {
+            "format": "c600-receipt",
+            "version": 1,
+            "identity": {
+              "puzzle": "full",
+              "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+              "menu_id": null,
+              "menu_order": null,
+              "contract_rev": null
+            },
+            "provenance": null,
+            "payload": {
+              "command": "play-1",
+              "request": {
+                "role": "content",
+                "sha256": "4e39826253fcfc14cc1bd35666e3e15268afac73ec8bbd9f690cc2173bf9cd4d"
+              },
+              "job": null,
+              "status": {
+                "kind": "completed",
+                "completion": {
+                  "kind": "workspace",
+                  "revision": {
+                    "session": "fixture-session",
+                    "epoch": "epoch-1",
+                    "identity": {
+                      "puzzle": "full",
+                      "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+                      "menu_id": null,
+                      "menu_order": null,
+                      "contract_rev": null
+                    },
+                    "mode": "retained",
+                    "head": "H",
+                    "state": "4",
+                    "workspace": "2",
+                    "protection": "1",
+                    "digest": {
+                      "role": "poses",
+                      "sha256": "f16d05ec6b29248d2c61adb1e9263f78e4f7bace1b955014a2d17872cfe4064d"
+                    }
+                  },
+                  "result": null
+                }
+              }
+            }
+          }
+        ]
+      },
+      "expected": "PS2:input.persistence_version"
+    },
+    {
+      "id": "playback-last-wrong-kind",
+      "clause": "FP.37",
+      "given": {
+        "wrapper": {
+          "format": "c600-workspace",
+          "version": 1,
+          "identity": {
+            "puzzle": "full",
+            "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+            "menu_id": null,
+            "menu_order": null,
+            "contract_rev": null
+          },
+          "provenance": {
+            "block": {
+              "version": 1,
+              "form": "flow_static",
+              "contract": {
+                "version": "fixture-1",
+                "source": {
+                  "role": "source",
+                  "sha256": "1e5cc3c361ab70e2c8a2e5b2f2f03f71daef28507cc4e4e2d49f3747700d718e"
+                }
+              },
+              "checker": null
+            },
+            "author": "own",
+            "producer": {
+              "kind": "manual"
+            },
+            "profile": "none",
+            "depends": {
+              "labels": []
+            },
+            "parts": [],
+            "pick": null,
+            "declassified": [],
+            "legacy": null
+          },
+          "payload": {
+            "id": "workspace-1",
+            "kind": "c600-playback-draft",
+            "value": {
+              "format": "c600-playback-draft",
+              "version": 1,
+              "content": {
+                "role": "content",
+                "sha256": "61a8f79fd2a59cd2e794ccbb91e7351dfdb675fe74fa8c99bf9e81a73d294e01"
+              }
+            },
+            "dependencies": [],
+            "action": null,
+            "revision": {
+              "session": "fixture-session",
+              "epoch": "epoch-1",
+              "identity": {
+                "puzzle": "full",
+                "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+                "menu_id": null,
+                "menu_order": null,
+                "contract_rev": null
+              },
+              "mode": "retained",
+              "head": "H",
+              "state": "4",
+              "workspace": "2",
+              "protection": "1",
+              "digest": {
+                "role": "poses",
+                "sha256": "f16d05ec6b29248d2c61adb1e9263f78e4f7bace1b955014a2d17872cfe4064d"
+              }
+            }
+          }
+        },
+        "records": [
+          {
+            "format": "c600-playback-draft",
+            "version": 1,
+            "identity": {
+              "puzzle": "full",
+              "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+              "menu_id": null,
+              "menu_order": null,
+              "contract_rev": null
+            },
+            "provenance": null,
+            "payload": {
+              "playback": "playback-1",
+              "recording": {
+                "role": "content",
+                "sha256": "fb7cc2c07376dd6d6b026a13d16f4b352f00565346e5eb00632e9694c8630ee8"
+              },
+              "step": "1",
+              "pending": {
+                "command": "play-2",
+                "request": {
+                  "role": "content",
+                  "sha256": "f09b46d6161e203d5fe11ce403253ad86932527451d32a0022a67eef5f4a21bf"
+                }
+              },
+              "actions": [
+                {
+                  "recorded": "41",
+                  "played": "58"
+                }
+              ],
+              "status": {
+                "kind": "running"
+              },
+              "last": {
+                "format": "c600-pick",
+                "version": 1,
+                "content": {
+                  "role": "content",
+                  "sha256": "c6a12ebc5dda6426118bea3fb48be5d218c20fd3181843946e61badd7889c530"
+                }
+              }
+            }
+          },
+          {
+            "format": "c600-receipt",
+            "version": 1,
+            "identity": {
+              "puzzle": "full",
+              "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+              "menu_id": null,
+              "menu_order": null,
+              "contract_rev": null
+            },
+            "provenance": null,
+            "payload": {
+              "command": "play-1",
+              "request": {
+                "role": "content",
+                "sha256": "4e39826253fcfc14cc1bd35666e3e15268afac73ec8bbd9f690cc2173bf9cd4d"
+              },
+              "job": null,
+              "status": {
+                "kind": "completed",
+                "completion": {
+                  "kind": "workspace",
+                  "revision": {
+                    "session": "fixture-session",
+                    "epoch": "epoch-1",
+                    "identity": {
+                      "puzzle": "full",
+                      "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+                      "menu_id": null,
+                      "menu_order": null,
+                      "contract_rev": null
+                    },
+                    "mode": "retained",
+                    "head": "H",
+                    "state": "4",
+                    "workspace": "2",
+                    "protection": "1",
+                    "digest": {
+                      "role": "poses",
+                      "sha256": "f16d05ec6b29248d2c61adb1e9263f78e4f7bace1b955014a2d17872cfe4064d"
+                    }
+                  },
+                  "result": null
+                }
+              }
+            }
+          }
+        ]
+      },
+      "expected": "PS1:input.persistence_format"
+    },
+    {
+      "id": "playback-last-wrong-kind-version-first",
+      "clause": "FP.37",
+      "given": {
+        "wrapper": {
+          "format": "c600-workspace",
+          "version": 1,
+          "identity": {
+            "puzzle": "full",
+            "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+            "menu_id": null,
+            "menu_order": null,
+            "contract_rev": null
+          },
+          "provenance": {
+            "block": {
+              "version": 1,
+              "form": "flow_static",
+              "contract": {
+                "version": "fixture-1",
+                "source": {
+                  "role": "source",
+                  "sha256": "1e5cc3c361ab70e2c8a2e5b2f2f03f71daef28507cc4e4e2d49f3747700d718e"
+                }
+              },
+              "checker": null
+            },
+            "author": "own",
+            "producer": {
+              "kind": "manual"
+            },
+            "profile": "none",
+            "depends": {
+              "labels": []
+            },
+            "parts": [],
+            "pick": null,
+            "declassified": [],
+            "legacy": null
+          },
+          "payload": {
+            "id": "workspace-1",
+            "kind": "c600-playback-draft",
+            "value": {
+              "format": "c600-playback-draft",
+              "version": 1,
+              "content": {
+                "role": "content",
+                "sha256": "78e8681cb1adbd98e693473b142878191729bd94f0529fd8690a595085f409a2"
+              }
+            },
+            "dependencies": [],
+            "action": null,
+            "revision": {
+              "session": "fixture-session",
+              "epoch": "epoch-1",
+              "identity": {
+                "puzzle": "full",
+                "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+                "menu_id": null,
+                "menu_order": null,
+                "contract_rev": null
+              },
+              "mode": "retained",
+              "head": "H",
+              "state": "4",
+              "workspace": "2",
+              "protection": "1",
+              "digest": {
+                "role": "poses",
+                "sha256": "f16d05ec6b29248d2c61adb1e9263f78e4f7bace1b955014a2d17872cfe4064d"
+              }
+            }
+          }
+        },
+        "records": [
+          {
+            "format": "c600-playback-draft",
+            "version": 1,
+            "identity": {
+              "puzzle": "full",
+              "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+              "menu_id": null,
+              "menu_order": null,
+              "contract_rev": null
+            },
+            "provenance": null,
+            "payload": {
+              "playback": "playback-1",
+              "recording": {
+                "role": "content",
+                "sha256": "fb7cc2c07376dd6d6b026a13d16f4b352f00565346e5eb00632e9694c8630ee8"
+              },
+              "step": "1",
+              "pending": {
+                "command": "play-2",
+                "request": {
+                  "role": "content",
+                  "sha256": "f09b46d6161e203d5fe11ce403253ad86932527451d32a0022a67eef5f4a21bf"
+                }
+              },
+              "actions": [
+                {
+                  "recorded": "41",
+                  "played": "58"
+                }
+              ],
+              "status": {
+                "kind": "running"
+              },
+              "last": {
+                "format": "c600-pick",
+                "version": 1,
+                "content": {
+                  "role": "content",
+                  "sha256": "20ff6d417599c1d64c30f4ee87f5305090aba60402a67265699cf9f4c9f2c875"
+                }
+              }
+            }
+          },
+          {
+            "format": "c600-receipt",
+            "version": 2,
+            "identity": {
+              "puzzle": "full",
+              "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+              "menu_id": null,
+              "menu_order": null,
+              "contract_rev": null
+            },
+            "provenance": null,
+            "payload": {
+              "command": "play-1",
+              "request": {
+                "role": "content",
+                "sha256": "4e39826253fcfc14cc1bd35666e3e15268afac73ec8bbd9f690cc2173bf9cd4d"
+              },
+              "job": null,
+              "status": {
+                "kind": "completed",
+                "completion": {
+                  "kind": "workspace",
+                  "revision": {
+                    "session": "fixture-session",
+                    "epoch": "epoch-1",
+                    "identity": {
+                      "puzzle": "full",
+                      "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+                      "menu_id": null,
+                      "menu_order": null,
+                      "contract_rev": null
+                    },
+                    "mode": "retained",
+                    "head": "H",
+                    "state": "4",
+                    "workspace": "2",
+                    "protection": "1",
+                    "digest": {
+                      "role": "poses",
+                      "sha256": "f16d05ec6b29248d2c61adb1e9263f78e4f7bace1b955014a2d17872cfe4064d"
+                    }
+                  },
+                  "result": null
+                }
+              }
+            }
+          }
+        ]
+      },
+      "expected": "PS2:input.persistence_version"
+    },
+    {
+      "id": "playback-value-wrong-kind-unresolved",
+      "clause": "FP.37",
+      "given": {
+        "wrapper": {
+          "format": "c600-workspace",
+          "version": 1,
+          "identity": {
+            "puzzle": "full",
+            "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+            "menu_id": null,
+            "menu_order": null,
+            "contract_rev": null
+          },
+          "provenance": {
+            "block": {
+              "version": 1,
+              "form": "flow_static",
+              "contract": {
+                "version": "fixture-1",
+                "source": {
+                  "role": "source",
+                  "sha256": "1e5cc3c361ab70e2c8a2e5b2f2f03f71daef28507cc4e4e2d49f3747700d718e"
+                }
+              },
+              "checker": null
+            },
+            "author": "own",
+            "producer": {
+              "kind": "manual"
+            },
+            "profile": "none",
+            "depends": {
+              "labels": []
+            },
+            "parts": [],
+            "pick": null,
+            "declassified": [],
+            "legacy": null
+          },
+          "payload": {
+            "id": "workspace-1",
+            "kind": "c600-playback-draft",
+            "value": {
+              "format": "c600-receipt",
+              "version": 1,
+              "content": {
+                "role": "content",
+                "sha256": "7656fd1e4735b611f8c1b1e4be37fbb4c06ca3d936403f56f6f6d8568087ea53"
+              }
+            },
+            "dependencies": [],
+            "action": null,
+            "revision": {
+              "session": "fixture-session",
+              "epoch": "epoch-1",
+              "identity": {
+                "puzzle": "full",
+                "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+                "menu_id": null,
+                "menu_order": null,
+                "contract_rev": null
+              },
+              "mode": "retained",
+              "head": "H",
+              "state": "4",
+              "workspace": "2",
+              "protection": "1",
+              "digest": {
+                "role": "poses",
+                "sha256": "f16d05ec6b29248d2c61adb1e9263f78e4f7bace1b955014a2d17872cfe4064d"
+              }
+            }
+          }
+        },
+        "records": [
+          {
+            "format": "c600-playback-draft",
+            "version": 1,
+            "identity": {
+              "puzzle": "full",
+              "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+              "menu_id": null,
+              "menu_order": null,
+              "contract_rev": null
+            },
+            "provenance": null,
+            "payload": {
+              "playback": "playback-1",
+              "recording": {
+                "role": "content",
+                "sha256": "fb7cc2c07376dd6d6b026a13d16f4b352f00565346e5eb00632e9694c8630ee8"
+              },
+              "step": "1",
+              "pending": {
+                "command": "play-2",
+                "request": {
+                  "role": "content",
+                  "sha256": "f09b46d6161e203d5fe11ce403253ad86932527451d32a0022a67eef5f4a21bf"
+                }
+              },
+              "actions": [
+                {
+                  "recorded": "41",
+                  "played": "58"
+                }
+              ],
+              "status": {
+                "kind": "running"
+              },
+              "last": {
+                "format": "c600-receipt",
+                "version": 1,
+                "content": {
+                  "role": "content",
+                  "sha256": "c6a12ebc5dda6426118bea3fb48be5d218c20fd3181843946e61badd7889c530"
+                }
+              }
+            }
+          },
+          {
+            "format": "c600-receipt",
+            "version": 1,
+            "identity": {
+              "puzzle": "full",
+              "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+              "menu_id": null,
+              "menu_order": null,
+              "contract_rev": null
+            },
+            "provenance": null,
+            "payload": {
+              "command": "play-1",
+              "request": {
+                "role": "content",
+                "sha256": "4e39826253fcfc14cc1bd35666e3e15268afac73ec8bbd9f690cc2173bf9cd4d"
+              },
+              "job": null,
+              "status": {
+                "kind": "completed",
+                "completion": {
+                  "kind": "workspace",
+                  "revision": {
+                    "session": "fixture-session",
+                    "epoch": "epoch-1",
+                    "identity": {
+                      "puzzle": "full",
+                      "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+                      "menu_id": null,
+                      "menu_order": null,
+                      "contract_rev": null
+                    },
+                    "mode": "retained",
+                    "head": "H",
+                    "state": "4",
+                    "workspace": "2",
+                    "protection": "1",
+                    "digest": {
+                      "role": "poses",
+                      "sha256": "f16d05ec6b29248d2c61adb1e9263f78e4f7bace1b955014a2d17872cfe4064d"
+                    }
+                  },
+                  "result": null
+                }
+              }
+            }
+          }
+        ]
+      },
+      "expected": "PS1:input.digest_mismatch"
     }
   ],
   "picks": [
@@ -16839,6 +17694,286 @@
         ]
       },
       "expected": "PS2:input.persistence_version"
+    },
+    {
+      "id": "pick-wrong-kind",
+      "clause": "FP.38",
+      "given": {
+        "block": {
+          "block": {
+            "version": 1,
+            "form": "flow_static",
+            "contract": {
+              "version": "fixture-1",
+              "source": {
+                "role": "source",
+                "sha256": "1e5cc3c361ab70e2c8a2e5b2f2f03f71daef28507cc4e4e2d49f3747700d718e"
+              }
+            },
+            "checker": {
+              "version": "fixture-1",
+              "source": {
+                "role": "source",
+                "sha256": "126a5a51dc49577a2e85966350a469edde5d1a9a6b28bcc6afdb880b6e63a14a"
+              }
+            }
+          },
+          "author": "built_in",
+          "producer": {
+            "kind": "program",
+            "module": {
+              "role": "source",
+              "sha256": "453fc55541ea7c6c3a08cd7ca8c1f50d13681d4085fdbe74298ece60d4e4cf8a"
+            },
+            "entry": "repair_pairs"
+          },
+          "profile": "solving",
+          "depends": {
+            "labels": [
+              "computed",
+              "state"
+            ]
+          },
+          "parts": [],
+          "pick": {
+            "record": {
+              "format": "c600-receipt",
+              "version": 1,
+              "content": {
+                "role": "content",
+                "sha256": "17d1650d078183ca9cbffc055bbb8afe2ff7ecbdc9801f881e43c1ee77e573c2"
+              }
+            },
+            "chosen": {
+              "role": "content",
+              "sha256": "92872db51e92b967421e867b4f1fae5aebedf33c8d316708a79d43ef6f8f20e0"
+            }
+          },
+          "declassified": [],
+          "legacy": null
+        },
+        "records": [
+          {
+            "format": "c600-pick",
+            "version": 1,
+            "identity": {
+              "puzzle": "full",
+              "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+              "menu_id": null,
+              "menu_order": null,
+              "contract_rev": null
+            },
+            "provenance": null,
+            "payload": {
+              "list": {
+                "role": "content",
+                "sha256": "77a9a464a362f14012676b8e4c1c59513705b3872de1a06cac8d6f9972fdb90a"
+              },
+              "fixed": true,
+              "options": {
+                "role": "content",
+                "sha256": "0791c0a84a8e84ccc4b933e0c5bb539fc7614ea193b2c22a72f9d0c11df1733d"
+              },
+              "chosen": {
+                "role": "content",
+                "sha256": "92872db51e92b967421e867b4f1fae5aebedf33c8d316708a79d43ef6f8f20e0"
+              },
+              "target": {
+                "kind": "word",
+                "value": "option-a"
+              }
+            }
+          }
+        ]
+      },
+      "expected": "PS1:capability.provenance_incompatible"
+    },
+    {
+      "id": "pick-wrong-kind-version-first",
+      "clause": "FP.38",
+      "given": {
+        "block": {
+          "block": {
+            "version": 1,
+            "form": "flow_static",
+            "contract": {
+              "version": "fixture-1",
+              "source": {
+                "role": "source",
+                "sha256": "1e5cc3c361ab70e2c8a2e5b2f2f03f71daef28507cc4e4e2d49f3747700d718e"
+              }
+            },
+            "checker": {
+              "version": "fixture-1",
+              "source": {
+                "role": "source",
+                "sha256": "126a5a51dc49577a2e85966350a469edde5d1a9a6b28bcc6afdb880b6e63a14a"
+              }
+            }
+          },
+          "author": "built_in",
+          "producer": {
+            "kind": "program",
+            "module": {
+              "role": "source",
+              "sha256": "453fc55541ea7c6c3a08cd7ca8c1f50d13681d4085fdbe74298ece60d4e4cf8a"
+            },
+            "entry": "repair_pairs"
+          },
+          "profile": "solving",
+          "depends": {
+            "labels": [
+              "computed",
+              "state"
+            ]
+          },
+          "parts": [],
+          "pick": {
+            "record": {
+              "format": "c600-receipt",
+              "version": 1,
+              "content": {
+                "role": "content",
+                "sha256": "8d2fe133868c896c393a67b4404697bf8498e1008e6b483b3af5795c78ff1ee4"
+              }
+            },
+            "chosen": {
+              "role": "content",
+              "sha256": "92872db51e92b967421e867b4f1fae5aebedf33c8d316708a79d43ef6f8f20e0"
+            }
+          },
+          "declassified": [],
+          "legacy": null
+        },
+        "records": [
+          {
+            "format": "c600-pick",
+            "version": 2,
+            "identity": {
+              "puzzle": "full",
+              "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+              "menu_id": null,
+              "menu_order": null,
+              "contract_rev": null
+            },
+            "provenance": null,
+            "payload": {
+              "list": {
+                "role": "content",
+                "sha256": "77a9a464a362f14012676b8e4c1c59513705b3872de1a06cac8d6f9972fdb90a"
+              },
+              "fixed": true,
+              "options": {
+                "role": "content",
+                "sha256": "0791c0a84a8e84ccc4b933e0c5bb539fc7614ea193b2c22a72f9d0c11df1733d"
+              },
+              "chosen": {
+                "role": "content",
+                "sha256": "92872db51e92b967421e867b4f1fae5aebedf33c8d316708a79d43ef6f8f20e0"
+              },
+              "target": {
+                "kind": "word",
+                "value": "option-a"
+              }
+            }
+          }
+        ]
+      },
+      "expected": "PS2:input.persistence_version"
+    },
+    {
+      "id": "pick-ref-added-field",
+      "clause": "FP.38",
+      "given": {
+        "block": {
+          "block": {
+            "version": 1,
+            "form": "flow_static",
+            "contract": {
+              "version": "fixture-1",
+              "source": {
+                "role": "source",
+                "sha256": "1e5cc3c361ab70e2c8a2e5b2f2f03f71daef28507cc4e4e2d49f3747700d718e"
+              }
+            },
+            "checker": {
+              "version": "fixture-1",
+              "source": {
+                "role": "source",
+                "sha256": "126a5a51dc49577a2e85966350a469edde5d1a9a6b28bcc6afdb880b6e63a14a"
+              }
+            }
+          },
+          "author": "built_in",
+          "producer": {
+            "kind": "program",
+            "module": {
+              "role": "source",
+              "sha256": "453fc55541ea7c6c3a08cd7ca8c1f50d13681d4085fdbe74298ece60d4e4cf8a"
+            },
+            "entry": "repair_pairs"
+          },
+          "profile": "solving",
+          "depends": {
+            "labels": [
+              "computed",
+              "state"
+            ]
+          },
+          "parts": [],
+          "pick": {
+            "record": {
+              "format": "c600-pick",
+              "version": 1,
+              "content": {
+                "role": "content",
+                "sha256": "17d1650d078183ca9cbffc055bbb8afe2ff7ecbdc9801f881e43c1ee77e573c2"
+              },
+              "future_field": true
+            },
+            "chosen": {
+              "role": "content",
+              "sha256": "92872db51e92b967421e867b4f1fae5aebedf33c8d316708a79d43ef6f8f20e0"
+            }
+          },
+          "declassified": [],
+          "legacy": null
+        },
+        "records": [
+          {
+            "format": "c600-pick",
+            "version": 1,
+            "identity": {
+              "puzzle": "full",
+              "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+              "menu_id": null,
+              "menu_order": null,
+              "contract_rev": null
+            },
+            "provenance": null,
+            "payload": {
+              "list": {
+                "role": "content",
+                "sha256": "77a9a464a362f14012676b8e4c1c59513705b3872de1a06cac8d6f9972fdb90a"
+              },
+              "fixed": true,
+              "options": {
+                "role": "content",
+                "sha256": "0791c0a84a8e84ccc4b933e0c5bb539fc7614ea193b2c22a72f9d0c11df1733d"
+              },
+              "chosen": {
+                "role": "content",
+                "sha256": "92872db51e92b967421e867b4f1fae5aebedf33c8d316708a79d43ef6f8f20e0"
+              },
+              "target": {
+                "kind": "word",
+                "value": "option-a"
+              }
+            }
+          }
+        ]
+      },
+      "expected": "PS1:input.persistence_format"
     }
   ],
   "editions": [
@@ -17804,6 +18939,309 @@
         }
       },
       "expected": "PS3:input.checkpoint_replay"
+    },
+    {
+      "id": "path-b-future-ref-added-field",
+      "clause": "FP.10",
+      "given": {
+        "fixture": "fresh-session",
+        "raw_copy": false,
+        "mutation": {
+          "kind": "ref",
+          "at": "head",
+          "record_version": 2,
+          "ref": {
+            "future_field": true
+          }
+        }
+      },
+      "package_sha256": "43acdb209e653cfe32cf0e8885738215caa5593e4c05de3b991735c6dc567e39",
+      "expected": "PS2:input.persistence_version"
+    },
+    {
+      "id": "path-b-future-ref-removed-field",
+      "clause": "FP.10",
+      "given": {
+        "fixture": "fresh-session",
+        "raw_copy": false,
+        "mutation": {
+          "kind": "ref",
+          "at": "head",
+          "record_version": 2,
+          "remove": [
+            "content"
+          ]
+        }
+      },
+      "package_sha256": "c0a6cab83825f541c55ce82e0034c2485ac343af5460a9b052c5c890905a462c",
+      "expected": "PS2:input.persistence_version"
+    },
+    {
+      "id": "path-b-wrong-kind-ref-future-record",
+      "clause": "FP.10",
+      "given": {
+        "fixture": "fresh-session",
+        "raw_copy": false,
+        "mutation": {
+          "kind": "ref",
+          "at": "head",
+          "record_version": 2,
+          "ref": {
+            "format": "c600-replay-path",
+            "version": 1
+          }
+        }
+      },
+      "package_sha256": "5188d3b843a0dbc0da6c249bdca561e2b3b249604db3b88db91c2a205f290396",
+      "expected": "PS2:input.persistence_version"
+    },
+    {
+      "id": "path-b-future-record-known-ref",
+      "clause": "FP.10",
+      "given": {
+        "fixture": "fresh-session",
+        "raw_copy": false,
+        "mutation": {
+          "kind": "ref",
+          "at": "head",
+          "record_version": 2,
+          "ref": {
+            "version": 1
+          }
+        }
+      },
+      "package_sha256": "af53e04ea1de4519451741ae10304ba685ac8baf502f6d788dd9118fc081c15d",
+      "expected": "PS2:input.persistence_version"
+    },
+    {
+      "id": "path-b-future-nested-ref-added-field",
+      "clause": "FP.10",
+      "given": {
+        "fixture": "fresh-session",
+        "raw_copy": false,
+        "mutation": {
+          "kind": "ref",
+          "at": "head.preferences",
+          "record_version": 2,
+          "ref": {
+            "future_field": true
+          }
+        }
+      },
+      "package_sha256": "0d9a1637d8cbd3a04448e64c8d6d16030263c8bac92721a54d883803f13d04ae",
+      "expected": "PS2:input.persistence_version"
+    },
+    {
+      "id": "path-b-known-ref-added-field",
+      "clause": "FP.10",
+      "given": {
+        "fixture": "fresh-session",
+        "raw_copy": false,
+        "mutation": {
+          "kind": "ref",
+          "at": "head",
+          "record_version": 1,
+          "ref": {
+            "future_field": true
+          }
+        }
+      },
+      "package_sha256": "8a6abc4d114cb5978f433a6a63650257fa42032ca6d17b47c3c5a8ca45ec3aa9",
+      "expected": "PS1:input.persistence_format"
+    },
+    {
+      "id": "path-b-known-ref-wrong-kind",
+      "clause": "FP.10",
+      "given": {
+        "fixture": "fresh-session",
+        "raw_copy": false,
+        "mutation": {
+          "kind": "ref",
+          "at": "head",
+          "record_version": 1,
+          "ref": {
+            "format": "c600-replay-path"
+          }
+        }
+      },
+      "package_sha256": "1a99ac6c905ca0b6de80530cbddfaebea5296bcedc698608b03a43fa5dc12a6e",
+      "expected": "PS1:input.persistence_format"
+    },
+    {
+      "id": "path-b-named-carrier-250000",
+      "clause": "FP.24",
+      "given": {
+        "fixture": "fresh-session",
+        "raw_copy": false,
+        "mutation": {
+          "kind": "pad",
+          "carrier": "named",
+          "bytes": 250000
+        }
+      },
+      "expected": {
+        "package_sha256": "456be7e3df657823bde0f077c2172406af4d6711ef3ce27c18909d7b45ea3f11",
+        "package_bytes": 1296941,
+        "carrier": "session/record.json",
+        "carrier_bytes": 250000,
+        "result": {
+          "head_event_id": "",
+          "head_state_sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+          "checkpoints": [
+            {
+              "id": "current",
+              "head": "",
+              "state_sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+              "preferences_sha256": "31f131dca3867d998f7a7f7b3ba353c70caec03847446dce365fec9649d27adf"
+            }
+          ],
+          "session_preferences_sha256": "31f131dca3867d998f7a7f7b3ba353c70caec03847446dce365fec9649d27adf",
+          "conversion_target_sha256": "5bdb2dee54c3e2a64861a53f51a9a2040e80045d961ac192db5c6ef7240b87e2",
+          "closure_records": 6,
+          "blob_carriers": 0,
+          "replayed_letters": 0
+        }
+      }
+    },
+    {
+      "id": "path-b-named-carrier-250001",
+      "clause": "FP.24",
+      "given": {
+        "fixture": "fresh-session",
+        "raw_copy": false,
+        "mutation": {
+          "kind": "pad",
+          "carrier": "named",
+          "bytes": 250001
+        }
+      },
+      "expected": {
+        "package_sha256": "45b1c13ffa188665ac046ffdf5d0e82e3dee8168ae5bc05ee319457c3a4d74ff",
+        "package_bytes": 1296942,
+        "carrier": "session/record.json",
+        "carrier_bytes": 250001,
+        "result": {
+          "head_event_id": "",
+          "head_state_sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+          "checkpoints": [
+            {
+              "id": "current",
+              "head": "",
+              "state_sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+              "preferences_sha256": "31f131dca3867d998f7a7f7b3ba353c70caec03847446dce365fec9649d27adf"
+            }
+          ],
+          "session_preferences_sha256": "31f131dca3867d998f7a7f7b3ba353c70caec03847446dce365fec9649d27adf",
+          "conversion_target_sha256": "3fa00a5ffff1635eadcfa4effe9cef68aec5cf1ecf4c868794663addf0257ff3",
+          "closure_records": 6,
+          "blob_carriers": 0,
+          "replayed_letters": 0
+        }
+      }
+    },
+    {
+      "id": "path-b-digest-carrier-250000",
+      "clause": "FP.24",
+      "given": {
+        "fixture": "fresh-session",
+        "raw_copy": false,
+        "mutation": {
+          "kind": "pad",
+          "carrier": "digest",
+          "bytes": 250000
+        }
+      },
+      "expected": {
+        "package_sha256": "aea7864668b15ccfbdb02df7619efff27a99fc1397c7fd94a7574d081f7634f2",
+        "package_bytes": 1295940,
+        "carrier": "records/ab6e36cd0c568ed352f78a7a65ed97ba77d6591d0ef515cb019523f1f5f3f289.json",
+        "carrier_bytes": 250000,
+        "result": {
+          "head_event_id": "",
+          "head_state_sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+          "checkpoints": [
+            {
+              "id": "current",
+              "head": "",
+              "state_sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+              "preferences_sha256": "31f131dca3867d998f7a7f7b3ba353c70caec03847446dce365fec9649d27adf"
+            }
+          ],
+          "session_preferences_sha256": "31f131dca3867d998f7a7f7b3ba353c70caec03847446dce365fec9649d27adf",
+          "conversion_target_sha256": "fe1c9eeff900aec7d062f93f62a62f675637f7c4b726e76eb18458e7a978ddb6",
+          "closure_records": 6,
+          "blob_carriers": 0,
+          "replayed_letters": 0
+        }
+      }
+    },
+    {
+      "id": "path-b-digest-carrier-250001",
+      "clause": "FP.24",
+      "given": {
+        "fixture": "fresh-session",
+        "raw_copy": false,
+        "mutation": {
+          "kind": "pad",
+          "carrier": "digest",
+          "bytes": 250001
+        }
+      },
+      "expected": {
+        "package_sha256": "e5fc7c9b26dfdc8f355e479c587a563d1f0ddaf51d193669a6a73b3e92a58868",
+        "package_bytes": 1295941,
+        "carrier": "records/ff798ccda94ecc009888828835ba12bded245a383cd63ed329fc9d4fd5b900ac.json",
+        "carrier_bytes": 250001,
+        "result": {
+          "head_event_id": "",
+          "head_state_sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+          "checkpoints": [
+            {
+              "id": "current",
+              "head": "",
+              "state_sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+              "preferences_sha256": "31f131dca3867d998f7a7f7b3ba353c70caec03847446dce365fec9649d27adf"
+            }
+          ],
+          "session_preferences_sha256": "31f131dca3867d998f7a7f7b3ba353c70caec03847446dce365fec9649d27adf",
+          "conversion_target_sha256": "29737ace915f191003b488218a15c351a348e07c26bd8ccfabc61988a27a75a6",
+          "closure_records": 6,
+          "blob_carriers": 0,
+          "replayed_letters": 0
+        }
+      }
+    },
+    {
+      "id": "path-b-named-carrier-gzip",
+      "clause": "FP.24",
+      "given": {
+        "fixture": "fresh-session",
+        "raw_copy": false,
+        "mutation": {
+          "kind": "pad",
+          "carrier": "named",
+          "bytes": 250001,
+          "stored": "c600-gzip-stored-1"
+        }
+      },
+      "package_sha256": "e6c64da8a37c381a595685218cd453aa81f2f5546c92a256b6d0b114f1893d05",
+      "expected": "PS1:input.noncanonical_value"
+    },
+    {
+      "id": "path-b-digest-carrier-gzip",
+      "clause": "FP.24",
+      "given": {
+        "fixture": "fresh-session",
+        "raw_copy": false,
+        "mutation": {
+          "kind": "pad",
+          "carrier": "digest",
+          "bytes": 250001,
+          "stored": "c600-gzip-stored-1"
+        }
+      },
+      "package_sha256": "0d612c883547bcc91a9d416077a53a13019d5dd5f6622339fc3055be631e62bd",
+      "expected": "PS1:input.digest_mismatch"
     }
   ]
 }
