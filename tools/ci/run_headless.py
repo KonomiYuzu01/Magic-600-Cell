@@ -94,11 +94,29 @@ CHECKS: list[list[str]] = [
     ["tests/test_workbench.py"],
 ]
 
+# The language checkers (600 Cell Script). The frozen migration format packet pins files that other work
+# edits, among them the agent briefing and docs/progress pages, and every pin mismatch is fatal (FP.1).
+_LANGUAGE = "docs/architecture/1.0/language/"
+# These read Markdown under the documentation trees below, so a documentation-only pull request runs them too.
+LANGUAGE_DOCS_CHECKS: list[list[str]] = [
+    [_LANGUAGE + "format-packet/check_vectors.py"],
+    [_LANGUAGE + "closure/check_closure.py", "--all"],
+    [_LANGUAGE + "closure/check_p7.py", "--all"],
+    [_LANGUAGE + "closure/test_checks.py"],
+    ["docs/progress/1.0/test_command_table.py"],
+]
+CHECKS += LANGUAGE_DOCS_CHECKS + [
+    [_LANGUAGE + "contract-vectors/check_vectors.py"],
+    [_LANGUAGE + "claim-matrix/check_matrix.py"],
+    [_LANGUAGE + "kernel-interface/check_annex.py"],
+]
+
 TIME_LIMIT_SECONDS = 1200
 
 # The checks that read the documentation trees below: the wiki and its lint,
 # the agent rules and briefing, the review wrapper, the Stop gate and the
-# workbench (status and gallery), plus the byte, skills and CI-runner checks.
+# workbench (status and gallery), the language checkers that read them, plus
+# the byte, skills and CI-runner checks.
 LIGHT_CHECKS: list[list[str]] = [
     ["tools/checkout_bytes.py"],
     ["tools/wiki/lint.py"],
@@ -110,6 +128,7 @@ LIGHT_CHECKS: list[list[str]] = [
     ["tests/test_stop_gate.py"],
     ["tests/test_wiki_lint.py"],
     ["tests/test_workbench.py"],
+    *LANGUAGE_DOCS_CHECKS,
 ]
 
 # Markdown under these trees may run the light checks only.
