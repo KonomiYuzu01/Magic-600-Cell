@@ -59,7 +59,8 @@ This page records the answers in English.
 | --- | --- |
 | Architecture candidate | The language architecture at `37dd0079`, with the format changes read at `1bd7f3fe` |
 | Format candidate | `en4-data-core-draft-1` at `1bd7f3fe` |
-| Freeze commit and final inventory digest | Recorded here after the pin refresh |
+| Freeze commit | `5ad74a96`: `candidate.json` records `frozen: true`, with every pin refreshed against input commit `a5b24fe9`, the sign-off's status commit |
+| Final inventory digest | `candidate_sha256` `661e01ebc197b9eedf0246f41b7d5b317bd95059937a0efcb5dd434da1726952` |
 
 ## Integrator readings (the owner may change them)
 
