@@ -1,7 +1,7 @@
 # ADR-L05: the evidence model and certificates
 
-Status: **Proposed.** Not accepted. The owner accepts or rejects it ([`AGENTS.md`](../../../../../AGENTS.md), "Ask the
-owner"). The owner answered LQ3 on 6 November 2026; the answer accepted no ADR.
+Status: **Accepted** (owner, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). The owner answered LQ3 on 6 November 2026; the answer accepted no ADR.
 
 Rests on: partition INV-5 and section 8.1; [chapter 06](../architecture/06-evidence.md); [chapter
 01](../architecture/01-kernel.md) KN6; [the label table](../evidence-import/README.md). Round table: DT-L1 M1, M2,

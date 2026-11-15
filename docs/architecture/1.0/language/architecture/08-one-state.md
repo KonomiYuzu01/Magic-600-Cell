@@ -1,6 +1,8 @@
 # Chapter 08: one state
 
-Status: **draft for the owner. Not accepted.** Conventions are in [the overview](00-overview.md), section 3.
+Status: **frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). Conventions are in
+[the overview](00-overview.md), section 3, and its status says what the freeze covers.
 
 A session has one authoritative puzzle state, and nothing a program does can make a second one. This chapter follows that
 promise through the system. It gives the life of everything that can look like a state, the two paths to a commit, what

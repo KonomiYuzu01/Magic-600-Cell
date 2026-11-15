@@ -1,7 +1,7 @@
 # ADR-L11: display plans and user stages
 
-Status: **Proposed.** Not accepted. The owner accepts or rejects it ([`AGENTS.md`](../../../../../AGENTS.md), "Ask the
-owner").
+Status: **Accepted** (owner, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)).
 
 Rests on: partition INV-4, INV-6, INV-8, INV-9, section 8.5 and LB4; [chapter
 10](../architecture/10-renderer-platform.md); the owner's answers of

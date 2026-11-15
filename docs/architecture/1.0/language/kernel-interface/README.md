@@ -1,6 +1,8 @@
 # Language-kernel interface annex
 
-Status: **draft architecture input for FR-B03; not accepted or frozen**. This annex selects no route,
+Status: **architecture input for FR-B03, frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)); the `status` strings in its JSON files keep
+the wording the rulings read. This annex selects no route,
 engine language, placement, syntax, ABI or wire format, answers no LQ, and makes no zero-copy claim.
 
 - **KI.1 [D]** [operations.json](operations.json) is the typed catalogue for the two traces in

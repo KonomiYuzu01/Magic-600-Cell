@@ -1,7 +1,7 @@
 # ADR-L09: boundary mechanisms, with the policy left to the joint setting
 
-Status: **Proposed.** Not accepted. The owner accepts or rejects it ([`AGENTS.md`](../../../../../AGENTS.md), "Ask the
-owner"). **This record fixes mechanisms and the interim reading. It chooses no boundary option set.** The owner and the
+Status: **Accepted** (owner, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). **This record fixes mechanisms and the interim reading. It chooses no boundary option set.** The owner and the
 integrator set that together (owner, 3 November 2026).
 
 Rests on: partition INV-3, INV-11, INV-12, section 8.2 and section 11; [chapter 07](../architecture/07-boundary.md);

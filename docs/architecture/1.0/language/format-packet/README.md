@@ -1,9 +1,11 @@
 # EN4 migration format packet
 
-Status: **candidate draft, not accepted and not frozen**. This is packet `p3` of
+Status: **frozen** after Astra's migration-format-freeze ruling and the owner's
+sign-off on 15 November 2026
+([decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md));
+`candidate.json` records `frozen: true`. This is packet `p3` of
 `docs/architecture/1.0/language/closure/HANDOFF.md`. Clause tags have the meaning in
-chapter 00. The migration-format-freeze ruling belongs to Astra; the owner signs
-after it. No schema, importer, runtime, UI or model is changed here.
+chapter 00. No schema, importer, runtime, UI or model is changed here.
 
 ## Candidate and scope
 
@@ -28,7 +30,8 @@ after it. No schema, importer, runtime, UI or model is changed here.
 - **FP.2 [B]** The freeze covers PS2.10's language-neutral data core and the facts
   payload (owner, 6 November 2026, LQ10). This packet consumes H8 for text/output
   accounting, H9 for no-run provenance, H10 for flat menu words and H12 for aliases.
-  Those four are working proposals, not owner decisions. The archive preserves source
+  The owner accepted the frozen portions of those four working proposals on
+  15 November 2026. The archive preserves source
   syntax as bytes; source editions, syntax, IR, module semantics and renderer data do
   not freeze here. This packet grants no LP2 start or release approval.
 - **FP.3 [B] Withdrawn.** Rejected alternatives of LQ10 (owner, 6 November 2026).

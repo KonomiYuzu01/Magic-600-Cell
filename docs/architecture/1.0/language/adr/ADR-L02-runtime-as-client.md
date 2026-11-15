@@ -1,7 +1,7 @@
 # ADR-L02: the runtime as a client of the command layer, off the critical path
 
-Status: **Proposed.** Not accepted. The owner accepts or rejects it ([`AGENTS.md`](../../../../../AGENTS.md), "Ask the
-owner").
+Status: **Accepted** (owner, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)).
 
 Rests on: partition sections 2 and 9; [chapter 08](../architecture/08-one-state.md) ONE.67 to ONE.69; [chapter
 01](../architecture/01-kernel.md) KN0.7, KN5, KN7; [chapter 02](../architecture/02-language-core.md) LG4. Round table:

@@ -1,6 +1,8 @@
 # Chapter 11: implementation routes and spikes
 
-Status: **draft for the owner. Not accepted.** Conventions are in [the overview](00-overview.md), section 3.
+Status: **frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). Conventions are in
+[the overview](00-overview.md), section 3, and its status says what the freeze covers.
 
 This chapter gives the obligations of each implementation route and the evidence needed to choose a route, an engine
 language and a runtime placement. It supplies experiment cards and decision rules. LX-1 to LX-9 ran as far as the

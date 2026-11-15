@@ -1,6 +1,8 @@
 # Chapter 01: the kernel
 
-Status: **draft for the owner. Not accepted.** Conventions are in [the overview](00-overview.md), section 3.
+Status: **frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). Conventions are in
+[the overview](00-overview.md), section 3, and its status says what the freeze covers.
 
 The kernel is the lower half of the charter's six layers: the engine (KN1, KN2, KN3, KN6, KN7), the session store (KN4)
 and the command layer (KN5). This chapter states what the language needs from it. It is the contract that LP1's kernel

@@ -1,12 +1,22 @@
 # Language architecture: overview and conventions
 
-Status: **draft for the owner. Not accepted.** Nothing in this document is an ADR, a frozen architecture or a chosen
+Status: **frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). This document is not an ADR and chooses no
 syntax. It is the full text that the [ecosystem partition](../ecosystem-partition.md) promises in its section 17. The
 owner confirmed the partition's direction on 3 November 2026, answered LQ1 to LQ21 on 6 November 2026 and chose LQ8,
 LQ9 and LQ21 on 14 November 2026: the engine and the interpreter's host in Rust, route RT1 with the runtime in a process
-of its own, and capability separation (RTE.17, RTE.21, RTE.24). LQ13 waits for its evidence, and LQ2's option set waits
-for the joint setting. Accepting ADRs and freezing the architecture are the owner's decisions. No ADR is accepted and
-nothing is frozen by these answers.
+of its own, and capability separation (RTE.17, RTE.21, RTE.24). After both Astra freeze rulings went go, the owner
+confirmed understanding and signed LP1 on 15 November 2026: ADR-L01 to ADR-L12 are accepted, this architecture and the
+migration format are frozen, and LP2 to LP5 may start (PHS.44, PHS.51).
+
+The freeze covers the chapters, the [ADRs](../adr/README.md), the annexes in the language folder and the
+[format packet](../format-packet/README.md) as the rulings read them, with the status lines changed at the sign-off.
+The `status` strings inside annex data files keep the wording the rulings read; these status lines supersede them. [O]
+clauses stay open until the decision they name, and [P LQ13] clauses stay conditional on LQ13, which waits for LX-8
+before LP2's parser. LQ2's option set waits for the joint setting. Syntax and the IR freeze later (PHS.49), and the
+command table freezes at LP3 (PHS.53). A changed format, layer boundary or renderer feature follows PHS.52. The
+design-system ADR is still outstanding (PHS.44). The owner also accepted state-contract amendment A6 on 15 November
+2026: where a clause calls A6 proposed or not in force, A6 is in force; it replaces A1's input map only.
 
 "The language" means 600 Cell Script, with source files `.6cs` (owner, 6 November 2026, LQ17). "The partition" means the
 page linked above. Its IDs are used unchanged: INV-n, KNn, LGn, LBn, EVn, PSn, BMn, BSn, RTn, LX-n, LPn, LQn and its

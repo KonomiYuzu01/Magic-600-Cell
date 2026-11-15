@@ -1,6 +1,8 @@
 # Chapter 06: evidence and certificates
 
-Status: **draft for the owner. Not accepted.** Conventions are in [the overview](00-overview.md), section 3.
+Status: **frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). Conventions are in
+[the overview](00-overview.md), section 3, and its status says what the freeze covers.
 
 This chapter says what a result claims, on what grounds, about what, and which word the display may use for it. It holds
 the partial order on evidence with its proofs, the function that computes every display word, the rules for premises and

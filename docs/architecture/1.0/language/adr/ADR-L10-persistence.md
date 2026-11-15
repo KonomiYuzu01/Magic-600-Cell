@@ -1,7 +1,7 @@
 # ADR-L10: persistence formats, the data core and editions
 
-Status: **Proposed.** Not accepted. The owner accepts or rejects it ([`AGENTS.md`](../../../../../AGENTS.md), "Ask the
-owner"). Accepting it freezes no format. The migration format freeze is a separate gate.
+Status: **Accepted** (owner, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). Accepting it freezes no format. The migration format freeze is a separate gate.
 
 Rests on: partition INV-7, PS1 to PS3, section 13 and defaults 3, 4, 11, 13 and 20; [chapter
 05](../architecture/05-persistence.md); [chapter 01](../architecture/01-kernel.md) KN4. Round table: DT-L1 E6, M2,

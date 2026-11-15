@@ -1,6 +1,8 @@
 # Chapter 13: the error registry
 
-Status: **draft for the owner. Not accepted.** Conventions are in [the overview](00-overview.md), section 3.
+Status: **frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). Conventions are in
+[the overview](00-overview.md), section 3, and its status says what the freeze covers.
 
 This chapter defines error identity, the error envelope and its categories. It collects the codes proposed by the
 drafted chapters and reconciles their spellings with DT-L1 Round 3. It defines no implementation, concrete syntax or

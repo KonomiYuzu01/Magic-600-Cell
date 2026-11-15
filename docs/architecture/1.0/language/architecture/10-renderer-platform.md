@@ -1,6 +1,8 @@
 # Chapter 10: renderer and platform independence
 
-Status: **draft for the owner. Not accepted.** Conventions are in [the overview](00-overview.md), section 3.
+Status: **frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). Conventions are in
+[the overview](00-overview.md), section 3, and its status says what the freeze covers.
 
 The language produces descriptions of views. An adapter turns those descriptions into drawing work for whichever
 renderer the owner selects. This chapter defines the descriptions, their revision and identity rules, and the handoff

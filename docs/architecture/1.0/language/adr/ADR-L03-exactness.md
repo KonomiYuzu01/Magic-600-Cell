@@ -1,7 +1,8 @@
 # ADR-L03: exactness, the numeric tower and the algebras
 
-Status: **Proposed.** Not accepted. The owner accepts or rejects it ([`AGENTS.md`](../../../../../AGENTS.md), "Ask the
-owner").
+Status: **Accepted** (owner, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). The owner accepted state-contract amendment A6 separately
+on the same day, after EN1's Astra check, so A6 is in force where this record calls it proposed.
 
 Rests on: partition INV-4, KN3 and LG2; [chapter 01](../architecture/01-kernel.md) KN3; [chapter
 02](../architecture/02-language-core.md) LG1, LG2; [chapter 09](../architecture/09-determinism.md) DET.13, DET.31 to

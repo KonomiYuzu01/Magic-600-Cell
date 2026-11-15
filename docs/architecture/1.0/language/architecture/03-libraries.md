@@ -1,6 +1,8 @@
 # Chapter 03: libraries and built-in tools
 
-Status: **draft for the owner. Not accepted.** Conventions are in [the overview](00-overview.md), section 3.
+Status: **frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). Conventions are in
+[the overview](00-overview.md), section 3, and its status says what the freeze covers.
 
 This chapter gives the library entries, their contracts and their backing. It defines `PrincipleRecord` and lists
 candidate built-in tools. It grants no solving capability. Chapter 07 owns the policy table, chapter 02 the types and

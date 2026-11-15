@@ -167,7 +167,7 @@ The design track and the engineering track run in parallel and meet through numb
 
 | ID | Item | First version | Final | Used by the engineering track for | Status |
 |---|---|---|---|---|---|
-| H-11 | Display-plan primitives, the user-stage contract and the free-view workload (owner, 6 November 2026, LQ20) | [renderer-feature-matrix](../../architecture/1.0/language/renderer-feature-matrix.md) and chapter 10, draft, not accepted | before the renderer feature-list freeze | the renderer feature list | open |
+| H-11 | Display-plan primitives, the user-stage contract and the free-view workload (owner, 6 November 2026, LQ20) | [renderer-feature-matrix](../../architecture/1.0/language/renderer-feature-matrix.md) and chapter 10 | before the renderer feature-list freeze | the renderer feature list | delivered 15 November 2026: frozen with the LP1 candidate ([decision](../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)) |
 
 ## 5. Schedule: about 20 working days (owner decisions, 1 and 2 October 2026)
 

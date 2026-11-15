@@ -1,6 +1,8 @@
 # Chapter 12: phases and conformance
 
-Status: **draft for the owner. Not accepted.** Conventions are in [the overview](00-overview.md), section 3.
+Status: **frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). Conventions are in
+[the overview](00-overview.md), section 3, and its status says what the freeze covers.
 
 A phase ends when its acceptance is evidenced. This chapter makes the partition's phase table checkable, connects it
 to the other engineering lines, and assigns the existing chapters' test requirements to their first runnable phase.

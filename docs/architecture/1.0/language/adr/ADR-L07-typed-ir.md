@@ -1,8 +1,8 @@
 # ADR-L07: the typed IR as the stable contract
 
-Status: **Proposed.** Not accepted. It follows the route choice (partition section 17, PHS.10), and the owner chose
-RT1 on 14 November 2026 (LQ9, RTE.21), so the typed IR applies. The owner accepts or rejects it after both LP1 rulings
-([`AGENTS.md`](../../../../../AGENTS.md), "Ask the owner").
+Status: **Accepted** (owner, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). It follows the route choice (partition
+section 17, PHS.10), and the owner chose RT1 on 14 November 2026 (LQ9, RTE.21), so the typed IR applies.
 
 Rests on: partition LG4 and section 12; [chapter 02](../architecture/02-language-core.md) LG1, LG4; [chapter
 11](../architecture/11-route-and-spikes.md) sections 1 to 5. Round table: DT-L1 E4.

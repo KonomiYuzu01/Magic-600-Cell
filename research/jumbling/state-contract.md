@@ -116,7 +116,7 @@ Acceptance for a later simulator, not for this experiment:
 
 ## 7. Amendments
 
-A1 to A4 (9 October 2026) were written from section 4 of `docs/progress/1.0/jumbling-plan.md` after its plan check and scoped re-checks; A5 (22 October 2026) from ENG-0J revision 2, as its entry says. Where an amendment and an earlier section differ, the amendment holds. A6 (6 November 2026) is a proposal and holds only when its own entry says so.
+A1 to A4 (9 October 2026) were written from section 4 of `docs/progress/1.0/jumbling-plan.md` after its plan check and scoped re-checks; A5 (22 October 2026) from ENG-0J revision 2, as its entry says. Where an amendment and an earlier section differ, the amendment holds. A6 (6 November 2026) was accepted by the owner on 15 November 2026 and holds as its own entry says.
 
 ### A1 Exact rotation domain and input map
 - **Domain.**
@@ -195,8 +195,8 @@ Written from section 8 of `docs/progress/1.0/packets/engineering/ENG-0J-jumbling
 | Label-lift lemma | The integrator's proof above (DT-J1 M10, M17), checked by the Astra plan check of ENG-0J revision 2 | this amendment |
 | C5 convention | A definition; its inputs are under the model identity | `nucoords.py`; `assets/manifest.json` |
 
-### A6 Exact rotation requests (proposed, 6 November 2026; not in force)
-**Status.** Proposed. A1 stays the contract in force until this text passes EN1's Astra check and the owner accepts it (owner, 6 November 2026, decision 8: `docs/wiki/decisions/owner-decisions-2026-11-06.md`). Until then the rule of this section that an amendment holds over an earlier section does not apply to A6. A6 replaces A1's input map only. A1's domain, its exact branches, its rule for menu elements and its rule that replay uses the recorded exact rotation stay.
+### A6 Exact rotation requests (6 November 2026; accepted 15 November 2026)
+**Status.** Accepted (owner, 15 November 2026: `docs/wiki/decisions/owner-decisions-2026-11-15-freeze.md`). It passed EN1's Astra check, which the architecture-freeze ruling of 14 November 2026 completed, and the owner accepted it, as decision 8 of 6 November 2026 requires (`docs/wiki/decisions/owner-decisions-2026-11-06.md`). From 15 November 2026 the rule of this section that an amendment holds over an earlier section applies to A6. A6 replaces A1's input map only. A1's domain, its exact branches, its rule for menu elements and its rule that replay uses the recorded exact rotation stay.
 - **Request.** A fresh rotation request is exact bytes, read in A1's frame at the named cap, in one of three forms:
   - C, an exact dyadic Cayley vector ω, naming R(ω);
   - H, an explicit half-turn form: a nonzero primitive integer axis with its first nonzero component positive;

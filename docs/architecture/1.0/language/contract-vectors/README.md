@@ -1,6 +1,7 @@
 # LP1 execution contract reference vectors
 
-Status: **draft for the owner. Not accepted.** These are abstract accounting examples, not a language, a serialized
+Status: **frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). These are abstract accounting examples, not a language, a serialized
 IR, a route implementation, measured tariffs or budget presets. The semantic rules are DET.54 to DET.65 in
 [chapter 09](../architecture/09-determinism.md); LG4.8 retains the weighted-step alternative. Boundary examples
 also consume LG2.20/LG2.22 and EV3.5. They are small rule models over declared inputs, not a source checker or renderer.

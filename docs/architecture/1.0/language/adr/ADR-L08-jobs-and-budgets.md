@@ -1,7 +1,7 @@
 # ADR-L08: jobs and deterministic budgets
 
-Status: **Proposed.** Not accepted. The owner accepts or rejects it ([`AGENTS.md`](../../../../../AGENTS.md), "Ask the
-owner").
+Status: **Accepted** (owner, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)).
 
 Rests on: partition INV-10, section 8.4 and default 6; [chapter 01](../architecture/01-kernel.md) KN7; [chapter
 09](../architecture/09-determinism.md). Round table: DT-L1 E3, M1; explainer P-E7.

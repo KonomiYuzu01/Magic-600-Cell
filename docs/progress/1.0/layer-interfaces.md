@@ -1,6 +1,8 @@
 # EN4 layer interfaces
 
-Status: **draft for review, `en4-layer-interfaces/1-draft`. Not accepted or frozen.**
+Status: **`en4-layer-interfaces/1-draft`, frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
+[decision](../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). A changed layer boundary follows chapter 12, PHS.52;
+complete typed coverage and implementation evidence stay open (PHS.53).
 
 This is the main-line contract requested by PHS.13. It accompanies [H-08](command-table.md),
 [chapter 01](../../architecture/1.0/language/architecture/01-kernel.md) and

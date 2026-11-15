@@ -1,6 +1,8 @@
 # FR-B08: claim, checker and dependency matrix
 
-Status: **draft architecture input; not accepted or frozen**. This selects no
+Status: **architecture input, frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)); the `status` string in `matrix.json` keeps
+the wording the rulings read. This selects no
 route, engine language or syntax, answers no LQ, and changes no chapter. Research
 remains stopped. The matrix is an independent-checking **plan**, not a new check
 report or mathematical result.

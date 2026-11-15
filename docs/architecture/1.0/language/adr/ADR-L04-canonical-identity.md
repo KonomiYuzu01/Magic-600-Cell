@@ -1,7 +1,7 @@
 # ADR-L04: canonical identity, the identity tower and source maps
 
-Status: **Proposed.** Not accepted. The owner accepts or rejects it ([`AGENTS.md`](../../../../../AGENTS.md), "Ask the
-owner").
+Status: **Accepted** (owner, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)).
 
 Rests on: partition INV-6, INV-7; [chapter 01](../architecture/01-kernel.md) KN1; [chapter
 02](../architecture/02-language-core.md) LG2; [chapter 10](../architecture/10-renderer-platform.md) RPI.20 to RPI.26.

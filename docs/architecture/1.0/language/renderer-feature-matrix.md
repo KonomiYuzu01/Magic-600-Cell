@@ -1,7 +1,8 @@
 # Renderer feature matrix and portable interface
 
-Status: **draft for the owner. Not accepted.** Packets p6 and p7-render, closure and reconciliation waves.
-No renderer is selected, no ADR is accepted, and no gate result or new measurement is supplied here. The selection gate in
+Status: **frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
+[decision](../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). Packets p6 and p7-render, closure and
+reconciliation waves. No renderer is selected, and no gate result or new measurement is supplied here. The selection gate in
 [renderer-candidates](../../../wiki/decisions/renderer-candidates.md) is unchanged.
 
 Read with [chapter 10](architecture/10-renderer-platform.md), [ADR-L11](adr/ADR-L11-display-plans.md),

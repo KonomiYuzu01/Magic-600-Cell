@@ -1,7 +1,7 @@
 # ADR-L12: implementation route and runtime placement
 
-Status: **Proposed.** Not accepted. The owner accepts or rejects it after both LP1 rulings
-([`AGENTS.md`](../../../../../AGENTS.md), "Ask the owner"). **The owner chose on 14 November 2026:** the engine, the
+Status: **Accepted** (owner, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). **The owner chose on 14 November 2026:** the engine, the
 session store, the command layer and the interpreter's host in Rust (LQ8, RTE.17); route RT1, an own interpreter over
 the typed IR, with the runtime in a process of its own (LQ9, RTE.21); and capability separation (LQ21, RTE.24). This
 record states those choices, what holds under every outcome, and the checks that can still reopen LQ9.

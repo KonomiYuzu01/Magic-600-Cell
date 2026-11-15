@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-15] decision | The language: LP1 signed, architecture and migration format frozen
+After both Astra freeze rulings went go, the owner confirmed understanding and signed LP1: ADR-L01 to ADR-L12 are accepted, the language architecture and the migration format are frozen, LP2 to LP5 may start, and state-contract amendment A6 is accepted ([decision](decisions/owner-decisions-2026-11-15-freeze.md)). The design-system ADR, LQ13, LQ2's option set and the LP3 acceptance runs stay open.
+
 ## [2026-11-14] decision | The language: Rust, route RT1 in its own process, and capability separation
 The owner accepted the CPU timing runs of 14 November as decisive and chose Rust for the engine and the interpreter's host (LQ8), route RT1 with the runtime in a process of its own (LQ9) and capability separation (LQ21); the decisive LX-1, LX-2 and LX-4 runs become LP3 acceptance checks, and a failing one reopens LQ9 ([decision](decisions/owner-decisions-2026-11-14-language-route.md)). The architecture chapters and ADR drafts carry the answers; no ADR is accepted and nothing is frozen.
 

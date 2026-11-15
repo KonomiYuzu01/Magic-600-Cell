@@ -1,8 +1,7 @@
 # ADR-L06: effects, capabilities and flow control
 
-Status: **Proposed.** Not accepted. The owner accepts or rejects it ([`AGENTS.md`](../../../../../AGENTS.md), "Ask the
-owner"). **The owner chose the form of flow control on 14 November 2026: capability separation** (LQ21, RTE.24). The
-owner accepts ADRs after both LP1 rulings.
+Status: **Accepted** (owner, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). **The owner chose the form of flow control on 14 November 2026: capability separation** (LQ21, RTE.24).
 
 Rests on: partition INV-3, INV-10, INV-11, LG3 and BM2; [chapter 02](../architecture/02-language-core.md) LG3; [chapter
 07](../architecture/07-boundary.md) sections 4 to 6; [chapter 09](../architecture/09-determinism.md) section 5. Round

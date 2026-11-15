@@ -1,6 +1,8 @@
 # Chapter 07: the human-solve boundary
 
-Status: **draft for the owner. Not accepted.** Conventions are in [the overview](00-overview.md), section 3.
+Status: **frozen with the LP1 candidate** (owner sign-off, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)). Conventions are in
+[the overview](00-overview.md), section 3, and its status says what the freeze covers.
 
 This chapter says how the language and its runtime carry the human-solve boundary. It states what binds, what software
 can and cannot establish, the mechanisms that exist under every option, and the option sets the owner and the integrator

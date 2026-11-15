@@ -1,7 +1,7 @@
 # ADR-L01: one mechanics and one authoritative state
 
-Status: **Proposed.** Not accepted. The owner accepts or rejects it ([`AGENTS.md`](../../../../../AGENTS.md), "Ask the
-owner").
+Status: **Accepted** (owner, 15 November 2026;
+[decision](../../../../wiki/decisions/owner-decisions-2026-11-15-freeze.md)).
 
 Rests on: [chapter 08](../architecture/08-one-state.md), [chapter 01](../architecture/01-kernel.md) KN2, KN5; partition
 INV-1 to INV-3 and section 8.3. Round table: DT-L1 E1, E2, R2-E2.
