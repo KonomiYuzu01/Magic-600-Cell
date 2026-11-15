@@ -225,6 +225,7 @@ Sources: [the partition](../ecosystem-partition.md), sections 12 to 17 and INV-1
 | Presented-preview binding in the selected renderer | Exercise the gap between received and presented previews under actual frame pacing; the chord binds the presented preview (ONE.41) | windows |
 | Charter E2 with the tools' views active | Measure key to first correct full frame, including admission, apply, durable store transaction and adoption; p95 at most 100 ms over at least 100 observations, on one frozen candidate | performance |
 | Stage and view contract on the selected renderer | On the actual device a stopped frame runs no user-stage fragment work, picks agree with the drawing pass and a device fault quarantines the chain's user-stage digests; the advertised combination passes the unchanged gate in one run (RPI.72, RPI.77, RPI.79; RM.40) | windows; performance for the gate run |
+| Decisive LX-1 to LX-4 checks (owner, 14 November 2026; RTE.21, RTE.24) | LX-1's decisive check is the E2 row above. LX-2's and LX-4's decisive runs, LX-3's admitted-executor and platform coverage, the execution-contract mapping and product sandbox admission run on the LP3 candidate with their bars unchanged (CT-KN7-06, CT-EV1-06, CT-RTE-04, CT-RTE-07, CT-RTE-08, CT-RTE-10, CT-RTE-11, CT-RTE-12). A failing LX-1, LX-2 or LX-4 run reopens LQ9; a failing LX-3 check goes to the owner | source; windows; performance |
 
 - **PHS.24 [D]** LP3 depends on LP2, frozen H-08 and the renderer freeze for its on-screen half (partition LP3).
   Headless integration work does not pass the on-screen acceptance early. The E2 figures are decision thresholds,
@@ -520,8 +521,15 @@ completed applicable language products + design-system ADR + migration/renderer/
   PHS.26's authoring services. LP2 stubs cannot discharge either requirement. Earlier partial
   checker mutation checks do not discharge the all-kinds gate indexed in LP5. Results are rechecked on later changed
   candidates under PHS.4; first assignment is not a lifetime exemption.
-  The tables follow the owner's answers of 6 November 2026. An approved order or scope change requires the same
-  readiness check and an updated index; nothing is reassigned through an assumed answer.
+  The tables follow the owner's answers of 6 and 14 November 2026. The 14 November answers made the decisive LX-1,
+  LX-2 and LX-4 runs and LX-3's remaining checks LP3 acceptance checks with their bars unchanged (RTE.21, RTE.24;
+  PHS.23). The tests that need those runs are therefore indexed in LP3: CT-KN7-06 and CT-EV1-06 (charter E2 under a
+  running program job and LX-4's bars), and CT-RTE-04, CT-RTE-07, CT-RTE-08, CT-RTE-10, CT-RTE-11 and CT-RTE-12
+  (execution-contract mapping, platform coverage, sandbox admission, LX-2's faults and LX-4's protocol). Their IDs,
+  classes and bars are unchanged. A failing LX-1, LX-2 or LX-4 run reopens LQ9, and a failing LX-3 check goes to the
+  owner (PHS.63). LP1 keeps the direct checks that the first-pass spike records can run whole, such as CT-RTE-05,
+  CT-RTE-06, CT-DET-19 and CT-BND-25. An approved order or scope change requires the same readiness check and an
+  updated index; nothing is reassigned through an assumed answer.
 - **PHS.63 [D]** A failed required test blocks its owning acceptance and every dependent exit that needs it
   (partition section 14). A failure of a lead blocks reporting that lead as obtained; it is not itself a refutation
   of the proposed theorem. A test that depends on a waiting question waits for its decision. If that decision removes
@@ -560,10 +568,8 @@ LP0 has no executable component test in the supplied chapters. Its contract chec
 
 | Component | source | synthetic | windows | performance | human |
 | --- | --- | --- | --- | --- | --- |
-| KN7 | none | none | none | CT-KN7-06 | none |
 | LG1 | CT-LG1-06 | none | none | none | none |
 | LG3 | CT-LG3-08 | none | none | none | none |
-| EV1 | none | none | none | CT-EV1-06 | none |
 | EV3 | CT-EV3-09 | none | none | none | none |
 | PS1 | CT-PS1-20 | none | none | none | none |
 | PS2 | CT-PS2-07 | none | none | none | none |
@@ -572,7 +578,7 @@ LP0 has no executable component test in the supplied chapters. Its contract chec
 | RPI | CT-RPI-15, CT-RPI-28, CT-RPI-29, CT-RPI-35, CT-RPI-38 | CT-RPI-16, CT-RPI-30 | CT-RPI-17 | CT-RPI-25 | none |
 | EVD | CT-EVD-14, CT-EVD-15, CT-EVD-16, CT-EVD-23, CT-EVD-25 | CT-EVD-24 | none | none | none |
 | BND | CT-BND-25 | none | none | none | none |
-| RTE | CT-RTE-01, CT-RTE-02, CT-RTE-03, CT-RTE-04, CT-RTE-05, CT-RTE-06, CT-RTE-07, CT-RTE-08, CT-RTE-13, CT-RTE-14, CT-RTE-15, CT-RTE-21 | CT-RTE-09, CT-RTE-19, CT-RTE-22 | CT-RTE-10, CT-RTE-17 | CT-RTE-11, CT-RTE-12, CT-RTE-16 | CT-RTE-18 |
+| RTE | CT-RTE-01, CT-RTE-02, CT-RTE-03, CT-RTE-05, CT-RTE-06, CT-RTE-13, CT-RTE-14, CT-RTE-15, CT-RTE-21 | CT-RTE-09, CT-RTE-19, CT-RTE-22 | CT-RTE-17 | CT-RTE-16 | CT-RTE-18 |
 | JI | CT-JI-01, CT-JI-02, CT-JI-03, CT-JI-04, CT-JI-05, CT-JI-06, CT-JI-07, CT-JI-08, CT-JI-09, CT-JI-10, CT-JI-11 | none | none | none | none |
 | LI | CT-LI-08 | none | none | none | none |
 | FP | CT-FP-01, CT-FP-02, CT-FP-03, CT-FP-05, CT-FP-07, CT-FP-08, CT-FP-09 | CT-FP-04, CT-FP-06 | none | none | none |
@@ -613,17 +619,20 @@ LP0 has no executable component test in the supplied chapters. Its contract chec
 
 | Component | source | synthetic | windows | performance | human |
 | --- | --- | --- | --- | --- | --- |
+| KN7 | none | none | none | CT-KN7-06 | none |
 | LG4 | none | none | none | CT-LG4-09 | none |
 | LB1 | CT-LB1-01, CT-LB1-02, CT-LB1-03, CT-LB1-06 | none | none | none | none |
 | LB2 | CT-LB2-01, CT-LB2-02, CT-LB2-03, CT-LB2-04 | none | none | none | none |
 | LB3 | CT-LB3-01, CT-LB3-02, CT-LB3-03, CT-LB3-04, CT-LB3-05, CT-LB3-06, CT-LB3-07 | none | none | none | none |
 | LB4 | CT-LB4-01, CT-LB4-03, CT-LB4-04 | CT-LB4-02 | none | none | none |
 | LB6 | CT-LB6-03 | none | none | none | none |
+| EV1 | none | none | none | CT-EV1-06 | none |
 | EV3 | CT-EV3-03, CT-EV3-06, CT-EV3-07, CT-EV3-08 | CT-EV3-01, CT-EV3-02, CT-EV3-04 | none | none | none |
 | EV4 | none | CT-EV4-02, CT-EV4-04 | none | none | none |
 | ONE | CT-ONE-29, CT-ONE-30 | none | CT-ONE-26 | CT-ONE-25 | none |
 | RPI | CT-RPI-02, CT-RPI-04, CT-RPI-05, CT-RPI-06, CT-RPI-08, CT-RPI-09, CT-RPI-12, CT-RPI-19, CT-RPI-22, CT-RPI-23, CT-RPI-27, CT-RPI-32, CT-RPI-36 | CT-RPI-03, CT-RPI-07, CT-RPI-10, CT-RPI-11, CT-RPI-14, CT-RPI-18, CT-RPI-37 | CT-RPI-13, CT-RPI-21, CT-RPI-24, CT-RPI-31, CT-RPI-33, CT-RPI-34 | CT-RPI-26 | none |
 | BND | CT-BND-15, CT-BND-17, CT-BND-18, CT-BND-19 | none | CT-BND-20 | none | none |
+| RTE | CT-RTE-04, CT-RTE-07, CT-RTE-08 | none | CT-RTE-10 | CT-RTE-11, CT-RTE-12 | none |
 | RM | CT-RM-02, CT-RM-03, CT-RM-04, CT-RM-07, CT-RM-09 | none | CT-RM-05, CT-RM-06, CT-RM-10 | none | none |
 
 ### 15.5. LP4
@@ -670,9 +679,9 @@ Source counts from the index above, for the integrated candidate (PHS.71):
 | Phase | source | synthetic | windows | performance | human | Total |
 | --- | --- | --- | --- | --- | --- | --- |
 | LP0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| LP1 | 54 | 8 | 3 | 6 | 1 | 72 |
+| LP1 | 51 | 8 | 2 | 2 | 1 | 64 |
 | LP2 | 244 | 4 | 0 | 0 | 0 | 248 |
-| LP3 | 47 | 13 | 11 | 3 | 0 | 74 |
+| LP3 | 50 | 13 | 12 | 7 | 0 | 82 |
 | LP4 | 42 | 5 | 1 | 0 | 3 | 51 |
 | LP5 | 23 | 0 | 0 | 0 | 0 | 23 |
 | LP6 | 12 | 0 | 0 | 0 | 1 | 13 |
@@ -691,8 +700,10 @@ the other class counts are unchanged. Those ten are excluded from the imported p
   The integration of the owner's answers of 6 November 2026 adds 64 more and withdraws CT-RTE-20: 10 in LP1 (8 source,
   2 synthetic), 24 source in LP2, 11 in LP3 (6 source, 1 synthetic, 4 windows), 13 in LP4 (11 source, 2 synthetic),
   4 source in LP5 and 2 source in LP6. The integrator compared this index with every defining table of the combined
-  candidate on 6 November 2026: each defined ID occurs once with its class unchanged. A later addition needs a recount.
-  The totals count requirements only: none of these tests has run.
+  candidate on 6 November 2026: each defined ID occurs once with its class unchanged. The owner's answers of
+  14 November 2026 move eight requirements from LP1 to LP3 (three source, one windows and four performance; PHS.62)
+  and add or withdraw none. The integrator repeated the comparison on 15 November 2026 with the same result. A later
+  addition needs a recount. The totals count requirements only: none of these tests has run.
 
 ## 16. Source differences and evidence limits
 
@@ -719,9 +730,10 @@ the other class counts are unchanged. Those ten are excluded from the imported p
 
 - **PHS.72 [D]** ADR-L01, ADR-L02, ADR-L07, ADR-L08 and ADR-L11 describe the current one-state, client/receipt,
   execution/accounting and display-interface drafts by reference to their owning clauses. All five remain Proposed
-  and not accepted; ADR-L07 remains held for LP1 and the route choice. Their open lists retain review, implementation,
-  measurements and the waiting questions. The owner's answers of 6 November 2026 accepted no ADR, and a supplied draft
-  protocol is no accepted ADR or freeze.
+  and not accepted. ADR-L07 now records route RT1, which the owner chose on 14 November 2026 (LQ9; RTE.21), and waits
+  only for the owner's acceptance after both LP1 rulings (PHS.15). Their open lists retain review, implementation,
+  measurements and the waiting questions. Neither the owner's answers of 6 November nor those of 14 November 2026
+  accepted an ADR, and a supplied draft protocol is no accepted ADR or freeze.
 
 ## 17. Errors
 

@@ -60,7 +60,9 @@ RTE.27, LG3.14).
 Open mechanisms:
 
 - Whether an invoked command may replace a preview already on screen (LG3.7, KN5.12).
-- The three fixes for the stop and emission channels, none of them chosen (BND.51).
+
+The stop and emission channels are closed by capability separation, the third of BND.51's fixes (owner,
+14 November 2026, LQ21). The other two apply to flow labels; they stay on record and bind nothing.
 
 Waiting for the joint setting:
 

@@ -43,8 +43,8 @@ Every candidate was exact on the frozen cases; the crate follow-up's correctness
 | Node BigInt | 1,410.1 ms | 1.032, 1.52, 4.25 |
 | .NET BigInteger | 136.6 ms | 1.041, 2.22, 5.83 |
 
-This record does not attribute the larger spreads to particular rows; `lx5-full.json` and `crate-full.json` hold every
-sample.
+This record does not attribute the larger spreads to particular rows; `lx5-full.json` and `crate-full.json` hold the
+per-row series statistics (count, minimum, maximum, median and p99) and the raw-timing digests, not every sample.
 
 Geometric mean, over sizes, of each candidate's row median divided by the own limbs' row median (below 1 is faster).
 The JSON records also hold bits, cmp, shl, shr, q_conj and sum:
