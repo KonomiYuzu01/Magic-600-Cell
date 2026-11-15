@@ -19,7 +19,7 @@ This guide is for the owner and any person working on the project. Agents follow
 - Codex reviews every non-trivial plan and every candidate change, read-only, at `max` effort. GPT-6.1 Sol handles routine work. Codex Astra reviews critical, behaviour, contract and design changes, handles escalations and audits, and gives the three final rulings: the stage 2.4 day-7 go/no-go, the migration format freeze and the 1.0 architecture freeze.
 - Each candidate gets one full review and at most two short verification rounds; remaining blockers come to you as a decision. Every plan check and review runs on the fast tier; only the three final rulings, joint attacks and escalations use the standard tier.
 - Codex also writes code alongside Claude, each packet in its own sandboxed worktree; Claude reviews and merges, and no one reviews their own code. On Windows without administrator setup the sandbox blocks file writes outside the worktree but not network access.
-- Fable, a Claude subagent, joins only when a problem resists repeated attempts.
+- Fable, a Claude subagent, joins when a problem resists repeated attempts. Since 15 November 2026 it also runs the three read-only tasks you approved for LP2, one at a time: attacks on the checker, crash tests for the session store and the kernel's differential tests. It finds problems; Claude Opus writes the tests and the fixes.
 - Missing tools from the approved list are installed automatically once you have approved the installer (section 3).
 
 **What they must ask you** (full list in `AGENTS.md`, "Ask the owner")
