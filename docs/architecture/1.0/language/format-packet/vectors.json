@@ -618,6 +618,43 @@
         "format": "unknown-record"
       },
       "expected": "PS2:input.persistence_version"
+    },
+    {
+      "id": "future-version-added-field",
+      "clause": "FP.10",
+      "given": {
+        "version": 2,
+        "future_field": true
+      },
+      "expected": "PS2:input.persistence_version"
+    },
+    {
+      "id": "future-version-removed-field",
+      "clause": "FP.10",
+      "given": {
+        "version": 2
+      },
+      "remove": [
+        "provenance"
+      ],
+      "expected": "PS2:input.persistence_version"
+    },
+    {
+      "id": "known-version-removed-field",
+      "clause": "FP.10",
+      "given": {},
+      "remove": [
+        "provenance"
+      ],
+      "expected": "PS1:input.persistence_format"
+    },
+    {
+      "id": "old-draft-identifier",
+      "clause": "FP.4",
+      "given": {
+        "format": "c600-word-draft"
+      },
+      "expected": "PS2:input.persistence_version"
     }
   ],
   "provenance": {
@@ -669,7 +706,7 @@
         "moved_slots": 0,
         "labels": 259800,
         "source_sha256": "f51ba77ae585ae9855a44eb584f33696312a2eaa1f94d97e3a3613eeffef9ec0",
-        "content_sha256": "d8fe1f0f2298f095350662543dc03708e180bc9ca61fdc2b2fb6e362d5c11194"
+        "content_sha256": "42059e420b333e09c1cb589e8184762aabdf7be5dba8e74e629df6a911cf62cb"
       }
     },
     {
@@ -694,7 +731,7 @@
         "moved_slots": 6493,
         "labels": 259800,
         "source_sha256": "3d149a377314801468266bee78f9e7a9f8d3f6c236cd22aa7f03a6a00a94d73f",
-        "content_sha256": "e4a62d86fdaa0bcb03cb3b55a3e9a211cff42be10165cb93c205ec3e57a73c04"
+        "content_sha256": "5b5f9f948f88031e521d94662bbe50d37134e3f58c4f59dd9e2630d6e0f72b46"
       }
     },
     {
@@ -723,7 +760,7 @@
         "moved_slots": 4671,
         "labels": 259800,
         "source_sha256": "593e245b1d4e51d90a8c67f2f12f0924819331777db7bf351bd8acfd1c708558",
-        "content_sha256": "dae63011768cc61b39d540d2d141ebc94b9edffcac574ca85283a51a6e8c2811"
+        "content_sha256": "95965ed2d7eec219d090c77315dfdecdae6d373615e301626a109fa3d161efac"
       }
     }
   ],
@@ -2421,7 +2458,7 @@
         "pose_root": "19e4e45862199679d660f9242f3e8e4d5dd2994beded2de3f81a3fe075c77d59",
         "state_digest": {
           "role": "poses",
-          "sha256": "3835ed1f72a79fc03556eaba1fdce9887652352c6811f93c5db80edc49c0a02d"
+          "sha256": "d6338558d6a95525950d93d45b542e9b88f7f482b9e1b78213776b22f0360e92"
         }
       }
     },
@@ -2484,7 +2521,7 @@
         "pose_root": "19e4e45862199679d660f9242f3e8e4d5dd2994beded2de3f81a3fe075c77d59",
         "state_digest": {
           "role": "poses",
-          "sha256": "a4ede854fa8e09a1ba4c83c8104b455f4788a7e67e4bb5178ce87bc52715d425"
+          "sha256": "bdc9a32f670766f0bd7f923950f212f6875b4998e1e0d302d180ea46c673bf05"
         }
       }
     },
@@ -2551,7 +2588,7 @@
         "pose_root": "19e4e45862199679d660f9242f3e8e4d5dd2994beded2de3f81a3fe075c77d59",
         "state_digest": {
           "role": "poses",
-          "sha256": "3835ed1f72a79fc03556eaba1fdce9887652352c6811f93c5db80edc49c0a02d"
+          "sha256": "d6338558d6a95525950d93d45b542e9b88f7f482b9e1b78213776b22f0360e92"
         }
       }
     },
@@ -2618,7 +2655,7 @@
         "pose_root": "19e4e45862199679d660f9242f3e8e4d5dd2994beded2de3f81a3fe075c77d59",
         "state_digest": {
           "role": "poses",
-          "sha256": "3835ed1f72a79fc03556eaba1fdce9887652352c6811f93c5db80edc49c0a02d"
+          "sha256": "d6338558d6a95525950d93d45b542e9b88f7f482b9e1b78213776b22f0360e92"
         }
       }
     },
@@ -2685,10 +2722,10 @@
         ]
       },
       "expected": {
-        "pose_root": "3835ed1f72a79fc03556eaba1fdce9887652352c6811f93c5db80edc49c0a02d",
+        "pose_root": "d6338558d6a95525950d93d45b542e9b88f7f482b9e1b78213776b22f0360e92",
         "state_digest": {
           "role": "poses",
-          "sha256": "3835ed1f72a79fc03556eaba1fdce9887652352c6811f93c5db80edc49c0a02d"
+          "sha256": "d6338558d6a95525950d93d45b542e9b88f7f482b9e1b78213776b22f0360e92"
         }
       }
     },
@@ -2881,7 +2918,7 @@
         "pose_root": "19e4e45862199679d660f9242f3e8e4d5dd2994beded2de3f81a3fe075c77d59",
         "state_digest": {
           "role": "poses",
-          "sha256": "3835ed1f72a79fc03556eaba1fdce9887652352c6811f93c5db80edc49c0a02d"
+          "sha256": "d6338558d6a95525950d93d45b542e9b88f7f482b9e1b78213776b22f0360e92"
         }
       }
     },
@@ -2973,7 +3010,7 @@
         "pose_root": "19e4e45862199679d660f9242f3e8e4d5dd2994beded2de3f81a3fe075c77d59",
         "state_digest": {
           "role": "poses",
-          "sha256": "2ee28f10b5737ac49e03f1500d39ada8b5145aace5148ad94c0ed89c5a41212c"
+          "sha256": "74c212bfa6b9a6abed35eb3bf49730b4ce69755b549c6a736914e233e3c948f1"
         }
       }
     },
@@ -3069,7 +3106,7 @@
         "pose_root": "19e4e45862199679d660f9242f3e8e4d5dd2994beded2de3f81a3fe075c77d59",
         "state_digest": {
           "role": "poses",
-          "sha256": "3835ed1f72a79fc03556eaba1fdce9887652352c6811f93c5db80edc49c0a02d"
+          "sha256": "d6338558d6a95525950d93d45b542e9b88f7f482b9e1b78213776b22f0360e92"
         }
       }
     },
@@ -3166,10 +3203,10 @@
       "expected": {
         "head": "J3",
         "mode": "jumble_on",
-        "pose_root": "2ee28f10b5737ac49e03f1500d39ada8b5145aace5148ad94c0ed89c5a41212c",
+        "pose_root": "74c212bfa6b9a6abed35eb3bf49730b4ce69755b549c6a736914e233e3c948f1",
         "state_digest": {
           "role": "poses",
-          "sha256": "2ee28f10b5737ac49e03f1500d39ada8b5145aace5148ad94c0ed89c5a41212c"
+          "sha256": "74c212bfa6b9a6abed35eb3bf49730b4ce69755b549c6a736914e233e3c948f1"
         }
       }
     },
@@ -3257,7 +3294,7 @@
         "pose_root": "19e4e45862199679d660f9242f3e8e4d5dd2994beded2de3f81a3fe075c77d59",
         "state_digest": {
           "role": "poses",
-          "sha256": "3835ed1f72a79fc03556eaba1fdce9887652352c6811f93c5db80edc49c0a02d"
+          "sha256": "d6338558d6a95525950d93d45b542e9b88f7f482b9e1b78213776b22f0360e92"
         }
       }
     }
@@ -5022,6 +5059,46 @@
         }
       },
       "expected": "PS3:input.checkpoint_replay"
+    },
+    {
+      "id": "exit-future-version",
+      "clause": "FP.10",
+      "given": {
+        "actions": [
+          {
+            "action": "reset",
+            "head": "Y"
+          },
+          {
+            "action": "entry",
+            "head": "J",
+            "entrance": "solved_witness",
+            "empty_witness": true
+          },
+          {
+            "action": "jumble_move",
+            "head": "Q",
+            "letters": [
+              [
+                0,
+                12
+              ]
+            ]
+          },
+          {
+            "action": "workspace",
+            "checkpoint": "C1",
+            "command": "save-C"
+          },
+          {
+            "action": "exit",
+            "head": "X",
+            "crossing_protection": "B"
+          }
+        ],
+        "future_exit_version": true
+      },
+      "expected": "PS2:input.persistence_version"
     }
   ],
   "evidence": [
@@ -5666,6 +5743,14 @@
         "case": "menu_order"
       },
       "expected": "KN1:input.identity_mismatch"
+    },
+    {
+      "id": "relation_part_future_version",
+      "clause": "FP.13",
+      "given": {
+        "case": "part_future_version"
+      },
+      "expected": "PS2:input.persistence_version"
     }
   ],
   "aliases": [
@@ -13606,7 +13691,7 @@
       "clause": "FP.37",
       "given": {
         "wrapper": {
-          "format": "c600-workspace-draft",
+          "format": "c600-workspace",
           "version": 1,
           "identity": {
             "puzzle": "full",
@@ -13649,7 +13734,7 @@
               "version": 1,
               "content": {
                 "role": "content",
-                "sha256": "e49d3b76c19f35d3e78122f297153d0aa352273eb2d3da1697a538f4dfb016de"
+                "sha256": "83272f066b8eff63d8fc69caf226e09d7d43f9d4d46ed074ccad19a7b023d177"
               }
             },
             "dependencies": [],
@@ -13712,17 +13797,17 @@
                 "kind": "running"
               },
               "last": {
-                "format": "c600-receipt-draft",
+                "format": "c600-receipt",
                 "version": 1,
                 "content": {
                   "role": "content",
-                  "sha256": "2d35c16014bdfe17cf9bdf2bc45cacb9c98078324e6304ba5862c463a0050539"
+                  "sha256": "c6a12ebc5dda6426118bea3fb48be5d218c20fd3181843946e61badd7889c530"
                 }
               }
             }
           },
           {
-            "format": "c600-receipt-draft",
+            "format": "c600-receipt",
             "version": 1,
             "identity": {
               "puzzle": "full",
@@ -13771,7 +13856,7 @@
         ]
       },
       "expected": {
-        "sha256": "34ebddb87fb0fd360eee3040fd1a2e6ac24e01ab8d890bc701d4323801b8ec80",
+        "sha256": "6cf9dbcf9aee245b46c7673af6e4adfc32c75dd8a47c06e26c8a6e2c6078f8c3",
         "step": "1",
         "status": "running",
         "actions": 1,
@@ -13783,7 +13868,7 @@
       "clause": "FP.37",
       "given": {
         "wrapper": {
-          "format": "c600-workspace-draft",
+          "format": "c600-workspace",
           "version": 1,
           "identity": {
             "puzzle": "full",
@@ -13826,7 +13911,7 @@
               "version": 1,
               "content": {
                 "role": "content",
-                "sha256": "755f41d17c1a86e1c6fd9831e20984d3213f3e43e4a094a26b4c4c3658b6bb74"
+                "sha256": "e2b3d290061afaf98b80143caf10dde35fa23e84a287aaa5f10740651cf0e54e"
               }
             },
             "dependencies": [],
@@ -13894,17 +13979,17 @@
                 "step": "2"
               },
               "last": {
-                "format": "c600-receipt-draft",
+                "format": "c600-receipt",
                 "version": 1,
                 "content": {
                   "role": "content",
-                  "sha256": "2d35c16014bdfe17cf9bdf2bc45cacb9c98078324e6304ba5862c463a0050539"
+                  "sha256": "c6a12ebc5dda6426118bea3fb48be5d218c20fd3181843946e61badd7889c530"
                 }
               }
             }
           },
           {
-            "format": "c600-receipt-draft",
+            "format": "c600-receipt",
             "version": 1,
             "identity": {
               "puzzle": "full",
@@ -13953,7 +14038,7 @@
         ]
       },
       "expected": {
-        "sha256": "d88cb09e1264a3ce009dc516e1c90de585dcb185c7b84d0a5cd669c4e86c5811",
+        "sha256": "ee03460ac59e9b5802887a6b183df88ba9d48c6cad39d813f79b392370a6331e",
         "step": "1",
         "status": "waiting",
         "actions": 2,
@@ -13965,7 +14050,7 @@
       "clause": "FP.37",
       "given": {
         "wrapper": {
-          "format": "c600-workspace-draft",
+          "format": "c600-workspace",
           "version": 1,
           "identity": {
             "puzzle": "full",
@@ -14008,7 +14093,7 @@
               "version": 1,
               "content": {
                 "role": "content",
-                "sha256": "74187eb521a100c696600247408d2dd2c03cf927decd173cab5a7f026cdca869"
+                "sha256": "7fae293749b3c5e883fe8ba253a7aadb8e4f8ce3f39414f2dc3dfeac4f0d1a15"
               }
             },
             "dependencies": [],
@@ -14070,17 +14155,17 @@
                 }
               },
               "last": {
-                "format": "c600-receipt-draft",
+                "format": "c600-receipt",
                 "version": 1,
                 "content": {
                   "role": "content",
-                  "sha256": "2d35c16014bdfe17cf9bdf2bc45cacb9c98078324e6304ba5862c463a0050539"
+                  "sha256": "c6a12ebc5dda6426118bea3fb48be5d218c20fd3181843946e61badd7889c530"
                 }
               }
             }
           },
           {
-            "format": "c600-receipt-draft",
+            "format": "c600-receipt",
             "version": 1,
             "identity": {
               "puzzle": "full",
@@ -14129,7 +14214,7 @@
         ]
       },
       "expected": {
-        "sha256": "68c74c80f60f7b142ab2eebef90a4aecbc2ca346cf2747adcbdb981a784ecb6a",
+        "sha256": "86cb641b9c43c15cbf92c09708770e47d0502d535125ebc27e0d3800fad194d5",
         "step": "1",
         "status": "stopped",
         "actions": 0,
@@ -14141,7 +14226,7 @@
       "clause": "FP.37",
       "given": {
         "wrapper": {
-          "format": "c600-workspace-draft",
+          "format": "c600-workspace",
           "version": 1,
           "identity": {
             "puzzle": "full",
@@ -14184,7 +14269,7 @@
               "version": 1,
               "content": {
                 "role": "content",
-                "sha256": "1f5ce7698d3aa111b1d0a76909f7bc0119574f0ac3a6d3aa6b52710af663472c"
+                "sha256": "9c19397a6a29010c2457594586607e68bbf18e87060f1405eeac0a37fc147bcf"
               }
             },
             "dependencies": [],
@@ -14246,17 +14331,17 @@
                 }
               },
               "last": {
-                "format": "c600-receipt-draft",
+                "format": "c600-receipt",
                 "version": 1,
                 "content": {
                   "role": "content",
-                  "sha256": "2d35c16014bdfe17cf9bdf2bc45cacb9c98078324e6304ba5862c463a0050539"
+                  "sha256": "c6a12ebc5dda6426118bea3fb48be5d218c20fd3181843946e61badd7889c530"
                 }
               }
             }
           },
           {
-            "format": "c600-receipt-draft",
+            "format": "c600-receipt",
             "version": 1,
             "identity": {
               "puzzle": "full",
@@ -14305,7 +14390,7 @@
         ]
       },
       "expected": {
-        "sha256": "27db4a04c64280314e986c4b68a90bb67c48e11498151952b90647605c6424f3",
+        "sha256": "ced21acf525860c0c004a55f3ebf12d831eed99840f5548bdc3728c991c80c32",
         "step": "1",
         "status": "stopped",
         "actions": 0,
@@ -14317,7 +14402,7 @@
       "clause": "FP.37",
       "given": {
         "wrapper": {
-          "format": "c600-workspace-draft",
+          "format": "c600-workspace",
           "version": 1,
           "identity": {
             "puzzle": "full",
@@ -14360,7 +14445,7 @@
               "version": 1,
               "content": {
                 "role": "content",
-                "sha256": "242fdc3cec27cb304e79cb7dd937d759ce61c509ed1c5a59a8352a0b5851594a"
+                "sha256": "5588056f846c7042876606c6d86a2068fab30999514911a08adc6dba2d9aeabd"
               }
             },
             "dependencies": [],
@@ -14427,17 +14512,17 @@
                 "kind": "running"
               },
               "last": {
-                "format": "c600-receipt-draft",
+                "format": "c600-receipt",
                 "version": 1,
                 "content": {
                   "role": "content",
-                  "sha256": "2d35c16014bdfe17cf9bdf2bc45cacb9c98078324e6304ba5862c463a0050539"
+                  "sha256": "c6a12ebc5dda6426118bea3fb48be5d218c20fd3181843946e61badd7889c530"
                 }
               }
             }
           },
           {
-            "format": "c600-receipt-draft",
+            "format": "c600-receipt",
             "version": 1,
             "identity": {
               "puzzle": "full",
@@ -14492,7 +14577,7 @@
       "clause": "FP.37",
       "given": {
         "wrapper": {
-          "format": "c600-workspace-draft",
+          "format": "c600-workspace",
           "version": 1,
           "identity": {
             "puzzle": "full",
@@ -14535,7 +14620,7 @@
               "version": 1,
               "content": {
                 "role": "content",
-                "sha256": "f2a1cd49ffdfdf8ec2c5746afa40ac210e12518e21401a324446d28db259cb47"
+                "sha256": "42fffc95b14bf1e5cbc0b36f7d72d354e2eecc8b762b41466dc4293aaf1c1197"
               }
             },
             "dependencies": [],
@@ -14602,17 +14687,17 @@
                 "kind": "running"
               },
               "last": {
-                "format": "c600-receipt-draft",
+                "format": "c600-receipt",
                 "version": 1,
                 "content": {
                   "role": "content",
-                  "sha256": "2d35c16014bdfe17cf9bdf2bc45cacb9c98078324e6304ba5862c463a0050539"
+                  "sha256": "c6a12ebc5dda6426118bea3fb48be5d218c20fd3181843946e61badd7889c530"
                 }
               }
             }
           },
           {
-            "format": "c600-receipt-draft",
+            "format": "c600-receipt",
             "version": 1,
             "identity": {
               "puzzle": "full",
@@ -14667,7 +14752,7 @@
       "clause": "FP.37",
       "given": {
         "wrapper": {
-          "format": "c600-workspace-draft",
+          "format": "c600-workspace",
           "version": 1,
           "identity": {
             "puzzle": "full",
@@ -14710,7 +14795,7 @@
               "version": 1,
               "content": {
                 "role": "content",
-                "sha256": "7da0226f48e20f8a54f407f68d86198ed21aacabb88227171e2866c981d568ac"
+                "sha256": "664a829c68087bd4593ba566e6902a08e82a68d91b74779e08aee8a81ac5eeda"
               }
             },
             "dependencies": [],
@@ -14768,11 +14853,11 @@
                 "kind": "running"
               },
               "last": {
-                "format": "c600-receipt-draft",
+                "format": "c600-receipt",
                 "version": 1,
                 "content": {
                   "role": "content",
-                  "sha256": "2d35c16014bdfe17cf9bdf2bc45cacb9c98078324e6304ba5862c463a0050539"
+                  "sha256": "c6a12ebc5dda6426118bea3fb48be5d218c20fd3181843946e61badd7889c530"
                 }
               }
             }
@@ -14786,7 +14871,7 @@
       "clause": "FP.37",
       "given": {
         "wrapper": {
-          "format": "c600-workspace-draft",
+          "format": "c600-workspace",
           "version": 1,
           "identity": {
             "puzzle": "full",
@@ -14829,7 +14914,7 @@
               "version": 1,
               "content": {
                 "role": "content",
-                "sha256": "3b2f1833fed065c0f3d50ba5f6b75332850a828894b0b26ae7ac55768cf092e1"
+                "sha256": "7a4a01000407428894dbf461092b6d20e05ba551318da4d7946196ca983b8296"
               }
             },
             "dependencies": [],
@@ -14891,17 +14976,17 @@
                 }
               },
               "last": {
-                "format": "c600-receipt-draft",
+                "format": "c600-receipt",
                 "version": 1,
                 "content": {
                   "role": "content",
-                  "sha256": "2d35c16014bdfe17cf9bdf2bc45cacb9c98078324e6304ba5862c463a0050539"
+                  "sha256": "c6a12ebc5dda6426118bea3fb48be5d218c20fd3181843946e61badd7889c530"
                 }
               }
             }
           },
           {
-            "format": "c600-receipt-draft",
+            "format": "c600-receipt",
             "version": 1,
             "identity": {
               "puzzle": "full",
@@ -14956,7 +15041,7 @@
       "clause": "FP.37",
       "given": {
         "wrapper": {
-          "format": "c600-workspace-draft",
+          "format": "c600-workspace",
           "version": 1,
           "identity": {
             "puzzle": "full",
@@ -14999,7 +15084,7 @@
               "version": 1,
               "content": {
                 "role": "content",
-                "sha256": "7da0226f48e20f8a54f407f68d86198ed21aacabb88227171e2866c981d568ac"
+                "sha256": "664a829c68087bd4593ba566e6902a08e82a68d91b74779e08aee8a81ac5eeda"
               }
             },
             "dependencies": [],
@@ -15028,7 +15113,7 @@
         },
         "records": [
           {
-            "format": "c600-receipt-draft",
+            "format": "c600-receipt",
             "version": 1,
             "identity": {
               "puzzle": "full",
@@ -15083,7 +15168,7 @@
       "clause": "FP.37",
       "given": {
         "wrapper": {
-          "format": "c600-workspace-draft",
+          "format": "c600-workspace",
           "version": 1,
           "identity": {
             "puzzle": "full",
@@ -15126,7 +15211,7 @@
               "version": 1,
               "content": {
                 "role": "content",
-                "sha256": "bf42584f597f2df056d52814a33dda73352059dbb3d4df237bb10fc8d8ea4132"
+                "sha256": "21b374dfa6b670757e93b2de5b6260d1e059bb4bfdf9ea4e8902792bead2404b"
               }
             },
             "dependencies": [],
@@ -15189,17 +15274,17 @@
                 "kind": "running"
               },
               "last": {
-                "format": "c600-receipt-draft",
+                "format": "c600-receipt",
                 "version": 1,
                 "content": {
                   "role": "content",
-                  "sha256": "2f920e934e253fffece32ace44383e66d625a300ce1ecd2ef39a0952de90c2f1"
+                  "sha256": "4b057b43e133b9dd40f77829c845ed236dac028fbb10cc5d4b473f6afcd69a4d"
                 }
               }
             }
           },
           {
-            "format": "c600-pick-draft",
+            "format": "c600-pick",
             "version": 1,
             "identity": {
               "puzzle": "full",
@@ -15254,7 +15339,7 @@
       "clause": "FP.37",
       "given": {
         "wrapper": {
-          "format": "c600-workspace-draft",
+          "format": "c600-workspace",
           "version": 1,
           "identity": {
             "puzzle": "full",
@@ -15297,7 +15382,7 @@
               "version": 1,
               "content": {
                 "role": "content",
-                "sha256": "c1d0b59a422673e511e30c743d7a17eccc6c6ab6a28b13116126c88075923934"
+                "sha256": "caa85d1de1146530129eac0acce83a756e0e7f3e7e7ae8ff3ea193b0e83c1e8b"
               }
             },
             "dependencies": [],
@@ -15360,18 +15445,360 @@
                 "kind": "running"
               },
               "last": {
-                "format": "c600-receipt-draft",
+                "format": "c600-receipt",
                 "version": 1,
                 "content": {
                   "role": "content",
-                  "sha256": "80434185f0726c09059252705c7e89049f42afec91a5b3ffa8dde6fd1a1a0637"
+                  "sha256": "20ff6d417599c1d64c30f4ee87f5305090aba60402a67265699cf9f4c9f2c875"
                 }
               }
             }
           },
           {
-            "format": "c600-receipt-draft",
+            "format": "c600-receipt",
             "version": 2,
+            "identity": {
+              "puzzle": "full",
+              "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+              "menu_id": null,
+              "menu_order": null,
+              "contract_rev": null
+            },
+            "provenance": null,
+            "payload": {
+              "command": "play-1",
+              "request": {
+                "role": "content",
+                "sha256": "4e39826253fcfc14cc1bd35666e3e15268afac73ec8bbd9f690cc2173bf9cd4d"
+              },
+              "job": null,
+              "status": {
+                "kind": "completed",
+                "completion": {
+                  "kind": "workspace",
+                  "revision": {
+                    "session": "fixture-session",
+                    "epoch": "epoch-1",
+                    "identity": {
+                      "puzzle": "full",
+                      "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+                      "menu_id": null,
+                      "menu_order": null,
+                      "contract_rev": null
+                    },
+                    "mode": "retained",
+                    "head": "H",
+                    "state": "4",
+                    "workspace": "2",
+                    "protection": "1",
+                    "digest": {
+                      "role": "poses",
+                      "sha256": "f16d05ec6b29248d2c61adb1e9263f78e4f7bace1b955014a2d17872cfe4064d"
+                    }
+                  },
+                  "result": null
+                }
+              }
+            }
+          }
+        ]
+      },
+      "expected": "PS2:input.persistence_version"
+    },
+    {
+      "id": "playback-last-ref-version-first",
+      "clause": "FP.37",
+      "given": {
+        "wrapper": {
+          "format": "c600-workspace",
+          "version": 1,
+          "identity": {
+            "puzzle": "full",
+            "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+            "menu_id": null,
+            "menu_order": null,
+            "contract_rev": null
+          },
+          "provenance": {
+            "block": {
+              "version": 1,
+              "form": "flow_static",
+              "contract": {
+                "version": "fixture-1",
+                "source": {
+                  "role": "source",
+                  "sha256": "1e5cc3c361ab70e2c8a2e5b2f2f03f71daef28507cc4e4e2d49f3747700d718e"
+                }
+              },
+              "checker": null
+            },
+            "author": "own",
+            "producer": {
+              "kind": "manual"
+            },
+            "profile": "none",
+            "depends": {
+              "labels": []
+            },
+            "parts": [],
+            "pick": null,
+            "declassified": [],
+            "legacy": null
+          },
+          "payload": {
+            "id": "workspace-1",
+            "kind": "c600-playback-draft",
+            "value": {
+              "format": "c600-playback-draft",
+              "version": 1,
+              "content": {
+                "role": "content",
+                "sha256": "1836866141447c5193ae4510f066d8e777b098b8be8fc79f8a81b3f015a7b213"
+              }
+            },
+            "dependencies": [],
+            "action": null,
+            "revision": {
+              "session": "fixture-session",
+              "epoch": "epoch-1",
+              "identity": {
+                "puzzle": "full",
+                "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+                "menu_id": null,
+                "menu_order": null,
+                "contract_rev": null
+              },
+              "mode": "retained",
+              "head": "H",
+              "state": "4",
+              "workspace": "2",
+              "protection": "1",
+              "digest": {
+                "role": "poses",
+                "sha256": "f16d05ec6b29248d2c61adb1e9263f78e4f7bace1b955014a2d17872cfe4064d"
+              }
+            }
+          }
+        },
+        "records": [
+          {
+            "format": "c600-playback-draft",
+            "version": 1,
+            "identity": {
+              "puzzle": "full",
+              "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+              "menu_id": null,
+              "menu_order": null,
+              "contract_rev": null
+            },
+            "provenance": null,
+            "payload": {
+              "playback": "playback-1",
+              "recording": {
+                "role": "content",
+                "sha256": "fb7cc2c07376dd6d6b026a13d16f4b352f00565346e5eb00632e9694c8630ee8"
+              },
+              "step": "1",
+              "pending": {
+                "command": "play-2",
+                "request": {
+                  "role": "content",
+                  "sha256": "f09b46d6161e203d5fe11ce403253ad86932527451d32a0022a67eef5f4a21bf"
+                }
+              },
+              "actions": [
+                {
+                  "recorded": "41",
+                  "played": "58"
+                }
+              ],
+              "status": {
+                "kind": "running"
+              },
+              "last": {
+                "format": "c600-receipt",
+                "version": 2,
+                "content": {
+                  "role": "content",
+                  "sha256": "20ff6d417599c1d64c30f4ee87f5305090aba60402a67265699cf9f4c9f2c875"
+                }
+              }
+            }
+          },
+          {
+            "format": "c600-receipt",
+            "version": 2,
+            "identity": {
+              "puzzle": "full",
+              "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+              "menu_id": null,
+              "menu_order": null,
+              "contract_rev": null
+            },
+            "provenance": null,
+            "payload": {
+              "command": "play-1",
+              "request": {
+                "role": "content",
+                "sha256": "4e39826253fcfc14cc1bd35666e3e15268afac73ec8bbd9f690cc2173bf9cd4d"
+              },
+              "job": null,
+              "status": {
+                "kind": "completed",
+                "completion": {
+                  "kind": "workspace",
+                  "revision": {
+                    "session": "fixture-session",
+                    "epoch": "epoch-1",
+                    "identity": {
+                      "puzzle": "full",
+                      "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+                      "menu_id": null,
+                      "menu_order": null,
+                      "contract_rev": null
+                    },
+                    "mode": "retained",
+                    "head": "H",
+                    "state": "4",
+                    "workspace": "2",
+                    "protection": "1",
+                    "digest": {
+                      "role": "poses",
+                      "sha256": "f16d05ec6b29248d2c61adb1e9263f78e4f7bace1b955014a2d17872cfe4064d"
+                    }
+                  },
+                  "result": null
+                }
+              }
+            }
+          }
+        ]
+      },
+      "expected": "PS2:input.persistence_version"
+    },
+    {
+      "id": "playback-value-version-first",
+      "clause": "FP.37",
+      "given": {
+        "wrapper": {
+          "format": "c600-workspace",
+          "version": 1,
+          "identity": {
+            "puzzle": "full",
+            "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+            "menu_id": null,
+            "menu_order": null,
+            "contract_rev": null
+          },
+          "provenance": {
+            "block": {
+              "version": 1,
+              "form": "flow_static",
+              "contract": {
+                "version": "fixture-1",
+                "source": {
+                  "role": "source",
+                  "sha256": "1e5cc3c361ab70e2c8a2e5b2f2f03f71daef28507cc4e4e2d49f3747700d718e"
+                }
+              },
+              "checker": null
+            },
+            "author": "own",
+            "producer": {
+              "kind": "manual"
+            },
+            "profile": "none",
+            "depends": {
+              "labels": []
+            },
+            "parts": [],
+            "pick": null,
+            "declassified": [],
+            "legacy": null
+          },
+          "payload": {
+            "id": "workspace-1",
+            "kind": "c600-playback-draft",
+            "value": {
+              "format": "c600-playback-draft",
+              "version": 2,
+              "content": {
+                "role": "content",
+                "sha256": "0cbf2ffdbf86c632eb771b98ca71d30b40cf6337b17312a66446f331a051fa0e"
+              }
+            },
+            "dependencies": [],
+            "action": null,
+            "revision": {
+              "session": "fixture-session",
+              "epoch": "epoch-1",
+              "identity": {
+                "puzzle": "full",
+                "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+                "menu_id": null,
+                "menu_order": null,
+                "contract_rev": null
+              },
+              "mode": "retained",
+              "head": "H",
+              "state": "4",
+              "workspace": "2",
+              "protection": "1",
+              "digest": {
+                "role": "poses",
+                "sha256": "f16d05ec6b29248d2c61adb1e9263f78e4f7bace1b955014a2d17872cfe4064d"
+              }
+            }
+          }
+        },
+        "records": [
+          {
+            "format": "c600-playback-draft",
+            "version": 2,
+            "identity": {
+              "puzzle": "full",
+              "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+              "menu_id": null,
+              "menu_order": null,
+              "contract_rev": null
+            },
+            "provenance": null,
+            "payload": {
+              "playback": "playback-1",
+              "recording": {
+                "role": "content",
+                "sha256": "fb7cc2c07376dd6d6b026a13d16f4b352f00565346e5eb00632e9694c8630ee8"
+              },
+              "step": "1",
+              "pending": {
+                "command": "play-2",
+                "request": {
+                  "role": "content",
+                  "sha256": "f09b46d6161e203d5fe11ce403253ad86932527451d32a0022a67eef5f4a21bf"
+                }
+              },
+              "actions": [
+                {
+                  "recorded": "41",
+                  "played": "58"
+                }
+              ],
+              "status": {
+                "kind": "running"
+              },
+              "last": {
+                "format": "c600-receipt",
+                "version": 1,
+                "content": {
+                  "role": "content",
+                  "sha256": "c6a12ebc5dda6426118bea3fb48be5d218c20fd3181843946e61badd7889c530"
+                }
+              }
+            }
+          },
+          {
+            "format": "c600-receipt",
+            "version": 1,
             "identity": {
               "puzzle": "full",
               "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
@@ -15464,11 +15891,11 @@
           "parts": [],
           "pick": {
             "record": {
-              "format": "c600-pick-draft",
+              "format": "c600-pick",
               "version": 1,
               "content": {
                 "role": "content",
-                "sha256": "023ed26b0b6cbb537ec02ef56ecfad90e0ead141732d87e1d26a908f77b9df30"
+                "sha256": "17d1650d078183ca9cbffc055bbb8afe2ff7ecbdc9801f881e43c1ee77e573c2"
               }
             },
             "chosen": {
@@ -15481,7 +15908,7 @@
         },
         "records": [
           {
-            "format": "c600-pick-draft",
+            "format": "c600-pick",
             "version": 1,
             "identity": {
               "puzzle": "full",
@@ -15515,7 +15942,7 @@
       },
       "expected": {
         "chosen": "92872db51e92b967421e867b4f1fae5aebedf33c8d316708a79d43ef6f8f20e0",
-        "block": "1d72f1076971c99c4b174b7c733314569b1914deef545cc400836c136c53f59c"
+        "block": "c822e8d01cfd590e25e25945cc88424a38d6fbb5cc448a38e29b0516abc43f2c"
       }
     },
     {
@@ -15560,11 +15987,11 @@
           "parts": [],
           "pick": {
             "record": {
-              "format": "c600-pick-draft",
+              "format": "c600-pick",
               "version": 1,
               "content": {
                 "role": "content",
-                "sha256": "023ed26b0b6cbb537ec02ef56ecfad90e0ead141732d87e1d26a908f77b9df30"
+                "sha256": "17d1650d078183ca9cbffc055bbb8afe2ff7ecbdc9801f881e43c1ee77e573c2"
               }
             },
             "chosen": {
@@ -15577,7 +16004,7 @@
         },
         "records": [
           {
-            "format": "c600-pick-draft",
+            "format": "c600-pick",
             "version": 1,
             "identity": {
               "puzzle": "full",
@@ -15611,7 +16038,7 @@
       },
       "expected": {
         "chosen": "92872db51e92b967421e867b4f1fae5aebedf33c8d316708a79d43ef6f8f20e0",
-        "block": "e2a8bbebb7004ed1be6cb608b23a93a8a40a5aa012ed17578700bd774b156788"
+        "block": "ee16a5c76f1f84bf76c7b455fd4d3bb25ce8c20fab50ec75963f426448be0276"
       }
     },
     {
@@ -15647,11 +16074,11 @@
           "parts": [],
           "pick": {
             "record": {
-              "format": "c600-pick-draft",
+              "format": "c600-pick",
               "version": 1,
               "content": {
                 "role": "content",
-                "sha256": "023ed26b0b6cbb537ec02ef56ecfad90e0ead141732d87e1d26a908f77b9df30"
+                "sha256": "17d1650d078183ca9cbffc055bbb8afe2ff7ecbdc9801f881e43c1ee77e573c2"
               }
             },
             "chosen": {
@@ -15664,7 +16091,7 @@
         },
         "records": [
           {
-            "format": "c600-pick-draft",
+            "format": "c600-pick",
             "version": 1,
             "identity": {
               "puzzle": "full",
@@ -15698,7 +16125,7 @@
       },
       "expected": {
         "chosen": "92872db51e92b967421e867b4f1fae5aebedf33c8d316708a79d43ef6f8f20e0",
-        "block": "8175a5e8721f04b41b6120b54b4fec079fc7fbf36bf1be31f3af1a099d1f38e9"
+        "block": "9009a67d5694b34b8cd3572c41ce668e6ba00323323cafed4d324ca0ad6602e8"
       }
     },
     {
@@ -15743,11 +16170,11 @@
           "parts": [],
           "pick": {
             "record": {
-              "format": "c600-pick-draft",
+              "format": "c600-pick",
               "version": 1,
               "content": {
                 "role": "content",
-                "sha256": "023ed26b0b6cbb537ec02ef56ecfad90e0ead141732d87e1d26a908f77b9df30"
+                "sha256": "17d1650d078183ca9cbffc055bbb8afe2ff7ecbdc9801f881e43c1ee77e573c2"
               }
             },
             "chosen": {
@@ -15804,11 +16231,11 @@
           "parts": [],
           "pick": {
             "record": {
-              "format": "c600-pick-draft",
+              "format": "c600-pick",
               "version": 1,
               "content": {
                 "role": "content",
-                "sha256": "0c90f689598bb73413f664d84d240f6f1a4ee5353ac133e964b987ca027f0c2d"
+                "sha256": "5ca54184cce2dd51cc1e70d753cb593badf124d466675b388da0cd751b7c585f"
               }
             },
             "chosen": {
@@ -15821,7 +16248,7 @@
         },
         "records": [
           {
-            "format": "c600-pick-draft",
+            "format": "c600-pick",
             "version": 1,
             "identity": {
               "puzzle": "full",
@@ -15897,11 +16324,11 @@
           "parts": [],
           "pick": {
             "record": {
-              "format": "c600-pick-draft",
+              "format": "c600-pick",
               "version": 1,
               "content": {
                 "role": "content",
-                "sha256": "726a82cc8f4ac8ae93f392c360fc56190162d014eb40f385ac020c71f2d6b702"
+                "sha256": "d5422f11b851faa9d982d7a8951731160b0e4a84359c687f5f287be785647d44"
               }
             },
             "chosen": {
@@ -15914,7 +16341,7 @@
         },
         "records": [
           {
-            "format": "c600-receipt-draft",
+            "format": "c600-receipt",
             "version": 1,
             "identity": {
               "puzzle": "full",
@@ -15990,11 +16417,383 @@
           "parts": [],
           "pick": {
             "record": {
+              "format": "c600-pick",
+              "version": 1,
+              "content": {
+                "role": "content",
+                "sha256": "8d2fe133868c896c393a67b4404697bf8498e1008e6b483b3af5795c78ff1ee4"
+              }
+            },
+            "chosen": {
+              "role": "content",
+              "sha256": "92872db51e92b967421e867b4f1fae5aebedf33c8d316708a79d43ef6f8f20e0"
+            }
+          },
+          "declassified": [],
+          "legacy": null
+        },
+        "records": [
+          {
+            "format": "c600-pick",
+            "version": 2,
+            "identity": {
+              "puzzle": "full",
+              "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+              "menu_id": null,
+              "menu_order": null,
+              "contract_rev": null
+            },
+            "provenance": null,
+            "payload": {
+              "list": {
+                "role": "content",
+                "sha256": "77a9a464a362f14012676b8e4c1c59513705b3872de1a06cac8d6f9972fdb90a"
+              },
+              "fixed": true,
+              "options": {
+                "role": "content",
+                "sha256": "0791c0a84a8e84ccc4b933e0c5bb539fc7614ea193b2c22a72f9d0c11df1733d"
+              },
+              "chosen": {
+                "role": "content",
+                "sha256": "92872db51e92b967421e867b4f1fae5aebedf33c8d316708a79d43ef6f8f20e0"
+              },
+              "target": {
+                "kind": "word",
+                "value": "option-a"
+              }
+            }
+          }
+        ]
+      },
+      "expected": "PS2:input.persistence_version"
+    },
+    {
+      "id": "pick-ref-version-first",
+      "clause": "FP.38",
+      "given": {
+        "block": {
+          "block": {
+            "version": 1,
+            "form": "flow_static",
+            "contract": {
+              "version": "fixture-1",
+              "source": {
+                "role": "source",
+                "sha256": "1e5cc3c361ab70e2c8a2e5b2f2f03f71daef28507cc4e4e2d49f3747700d718e"
+              }
+            },
+            "checker": {
+              "version": "fixture-1",
+              "source": {
+                "role": "source",
+                "sha256": "126a5a51dc49577a2e85966350a469edde5d1a9a6b28bcc6afdb880b6e63a14a"
+              }
+            }
+          },
+          "author": "built_in",
+          "producer": {
+            "kind": "program",
+            "module": {
+              "role": "source",
+              "sha256": "453fc55541ea7c6c3a08cd7ca8c1f50d13681d4085fdbe74298ece60d4e4cf8a"
+            },
+            "entry": "repair_pairs"
+          },
+          "profile": "solving",
+          "depends": {
+            "labels": [
+              "computed",
+              "state"
+            ]
+          },
+          "parts": [],
+          "pick": {
+            "record": {
+              "format": "c600-pick",
+              "version": 2,
+              "content": {
+                "role": "content",
+                "sha256": "8d2fe133868c896c393a67b4404697bf8498e1008e6b483b3af5795c78ff1ee4"
+              }
+            },
+            "chosen": {
+              "role": "content",
+              "sha256": "92872db51e92b967421e867b4f1fae5aebedf33c8d316708a79d43ef6f8f20e0"
+            }
+          },
+          "declassified": [],
+          "legacy": null
+        },
+        "records": [
+          {
+            "format": "c600-pick",
+            "version": 2,
+            "identity": {
+              "puzzle": "full",
+              "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+              "menu_id": null,
+              "menu_order": null,
+              "contract_rev": null
+            },
+            "provenance": null,
+            "payload": {
+              "list": {
+                "role": "content",
+                "sha256": "77a9a464a362f14012676b8e4c1c59513705b3872de1a06cac8d6f9972fdb90a"
+              },
+              "fixed": true,
+              "options": {
+                "role": "content",
+                "sha256": "0791c0a84a8e84ccc4b933e0c5bb539fc7614ea193b2c22a72f9d0c11df1733d"
+              },
+              "chosen": {
+                "role": "content",
+                "sha256": "92872db51e92b967421e867b4f1fae5aebedf33c8d316708a79d43ef6f8f20e0"
+              },
+              "target": {
+                "kind": "word",
+                "value": "option-a"
+              }
+            }
+          }
+        ]
+      },
+      "expected": "PS2:input.persistence_version"
+    },
+    {
+      "id": "pick-version-first-added-field",
+      "clause": "FP.38",
+      "given": {
+        "block": {
+          "block": {
+            "version": 1,
+            "form": "flow_static",
+            "contract": {
+              "version": "fixture-1",
+              "source": {
+                "role": "source",
+                "sha256": "1e5cc3c361ab70e2c8a2e5b2f2f03f71daef28507cc4e4e2d49f3747700d718e"
+              }
+            },
+            "checker": {
+              "version": "fixture-1",
+              "source": {
+                "role": "source",
+                "sha256": "126a5a51dc49577a2e85966350a469edde5d1a9a6b28bcc6afdb880b6e63a14a"
+              }
+            }
+          },
+          "author": "built_in",
+          "producer": {
+            "kind": "program",
+            "module": {
+              "role": "source",
+              "sha256": "453fc55541ea7c6c3a08cd7ca8c1f50d13681d4085fdbe74298ece60d4e4cf8a"
+            },
+            "entry": "repair_pairs"
+          },
+          "profile": "solving",
+          "depends": {
+            "labels": [
+              "computed",
+              "state"
+            ]
+          },
+          "parts": [],
+          "pick": {
+            "record": {
+              "format": "c600-pick",
+              "version": 1,
+              "content": {
+                "role": "content",
+                "sha256": "ac51f19e72b2b1014dc85926a785cf14e355b78eae946fc827907f0284834d1d"
+              }
+            },
+            "chosen": {
+              "role": "content",
+              "sha256": "92872db51e92b967421e867b4f1fae5aebedf33c8d316708a79d43ef6f8f20e0"
+            }
+          },
+          "declassified": [],
+          "legacy": null
+        },
+        "records": [
+          {
+            "format": "c600-pick",
+            "version": 2,
+            "identity": {
+              "puzzle": "full",
+              "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+              "menu_id": null,
+              "menu_order": null,
+              "contract_rev": null
+            },
+            "provenance": null,
+            "payload": {
+              "list": {
+                "role": "content",
+                "sha256": "77a9a464a362f14012676b8e4c1c59513705b3872de1a06cac8d6f9972fdb90a"
+              },
+              "fixed": true,
+              "options": {
+                "role": "content",
+                "sha256": "0791c0a84a8e84ccc4b933e0c5bb539fc7614ea193b2c22a72f9d0c11df1733d"
+              },
+              "chosen": {
+                "role": "content",
+                "sha256": "92872db51e92b967421e867b4f1fae5aebedf33c8d316708a79d43ef6f8f20e0"
+              },
+              "target": {
+                "kind": "word",
+                "value": "option-a"
+              }
+            },
+            "future_field": true
+          }
+        ]
+      },
+      "expected": "PS2:input.persistence_version"
+    },
+    {
+      "id": "pick-version-first-removed-field",
+      "clause": "FP.38",
+      "given": {
+        "block": {
+          "block": {
+            "version": 1,
+            "form": "flow_static",
+            "contract": {
+              "version": "fixture-1",
+              "source": {
+                "role": "source",
+                "sha256": "1e5cc3c361ab70e2c8a2e5b2f2f03f71daef28507cc4e4e2d49f3747700d718e"
+              }
+            },
+            "checker": {
+              "version": "fixture-1",
+              "source": {
+                "role": "source",
+                "sha256": "126a5a51dc49577a2e85966350a469edde5d1a9a6b28bcc6afdb880b6e63a14a"
+              }
+            }
+          },
+          "author": "built_in",
+          "producer": {
+            "kind": "program",
+            "module": {
+              "role": "source",
+              "sha256": "453fc55541ea7c6c3a08cd7ca8c1f50d13681d4085fdbe74298ece60d4e4cf8a"
+            },
+            "entry": "repair_pairs"
+          },
+          "profile": "solving",
+          "depends": {
+            "labels": [
+              "computed",
+              "state"
+            ]
+          },
+          "parts": [],
+          "pick": {
+            "record": {
+              "format": "c600-pick",
+              "version": 1,
+              "content": {
+                "role": "content",
+                "sha256": "1bec0851e9d050675b970448c9921dd10162155bc733b8c0ddfe41b3d0e1bec7"
+              }
+            },
+            "chosen": {
+              "role": "content",
+              "sha256": "92872db51e92b967421e867b4f1fae5aebedf33c8d316708a79d43ef6f8f20e0"
+            }
+          },
+          "declassified": [],
+          "legacy": null
+        },
+        "records": [
+          {
+            "format": "c600-pick",
+            "version": 2,
+            "identity": {
+              "puzzle": "full",
+              "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+              "menu_id": null,
+              "menu_order": null,
+              "contract_rev": null
+            },
+            "payload": {
+              "list": {
+                "role": "content",
+                "sha256": "77a9a464a362f14012676b8e4c1c59513705b3872de1a06cac8d6f9972fdb90a"
+              },
+              "fixed": true,
+              "options": {
+                "role": "content",
+                "sha256": "0791c0a84a8e84ccc4b933e0c5bb539fc7614ea193b2c22a72f9d0c11df1733d"
+              },
+              "chosen": {
+                "role": "content",
+                "sha256": "92872db51e92b967421e867b4f1fae5aebedf33c8d316708a79d43ef6f8f20e0"
+              },
+              "target": {
+                "kind": "word",
+                "value": "option-a"
+              }
+            }
+          }
+        ]
+      },
+      "expected": "PS2:input.persistence_version"
+    },
+    {
+      "id": "pick-old-draft-identifier",
+      "clause": "FP.4",
+      "given": {
+        "block": {
+          "block": {
+            "version": 1,
+            "form": "flow_static",
+            "contract": {
+              "version": "fixture-1",
+              "source": {
+                "role": "source",
+                "sha256": "1e5cc3c361ab70e2c8a2e5b2f2f03f71daef28507cc4e4e2d49f3747700d718e"
+              }
+            },
+            "checker": {
+              "version": "fixture-1",
+              "source": {
+                "role": "source",
+                "sha256": "126a5a51dc49577a2e85966350a469edde5d1a9a6b28bcc6afdb880b6e63a14a"
+              }
+            }
+          },
+          "author": "built_in",
+          "producer": {
+            "kind": "program",
+            "module": {
+              "role": "source",
+              "sha256": "453fc55541ea7c6c3a08cd7ca8c1f50d13681d4085fdbe74298ece60d4e4cf8a"
+            },
+            "entry": "repair_pairs"
+          },
+          "profile": "solving",
+          "depends": {
+            "labels": [
+              "computed",
+              "state"
+            ]
+          },
+          "parts": [],
+          "pick": {
+            "record": {
               "format": "c600-pick-draft",
               "version": 1,
               "content": {
                 "role": "content",
-                "sha256": "92a2ff41977141427d2087d733ca9d0593af08f7c7c4f29de1a0b7964dd2b8af"
+                "sha256": "023ed26b0b6cbb537ec02ef56ecfad90e0ead141732d87e1d26a908f77b9df30"
               }
             },
             "chosen": {
@@ -16008,7 +16807,7 @@
         "records": [
           {
             "format": "c600-pick-draft",
-            "version": 2,
+            "version": 1,
             "identity": {
               "puzzle": "full",
               "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
@@ -16743,6 +17542,268 @@
         }
       },
       "expected": "PS1:input.digest_mismatch"
+    }
+  ],
+  "path_b_packages": [
+    {
+      "id": "path-b-fresh-session-raw-off",
+      "clause": "FP.24",
+      "given": {
+        "fixture": "fresh-session",
+        "raw_copy": false
+      },
+      "expected": {
+        "package_sha256": "6fb753cc6819495490e73e3cbacb082dd881a33e4f639bb2347c367b9b4577f1",
+        "package_bytes": 1047356,
+        "result": {
+          "head_event_id": "",
+          "head_state_sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+          "checkpoints": [
+            {
+              "id": "current",
+              "head": "",
+              "state_sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+              "preferences_sha256": "31f131dca3867d998f7a7f7b3ba353c70caec03847446dce365fec9649d27adf"
+            }
+          ],
+          "session_preferences_sha256": "31f131dca3867d998f7a7f7b3ba353c70caec03847446dce365fec9649d27adf",
+          "conversion_target_sha256": "3349520805dbce0f73101b6ec3ac560bf1e6604e3e3ee321b4c0405263bd10bb",
+          "closure_records": 6,
+          "blob_carriers": 0,
+          "replayed_letters": 0
+        }
+      }
+    },
+    {
+      "id": "path-b-fresh-session-raw-on",
+      "clause": "FP.24",
+      "given": {
+        "fixture": "fresh-session",
+        "raw_copy": true
+      },
+      "expected": {
+        "package_sha256": "4880882fb56c07d9324049f56f6e89d0d2cfa54d91f1a3d902555856ea7aefd1",
+        "package_bytes": 1047647,
+        "result": {
+          "head_event_id": "",
+          "head_state_sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+          "checkpoints": [
+            {
+              "id": "current",
+              "head": "",
+              "state_sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6",
+              "preferences_sha256": "31f131dca3867d998f7a7f7b3ba353c70caec03847446dce365fec9649d27adf"
+            }
+          ],
+          "session_preferences_sha256": "31f131dca3867d998f7a7f7b3ba353c70caec03847446dce365fec9649d27adf",
+          "conversion_target_sha256": "3349520805dbce0f73101b6ec3ac560bf1e6604e3e3ee321b4c0405263bd10bb",
+          "closure_records": 6,
+          "blob_carriers": 0,
+          "replayed_letters": 0
+        }
+      }
+    },
+    {
+      "id": "path-b-abandoned-branch-raw-off",
+      "clause": "FP.24",
+      "given": {
+        "fixture": "abandoned-branch",
+        "raw_copy": false
+      },
+      "expected": {
+        "package_sha256": "bbb414ca8d2ca5daaaadd0281f211f9e3e0442533d3512e5ead663f46513b3b2",
+        "package_bytes": 2101573,
+        "result": {
+          "head_event_id": "3",
+          "head_state_sha256": "6445545cef1b08acdee67b29f2e9dc2cd7d7c27f50a726debcb721fedc1eeb57",
+          "checkpoints": [
+            {
+              "id": "current",
+              "head": "3",
+              "state_sha256": "6445545cef1b08acdee67b29f2e9dc2cd7d7c27f50a726debcb721fedc1eeb57",
+              "preferences_sha256": "31f131dca3867d998f7a7f7b3ba353c70caec03847446dce365fec9649d27adf"
+            },
+            {
+              "id": "branch-2",
+              "head": "2",
+              "state_sha256": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+              "preferences_sha256": "22e12253292116c6fcfd9c0f5f7794885020ca31295a45abd7c044a98bdc0b79"
+            }
+          ],
+          "session_preferences_sha256": "31f131dca3867d998f7a7f7b3ba353c70caec03847446dce365fec9649d27adf",
+          "conversion_target_sha256": "fe7084cdcf548f2879becedc9dd3034d1c135534e9a8f099783be002747eb4f6",
+          "closure_records": 16,
+          "blob_carriers": 1,
+          "replayed_letters": 6
+        }
+      }
+    },
+    {
+      "id": "path-b-abandoned-branch-raw-on",
+      "clause": "FP.24",
+      "given": {
+        "fixture": "abandoned-branch",
+        "raw_copy": true
+      },
+      "expected": {
+        "package_sha256": "201cea0eec91ccaa5ec25f0c73dde1f669623fecbde8d0372e4237b850743639",
+        "package_bytes": 2101864,
+        "result": {
+          "head_event_id": "3",
+          "head_state_sha256": "6445545cef1b08acdee67b29f2e9dc2cd7d7c27f50a726debcb721fedc1eeb57",
+          "checkpoints": [
+            {
+              "id": "current",
+              "head": "3",
+              "state_sha256": "6445545cef1b08acdee67b29f2e9dc2cd7d7c27f50a726debcb721fedc1eeb57",
+              "preferences_sha256": "31f131dca3867d998f7a7f7b3ba353c70caec03847446dce365fec9649d27adf"
+            },
+            {
+              "id": "branch-2",
+              "head": "2",
+              "state_sha256": "392a1b23d7b7819ad9b8845171df1ac7321f9b6735bddc76528c5f582c6e0cb1",
+              "preferences_sha256": "22e12253292116c6fcfd9c0f5f7794885020ca31295a45abd7c044a98bdc0b79"
+            }
+          ],
+          "session_preferences_sha256": "31f131dca3867d998f7a7f7b3ba353c70caec03847446dce365fec9649d27adf",
+          "conversion_target_sha256": "fe7084cdcf548f2879becedc9dd3034d1c135534e9a8f099783be002747eb4f6",
+          "closure_records": 16,
+          "blob_carriers": 1,
+          "replayed_letters": 6
+        }
+      }
+    },
+    {
+      "id": "path-b-missing-record-carrier",
+      "clause": "FP.24",
+      "given": {
+        "fixture": "abandoned-branch",
+        "raw_copy": false,
+        "mutation": {
+          "kind": "drop",
+          "path": "records/0abd67a4e571b1e7140a7288c8994e8d1d022d9885f35483fa09567747131823.json"
+        }
+      },
+      "expected": "PS1:input.persistence_format"
+    },
+    {
+      "id": "path-b-missing-blob-carrier",
+      "clause": "FP.24",
+      "given": {
+        "fixture": "abandoned-branch",
+        "raw_copy": false,
+        "mutation": {
+          "kind": "drop",
+          "path": "blobs/963c86c7b5a21c224f0f5c82f565adee14e99319024ffa7eb97a90b9ff275be0"
+        }
+      },
+      "expected": "PS1:input.persistence_format"
+    },
+    {
+      "id": "path-b-extra-record-carrier",
+      "clause": "FP.24",
+      "given": {
+        "fixture": "abandoned-branch",
+        "raw_copy": false,
+        "mutation": {
+          "kind": "add",
+          "record": {
+            "format": "c600-protection-set",
+            "version": 1,
+            "identity": {
+              "puzzle": "full",
+              "model_id": "58c83f336e451aa64147fe1b8db2d60d7d43806aa3a35122f8403d5af51253f9",
+              "menu_id": null,
+              "menu_order": null,
+              "contract_rev": null
+            },
+            "payload": {
+              "level": "labels",
+              "members": [
+                {
+                  "kind": "orbit",
+                  "id": 1
+                }
+              ],
+              "mode": "net",
+              "contract": {
+                "version": "fixture-1",
+                "source": {
+                  "role": "source",
+                  "sha256": "433c3507c372d907a357bb02e4632eebc85431812c03aa44ac31b6a66dc26e91"
+                }
+              },
+              "origin": null
+            },
+            "provenance": {
+              "block": {
+                "version": 1,
+                "form": "capability_separation",
+                "contract": {
+                  "version": "fixture-1",
+                  "source": {
+                    "role": "source",
+                    "sha256": "b709a1496263ef8e7a542ab944d7fdf2cf5e152e7ff00d44d0c0e5df5c36b01f"
+                  }
+                },
+                "checker": null
+              },
+              "author": "own",
+              "producer": {
+                "kind": "manual"
+              },
+              "profile": "none",
+              "depends": {
+                "read_state": "no"
+              },
+              "parts": [],
+              "pick": null,
+              "declassified": [],
+              "legacy": null
+            }
+          }
+        }
+      },
+      "expected": "PS1:input.persistence_format"
+    },
+    {
+      "id": "path-b-second-record-carrier",
+      "clause": "FP.24",
+      "given": {
+        "fixture": "abandoned-branch",
+        "raw_copy": false,
+        "mutation": {
+          "kind": "duplicate",
+          "path": "session/checkpoint-paths.json"
+        }
+      },
+      "expected": "PS1:input.persistence_format"
+    },
+    {
+      "id": "path-b-misnamed-record-carrier",
+      "clause": "FP.24",
+      "given": {
+        "fixture": "abandoned-branch",
+        "raw_copy": false,
+        "mutation": {
+          "kind": "rename",
+          "path": "records/0abd67a4e571b1e7140a7288c8994e8d1d022d9885f35483fa09567747131823.json",
+          "to": "records/0000000000000000000000000000000000000000000000000000000000000000.json"
+        }
+      },
+      "expected": "PS1:input.digest_mismatch"
+    },
+    {
+      "id": "path-b-exchanged-labels",
+      "clause": "FP.24",
+      "given": {
+        "fixture": "abandoned-branch",
+        "raw_copy": false,
+        "mutation": {
+          "kind": "exchange_labels"
+        }
+      },
+      "expected": "PS3:input.checkpoint_replay"
     }
   ]
 }

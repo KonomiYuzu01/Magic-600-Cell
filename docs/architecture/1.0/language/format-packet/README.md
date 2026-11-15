@@ -17,6 +17,14 @@ after it. No schema, importer, runtime, UI or model is changed here.
   is not fatal. Packet files, vectors and other inputs remain fatal. At the freeze,
   refresh all pins and set `frozen:true`; every mismatch is then fatal. This draft
   allowance is not proof that changed chapter semantics agree with the packet.
+  After the freeze, a change to the frozen core's semantics (a frozen clause, vector
+  or dependency meaning) follows PHS.52. A governance-only or non-core change, such
+  as an owner decision recorded in `AGENTS.md` or the briefing, or an edit to a
+  chapter clause outside the data core, needs a recorded pin refresh that names each
+  old and new identity and shows every frozen clause, vector and dependency meaning
+  unchanged. No mismatched pin is refreshed silently, and a whole-file digest change
+  never permits a change to the frozen core (migration-format-freeze ruling,
+  question 2).
 - **FP.2 [B]** The freeze covers PS2.10's language-neutral data core and the facts
   payload (owner, 6 November 2026, LQ10). This packet consumes H8 for text/output
   accounting, H9 for no-run provenance, H10 for flat menu words and H12 for aliases.
@@ -29,29 +37,33 @@ after it. No schema, importer, runtime, UI or model is changed here.
 
 - **FP.4 [D]** The following are independent record identifiers at version 1,
   encoded as integer `version: 1`, or `format_version: 1` in the Path B manifest.
-  The suffix `-draft` is literal and cannot be removed by an alias.
+  A row wholly or partly in the freeze has no `-draft` suffix (migration-format-freeze
+  ruling, question 1). A row marked No keeps its literal `-draft` suffix, which no
+  alias removes. A former `c600-<kind>-draft` identifier of a frozen row is not an
+  alias of its frozen identifier: FP.10 refuses it as an unknown format unless an
+  explicit recorded conversion (FP.29) applies.
   Every core row uses FP.5; binary members use FP.8. All retained identifiers and
   profiles in PS1.12/PS1.39/PS3.13 remain unchanged. Import never writes new fields
   into an old v1 record.
 
 | Record | Exact `format` | Payload contract | In the freeze |
 | --- | --- | --- | --- |
-| Word | `c600-word-draft` | FP.13 | Yes |
-| Recipe | `c600-recipe-draft` | FP.12 | Yes |
-| Macro, macro set | `c600-macro-draft`, `c600-macro-set-draft` | FP.14 | Yes |
-| Protection set | `c600-protection-set-draft` | FP.14 | Yes |
-| Binding, key map | `c600-binding-draft`, `c600-key-map-draft` | FP.15 | Yes |
-| Filter, preferences | `c600-filter-draft`, `c600-preferences-draft` | FP.15 | Yes |
-| Checkpoint, replay path | `c600-checkpoint-draft`, `c600-replay-path-draft` | FP.16 | Yes |
-| Workspace | `c600-workspace-draft` | FP.12 | Provenance and core payloads only |
-| Evidence, import table | `c600-evidence-draft`, `c600-import-table-draft` | FP.19 to FP.22 | Common envelope and facts only |
-| Migration | `c600-migration-draft` | FP.29 | Yes |
-| Exit, void, transition | `c600-exit-draft`, `c600-void-draft`, `c600-transition-draft` | FP.30 to FP.32 | Durable replay/recovery data |
-| Admission, receipt, workspace inverse | `c600-admission-draft`, `c600-receipt-draft`, `c600-workspace-inverse-draft` | FP.31, FP.36 | Durable action/outcome bindings |
-| Path B manifest | `C600-MIGRATE-draft` | FP.24 | Yes |
-| Path B session record, local publication metadata | `c600-session-record-draft`, `c600-publication-draft` | FP.24, FP.28; their stated wrappers | Yes |
-| Research/check bundle manifest | `c600-research-bundle-draft` | FP.23 | Core transport only |
-| Pick record | `c600-pick-draft` | FP.38 | Yes |
+| Word | `c600-word` | FP.13 | Yes |
+| Recipe | `c600-recipe` | FP.12 | Yes |
+| Macro, macro set | `c600-macro`, `c600-macro-set` | FP.14 | Yes |
+| Protection set | `c600-protection-set` | FP.14 | Yes |
+| Binding, key map | `c600-binding`, `c600-key-map` | FP.15 | Yes |
+| Filter, preferences | `c600-filter`, `c600-preferences` | FP.15 | Yes |
+| Checkpoint, replay path | `c600-checkpoint`, `c600-replay-path` | FP.16 | Yes |
+| Workspace | `c600-workspace` | FP.12 | Provenance and core payloads only |
+| Evidence, import table | `c600-evidence`, `c600-import-table` | FP.19 to FP.22 | Common envelope and facts only |
+| Migration | `c600-migration` | FP.29 | Yes |
+| Exit, void, transition | `c600-exit`, `c600-void`, `c600-transition` | FP.30 to FP.32 | Durable replay/recovery data |
+| Admission, receipt, workspace inverse | `c600-admission`, `c600-receipt`, `c600-workspace-inverse` | FP.31, FP.36 | Durable action/outcome bindings |
+| Path B manifest | `C600-MIGRATE` | FP.24 | Yes |
+| Path B session record, local publication metadata | `c600-session-record`, `c600-publication` | FP.24, FP.28; their stated wrappers | Yes |
+| Research/check bundle manifest | `c600-research-bundle` | FP.23 | Core transport only |
+| Pick record | `c600-pick` | FP.38 | Yes |
 | Playback state | `c600-playback-draft` | FP.37 | No |
 | Source descriptor, module manifest, lockfile | `c600-source-draft`, `c600-module-draft`, `c600-lock-draft` | PS1.14/PS1.15; byte descriptors only | No |
 | Layout, recording, run | `c600-layout-draft`, `c600-recording-draft`, `c600-run-draft` | PS1.27/PS1.30/PS1.31 | No |
@@ -60,8 +72,8 @@ after it. No schema, importer, runtime, UI or model is changed here.
 The last three rows reserve draft identifiers only. Their payload contracts need
 their own packet before an active reader exists. The language's name and extension
 are chosen (600 Cell Script, `.6cs`; owner, 6 November 2026, LQ17), module sharing
-is local (LQ12), `c600-` descriptors stay until the format freeze, and syntax waits
-for LQ13.
+is local (LQ12), every identifier here keeps the `c600-` prefix, the rows marked No
+keep `-draft` until their own packet, and syntax waits for LQ13.
 
 - **FP.5 [D]** New JSON uses `c600-json-1`: UTF-8 without BOM, sorted object keys
   in Unicode scalar order, no normalization (H8), compact `,` and `:`, and exactly
@@ -123,7 +135,7 @@ for LQ13.
 
 ## Shared limits and read outcomes
 
-- **FP.9 [D]** `c600-limits-draft-1` is the following single read/write table.
+- **FP.9 [D]** `c600-limits-1` is the following single read/write table.
   Both bounds are inclusive and equal. Counts are exact; before accepting the next
   byte, digit, member, edge or operation the reader/writer checks the bound. Every
   applicable row applies, including decoded totals through nested containers and
@@ -189,6 +201,13 @@ profiles require their own version and evidence, not an automatic split or retry
   may redefine identity, provenance, protection, letters, evidence or any required
   field; those changes need a new version. An unknown format/version remains
   recorded byte-for-byte and refuses active use with `PS2:input.persistence_version`.
+  Dispatch comes first: a reader checks the `format`/`version` pair of a record, and
+  of each Ref before following it and then of the record it resolves to, before any
+  version-specific field, expected-Ref or header-mismatch check. An unknown pair gives
+  `PS2:input.persistence_version` even with added or missing fields; a header
+  without `format` or `version` gives `PS1:input.persistence_format`; the mismatch
+  outcomes of FP.11 and of each record contract apply only to known pairs. A former
+  draft identifier of a frozen FP.4 row is an unknown format (FP.4).
   In particular, an unknown nested provenance version cannot be hidden as an optional
   extension. A current known field may not be silently omitted during conversion.
 
@@ -306,7 +325,8 @@ after the reconciliation (H15.15); a later table version needs a new pin.
   No display float enters this object. Replay-path payload is
   `{root:Ref|null,head:Text,events:[{id:Text,parent:Text|null,value:Ref,
   pre:DigestRef,post:DigestRef,preferences:Ref|null}]}`. Root null means solved;
-  each event value is a recipe/word. Event IDs are unique; the parent graph is
+  each event value is a recipe/word. Event IDs are nonempty and unique; `head`
+  names one event, or is the empty Text and selects the root itself. The parent graph is
   acyclic and ordered parent-before-child. Every offered checkpoint selects its
   own head; verify its full path and complete state (PS3.5), including abandoned
   branches. References to cached states do not replace the replay witness.
@@ -325,7 +345,7 @@ after the reconciliation (H15.15); a later table version needs a new pin.
 | `profile` | `solving\|tool_authoring\|research\|none`; `none` exactly for manual/import; program requires a real producing run profile |
 | `depends` | For flow forms `{labels:[Text]}` with unique scalar-sorted atoms; for capability form `{read_state:yes\|no}`; either may use `{kind:not_recorded}` only for imported/unknown legacy detail |
 | `parts` | Ordered DigestRef(content) list of component provenance blocks |
-| `pick` | null or `{record:Ref,chosen:DigestRef(content)}` binding chapter 07's recorded pick, a `c600-pick-draft` record (FP.38) |
+| `pick` | null or `{record:Ref,chosen:DigestRef(content)}` binding chapter 07's recorded pick, a `c600-pick` record (FP.38) |
 | `declassified` | List of `{entry:Text,contract:Pin,record:Ref,output:DigestRef(content)}`; each requires the chapter 07 check, never a declaration of permission |
 | `legacy` | null or `{source:DigestRef(bytes),labels:[Value],missing:[Text]}`; original labels retained, not reclassified |
 
@@ -449,26 +469,73 @@ questions remain open.
   overwrite. A missing dependency remains listed and prevents the check requiring
   it; bundle integrity alone does not imply replay. A reader resolves bytes in
   memory or by safe digest names and never executes an archived producer.
-- **FP.24 [D]** Path B retains PS3.3's ZIP paths, member roles and safety rules;
-  its metadata/header rules and limits are FP.23/FP.9. Its manifest uses
-  `format:"C600-MIGRATE-draft",format_version:1`, not FP.11's common wrapper.
+- **FP.24 [D]** Path B retains PS3.3's named ZIP members and safety rules and adds
+  the two digest-named carriers below; its metadata/header rules and limits are
+  FP.23/FP.9. Its manifest uses
+  `format:"C600-MIGRATE",format_version:1`, not FP.11's common wrapper.
   `c600migrate`/`format_version:1` in the old exporter proposal is a distinct draft
   input; an explicit converter may recognize it, but it is not an alias.
   Manifest fields are exactly PS3.3's `producer`, `model_id`, `created_utc`,
   `head_state_hash`, `head_event_id`, `entries`, `options`, `privacy`, plus
-  `limits:"c600-limits-draft-1"` and `conversion:Ref`.
+  `limits:"c600-limits-1"` and `conversion:Ref`.
   Producer is `{name,version,source:DigestRef(source)}`; time is UTC Text metadata;
-  head hash is labels hex and event ID Text; entries are sorted
-  `{path:Text,bytes:Nat,sha256:hex,role:Text}` for every other member. Options is
-  `{include_logs:Bool,raw_copy:Bool}`; privacy is `{publication:private}`. Raw SQLite
+  head hash is labels hex and event ID Text; entries are
+  `{path:Text,bytes:Nat,sha256:hex,role:Text}` for every other member, sorted by
+  path in byte order, and the ZIP holds `manifest.json` first, then the members in
+  entry order. Roles are `session`, `paths`, `labels`, `macros`, `keymap`,
+  `workspace`, `raw` and `log` for PS3.3's members, and `record` and `blob` for the
+  carriers. Options is `{include_logs:Bool,raw_copy:Bool}`; `logs/` and
+  `raw/session.sqlite3` members are present exactly when these say so. Privacy is
+  `{publication:private}`. Raw SQLite
   and logs remain private and are not research-publication inputs. Entries are
   checked before reading logical content. `session/record.json` has
-  `{format:"c600-session-record-draft",version:1,head:Ref,checkpoints:[Ref],
-  preferences:Ref,attempt:Value,timer:Value,unmapped:[{item:Text,reason:Text}]}`.
+  `{format:"c600-session-record",version:1,head:Ref,checkpoints:[Ref],
+  preferences:Ref,attempt:Value,timer:Value,unmapped:[{item:Text,reason:Text}]}`;
+  `head` and `checkpoints` name checkpoint records, and `preferences` names the
+  session's preferences outside the workspace.
   Checkpoint label files retain their raw bytes; `session/checkpoint-paths.json`
   is a replay-path record. Workspace members contain the corresponding FP.4
   record or retained exchange bytes with a conversion record; no empty macro
   record is invented. Unsupported attempt/timer meanings stay recorded.
+
+  Dependency carriage (migration-format-freeze ruling, MFF-01). The entry points are
+  the manifest's `conversion`, `session/record.json`, `session/checkpoint-paths.json`
+  and each workspace member that holds an FP.4 record. A workspace member holds
+  retained exchange bytes exactly when an `outcomes` item of the `conversion` record
+  names its path with status `recorded` or `refused`; its DigestRef(bytes) is then
+  among that record's `inputs`, and its bytes are checked against their entry and
+  never read as a record. Any other workspace member holds the FP.4 record of its
+  kind: `c600-macro-set` in `workspace/macros.json`, `c600-key-map` in
+  `workspace/keymap.json` and `c600-workspace` in `workspace/workspace.json`.
+  The entry points' content Refs, followed
+  through every resolved record, form the closure. Each closure record is carried
+  once: by the named member that holds it, otherwise as `records/<hex>.json` with
+  role `record`, where `<hex>` is the Ref's `content.sha256` and the bytes are
+  exactly the record's FP.5 bytes. A Ref resolves to the one record carrier (a
+  `records/` member or a named member above) whose entry `sha256` is its digest;
+  FP.10's dispatch, FP.5's canonical check and FP.11's format/version equality
+  follow. A checkpoint's labels `state.data` is a raw BlobRef whose carrier is its
+  label member: `session/checkpoints/head.labels` for `head` and
+  `session/checkpoints/<i>.labels` for entry `i` of `checkpoints`, counted from 0
+  in decimal. FP.7's raw threshold does not apply to these retained uncompressed
+  members. Every other BlobRef in the closure is carried once as `blobs/<hex>` with
+  role `blob`, where `<hex>` is its `stored.sha256`; its stored size and digest,
+  then its decoded size and digest under its encoding, are checked. A bare DigestRef
+  or Pin names bytes and is not a dependency. Raw and log members are never
+  resolution inputs, so validation and replay give the same result with `raw_copy`
+  true or false. A missing carrier, a second record or blob carrier of one digest,
+  or a `records/` or `blobs/` member outside the closure refuses the package with
+  `PS1:input.persistence_format`; a carrier whose name and entry disagree gives
+  `PS1:input.digest_mismatch`. No cache, path guess, raw copy or log is consulted.
+
+  The head checkpoint's `path` is `session/checkpoint-paths.json`, whose `head` is
+  `head_event_id`. Each offered checkpoint's path record has the same `root` and
+  `events` and selects its own `head`; every event lies on the head path or on an
+  offered checkpoint's path. Each path is replayed from its root to its head (PS3.5,
+  PS3.8). Every event's `pre`/`post`, the replayed labels, the label member,
+  `state.digest` and, for the head, `head_state_hash` must agree, otherwise
+  `PS3:input.checkpoint_replay`. Each checkpoint restores the preferences record its
+  own `preferences` names.
 - **FP.25 [D]** Conversion walks every target in PS3.3 before publication:
   recipes retain word/star chronology and exact counts; macros retain their source
   and FP.17 provenance; protection requires complete rule/member translation;
@@ -487,6 +554,16 @@ questions remain open.
   future 1.0 engine matches the oracle or that every migration fixture passed.
   Integration still needs O01 to O07 and each offered checkpoint with the actual
   candidate engine. A reversed path or wrong pre/post digest must refuse import.
+  It also builds FP.24's golden Path B packages, a fresh session (F12) and an
+  abandoned-branch checkpoint with its own preferences (F10), each with `raw_copy`
+  true and false, matches each against its recorded package digest, and then, from
+  the archive bytes alone, resolves every closure Ref and BlobRef, replays both
+  heads and compares the preferences. Its mutation vectors refuse a missing record
+  or blob carrier, an extra, second or misnamed carrier, and exchanged labels. These
+  are synthetic packages, not importer output. The golden family holds recipe events
+  from the solved root, `jumble_off` checkpoints and workspace members that hold FP.4
+  records; it has no key map, logs or retained exchange bytes, and the reference
+  reader refuses shapes outside that family instead of implementing them.
 - **FP.27 [B]** Source preservation follows PS3.1/PS3.2's amended locked-copy
   contract: existing read-only engine.lock, guarded byte copy of database/WAL,
   no source SQLite open, no immutable=1, no source -shm access, no source writes.
@@ -498,11 +575,13 @@ questions remain open.
 - **FP.28 [D]** Publication follows PS3.9: complete validation and replay from the
   package alone, durable new generation/archive and directory entries, then durable
   active-pointer switch. Retain old generation and recovery checkpoint. Durable
-  publication metadata is `{format:"c600-publication-draft",version:1,id:Text,
+  publication metadata is `{format:"c600-publication",version:1,id:Text,
   previous:DigestRef(content)|null,next:DigestRef(content),archive:DigestRef(bytes),
   validation:Ref}`; the active pointer identifies exactly this metadata's digest.
-  It is stored locally, not a reusable grant. A missing dependency or failed
-  durability barrier leaves the previous generation active. On an uncertain switch,
+  It is stored locally, not a reusable grant. A missing dependency, or a failed
+  durability barrier before the pointer switch, leaves the previous generation
+  active. A failure after a possible switch is reconciled as below, not assumed to
+  leave either generation active. On an uncertain switch,
   read the authoritative pointer and validate the named generation before retry;
   otherwise return `PS3:unknown_outcome.import_publication`. Live undo begins at
   the imported head. Publication metadata does not replace a platform's durability
@@ -698,7 +777,7 @@ questions remain open.
   The `playback` vectors check EV4.18's map under CT-EV4-20; `playback_from`,
   `playback_trace`, `playback_arguments` and `playback_storage` check EV4.22's table,
   EV4.14 and this wire form.
-- **FP.38 [D]** `c600-pick-draft` is chapter 07's `PickRecord` (BND.54): an FP.11
+- **FP.38 [D]** `c600-pick` is chapter 07's `PickRecord` (BND.54): an FP.11
   record with null `provenance`. The payload is
   `{list:DigestRef(content),fixed:Bool,options:DigestRef(content),
   chosen:DigestRef(content),target:Value}`. `chosen` digests the option and `target`
@@ -728,7 +807,8 @@ questions remain open.
   write caches, reports or refreshed vectors. `vectors.json` supplies concrete
   given/expected values. Checks recompute canonical bytes and hashes, exact-number
   round trips, deterministic gzip, both provenance forms, unknown-field outcomes,
-  ia16 chunks and relations, alias identity, retained conversion, producing-job
+  version-first dispatch, ia16 chunks and relations, alias identity, retained
+  conversion, golden Path B packages, producing-job
   facts, the four evidence corrections, durable-history/outcome examples, playback
   records and `from` transitions, picks, evidence editions and the obligation
   translator. Limit vectors
@@ -759,10 +839,10 @@ questions remain open.
 
 | Test | Checks | Class |
 | --- | --- | --- |
-| CT-FP-01 | Three JSON profiles, canonical numbers, gzip, all limit rows and unknown fields | source |
+| CT-FP-01 | Three JSON profiles, canonical numbers, gzip, all limit rows and unknown fields; version-first dispatch of records and Refs with added or missing fields, and refusal of former draft identifiers | source |
 | CT-FP-02 | Complete manual/import blocks under both forms, a non-null built-in pick under each form, a pick with no resolving record, missing profile, incompatible form and no permission | source |
 | CT-FP-03 | ia16 chunk round trip, independent menu identity/order pins, invalid code/length and retained conversion over the full label array; empty signed word with legacy recipe minima preserved | source |
-| CT-FP-04 | Exit and both materialized entry forms (including empty witness), Jumble move/save/recovery/inverses, current protection members across crossing-level deltas, monotone voids, outcome lookup validating resolved request input/base after rehashed corruptions, including a corrupted revision, and a complete playback record with its workspace wrapper, pending binding, actions, last receipt and `from` transitions | synthetic |
+| CT-FP-04 | Exit and both materialized entry forms (including empty witness), Jumble move/save/recovery/inverses, current protection members across crossing-level deltas, monotone voids, outcome lookup validating resolved request input/base after rehashed corruptions, including a corrupted revision, and a complete playback record with its workspace wrapper, pending binding, actions, last receipt and `from` transitions; golden Path B packages (fresh session, abandoned-branch checkpoint, raw copy on and off) resolved and replayed from archive bytes alone, with missing, extra and misnamed carriers and exchanged labels refused | synthetic |
 | CT-FP-05 | Source-discriminated absent-format dispatch and empty-AND refusal | source |
 | CT-FP-06 | Human/formal grades and source-bound producing jobs round-trip; EVD.62 collisions and EVD.42's paired finite exhaustive negative with each guard broken run on decoded facts under a trial threshold only; with no cache, a display-function change keeps the old pin and records the new edition | synthetic |
 | CT-FP-07 | JI.23 local/part/ref relations, missing/cyclic targets, changed inverse and mandatory flat chunks; graph archival is distinct from word admission | source |

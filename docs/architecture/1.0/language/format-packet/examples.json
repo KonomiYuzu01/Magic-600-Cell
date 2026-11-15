@@ -9,7 +9,7 @@
     "legacy_recipe": "[{\"kind\":\"word\",\"moves\":[1,-1]}]"
   },
   "recipe": {
-    "format": "c600-recipe-draft",
+    "format": "c600-recipe",
     "version": 1,
     "identity": {
       "puzzle": "full",
@@ -45,7 +45,7 @@
   },
   "records": {
     "manual_flow": {
-      "format": "c600-word-draft",
+      "format": "c600-word",
       "version": 1,
       "identity": {
         "puzzle": "full",
@@ -61,11 +61,11 @@
           "sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6"
         },
         "recipe": {
-          "format": "c600-recipe-draft",
+          "format": "c600-recipe",
           "version": 1,
           "content": {
             "role": "content",
-            "sha256": "d8fe1f0f2298f095350662543dc03708e180bc9ca61fdc2b2fb6e362d5c11194"
+            "sha256": "42059e420b333e09c1cb589e8184762aabdf7be5dba8e74e629df6a911cf62cb"
           }
         }
       },
@@ -97,7 +97,7 @@
       }
     },
     "imported_flow": {
-      "format": "c600-macro-draft",
+      "format": "c600-macro",
       "version": 1,
       "identity": {
         "puzzle": "full",
@@ -111,11 +111,11 @@
         "name": "Imported 0.4 macro",
         "revision": "1",
         "value": {
-          "format": "c600-recipe-draft",
+          "format": "c600-recipe",
           "version": 1,
           "content": {
             "role": "content",
-            "sha256": "d8fe1f0f2298f095350662543dc03708e180bc9ca61fdc2b2fb6e362d5c11194"
+            "sha256": "42059e420b333e09c1cb589e8184762aabdf7be5dba8e74e629df6a911cf62cb"
           }
         },
         "metadata": {},
@@ -163,7 +163,7 @@
       }
     },
     "manual_capability": {
-      "format": "c600-word-draft",
+      "format": "c600-word",
       "version": 1,
       "identity": {
         "puzzle": "full",
@@ -179,11 +179,11 @@
           "sha256": "88cc6e660964145096c29d46575f6ab5e78ac5d6ab3f7e5f4e14ad45fde3f9c6"
         },
         "recipe": {
-          "format": "c600-recipe-draft",
+          "format": "c600-recipe",
           "version": 1,
           "content": {
             "role": "content",
-            "sha256": "d8fe1f0f2298f095350662543dc03708e180bc9ca61fdc2b2fb6e362d5c11194"
+            "sha256": "42059e420b333e09c1cb589e8184762aabdf7be5dba8e74e629df6a911cf62cb"
           }
         }
       },
@@ -215,7 +215,7 @@
       }
     },
     "imported_capability": {
-      "format": "c600-macro-draft",
+      "format": "c600-macro",
       "version": 1,
       "identity": {
         "puzzle": "full",
@@ -229,11 +229,11 @@
         "name": "Imported 0.4 macro",
         "revision": "1",
         "value": {
-          "format": "c600-recipe-draft",
+          "format": "c600-recipe",
           "version": 1,
           "content": {
             "role": "content",
-            "sha256": "d8fe1f0f2298f095350662543dc03708e180bc9ca61fdc2b2fb6e362d5c11194"
+            "sha256": "42059e420b333e09c1cb589e8184762aabdf7be5dba8e74e629df6a911cf62cb"
           }
         },
         "metadata": {},
@@ -284,7 +284,7 @@
   "ji23": {
     "status": "JI.23 literal example; menu/source pins are fixtures, not replay evidence or policy authority",
     "record": {
-      "format": "c600-word-draft",
+      "format": "c600-word",
       "version": 1,
       "identity": {
         "puzzle": "jumbling",
@@ -379,16 +379,16 @@
       }
     },
     "part_ref": {
-      "format": "c600-word-draft",
+      "format": "c600-word",
       "version": 1,
       "content": {
         "role": "content",
-        "sha256": "4db82b3e4dde0edfa6e341cb7011522ed4f4bb959a703bb6c2246967c099192e"
+        "sha256": "0e4fdd939c0d5efe502f612ad184c20651efb1b136a9d7a43712b2044c0477cd"
       }
     },
     "records": {
-      "4db82b3e4dde0edfa6e341cb7011522ed4f4bb959a703bb6c2246967c099192e": {
-        "format": "c600-word-draft",
+      "0e4fdd939c0d5efe502f612ad184c20651efb1b136a9d7a43712b2044c0477cd": {
+        "format": "c600-word",
         "version": 1,
         "identity": {
           "puzzle": "jumbling",
@@ -468,7 +468,7 @@
     }
   },
   "empty_signed_word": {
-    "format": "c600-word-draft",
+    "format": "c600-word",
     "version": 1,
     "identity": {
       "puzzle": "full",

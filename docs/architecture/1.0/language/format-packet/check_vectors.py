@@ -10,6 +10,7 @@ import ast
 import copy
 import gzip
 import hashlib
+import io
 import itertools
 import json
 import math
@@ -34,6 +35,12 @@ STATE = "EV4:input.recording_state"
 UNTRANSLATABLE = "LB5:input.obligation_untranslatable"
 DECIMAL = re.compile(r"(?:0|-?[1-9][0-9]*)\Z")
 GZIP_HEADER = bytes.fromhex("1f8b08000000000000ff")
+# FP.4: a record kind wholly or partly in the format freeze has an identifier without the draft suffix.
+FROZEN_KINDS = frozenset({
+    "word", "recipe", "macro", "macro-set", "protection-set", "binding", "key-map", "filter", "preferences",
+    "checkpoint", "replay-path", "workspace", "evidence", "import-table", "migration", "exit", "void",
+    "transition", "admission", "receipt", "workspace-inverse", "session-record", "publication",
+    "research-bundle", "pick"})
 
 
 class Refusal(ValueError):
@@ -60,6 +67,22 @@ def outcome(operation):
 
 def sha(data):
     return hashlib.sha256(data).hexdigest()
+
+
+def ident(kind):
+    """FP.4's exact `format` for a c600 record kind."""
+    return f"c600-{kind}" if kind in FROZEN_KINDS else f"c600-{kind}-draft"
+
+
+# FP.10: the formats this reference reader dispatches. Old draft identifiers of frozen kinds are not among them.
+KNOWN_FORMATS = frozenset(ident(kind) for kind in FROZEN_KINDS | {"playback"})
+
+
+def supported(header):
+    """FP.10: dispatch a record's or a Ref's format and version before any version-specific shape or Ref check."""
+    require(isinstance(header, dict) and {"format", "version"} <= header.keys(), FORMAT)
+    require(isinstance(header["format"], str) and header["format"] in KNOWN_FORMATS and
+            type(header["version"]) is int and header["version"] == 1, VERSION)
 
 
 def limits_from_text():
@@ -210,12 +233,10 @@ def unpack_gzip(packed):
 
 
 def record_header(record):
+    supported(record)
     fields = {"format", "version", "identity", "payload", "provenance"}
-    require(isinstance(record, dict) and fields <= record.keys(), FORMAT)
+    require(fields <= record.keys(), FORMAT)
     require(not (record.keys() - fields - {"extensions"}), FORMAT)
-    known = {"c600-word-draft", "c600-recipe-draft", "c600-macro-draft", "c600-pick-draft", "c600-playback-draft",
-             "c600-workspace-draft", "c600-receipt-draft"}
-    require(record["format"] in known and type(record["version"]) is int and record["version"] == 1, VERSION)
     names = []
     for extension in record.get("extensions", []):
         require(set(extension) == {"name", "required", "value"}, FORMAT)
@@ -398,7 +419,7 @@ def conversion_result(reference, recipe):
     payload = {"steps": normalized, "primitive_count": int_text(len(old_moves)),
                "expansion": {"role": "recipe_expansion", "sha256": sha(i32_bytes(old_moves))},
                "contract": {"version": "retained-0.4", "source": digest_ref("source", (ROOT / "core.py").read_bytes())}}
-    wire = {"format": "c600-recipe-draft", "version": 1,
+    wire = {"format": ident("recipe"), "version": 1,
             "identity": {"puzzle": "full", "model_id": reference.manifest["model_id"],
                          "menu_id": None, "menu_order": None, "contract_rev": None},
             "payload": payload, "provenance": None}
@@ -433,7 +454,7 @@ def digest_ref(role, data):
 
 
 def synthetic_ref(kind, name):
-    return {"format": f"c600-{kind}-draft", "version": 1,
+    return {"format": ident(kind), "version": 1,
             "content": digest_ref("content", canonical({"fixture": name}))}
 
 
@@ -474,7 +495,7 @@ def durable_result(given, reference=None):
     fixture_provenance = json.loads((HERE / "examples.json").read_bytes())["records"]["manual_flow"]["provenance"]
 
     def keep(kind, payload):
-        record = {"format": f"c600-{kind}-draft", "version": 1, "identity": identity,
+        record = {"format": ident(kind), "version": 1, "identity": identity,
                   "provenance": fixture_provenance if kind in {"workspace-inverse", "word", "protection-set"} else None, "payload": payload}
         raw = canonical(record)
         ref = {"format": record["format"], "version": 1, "content": digest_ref("content", raw)}
@@ -721,8 +742,8 @@ def durable_result(given, reference=None):
     if given.get("corrupt_event"):
         mutation = given["corrupt_event"]
         durable["events"][mutation["head"]]["kind"] = mutation["kind"]
-    if (given.get("corrupt_exit") or given.get("drop_exit_blob") or given.get("corrupt_after_state")
-            or given.get("corrupt_retained_parent") or given.get("corrupt_revision")):
+    if (given.get("corrupt_exit") or given.get("drop_exit_blob") or given.get("future_exit_version")
+            or given.get("corrupt_after_state") or given.get("corrupt_retained_parent") or given.get("corrupt_revision")):
         # Rebind content and terminal references so these controls reach the semantic checks.
         row_ref = durable["transactions"][-1]["transition"]
         record = copy.deepcopy(durable["objects"][row_ref["content"]["sha256"]])
@@ -759,6 +780,10 @@ def durable_result(given, reference=None):
             exit_record = copy.deepcopy(durable["objects"][exit_ref["content"]["sha256"]])
             if given.get("drop_exit_blob"):
                 durable["blobs"].pop(exit_record["payload"]["poses"]["stored"]["sha256"], None)
+            elif given.get("future_exit_version"):
+                # FP.10: the exit Ref and its record both declare an unknown version.
+                exit_record["version"] = 2
+                exit_ref = {**exit_ref, "version": 2}
             else:
                 mutation = given["corrupt_exit"]
                 target = exit_record["payload"]
@@ -776,8 +801,10 @@ def durable_result(given, reference=None):
 
     def resolve(ref):
         require(ref is not None, REPLAY)
+        supported(ref)
         record = durable["objects"].get(ref["content"]["sha256"])
         require(record is not None and digest_ref("content", canonical(record)) == ref["content"], REPLAY)
+        supported(record)
         require(record["format"] == ref["format"] and record["version"] == ref["version"], REPLAY)
         return record["payload"]
 
@@ -950,7 +977,7 @@ def durable_result(given, reference=None):
             try:
                 word = resolve(binding["word"])
                 record = durable["objects"][binding["word"]["content"]["sha256"]]
-                require(record["format"] == "c600-word-draft" and record["identity"] == identity, REPLAY)
+                require(record["format"] == ident("word") and record["identity"] == identity, REPLAY)
                 reference = reference or RetainedReference()
                 moves = signed_word(record, resolve, reference)
                 _, prefixes = reference.replay(moves)
@@ -1212,6 +1239,7 @@ def evidence_result(given):
 
 
 def word_admission(record, blobs, records, inverse, menu, visiting=()):
+    supported(record)
     digest = sha(canonical(record))
     require(digest not in visiting, FORMAT)
     require(all(record["identity"][pin] == menu[pin] for pin in ("menu_id", "menu_order")),
@@ -1232,8 +1260,10 @@ def word_admission(record, blobs, records, inverse, menu, visiting=()):
     require(list(parts) == sorted(parts) and len(parts) == len(payload["parts"]), FORMAT)
 
     def external(ref):
+        supported(ref)
         target = records.get(ref["content"]["sha256"])
         require(target is not None, FORMAT)
+        supported(target)
         require(target["format"] == ref["format"] and target["version"] == ref["version"], FORMAT)
         require(digest_ref("content", canonical(target)) == ref["content"], DIGEST)
         require(target["identity"] == record["identity"], "KN1:input.identity_mismatch")
@@ -1292,6 +1322,13 @@ def relation_result(given, examples):
     elif case == "missing_part":
         payload["parts"] = [{"id": "A-part", "word": fixture["part_ref"]}]
         fixture["records"] = {}
+    elif case == "part_future_version":
+        # FP.10: a part whose Ref and record both declare an unknown version is refused before it is read.
+        target = copy.deepcopy(fixture["records"][fixture["part_ref"]["content"]["sha256"]])
+        target["version"] = 2
+        ref = {**fixture["part_ref"], "version": 2, "content": digest_ref("content", canonical(target))}
+        fixture["records"] = {ref["content"]["sha256"]: target}
+        payload["parts"] = [{"id": "A-part", "word": ref}]
     elif case in {"menu_id", "menu_order"}:
         record["identity"][case] = "0" * 64
     return outcome(lambda: word_admission(record, fixture["blobs"], fixture["records"], fixture["inverse"], fixture["menu"]))
@@ -1396,7 +1433,8 @@ def playback_storage_result(given):
     payload = wrapper["payload"]
     require(set(payload) == {"id", "kind", "value", "dependencies", "action", "revision"}, FORMAT)
     value = payload["value"]
-    require(payload["kind"] == value["format"] == "c600-playback-draft" and value["version"] == 1, FORMAT)
+    supported(value)
+    require(payload["kind"] == value["format"] == ident("playback"), FORMAT)
     records = {sha(canonical(record)): record for record in given["records"]}
     record = records.get(value["content"]["sha256"])
     require(record is not None, DIGEST)
@@ -1429,7 +1467,8 @@ def playback_storage_result(given):
         require(status in ({"kind": "running"}, {"kind": "finished"}), FORMAT)
     last, command = state["last"], None
     if last is not None:
-        require(last["format"] == "c600-receipt-draft" and last["version"] == 1, FORMAT)
+        supported(last)
+        require(last["format"] == ident("receipt"), FORMAT)
         receipt = records.get(last["content"]["sha256"])
         require(receipt is not None, DIGEST)
         record_header(receipt)
@@ -1448,7 +1487,8 @@ def pick_result(given):
     pick = block["pick"]
     require(pick is not None, PROVENANCE)
     reference = pick["record"]
-    require(reference["format"] == "c600-pick-draft" and reference["version"] == 1, PROVENANCE)
+    supported(reference)
+    require(reference["format"] == ident("pick"), PROVENANCE)
     record = records.get(reference["content"]["sha256"])
     require(record is not None, PROVENANCE)
     record_header(record)
@@ -1537,6 +1577,385 @@ def obligation_result(given):
             "source": source, "sha256": sha(source.encode("utf-8"))}
 
 
+# FP.24 Path B packages (migration-format-freeze ruling, MFF-01). `path_b_package` builds the synthetic
+# golden packages in memory; `path_b_read` validates one from its archive bytes alone.
+ZIP_DATE = (1 << 5) | 1  # DOS date 1980-01-01; the DOS time field is zero
+NAMED_MEMBERS = {"session/record.json": "session", "session/checkpoint-paths.json": "paths",
+                 "workspace/macros.json": "macros", "workspace/keymap.json": "keymap",
+                 "workspace/workspace.json": "workspace", "raw/session.sqlite3": "raw"}
+RECORD_ROLES = frozenset({"session", "paths", "macros", "keymap", "workspace", "record"})
+WORKSPACE_KINDS = {"workspace/macros.json": "macro-set", "workspace/keymap.json": "key-map",
+                   "workspace/workspace.json": "workspace"}  # FP.24: the record each workspace member holds
+CARRIER_MEMBER = re.compile(r"records/([0-9a-f]{64})\.json\Z|blobs/([0-9a-f]{64})\Z")
+LABEL_MEMBER = re.compile(r"session/checkpoints/(?:head|0|[1-9][0-9]*)\.labels\Z")
+
+
+def member_role(name):
+    """FP.24's role for a member name; None for a name outside the package layout."""
+    if name in NAMED_MEMBERS:
+        return NAMED_MEMBERS[name]
+    carrier = CARRIER_MEMBER.fullmatch(name)
+    if carrier:
+        return "record" if carrier.group(1) else "blob"
+    if LABEL_MEMBER.fullmatch(name):
+        return "labels"
+    return "log" if name.startswith("logs/") and len(name) > 5 else None
+
+
+def ref_links(value, refs, blobs):
+    """Collect content Refs and BlobRefs; a bare DigestRef or Pin names bytes and is not a dependency."""
+    if isinstance(value, dict):
+        if set(value) == {"format", "version", "content"}:
+            refs.append(value)
+        elif set(value) == {"stored", "decoded", "stored_bytes", "decoded_bytes", "encoding"}:
+            blobs.append(value)
+        else:
+            for child in value.values():
+                ref_links(child, refs, blobs)
+    elif isinstance(value, list):
+        for child in value:
+            ref_links(child, refs, blobs)
+
+
+def zip_store(members):
+    """FP.23's framing: STORE, UTF-8 flag only, 1980-01-01 00:00:00, version 20, no extras, comments or attributes."""
+    body, directory = bytearray(), bytearray()
+    for name, data in members:
+        encoded = name.encode("utf-8")
+        common = struct.pack("<HHHHHIIIHH", 20, 0x800, 0, 0, ZIP_DATE, zlib.crc32(data), len(data), len(data),
+                             len(encoded), 0)
+        directory += struct.pack("<IH", 0x02014B50, 20) + common + struct.pack("<HHHII", 0, 0, 0, 0, len(body)) + encoded
+        body += struct.pack("<I", 0x04034B50) + common + encoded + data
+    return bytes(body + directory + struct.pack("<IHHHHIIH", 0x06054B50, 0, 0, len(members), len(members),
+                                                len(directory), len(body), 0))
+
+
+def zip_read(data):
+    """Read only FP.23's framing; members come back in archive order."""
+    charge("bundle_stored", len(data))
+    require(len(data) >= 22, FORMAT)
+    sig, disk, start_disk, here, total, size, offset, comment = struct.unpack_from("<IHHHHIIH", data, len(data) - 22)
+    require(sig == 0x06054B50 and disk == start_disk == comment == 0 and here == total >= 1, FORMAT)
+    require(offset + size == len(data) - 22, FORMAT)
+    charge("bundle_members", total - 1)
+    members, folded, at, position = [], set(), 0, offset
+    for _ in range(total):
+        require(position + 46 <= offset + size, FORMAT)
+        sig, made = struct.unpack_from("<IH", data, position)
+        common = data[position + 6:position + 32]
+        need, flags, method, time, date, crc, csize, usize, length, extra = struct.unpack("<HHHHHIIIHH", common)
+        note, disk, internal, external, local = struct.unpack_from("<HHHII", data, position + 32)
+        raw_name = data[position + 46:position + 46 + length]
+        position += 46 + length
+        require(sig == 0x02014B50 and made == need == 20 and flags == 0x800 and method == time == 0 and
+                date == ZIP_DATE and csize == usize and extra == note == disk == internal == external == 0, FORMAT)
+        require(local == at and data[at:at + 30 + length] == struct.pack("<I", 0x04034B50) + common + raw_name, FORMAT)
+        content = data[at + 30 + length:at + 30 + length + csize]
+        at += 30 + length + csize
+        require(at <= offset, FORMAT)
+        require(zlib.crc32(content) == crc, DIGEST)
+        try:
+            name = raw_name.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise Refusal(FORMAT) from exc
+        require(all(part not in {"", ".", ".."} for part in name.split("/")) and "\\" not in name and ":" not in name,
+                FORMAT)
+        require(name.casefold() not in folded, FORMAT)  # duplicates and case aliases
+        folded.add(name.casefold())
+        members.append((name, content))
+    require(at == offset and position == offset + size, FORMAT)
+    return members
+
+
+def path_b_package(fixture, raw_copy, reference, examples, mutation=None):
+    """FP.24's synthetic golden package: `fresh-session` (F12) or `abandoned-branch` (F10). Not importer output."""
+    identity = {"puzzle": "full", "model_id": reference.manifest["model_id"],
+                "menu_id": None, "menu_order": None, "contract_rev": None}
+    block = examples["records"]["manual_capability"]["provenance"]
+    stored = {}
+
+    def keep(record):
+        raw = canonical(record)
+        stored[sha(raw)] = raw
+        return {"format": record["format"], "version": record["version"], "content": digest_ref("content", raw)}
+
+    def wire(kind, payload):
+        return keep({"format": ident(kind), "version": 1, "identity": identity, "payload": payload,
+                     "provenance": None if kind in {"recipe", "checkpoint", "replay-path", "migration"} else block})
+
+    def pin(text):
+        return {"version": "fixture-1", "source": digest_ref("source", text.encode("utf-8"))}
+
+    def preferences(show):
+        entry = {"name": "show_frame", "value": show, "outcome": "converted",
+                 "source": digest_ref("bytes", b"show_frame=" + (b"true" if show else b"false"))}
+        return wire("preferences", {"contract": pin("preferences"), "entries": [entry], "protection": protection,
+                                    "conversion": None})
+
+    branch = {"fresh-session": False, "abandoned-branch": True}[fixture]
+    protection = wire("protection-set", {"level": "labels", "members": [{"kind": "orbit", "id": 0}], "mode": "net",
+                                         "contract": pin("protection"), "origin": None})
+    contract = {"version": "retained-0.4", "source": digest_ref("source", (ROOT / "core.py").read_bytes())}
+    words = {"1": [1, 2], "2": [3], "3": [-4]} if branch else {}
+    parents = {"1": None, "2": "1", "3": "1"}
+    states, recipes, events = {"": i32_bytes(range(reference.count))}, {}, []
+    for event, word in words.items():
+        recipes[event] = wire("recipe", {"steps": [{"kind": "word", "moves": word}], "primitive_count": int_text(len(word)),
+                                         "expansion": digest_ref("recipe_expansion", i32_bytes(word)), "contract": contract})
+        chain, at = [], event
+        while at:
+            chain.insert(0, at)
+            at = parents[at]
+        states[event] = i32_bytes(reference.replay([move for step in chain for move in words[step]])[0])
+        events.append({"id": event, "parent": parents[event], "value": recipes[event],
+                       "pre": digest_ref("labels", states[parents[event] or ""]),
+                       "post": digest_ref("labels", states[event]), "preferences": None})
+    head, offered = ("3", ["2"]) if branch else ("", [])
+    paths = {head: wire("replay-path", {"root": None, "head": head, "events": events})}
+    prefs = {head: preferences(True)}
+    for event in offered:
+        paths[event] = wire("replay-path", {"root": None, "head": event, "events": events})
+        prefs[event] = preferences(False)
+    labels = {point: states[point] for point in [head] + offered}
+    if mutation and mutation["kind"] == "exchange_labels":
+        labels[head], labels[offered[0]] = labels[offered[0]], labels[head]
+    checkpoints = {}
+    for point in [head] + offered:
+        checkpoints[point] = wire("checkpoint", {
+            "id": "current" if point == head else "branch-" + point,
+            "name": "Current state" if point == head else "Abandoned branch",
+            "mode": "jumble_off", "state": {"digest": digest_ref("labels", labels[point]), "data": blob(labels[point])},
+            "root": {"kind": "solved"}, "path": paths[point], "preferences": prefs[point],
+            "episode": None, "exit": None, "assistance": block})
+    session = keep({"format": ident("session-record"), "version": 1, "head": checkpoints[head],
+                    "checkpoints": [checkpoints[point] for point in offered], "preferences": prefs[head],
+                    "attempt": None, "timer": None, "unmapped": []})
+    conversion = wire("migration", {
+        "source": {"format": "magic600-0.4-session", "version": 1, "edition": None,
+                   "bytes": digest_ref("bytes", b"synthetic locked session copy")},
+        "target": session, "converter": pin("golden Path B converter"), "inputs": [],
+        "outcomes": [{"item": "session", "status": "converted", "reason": "synthetic golden package"}],
+        "checks": [], "semantic_changes": []})
+    named = {"session/record.json": session, "session/checkpoint-paths.json": paths[head]}
+    carried = {}
+    if branch:
+        macro = wire("macro", {"id": "m1", "name": "First event again", "revision": "0", "value": recipes["1"],
+                               "metadata": {}, "evidence": []})
+        named["workspace/macros.json"] = wire("macro-set", {"entries": [macro], "origin": None})
+        source = b"highlight orbit 0\n"
+        packed = pack_gzip(source)
+        carried[sha(packed)] = packed
+        source_ref = {"stored": digest_ref("bytes", packed), "decoded": digest_ref("bytes", source),
+                      "stored_bytes": str(len(packed)), "decoded_bytes": str(len(source)),
+                      "encoding": "c600-gzip-stored-1"}
+        rule = wire("filter", {"contract": pin("filter"), "rules": [{"expr": "orbit 0", "style": "highlight"}],
+                               "named_sets": [], "source": source_ref, "conversion": None})
+        named["workspace/workspace.json"] = wire("workspace", {"id": "filter", "kind": ident("filter"), "value": rule,
+                                                               "dependencies": [], "action": "converted",
+                                                               "revision": "0"})
+    members = {name: stored[ref["content"]["sha256"]] for name, ref in named.items()}
+    held = {ref["content"]["sha256"] for ref in named.values()}
+    members.update((f"records/{key}.json", raw) for key, raw in stored.items() if key not in held)
+    members.update((f"blobs/{key}", raw) for key, raw in carried.items())
+    members["session/checkpoints/head.labels"] = labels[head]
+    members.update((f"session/checkpoints/{index}.labels", labels[point]) for index, point in enumerate(offered))
+    if raw_copy:
+        members["raw/session.sqlite3"] = b"synthetic raw copy; never a resolution input\n"
+    if mutation and mutation["kind"] == "drop":
+        del members[mutation["path"]]
+    elif mutation and mutation["kind"] == "add":
+        raw = canonical(mutation["record"])
+        members[f"records/{sha(raw)}.json"] = raw
+    elif mutation and mutation["kind"] == "duplicate":
+        members[f"records/{sha(members[mutation['path']])}.json"] = members[mutation["path"]]
+    elif mutation and mutation["kind"] == "rename":
+        members[mutation["to"]] = members.pop(mutation["path"])
+    else:
+        require(not mutation or mutation["kind"] == "exchange_labels", FORMAT)
+    entries = [{"path": name, "bytes": str(len(members[name])), "sha256": sha(members[name]), "role": member_role(name)}
+               for name in sorted(members, key=lambda name: name.encode("utf-8"))]
+    manifest = {"format": "C600-MIGRATE", "format_version": 1,
+                "producer": {"name": "golden-path-b", "version": "1",
+                             "source": digest_ref("source", b"golden Path B synthetic producer")},
+                "model_id": reference.manifest["model_id"], "created_utc": "1980-01-01T00:00:00Z",
+                "head_state_hash": sha(labels[head]), "head_event_id": head, "entries": entries,
+                "options": {"include_logs": False, "raw_copy": raw_copy}, "privacy": {"publication": "private"},
+                "limits": "c600-limits-1", "conversion": conversion}
+    return zip_store([("manifest.json", canonical(manifest))] + [(entry["path"], members[entry["path"]])
+                                                                 for entry in entries])
+
+
+def path_b_read(data, reference):
+    """FP.24 from the archive bytes alone: entries, carriers, closure, then each offered path's replay."""
+    members = zip_read(data)
+    require(members[0][0] == "manifest.json", FORMAT)
+    manifest = read_canonical(members[0][1])
+    require(isinstance(manifest, dict) and {"format", "format_version"} <= manifest.keys(), FORMAT)
+    require(manifest["format"] == "C600-MIGRATE" and type(manifest["format_version"]) is int and
+            manifest["format_version"] == 1, VERSION)
+    require(set(manifest) == {"format", "format_version", "producer", "model_id", "created_utc", "head_state_hash",
+                              "head_event_id", "entries", "options", "privacy", "limits", "conversion"}, FORMAT)
+    require(manifest["limits"] == "c600-limits-1", VERSION)
+    require(manifest["model_id"] == reference.manifest["model_id"] and
+            manifest["privacy"] == {"publication": "private"}, FORMAT)
+    options, entries = manifest["options"], manifest["entries"]
+    require(isinstance(options, dict) and set(options) == {"include_logs", "raw_copy"} and
+            all(type(flag) is bool for flag in options.values()), FORMAT)
+    require(isinstance(entries, list) and all(isinstance(entry, dict) and set(entry) == {"path", "bytes", "sha256", "role"}
+                                              and isinstance(entry["path"], str) for entry in entries), FORMAT)
+    names = [entry["path"] for entry in entries]
+    require(names == sorted(set(names), key=lambda name: name.encode("utf-8")), FORMAT)
+    require(names == [name for name, _ in members[1:]], FORMAT)
+    # Entries are checked before any logical content is read.
+    records, blobs, labels, digest_of = {}, {}, {}, {}
+    for entry, (name, raw) in zip(entries, members[1:]):
+        role = member_role(name)
+        require(role is not None and entry["role"] == role, FORMAT)
+        require(entry["bytes"] == str(len(raw)) and entry["sha256"] == sha(raw), DIGEST)
+        carrier = CARRIER_MEMBER.fullmatch(name)
+        require(carrier is None or entry["sha256"] in carrier.groups(), DIGEST)
+        digest_of[name] = entry["sha256"]
+        if role in RECORD_ROLES or role == "blob":
+            index = records if role in RECORD_ROLES else blobs
+            require(entry["sha256"] not in index, FORMAT)  # a second carrier of one digest
+            index[entry["sha256"]] = (name, raw)
+        elif role == "labels":
+            labels[name] = raw
+    require(options["raw_copy"] == ("raw/session.sqlite3" in digest_of), FORMAT)
+    require(options["include_logs"] == any(entry["role"] == "log" for entry in entries), FORMAT)
+    # The closure: the conversion Ref and every named record member, followed through each resolved record.
+    seen, used, label_refs, blob_refs = {}, set(), {}, []
+    pending = [(manifest["conversion"], None)] + [(None, digest_of[name]) for name, role in NAMED_MEMBERS.items()
+                                                  if role in RECORD_ROLES and name in digest_of]
+    while pending:
+        ref, key = pending.pop()
+        if ref is not None:
+            supported(ref)  # FP.10: the Ref's own pair before it is followed
+            require(isinstance(ref["content"], dict) and set(ref["content"]) == {"role", "sha256"} and
+                    ref["content"]["role"] == "content", FORMAT)
+            key = ref["content"]["sha256"]
+        require(key in records, FORMAT)
+        if key not in seen:
+            name, raw = records[key]
+            record = read_canonical(raw)
+            supported(record)
+            if record["format"] != ident("session-record"):
+                record_header(record)
+                require(record["provenance"] is not None or
+                        record["format"] not in {ident("word"), ident("macro"), ident("workspace")}, FORMAT)
+            seen[key], walk = record, copy.deepcopy(record)
+            used.add(name)
+            if record["format"] == ident("checkpoint"):
+                state = walk["payload"].get("state") if isinstance(walk["payload"], dict) else None
+                require(isinstance(state, dict) and "data" in state, FORMAT)
+                label_refs[key] = state.pop("data")  # carried by its label member, not blobs/
+            refs = []
+            ref_links(walk, refs, blob_refs)
+            pending.extend((child, None) for child in refs)
+        if ref is not None:
+            require(seen[key]["format"] == ref["format"] and seen[key]["version"] == ref["version"], FORMAT)
+    for name, kind in WORKSPACE_KINDS.items():  # retained exchange bytes are outside the golden family (FP.26)
+        require(name not in digest_of or seen[digest_of[name]]["format"] == ident(kind), FORMAT)
+
+    def target(ref):
+        require(isinstance(ref, dict) and isinstance(ref.get("content"), dict) and
+                ref["content"].get("sha256") in seen, FORMAT)
+        return seen[ref["content"]["sha256"]]
+
+    decoded = sum(len(raw) for _, raw in members)
+    for blob_ref in blob_refs:
+        stored_ref, decoded_ref = blob_ref["stored"], blob_ref["decoded"]
+        require(isinstance(stored_ref, dict) and stored_ref.get("role") == "bytes" and
+                stored_ref.get("sha256") in blobs, FORMAT)
+        name, raw = blobs[stored_ref["sha256"]]
+        require(blob_ref["stored_bytes"] == str(len(raw)), DIGEST)
+        require(blob_ref["encoding"] in {"raw", "c600-gzip-stored-1"}, FORMAT)
+        content = raw if blob_ref["encoding"] == "raw" else unpack_gzip(raw)
+        require(blob_ref["decoded_bytes"] == str(len(content)) and decoded_ref == digest_ref("bytes", content), DIGEST)
+        if name not in used:
+            decoded += len(content) - len(raw)
+        used.add(name)
+    charge("bundle_decoded", decoded)
+    require("session/record.json" in digest_of and "session/checkpoint-paths.json" in digest_of, FORMAT)
+    session = seen[digest_of["session/record.json"]]
+    require(session["format"] == ident("session-record") and isinstance(session.get("checkpoints"), list) and
+            set(session) == {"format", "version", "head", "checkpoints", "preferences", "attempt", "timer", "unmapped"},
+            FORMAT)
+    offered = [("head", session["head"])] + [(str(index), ref) for index, ref in enumerate(session["checkpoints"])]
+    keys = []
+    for _, ref in offered:
+        target(ref)
+        keys.append(ref["content"]["sha256"])
+    require(len(set(keys)) == len(keys) and set(keys) == set(label_refs), FORMAT)
+    for (tag, _), key in zip(offered, keys):
+        member = f"session/checkpoints/{tag}.labels"
+        require(member in labels, FORMAT)
+        require(label_refs[key] == blob(labels[member]), DIGEST)
+        used.add(member)
+    require(set(labels) <= used and {name for name, _ in [*records.values(), *blobs.values()]} <= used, FORMAT)
+    main_path = seen[digest_of["session/checkpoint-paths.json"]]
+    require(main_path["format"] == ident("replay-path") and isinstance(main_path["payload"], dict) and
+            set(main_path["payload"]) == {"root", "head", "events"}, FORMAT)
+    root, events = main_path["payload"]["root"], main_path["payload"]["events"]
+    require(root is None and isinstance(events, list), FORMAT)  # the golden packages start from the solved root
+    require(main_path["payload"]["head"] == manifest["head_event_id"], REPLAY)
+    charge("archive_events", len(events))
+    by_id = {}
+    for event in events:
+        require(isinstance(event, dict) and set(event) == {"id", "parent", "value", "pre", "post", "preferences"}, FORMAT)
+        require(isinstance(event["id"], str) and event["id"] and event["id"] not in by_id and
+                (event["parent"] is None or event["parent"] in by_id), FORMAT)
+        by_id[event["id"]] = event
+    restored, covered, replayed = [], set(), 0
+    for (tag, ref), key in zip(offered, keys):
+        payload = seen[key]["payload"]
+        require(set(payload) == {"id", "name", "mode", "state", "root", "path", "preferences", "episode", "exit",
+                                 "assistance"} and payload["mode"] == "jumble_off" and payload["root"] == {"kind": "solved"},
+                FORMAT)
+        path = target(payload["path"])
+        require(path["format"] == ident("replay-path") and path["payload"]["root"] == root and
+                path["payload"]["events"] == events, FORMAT)
+        require(tag != "head" or payload["path"]["content"]["sha256"] == digest_of["session/checkpoint-paths.json"],
+                FORMAT)
+        at, chain = path["payload"]["head"], []
+        require(at == "" or at in by_id, FORMAT)
+        while at:
+            chain.insert(0, by_id[at])
+            at = by_id[at]["parent"]
+        covered.update(event["id"] for event in chain)
+        moves, ends = [], []
+        for event in chain:
+            recipe = target(event["value"])
+            require(recipe["format"] == ident("recipe"), FORMAT)  # the golden packages replay recipe events
+            _, word = reference.expand(recipe["payload"]["steps"])
+            require(recipe["payload"]["primitive_count"] == int_text(len(word)) and
+                    recipe["payload"]["expansion"] == digest_ref("recipe_expansion", i32_bytes(word)), DIGEST)
+            moves.extend(word)
+            ends.append(len(moves))
+        replayed += len(moves)
+        charge("archive_replay", replayed)
+        final, prefixes = reference.replay(moves)
+        for event, start, end in zip(chain, [0] + ends, ends):
+            require(event["pre"] == {"role": "labels", "sha256": prefixes[start]} and
+                    event["post"] == {"role": "labels", "sha256": prefixes[end]}, REPLAY)
+        final = i32_bytes(final)
+        require(labels[f"session/checkpoints/{tag}.labels"] == final and
+                payload["state"]["digest"] == digest_ref("labels", final), REPLAY)
+        require(tag != "head" or manifest["head_state_hash"] == sha(final), REPLAY)
+        require(target(payload["preferences"])["format"] == ident("preferences"), FORMAT)
+        restored.append({"id": payload["id"], "head": path["payload"]["head"], "state_sha256": sha(final),
+                         "preferences_sha256": payload["preferences"]["content"]["sha256"]})
+    require(covered == set(by_id), FORMAT)  # every event lies on an offered path
+    require(target(session["preferences"])["format"] == ident("preferences"), FORMAT)
+    conversion = target(manifest["conversion"])
+    require(conversion["format"] == ident("migration"), FORMAT)
+    goal = conversion["payload"].get("target")
+    return {"head_event_id": manifest["head_event_id"], "head_state_sha256": manifest["head_state_hash"],
+            "checkpoints": restored, "session_preferences_sha256": session["preferences"]["content"]["sha256"],
+            "conversion_target_sha256": goal["content"]["sha256"] if goal else None,
+            "closure_records": len(seen), "blob_carriers": len(blobs), "replayed_letters": replayed}
+
+
 def main():
     vectors = json.loads((HERE / "vectors.json").read_bytes())
     examples = json.loads((HERE / "examples.json").read_bytes())
@@ -1590,6 +2009,8 @@ def main():
     for vector in vectors["unknown_fields"]:
         record = copy.deepcopy(specimen)
         record.update(vector["given"])
+        for field in vector.get("remove", []):
+            del record[field]
         equal(outcome(lambda: record_header(record)), vector["expected"], vector["id"])
         if vector["expected"] == "accepted":
             equal(read_canonical(canonical(record)), record, "unknown optional retained")
@@ -1741,6 +2162,25 @@ def main():
                 result = str(error)
             equal(result, vector["expected"], vector["id"])
             count += 1
+    golden, cases = {}, []
+    for vector in vectors["path_b_packages"]:
+        given = vector["given"]
+        package = path_b_package(given["fixture"], given["raw_copy"], reference, examples, given.get("mutation"))
+        if isinstance(vector["expected"], str):
+            equal(outcome(lambda: path_b_read(package, reference)), vector["expected"], vector["id"])
+        else:
+            equal({"package_sha256": sha(package), "package_bytes": len(package)},
+                  {key: vector["expected"][key] for key in ("package_sha256", "package_bytes")}, vector["id"] + " package")
+            with zipfile.ZipFile(io.BytesIO(package)) as archive:
+                equal(archive.testzip(), None, vector["id"] + " independent ZIP read")
+            golden.setdefault(given["fixture"], []).append(path_b_read(package, reference))
+            equal(golden[given["fixture"]][-1], vector["expected"]["result"], vector["id"])
+            cases.append((given["fixture"], given["raw_copy"]))
+        count += 1
+    equal(sorted(cases), [("abandoned-branch", False), ("abandoned-branch", True), ("fresh-session", False),
+                          ("fresh-session", True)], "golden Path B packages with raw_copy off and on")
+    for fixture, results in golden.items():
+        equal(results[0], results[1], fixture + " restores the same with raw_copy on and off")
     evidence_text = (ROOT / "docs/architecture/1.0/language/architecture/06-evidence.md").read_bytes().decode("utf-8")
     e1 = evidence_text.split("**E1,", 1)[1].split("**E2,", 1)[0]
     require("(exact computation, independent checker)" not in e1 and

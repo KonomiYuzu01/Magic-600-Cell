@@ -109,10 +109,10 @@ R2-E3 and the persistence and evidence-storage Fix first items;
 | Experimental store named-part nesting, depth | At most 64 | 64 | `candidate/store.py`, `_check_parts`; applies to that existing carrier |
 | Checking, previewing or replaying a menu word, expanded menu letters | At most the X3 admission bound | The same X3 admission bound | Value open; DT-J1 X3 and EN3, PS1.21 |
 | Legacy preference validation, characters in `core.canonical(prefs)` | At most 500,000 | 500,000 in the compatibility validator | `session.py`, `_validated_prefs`; this is a character count, not a UTF-8 byte count |
-| New JSON, source, graph and binary record profiles | Equal to each FP.9 read limit | `c600-limits-draft-1`: FP.9 | PS1.11; trial resource budgets, not measured capacity |
+| New JSON, source, graph and binary record profiles | Equal to each FP.9 read limit | `c600-limits-1`: FP.9 | PS1.11; trial resource budgets, not measured capacity |
 | Path B package and independent-check bundle | Equal to each FP.9 read limit | FP.9 per-member and cumulative bytes, members, events and replay cost | PS1.11; no inherited interactive-log cap |
 
-- **PS1.11 [D]** FP.9 assigns `c600-limits-draft-1`, with equal read/write bounds for new records and archives,
+- **PS1.11 [D]** FP.9 assigns `c600-limits-1`, with equal read/write bounds for new records and archives,
   and retains the compatibility limits separately. Its analysis cites the PS1.38 corpus and labels the unmeasured
   memory/performance assumptions. Counts are checked before allocation or expansion, including cumulative gzip,
   graph and replay work. The old log cap is not a path B archive cap, and the archive cannot raise a recipe's
@@ -136,36 +136,36 @@ operation write_record(value: StoredValue, format: FormatRef, limits: LimitsRef)
 - **PS1.12 [D]** Existing format identifiers and versions are reused without renaming (partition default 3).
   The catalogue distinguishes a legacy input, an experimental carrier and a proposed logical record. A slash in an
   existing identifier is part of that identifier. The source extension is `.6cs` (owner, 6 November 2026, decision 6).
-  The `c600-` descriptors, including `c600-source-draft`, stay until the format freeze; the name changes no module
-  identity bytes. The data-core column follows the scope chosen in LQ10; nothing in this catalogue freezes a format.
+  The `c600-` prefix stays: FP.4's frozen rows drop `-draft`, and the descriptors, including `c600-source-draft`,
+  keep it until their own packet; the name changes no module identity bytes. The data-core column follows the scope chosen in LQ10; nothing in this catalogue freezes a format.
 
 | Format | Identifier | Version | Writer | Reader | Data core under LQ10 |
 | --- | --- | --- | --- | --- | --- |
 | Source | Source bytes: PS1.14; descriptor `c600-source-draft` (FP.4); extension `.6cs` | Source edition | Authoring environment | Chapter 02 front end | No |
 | Module manifest | `c600-module-draft` (reserved; FP.4) | Data schema plus source edition reference | Module authoring command | Chapters 02, 03, 09 | No |
 | Lockfile | `c600-lock-draft` (reserved; FP.4) | Data schema | Local module resolver | Chapters 02, 09 | No |
-| Word and macro | `c600-word-draft`, `c600-macro-draft` (FP.4) | Data schema | Workspace word commands, importer | Kernel replay, macro tools, exporter | Yes |
+| Word and macro | `c600-word`, `c600-macro` (FP.4) | Data schema | Workspace word commands, importer | Kernel replay, macro tools, exporter | Yes |
 | Recipe | Existing `word` and `star` steps in the carriers below | Carrier's schema | Workspace commands, importer | Exact engine, oracle adapter | Yes |
-| Macro set and protection set | `c600-macro-set-draft`, `c600-protection-set-draft` | Data schema | Workspace commands, importer | Session command layer | Yes |
-| Binding and key map | `c600-binding-draft`, `c600-key-map-draft` | Data schema | Key-map commands, importer | Chapter 04, command layer | Yes |
+| Macro set and protection set | `c600-macro-set`, `c600-protection-set` | Data schema | Workspace commands, importer | Session command layer | Yes |
+| Binding and key map | `c600-binding`, `c600-key-map` | Data schema | Key-map commands, importer | Chapter 04, command layer | Yes |
 | Layout and declared tool parameters | `c600-layout-draft` (reserved; FP.4) | Data schema | Invoked workspace commands | Chapters 04, 10 | No; their provenance field is in the core |
-| Filter | `c600-filter-draft` | Data schema | Filter commands, importer | Filter evaluator | Yes |
-| Preference | `c600-preferences-draft` | Data schema | Preference commands, importer | Session and workspace commands | Yes |
-| Checkpoint and replay path | `c600-checkpoint-draft`, `c600-replay-path-draft`; member `session/checkpoint-paths.json` | Data schema | Session store, importer | Recovery and replay checker | Yes |
+| Filter | `c600-filter` | Data schema | Filter commands, importer | Filter evaluator | Yes |
+| Preference | `c600-preferences` | Data schema | Preference commands, importer | Session and workspace commands | Yes |
+| Checkpoint and replay path | `c600-checkpoint`, `c600-replay-path`; member `session/checkpoint-paths.json` | Data schema | Session store, importer | Recovery and replay checker | Yes |
 | Recording | `c600-recording-draft` (reserved; FP.4) | Data schema | Chapter 04 recorder | Recording converter and gated playback | No |
 | Playback state | `c600-playback-draft` (FP.37) | Data schema | Command layer (PS1.44) | Playback and recovery | No |
 | Proof-obligation export | `c600-proof-obligation-draft` (PS1.45) | Export schema and vocabulary version | LB5.18 translator through a granted file capability | External Lean 4 tooling | No |
 | Run record | `c600-run-draft` (reserved; FP.4) | Data schema, editions and ReproKey references | Job completion/store command | Reproducer, independent checker | No; referenced envelopes use the core |
-| Workspace record | `c600-workspace-draft` | Data schema | Workspace commands, importer | Workspace queries | Provenance field only, plus the core payload kinds above |
-| Pick record | `c600-pick-draft` (FP.38) | Data schema | Workspace commands (BND.54) | Provenance adapter (BND.84, BND.85) | Yes |
-| Evidence envelope | `c600-evidence-draft` | Data schema and evidence-function editions | EVD.64's named writers, enforced by EVD.65; imports obey EVD.47 | Chapter 06, independent checker | Identity, immutable scope and facts payload |
-| Import table | `c600-import-table-draft` | Mapping-table version | Reviewed import-table author | Research importer, coverage checker | Envelope's mapping dependency; packet fixes its boundary |
+| Workspace record | `c600-workspace` | Data schema | Workspace commands, importer | Workspace queries | Provenance field only, plus the core payload kinds above |
+| Pick record | `c600-pick` (FP.38) | Data schema | Workspace commands (BND.54) | Provenance adapter (BND.84, BND.85) | Yes |
+| Evidence envelope | `c600-evidence` | Data schema and evidence-function editions | EVD.64's named writers, enforced by EVD.65; imports obey EVD.47 | Chapter 06, independent checker | Identity, immutable scope and facts payload |
+| Import table | `c600-import-table` | Mapping-table version | Reviewed import-table author | Research importer, coverage checker | Envelope's mapping dependency; packet fixes its boundary |
 | Retained session exchange | `C600-STUDIO-SESSION-v1` | v1 | Existing 0.4 exporter | Compatibility reader | Existing input to migration |
 | Retained preview certificate | `C600-STUDIO-CERTIFICATE-v1` | v1 | Existing 0.4 preview | Compatibility reader, independent checker | Existing evidence input; no permission |
 | Experimental jumbling section | `magic600-jumbling-store/1` | 1 | Experimental store; future store adapter | Store/recovery checker | Word, checkpoint and evidence portions only |
 | Jumbling drawing data | `magic600-jumbling-render/1` | 1 | Engine/view-model export | Renderer adapter, fixture readers | No |
 | Experimental session wrapper | `magic600-session-proto/1` | 1 | Experimental store | Experimental round-trip reader | No choice of product wrapper follows |
-| Path B archive | `C600-MIGRATE-draft`, working package name `.c600migrate` | Draft | 1.0 importer, from staged copies | Migration validator/importer | Carrier of the selected core; still draft |
+| Path B archive | `C600-MIGRATE`, working package name `.c600migrate` | `format_version` 1 | 1.0 importer, from staged copies | Migration validator/importer | Carrier of the selected core and its dependencies (FP.24) |
 | Stage 14 certificates and checks | `t3p-certificate/1`, `t3p-check/1` | 1 each | Archived producer/checker | Independent research checker/importer | Archived inputs |
 | Stage 14 analyses | `t3p-scan/1`, `t3p-pairs/1`, `t3p-plus/1`, `t3p-levels/1`, `t3p-locality/1`, `t3p-chain/1` | 1 each | Archived research tools | Importer and format-specific checkers | Archived inputs |
 | Stage 15 macro records | `macro-certificate/1`, `macro-check/1` | 1 each | Archived producer/checker | Independent macro checker/importer | Archived inputs |
@@ -179,11 +179,12 @@ operation write_record(value: StoredValue, format: FormatRef, limits: LimitsRef)
 | Research publication manifest | `IMPORT-MANIFEST.json`; stage 19 header `sanitized-research-archive/1` | Per manifest | Archive preparation | Integrity checker/importer | Source-byte dependency |
 | Stage 19 proofs, tables and receipts | Each original header, including absent headers; no umbrella rename | As captured | Archived research producer/reviewer | Independent checker/importer | Archived inputs |
 
-- **PS1.13 [D]** FP.4/FP.10/FP.11 assign independent version-1 draft records, their wire fields and unknown-field
+- **PS1.13 [D]** FP.4/FP.10/FP.11 assign independent version-1 records, their wire fields and unknown-field
   outcomes. FP.4 supplies the identifiers now listed in the catalogue; language-dependent payloads remain
   outside the data-core freeze. Unknown ordinary fields refuse active read; optional extensions are preserved
-  and cannot alter required meaning, while unknown required extensions or versions refuse activation. FP.24 uses
-  `C600-MIGRATE-draft` with `format_version=1`; `c600migrate` is a different draft input requiring an explicit
+  and cannot alter required meaning, while unknown required extensions or versions refuse activation; FP.10
+  dispatches format and version before any version-specific check. FP.24 uses
+  `C600-MIGRATE` with `format_version=1`; `c600migrate` is a different draft input requiring an explicit
   converter, not an alias. No experimental session wrapper becomes the product container. Default 11 keeps this
   specification in prose; nothing is added under `schemas/`.
 
@@ -733,9 +734,9 @@ operation migrate_record(input: RecordedInput, target: FormatRef, converter: Con
   links, duplicates and encrypted entries; PS1.10 and PS1.11 give the shared limits obligation. The following tables
   give its fields and target conversion checks without silently changing session v1.
 
-| Path B draft manifest field | Stored value and validation |
+| Path B manifest field | Stored value and validation |
 | --- | --- |
-| `format`, `format_version` | Candidate `C600-MIGRATE-draft`, integer 1; FP.24 distinguishes the older exporter spelling |
+| `format`, `format_version` | Candidate `C600-MIGRATE`, integer 1; FP.24 distinguishes the older exporter spelling |
 | `producer` | Producer name/version/source identity; the re-plan moves production to the 1.0 importer |
 | `model_id` | Exact retained model; disagreement refuses import |
 | `created_utc` | Recorded creation metadata, separate from replay inputs and evidence strength |
@@ -743,11 +744,13 @@ operation migrate_record(input: RecordedInput, target: FormatRef, converter: Con
 | `entries` | Each non-manifest member's path, byte count, SHA-256 and role; no unlisted member |
 | `options`, `privacy` | Explicit log-inclusion choice and the draft's privacy contract; no machine paths in public metadata |
 
-| Path B draft member | Stored fields and validation |
+| Path B member | Stored fields and validation |
 | --- | --- |
-| `session/record.json` | Neutral event chain, checkpoint metadata and label-file references, preferences outside workspace, attempt/timer record |
-| `session/checkpoints/<n>.labels` | Complete little-endian int32 labels for current state/checkpoints; exact permutation and replay checks |
-| `session/checkpoint-paths.json` | Added by the re-plan: each offered checkpoint's recipe/pre/post path, including abandoned branches |
+| `session/record.json` | FP.24's session record: Refs to the head and offered checkpoint records, preferences outside workspace, attempt/timer record |
+| `session/checkpoints/<n>.labels` | Complete little-endian int32 labels for current state/checkpoints, `<n>` being `head` or the checkpoint's index; the raw carrier of that checkpoint's state (FP.24); exact permutation and replay checks |
+| `session/checkpoint-paths.json` | Added by the re-plan: each offered checkpoint's recipe/pre/post path, including abandoned branches; the head checkpoint's own path record |
+| `records/<sha256>.json` | Added by the format-freeze ruling: each record a content Ref reaches that no named member holds, once, as its exact FP.5 bytes (FP.24) |
+| `blobs/<sha256>` | Added by the format-freeze ruling: the stored bytes of each other BlobRef those records reach, once, named by stored digest (FP.24) |
 | `workspace/macros.json`, `workspace/keymap.json` | Existing exchange records, interpreted through their own declared formats; empty macro member may be absent |
 | `workspace/workspace.json` | Remaining typed/versioned workspace sections with explicit import outcomes |
 | `raw/session.sqlite3` | Staged consistent copy for recovery/evidence, mandatory for unsupported work under PS3.6; not the logical import input |
@@ -879,9 +882,10 @@ operation migrate_record(input: RecordedInput, target: FormatRef, converter: Con
   or silently removed from a coverage denominator.
 - **PS3.16 [D]** FP.23 chooses digest-named ZIP STORE members with original names kept in a source-name manifest.
   It fixes framing, header fields, traversal/duplicate checks, stored/decoded digest boundaries and FP.9 cumulative
-  limits. Case-only source names stay distinct metadata and are never extraction paths. Path B keeps PS3.3's ZIP
-  paths with FP.24's candidate manifest, rather than adopting the research bundle's object paths. The carrier is
-  a draft and executes no archived producer.
+  limits. Case-only source names stay distinct metadata and are never extraction paths. Path B keeps PS3.3's named
+  members with FP.24's manifest and carries their dependencies in its own digest-named `records/` and `blobs/`
+  members (FP.24), resolved from the package alone, rather than adopting the research bundle's `objects/` paths and
+  source-name manifest. The carrier executes no archived producer.
 - **PS3.17 [D]** Independent-check exports include the evidence envelope, original-label mapping version, exact input
   tables/words/certificates or their available digest-pinned bytes, and the checker identity plus the instructions
   and dependencies needed to check them (partition PS3, KN6). A bundle manifest records member digests and missing
@@ -963,7 +967,8 @@ probe report's MPR-06 decision without attribution. PS3.1 and PS3.2 use the amen
 
 The older exporter draft's 0.4.1 vehicle, live-export option and head-chain-only checkpoint treatment are superseded
 by path B and the checkpoint-path additions. FP.24 distinguishes its old manifest spelling from the candidate
-`C600-MIGRATE-draft`. Its existing ZIP layout remains the referenced package proposal.
+`C600-MIGRATE`. Its existing ZIP layout remains the referenced package proposal for the named members; FP.24 adds
+the `records/` and `blobs/` dependency carriers.
 
 The retained JSON serializer, prototype store serializer and stage 19 publication serializer are different byte
 profiles, as PS1.2 records. `encode_export` also differs from deterministic `encode_log` in gzip timestamp and byte
@@ -1043,7 +1048,7 @@ they do not establish full cross-platform, importer or mechanical conformance.
 | CT-PS2-03 | Facts-function edition change retains old facts and interpretation, records new outputs/inconsistencies and invalidates stale derived caches | source |
 | CT-PS2-04 | R-08 inputs changed during build/conversion cause reuse refusal even if cached output hashes match; check occurs after build | source |
 | CT-PS2-05 | Newer schema/edition, unavailable extension rules and missing provenance versions cannot partially activate a record | source |
-| CT-PS2-06 | PS1.12, PS2.10: the source extension is .6cs while c600-source-draft and the other c600- descriptors remain until freeze; the freeze inventory covers every path B data-core target and facts envelope but excludes syntax, IR, module semantics, recordings and proof-obligation export | source |
+| CT-PS2-06 | PS1.12, PS2.10: the source extension is .6cs, the frozen FP.4 rows carry no -draft suffix while c600-source-draft and the other c600- descriptors keep it; the freeze inventory covers every path B data-core target and facts envelope but excludes syntax, IR, module semantics, recordings and proof-obligation export | source |
 | CT-PS2-07 | PS2.12, PS2.13: both rulings and owner sign-off precede LP2 to LP5; evidence-dependent choices precede the rulings, and the design-system ADR still conditions LP4's editor look and LP6. The packet states the facts core and amended order without treating this draft as either ruling | source |
 | CT-PS3-01 | Path B fixture matrix: guarded, locked database/WAL copy includes WAL-only commits, never uses `immutable=1`, and never opens source SQLite | source |
 | CT-PS3-02 | Every oracle fixture recipe has the same replay hash after path B conversion, with exact word/star semantics and full collateral | source |
