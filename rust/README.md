@@ -216,27 +216,32 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - The reference meter of chapter 09 (DET.55 to DET.60) replays the 40 frozen contract-vector traces with every field
   compared exactly, and the meter boundary vectors derived from them (`c600-run/tests/traces.rs`). The frozen test
   tariffs are `Tariffs::TEST`, labelled test-only.
-- `traces.rs` also runs seven traces as programs through `Loaded::run` (nested-calls, output-equality,
-  output-retained-at-cutoff, simultaneous-exhaustion, simultaneous-memory-output, step-precedence and generator) and
-  stops each limit one unit below use at the predicted row. Two differences from the vectors come from the fixtures,
-  not from a defect. `nested-calls` completes at the frozen use plus 2 steps, 5 kernel, 16 memory and 5 output: in the
-  draft frame layout every body has at least one slot, so the smallest frame is 24 bytes, while the vectors' zero-slot
-  frames are synthetic (CV.2). RT1 charges an encoding row and then a publication row, as DET.59 allows, where a
-  fixture `emit` is a fused row of known size (CV.5). The other traces wait for child jobs (M6), loops, assertions and
-  multiplication in the IR, streaming words (KN2.10) or form 2; they still replay through the meter.
+- `c600-run/tests/det65_programs.rs` runs 11 of the 40 traces as programs through `Loaded::run`: nested-calls,
+  equal-to-limit, step-precedence, simultaneous-exhaustion, simultaneous-memory-output, generator, the three display
+  traces, output-equality and output-retained-at-cutoff. Each frozen row and each cutoff (dimension, phase, scope, denied row,
+  source range) equals the vector, under LP3's limit mapping (`c600-runtime/tests/ct_rte_04.rs`): CT-DET-26, 27, 28
+  (synthetic), 29, 31 and 32, all in part, on RT1 only.
+- The other 29 are listed with the reason the IR draft cannot express them: child scopes (6), a generator started,
+  aliased or returned in a call (4), a `let` released before its alias (2), text order (1), byte decoding (2), loops,
+  assertions and flow checks (3), exact multiplication (3), streaming cursors (3) and display form 2 (5). They still
+  replay through the meter.
+- The product output profile is not the fixtures' (CV.5): a realisation publishes values with the fixture's byte
+  counts, and `output-retained-at-cutoff`'s one-byte denied unit gets two bytes of kernel-cost headroom, since no
+  `c600-json-1` unit is shorter than three bytes.
 - `load` checks the IR identity and the program's names, arities, literals and precisions
   (`LG4:input.ir_version_unsupported`, `LG4:input.ir_rejected`). `Loaded::run` evaluates with an explicit work stack:
   one charge row per operation (DET.55), interruption observed before each operation (DET.56), aliases and owners
-  (DET.58), DET.59's priced encoding before publication, the generator `sha256-counter-draft-1` (DET.61) and
-  `display_if` charging the selected branch only (DET.64). A stop names the call path, the operation and its source
-  range.
+  (DET.58), each output unit as one fused row of encoding work, buffer and bytes (DET.56, DET.59), a preview
+  request's priced `encode` pass before `invoke`, the generator `sha256-counter-draft-1` (DET.61) and `display_if`
+  charging the selected branch only (DET.64). A stop names the call path, the operation and its source range.
 - Values: exact `Int`, `Rat` and Q(√5) arithmetic, order and equality with widening, on `num-bigint`; `Approx<p>` for
   p in {24, 53, 113}, rounded to nearest with ties to even; canonical `c600-json-1` bytes with FP.6's exact and `f64`
   forms. Deep values compare, encode and drop without recursion.
-- Drafts, which freeze with the IR (PHS.49): operation names, the stop locator, the frame layout, the receipt request
-  record, the JSON form of a word (LG2.18's word keys stay open) and `DraftTariffs`, test-only tariffs for the rows the
-  frozen vectors do not price. The IR draft has one read construct for snapshots and workspace records; the IR freeze
-  should split it.
+- Drafts, which freeze with the IR (PHS.49): operation names, the stop locator, the frame layout (parameters,
+  captures, `let` slots and operand temporaries; a body's own result has no slot), a value's canonical byte length as
+  retained metadata (so an output unit is one fused row), the receipt request record, the JSON form of a word (LG2.18's
+  word keys stay open) and `DraftTariffs`, test-only tariffs for the rows the frozen vectors do not price. The IR
+  draft has one read construct for snapshots and workspace records; the IR freeze should split it.
 - Evidence kind: source and fixture.
 
 ## Status of M3: the run-time boundary

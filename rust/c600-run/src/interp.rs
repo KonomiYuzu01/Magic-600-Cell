@@ -28,7 +28,7 @@
 //! | exact arithmetic | `exact_add`, `exact_less`, `exact_eq`, `not`, `to_approx`, `approx_add`, `approx_less`, `approx_and`, `approx_not` |
 //! | snapshot read, declassifier | `kernel` with the host row's tariff and result bound |
 //! | file read, clock | `read` with the host row's tariff and result bound |
-//! | view, workspace and file output | `encode` (DET.59's priced encoding pass), then `publish_view` or `emit` with the output bytes |
+//! | view, workspace and file output | `publish_view` or `emit`: one fused row per output unit, its encoding work, buffer and bytes in one admission (DET.56, DET.59); the buffer is released after the publication |
 //! | `propose` | `encode` of the request, then `invoke` with the host row's tariff and the request bytes as output |
 //! | receipt field | `read_receipt`; a field the host withheld stops with `LG3:capability.not_granted` (BND.42) |
 //! | exact sink | `use_exact` |
@@ -36,14 +36,17 @@
 //! | random draw | `rng_draw` (DET.61) |
 //!
 //! A run is entered with `rng_init` when a seed is given, one `read` per argument, and the entry `call`. Its result
-//! is the top-level output unit: `encode` and `emit` (DET.59).
+//! is the top-level output unit: one fused `emit` row (DET.59).
 //!
 //! # Drafts (M2)
 //!
-//! The operation names, the stop locator text, the frame layout (parameters, captures, `let` slots and temporaries),
-//! the per-capture `alias`, the receipt request record, [`DraftTariffs`], the `Status` accounting value `"running"`
-//! and the JSON form of a word are drafts that change freely until the IR freeze. The IR has no child construct yet:
-//! DET.60's children are exercised through the meter's traces only.
+//! The operation names, the stop locator text, the frame layout (parameters, captures, `let` slots and the
+//! temporaries that hold operands; a body's own result has no slot, since it moves to the caller), the per-capture
+//! `alias`, the receipt request record, [`DraftTariffs`], the `Status` accounting value `"running"`, the JSON form of
+//! a word, and a value's canonical byte length as retained metadata (so an output unit is one fused row, DET.59) are
+//! drafts that change freely until the IR freeze. A preview request keeps DET.59's other form: a priced `encode` pass
+//! on the retained bound, then `invoke`. The IR has no child construct yet: DET.60's children are exercised through
+//! the meter's traces only.
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU8, Ordering as Atomic};
@@ -724,7 +727,11 @@ impl Compiler {
         }
     }
 
-    /// Sizes every frame (DET.57): parameters, captures, `let` slots and the temporaries its body needs at once.
+    /// Sizes every frame (DET.57): parameters, captures, `let` slots and the temporaries its body holds at once. A
+    /// temporary holds an operand while the operations after it run, up to its consumer. The value a node produces is
+    /// its consumer's operand, not a temporary of the node, so the body's own result has no slot: it moves to the
+    /// caller (DET.58). A body that holds no operand, such as a call without arguments or one host read, has no
+    /// temporary.
     fn frames(&mut self) {
         let nodes = &self.loaded.nodes;
         let mut temps = vec![0u128; nodes.len()];
@@ -732,19 +739,14 @@ impl Compiler {
             let kids = &nodes[id].kids;
             let t = |k: NodeId| temps[k];
             temps[id] = match &nodes[id].kind {
-                Kind::Closure { .. } => 1,
-                _ if kids.is_empty() => 1,
+                Kind::Closure { .. } => 0,
+                _ if kids.is_empty() => 0,
                 Kind::Let(_) => t(kids[0]).max(t(kids[1])),
+                // The condition is the operand of `branch` or `display_if`; the selected branch runs after it.
                 Kind::If | Kind::DisplayIf | Kind::Match(_) | Kind::Prim(Prim::And | Prim::Or) => {
-                    kids.iter().map(|&k| t(k)).max().unwrap_or(1)
+                    kids.iter().map(|&k| t(k)).max().unwrap_or(0).max(1)
                 }
-                _ => kids
-                    .iter()
-                    .enumerate()
-                    .map(|(i, &k)| i as u128 + t(k))
-                    .max()
-                    .unwrap_or(0)
-                    .max(kids.len() as u128 + 1),
+                _ => kids.iter().enumerate().map(|(i, &k)| i as u128 + t(k)).max().unwrap_or(0).max(kids.len() as u128),
             };
         }
         for code in &mut self.loaded.codes {
@@ -1300,8 +1302,25 @@ impl<'a> Machine<'a> {
         Ok(())
     }
 
-    /// DET.59's priced encoding pass: its tariff and buffer reservation come from the value's retained bound, and the
-    /// buffer shrinks to the exact length.
+    /// DET.59's output unit as one fused row `op`. The unit's canonical byte length is retained metadata of the value
+    /// (a draft: every value comes from metered construction, which retains it), so one admission prices, in DET.56's
+    /// order, the encoding work (`encode_per_byte` per byte), the buffer (memory) and the bytes (output). The draft
+    /// computes that length on demand, by encoding, which changes no charge; the bytes reach the sink only after the
+    /// row is admitted, and the caller releases the buffer after the publication. A value with no canonical form has
+    /// no length: its row is charged its step and stops with `PS1:input.noncanonical_value`.
+    fn unit(&mut self, n: Option<NodeId>, op: &str, value: &Value) -> Result<(Vec<u8>, OwnerId), Stop> {
+        let mut bytes = Vec::new();
+        if encode::encode(value, &mut bytes).is_err() {
+            self.charge(n, op, 0, 0, 0)?;
+            return Err(self.fail(n, op, code::NONCANONICAL_VALUE));
+        }
+        let len = bytes.len() as u128;
+        self.charge(n, op, self.tariffs.encode_per_byte.saturating_mul(len), len, len)?;
+        Ok((bytes, self.meter.own(len)))
+    }
+
+    /// DET.59's priced encoding pass, before a row that is not an output unit: its tariff and buffer reservation come
+    /// from the value's retained bound, and the buffer shrinks to the exact length.
     fn encode(&mut self, n: Option<NodeId>, value: &Value) -> Result<(Vec<u8>, OwnerId), Stop> {
         let bound = value.bound().saturating_add(1);
         self.charge(n, "encode", self.tariffs.encode_per_byte.saturating_mul(bound), bound, 0)?;
@@ -1315,9 +1334,8 @@ impl<'a> Machine<'a> {
     }
 
     fn output(&mut self, n: NodeId, sink: Sink, held: Held) -> Result<(), Stop> {
-        let (bytes, buffer) = self.encode(Some(n), &held.value)?;
         let op = if matches!(sink, Sink::View) { "publish_view" } else { "emit" };
-        self.charge(Some(n), op, 0, 0, bytes.len() as u128)?;
+        let (bytes, buffer) = self.unit(Some(n), op, &held.value)?;
         if let Err(c) = self.host.sink(&sink, &held.value, &bytes) {
             return Err(self.fail(Some(n), op, c));
         }
@@ -1413,8 +1431,7 @@ impl<'a> Machine<'a> {
         self.call(None, self.loaded.functions[function].code, held, None)?;
         self.execute()?;
         let result = self.values.pop().expect("the entry's result");
-        let (bytes, buffer) = self.encode(None, &result.value)?;
-        self.charge(None, "emit", 0, 0, bytes.len() as u128)?;
+        let (bytes, buffer) = self.unit(None, "emit", &result.value)?;
         self.meter.drop_owner(buffer, true);
         let value = result.value.clone();
         self.release(result);
