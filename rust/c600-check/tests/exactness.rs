@@ -4,10 +4,12 @@
 
 mod support;
 
-use c600_check::{check, EFFECT_UNDECLARED, EXACTNESS_VIOLATION, EXACT_REQUIRED, IR_VERSION_UNSUPPORTED};
+use c600_check::{
+    check, EFFECT_UNDECLARED, EXACTNESS_VIOLATION, EXACT_REQUIRED, IR_VERSION_UNSUPPORTED, TYPE_MISMATCH,
+};
 use c600_ir::build::*;
 use c600_ir::{Capability, ExactRole, Expr, Function, Lit, Prim, QTy, Ty, FORM2_EXEC_CONTRACT};
-use support::{codes, fields, less, only, report, tint, tool, xy};
+use support::{codes, fields, less, mismatch, only, report, tint, tool, xy};
 
 const V: &str = EXACTNESS_VIOLATION;
 
@@ -64,17 +66,17 @@ fn lg2_22_exporting_the_display_colour_with_its_qualifier_is_admitted() {
 fn ct_lg2_04_exact_to_approximate_conversion_names_its_precision() {
     let widen = tool(vec![helper("widen", vec![param("x", exact(Ty::Nat))], exact(approx()), to_approx(var("x")))]);
     assert!(report(&widen).is_admitted());
-    // The precision is part of the type: values of two precisions do not mix, and none narrows silently.
+    // The precision is part of the type: values of two precisions do not mix, and none narrows silently (LG2.1).
     let mixed = tool(vec![helper(
         "mix",
         xy(),
         exact(approx()),
         prim(Prim::ApproxAdd, vec![prim(Prim::ToApprox(53), vec![var("x")]), prim(Prim::ToApprox(24), vec![var("y")])]),
     )]);
-    assert!(check(&mixed).is_err());
+    assert_eq!(mismatch(&only(&mixed)), (TYPE_MISMATCH, "mix", "1", "Approx<P53>", "Approx<P24>"));
     let narrowed =
         tool(vec![helper("narrow", vec![param("x", exact(Ty::Nat))], exact(Ty::Approx(24)), to_approx(var("x")))]);
-    assert!(check(&narrowed).is_err());
+    assert_eq!(mismatch(&only(&narrowed)), (TYPE_MISMATCH, "narrow", "root", "Approx<P24>", "Approx<P53>"));
 }
 
 #[test]
@@ -203,10 +205,11 @@ fn ct_lg2_05_higher_order_calls_keep_the_result_qualifier_of_a_callable() {
     }
     let exact_pick = helper("pick", xy(), exact(Ty::Bool), prim(Prim::ExactLess, vec![var("x"), var("y")]));
     assert!(report(&steer(exact_pick)).is_admitted());
-    // A parameter of another base type is malformed IR.
+    // A parameter of another base type does not fit the slot (LG2.1).
     let words =
         helper("pick", vec![param("a", exact(Ty::Word)), param("b", exact(Ty::Word))], exact(Ty::Bool), boolean(true));
-    assert!(check(&steer(words)).is_err());
+    let d = only(&steer(words));
+    assert_eq!(mismatch(&d), (TYPE_MISMATCH, "go", "0.0", "fn(Nat, Nat) -> Bool", "fn(Word, Word) -> Bool"));
 }
 
 #[test]
@@ -466,10 +469,18 @@ fn lg4_1_a_program_pinned_to_another_contract_is_refused_whole() {
 }
 
 #[test]
-fn malformed_ir_is_an_error_not_a_diagnostic() {
-    // Chapter 02 has no source code for a base-type mismatch: the lowering is at fault.
+fn lg2_1_a_base_type_mismatch_is_a_diagnostic_not_an_error() {
+    // An ordinary if takes a Bool condition, and display_if an ApproxBool one (LG2.20).
     let mismatched = tool(vec![helper("f", vec![], exact(Ty::Word), if_(nat(1), word(&[6]), word(&[7])))]);
-    assert!(check(&mismatched).is_err());
+    assert_eq!(mismatch(&only(&mismatched)), (TYPE_MISMATCH, "f", "0", "Bool", "Nat"));
+    let exact_condition = tool(vec![helper("f", vec![], display(Ty::Nat), display_if(boolean(true), nat(1), nat(2)))]);
+    assert_eq!(mismatch(&only(&exact_condition)), (TYPE_MISMATCH, "f", "0", "ApproxBool", "Bool"));
+}
+
+#[test]
+fn faults_without_a_source_diagnostic_are_errors() {
+    // An unbound name, a function defined twice, a call of an unexported function and a wrong number of arguments
+    // have no code in chapters 02 and 13. Lowering refuses the first two before the checker sees them.
     assert!(check(&tool(vec![helper("f", vec![], exact(Ty::Nat), var("z"))])).is_err());
     let twice = tool(vec![helper("f", vec![], exact(Ty::Nat), nat(1)), helper("f", vec![], exact(Ty::Nat), nat(2))]);
     assert!(check(&twice).is_err());
@@ -478,8 +489,11 @@ fn malformed_ir_is_an_error_not_a_diagnostic() {
         module("app", vec![helper("g", vec![], exact(Ty::Nat), call_in("lib", "f", vec![]))]),
     ]);
     assert!(check(&private).is_err());
-    let exact_condition = tool(vec![helper("f", vec![], display(Ty::Nat), display_if(boolean(true), nat(1), nat(2)))]);
-    assert!(check(&exact_condition).is_err());
+    let arity = tool(vec![
+        helper("f", vec![], exact(Ty::Nat), nat(1)),
+        helper("g", vec![], exact(Ty::Nat), call("f", vec![nat(1)])),
+    ]);
+    assert!(check(&arity).is_err());
 }
 
 // The Fable attack on the M1 checker (owner decision, 15 November 2026): each program below slipped past the checker

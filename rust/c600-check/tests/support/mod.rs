@@ -72,6 +72,12 @@ pub fn fields(d: &Diagnostic) -> (&'static str, Option<&str>, bool, bool) {
     (d.code, d.value_type.as_deref(), d.display_control, d.qualifier_erasure)
 }
 
+/// The fields of a type mismatch: code, function, path, and the expected and supplied types.
+pub fn mismatch(d: &Diagnostic) -> (&'static str, &str, &str, &str, &str) {
+    let m = d.mismatch.as_ref().unwrap_or_else(|| panic!("no mismatch types: {d:#?}"));
+    (d.code, d.function.as_str(), d.path.as_str(), m.expected.as_str(), m.supplied.as_str())
+}
+
 /// A program with one module `tool` holding the given functions.
 pub fn tool(functions: Vec<Function>) -> Program {
     program(vec![module("tool", functions)])

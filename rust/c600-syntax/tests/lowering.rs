@@ -1,14 +1,15 @@
 //! LP2 plan section 8, acceptance check 7: the nine frozen exactness cases of M1's acceptance check 2, written in
 //! source, give the frozen code, value type and fields through the checker, and each diagnostic maps to a source
-//! range of its function (LG4.12). Also: imports by digest, and what lowering refuses.
+//! range of its function (LG4.12). Also: base-type mismatches at their source text (LG2.1), imports by digest, and
+//! what lowering refuses.
 
 #[path = "../../c600-check/tests/support/mod.rs"]
 mod support;
 
-use c600_check::check;
+use c600_check::{check, TYPE_MISMATCH};
 use c600_ir::{Callee, Expr as Ir};
 use c600_syntax::{lower, parse, sha256_hex, LowerError, Lowered};
-use support::{boundary_vector, fields, Case};
+use support::{boundary_vector, fields, mismatch, Case};
 
 const HEADER: &str = "edition \"6cs-draft-1\";\nmodule tool requires [];\n\n";
 
@@ -48,6 +49,55 @@ fn assert_cases(cases: Vec<Case>, sources: Vec<(String, &str)>) {
         assert!(declaration.start <= span.start && span.end <= declaration.end, "{}", case.site);
         assert_eq!(&source[span.start..span.end], *offending, "{}: path {}", case.site, d.path);
     }
+}
+
+/// Each `(declarations, offending, expected, supplied)` gives exactly one `LG2:type.mismatch`, in `f`, with the
+/// expected and supplied types, and through the source map its path names the offending source text.
+fn assert_mismatches(cases: &[(&str, &str, &str, &str)]) {
+    for &(declarations, offending, expected, supplied) in cases {
+        let source = tool(declarations);
+        let lowered = lowered(&[&source]).unwrap_or_else(|e| panic!("{declarations}: {e}"));
+        let report = check(&lowered.program).unwrap_or_else(|e| panic!("{declarations}: {e}"));
+        assert_eq!(report.diagnostics.len(), 1, "{declarations}: {:#?}", report.diagnostics);
+        let d = &report.diagnostics[0];
+        let (code, function, path, expected_type, supplied_type) = mismatch(d);
+        assert_eq!((code, function, expected_type, supplied_type), (TYPE_MISMATCH, "f", expected, supplied));
+        let map = lowered.source(&d.module).expect("a source map per module");
+        let span = map.span(function, path).unwrap_or_else(|| panic!("{declarations}: no range for {path}"));
+        let declaration = map.declarations[function];
+        assert!(declaration.start <= span.start && span.end <= declaration.end, "{declarations}");
+        assert_eq!(&source[span.start..span.end], offending, "{declarations}: path {path}");
+    }
+}
+
+#[test]
+fn a_base_type_mismatch_is_reported_at_its_source_text() {
+    assert_mismatches(&[
+        // a wrong operand
+        (
+            "fn f(t: Text) -> Nat effects [] {\n    let n = 1;\n    return exact_add(n, t);\n}\n",
+            "t",
+            "Nat | Int | Rat | Q5 | Budget",
+            "Text",
+        ),
+        // a condition that is not Bool
+        (
+            "fn f(n: Nat) -> Word effects [] {\n    return if(exact_add(n, 1), word[+1], word[+2]);\n}\n",
+            "exact_add(n, 1)",
+            "Bool",
+            "Nat",
+        ),
+        // a wrong return type
+        ("fn f(x: Nat) -> Bool effects [] {\n    let y = exact_add(x, 1);\n    return y;\n}\n", "y", "Bool", "Nat"),
+        // a wrong argument type
+        (
+            "fn g(n: Nat, w: Word) -> Word effects [] {\n    return w;\n}\n\n\
+             fn f(x: Nat) -> Word effects [] {\n    return g(exact_add(x, 1), x);\n}\n",
+            "x",
+            "Word",
+            "Nat",
+        ),
+    ]);
 }
 
 #[test]
@@ -225,19 +275,23 @@ fn exact_arithmetic_takes_rationals_and_q5_values() {
         let report = check(&lowered.program).unwrap_or_else(|e| panic!("{declaration}: {e}"));
         assert!(report.diagnostics.is_empty(), "{declaration}: {:#?}", report.diagnostics);
     }
-    // A wider result does not fit a narrower slot, and a budget is a cost that mixes with integers only (LG2.6).
-    let refused = [
-        ("fn f() -> Int effects [] {\n    return exact_add(1/2, 1);\n}\n", "Rat"),
-        ("fn f(b: Budget) -> Bool effects [] {\n    return exact_less(b, 1/2);\n}\n", "Budget and a Rat"),
-        ("fn f(b: Budget) -> Q5 effects [] {\n    return exact_add(q5(1/1, 0/1), b);\n}\n", "Budget and a Q5"),
-    ];
-    for (declaration, why) in refused {
-        let lowered = lowered(&[&tool(declaration)]).unwrap();
-        match check(&lowered.program) {
-            Ok(report) => panic!("{declaration}: checked, {:#?}", report.diagnostics),
-            Err(e) => assert!(e.to_string().contains(why), "{declaration}: {e}"),
-        }
-    }
+    // A wider result does not fit a narrower slot, and a budget is a cost that mixes with integers only (LG2.6). Each
+    // is a type mismatch (LG2.1).
+    assert_mismatches(&[
+        ("fn f() -> Int effects [] {\n    return exact_add(1/2, 1);\n}\n", "exact_add(1/2, 1)", "Int", "Rat"),
+        (
+            "fn f(b: Budget) -> Bool effects [] {\n    return exact_less(b, 1/2);\n}\n",
+            "1/2",
+            "Nat | Int | Budget",
+            "Rat",
+        ),
+        (
+            "fn f(b: Budget) -> Q5 effects [] {\n    return exact_add(q5(1/1, 0/1), b);\n}\n",
+            "b",
+            "Nat | Int | Rat | Q5",
+            "Budget",
+        ),
+    ]);
     // An approximate operand at a rational exact addition stays an exactness refusal, not malformed IR.
     let source = tool("fn f(x: Rat) -> Rat effects [] {\n    return exact_add(approx53(x), 1/2);\n}\n");
     let lowered = lowered(&[&source]).unwrap();
