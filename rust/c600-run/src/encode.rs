@@ -5,6 +5,8 @@
 //! - Exact numbers are `{"int":"…"}`, `{"rat":["n","d"]}` and `{"q5":["a","b","d"]}`; an approximation is
 //!   `{"f64":"<16 lowercase hex digits>"}`.
 //! - A word is an array of its signed letters. This JSON form is an M2 draft; LG2.18's word keys stay open.
+//! - A list is an array of its elements in order (LP2 draft). A word equality key has no form: it is never output as
+//!   letters (LG2.13).
 //!
 //! The encoder walks with an explicit stack, so a deep value cannot overflow the host stack.
 
@@ -113,7 +115,21 @@ pub fn encode(value: &Value, out: &mut Vec<u8>) -> Result<(), Noncanonical> {
                     }
                 }
             }
-            Value::Closure(_) | Value::Fn(_) | Value::Receipt(_) => return Err(Noncanonical),
+            // A list is a JSON array of its elements in order (LP2 draft).
+            Value::List(l) => {
+                out.push(b'[');
+                stack.push(Task::Byte(b']'));
+                for (i, item) in l.items().iter().enumerate().rev() {
+                    stack.push(Task::Value(item));
+                    if i > 0 {
+                        stack.push(Task::Byte(b','));
+                    }
+                }
+            }
+            // A word key is never output as letters (LG2.13); the LP2 draft gives it no canonical form.
+            Value::Closure(_) | Value::Fn(_) | Value::Receipt(_) | Value::WordEqualityKey(_) => {
+                return Err(Noncanonical)
+            }
         }
     }
     out.push(b'\n');

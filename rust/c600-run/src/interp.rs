@@ -25,6 +25,9 @@
 //! | closure | `value` (32 bytes), then one `alias` per capture in declaration order |
 //! | record | `value` (the header), then per field `visit` (a move) or `alias` (a borrow) |
 //! | field | `visit`: a borrowed record lends its field; an owned one retains the field with a charged owner and is released |
+//! | list (LP2 draft) | `value` (the header), then per element `visit` (a move) or `alias` (a borrow), as a record is built |
+//! | `length`, `index` (LP2 drafts) | `length` reserves its integer; `index` lends or retains one element as a field read does, and an index outside the list stops with `LG4:input.pointwise_failed` before its step |
+//! | `push`, `concat`, `inverse`, `conjugate`, `commutator`, `compose`, `word_key` (LP2 drafts) | one step each, priced before the value is built: `expand_per_letter` per letter built or scanned, [`LIST_PER_ELEMENT`] per element built |
 //! | exact arithmetic | `exact_add`, `exact_less`, `exact_eq`, `not`, `to_approx`, `approx_add`, `approx_less`, `approx_and`, `approx_not` |
 //! | snapshot read, declassifier | `kernel` with the host row's tariff and result bound |
 //! | file read, clock | `read` with the host row's tariff and result bound |
@@ -59,7 +62,14 @@ use crate::meter::{
     Tariffs, GENERATOR_SIZE,
 };
 use crate::rng::{self, Cursor};
-use crate::value::{self, Closure, Record, Text, Value};
+use crate::value::{self, free_reduction, inverse, Closure, List, Record, Text, Value};
+
+/// The draft price of a built list (LP2): kernel units per element it holds. DET.55 names no row for it.
+///
+/// The list and word operations' names and prices, the word operations' reuse of `expand_per_letter`, the pointwise
+/// stop of an index outside its list and a list's JSON form are LP2 drafts that change freely until the IR freeze
+/// (PHS.49).
+pub const LIST_PER_ELEMENT: u128 = 1;
 
 /// The codes the interpreter raises in addition to the meter's (chapter 13).
 pub mod code {
@@ -245,6 +255,7 @@ enum Kind {
     Prim(Prim),
     Record(Vec<Arc<Text>>),
     Field(Box<str>),
+    List,
     ReadSnapshot { query: String, ty: QTy },
     PublishView,
     WriteWorkspace { record: String, ty: QTy },
@@ -442,6 +453,8 @@ fn arity(op: Prim) -> Option<usize> {
         | Prim::ApproxAnd => Some(2),
         Prim::Not | Prim::ApproxNot | Prim::ToApprox(_) => Some(1),
         Prim::ToExact => None,
+        Prim::Length | Prim::Inverse | Prim::WordKey => Some(1),
+        Prim::Index | Prim::Push | Prim::Concat | Prim::Conjugate | Prim::Commutator | Prim::Compose => Some(2),
     }
 }
 
@@ -653,6 +666,13 @@ impl Compiler {
             Expr::Field { field, .. } => {
                 kids(steps, expr.children());
                 Kind::Field(field.as_str().into())
+            }
+            Expr::Collection { ty, .. } => {
+                if !matches!(ty, Ty::List(_)) {
+                    return Err(rejected(format!("a collection of type {ty:?}")));
+                }
+                kids(steps, expr.children());
+                Kind::List
             }
             Expr::ReadSnapshot { query, ty } => Kind::ReadSnapshot { query: query.clone(), ty: ty.clone() },
             Expr::PublishView { .. } => {
@@ -1076,6 +1096,7 @@ impl<'a> Machine<'a> {
             }
             Kind::Prim(op) => self.prim(n, *op, args),
             Kind::Record(names) => self.record(n, names, args),
+            Kind::List => self.list(n, args),
             Kind::Field(name) => self.field(n, args.pop().expect("a record"), name, "visit"),
             Kind::ReadReceipt(field) => self.read_receipt(n, args.pop().expect("a receipt"), *field),
             Kind::PublishView => self.output(n, Sink::View, args.pop().expect("a value")),
@@ -1166,6 +1187,15 @@ impl<'a> Machine<'a> {
             Prim::ApproxAnd => "approx_and",
             Prim::ApproxNot => "approx_not",
             Prim::And | Prim::Or | Prim::ToExact => unreachable!("branches and refused conversions"),
+            Prim::Length
+            | Prim::Index
+            | Prim::Push
+            | Prim::Concat
+            | Prim::Inverse
+            | Prim::Conjugate
+            | Prim::Commutator
+            | Prim::Compose
+            | Prim::WordKey => return self.sequence(n, op, args),
         };
         let display = |v: &Value| match v {
             Value::Bool(x) | Value::ApproxBool(x) => Some(*x),
@@ -1234,6 +1264,151 @@ impl<'a> Machine<'a> {
         }
         let record = Record::new(names.iter().cloned().zip(values).collect());
         self.push(Value::Record(Arc::new(record)), owners);
+        Ok(())
+    }
+
+    /// A list, built as a record is: `value` for the header, then per item `visit` (a move) or `alias` (a borrow).
+    fn list(&mut self, n: NodeId, args: Vec<Held>) -> Result<(), Stop> {
+        let values: Vec<Value> = args.iter().map(|h| h.value.clone()).collect();
+        let header = List::header(&values);
+        self.charge(Some(n), "value", 0, header, 0)?;
+        let mut owners = self.own(header);
+        for held in args {
+            if held.origin == Origin::Owned {
+                self.charge(Some(n), "visit", 0, 0, 0)?;
+                owners.extend(held.owners);
+            } else {
+                let size = held.value.size();
+                self.charge(Some(n), "alias", 0, size, 0)?;
+                owners.extend(self.own(size));
+            }
+        }
+        self.push(Value::List(Arc::new(List::new(values))), owners);
+        Ok(())
+    }
+
+    /// The list and word operations, one step each (LP2 drafts; DET.55 names no row for them). `length` reads
+    /// retained metadata and reserves its integer. `index` lends or retains one element as a field read does; an
+    /// index outside the list stops with `LG4:input.pointwise_failed` before the step. The others build a new value
+    /// and are priced from the operands' lengths before it is built: `expand_per_letter` per letter of a built word
+    /// or per letter a key scan reads, and [`LIST_PER_ELEMENT`] per element of a built list.
+    fn sequence(&mut self, n: NodeId, op: Prim, mut args: Vec<Held>) -> Result<(), Stop> {
+        let name = match op {
+            Prim::Length => "length",
+            Prim::Index => "index",
+            Prim::Push => "push",
+            Prim::Concat => "concat",
+            Prim::Inverse => "inverse",
+            Prim::Conjugate => "conjugate",
+            Prim::Commutator => "commutator",
+            Prim::Compose => "compose",
+            _ => "word_key",
+        };
+        if op == Prim::Index {
+            let index = args.pop().expect("an index");
+            let list = args.pop().expect("a list");
+            let element = match (&list.value, &index.value) {
+                (Value::List(l), Value::Int(i)) => usize::try_from(&**i).ok().and_then(|i| l.items().get(i).cloned()),
+                _ => return Err(self.fail(Some(n), name, code::IR_REJECTED)),
+            };
+            let Some(element) = element else {
+                return Err(self.fail(Some(n), name, meter::code::POINTWISE_FAILED));
+            };
+            self.release(index);
+            return match list.origin {
+                Origin::Owned => {
+                    let size = element.size();
+                    self.charge(Some(n), name, 0, size, 0)?;
+                    let owners = self.own(size);
+                    self.release(list);
+                    self.push(element, owners);
+                    Ok(())
+                }
+                origin => {
+                    self.charge(Some(n), name, 0, 0, 0)?;
+                    let origin = match origin {
+                        Origin::Let { slot, .. } => Origin::Let { slot, whole: false },
+                        other => other,
+                    };
+                    self.values.push(Held { value: element, owners: Vec::new(), origin });
+                    Ok(())
+                }
+            };
+        }
+        let letters = |h: &Held| match &h.value {
+            Value::Word(w) => Some(w.clone()),
+            _ => None,
+        };
+        let words: Option<Vec<Arc<[i32]>>> = args.iter().map(letters).collect();
+        let per_letter = self.tariffs.expand_per_letter;
+        let (kernel, memory, result): (u128, u128, Box<dyn FnOnce() -> Value>) = match (op, &words, &args[..]) {
+            (Prim::Length, _, [h]) => {
+                let count = match &h.value {
+                    Value::Word(w) => w.len(),
+                    Value::List(l) => l.items().len(),
+                    _ => return Err(self.fail(Some(n), name, code::IR_REJECTED)),
+                };
+                let result = Value::int(count);
+                (0, result.size(), Box::new(move || result))
+            }
+            (Prim::WordKey, Some(ws), _) => {
+                let w = ws[0].clone();
+                let read = w.len() as u128;
+                (
+                    per_letter.saturating_mul(read),
+                    2 * read,
+                    Box::new(move || Value::WordEqualityKey(free_reduction(&w).into())),
+                )
+            }
+            (Prim::Inverse | Prim::Conjugate | Prim::Commutator | Prim::Compose | Prim::Concat, Some(ws), _) => {
+                let (x, y) = (ws[0].clone(), ws.get(1).cloned().unwrap_or_else(|| Arc::from(Vec::new())));
+                let (lx, ly) = (x.len() as u128, y.len() as u128);
+                let built = match op {
+                    Prim::Inverse => lx,
+                    Prim::Conjugate => 2 * lx + ly,
+                    Prim::Commutator => 2 * lx + 2 * ly,
+                    _ => lx + ly,
+                };
+                let build = move || {
+                    let letters: Vec<i32> = match op {
+                        Prim::Inverse => inverse(&x),
+                        Prim::Conjugate => [&x[..], &y[..], &inverse(&x)].concat(),
+                        Prim::Commutator => [&x[..], &y[..], &inverse(&x), &inverse(&y)].concat(),
+                        _ => [&x[..], &y[..]].concat(),
+                    };
+                    Value::Word(letters.into())
+                };
+                (per_letter.saturating_mul(built), 2 * built, Box::new(build))
+            }
+            (Prim::Concat, None, [a, b]) => {
+                let (Value::List(x), Value::List(y)) = (&a.value, &b.value) else {
+                    return Err(self.fail(Some(n), name, code::IR_REJECTED));
+                };
+                let (x, y) = (x.clone(), y.clone());
+                let count = (x.items().len() + y.items().len()) as u128;
+                let memory = a.value.size() + b.value.size() - 4;
+                let build = move || Value::List(Arc::new(List::new([x.items(), y.items()].concat())));
+                (LIST_PER_ELEMENT.saturating_mul(count), memory, Box::new(build))
+            }
+            (Prim::Push, _, [a, b]) => {
+                let Value::List(x) = &a.value else {
+                    return Err(self.fail(Some(n), name, code::IR_REJECTED));
+                };
+                let (x, e) = (x.clone(), b.value.clone());
+                let count = x.items().len() as u128 + 1;
+                let memory = a.value.size() + e.size() + if e.is_sequence() { 8 } else { 0 };
+                let build = move || Value::List(Arc::new(List::new([x.items(), &[e]].concat())));
+                (LIST_PER_ELEMENT.saturating_mul(count), memory, Box::new(build))
+            }
+            _ => return Err(self.fail(Some(n), name, code::IR_REJECTED)),
+        };
+        self.charge(Some(n), name, kernel, memory, 0)?;
+        self.settle(memory, result());
+        let result = self.values.pop().expect("the result");
+        for held in args {
+            self.release(held);
+        }
+        self.values.push(result);
         Ok(())
     }
 

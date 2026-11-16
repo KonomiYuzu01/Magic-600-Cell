@@ -116,6 +116,31 @@ pub enum Ty {
     Receipt,
     /// A generic type parameter; substitution preserves the qualifier (LG2.19).
     Var(String),
+    /// `List<T>`: a finite sequence in written order. Draft (LP2) until the IR freeze (PHS.49), like every
+    /// collection and word form below.
+    List(Box<QTy>),
+    /// LG2.13's word equality key of a Full word, under LG2.18's free reduction. It is never a `Word` and never
+    /// converts to one (CT-LG2-11).
+    WordEqualityKey,
+}
+
+impl Ty {
+    /// The element types of a collection type, in order; empty for other types.
+    pub fn elements(&self) -> Vec<&QTy> {
+        match self {
+            Ty::List(e) => vec![&**e],
+            _ => Vec::new(),
+        }
+    }
+
+    /// The collection type of the same kind with its element types replaced, in [`Ty::elements`] order.
+    pub fn with_elements(&self, mut parts: Vec<QTy>) -> Ty {
+        let mut next = || Box::new(parts.remove(0));
+        match self {
+            Ty::List(_) => Ty::List(next()),
+            other => other.clone(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -207,6 +232,25 @@ pub enum Prim {
     ApproxLess,
     ApproxAnd,
     ApproxNot,
+    // Collections and words (LP2 drafts until the IR freeze, PHS.49).
+    /// `length(x)`: the element count of a list, or the exact length of a word (LG2.16), as `Nat`.
+    Length,
+    /// `index(list, i)`: the element at exact position `i`, counted from 0 (LG2.20).
+    Index,
+    /// `push(list, x)`: the list with `x` appended.
+    Push,
+    /// `concat(a, b)`: two words or two lists joined in order.
+    Concat,
+    /// `inverse(w)`: the letters in reverse order, each negated (LG2.15).
+    Inverse,
+    /// `conjugate(x, y)`: x · y · x⁻¹ (LG2.15).
+    Conjugate,
+    /// `commutator(x, y)`: x · y · x⁻¹ · y⁻¹ (LG2.15).
+    Commutator,
+    /// `compose(x, y)`: the action of x, then of y; its letters are x's, then y's, in chronological order (LG2.15).
+    Compose,
+    /// `word_key(w)`: LG2.13's key of a Full word, LG2.18's stack free reduction of adjacent inverse pairs.
+    WordKey,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -300,6 +344,11 @@ pub enum Expr {
         value: Box<Expr>,
         field: String,
     },
+    /// A collection of type `ty` (a `List`) from its items in written order. Draft.
+    Collection {
+        ty: Ty,
+        items: Vec<Expr>,
+    },
     /// A snapshot or workspace read. The type carries the stored field's display qualifier: decoding retains it
     /// (LG2.19, storage row).
     ReadSnapshot {
@@ -375,7 +424,7 @@ impl Expr {
                 out
             }
             Expr::Closure { body, .. } => vec![&**body],
-            Expr::Prim { args, .. } => args.iter().collect(),
+            Expr::Prim { args, .. } | Expr::Collection { items: args, .. } => args.iter().collect(),
             Expr::Record(fields) => fields.iter().map(|(_, f)| f).collect(),
             Expr::Field { value, .. }
             | Expr::PublishView { value }
@@ -469,6 +518,11 @@ pub mod build {
     }
     pub fn record(fields: Vec<(&str, Expr)>) -> Expr {
         Expr::Record(fields.into_iter().map(|(n, e)| (n.to_string(), e)).collect())
+    }
+
+    /// `List<elem>` with the given items (draft).
+    pub fn list(elem: QTy, items: Vec<Expr>) -> Expr {
+        Expr::Collection { ty: Ty::List(Box::new(elem)), items }
     }
     pub fn field(value: Expr, name: &str) -> Expr {
         Expr::Field { value: Box::new(value), field: name.into() }

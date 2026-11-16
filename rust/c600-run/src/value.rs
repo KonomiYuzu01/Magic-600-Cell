@@ -40,6 +40,66 @@ pub enum Value {
     Fn(usize),
     /// A preview receipt (BND.42): the fields the host supplied. A field it withholds is absent.
     Receipt(Arc<Record>),
+    /// A list (LP2 draft): its elements in order.
+    List(Arc<List>),
+    /// LG2.13's word equality key: the letters after LG2.18's free reduction. It is never a `Word`.
+    WordEqualityKey(Arc<[i32]>),
+}
+
+/// A list: its elements in order, its logical size and an upper bound of its canonical encoding (LP2 draft).
+#[derive(Debug)]
+pub struct List {
+    items: Vec<Value>,
+    size: u128,
+    bound: u128,
+}
+
+impl List {
+    /// DET.57: a 4-byte variant tag and the owned elements, each variable sequence among them with its 8-byte
+    /// length, as a record stores its fields. The list's own 8-byte length is counted where it is stored.
+    pub fn new(items: Vec<Value>) -> List {
+        let size = items
+            .iter()
+            .fold(4u128, |s, v| s.saturating_add(v.size()).saturating_add(if v.is_sequence() { 8 } else { 0 }));
+        let bound = items.iter().fold(2u128, |s, v| s.saturating_add(v.bound()).saturating_add(1));
+        List { items, size, bound }
+    }
+
+    pub fn items(&self) -> &[Value] {
+        &self.items
+    }
+
+    /// The logical size of a list header over these elements: the variant tag and the sequence lengths.
+    pub fn header(items: &[Value]) -> u128 {
+        Record::header(items)
+    }
+}
+
+impl Drop for List {
+    fn drop(&mut self) {
+        let mut stack = std::mem::take(&mut self.items);
+        while let Some(v) = stack.pop() {
+            take_children(v, &mut stack);
+        }
+    }
+}
+
+/// LG2.18's key of a Full word: a stack scan in chronological order that cancels only adjacent inverse pairs.
+pub fn free_reduction(letters: &[i32]) -> Vec<i32> {
+    let mut stack: Vec<i32> = Vec::with_capacity(letters.len());
+    for &l in letters {
+        if stack.last() == Some(&-l) {
+            stack.pop();
+        } else {
+            stack.push(l);
+        }
+    }
+    stack
+}
+
+/// The inverse of a word: its letters in reverse order, each negated (LG2.15).
+pub fn inverse(letters: &[i32]) -> Vec<i32> {
+    letters.iter().rev().map(|l| -l).collect()
 }
 
 /// A text with its scalar count, which sizes and output bounds need without a walk (DET.57, DET.62).
@@ -169,6 +229,11 @@ fn take_children(value: Value, out: &mut Vec<Value>) {
                 out.append(&mut c.captures);
             }
         }
+        Value::List(l) => {
+            if let Some(mut l) = Arc::into_inner(l) {
+                out.append(&mut l.items);
+            }
+        }
         _ => {}
     }
 }
@@ -234,6 +299,11 @@ impl Value {
         Value::Record(Arc::new(Record::new(fields.into_iter().map(|(k, v)| (Text::new(k), v)).collect())))
     }
 
+    /// A list of these elements in order (LP2 draft).
+    pub fn list(items: Vec<Value>) -> Value {
+        Value::List(Arc::new(List::new(items)))
+    }
+
     pub fn receipt(fields: Vec<(&str, Value)>) -> Value {
         Value::Receipt(Arc::new(Record::new(fields.into_iter().map(|(k, v)| (Text::new(k), v)).collect())))
     }
@@ -249,16 +319,17 @@ impl Value {
             Value::Approx(x) => approx::width(x.precision),
             Value::Text(t) | Value::Target(t) => t.scalars.saturating_mul(4),
             Value::Tag(_) | Value::Colour(_) => 4,
-            Value::Word(w) => 2 * w.len() as u128,
+            Value::Word(w) | Value::WordEqualityKey(w) => 2 * w.len() as u128,
             Value::Record(r) | Value::Receipt(r) => r.size,
             Value::Closure(c) => c.size,
             Value::Fn(_) => 32,
+            Value::List(l) => l.size,
         }
     }
 
     /// Whether the value is a variable sequence, which a record field stores with an 8-byte length (DET.57).
     pub fn is_sequence(&self) -> bool {
-        matches!(self, Value::Text(_) | Value::Target(_) | Value::Word(_))
+        matches!(self, Value::Text(_) | Value::Target(_) | Value::Word(_) | Value::WordEqualityKey(_) | Value::List(_))
     }
 
     /// An upper bound of the value's canonical encoding in bytes, without the terminal line feed (FP.5, FP.6). It is
@@ -275,7 +346,9 @@ impl Value {
             Value::Text(t) | Value::Target(t) | Value::Tag(t) | Value::Colour(t) => text_bound(t),
             Value::Word(w) => 2 + 6 * w.len() as u128,
             Value::Record(r) => r.bound,
-            Value::Closure(_) | Value::Fn(_) | Value::Receipt(_) => 0,
+            Value::List(l) => l.bound,
+            // A word key has no canonical form in the LP2 draft: it is never output as letters (LG2.13).
+            Value::Closure(_) | Value::Fn(_) | Value::Receipt(_) | Value::WordEqualityKey(_) => 0,
         }
     }
 }
@@ -425,7 +498,11 @@ pub fn equal(a: &Value, b: &Value) -> bool {
             | (Value::Target(x), Value::Target(y))
             | (Value::Tag(x), Value::Tag(y))
             | (Value::Colour(x), Value::Colour(y)) => x.as_str() == y.as_str(),
-            (Value::Word(x), Value::Word(y)) => x == y,
+            (Value::Word(x), Value::Word(y)) | (Value::WordEqualityKey(x), Value::WordEqualityKey(y)) => x == y,
+            (Value::List(x), Value::List(y)) => {
+                stack.extend(x.items.iter().zip(&y.items));
+                x.items.len() == y.items.len()
+            }
             (Value::Fn(x), Value::Fn(y)) => x == y,
             (Value::Approx(x), Value::Approx(y)) => x == y,
             _ => compare(a, b) == Some(Ordering::Equal),

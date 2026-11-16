@@ -31,6 +31,8 @@ pub const TYPE_MISMATCH: &str = "LG2:type.mismatch";
 pub const EXACTNESS_VIOLATION: &str = "LG2:type.exactness_violation";
 /// `LG2:type.exact_required` (LG2.22).
 pub const EXACT_REQUIRED: &str = "LG2:type.exact_required";
+/// `LG2:type.word_key_not_executable` (LG2.13, LG2.17).
+pub const WORD_KEY_NOT_EXECUTABLE: &str = "LG2:type.word_key_not_executable";
 /// `LG3:effect.undeclared` (LG3.2, LG3.5, LG3.6).
 pub const EFFECT_UNDECLARED: &str = "LG3:effect.undeclared";
 /// `LG3:capability.not_granted` (LG3.8, LG3.9; chapter 07 section 8).
@@ -393,6 +395,8 @@ pub fn type_name(ty: &Ty) -> String {
         Ty::Fn(_) => "Fn".into(),
         Ty::Receipt => "Receipt".into(),
         Ty::Var(name) => name.clone(),
+        Ty::List(_) => "List".into(),
+        Ty::WordEqualityKey => "WordEqualityKey".into(),
     }
 }
 
@@ -409,6 +413,7 @@ fn type_text(ty: &Ty) -> String {
             let params: Vec<String> = f.params.iter().map(|p| type_text(&p.ty)).collect();
             format!("fn({}) -> {}", params.join(", "), type_text(&f.result.ty))
         }
+        Ty::List(e) => format!("List<{}>", type_text(&e.ty)),
         other => type_name(other),
     }
 }
@@ -436,6 +441,7 @@ fn replace_var(ty: &Ty, name: &str, with: &Ty) -> Ty {
             result: q(&f.result),
             effects: f.effects.clone(),
         })),
+        list @ Ty::List(_) => list.with_elements(list.elements().into_iter().map(q).collect()),
         other => other.clone(),
     }
 }
@@ -504,7 +510,31 @@ fn declared_qual(q: &QTy) -> Qual {
         Ty::ApproxBool => Qual::Cond,
         _ if q.display => Qual::Display { control: false },
         Ty::Record(fields) => fields.iter().fold(Qual::Exact, |acc, (_, f)| acc.join(declared_qual(f).container())),
+        Ty::List(_) => q.ty.elements().into_iter().fold(Qual::Exact, |acc, e| acc.join(declared_qual(e).container())),
         _ => Qual::Exact,
+    }
+}
+
+/// Projection's qualifier rule (LG2.19): an element of a container of qualifier `container`, declared with qualifier
+/// `element`. A display-qualified container lends no exact element; an element under approximate control stays so.
+fn project(container: Qual, element: Qual) -> Qual {
+    match container {
+        Qual::Exact => element,
+        Qual::Display { control: true } => element.join(Qual::Display { control: true }),
+        _ => match element {
+            Qual::Approx | Qual::Cond => element,
+            q => q.join(Qual::Display { control: false }),
+        },
+    }
+}
+
+/// Whether a type holds a callable at any depth. A collection does not (LP2 draft): its elements carry no callable
+/// needs (LG3.2).
+fn holds_callable(ty: &Ty) -> bool {
+    match ty {
+        Ty::Fn(_) => true,
+        Ty::Record(fields) => fields.iter().any(|(_, f)| holds_callable(&f.ty)),
+        other => other.elements().into_iter().any(|e| holds_callable(&e.ty)),
     }
 }
 
@@ -519,6 +549,7 @@ fn exact_slot(slot: &QTy, own: bool) -> bool {
         Ty::Unit | Ty::Approx(_) | Ty::ApproxBool => false,
         Ty::Var(_) => own,
         Ty::Record(fields) => fields.iter().all(|(_, f)| f.ty == Ty::Unit || exact_slot(f, own)),
+        Ty::List(_) => slot.ty.elements().into_iter().all(|e| exact_slot(e, own)),
         _ => true,
     }
 }
@@ -531,6 +562,7 @@ fn admits(slot: &QTy, value: &QTy, own: bool) -> bool {
     match (&slot.ty, &value.ty) {
         (Ty::Fn(s), Ty::Fn(t)) => signature_keeps(s, t, own),
         (Ty::Record(s), Ty::Record(t)) => s.iter().zip(t).all(|((_, sf), (_, tf))| admits(sf, tf, own)),
+        (Ty::List(s), Ty::List(t)) => admits(s, t, own),
         _ => true,
     }
 }
@@ -574,6 +606,7 @@ fn fits(slot: &Ty, value: &Ty) -> bool {
                 && a.params.iter().zip(&b.params).all(|(pa, pb)| matches!(pa.ty, Ty::Var(_)) || fits(&pb.ty, &pa.ty))
                 && fits(&a.result.ty, &b.result.ty)
         }
+        (Ty::List(a), Ty::List(b)) => fits(&a.ty, &b.ty),
         (a, b) => a == b,
     }
 }
@@ -607,6 +640,7 @@ fn widen(a: &Ty, b: &Ty) -> Option<Ty> {
             let result = widen_q(&x.result, &y.result)?;
             Some(Ty::Fn(Box::new(FnTy { params: x.params.clone(), result, effects })))
         }
+        (Ty::List(x), Ty::List(y)) => Some(Ty::List(Box::new(widen_q(x, y)?))),
         _ => None,
     }
 }
@@ -630,7 +664,11 @@ fn effect_vars(q: &QTy, out: &mut BTreeSet<String>) {
                 effect_vars(f, out);
             }
         }
-        _ => {}
+        other => {
+            for e in other.elements() {
+                effect_vars(e, out);
+            }
+        }
     }
 }
 
@@ -647,6 +685,7 @@ fn rename_vars(q: &QTy, map: &BTreeMap<String, String>) -> QTy {
             }))
         }
         Ty::Record(fields) => Ty::Record(fields.iter().map(|(n, f)| (n.clone(), rename_vars(f, map))).collect()),
+        list @ Ty::List(_) => list.with_elements(list.elements().into_iter().map(|e| rename_vars(e, map)).collect()),
         other => other.clone(),
     };
     QTy { ty, display: q.display }
@@ -779,6 +818,16 @@ impl Val {
         Val { ty: q.ty.clone(), qual: declared_qual(q), callable, fields: None }
     }
 
+    /// Element type `i` of a collection value ([`Ty::elements`]) under projection's qualifier rule (LG2.19).
+    fn element(&self, i: usize) -> Val {
+        let Some(declared) = self.ty.elements().get(i).map(|e| (*e).clone()) else {
+            return Val::unknown();
+        };
+        let mut v = Val::declared(&declared);
+        v.qual = project(self.qual, v.qual);
+        v
+    }
+
     /// Field `i` of a record value as the record holds it, before projection's qualifier rule.
     fn field(&self, i: usize) -> Val {
         match (&self.fields, &self.ty) {
@@ -843,6 +892,7 @@ fn bindings(slot: &QTy, v: &Val, out: &mut Vec<(String, Val)>) {
                 bindings(&s.result, &result, out);
             }
         }
+        Ty::List(e) if matches!(v.ty, Ty::List(_)) => bindings(e, &v.element(0), out),
         _ => {}
     }
 }
@@ -1145,6 +1195,11 @@ impl<'p> Checker<'p> {
 
     /// `LG2:type.mismatch` at the current position (LG2.1).
     fn mismatch(&mut self, expected: String, supplied: String, what: &str) {
+        // A word equality key where literal letters are required has a code of its own (LG2.13, CT-LG2-11).
+        if supplied == "WordEqualityKey" && expected == "Word" {
+            let note = format!("{what}: a word equality key is never literal letters (LG2.13, LG2.17)");
+            return self.record(WORD_KEY_NOT_EXECUTABLE, None, Some(Mismatch { expected, supplied }), note);
+        }
         let note = format!("{what}: {supplied} where {expected} is expected (LG2.1)");
         self.record(TYPE_MISMATCH, None, Some(Mismatch { expected, supplied }), note);
     }
@@ -1765,6 +1820,27 @@ impl<'p> Checker<'p> {
                 // The record keeps its field values, so that a callable keeps its needs through it (LG3.2).
                 Ok((Val { ty: Ty::Record(tys), qual, callable: None, fields: Some(vals) }, s))
             }
+            Expr::Collection { ty, items } => {
+                let elements = ty.elements();
+                let Some(element) = elements.first().map(|e| (*e).clone()) else {
+                    return Err(self.err(format!("a collection of type {} (the LP2 draft has List)", type_text(ty))));
+                };
+                if holds_callable(&element.ty) {
+                    return Err(self.err(format!("{}: a collection holds no callable (LP2 draft)", type_text(ty))));
+                }
+                let mut s = Summary::default();
+                // A container with a display element is display-qualified as a whole (LG2.19).
+                let mut qual = declared_qual(&QTy { ty: ty.clone(), display: false });
+                for (i, item) in items.iter().enumerate() {
+                    let (v, i_s) = self.at(i, |c| c.expr(item, env))?;
+                    s.add(&i_s);
+                    if !fits(&element.ty, &v.ty) {
+                        self.at(i, |c| c.misfit(&type_text(&element.ty), &v, "a list element"));
+                    }
+                    qual = qual.join(v.qual.container());
+                }
+                Ok((Val::new(ty.clone(), qual), s))
+            }
             Expr::Field { value, field } => {
                 let (rv, s) = self.at(0, |c| c.expr(value, env))?;
                 let index = match &rv.ty {
@@ -1947,6 +2023,7 @@ impl<'p> Checker<'p> {
     fn prim(&mut self, op: Prim, vals: &[Val]) -> Result<Val, IrError> {
         let arity = match op {
             Prim::Not | Prim::ToApprox(_) | Prim::ToExact | Prim::ApproxNot => 1,
+            Prim::Length | Prim::Inverse | Prim::WordKey => 1,
             _ => 2,
         };
         if vals.len() != arity {
@@ -2084,6 +2161,80 @@ impl<'p> Checker<'p> {
                     }
                 }
                 Ok(Val::new(Ty::ApproxBool, cond_of(q)))
+            }
+            Prim::Length => {
+                let v = &vals[0];
+                if !matches!(v.ty, Ty::List(_) | Ty::Word) && !is_unknown(&v.ty) {
+                    self.at(0, |c| c.misfit("List<_> | Word", v, "a length"));
+                }
+                // A length cannot extract an exact result from a display-qualified value (LG2.19).
+                Ok(Val::new(Ty::Nat, project(v.qual, Qual::Exact)))
+            }
+            Prim::Index => {
+                let (list, i) = (&vals[0], &vals[1]);
+                // An exact collection index accepts exact inputs only (LG2.20).
+                if fits(&Ty::Nat, &i.ty) {
+                    self.at(1, |c| c.exact_use(Site::Control, i, "an exact collection index"));
+                } else {
+                    self.at(1, |c| c.misfit("Nat", i, "an exact collection index"));
+                }
+                match &list.ty {
+                    Ty::List(_) => Ok(list.element(0)),
+                    t => {
+                        if !is_unknown(t) {
+                            self.at(0, |c| c.misfit("List<_>", list, "an indexed list"));
+                        }
+                        Ok(Val::unknown())
+                    }
+                }
+            }
+            Prim::Push => {
+                let (list, x) = (&vals[0], &vals[1]);
+                let Ty::List(element) = &list.ty else {
+                    if !is_unknown(&list.ty) {
+                        self.at(0, |c| c.misfit("List<_>", list, "a push"));
+                    }
+                    return Ok(Val::unknown());
+                };
+                if !fits(&element.ty, &x.ty) {
+                    self.at(1, |c| c.misfit(&type_text(&element.ty), x, "a pushed element"));
+                }
+                Ok(Val::new(list.ty.clone(), list.qual.join(x.qual.container())))
+            }
+            Prim::Concat => {
+                let (a, b) = (&vals[0], &vals[1]);
+                let ty = match (&a.ty, &b.ty) {
+                    (x, y) if is_unknown(x) || is_unknown(y) => return Ok(Val::unknown()),
+                    (Ty::Word, _) | (Ty::List(_), _) => {
+                        let common = if fits(&a.ty, &b.ty) { widen(&a.ty, &b.ty) } else { None };
+                        if common.is_none() {
+                            self.at(1, |c| c.misfit(&type_text(&a.ty), b, "a concatenation"));
+                            return Ok(Val::unknown());
+                        }
+                        common
+                    }
+                    _ => {
+                        self.at(0, |c| c.misfit("Word | List<_>", a, "a concatenation"));
+                        return Ok(Val::unknown());
+                    }
+                };
+                Ok(Val::new(ty.unwrap_or_else(unknown), a.qual.join(b.qual)))
+            }
+            Prim::Inverse | Prim::Conjugate | Prim::Commutator | Prim::Compose | Prim::WordKey => {
+                // One well-formed word domain for every word operation (LG2.15).
+                let mut q = Qual::Exact;
+                let mut unknown_operand = false;
+                for (i, v) in vals.iter().enumerate() {
+                    if is_unknown(&v.ty) {
+                        unknown_operand = true;
+                    } else if v.ty != Ty::Word {
+                        self.at(i, |c| c.misfit("Word", v, &what));
+                        unknown_operand = true;
+                    }
+                    q = q.join(v.qual);
+                }
+                let ty = if op == Prim::WordKey { Ty::WordEqualityKey } else { Ty::Word };
+                Ok(if unknown_operand { Val::unknown() } else { Val::new(ty, q) })
             }
         }
     }

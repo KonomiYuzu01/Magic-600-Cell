@@ -5,7 +5,7 @@
 
 mod support;
 
-use c600_check::{EXACTNESS_VIOLATION, EXACT_REQUIRED, TYPE_MISMATCH};
+use c600_check::{EXACTNESS_VIOLATION, EXACT_REQUIRED, TYPE_MISMATCH, WORD_KEY_NOT_EXECUTABLE};
 use c600_ir::build::*;
 use c600_ir::{ExactRole, Expr, Lit, Prim, Program, ReceiptField, Ty};
 use support::{less, mismatch, only, report, tint, tool, xy};
@@ -140,12 +140,28 @@ fn a_field_read_needs_a_record_with_that_field() {
     assert_only(&f(Ty::Nat, other), "f", "0", "record { a: _, .. }", "record { b: Nat }");
 }
 
-/// CT-LG2-11 (part: a proposal takes a Word, in IR; not run: the WordEqualityKey type, LG2.13, and the other
-/// bindings, which wait for M4).
+/// CT-LG2-11 (part: a proposal takes a Word, in IR, and refuses a `WordEqualityKey` (LP2 draft) with
+/// `LG2:type.word_key_not_executable`, as a word operation and a stored word do; not run: the other bindings, which
+/// wait for M4).
 #[test]
 fn state_and_preview_operations_take_their_types() {
     assert_only(&cmd(Ty::Unit, write_workspace("r", exact(Ty::Word), nat(1))), "f", "0", "Word", "Nat");
     assert_only(&cmd(Ty::Receipt, propose(nat(1), target("t"))), "f", "0", "Word", "Nat");
+    let key = || prim(Prim::WordKey, vec![word(&[1, -1])]);
+    let keyed = [
+        (cmd(Ty::Receipt, propose(key(), target("t"))), "0"),
+        (f(Ty::Word, prim(Prim::Inverse, vec![key()])), "0"),
+        (cmd(Ty::Unit, write_workspace("r", exact(Ty::Word), key())), "0"),
+        (f(Ty::Word, key()), "root"),
+    ];
+    for (p, path) in &keyed {
+        let d = only(p);
+        let (code, function, at, expected, supplied) = mismatch(&d);
+        assert_eq!(
+            (code, function, at, expected, supplied),
+            (WORD_KEY_NOT_EXECUTABLE, "f", *path, "Word", "WordEqualityKey")
+        );
+    }
     assert_only(&cmd(Ty::Receipt, propose(word(&[1]), nat(2))), "f", "1", "Target", "Nat");
     assert_only(&cmd(Ty::Text, read_receipt(nat(1), ReceiptField::Id)), "f", "0", "Receipt", "Nat");
     assert_only(&cmd(Ty::Unit, use_exact(ExactRole::Budget, word(&[1]))), "f", "0", "Nat | Int | Budget", "Word");

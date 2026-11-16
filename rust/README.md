@@ -128,6 +128,15 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   acknowledgement of BND.43, the saved-word half of CT-LG3-07, the undo half of CT-LG3-03 and research output that
   never becomes a solving preview (BND.61). M3 builds the acknowledgement, the saved-word half and BND.61's refusal
   at run time (below); the built-in tool column and the undo half of CT-LG3-03 stay open.
+- Lists and word operations (LP2 drafts until the IR freeze, PHS.49). `List<T>` is a finite sequence in written
+  order, built by the IR's collection form; `length`, `index`, `push` and `concat` work on it. A list with a display
+  element is display-qualified as a whole, so its length, an element or an equality cannot extract an exact result
+  (LG2.19), and an index takes exact inputs only (LG2.20): CT-LG2-05's aggregate part for lists. A list holds no
+  callable in the draft. `inverse`, `conjugate`, `commutator` and `compose` (with `concat` and `length`) take the
+  `Word` domain and give a `Word` (LG2.15, LG2.16; CT-LG2-12's language half, part). `word_key` gives a
+  `WordEqualityKey` (LG2.13), which no proposal, word operation, word slot or result takes:
+  `LG2:type.word_key_not_executable`, not a mismatch (CT-LG2-11, part). The key is not indexed by puzzle and identity
+  yet, since the IR draft has one puzzle.
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
 
 ## Status of M7: the parser
@@ -184,6 +193,10 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   declared `charge` (LG4.8's tariffs), command metadata (the command table, LP3), binder arms and LX-8's domain types
   such as `Word<Full,Retained>` (the IR's domain families, M4 and M5), and menu words (the jumbled puzzle's alphabet,
   M5). Type arguments on a program's own function are refused: the IR draft has no explicit instantiation.
+- Lists and words (LP2 drafts). `List<T>` and `WordEqualityKey` are types, and a `List` of a function is refused at
+  lowering. `list<T>(a, b, ...)` builds a list; `length`, `index`, `push`, `concat`, `inverse`, `conjugate`,
+  `commutator`, `compose` and `word_key` are reserved operations called like functions
+  (`c600-syntax/tests/collections.rs`).
 - Not run or not applicable, which is no pass (PHS.63): CT-LG1-01's second half, mixed dependency editions, while one
   edition exists; CT-RTE-18 (LQ13 was answered without it).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
@@ -214,6 +227,15 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   record, the JSON form of a word (LG2.18's word keys stay open) and `DraftTariffs`, test-only tariffs for the rows the
   frozen vectors do not price. The IR draft has one read construct for snapshots and workspace records; the IR freeze
   should split it.
+- Lists and words (LP2 drafts): `Value::List` (`Value::list`) and `Value::WordEqualityKey`. A list's logical size is
+  a record's, after DET.57's sequence row: a 4-byte tag, 8 bytes per variable-sequence element, and the elements. Its
+  JSON form is an array in written order. Each operation is one step: `length` reserves its integer; `index` lends or
+  retains an element as a field read does, and an index outside the list stops with `LG4:input.pointwise_failed`
+  before its step; the builders are priced before they build, `expand_per_letter` per letter built or scanned and
+  `LIST_PER_ELEMENT` (1) per element built. These prices are drafts, since DET.55 names no row for them. The key is
+  LG2.18's Full free reduction and has no output form, so a run that would emit one stops with
+  `PS1:input.noncanonical_value`. Tests: `c600-run/tests/collections.rs` (CT-LG2-12's run-time language half and
+  CT-LG4-01 for lists and words, parts) and the key halves of CT-LG2-11 and CT-LG2-13 in `conformance_lg2.rs`.
 - Evidence kind: source and fixture.
 
 ## Status of M3: the run-time boundary

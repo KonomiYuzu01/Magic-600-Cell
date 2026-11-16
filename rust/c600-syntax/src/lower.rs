@@ -21,7 +21,7 @@ use crate::Span;
 const KEYWORDS: [&str; 10] = ["fn", "let", "return", "match", "true", "false", "q5", "word", "menu", "_"];
 
 /// The IR's operations, called like functions. A program cannot bind these names either.
-const BUILTINS: [&str; 41] = [
+const BUILTINS: [&str; 51] = [
     "if",
     "display_if",
     "exact_add",
@@ -63,12 +63,23 @@ const BUILTINS: [&str; 41] = [
     "file_write",
     "random_draw",
     "read_clock",
+    // Lists and words (LP2 drafts).
+    "list",
+    "length",
+    "index",
+    "push",
+    "concat",
+    "inverse",
+    "conjugate",
+    "commutator",
+    "compose",
+    "word_key",
 ];
 
 /// The effect names of an `effects` list (LG3.1). `file` and `random` also name their capability (LG3.8).
 const EFFECTS: [&str; 5] = ["snapshot", "view", "workspace", "preview", "budget"];
 
-const BASE_TYPES: [&str; 14] = [
+const BASE_TYPES: [&str; 15] = [
     "Unit",
     "Bool",
     "Nat",
@@ -83,10 +94,20 @@ const BASE_TYPES: [&str; 14] = [
     "Colour",
     "ApproxBool",
     "Receipt",
+    "WordEqualityKey",
 ];
 
 fn reserved(name: &str) -> bool {
     KEYWORDS.contains(&name) || BUILTINS.contains(&name)
+}
+
+/// Whether a type is or holds a function. The LP2 draft's lists hold none, so a callable's needs never hide in one.
+fn holds_callable(ty: &Ty) -> bool {
+    match ty {
+        Ty::Fn(_) => true,
+        Ty::Record(fields) => fields.iter().any(|(_, f)| holds_callable(&f.ty)),
+        other => other.elements().into_iter().any(|e| holds_callable(&e.ty)),
+    }
 }
 
 fn capability(name: &str) -> Option<Capability> {
@@ -570,7 +591,7 @@ impl Body<'_> {
     }
 
     fn builtin(&mut self, op: &str, type_args: &[TypeExpr], args: &[Expr], span: Span, path: &mut Vec<u32>) -> R<Ir> {
-        let typed = matches!(op, "read_snapshot" | "write_workspace" | "declassified" | "file_read");
+        let typed = matches!(op, "read_snapshot" | "write_workspace" | "declassified" | "file_read" | "list");
         if typed != (type_args.len() == 1) || type_args.len() > 1 {
             let wanted = if typed { "one type argument" } else { "no type argument" };
             return Err(self.err(span, format!("`{op}` takes {wanted}")));
@@ -579,11 +600,27 @@ impl Body<'_> {
             "if" | "display_if" => 3,
             "exact_add" | "exact_less" | "exact_eq" | "and" | "or" | "approx_add" | "approx_less" | "approx_and"
             | "write_workspace" | "propose" | "file_write" => 2,
+            "index" | "push" | "concat" | "conjugate" | "commutator" | "compose" => 2,
             "used_steps" | "unused_steps" | "budget_status" | "random_draw" | "read_clock" => 0,
+            // `list<T>(a, b, ...)` takes its items (LP2 draft).
+            "list" => args.len(),
             _ => 1,
         };
         self.takes(op, arity, args, span)?;
+        if op == "list" {
+            let element = self.ty(&type_args[0])?;
+            return Ok(Ir::Collection { ty: Ty::List(Box::new(element)), items: self.args(args, path)? });
+        }
         let prim = match op {
+            "length" => Some(Prim::Length),
+            "index" => Some(Prim::Index),
+            "push" => Some(Prim::Push),
+            "concat" => Some(Prim::Concat),
+            "inverse" => Some(Prim::Inverse),
+            "conjugate" => Some(Prim::Conjugate),
+            "commutator" => Some(Prim::Commutator),
+            "compose" => Some(Prim::Compose),
+            "word_key" => Some(Prim::WordKey),
             "exact_add" => Some(Prim::ExactAdd),
             "exact_less" => Some(Prim::ExactLess),
             "exact_eq" => Some(Prim::ExactEq),
@@ -748,6 +785,17 @@ impl Body<'_> {
                         }
                         Ok(QTy { ty: q.ty, display: true })
                     }
+                    // `List<T>` (LP2 draft).
+                    "List" if !self.is_generic(n) => {
+                        let [inner] = args.as_slice() else {
+                            return Err(self.err(loc.0, "`List` takes one type argument"));
+                        };
+                        let element = self.ty(inner)?;
+                        if holds_callable(&element.ty) {
+                            return Err(self.err(loc.0, "a `List` holds no function in the LP2 draft"));
+                        }
+                        Ok(exact(Ty::List(Box::new(element))))
+                    }
                     "Approx" => {
                         let precision = match args.as_slice() {
                             [TypeExpr::Named { name, args, .. }] if args.is_empty() => match name.text.as_str() {
@@ -785,6 +833,7 @@ impl Body<'_> {
                             "Colour" => Ty::Colour,
                             "ApproxBool" => Ty::ApproxBool,
                             "Receipt" => Ty::Receipt,
+                            "WordEqualityKey" => Ty::WordEqualityKey,
                             _ => Ty::Var(n.into()),
                         }))
                     }
@@ -866,7 +915,10 @@ mod tests {
                 "if" | "display_if" => format!("{op}(true, 1, 2)"),
                 "used_steps" | "unused_steps" | "budget_status" | "random_draw" | "read_clock" => format!("{op}()"),
                 "exact_add" | "exact_less" | "exact_eq" | "and" | "or" | "approx_add" | "approx_less"
-                | "approx_and" | "propose" => format!("{op}(1, 2)"),
+                | "approx_and" | "propose" | "index" | "push" | "concat" | "conjugate" | "commutator" | "compose" => {
+                    format!("{op}(1, 2)")
+                }
+                "list" => format!("{op}<Nat>(1, 2)"),
                 _ => format!("{op}(1)"),
             };
             let source =

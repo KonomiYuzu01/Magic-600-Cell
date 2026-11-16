@@ -72,6 +72,7 @@ fn row(e: &Expr) -> (&'static str, Kind, &'static [&'static str]) {
         Expr::Prim { op: _, args: _ } => ("primitive", Kind::Pure, &["args"]),
         Expr::Record(_) => ("record", Kind::Pure, &["fields"]),
         Expr::Field { value: _, field: _ } => ("field", Kind::Pure, &["value"]),
+        Expr::Collection { ty: _, items: _ } => ("collection", Kind::Pure, &["items"]),
         Expr::ReadSnapshot { query: _, ty: _ } => ("read_snapshot", Kind::StateRead, &[]),
         Expr::PublishView { value: _ } => ("publish_view", Kind::View, &["value"]),
         Expr::WriteWorkspace { record: _, ty: _, value: _ } => ("write_workspace", Kind::Workspace, &["value"]),
@@ -145,6 +146,8 @@ fn holds(ty: &Ty) -> &'static str {
         Ty::Fn(_) => "a function of the program, which runs only inside the interpreter",
         Ty::Receipt => "a preview receipt, read only through its fields",
         Ty::Var(_) => "a type parameter",
+        Ty::List(_) => "values of its element type, in order",
+        Ty::WordEqualityKey => "a word equality key, which is never letters",
     }
 }
 
@@ -158,6 +161,8 @@ fn value_holds(v: &Value) -> &'static str {
         Value::Record(_) => "named values",
         Value::Closure(_) | Value::Fn(_) => "a function of the program, which runs only inside the interpreter",
         Value::Receipt(_) => "a preview receipt, read only through its fields",
+        Value::List(_) => "values in order",
+        Value::WordEqualityKey(_) => "a word equality key, which is never letters",
     }
 }
 
