@@ -36,6 +36,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "c600-evidence"
+version = "0.0.0"
+dependencies = [
+ "c600-digest",
+]
+
+[[package]]
 name = "c600-ir"
 version = "0.0.0"
 

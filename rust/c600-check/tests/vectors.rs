@@ -24,6 +24,7 @@ fn assert_cases(programs: Vec<Program>, cases: Vec<Case>) {
     }
 }
 
+/// CT-LG2-05 (part: the frozen vector `direct-and-helper-condition`, lowered by hand).
 #[test]
 fn direct_and_helper_condition() {
     let lowerings = vec![
@@ -80,6 +81,7 @@ fn direct_and_helper_condition() {
     assert_cases(lowerings, boundary_vector("direct-and-helper-condition"));
 }
 
+/// CT-LG2-05 (part: the frozen vector `display-accounting-no-exact-continuation`, lowered by hand).
 #[test]
 fn display_accounting_no_exact_continuation() {
     // The accounting observation is the same under either display form; form 2 itself is not built (LG2.21).

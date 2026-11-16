@@ -146,12 +146,12 @@ impl Parser<'_> {
         })
     }
 
+    /// `depth` counts the containers around the value. FP.9's `json_depth` counts the containers on the deepest path,
+    /// so a container at depth 64 would be the 65th.
     fn value(&mut self, depth: usize) -> Option<Json> {
-        if depth > MAX_DEPTH {
-            return None;
-        }
         self.ws();
         match *self.s.get(self.i)? {
+            b'[' | b'{' if depth >= MAX_DEPTH => None,
             b'n' => self.literal(b"null", Json::Null),
             b't' => self.literal(b"true", Json::Bool(true)),
             b'f' => self.literal(b"false", Json::Bool(false)),
