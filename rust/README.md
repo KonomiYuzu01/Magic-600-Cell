@@ -1060,10 +1060,10 @@ run or not applicable is no pass (PHS.63).
     the command route.
   - `lb3_checker.rs`: CT-LB3-07's checker half, as far as capability separation decides it (an outcome table that reads
     state and prepares previews is refused; a named-word check that answers only the acknowledgement is admitted).
-  - `kn5_retry_lead.rs`: a lead on KN5.21 to KN5.23, confirmed. A refused envelope that reuses a genuine
-    `operation.execute` envelope's command ID, arguments and binding (a token minted with another secret, or a runtime
-    caller) is stored as that command ID's outcome, so the genuine envelope never commits under it; a fresh command ID
-    still commits. The test records today's behaviour; the requirement went to LP2's KN5 implementation.
+  - `kn5_retry_lead.rs`: a lead on KN5.21 to KN5.23, closed by LP2's KN5 implementation (draft ruling 4). A refused
+    envelope that reuses a genuine `operation.execute` envelope's command ID, arguments and binding (a token minted
+    with another secret, or a runtime caller) no longer becomes that command ID's outcome: its refusal is kept under
+    its full digest, the genuine envelope commits under the ID, and neither retry commits anything more.
 - Not built: the shell's own refusal of a user-stage frame (LP2's KN5 implementation adds a presented-frame input to
   `present`); CT-BND-19's live-twist part (KN3.7's exact rotations); an import row; grip, cell or piece objects for a
   word's letters (the kernel has no letter-to-grip map); a view declaring both of the manifest's classes (`c600-view`'s
