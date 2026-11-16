@@ -18,9 +18,9 @@ fn clean_run(kind: &Kind) -> (u64, c600_session::Overview) {
     (disk.writes() - start, durable(&session))
 }
 
-/// CT-KN4-02: one failure at any write of any kind of durable action is a proved rollback. The receipt is `failed`
-/// with `KN4:resource_limit.disk_full`, the session is wholly as before, and so is the session a reopen finds, with or
-/// without a crash after the failure.
+/// CT-KN4-02 (whole): one failure at any write of any kind of durable action is a proved rollback. The receipt is
+/// `failed` with `KN4:resource_limit.disk_full`, the session is wholly as before, and so is the session a reopen finds,
+/// with or without a crash after the failure.
 #[test]
 fn one_failed_write_rolls_the_action_back_whole() {
     for kind in kinds() {
@@ -57,10 +57,10 @@ fn one_failed_write_rolls_the_action_back_whole() {
     }
 }
 
-/// CT-KN4-02, KN5.23: when the rollback fails too, nothing proves the fate. The receipt is `unknown_outcome`, the
-/// session refuses every row until it is reopened, and the reopened session is wholly before the action or wholly
-/// after it: after it exactly when the whole frame reached what the reopen reads. Each of the three kinds of failure
-/// is tried at the append and at its sync.
+/// CT-KN4-02 (part: a rollback that fails too), KN5.23: when the rollback fails too, nothing proves the fate. The
+/// receipt is `unknown_outcome`, the session refuses every row until it is reopened, and the reopened session is wholly
+/// before the action or wholly after it: after it exactly when the whole frame reached what the reopen reads. Each of
+/// the three kinds of failure is tried at the append and at its sync.
 #[test]
 fn an_unproved_fate_is_unknown_and_read_only_until_reopened() {
     for kind in kinds() {
@@ -107,8 +107,8 @@ fn an_unproved_fate_is_unknown_and_read_only_until_reopened() {
     }
 }
 
-/// CT-KN4-03, R-13: the status answers from memory. It reads no storage at 0, 50, 200 and 400 checkpoints, and opening
-/// a session reads its journal once, whatever the history holds.
+/// CT-KN4-03 (whole), R-13: the status answers from memory. It reads no storage at 0, 50, 200 and 400 checkpoints, and
+/// opening a session reads its journal once, whatever the history holds.
 #[test]
 fn status_reads_no_storage_at_any_history_size() {
     let (session, disk) = session();

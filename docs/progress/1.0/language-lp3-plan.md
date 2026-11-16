@@ -20,7 +20,7 @@ for representations, each demonstrating the complete loop. Its four products:
 
 | Product | Without the owner's machine | Waits for |
 | --- | --- | --- |
-| Three-tool vertical path: source, check, run, view nodes, engine preview, explicit user commit, durable receipt and undo | 600-cell-Full: preview, commit and undo through the command layer with oracle equality (C1), the source route (C5), view nodes (C2, C5). Representations: the headless half (C6) | Durable receipts: C7, now that M6 is on main. The jumbling tool: M5 (C8) |
+| Three-tool vertical path: source, check, run, view nodes, engine preview, explicit user commit, durable receipt and undo | 600-cell-Full: preview, commit and undo through the command layer with oracle equality (C1), the source route (C5), view nodes (C2, C5). Representations: the headless half (C6) | Durable receipts and undo through the command layer: KN5's one implementation, which LP2 writes in `c600-command` (C7). The jumbling tool: M5 (C8) |
 | Matching command and key routes, kernel-row keys on ONE.48's direct path | The command and key routes with byte-identical traces and receipts (C1); the source route (C5) | The actual key route on Windows (C9) |
 | Active program views under ONE.11, ONE.12 and ONE.64 | Revision-bound output, latest-wins recomputation and stale-state data, headless (C2) | On screen: the renderer freeze (C9) |
 | Further views and user stages | `view.open`, `view.close` and RPI.82's budget, headless (C2) | User vertex and fragment stages on the selected renderer, advertised only after RPI.79's run (C9) |
@@ -51,7 +51,7 @@ and the renderer freeze for its on-screen half, and headless integration does no
 | Module closure | Built (C4) | Nothing |
 | Source route and the 600-cell-Full tool | May start when C1 is on main | C1 |
 | Representations tool, headless half | May start after C5 | C2's views and C5's host bridge |
-| Durable receipts and undo, CT-RTE-08's persisted words, work sheets | In progress (C7) | M6 is on main (pull request 160); CT-RTE-08's persisted words also need C4 |
+| Durable receipts and undo, CT-RTE-08's persisted words, work sheets | Built in part on M6's store (C7, section 8) | Receipts and undo through the command layer: KN5's one implementation, which LP2 writes in `c600-command` (PHS.18) |
 | The jumbling tool and every jumbling half | Waits | M5 on main |
 | Tests that read kernel rows LP2 has not built: Strict protection, streaming words (KN2.10), `positions` (KN2.4), KN3's exact rotations and polytope operations | Waits | LP2's kernel: LP2 deliverables, not built yet (the table below) |
 | The on-screen half | Waits | The renderer freeze |
@@ -87,8 +87,9 @@ M8 row ("section 15.3 runnable") cover the kernel rows. LP3 builds nothing in LP
    layer raises that chapter 13 does not register yet are drafts; registering them changes a frozen chapter, so it goes
    through PHS.52 at C10.
 3. **Session store stand-in.** Step 9's durable transaction sits behind a `Store` trait. `MemoryStore` stands in until
-   C7 puts the transaction on M6's store, so "durable" means only "kept across the layer's restart". Nothing before C7
-   is persistence evidence.
+   KN5's one implementation (PHS.18), which LP2 writes in `c600-command` with `c600-session` implementing the trait,
+   replaces it, so "durable" means only "kept across the layer's restart". Nothing on `MemoryStore` is persistence
+   evidence; C7's tests on M6's store are.
 4. **Routes.** The command route invokes rows with absolute arguments. The key route presses the draft keymap's chords
    (Ctrl+Enter, Ctrl+Shift+Enter, Escape, Ctrl+Z, Ctrl+Y), which the shell resolves before the envelope (EV4.3). The
    source route (C5) runs a built-in tool whose program proposes the literal word. The headless key route is source
@@ -120,7 +121,7 @@ One pull request per milestone; each names the checks that ran.
 | C4 | Module closure (`c600-module`) | M2 and M7 (on main) | Built |
 | C5 | Source route and the 600-cell-Full tool (`c600-tools`) | C1 | Built in part (section 7) |
 | C6 | Representations tool, headless half | C2, C5 | Next |
-| C7 | Durable receipts and undo through the session store | M6 (on main) and C1 | In progress |
+| C7 | Durable receipts and undo through the session store | M6 (on main), C1 and LP2's KN5 implementation | Built in part (section 8) |
 | C8 | The jumbling tool | M5 on main | Waits |
 | C9 | The on-screen half and the owner-machine acceptance runs | The renderer freeze; the owner's runs | Waits |
 | C10 | LP3 exit: H-08 freeze, the whole index on one frozen candidate, the owner's sign-off | C1 to C9 | Waits |
@@ -228,9 +229,13 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
 
 ## 8. C7 to C10: what waits
 
-- **C7, now that M6 is on main (pull request 160).** M6's session store replaces `MemoryStore`: durable receipts and
-  undo across a real restart, the persisted-word part of CT-RTE-08, the work sheets of CT-LB2-03 and the durable
-  action order of CT-EV3-07.
+- **C7, durable receipts on M6's store.** KN5 gets one implementation, owned by LP2 under PHS.18 (integrator,
+  16 November 2026); the LP2 integrator placed it in `c600-command`, with `c600-session` implementing its `Store`
+  trait, and until it lands LP3 changes neither `c600-command`'s layer, token, receipt, store and shell code nor
+  `c600-session`. Built (`rust/c600-durable`, test-only), on M6's public API: CT-RTE-08's persisted-word case, its
+  durable leg; CT-EV3-07's durable action order and a view part on M6's stand-ins; CT-LB2-03's work-sheet part.
+  Waits for LP2's KN5 implementation: durable receipts and undo through the command layer, KN5.26's admission of
+  record words, EV3.2's view rows and LB7.2's work-sheet structure.
 - **C8, after M5 is on main.** The jumbling tool, with Jumble on in the command layer and oracle equality against M5's
   fixtures; CT-LB1-02, the jumbling halves of CT-LB1-03 and CT-LB1-06, CT-LB3-01 to CT-LB3-07, the pose levels of
   CT-LB4-03, CT-LB6-03, CT-BND-15, CT-BND-17, CT-EV3-06, CT-RPI-12 and CT-RM-07.

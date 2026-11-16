@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-16] update | The language: section 15.3's session rows that M6 unblocked
+With M5's tests (pull request 167), tests now mark 174 of the 248 LP2 conformance tests that section 15.3 lists, 58 whole and 116 in part (pull request 168): M6's tests mark the rows they name, and three new files in `rust/c600-session/tests/` run the session's rows of CT-ONE-01, CT-ONE-02, CT-ONE-06 to CT-ONE-08, CT-ONE-11, CT-ONE-12, CT-ONE-20 to CT-ONE-23, CT-KN5-03 and CT-KN5-10; `rust/README.md` lists the 74 not yet covered by what they wait for. CT-ONE-21's test found that `open_snapshot` refused a `RevisionRef` stored in an earlier engine epoch, against ONE.17; it now opens the same revision under the new epoch, while a snapshot handle of the old epoch stays no job input.
+
 ## [2026-11-16] update | The language: M5, the jumbling half of the kernel API
 `rust/c600-jumble` is a candidate engine for the rigid jumbling puzzle, built from `assets/` alone through the kernel's asset checks, and `tests/test_jumbling_rust_candidate.py` compares it with J1 through the differential harness step by step (the W-J fixture prefixes with surveys, straddler sets and J1-checked certificates, the first 600 letters of H6030, refusals and a planted difference; `JUMBLING_FULL_REPLAY=1` runs every record and letter), with the jumbling halves of CT-KN1-02, CT-KN1-05, CT-KN2-02 to CT-KN2-05, CT-KN3-02 and CT-JI-03, so section 15.3's index now counts 40 of the 248 LP2 tests whole and 104 in part. The harness bindings reach J1 only through its public API (JI.52); what is not built, for M8, is listed in `rust/README.md`.
 
