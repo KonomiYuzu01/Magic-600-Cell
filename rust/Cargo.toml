@@ -3,7 +3,7 @@
 resolver = "2"
 members = [
     "c600-ir", "c600-check", "c600-digest", "c600-syntax", "c600-run", "c600-kernel", "c600-session",
-    "c600-evidence",
+    "c600-evidence", "c600-command",
 ]
 
 [workspace.package]

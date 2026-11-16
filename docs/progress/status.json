@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "updated": "2026-11-16",
-  "current": "1.0-lp2",
+  "current": "1.0-lp3",
   "paid_api_ceiling_usd": 100,
   "tracks": [{"id": "0.4.1", "title": "0.4.1"}, {"id": "stage-2", "title": "Stage 2"}, {"id": "migration", "title": "1.0 migration (path B)"}, {"id": "jumbling", "title": "1.0 jumbling puzzle"}, {"id": "language", "title": "1.0 language"}],
   "steps": [
@@ -143,6 +143,20 @@
       {"id": "m7-parser", "title": "Parser after LQ13 (M7)", "weight": 3, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/154"},
       {"id": "m8-acceptance", "title": "PHS.19 acceptance and the section 15.3 suite (M8)", "weight": 2, "done": false, "evidence": null},
       {"id": "m8-suite-now", "title": "Section 15.3 tests that can run before M5 and LP3 (part of M8)", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/164"}
+     ]},
+    {"id": "1.0-lp3", "track": "language", "title": "Language first closed loop (LP3)", "status": "in_progress", "acceptance": "PHS.23's six acceptance items have evidence on one frozen candidate and the 82 tests that chapter 12 section 15.4 indexes run whole; the owner signs off LP3.", "acceptance_source": "docs/progress/1.0/language-lp3-plan.md", "blocker": null,
+     "items": [
+      {"id": "plan", "title": "LP3 plan with milestones, acceptance and the 82-test table", "weight": 1, "done": true, "evidence": "docs/progress/1.0/language-lp3-plan.md"},
+      {"id": "c1-command-layer", "title": "Command layer and the O01 to O07 loop on two routes (C1)", "weight": 3, "done": false, "evidence": null},
+      {"id": "c2-display-views", "title": "Headless display contract and views (C2)", "weight": 2, "done": false, "evidence": null},
+      {"id": "c3-runtime-process", "title": "Runtime in its own process (C3)", "weight": 2, "done": false, "evidence": null},
+      {"id": "c4-module-closure", "title": "Module closure (C4)", "weight": 2, "done": false, "evidence": null},
+      {"id": "c5-source-route", "title": "Source route and the 600-cell-Full tool (C5)", "weight": 3, "done": false, "evidence": null},
+      {"id": "c6-representations", "title": "Representations tool, headless half (C6)", "weight": 2, "done": false, "evidence": null},
+      {"id": "c7-durable-receipts", "title": "Durable receipts and undo through the session store (C7)", "weight": 2, "done": false, "evidence": null},
+      {"id": "c8-jumbling-tool", "title": "Jumbling tool (C8)", "weight": 3, "done": false, "evidence": null},
+      {"id": "c9-owner-runs", "title": "On-screen half and owner-machine runs (C9)", "weight": 3, "done": false, "evidence": null},
+      {"id": "c10-exit", "title": "LP3 exit with H-08 frozen, the whole index run and the owner's sign-off (C10)", "weight": 1, "done": false, "evidence": null}
      ]}
   ]
 }

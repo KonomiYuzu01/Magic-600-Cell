@@ -1,6 +1,7 @@
 # 600 Cell Script in Rust
 
-The Rust workspace of 600 Cell Script, built under LP2 ([plan](../docs/progress/1.0/language-lp2-plan.md)). The
+The Rust workspace of 600 Cell Script, built under LP2 ([plan](../docs/progress/1.0/language-lp2-plan.md)) and LP3
+([plan](../docs/progress/1.0/language-lp3-plan.md)). The
 engine, the session store, the command layer and the interpreter's host are written in Rust (LQ8), and the language
 runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen architecture is in
 [`docs/architecture/1.0/language/`](../docs/architecture/1.0/language/); nothing here changes it.
@@ -17,12 +18,14 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-kernel` | The 600-cell-Full kernel read straight from `assets/`, its chapter 01 API, and the oracle adapter `c600-oracle-adapter` (M4) |
 | `c600-session` | The session store below the language: the journal, revisions, snapshots, the commit path, undo, branches and program jobs (M6) |
 | `c600-evidence` | Chapter 06's evidence library as pure code: statements, keys and scopes, the AND/OR graph, grades and editions, the two standing passes, the word function with EVD.32's rows and EVD.40's checks, `CheckReport` admission, EVD.52's import rules and EVD.64's writer check |
+| `c600-command` | The command layer over H-08's stored table (KN5, chapter 08 section 7), the shell's tokens and key routes, and the loop runner `c600-lp3-oracle` (LP3, C1) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
 checker; its tests run checked source programs, so the checker and the syntax crate are its dev-dependencies. The
 kernel depends on the digest crate only. The session crate depends on the kernel, the interpreter, the IR and digest
 crates; its job tests run checked source programs too. The evidence library depends on the digest crate only.
+The command layer depends on the kernel and digest crates only, so it has no path to the interpreter (ONE.48).
 
 ## Running the tests
 
@@ -215,7 +218,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   and passes any other read to the engine; the engine's preview call does not take the block yet (KN5.9); the store is
   in memory and returns a stored value as written, and M6's session store decodes by the reader's type.
 - Open: a built-in repair-list pick (CT-BND-29's third case) is refused with `PS1:capability.provenance_incompatible`
-  until the session store resolves `c600-pick` records (M6). The command layer is not built.
+  until the session store resolves `c600-pick` records (M6). The command layer is LP3's `c600-command` (below); the
+  boundary does not reach it yet.
 - Evidence kind: source and fixture.
 
 ## Status of M4: the 600-cell-Full kernel
@@ -507,3 +511,40 @@ run or not applicable is no pass (PHS.63).
   - A builder and its build cache (2, no milestone named): CT-DET-21 and CT-DET-22.
   - A pointwise or whole-state contract form in the IR (no milestone named): CT-LG4-05, named as not built.
 - Evidence kind: source and fixture. The checks ran on Windows only.
+
+## Status of LP3, C1: the command layer
+
+- `c600-command` runs every change to a session through `CommandLayer::invoke` and its gates (KN5.1) over H-08's
+  stored table (`docs/progress/1.0/command-table.json`, 174 rows). A word commit runs chapter 08 section 7's steps in
+  order: the shell's gate and token (steps 1 and 2), the authenticator and the unused nonce (3), commit-lane
+  admission (4), the token's binding and its presented preview (5), `fresh(p)` (6), the head hash (7), the protection
+  recheck (8), the durable transaction (9) and adoption (10). `session.undo` and `session.redo` take LI.9's hint and
+  derive through the kernel under the protection in force (LI.26). Every invocation gets a receipt (KN5.21); a command
+  ID the layer knows is answered by its outcome lookup (KN5.23, LI.30), across a restart too.
+- The shell mints the user-action tokens from a per-launch secret the runtime never receives (KN5.14, KN5.15) and
+  resolves the draft keymap's chords before the envelope (EV4.3), so a key bound to a kernel row reaches the engine
+  with no interpreter step (ONE.48). The runtime reaches at most a preview: the 19 commit and app rows and any token it
+  carries are refused (ADR-L02).
+- Tests (`c600-command/tests/layer.rs`): parts of CT-KN5-01, CT-KN5-03, CT-KN5-04, CT-KN5-06, CT-KN5-07, CT-KN5-09,
+  CT-KN5-11, CT-KN5-12, CT-KN7-04, CT-KN7-05, CT-ONE-03, CT-ONE-04, CT-ONE-05, CT-ONE-11, CT-ONE-20, CT-ONE-21,
+  CT-ONE-22 and CT-LI-10, each naming its part. These tests are indexed in LP2 (chapter 12 section 15.3); they count
+  as run only when their whole definitions run.
+- `tests/test_lp3_loop.py` builds `c600-lp3-oracle` in release and drives O01 to O07 through the command layer on the
+  command route and the key route: `tools/oracle/compare.py` reports every step equal with no omitted fields (3,201
+  steps per route), every accepted step commits once, independent cases undo each commit, chain cases undo and redo
+  every commit onto the recorded states, and the two routes write byte-identical traces and receipts. A tampered trace
+  fails at its step, and a case with another model identity is refused without a trace. `tools/ci/run_headless.py`
+  lists it.
+- Drafts, which freeze with the command table at LP3 (PHS.53): the list in the crate documentation, among them one
+  session per layer with Jumble off, an inline recipe as `WordRef`, `twist.apply` refused until KN3's exact rotations
+  exist, five codes chapter 13 does not register yet, and the envelope's epoch (LI.5).
+- Not built: the durable transaction is `MemoryStore`, a stand-in until M6 is on main, so no receipt here is
+  persistence evidence; the source route, the views and the other two tools (LP3 plan, C2 to C8); protection rows;
+  every row the crate refuses with `KN5:input.row_not_built`.
+- Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model read the crate with the
+  acceptance check and found no blocker. Fixed before the pull request: R1 (major), a retry after a restart was refused
+  as `command_id_reused` because the request digest used the layer's current epoch, not the envelope's; R2 (minor),
+  the token's binding was checked before commit-lane admission; R3 (nit), the outcome lookup ignored the request
+  digest. A scoped re-check found all three fixed and no new blocking finding.
+- Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run. The timings the loop
+  check prints are informational, not performance evidence.
