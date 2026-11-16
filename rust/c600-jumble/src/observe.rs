@@ -67,9 +67,25 @@ fn opt_int(v: Option<i64>) -> Value {
     v.map_or(Value::Null, int)
 }
 
-/// A refusal answer: the chapter 13 code and its message.
-fn refusal(code: &str, message: &str) -> Value {
-    obj(vec![("status", text("refused")), ("code", text(code)), ("message", text(message))])
+/// JI.45's `KN2:input.named_object_invalid`: a missing or out-of-range cap or piece, or an invalid unit, with the
+/// argument's name, the supplied IDs and the failed condition. No other object is selected in its place.
+pub fn invalid_object(argument: &str, supplied: &[i64], condition: &str) -> Value {
+    obj(vec![
+        ("status", text("refused")),
+        ("code", text(codes::NAMED_OBJECT_INVALID)),
+        ("message", text(&format!("{argument}: {condition}"))),
+        ("argument", text(argument)),
+        ("supplied", Value::Array(supplied.iter().map(|&v| int(v)).collect())),
+        ("condition", text(condition)),
+    ])
+}
+
+/// A cap argument as a pole ID, or the JI.45 refusal that names it.
+fn cap_index(argument: &str, cap: i64) -> Result<usize, Value> {
+    match usize::try_from(cap) {
+        Ok(c) if c < POLES => Ok(c),
+        _ => Err(invalid_object(argument, &[cap], "a cap is a pole ID in 0..599")),
+    }
 }
 
 /// The moved-set hash of the harness: SHA-256 of the ascending piece IDs as little-endian u32.
@@ -902,10 +918,10 @@ impl Progress {
 
 // ----------------------------------------------------------------------------------------------- seam facts
 
-/// The scope of a seam-facts batch: every domain, or the cut of one named cap.
+/// The scope of a seam-facts batch: every domain, or the cut of one named cap (a cap outside 0..599 is refused).
 pub enum Scope {
     All,
-    Cap(usize),
+    Cap(i64),
 }
 
 /// Which cells a seam-facts answer lists.
@@ -1018,6 +1034,10 @@ pub fn seam_facts(
             None
         }
         Scope::Cap(c) => {
+            let c = match cap_index("scope", c) {
+                Ok(c) => c,
+                Err(refused) => return Ok(refused),
+            };
             let status = state.classify(ctx, c, false, true, eval_budget).map_err(|e| e.0)?.status();
             fields.extend([("scope", int(c as i64)), ("status", text(status.as_str()))]);
             if status != Status::Admissible {
@@ -1120,34 +1140,38 @@ pub fn seam_totals(cells: &[Value]) -> Result<Value, String> {
 
 // ---------------------------------------------------------------------------------------------------- units
 
-/// The pieces of a named unit, or the refusal JI.9 names: non-empty, every piece off the lattice, one pose.
-fn named_unit(state: &State, pieces: &[u32]) -> Result<Vec<u32>, String> {
-    let mut set = pieces.to_vec();
+/// The pieces of a named unit, ascending and without repeats, or the condition JI.9 names that it fails:
+/// non-empty, piece IDs of the model, every piece off the lattice, one exact pose. Argument `argument` of the
+/// caller; the refusal is JI.45's.
+fn named_unit(state: &State, argument: &str, pieces: &[i64]) -> Result<Vec<u32>, Value> {
+    let fail = |condition: &str| Err(invalid_object(argument, pieces, condition));
+    if pieces.is_empty() {
+        return fail("a named unit needs at least one piece");
+    }
+    if pieces.iter().any(|&p| !(0..NP as i64).contains(&p)) {
+        return fail("a named unit holds piece IDs of the model, in 0..177119");
+    }
+    let mut set: Vec<u32> = pieces.iter().map(|&p| p as u32).collect();
     set.sort_unstable();
     set.dedup();
-    if set.is_empty() {
-        return Err("a named unit needs at least one piece".into());
-    }
-    if set.iter().any(|&p| p as usize >= NP) {
-        return Err("a named unit holds piece IDs of the model".into());
-    }
     if set.iter().any(|&p| state.is_lattice_piece(p as usize)) {
-        return Err("a named unit holds only pieces off the lattice".into());
+        return fail("a named unit holds only pieces off the lattice");
     }
     let pid = state.pose_ids()[set[0] as usize];
     if set.iter().any(|&p| state.pose_ids()[p as usize] != pid) {
-        return Err("the pieces of a named unit share one exact pose".into());
+        return fail("the pieces of a named unit share one exact pose");
     }
     Ok(set)
 }
 
-/// JI.9 units: the exact-pose groups of the off pieces (or one named unit), ordered by smallest member.
-pub fn units(ctx: &Context, state: &State, named: Option<&[u32]>) -> Result<Value, String> {
+/// JI.9 units: the exact-pose groups of the off pieces (or one named unit, argument `pieces`), ordered by smallest
+/// member, members ascending.
+pub fn units(ctx: &Context, state: &State, named: Option<&[i64]>) -> Result<Value, String> {
     let t = tables(ctx)?;
     let groups: Vec<Vec<u32>> = match named {
-        Some(pieces) => match named_unit(state, pieces) {
+        Some(pieces) => match named_unit(state, "pieces", pieces) {
             Ok(set) => vec![set],
-            Err(message) => return Ok(refusal(codes::NAMED_OBJECT_INVALID, &message)),
+            Err(refused) => return Ok(refused),
         },
         None => {
             let mut by_pose: HashMap<u32, Vec<u32>> = HashMap::new();
@@ -1258,7 +1282,8 @@ fn accounting(
 pub struct PrefixRequest<'a> {
     pub letters: &'a [([i64; 2], Twist)],
     pub fields: Fields,
-    pub cap: Option<usize>,
+    /// A named cap; one outside 0..599 refuses the request (JI.45).
+    pub cap: Option<i64>,
     pub batch: Batch,
     pub keep: bool,
     pub eval_budget: Option<u64>,
@@ -1285,12 +1310,16 @@ fn straddler_count(
 /// letter raises Φ). With `keep`, the state after every admissible row is returned for the caller to store.
 pub fn prefix_observations(ctx: &Context, start: &State, req: &PrefixRequest) -> Result<(Value, Vec<State>), String> {
     let t = tables(ctx)?;
+    let cap = match req.cap.map(|c| cap_index("cap", c)).transpose() {
+        Ok(cap) => cap,
+        Err(refused) => return Ok((refused, Vec::new())),
+    };
     let (letters, fields) = (req.letters, &req.fields);
     let mut work = start.clone();
     let mut stats = stats_of(ctx, t, &work)?;
     let (phi0, mut peak, mut max_phi, mut tame) = (stats.phi, stats.max, stats.phi, true);
     let mut n_prev = if fields.n { Some(total_n(ctx, t, &work)?) } else { None };
-    let mut u_prev = straddler_count(ctx, &mut work, req.cap, req.eval_budget)?;
+    let mut u_prev = straddler_count(ctx, &mut work, cap, req.eval_budget)?;
     let start_fields = obj(vec![
         ("digest", text(&work.digest(ctx))),
         ("phi", int(stats.phi)),
@@ -1345,8 +1374,8 @@ pub fn prefix_observations(ctx: &Context, start: &State, req: &PrefixRequest) ->
                 ]);
                 n_prev = Some(n);
             }
-            if req.cap.is_some() {
-                let u = straddler_count(ctx, &mut work, req.cap, req.eval_budget)?;
+            if cap.is_some() {
+                let u = straddler_count(ctx, &mut work, cap, req.eval_budget)?;
                 let delta = u_prev.zip(u).map(|(b, a)| a - b);
                 row.extend([("u_before", opt_int(u_prev)), ("u_after", opt_int(u)), ("delta_u", opt_int(delta))]);
                 u_prev = u;
@@ -1382,7 +1411,7 @@ pub fn prefix_observations(ctx: &Context, start: &State, req: &PrefixRequest) ->
     let mut out = vec![
         ("start", start_fields),
         ("letters", int(letters.len() as i64)),
-        ("cap", opt_int(req.cap.map(|c| c as i64))),
+        ("cap", opt_int(req.cap)),
         ("rows", Value::Array(rows)),
         ("complete", Value::Bool(complete)),
         ("first_refused", opt_int(refused.map(|i| i as i64))),
@@ -1399,18 +1428,29 @@ pub fn prefix_observations(ctx: &Context, start: &State, req: &PrefixRequest) ->
 /// exact or changed, the off counts, ΔN, the X5 height counts and, at a named cap, the straddler counts u.
 /// The step flag is the LB3.8 conjunction and is undefined without a named unit; peak height, excursion
 /// and tameness need the whole word applied.
+///
+/// A blocked or uncertain letter ends the check (JI.11): the answer reports its index, the processed range
+/// [0, index + 1) and the start facts, and no end-state assertion covers the word, so every field read on the
+/// end state (end digest, landing partition, off counts after, ΔN, height counts after and their delta, u
+/// after) is undefined, with `end_state_undefined` "refused_prefix". The step flag is then false, since LB3.8
+/// checks every prefix's admissibility. J1's reference (`references/word_check.py`) instead describes the
+/// played prefix's end state; this answer follows JI.11. A unit or cap outside the model is refused (JI.45).
 pub fn word_check(
     ctx: &Context,
     start: &State,
     letters: &[([i64; 2], Twist)],
-    unit: Option<&[u32]>,
-    cap: Option<usize>,
+    unit: Option<&[i64]>,
+    cap: Option<i64>,
     eval_budget: Option<u64>,
 ) -> Result<Value, String> {
     let t = tables(ctx)?;
-    let unit = match unit.map(|u| named_unit(start, u)).transpose() {
+    let unit = match unit.map(|u| named_unit(start, "unit", u)).transpose() {
         Ok(unit) => unit,
-        Err(message) => return Ok(refusal(codes::NAMED_OBJECT_INVALID, &message)),
+        Err(refused) => return Ok(refused),
+    };
+    let cap = match cap.map(|c| cap_index("cap", c)).transpose() {
+        Ok(cap) => cap,
+        Err(refused) => return Ok(refused),
     };
     let lattice_before: Vec<bool> = (0..NP).map(|p| start.is_lattice_piece(p)).collect();
     let off0: Vec<u32> = (0..NP as u32).filter(|&p| !lattice_before[p as usize]).collect();
@@ -1436,9 +1476,67 @@ pub fn word_check(
         peak = peak.max(s.max);
         max_phi = max_phi.max(s.phi);
     }
-    let lattice_after: Vec<bool> = (0..NP).map(|p| end.is_lattice_piece(p)).collect();
+    let admissible = failed.is_none();
     let unit_set: HashSet<u32> = unit.iter().flatten().copied().collect();
     let other: Vec<u32> = off0.iter().copied().filter(|p| !unit_set.contains(p)).collect();
+    // The reference's word digest: SHA-256 of the chronological [grip, item] pairs as compact JSON.
+    let pairs: Vec<String> = letters.iter().map(|([c, x], _)| format!("[{c},{x}]")).collect();
+    let word_digest = c600_digest::sha256_hex(format!("[{}]", pairs.join(",")).as_bytes());
+    // The facts of the start and of the check itself: always reported.
+    let mut fields: Vec<(&str, Value)> = vec![
+        ("status", text("ok")),
+        ("start_digest", text(&start.digest(ctx))),
+        ("letters", int(letters.len() as i64)),
+        ("word_digest", text(&word_digest)),
+        ("unit", unit.as_ref().map_or(Value::Null, |u| ids(u))),
+        ("unit_size", opt_int(unit.as_ref().map(|u| u.len() as i64))),
+        ("others", int(other.len() as i64)),
+        ("off_before", int(off0.len() as i64)),
+        ("heights_before", counts_value(&stats0.counts)),
+        ("cap", opt_int(cap.map(|c| c as i64))),
+        ("u_before", opt_int(u_before)),
+        ("admissible", Value::Bool(admissible)),
+        ("failing_letter_index", opt_int(failed.map(|i| i as i64))),
+        ("failing_status", failing_status.map_or(Value::Null, text)),
+        ("applied_letters", int(applied as i64)),
+        ("processed", pair(0, (applied + failed.is_some() as usize) as i64)),
+        ("step_flag_undefined", if unit.is_none() { text("unit_not_named") } else { Value::Null }),
+    ];
+    if !admissible {
+        // JI.11: no end-state assertion covers a refused prefix; LB3.8's flag fails on the prefix's admissibility.
+        const END_FIELDS: [&str; 22] = [
+            "end_digest",
+            "unit_on_lattice",
+            "unit_landed",
+            "lattice_pieces_lifted_off",
+            "collateral_ids",
+            "others_exact",
+            "others_landed",
+            "others_changed_ids",
+            "off_after",
+            "off_min",
+            "off_max",
+            "off_pieces_landed",
+            "pose_changed",
+            "pose_changed_ids",
+            "delta_N",
+            "heights_after",
+            "delta_n_h",
+            "u_after",
+            "delta_u",
+            "peak_left_height",
+            "excursion",
+            "tame",
+        ];
+        fields.extend(END_FIELDS.iter().map(|&name| (name, Value::Null)));
+        fields.extend([
+            ("step_flag", if unit.is_some() { Value::Bool(false) } else { Value::Null }),
+            ("end_state_undefined", text("refused_prefix")),
+        ]);
+        return Ok(obj(fields));
+    }
+    let lattice_after: Vec<bool> = (0..NP).map(|p| end.is_lattice_piece(p)).collect();
+    // Exact poses are compared, never pose-table indices (JI.11).
     let changed: Vec<u32> = off0
         .iter()
         .copied()
@@ -1453,35 +1551,22 @@ pub fn word_check(
     let restored = off0.iter().filter(|&&p| lattice_after[p as usize]).count() as i64;
     let stats1 = stats_of(ctx, t, &end)?;
     let u_after = straddler_count(ctx, &mut end, cap, eval_budget)?;
-    let admissible = failed.is_none();
     let on_lattice = unit.as_ref().map(|u| u.iter().filter(|&&p| lattice_after[p as usize]).count() as i64);
     let step_flag = match (&unit, on_lattice) {
-        (Some(u), Some(on)) => Value::Bool(
-            admissible && on == u.len() as i64 && collateral.is_empty() && exact + landed == other.len() as i64,
-        ),
+        (Some(u), Some(on)) => {
+            Value::Bool(on == u.len() as i64 && collateral.is_empty() && exact + landed == other.len() as i64)
+        }
         _ => Value::Null,
     };
-    let claims = |v: Value| if admissible { v } else { Value::Null };
-    // The reference's word digest: SHA-256 of the chronological [grip, item] pairs as compact JSON.
-    let pairs: Vec<String> = letters.iter().map(|([c, x], _)| format!("[{c},{x}]")).collect();
-    let word_digest = c600_digest::sha256_hex(format!("[{}]", pairs.join(",")).as_bytes());
-    Ok(obj(vec![
-        ("status", text("ok")),
-        ("start_digest", text(&start.digest(ctx))),
+    fields.extend([
         ("end_digest", text(&end.digest(ctx))),
-        ("letters", int(letters.len() as i64)),
-        ("word_digest", text(&word_digest)),
-        ("unit", unit.as_ref().map_or(Value::Null, |u| ids(u))),
-        ("unit_size", opt_int(unit.as_ref().map(|u| u.len() as i64))),
         ("unit_on_lattice", opt_int(on_lattice)),
         ("unit_landed", unit.as_ref().map_or(Value::Null, |u| Value::Bool(on_lattice == Some(u.len() as i64)))),
         ("lattice_pieces_lifted_off", int(collateral.len() as i64)),
         ("collateral_ids", ids(&collateral)),
-        ("others", int(other.len() as i64)),
         ("others_exact", int(exact)),
         ("others_landed", int(landed)),
         ("others_changed_ids", ids(&others_changed)),
-        ("off_before", int(off0.len() as i64)),
         ("off_after", int(lattice_after.iter().filter(|&&on| !on).count() as i64)),
         ("off_min", int(*counts.iter().min().unwrap_or(&0))),
         ("off_max", int(*counts.iter().max().unwrap_or(&0))),
@@ -1489,24 +1574,17 @@ pub fn word_check(
         ("pose_changed", int(changed.len() as i64)),
         ("pose_changed_ids", ids(&changed)),
         ("delta_N", int(total_n(ctx, t, &end)? - n_before)),
-        ("heights_before", counts_value(&stats0.counts)),
         ("heights_after", counts_value(&stats1.counts)),
         ("delta_n_h", delta_counts(&stats0.counts, &stats1.counts)),
-        ("cap", opt_int(cap.map(|c| c as i64))),
-        ("u_before", opt_int(u_before)),
         ("u_after", opt_int(u_after)),
         ("delta_u", opt_int(u_before.zip(u_after).map(|(b, a)| a - b))),
-        ("admissible", Value::Bool(admissible)),
-        ("failing_letter_index", opt_int(failed.map(|i| i as i64))),
-        ("failing_status", failing_status.map_or(Value::Null, text)),
-        ("applied_letters", int(applied as i64)),
-        ("processed", pair(0, (applied + failed.is_some() as usize) as i64)),
         ("step_flag", step_flag),
-        ("step_flag_undefined", if unit.is_none() { text("unit_not_named") } else { Value::Null }),
-        ("peak_left_height", claims(int(peak))),
-        ("excursion", claims(int(max_phi - stats0.phi))),
-        ("tame", claims(Value::Bool(tame))),
-    ]))
+        ("peak_left_height", int(peak)),
+        ("excursion", int(max_phi - stats0.phi)),
+        ("tame", Value::Bool(tame)),
+        ("end_state_undefined", Value::Null),
+    ]);
+    Ok(obj(fields))
 }
 
 /// The exact rotation of a Cayley parameter at a grip, as a twist record (free-mode tests).
