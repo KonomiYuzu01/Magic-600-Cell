@@ -5,7 +5,8 @@
 # owner's machine. The approved crates are vendored (rust/.cargo/config.toml), so the tests need
 # no network after the checkout. The runner's preinstalled Rust is used, as on the Windows shards.
 # A pass is headless Linux evidence only, not Windows/DirectX, input, long-session or performance
-# evidence. The runner has no personal data and gets no secrets.
+# evidence. The runner has no personal data and gets no secrets. `--no-fail-fast` runs every test
+# target after a failure, so one run reports every failing target.
 name: Linux Rust tests
 
 on:
@@ -42,4 +43,4 @@ jobs:
           cargo --version
 
       - name: Run the Rust tests with the locked, vendored crates
-        run: cargo test --locked --offline
+        run: cargo test --locked --offline --no-fail-fast
