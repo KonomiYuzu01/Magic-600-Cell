@@ -62,7 +62,7 @@ share one pull request, which names each milestone's checks (section 9).
 | M3 | Run-time boundary: stored provenance, the fixed acknowledgement of BND.43, the saved-word half of CT-LG3-07 | M2 |
 | M4 | Kernel API and 600-cell-Full candidate adapter: O01 to O07 through `tools/oracle/` | Rust engine port |
 | M5 | Jumbling half: public J1 API, differential comparisons, W-J fixtures and H6030 | EN3's approval |
-| M6 | Session store below the language; budgets and cancellation end to end | M2, M4 |
+| M6 | Session store below the language; budgets and cancellation end to end (section 10) | M2, M4 |
 | M7 | Parser and its lowering into the IR (section 8) | LQ13 (answered: candidate A) |
 | M8 | PHS.19's acceptance on Windows and headless Linux; section 15.3 runnable | M1 to M7 |
 
@@ -226,3 +226,58 @@ For all three, no file under `docs/architecture/1.0/language/` changes, and the 
 Stop condition: each milestone ends when its items pass in CI and the shared pull request is merged. Each stops
 earlier, and the owner is told, under M1's conditions. What is not built or not run is recorded in `rust/README.md`;
 non-applicability is no pass (PHS.63).
+
+## 10. M6: the session store below the language
+
+The owner asked on 16 November 2026 for M6 to follow M2 to M4, in a pull request of its own. M6 adds the crate
+`rust/c600-session` on `c600-kernel` and `c600-run`, with the standard library only. Its drafts are listed in
+`rust/README.md`; they freeze with chapter 01's open rows, the command table (LP3) and the persistence encodings, and
+may change until then.
+
+What M6 builds:
+
+- A disk interface over a directory and over memory. The memory disk fails a chosen write, tears an unsynced append
+  and loses unsynced data in a crash; the store counts its reads.
+- An append-only journal. One durable action is one frame with its length, the length's complement and SHA-256,
+  synced before the reply (R-06). Opening cuts a torn final frame; any other damage opens the session read-only
+  (ONE.70). Mechanical events keep their literal words with pre and post digests in a parent-linked tree, and head
+  changes join the action chain (PS1.22, PS1.29, PS1.43). A checkpoint's state is a content-addressed object, written
+  before the frame that cites it.
+- RevisionRef counters (KN0.2), snapshots by RevisionRef or of the current revision (LI.11), checkpoints, branches with
+  one active line (KN4.6, ONE.73 to ONE.76), and a status that reads no storage (R-13).
+- The commit path of chapter 08 section 7, from step 3: a shell stub mints single-use tokens under a per-launch secret
+  (HMAC-SHA256 over `c600-digest`; KN5.14, KN5.15); receipts and outcome lookup (KN5.21 to KN5.23, LI.30); undo and
+  redo with `ActionHint` (LI.9, LI.26); workspace records with M3's provenance blocks (PS1.16); branch switches and
+  checkpoint saves as durable rows.
+- Program jobs that run `c600-run` on opened snapshots under a declared KN7.7 budget, in the exclusive and program
+  lanes (LI.22, LI.24); rows that hold no lane, such as status reads and workspace edits, run as KN7.2's `none` lane.
+  `job.stop` or a commit that replaces their revision cancels them cooperatively; file and pinned jobs finish (LI.25,
+  KN7.5). Results settle as LI.28 says.
+
+Acceptance:
+
+1. `cargo test --locked --offline` passes in `rust/`, in CI through `tests/test_language_rust.py`.
+2. CT-KN4-02: a failure injected at each write of each kind of durable action, with and without a crash after it,
+   leaves the session wholly before the action, or wholly after it once its frame is durable. A proved rollback
+   answers `failed` with `KN4:resource_limit.disk_full`; an unproved fate answers `unknown_outcome` and keeps the
+   session read-only until it is reopened.
+3. CT-KN4-03: status reads no storage at 0, 50, 200 and 400 checkpoints; store reads are counted, not timed.
+4. CT-KN4-04: a commit after an undo keeps the old line, exactly one line is active, a line switch is a row of kind
+   `commit`, a program job compares two lines through opened snapshots, and no runtime request creates, switches or
+   changes a line.
+5. CT-KN4-01, its in-process part: a program job has no row that opens a session file, and `c600-run` makes no
+   file-system call of its own.
+6. CT-KN5-01 with PHS.19's preview-swap row, CT-KN5-04, CT-KN5-06, CT-KN5-09, CT-KN5-11, and LI.33's gate-order trace.
+7. CT-KN7-01 to CT-KN7-05 and CT-KN7-07, with PHS.19's budget row: each budget case, repeated warm and after an
+   eviction, stops at the same step with the same coverage and charges.
+8. Persistence is a critical path: a fresh Claude subagent on a smaller model reads the change before the pull request
+   merges, and its blocking findings are fixed (`AGENTS.md`, "Codex minimum").
+
+Not in M6: the live twist; the crossing and the Jumble rows; the latest-wins and view lanes; previews and workspace
+writes by programs through the session (LI.17); the runtime in a process of its own (the rest of CT-KN4-01);
+historical workspace versions; the session lock; file publication; CT-KN7-06 (performance, LP3). No file under
+`docs/architecture/1.0/language/` changes, and the eight language checkers still pass.
+
+Stop condition: M6 ends when its items pass in CI and its pull request is merged. It stops earlier, and the owner is
+told, if a frozen file would change or a product dependency is needed. What is not built or not run is recorded in
+`rust/README.md`; non-applicability is no pass (PHS.63).
