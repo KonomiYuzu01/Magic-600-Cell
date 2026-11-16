@@ -428,6 +428,11 @@ fn err_of(g: &Graph, k: &Key, e: &Edition) -> EvidenceError {
 /// threshold inside U0, never proved, and a supported theorem elsewhere in the graph keeps its word.
 #[test]
 fn ct_evd_09_each_inconsistency_raises_its_code() {
+    // The codes are EVD.58's literal strings.
+    assert_eq!(INCONSISTENT_FIELDS, "EVD:evidence.inconsistent_fields");
+    assert_eq!(NEGATIVE_WITHOUT_COMPLETION, "EVD:evidence.negative_without_completion");
+    assert_eq!(PREMISE_UNMET, "EVD:evidence.premise_unmet");
+    assert_eq!(SCOPE_MISMATCH, "EVD:evidence.scope_mismatch");
     let e = ed();
     let f = Covers::search_set("R", "retained letters", "three letters");
     let d7 = Covers::admitted_domain("D[7]", "k = 7");
