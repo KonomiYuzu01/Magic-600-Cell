@@ -282,6 +282,68 @@ fn a_turned_centre_passes_the_sticker_test_and_no_checkpoint() {
         let verdict = levels::label_checkpoint(ctx, &state, &stated(kind), None).expect("no engine error");
         assert!(matches!(verdict, Verdict::Unknown(_)), "{}: {verdict:?}", kind.name());
     }
+    // The solved state's witnessed claim speaks of the solved state, not of this one (A4, A5).
+    let verdict = levels::label_checkpoint(ctx, &state, &Reachability::solved(ctx), None).expect("no engine error");
+    assert!(matches!(verdict, Verdict::Unknown(_)), "{verdict:?}");
+}
+
+/// A4 and A5: a witnessed claim speaks only of the state it reached. Used for another state it answers unknown, with ν
+/// supplied or not, and its retained witness shows no ν there; on its own state it answers yes.
+#[test]
+fn a_witnessed_claim_speaks_only_of_its_own_state() {
+    let s = setup();
+    let ctx = &s.ctx;
+    let (a, twists) = retained_state(s, &[1, 3, -5]);
+    let (b, _) = retained_state(s, &[2, -7, 11]);
+    let claim = levels::witness(ctx, &a, Some(s.menu.clone()), &twists, None)
+        .expect("no engine error")
+        .expect("the journal witnesses a");
+    assert_eq!(claim.at(), Some(a.digest(ctx).as_str()));
+    let zero = vec![0i64; levels::NU_LEN];
+    for nu in [None, Some(zero.as_slice())] {
+        let verdict = levels::label_checkpoint(ctx, &b, &claim, nu).expect("no engine error");
+        assert!(matches!(verdict, Verdict::Unknown(_)), "{verdict:?}");
+    }
+    let verdict = levels::label_checkpoint(ctx, &a, &claim, None).expect("no engine error");
+    assert_eq!(evidence_text(&verdict, "nu_source"), Some("retained_witness"), "{verdict:?}");
+}
+
+/// KN2.14 reads a raw table for form and identity only, so a lattice table with its centres home may hold two pieces
+/// in one chamber. No word reaches it: the label checkpoint answers no with the collision count under any claim, as
+/// the sticker test answers no, and never with an engine error.
+#[test]
+fn a_collided_table_is_no_checkpoint() {
+    let ctx = &setup().ctx;
+    let [_, (b, tb), _] = congruent_pieces(ctx);
+    let state = raw_table(ctx, &[(b, Pose::K(tb))]);
+    assert_eq!(state.off_lattice_count(), 0);
+    assert!(levels::displaced_centres(ctx, &state).expect("no engine error").is_empty());
+    assert_eq!(fact(&levels::sticker_test(ctx, &state).expect("no engine error")), Some("labels_differ"));
+    for claim in [stated(ReachKind::Open), stated(ReachKind::Promised), Reachability::solved(ctx)] {
+        let verdict = levels::label_checkpoint(ctx, &state, &claim, None).expect("a verdict, not an engine error");
+        assert_eq!(fact(&verdict), Some("pieces_collide"), "{verdict:?}");
+        let Verdict::No(evidence) = &verdict else { unreachable!() };
+        assert!(evidence.get("collisions").and_then(Value::as_i64).is_some_and(|n| n > 0), "{verdict:?}");
+    }
+    let retained = levels::retained_checkpoint(ctx, &state, Witness::Word(&[])).expect("no engine error");
+    assert!(!matches!(retained, Verdict::Yes(_)), "{retained:?}");
+}
+
+/// KN1.11 and JI.4: a verdict carries its level. The sticker test and the label checkpoint read the labels, the
+/// retained checkpoint the poses, and every verdict kind names its level.
+#[test]
+fn a_verdict_carries_its_level() {
+    assert_eq!(
+        (levels::STICKER_TEST_LEVEL, levels::RETAINED_CHECKPOINT_LEVEL, levels::LABEL_CHECKPOINT_LEVEL),
+        (Level::Labels, Level::Poses, Level::Labels)
+    );
+    for verdict in [Verdict::Yes(Value::Null), Verdict::No(Value::Null), Verdict::Unknown("a reason".into())] {
+        for level in Level::ALL {
+            let json = verdict.to_json_at(level);
+            assert_eq!(json.get("level").and_then(Value::as_str), Some(level.name()));
+            assert_eq!(json.get("verdict").and_then(Value::as_str), Some(verdict.name()));
+        }
+    }
 }
 
 /// A5's end tests on a retained word: the sticker test answers no, the retained checkpoint replays the supplied word or
@@ -311,7 +373,7 @@ fn a_retained_word_is_a_checkpoint_under_its_witness_only() {
     let verdict = levels::label_checkpoint(ctx, &state, &reach, None).expect("no engine error");
     assert_eq!(evidence_text(&verdict, "nu_source"), Some("retained_witness"), "{verdict:?}");
     assert_eq!(evidence_text(&verdict, "pose_digest"), Some(digest.as_str()));
-    assert_eq!(evidence_text(&verdict, "contract_revision"), Some(levels::A5_REVISION));
+    assert_eq!(evidence_text(&verdict, "contract_revision"), Some(c600_jumble::CONTRACT_REVISION));
     let zero = vec![0i64; levels::NU_LEN];
     assert_eq!(levels::label_checkpoint(ctx, &state, &reach, Some(zero.as_slice())).expect("no engine error"), verdict);
     let mut one = zero.clone();
@@ -343,7 +405,7 @@ fn off_the_lattice_every_end_test_answers_no() {
         levels::sticker_test(ctx, &state).expect("no engine error"),
         levels::retained_checkpoint(ctx, &state, Witness::Word(&[])).expect("no engine error"),
         levels::label_checkpoint(ctx, &state, &stated(ReachKind::Open), None).expect("no engine error"),
-        levels::label_checkpoint(ctx, &state, &Reachability::solved(), None).expect("no engine error"),
+        levels::label_checkpoint(ctx, &state, &Reachability::solved(ctx), None).expect("no engine error"),
     ];
     for verdict in &verdicts {
         assert_eq!(fact(verdict), Some("off_lattice"), "{verdict:?}");
@@ -381,7 +443,7 @@ fn a_witnessed_claim_cannot_be_stated() {
         assert_eq!((claim.kind(), claim.retained()), (kind, false));
         assert_eq!(ReachKind::parse(kind.name()), Some(kind));
     }
-    assert!(Reachability::solved().retained());
+    assert!(Reachability::solved(&setup().ctx).retained());
 }
 
 // ------------------------------------------------------------------------------------------- shapes and gauges
@@ -729,7 +791,7 @@ fn moved_piece(piece: u32, from: u16, to: u16) -> Value {
 fn a_derivation_refuses_another_identity_or_a_piece_outside_the_model() {
     let s = setup();
     let ctx = &s.ctx;
-    let base = Snapshot::solved(Some(s.menu.clone()));
+    let base = Snapshot::solved(ctx, Some(s.menu.clone()));
     let ia = ctx.identity(Some(&*s.menu));
     let twists = primitives(ctx, &[1]);
     let refusal = levels::derive(ctx, Base::Snapshot(&base), &ctx.identity(None), &twists, ProtectionMode::Net, &[])
@@ -791,7 +853,7 @@ fn strict_judges_every_prefix_and_net_the_end_of_the_word() {
     let s = setup();
     let ctx = &s.ctx;
     let ia = ctx.identity(Some(&*s.menu));
-    let base = Snapshot::solved(Some(s.menu.clone()));
+    let base = Snapshot::solved(ctx, Some(s.menu.clone()));
     let solved = base.state().digest(ctx);
     let word = primitives(ctx, &[1, 3, -3, -1]);
     let (_, steps) = run(ctx, base.state(), &word);
@@ -845,7 +907,7 @@ fn a_derived_value_keeps_its_identity_lineage_and_claim() {
     let s = setup();
     let ctx = &s.ctx;
     let ia = ctx.identity(Some(&*s.menu));
-    let base = Snapshot::solved(Some(s.menu.clone()));
+    let base = Snapshot::solved(ctx, Some(s.menu.clone()));
     let solved = base.state().digest(ctx);
     let first = derived(derivation(ctx, Base::Snapshot(&base), &ia, &primitives(ctx, &[1]), ProtectionMode::Net, &[]));
     let tail = primitives(ctx, &[3, -5]);
@@ -886,7 +948,7 @@ fn ct_one_09_a_raw_table_enters_with_an_open_or_promised_claim() {
     let import = |record: &Value, identity: &IdentityBlock, claim| {
         levels::import(ctx, Some(s.menu.clone()), record, identity, claim)
     };
-    for claim in [stated(ReachKind::ByTheorem), stated(ReachKind::Refuted), Reachability::solved()] {
+    for claim in [stated(ReachKind::ByTheorem), stated(ReachKind::Refuted), Reachability::solved(ctx)] {
         assert!(import(&record, &ia, claim).is_err());
     }
     for kind in [ReachKind::Open, ReachKind::Promised] {
@@ -927,7 +989,7 @@ fn ct_one_10_a_derived_state_with_an_open_claim_answers_unknown_at_nu_zero() {
             assert!(matches!(verdict, Verdict::Unknown(_)), "{verdict:?}");
         }
     }
-    let snapshot = Snapshot::solved(Some(s.menu.clone()));
+    let snapshot = Snapshot::solved(ctx, Some(s.menu.clone()));
     let retained = derived(derivation(ctx, Base::Snapshot(&snapshot), &ia, &word, ProtectionMode::Net, &[]));
     assert_eq!(retained.digest(ctx), on.digest(ctx));
     let verdict = levels::label_checkpoint(ctx, retained.state(), retained.reachability(), Some(zero.as_slice()))
@@ -994,14 +1056,14 @@ fn ct_lg2_07_a_jumbling_witness_does_not_assert_retained_reachability() {
     assert!(matches!(verdict, Verdict::Unknown(_)), "{verdict:?}");
 
     let retained =
-        derived(derivation(ctx, Base::Snapshot(&Snapshot::solved(None)), &free, &word, ProtectionMode::Net, &[]));
+        derived(derivation(ctx, Base::Snapshot(&Snapshot::solved(ctx, None)), &free, &word, ProtectionMode::Net, &[]));
     assert_eq!(retained.digest(ctx), on.digest(ctx));
     assert!(retained.reachability().retained());
     let verdict =
         levels::label_checkpoint(ctx, retained.state(), retained.reachability(), None).expect("no engine error");
     assert!(matches!(verdict, Verdict::Yes(_)), "{verdict:?}");
     // A raw table never enters witnessed.
-    assert!(levels::import(ctx, None, &solved.record(ctx), &free, Reachability::solved()).is_err());
+    assert!(levels::import(ctx, None, &solved.record(ctx), &free, Reachability::solved(ctx)).is_err());
 }
 
 /// ONE.25: two values compare at one level. Off the lattice the comparison is made on the keys that both cover, with

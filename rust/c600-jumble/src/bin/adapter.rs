@@ -782,7 +782,7 @@ fn gauge_part(value: Option<&Value>, what: &str) -> Result<Option<Vec<u32>>, Fai
     }
 }
 
-/// The result of an end test, naming the state it read (KN0.6).
+/// The result of an end test, naming the state it read (KN0.6); its verdict names the level (KN1.11).
 fn naming(mut result: Value, state_digest: String) -> Value {
     if let Value::Object(fields) = &mut result {
         fields.insert("state".into(), Value::String(state_digest));
@@ -858,7 +858,7 @@ impl Adapter {
             "sticker_test" => {
                 let state = self.read_state(request)?;
                 let verdict = levels::sticker_test(&self.ctx, state).map_err(engine)?;
-                Ok(naming(verdict.to_json(), state.digest(&self.ctx)))
+                Ok(naming(verdict.to_json_at(levels::STICKER_TEST_LEVEL), state.digest(&self.ctx)))
             }
             "retained_checkpoint" => {
                 let word = match request.get("witness") {
@@ -873,7 +873,7 @@ impl Adapter {
                     _ => return Err(input("a retained checkpoint needs a witness word or a journal, not both")),
                 };
                 let verdict = levels::retained_checkpoint(&self.ctx, state, witness).map_err(engine)?;
-                Ok(naming(verdict.to_json(), state.digest(&self.ctx)))
+                Ok(naming(verdict.to_json_at(levels::RETAINED_CHECKPOINT_LEVEL), state.digest(&self.ctx)))
             }
             "label_checkpoint" => {
                 let claim = request.get("reachability").ok_or_else(|| input("a label checkpoint needs a claim"))?;
@@ -893,7 +893,10 @@ impl Adapter {
                             Ok(reach) => reach,
                             Err(reason) => {
                                 let reason = format!("the journal does not witness this state: {reason}");
-                                return Ok(naming(Verdict::Unknown(reason).to_json(), digest));
+                                return Ok(naming(
+                                    Verdict::Unknown(reason).to_json_at(levels::LABEL_CHECKPOINT_LEVEL),
+                                    digest,
+                                ));
                             }
                         }
                     }
@@ -905,7 +908,7 @@ impl Adapter {
                         .ok_or_else(|| input("a witnessed claim names its journal from solved"))?,
                 };
                 let verdict = levels::label_checkpoint(&self.ctx, state, &reach, nu.as_deref()).map_err(engine)?;
-                Ok(naming(verdict.to_json(), digest))
+                Ok(naming(verdict.to_json_at(levels::LABEL_CHECKPOINT_LEVEL), digest))
             }
             "retained_word" => {
                 let word = signed_ids(request.get("word"), "word")?;
@@ -1215,7 +1218,7 @@ impl Adapter {
             "sticker_test" => {
                 let state = self.derived_value(request)?.state();
                 let verdict = levels::sticker_test(&self.ctx, state).map_err(engine)?;
-                Ok(naming(verdict.to_json(), state.digest(&self.ctx)))
+                Ok(naming(verdict.to_json_at(levels::STICKER_TEST_LEVEL), state.digest(&self.ctx)))
             }
             "retained_checkpoint" => {
                 let word = match request.get("witness") {
@@ -1230,7 +1233,7 @@ impl Adapter {
                     _ => return Err(input("a retained checkpoint needs a witness word or a journal, not both")),
                 };
                 let verdict = levels::retained_checkpoint(&self.ctx, state, witness).map_err(engine)?;
-                Ok(naming(verdict.to_json(), state.digest(&self.ctx)))
+                Ok(naming(verdict.to_json_at(levels::RETAINED_CHECKPOINT_LEVEL), state.digest(&self.ctx)))
             }
             _ => {
                 if !matches!(request.get("reachability"), None | Some(Value::Null)) {
@@ -1241,7 +1244,7 @@ impl Adapter {
                 let state = derived.state();
                 let verdict = levels::label_checkpoint(&self.ctx, state, derived.reachability(), nu.as_deref())
                     .map_err(engine)?;
-                Ok(naming(verdict.to_json(), state.digest(&self.ctx)))
+                Ok(naming(verdict.to_json_at(levels::LABEL_CHECKPOINT_LEVEL), state.digest(&self.ctx)))
             }
         }
     }

@@ -65,7 +65,45 @@ RESUMED = [9, -9, 1024, 77, -400]
 # Library corrections: 0 states its moved counts, 2 does not.
 CORRECTIONS = (0, 2)
 
+# The level each end test reads; every answer names it, whatever its verdict (KN1.11: a verdict carries its level and
+# never crosses over; JI.4). `LevelChecked` checks it on every end test this module runs.
+END_TEST_LEVELS = {'sticker_test': 'labels', 'retained_checkpoint': 'poses', 'label_checkpoint': 'labels'}
+# The state contract stamps (owner decision of 16 November 2026,
+# docs/wiki/decisions/owner-decisions-2026-11-16-lp2-questions.md): the engine stamps the pin JI.3 names; the ν
+# reference's label certificate stamps A1 to A5. This comparison maps that stamp to the engine's (`engine_stamp`).
+NU_CONTRACT_REVISION = 'state-contract 2026-10-22 A1-A5'
+ENGINE_CONTRACT_REVISION = 'state-contract 2026-11-15 A1-A6'
+
 _ENGINES = {}
+
+
+def engine_stamp(revision):
+    """The ν reference's contract stamp as the engine writes it. Any other value comes back unchanged, so a change of
+    either stamp still fails the comparison."""
+    return ENGINE_CONTRACT_REVISION if revision == NU_CONTRACT_REVISION else revision
+
+
+class LevelChecked:
+    """The candidate engine, with the level of every end-test answer checked against END_TEST_LEVELS, called directly
+    or through `read_derived`."""
+
+    def __init__(self, engine):
+        self._engine = engine
+
+    def __getattr__(self, name):
+        method = getattr(self._engine, name)
+        if name in END_TEST_LEVELS:
+            return lambda *args, **fields: self._checked(name, method(*args, **fields))
+        if name == 'read_derived':
+            return lambda op, *args, **fields: self._checked(op, method(op, *args, **fields))
+        return method
+
+    @staticmethod
+    def _checked(op, answer):
+        level = END_TEST_LEVELS.get(op)
+        if level is not None and answer.get('level') != level:
+            raise AssertionError(f'{op} answered at level {answer.get("level")!r}, not {level!r}: {answer}')
+        return answer
 
 
 def setUpModule():
@@ -88,7 +126,7 @@ def setUpModule():
     if Path(census.seams.CACHE).resolve().is_relative_to(ROOT):
         raise AssertionError('the centroid cache is inside the repository')
     R.build()
-    _ENGINES['candidate'] = R.RustJumbleEngine(step_result=H.StepResult)
+    _ENGINES['candidate'] = LevelChecked(R.RustJumbleEngine(step_result=H.StepResult))
     _ENGINES['j1'] = J1Engine()
     _ENGINES['session'] = J1SessionEngine('I_a')
 
@@ -226,7 +264,7 @@ class RetainedCheckpoints(unittest.TestCase):
                 self.assertEqual(certificate['labels_digest'], nu.labels_digest(labels))
                 self.assertEqual(evidence['nu'], list(certificate['nu']))
                 self.assertEqual((evidence['nu_source'], evidence['contract_revision']),
-                                 ('retained_witness', certificate['contract_revision']))
+                                 ('retained_witness', engine_stamp(certificate['contract_revision'])))
                 self.assertEqual((evidence['reachability']['kind'], evidence['reachability']['retained']),
                                  ('witnessed', True))
                 # Open and promised claims answer unknown at ν = 0 (ONE.28).

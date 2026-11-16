@@ -90,9 +90,6 @@ use crate::{b64, observe, Context};
 /// A level this puzzle or input does not hold (KN1.9).
 pub const LEVEL_NOT_HELD: &str = "KN1:input.level_not_held";
 
-/// The contract revision a label checkpoint's certificate names: the amendment that defines it.
-pub const A5_REVISION: &str = "state-contract 2026-10-22 A1-A5";
-
 /// The number of ν coordinates (A5: 35 sign bits, 8 frame bits and two values modulo 5).
 pub const NU_LEN: usize = 45;
 
@@ -1027,7 +1024,24 @@ pub enum Verdict {
     Unknown(String),
 }
 
+/// The level each end test reads, which its verdict carries (KN1.11, JI.4): the sticker test and the label checkpoint
+/// read the labels, the retained checkpoint the poses.
+pub const STICKER_TEST_LEVEL: Level = Level::Labels;
+pub const RETAINED_CHECKPOINT_LEVEL: Level = Level::Poses;
+pub const LABEL_CHECKPOINT_LEVEL: Level = Level::Labels;
+
 impl Verdict {
+    /// The verdict with the level it was reached at, `{level, verdict, evidence or reason}`: a verdict carries its
+    /// level and never crosses over (KN1.11), and a read names its level (JI.4).
+    pub fn to_json_at(&self, level: Level) -> Value {
+        let mut fields = vec![("level", text(level.name())), ("verdict", text(self.name()))];
+        match self {
+            Verdict::Yes(evidence) | Verdict::No(evidence) => fields.push(("evidence", evidence.clone())),
+            Verdict::Unknown(reason) => fields.push(("reason", text(reason))),
+        }
+        object(fields)
+    }
+
     pub fn to_json(&self) -> Value {
         match self {
             Verdict::Yes(evidence) => object(vec![("verdict", text("yes")), ("evidence", evidence.clone())]),
@@ -1251,29 +1265,33 @@ impl ReachKind {
 
 /// A reachability claim in the jumbling puzzle (KN2.13). The evidence is an envelope reference (chapter 06), passed
 /// through as given; this crate never searches for a witness. A witnessed claim is made only by a replay from solved
-/// or by a derivation from a witnessed base ([`Reachability::then`]).
+/// ([`witness`]) or by a derivation from a witnessed base ([`derive`]), and it speaks only of the state it reached.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Reachability {
     kind: ReachKind,
     evidence: Value,
     /// Witnessed only: every twist of the witness lies in K⁺, so it is a retained word and keeps ν = 0 (card 1, F1).
     retained: bool,
+    /// The pose digest of the state that a claim this crate made speaks of; a stated claim names none. A witnessed
+    /// claim holds for that state only (A4, A5).
+    at: Option<String>,
 }
 
 impl Reachability {
-    /// The solved state, witnessed by the empty word.
-    pub fn solved() -> Reachability {
+    /// The solved state, witnessed by the empty word; the claim speaks of the solved state only.
+    pub fn solved(ctx: &Context) -> Reachability {
         Reachability {
             kind: ReachKind::Witnessed,
             evidence: object(vec![("from", text("solved")), ("word", text(&word_digest(&[]))), ("letters", int(0))]),
             retained: true,
+            at: Some(State::new(None).digest(ctx)),
         }
     }
 
     /// A claim the caller states: by theorem, promised, refuted or open, with its evidence reference. A witnessed claim
     /// cannot be stated; it is replayed ([`witness`]) or derived.
     pub fn stated(kind: ReachKind, evidence: Value) -> Option<Reachability> {
-        (kind != ReachKind::Witnessed).then_some(Reachability { kind, evidence, retained: false })
+        (kind != ReachKind::Witnessed).then_some(Reachability { kind, evidence, retained: false, at: None })
     }
 
     pub fn kind(&self) -> ReachKind {
@@ -1284,15 +1302,21 @@ impl Reachability {
         &self.evidence
     }
 
+    /// The pose digest of the state the claim speaks of, or `None` for a stated claim.
+    pub fn at(&self) -> Option<&str> {
+        self.at.as_deref()
+    }
+
     /// Whether the claim is witnessed by a retained word.
     pub fn retained(&self) -> bool {
         self.kind == ReachKind::Witnessed && self.retained
     }
 
-    /// The claim of the state an admissible word reaches from a state with this claim. Reachability moves along
-    /// admissible twists both ways (an admissible twist's inverse is admissible from its result), so every value
-    /// carries over; a witnessed claim records the base and the word.
-    pub fn then(&self, base_digest: &str, twists: &[Twist]) -> Reachability {
+    /// The claim of the state `reached` that an admissible word reaches from the state `base_digest`, which has this
+    /// claim. Reachability moves along admissible twists both ways (an admissible twist's inverse is admissible from
+    /// its result), so every value carries over; a witnessed claim records the base and the word. Only a replay
+    /// ([`witness`]) and a derivation ([`derive`]) call it, once they have reached `reached`.
+    pub(crate) fn then(&self, base_digest: &str, twists: &[Twist], reached: &str) -> Reachability {
         let evidence = object(vec![
             ("base", text(base_digest)),
             ("base_claim", self.to_json()),
@@ -1300,7 +1324,7 @@ impl Reachability {
             ("letters", int(twists.len())),
         ]);
         let retained = self.retained && twists.iter().all(|t| t.kidx.is_some());
-        Reachability { kind: self.kind, evidence, retained }
+        Reachability { kind: self.kind, evidence, retained, at: Some(reached.to_string()) }
     }
 
     pub fn to_json(&self) -> Value {
@@ -1309,6 +1333,7 @@ impl Reachability {
             ("kind", text(self.kind.name())),
             ("evidence", self.evidence.clone()),
             ("retained", Value::Bool(self.retained())),
+            ("at", self.at.as_deref().map_or(Value::Null, text)),
         ])
     }
 }
@@ -1326,19 +1351,22 @@ pub fn witness(
         Ok(reached) => reached,
         Err(reason) => return Ok(Err(reason)),
     };
-    if reached.digest(ctx) != state.digest(ctx) {
+    let digest = state.digest(ctx);
+    if reached.digest(ctx) != digest {
         return Ok(Err("the journal reaches another configuration".into()));
     }
-    Ok(Ok(Reachability::solved().then(&State::new(None).digest(ctx), journal)))
+    Ok(Ok(Reachability::solved(ctx).then(&State::new(None).digest(ctx), journal, &digest)))
 }
 
 /// A5's label checkpoint. `nu` is the ν of the state as the ν row computes it, when the caller has it (45 values).
 ///
-/// The clauses that do not depend on reachability come first: off the lattice, a displaced centre or a known nonzero
-/// ν answer no whatever the claim. Then only a witnessed claim decides (ONE.28): open, promised, by theorem and
-/// refuted answer unknown, the last two because this edition checks no theorem evidence. A witnessed claim with ν not
-/// shown answers unknown too. A supplied ν that differs from the ν = 0 that the identity labels or a retained witness
-/// show is an engine error: the ν row and this one disagree.
+/// The clauses that do not depend on reachability come first: off the lattice, a displaced centre, two pieces in one
+/// chamber or a known nonzero ν answer no whatever the claim. Then only a witnessed claim decides (ONE.28): open,
+/// promised, by theorem and refuted answer unknown, the last two because this edition checks no theorem evidence. A
+/// witnessed claim speaks only of the state it reached (A4, A5): of another state it answers unknown, and its retained
+/// witness shows no ν there. A witnessed claim with ν not shown answers unknown too. A supplied ν that differs from
+/// the ν = 0 that the identity labels or a retained witness show is an engine error: the ν row and this one disagree.
+/// A yes carries the engine's contract stamp ([`crate::CONTRACT_REVISION`]).
 pub fn label_checkpoint(
     ctx: &Context,
     state: &State,
@@ -1350,16 +1378,23 @@ pub fn label_checkpoint(
     }
     let labels = match labels(ctx, state)? {
         Partial::Total(labels) => labels,
-        _ => return Err(engine("a lattice configuration with its centres home has no total labels")),
+        // Every piece is on the lattice, so a partial labelling has two pieces in one chamber, which no word reaches;
+        // KN2.14's validation does not test for it.
+        Partial::Partial { missing, .. } => {
+            return Ok(Verdict::No(fact("pieces_collide", vec![("collisions", int(missing.collisions))])))
+        }
+        Partial::Undefined(reason) => return Ok(Verdict::Unknown(reason)),
     };
     if let Some(nu) = nu {
         if nu.len() != NU_LEN {
             return Err(engine(format!("ν has {NU_LEN} coordinates, not {}", nu.len())));
         }
     }
+    let digest = state.digest(ctx);
+    let holds_here = reach.kind != ReachKind::Witnessed || reach.at.as_deref() == Some(digest.as_str());
     let shown = if labels.displaced() == 0 {
         Some((vec![0i64; NU_LEN], "identity_labels"))
-    } else if reach.retained() {
+    } else if holds_here && reach.retained() {
         Some((vec![0i64; NU_LEN], "retained_witness"))
     } else {
         nu.map(|nu| (nu.to_vec(), "supplied"))
@@ -1376,7 +1411,8 @@ pub fn label_checkpoint(
         }
     }
     match reach.kind {
-        ReachKind::Witnessed => {}
+        ReachKind::Witnessed if holds_here => {}
+        ReachKind::Witnessed => return Ok(Verdict::Unknown("the witnessed claim speaks of another state".into())),
         ReachKind::Open => return Ok(Verdict::Unknown("reachability is open".into())),
         ReachKind::Promised => return Ok(Verdict::Unknown("reachability is promised, not shown".into())),
         ReachKind::ByTheorem | ReachKind::Refuted => {
@@ -1390,13 +1426,13 @@ pub fn label_checkpoint(
         return Ok(Verdict::Unknown("ν is not shown: the ν row computes it".into()));
     };
     Ok(Verdict::Yes(object(vec![
-        ("pose_digest", text(&state.digest(ctx))),
+        ("pose_digest", text(&digest)),
         ("labels_digest", text(&labels.digest())),
         ("frame_agrees", Value::Bool(true)),
         ("nu", nu_json(&value)),
         ("nu_source", text(source)),
         ("reachability", reach.to_json()),
-        ("contract_revision", text(A5_REVISION)),
+        ("contract_revision", text(crate::CONTRACT_REVISION)),
     ])))
 }
 
@@ -1789,8 +1825,8 @@ impl std::fmt::Debug for Snapshot {
 
 impl Snapshot {
     /// The solved state under `menu` (`None` in free mode), witnessed by the empty word.
-    pub fn solved(menu: Option<Arc<Menu>>) -> Snapshot {
-        Snapshot { state: State::new(menu), reach: Reachability::solved() }
+    pub fn solved(ctx: &Context, menu: Option<Arc<Menu>>) -> Snapshot {
+        Snapshot { state: State::new(menu), reach: Reachability::solved(ctx) }
     }
 
     /// `state` with the witnessed claim of its journal from solved, replayed exactly under the state's own menu, with
@@ -1988,6 +2024,9 @@ pub fn derive(
     protected.sort_unstable();
     protected.dedup();
     let base_digest = start.digest(ctx);
+    if claim.kind() == ReachKind::Witnessed && claim.at() != Some(base_digest.as_str()) {
+        return Err(engine("a witnessed claim speaks of another state than its base"));
+    }
     let word = word_digest(twists);
     let refused = |first_refused_prefix: Option<u64>,
                    outcome: Status,
@@ -2085,7 +2124,7 @@ pub fn derive(
         return refused(None, Status::Protected, refusal, certificates, protection);
     }
 
-    let reach = claim.then(&base_digest, twists);
+    let reach = claim.then(&base_digest, twists, &state.digest(ctx));
     let lineage = root.cloned().unwrap_or_else(|| Lineage::Snapshot(base_digest.clone()));
     Ok(Ok(Derivation::Derived(Derived {
         identity: ctx.identity(state.menu()),
