@@ -34,6 +34,12 @@ PLATFORM_LAYER: frozenset[str] = frozenset()
 # KN6 checkers, by source path, with the producer modules they must not import (KN6.2). LP2 has none: KN6.1's checker
 # kinds arrive with LP5 (CT-KN6-01, CT-KN6-03).
 KN6_CHECKERS: dict[str, tuple[str, ...]] = {}
+# Sources that define KN6.1's `CheckReport` to read one and run no check, with the producer crates they must not
+# import. The evidence library admits a report as one leaf (EVD.46) and reads no program or session (EVD.14, EVD.54),
+# so it imports neither the interpreter that runs programs nor the session store that runs their jobs.
+KN6_REPORT_READERS: dict[str, tuple[str, ...]] = {
+    "rust/c600-evidence/src/sink.rs": ("c600_run", "c600_session"),
+}
 # LP2's one checker of a producer's output: the O01 to O07 oracle comparison. It must import neither the producers of
 # its references (the case maker and the trace replayer) nor the 0.4 engine they construct them with.
 ORACLE_CHECKERS = {
@@ -555,13 +561,17 @@ class ScanTests(unittest.TestCase):
     def test_ct_kn6_02_no_checker_imports_producer_code(self):
         """CT-KN6-02 (part: not run: KN6.1's five checker kinds, which arrive with LP5 (CT-KN6-01, CT-KN6-03), so the
         Rust half has no checker to scan): no workspace source and no Python tool defines KN6.1's checker interface
-        unless it is declared with its producers (none in LP2); LP2's one checker of a producer's output, the O01 to
-        O07 oracle comparison (tools/oracle/compare.py), imports neither the case maker nor the trace replayer nor the
-        0.4 engine they build references with, by import statement, relative import or dynamic loading. Controls: a
+        unless it is declared with its producers (no checker in LP2, and one reader of a report, the evidence
+        library's admission (EVD.46), which imports neither the interpreter nor the session store); LP2's one checker
+        of a producer's output, the O01 to O07 oracle comparison (tools/oracle/compare.py), imports neither the case
+        maker nor the trace replayer nor the 0.4 engine they build references with, by import statement, relative
+        import or dynamic loading. Controls: a
         planted Rust checker crate that depends on a producer crate, names its search module and includes its file
         fails three ways while one that uses only an allowed engine passes; planted Python checkers importing a
         producer statically, relatively and dynamically fail; an undeclared checker interface fails the inventory."""
-        self.assertEqual(checker_inventory(self.sources), set(KN6_CHECKERS))
+        self.assertEqual(checker_inventory(self.sources), set(KN6_CHECKERS) | set(KN6_REPORT_READERS))
+        for path, producers in KN6_REPORT_READERS.items():
+            self.assertEqual(rust_import_problems(ROOT.joinpath(*Path(path).parts[:2]), producers), [])
         self.assertEqual(python_import_problems(ORACLE_CHECKERS), [])
         names = python_imports(ROOT / "tools/oracle/compare.py")
         self.assertTrue({"json", "zlib"} <= names, names)

@@ -486,8 +486,9 @@ fn ct_one_01_no_operation_takes_a_state_or_a_digest_to_adopt() {
 /// The workspace's members, from its manifest.
 fn members() -> Vec<String> {
     let manifest = std::fs::read_to_string(format!("{RUST}/Cargo.toml")).unwrap();
-    let line = manifest.lines().find(|l| l.trim_start().starts_with("members")).expect("a members list");
-    let list = &line[line.find('[').unwrap() + 1..line.rfind(']').unwrap()];
+    let start = manifest.find("\nmembers").expect("a members list");
+    let open = start + manifest[start..].find('[').unwrap() + 1;
+    let list = &manifest[open..open + manifest[open..].find(']').unwrap()];
     list.split(',').map(|m| m.trim().trim_matches('"').to_string()).filter(|m| !m.is_empty()).collect()
 }
 
