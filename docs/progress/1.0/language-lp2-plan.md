@@ -28,7 +28,7 @@ integration, authoring services, the research corpus and the importer stay with 
 | Interpreter and the `lp1-exec-draft-1` meter | May start; the big-integer question is answered | Nothing: the owner chose option A, `num-bigint` 0.5.1 with `num-integer` 0.1.47 and `num-traits` 0.2.19 ([owner, 16 November 2026](../../wiki/decisions/owner-decisions-2026-11-16-big-integers.md); RTE.18, RTE.70) |
 | Parser | May start; LQ13 is answered | Nothing: the owner chose LX-8 candidate A (braces) from a one-page comparison of the three candidates, with no human test ([owner, 16 November 2026](../../wiki/decisions/owner-decisions-2026-11-16-lq13.md)); keyword and punctuation details are settled in M7, and CT-RTE-18 stays recorded as not run |
 | Kernel API and candidate adapter, 600-cell-Full half | May start in Rust (LQ8) | Nothing beyond the frozen chapters |
-| Jumbling half of the kernel API | Waits | EN3's review and approval of the jumbling interfaces (PHS.53) |
+| Jumbling half of the kernel API | May start; EN3's engine half is approved | Nothing: after a fresh Claude read of the jumbling interfaces and its fixes, the owner approved their engine half, JI.1 to JI.16, JI.52 and JI.53, as M5's input ([owner, 16 November 2026](../../wiki/decisions/owner-decisions-2026-11-16-en3-engine-half.md); PHS.53, JI.54); the store, command and view halves stay drafts |
 | Session store below the language | May start | Nothing beyond chapter 05's frozen core |
 
 ## 3. Integrator selections (the owner may overrule them)
@@ -61,7 +61,7 @@ share one pull request, which names each milestone's checks (section 9).
 | M2 | Interpreter and `lp1-exec-draft-1` reference meter: the 40 frozen traces and the meter boundary vectors | Big-integer answer (answered: option A) |
 | M3 | Run-time boundary: stored provenance, the fixed acknowledgement of BND.43, the saved-word half of CT-LG3-07 | M2 |
 | M4 | Kernel API and 600-cell-Full candidate adapter: O01 to O07 through `tools/oracle/` | Rust engine port |
-| M5 | Jumbling half: public J1 API, differential comparisons, W-J fixtures and H6030 | EN3's approval |
+| M5 | Jumbling half: public J1 API (JI.52), differential comparisons, W-J fixtures and H6030, with CT-JI-03 | EN3's engine half (approved 16 November 2026) |
 | M6 | Session store below the language; budgets and cancellation end to end (section 10) | M2, M4 |
 | M7 | Parser and its lowering into the IR (section 8) | LQ13 (answered: candidate A) |
 | M8 | PHS.19's acceptance on Windows and headless Linux; section 15.3 runnable | M1 to M7 |
@@ -105,8 +105,8 @@ dependency.
 
 ## 6. Stop condition for LP2
 
-LP2 stops and reports to the owner when every remaining milestone waits for an owner answer or another line (EN3's
-approval, for example), or when an implementation would change a frozen file (PHS.52). A failing
+LP2 stops and reports to the owner when every remaining milestone waits for an owner answer or another line, or
+when an implementation would change a frozen file (PHS.52). A failing
 acceptance item blocks LP2's exit (PHS.63); nothing is cut.
 
 ## 7. Questions put to the owner on 15 November 2026
