@@ -25,6 +25,7 @@ if str(JUMBLING) not in sys.path:
     sys.path.insert(0, str(JUMBLING))
 
 from differential.references import nu_refs  # noqa: E402
+from sim import api  # noqa: E402
 
 LIBRARY = JUMBLING / 'restoration/09-general-method/data/library-merged.json.gz'
 LIBRARY_SHA256 = '8a13eb6c4f4359ce4dd58a0018cf86eed3089111e11f20b7c00476f6393a661a'
@@ -125,13 +126,7 @@ def _library():
 
 def _clone(state):
     # J1 pose entries, exact matrices, context and menu are shared immutable data.
-    result = copy.copy(state)
-    result.pose_id = state.pose_id.copy()
-    result._poses = list(state._poses)
-    result._lookup = dict(state._lookup)
-    result.journal = list(state.journal)
-    result._anchor_cache = {}
-    return result
+    return api.copy_state(state)
 
 
 @lru_cache(maxsize=None)
@@ -177,7 +172,7 @@ def _lattice_action(cid, encoded_records):
             raise InadmissiblePrefix(cid, index, outcome.status)
     if not state.is_lattice():
         raise ValueError(f'correction {cid}: the complete J1 witness does not end on the lattice')
-    action = state._kpose()[state.pose_id]
+    action = api.piece_kplus(state)
     action.flags.writeable = False
     return action, tuple(state.journal)
 
@@ -193,17 +188,16 @@ def _transport_action(state, action, journal):
     import numpy as np
 
     kp, regions = state.ctx.kplus, state.ctx.regions
-    before = state._kpose()[state.pose_id]
+    before = api.piece_kplus(state)
     destination = regions.piece_of[regions.orbit_of, kp.compose_vec(before, regions.transport)]
     if not np.array_equal(np.sort(destination), np.arange(len(destination))):
         raise ValueError('the lattice piece-region map is not a bijection')
     after = kp.compose_vec(action[destination], before)
     unique, inverse = np.unique(after, return_inverse=True)
-    indices = np.asarray([state._intern_k(int(k)) for k in unique], np.int32)
-    state.pose_id = indices[inverse]
-    state._compact()
-    state.journal.extend(copy.deepcopy(journal))
-    state._anchor_cache = {}
+    moved = api.from_pose_table(state.ctx, [(int(k), None) for k in unique], inverse, state.menu,
+                                state.filtered)
+    moved.journal = list(state.journal) + copy.deepcopy(list(journal))
+    api.adopt(state, moved)
 
 
 def play(state, correction_or_ids, *, literal=False):
@@ -225,7 +219,7 @@ def play(state, correction_or_ids, *, literal=False):
             _literal_play(trial, correction)
     value = nu.nu(trial)
     nu.check_fixed(value)
-    state.__dict__.update(trial.__dict__)
+    api.adopt(state, trial)
     return value
 
 

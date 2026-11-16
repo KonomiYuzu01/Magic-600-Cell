@@ -1,8 +1,7 @@
 """Full certified straddler sets of a named cap, without changing J1.
 
-Explicit private J1 dependencies: State._kpose, _groups, _anchors, _pose_matrix,
-_eval and _straddle_certificate. The traversal follows J1's pose groups and
-anchor supersets but retains every straddler. The separate checker parses the
+J1 is reached through sim.api (JI.52) and public names. The traversal follows
+J1's pose groups and anchor supersets but retains every straddler. The separate checker parses the
 points anew and tests the current posed region and cut exactly; it trusts
 neither cached h values nor the certificate's vertex indices or scan order.
 """
@@ -17,6 +16,7 @@ from time import perf_counter
 import numpy as np
 
 from exact import Q5
+from sim import api
 from sim.kernel import Evaluator, pullback_form
 from sim.state import Classification, posed_point_check
 
@@ -36,18 +36,18 @@ def straddler_set(state, cap, *, budget=None) -> dict:
     started = perf_counter()
     data, reg = state.ctx.data, state.ctx.regions
     cl = Classification(cap)
-    lattice = state._kpose()[state.pose_id] >= 0
+    lattice = state.lattice_flags()
     cl.counts['signature'] = int(lattice.sum())
     off = np.flatnonzero(~lattice)
     certificates = {}
-    for pid, members in (state._groups(off) if off.size else []):
-        ev = Evaluator(pullback_form(state._pose_matrix(pid), data.N[cap]))
-        for anchor, sub in state._anchors(pid, members):
+    for pid, members in (api.pose_groups(state, off) if off.size else []):
+        ev = Evaluator(pullback_form(api.pose_matrix(state, pid), data.N[cap]))
+        for anchor, sub in api.anchors(state, pid, members):
             if budget is not None and cl.exact_evaluations >= budget:
                 cl.uncertain += len(sub)
                 continue
-            result = state._eval(ev, reg.cap_vform(anchor),
-                                 lambda a=anchor: reg.cap_frows(a), cl, budget)
+            result = api.evaluate(state, ev, reg.cap_vform(anchor),
+                                  lambda a=anchor: reg.cap_frows(a), cl, budget)
             if result[0] == 'uncertain':
                 cl.uncertain += len(sub)
                 continue
@@ -55,13 +55,13 @@ def straddler_set(state, cap, *, budget=None) -> dict:
                 cl.counts['group_superset'] += len(sub)
                 continue
             for piece in sub.tolist():
-                result = state._eval(ev, reg.vform(piece),
-                                     lambda p=piece: reg.frows(p), cl, budget)
+                result = api.evaluate(state, ev, reg.vform(piece),
+                                      lambda p=piece: reg.frows(p), cl, budget)
                 if result[0] == 'uncertain':
                     cl.uncertain += 1
                 elif result[0] == 'straddle':
-                    certificates[piece] = state._straddle_certificate(
-                        piece, pid, cap, result[2], result[3])
+                    certificates[piece] = api.straddle_certificate(
+                        state, piece, pid, cap, result[2], result[3])
                 else:
                     cl.counts['piece_vertices'] += 1
     pieces = sorted(certificates)
@@ -100,7 +100,7 @@ def check_certificate(state, cap, piece, cert) -> bool:
     except (KeyError, TypeError, ValueError):
         return False
     data = state.ctx.data
-    pose = state._pose_matrix(int(state.pose_id[piece]))
+    pose = api.pose_matrix(state, int(state.pose_id[piece]))
     signature = data.signature(piece)
     return bool(posed_point_check(data, signature, pose, below)
                 and posed_point_check(data, signature, pose, above)

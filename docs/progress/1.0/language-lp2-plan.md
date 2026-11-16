@@ -61,7 +61,7 @@ share one pull request, which names each milestone's checks (section 9).
 | M2 | Interpreter and `lp1-exec-draft-1` reference meter: the 40 frozen traces and the meter boundary vectors | Big-integer answer (answered: option A) |
 | M3 | Run-time boundary: stored provenance, the fixed acknowledgement of BND.43, the saved-word half of CT-LG3-07 | M2 |
 | M4 | Kernel API and 600-cell-Full candidate adapter: O01 to O07 through `tools/oracle/` | Rust engine port |
-| M5 | Jumbling half: public J1 API (JI.52), differential comparisons, W-J fixtures and H6030, with CT-JI-03 | EN3's engine half (approved 16 November 2026) |
+| M5 | Jumbling half: public J1 API (JI.52), differential comparisons, W-J fixtures and H6030, with CT-JI-03 (section 11) | EN3's engine half (approved 16 November 2026) |
 | M6 | Session store below the language; budgets and cancellation end to end (section 10) | M2, M4 |
 | M7 | Parser and its lowering into the IR (section 8) | LQ13 (answered: candidate A) |
 | M8 | PHS.19's acceptance on Windows and headless Linux; section 15.3 runnable | M1 to M7 |
@@ -281,3 +281,93 @@ historical workspace versions; the session lock; file publication; CT-KN7-06 (pe
 Stop condition: M6 ends when its items pass in CI and its pull request is merged. It stops earlier, and the owner is
 told, if a frozen file would change or a product dependency is needed. What is not built or not run is recorded in
 `rust/README.md`; non-applicability is no pass (PHS.63).
+
+## 11. M5: the jumbling half of the kernel API
+
+Crate: `rust/c600-jumble`, which depends on `c600-kernel` (its archive and NPY readers) and on the approved
+`num-bigint` (section 7, question 1). It reads `assets/model.npz` and builds the exact jumbling geometry itself: the
+exact poles, K⁺ from the stored rotation permutations, one exact double description per K⁺-orbit representative, and
+the cap regions. Nothing is exported from J1, so the comparisons test an independent candidate behind the boundary
+(PHS.18). A JSON-lines adapter binary serves the differential harness through a standard-library adapter in
+`research/jumbling/differential/candidate/`. J1 gets its public API, `research/jumbling/sim/api.py` (JI.52), and the
+harness bindings reach J1 only through it. EN3's engine half (JI.1 to JI.16, JI.52, JI.53) is M5's input; what that
+draft leaves to M5 (JI.54) is decided below and recorded in the pull request.
+
+Selections (the owner may overrule them):
+
+1. **Exact numbers.** Q(√5) numbers are reduced integer triples on `num-bigint`, and the crate has no float type. The
+   stored binary64 normals are read as exact dyadic rationals, and each coordinate is matched to the unique
+   (p + q√5)/2 with |q| ≤ 12 within 10⁻⁹ by exact comparisons: J1's rule, decided exactly.
+2. **Records.** The candidate reads the record families the comparisons use: `menu`, `matrix` and `cayley`. Another
+   family is an adapter error, not a refusal.
+3. **Free mode.** An internal entry, a start without a menu, admits any exact rotation that fixes the grip's pole. It
+   serves the tests (CT-KN2-02) and is no product command.
+4. **Net protection** at pose level reports its level (poses), its mode (net), the verdict and the sorted IDs of the
+   protected pieces whose pose would change, and no first refused prefix, since Net judges the net map; M4's
+   label-level Net does the same.
+5. **Batches.** `prefix_observations` and `seam_facts` take a positive maximum chunk size (letters or cells) and a
+   budget (letters or cells); cancellation is checked between chunks; a cut-off or cancelled batch has half-open
+   coverage and no total or final claim (JI.14). JI.16 runs with chunk size 1.
+6. **Budgets.** A classification takes an optional budget of exact evaluations. Exhausting it gives `uncertain` and
+   changes nothing, and the same budget gives the same outcome on every run.
+
+Acceptance:
+
+1. `cargo test --locked --offline` passes in `rust/`, in CI through `tests/test_language_rust.py`.
+2. JI.52: `research/jumbling/sim/api.py` is the only change under `research/jumbling/` outside `differential/`;
+   `accept.py` and `fixtures/wj.py check` give their recorded results; `tests/test_jumbling_*.py` pass; a source scan
+   of the bindings (adapters, `candidate/`, `references/`, `leads/census.py`, `leads/x5_release.py`) finds no private
+   member of J1 or of the theory code.
+3. CT-KN2-01, jumbling half (with M4's half the CT runs whole): `tests/test_jumbling_rust_candidate.py`, listed in
+   `tools/ci/run_headless.py`, compares J1 with the candidate through `harness.compare` step by step (status, moved
+   count, moved set, pose digest and lattice digest, refusals first) on the first 60 records of each W-J fixture (S4,
+   I_a, I_b) with surveys at steps 0 and 30, the first 600 letters of H6030, and refusals: a letter outside the menu,
+   a blocked twist and a malformed record. Straddler sets at named caps are equal, and every candidate certificate
+   passes J1's independent check. Under `JUMBLING_FULL_REPLAY=1` every record of the three fixtures and all 3,156
+   letters of H6030 run. A planted difference fails at its step.
+4. CT-KN1-02: a word recorded under the reversed I_a order is refused: same menu identity, other order digest.
+5. CT-KN1-05, poses half (with M4's labels half the CT runs whole): the candidate's pose digest equals J1's at every
+   compared step of every fixture.
+6. CT-KN2-02, in part: heights and domain IDs equal `trees.py` and the library's histograms on H6030's compared
+   states and on the in-repository state of ENG-0J item 8 (u1). The free-mode case: the Cayley rotation ω = (2,0,0) at
+   cap 0 reads heights (0,0), lies outside K⁺, and its domain ID, from the exact coset key (JI.53), differs from the
+   identity's. Item 8's other states (b20, b06-14, b14, b03) need recorded draft inputs outside the repository and run
+   in M8.
+7. CT-KN2-03: with centre piece 0 protected, a letter at grip 0 that turns it by an element of A4 is refused at pose
+   level inside Jumble with the report of selection 4, and the same retained word passes at label level after the
+   crossing at solved: under M4's kernel no slot of the piece moves.
+8. CT-KN2-04, jumbling half (with M4's half the CT runs whole): a blocked, an invalid and an uncertain (budget) letter
+   each leave the pose digest, the lattice digest and the pose table unchanged.
+9. CT-KN2-05: a scan of the sources of `c600-kernel` and `c600-jumble` finds no `f32` or `f64`; no INV-4 site (display
+   plans, the A2 filter, float requests) is in these crates.
+10. CT-KN3-02: synthetic pose entries beyond 2^64 and a 6,775-digit integer round-trip exactly through the candidate's
+    pose-table input and output.
+11. CT-JI-03: `seam_facts(all)` counts off-grip cells (a state with off-grip mismatches gives total_N equal to the
+    on-grip plus the off-grip count, and a supplied table with one on-grip and two off-grip mismatches gives 3); JI.16's
+    prefix observations, units and word check agree with exact replay through J1 (two admissible rows; F, D and ΔΦ
+    zero; peak left height 2; excursion 0; tame; end digest solved; one unit of the pieces item 12 moved, which lands;
+    total_N 0 at both ends); cancelling after row 0 gives coverage [0,1) with no row 1 and no final claim.
+12. The pull request records JI.54's items: the Net refusal report, the identity blocks of the S4 and I_b fixtures, the
+    chunk sizes and budgets, the free-mode entry, and whether JI.16's vector holds as written.
+13. Model and protection logic is a critical path: a fresh Claude subagent on a smaller model reads the change before
+    the pull request merges, and its blocking findings are fixed (`AGENTS.md`, "Codex minimum").
+14. No file under `docs/architecture/1.0/language/` changes, and the eight language checkers still pass.
+
+Not built in M5, each with the milestone that owns it (non-applicability is no pass, PHS.63):
+
+- CT-KN1-03 (a projection off the lattice) and CT-KN1-04 (no lift to a finer level) need the level-crossing calls (A3,
+  A5 checkpoints): M8.
+- CT-KN1-06 (shapes as multisets of posed regions) and CT-KN2-06 (gauge transfer) need the shape and gauge
+  comparisons: M8.
+- CT-KN2-07 needs streaming replay (KN2.10), built in neither half: M8.
+- CT-KN3-01 (small margins) and CT-KN3-03 (the A2 filter): the candidate has no A2 filter and the state contract records
+  no small-margin cases; M8 builds the adversarial set for both.
+- CT-KN3-04 to CT-KN3-06 (A6 request decoding, menu drags, the shell producer): M8.
+- R-11's jumbling property (CT-LG2-12, LG2.14's four hypotheses) needs the language's binding to the jumbling calls:
+  M8.
+- The other JI.6 and JI.7 calls (`rim_summary`, `covers`, `repair_list`, `nu`, the three checkpoints, `release_check`,
+  derivation with reachability) and Strict protection: M8. `rust/README.md` lists what is built.
+
+Stop condition: M5 ends when items 1 to 14 pass in CI and its pull request is merged. It stops earlier, and the owner is
+told, under M1's conditions, or when J1 and the candidate differ and the difference is not the candidate's: a J1 fault
+is reported, never fixed in J1, while the research is stopped.
