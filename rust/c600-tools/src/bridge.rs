@@ -1,8 +1,9 @@
 //! The host bridge from `c600-run` onto `c600-command`: the runtime's [`Host`] for one run of a tool in the solving
 //! profile, used through [`c600_run::boundary::Boundary`] (LP3, C5).
 //!
-//! A proposal that passes preview admission becomes one invocation of the row its target names, made as the runtime:
-//! [`Caller::Runtime`] for the run, a fresh command ID, the layer's current epoch, the literal word as an inline draft,
+//! A proposal that passes preview admission becomes one invocation of the row its target names, sent on the run's
+//! channel: the bridge stamps [`Caller::Runtime`] for the run, as the host does (the envelope names no caller;
+//! ruling 4, PHS.52), with a fresh command ID, the layer's current epoch, the literal word as an inline draft,
 //! `{"draft": {"recipe": [{"kind": "word", "moves": [...]}]}}`, and no token. The bridge filters no row: the command
 //! layer refuses a runtime invocation of a commit or app row, and any runtime invocation that carries a token
 //! (ADR-L02, KN5.15). The bridge answers the boundary with a short form of the layer's receipt, which only the shell
@@ -30,10 +31,11 @@ pub fn word_args(word: &[i32]) -> Json {
     json::object([("draft", json::object([("recipe", Json::Array(vec![step]))]))])
 }
 
-/// One invocation the bridge sent, with the layer's receipt.
+/// One invocation the bridge sent, with the caller it stamped and the layer's receipt.
 #[derive(Clone, Debug)]
 pub struct Sent {
     pub invocation: Invocation,
+    pub caller: Caller,
     pub receipt: Receipt,
 }
 
@@ -52,20 +54,20 @@ impl<'l, S: Store> Bridge<'l, S> {
         Bridge { layer, run: run.to_owned(), sent: Vec::new() }
     }
 
-    /// One invocation of `row` with absolute arguments, as the runtime: [`Caller::Runtime`] for this run, a fresh
-    /// command ID and the layer's current epoch. A proposal never carries a token; `token` is there so a test can show
-    /// that the layer refuses a runtime invocation carrying one.
+    /// One invocation of `row` with absolute arguments on this run's channel, stamped [`Caller::Runtime`] for the run,
+    /// with a fresh command ID and the layer's current epoch. A proposal never carries a token; `token` is there so a
+    /// test can show that the layer refuses a runtime invocation carrying one.
     pub fn invoke(&mut self, row: &str, args: Json, token: Option<Token>) -> Receipt {
         let invocation = Invocation {
             command: format!("{}/{}", self.run, self.sent.len() + 1),
             row: row.to_owned(),
             args,
             token,
-            caller: Caller::Runtime { run: self.run.clone() },
             epoch: self.layer.revision().epoch,
         };
-        let receipt = self.layer.invoke(invocation.clone());
-        self.sent.push(Sent { invocation, receipt: receipt.clone() });
+        let caller = Caller::Runtime { run: self.run.clone() };
+        let receipt = self.layer.invoke(&caller, invocation.clone());
+        self.sent.push(Sent { invocation, caller, receipt: receipt.clone() });
         receipt
     }
 }

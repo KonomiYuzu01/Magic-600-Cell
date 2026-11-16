@@ -64,7 +64,8 @@ pub fn admit_program(program: &Program, entry: &Entry) -> Result<Admitted, Refus
                 } else {
                     continue;
                 };
-                findings.push(finding(NOT_GRANTED, &entry.module, &entry.function, "entry", &note));
+                // `c600-check`'s mapping: an ambient read or another capability (PHS.52, 16 November 2026).
+                findings.push(finding(summary.ungranted(*cap), &entry.module, &entry.function, "entry", &note));
             }
             (findings, separation(summary, &entry.policy), Vec::new())
         }

@@ -167,7 +167,7 @@ impl Token {
     }
 
     /// The authenticator in hex. Only an envelope's full digest covers it, which keys the refusals issued before
-    /// authentication (draft ruling 4); the request digest does not (LI.5).
+    /// authentication (ruling 4); the request digest does not (LI.5).
     pub(crate) fn authenticator(&self) -> String {
         self.mac.iter().map(|b| format!("{b:02x}")).collect()
     }

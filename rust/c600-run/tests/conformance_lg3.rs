@@ -4,7 +4,7 @@
 
 mod conformance;
 
-use c600_check::{admit, check, Grant, Policy, Profile as CheckProfile, EFFECT_UNDECLARED, NOT_GRANTED};
+use c600_check::{admit, check, Grant, Policy, Profile as CheckProfile, AMBIENT_READ, EFFECT_UNDECLARED, NOT_GRANTED};
 use c600_ir::{Capability, ReceiptField};
 use c600_run::boundary::{Answer, Store};
 use c600_run::interp::{NoHost, Options, Request, Sink};
@@ -283,12 +283,14 @@ fn ct_lb7_02_grants_and_profiles_decide_and_storage_or_a_fork_grants_nothing() {
         }
         rows
     };
+    // An ungranted file read is an ambient read (owner, 16 November 2026, PHS.52); the solving profile's other refusal
+    // keeps `not_granted`, with or without the grant.
     let expected = vec![
-        (CheckProfile::Solving, 0, vec![NOT_GRANTED, NOT_GRANTED]),
+        (CheckProfile::Solving, 0, vec![AMBIENT_READ, NOT_GRANTED]),
         (CheckProfile::Solving, 1, vec![NOT_GRANTED]),
-        (CheckProfile::ToolAuthoring, 0, vec![NOT_GRANTED]),
+        (CheckProfile::ToolAuthoring, 0, vec![AMBIENT_READ]),
         (CheckProfile::ToolAuthoring, 1, vec![]),
-        (CheckProfile::Research, 0, vec![NOT_GRANTED]),
+        (CheckProfile::Research, 0, vec![AMBIENT_READ]),
         (CheckProfile::Research, 1, vec![]),
     ];
     let original = lowered(&[&source]).program;

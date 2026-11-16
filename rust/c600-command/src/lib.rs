@@ -14,6 +14,28 @@
 //! depends on this crate and never the reverse); [`store::MemoryStore`] keeps the same contract in memory for the
 //! tests and the oracle loop.
 //!
+//! # Owner decisions
+//!
+//! The owner decided these readings of the frozen text under PHS.52 on 16 November 2026
+//! (`docs/wiki/decisions/owner-decisions-2026-11-16-phs52.md`). The frozen text itself changes with the amendment LP3
+//! makes at its command-table freeze.
+//!
+//! - Ruling 1: a press whose preview ended is refused `KN5:stale.no_fresh_preview` when the slot is empty and
+//!   `KN5:stale.preview_replaced` when it holds another preview; a token for a preview never presented is
+//!   `no_fresh_preview`. LI.33's vector, which answers `preview_replaced` after the pressed preview was committed, is
+//!   amended to follow this ruling.
+//! - Ruling 4 (KN5.21, KN5.23): the retry lookup keeps its frozen place before authentication (chapter 08 section 7),
+//!   and the host stamps the caller from the channel the envelope came on. The envelope ([`Invocation`]) names no
+//!   caller; [`CommandLayer::invoke`] takes the channel's caller beside it. Command IDs are scoped per caller (the
+//!   shell, the runtime; no host caller is built). A record is keyed by the scope and the ID, and the request digest
+//!   covers the stamped caller (LI.5's amendment says so). A refusal of an envelope that does not authenticate (a bad
+//!   authenticator, a missing token, or a caller that may not use the row or hold a token) is retained for the epoch
+//!   under the envelope's full digest, authenticator included, which is its receipt's `request`; it never attaches to
+//!   the command ID. Every other answer attaches to the ID. An envelope whose request digest equals a recorded one is
+//!   answered as its retry whatever its authenticator, and commits nothing.
+//! - EN4's layer interfaces (LI) are frozen with the architecture (owner, 15 November 2026), so a change to LI follows
+//!   PHS.52. Where LI is silent, the layer's choices below are drafts.
+//!
 //! # Drafts
 //!
 //! The command table freezes at LP3 (PHS.53) and the IR later; these choices are drafts until then.
@@ -44,27 +66,14 @@
 //!   through the kernel under the protected set in force, from a head whose hash matches its node; the undo of a
 //!   protection change restores the set before it and needs `confirm` when it releases an orbit. After an undo the
 //!   revision's head is the node the undo returns to, not the undo's own event (KN5.21).
-//! - Draft ruling 1: a press whose preview ended is refused `KN5:stale.no_fresh_preview` when the slot is empty and
-//!   `KN5:stale.preview_replaced` when it holds another preview; a token for a preview never presented is
-//!   `no_fresh_preview`. LI's vector that answers `preview_replaced` after the pressed preview was committed is not
-//!   followed (a PHS.52 note in `rust/README.md`).
 //! - Draft ruling 2: an undo or redo checks its hint before its bound revisions, so a press raced by any durable action
 //!   is `KN5:stale.undo_superseded`.
 //! - Draft ruling 3: no receipt and no lookup answers `accepted`. A record is written once the gates answered, and a
 //!   refusal never overwrites a stored record.
-//! - Draft ruling 4 (a PHS.52 reading of KN5.21 and KN5.23): command IDs are scoped per caller (the shell, the runtime;
-//!   no host caller is built). A record is keyed by the scope and the ID, and the request digest covers the caller. A
-//!   refusal of an envelope that does not authenticate (a bad authenticator, a missing token, or a caller that may not
-//!   use the row or hold a token) is retained for the epoch under the envelope's full digest, authenticator included,
-//!   which is its receipt's `request`; it never attaches to the command ID. Every other answer attaches to the ID. The
-//!   retry lookup precedes authentication (chapter 08 section 7), so an envelope whose request digest equals a
-//!   recorded one is answered as its retry whatever its authenticator, and commits nothing.
 //! - Draft ruling 5: a token whose authenticator fails is `KN5:auth.token_invalid`; one that verifies but names another
 //!   session or epoch is `KN5:stale.token_mismatch`.
 //! - Draft ruling 7: `session.checkpoint.save` follows `command-table.json`, a commit row that takes a token; it is not
 //!   built yet. M6's `session.checkpoint` takes no token.
-//! - Draft ruling 8: LI's clauses are drafts. The layer follows them where the frozen text is silent, and the tests
-//!   mark those expectations as drafts.
 //! - A commit token binds the SHA-256 of the kernel's identity block ([`identity_json`]) and the preview's
 //!   dependencies (KN0.8); an undo or redo token binds the state and protection revisions and the hint (LI.6).
 //! - `confirm` is an optional boolean argument of a row with the `confirm` gate or an action guard.

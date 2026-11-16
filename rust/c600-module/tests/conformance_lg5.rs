@@ -8,7 +8,7 @@
 
 mod support;
 
-use c600_check::{Grant, EFFECT_UNDECLARED, IR_VERSION_UNSUPPORTED, TYPE_MISMATCH};
+use c600_check::{Grant, AMBIENT_READ, EFFECT_UNDECLARED, IR_VERSION_UNSUPPORTED, TYPE_MISMATCH};
 use c600_digest::sha256;
 use c600_ir::{Capability, Program, EXEC_CONTRACT, IR_VERSION};
 use c600_module::code::{
@@ -207,7 +207,7 @@ fn ct_lg5_02_manifest_entries_are_checked_as_data_and_grant_nothing() {
     let authors = [Author::Own, Author::BuiltIn, Author::Imported];
 
     // LG5.2, LG5.7, LG3.9: a requirement anywhere in the closure is the root's, an import does not make it pure, and a
-    // declaration is no grant.
+    // declaration is no grant. An ungranted file read is an ambient read (chapter 13; PHS.52, 16 November 2026).
     let pure = |source: String| source.replace("effects [file]", "effects []");
     let declared = package(&root(&["file"]), &[&reader]);
     let chains = [
@@ -224,7 +224,7 @@ fn ct_lg5_02_manifest_entries_are_checked_as_data_and_grant_nothing() {
             assert_eq!(code(approved(undeclared, e.clone())), EFFECT_UNDECLARED, "{author:?}");
             assert_eq!(code(approved(hidden, e.clone())), EFFECT_UNDECLARED, "{author:?}: an effect-free signature");
             let ungranted = entry("go", author, Profile::ToolAuthoring);
-            assert_eq!(code(approved(declared, ungranted)), NOT_GRANTED, "{author:?}");
+            assert_eq!(code(approved(declared, ungranted)), AMBIENT_READ, "{author:?}");
             assert!(approved(declared, e).is_ok(), "{author:?}");
         }
     }
@@ -240,12 +240,13 @@ fn ct_lg5_02_manifest_entries_are_checked_as_data_and_grant_nothing() {
         assert_eq!(code(relocked(m)), CONTRACT_MISMATCH);
     }
 
-    // LG3.8: a never-granted capability stays refused, declared by the manifest and the header and granted by the run.
+    // LG3.8: a never-granted capability stays refused, declared by the manifest and the header and granted by the run;
+    // a network request is an ambient read (chapter 13; PHS.52).
     let network = package(&root(&["file", "network"]), &[&reader]);
     assert!(network.verify().is_ok(), "the declaration is well-formed data");
     for author in authors {
         let e = granted("go", author, Profile::ToolAuthoring, &[Capability::File, Capability::Network]);
-        assert_eq!(code(approved(&network, e)), NOT_GRANTED, "{author:?}");
+        assert_eq!(code(approved(&network, e)), AMBIENT_READ, "{author:?}");
     }
 
     // LG5.2, LG5.5: compatibility is checked against the session, and listing an identity grants nothing.
@@ -253,7 +254,7 @@ fn ct_lg5_02_manifest_entries_are_checked_as_data_and_grant_nothing() {
     let both = package_with(&root(&["file"]), &[&reader], |m| m.supports.push(j.clone()));
     for session in [&full, &j] {
         let closure = verify(&both.manifest, &both.lock, &both.files, session).unwrap();
-        assert_eq!(code(approve(&closure, own("go"), contract(), checker())), NOT_GRANTED);
+        assert_eq!(code(approve(&closure, own("go"), contract(), checker())), AMBIENT_READ);
         let e = granted("go", Author::Own, Profile::ToolAuthoring, &file);
         assert!(approve(&closure, e, contract(), checker()).is_ok());
     }
@@ -449,7 +450,7 @@ fn ct_lg5_05_broken_drafts_leave_the_active_version_running_under_its_own_approv
         "export fn go() -> Int effects [file] {\n    let v = constant.value();\n    \
          let notes = file_read<Text>(\"notes\");\n    return v;\n}\n",
     );
-    assert_eq!(code(approved(&package(&reads, &[&dep]), own("go"))), NOT_GRANTED, "a capability");
+    assert_eq!(code(approved(&package(&reads, &[&dep]), own("go"))), AMBIENT_READ, "a capability");
 
     // Manifest drafts: an unlisted identity, other capabilities, noncanonical bytes.
     let unlisted = package_with(&root, &[&dep], |m| m.supports = vec![jumbling(7, "menu-a", "order-a", "rev-a")]);
@@ -534,10 +535,10 @@ fn ct_lg5_06_a_changed_fork_is_a_new_module_that_needs_its_own_grants() {
     let forked = entry("preview_word", Author::ForkedBuiltIn, Profile::Solving);
     assert_eq!(code(approve(&fork_closure, forked.clone(), contract(), checker())), NOT_GRANTED);
 
-    // LG5.8: running the fork still needs the run's grant.
+    // LG5.8: running the fork still needs the run's grant; its file read is an ambient read (PHS.52).
     for (closure, author) in [(&parent_closure, Author::BuiltIn), (&fork_closure, Author::ForkedBuiltIn)] {
         let refused = approve(closure, entry("notes", author, Profile::ToolAuthoring), contract(), checker());
-        assert_eq!(code(refused), NOT_GRANTED, "{author:?}");
+        assert_eq!(code(refused), AMBIENT_READ, "{author:?}");
     }
     let file = granted("notes", Author::ForkedBuiltIn, Profile::ToolAuthoring, &[Capability::File]);
     assert!(approve(&fork_closure, file, contract(), checker()).is_ok());
@@ -611,9 +612,10 @@ fn ct_lg5_07_sharing_through_local_files_keeps_every_check_and_a_signature_grant
     let session = jumbling(7, "menu-a", "order-a", "rev-a");
     assert_eq!(code(verify(&shared.manifest, &shared.lock, &same, &session)), MODEL_NOT_SUPPORTED, "an identity");
 
-    // LG5.9, LG3.9: the recipient's approval of an imported module needs the recipient's grant.
+    // LG5.9, LG3.9: the recipient's approval of an imported module needs the recipient's grant (an ungranted file read
+    // is an ambient read, PHS.52).
     let ungranted = entry("notes", Author::Imported, Profile::ToolAuthoring);
-    assert_eq!(code(approve(&received, ungranted.clone(), contract(), checker())), NOT_GRANTED);
+    assert_eq!(code(approve(&received, ungranted.clone(), contract(), checker())), AMBIENT_READ);
     let imported = granted("notes", Author::Imported, Profile::ToolAuthoring, &file);
     let accepted = approve(&received, imported.clone(), contract(), checker()).unwrap();
     assert_eq!((accepted.closure, accepted.lock), (sent.closure, sha256(&lock)));

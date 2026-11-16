@@ -78,14 +78,14 @@ impl Session {
         receipt
     }
 
-    /// An invocation of `row` by a running program, with one placeholder value for each argument the row names.
+    /// An invocation of `row` by a running program, with one placeholder value for each argument the row names. It is
+    /// sent on [`program_channel`].
     pub fn runtime_call(&self, command: &str, row: &str) -> Invocation {
         Invocation {
             command: command.to_owned(),
             row: row.to_owned(),
             args: placeholder_args(self.layer.table(), row),
             token: None,
-            caller: Caller::Runtime { run: "run-1".to_owned() },
             epoch: self.layer.revision().epoch,
         }
     }
@@ -94,6 +94,11 @@ impl Session {
     pub fn fixed(&self) -> (c600_command::Revision, usize, Option<ActionHint>) {
         (self.layer.revision().clone(), self.layer.store().log.len(), self.layer.undo_hint(Direction::Undo))
     }
+}
+
+/// The channel of the running program: the host stamps this caller on what the program sends (ruling 4).
+pub fn program_channel() -> Caller {
+    Caller::Runtime { run: "run-1".to_owned() }
 }
 
 /// Arguments with the names the row takes, each a placeholder: the layer checks the names before it dispatches.

@@ -98,10 +98,11 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
 - The built-in tool column of chapter 07's grant table (draft, LP2; LP3 asked for it): `admit_built_in` admits one entry
   of a built-in tool in the solving profile against the rows its reviewed class lists (`Row`, BND.57); the IR has no
   manifest, so the caller supplies them, and each summary lists the rows it may use (`Summary::rows`). It refuses with
-  `LG3:capability.not_granted` an entry that is not exported, an ungranted capability, an entry that both reads state
-  and prepares previews, a row the class does not list or the checker cannot name (an unresolved call, an open effect
-  variable), and a proposal or a word-carrying workspace write whose word the solver did not name to the entry, unless
-  an enabled declassifier covers the write; a write at a type variable, of a compressed word or a word equality key, or
+  `LG3:capability.not_granted` an entry that is not exported, an ungranted capability (`LG3:capability.ambient_read`
+  where `Summary::ungranted` says so; PHS.52 below), an entry that both reads state and prepares previews, a row the
+  class does not list or the checker cannot name (an unresolved call, an open effect variable), and a proposal or a
+  word-carrying workspace write whose word the solver did not name to the entry, unless an enabled declassifier covers
+  the write; a write at a type variable, of a compressed word or a word equality key, or
   of a record, list, set, map or callable type that holds a word or a type variable, counts as one that may carry a
   word. The rule is conservative: it also refuses a named word passed to a helper that proposes or writes it, a write
   of a record, collection or closure built from named words, and a proposal to a `Target` parameter (a row the
@@ -112,6 +113,17 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   closes LP3's finding of an exported plain `fn` that proposes: `check` admits it, since a command may call such a
   helper. In tool authoring and research `propose` goes to a capture (BND.60), and the frozen text does not say whether
   such a run needs a command entry, so `admit` still admits one there.
+- Owner decisions of 16 November 2026 under PHS.52 (`../docs/wiki/decisions/owner-decisions-2026-11-16-phs52.md`). A
+  capability the run does not hold, or that 1.0 never grants, is `LG3:capability.ambient_read` when it is the clock,
+  the network, or the file capability of an entry that may read a file (a file read, or a call of a callable whose
+  effect bound holds the file capability), and `LG3:capability.not_granted` otherwise; a manifest's network request is
+  an ambient read. One mapping, `Summary::ungranted`, serves `admit`, `admit_built_in`, the manifest finding and
+  `c600-module`'s approval of a built-in tool. Dynamic code, a call that resolves to no checked function, is
+  `LG3:capability.not_granted` at the call (DET.36, RTE.45); a call of a function value whose callable the checker
+  cannot see keeps `LG3:effect.undeclared`. The value of `use_goal` and `use_evidence` must be portable exact data: a
+  type that holds a function, a receipt, a word equality key or a compressed word at any depth, or a type variable, is
+  `LG2:type.mismatch` at the sink, and an approximate value keeps its exactness codes. Chapter 13 changes once, in the
+  amendment LP3 makes at its command-table freeze; until then the drafts stay in use.
 - Base types (LG2.1). A value whose base type does not fit its use is the diagnostic `LG2:type.mismatch` at the path
   of the offending expression, with the expected and supplied types in source notation (`Diagnostic::mismatch`); the
   exactness fields stay empty. This covers arguments, conditions, branches and arms, patterns, operands, field reads,
@@ -584,9 +596,12 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   - In `covers` and `repair_list`, a classification or pair budget that runs out cuts the job off with
     `KN7:budget.kernel_cost` and no claim (KN7.4). In `rim_summary` it leaves the caps it could not classify
     uncertain, with no rim and no grip N.
-  - Drafts: the pair budget `max_pairs`, which JI.6 and JI.12 do not define, takes `KN7:budget.kernel_cost` (KN7.10
-    asks for that budget's code); a cancelled repair list keeps its covered outcomes and names no code; a blocked or
-    closed named cap, and a repair list in free mode, are errors with no code, because no chapter 13 code fits.
+  - The four drafts, as the owner decided them on 16 November 2026 (PHS.52): the pair budget `max_pairs`, which JI.6
+    and JI.12 do not define, takes `KN7:budget.kernel_cost` once JI declares the budget (KN7.10 asks for that budget's
+    code); a cancelled repair list keeps its covered outcomes and needs no code (KN7.3's `cancelled`;
+    `KN7:cancelled.by_user` exists if one is wanted); a blocked or closed named cap, and a repair list in free mode,
+    get new rows in chapter 13's amendment rather than a wider `KN2:input.named_object_invalid` or
+    `KN2:input.menu_binding_mismatch` (ERR.5), and stay errors with no code until then.
   - Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model found no blocker or
     major finding. Its minor points are the drafts above, which it found defensible, and engine faults that return a
     plain error without a code, as the crate's other engine faults do; no change.
@@ -722,7 +737,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   (ruling 3; `commit.rs` asserts it during a held write); its request digest includes the origin and the
   authenticator (the layer's excludes the authenticator, LI.5); command IDs are one space for the shell and programs;
   an `epoch_changed` refusal is not kept; and its shell stub mints for a fresh preview that need not be presented
-  (LP3's L4).
+  (LP3's L4). It also takes its origin from the envelope, which the owner's host rule of 16 November 2026 (PHS.52)
+  excludes: the host stamps the caller from the channel the envelope came on.
 - Evidence kind: source and fixture. Failures are injected in memory; `FsDisk` runs in one reopen test, so a pass is no
   evidence of a real disk's behaviour in a crash. The checks ran on Windows only.
 
@@ -832,24 +848,28 @@ run or not applicable is no pass (PHS.63).
     Its minor points need no change: an epoch the store never had is not refused, which the rest of the reference
     makes harmless, and after damage a reference whose counters lie past the surviving frames is gone even when its
     head survived, which refuses rather than opens.
+- Exact sinks (owner, 16 November 2026, PHS.52): the checker takes only portable exact data at `use_goal` and
+  `use_evidence` (M1's section), and the interpreter encodes the value with DET.59's priced encoding pass (an `encode`
+  row before the `use_exact` row) and hands the host the canonical bytes, so a function or a receipt never reaches the
+  host (RPI.54, RPI.1); a value with no canonical form stops the run with `PS1:input.noncanonical_value` before the
+  host is called. Receipt-as-evidence is a question for the next milestone card.
+- Chapter 13's amendment (owner, 16 November 2026, PHS.52): chapter 13 changes once, in the amendment LP3 makes at its
+  command-table freeze (PHS.53), and the drafts stay in use until then. It takes the six draft codes `c600-command`
+  emits (`KN2:consistency.star_certificate`, `KN5:input.unknown_row`, `KN5:input.argument_form`,
+  `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`, and KN5's `KN4:input.session_exists` for a store that
+  already holds a session), M5's section's four drafts, DET.36 in the rule source of `LG3:capability.not_granted`, and
+  these errata: in `13-errors.md`, the LB6 closure row `evidence.decomposition_mismatch` (line 661) sits between
+  ERR.28's table and ERR.31 and belongs at the head of ERR.31's table, and ERR.31 comes before ERR.29 and ERR.30; the
+  rule source of `KN5:stale.filter_preview` (line 322) omits KN0.9 (`closure/manifests/p7-layers.json`); the Used-by
+  cells of `KN2:input.recipe_shape` and `KN2:resource_limit.primitive_ceiling` say "not yet used", but the kernel emits
+  both, and the cell of `KN2:input.word_blocked_prefix` says the same, but the jumbling adapter emits it for a refused
+  word (M5).
 - Open, each needing a decision:
-  - Exact sinks take any value: the checker admits `use_evidence(f)` with a function value, and the interpreter passes
-    the value to the host's exact sink without encoding it, so a function or a receipt reaches the host, against RPI.54
-    and RPI.1. The frozen text does not say what a goal or evidence sink accepts.
   - ERR.6: `c600-kernel/tests/kernel.rs` compares refusal texts, because `c600_kernel::Refusal` has no typed context
     (CT-ERR-16's typed failed fact); `c600_syntax::LowerError` has no code.
-  - For the owner under PHS.52 (frozen text): in `13-errors.md`, the LB6 closure row `evidence.decomposition_mismatch`
-    (line 661) sits between ERR.28's table and ERR.31 and belongs at the head of ERR.31's table, and ERR.31 comes
-    before ERR.29 and ERR.30; the rule source of `KN5:stale.filter_preview` (line 322) omits KN0.9
-    (`closure/manifests/p7-layers.json`). The Used-by cells of `KN2:input.recipe_shape` and
-    `KN2:resource_limit.primitive_ceiling` say "not yet used", but the kernel emits both; the cell of
-    `KN2:input.word_blocked_prefix` says the same, but the jumbling adapter emits it for a refused word (M5).
-    Chapter 13 registers none of the six draft codes `c600-command` emits (`KN2:consistency.star_certificate`,
-    `KN5:input.unknown_row`, `KN5:input.argument_form`, `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`,
-    and KN5's `KN4:input.session_exists` for a store that already holds a session); the command table's drafts settle
-    at LP3 (PHS.53).
   - For LP3: LB7.1's `LB7:capability.module_grant_missing` is the workspace library's entry-admission fact, built with
-    LB7; the checker's own admission reports `LG3:capability.not_granted`, as chapter 02's LG3 table has it.
+    LB7; the checker's own admission reports `LG3:capability.not_granted` or `LG3:capability.ambient_read` (PHS.52),
+    as chapter 02's LG3 table has them.
   - For LP3, from the LG5 tests (`c600-module`): a built-in approval of a closure built for another IR version is
     refused with `LG4:input.ir_rejected`, because the built-in branch looks up the function summary first, while
     the own path gives `LG4:input.ir_version_unsupported`; the manifest's `boundary` is checked for form only; a run
@@ -857,7 +877,8 @@ run or not applicable is no pass (PHS.63).
     only in memory, with public fields.
   - KN5 has one implementation: LP3's `c600-command`, durable over M6's journal through `c600_session::JournalStore`
     (KN5's stages 1 and 2; LP3's C7 section below). The CT-KN5 parts that run, run against it; M6's `Session::invoke`
-    follows the same draft ruling 4 until its tests move to `c600-command`.
+    follows ruling 4's order until its tests move to `c600-command`, but takes its origin from the envelope (M6's
+    section).
   - `Kernel::protection` itself checks no model; `Kernel::checked_protection` adds KN1.4's check (M4's section).
   - For M6's store: the kernel's `archive::gunzip` accepts concatenated gzip members and trailing zero padding, so
     FP.7's strict one-member reader must refuse them itself; run-time `encode` applies no json_depth or integer_digits
@@ -933,27 +954,28 @@ run or not applicable is no pass (PHS.63).
   CT-LI-09. `c600-session/tests/kn5_command.rs` runs the layer over the journal: parts of CT-ONE-21, CT-ONE-22,
   CT-KN4-02 and CT-KN5-04, and CT-KN5-04's attack against M6's own `invoke`. Each test names its part; none runs a
   whole definition.
-- KN5 drafts (listed in the crate documentation): ruling 1, a press whose preview ended answers
-  `KN5:stale.no_fresh_preview` when the slot is empty and `KN5:stale.preview_replaced` when it holds another preview;
-  ruling 2, an undo checks its hint before its bound revisions, so a raced undo is `KN5:stale.undo_superseded`; ruling
-  3, no receipt or lookup answers `accepted`; ruling 5, `KN5:auth.token_invalid` for a failed authenticator and
-  `KN5:stale.token_mismatch` for another session or epoch; ruling 7, `session.checkpoint.save` follows the table (a
-  commit row with a token; not built), where M6's `session.checkpoint` takes none; ruling 8, LI's clauses are drafts;
-  `KN4:input.session_exists`, a sixth code chapter 13 does not register.
-- Frozen-text readings for the owner (PHS.52). (1) Ruling 4 reads KN5.21 and KN5.23 so: command IDs are scoped per
-  caller and the request digest covers the caller; a refusal of an envelope that does not authenticate (a bad
-  authenticator, a missing token, or a caller that may not use the row or hold a token) is kept for its epoch under
-  the envelope's full digest, authenticator included, and never takes the command ID, so a forged or runtime envelope
-  sent first cannot block the solver's press; every other answer takes the ID. The frozen order puts the retry lookup
-  before authentication (chapter 08 section 7), so an envelope whose request digest equals a recorded command's gets
-  that receipt whatever its authenticator, and commits nothing. This is security-relevant. (2) LI.33's vector answers
-  `preview_replaced` for a token whose preview was committed and whose slot is now empty; ruling 1 answers
-  `no_fresh_preview`. Chapter 08's error table ("no longer the pending one") reads either way, so the vector is not
-  followed until the owner rules.
+- KN5 drafts (listed in the crate documentation): ruling 2, an undo checks its hint before its bound revisions, so a
+  raced undo is `KN5:stale.undo_superseded`; ruling 3, no receipt or lookup answers `accepted`; ruling 5,
+  `KN5:auth.token_invalid` for a failed authenticator and `KN5:stale.token_mismatch` for another session or epoch;
+  ruling 7, `session.checkpoint.save` follows the table (a commit row with a token; not built), where M6's
+  `session.checkpoint` takes none; `KN4:input.session_exists`, a sixth code chapter 13 does not register.
+- Owner decisions of 16 November 2026 under PHS.52 (`../docs/wiki/decisions/owner-decisions-2026-11-16-phs52.md`).
+  (1) Ruling 4 (KN5.21, KN5.23) keeps the frozen order, the retry lookup before the token checks (chapter 01 KN5,
+  chapter 08 section 7, LI.6), and the host stamps the caller from the channel the envelope came on and never takes
+  it from the envelope: `Invocation` names no caller, and `CommandLayer::invoke(&caller, invocation)` takes the
+  channel's. Command IDs are scoped per caller and the request digest covers the stamped caller; a refusal of an
+  envelope that does not authenticate (a bad authenticator, a missing token, or a caller that may not use the row or
+  hold a token) is kept for its epoch under the envelope's full digest, authenticator included, and never takes the
+  command ID, so an envelope sent first on another channel cannot block or answer the solver's press; every other
+  answer takes the ID. An envelope whose request digest equals a recorded command's gets that receipt whatever its
+  authenticator, and commits nothing. (2) Ruling 1: a press whose preview ended answers `KN5:stale.no_fresh_preview`
+  when the slot is empty and `KN5:stale.preview_replaced` when it holds another preview. LI is frozen with the
+  architecture, so LI changes follow PHS.52: the amendment adds the caller to LI.5's digest list and changes LI.33's
+  sentence to ruling 1.
 - KN5 not built yet: KN5.26's admission matrix (L1, L2), ruling 6 (the host stamps a runtime proposal's block; a
   `file` overlay without a granted file capability), L12 to L14, L16, L17, and CT-ONE-29's `FrameChain` and
-  `PresentedFrame`. No host caller is built. No session lock exists (LP3's L9), so two opens of one journal can
-  interleave.
+  `PresentedFrame`. No host caller is built: callers are stamped on two channels, the shell's and LP3's runtime bridge
+  (`c600-tools`). No session lock exists (LP3's L9), so two opens of one journal can interleave.
 - The integrator's fresh Claude read of KN5 found one major problem and it is fixed: a restart that could not read
   the journal back treated an unknown fate as absent. `Store::durable` now answers `None` when the store cannot tell.
   The transaction then stays unknown and the layer stays in read-only recovery, so no later action takes its order.
@@ -1055,14 +1077,14 @@ run or not applicable is no pass (PHS.63).
   with one SHA-256 over its canonical result, engine side and store, and a check that every key is either realised
   or listed as left, exactly once.
 - Differences from the corpus, listed in the tests: A25 is a false refusal, which the corpus permits (separation
-  refuses the preview of an allowed combination). P01 to P03 give `LG3:capability.not_granted` where the corpus
-  expects `LG3:capability.ambient_read`, which chapter 13 does not yet list as a concrete code; the code is the
-  checker's (LP2).
+  refuses the preview of an allowed combination). P01 to P03 give the corpus's `LG3:capability.ambient_read` since
+  the owner's decision of 16 November 2026 (PHS.52).
 - Drafts, which freeze with the module formats (LG5.10, LQ10): the list in the crate documentation, among them the
   manifest and lock forms (`c600-module-draft` and `c600-lock-draft`, version 1), a null FP.11 identity for both
   records with the model identities in `payload.supports` (a gap for the format review), locations in the lock
-  only, the closure digest, the in-memory approval record `c600-approval-draft`, the nearest code for dynamic code,
-  and the separation refusal at the preview point, which stays in this crate until C5's host bridge.
+  only, the closure digest, the in-memory approval record `c600-approval-draft`, and the separation refusal at the
+  preview point, which stays in this crate until C5's host bridge. Dynamic code is `LG3:capability.not_granted` by the
+  owner's decision of 16 November 2026 (PHS.52).
 - Not built: CT-RTE-08's persisted words (C7, on M6's store). CT-RTE-07's other 39 keys: 6 jumbling keys (M5); 6
   keys that need the session store (C7); 15 keys the IR draft cannot express (early stop, word length, inverse and
   concatenation, exact multiplication and remainder, and a run's input as a query argument; LP2); and 12 budget
@@ -1264,10 +1286,11 @@ run or not applicable is no pass (PHS.63).
     the command route.
   - `lb3_checker.rs`: CT-LB3-07's checker half, as far as capability separation decides it (an outcome table that reads
     state and prepares previews is refused; a named-word check that answers only the acknowledgement is admitted).
-  - `kn5_retry_lead.rs`: a lead on KN5.21 to KN5.23, closed by LP2's KN5 implementation (draft ruling 4). A refused
-    envelope that reuses a genuine `operation.execute` envelope's command ID, arguments and binding (a token minted
-    with another secret, or a runtime caller) no longer becomes that command ID's outcome: its refusal is kept under
-    its full digest, the genuine envelope commits under the ID, and neither retry commits anything more.
+  - `kn5_retry_lead.rs`: a lead on KN5.21 to KN5.23, closed by LP2's KN5 implementation (ruling 4, owner decision of
+    16 November 2026). A refused envelope that reuses a genuine `operation.execute` envelope's command ID, arguments
+    and binding (a token minted with another secret, or the same envelope on a runtime's channel) no longer becomes
+    that command ID's outcome: its refusal is kept under its full digest, the genuine envelope commits under the ID,
+    and neither retry commits anything more.
 - Not built: the shell's own refusal of a user-stage frame (LP2's KN5 implementation adds a presented-frame input to
   `present`); CT-BND-19's live-twist part (KN3.7's exact rotations); an import row; grip, cell or piece objects for a
   word's letters (the kernel has no letter-to-grip map); a view declaring both of the manifest's classes (`c600-view`'s

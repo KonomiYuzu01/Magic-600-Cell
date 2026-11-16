@@ -11,7 +11,7 @@
 
 use std::thread;
 
-use c600_check::{admit, check, Grant, Policy, Profile, EFFECT_UNDECLARED};
+use c600_check::{admit, check, Grant, Policy, Profile, AMBIENT_READ, EFFECT_UNDECLARED};
 use c600_ir::{Capability, Lit};
 use c600_run::approx::Approx;
 use c600_run::interp::{code, load, CancelFlag, Host, Loaded, NoHost, Options, Request, RowTariff, Run, Sink};
@@ -876,13 +876,25 @@ fn ct_det_15_exact_fields_ignore_approximate_perturbation() {
 /// runtime process and the shell's placement (LP3), and other routes (no owner yet)): without a grant, clock, file and
 /// generator access is refused statically in each profile and at the operation at run time; network, process and
 /// session-file access is refused whatever the grant; and the runtime's host interface has no environment, process,
-/// network, session-file or commit request at all.
+/// network, session-file or commit request at all. The checker refuses an ungranted clock or file read and a network
+/// request as `LG3:capability.ambient_read` and the rest as `LG3:capability.not_granted` (owner, 16 November 2026,
+/// PHS.52); a host that grants nothing answers `LG3:capability.not_granted` at run time.
 #[test]
 fn ct_det_17_ambient_access_without_a_grant_is_refused() {
     let programs = [
-        ("clock", "export fn go() -> Display<Nat> effects [clock] {\n    return read_clock();\n}\n", "read"),
-        ("file", "export fn go() -> Nat effects [file] {\n    return file_read<Nat>(\"data.txt\");\n}\n", "read"),
-        ("random", "export fn go() -> Nat effects [random] {\n    return random_draw();\n}\n", "rng_draw"),
+        (
+            "clock",
+            "export fn go() -> Display<Nat> effects [clock] {\n    return read_clock();\n}\n",
+            "read",
+            AMBIENT_READ,
+        ),
+        (
+            "file",
+            "export fn go() -> Nat effects [file] {\n    return file_read<Nat>(\"data.txt\");\n}\n",
+            "read",
+            AMBIENT_READ,
+        ),
+        ("random", "export fn go() -> Nat effects [random] {\n    return random_draw();\n}\n", "rng_draw", NOT_GRANTED),
     ];
     let every = Grant::of(&[
         Capability::File,
@@ -892,12 +904,12 @@ fn ct_det_17_ambient_access_without_a_grant_is_refused() {
         Capability::Process,
         Capability::SessionFile,
     ]);
-    for (cap, declarations, op) in programs {
+    for (cap, declarations, op, code) in programs {
         let program = lowered(&[&source(cap, declarations)]).program;
         assert!(check(&program).unwrap().is_admitted(), "{cap}");
         for profile in PROFILES {
             let refused = admit(&program, "m", "go", profile, &Grant::none(), &Policy::interim()).unwrap();
-            assert_eq!(refused.codes(), [NOT_GRANTED], "{cap} in {profile:?}");
+            assert_eq!(refused.codes(), [code], "{cap} in {profile:?}");
             assert_eq!(refused.diagnostics[0].path, "entry");
             assert!(admit(&program, "m", "go", profile, &every, &Policy::interim()).unwrap().is_admitted());
         }
@@ -908,11 +920,11 @@ fn ct_det_17_ambient_access_without_a_grant_is_refused() {
         assert!(r.output.is_none());
         assert!(spy.calls.iter().all(|c| c == "tariff clock" || c == "tariff file_read"), "{cap}: {:?}", spy.calls);
     }
-    for cap in ["network", "process", "session_file"] {
+    for (cap, code) in [("network", AMBIENT_READ), ("process", NOT_GRANTED), ("session_file", NOT_GRANTED)] {
         let program = lowered(&[&source(cap, "export fn go() -> Nat effects [] {\n    return 1;\n}\n")]).program;
         for profile in PROFILES {
             let refused = admit(&program, "m", "go", profile, &every, &Policy::interim()).unwrap();
-            assert_eq!(refused.codes(), [NOT_GRANTED], "{cap} in {profile:?}");
+            assert_eq!(refused.codes(), [code], "{cap} in {profile:?}");
             assert_eq!(refused.diagnostics[0].path, "manifest");
         }
     }
@@ -952,8 +964,9 @@ fn ct_det_18_grants_do_not_widen_through_calls_or_imports() {
     let others = Grant::of(&[Capability::Clock, Capability::Randomness]);
     for profile in PROFILES {
         for grant in [Grant::none(), others.clone()] {
+            // The file read through the call and the import is an ambient read (PHS.52).
             let refused = admit(&program, "m", "go", profile, &grant, &Policy::interim()).unwrap();
-            assert_eq!(refused.codes(), [NOT_GRANTED], "{profile:?} with {grant:?}");
+            assert_eq!(refused.codes(), [AMBIENT_READ], "{profile:?} with {grant:?}");
         }
         let granted = admit(&program, "m", "go", profile, &Grant::of(&[Capability::File]), &Policy::interim());
         assert!(granted.unwrap().is_admitted(), "{profile:?}");

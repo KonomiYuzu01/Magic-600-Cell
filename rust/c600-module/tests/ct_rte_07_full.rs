@@ -6,8 +6,9 @@
 //! and stop reasons, the engine side and the store. An allowed key completes with the corpus's value; a refused key
 //! gives the corpus's expected code at the refused operation, installs no preview, keeps the session fields and the
 //! existing workspace provenance, and reads no planted data. A realised budget key (B05, B06) gives the corpus's
-//! outcome, code and used amounts; its stop is the draft's operation path. [`FALSE_REFUSALS`] and [`WRONG_CODES`] list
-//! where this leg differs from the corpus; [`LEFT`] lists the keys not realised, with the reason.
+//! outcome, code and used amounts; its stop is the draft's operation path. [`FALSE_REFUSALS`] lists where this leg
+//! differs from the corpus; every refused key gives the corpus's code (P01 to P03 since the owner decision of 16
+//! November 2026 under PHS.52). [`LEFT`] lists the keys not realised, with the reason.
 //!
 //! Evidence kind: source and synthetic. The fixture is LX-3's fake data, not Full's mechanics; nothing here measures
 //! time or performance.
@@ -95,15 +96,6 @@ const LEFT: [(&str, &str); 39] = [
 /// Allowed keys this leg refuses. A25 reads the counts and previews a manually named word in one entry; separation
 /// refuses the preview, which the corpus allows ("Separation may falsely refuse the combination").
 const FALSE_REFUSALS: [&str; 1] = ["A25"];
-
-/// Refused keys whose code differs from the corpus's: key, expected code, code given. `c600-check` gives
-/// `LG3:capability.not_granted` for an ungranted clock, file or network capability; chapter 13 lists
-/// `LG3:capability.ambient_read` as not yet used as a concrete code.
-const WRONG_CODES: [(&str, &str, &str); 3] = [
-    ("P01", "LG3:capability.ambient_read", NOT_GRANTED),
-    ("P02", "LG3:capability.ambient_read", NOT_GRANTED),
-    ("P03", "LG3:capability.ambient_read", NOT_GRANTED),
-];
 
 const INTS: &str = "record { c0: Int, c1: Int, c2: Int }";
 const BOOLS: &str = "record { c0: Bool, c1: Bool, c2: Bool }";
@@ -308,10 +300,7 @@ fn ct_rte_07_full_corpus_is_frozen_and_every_key_is_accounted_for() {
     assert_eq!(realised.len() + left.len(), REALISED.len() + LEFT.len(), "no key is listed twice");
     assert!(realised.is_disjoint(&left));
     assert_eq!(&realised | &left, ids, "every key is realised or left");
-    assert!(FALSE_REFUSALS.iter().chain(WRONG_CODES.iter().map(|(k, _, _)| k)).all(|k| realised.contains(k)));
-    for (key, expected, _) in WRONG_CODES {
-        assert_eq!(corpus_code("planted.json", key), expected);
-    }
+    assert!(FALSE_REFUSALS.iter().all(|k| realised.contains(k)));
 }
 
 /// A01: the counts, in fixed order.
@@ -782,10 +771,7 @@ fn probe(requires: &str, body: &str, key: &str) {
     let trial = ten(|| Trial::of(&source, &[]).run("go", Author::Own, Profile::ToolAuthoring));
     let refusal = trial.results[0].as_ref().map(|_| ()).unwrap_err();
     let expected = corpus_code("planted.json", key);
-    match WRONG_CODES.iter().find(|(k, _, _)| *k == key) {
-        Some((_, corpus, given)) => assert_eq!((expected.as_str(), refusal.code), (*corpus, *given)),
-        None => assert_eq!(refusal.code, expected),
-    }
+    assert_eq!(refusal.code, expected);
     assert!(refusal.detail.to_lowercase().contains(requires), "the refusal names the resource: {}", refusal.detail);
     unchanged(&trial);
     clean(&trial);

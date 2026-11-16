@@ -54,7 +54,7 @@ pub enum Caller {
 }
 
 impl Caller {
-    /// The caller's command-ID space (draft ruling 4): a record is keyed by it and the command ID, so the runtime's
+    /// The caller's command-ID space (ruling 4): a record is keyed by it and the command ID, so the runtime's
     /// IDs never reach the shell's records.
     pub fn scope(&self) -> &'static str {
         match self {
@@ -81,14 +81,15 @@ impl Caller {
     }
 }
 
-/// LI.5's envelope. `args` holds the absolute arguments, without the token.
+/// LI.5's envelope. `args` holds the absolute arguments, without the token. The envelope names no caller: the host
+/// stamps the caller from the channel the envelope came on ([`CommandLayer::invoke`]; PHS.52 ruling 4, owner decision
+/// of 16 November 2026).
 #[derive(Clone, Debug)]
 pub struct Invocation {
     pub command: String,
     pub row: String,
     pub args: Value,
     pub token: Option<Token>,
-    pub caller: Caller,
     /// The originating engine epoch. The request digest covers it, and a transport retry keeps the whole envelope, so
     /// a retry finds its receipt after a restart.
     pub epoch: u64,
@@ -246,9 +247,9 @@ struct Meta {
 }
 
 impl Meta {
-    fn of(invocation: &Invocation, request: &str) -> Meta {
+    fn of(caller: &Caller, invocation: &Invocation, request: &str) -> Meta {
         Meta {
-            caller: invocation.caller.clone(),
+            caller: caller.clone(),
             command: invocation.command.clone(),
             row: invocation.row.clone(),
             request: request.to_owned(),
@@ -277,7 +278,7 @@ struct Record {
     durable: bool,
 }
 
-/// A caller's command-ID space and a command ID (draft ruling 4).
+/// A caller's command-ID space and a command ID (ruling 4).
 type Key = (&'static str, String);
 
 /// A recipe's steps in the kernel's JSON form, or the steps of its inverse.
@@ -369,7 +370,7 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     /// Records whose transient receipts a restart lost, with their request digests.
     lost: BTreeMap<Key, String>,
     /// Refusals of envelopes that do not authenticate, kept for the epoch under the envelope's full digest and never
-    /// attached to the command ID (draft ruling 4).
+    /// attached to the command ID (ruling 4).
     retained: BTreeMap<Key, Receipt>,
     commit_held: bool,
     recovery: Option<Error>,
@@ -686,7 +687,7 @@ impl<S: Store> CommandLayer<S> {
     }
 
     /// `kernel.outcome(command, request)` (KN5.23, LI.30): the stored answer for the caller's command ID, with no side
-    /// effect and no lane. A refusal retained for this epoch answers its envelope's full digest (draft ruling 4); a
+    /// effect and no lane. A refusal retained for this epoch answers its envelope's full digest (ruling 4); a
     /// recorded command with another request digest answers `refused(KN5:input.command_id_reused)` and leaves the
     /// record unchanged; a transient receipt a restart lost, and any command ID never recorded, answer
     /// `unknown_outcome` (CT-ONE-21, LI.30).
@@ -863,12 +864,13 @@ impl<S: Store> CommandLayer<S> {
         Ok(())
     }
 
-    /// The request digest: the envelope without the token's authenticator (LI.5), its caller included (draft ruling 4).
-    fn request(&self, invocation: &Invocation) -> String {
+    /// The request digest: the envelope without the token's authenticator (LI.5) and the caller the host stamped
+    /// (ruling 4).
+    fn request(&self, caller: &Caller, invocation: &Invocation) -> String {
         digest(&json::object([
             ("session", Value::String(self.revision.session.clone())),
             ("epoch", Value::Int(invocation.epoch as i64)),
-            ("caller", invocation.caller.to_json()),
+            ("caller", caller.to_json()),
             ("command", Value::String(invocation.command.clone())),
             ("row", Value::String(invocation.row.clone())),
             ("args", invocation.args.clone()),
@@ -876,7 +878,7 @@ impl<S: Store> CommandLayer<S> {
         ]))
     }
 
-    /// The envelope's full digest: the request digest and the token's authenticator (draft ruling 4).
+    /// The envelope's full digest: the request digest and the token's authenticator (ruling 4).
     fn envelope(invocation: &Invocation, request: &str) -> String {
         let authenticator = invocation.token.as_ref().map_or(Value::Null, |t| Value::String(t.authenticator()));
         digest(&json::object([("request", Value::String(request.to_owned())), ("authenticator", authenticator)]))
@@ -889,12 +891,12 @@ impl<S: Store> CommandLayer<S> {
     }
 
     /// Whether the envelope authenticates: its row exists, its caller may invoke the row and hold what it holds, and
-    /// its token, where the row takes one, verifies under this launch's secret (draft ruling 4).
-    fn authentic(&self, invocation: &Invocation) -> bool {
+    /// its token, where the row takes one, verifies under this launch's secret (ruling 4).
+    fn authentic(&self, caller: &Caller, invocation: &Invocation) -> bool {
         let Some(row) = self.table.row(&invocation.row) else {
             return false;
         };
-        match (&invocation.caller, &invocation.token) {
+        match (caller, &invocation.token) {
             (Caller::Runtime { .. }, Some(_)) => false,
             (Caller::Runtime { .. }, None) => Self::runtime_may(row) && !row.takes_token(),
             (Caller::Shell, None) => !row.takes_token(),
@@ -902,16 +904,19 @@ impl<S: Store> CommandLayer<S> {
         }
     }
 
-    /// `invoke(command, row, args) -> Receipt` (KN5.1). The retry lookup comes first, before lane admission or a token
-    /// is consumed (chapter 08 section 7): an envelope refused earlier in the epoch without authenticating gets its
-    /// refusal again, and a command ID recorded for the caller is answered by [`CommandLayer::kernel_outcome`], so the
-    /// same content returns the stored receipt and a retried delivery commits at most once, also across a restart or a
-    /// reopen, while other content is refused (CT-KN5-04, LI.30). A refusal of an envelope that does not authenticate
-    /// is retained for the epoch under its full digest and never attaches to the command ID, so a later authentic
-    /// envelope with the ID is treated as the first (draft ruling 4); every other answer attaches to the ID (KN5.21).
-    pub fn invoke(&mut self, invocation: Invocation) -> Receipt {
-        let scope = invocation.caller.scope();
-        let request = self.request(&invocation);
+    /// `invoke(command, row, args) -> Receipt` (KN5.1) for an envelope that came on `caller`'s channel. The host stamps
+    /// the caller from the channel and never takes it from the envelope, which names none (ruling 4, PHS.52, owner
+    /// decision of 16 November 2026): the shell's channel is [`Caller::Shell`], and a run's channel is that run's
+    /// [`Caller::Runtime`]. The retry lookup comes first, before lane admission or a token is consumed (chapter 08
+    /// section 7, KN5.21): an envelope refused earlier in the epoch without authenticating gets its refusal again, and
+    /// a command ID recorded for the caller is answered by [`CommandLayer::kernel_outcome`], so the same content
+    /// returns the stored receipt and a retried delivery commits at most once, also across a restart or a reopen, while
+    /// other content is refused (CT-KN5-04, LI.30). A refusal of an envelope that does not authenticate is retained for
+    /// the epoch under its full digest and never attaches to the command ID, so a later authentic envelope with the ID
+    /// is treated as the first (ruling 4); every other answer attaches to the ID (KN5.21).
+    pub fn invoke(&mut self, caller: &Caller, invocation: Invocation) -> Receipt {
+        let scope = caller.scope();
+        let request = self.request(caller, &invocation);
         let full = Self::envelope(&invocation, &request);
         let retained = self.retained.get(&(scope, full.clone())).filter(|r| r.command == invocation.command);
         if let Some(receipt) = retained {
@@ -919,13 +924,13 @@ impl<S: Store> CommandLayer<S> {
         }
         let key = (scope, invocation.command.clone());
         if self.receipts.contains_key(&key) || self.lost.contains_key(&key) {
-            return self.kernel_outcome(&invocation.caller, &invocation.command, &request);
+            return self.kernel_outcome(caller, &invocation.command, &request);
         }
-        let (job, status) = match self.dispatch(&invocation, &request) {
+        let (job, status) = match self.dispatch(caller, &invocation, &request) {
             Ok(answer) => answer,
             Err(error) => (None, Status::Refused(error)),
         };
-        if matches!(status, Status::Refused(_)) && !self.authentic(&invocation) {
+        if matches!(status, Status::Refused(_)) && !self.authentic(caller, &invocation) {
             let receipt = Receipt { command: invocation.command.clone(), request: full.clone(), job, status };
             self.retained.insert((scope, full), receipt.clone());
             return receipt;
@@ -935,14 +940,19 @@ impl<S: Store> CommandLayer<S> {
         record.receipt.clone()
     }
 
-    fn dispatch(&mut self, invocation: &Invocation, request: &str) -> Result<(Option<u64>, Status), Error> {
+    fn dispatch(
+        &mut self,
+        caller: &Caller,
+        invocation: &Invocation,
+        request: &str,
+    ) -> Result<(Option<u64>, Status), Error> {
         if invocation.epoch != self.revision.epoch {
             return refused(code::EPOCH_CHANGED, "the envelope belongs to another engine epoch");
         }
         let Some(row) = self.table.row(&invocation.row).cloned() else {
             return refused(code::UNKNOWN_ROW, format!("no row `{}`", invocation.row));
         };
-        if let Caller::Runtime { .. } = invocation.caller {
+        if let Caller::Runtime { .. } = caller {
             if matches!(row.kind, Kind::Commit | Kind::App) {
                 return refused(code::COMMIT_ROW_REFUSED, format!("the runtime may not invoke `{}` (KN5.15)", row.id));
             }
@@ -975,13 +985,13 @@ impl<S: Store> CommandLayer<S> {
             };
         }
         match row.id.as_str() {
-            "operation.preview" => self.admit_preview(invocation),
-            "operation.execute" => self.execute(invocation, request),
+            "operation.preview" => self.admit_preview(caller, invocation),
+            "operation.execute" => self.execute(caller, invocation, request),
             "operation.preview.cancel" => self.cancel(invocation),
-            "session.undo" => self.undo(invocation, request, Direction::Undo),
-            "session.redo" => self.undo(invocation, request, Direction::Redo),
-            "protection.orbit.set" => self.set_orbits(invocation, request),
-            _ if row.overlay.is_some() => self.admit_program(invocation, &row),
+            "session.undo" => self.undo(caller, invocation, request, Direction::Undo),
+            "session.redo" => self.undo(caller, invocation, request, Direction::Redo),
+            "protection.orbit.set" => self.set_orbits(caller, invocation, request),
+            _ if row.overlay.is_some() => self.admit_program(caller, invocation, &row),
             _ => refused(code::ROW_NOT_BUILT, format!("`{}` is not built in the headless layer", row.id)),
         }
     }
@@ -993,7 +1003,7 @@ impl<S: Store> CommandLayer<S> {
 
     // ----- operation.preview -----
 
-    fn admit_preview(&mut self, invocation: &Invocation) -> Result<(Option<u64>, Status), Error> {
+    fn admit_preview(&mut self, caller: &Caller, invocation: &Invocation) -> Result<(Option<u64>, Status), Error> {
         let draft = invocation.args.get("draft").expect("the form check saw the draft");
         let Some(recipe) = draft.get("recipe").filter(|_| draft.as_object().is_some_and(|o| o.len() == 1)) else {
             return refused(code::ARGUMENT_FORM, "a draft is `{\"recipe\": [...]}`; ResolvedDraftRef waits for M6");
@@ -1001,8 +1011,8 @@ impl<S: Store> CommandLayer<S> {
         let recipe = self.kernel.recipe(recipe)?;
         self.exclusive_free()?;
         let id = self.next_job();
-        let kind = JobKind::Preview { recipe, draft: digest(draft), caller: invocation.caller.clone() };
-        let (command, scope) = (invocation.command.clone(), invocation.caller.scope());
+        let kind = JobKind::Preview { recipe, draft: digest(draft), caller: caller.clone() };
+        let (command, scope) = (invocation.command.clone(), caller.scope());
         self.jobs.push_back(Job { id, command, scope, lane: Lane::Exclusive, kind });
         self.generation += 1;
         Ok((Some(id), Status::Running(id)))
@@ -1143,7 +1153,12 @@ impl<S: Store> CommandLayer<S> {
 
     // ----- operation.execute -----
 
-    fn execute(&mut self, invocation: &Invocation, request: &str) -> Result<(Option<u64>, Status), Error> {
+    fn execute(
+        &mut self,
+        caller: &Caller,
+        invocation: &Invocation,
+        request: &str,
+    ) -> Result<(Option<u64>, Status), Error> {
         let Some(id) = nat(invocation.args.get("preview")) else {
             return refused(code::ARGUMENT_FORM, "`preview` is a preview ID");
         };
@@ -1154,7 +1169,7 @@ impl<S: Store> CommandLayer<S> {
             return refused(code::TOKEN_MISMATCH, "a word commit's token binds the presented preview");
         };
         // The token's preview ended: an empty slot is `no_fresh_preview`, a slot holding another preview is
-        // `preview_replaced` (draft ruling 1).
+        // `preview_replaced` (ruling 1).
         match &self.slot {
             None => return refused(code::NO_FRESH_PREVIEW, format!("preview {} is not pending", bound.id)),
             Some(p) if p.id != bound.id => {
@@ -1185,7 +1200,7 @@ impl<S: Store> CommandLayer<S> {
             _ => return refused(code::ORBIT_WOULD_MOVE, c600_kernel::PROTECTED_MESSAGE),
         };
         let (recipe, literal) = (p.recipe.clone(), p.literal.clone());
-        let adoption = self.commit_adoption(Meta::of(invocation, request), recipe, end, literal, Some(id));
+        let adoption = self.commit_adoption(Meta::of(caller, invocation, request), recipe, end, literal, Some(id));
         self.transact(adoption)
     }
 
@@ -1455,6 +1470,7 @@ impl<S: Store> CommandLayer<S> {
 
     fn undo(
         &mut self,
+        caller: &Caller,
         invocation: &Invocation,
         request: &str,
         direction: Direction,
@@ -1476,7 +1492,7 @@ impl<S: Store> CommandLayer<S> {
             return refused(code::REVISION_CHANGED, "the token's state or protection revision changed");
         }
         let protected = self.protected.clone();
-        let adoption = self.plan_step(Meta::of(invocation, request), direction, &protected)?;
+        let adoption = self.plan_step(Meta::of(caller, invocation, request), direction, &protected)?;
         self.transact(adoption)
     }
 
@@ -1518,14 +1534,19 @@ impl<S: Store> CommandLayer<S> {
         Ok(Adoption { transaction, state: None, protected: Some(set), head: self.head, tree, preview: None })
     }
 
-    fn set_orbits(&mut self, invocation: &Invocation, request: &str) -> Result<(Option<u64>, Status), Error> {
+    fn set_orbits(
+        &mut self,
+        caller: &Caller,
+        invocation: &Invocation,
+        request: &str,
+    ) -> Result<(Option<u64>, Status), Error> {
         let orbits = invocation.args.get("orbits").and_then(Value::as_array);
         let Some(orbits) = orbits.and_then(|orbits| orbits.iter().map(Value::as_i64).collect::<Option<Vec<_>>>())
         else {
             return refused(code::ARGUMENT_FORM, "`orbits` is a list of orbit numbers");
         };
         let set = self.kernel.protected_set(&orbits)?;
-        let adoption = self.plan_orbits(Meta::of(invocation, request), set)?;
+        let adoption = self.plan_orbits(Meta::of(caller, invocation, request), set)?;
         self.transact(adoption)
     }
 
@@ -1560,7 +1581,12 @@ impl<S: Store> CommandLayer<S> {
 
     // ----- language-defined rows -----
 
-    fn admit_program(&mut self, invocation: &Invocation, row: &Row) -> Result<(Option<u64>, Status), Error> {
+    fn admit_program(
+        &mut self,
+        caller: &Caller,
+        invocation: &Invocation,
+        row: &Row,
+    ) -> Result<(Option<u64>, Status), Error> {
         let overlay = row.overlay.clone().expect("an overlay row");
         if row.lane == Lane::Program {
             self.program_free()?;
@@ -1587,14 +1613,14 @@ impl<S: Store> CommandLayer<S> {
             row: row.id.clone(),
             kind: row.kind,
             args: invocation.args.clone(),
-            caller: invocation.caller.clone(),
+            caller: caller.clone(),
             revision: self.revision.clone(),
             overlay,
         };
         self.jobs.push_back(Job {
             id,
             command: invocation.command.clone(),
-            scope: invocation.caller.scope(),
+            scope: caller.scope(),
             lane: row.lane,
             kind: JobKind::Program(program),
         });
