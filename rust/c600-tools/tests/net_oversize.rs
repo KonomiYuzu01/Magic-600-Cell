@@ -93,9 +93,7 @@ fn ct_lb2_02_net_half_an_identity_word_with_moving_prefixes_passes_net_through_t
             assert_eq!(preview.literal, literal_digest(&narrow(word)), "{host} {word:?}");
             assert_eq!((preview.effect.moved_stickers(), preview.effect.primitive_count), (0, word.len()), "{host}");
             let row = &preview.protection;
-            match row.mode {
-                ProtectionMode::Net => {}
-            }
+            assert!(matches!(row.mode, ProtectionMode::Net), "{host}: a Net row");
             assert_eq!((row.level, row.verdict, row.conflicts.len()), (Level::Labels, Verdict::Clear, 0), "{host}");
             assert_eq!(row.protected.len(), orbits.len(), "{host}: the row names the protected orbits");
             let end = preview.end.as_ref().expect("a clear preview has an end state");
