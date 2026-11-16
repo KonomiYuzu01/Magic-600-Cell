@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-16] decision | Five frozen-text readings (PHS.52)
+The owner chose the recommended option for each of five LP2 readings ([decision](decisions/owner-decisions-2026-11-16-phs52.md)): the command layer's envelope names no caller and the host stamps it from the channel, an ungranted clock read, file read or network request is `LG3:capability.ambient_read` and dynamic code `LG3:capability.not_granted`, and `use_goal` and `use_evidence` take only portable exact data, refused at admission with `LG2:type.mismatch` and at run time with `PS1:input.noncanonical_value`. The two contradiction questions are answered, and the frozen-text changes wait for one amendment at LP3's command-table freeze.
+
 ## [2026-11-16] decision | Three LP2 answers: the Linux leg on CI, the A1-A6 stamp, J1's acceptance on Windows
 The owner answered three LP2 questions with the recommended options ([decision](decisions/owner-decisions-2026-11-16-lp2-questions.md)): `.github/workflows/linux-rust.yml` runs `cargo test --locked --offline` in `rust/` on ubuntu-24.04 as M8's headless Linux leg; `c600-jumble` stamps `state-contract 2026-11-15 A1-A6`, while J1's A1-A4 stamp stays as a known J1 defect that only the differential comparison maps; and a change to `research/jumbling/sim/accept.py` alone hands the pool workers their inputs as arguments, so J1's acceptance exits with 0 on Windows with all 32 flags true and the recorded results unchanged apart from timings and two angles that differ in the last digit.
 

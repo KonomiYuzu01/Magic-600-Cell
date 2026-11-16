@@ -1,27 +1,41 @@
 ---
 id: dynamic-code-refusal-code
 type: question
-status: draft
+status: verified
 visibility: public
-summary: Contradiction - the frozen chapters require dynamic code to be refused, but chapter 13 registers no code for it; LX-3 records the gap with `LG3:capability.not_granted` as its nearest code, `c600-module` refuses with that code, and `c600-check` reports the same call with `LG3:effect.undeclared`.
+summary: Answered on 16 November 2026 - dynamic code is refused with `LG3:capability.not_granted` in the checker and in the module loader alike, and the PHS.52 amendment at LP3's command-table freeze adds DET.36 to that row's rule source.
 tags: [contradiction]
-related: [owner-decisions-2026-11-14-language-route, owner-decisions-2026-11-15-freeze]
+related: [owner-decisions-2026-11-14-language-route, owner-decisions-2026-11-15-freeze, owner-decisions-2026-11-16-phs52]
 supersedes: []
 claims:
   - {id: refusal-required, evidence_kind: source, path: docs/architecture/1.0/language/architecture/09-determinism.md, line: 264, checked_at: 2026-11-16}
   - {id: conformance-row, evidence_kind: source, path: docs/architecture/1.0/language/architecture/11-route-and-spikes.md, line: 780, checked_at: 2026-11-16}
   - {id: no-registry-row, evidence_kind: source, path: docs/architecture/1.0/language/architecture/13-errors.md, checked_at: 2026-11-16}
   - {id: lx3-open-gap, evidence_kind: fixture, path: work/experiments/language-lx/lx3-sandbox-flow/corpus/policy.json, checked_at: 2026-11-16}
+  - {id: phs52-dynamic-code, evidence_kind: decision, checked_at: 2026-11-16}
   - {id: module-gives-not-granted, evidence_kind: source, path: rust/c600-module/src/approval.rs, checked_at: 2026-11-16}
-  - {id: checker-gives-effect-undeclared, evidence_kind: source, path: rust/c600-check/src/lib.rs, checked_at: 2026-11-16}
+  - {id: checker-gives-not-granted, evidence_kind: source, path: rust/c600-check/src/lib.rs, checked_at: 2026-11-16}
 ---
 
 # Which code refuses dynamic code?
 
-Status: **open.** Found while the LP2 checker was extended on 16 November 2026. This page records the conflict; it
-changes no rule and accepts no decision.
+Status: **answered.** On 16 November 2026 the owner chose `LG3:capability.not_granted` in both places, with DET.36
+added to that row's rule source, as one of the PHS.52 readings
+([owner-decisions-2026-11-16-phs52](../decisions/owner-decisions-2026-11-16-phs52.md), section 3). The conflict was
+found while the LP2 checker was extended the same day.
 
-## The conflict
+## The answer as carried out
+
+- `c600-check` reports an unresolved call with `LG3:capability.not_granted` at the call's path (DET.36, RTE.45)
+  ([lib.rs](../../../rust/c600-check/src/lib.rs)). `c600-module` already refused an unresolved call anywhere in a
+  module's closure with that code, before any other finding
+  ([approval.rs](../../../rust/c600-module/src/approval.rs)). One program now carries one code in both layers.
+- A call of a function value whose callable the checker cannot see is unchanged: it keeps `LG3:effect.undeclared`
+  (LG2.19, LG3.2). The answer covers an unresolved call only.
+- Chapter 13 gets no new row. The PHS.52 amendment at LP3's command-table freeze adds DET.36 to the rule source of
+  `LG3:capability.not_granted`; the frozen text is not edited before then.
+
+## The conflict, as found
 
 - DET.36 requires the refusal: dynamic code cannot supply an ungranted access path, and unresolved imports, dynamic
   code and unmodelled native calls refuse admission
@@ -35,15 +49,6 @@ changes no rule and accepts no decision.
   LG3.12 records the unselected flow-label alternative and binds nothing since LQ21 was answered (owner,
   14 November 2026).
 - On route RT1 an unresolved call in the typed IR is dynamic code; the surface cannot write one, since lowering refuses
-  an unbound name. `c600-module` refuses an unresolved call anywhere in a module's closure with
-  `LG3:capability.not_granted`, before any other finding ([approval.rs](../../../rust/c600-module/src/approval.rs)).
-- `c600-check` reports the same call with `LG3:effect.undeclared` at its path, because an unresolved callable is
-  neither exact nor pure (LG2.19, LG3.2). Its solving-profile admission and its built-in column also refuse the entry
-  with `LG3:capability.not_granted` ([lib.rs](../../../rust/c600-check/src/lib.rs)). One program thus carries two
-  codes by layer, and neither row names DET.36 in its rule source.
-
-## What needs deciding
-
-Which registry code a dynamic-code refusal carries: a dedicated chapter 13 row, or `LG3:capability.not_granted` with
-DET.36 in its rule source. Either changes frozen text and follows the revision, review and owner acceptance process of
-PHS.52. Until then the implementations keep the nearest code LX-3 recorded, and the refusal itself holds.
+  an unbound name. `c600-module` refused it with `LG3:capability.not_granted`, while `c600-check` reported the same
+  call with `LG3:effect.undeclared`, because an unresolved callable is neither exact nor pure (LG2.19, LG3.2). One
+  program thus carried two codes by layer, and neither row named DET.36 in its rule source.
