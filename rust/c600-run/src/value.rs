@@ -1,0 +1,523 @@
+//! Run-time values (LP2, M2): their DET.57 logical sizes, exact literals, exact arithmetic and exact equality.
+//!
+//! A value that holds heap data shares it through an `Arc`, so a borrow or an alias copies a reference and never the
+//! payload; the meter still charges an alias in full (DET.57). Records and closures drop their contents with an explicit
+//! stack, and equality walks one, so a deep value cannot overflow the host stack.
+
+use std::cmp::Ordering;
+use std::sync::Arc;
+
+use num_bigint::{BigInt, Sign};
+use num_integer::Integer;
+use num_traits::{One, Signed, Zero};
+
+use crate::approx::{self, Approx};
+use crate::meter::{integer_size, DraftTariffs, IntOp, Tariffs};
+
+/// The most decimal digits an exact literal may have: PS1.5's limit for persisted integers, applied to IR literals.
+pub const MAX_DIGITS: usize = 10_000;
+
+/// A run-time value. Values follow their static types: `Nat`, `Int` and `Budget` are integers, a `Rat` stays a rational
+/// when its denominator is 1, and a `Q5` keeps a zero √5 coefficient.
+#[derive(Clone, Debug)]
+pub enum Value {
+    Unit,
+    Bool(bool),
+    Int(Arc<BigInt>),
+    Rat(Arc<Ratio>),
+    Q5(Arc<Quad>),
+    Approx(Approx),
+    ApproxBool(bool),
+    Text(Arc<Text>),
+    Target(Arc<Text>),
+    /// Signed letters of magnitude 1 to 1200 in written order.
+    Word(Arc<[i32]>),
+    Tag(Arc<Text>),
+    Colour(Arc<Text>),
+    Record(Arc<Record>),
+    Closure(Arc<Closure>),
+    /// A named function, by its index in the loaded program.
+    Fn(usize),
+    /// A preview receipt (BND.42): the fields the host supplied. A field it withholds is absent.
+    Receipt(Arc<Record>),
+}
+
+/// A text with its scalar count, which sizes and output bounds need without a walk (DET.57, DET.62).
+#[derive(Debug)]
+pub struct Text {
+    text: Box<str>,
+    scalars: u128,
+}
+
+impl Text {
+    pub fn new(text: &str) -> Arc<Text> {
+        Arc::new(Text { text: text.into(), scalars: text.chars().count() as u128 })
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.text
+    }
+
+    pub fn scalars(&self) -> u128 {
+        self.scalars
+    }
+}
+
+/// A rational in lowest terms with a positive denominator.
+#[derive(Debug, PartialEq, Eq)]
+pub struct Ratio {
+    pub num: BigInt,
+    pub den: BigInt,
+}
+
+impl Ratio {
+    /// `num / den` in lowest terms; `den` is nonzero.
+    pub fn new(num: BigInt, den: BigInt) -> Ratio {
+        let (num, den) = if den.is_negative() { (-num, -den) } else { (num, den) };
+        let g = num.gcd(&den);
+        if g.is_one() {
+            Ratio { num, den }
+        } else {
+            Ratio { num: num / &g, den: den / &g }
+        }
+    }
+}
+
+/// An element (a + b√5)/d of Q(√5) with d > 0 and gcd(a, b, d) = 1.
+#[derive(Debug, PartialEq, Eq)]
+pub struct Quad {
+    pub a: BigInt,
+    pub b: BigInt,
+    pub d: BigInt,
+}
+
+impl Quad {
+    /// `(a + b√5) / d` in lowest terms; `d` is nonzero.
+    pub fn new(a: BigInt, b: BigInt, d: BigInt) -> Quad {
+        let (a, b, d) = if d.is_negative() { (-a, -b, -d) } else { (a, b, d) };
+        let g = a.gcd(&b).gcd(&d);
+        if g.is_one() {
+            Quad { a, b, d }
+        } else {
+            Quad { a: a / &g, b: b / &g, d: d / &g }
+        }
+    }
+}
+
+/// A record: its fields in IR order, its logical size and an upper bound of its canonical encoding.
+#[derive(Debug)]
+pub struct Record {
+    fields: Vec<(Arc<Text>, Value)>,
+    size: u128,
+    bound: u128,
+}
+
+impl Record {
+    pub fn new(fields: Vec<(Arc<Text>, Value)>) -> Record {
+        let size = fields
+            .iter()
+            .fold(4u128, |s, (_, v)| s.saturating_add(v.size()).saturating_add(if v.is_sequence() { 8 } else { 0 }));
+        let bound = fields
+            .iter()
+            .fold(2u128, |s, (k, v)| s.saturating_add(text_bound(k)).saturating_add(v.bound()).saturating_add(2));
+        Record { fields, size, bound }
+    }
+
+    pub fn fields(&self) -> &[(Arc<Text>, Value)] {
+        &self.fields
+    }
+
+    pub fn get(&self, name: &str) -> Option<&Value> {
+        self.fields.iter().find(|(k, _)| k.as_str() == name).map(|(_, v)| v)
+    }
+
+    /// DET.57: a 4-byte variant tag, an 8-byte length per variable sequence and the owned fields.
+    pub fn header(fields: &[Value]) -> u128 {
+        4 + 8 * fields.iter().filter(|v| v.is_sequence()).count() as u128
+    }
+}
+
+/// A closure: its code and its captured values in declaration order.
+#[derive(Debug)]
+pub struct Closure {
+    pub code: usize,
+    captures: Vec<Value>,
+    size: u128,
+}
+
+impl Closure {
+    pub fn new(code: usize, captures: Vec<Value>) -> Closure {
+        let size = captures.iter().fold(32u128, |s, v| s.saturating_add(v.size()));
+        Closure { code, captures, size }
+    }
+
+    pub fn captures(&self) -> &[Value] {
+        &self.captures
+    }
+}
+
+/// Moves the children of a value out for an explicit-stack drop.
+fn take_children(value: Value, out: &mut Vec<Value>) {
+    match value {
+        Value::Record(r) | Value::Receipt(r) => {
+            if let Some(mut r) = Arc::into_inner(r) {
+                out.extend(std::mem::take(&mut r.fields).into_iter().map(|(_, v)| v));
+            }
+        }
+        Value::Closure(c) => {
+            if let Some(mut c) = Arc::into_inner(c) {
+                out.append(&mut c.captures);
+            }
+        }
+        _ => {}
+    }
+}
+
+impl Drop for Record {
+    fn drop(&mut self) {
+        let mut stack: Vec<Value> = std::mem::take(&mut self.fields).into_iter().map(|(_, v)| v).collect();
+        while let Some(v) = stack.pop() {
+            take_children(v, &mut stack);
+        }
+    }
+}
+
+impl Drop for Closure {
+    fn drop(&mut self) {
+        let mut stack = std::mem::take(&mut self.captures);
+        while let Some(v) = stack.pop() {
+            take_children(v, &mut stack);
+        }
+    }
+}
+
+fn int_size(n: &BigInt) -> u128 {
+    integer_size(n.bits() as u128)
+}
+
+/// An upper bound of the decimal digits of `n`: log10(2) < 0.302.
+fn digits_bound(n: &BigInt) -> u128 {
+    (n.bits() as u128) * 302 / 1000 + 1
+}
+
+/// An upper bound of a JSON string's bytes: two quotes and at most six bytes per scalar (FP.5).
+fn text_bound(t: &Text) -> u128 {
+    t.scalars.saturating_mul(6).saturating_add(2)
+}
+
+impl Value {
+    pub fn int(n: impl Into<BigInt>) -> Value {
+        Value::Int(Arc::new(n.into()))
+    }
+
+    pub fn text(s: &str) -> Value {
+        Value::Text(Text::new(s))
+    }
+
+    pub fn target(s: &str) -> Value {
+        Value::Target(Text::new(s))
+    }
+
+    pub fn tag(s: &str) -> Value {
+        Value::Tag(Text::new(s))
+    }
+
+    pub fn colour(s: &str) -> Value {
+        Value::Colour(Text::new(s))
+    }
+
+    pub fn word(letters: &[i32]) -> Value {
+        Value::Word(letters.into())
+    }
+
+    pub fn record(fields: Vec<(&str, Value)>) -> Value {
+        Value::Record(Arc::new(Record::new(fields.into_iter().map(|(k, v)| (Text::new(k), v)).collect())))
+    }
+
+    pub fn receipt(fields: Vec<(&str, Value)>) -> Value {
+        Value::Receipt(Arc::new(Record::new(fields.into_iter().map(|(k, v)| (Text::new(k), v)).collect())))
+    }
+
+    /// DET.57's logical size in bytes.
+    pub fn size(&self) -> u128 {
+        match self {
+            Value::Unit => 0,
+            Value::Bool(_) | Value::ApproxBool(_) => 1,
+            Value::Int(n) => int_size(n),
+            Value::Rat(r) => int_size(&r.num) + int_size(&r.den),
+            Value::Q5(q) => int_size(&q.a) + int_size(&q.b) + int_size(&q.d),
+            Value::Approx(x) => approx::width(x.precision),
+            Value::Text(t) | Value::Target(t) => t.scalars.saturating_mul(4),
+            Value::Tag(_) | Value::Colour(_) => 4,
+            Value::Word(w) => 2 * w.len() as u128,
+            Value::Record(r) | Value::Receipt(r) => r.size,
+            Value::Closure(c) => c.size,
+            Value::Fn(_) => 32,
+        }
+    }
+
+    /// Whether the value is a variable sequence, which a record field stores with an 8-byte length (DET.57).
+    pub fn is_sequence(&self) -> bool {
+        matches!(self, Value::Text(_) | Value::Target(_) | Value::Word(_))
+    }
+
+    /// An upper bound of the value's canonical encoding in bytes, without the terminal line feed (FP.5, FP.6). It is
+    /// retained metadata, so the encoding pass is priced before it runs (DET.59). A value with no canonical form has
+    /// bound 0; its encoding fails.
+    pub fn bound(&self) -> u128 {
+        match self {
+            Value::Unit => 4,
+            Value::Bool(_) | Value::ApproxBool(_) => 5,
+            Value::Int(n) => 11 + digits_bound(n),
+            Value::Rat(r) => 16 + digits_bound(&r.num) + digits_bound(&r.den),
+            Value::Q5(q) => 19 + digits_bound(&q.a) + digits_bound(&q.b) + digits_bound(&q.d),
+            Value::Approx(_) => 26,
+            Value::Text(t) | Value::Target(t) | Value::Tag(t) | Value::Colour(t) => text_bound(t),
+            Value::Word(w) => 2 + 6 * w.len() as u128,
+            Value::Record(r) => r.bound,
+            Value::Closure(_) | Value::Fn(_) | Value::Receipt(_) => 0,
+        }
+    }
+}
+
+/// An exact number viewed for widening along Int, Rat and Q5.
+enum Num<'a> {
+    Int(&'a BigInt),
+    Rat(&'a Ratio),
+    Q5(&'a Quad),
+}
+
+fn num(v: &Value) -> Option<Num<'_>> {
+    match v {
+        Value::Int(n) => Some(Num::Int(n)),
+        Value::Rat(r) => Some(Num::Rat(r)),
+        Value::Q5(q) => Some(Num::Q5(q)),
+        _ => None,
+    }
+}
+
+impl Num<'_> {
+    fn rank(&self) -> u8 {
+        match self {
+            Num::Int(_) => 0,
+            Num::Rat(_) => 1,
+            Num::Q5(_) => 2,
+        }
+    }
+
+    /// The components (a, b, d) of the number as an element of Q(√5).
+    fn quad(&self) -> (BigInt, BigInt, BigInt) {
+        match self {
+            Num::Int(n) => ((*n).clone(), BigInt::zero(), BigInt::one()),
+            Num::Rat(r) => (r.num.clone(), BigInt::zero(), r.den.clone()),
+            Num::Q5(q) => (q.a.clone(), q.b.clone(), q.d.clone()),
+        }
+    }
+
+    /// The size of the number widened to the given rank: a widened denominator is 1 and a widened √5 coefficient 0,
+    /// each two bytes (DET.57).
+    fn widened_size(&self, rank: u8) -> u128 {
+        let (a, b, d) = self.quad();
+        let mut size = int_size(&a);
+        if rank >= 1 {
+            size += int_size(&d);
+        }
+        if rank >= 2 {
+            size += int_size(&b);
+        }
+        size
+    }
+}
+
+fn exact_pair<'a>(a: &'a Value, b: &'a Value) -> Option<(Num<'a>, Num<'a>, u8)> {
+    let (x, y) = (num(a)?, num(b)?);
+    let rank = x.rank().max(y.rank());
+    Some((x, y, rank))
+}
+
+/// The sign of a + b√5 for integers a and b.
+pub fn sign_q5(a: &BigInt, b: &BigInt) -> Ordering {
+    match (a.sign(), b.sign()) {
+        (Sign::NoSign, Sign::NoSign) => Ordering::Equal,
+        (Sign::Minus, Sign::Minus | Sign::NoSign) | (Sign::NoSign, Sign::Minus) => Ordering::Less,
+        (Sign::Plus, Sign::Plus | Sign::NoSign) | (Sign::NoSign, Sign::Plus) => Ordering::Greater,
+        (Sign::Plus, Sign::Minus) => (a * a).cmp(&(b * b * 5u32)),
+        (Sign::Minus, Sign::Plus) => (b * b * 5u32).cmp(&(a * a)),
+    }
+}
+
+/// Exact addition with widening along Int, Rat and Q5; `None` if an operand is not an exact number.
+pub fn add(a: &Value, b: &Value) -> Option<Value> {
+    let (x, y, rank) = exact_pair(a, b)?;
+    Some(match (rank, &x, &y) {
+        (0, Num::Int(m), Num::Int(n)) => Value::int(*m + *n),
+        _ => {
+            let ((xa, xb, xd), (ya, yb, yd)) = (x.quad(), y.quad());
+            if rank == 1 {
+                Value::Rat(Arc::new(Ratio::new(&xa * &yd + &ya * &xd, xd * yd)))
+            } else {
+                Value::Q5(Arc::new(Quad::new(&xa * &yd + &ya * &xd, &xb * &yd + &yb * &xd, xd * yd)))
+            }
+        }
+    })
+}
+
+/// The kernel cost and the result reservation of an exact addition. Integers use the vectors' integer row; a rational
+/// or Q(√5) sum costs `field_per_unit_pair` per pair of widened operand bytes and reserves the unreduced result.
+pub fn add_price(a: &Value, b: &Value, t: &Tariffs, d: &DraftTariffs) -> Option<(u128, u128)> {
+    let (x, y, rank) = exact_pair(a, b)?;
+    if let (Num::Int(m), Num::Int(n)) = (&x, &y) {
+        return Some(t.integer(IntOp::Add, m.bits() as u128, n.bits() as u128));
+    }
+    let cost = d.field_per_unit_pair.saturating_mul(x.widened_size(rank)).saturating_mul(y.widened_size(rank));
+    let ((xa, xb, xd), (ya, yb, yd)) = (x.quad(), y.quad());
+    let bits = |n: &BigInt| n.bits() as u128;
+    let sum = |p: &BigInt, q: &BigInt| integer_size((bits(p) + bits(&yd)).max(bits(q) + bits(&xd)) + 1);
+    let mut reservation = sum(&xa, &ya) + integer_size(bits(&xd) + bits(&yd));
+    if rank == 2 {
+        reservation += sum(&xb, &yb);
+    }
+    Some((cost, reservation))
+}
+
+/// The exact order of two numbers; `None` if an operand is not an exact number.
+pub fn compare(a: &Value, b: &Value) -> Option<Ordering> {
+    let (x, y, rank) = exact_pair(a, b)?;
+    Some(match (rank, &x, &y) {
+        (0, Num::Int(m), Num::Int(n)) => m.cmp(n),
+        _ => {
+            let ((xa, xb, xd), (ya, yb, yd)) = (x.quad(), y.quad());
+            sign_q5(&(&xa * &yd - &ya * &xd), &(&xb * &yd - &yb * &xd))
+        }
+    })
+}
+
+/// The kernel cost of an exact order: a walk over both integers, or a product of widened sizes for fields.
+pub fn compare_price(a: &Value, b: &Value, d: &DraftTariffs) -> Option<u128> {
+    let (x, y, rank) = exact_pair(a, b)?;
+    Some(if rank == 0 {
+        d.compare_per_unit.saturating_mul(a.size().saturating_add(b.size()))
+    } else {
+        d.field_per_unit_pair.saturating_mul(x.widened_size(rank)).saturating_mul(y.widened_size(rank))
+    })
+}
+
+/// Exact equality. Numbers compare across Int, Rat and Q5; records, receipts and closures compare structurally, with an
+/// explicit stack.
+pub fn equal(a: &Value, b: &Value) -> bool {
+    let mut stack = vec![(a, b)];
+    while let Some((a, b)) = stack.pop() {
+        let same = match (a, b) {
+            (Value::Record(x), Value::Record(y)) | (Value::Receipt(x), Value::Receipt(y)) => {
+                x.fields.len() == y.fields.len()
+                    && x.fields.iter().zip(&y.fields).all(|((kx, vx), (ky, vy))| {
+                        stack.push((vx, vy));
+                        kx.as_str() == ky.as_str()
+                    })
+            }
+            (Value::Closure(x), Value::Closure(y)) => {
+                stack.extend(x.captures.iter().zip(&y.captures));
+                x.code == y.code && x.captures.len() == y.captures.len()
+            }
+            (Value::Unit, Value::Unit) => true,
+            (Value::Bool(x), Value::Bool(y)) | (Value::ApproxBool(x), Value::ApproxBool(y)) => x == y,
+            (Value::Text(x), Value::Text(y))
+            | (Value::Target(x), Value::Target(y))
+            | (Value::Tag(x), Value::Tag(y))
+            | (Value::Colour(x), Value::Colour(y)) => x.as_str() == y.as_str(),
+            (Value::Word(x), Value::Word(y)) => x == y,
+            (Value::Fn(x), Value::Fn(y)) => x == y,
+            (Value::Approx(x), Value::Approx(y)) => x == y,
+            _ => compare(a, b) == Some(Ordering::Equal),
+        };
+        if !same {
+            return false;
+        }
+    }
+    true
+}
+
+/// The kernel cost of an exact equality: DET.62's text tariff on both scalar lengths, nothing for fixed-size values,
+/// and a walk over both values otherwise.
+pub fn equal_price(a: &Value, b: &Value, t: &Tariffs, d: &DraftTariffs) -> u128 {
+    match (a, b) {
+        (Value::Text(x), Value::Text(y)) | (Value::Target(x), Value::Target(y)) => {
+            t.text_per_scalar.saturating_mul(x.scalars.saturating_add(y.scalars))
+        }
+        (
+            Value::Unit | Value::Bool(_) | Value::ApproxBool(_) | Value::Tag(_) | Value::Colour(_) | Value::Fn(_),
+            Value::Unit | Value::Bool(_) | Value::ApproxBool(_) | Value::Tag(_) | Value::Colour(_) | Value::Fn(_),
+        ) => 0,
+        _ => d.compare_per_unit.saturating_mul(a.size().saturating_add(b.size())),
+    }
+}
+
+/// The kernel cost of an explicit conversion to `Approx<p>`: `convert_per_unit_pair` per pair of bytes of the operand
+/// and the result together.
+pub fn convert_price(v: &Value, precision: u32, d: &DraftTariffs) -> u128 {
+    let n = v.size().saturating_add(approx::width(precision));
+    d.convert_per_unit_pair.saturating_mul(n.saturating_mul(n))
+}
+
+/// Converts an exact number to `Approx<p>`, rounding to nearest with ties to even.
+pub fn to_approx(v: &Value, precision: u32) -> Option<Approx> {
+    let (a, b, d) = num(v)?.quad();
+    Some(Approx::from_q5(precision, &a, &b, &d))
+}
+
+/// Parses an exact integer in the IR's decimal form: `0`, or an optional `-` and digits without a leading zero.
+pub fn parse_integer(s: &str) -> Option<BigInt> {
+    let digits = s.strip_prefix('-').unwrap_or(s);
+    let canonical = if digits == "0" { s == "0" } else { !digits.starts_with('0') };
+    let ok =
+        canonical && !digits.is_empty() && digits.len() <= MAX_DIGITS && digits.bytes().all(|c| c.is_ascii_digit());
+    ok.then(|| s.parse::<BigInt>().ok()).flatten()
+}
+
+/// Parses a ratio literal: the sign on the numerator and a positive denominator (LG1.6).
+pub fn parse_ratio(num: &str, den: &str) -> Option<(BigInt, BigInt)> {
+    let (n, d) = (parse_integer(num)?, parse_integer(den)?);
+    d.is_positive().then_some((n, d))
+}
+
+/// An exact literal of the IR as a value. `None` for a literal the IR draft does not allow.
+pub fn literal(lit: &c600_ir::Lit) -> Option<Value> {
+    use c600_ir::Lit;
+    Some(match lit {
+        Lit::Unit => Value::Unit,
+        Lit::Bool(b) => Value::Bool(*b),
+        Lit::Nat(n) => {
+            let n = parse_integer(n)?;
+            if n.is_negative() {
+                return None;
+            }
+            Value::int(n)
+        }
+        Lit::Int(n) => Value::int(parse_integer(n)?),
+        Lit::Rat { num, den } => {
+            let (n, d) = parse_ratio(num, den)?;
+            Value::Rat(Arc::new(Ratio::new(n, d)))
+        }
+        Lit::Q5 { one, sqrt5 } => {
+            let ((n1, d1), (n2, d2)) = (parse_ratio(&one.0, &one.1)?, parse_ratio(&sqrt5.0, &sqrt5.1)?);
+            let l = d1.lcm(&d2);
+            Value::Q5(Arc::new(Quad::new(n1 * (&l / &d1), n2 * (&l / &d2), l)))
+        }
+        Lit::Approx { decimal, precision } => {
+            if !approx::PRECISIONS.contains(precision) {
+                return None;
+            }
+            Value::Approx(Approx::parse(*precision, decimal)?)
+        }
+        Lit::Text(s) => Value::text(s),
+        Lit::Word(letters) => {
+            if letters.iter().any(|l| *l == 0 || l.unsigned_abs() > 1200) {
+                return None;
+            }
+            Value::word(letters)
+        }
+        Lit::Target(s) => Value::target(s),
+        Lit::Tag(s) => Value::tag(s),
+        Lit::Colour(s) => Value::colour(s),
+    })
+}

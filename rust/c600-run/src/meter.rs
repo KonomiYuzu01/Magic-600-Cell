@@ -186,14 +186,24 @@ pub struct Row {
     pub released: u128,
 }
 
-/// A live owner: a charged payload and the meters that count it.
+/// A live owner: a charged payload and the meters that count it. A dropped owner's slot is reused under a new
+/// generation, so an old identifier never names a later owner.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct OwnerId(usize);
+pub struct OwnerId {
+    index: usize,
+    generation: u64,
+}
 
 #[derive(Clone, Debug)]
 struct Owner {
     size: u128,
     meters: Vec<usize>,
+}
+
+#[derive(Clone, Debug)]
+struct Slot {
+    generation: u64,
+    owner: Option<Owner>,
 }
 
 /// An open child scope, returned by [`Meter::enter_child`] and closed by [`Meter::leave_child`].
@@ -237,7 +247,10 @@ pub struct Summary {
 pub struct Meter {
     scopes: Vec<Scope>,
     active: Vec<usize>,
-    owners: Vec<Option<Owner>>,
+    owners: Vec<Slot>,
+    free: Vec<usize>,
+    /// Whether charge rows are kept. A quiet meter keeps none; its counters and stops are the same.
+    record: bool,
     rows: Vec<Row>,
     children: Vec<ChildRecord>,
 }
@@ -245,14 +258,22 @@ pub struct Meter {
 const ROOT: usize = 0;
 
 impl Meter {
+    /// A meter that keeps one row per operation, as the contract vectors list them.
     pub fn new(limits: Amounts) -> Meter {
         Meter {
             scopes: vec![Scope::new("root", limits)],
             active: vec![ROOT],
             owners: Vec::new(),
+            free: Vec::new(),
+            record: true,
             rows: Vec::new(),
             children: Vec::new(),
         }
+    }
+
+    /// A meter that keeps no rows. A long run's bookkeeping then stays proportional to its live owners.
+    pub fn quiet(limits: Amounts) -> Meter {
+        Meter { record: false, ..Meter::new(limits) }
     }
 
     pub fn root(&self) -> &Scope {
@@ -280,31 +301,52 @@ impl Meter {
         memory: u128,
         output: u128,
     ) -> Result<(), Stop> {
-        self.rows.push(Row { at: at.to_string(), steps: 0, kernel_cost: 0, memory: 0, output: 0, released: 0 });
+        self.charge_at(|| (at.to_string(), source.cloned()), kernel_cost, memory, output)
+    }
+
+    /// [`Meter::charge`] with a locator that is called only when the operation's path is needed: for its row, or for
+    /// its stop.
+    pub fn charge_at(
+        &mut self,
+        locate: impl FnOnce() -> (String, Option<SourceRange>),
+        kernel_cost: u128,
+        memory: u128,
+        output: u128,
+    ) -> Result<(), Stop> {
+        let mut locate = Some(locate);
+        let mut located = None;
+        if self.record {
+            let (at, source) = (locate.take().expect("the locator is called once"))();
+            self.rows.push(Row { at: at.clone(), steps: 0, kernel_cost: 0, memory: 0, output: 0, released: 0 });
+            located = Some((at, source));
+        }
         let requests = [(Dim::Steps, 1), (Dim::KernelCost, kernel_cost), (Dim::Memory, memory), (Dim::Output, output)];
         for (dim, amount) in requests {
-            for &s in &self.active {
+            let failed = self.active.iter().copied().find(|&s| {
                 let scope = &self.scopes[s];
-                if scope.current(dim).saturating_add(amount) > scope.limits.get(dim) {
-                    let position = Position {
-                        at: at.to_string(),
-                        phase: dim.name(),
-                        scope: scope.name.clone(),
-                        source: source.cloned(),
-                    };
-                    let live = Some(self.scopes[ROOT].live);
-                    return Err(Stop { code: dim.code(), outcome: Outcome::CutOff, position, scope: s, live });
-                }
+                scope.current(dim).saturating_add(amount) > scope.limits.get(dim)
+            });
+            if let Some(s) = failed {
+                let (at, source) = match located {
+                    Some(located) => located,
+                    None => (locate.take().expect("the locator is called once"))(),
+                };
+                let position = Position { at, phase: dim.name(), scope: self.scopes[s].name.clone(), source };
+                let live = Some(self.scopes[ROOT].live);
+                return Err(Stop { code: dim.code(), outcome: Outcome::CutOff, position, scope: s, live });
             }
             if dim == Dim::Steps {
-                self.last_row().steps = 1;
+                if let Some(row) = self.last_row() {
+                    row.steps = 1;
+                }
                 for &s in &self.active {
                     self.scopes[s].used.steps += 1;
                 }
             }
         }
-        let row = self.last_row();
-        (row.kernel_cost, row.memory, row.output) = (kernel_cost, memory, output);
+        if let Some(row) = self.last_row() {
+            (row.kernel_cost, row.memory, row.output) = (kernel_cost, memory, output);
+        }
         for &s in &self.active {
             let scope = &mut self.scopes[s];
             scope.used.kernel_cost += kernel_cost;
@@ -349,18 +391,33 @@ impl Meter {
             let scope = &mut self.scopes[s];
             scope.reserved = scope.reserved.checked_sub(size).expect("owner exceeds admitted reservation");
         }
-        self.owners.push(Some(Owner { size, meters: self.active.clone() }));
-        OwnerId(self.owners.len() - 1)
+        let owner = Some(Owner { size, meters: self.active.clone() });
+        match self.free.pop() {
+            Some(index) => {
+                let slot = &mut self.owners[index];
+                slot.generation += 1;
+                slot.owner = owner;
+                OwnerId { index, generation: slot.generation }
+            }
+            None => {
+                self.owners.push(Slot { generation: 0, owner });
+                OwnerId { index: self.owners.len() - 1, generation: 0 }
+            }
+        }
+    }
+
+    fn owner(&self, owner: OwnerId) -> Option<&Owner> {
+        self.owners.get(owner.index).filter(|s| s.generation == owner.generation).and_then(|s| s.owner.as_ref())
     }
 
     /// The payload size of a live owner.
     pub fn size(&self, owner: OwnerId) -> u128 {
-        self.owners[owner.0].as_ref().expect("live owner").size
+        self.owner(owner).expect("live owner").size
     }
 
     /// Whether an owner is still live. An unwound child drops its owners.
     pub fn is_live(&self, owner: OwnerId) -> bool {
-        self.owners.get(owner.0).is_some_and(Option::is_some)
+        self.owner(owner).is_some()
     }
 
     /// Releases `size` units of unowned reservation in every active scope, recorded on the last row (DET.56: an excess
@@ -371,18 +428,25 @@ impl Meter {
             scope.reserved = scope.reserved.checked_sub(size).expect("release exceeds unowned reservation");
             scope.live = scope.live.checked_sub(size).expect("negative live charge");
         }
-        self.last_row().released += size;
+        if let Some(row) = self.last_row() {
+            row.released += size;
+        }
     }
 
     /// Drops an owner (DET.58). A drop inside the program is recorded on the last row; cleanup is not.
     pub fn drop_owner(&mut self, owner: OwnerId, record: bool) {
-        let owner = self.owners[owner.0].take().expect("an owner is dropped once");
-        for s in owner.meters {
+        let slot = &mut self.owners[owner.index];
+        assert_eq!(slot.generation, owner.generation, "a dropped owner is not dropped again");
+        let dropped = slot.owner.take().expect("an owner is dropped once");
+        self.free.push(owner.index);
+        for s in dropped.meters {
             let scope = &mut self.scopes[s];
-            scope.live = scope.live.checked_sub(owner.size).expect("negative live charge");
+            scope.live = scope.live.checked_sub(dropped.size).expect("negative live charge");
         }
         if record {
-            self.last_row().released += owner.size;
+            if let Some(row) = self.last_row() {
+                row.released += dropped.size;
+            }
         }
     }
 
@@ -415,7 +479,7 @@ impl Meter {
         let (outcome, code, stop, returned_memory, propagate) = match result {
             Ok(returned) => {
                 let mut freed = 0;
-                for owner in self.owners.iter_mut().flatten() {
+                for owner in self.owners.iter_mut().filter_map(|slot| slot.owner.as_mut()) {
                     if owner.meters.contains(&c) {
                         freed += owner.size;
                         owner.meters.retain(|&s| s != c);
@@ -431,9 +495,10 @@ impl Meter {
                     scope.reserved = scope.reserved.checked_sub(reserved).expect("child reservation");
                     scope.live = scope.live.checked_sub(reserved).expect("negative live charge");
                 }
-                for id in 0..self.owners.len() {
-                    if self.owners[id].as_ref().is_some_and(|o| o.meters.contains(&c)) {
-                        self.drop_owner(OwnerId(id), false);
+                for index in 0..self.owners.len() {
+                    let slot = &self.owners[index];
+                    if slot.owner.as_ref().is_some_and(|o| o.meters.contains(&c)) {
+                        self.drop_owner(OwnerId { index, generation: slot.generation }, false);
                     }
                 }
                 let propagate = (stop.scope != c).then(|| stop.clone());
@@ -461,9 +526,10 @@ impl Meter {
     pub fn finish(mut self, stop: Option<Stop>) -> Summary {
         assert_eq!(self.active, [ROOT], "every child is closed");
         let live_before_cleanup = stop.as_ref().and_then(|s| s.live).unwrap_or(self.scopes[ROOT].live);
-        for id in 0..self.owners.len() {
-            if self.owners[id].is_some() {
-                self.drop_owner(OwnerId(id), false);
+        for index in 0..self.owners.len() {
+            let slot = &self.owners[index];
+            if slot.owner.is_some() {
+                self.drop_owner(OwnerId { index, generation: slot.generation }, false);
             }
         }
         let root = &mut self.scopes[ROOT];
@@ -485,8 +551,14 @@ impl Meter {
         }
     }
 
-    fn last_row(&mut self) -> &mut Row {
-        self.rows.last_mut().expect("a charge precedes every release")
+    /// The row of the last admitted operation, when rows are kept.
+    fn last_row(&mut self) -> Option<&mut Row> {
+        self.record.then(|| self.rows.last_mut().expect("a charge precedes every release"))
+    }
+
+    /// The root's current live memory (owners plus unowned reservations).
+    pub fn live(&self) -> u128 {
+        self.scopes[ROOT].live
     }
 }
 
@@ -549,6 +621,25 @@ impl Tariffs {
         };
         (cost, 1u128.saturating_add(bound_bits.div_ceil(8)))
     }
+}
+
+/// Tariffs the interpreter needs beyond the vectors' set, for rows the frozen vectors do not price: comparisons of
+/// variable-size values, rational and Q(√5) arithmetic, and conversion to an approximation. They are M2 drafts with
+/// test-only values; LG4.8 owns the production tariffs.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct DraftTariffs {
+    /// Per byte of both operands of an integer order or a variable-size equality.
+    pub compare_per_unit: u128,
+    /// Per pair of widened operand bytes of a rational or Q(√5) addition or order.
+    pub field_per_unit_pair: u128,
+    /// Per pair of bytes of the operand and the result of a conversion to `Approx<p>`.
+    pub convert_per_unit_pair: u128,
+}
+
+impl DraftTariffs {
+    /// Test-only values.
+    pub const TEST: DraftTariffs =
+        DraftTariffs { compare_per_unit: 1, field_per_unit_pair: 1, convert_per_unit_pair: 1 };
 }
 
 /// The two native integer rows the vectors price.
