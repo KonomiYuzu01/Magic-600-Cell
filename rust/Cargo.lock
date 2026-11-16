@@ -36,6 +36,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "c600-durable"
+version = "0.0.0"
+dependencies = [
+ "c600-check",
+ "c600-digest",
+ "c600-kernel",
+ "c600-module",
+ "c600-run",
+ "c600-session",
+ "c600-syntax",
+]
+
+[[package]]
 name = "c600-evidence"
 version = "0.0.0"
 dependencies = [
@@ -138,10 +151,13 @@ dependencies = [
  "c600-check",
  "c600-command",
  "c600-digest",
+ "c600-display",
  "c600-ir",
  "c600-kernel",
  "c600-run",
+ "c600-runtime",
  "c600-syntax",
+ "c600-view",
 ]
 
 [[package]]

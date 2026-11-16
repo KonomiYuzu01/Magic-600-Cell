@@ -20,7 +20,7 @@ for representations, each demonstrating the complete loop. Its four products:
 
 | Product | Without the owner's machine | Waits for |
 | --- | --- | --- |
-| Three-tool vertical path: source, check, run, view nodes, engine preview, explicit user commit, durable receipt and undo | 600-cell-Full: preview, commit and undo through the command layer with oracle equality (C1), the source route (C5), view nodes (C2, C5). Representations: the headless half (C6) | Durable receipts: C7, now that M6 is on main. The jumbling tool: M5 (C8) |
+| Three-tool vertical path: source, check, run, view nodes, engine preview, explicit user commit, durable receipt and undo | 600-cell-Full: preview, commit and undo through the command layer with oracle equality (C1), the source route (C5), view nodes (C2, C5). Representations: the headless half (C6) | Durable receipts and undo through the command layer: KN5's one implementation, which LP2 writes in `c600-command` (C7). The jumbling tool: M5 (C8) |
 | Matching command and key routes, kernel-row keys on ONE.48's direct path | The command and key routes with byte-identical traces and receipts (C1); the source route (C5) | The actual key route on Windows (C9) |
 | Active program views under ONE.11, ONE.12 and ONE.64 | Revision-bound output, latest-wins recomputation and stale-state data, headless (C2) | On screen: the renderer freeze (C9) |
 | Further views and user stages | `view.open`, `view.close` and RPI.82's budget, headless (C2) | User vertex and fragment stages on the selected renderer, advertised only after RPI.79's run (C9) |
@@ -49,9 +49,9 @@ and the renderer freeze for its on-screen half, and headless integration does no
 | Headless display contract; views and their budgets | Built (C2) | Nothing |
 | The runtime in its own process | Built (C3) | Nothing: route RT1 (LQ9) |
 | Module closure | Built (C4) | Nothing |
-| Source route and the 600-cell-Full tool | May start when C1 is on main | C1 |
+| Source route and the 600-cell-Full tool | Built in part (C5, section 7) | The parts section 7 names for LP2; the jumbling halves for M5 (C8) |
 | Representations tool, headless half | May start after C5 | C2's views and C5's host bridge |
-| Durable receipts and undo, CT-RTE-08's persisted words, work sheets | In progress (C7) | M6 is on main (pull request 160); CT-RTE-08's persisted words also need C4 |
+| Durable receipts and undo, CT-RTE-08's persisted words, work sheets | Built in part on M6's store (C7, section 8) | Receipts and undo through the command layer: KN5's one implementation, which LP2 writes in `c600-command` (PHS.18) |
 | The jumbling tool and every jumbling half | Waits | M5 on main |
 | Tests that read kernel rows LP2 has not built: Strict protection, streaming words (KN2.10), `positions` (KN2.4), KN3's exact rotations and polytope operations | Waits | LP2's kernel: LP2 deliverables, not built yet (the table below) |
 | The on-screen half | Waits | The renderer freeze |
@@ -68,12 +68,20 @@ M8 row ("section 15.3 runnable") cover the kernel rows. LP3 builds nothing in LP
 | Strict protection on 600-cell-Full | KN2.4, KN2.7 | None names Strict on 600-cell-Full; CT-KN2-03 and CT-LG2-12 use the `protection` row | CT-LB2-02 |
 | Streaming words | KN2.10 | CT-KN2-07, CT-LG2-14 | CT-LB2-03 |
 | The `positions` row | KN2.4 | None names it | CT-LB2-04 |
-| Exact rotations and `twist.apply` (amendment A6) | KN3.4, KN3.7 to KN3.9 | CT-KN3-04 to CT-KN3-06, CT-LG2-16 | CT-EV4-04's twist leg |
+| Exact rotations and `twist.apply` (amendment A6) | KN3.4, KN3.7 to KN3.9 | CT-KN3-04 to CT-KN3-06, CT-LG2-16 | CT-EV4-04's twist leg, CT-BND-19's live-twist part |
 | Exact polytope operations | KN3.3 | CT-KN3-01, CT-KN3-03 | CT-LB4-01 |
 | The F2 and F5 number kinds | KN3.2 | None names them; the `nu` and `correction_set_check` rows use them (M5) | CT-LB1-01 |
 | Word operations in the IR draft: concatenation, inverse, conjugate, commutator | LG2.13 to LG2.16 | CT-LG2-11 to CT-LG2-14 | CT-LB1-03, CT-LB1-06, CT-LB2-01, CT-BND-18 |
 | Collection types in the IR draft: lists, maps, sets | LG2.20, LG4.3 | None names them; CT-LG4-01 checks host collection layouts | CT-LB1-01, CT-LB1-03, CT-LB1-06, CT-LB2-01, CT-BND-18 |
 | The IR features CT-RTE-04's other 32 traces need, and two meter differences in `c600-run` (`nested-calls`'s frame price; an `emit` row's single charge) | DET.56, DET.57, DET.65 | DET.65's trace vectors in `contract-vectors/vectors.json` | CT-RTE-04 |
+
+Found later, on 16 November 2026. KN5's one implementation, which LP2 writes in `c600-command` on branch
+`claude/lp2-kn5-one`, also carries the presented-frame input to `present` that CT-ONE-29's shell-side refusal needs and
+the requirement from LP3's KN5.21 lead, both accepted by the LP2 integrator. Sent to the LP2 integrator the same day and
+not yet confirmed: `c600-check` rules that decide CT-LB3-01's checker half (typed checkpoint and sticker-test results,
+LB3.2) and CT-LB3-07's recommendation rule (LB3.5); an author or column parameter on `c600_check::admit`, with a field
+in `c600-runtime`'s job options, so the runtime's child applies the built-in column itself; and a list of words in the
+IR, or KN2.10's streaming, for chunked recipes on the source route.
 
 ## 3. Integrator selections (the owner may overrule them)
 
@@ -87,8 +95,9 @@ M8 row ("section 15.3 runnable") cover the kernel rows. LP3 builds nothing in LP
    layer raises that chapter 13 does not register yet are drafts; registering them changes a frozen chapter, so it goes
    through PHS.52 at C10.
 3. **Session store stand-in.** Step 9's durable transaction sits behind a `Store` trait. `MemoryStore` stands in until
-   C7 puts the transaction on M6's store, so "durable" means only "kept across the layer's restart". Nothing before C7
-   is persistence evidence.
+   KN5's one implementation (PHS.18), which LP2 writes in `c600-command` with `c600-session` implementing the trait,
+   replaces it, so "durable" means only "kept across the layer's restart". Nothing on `MemoryStore` is persistence
+   evidence; C7's tests on M6's store are.
 4. **Routes.** The command route invokes rows with absolute arguments. The key route presses the draft keymap's chords
    (Ctrl+Enter, Ctrl+Shift+Enter, Escape, Ctrl+Z, Ctrl+Y), which the shell resolves before the envelope (EV4.3). The
    source route (C5) runs a built-in tool whose program proposes the literal word. The headless key route is source
@@ -120,7 +129,7 @@ One pull request per milestone; each names the checks that ran.
 | C4 | Module closure (`c600-module`) | M2 and M7 (on main) | Built |
 | C5 | Source route and the 600-cell-Full tool (`c600-tools`) | C1 | Built in part (section 7) |
 | C6 | Representations tool, headless half | C2, C5 | Next |
-| C7 | Durable receipts and undo through the session store | M6 (on main) and C1 | In progress |
+| C7 | Durable receipts and undo through the session store | M6 (on main), C1 and LP2's KN5 implementation | Built in part (section 8) |
 | C8 | The jumbling tool | M5 on main | Waits |
 | C9 | The on-screen half and the owner-machine acceptance runs | The renderer freeze; the owner's runs | Waits |
 | C10 | LP3 exit: H-08 freeze, the whole index on one frozen candidate, the owner's sign-off | C1 to C9 | Waits |
@@ -210,9 +219,22 @@ host ran it. Acceptance:
 - C5, input router (`rust/c600-input`, branch `claude/lp3-input-routing`), built: of item 2, CT-EV4-02 and CT-EV4-04's
   append, preview and commit legs and its busy leg, on synthetic events through the shell's public API; ahead of LP4,
   CT-EV4-06's synthetic half. CT-EV4-04's twist leg waits for KN3.7's exact rotations (section 2).
-- Next, C5's next piece: CT-LB2-02's Net half, CT-LB2-03's oversize refusal, the checker halves of CT-LB3-01 and
-  CT-LB3-07, CT-BND-19, CT-EV3-01 to CT-EV3-04 with the tool's views, CT-ONE-29's user-stage part (with C2's next
-  display piece), and the tool on C3's runtime process with its records naming the host.
+- C5 next, the process host (`rust/c600-tools`, branch `claude/lp3-c5-process`), built: the tool on C3's runtime process
+  (`c600-runtime`'s child), with the same boundary and bridge in the caller. `c600-lp3-source --host process` replays
+  O01 to O07 with traces byte-identical to the in-process host's, and every record names its host; four O07 steps whose
+  words have a letter outside 1 to 1200 in magnitude cannot cross the runtime's wire, so they have no receipt on the
+  process host and their records keep the kernel's refusal. Of item 2: CT-LB2-02's Net half; CT-LB2-03's oversize
+  refusal on both routes, with chunking on the command route; CT-LB3-07's checker half for outcome tables and named-word
+  checks. CT-LB3-01's checker half and CT-LB3-07's recommendation rule need `c600-check` to decide them (LP2). A test
+  confirms a lead on KN5.21 to KN5.23 (a refused forgery takes a genuine command ID's retry record), sent to LP2's KN5
+  implementation.
+- C5 next, the tool's views (`rust/c600-tools`, branch `claude/lp3-c5-views`), built: CT-EV3-01, CT-EV3-02 and
+  CT-EV3-04, whole for the tool's view; CT-EV3-03, whole, with its imported half on a fixture import record, since the
+  Rust layers have no import row; CT-BND-19's part for the tool's views; CT-ONE-29's user-stage part at the host's
+  adapter. The shell's own refusal of a user-stage frame waits for LP2's KN5 implementation, which adds a
+  presented-frame input to `present`; CT-BND-19's live-twist part waits for KN3.7's exact rotations (section 2).
+- Next, in C5's crate: nothing more runs now. The library entries wait for the IR draft (below), the jumbling halves for
+  M5 (C8), and the parts above for LP2.
 
 CT-LB1-01, CT-LB1-03, CT-LB1-06, CT-LB2-01 and CT-BND-18 test library entries, which are language code (LB1.1). They
 need collection types and word operations (concatenation, inverse, powers) that the IR draft `c600-ir-draft-1` does
@@ -228,9 +250,13 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
 
 ## 8. C7 to C10: what waits
 
-- **C7, now that M6 is on main (pull request 160).** M6's session store replaces `MemoryStore`: durable receipts and
-  undo across a real restart, the persisted-word part of CT-RTE-08, the work sheets of CT-LB2-03 and the durable
-  action order of CT-EV3-07.
+- **C7, durable receipts on M6's store.** KN5 gets one implementation, owned by LP2 under PHS.18 (integrator,
+  16 November 2026); the LP2 integrator placed it in `c600-command`, with `c600-session` implementing its `Store`
+  trait, and until it lands LP3 changes neither `c600-command`'s layer, token, receipt, store and shell code nor
+  `c600-session`. Built (`rust/c600-durable`, test-only), on M6's public API: CT-RTE-08's persisted-word case, its
+  durable leg; CT-EV3-07's durable action order and a view part on M6's stand-ins; CT-LB2-03's work-sheet part.
+  Waits for LP2's KN5 implementation: durable receipts and undo through the command layer, KN5.26's admission of
+  record words, EV3.2's view rows and LB7.2's work-sheet structure.
 - **C8, after M5 is on main.** The jumbling tool, with Jumble on in the command layer and oracle equality against M5's
   fixtures; CT-LB1-02, the jumbling halves of CT-LB1-03 and CT-LB1-06, CT-LB3-01 to CT-LB3-07, the pose levels of
   CT-LB4-03, CT-LB6-03, CT-BND-15, CT-BND-17, CT-EV3-06, CT-RPI-12 and CT-RM-07.
@@ -245,7 +271,7 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
 ## 9. Section 15.4's 82 tests
 
 "Now" means the whole test can run without the owner's machine, the renderer freeze, M5 or a missing kernel row.
-31 tests can run whole now (CT-RPI-19 also needs a Linux run for its record), 23 have a part that can run now, and 28
+29 tests can run whole now (CT-RPI-19 also needs a Linux run for its record), 24 have a part that can run now, and 29
 wait entirely. The milestone is in parentheses.
 
 | Test | Class | Whole run | Part now |
@@ -260,13 +286,13 @@ wait entirely. The milestone is in parentheses.
 | CT-LB2-02 | source | The kernel's Strict protection (LP2) | The Net half (C5) |
 | CT-LB2-03 | source | Streaming words, KN2.10 (LP2) | The oversize refusal (C5); work sheets (C7) |
 | CT-LB2-04 | source | The kernel's `positions` row, KN2.4 (LP2) | - |
-| CT-LB3-01 | source | M5 (C8) | The checker half (C5) |
+| CT-LB3-01 | source | M5 (C8); for the checker half, typed checkpoint and sticker-test results in `c600-check` (LP2) | - |
 | CT-LB3-02 | source | M5 (C8) | - |
 | CT-LB3-03 | source | M5 (C8) | - |
 | CT-LB3-04 | source | M5 (C8) | - |
 | CT-LB3-05 | source | M5 (C8) | - |
 | CT-LB3-06 | source | M5 (C8) | - |
-| CT-LB3-07 | source | M5 (C8) | The checker half (C5) |
+| CT-LB3-07 | source | M5 (C8); LB3.5's recommendation rule in `c600-check` (LP2) | The checker half for outcome tables and named-word checks (C5) |
 | CT-LB4-01 | source | KN3's exact polytope operations in the kernel (LP2) | The CPU reference (C6) |
 | CT-LB4-02 | synthetic | Now (C6) | - |
 | CT-LB4-03 | source | M5: pose levels (C8) | The 600-cell-Full half (C6) |
@@ -284,7 +310,7 @@ wait entirely. The milestone is in parentheses.
 | CT-EV4-04 | synthetic | KN3.7's exact rotations in the kernel, for the twist leg (LP2) | The append, preview and commit legs (C5) |
 | CT-ONE-25 | performance | Owner runs: charter E2 (C9) | - |
 | CT-ONE-26 | windows | The renderer freeze (C9) | The token binds the presented preview (C1) |
-| CT-ONE-29 | source | Now (C5) | - |
+| CT-ONE-29 | source | The shell's own refusal of a user-stage frame: a presented-frame input to `present` (LP2's KN5 implementation) | The headless part and the user-stage part at the host's adapter (C5) |
 | CT-ONE-30 | source | Now (C2) | - |
 | CT-RPI-02 | source | Now (C2) | - |
 | CT-RPI-03 | synthetic | Now (C2) | - |
@@ -316,7 +342,7 @@ wait entirely. The milestone is in parentheses.
 | CT-BND-15 | source | M5: the jumbling tool (C8) | The 600-cell-Full and representations tools (C5, C6) |
 | CT-BND-17 | source | M5: the repair list (C8) | - |
 | CT-BND-18 | source | Collection types and word operations in the IR draft, for setup search (LP2) | - |
-| CT-BND-19 | source | Now (C5) | - |
+| CT-BND-19 | source | A live twist's release, which needs KN3.7's exact rotations (LP2) | The tool's views (C5) |
 | CT-BND-20 | windows | The renderer freeze (C9) | A held chord commits once; the runtime gets no token (C1) |
 | CT-RTE-04 | source | Child scopes, loops, text order, byte decoding, exact multiplication, streaming and LP1's region executor in the IR draft (LP2) | 8 of DET.65's 40 traces (C3) |
 | CT-RTE-07 | source | M5's jumbling keys (C8), M6's store keys (C7), the keys the IR draft cannot express (LP2), the budget keys that need a price mapping, host events in a loop or the command layer (C5), and a Linux run | 36 of LX-3's 75 frozen keys on 600-cell-Full (C4) |
