@@ -454,6 +454,46 @@ fn concurrent_requests_cannot_pass_a_one_job_lane() {
     assert_eq!(f.layer.run_jobs(), 1);
 }
 
+/// CT-KN7-05 with a view overlay: a running view overlay holds the view lane, not the program lane (KN7.2, LI.22).
+#[test]
+fn a_running_view_overlay_leaves_the_program_lane_free() {
+    let mut f = fixture(&[]);
+    f.layer.register_overlay("tool.full.view", Kind::View, &[], overlay("view")).unwrap();
+    f.layer.register_overlay("tool.full.inspect", Kind::Query, &[], overlay("inspect")).unwrap();
+    let view = f.shell.invoke(&mut f.layer, "tool.full.view", json::object([])).unwrap();
+    assert!(matches!(view.status, Status::Running(_)), "{:?}", view.status);
+    assert_eq!(f.layer.take_program_job().unwrap().row, "tool.full.view");
+    assert!(f.layer.availability("tool.full.inspect").is_ok());
+    let query = f.shell.invoke(&mut f.layer, "tool.full.inspect", json::object([])).unwrap();
+    assert!(matches!(query.status, Status::Running(_)), "{:?}", query.status);
+    assert_eq!(f.layer.availability("tool.full.inspect").unwrap_err().code, code::LANE_FULL);
+    let taken = f.layer.take_program_job().unwrap();
+    assert_eq!(taken.row, "tool.full.inspect");
+    assert_eq!(f.layer.availability("tool.full.inspect").unwrap_err().code, code::LANE_FULL);
+    assert!(f.layer.finish_program_job(taken.job, Ok(Value::Null)).is_some());
+    assert!(f.layer.availability("tool.full.inspect").is_ok());
+}
+
+/// CT-KN5-12: availability agrees with `operation.preview.cancel` while a preview is still building.
+#[test]
+fn cancel_is_available_while_a_preview_builds() {
+    let mut f = fixture(&[]);
+    assert_eq!(f.layer.availability("operation.preview.cancel").unwrap_err().code, code::NO_FRESH_PREVIEW);
+    let receipt = f.shell.invoke(&mut f.layer, "operation.preview", draft_args(&word(&[1]))).unwrap();
+    let Status::Running(id) = receipt.status else { panic!("preview not admitted: {:?}", receipt.status) };
+    assert_eq!(f.layer.preview_state(id), Some(PreviewState::Building));
+    assert!(f.layer.availability("operation.preview.cancel").is_ok());
+    let cancel = f.shell.invoke(&mut f.layer, "operation.preview.cancel", preview_args(id)).unwrap();
+    assert!(
+        matches!(cancel.status, Status::Completed(Completion { kind: CompletionKind::Workspace, .. })),
+        "{:?}",
+        cancel.status
+    );
+    assert_eq!(f.layer.preview_state(id), Some(PreviewState::Cancelled));
+    assert_eq!(f.layer.availability("operation.preview.cancel").unwrap_err().code, code::NO_FRESH_PREVIEW);
+    assert_eq!(f.layer.run_jobs(), 0);
+}
+
 /// CT-ONE-11.
 #[test]
 fn a_commit_refused_at_each_step_changes_nothing() {
