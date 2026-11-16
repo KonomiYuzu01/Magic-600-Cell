@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-16] update | M6's origin under the host rule
+M6's session store follows PHS.52 ruling 4 like the command layer: its envelope names no origin, and `Session::invoke` takes the origin of the channel the envelope came on, which the request digest and the program gates read (commit `a12ba67b`, [decision](decisions/owner-decisions-2026-11-16-phs52.md)). Tests that sent a program's envelope now send it on the program's channel.
+
 ## [2026-11-16] update | The language: M8's levels, end tests and derived values
 M8 adds the jumbled puzzle's levels to `rust/c600-jumble` (`src/levels.rs`): level crossings and projections (KN1.7, KN1.9), A5's three end tests under a reachability claim, shapes and gauges (KN1.14), and derived values (`derive` under Net or Strict protection, KN2.14's `import`, ONE.25's `compare`), each verdict naming its level and each compared with J1 on J1's fixtures (`tests/test_jumbling_rust_m8_levels.py`). Section 15.3's index now reads 67 of the 248 LP2 tests whole (9 by the union of their parts), 132 in part and 44 waiting; `nu`, `correction_set_check` and the session store's jumbling records wait.
 
