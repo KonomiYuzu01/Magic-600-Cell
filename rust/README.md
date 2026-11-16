@@ -439,10 +439,31 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   meaning, over unbounded integers, in `c600_jumble::rotation`; the shell passes a bit pattern, so no float type enters
   the kernel; a non-finite producer input and a malformed binding refuse with `KN2:input.rotation_request_malformed`;
   N or D above `u128` refuses with `KN2:resource_limit.rotation_search_bound`.
-- Open: the A2 filter (KN3.5, CT-KN3-03) has no home yet. INV-4 allows its float, but CT-KN2-05's scans keep float
-  types and literals out of `c600-kernel` and `c600-jumble`, so it needs a crate of its own or a recorded scan
-  exception; the integrator decides. Not built: the shell's gesture producer, F2 and F5 (ν), and the cost of an exact
-  operation by operand size (KN3.6).
+- KN3.5 (LP2): `c600-a2-filter` holds state contract A2's filter. It is a crate of its own because CT-KN2-05's scans
+  keep float types and literals out of `c600-kernel` and `c600-jumble`; INV-4 and ADR-L03.1 allow the filter its
+  float. It evaluates a sum of products of integers, √5 and 5 (the form of `c600_kernel::exact::SumOfProducts`) in
+  binary64 and accepts the sign only when |v̂| > E = fl(Ŝ·4(K + 1)u), at least 3.99 times the proven forward error
+  bound. Near zero, on a non-finite value and past 2^16 terms or 16 factors in a term, `c600_kernel::exact` decides;
+  when its 128-bit path overflows, the decision says so. `Decision` records the version
+  `a2-binary64-sum-of-products-draft-1`, the enclosure, and the accepted sign or the exact fallback result.
+- Contract tests, in part: CT-KN3-03 (`c600-a2-filter/tests/adversarial.rs`, 12,400 cases). Every decision is
+  checked against `c600_kernel::exact` and a wide-integer reference, and every finite enclosure is checked exactly.
+  The cases cover Lucas and Fibonacci pairs, exact contacts of h_A's form and the crossings next to them, conversions
+  that round, the 128-bit limits, cancellation-heavy sums, powers of √5, non-finite values and sums past the limits.
+  Not run: the model's own vertex sets and poses and the E0 controls, because neither kernel crate calls the filter
+  yet.
+- Draft choices: the crate's own `Sum`, because the kernel's `SumOfProducts` keeps its terms private; the limits; the
+  fixed √5 bit pattern; a margin of almost 4 with exact conversions counted as roundings; a fallback on a tie and on
+  a non-finite evaluation, which records no value; a new `FILTER_VERSION` for any change to the bound, the constant,
+  the evaluation order or the limits. The bound needs each operation rounded once to binary64, so the crate refuses
+  to compile for 32-bit x86 without SSE2.
+- Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model read the crate against
+  KN3.5, CT-KN3-03 and state contract A2 and found no blocker or major. Its minor point, that halving E would pass
+  the tests, is the margin the proof allows; the author's deliberate faults (a zero bound, the bound over 2^20, no
+  non-finite check, the summation count left out of K, √5 off by one ulp) each fail them.
+- Not built: the shell's gesture producer, F2 and F5 (ν), the cost of an exact operation by operand size (KN3.6),
+  and a call of the filter from either kernel crate; an accessor for `SumOfProducts`'s terms would let the filter
+  take the kernel's sum directly.
 
 ## Status of M5: the jumbling half
 
@@ -467,8 +488,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   of CT-KN2-01, CT-KN2-04, CT-KN1-05 (poses) and CT-KN2-05 (no `f32` or `f64` in the kernel crates), which run whole
   with M4's halves; CT-JI-03. CT-KN2-02 in part: heights and domain IDs against `trees.py` and the library's
   histograms on H6030's compared states, the recorded fixture prefixes and u1, and the free-mode Cayley rotation.
-- Not built, for M8: CT-KN1-03, CT-KN1-04's jumbling half, CT-KN1-06, CT-KN2-06, CT-KN3-03 (the A2 filter), the
-  jumbling words of CT-KN2-07, CT-KN3-01's small-margin set, R-11's jumbling property (CT-LG2-12), and CT-KN2-02's
+- Not built, for M8: CT-KN1-03, CT-KN1-04's jumbling half, CT-KN1-06, CT-KN2-06, CT-KN3-03's model inputs (the
+  filter itself is in `c600-a2-filter`, M4's section), the jumbling words of CT-KN2-07, CT-KN3-01's small-margin set, R-11's jumbling property (CT-LG2-12), and CT-KN2-02's
   cases b20, b06-14, b14 and b03; the observations rim_summary, covers, repair_list, nu, checkpoints, release_check and
   derivation with reachability; Strict protection on the jumbled puzzle; and the holding caps of seam cells and tree
   positions past the first step. Built since M5: KN3's exact rotation requests (below; CT-KN3-05 whole, CT-KN3-01,
@@ -723,9 +744,9 @@ run or not applicable is no pass (PHS.63).
 - Count with LP3's C1 to C5 and C7, M5 and LP2's first and second integration batches, KN3's exact requests among
   them, as `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool): 60 whole,
   seven of them by the union of their parts (CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01 and
-  CT-LG3-04); 123 part; 5 named only by LP3's command-layer tests, as parts without a marker (CT-KN5-07, CT-KN5-12,
+  CT-LG3-04); 124 part; 5 named only by LP3's command-layer tests, as parts without a marker (CT-KN5-07, CT-KN5-12,
   CT-LI-04, CT-LI-09 and CT-LI-10); 1 missing despite its name (CT-KN5-08: only the documentation in
-  `c600-command/src/layer.rs` names it); 59 waiting, each with what it waits for in
+  `c600-command/src/layer.rs` names it); 58 waiting, each with what it waits for in
   `docs/progress/1.0/lp2-ct-index-notes.md`.
 - Not run or not applicable, which is no pass (PHS.63), with the check that runs instead: CT-LG3-06's flow-label
   variant, while the flow rule is off (BND.41) and LQ2 has not set it, so the static-only and run-time variants run
@@ -786,8 +807,8 @@ run or not applicable is no pass (PHS.63).
   - M6's remaining rows (15): CT-PS1-08 to CT-PS1-10, CT-PS1-16, CT-PS1-19, CT-PS1-21, CT-PS1-23, CT-PS2-01 to
     CT-PS2-05, and the run records of CT-DET-04, CT-DET-14 and CT-BND-23 (with LP3's grants for CT-DET-04 and
     CT-BND-23).
-  - The jumbled puzzle's rows that M5 leaves to M8 (7): CT-KN1-03, CT-KN1-06, CT-KN2-06, CT-KN3-03, CT-PS1-11,
-    CT-PS1-14 and CT-PS1-22.
+  - The jumbled puzzle's rows that M5 leaves to M8 (6): CT-KN1-03, CT-KN1-06, CT-KN2-06, CT-PS1-11, CT-PS1-14 and
+    CT-PS1-22.
   - A session's second level (3): CT-ONE-17 and CT-ONE-18, which need a second level in the session, its crossing
     and `project` (KN1.9); and CT-ONE-19, with LP3's view model.
   - Derived states with an open reachability claim and KN2.14's raw-table import, which M4 does not build (3, no

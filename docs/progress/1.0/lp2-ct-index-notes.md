@@ -24,7 +24,6 @@ The tool refuses (exit 2) a note for an ID outside the phase's table and an unkn
 | CT-KN1-03 | waiting | the jumbled puzzle's row that M5 leaves to M8 (`rust/README.md`, M5's "Not built, for M8"; LP2 plan section 11) |
 | CT-KN1-06 | waiting | the jumbled puzzle's row that M5 leaves to M8 (`rust/README.md`, M5's "Not built, for M8") |
 | CT-KN2-06 | waiting | the jumbled puzzle's row that M5 leaves to M8 (`rust/README.md`, M5's "Not built, for M8") |
-| CT-KN3-03 | waiting | the jumbled puzzle's row that M5 leaves to M8 (`rust/README.md`, M5's "Not built, for M8") |
 | CT-PS1-11 | waiting | the jumbled puzzle's row that M5 leaves to M8 (`rust/README.md`, missing list) |
 | CT-PS1-14 | waiting | the jumbled puzzle's row that M5 leaves to M8 (`rust/README.md`, missing list) |
 | CT-PS1-22 | waiting | the jumbled puzzle's row that M5 leaves to M8 (`rust/README.md`, missing list) |

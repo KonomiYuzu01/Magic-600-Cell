@@ -53,8 +53,14 @@
 //!   and the caller decides with unbounded integers (`c600-jumble`'s `q5`); this crate uses the standard library and
 //!   `c600-kernel` only.
 //! - A change to the bound, the √5 constant, the evaluation order or the limits takes a new [`FILTER_VERSION`].
+//! - The proof needs each operation rounded once to binary64, as on x86_64 and on every target with SSE2. Rust never
+//!   fuses a multiply and an add on its own. On 32-bit x86 without SSE2, x87 arithmetic rounds to extended precision
+//!   first, so the crate refuses to compile there.
 
 #![forbid(unsafe_code)]
+
+#[cfg(all(target_arch = "x86", not(target_feature = "sse2")))]
+compile_error!("the A2 filter's bound needs each operation rounded once to binary64, which x87 arithmetic does not do");
 
 pub use c600_kernel::exact::Factor;
 use c600_kernel::exact::SumOfProducts;
