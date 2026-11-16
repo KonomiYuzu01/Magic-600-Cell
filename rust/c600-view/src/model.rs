@@ -13,6 +13,7 @@ use c600_digest::sha256;
 use crate::bundle::{validate_engine_bundle, BundleCandidate, CompleteBundle};
 use crate::error::{code, BundleFault, Context, Error, Form};
 use crate::limits::{Field, LimitProfile, OutputAllowance};
+use crate::provenance::{BoundaryClass, Profile, Provenance};
 use crate::publication::{Content, PublicationInput};
 use crate::receipt::{
     CancelReason, CommandId, Completion, CompletionKind, JobId, JobOutcome, JobResult, ResultRef, Status,
@@ -77,6 +78,12 @@ pub enum Origin {
     Recomputation,
 }
 
+/// RPI.83: `view.open` and `view.close` run only inside a command the solver invoked. A [`CommandId::Scheduled`] is a
+/// recomputation this model started (LI.25), so it holds no permission, whatever origin a caller states for it.
+fn solver_command(command: CommandId, origin: Origin) -> bool {
+    origin == Origin::Solver && !matches!(command, CommandId::Scheduled(_))
+}
+
 /// The declared per-frame workload of a view (RM.38, RM.39, RPI.71, RPI.82).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Workload {
@@ -101,13 +108,16 @@ impl Workload {
     }
 }
 
-/// What the host declares for a view's source when it opens: its dependencies, its workload and the output
-/// allowance of each revision-driven run (draft, RPI.83).
+/// What the host declares for a view's source when it opens: its dependencies, its workload, the output allowance of
+/// each revision-driven run and, for a built-in source, the boundary class of the tool's manifest (draft, RPI.83,
+/// BND.27).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Declared {
     pub depends: Depends,
     pub workload: Workload,
     pub output: OutputAllowance,
+    /// The class the host read from a built-in tool's manifest; `None` for a solver's own tool (BND.27).
+    pub class: Option<BoundaryClass>,
 }
 
 /// A run handed to the runner. Its base is the newest adopted revision at start (RPI.12).
@@ -131,7 +141,8 @@ pub enum RunOutcome {
     Error(Error),
 }
 
-/// An installed publication: nodes, plans and source maps installed together (RPI.10).
+/// An installed publication: nodes, plans and source maps installed together (RPI.10), with the block the display
+/// sink stores (RPI.45, BND.26).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Installed {
     pub command: CommandId,
@@ -140,6 +151,7 @@ pub struct Installed {
     pub content: Content,
     /// The installed view generation (RM.20's `covered`).
     pub covered: u64,
+    pub provenance: Provenance,
 }
 
 /// The host's status of a view's program output (RPI.13, charter D2). Each status carries its typed data.
@@ -178,8 +190,9 @@ pub enum StageUse {
 /// What a visible view contributes to a frame.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Draw {
-    /// Output whose declared dependencies match the frame's revision (ONE.63).
-    Output { base: Base, publication: Digest, stage: StageUse },
+    /// Output whose declared dependencies match the frame's revision (ONE.63), drawn with `stage` and carrying the
+    /// block of its producer whichever chain draws it (RPI.45).
+    Output { base: Base, publication: Digest, stage: StageUse, provenance: Provenance },
     /// The view's own stale presentation, naming its base. Its overlays do not attach to the new state (RPI.13).
     Stale { base: Base },
     /// No program output. Global and Local still draw the bundle.
@@ -204,17 +217,23 @@ pub struct FrameInput {
     pub views: Vec<FrameView>,
 }
 
-/// Work counters of one view (RPI.11, RM.25, KN7.8).
+/// Work counters of one view (RPI.11, RM.17, RM.25, KN7.8). Every counter only grows; a view that does no work
+/// leaves all of them unchanged.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Counters {
+    /// Host-scheduled recomputations admitted to the view's lane: the first run at open, a run for a revision that
+    /// moved its declared dependencies while it was visible, and a run when showing finds it out of date.
+    pub recomputations: u64,
     /// Program runs handed to the runner.
     pub program_runs: u64,
     /// Runs charged: program runs plus reused read results, which are charged as misses (KN7.8).
     pub charged_runs: u64,
     /// Read results reused under ONE.10.
     pub cache_hits: u64,
-    /// Publications installed: each is a resource rebuild.
-    pub prepares: u64,
+    /// Payloads validated and prepared as display resources of a new generation (RM.17's prepare), installed or not.
+    pub preparations: u64,
+    /// Prepared payloads installed (RM.17's activate). Each is a display-resource rebuild.
+    pub installs: u64,
 }
 
 /// The view budget in use (RM.38, RM.39, RPI.82).
@@ -330,6 +349,7 @@ struct Lane {
 
 /// The headless view model of one session.
 pub struct ViewModel {
+    session: Profile,
     profile: LimitProfile,
     bundle: CompleteBundle,
     views: BTreeMap<ViewId, ViewState>,
@@ -348,9 +368,11 @@ pub struct ViewModel {
 }
 
 impl ViewModel {
-    /// A view model with Global and Local open and visible over a first complete bundle. Their workloads must fit
-    /// the profile together.
+    /// A view model for a session in profile `session`, with Global and Local open and visible over a first complete
+    /// bundle. Their workloads must fit the limit profile together. The session's profile changes no admission rule
+    /// here: Global and Local are linked and further views open the same way in every profile (RPI.42, EV3.11).
     pub fn new(
+        session: Profile,
         profile: LimitProfile,
         initial: &BundleCandidate,
         global: Workload,
@@ -358,6 +380,7 @@ impl ViewModel {
     ) -> Result<ViewModel, Error> {
         let bundle = validate_engine_bundle(initial)?;
         let mut model = ViewModel {
+            session,
             profile,
             bundle,
             views: BTreeMap::new(),
@@ -375,7 +398,8 @@ impl ViewModel {
             next_covered: 1,
         };
         for (view, workload) in [(ViewId::global(), global), (ViewId::local(), local)] {
-            let declared = Declared { depends: Depends::NONE, workload, output: OutputAllowance::new(0, 0) };
+            let declared =
+                Declared { depends: Depends::NONE, workload, output: OutputAllowance::new(0, 0), class: None };
             let state = ViewState::new(None, declared, model.next_generation);
             model.check_view_usage(model.usage_with(&state, true))?;
             model.next_generation += 1;
@@ -392,7 +416,11 @@ impl ViewModel {
     /// Adoption never waits for program output. It fences runs and pending publications whose declared dependencies
     /// moved (`cancelled(replaced_revision)`), and each further view whose declared dependencies moved records the
     /// newest invalidation: a visible view gets one scheduled run at the newest revision, a hidden view only keeps
-    /// the invalidation (RPI.11, RPI.12). Re-adopting the identical bundle changes nothing.
+    /// the invalidation (RPI.11, RPI.12). Re-adopting the identical bundle changes nothing. A bundle of a newer engine
+    /// epoch is adopted whatever its counters, and every declared dependency counts as moved, `Depends::NONE`
+    /// included: the old epoch's runs and pending publications are fenced and every further view is invalidated as
+    /// above, where a retained read result may come back (KN0.2, ONE.10, ONE.63, ONE.70). A bundle of an older epoch is
+    /// out of order.
     pub fn adopt(&mut self, candidate: &BundleCandidate) -> Result<Revision, Error> {
         let complete = validate_engine_bundle(candidate)?;
         let old = *self.bundle.revision();
@@ -455,27 +483,37 @@ impl ViewModel {
         if has_pending {
             self.try_start(view);
         } else {
-            let command = self.mint();
-            self.admit(view, Request::Run { command, output });
+            self.schedule(view, output);
         }
+    }
+
+    /// Admits one host-scheduled recomputation of a further view (LI.25) and counts it.
+    fn schedule(&mut self, view: &ViewId, output: OutputAllowance) {
+        let command = self.mint();
+        if let Some(state) = self.views.get_mut(view) {
+            state.counters.recomputations += 1;
+        }
+        self.admit(view, Request::Run { command, output });
     }
 
     // ----- further views (RPI.81 to RPI.83, RM.39)
 
     /// `view.open {view, source}`: opens a further view, visible, and schedules its first run.
     ///
-    /// Only a solver-invoked command may open a view; a recomputation gets `LG3:capability.not_granted` (draft).
-    /// Naming an open view, Global or Local included, is `EV3:input.view_id_in_use`. Opening past `frame_work`,
-    /// `view_vertex_evals`, `adapter_cpu_bytes` or `adapter_gpu_bytes` is refused with
+    /// Only a solver-invoked command may open a view. A recomputation gets `LG3:capability.not_granted` (draft): a
+    /// stated [`Origin::Recomputation`], or a [`CommandId::Scheduled`] that this model minted for one, whatever origin
+    /// is stated. Naming an open view, Global or Local included, is `EV3:input.view_id_in_use`. Opening past
+    /// `frame_work`, `view_vertex_evals`, `adapter_cpu_bytes` or `adapter_gpu_bytes` is refused with
     /// `EV3:resource_limit.display_plan_ceiling`; nothing is queued. Returns the view's generation.
     pub fn open_view(
         &mut self,
+        command: CommandId,
         origin: Origin,
         view: ViewId,
         source: ViewSource,
         declared: Declared,
     ) -> Result<u64, Error> {
-        if origin != Origin::Solver {
+        if !solver_command(command, origin) {
             return Err(Error::refusal(code::NOT_GRANTED, Context::View(view.0)));
         }
         if self.views.contains_key(&view) {
@@ -487,8 +525,7 @@ impl ViewModel {
         let generation = state.generation;
         self.views.insert(view.clone(), state);
         self.order.push(view.clone());
-        let command = self.mint();
-        self.admit(&view, Request::Run { command, output: declared.output });
+        self.schedule(&view, declared.output);
         Ok(generation)
     }
 
@@ -497,15 +534,16 @@ impl ViewModel {
     /// The close is a newer request on the view's lane, so unfinished work there ends
     /// `cancelled(superseded(by: command))` (LI.23). The view's resources move to safe retirement and stay charged
     /// until [`ViewModel::complete_retirement`] (RM.19). Global, Local and unknown views give
-    /// `EV3:input.view_not_closable`; a recomputation gets `LG3:capability.not_granted` (draft). Returns the
-    /// retirement token, or `None` when an eviction already retired the view's resources.
+    /// `EV3:input.view_not_closable`; a recomputation, stated or by its [`CommandId::Scheduled`], gets
+    /// `LG3:capability.not_granted` (draft). Returns the retirement token, or `None` when an eviction already retired
+    /// the view's resources.
     pub fn close_view(
         &mut self,
         command: CommandId,
         origin: Origin,
         view: &ViewId,
     ) -> Result<Option<RetireToken>, Error> {
-        if origin != Origin::Solver {
+        if !solver_command(command, origin) {
             return Err(Error::refusal(code::NOT_GRANTED, Context::View(view.0.clone())));
         }
         if view.is_fixed() || !self.views.contains_key(view) {
@@ -558,8 +596,7 @@ impl ViewModel {
         if has_pending {
             self.try_start(view);
         } else if needs_run {
-            let command = self.mint();
-            self.admit(view, Request::Run { command, output });
+            self.schedule(view, output);
         }
         Ok(true)
     }
@@ -697,7 +734,8 @@ impl ViewModel {
         if !runner.fenced {
             match outcome {
                 RunOutcome::Published(content) => {
-                    self.finalize(&view, runner.command, Some(job), runner.base, content, runner.output, true)
+                    let run = (runner.command, Some(job), runner.base, runner.output);
+                    self.finalize(&view, run, content, None, true)
                 }
                 RunOutcome::CutOff(cut) => {
                     let outcome = JobOutcome::CutOff(cut);
@@ -772,7 +810,8 @@ impl ViewModel {
                     }
                 }
                 Request::Publish { command, input } => {
-                    self.finalize(view, command, None, input.base, input.content, input.output, false);
+                    let request = (command, None, input.base, input.output);
+                    self.finalize(view, request, input.content, Some(input.provenance), false);
                 }
             }
         }
@@ -789,7 +828,7 @@ impl ViewModel {
             if let Some(content) = hit {
                 state.counters.cache_hits += 1;
                 state.counters.charged_runs += 1;
-                self.finalize(view, command, None, base, content, output, false);
+                self.finalize(view, (command, None, base, output), content, None, false);
                 return false;
             }
         }
@@ -805,23 +844,35 @@ impl ViewModel {
         true
     }
 
-    /// Validates, rechecks dependencies, charges output and installs (RM.13, RM.20, LI.25). `remember` keeps a run's
-    /// read result for ONE.10's reuse; host publications and reused results are not kept again.
-    #[allow(clippy::too_many_arguments)]
+    /// Validates and prepares, rechecks dependencies, charges output and installs (RM.13, RM.17, RM.20, LI.25).
+    /// `request` is the command, its job, its base and its output allowance. `provenance` is the block a standalone
+    /// publication carries; `None` means a run of the view's source, whose block the host fills from the session's
+    /// profile, the view's source and its declared class (BND.22). `remember` keeps a run's read result for ONE.10's
+    /// reuse; host publications and reused results are not kept again.
     fn finalize(
         &mut self,
         view: &ViewId,
-        command: CommandId,
-        job: Option<JobId>,
-        base: Base,
+        request: (CommandId, Option<JobId>, Base, OutputAllowance),
         content: Content,
-        mut output: OutputAllowance,
+        provenance: Option<Provenance>,
         remember: bool,
     ) {
+        let (command, job, base, mut output) = request;
+        let session = self.session;
+        let provenance = match (provenance, self.views.get(view)) {
+            (Some(provenance), _) => provenance,
+            (None, Some(ViewState { source: Some(source), declared, .. })) => {
+                Provenance { profile: session, producer: source.clone(), class: declared.class }
+            }
+            (None, _) => return,
+        };
         let bytes = match content.admit(&base, &self.profile, Form::Stop) {
             Ok(bytes) => bytes,
             Err(error) => return self.fail(view, command, job, output, error),
         };
+        if let Some(state) = self.views.get_mut(view) {
+            state.counters.preparations += 1;
+        }
         if !base.matches(self.bundle.revision()) {
             return self.cancel(command, job, output, CancelReason::ReplacedRevision);
         }
@@ -837,8 +888,8 @@ impl ViewModel {
         if remember {
             state.remember(base.inputs(), content.clone());
         }
-        state.installed = Some(Installed { command, base, digest, content, covered });
-        state.counters.prepares += 1;
+        state.installed = Some(Installed { command, base, digest, content, covered, provenance });
+        state.counters.installs += 1;
         state.failure = None;
         let completion = Completion {
             kind: CompletionKind::ViewPublished,
@@ -989,6 +1040,11 @@ impl ViewModel {
 
     // ----- reading the model
 
+    /// The session's profile (LG3.9).
+    pub fn session_profile(&self) -> Profile {
+        self.session
+    }
+
     /// The fixed admission ceilings in use.
     pub fn profile(&self) -> &LimitProfile {
         &self.profile
@@ -1058,9 +1114,12 @@ impl ViewModel {
             .filter_map(|view| {
                 let state = self.views.get(view).filter(|state| state.visible)?;
                 let draw = match &state.installed {
-                    Some(installed) if installed.base.matches(&revision) => {
-                        Draw::Output { base: installed.base, publication: installed.digest, stage: state.stage_use() }
-                    }
+                    Some(installed) if installed.base.matches(&revision) => Draw::Output {
+                        base: installed.base,
+                        publication: installed.digest,
+                        stage: state.stage_use(),
+                        provenance: installed.provenance.clone(),
+                    },
                     Some(installed) => Draw::Stale { base: installed.base },
                     None => Draw::Nothing,
                 };
