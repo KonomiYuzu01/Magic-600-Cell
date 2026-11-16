@@ -35,8 +35,8 @@ fn complete(bytes: &[u8]) -> ParsedFile {
 }
 
 /// CT-LG1-03 (part: the layout of a parsed program equals the pinned bytes, is idempotent and lowers to the same
-/// program, with `ct_lg1_03_a_draft_with_a_hole_has_no_layout`; not run: a second host context, since CI runs on
-/// Windows only and the editor services that host the formatter come with LP4).
+/// program, with `ct_lg1_03_a_draft_with_a_hole_has_no_layout`, on Windows and on headless Linux; not run: a second
+/// host context, since the editor services that host the formatter come with LP4).
 #[test]
 fn ct_lg1_03_formatting_is_canonical_idempotent_and_keeps_the_program() {
     let source = UNFORMATTED.join("\n");

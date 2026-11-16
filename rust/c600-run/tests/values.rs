@@ -104,8 +104,8 @@ fn sizes_follow_det_57() {
 }
 
 /// CT-DET-15 (part: approximate fields round to nearest even at their declared precision, against golden values
-/// computed outside this crate, on the platform that runs the test; not run: the headless Linux leg, since CI has no
-/// Linux cargo leg (no owner yet)).
+/// computed outside this crate, on the platform that runs the test: Windows on the headless shards and headless Linux
+/// in the Linux Rust job, `.github/workflows/linux-rust.yml`).
 #[test]
 fn approximations_round_to_nearest_even() {
     let third = lit(Lit::Rat { num: "1".into(), den: "3".into() });
@@ -147,7 +147,7 @@ fn approximations_round_to_nearest_even() {
 }
 
 /// CT-PS1-01 (part: key order, escaping, Unicode and the terminal newline of the product profile on the platform that
-/// runs the test; not run: the headless Linux leg, since CI has no Linux cargo leg (no owner yet)).
+/// runs the test: Windows on the headless shards and headless Linux in the Linux Rust job).
 #[test]
 fn canonical_bytes_sort_and_escape() {
     let v = Value::record(vec![
