@@ -497,8 +497,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   histograms on H6030's compared states, the recorded fixture prefixes and u1, and the free-mode Cayley rotation.
 - Not built, for M8: CT-KN1-03, CT-KN1-04's jumbling half, CT-KN1-06, CT-KN2-06, CT-KN3-03's model inputs (the
   filter itself is in `c600-a2-filter`, M4's section), the jumbling words of CT-KN2-07, CT-KN3-01's small-margin set, R-11's jumbling property (CT-LG2-12), and CT-KN2-02's
-  cases b20, b06-14, b14 and b03; the observations rim_summary, covers, repair_list, nu, checkpoints, release_check and
-  derivation with reachability; Strict protection on the jumbled puzzle; and the holding caps of seam cells and tree
+  cases b20, b06-14, b14 and b03; the observation nu, the checkpoints and derivation with reachability (M8 builds
+  rim_summary, covers, repair_list and release_check, below); Strict protection on the jumbled puzzle; and the holding caps of seam cells and tree
   positions past the first step. Built since M5: KN3's exact rotation requests (below; CT-KN3-05 whole, CT-KN3-01,
   CT-KN3-04 and CT-KN3-06 in part) and the kernel rows for 600-cell-Full (M4's section).
 - Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model read the change with the
@@ -535,9 +535,10 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   `sim/api.py`'s `fixture_state` silently replays another prefix for a t outside 0 to the record count, and its
   `pose_entries` hands out J1's own exact numbers, which take attribute assignment, so the "read-only copy" can change
   the state's pose table (JI.52). The attack tests keep them as expected failures.
-- Not run, because M8 builds the calls: lead L9 (`label_checkpoint` on a raw table with a turned centre), L15's
-  `repair_list` and `covers` rows (pair order, no rank, a missing cap), L2's `release_check` agreement and L16's
-  `KN2:stale.revision_gone` (the candidate has no snapshot handles).
+- Not run, because the candidate does not build the calls: lead L9 (`label_checkpoint` on a raw table with a turned
+  centre) and L16's `KN2:stale.revision_gone` (the candidate has no snapshot handles). L15's `repair_list` and
+  `covers` rows (J1's pinned pair order, no rank, a cap outside 0..599) and L2's `release_check` agreement run in
+  M8's comparison with J1 (below).
 - Evidence kind: source and fixture. The comparison ran on Windows only. The timings the check prints are
   informational, not performance evidence.
 - KN3.4 and KN3.7 to KN3.9 under A6 (`c600_jumble::rotation`): `Request::decode` reads C, H and M lines with unbounded
@@ -566,6 +567,30 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   A1 to A4 although the state contract's revision is now `state-contract 2026-11-15 A1-A6`; renaming it changes the
   identity block J1 is compared with, so it waits for the integrator. KN3.3's exact double description is `dd`; no
   separate polytope API was added.
+- M8 observations (LP2 plan, section 11; JI.6, JI.7 and JI.12): `c600-jumble/src/observe/cuts.rs` builds
+  `rim_summary`, `release_check`, `covers` and `repair_list`, exact and read-only. The adapter serves them and
+  `rust_jumble.py` calls them. `tests/test_jumbling_rust_m8_observations.py` compares each with J1 on the states J1's
+  own tests use, undefined fields and refusals included: the rim summary on the I_a@40 stop and the I_a prefixes 10,
+  20 and 60; on census seed 7101, the release check before steps 44, 70 and 97, the cover table before steps 17, 30
+  and 33 (true answers in both directions included), and the repair list before step 97 at cap 458, whose 472
+  outcomes pass J1's `compare_recorded`, with J1's live cut-off, cancellation and errors.
+  `c600-jumble/tests/observations.rs` tests the refusals and the agreement with M5's seam facts and word check.
+  - A named cap outside 0..599 is refused with `KN2:input.named_object_invalid` (JI.45); a letter's grip outside it
+    stays an input error, as in the word check.
+  - In `covers` and `repair_list`, a classification or pair budget that runs out cuts the job off with
+    `KN7:budget.kernel_cost` and no claim (KN7.4). In `rim_summary` it leaves the caps it could not classify
+    uncertain, with no rim and no grip N.
+  - Drafts: the pair budget `max_pairs`, which JI.6 and JI.12 do not define, takes `KN7:budget.kernel_cost` (KN7.10
+    asks for that budget's code); a cancelled repair list keeps its covered outcomes and names no code; a blocked or
+    closed named cap, and a repair list in free mode, are errors with no code, because no chapter 13 code fits.
+  - Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model found no blocker or
+    major finding. Its minor points are the drafts above, which it found defensible, and engine faults that return a
+    plain error without a code, as the crate's other engine faults do; no change.
+  - Not built: `nu` and `correction_set_check` (JI.13). `nu` needs the label level of A5's crossings; the check needs
+    `nu` and the 36-row correction catalogue, which only research data holds, and shipping that catalogue as model
+    data is a model-boundary decision.
+  - CT-KN2-01, CT-KN2-04 and CT-BND-29 in part; no state changed in the index. No J1 fault was found. Evidence kind:
+    source and fixture; the comparison ran on Windows only, and its timings are informational.
 
 ## Status of M6: the session store
 
