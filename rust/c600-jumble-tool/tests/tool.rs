@@ -3,7 +3,7 @@
 
 use std::collections::BTreeSet;
 
-use c600_check::{admit, check, separation, Grant, Policy, Profile, Separation, NOT_GRANTED};
+use c600_check::{admit, admit_built_in, check, separation, Grant, Policy, Profile, Row, Separation, NOT_GRANTED};
 use c600_digest::sha256_hex;
 use c600_ir::{Effect, FnKind, Ty};
 use c600_jumble_tool::tool::{
@@ -13,7 +13,7 @@ use c600_run::boundary::Store;
 use c600_run::interp::{Host, Request, RowTariff, Sink};
 use c600_run::value::Value;
 use c600_syntax::{format, lower, parse};
-use c600_tools::tool::{admit_built_in, lower_source, targets, BoundaryClass, Manifest, Tool};
+use c600_tools::tool::{class_rows, lower_source, targets, BoundaryClass, Manifest, Tool};
 
 /// A module named as the tool's with `functions` as its functions.
 fn module(functions: &str) -> String {
@@ -125,7 +125,9 @@ fn ct_lb6_03_the_declared_class_matches_each_exact_entry_definition() {
         assert!(summary.unresolved.is_empty() && summary.reaches.is_empty(), "{entry}");
         assert_eq!(separation(summary, &Policy::interim()), previews_only(), "{entry}");
 
-        let admission = admit_built_in(&program, MODULE, entry, &Grant::none(), &Policy::interim()).unwrap();
+        let class = class_rows(&manifest(entry).expect("the entry's manifest"));
+        assert_eq!(class, BTreeSet::from([Row::Preview(ROW.to_owned())]), "{entry}: the class's rows (draft)");
+        let admission = admit_built_in(&program, MODULE, entry, &class, &Grant::none(), &Policy::interim()).unwrap();
         assert!(admission.is_admitted(), "{entry}: {:#?}", admission.diagnostics);
         assert_eq!((admission.separation, admission.open_cells.len()), (previews_only(), 0), "{entry}");
         let loaded = tool(entry).expect("the shipped entry loads");
@@ -153,9 +155,12 @@ fn ct_lb6_03_the_declared_class_matches_each_exact_entry_definition() {
 ///   read directly or through a declassifier, enabled or not.
 ///
 /// The checker admits each module as a well-typed program. The built-in column refuses each previewing entry with
-/// `LG3:capability.not_granted`: at `entry` for reading state beside the preview (LG3.13, BND.39), and at the proposal
-/// when the word is not a parameter as given. The keeping entry prepares no preview and is admitted, so the refusal
-/// is the relay's. A refused module never loads as a tool: no run starts and the engine is never called.
+/// `LG3:capability.not_granted`: at `entry` for reading state beside the preview (LG3.13, BND.39), at `entry` again
+/// for a target that is no literal (a row the checker cannot name, BND.57), and at the proposal when the word is not a
+/// parameter as given. The keeping entry prepares no preview and is refused at its write: the word it stores is not
+/// one the solver named (LP2's built-in column), so the laundering is cut at both ends. The column's checks here use a
+/// class that lists every row the fixtures use, so each refusal shown is the rule under test. A refused module never
+/// loads as a tool under the shipped class: no run starts and the engine is never called.
 #[test]
 fn ct_lb6_03_lx3_cases_are_refused_under_capability_separation() {
     let preview = "target(\"operation.preview\")";
@@ -201,10 +206,22 @@ fn ct_lb6_03_lx3_cases_are_refused_under_capability_separation() {
         ),
     ));
 
+    // The shipped class with every row the fixtures use added.
+    let class: BTreeSet<Row> = [
+        Row::Read("correction_combination".into()),
+        Row::Read("cap_is_blocked".into()),
+        Row::Read("lowers_n".into()),
+        Row::Read("lowering_word".into()),
+        Row::Read("kept_check".into()),
+        Row::Workspace("kept_check".into()),
+        Row::Declassified("kept_check".into()),
+        Row::Preview(ROW.to_owned()),
+    ]
+    .into();
     let enabled = Policy::enabling(&["kept_check"]);
     let cases: [(&str, &String, &'static str, Policy, Separation, &[&str]); 6] = [
         ("correction solve", &correction_solve, "solve_corrections", Policy::interim(), both(), &["entry", "0"]),
-        ("target chosen from state", &target_selection, "pick_target", Policy::interim(), both(), &["entry"]),
+        ("target chosen from state", &target_selection, "pick_target", Policy::interim(), both(), &["entry", "entry"]),
         ("word chosen from state", &target_selection, "pick_word", Policy::interim(), both(), &["entry", "0"]),
         ("laundering through a record", &laundering, "relay", Policy::interim(), both(), &["entry", "0"]),
         ("a declassified record", &laundering, "relay_declassified", Policy::interim(), both(), &["entry", "0"]),
@@ -214,7 +231,7 @@ fn ct_lb6_03_lx3_cases_are_refused_under_capability_separation() {
         let program = lower_source(source).unwrap_or_else(|error| panic!("{what}: {error}"));
         let report = check(&program).unwrap();
         assert!(report.is_admitted(), "{what}: the checker admits the program: {:#?}", report.diagnostics);
-        let admission = admit_built_in(&program, MODULE, entry, &Grant::none(), &policy).unwrap();
+        let admission = admit_built_in(&program, MODULE, entry, &class, &Grant::none(), &policy).unwrap();
         let found: Vec<&str> = admission.diagnostics.iter().map(|d| d.path.as_str()).collect();
         assert_eq!((admission.separation, &found[..]), (separation, paths), "{what}");
         assert!(admission.codes().iter().all(|&code| code == NOT_GRANTED), "{what}: {:#?}", admission.diagnostics);
@@ -229,10 +246,12 @@ fn ct_lb6_03_lx3_cases_are_refused_under_capability_separation() {
     // A target chosen from state is no literal row either, so the entry has no row set to declare.
     assert!(targets(&lower_source(&target_selection).unwrap(), MODULE, "pick_target").is_err());
 
-    // The keeping entry reads state and prepares no preview: the built-in column admits it, and it proposes nothing.
+    // The keeping entry reads state, prepares no preview and proposes nothing; the built-in column refuses it at the
+    // write (path `1.0`, the second `let`'s value), because the word it stores is not one the solver named.
     let program = lower_source(&laundering).unwrap();
-    let keep = admit_built_in(&program, MODULE, "keep", &Grant::none(), &Policy::interim()).unwrap();
-    assert!(keep.is_admitted(), "{:#?}", keep.diagnostics);
+    let keep = admit_built_in(&program, MODULE, "keep", &class, &Grant::none(), &Policy::interim()).unwrap();
+    let found: Vec<(&str, &str)> = keep.diagnostics.iter().map(|d| (d.path.as_str(), d.code)).collect();
+    assert_eq!(found, [("1.0", NOT_GRANTED)], "{:#?}", keep.diagnostics);
     assert_eq!(keep.separation, Separation { reads_state: true, prepares_previews: false });
     assert_eq!(targets(&program, MODULE, "keep"), Ok(BTreeSet::new()));
 }
