@@ -51,7 +51,8 @@ pub struct Diagnostic {
     pub note: String,
 }
 
-/// Malformed IR: the lowering is at fault, not the program.
+/// Malformed IR, where the lowering is at fault, or a base-type mismatch in the program, which the checker does not yet
+/// report as `LG2:type.mismatch` (`rust/README.md`).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IrError(pub String);
 
@@ -351,6 +352,8 @@ pub fn type_name(ty: &Ty) -> String {
         Ty::Bool => "Bool".into(),
         Ty::Nat => "Nat".into(),
         Ty::Int => "Int".into(),
+        Ty::Rat => "Rat".into(),
+        Ty::Q5 => "Q5".into(),
         Ty::Text => "Text".into(),
         Ty::Word => "Word".into(),
         Ty::Target => "Target".into(),
@@ -557,6 +560,9 @@ fn lit_type(lit: &Lit) -> Ty {
         Lit::Bool(_) => Ty::Bool,
         Lit::Nat(_) => Ty::Nat,
         Lit::Int(_) => Ty::Int,
+        Lit::Rat { .. } => Ty::Rat,
+        Lit::Q5 { .. } => Ty::Q5,
+        Lit::Approx { precision, .. } => Ty::Approx(*precision),
         Lit::Text(_) => Ty::Text,
         Lit::Word(_) => Ty::Word,
         Lit::Target(_) => Ty::Target,
@@ -616,7 +622,7 @@ fn free_names<'a>(e: &'a Expr, bound: &mut Vec<&'a str>, out: &mut BTreeSet<&'a 
             bound.truncate(depth);
         }
         other => {
-            for child in children(other) {
+            for child in other.children() {
                 free_names(child, bound, out);
             }
         }
@@ -628,48 +634,8 @@ fn writes<'a>(e: &'a Expr, out: &mut BTreeMap<&'a str, Vec<&'a QTy>>) {
     if let Expr::WriteWorkspace { record, ty, .. } = e {
         out.entry(record.as_str()).or_default().push(ty);
     }
-    for child in children(e) {
+    for child in e.children() {
         writes(child, out);
-    }
-}
-
-/// The child expressions in path order.
-fn children(e: &Expr) -> Vec<&Expr> {
-    match e {
-        Expr::Lit(_)
-        | Expr::Var(_)
-        | Expr::FnRef { .. }
-        | Expr::ReadSnapshot { .. }
-        | Expr::Accounting(_)
-        | Expr::Declassified { .. }
-        | Expr::FileRead { .. }
-        | Expr::RandomDraw
-        | Expr::ReadClock => Vec::new(),
-        Expr::Let { value, body, .. } => vec![&**value, &**body],
-        Expr::If { cond, then, els } | Expr::DisplayIf { cond, then, els } => vec![&**cond, &**then, &**els],
-        Expr::Match { scrutinee, arms, default } => {
-            let mut out = vec![&**scrutinee];
-            out.extend(arms.iter().map(|(_, arm)| arm));
-            out.push(&**default);
-            out
-        }
-        Expr::Call { callee, args } => {
-            let mut out: Vec<&Expr> = args.iter().collect();
-            if let Callee::Value(f) = callee {
-                out.push(&**f);
-            }
-            out
-        }
-        Expr::Closure { body, .. } => vec![&**body],
-        Expr::Prim { args, .. } => args.iter().collect(),
-        Expr::Record(fields) => fields.iter().map(|(_, f)| f).collect(),
-        Expr::Field { value, .. }
-        | Expr::PublishView { value }
-        | Expr::WriteWorkspace { value, .. }
-        | Expr::UseExact { value, .. }
-        | Expr::FileWrite { value, .. } => vec![&**value],
-        Expr::Propose { word, target } => vec![&**word, &**target],
-        Expr::ReadReceipt { receipt, .. } => vec![&**receipt],
     }
 }
 
@@ -1372,6 +1338,10 @@ impl<'p> Checker<'p> {
 
     fn expr(&mut self, e: &'p Expr, env: &mut Env) -> Result<(Val, Summary), IrError> {
         match e {
+            // An approximate literal is display data from the start, like an explicit conversion (LG1.7, LG2.19).
+            Expr::Lit(Lit::Approx { precision, .. }) => {
+                Ok((Val::new(Ty::Approx(*precision), Qual::Approx), Summary::default()))
+            }
             Expr::Lit(lit) => Ok((Val::exact(lit_type(lit)), Summary::default())),
             Expr::Var(name) => match env.get(name) {
                 Some(v) => Ok((v.clone(), Summary::default())),
@@ -1778,7 +1748,7 @@ impl<'p> Checker<'p> {
             }
             Prim::ToApprox(p) => {
                 let v = &vals[0];
-                if !is_numeric(&v.ty) {
+                if !is_numeric(&v.ty) && !matches!(v.ty, Ty::Rat | Ty::Q5) {
                     return Err(self.err(format!("an approximate conversion of a {:?}", v.ty)));
                 }
                 Ok(Val::new(Ty::Approx(p), Qual::Approx.join(v.qual)))

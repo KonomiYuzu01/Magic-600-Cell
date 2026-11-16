@@ -12,3 +12,11 @@ dependencies = [
 [[package]]
 name = "c600-ir"
 version = "0.0.0"
+
+[[package]]
+name = "c600-syntax"
+version = "0.0.0"
+dependencies = [
+ "c600-check",
+ "c600-ir",
+]

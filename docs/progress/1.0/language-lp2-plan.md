@@ -62,7 +62,7 @@ One pull request per milestone; each names the checks that ran.
 | M4 | Kernel API and 600-cell-Full candidate adapter: O01 to O07 through `tools/oracle/` | Rust engine port |
 | M5 | Jumbling half: public J1 API, differential comparisons, W-J fixtures and H6030 | EN3's approval |
 | M6 | Session store below the language; budgets and cancellation end to end | M2, M4 |
-| M7 | Parser and its lowering into the IR | LQ13 (answered: candidate A) |
+| M7 | Parser and its lowering into the IR (section 8) | LQ13 (answered: candidate A) |
 | M8 | PHS.19's acceptance on Windows and headless Linux; section 15.3 runnable | M1 to M7 |
 
 ## 5. M1: the IR draft and the checker
@@ -119,3 +119,60 @@ acceptance item blocks LP2's exit (PHS.63); nothing is cut.
 Questions to the owner are batched (owner, 16 November 2026): at most one question card per milestone, each with a
 recommended option. The big-integer card is M2's card; other M2 points follow recorded decisions or conventional
 defaults.
+
+## 8. M7: the parser and its lowering into the IR
+
+Crate: `rust/c600-syntax`, which depends on `c600-ir` only. It checks the source bytes, parses LX-8 candidate A with
+recovery, formats parsed programs and lowers them into the IR draft with a source map. The syntax details settled here
+are drafts: they freeze with the syntax and the IR (PHS.49), and `rust/README.md` lists them.
+
+Selections (the owner may overrule them):
+
+1. **Edition.** The header is `edition "6cs-draft-1";`, the only supported edition. Like `c600-ir-draft-1`, the name
+   says that its rules may still change before the syntax freeze (LG1.1, LG1.2).
+2. **Grammar.** Candidate A's grammar stands: declaration keywords, braces, `let`, an explicit `return`, `match` with
+   arms ending in `;`, column-1 declarations and no trailing commas. The IR draft needs a few additions, each in A's
+   style: `export` before a declaration, generic parameters `fn f<T, E>(...)`, closures `fn(x: T) -> R { ... }`,
+   records `record { a = e }` and field access `e.a`, literal arms and a `_` arm in `match`, type arguments in calls
+   (`read_snapshot<Colour>("q")`), the types `Display<T>`, `record { a: T }` and `fn(T) -> R effects [...]`, and the
+   literals `true`, `false` and `()`. The conditionals are the reserved calls `if(c, a, b)` and `display_if(c, a, b)`,
+   LG2.20's notation; the IR's other operations are reserved names called like functions. `charge` and the command
+   metadata become optional clauses.
+3. **Exact literals** stay exact decimal text in the IR: unbounded integers, rationals with a nonzero denominator and
+   the sign on the numerator, and Q(√5) pairs; an approximation keeps its decimal text and its precision (24, 53 or
+   113 bits). No host float and no big-integer crate is involved. Reducing a rational to lowest terms waits for the
+   big-integer answer (M2).
+4. **What parses but does not lower yet.** Declared charges (LG4.8's tariffs), command metadata (the command table,
+   LP3), verdict matches, menu words and LX-8's domain types (the IR's domain families, M4 and M5). Lowering refuses
+   each with a message that names what it waits for.
+5. **Comments** are accepted and not retained, as in candidate A, so the formatter drops them (LG1.4 allows it;
+   retention comes with the authoring services, PHS.21).
+6. **Source map** (LG4.12). Lowering returns, for each function, the source range of every IR path that the checker
+   names in a diagnostic, with the module's source digest (SHA-256 of the pinned bytes, written in the crate).
+
+Acceptance:
+
+1. `cargo test --locked --offline` passes in `rust/`, in CI through `tests/test_language_rust.py`.
+2. CT-LG1-01, first half: a file without the header gives `LG1:syntax.edition_missing` with an insertion range, and
+   another edition gives `LG1:syntax.edition_unsupported`; nothing after the header is parsed or retried under another
+   edition. The second half, mixed dependency editions, is not applicable while one edition exists, which is no pass.
+3. CT-LG1-02: a `.6cs` fixture yields its pinned SHA-256 from the checkout (`* -text`); the same bytes with CRLF line
+   ends or a BOM, and CT-ERR-05's inputs `61 FF 62` and `61 F0 9F 98`, give `LG1:syntax.invalid_encoding` with no
+   span, the raw input digest and the offending byte interval ([1,2) and [1,4) for the two CT-ERR-05 inputs).
+4. CT-LG1-03: formatting is a function of the parsed program; formatting again gives the same bytes; the formatted
+   text parses to the same program and lowers to the same IR; one expected output is pinned in the test, so Linux
+   and Windows compare against the same bytes.
+5. CT-LG1-04: candidate A's fourteen text recovery drafts from LX-8, with the product header, give the codes and
+   recovered declarations that LX-8 records; a prefix shifts every location and keeps every code; two independent
+   errors both recover; a program with a recovery hole does not lower.
+6. CT-LG1-05: an integer literal of more than 100 digits, rationals and Q(√5) pairs lower to exact text; `~53"0.125"`
+   lowers to a distinct approximate literal; `1/0`, `1.5` and `~53"NaN"` give `LG1:syntax.invalid_literal`.
+7. The nine frozen exactness cases of M1's acceptance item 2, written in source, give exactly the frozen code, value
+   type and fields through the checker, and each diagnostic maps to a source range of its function.
+8. Candidate A's 17 LX-8 fixtures, with the product header, parse and format idempotently, so the product grammar
+   accepts every program LX-8 wrote in candidate A.
+9. No file under `docs/architecture/1.0/language/` changes, and the eight language checkers still pass.
+
+Stop condition: M7 ends when items 1 to 9 pass in CI and its pull request is merged. It stops earlier, and the owner is
+told, if a rule cannot be implemented without changing a frozen file or choosing an open contract (LG4.8's tariffs,
+the command table, LQ2's policy options), or if it needs a product dependency.

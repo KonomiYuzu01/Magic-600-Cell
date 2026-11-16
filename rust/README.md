@@ -11,8 +11,10 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | --- | --- |
 | `c600-ir` | The typed IR draft `c600-ir-draft-1`: data types, and short constructors for hand-built test programs |
 | `c600-check` | The checker over the IR: exactness (LG2.19 to LG2.22), effects, capabilities, views and capability separation (LG3), report order and contract refusal (LG4.1, LG4.3) |
+| `c600-syntax` | The parser of `.6cs` source files: source byte checks, parsing with recovery, the canonical layout, and lowering into the IR draft with a source map (LG1, LG4.12) |
 
-The checker depends on the IR crate only. The later interpreter will depend on the IR and not on the checker.
+The checker and the syntax crate depend on the IR crate only; the syntax crate's tests also run the checker. The later
+interpreter will depend on the IR and not on the checker.
 
 ## Running the tests
 
@@ -27,10 +29,10 @@ the ID and the part (PHS.62). The exactness tests read the frozen
 None outside the Rust standard library. An external crate needs the owner's approval first (RTE.70), and each approved
 one is listed here with its licence.
 
-## Status (milestone M1)
+## Status of M1: the IR and the checker
 
-- The IR is a draft and changes freely until the IR freeze (PHS.49). Until the parser exists (M7), tests build IR by
-  hand, and a hand lowering is no evidence for the parser.
+- The IR is a draft and changes freely until the IR freeze (PHS.49). The checker's tests build IR by hand; the syntax
+  crate's tests write the nine frozen exactness cases in source as well (M7).
 - The IR and the checker advertise the exactness and execution contract `lp1-exec-draft-1` and refuse a program pinned
   to another contract or IR version with `LG4:input.ir_version_unsupported`. Form 2 (`lp1-exec-region-draft-1`) is not
   built, so CT-LG2-05's form-2 half is not applicable, which is no pass (PHS.63).
@@ -41,8 +43,9 @@ one is listed here with its licence.
   also when an unresolved call or an open effect variable may prepare one.
 - What an own tool may read in a solving session stays open (BND.59): the checker reports the open cell and neither
   grants nor refuses it.
-- A base-type mismatch in a hand-built program is an `IrError`, not a diagnostic: the frozen catalogue has no code for
-  it, and until the parser exists such a mismatch is a lowering fault.
+- A base-type mismatch is an `IrError` that refuses the whole program, not the diagnostic `LG2:type.mismatch` that the
+  frozen catalogue has for it (LG2.1). Lowering does not type programs, so since M7 a source program reaches this
+  error; it names the function and the path. Reporting it as `LG2:type.mismatch` is open work in the checker.
 - Qualifiers through calls (LG2.19): a callable enters a slot only if its signature keeps every qualifier (its result
   no more qualified than the slot's, each parameter taking what the slot passes), and a function's own result or
   stored field is checked against its declared bound even when that bound has effect variables. The checker does not
@@ -65,4 +68,56 @@ one is listed here with its licence.
 - Not in M1, because they need the runtime (M2, M3): the built-in tool column of the grant table, the fixed
   acknowledgement of BND.43, the saved-word half of CT-LG3-07, the undo half of CT-LG3-03 and research output that
   never becomes a solving preview (BND.61).
+- Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
+
+## Status of M7: the parser
+
+The syntax details below are drafts, settled under the plan's section 8. They freeze with the syntax and the IR
+(PHS.49) and may change until then.
+
+- Edition and bytes (LG1.1 to LG1.3). Every file starts with `edition "6cs-draft-1";`, the only supported edition. A
+  missing header gives `LG1:syntax.edition_missing` at an insertion point, another edition gives
+  `LG1:syntax.edition_unsupported`, and nothing after the header is read. Source is strict UTF-8 with LF line ends and
+  no byte-order mark; anything else is `LG1:syntax.invalid_encoding` with no span, the digest of the raw input and the
+  offending byte interval (CT-ERR-05). Digests are SHA-256, written in the crate (`c600-syntax/src/sha256.rs`).
+- Grammar. LX-8's candidate A
+  ([description](../work/experiments/language-lx/lx8-surfaces/candidate-a/DESCRIPTION.md)), with these additions
+  for the IR draft: `export` before `fn`, `view` or `command`; generic parameters `fn f<T,E>(...)`, which name types
+  and effect variables; closures `fn(x: T) -> R { ... }`; records `record { a = e }`, field access `e.a` and calls of
+  any expression (`values().ratio`); type arguments in calls of reserved operations (`read_snapshot<Colour>("q")`);
+  the types `Display<T>`, `Approx<P24>` (also `P53`, `P113`), `record { a: T }` and `fn(T) -> R effects [...]`;
+  literal arms and a final `_` arm in `match` beside LX-8's binder arms; and the literals `true`, `false` and `()`.
+  `charge` and the command metadata are optional; LX-8 required them. `true`, `false` and `_` are no longer names.
+- Reserved names. The keywords (`KEYWORDS` in `c600-syntax/src/lower.rs`) and the reserved operations (`BUILTINS`)
+  cannot be bound. A reserved operation is called like a function: `if(c, a, b)` and `display_if(c, a, b)` in LG2.20's
+  notation, the exact and approximate operations, the effect operations and the accounting reads. `tag`, `colour`
+  and `target` take a literal string and give a literal.
+- Names. A name is bound once in a function: a `let` or a parameter does not shadow another binding, a module
+  function or an import alias. An import names a module by the SHA-256 of its source file, among the files given to
+  one `lower` call, and the module's functions are written `alias.f`. The module loader, with its lockfile and its LG5
+  refusals, is not built.
+- Effects and capabilities. A declaration's `effects [...]` lists effects (`snapshot`, `view`, `workspace`,
+  `preview`, `budget`; `file` and `random` also name their capability), capabilities (`file`, `clock`, `random`,
+  `network`, `process`, `session_file`) and generic effect variables. A module's `requires [...]` lists capabilities
+  only; an effect there is refused (LG3.8, LG3.9).
+- Exact literals (LG1.5, CT-LG1-05). Integers of any length, rationals with a nonzero denominator and the sign on the
+  numerator, Q(√5) pairs and words keep exact decimal text in the IR; `~53"0.125"` keeps its decimal text and its
+  precision. A rational is not reduced to lowest terms until the big-integer answer (M2), so `6/8` and `3/4` are
+  different literals for now.
+- Recovery (CT-LG1-04). A damaged declaration becomes a recovery hole with `LG1:syntax.recovery_gap`, and parsing
+  resumes at the next `fn`, `view`, `command`, `import` or `export` in column 1. A draft with a hole has no layout and
+  does not lower.
+- Canonical layout (LG1.4, CT-LG1-03). `format` depends on the parsed program only: four-space indents, a blank line
+  before each declaration, imports directly after the module line, one `let` or `return` per line, `match` arms and
+  closure bodies on lines of their own, and type arguments and generic parameters without spaces (`<T,E>`, as LX-8's
+  type strings). Comments are not retained, as in candidate A, so the layout drops them; retention comes with the
+  authoring services (PHS.21). `c600-syntax/tests/fixtures/canonical.6cs` pins one expected output by its SHA-256.
+- Source map (LG4.12). `lower` returns, for each module, the source digest, each function's declaration range and
+  the source range of every IR path in each body, so a checker diagnostic's function and path map to source text.
+- What parses but does not lower yet. Lowering refuses each of these with a message naming what it waits for: a
+  declared `charge` (LG4.8's tariffs), command metadata (the command table, LP3), binder arms and LX-8's domain types
+  such as `Word<Full,Retained>` (the IR's domain families, M4 and M5), and menu words (the jumbled puzzle's alphabet,
+  M5). Type arguments on a program's own function are refused: the IR draft has no explicit instantiation.
+- Not run or not applicable, which is no pass (PHS.63): CT-LG1-01's second half, mixed dependency editions, while one
+  edition exists; CT-RTE-18 (LQ13 was answered without it).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.

@@ -28,7 +28,7 @@ fn assert_cases(programs: Vec<Program>, cases: Vec<Case>) {
 fn direct_and_helper_condition() {
     let lowerings = vec![
         // ordinary if on approx_less(x,y) selecting literal words w1 or w2
-        tool(vec![command("pick", xy(), exact(Ty::Word), if_(less(), word("w1"), word("w2")))]),
+        tool(vec![command("pick", xy(), exact(Ty::Word), if_(less(), word(&[1]), word(&[2])))]),
         // helper returns approx_less(x,y) as ordinary Bool; exporting it does not change the refusal
         tool(vec![helper(
             "less",
@@ -103,7 +103,7 @@ fn display_accounting_no_exact_continuation() {
             "branch",
             vec![],
             exact(Ty::Word),
-            match_(Expr::Accounting(Accounting::Status), vec![(tag("KN7:budget.output"), word("w1"))], word("w2")),
+            match_(Expr::Accounting(Accounting::Status), vec![(tag("KN7:budget.output"), word(&[1]))], word(&[2])),
         )]),
     ];
     assert_cases(lowerings, boundary_vector("display-accounting-no-exact-continuation"));

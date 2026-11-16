@@ -1,0 +1,26 @@
+edition "6cs-draft-1";
+module pinned requires [];
+
+export fn choose(x: Nat, y: Nat) -> Word effects [] {
+    let c = approx_less(approx53(x), approx53(y));
+    let f = fn() -> Display<Colour> {
+        return display_if(c, colour("red"), colour("blue"));
+    };
+    return match exact_less(x, y) {
+        true => word[+1, -2];
+        _ => word[+3];
+    };
+}
+
+fn apply<T,E>(g: fn(T) -> T effects [E], v: T) -> T effects [E] {
+    return g(v);
+}
+
+fn values() -> record { ratio: Rat, phi: Q5, scale: Approx<P53>, label: Text } effects [] {
+    let r = record { ratio = -3/4, phi = q5(1/2, 1/2), scale = ~53"0.125", label = "λ \"quoted\"\n" };
+    return r;
+}
+
+fn ratio() -> Rat effects [] {
+    return values().ratio;
+}

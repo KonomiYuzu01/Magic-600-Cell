@@ -1,9 +1,9 @@
 //! The typed IR draft `c600-ir-draft-1` of 600 Cell Script (LP2, milestone M1).
 //!
-//! The crate holds data and short constructors only. The checker (`c600-check`) and the later interpreter depend
-//! on it and not on each other. The IR is a draft: it changes freely until the IR freeze (chapter 12, PHS.49).
-//! Until the parser exists (milestone M7), tests build it by hand with [`build`]; a hand lowering is no evidence
-//! for the parser.
+//! The crate holds data and short constructors only. The parser (`c600-syntax`, milestone M7), the checker
+//! (`c600-check`) and the later interpreter depend on it and not on each other. The IR is a draft: it changes freely
+//! until the IR freeze (chapter 12, PHS.49). Checker tests also build it by hand with [`build`]; a hand lowering is
+//! no evidence for the parser.
 
 #![forbid(unsafe_code)]
 
@@ -96,6 +96,10 @@ pub enum Ty {
     Bool,
     Nat,
     Int,
+    /// An exact rational (LG1.6).
+    Rat,
+    /// An exact element of Q(√5): rational coefficients of 1 and √5 (LG1.6).
+    Q5,
     Text,
     Word,
     Target,
@@ -152,14 +156,33 @@ pub enum Capability {
     SessionFile,
 }
 
+/// A literal. Exact numbers are decimal text, never a host integer or float: an integer has no leading zeros and no
+/// sign unless negative, and a ratio keeps the sign on its numerator and a nonzero denominator (LG1.6). Reducing a
+/// ratio to lowest terms waits for the interpreter's big integers (M2).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Lit {
     Unit,
     Bool(bool),
-    Nat(u64),
-    Int(i64),
+    Nat(String),
+    Int(String),
+    Rat {
+        num: String,
+        den: String,
+    },
+    /// `one + sqrt5·√5`, each coefficient a ratio `(numerator, denominator)`.
+    Q5 {
+        one: (String, String),
+        sqrt5: (String, String),
+    },
+    /// An approximate literal: its decimal text and declared precision in bits. It is never read as exact (LG1.7).
+    Approx {
+        decimal: String,
+        precision: u32,
+    },
     Text(String),
-    Word(String),
+    /// A literal word in LX-8's retained alphabet: signed letters of magnitude 1 to 1200, in written order. The kernel
+    /// interface gives them their meaning (M4).
+    Word(Vec<i32>),
     Target(String),
     /// A status tag, such as a budget outcome code.
     Tag(String),
@@ -322,6 +345,49 @@ pub enum Expr {
     ReadClock,
 }
 
+impl Expr {
+    /// The child expressions in path order. A diagnostic's path is the chain of child indices from a function body,
+    /// and the parser's source map uses the same paths (LG4.12).
+    pub fn children(&self) -> Vec<&Expr> {
+        match self {
+            Expr::Lit(_)
+            | Expr::Var(_)
+            | Expr::FnRef { .. }
+            | Expr::ReadSnapshot { .. }
+            | Expr::Accounting(_)
+            | Expr::Declassified { .. }
+            | Expr::FileRead { .. }
+            | Expr::RandomDraw
+            | Expr::ReadClock => Vec::new(),
+            Expr::Let { value, body, .. } => vec![&**value, &**body],
+            Expr::If { cond, then, els } | Expr::DisplayIf { cond, then, els } => vec![&**cond, &**then, &**els],
+            Expr::Match { scrutinee, arms, default } => {
+                let mut out = vec![&**scrutinee];
+                out.extend(arms.iter().map(|(_, arm)| arm));
+                out.push(&**default);
+                out
+            }
+            Expr::Call { callee, args } => {
+                let mut out: Vec<&Expr> = args.iter().collect();
+                if let Callee::Value(f) = callee {
+                    out.push(&**f);
+                }
+                out
+            }
+            Expr::Closure { body, .. } => vec![&**body],
+            Expr::Prim { args, .. } => args.iter().collect(),
+            Expr::Record(fields) => fields.iter().map(|(_, f)| f).collect(),
+            Expr::Field { value, .. }
+            | Expr::PublishView { value }
+            | Expr::WriteWorkspace { value, .. }
+            | Expr::UseExact { value, .. }
+            | Expr::FileWrite { value, .. } => vec![&**value],
+            Expr::Propose { word, target } => vec![&**word, &**target],
+            Expr::ReadReceipt { receipt, .. } => vec![&**receipt],
+        }
+    }
+}
+
 /// Short constructors for hand-built IR.
 pub mod build {
     use super::*;
@@ -348,10 +414,10 @@ pub mod build {
         Expr::Lit(Lit::Unit)
     }
     pub fn nat(n: u64) -> Expr {
-        Expr::Lit(Lit::Nat(n))
+        Expr::Lit(Lit::Nat(n.to_string()))
     }
-    pub fn word(w: &str) -> Expr {
-        Expr::Lit(Lit::Word(w.into()))
+    pub fn word(letters: &[i32]) -> Expr {
+        Expr::Lit(Lit::Word(letters.to_vec()))
     }
     pub fn target(t: &str) -> Expr {
         Expr::Lit(Lit::Target(t.into()))

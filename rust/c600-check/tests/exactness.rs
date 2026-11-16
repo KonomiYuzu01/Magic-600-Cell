@@ -113,7 +113,7 @@ fn ct_lg2_05_branches_cannot_steer_a_word_or_an_exact_goal() {
         "go",
         xy(),
         exact(Ty::Receipt),
-        propose(display_if(less(), word("w1"), word("w2")), target("t")),
+        propose(display_if(less(), word(&[1]), word(&[2])), target("t")),
     )]);
     let d = only(&word_);
     assert_eq!((d.path.as_str(), fields(&d)), ("0", (V, Some("Word"), true, false)));
@@ -122,7 +122,7 @@ fn ct_lg2_05_branches_cannot_steer_a_word_or_an_exact_goal() {
         "go",
         xy(),
         exact(Ty::Unit),
-        display_if(less(), use_exact(ExactRole::Goal, word("w1")), unit()),
+        display_if(less(), use_exact(ExactRole::Goal, word(&[1])), unit()),
     )]);
     let d = only(&goal);
     assert_eq!((d.path.as_str(), fields(&d)), ("1", (V, Some("Word"), true, false)));
@@ -137,7 +137,7 @@ fn ct_lg2_05_generic_substitution_keeps_the_qualifier_of_a_target() {
             "go",
             xy(),
             exact(Ty::Receipt),
-            propose(word("w"), call("id", vec![display_if(less(), target("a"), target("b"))])),
+            propose(word(&[4]), call("id", vec![display_if(less(), target("a"), target("b"))])),
         ),
     ]);
     let d = only(&p);
@@ -153,7 +153,7 @@ fn ct_lg2_05_closures_cannot_steer_evidence() {
         exact(Ty::Unit),
         let_(
             "f",
-            closure(vec![], exact(Ty::Unit), use_exact(ExactRole::Evidence, word("e1"))),
+            closure(vec![], exact(Ty::Unit), use_exact(ExactRole::Evidence, word(&[5]))),
             display_if(less(), call_value(var("f"), vec![]), unit()),
         ),
     )]);
@@ -191,7 +191,7 @@ fn ct_lg2_05_higher_order_calls_keep_the_result_qualifier_of_a_callable() {
         )
     };
     let steer = |pick: Function| {
-        let choice = if_(call("apply", vec![fn_ref("pick"), var("x"), var("y")]), word("w1"), word("w2"));
+        let choice = if_(call("apply", vec![fn_ref("pick"), var("x"), var("y")]), word(&[1]), word(&[2]));
         tool(vec![pick, apply(), command("go", xy(), exact(Ty::Word), choice)])
     };
     // LG2.22's display pick and an approximate condition cannot pass for an exact boolean.
@@ -243,8 +243,8 @@ fn ct_lg2_05_a_callable_cannot_take_a_display_argument_as_exact() {
 fn ct_lg2_05_a_generic_result_keeps_the_qualifier_of_every_argument_it_may_return() {
     let t = || exact(Ty::Var("T".into()));
     let second = helper("second", vec![param("a", t()), param("b", t())], t(), var("b"));
-    let steered = || display_if(less(), word("w2"), word("w3"));
-    for args in [vec![word("w1"), steered()], vec![steered(), word("w1")]] {
+    let steered = || display_if(less(), word(&[2]), word(&[3]));
+    for args in [vec![word(&[1]), steered()], vec![steered(), word(&[1])]] {
         let go = command("go", xy(), exact(Ty::Receipt), propose(call("second", args), target("t")));
         let d = only(&tool(vec![second.clone(), go]));
         assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("go", "0", (V, Some("Word"), true, false)));
@@ -255,7 +255,7 @@ fn ct_lg2_05_a_generic_result_keeps_the_qualifier_of_every_argument_it_may_retur
     };
     let d = only(&tool(vec![choose(t())]));
     assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("choose", "root", (V, Some("T"), true, false)));
-    let chosen = propose(call("choose", vec![word("w1"), word("w2"), var("x"), var("y")]), target("t"));
+    let chosen = propose(call("choose", vec![word(&[1]), word(&[2]), var("x"), var("y")]), target("t"));
     let p = tool(vec![choose(display(Ty::Var("T".into()))), command("go", xy(), exact(Ty::Receipt), chosen)]);
     let d = only(&p);
     assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("go", "0", (V, Some("Word"), false, true)));
@@ -264,19 +264,20 @@ fn ct_lg2_05_a_generic_result_keeps_the_qualifier_of_every_argument_it_may_retur
 #[test]
 fn ct_lg2_05_a_generic_body_with_a_display_instance_is_a_pure_display_body() {
     let t = || exact(Ty::Var("T".into()));
-    let steered = || display_if(less(), word("w1"), word("w2"));
+    let steered = || display_if(less(), word(&[1]), word(&[2]));
     let go = |callee: Function, arg: Expr| {
         let name = callee.name.clone();
         tool(vec![callee, command("go", xy(), exact(Ty::Unit), call(&name, vec![arg]))])
     };
     // An exact goal set from the argument.
     let aim = helper("aim", vec![param("v", t())], exact(Ty::Unit), use_exact(ExactRole::Goal, var("v")));
-    assert!(report(&go(aim.clone(), word("w1"))).is_admitted());
+    assert!(report(&go(aim.clone(), word(&[1]))).is_admitted());
     let d = only(&go(aim, steered()));
     assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("go", "root", (V, Some("T"), true, false)));
     // An effect.
-    let log = helper("log", vec![param("v", t())], exact(Ty::Unit), let_("r", propose(word("w"), target("t")), unit()));
-    assert!(report(&go(log.clone(), word("w1"))).is_admitted());
+    let log =
+        helper("log", vec![param("v", t())], exact(Ty::Unit), let_("r", propose(word(&[4]), target("t")), unit()));
+    assert!(report(&go(log.clone(), word(&[1]))).is_admitted());
     let d = only(&go(log, steered()));
     assert_eq!((d.code, d.function.as_str(), d.path.as_str()), (EFFECT_UNDECLARED, "go", "root"));
     // A result of a concrete type is display-qualified too.
@@ -291,7 +292,7 @@ fn ct_lg2_05_a_generic_body_with_a_display_instance_is_a_pure_display_body() {
 
 #[test]
 fn ct_lg2_05_a_callable_in_a_record_keeps_its_exact_evidence() {
-    let ev = helper("ev", vec![], exact(Ty::Unit), use_exact(ExactRole::Evidence, word("e1")));
+    let ev = helper("ev", vec![], exact(Ty::Unit), use_exact(ExactRole::Evidence, word(&[5])));
     let called = display_if(less(), call_value(field(var("r"), "f"), vec![]), unit());
     let p = tool(vec![ev, command("go", xy(), exact(Ty::Unit), let_("r", record(vec![("f", fn_ref("ev"))]), called))]);
     let r = report(&p);
@@ -336,7 +337,7 @@ fn ct_lg2_05_storage_keeps_the_qualifier() {
         "keep",
         xy(),
         exact(Ty::Unit),
-        write_workspace("word", exact(Ty::Word), display_if(less(), word("w1"), word("w2"))),
+        write_workspace("word", exact(Ty::Word), display_if(less(), word(&[1]), word(&[2]))),
     )]);
     assert_eq!(fields(&only(&stored)), (V, Some("Word"), true, false));
     // Untyped file bytes are no typed display field (LG2.19, storage row).
@@ -373,8 +374,8 @@ fn ct_lg2_05_projection_and_matching_cannot_extract_an_exact_result() {
         exact(Ty::Word),
         match_(
             field(record(vec![("tag", display_if(less(), Expr::Lit(tag("a")), Expr::Lit(tag("b"))))]), "tag"),
-            vec![(tag("a"), word("w1"))],
-            word("w2"),
+            vec![(tag("a"), word(&[1]))],
+            word(&[2]),
         ),
     )]);
     assert_eq!(fields(&only(&tagged)), (V, Some("Status"), true, false));
@@ -388,7 +389,7 @@ fn lg2_20_ordinary_control_accepts_exact_inputs_only() {
         "pick",
         xy(),
         exact(Ty::Word),
-        if_(prim(Prim::And, vec![less(), boolean(true)]), word("w1"), word("w2")),
+        if_(prim(Prim::And, vec![less(), boolean(true)]), word(&[1]), word(&[2])),
     )]);
     let d = only(&short_circuit);
     assert_eq!((d.path.as_str(), fields(&d)), ("0.0", (V, Some("ApproxBool"), false, false)));
@@ -396,7 +397,7 @@ fn lg2_20_ordinary_control_accepts_exact_inputs_only() {
         "pick",
         xy(),
         exact(Ty::Word),
-        if_(prim(Prim::ExactLess, vec![var("x"), var("y")]), word("w1"), word("w2")),
+        if_(prim(Prim::ExactLess, vec![var("x"), var("y")]), word(&[1]), word(&[2])),
     )]);
     assert!(report(&exact_condition).is_admitted());
 }
@@ -414,7 +415,7 @@ fn lg2_20_display_branches_and_display_bodies_are_pure() {
     assert_eq!((d.code, d.path.as_str()), (EFFECT_UNDECLARED, "0.1"));
     // A preview prepared by a callee of a display branch: display context propagates into callees.
     let preview = tool(vec![
-        helper("prepare", vec![], exact(Ty::Unit), let_("r", propose(word("w"), target("t")), unit())),
+        helper("prepare", vec![], exact(Ty::Unit), let_("r", propose(word(&[4]), target("t")), unit())),
         command("go", xy(), exact(Ty::Unit), display_if(less(), call("prepare", vec![]), unit())),
     ]);
     let d = only(&preview);
@@ -467,7 +468,7 @@ fn lg4_1_a_program_pinned_to_another_contract_is_refused_whole() {
 #[test]
 fn malformed_ir_is_an_error_not_a_diagnostic() {
     // Chapter 02 has no source code for a base-type mismatch: the lowering is at fault.
-    let mismatched = tool(vec![helper("f", vec![], exact(Ty::Word), if_(nat(1), word("a"), word("b")))]);
+    let mismatched = tool(vec![helper("f", vec![], exact(Ty::Word), if_(nat(1), word(&[6]), word(&[7])))]);
     assert!(check(&mismatched).is_err());
     assert!(check(&tool(vec![helper("f", vec![], exact(Ty::Nat), var("z"))])).is_err());
     let twice = tool(vec![helper("f", vec![], exact(Ty::Nat), nat(1)), helper("f", vec![], exact(Ty::Nat), nat(2))]);
@@ -488,7 +489,7 @@ fn malformed_ir_is_an_error_not_a_diagnostic() {
 fn ct_lg2_05_a_type_variable_bound_through_a_callable_result_keeps_its_qualifier() {
     let t = || exact(Ty::Var("T".into()));
     let u = || exact(Ty::Var("U".into()));
-    let steered = || closure(vec![], display(Ty::Word), display_if(less(), word("w1"), word("w2")));
+    let steered = || closure(vec![], display(Ty::Word), display_if(less(), word(&[1]), word(&[2])));
     let pipe = helper(
         "pipe",
         vec![
@@ -517,8 +518,8 @@ fn ct_lg2_05_a_type_variable_bound_through_a_callable_result_keeps_its_qualifier
 fn ct_lg2_05_a_generic_result_keeps_the_result_qualifier_of_every_callable_it_may_return() {
     let t = || exact(Ty::Var("T".into()));
     let second = helper("second", vec![param("a", t()), param("b", t())], t(), var("b"));
-    let fixed = || closure(vec![], exact(Ty::Word), word("w1"));
-    let steered = || closure(vec![], display(Ty::Word), display_if(less(), word("w2"), word("w3")));
+    let fixed = || closure(vec![], exact(Ty::Word), word(&[1]));
+    let steered = || closure(vec![], display(Ty::Word), display_if(less(), word(&[2]), word(&[3])));
     for args in [vec![fixed(), steered()], vec![steered(), fixed()]] {
         let chosen = call_value(call("second", args), vec![]);
         let d =
@@ -541,9 +542,9 @@ fn ct_lg2_05_a_display_instance_cannot_hand_back_a_closure_that_previews_its_arg
         closure(vec![param("w", exact(Ty::Word))], exact(Ty::Unit), let_("r", propose(var("w"), target("t")), unit()))
     };
     let go = |arg: Expr| command("go", xy(), exact(Ty::Unit), call_value(call("later", vec![arg, send()]), vec![]));
-    assert!(report(&tool(vec![later.clone(), go(word("w1"))])).is_admitted());
+    assert!(report(&tool(vec![later.clone(), go(word(&[1]))])).is_admitted());
     // A steered argument makes the handed-back callable display-qualified: calling it is a display region.
-    let d = only(&tool(vec![later, go(display_if(less(), word("w1"), word("w2")))]));
+    let d = only(&tool(vec![later, go(display_if(less(), word(&[1]), word(&[2])))]));
     assert_eq!((d.function.as_str(), d.path.as_str(), d.code), ("go", "root", EFFECT_UNDECLARED));
 }
 
@@ -557,7 +558,7 @@ fn lg2_20_a_captured_effect_variable_cannot_hide_exact_evidence_from_a_display_b
     );
     let nothing = closure(vec![], exact(Ty::Unit), unit());
     let run = helper("run", vec![param("f", poly())], exact(Ty::Unit), call_value(both, vec![nothing]));
-    let ev = helper("ev", vec![], exact(Ty::Unit), use_exact(ExactRole::Evidence, word("e1")));
+    let ev = helper("ev", vec![], exact(Ty::Unit), use_exact(ExactRole::Evidence, word(&[5])));
     let go = command("go", xy(), exact(Ty::Unit), display_if(less(), call("run", vec![fn_ref("ev")]), unit()));
     let d = only(&tool(vec![ev, run, go]));
     assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("go", "1", (V, Some("Word"), true, false)));
@@ -567,7 +568,7 @@ fn lg2_20_a_captured_effect_variable_cannot_hide_exact_evidence_from_a_display_b
 fn ct_lg2_05_a_stored_display_field_is_not_decoded_as_exact() {
     let keep = command("keep", xy(), exact(Ty::Unit), write_workspace("tint", display(Ty::Colour), tint()));
     let chosen =
-        match_(read_snapshot("tint", exact(Ty::Colour)), vec![(Lit::Colour("red".into()), word("w1"))], word("w2"));
+        match_(read_snapshot("tint", exact(Ty::Colour)), vec![(Lit::Colour("red".into()), word(&[1]))], word(&[2]));
     let d = only(&tool(vec![keep, command("go", vec![], exact(Ty::Receipt), propose(chosen, target("t")))]));
     assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("go", "0.0", (V, Some("Colour"), false, true)));
 }
