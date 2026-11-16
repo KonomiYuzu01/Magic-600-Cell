@@ -1,0 +1,17 @@
+[package]
+name = "c600-runtime"
+description = "The 600 Cell Script runtime in a process of its own (route RT1, LQ9; LP3): child binary and parent library"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+c600-check = { path = "../c600-check" }
+c600-digest = { path = "../c600-digest" }
+c600-ir = { path = "../c600-ir" }
+c600-run = { path = "../c600-run" }
+c600-syntax = { path = "../c600-syntax" }
+# Approved by the owner on 16 November 2026 (option A), pinned exactly; the archives are vendored in ../vendor.
+num-bigint = { version = "=0.5.1", default-features = false, features = ["std"] }
+num-integer = { version = "=0.1.47", default-features = false, features = ["std"] }
+num-traits = { version = "=0.2.19", default-features = false, features = ["std"] }

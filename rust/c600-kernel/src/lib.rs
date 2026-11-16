@@ -584,6 +584,23 @@ impl Kernel {
         self.solved.clone()
     }
 
+    /// The state with these labels, if they are a permutation of the slots. This is how a stored state object is read
+    /// back (LP2, M6). It does not decide whether the state is reachable: that stays the caller's evidence, such as
+    /// the stored object's digest.
+    pub fn state_from_labels(&self, labels: Vec<i32>) -> Option<Snapshot> {
+        if labels.len() != SLOTS {
+            return None;
+        }
+        let mut seen = vec![false; SLOTS];
+        for &label in &labels {
+            let slot = usize::try_from(label).ok().filter(|&slot| slot < SLOTS)?;
+            if std::mem::replace(&mut seen[slot], true) {
+                return None;
+            }
+        }
+        Some(Snapshot::new(&self.model.model_id, labels))
+    }
+
     /// The number of frame nodes in `orbit`'s execution tree.
     pub fn star_nodes(&self, orbit: usize) -> Option<usize> {
         self.model.trees.get(orbit).map(|tree| tree.parent.len())
@@ -644,13 +661,13 @@ impl Kernel {
             }
         }
         let (source, destination) = engine::net_from_map(&map);
-        Ok(self.effect_of(source, destination, &self.letters(recipe)))
+        Ok(self.effect_of(source, destination, &self.expansion(recipe)))
     }
 
     /// The effect of a recipe by replaying every letter of its expansion: the reference of the KN2.9 agreement test.
     pub fn effect_by_replay(&self, recipe: &Recipe) -> Result<Effect, Error> {
         self.same_model(&recipe.model_id)?;
-        let letters = self.letters(recipe);
+        let letters = self.expansion(recipe);
         let mut map: Vec<i32> = (0..SLOTS as i32).collect();
         let mut scratch = Vec::new();
         for &m in &letters {
@@ -661,8 +678,15 @@ impl Kernel {
         Ok(self.effect_of(source, destination, &letters))
     }
 
-    /// The literal letters of a recipe's expansion.
-    pub fn letters(&self, recipe: &Recipe) -> Vec<i32> {
+    /// The literal letters of a recipe's expansion. A recipe of another model is refused, since its stars would be
+    /// expanded with this model's seeds and relocations (KN1.4).
+    pub fn letters(&self, recipe: &Recipe) -> Result<Vec<i32>, Refusal> {
+        self.same_model(&recipe.model_id)?;
+        Ok(self.expansion(recipe))
+    }
+
+    /// The letters of a recipe whose model the caller has checked.
+    fn expansion(&self, recipe: &Recipe) -> Vec<i32> {
         let mut letters = Vec::with_capacity(recipe.length);
         engine::expand(&self.model, &recipe.steps, &mut letters);
         letters

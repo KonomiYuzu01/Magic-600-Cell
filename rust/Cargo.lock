@@ -16,8 +16,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "c600-command"
+version = "0.0.0"
+dependencies = [
+ "c600-digest",
+ "c600-kernel",
+]
+
+[[package]]
 name = "c600-digest"
 version = "0.0.0"
+
+[[package]]
+name = "c600-display"
+version = "0.0.0"
+dependencies = [
+ "c600-digest",
+ "c600-kernel",
+]
+
+[[package]]
+name = "c600-evidence"
+version = "0.0.0"
+dependencies = [
+ "c600-digest",
+]
 
 [[package]]
 name = "c600-ir"
@@ -42,6 +65,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "c600-module"
+version = "0.0.0"
+dependencies = [
+ "c600-check",
+ "c600-digest",
+ "c600-ir",
+ "c600-run",
+ "c600-syntax",
+]
+
+[[package]]
 name = "c600-run"
 version = "0.0.0"
 dependencies = [
@@ -55,12 +89,45 @@ dependencies = [
 ]
 
 [[package]]
+name = "c600-runtime"
+version = "0.0.0"
+dependencies = [
+ "c600-check",
+ "c600-digest",
+ "c600-ir",
+ "c600-run",
+ "c600-syntax",
+ "num-bigint",
+ "num-integer",
+ "num-traits",
+]
+
+[[package]]
+name = "c600-session"
+version = "0.0.0"
+dependencies = [
+ "c600-check",
+ "c600-digest",
+ "c600-ir",
+ "c600-kernel",
+ "c600-run",
+ "c600-syntax",
+]
+
+[[package]]
 name = "c600-syntax"
 version = "0.0.0"
 dependencies = [
  "c600-check",
  "c600-digest",
  "c600-ir",
+]
+
+[[package]]
+name = "c600-view"
+version = "0.0.0"
+dependencies = [
+ "c600-digest",
 ]
 
 [[package]]

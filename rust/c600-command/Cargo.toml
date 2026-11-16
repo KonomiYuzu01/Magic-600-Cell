@@ -1,0 +1,10 @@
+[package]
+name = "c600-command"
+description = "The command layer of LP3: H-08 rows, invoke and receipts, previews, the commit steps, undo and redo, the shell's tokens and key route, and the oracle loop (headless draft)"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+c600-digest = { path = "../c600-digest" }
+c600-kernel = { path = "../c600-kernel" }

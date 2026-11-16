@@ -1,0 +1,10 @@
+[package]
+name = "c600-display"
+description = "The host-side display-plan and publication contract: plan types and their validator, the publication state machine over a mock backend, and pick resolution (LP3; chapter 10 RPI, renderer feature matrix RM)"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+c600-digest = { path = "../c600-digest" }
+c600-kernel = { path = "../c600-kernel" }

@@ -1,0 +1,236 @@
+//! H-08's rows and the language's overlay rows (ADR-L02; KN5.3).
+//!
+//! The stored table is `docs/progress/1.0/command-table.json`, compiled in. It freezes at LP3 (PHS.53); until then
+//! this module reads only the fields the command layer uses and ignores the rest. A language-defined command is an
+//! overlay row of kind view, workspace, query or file, never commit or app. A view overlay runs on the `view` lane and
+//! every other overlay on the `program` lane.
+
+use std::collections::BTreeMap;
+
+use c600_kernel::json::{self, Value};
+
+use crate::receipt::{code, Error};
+
+/// The stored H-08 table.
+pub const H08: &str = include_str!("../../../docs/progress/1.0/command-table.json");
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Kind {
+    App,
+    Commit,
+    File,
+    Query,
+    View,
+    Workspace,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Lane {
+    Commit,
+    Exclusive,
+    LatestWins,
+    None,
+    Program,
+    View,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum UndoClass {
+    Journal,
+    None,
+    Workspace,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PreviewRule {
+    None,
+    Required,
+    Filter,
+}
+
+/// The module entry a language-defined row runs.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Overlay {
+    pub module: String,
+    pub entry: String,
+}
+
+/// One row.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Row {
+    pub id: String,
+    pub kind: Kind,
+    pub lane: Lane,
+    pub undo: UndoClass,
+    pub preview: PreviewRule,
+    pub gates: Vec<String>,
+    pub contexts: Vec<String>,
+    pub repeat: bool,
+    pub job: bool,
+    pub key_0_4: Option<String>,
+    /// Argument names and their H-08 types.
+    pub arguments: BTreeMap<String, String>,
+    pub action_guard: Option<String>,
+    /// Set for a language-defined row.
+    pub overlay: Option<Overlay>,
+}
+
+impl Row {
+    pub fn has_gate(&self, gate: &str) -> bool {
+        self.gates.iter().any(|g| g == gate)
+    }
+
+    /// Whether the row takes a user-action token.
+    pub fn takes_token(&self) -> bool {
+        self.arguments.values().any(|t| t == "UserActionToken")
+    }
+
+    /// The argument names other than the token, which travels beside the arguments in the envelope.
+    pub fn plain_arguments(&self) -> impl Iterator<Item = &str> {
+        self.arguments.iter().filter(|(_, t)| *t != "UserActionToken").map(|(name, _)| name.as_str())
+    }
+}
+
+/// The rows by ID.
+#[derive(Clone, Debug)]
+pub struct Table {
+    rows: BTreeMap<String, Row>,
+    services: Vec<String>,
+}
+
+fn word<T: Copy>(value: Option<&Value>, names: &[(&str, T)]) -> Result<T, String> {
+    let text = value.and_then(Value::as_str).ok_or("a vocabulary field is not text")?;
+    names.iter().find(|(name, _)| *name == text).map(|&(_, v)| v).ok_or_else(|| format!("unknown value `{text}`"))
+}
+
+fn texts(value: Option<&Value>) -> Result<Vec<String>, String> {
+    match value {
+        None => Ok(Vec::new()),
+        Some(value) => value
+            .as_array()
+            .ok_or("a list field is not a list")?
+            .iter()
+            .map(|v| v.as_str().map(str::to_owned).ok_or_else(|| "a list item is not text".to_owned()))
+            .collect(),
+    }
+}
+
+fn row(value: &Value) -> Result<Row, String> {
+    let id = value.get("id").and_then(Value::as_str).ok_or("a row has no id")?.to_owned();
+    let fail = |e: String| format!("row `{id}`: {e}");
+    let kinds = [
+        ("app", Kind::App),
+        ("commit", Kind::Commit),
+        ("file", Kind::File),
+        ("query", Kind::Query),
+        ("view", Kind::View),
+        ("workspace", Kind::Workspace),
+    ];
+    let lanes = [
+        ("commit", Lane::Commit),
+        ("exclusive", Lane::Exclusive),
+        ("latest_wins", Lane::LatestWins),
+        ("none", Lane::None),
+        ("program", Lane::Program),
+        ("view", Lane::View),
+    ];
+    let undos = [("journal", UndoClass::Journal), ("none", UndoClass::None), ("workspace", UndoClass::Workspace)];
+    let previews = [("none", PreviewRule::None), ("required", PreviewRule::Required), ("filter", PreviewRule::Filter)];
+    let mut arguments = BTreeMap::new();
+    if let Some(args) = value.get("arguments") {
+        for (name, t) in args.as_object().ok_or_else(|| fail("arguments is not an object".into()))? {
+            let t = t.as_str().ok_or_else(|| fail(format!("argument `{name}` has no type")))?;
+            arguments.insert(name.clone(), t.to_owned());
+        }
+    }
+    let flag = |name: &str| value.get(name).is_some_and(|v| matches!(v, Value::Bool(true)));
+    Ok(Row {
+        kind: word(value.get("kind"), &kinds).map_err(fail)?,
+        lane: word(value.get("lane"), &lanes).map_err(fail)?,
+        undo: word(value.get("undo"), &undos).map_err(fail)?,
+        preview: word(value.get("preview"), &previews).map_err(fail)?,
+        gates: texts(value.get("gates")).map_err(fail)?,
+        contexts: texts(value.get("contexts")).map_err(fail)?,
+        repeat: flag("repeat"),
+        job: flag("job"),
+        key_0_4: value.get("key_0_4").and_then(Value::as_str).map(str::to_owned),
+        arguments,
+        action_guard: value.get("action_guard").and_then(Value::as_str).map(str::to_owned),
+        overlay: None,
+        id,
+    })
+}
+
+impl Table {
+    /// The stored H-08 table.
+    pub fn h08() -> Table {
+        Table::parse(H08.as_bytes()).expect("the stored H-08 table reads")
+    }
+
+    pub fn parse(bytes: &[u8]) -> Result<Table, String> {
+        let document = json::parse(bytes).map_err(|e| e.to_string())?;
+        let commands = document.get("commands").and_then(Value::as_array).ok_or("the table has no command list")?;
+        let mut rows = BTreeMap::new();
+        for value in commands {
+            let row = row(value)?;
+            if rows.insert(row.id.clone(), row).is_some() {
+                return Err("the table repeats a row id".into());
+            }
+        }
+        let services = match document.get("services").and_then(Value::as_array) {
+            None => Vec::new(),
+            Some(list) => list.iter().filter_map(|s| s.get("id").and_then(Value::as_str).map(str::to_owned)).collect(),
+        };
+        Ok(Table { rows, services })
+    }
+
+    pub fn row(&self, id: &str) -> Option<&Row> {
+        self.rows.get(id)
+    }
+
+    pub fn rows(&self) -> impl Iterator<Item = &Row> {
+        self.rows.values()
+    }
+
+    /// The `kernel.*` and `language.*` services, which are not rows (LI.10).
+    pub fn services(&self) -> &[String] {
+        &self.services
+    }
+
+    /// Registers a language-defined row. Its lane follows its kind, it takes no token, it has no gates and it is
+    /// available in every context. A commit or app row is refused with `KN5:input.overlay_row_kind`; an ID that a
+    /// row or service already holds is refused with the draft code `KN5:input.overlay_row_conflict`.
+    pub fn register_overlay(
+        &mut self,
+        id: &str,
+        kind: Kind,
+        arguments: &[(&str, &str)],
+        overlay: Overlay,
+    ) -> Result<&Row, Error> {
+        if matches!(kind, Kind::Commit | Kind::App) {
+            return Err(Error::new(code::OVERLAY_ROW_KIND, format!("overlay row `{id}` may not be a {kind:?} row")));
+        }
+        if self.rows.contains_key(id) || self.services.iter().any(|s| s == id) {
+            return Err(Error::new(code::OVERLAY_ROW_CONFLICT, format!("`{id}` is already a row or service")));
+        }
+        if arguments.iter().any(|(_, t)| *t == "UserActionToken") {
+            return Err(Error::new(code::OVERLAY_ROW_KIND, "an overlay row never takes a user-action token (KN5.15)"));
+        }
+        let row = Row {
+            id: id.to_owned(),
+            kind,
+            lane: if kind == Kind::View { Lane::View } else { Lane::Program },
+            undo: if kind == Kind::Workspace { UndoClass::Workspace } else { UndoClass::None },
+            preview: PreviewRule::None,
+            gates: Vec::new(),
+            contexts: vec!["any".to_owned()],
+            repeat: false,
+            job: true,
+            key_0_4: None,
+            arguments: arguments.iter().map(|(n, t)| ((*n).to_owned(), (*t).to_owned())).collect(),
+            action_guard: None,
+            overlay: Some(overlay),
+        };
+        Ok(self.rows.entry(id.to_owned()).or_insert(row))
+    }
+}

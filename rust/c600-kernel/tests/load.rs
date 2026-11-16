@@ -3,19 +3,23 @@
 //! plain file name in `assets/`, and a malformed manifest is refused. Each case writes a manifest, and the small files
 //! it lists, into a fresh folder under the test's temporary directory, so the shipped `assets/` is only read.
 //!
-//! `verify_assets` is the check itself; `Kernel::load` and the jumbling model both load through it.
+//! The checks of the arrays and trees inside verified archives (lead L10 of the M4 differential tests, the deferred
+//! half of R2) are tested on copies of the five files the kernel reads with one change each: a test-only writer packs
+//! the changed array into a stored ZIP archive or the changed trees into a gzip member of stored DEFLATE blocks, and a
+//! manifest lists the five files under the model ID of that list. The same copy without a change is the model of
+//! another identity that lead L8 offers the shipped kernel's values to (CT-KN1-01).
 //!
-//! Not tested here: the checks of the arrays and trees inside verified archives (a primitive that is not a permutation
-//! of its support, malformed offsets, an execution tree whose walk does not end). Such a test has to write a changed
-//! archive under a new model ID, and the crate only reads archives; these tests are deferred (rust/README.md, M4).
+//! `verify_assets` is the check itself; `Kernel::load` and the jumbling model both load through it.
 
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
 use c600_digest::sha256_hex;
+use c600_kernel::archive::{self, crc32, Zip};
 use c600_kernel::json::{self, Value};
-use c600_kernel::{Kernel, LoadError};
+use c600_kernel::{codes, Error, Kernel, LoadError, ProtectedSet, Refusal};
 
 const NOT_PLAIN: &str = "manifest.json lists a file that is not a plain file name in assets/";
 const NOT_NAMED: &str = "manifest.json's model_id does not match its file list";
@@ -175,6 +179,225 @@ fn malformed_manifests_are_refused() {
         let text = refusal("malformed", &manifest, &[]);
         assert!(text.starts_with(expected), "{case}: {text}");
     }
+}
+
+/// The files the kernel reads besides the manifest.
+const NEEDED: [&str; 5] = ["model.npz", "primitives.npz", "execution_trees.json.gz", "census.json", "seed_atlas.json"];
+
+/// A fresh folder with the five files the kernel reads, from `assets/` unless `changed` gives other bytes, and a
+/// manifest that lists only those five under the model ID of that list. A fixture of these tests, never shipped.
+fn model_folder(case: &str, changed: &[(&str, Vec<u8>)]) -> (PathBuf, String) {
+    let folder = Path::new(env!("CARGO_TARGET_TMPDIR")).join("c600-kernel-load").join(case);
+    let _ = fs::remove_dir_all(&folder);
+    fs::create_dir_all(&folder).unwrap();
+    let (shipped, _) = shipped();
+    let mut files = BTreeMap::new();
+    for name in NEEDED {
+        let listed = format!("assets/{name}");
+        let digest = match changed.iter().find(|(changed, _)| *changed == name) {
+            Some((_, bytes)) => {
+                fs::write(folder.join(name), bytes).unwrap();
+                sha256_hex(bytes)
+            }
+            None => {
+                fs::copy(assets().join(name), folder.join(name)).unwrap();
+                shipped[&listed].clone()
+            }
+        };
+        files.insert(listed, digest);
+    }
+    let id = model_id(&files);
+    fs::write(folder.join("manifest.json"), manifest(&files, &id)).unwrap();
+    (folder, id)
+}
+
+/// The loader's refusal of a copy of the model with the `changed` files. The copy is removed afterwards.
+fn refused_copy(case: &str, changed: &[(&str, Vec<u8>)]) -> String {
+    let (folder, _) = model_folder(case, changed);
+    let loaded = Kernel::load(&folder);
+    let _ = fs::remove_dir_all(&folder);
+    match loaded {
+        Ok(_) => panic!("{case}: the changed copy loads"),
+        Err(LoadError(text)) => text,
+    }
+}
+
+/// A ZIP archive of stored (uncompressed) members without ZIP64 fields, which the crate's reader accepts.
+fn stored_zip(members: &[(String, Vec<u8>)]) -> Vec<u8> {
+    let mut out = Vec::new();
+    let mut directory = Vec::new();
+    for (name, data) in members {
+        let (offset, crc, size) = (out.len() as u32, crc32(data), data.len() as u32);
+        // Version needed, flags, method 0 (stored), time and date, CRC-32, compressed and plain sizes, name length.
+        let mut fields = vec![20, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        fields.extend(crc.to_le_bytes());
+        fields.extend(size.to_le_bytes());
+        fields.extend(size.to_le_bytes());
+        fields.extend((name.len() as u16).to_le_bytes());
+        out.extend(0x0403_4b50u32.to_le_bytes());
+        out.extend(&fields);
+        out.extend([0, 0]); // no extra field
+        out.extend(name.as_bytes());
+        out.extend(data);
+        directory.extend(0x0201_4b50u32.to_le_bytes());
+        directory.extend([20, 0]); // version made by
+        directory.extend(&fields);
+        directory.extend([0; 12]); // extra and comment lengths, disk, internal and external attributes
+        directory.extend(offset.to_le_bytes());
+        directory.extend(name.as_bytes());
+    }
+    let (start, size, count) = (out.len() as u32, directory.len() as u32, members.len() as u16);
+    out.extend(directory);
+    out.extend(0x0605_4b50u32.to_le_bytes());
+    out.extend([0; 4]); // disk numbers
+    out.extend(count.to_le_bytes());
+    out.extend(count.to_le_bytes());
+    out.extend(size.to_le_bytes());
+    out.extend(start.to_le_bytes());
+    out.extend([0, 0]); // no comment
+    out
+}
+
+/// A gzip member of stored DEFLATE blocks.
+fn stored_gzip(data: &[u8]) -> Vec<u8> {
+    let mut out = vec![0x1f, 0x8b, 8, 0, 0, 0, 0, 0, 0, 0xff];
+    let blocks: Vec<&[u8]> = data.chunks(65_535).collect();
+    for (i, block) in blocks.iter().enumerate() {
+        out.push(u8::from(i + 1 == blocks.len())); // BFINAL on the last block, BTYPE 00
+        let length = block.len() as u16;
+        out.extend(length.to_le_bytes());
+        out.extend((!length).to_le_bytes());
+        out.extend(*block);
+    }
+    out.extend(crc32(data).to_le_bytes());
+    out.extend((data.len() as u32).to_le_bytes());
+    out
+}
+
+/// The members of the shipped `primitives.npz`, read once with the crate's ZIP reader.
+fn primitive_members() -> &'static [(String, Vec<u8>)] {
+    static MEMBERS: OnceLock<Vec<(String, Vec<u8>)>> = OnceLock::new();
+    MEMBERS.get_or_init(|| {
+        let bytes = fs::read(assets().join("primitives.npz")).unwrap();
+        let zip = Zip::parse(&bytes).unwrap();
+        zip.names().into_iter().map(|name| (name.to_owned(), zip.read(name, 1 << 30).unwrap())).collect()
+    })
+}
+
+/// The loader's refusal of the shipped model with one `<i4` array of `primitives.npz` changed in place.
+fn changed_primitives(case: &str, member: &str, change: impl FnOnce(&mut Values<'_>)) -> String {
+    let mut members = primitive_members().to_vec();
+    let (_, bytes) = members.iter_mut().find(|(name, _)| name == member).unwrap();
+    change(&mut Values::of(bytes));
+    refused_copy(case, &[("primitives.npz", stored_zip(&members))])
+}
+
+/// The values of an NPY array of little-endian int32, in place.
+struct Values<'a> {
+    data: &'a mut [u8],
+}
+
+impl<'a> Values<'a> {
+    fn of(npy: &'a mut [u8]) -> Values<'a> {
+        let start = match npy[6] {
+            1 => 10 + u16::from_le_bytes([npy[8], npy[9]]) as usize,
+            _ => 12 + u32::from_le_bytes([npy[8], npy[9], npy[10], npy[11]]) as usize,
+        };
+        Values { data: &mut npy[start..] }
+    }
+
+    fn len(&self) -> usize {
+        self.data.len() / 4
+    }
+
+    fn get(&self, i: usize) -> i32 {
+        i32::from_le_bytes(self.data[4 * i..4 * i + 4].try_into().unwrap())
+    }
+
+    fn set(&mut self, i: usize, value: i32) {
+        self.data[4 * i..4 * i + 4].copy_from_slice(&value.to_le_bytes());
+    }
+}
+
+/// CT-KN1-01 (part: snapshots and recipes of another model; identity blocks and the registry in `tests/kernel.rs`)
+/// and lead L8 (M4). A copy of the five files the kernel reads, listed alone, is a model with the shipped mechanics
+/// under another model ID. Its kernel refuses the shipped kernel's snapshots and recipes with
+/// `KN1:input.identity_mismatch` in every call that takes one, and its own recipe gives the shipped net map.
+#[test]
+fn ct_kn1_01_values_of_another_model_are_refused() {
+    let (folder, id) = model_folder("another-model", &[]);
+    let shipped = Kernel::load(&assets()).unwrap();
+    let other = Kernel::load(&folder).unwrap();
+    let _ = fs::remove_dir_all(&folder);
+    assert_eq!(other.identity().model_id, id);
+    assert_ne!(id, shipped.identity().model_id);
+    assert_eq!(other.check_identity(&shipped.identity()).unwrap_err().code, codes::IDENTITY_MISMATCH);
+
+    let (state, recipe) = (shipped.solved(), shipped.word(&[1]).unwrap());
+    let (own_state, own_recipe, none) = (other.solved(), other.word(&[1]).unwrap(), ProtectedSet::none());
+    let refusal = Refusal { code: codes::IDENTITY_MISMATCH, message: "The value belongs to another model_id".into() };
+    let mismatch = Error::Refusal(refusal.clone());
+    assert_eq!(other.derive(&state, &own_recipe, &none).unwrap_err(), mismatch);
+    assert_eq!(other.derive(&own_state, &recipe, &none).unwrap_err(), mismatch);
+    assert_eq!(other.effect(&recipe).unwrap_err(), mismatch);
+    assert_eq!(other.effect_by_replay(&recipe).unwrap_err(), mismatch);
+    assert_eq!(other.progress(&state).unwrap_err(), refusal);
+    // Until the finding of lead L8 was fixed, letters() expanded another model's recipe without a check.
+    assert_eq!(other.letters(&recipe).unwrap_err(), refusal);
+    assert_eq!(other.letters(&own_recipe).unwrap(), shipped.letters(&recipe).unwrap());
+
+    // The same mechanics under another identity give the same net map and the same labels digest.
+    assert_eq!(other.effect(&own_recipe).unwrap(), shipped.effect(&recipe).unwrap());
+    assert_eq!(own_state.digest(), state.digest());
+}
+
+/// Lead L10 (M4): the shipped model with one destination of the first primitive repeated is refused.
+#[test]
+fn a_primitive_that_is_not_a_permutation_of_its_support_is_refused() {
+    let text = changed_primitives("not-a-permutation", "dst.npy", |dst| {
+        let first = dst.get(0);
+        assert_ne!(dst.get(1), first);
+        dst.set(1, first);
+    });
+    assert_eq!(text, "A primitive is not a permutation of its support");
+}
+
+/// Lead L10 (M4): the shipped model with the first two sources of the first primitive swapped is refused.
+#[test]
+fn primitive_sources_out_of_order_are_refused() {
+    let text = changed_primitives("sources-out-of-order", "src.npy", |src| {
+        let (a, b) = (src.get(0), src.get(1));
+        assert!(a < b);
+        src.set(0, b);
+        src.set(1, a);
+    });
+    assert_eq!(text, "Primitive sources are not strictly increasing");
+}
+
+/// Lead L10 (M4): the shipped model whose last primitive offset stops one short of the arrays' end is refused.
+#[test]
+fn primitive_offsets_that_disagree_with_the_arrays_are_refused() {
+    let text = changed_primitives("short-offsets", "offsets.npy", |offsets| {
+        let last = offsets.len() - 1;
+        assert_eq!(last, 1_200);
+        offsets.set(last, offsets.get(last) - 1);
+    });
+    assert_eq!(text, "Primitive offsets disagree with the arrays");
+}
+
+/// Lead L10 (M4): the shipped model whose first execution tree names a node as its own parent is refused, so a walk
+/// to the root always ends.
+#[test]
+fn an_execution_tree_with_a_parent_at_its_child_is_refused() {
+    let gz = fs::read(assets().join("execution_trees.json.gz")).unwrap();
+    let mut trees = json::parse(&archive::gunzip(&gz, 1 << 30).unwrap()).unwrap();
+    let Value::Array(rows) = &mut trees else { panic!("the trees are not a list") };
+    let Value::Object(tree) = &mut rows[0] else { panic!("a tree is not an object") };
+    let Some(Value::Array(parent)) = tree.get_mut("parent") else { panic!("a tree has no parent list") };
+    assert_eq!(parent[1], Value::Int(0));
+    parent[1] = Value::Int(1);
+    let text = refused_copy("tree-parent", &[("execution_trees.json.gz", stored_gzip(trees.canonical().as_bytes()))]);
+    assert_eq!(text, "An execution tree is malformed");
 }
 
 /// `verify_assets`, through which the jumbling half loads (M5, R3 of its critical-path read): on the shipped folder it
