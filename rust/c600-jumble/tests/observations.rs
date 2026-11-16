@@ -8,7 +8,7 @@
 //! unchanged; not run here: words of more than one letter, which the M5 word-check tests cover).
 
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use c600_jumble::model::POLES;
 use c600_jumble::observe::{self, cuts, Batch, Rows, Scope};
@@ -74,6 +74,38 @@ impl Setup {
     }
 }
 
+/// The model, the pinned I_a menu and the fixture's journal, loaded once for all tests in this file, so that they
+/// also share the context's observation tables, which are built on first use.
+fn setup() -> &'static Setup {
+    static SETUP: OnceLock<Setup> = OnceLock::new();
+    SETUP.get_or_init(Setup::load)
+}
+
+/// The state after three records, its record and its complete rim summary, computed once for the tests that read
+/// them; the summary leaves the record unchanged.
+struct Rims {
+    state: State,
+    before: Value,
+    summary: Value,
+}
+
+fn rims() -> &'static Rims {
+    static RIMS: OnceLock<Rims> = OnceLock::new();
+    RIMS.get_or_init(|| {
+        let s = setup();
+        let mut state = s.after(3);
+        let before = state.record(&s.ctx);
+        let summary = cuts::rim_summary(&s.ctx, &mut state, None, None).expect("no engine error");
+        assert_eq!(state.record(&s.ctx), before, "the rim summary changes nothing");
+        Rims { state, before, summary }
+    })
+}
+
+/// The first misaligned cap of a rim summary.
+fn misaligned_cap(summary: &Value) -> usize {
+    rows(summary).iter().position(|row| int(row, "N_c").is_some_and(|n| n > 0)).expect("a misaligned cap")
+}
+
 fn text(value: &Value, key: &str) -> Option<String> {
     value.get(key).and_then(Value::as_str).map(str::to_owned)
 }
@@ -98,7 +130,7 @@ const RIM_FIELDS: [&str; 6] = ["N_c", "In_c", "Out_c", "A_c", "F_c", "at_floor"]
 
 #[test]
 fn rim_summary_refuses_a_cap_outside_the_model_and_changes_nothing() {
-    let s = Setup::load();
+    let s = setup();
     let mut state = s.after(1);
     let before = state.record(&s.ctx);
     // JI.45: a cap outside 0..599 and an empty selection, never another cap or an empty answer.
@@ -111,7 +143,7 @@ fn rim_summary_refuses_a_cap_outside_the_model_and_changes_nothing() {
 
 #[test]
 fn the_solved_state_has_every_cap_aligned() {
-    let s = Setup::load();
+    let s = setup();
     let mut state = State::new(Some(s.menu.clone()));
     let answer = cuts::rim_summary(&s.ctx, &mut state, None, None).expect("no engine error");
     assert_eq!(text(&answer, "status").as_deref(), Some("ok"));
@@ -132,16 +164,14 @@ fn the_solved_state_has_every_cap_aligned() {
 
 #[test]
 fn rims_agree_with_seam_facts_and_blocked_caps_have_none() {
-    let s = Setup::load();
-    let mut state = s.after(3);
-    let before = state.record(&s.ctx);
-    let answer = cuts::rim_summary(&s.ctx, &mut state, None, None).expect("no engine error");
+    let (s, r) = (setup(), rims());
+    let (mut state, answer) = (r.state.clone(), &r.summary);
     assert_eq!(answer.get("complete"), Some(&Value::Bool(true)));
     let grips: Vec<usize> = (0..POLES).collect();
     let statuses = state.survey(&s.ctx, &grips, None).expect("no engine error");
     let (mut grip_n, mut misaligned, mut blocked, mut aligned_checked) = (0, 0, 0, 0);
     let batch = Batch { chunk: 1 << 16, budget: Some(1 << 24), cancel_after: None };
-    for (c, row) in rows(&answer).iter().enumerate() {
+    for (c, row) in rows(answer).iter().enumerate() {
         assert_eq!(int(row, "cap"), Some(c as i64));
         assert_eq!(text(row, "status").as_deref(), Some(statuses[c].as_str()), "cap {c}");
         if statuses[c] != Status::Admissible {
@@ -170,13 +200,13 @@ fn rims_agree_with_seam_facts_and_blocked_caps_have_none() {
         }
     }
     assert!(misaligned > 0 && blocked > 0, "the state has misaligned and blocked caps");
-    assert_eq!(int(&answer, "grip_n"), Some(grip_n));
-    assert_eq!(state.record(&s.ctx), before);
+    assert_eq!(int(answer, "grip_n"), Some(grip_n));
+    assert_eq!(state.record(&s.ctx), r.before);
 }
 
 #[test]
 fn named_caps_and_an_exhausted_budget_claim_no_grip_n() {
-    let s = Setup::load();
+    let s = setup();
     let mut state = s.after(1);
     let named = cuts::rim_summary(&s.ctx, &mut state, Some(&[5, 3, 5]), None).expect("no engine error");
     let caps: Vec<i64> = rows(&named).iter().map(|row| int(row, "cap").unwrap()).collect();
@@ -219,7 +249,7 @@ fn assert_no_rim(answer: &Value, reason: &str) {
 
 #[test]
 fn release_check_is_the_one_letter_word_check_plus_the_rim_of_its_cap() {
-    let s = Setup::load();
+    let s = setup();
     for n in [0, 3] {
         let mut start = s.after(n);
         let letter = s.record_letter(n);
@@ -238,7 +268,7 @@ fn release_check_is_the_one_letter_word_check_plus_the_rim_of_its_cap() {
         // The rims are the rim summary's rows of the letter's cap before the letter and on the journal's next state.
         let mut end = s.after(n + 1);
         assert_eq!(text(&answer, "end_digest"), Some(end.digest(&s.ctx)), "record {n}");
-        let (row_before, row_after) = (rim_row(&s, &mut start, c), rim_row(&s, &mut end, c));
+        let (row_before, row_after) = (rim_row(s, &mut start, c), rim_row(s, &mut end, c));
         let (rim_before, rim_after) = (answer.get("rim_before").unwrap(), answer.get("rim_after").unwrap());
         for field in RIM_FIELDS {
             assert_eq!(rim_before.get(field), row_before.get(field), "record {n}: {field} before");
@@ -256,7 +286,7 @@ fn release_check_is_the_one_letter_word_check_plus_the_rim_of_its_cap() {
 
 #[test]
 fn release_check_of_a_refused_letter_has_no_rim_and_changes_nothing() {
-    let s = Setup::load();
+    let s = setup();
     let mut start = s.after(3);
     let before = start.record(&s.ctx);
     let grips: Vec<usize> = (0..POLES).collect();
@@ -285,7 +315,7 @@ fn release_check_of_a_refused_letter_has_no_rim_and_changes_nothing() {
 
 #[test]
 fn release_check_refuses_a_cap_outside_the_model() {
-    let s = Setup::load();
+    let s = setup();
     let start = s.after(1);
     let letter = s.record_letter(1);
     for cap in [600, -1] {
@@ -322,7 +352,7 @@ fn assert_no_answers(answer: &Value, status: &str, message: &str, by: Option<&st
 
 #[test]
 fn covers_refuses_a_cap_outside_the_model_and_answers_no_blocked_or_closed_cap() {
-    let s = Setup::load();
+    let s = setup();
     let mut state = s.after(3);
     let before = state.record(&s.ctx);
     for cap in [600, -1] {
@@ -344,12 +374,10 @@ fn covers_refuses_a_cap_outside_the_model_and_answers_no_blocked_or_closed_cap()
 
 #[test]
 fn covers_answers_every_meeting_cap_in_both_directions() {
-    let s = Setup::load();
-    let mut state = s.after(3);
-    let before = state.record(&s.ctx);
-    let summary = cuts::rim_summary(&s.ctx, &mut state, None, None).expect("no engine error");
-    let rim: Vec<&Value> = rows(&summary).iter().collect();
-    let c = rim.iter().position(|row| int(row, "N_c").is_some_and(|n| n > 0)).expect("a misaligned cap");
+    let (s, r) = (setup(), rims());
+    let mut state = r.state.clone();
+    let rim: Vec<&Value> = rows(&r.summary).iter().collect();
+    let c = misaligned_cap(&r.summary);
     let answer = cuts::covers(&s.ctx, &mut state, c as i64, None).expect("no engine error");
     assert_eq!(text(&answer, "status").as_deref(), Some("completed"), "{:?}", text(&answer, "message"));
     assert_eq!((answer.get("message"), answer.get("by")), (Some(&Value::Null), Some(&Value::Null)));
@@ -407,21 +435,19 @@ fn covers_answers_every_meeting_cap_in_both_directions() {
     let table = cuts::covers(&s.ctx, &mut state, d as i64, None).expect("no engine error");
     let row = answers(&table).iter().find(|row| int(row, "cap") == Some(c as i64)).expect("c meets d");
     assert_eq!(row.get("d_covers_c"), Some(&c_covers_d));
-    assert_eq!(state.record(&s.ctx), before);
+    assert_eq!(state.record(&s.ctx), r.before);
 }
 
 #[test]
 fn covers_is_cut_off_when_the_classification_budget_ends() {
-    let s = Setup::load();
-    let mut state = s.after(3);
-    let before = state.record(&s.ctx);
-    let summary = cuts::rim_summary(&s.ctx, &mut state, None, None).expect("no engine error");
-    let c = rows(&summary).iter().position(|row| int(row, "N_c").is_some_and(|n| n > 0)).expect("a misaligned cap");
+    let (s, r) = (setup(), rims());
+    let mut state = r.state.clone();
+    let c = misaligned_cap(&r.summary);
     // KN7.4 and KN7.10: a budget of zero exact evaluations leaves the named cap uncertain, so the job makes no claim.
     let answer = cuts::covers(&s.ctx, &mut state, c as i64, Some(0)).expect("no engine error");
     let message = format!("cap {c}: the classification budget ends before the cap is classified");
     assert_no_answers(&answer, "cut_off", &message, Some("KN7:budget.kernel_cost"));
-    assert_eq!(state.record(&s.ctx), before);
+    assert_eq!(state.record(&s.ctx), r.before);
 }
 
 fn coverage(answer: &Value) -> &Value {
@@ -446,7 +472,7 @@ fn assert_no_pairs(answer: &Value, status: &str, message: Option<&str>, by: Opti
 
 #[test]
 fn repair_list_refuses_a_cap_outside_the_model_and_lists_nothing_at_a_blocked_closed_or_free_cap() {
-    let s = Setup::load();
+    let s = setup();
     let mut state = s.after(3);
     let before = state.record(&s.ctx);
     for cap in [600, -1] {
@@ -472,14 +498,14 @@ fn repair_list_refuses_a_cap_outside_the_model_and_lists_nothing_at_a_blocked_cl
     assert_eq!(parameters.get("order_digest"), Some(&Value::Null));
 }
 
-/// A misaligned cap with at least two admissible, misaligned meeting caps (found through the rim summary and the
-/// cover table's domain), and those meeting caps in cap-ID order.
-fn repair_cap(s: &Setup, state: &mut State) -> (usize, Vec<i64>) {
-    let summary = cuts::rim_summary(&s.ctx, state, None, None).expect("no engine error");
-    let rim: Vec<Value> = rows(&summary).to_vec();
+/// A misaligned cap with at least two admissible, misaligned meeting caps (found through the state's rim summary and
+/// the cover table's domain, which a classification budget of zero still lists), and those meeting caps in cap-ID
+/// order.
+fn repair_cap(s: &Setup, state: &mut State, summary: &Value) -> (usize, Vec<i64>) {
+    let rim = rows(summary);
     let open = |c: usize| int(&rim[c], "N_c").is_some_and(|n| n > 0);
     for c in (0..POLES).filter(|&c| open(c)) {
-        let table = cuts::covers(&s.ctx, state, c as i64, None).expect("no engine error");
+        let table = cuts::covers(&s.ctx, state, c as i64, Some(0)).expect("no engine error");
         let meeting: Vec<i64> = ints(&table, "domain").into_iter().filter(|&d| open(d as usize)).collect();
         if meeting.len() >= 2 {
             return (c, meeting);
@@ -513,16 +539,34 @@ fn lowest(values: &[i64]) -> usize {
     (0..values.len()).min_by_key(|&k| (values[k], k)).expect("values")
 }
 
+/// The state of both repair-list tests (after three records) with its record, the cap c that [`repair_cap`] finds,
+/// c's admissible, misaligned meeting caps and c's complete repair list, computed once for both tests.
+struct Repair {
+    state: State,
+    before: Value,
+    c: usize,
+    meeting: Vec<i64>,
+    full: Value,
+}
+
+fn repair() -> &'static Repair {
+    static REPAIR: OnceLock<Repair> = OnceLock::new();
+    REPAIR.get_or_init(|| {
+        let (s, r) = (setup(), rims());
+        let mut state = r.state.clone();
+        let (c, meeting) = repair_cap(s, &mut state, &r.summary);
+        let full = cuts::repair_list(&s.ctx, &state, c as i64, None, None, None).expect("no engine error");
+        Repair { state, before: r.before.clone(), c, meeting, full }
+    })
+}
+
 #[test]
 fn repair_list_tries_every_pair_in_pinned_order_and_each_delta_is_the_change_of_n() {
-    let s = Setup::load();
-    let mut state = s.after(3);
-    let before = state.record(&s.ctx);
-    let (c, meeting) = repair_cap(&s, &mut state);
-    let answer = cuts::repair_list(&s.ctx, &state, c as i64, None, None, None).expect("no engine error");
-    assert_eq!(text(&answer, "status").as_deref(), Some("completed"), "{:?}", text(&answer, "message"));
+    let (s, r) = (setup(), repair());
+    let (state, c, meeting, answer) = (&r.state, r.c, r.meeting.as_slice(), &r.full);
+    assert_eq!(text(answer, "status").as_deref(), Some("completed"), "{:?}", text(answer, "message"));
     assert_eq!((answer.get("message"), answer.get("by")), (Some(&Value::Null), Some(&Value::Null)));
-    assert_eq!(text(&answer, "input_digest"), Some(state.digest(&s.ctx)));
+    assert_eq!(text(answer, "input_digest"), Some(state.digest(&s.ctx)));
     let parameters = answer.get("parameters").expect("parameters");
     assert_eq!(int(parameters, "cap"), Some(c as i64));
     assert_eq!(text(parameters, "menu_identity"), Some(s.menu.identity.clone()));
@@ -530,14 +574,14 @@ fn repair_list_tries_every_pair_in_pinned_order_and_each_delta_is_the_change_of_
     assert_eq!(text(parameters, "tie_rule").as_deref(), Some("lowest value, then smaller pinned index"));
     assert_eq!(text(parameters, "contract_revision").as_deref(), Some(c600_jumble::CONTRACT_REVISION));
     // The meeting caps are the admissible, misaligned caps meeting c, and the items are c's twists but the identity.
-    assert_eq!(ints(coverage(&answer), "meeting_caps"), meeting);
+    assert_eq!(ints(coverage(answer), "meeting_caps"), meeting);
     let twists = s.menu.for_cap(&s.ctx, c).expect("the menu's twists");
     let items: Vec<i64> = (0..twists.len()).filter(|&x| *twists[x].matrix != identity4()).map(|x| x as i64).collect();
-    assert_eq!(ints(coverage(&answer), "items_done"), items);
+    assert_eq!(ints(coverage(answer), "items_done"), items);
     // Every pair once, in pinned x order then cap d order; the rows are the pairs whose delta is negative.
-    let pairs = outcomes(&answer);
+    let pairs = outcomes(answer);
     assert_eq!(pairs.len(), items.len() * meeting.len());
-    assert_eq!(int(coverage(&answer), "pairs_tried"), Some(pairs.len() as i64));
+    assert_eq!(int(coverage(answer), "pairs_tried"), Some(pairs.len() as i64));
     let (mut listed, mut drops, mut no_drop, mut d_closed) = (Vec::new(), Vec::new(), None, None);
     for (i, pair) in pairs.iter().enumerate() {
         let pair = pair.as_array().expect("an outcome is [x, d, delta, info]");
@@ -564,49 +608,46 @@ fn repair_list_tries_every_pair_in_pinned_order_and_each_delta_is_the_change_of_
             other => panic!("pair ({x}, {d}): an outcome {other:?}"),
         }
     }
-    assert_eq!(rows(&answer), listed.as_slice());
+    assert_eq!(rows(answer), listed.as_slice());
     assert!(!drops.is_empty() && no_drop.is_some(), "the list has pairs with and without a drop of N_d");
     // J1's M2: each delta, the sum of the three own-cut changes, is the change of N over the word (c,x) (d,y) (c,z).
     for &(x, d, y, z, delta) in drops.iter().take(4) {
         let word = [s.letter(c, x), s.letter(d, y), s.letter(c, z)];
-        let checked = observe::word_check(&s.ctx, &state, &word, None, None, None).expect("no engine error");
+        let checked = observe::word_check(&s.ctx, state, &word, None, None, None).expect("no engine error");
         assert_eq!(checked.get("admissible"), Some(&Value::Bool(true)), "({x}, {d}, {y}, {z})");
         assert_eq!(int(&checked, "delta_N"), Some(delta), "({x}, {d}, {y}, {z})");
     }
     // y minimises N_d after x, and z minimises N_c after x and y, ties to the smaller pinned index; the identity is a
     // candidate, so y lowers N_d strictly. At a pair without a drop no twist of d lowers N_d after x.
     let (x, d, y, z, _) = drops[0];
-    let after_x = played(&s, &state, &[(c, x)]);
-    let changes = own_cut_changes(&s, &after_x, d);
+    let after_x = played(s, state, &[(c, x)]);
+    let changes = own_cut_changes(s, &after_x, d);
     assert_eq!((lowest(&changes), changes[y] < 0), (y, true), "({x}, {d})");
-    let after_xy = played(&s, &after_x, &[(d, y)]);
-    assert_eq!(lowest(&own_cut_changes(&s, &after_xy, c)), z, "({x}, {d}, {y})");
+    let after_xy = played(s, &after_x, &[(d, y)]);
+    assert_eq!(lowest(&own_cut_changes(s, &after_xy, c)), z, "({x}, {d}, {y})");
     let (x, d) = no_drop.unwrap();
-    let after_x = played(&s, &state, &[(c, x)]);
-    assert!(own_cut_changes(&s, &after_x, d).iter().all(|&change| change >= 0), "({x}, {d})");
+    let after_x = played(s, state, &[(c, x)]);
+    assert!(own_cut_changes(s, &after_x, d).iter().all(|&change| change >= 0), "({x}, {d})");
     if let Some((x, d)) = d_closed {
-        let mut after_x = played(&s, &state, &[(c, x)]);
-        let row = rim_row(&s, &mut after_x, d);
+        let mut after_x = played(s, state, &[(c, x)]);
+        let row = rim_row(s, &mut after_x, d);
         assert!(text(&row, "status").as_deref() == Some("blocked") || int(&row, "N_c") == Some(0), "({x}, {d})");
     }
-    assert_eq!(state.record(&s.ctx), before);
+    assert_eq!(state.record(&s.ctx), r.before);
 }
 
 #[test]
 fn repair_list_stops_at_a_cancellation_the_pair_budget_or_the_classification_budget() {
-    let s = Setup::load();
-    let mut state = s.after(3);
-    let before = state.record(&s.ctx);
-    let (c, meeting) = repair_cap(&s, &mut state);
+    let (s, r) = (setup(), repair());
+    let (state, c, meeting, full) = (&r.state, r.c, r.meeting.as_slice(), &r.full);
     let run = |max_pairs: Option<u64>, cancel_after: Option<u64>, eval_budget: Option<u64>| {
-        cuts::repair_list(&s.ctx, &state, c as i64, max_pairs, cancel_after, eval_budget).expect("no engine error")
+        cuts::repair_list(&s.ctx, state, c as i64, max_pairs, cancel_after, eval_budget).expect("no engine error")
     };
-    let full = run(None, None, None);
-    let items = ints(coverage(&full), "items_done");
+    let items = ints(coverage(full), "items_done");
     let k = meeting.len();
     // A budget of no pairs and a cancellation at the first check try nothing (KN7.10 for the budget).
-    assert_no_pairs(&run(Some(0), None, None), "cut_off", None, Some("KN7:budget.kernel_cost"), &meeting);
-    assert_no_pairs(&run(None, Some(0), None), "cancelled", None, None, &meeting);
+    assert_no_pairs(&run(Some(0), None, None), "cut_off", None, Some("KN7:budget.kernel_cost"), meeting);
+    assert_no_pairs(&run(None, Some(0), None), "cancelled", None, None, meeting);
     // The first item and one more pair, and a cancellation at the check before the second item: each stopped list
     // keeps the complete list's first outcomes as coverage and has no rows.
     let stopped = [
@@ -618,7 +659,7 @@ fn repair_list_stops_at_a_cancellation_the_pair_budget_or_the_classification_bud
         assert_eq!(text(&answer, "by").as_deref(), by);
         assert_eq!(answer.get("message"), Some(&Value::Null));
         assert_eq!(answer.get("rows"), Some(&Value::Null), "{status}: only a completed list has rows");
-        assert_eq!(outcomes(&answer), &outcomes(&full)[..pairs]);
+        assert_eq!(outcomes(&answer), &outcomes(full)[..pairs]);
         assert_eq!(int(coverage(&answer), "pairs_tried"), Some(pairs as i64));
         assert_eq!(ints(coverage(&answer), "items_done"), items[..1]);
         assert_eq!(ints(coverage(&answer), "meeting_caps"), meeting);
@@ -626,5 +667,5 @@ fn repair_list_stops_at_a_cancellation_the_pair_budget_or_the_classification_bud
     // KN7.4 and KN7.10: a budget of zero exact evaluations leaves c uncertain, so the job makes no claim.
     let message = format!("cap {c}: the classification budget ends before the cap is classified");
     assert_no_pairs(&run(None, None, Some(0)), "cut_off", Some(&message), Some("KN7:budget.kernel_cost"), &[]);
-    assert_eq!(state.record(&s.ctx), before);
+    assert_eq!(state.record(&s.ctx), r.before);
 }
