@@ -457,7 +457,7 @@ run or not applicable is no pass (PHS.63).
     `tests/test_source_checkout.py` reads every `.6cs` source and every pinned packet file as LF, CRLF and `input`
     checkouts write them (CT-LG1-02, CT-PS1-05's checkout half); `tests/test_kernel_oracle.py` replays O01 to O07 and
     N01 to N04 through the kernel (M4's section).
-- Count on this branch, with LP3's C1 and C2 from main: 33 whole, three of them by the union of their parts
+- Count on this branch, with LP3's C1, C2 and C4 from main: 33 whole, three of them by the union of their parts
   (CT-LG2-04, CT-LG3-01, CT-LG3-04); 108 part; 15 named by M6's tests without a marker (CT-KN4-01 to CT-KN4-04,
   CT-KN5-01, CT-KN5-04, CT-KN5-06, CT-KN5-09, CT-KN5-11, CT-KN7-01 to CT-KN7-05 and CT-KN7-07; M6's section calls
   CT-KN4-01's an in-process part); 13 more named only by LP3's command-layer tests, as parts without a marker
@@ -470,11 +470,13 @@ run or not applicable is no pass (PHS.63).
   services that host the formatter come with LP4; CT-LG4-01's second admitted route, since RT1 is the only one (LQ9);
   CT-BND-11's ONE.32 fields in other profiles, which never arise (BND.60); the Linux legs of CT-DET-02, CT-DET-15 and
   CT-PS1-01, since CI has no Linux cargo job; form 2 in CT-DET-32, since RT1 runs form 1 only (the LP2 plan's
-  selection, which the owner may overrule); and, as before, CT-LG1-01's mixed dependency editions and CT-LG2-05's
-  form 2.
+  selection, which the owner may overrule); ERR.1 for the five codes `c600-command` names as drafts that chapter 13
+  does not register, which `tests/test_language_scans.py` lists exactly (`UNREGISTERED_DRAFTS`); and, as before,
+  CT-LG1-01's mixed dependency editions and CT-LG2-05's form 2.
 - Fixed, each found by a test:
   - A clock reading was an exact `Nat`, so `use_budget(read_clock())` was admitted against LG2.6, LG3.8 and DET.18; it
-    is now `Display<Nat>`, and CT-LG2-06's seconds half runs.
+    is now `Display<Nat>`, and CT-LG2-06's seconds half runs. LP3 C4's clock probe P01
+    (`c600-module/tests/ct_rte_07_full.rs`) now returns `Display<Nat>`, so it still reaches the grant check.
   - The provenance reader accepted a 65th nested container when the innermost one was empty, above FP.9's json_depth
     of 64 (CT-PS1-07). A fresh Sonnet read found no blocker or major finding.
   - The kernel's adapter refused a whole case when one recipe held JSON that 0.4 refuses step by step (L1), and
@@ -490,7 +492,10 @@ run or not applicable is no pass (PHS.63).
     (line 661) sits between ERR.28's table and ERR.31 and belongs at the head of ERR.31's table, and ERR.31 comes
     before ERR.29 and ERR.30; the rule source of `KN5:stale.filter_preview` (line 322) omits KN0.9
     (`closure/manifests/p7-layers.json`). The Used-by cells of `KN2:input.recipe_shape` and
-    `KN2:resource_limit.primitive_ceiling` say "not yet used", but the kernel emits both.
+    `KN2:resource_limit.primitive_ceiling` say "not yet used", but the kernel emits both. Chapter 13 registers none of
+    the five draft codes `c600-command` emits (`KN2:consistency.star_certificate`, `KN5:input.unknown_row`,
+    `KN5:input.argument_form`, `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`); the command table's
+    drafts settle at LP3 (PHS.53).
   - For LP3: LB7.1's `LB7:capability.module_grant_missing` is the workspace library's entry-admission fact, built with
     LB7; the checker's own admission reports `LG3:capability.not_granted`, as chapter 02's LG3 table has it.
   - KN5 has two implementations, `c600-session` (M6) and LP3's `c600-command` (pull request 159). The LP2 integrator
@@ -510,7 +515,8 @@ run or not applicable is no pass (PHS.63).
     CT-BND-23).
   - M5, the jumbled puzzle (12): CT-KN1-02, CT-KN1-03, CT-KN1-06, CT-KN2-02, CT-KN2-03, CT-KN2-06, CT-KN3-01,
     CT-KN3-03, CT-LG2-12, CT-PS1-11, CT-PS1-14 and CT-PS1-22.
-  - LG5's module loader and lockfiles (7, no milestone named): CT-LG5-01 to CT-LG5-07.
+  - LG5's module loader and lockfiles (7): CT-LG5-01 to CT-LG5-07. LP3 C4's `c600-module` builds closures and
+    lockfiles, but its tests name none of these rows.
   - KN5's command layer, once its candidate is picked (3): CT-KN5-05, CT-KN5-08 and CT-KN5-10.
   - A6's exact rotation requests (5, no milestone named): CT-KN3-04 to CT-KN3-06, CT-LG2-16 and CT-DET-16.
   - The stage checker, RPI.68 to RPI.76 (3, no milestone named): CT-LG2-15, CT-LG3-10 and CT-LG5-08.

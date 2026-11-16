@@ -55,6 +55,22 @@ GUARDED_SLUGS = {
     "chart_subset_violation": "LG2:type.chart_subset_violation is withdrawn",
     "outside_certified_domain": "the outside-domain spelling is withdrawn, not renamed (ERR.22)",
 }
+# Names a crate defines for a reserved code only to recognise it: (path, name, code). The definition must read exactly
+# `pub const <name>: &str = "<code>";`, and every other use of the name compares a code with it, so no source builds the
+# reserved code (ERR.25: the fixed-ceiling draft never emits KN7:budget.display_plan_limit; RM.13).
+RESERVED_NAMES = (
+    ("rust/c600-display/src/error.rs", "PLAN_LIMIT", "KN7:budget.display_plan_limit"),
+)
+# Codes LP3's command layer names as drafts that chapter 13 does not register yet, by path (PHS.53: the command table's
+# drafts settle at LP3; a new registry row is a change to chapter 13, PHS.52). ERR.1 is not run for them, and the list is
+# exact: a code that becomes registered or leaves its source fails the scan until the list follows.
+UNREGISTERED_DRAFTS = frozenset({
+    ("rust/c600-command/src/layer.rs", "KN2:consistency.star_certificate"),
+    ("rust/c600-command/src/receipt.rs", "KN5:input.unknown_row"),
+    ("rust/c600-command/src/receipt.rs", "KN5:input.argument_form"),
+    ("rust/c600-command/src/receipt.rs", "KN5:input.row_not_built"),
+    ("rust/c600-command/src/receipt.rs", "KN5:input.overlay_row_conflict"),
+})
 
 CODE_IN_TEXT = re.compile(r"(?<![A-Za-z0-9_])([A-Z]{2,3}[0-9]?):([a-z_]+)\.([a-z0-9_]+)(?![A-Za-z0-9_])")
 SHORT_CODE = re.compile(r"^([a-z_]+)\.([a-z0-9_]+)$")
@@ -196,25 +212,65 @@ def lexed_sources(rust: Path = RUST) -> dict[str, Lexed]:
             for member in workspace_members(rust) for path in crate_sources(rust / member)}
 
 
+def reservation_lines(sources: dict[str, Lexed]) -> dict[tuple[str, int], str]:
+    """The lines that define a reserved code's name exactly as RESERVED_NAMES records it, with the code each names."""
+    found = {}
+    for path, name, code in RESERVED_NAMES:
+        if path in sources:
+            for n, text in enumerate(sources[path].code.split("\n"), 1):
+                if text.strip() == f'pub const {name}: &str = "{code}";':
+                    found[(path, n)] = code
+    return found
+
+
+def reservation_problems(sources: dict[str, Lexed]) -> list[str]:
+    """Each use of a reserved code's name, other than its definition, compares a code with it (ERR.25, RM.13)."""
+    defined = reservation_lines(sources)
+    problems = []
+    for _, name, _ in RESERVED_NAMES:
+        use = re.compile(rf"(?<![A-Za-z0-9_]){name}(?![A-Za-z0-9_])")
+        compared = re.compile(rf"(?:==|!=)\s*(?:[A-Za-z_]\w*\s*::\s*)*{name}(?![A-Za-z0-9_])|"
+                              rf"(?<![A-Za-z0-9_]){name}\s*(?:==|!=)")
+        for path, lexed in sources.items():
+            for n, text in enumerate(lexed.bare.split("\n"), 1):
+                if (path, n) not in defined and len(use.findall(text)) > len(compared.findall(text)):
+                    problems.append(f"{path}:{n}: the reserved {name} is used other than in a comparison")
+    return problems
+
+
 def emitted_codes(sources: dict[str, Lexed], registry: reg.Registry) -> list[Emitted]:
     """Every registry-shaped code inside a string literal: a prefix that is a registry source or a category that is a
-    registry category. Other identifiers of that shape are no error codes."""
+    registry category. Other identifiers of that shape are no error codes. A reserved code's definition under
+    RESERVED_NAMES names the code without emitting it, and reservation_problems checks how that name is used."""
+    reserved = reservation_lines(sources)
     found = []
     for path, lexed in sources.items():
         for line, literal in lexed.literals:
+            if reserved.get((path, line)) == literal:
+                continue
             for m in CODE_IN_TEXT.finditer(literal):
                 if m.group(1) in registry.sources or m.group(2) in registry.categories:
                     found.append(Emitted(path, line, m.group(0), literal))
     return found
 
 
+def draft_problems(sources: dict[str, Lexed], registry: reg.Registry) -> list[str]:
+    """UNREGISTERED_DRAFTS is exact: each draft is still named at its path and still unregistered."""
+    emitted = {(e.path, e.code) for e in emitted_codes(sources, registry)}
+    return [f"{path}: {code} is " + ("registered now" if registry.row(code) else "no longer named there")
+            for path, code in sorted(UNREGISTERED_DRAFTS)
+            if registry.row(code) is not None or (path, code) not in emitted]
+
+
 def emitted_problems(sources: dict[str, Lexed], registry: reg.Registry) -> list[str]:
-    """ERR.1, ERR.2, ERR.4, ERR.5: each emitted code is an active registry row, and none drops its prefix."""
+    """ERR.1, ERR.2, ERR.4, ERR.5: each emitted code is an active registry row, and none drops its prefix. A draft under
+    UNREGISTERED_DRAFTS, at its own path, is the one exception (not run; draft_problems keeps the list exact)."""
     problems = []
     for e in emitted_codes(sources, registry):
         row = registry.row(e.code)
         if row is None:
-            problems.append(f"{e.path}:{e.line}: {e.code} is not registered")
+            if (e.path, e.code) not in UNREGISTERED_DRAFTS:
+                problems.append(f"{e.path}:{e.line}: {e.code} is not registered")
         elif row.status != "active":
             problems.append(f"{e.path}:{e.line}: {e.code} is {row.status} and cannot be emitted")
     short = {f"{row.category}.{row.slug}": row.code for row in registry.rows}
@@ -226,8 +282,10 @@ def emitted_problems(sources: dict[str, Lexed], registry: reg.Registry) -> list[
 
 
 def guarded_problems(sources: dict[str, Lexed]) -> list[str]:
+    reserved = reservation_lines(sources)
     return [f"{path}:{line}: a literal names {slug!r}: {why}" for path, lexed in sources.items()
-            for line, literal in lexed.literals for slug, why in GUARDED_SLUGS.items() if slug in literal]
+            for line, literal in lexed.literals for slug, why in GUARDED_SLUGS.items()
+            if slug in literal and reserved.get((path, line)) != literal]
 
 
 def category_problems(sources: dict[str, Lexed], registry: reg.Registry) -> list[str]:
@@ -465,32 +523,57 @@ class ScanTests(unittest.TestCase):
         which exist only from LP3's command layer; the registry half is in tests/test_error_registry.py): every code
         the workspace members' sources name in a string literal is an active registry row with its own prefix, and no
         literal drops a registered code's prefix. This is also CT-ERR-04's emitted half (forwarded codes keep their
-        full prefixes) and CT-ERR-17's (the withdrawn chart-subset code is not emitted). Controls: an unregistered
-        code, a reserved code, a retired code and a short form fail; a code in a comment is not read."""
+        full prefixes) and CT-ERR-17's (the withdrawn chart-subset code is not emitted). Not run either: ERR.1 for the
+        five drafts LP3's command layer names that chapter 13 does not register (UNREGISTERED_DRAFTS, a finding for
+        the owner under PHS.52); the list is exact, and the same code at another path fails. Controls: an
+        unregistered code, a reserved code, a retired code, a short form and a draft outside its path fail; a code in
+        a comment is not read."""
         self.assertEqual(emitted_problems(self.sources, self.registry), [])
+        self.assertEqual(draft_problems(self.sources, self.registry), [])
         self.assertGreaterEqual(len({e.code for e in self.emitted}), 25)
-        for crate in ("c600-check", "c600-kernel", "c600-run", "c600-syntax"):
+        for crate in ("c600-check", "c600-kernel", "c600-run", "c600-syntax", "c600-command", "c600-display"):
             self.assertTrue(any(e.path.startswith(f"rust/{crate}/") for e in self.emitted), crate)
         found = emitted_problems(planted("\n".join([
             '// "KN5:stale.never_registered" in a comment',
             'const A: &str = "KN5:stale.never_registered";', 'const B: &str = "KN7:budget.display_plan_limit";',
-            'const C: &str = "KN7:budget.over_ceiling";', 'const D: &str = "stale.token_used";'])), self.registry)
-        self.assertEqual([p.split(": ", 1)[0] for p in found], [f"rust/planted/src/lib.rs:{n}" for n in (2, 3, 4, 5)])
+            'const C: &str = "KN7:budget.over_ceiling";', 'const D: &str = "stale.token_used";',
+            'const E: &str = "KN5:input.unknown_row";'])), self.registry)
+        self.assertEqual(sorted(p.split(": ", 1)[0] for p in found),
+                         [f"rust/planted/src/lib.rs:{n}" for n in (2, 3, 4, 5, 6)])
+        stale = draft_problems(planted('const E: &str = "KN5:input.unknown_row";', "rust/c600-command/src/receipt.rs"),
+                               self.registry)
+        self.assertEqual(len(stale), len(UNREGISTERED_DRAFTS) - 1)
 
     def test_ct_err_15_retired_and_reserved_codes_are_not_emitted(self):
-        """CT-ERR-15 (part: the emitted half for the present source; not run: RM.13's fixed-ceiling and output-budget
-        path, which has no source until LP3's display, so the scan covers it only when that crate joins the
-        workspace): no member names or assembles LG3:effect.flow_refused, LG3:capability.flow_refused, the reserved
-        KN7:budget.display_plan_limit or KN7:resource_limit.recursion_exhausted, or the withdrawn chart-subset and
-        outside-domain codes, in any string literal. Controls: each guarded slug planted in a literal fails, and in a
-        comment it does not."""
+        """CT-ERR-15 (part: the emitted half for the present source, which includes RM.13's fixed-ceiling path in
+        LP3's c600-display; not run: a display run at its ceiling, which is LP3's): no member names or assembles
+        LG3:effect.flow_refused, LG3:capability.flow_refused, KN7:resource_limit.recursion_exhausted, or the
+        withdrawn chart-subset and outside-domain codes, in any string literal. The reserved
+        KN7:budget.display_plan_limit appears once, as c600-display's constant for ERR.25's reservation, and every
+        other use of that constant compares a code with it, so no source builds the code. Controls: each guarded slug
+        planted in a literal fails, and in a comment it does not; the reservation constant outside its path, or used
+        to build an error, fails."""
         self.assertEqual(guarded_problems(self.sources), [])
         codes = {e.code for e in self.emitted}
         self.assertTrue(codes.isdisjoint({"LG3:effect.flow_refused", "LG3:capability.flow_refused",
                                           "KN7:budget.display_plan_limit", "KN7:resource_limit.recursion_exhausted"}))
+        self.assertIn("EV3:resource_limit.display_plan_ceiling", codes)
+        self.assertEqual(sorted(path for path, _ in reservation_lines(self.sources)),
+                         [path for path, _, _ in RESERVED_NAMES])
+        self.assertEqual(reservation_problems(self.sources), [])
+        uses = [path for path, lexed in self.sources.items() if "PLAN_LIMIT" in lexed.bare]
+        self.assertGreaterEqual(len(uses), 2, "the scan reads the constant's definition and a comparison with it")
         for slug in GUARDED_SLUGS:
             text = f'// {slug} in a comment\nconst X: &str = "prefix {slug}";\n'
             self.assertEqual(len(guarded_problems(planted(text))), 1, slug)
+        definition = '    pub const PLAN_LIMIT: &str = "KN7:budget.display_plan_limit";\n'
+        self.assertEqual(guarded_problems(planted(definition, RESERVED_NAMES[0][0])), [])
+        self.assertEqual(len(guarded_problems(planted(definition))), 1)
+        built = planted(definition + "fn f() -> Error { Error::new(codes::PLAN_LIMIT, \"x\") }\n"
+                        "fn g(e: &Error) -> bool { e.code == codes::PLAN_LIMIT || codes::PLAN_LIMIT != e.code }\n",
+                        RESERVED_NAMES[0][0])
+        self.assertEqual([p.split(": ", 1)[0] for p in reservation_problems(built)],
+                         [f"{RESERVED_NAMES[0][0]}:2"])
 
     def test_ct_bnd_24_flow_refusal_codes_are_not_emitted(self):
         """CT-BND-24 (whole, for the workspace's sources): LG3:effect.flow_refused is retired (its registry row says so)
@@ -514,12 +597,13 @@ class ScanTests(unittest.TestCase):
     def test_ct_err_07_08_16_emitted_category_rules(self):
         """CT-ERR-07, CT-ERR-08 and CT-ERR-16 (part: the emitted halves; not run: the session-freeze, budget-stop and
         rotation-request fixtures, which need the session store (M6), the command layer and renderer (LP3) and the
-        rotation-request parser of the jumbling engine half (M5); no member emits a consistency code yet, so
-        CT-ERR-07's emitted half has nothing to check): every emitted budget code is an active KN7 budget row on a
-        declared allowance, an emitted consistency code would have to come from KN1 to KN7, and no member emits a KN3
-        code. Controls: a budget code outside KN7, a retired budget code, a non-kernel consistency code and a KN3 code
-        fail."""
+        rotation-request parser of the jumbling engine half (M5)): every emitted budget code is an active KN7 budget
+        row on a declared allowance, every emitted consistency code comes from KN1 to KN7 (the session store and
+        LP3's crates emit KN2 and KN5 ones), and no member emits a KN3 code. Controls: a budget code outside KN7, a
+        retired budget code, a non-kernel consistency code and a KN3 code fail."""
         self.assertEqual(category_problems(self.sources, self.registry), [])
+        consistency = {e.code for e in self.emitted if reg.split_code(e.code)[1] == "consistency"}
+        self.assertTrue(consistency, "the scan reads emitted consistency codes")
         budgets = sorted({e.code for e in self.emitted if reg.split_code(e.code)[1] == "budget"})
         self.assertEqual(budgets, ["KN7:budget.kernel_cost", "KN7:budget.memory", "KN7:budget.output",
                                    "KN7:budget.steps"])
