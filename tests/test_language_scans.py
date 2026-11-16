@@ -70,6 +70,7 @@ UNREGISTERED_DRAFTS = frozenset({
     ("rust/c600-command/src/receipt.rs", "KN5:input.argument_form"),
     ("rust/c600-command/src/receipt.rs", "KN5:input.row_not_built"),
     ("rust/c600-command/src/receipt.rs", "KN5:input.overlay_row_conflict"),
+    ("rust/c600-command/src/receipt.rs", "KN4:input.session_exists"),
 })
 
 CODE_IN_TEXT = re.compile(r"(?<![A-Za-z0-9_])([A-Z]{2,3}[0-9]?):([a-z_]+)\.([a-z0-9_]+)(?![A-Za-z0-9_])")
@@ -524,7 +525,7 @@ class ScanTests(unittest.TestCase):
         the workspace members' sources name in a string literal is an active registry row with its own prefix, and no
         literal drops a registered code's prefix. This is also CT-ERR-04's emitted half (forwarded codes keep their
         full prefixes) and CT-ERR-17's (the withdrawn chart-subset code is not emitted). Not run either: ERR.1 for the
-        five drafts LP3's command layer names that chapter 13 does not register (UNREGISTERED_DRAFTS, a finding for
+        six drafts LP3's command layer names that chapter 13 does not register (UNREGISTERED_DRAFTS, a finding for
         the owner under PHS.52); the list is exact, and the same code at another path fails. Controls: an
         unregistered code, a reserved code, a retired code, a short form and a draft outside its path fail; a code in
         a comment is not read."""
