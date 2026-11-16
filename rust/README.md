@@ -21,11 +21,13 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-evidence` | Chapter 06's evidence library as pure code: statements, keys and scopes, the AND/OR graph, grades and editions, the two standing passes, the word function with EVD.32's rows and EVD.40's checks, `CheckReport` admission, EVD.52's import rules and EVD.64's writer check |
 | `c600-command` | The command layer over H-08's stored table (KN5, chapter 08 section 7), the shell's tokens and key routes, and the loop runner `c600-lp3-oracle` (LP3, C1) |
 | `c600-view` | The headless view model, view lane and view budget: Global, Local and further views, revision binding and statuses, visibility, and the views' limits and allowances (LP3, C2) |
-| `c600-display` | The headless display contract: display plans and publications, the host validator, the publication state machine over a mock backend, picks and frame stamps, and RM.37's jumbling crosswalk as fixtures (LP3, C2) |
+| `c600-display` | The headless display contract: display plans and publications, the host validator, the publication state machine over a mock backend, picks and frame stamps, RM.37's jumbling crosswalk as fixtures (LP3, C2), and the jumbling producers from M5's kernel (LP3, C8) |
 | `c600-module` | Module closures, lockfiles and their approval binding: the draft manifest and lock forms, resolution by content digest, closure verification and the closure digest, an approval bound to that digest, and load and run through the run-time boundary (LP3, C4) |
 | `c600-runtime` | The runtime in a process of its own (route RT1): the child binary `c600-runtime`, the parent library that starts it and answers its host calls, the wire protocol draft `c600-rt1-wire-1` and the in-process reference path (LP3, C3) |
 | `c600-durable` | LP3 C7's durable conformance cases on M6's session store, test-only: CT-RTE-08's persisted word, CT-EV3-07's durable action order and view part, and CT-LB2-03's work-sheet part (LP3, C7) |
 | `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, in process or on the runtime's own process, the recipe expansion, the source route `c600-lp3-source` and the tool's views (LP3, C5) |
+| `c600-repr` | The representations tool, headless half: layouts and atlases with their source maps, the layout filter, linked selection, chart surveys and user-chart admission over the display contract, the tool's `.6cs` source and `view_aid` manifest, its class review, and what its six rows need from the command layer (LP3, C6) |
+| `c600-jumble-tool` | The built-in jumbling tool, headless half: its `.6cs` source with two entries that preview a word the solver names, its `checking` manifest and built-in admission, the reading of a `Word` as literal jumbling letters, and the kernel halves of LB1's and LB3's jumbling tests (LP3, C8) |
 | `c600-input` | The headless input router: synthetic key events to command-layer invocations in chapter 04's routing order, bindings resolved to absolute arguments at the press, the held-key allowlist and the key-map checks (LP3, C5) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
@@ -34,7 +36,7 @@ checker; its tests run checked source programs, so the checker and the syntax cr
 kernel depends on the digest crate only. The session crate depends on the kernel, the interpreter, the IR and digest
 crates; its job tests run checked source programs too. The evidence library depends on the digest crate only.
 The command layer depends on the kernel and digest crates only, so it has no path to the interpreter (ONE.48). The
-view model depends on the digest crate only, and the display contract on the digest and kernel crates.
+view model depends on the digest crate only, and the display contract on the digest, kernel and jumbling crates.
 The module crate depends on the syntax, IR, checker, interpreter and digest crates, and has no path to the command
 layer.
 The runtime depends on the syntax, checker, interpreter, IR and digest crates and the big-integer crates, and has no
@@ -46,6 +48,11 @@ model.
 The input router depends on the command layer and the kernel crate only, so a key reaches a kernel row with no path to
 the interpreter (ONE.48).
 The jumbling crate depends on the kernel and digest crates and the big-integer crates.
+The representations crate depends on the checker, IR and digest crates, the display contract, the tools crate, whose
+built-in column admits its entries, and the command layer, whose stored table its class review reads; it draws nothing
+and owns no device.
+The jumbling tool crate depends on the digest crate, the jumbling crate and the tools crate, whose built-in column
+admits its entries; its tests also run the checker, syntax, IR, interpreter and kernel crates.
 The durable crate holds tests only; its dev-dependencies are the session store, the module crate, the checker, the
 syntax crate, the interpreter, the kernel and the digest crate.
 
@@ -1171,3 +1178,87 @@ run or not applicable is no pass (PHS.63).
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim; the source-route check's timings are
   informational. The checks ran on Windows only; the Linux leg was not run.
+
+## Status of LP3, C6: the representations tool, headless half
+
+- `c600-repr` is LB6.5's row "Representation, work-set and filter tools", class `view_aid`, over LB4's layouts and
+  atlases, map property checks and linked selection. It draws nothing and owns no device, renderer, clock or session:
+  picks resolve through `c600-display`'s host and the installed source map, exact chart checks are `c600-display`'s, and
+  each entry's admission is `c600_tools::tool::admit_built_in`.
+  - `layout`: sheets and atlases as display plans with their source maps; a layout filter rebuilds the layout, the
+    instance list and the map's entries and leaves the mechanically analysed set alone (LB4.4); a linked selection is
+    computed once for its inputs, and frames only read it (EV3.10).
+  - `chart`: a chart's survey over camera poses, with exact verdicts at exact poses from `c600-display`'s checks and
+    display data between them (LB4.2), and a user chart's admission as far as `c600-display` reaches it (LB4.3).
+  - `tool`: the source [`representations.6cs`](c600-repr/src/representations.6cs) (edition `6cs-draft-1`, syntax
+    candidate A) with five entries, each admitted under the built-in column; the Rust manifest with the class
+    `view_aid`; the review of the class against the exact entry definitions and the row set, which also finds an
+    exported function the manifest does not list and source bytes other than the ones the manifest names; and the form
+    of a review record that names every entry digest (BND.37).
+  - `rows`: what each of the six rows needs from the command layer, which refuses them as not built: a dispatch from a
+    stored row to a built-in tool's entry, the runtime's view and workspace sinks as the job's result, argument forms
+    for the rows' reference types, and a workspace revision that moves. `set.save` also needs a list type in the IR
+    draft. LP3 changes no layer code until KN5's one implementation lands.
+- Tests (`c600-repr/tests/`), each naming its part:
+  - `ct_lb4_03.rs`: CT-LB4-03's 600-cell-Full half. Display instances of two charts map through the installed source map
+    to occurrence, sticker, piece, cell and slot; a chart's inverse value is never consulted for a pick; a layout filter
+    preserves the analysed set. Pose levels are C8's next piece, on M5's kernel.
+  - `ct_lb4_charts.rs`: CT-LB4-01's CPU reference (a declared domain decided by an exact region test and section
+    membership on the posed vertices, boundary cases included; a chart whose vertices pass and whose domain fails inside
+    is refused; an established domain establishes no injectivity); CT-LB4-02, whole (synthetic: replacing the decisions
+    between exact poses changes only display data); CT-LB4-04's admission half and CPU half.
+  - `tool.rs`: the source parses and lowers, and every entry is admitted; CT-BND-15's representations part; CT-LB6-03's
+    representations part (a stash-and-relay, a state-chosen target, a writing view and an exported function the manifest
+    does not list are each found). The record is checked with a fixture reviewer: BM5's review of the tool happens when
+    it ships.
+  - `ct_ev3.rs`: CT-EV3-06's counter half (unchanged frame draws and a workspace-only revision compute no relation;
+    counted, never timed); CT-EV3-07's view half at the command layer (the checker refuses a view that writes the
+    workspace or proposes; after a commit, program calls to the six rows and to `session.undo` are refused, a view
+    overlay row completes as `view_published`, and the revision, the log and the undo hint stay as they were).
+  - `rows.rs`: the requirements name the stored rows as H-08 has them, each row's effects are its entry's, and the layer
+    refuses all six rows; an overlay cannot replace one.
+- Not built: the six rows and a `set.save` entry; the checkers for homomorphism, embedding, isometry and
+  full-dimensional injectivity (CT-LB4-01's rest, which needs KN3's exact polytope operations); the stage checker, HLSL
+  compilation and every device step (CT-LB4-04's rest, the renderer freeze); pose levels and off-lattice relations (C8's
+  next piece, on M5's kernel); the relationship strip; filters of trees, complexes and graphs; a BM5 review record; an
+  explicit workspace command through the command layer (KN5's one implementation).
+- Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
+- Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
+  Linux leg was not run.
+
+## Status of LP3, C8: the jumbling tool, headless half
+
+- `c600-jumble-tool` is LB6.5's row "Named twist/word checker and kept checks", class `checking`: PHS.22's built-in tool
+  for jumbling. Its source [`jumble_checker.6cs`](c600-jumble-tool/src/jumble_checker.6cs) (edition `6cs-draft-1`,
+  syntax candidate A) has two entries, `check_named_twist` and `check_named_word`, each admitted under the built-in
+  column through `c600_tools::tool`. Each proposes the literal word the solver named and reads no state, so the tool
+  never chooses or outputs a word by itself. `word` reads a `Word` as literal jumbling letters, cap then item, of the
+  state's menu; a word that is no sequence of letters is refused before any letter is applied.
+- `c600-display` gains the jumbling producers (`jumble`): the posed-sticker row J02 from a state's canonical pose table,
+  the certified transform J03, the certified overlays J04 (the full named-cap set, the cap-map witness and the named
+  cut), J08's seam table from the engine's `seam_facts`, and the slot projection J13, with a fixture support report for
+  J02 to J05. Under a jumbling identity the validator now checks a posed row instead of refusing it; 600-cell-Full is
+  unchanged.
+- Tests, each naming its part:
+  - `c600-jumble-tool/tests/tool.rs`: CT-LB6-03's jumbling part (the declared class against the exact entry definitions;
+    LX-3's correction-solve, state-based target and storage-laundering cases refused under capability separation and
+    never run) and CT-BND-15's jumbling part (the class, the row set `operation.preview` and a manifest that names the
+    source digest).
+  - `c600-jumble-tool/tests/lb3.rs`: the kernel halves of CT-LB1-02 (at a blocked cap literal a,a⁻¹ is refused at its
+    first letter and the empty word is admitted; prefix protection reads literal letters), CT-LB3-03 (heights (0,0) off
+    the lattice in free mode; domain IDs by exact coset tests), CT-LB3-06 (prefix peak, excursion, tameness and the step
+    flag recomputed apart from the kernel's batch; a false flag refuses nothing) and CT-LB3-07 (a named-word check
+    answers only its named word, with no word, outcome table or recommendation field).
+  - `c600-display/tests/jumbling.rs`: CT-RPI-08's jumbling rows (produced and validated; unsupported and missing data
+    explicit), CT-RPI-12's off-lattice part on a real jumbling state (with C2's stale half, CT-RPI-12 runs whole) and
+    CT-RM-07's jumbling half on M5's model (rows 1 to 8 and 15).
+- Not built: Jumble on in the command layer and oracle equality against M5's fixtures (KN5's one implementation, LP2);
+  M8's items (nu, the checkpoints, the sticker test, a whole word's Net and Strict protection, the repair list, covers,
+  release order, the correction catalogue, and the rows J01 and J06 to J12); the library entries, which need the IR
+  draft's collection types; CT-LB1-02's key half (LG2.18); BM5's review records; a slot action of K⁺ and an engine-named
+  rotation plane in `c600-jumble`; J10's exposed-face geometry; a comparison of the posed arrays with the J1 fixture's
+  later stages; the pose levels of CT-LB4-03 and CT-EV3-06's off-lattice relations, which build on C6; LP3's own test of
+  LB3.4's crossing for CT-LB3-02 (M5's `crossing.rs` runs its kernel facts as CT-KN2-03); CT-LB1-03's kernel half.
+- Drafts, which freeze with the IR and the command table, are in each crate's documentation under "Drafts".
+- Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
+  Linux leg was not run.

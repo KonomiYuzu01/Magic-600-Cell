@@ -8,3 +8,4 @@ publish.workspace = true
 [dependencies]
 c600-digest = { path = "../c600-digest" }
 c600-kernel = { path = "../c600-kernel" }
+c600-jumble = { path = "../c600-jumble" }
