@@ -21,6 +21,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-view` | The headless view model, view lane and view budget: Global, Local and further views, revision binding and statuses, visibility, and the views' limits and allowances (LP3, C2) |
 | `c600-display` | The headless display contract: display plans and publications, the host validator, the publication state machine over a mock backend, picks and frame stamps, and RM.37's jumbling crosswalk as fixtures (LP3, C2) |
 | `c600-module` | Module closures, lockfiles and their approval binding: the draft manifest and lock forms, resolution by content digest, closure verification and the closure digest, an approval bound to that digest, and load and run through the run-time boundary (LP3, C4) |
+| `c600-runtime` | The runtime in a process of its own (route RT1): the child binary `c600-runtime`, the parent library that starts it and answers its host calls, the wire protocol draft `c600-rt1-wire-1` and the in-process reference path (LP3, C3) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
@@ -31,6 +32,8 @@ only, so it has no path to the interpreter (ONE.48). The view model depends on t
 contract on the digest and kernel crates.
 The module crate depends on the syntax, IR, checker, interpreter and digest crates, and has no path to the command
 layer.
+The runtime depends on the syntax, checker, interpreter, IR and digest crates and the big-integer crates, and has no
+path to the command layer; C5's host bridge connects them.
 
 ## Running the tests
 
@@ -481,3 +484,37 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   which need host events inside a loop, the host's row cache or the command layer's rows. The Linux leg did not
   run.
 - Evidence kind: source and synthetic. No timing is measured.
+
+## Status of LP3, C3: the runtime in its own process
+
+- `c600-runtime` runs a program in a child process of its own (route RT1, LQ9; RTE.21, ONE.69). The child binary
+  reads framed messages on standard input, compiles and runs each job with `c600-syntax`, `c600-check` and
+  `c600-run`, and forwards every host call (`tariff`, `perform`, `sink`) to the parent. The parent starts the child,
+  answers its calls from the caller's host and returns the run's end or a typed fault. `run_in_process` is the same
+  path in one process, the reference the tests hold the child to.
+- Protocol draft `c600-rt1-wire-1`: length-prefixed frames of at most 16 MiB either way, one protocol byte, six
+  message kinds, and a canonical value encoding that refuses every noncanonical form on both sides. The parent
+  answers a repeated, unacknowledged call from its record and never calls the host twice for one call, and a new
+  call must acknowledge the last answer, so at most one answer is open (KI.5). No message has a field for a token
+  or any other authority (KN5.15).
+- Faults: a child that is lost, does not start, names another protocol, sends a malformed or oversized frame or
+  breaks the call protocol ends the run as `error` with `KN7:resource_limit.runtime_lost`; a passed deadline ends it
+  as `cut_off` with `KN7:resource_limit.safety_stop`. The child is killed and reaped, and the next run starts a fresh
+  one.
+- Tests (`c600-runtime/tests/`): the child and the in-process run give the same results, charges, stop points, host
+  calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 8 of DET.65's 40 traces as `.6cs` programs on both
+  executors (`ct_rte_04.rs`); the protocol's bounds, canonical encodings, KI.5's record and KN5.15's field list
+  (`protocol.rs`); CT-RTE-10's headless fault half, rehearsals in debug builds that kill, crash, truncate, garble,
+  oversize or hang the child while the session keeps its journal, state hash and pending preview (`faults.rs`).
+- Drafts, which freeze with the IR and the command table: the list in the crate documentation, among them the
+  framing and message kinds (KI.15, ONE.69), the transfer encoding (DET.59), acknowledgement and retry (KI.5), the
+  fault codes (KN7.13), source bytes rather than checked IR in a job (KI.6, ADR-L12.9), and a deadline checked
+  between messages only, so a blocking host call is not interrupted.
+- Not built: OS isolation of the child (a job object with kill-on-close, a restricted or AppContainer token,
+  filesystem and network confinement); a bound on the parent's queue of frames to a child that stops reading its
+  input (draft 5); LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's other 32 traces need
+  what the IR draft lacks: child scopes, more than one generator per run, releasing a `let` before its alias, text
+  order, byte decoding, loops and pointwise checks, exact multiplication, streaming cursors, one-row output units,
+  and an executor for `lp1-exec-region-draft-1` (LP2). Two of them, `nested-calls` and the output rows, may be meter
+  mismatches in `c600-run`; LP2 has them.
+- Evidence kind: source and synthetic. The fault rehearsals are not LX-2 evidence, and no timing is measured.

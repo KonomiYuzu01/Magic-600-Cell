@@ -47,17 +47,33 @@ and the renderer freeze for its on-screen half, and headless integration does no
 | --- | --- | --- |
 | Command layer, shell tokens and key routes; the oracle loop for 600-cell-Full | Built (C1) | Nothing; the table freezes at LP3 |
 | Headless display contract; views and their budgets | Built (C2) | Nothing |
-| The runtime in its own process | In progress (C3) | Nothing: route RT1 (LQ9) |
+| The runtime in its own process | Built (C3) | Nothing: route RT1 (LQ9) |
 | Module closure | Built (C4) | Nothing |
 | Source route and the 600-cell-Full tool | May start when C1 is on main | C1 |
 | Representations tool, headless half | May start after C5 | C2's views and C5's host bridge |
 | Durable receipts and undo, CT-RTE-08's persisted words, work sheets | In progress (C7) | M6 is on main (pull request 160); CT-RTE-08's persisted words also need C4 |
 | The jumbling tool and every jumbling half | Waits | M5 on main |
-| Tests that read kernel rows LP2 has not built: Strict protection, streaming words (KN2.10), `positions` (KN2.4), KN3's exact rotations and polytope operations | Waits | LP2's kernel; asked of the LP2 line, not built here |
+| Tests that read kernel rows LP2 has not built: Strict protection, streaming words (KN2.10), `positions` (KN2.4), KN3's exact rotations and polytope operations | Waits | LP2's kernel: LP2 deliverables, not built yet (the table below) |
 | The on-screen half | Waits | The renderer freeze |
 | Charter E2, the decisive LX-1, LX-2 and LX-4 runs, LX-3's platform coverage, the renderer gate | Waits | The owner's machine, all run together (owner, 16 November 2026) |
 | CT-LB1-06's word keys | Waits | An owner answer on LG2.18's word keys (section 10) |
-| Library entries as language code (LB1.1): collections, exact linear algebra, word construction, word and trace keys, setup search | Waits | Collection types and word operations in the IR draft (LP2; the IR freezes at PHS.49); asked of the LP2 line |
+| Library entries as language code (LB1.1): collections, exact linear algebra, word construction, word and trace keys, setup search | Waits | Collection types and word operations in the IR draft (LP2; the IR freezes at PHS.49): LP2 deliverables, not built yet (the table below) |
+
+LP2 deliverables that LP3's tests wait for, not built yet. The LP2 line confirmed on 16 November 2026 that each is
+LP2 work: section 15.3 lists its tests, and PHS.18's product row "Kernel API over both puzzles" and the LP2 plan's
+M8 row ("section 15.3 runnable") cover the kernel rows. LP3 builds nothing in LP2's crates.
+
+| LP2 deliverable, not built yet | Rule | LP2 tests | LP3 tests that wait |
+| --- | --- | --- | --- |
+| Strict protection on 600-cell-Full | KN2.4, KN2.7 | None names Strict on 600-cell-Full; CT-KN2-03 and CT-LG2-12 use the `protection` row | CT-LB2-02 |
+| Streaming words | KN2.10 | CT-KN2-07, CT-LG2-14 | CT-LB2-03 |
+| The `positions` row | KN2.4 | None names it | CT-LB2-04 |
+| Exact rotations and `twist.apply` (amendment A6) | KN3.4, KN3.7 to KN3.9 | CT-KN3-04 to CT-KN3-06, CT-LG2-16 | CT-EV4-04's twist leg |
+| Exact polytope operations | KN3.3 | CT-KN3-01, CT-KN3-03 | CT-LB4-01 |
+| The F2 and F5 number kinds | KN3.2 | None names them; the `nu` and `correction_set_check` rows use them (M5) | CT-LB1-01 |
+| Word operations in the IR draft: concatenation, inverse, conjugate, commutator | LG2.13 to LG2.16 | CT-LG2-11 to CT-LG2-14 | CT-LB1-03, CT-LB1-06, CT-LB2-01, CT-BND-18 |
+| Collection types in the IR draft: lists, maps, sets | LG2.20, LG4.3 | None names them; CT-LG4-01 checks host collection layouts | CT-LB1-01, CT-LB1-03, CT-LB1-06, CT-LB2-01, CT-BND-18 |
+| The IR features CT-RTE-04's other 32 traces need, and two meter differences in `c600-run` (`nested-calls`'s frame price; an `emit` row's single charge) | DET.56, DET.57, DET.65 | DET.65's trace vectors in `contract-vectors/vectors.json` | CT-RTE-04 |
 
 ## 3. Integrator selections (the owner may overrule them)
 
@@ -100,7 +116,7 @@ One pull request per milestone; each names the checks that ran.
 | --- | --- | --- | --- |
 | C1 | Command layer, shell tokens and key routes; O01 to O07 through it on two routes, with undo and redo | M4 (on main) | Built; this plan's pull request |
 | C2 | Headless display contract (`c600-display`); views and their budgets (`c600-view`) | M2 and M3 (on main) | Built |
-| C3 | The runtime in its own process (`c600-runtime`) | M2 and M3 | In progress |
+| C3 | The runtime in its own process (`c600-runtime`) | M2 and M3 | Built |
 | C4 | Module closure (`c600-module`) | M2 and M7 (on main) | Built |
 | C5 | Source route and the 600-cell-Full tool (`c600-tools`) | C1 | Next |
 | C6 | Representations tool, headless half | C2, C5 | Next |
@@ -144,8 +160,9 @@ acceptance check and stop condition.
   and the 600-cell-Full half of CT-RM-07. CT-RPI-08's jumbling rows wait for M5 (C8).
 - C2, views (`rust/c600-view`, branch `claude/lp3-view`), built: CT-ONE-30, CT-RM-02, CT-RPI-03, CT-RPI-06,
   CT-RPI-07, CT-RPI-36 and CT-RPI-37, the limit half of CT-RPI-22 and rows 1, 2, 7 and 9 of CT-RM-09.
-- C3 (`rust/c600-runtime`, branch `claude/lp3-runtime-process`): the runtime in a process of its own, a client of the
-  command layer (ADR-L02); CT-RTE-04's execution-contract mapping and the headless fault half of CT-RTE-10.
+- C3 (`rust/c600-runtime`, branch `claude/lp3-runtime-process`), built: the runtime in a process of its own; 8 of
+  DET.65's 40 traces of CT-RTE-04 and the headless fault half of CT-RTE-10. C5's host bridge makes it a client of the
+  command layer (ADR-L02). CT-RTE-04's other 32 traces wait for the IR draft's features (LP2).
 - C4 (`rust/c600-module`, branch `claude/lp3-module-closure`), built: module closure, its lock and the approval bound
   to the closure digest; CT-RTE-08's source leg and 36 of LX-3's 75 frozen keys of CT-RTE-07 on 600-cell-Full.
   CT-RTE-08's persisted words come with C7; CT-RTE-07's other keys wait for M5, C7, the IR draft and C5.
@@ -209,18 +226,18 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
 ## 9. Section 15.4's 82 tests
 
 "Now" means the whole test can run without the owner's machine, the renderer freeze, M5 or a missing kernel row.
-32 tests can run whole now (CT-RPI-19 also needs a Linux run for its record), 22 have a part that can run now, and 28
+31 tests can run whole now (CT-RPI-19 also needs a Linux run for its record), 23 have a part that can run now, and 28
 wait entirely. The milestone is in parentheses.
 
 | Test | Class | Whole run | Part now |
 | --- | --- | --- | --- |
 | CT-KN7-06 | performance | Owner runs: charter E2 under a running program job (C9) | - |
 | CT-LG4-09 | performance | Owner runs: LX-2 (C9) | - |
-| CT-LB1-01 | source | Collection types in the IR draft, for the library code (LP2) | - |
+| CT-LB1-01 | source | Collection types in the IR draft and the F2 and F5 number kinds, for the library code (LP2) | - |
 | CT-LB1-02 | source | M5: a blocked cap (C8) | - |
-| CT-LB1-03 | source | Word operations in the IR draft (LP2); M5 (C8) | - |
+| CT-LB1-03 | source | Collection types and word operations in the IR draft (LP2); M5 (C8) | - |
 | CT-LB1-06 | source | Collection types and word operations in the IR draft (LP2); an owner answer on LG2.18's word keys; M5 for jumbling letters (C8) | - |
-| CT-LB2-01 | source | Collection types in the IR draft, for the library's reports (LP2) | - |
+| CT-LB2-01 | source | Collection types and word operations in the IR draft, for the library's recipes and reports (LP2) | - |
 | CT-LB2-02 | source | The kernel's Strict protection (LP2) | The Net half (C5) |
 | CT-LB2-03 | source | Streaming words, KN2.10 (LP2) | The oversize refusal (C5); work sheets (C7) |
 | CT-LB2-04 | source | The kernel's `positions` row, KN2.4 (LP2) | - |
@@ -279,10 +296,10 @@ wait entirely. The milestone is in parentheses.
 | CT-RPI-37 | synthetic | Now (C2) | - |
 | CT-BND-15 | source | M5: the jumbling tool (C8) | The 600-cell-Full and representations tools (C5, C6) |
 | CT-BND-17 | source | M5: the repair list (C8) | - |
-| CT-BND-18 | source | Collection types in the IR draft, for setup search (LP2) | - |
+| CT-BND-18 | source | Collection types and word operations in the IR draft, for setup search (LP2) | - |
 | CT-BND-19 | source | Now (C5) | - |
 | CT-BND-20 | windows | The renderer freeze (C9) | A held chord commits once; the runtime gets no token (C1) |
-| CT-RTE-04 | source | Now (C3) | - |
+| CT-RTE-04 | source | Child scopes, loops, text order, byte decoding, exact multiplication, streaming and LP1's region executor in the IR draft (LP2) | 8 of DET.65's 40 traces (C3) |
 | CT-RTE-07 | source | M5's jumbling keys (C8), M6's store keys (C7), the keys the IR draft cannot express (LP2), the budget keys that need a price mapping, host events in a loop or the command layer (C5), and a Linux run | 36 of LX-3's 75 frozen keys on 600-cell-Full (C4) |
 | CT-RTE-08 | source | Now: module closure (C4); persisted words (C7) | - |
 | CT-RTE-10 | windows | Owner runs: LX-2 (C9) | The headless fault half (C3) |
@@ -300,9 +317,9 @@ wait entirely. The milestone is in parentheses.
 ## 10. Stop condition for LP3, and questions to the owner
 
 LP3's offline work stops and reports when every remaining milestone waits for M5, a kernel row, the IR draft's
-collection types and word operations, the renderer freeze, an owner run or an owner answer, or when an implementation
-would change a frozen file (PHS.52). A failing acceptance item blocks LP3's exit (PHS.63); nothing is cut, and no bar
-moves.
+collection types, word operations and the features CT-RTE-04's traces need, the renderer freeze, an owner run or an
+owner answer, or when an implementation would change a frozen file (PHS.52). A failing acceptance item blocks LP3's
+exit (PHS.63); nothing is cut, and no bar moves.
 
 Questions are batched (owner, 16 November 2026): at most one card per milestone, each with a recommended option.
 
