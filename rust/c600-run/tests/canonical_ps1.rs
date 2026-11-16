@@ -134,10 +134,11 @@ fn large_integer() -> String {
     format!("1{}7", "0".repeat(6773))
 }
 
-/// CT-PS1-01 (part: one platform per run; not run: the headless Linux leg, since CI runs `cargo test` on its Windows
-/// shards only and has no Linux job (no owner yet)): the format packet's six `c600-json-1` vectors give the frozen
-/// bytes and digests through the product's writers (Unicode, every escape, scalar key order, no normalization and the
-/// terminal LF); the retained profile keeps ASCII escapes and no LF; and the nine invalid texts are refused.
+/// CT-PS1-01 (whole: one platform per run, Windows on the headless shards and headless Linux in the Linux Rust job,
+/// `.github/workflows/linux-rust.yml`, each against the same frozen bytes): the format packet's six `c600-json-1`
+/// vectors give the frozen bytes and digests through the product's writers (Unicode, every escape, scalar key order,
+/// no normalization and the terminal LF); the retained profile keeps ASCII escapes and no LF; and the nine invalid
+/// texts are refused.
 #[test]
 fn ct_ps1_01_canonical_json_vectors() {
     let root = packet("vectors.json");

@@ -1,10 +1,10 @@
 //! The jumbling half of the kernel API of 600 Cell Script (LP2, milestone M5).
 //!
-//! This crate is a candidate engine for the rigid jumbling puzzle (state contract 2026-10-09 with amendments A1 to
-//! A4), built from `assets/` alone: nothing is read from the research reference J1 (PHS.18). The differential
-//! harness of `research/jumbling/differential/` compares it with J1 step by step through the adapter binary
-//! (`src/bin/adapter.rs`), and `tests/test_jumbling_rust_candidate.py` runs that comparison (CT-KN2-01, jumbling
-//! half).
+//! This crate is a candidate engine for the rigid jumbling puzzle (the state contract with amendments A1 to A6,
+//! [`CONTRACT_REVISION`]), built from `assets/` alone: nothing is read from the research reference J1 (PHS.18). The
+//! differential harness of `research/jumbling/differential/` compares it with J1 step by step through the adapter
+//! binary (`src/bin/adapter.rs`), and `tests/test_jumbling_rust_candidate.py` runs that comparison (CT-KN2-01,
+//! jumbling half).
 //!
 //! # Selections of the integrator for M5 (LP2 plan, section 11)
 //!
@@ -54,8 +54,10 @@ use crate::model::{Model, ModelError};
 use crate::regions::Regions;
 use crate::twist::Menu;
 
-/// The state contract revision the candidate implements.
-pub const CONTRACT_REVISION: &str = "state-contract 2026-10-09 A1-A4";
+/// The state contract revision the candidate implements: the contract pin JI.3 names, amendments A1 to A6 (owner
+/// decision, 16 November 2026). J1 still stamps `state-contract 2026-10-09 A1-A4`, a known J1 defect that stays in J1;
+/// only the differential comparison maps J1's stamp to this one.
+pub const CONTRACT_REVISION: &str = "state-contract 2026-11-15 A1-A6";
 
 /// Chapter 13 codes the candidate uses.
 pub mod codes {
