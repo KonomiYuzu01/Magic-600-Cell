@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-16] update | The 16 November decisions in the rule files
+At the owner's word ("write them all in"), `CLAUDE.md` carries points 4 and 5 of the [time-saving decision](decisions/owner-decisions-2026-11-16-time-saving.md), and the briefing records that decision and the [LQ13 answer](decisions/owner-decisions-2026-11-16-lq13.md) and no longer says that LQ13 waits. The briefing is an input of the frozen migration format packet, so its pin was refreshed under FP.1 with the old and new identities on the LQ13 page; no frozen clause, vector or dependency meaning changed.
+
 ## [2026-11-16] update | The language: the Fable attack on the M1 checker
 The first proactive Fable task (owner, 15 November 2026) attacked the M1 checker read-only: all ten of its programs slipped past the checker, and each is now a test with its exact verdict that the checker refuses (pull request 149). Three leads that no test confirms yet stay open as M1 limits in `rust/README.md`.
 
