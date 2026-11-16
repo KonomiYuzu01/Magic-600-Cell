@@ -18,13 +18,22 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-kernel` | The 600-cell-Full kernel read straight from `assets/`, its chapter 01 API, and the oracle adapter `c600-oracle-adapter` (M4) |
 | `c600-session` | The session store below the language: the journal, revisions, snapshots, the commit path, undo, branches and program jobs (M6) |
 | `c600-command` | The command layer over H-08's stored table (KN5, chapter 08 section 7), the shell's tokens and key routes, and the loop runner `c600-lp3-oracle` (LP3, C1) |
+| `c600-view` | The headless view model, view lane and view budget: Global, Local and further views, revision binding and statuses, visibility, and the views' limits and allowances (LP3, C2) |
+| `c600-display` | The headless display contract: display plans and publications, the host validator, the publication state machine over a mock backend, picks and frame stamps, and RM.37's jumbling crosswalk as fixtures (LP3, C2) |
+| `c600-module` | Module closures, lockfiles and their approval binding: the draft manifest and lock forms, resolution by content digest, closure verification and the closure digest, an approval bound to that digest, and load and run through the run-time boundary (LP3, C4) |
+| `c600-runtime` | The runtime in a process of its own (route RT1): the child binary `c600-runtime`, the parent library that starts it and answers its host calls, the wire protocol draft `c600-rt1-wire-1` and the in-process reference path (LP3, C3) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
 checker; its tests run checked source programs, so the checker and the syntax crate are its dev-dependencies. The
 kernel depends on the digest crate only. The session crate depends on the kernel, the interpreter, the IR and digest
 crates; its job tests run checked source programs too. The command layer depends on the kernel and digest crates
-only, so it has no path to the interpreter (ONE.48).
+only, so it has no path to the interpreter (ONE.48). The view model depends on the digest crate only, and the display
+contract on the digest and kernel crates.
+The module crate depends on the syntax, IR, checker, interpreter and digest crates, and has no path to the command
+layer.
+The runtime depends on the syntax, checker, interpreter, IR and digest crates and the big-integer crates, and has no
+path to the command layer; C5's host bridge connects them.
 
 ## Running the tests
 
@@ -405,6 +414,110 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   digest. A scoped re-check found all three fixed and no new blocking finding.
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run. The timings the loop
   check prints are informational, not performance evidence.
+
+## Status of LP3, C2: display and views
+
+- `c600-view` is the host side of chapter 10's view interfaces without a device: which views are open, which engine
+  revision they show, which program output may attach to it, what the view lane runs next and what the views cost.
+  Global and Local are always open and visible; further views open and close through `view.open` and `view.close`
+  (RPI.81 to RPI.83). A complete engine bundle is adopted whole or not at all (RPI.9, ONE.60, ONE.61); output bound to
+  an older revision shows as stale and is never drawn over a revision it does not match (ONE.12, ONE.63, RPI.13). The
+  view lane keeps one runner and one newest pending request (KN7.2, LI.22 to LI.25, ONE.64). Hidden views do no work
+  (RPI.11, RM.25), and the view budget charges RM.11's limits, RM.13's output allowance and RM.38's frame work.
+- Tests (`c600-view/tests/view_rows.rs`): CT-RPI-03, CT-RPI-06, CT-RPI-07, CT-RPI-36, CT-RPI-37, CT-RM-02 and
+  CT-ONE-30; the limit half of CT-RPI-22; rows 1, 2, 7 and 9 of CT-RM-09's RM.40 table. Supporting tests cover ONE.10's
+  reuse after undo, RM.11's profile validation, RM.12's admission ceiling, RM.35's malformed output and RPI.9's bundle
+  faults.
+- Drafts, which freeze with the IR and the command table: the list in the crate documentation, among them Global and
+  Local's fixed IDs, `LG3:capability.not_granted` for a recomputation that names a view row (RPI.83 names no code), a
+  separate command-ID namespace for scheduled recomputations (LI.25), the status precedence (RPI.13, charter D2), and an
+  LEB128 byte form standing in for H8's canonical output bytes.
+- `c600-display` is the host side of chapter 10's display plans and RM's feature matrix without a renderer. The
+  validator checks RPI.10, RM.11, RM.12 and RM.20 in the order invalid, unsupported, ceiling. A publication installs
+  whole or not at all and ends in exactly one KN5.21-style terminal, standalone or scheduled (RM.17 to RM.26, LI.25);
+  a mock backend stands in for an adapter (RPI.55, RM.33). Picks resolve by instance ID through the installed source
+  map, never through a chart inverse, and stale picks name the field that changed (RM.10, RM.24, RPI.24, RPI.25).
+- Display tests (`c600-display/tests/`): CT-RPI-02, CT-RPI-04, CT-RPI-05, CT-RPI-09, CT-RPI-10, CT-RPI-11,
+  CT-RPI-27, CT-RM-03 and CT-RM-04; CT-RPI-08's 600-cell-Full rows (F01 to F17, with J02 and J04 unsupported on
+  Full); the stale half of CT-RPI-12; RM.37's fifteen rows of CT-RM-07 as fixture payloads over the Full geometry
+  digests.
+- Display drafts: the list in the crate documentation, among them the validation order, string dependency keys,
+  set digests over sorted piece IDs, canonical JSON standing in for the output bytes, form `stop` for every error
+  after acceptance, and a publication to a view that is not open being invalid.
+- Not built: CT-RPI-22's chart half (the display-plan validator now exists; it is C2's next piece); CT-RPI-08's
+  jumbling rows and the posed producer wait for M5; a decoder from the interpreter's values needs list types in the
+  IR (LP2); the user-stage checker (RPI.68 to RPI.80), so F05 and F26 stay unsupported; CT-RM-09's rows 3 to 6, 8
+  and 10 (the raster
+  bound, frame-report stops and device-fault quarantine) need a user-stage checker or a device; RM.38's weight table,
+  device loss and `display_unsupported` belong to the renderer and its backend.
+- Evidence kind: source and synthetic. Every ceiling in the tests is a fixture value; nothing is measured, and nothing
+  advertises support or a profile (RPI.82, RM.40).
+
+## Status of LP3, C4: module closure
+
+- `c600-module` keeps a module's dependency closure, its lockfile and the approval bound to them (chapter 02 LG5,
+  chapter 05 PS1.14 and PS1.15). `resolve` finds a manifest's closure among local files by content digest only and
+  writes its lock. `verify` checks a manifest, its lock and the local bytes and gives the closure digest. `approve`
+  checks the closure with `c600-check` for one entry, author, profile, grant and policy and binds an approval to
+  the closure digest (RTE.45's `source_bound` variant for route RT1). `load` refuses a closure whose digest differs
+  from the approval's, so substituted dependency bytes never run, and `Ready::run` runs the approved entry through
+  `c600-run`'s boundary.
+- Tests (`c600-module/tests/`): CT-RTE-08's source leg (`ct_rte_08.rs`, 13 tests): the approval binds every
+  executed module; substituted, missing and mismatched dependencies are refused; record forms are checked before
+  use; a moved file keeps its closure and its approval; dynamic code is refused; capability separation holds at the
+  preview point. CT-RTE-07 on 600-cell-Full (`ct_rte_07_full.rs`): 36 of LX-3's 75 frozen keys, each run ten times
+  with one SHA-256 over its canonical result, engine side and store, and a check that every key is either realised
+  or listed as left, exactly once.
+- Differences from the corpus, listed in the tests: A25 is a false refusal, which the corpus permits (separation
+  refuses the preview of an allowed combination). P01 to P03 give `LG3:capability.not_granted` where the corpus
+  expects `LG3:capability.ambient_read`, which chapter 13 does not yet list as a concrete code; the code is the
+  checker's (LP2).
+- Drafts, which freeze with the module formats (LG5.10, LQ10): the list in the crate documentation, among them the
+  manifest and lock forms (`c600-module-draft` and `c600-lock-draft`, version 1), a null FP.11 identity for both
+  records with the model identities in `payload.supports` (a gap for the format review), locations in the lock
+  only, the closure digest, the in-memory approval record `c600-approval-draft`, the nearest code for dynamic code,
+  and the separation refusal at the preview point, which stays in this crate until C5's host bridge.
+- Not built: CT-RTE-08's persisted words (C7, on M6's store). CT-RTE-07's other 39 keys: 6 jumbling keys (M5); 6
+  keys that need the session store (C7); 15 keys the IR draft cannot express (early stop, word length, inverse and
+  concatenation, exact multiplication and remainder, and a run's input as a query argument; LP2); and 12 budget
+  keys, whose amounts follow LX-3's experiment-only counting fixture rather than `lp1-exec-draft-1`'s prices, or
+  which need host events inside a loop, the host's row cache or the command layer's rows. The Linux leg did not
+  run.
+- Evidence kind: source and synthetic. No timing is measured.
+
+## Status of LP3, C3: the runtime in its own process
+
+- `c600-runtime` runs a program in a child process of its own (route RT1, LQ9; RTE.21, ONE.69). The child binary
+  reads framed messages on standard input, compiles and runs each job with `c600-syntax`, `c600-check` and
+  `c600-run`, and forwards every host call (`tariff`, `perform`, `sink`) to the parent. The parent starts the child,
+  answers its calls from the caller's host and returns the run's end or a typed fault. `run_in_process` is the same
+  path in one process, the reference the tests hold the child to.
+- Protocol draft `c600-rt1-wire-1`: length-prefixed frames of at most 16 MiB either way, one protocol byte, six
+  message kinds, and a canonical value encoding that refuses every noncanonical form on both sides. The parent
+  answers a repeated, unacknowledged call from its record and never calls the host twice for one call, and a new
+  call must acknowledge the last answer, so at most one answer is open (KI.5). No message has a field for a token
+  or any other authority (KN5.15).
+- Faults: a child that is lost, does not start, names another protocol, sends a malformed or oversized frame or
+  breaks the call protocol ends the run as `error` with `KN7:resource_limit.runtime_lost`; a passed deadline ends it
+  as `cut_off` with `KN7:resource_limit.safety_stop`. The child is killed and reaped, and the next run starts a fresh
+  one.
+- Tests (`c600-runtime/tests/`): the child and the in-process run give the same results, charges, stop points, host
+  calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 8 of DET.65's 40 traces as `.6cs` programs on both
+  executors (`ct_rte_04.rs`); the protocol's bounds, canonical encodings, KI.5's record and KN5.15's field list
+  (`protocol.rs`); CT-RTE-10's headless fault half, rehearsals in debug builds that kill, crash, truncate, garble,
+  oversize or hang the child while the session keeps its journal, state hash and pending preview (`faults.rs`).
+- Drafts, which freeze with the IR and the command table: the list in the crate documentation, among them the
+  framing and message kinds (KI.15, ONE.69), the transfer encoding (DET.59), acknowledgement and retry (KI.5), the
+  fault codes (KN7.13), source bytes rather than checked IR in a job (KI.6, ADR-L12.9), and a deadline checked
+  between messages only, so a blocking host call is not interrupted.
+- Not built: OS isolation of the child (a job object with kill-on-close, a restricted or AppContainer token,
+  filesystem and network confinement); a bound on the parent's queue of frames to a child that stops reading its
+  input (draft 5); LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's other 32 traces need
+  what the IR draft lacks: child scopes, more than one generator per run, releasing a `let` before its alias, text
+  order, byte decoding, loops and pointwise checks, exact multiplication, streaming cursors, one-row output units,
+  and an executor for `lp1-exec-region-draft-1` (LP2). Two of them, `nested-calls` and the output rows, may be meter
+  mismatches in `c600-run`; LP2 has them.
+- Evidence kind: source and synthetic. The fault rehearsals are not LX-2 evidence, and no timing is measured.
 
 ## Status of LP3, C5: the source route
 
