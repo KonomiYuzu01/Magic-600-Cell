@@ -149,6 +149,51 @@ fn a_built_in_writes_a_word_only_if_the_solver_named_it_or_a_declassifier_covers
     assert!(built_in(&tool(vec![count]), &rows(&[Row::Workspace("count".into())]), &Policy::interim()).is_admitted());
 }
 
+/// CT-BND-15 (part: the workspace-change row of the built-in column for a write at a type variable, which may stand
+/// for a word; review finding F1). A generic helper `put<T>(x: T)` that writes `x` is refused at the entry whatever the
+/// entry passes. With the word the solver named the refusal is conservative: the checker does not follow a named word
+/// into a callee, as for a proposal in a callee.
+#[test]
+fn a_workspace_write_at_a_type_variable_may_carry_a_word() {
+    let t = || exact(Ty::Var("T".into()));
+    let put = || helper("put", vec![param("x", t())], exact(Ty::Unit), write_workspace("kept", t(), var("x")));
+    let go = |arg: Expr| command("go", w(), exact(Ty::Unit), call("put", vec![arg])).exported();
+    let kept = rows(&[Row::Workspace("kept".into())]);
+    let literal = tool(vec![put(), go(word(&[1]))]);
+    assert_eq!(found(&built_in(&literal, &kept, &Policy::interim())), [(NOT_GRANTED, "entry")]);
+    let read = tool(vec![put(), go(read_snapshot("best_word", exact(Ty::Word)))]);
+    let read_and_kept = rows(&[Row::Read("best_word".into()), Row::Workspace("kept".into())]);
+    assert_eq!(found(&built_in(&read, &read_and_kept, &Policy::interim())), [(NOT_GRANTED, "entry")]);
+    // The control: the word the solver named, passed through the generic helper, is refused conservatively.
+    let named = tool(vec![put(), go(var("w"))]);
+    assert_eq!(found(&built_in(&named, &kept, &Policy::interim())), [(NOT_GRANTED, "entry")]);
+    // At the entry itself a write at a type variable takes the word the solver named and nothing else.
+    let params = || vec![param("w", exact(Ty::Word)), param("x", t())];
+    let keep = |value: Expr| command("go", params(), exact(Ty::Unit), write_workspace("kept", t(), value)).exported();
+    assert_eq!(found(&built_in(&tool(vec![keep(var("x"))]), &kept, &Policy::interim())), [(NOT_GRANTED, "root")]);
+    assert!(built_in(&tool(vec![keep(var("w"))]), &kept, &Policy::interim()).is_admitted());
+}
+
+/// CT-BND-15 (part: the workspace-change row of the built-in column for a write of a callable whose type holds a word
+/// or a type variable; review finding F1, "any type that contains one"). A stored callable that returns a word holds
+/// it, so its write is refused at the write; conservatively also when the closure returns the word the solver named.
+/// A callable whose type holds neither is written.
+#[test]
+fn a_workspace_write_of_a_callable_may_carry_a_word() {
+    let kept = rows(&[Row::Workspace("kept".into())]);
+    let params = || vec![param("w", exact(Ty::Word)), param("x", exact(Ty::Var("T".into())))];
+    let keep = |result: Ty, value: Expr| {
+        let ty = exact(fn_ty(vec![], exact(result.clone()), bound(&[], &[])));
+        let write = write_workspace("kept", ty, closure(vec![], exact(result), value));
+        command("go", params(), exact(Ty::Unit), write).exported()
+    };
+    let refused = [(NOT_GRANTED, "root")];
+    assert_eq!(found(&built_in(&tool(vec![keep(Ty::Word, word(&[1]))]), &kept, &Policy::interim())), refused);
+    assert_eq!(found(&built_in(&tool(vec![keep(Ty::Var("T".into()), var("x"))]), &kept, &Policy::interim())), refused);
+    assert_eq!(found(&built_in(&tool(vec![keep(Ty::Word, var("w"))]), &kept, &Policy::interim())), refused);
+    assert!(built_in(&tool(vec![keep(Ty::Nat, nat(1))]), &kept, &Policy::interim()).is_admitted());
+}
+
 /// LG3.5 and LG3.6 at the entry: a run whose entry is no command changes no workspace and prepares no preview. The
 /// LP3 finding: an exported plain `fn` that proposes was admitted on the built-in path, which kept only `check`.
 #[test]

@@ -443,6 +443,10 @@ fn entry_fn<'p>(program: &'p Program, module: &str, function: &str) -> Option<&'
 ///   value, is not a `Word` parameter of the entry as given, unshadowed (a word the solver named), or for a write a
 ///   read through a declassifier the policy enables (chapter 07 section 8, built-in column).
 ///
+/// A type is word-carrying when it is `Word`, a type variable (which may stand for a word), or a record or a callable
+/// type holding one in a field, a parameter or the result. The rule is conservative: a callee that proposes or writes
+/// the word the solver named is refused, as is a write of a record or a closure built from named words.
+///
 /// Not built: the column's two exceptions (setup search for a named target, the repair list: CT-BND-17, CT-BND-18),
 /// the derived-state row (`derive`: the IR draft has no such operation, ONE.23), rule 6's check of the facts a view
 /// shows, and the review of the class against the entry (CT-BND-15). The open cells are left empty: they are the own
@@ -600,11 +604,14 @@ fn unnamed_words(body: &Expr, words: &BTreeSet<&str>, policy: &Policy) -> Vec<(S
     out
 }
 
-/// Whether a type holds a word, itself or in a record field at any depth.
+/// Whether a value of a type may hold a word, itself, in a record field or in a callable's parameters or result, at any
+/// depth. A type variable, the unknown type included, may stand for a word, so it counts as one. A callable counts by
+/// its parameters too, conservatively: one that takes a callback may hand the callback a word it holds.
 fn carries_word(ty: &Ty) -> bool {
     match ty {
-        Ty::Word => true,
+        Ty::Word | Ty::Var(_) => true,
         Ty::Record(fields) => fields.iter().any(|(_, f)| carries_word(&f.ty)),
+        Ty::Fn(f) => carries_word(&f.result.ty) || f.params.iter().any(|p| carries_word(&p.ty)),
         _ => false,
     }
 }

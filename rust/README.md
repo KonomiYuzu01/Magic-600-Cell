@@ -90,9 +90,12 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   `LG3:capability.not_granted` an entry that is not exported, an ungranted capability, an entry that both reads state
   and prepares previews, a row the class does not list or the checker cannot name (an unresolved call, an open effect
   variable), and a proposal or a word-carrying workspace write whose word the solver did not name to the entry, unless
-  an enabled declassifier covers the write. Not built: the column's two exceptions (CT-BND-17, CT-BND-18), the
-  derived-state row (the IR draft has no `derive`), rule 6's check of the facts a view shows and the class review
-  (CT-BND-15).
+  an enabled declassifier covers the write; a write at a type variable, or of a record or callable type that holds a
+  word or a type variable, counts as one that may carry a word. The rule is conservative: it also refuses a named word
+  passed to a helper that proposes or writes it, a write of a record or closure built from named words, and a proposal
+  to a `Target` parameter (a row the checker cannot name). Not built: the column's two exceptions (CT-BND-17,
+  CT-BND-18), the derived-state row (the IR draft has no `derive`), rule 6's check of the facts a view shows and the
+  class review (CT-BND-15).
 - An entry that is no command and changes the workspace or prepares a preview is `LG3:effect.undeclared` at `entry`
   (LG3.5, LG3.6), on the built-in column and, for a workspace change, in `admit`'s solving profile. This confirms and
   closes LP3's finding of an exported plain `fn` that proposes: `check` admits it, since a command may call such a
