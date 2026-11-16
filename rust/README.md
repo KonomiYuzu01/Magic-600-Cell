@@ -16,6 +16,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-digest` | SHA-256, raw and in hex, for the other crates |
 | `c600-run` | The interpreter over the IR draft (route RT1) with the `lp1-exec-draft-1` reference meter and generator (M2), and the run-time boundary under capability separation with FP.17's provenance blocks (M3) |
 | `c600-kernel` | The 600-cell-Full kernel read straight from `assets/`, its chapter 01 API, and the oracle adapter `c600-oracle-adapter` (M4) |
+| `c600-jumble` | The jumbling half of the kernel API (M5): exact poses over Q(√5), K⁺, piece regions, twists and menus, states with their pose tables, the observations, and the adapter `c600-jumble-adapter` that the differential harness drives |
 | `c600-session` | The session store below the language: the journal, revisions, snapshots, the commit path, undo, branches and program jobs (M6) |
 | `c600-evidence` | Chapter 06's evidence library as pure code: statements, keys and scopes, the AND/OR graph, grades and editions, the two standing passes, the word function with EVD.32's rows and EVD.40's checks, `CheckReport` admission, EVD.52's import rules and EVD.64's writer check |
 | `c600-command` | The command layer over H-08's stored table (KN5, chapter 08 section 7), the shell's tokens and key routes, and the loop runner `c600-lp3-oracle` (LP3, C1) |
@@ -42,6 +43,7 @@ host bridge connects the in-process interpreter to the command layer as the runt
 (C3) is not connected to the bridge yet.
 The input router depends on the command layer and the kernel crate only, so a key reaches a kernel row with no path to
 the interpreter (ONE.48).
+The jumbling crate depends on the kernel and digest crates and the big-integer crates.
 
 ## Running the tests
 
@@ -299,6 +301,49 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run. The timings the check
   prints are informational, not performance evidence.
 
+## Status of M5: the jumbling half
+
+- `c600-jumble` is a candidate engine for the rigid jumbling puzzle under the state contract of 9 October 2026 with
+  A1 to A4. It is built from `assets/` alone and reads nothing from the research reference J1 (PHS.18); its import
+  scan under `differential/independence.py` finds no harness or J1 module in the Python client
+  (`research/jumbling/differential/candidate/rust_jumble.py`). The integrator's selections 1 to 6 (exact numbers,
+  record families, free mode, Net protection at pose level, batches, the classification budget) are in the crate
+  documentation.
+- The jumbling model is read through `c600_kernel::verify_assets`, the kernel's asset check made public for it, which
+  `Kernel::load` also calls: plain file names in `assets/`, the puzzle name, the model ID as the SHA-256 of the file
+  list, and the SHA-256 of every listed file. The identity block's model ID therefore names the files that were read.
+  `c600-jumble/tests/assets.rs` tests the refusals, and `c600-kernel/tests/load.rs` the check's result.
+- JI.52: the harness bindings reach J1 only through its public API, `research/jumbling/sim/api.py`.
+- `tests/test_jumbling_rust_candidate.py` builds the adapter in release and compares it with J1 through
+  `harness.compare`, step by step (status, moved count, moved set, pose digest and lattice digest): the first 60
+  records of each W-J fixture with surveys at steps 0 and 30 and the straddler sets of named caps at step 30, every
+  candidate certificate checked by J1; the first 600 letters of H6030; refusals (a blocked twist, a twist outside the
+  menu, a malformed record); and a planted difference, which fails at its step. With `JUMBLING_FULL_REPLAY=1` every
+  record of the three fixtures and all 3,156 letters of H6030 run. `tools/ci/run_headless.py` lists it.
+- Contract tests: CT-KN1-02, CT-KN2-03 (`c600-jumble/tests/crossing.rs`) and CT-KN3-02 whole; the jumbling halves
+  of CT-KN2-01, CT-KN2-04, CT-KN1-05 (poses) and CT-KN2-05 (no `f32` or `f64` in the kernel crates), which run whole
+  with M4's halves; CT-JI-03. CT-KN2-02 in part: heights and domain IDs against `trees.py` and the library's
+  histograms on H6030's compared states, the recorded fixture prefixes and u1, and the free-mode Cayley rotation.
+- Not built, for M8: CT-KN1-03, CT-KN1-04, CT-KN1-06, CT-KN2-06, CT-KN2-07, CT-KN3-01, CT-KN3-03 to CT-KN3-06, R-11
+  (CT-LG2-12), and CT-KN2-02's cases b20, b06-14, b14 and b03; the observations rim_summary, covers, repair_list, nu,
+  checkpoints, release_check and derivation with reachability; Strict protection; and the holding caps of seam cells
+  and tree positions past the first step.
+- Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model read the change with the
+  acceptance check. Its three major findings were fixed before the pull request, and a scoped re-check found no
+  blocking finding: R1, a word whose later letter was malformed, or met an engine error, left its earlier letters
+  applied (the adapter now reads every letter before it applies any, and restores the state on every error); R2, a
+  record step before `start` stopped the adapter with a panic (it is now an input error); R3, the model ID was taken
+  from the manifest unchecked (the model now loads through `verify_assets`, above). Fixed: R4, a record of a family the
+  candidate does not read was refused as `invalid` when its matrix was malformed (the family and a float request are
+  now checked first, so it is an adapter error under selection 2); R5, `seam_facts` on a cap whose classification ran
+  out of budget claimed a complete answer (it now claims nothing, JI.14). No action: R6, a refused word still reports
+  the end state it reached, with `admissible` false and the failing letter's index, as J1's `word_check` reference does
+  and the comparison checks; R7, the INV-4 half of CT-KN2-05 is not scanned, and the test's docstring says why; R8,
+  CT-KN3-02's large entries come from rotations the test chooses, which the engine makes exact and `load` reads back
+  with the rotation and the digest checked exactly, and J1's digest agrees on the first.
+- Evidence kind: source and fixture. The comparison ran on Windows only. The timings the check prints are
+  informational, not performance evidence.
+
 ## Status of M6: the session store
 
 - `c600-session` keeps one session in one journal on a `Disk`: `FsDisk` over a directory, or `MemDisk` in memory for
@@ -460,6 +505,8 @@ run or not applicable is no pass (PHS.63).
     `traces.rs` and `values.rs` mark the meter's and the values' rows.
   - `c600-kernel/tests/`: `kernel.rs`, `load.rs` and `json.rs` run the 600-cell-Full halves of the KN rows, CT-PS1-04
     and CT-PS1-12 (M4's section).
+  - `c600-jumble/tests/`: `crossing.rs` runs CT-KN2-03, and `assets.rs` the jumbling model's asset checks (M5's
+    section).
   - `c600-evidence/tests/` runs the EVD rows (the evidence library's section).
   - `c600-session/tests/`: M6's tests mark their rows (M6's section), CT-ONE-03 to CT-ONE-05, CT-ONE-11, CT-ONE-21,
     CT-ONE-23 and CT-ONE-24 included. `conformance_rows.rs` runs the session's half of CT-ONE-01 and CT-ONE-02 over
@@ -472,12 +519,13 @@ run or not applicable is no pass (PHS.63).
     `tests/test_language_scans.py` scans the workspace's sources; `tests/test_format_inventory.py` runs CT-PS2-06;
     `tests/test_source_checkout.py` reads every `.6cs` source and every pinned packet file as LF, CRLF and `input`
     checkouts write them (CT-LG1-02, CT-PS1-05's checkout half); `tests/test_kernel_oracle.py` replays O01 to O07 and
-    N01 to N04 through the kernel (M4's section).
-- Count on this branch, with LP3's C1 to C4 from main: 51 whole, two of them with the tests they name (CT-KN4-04,
-  CT-ONE-23) and three by the union of their parts (CT-LG2-04, CT-LG3-01, CT-LG3-04); 120 part; 5 named only by
-  LP3's command-layer tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04, CT-LI-09 and CT-LI-10); 2
-  named only as not built (CT-KN2-07, CT-LG4-05); 70 missing. CT-KN5-08 counts as missing, since only the
-  documentation in `c600-command/src/layer.rs` names it.
+    N01 to N04 through the kernel (M4's section); `tests/test_jumbling_rust_candidate.py` compares the jumbling
+    candidate with J1 (M5's section).
+- Count with LP3's C1 to C5 and M5: 58 whole, two of them with the tests they name (CT-KN4-04, CT-ONE-23) and seven by
+  the union of their parts (CT-LG2-04, CT-LG3-01, CT-LG3-04, and with M5 CT-KN1-05, CT-KN2-01, CT-KN2-04 and CT-KN2-05);
+  116 part; 5 named only by LP3's command-layer tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04,
+  CT-LI-09 and CT-LI-10); 2 named only as not built (CT-KN2-07, CT-LG4-05); 67 missing. CT-KN5-08 counts as missing,
+  since only the documentation in `c600-command/src/layer.rs` names it.
 - Not run or not applicable, which is no pass (PHS.63), with the check that runs instead: CT-LG3-06's flow-label
   variant, while the flow rule is off (BND.41) and LQ2 has not set it, so the static-only and run-time variants run
   (`c600-run/tests/conformance_lg3.rs`); CT-LG1-03's second host context, since CI runs on Windows only and the editor
@@ -515,10 +563,11 @@ run or not applicable is no pass (PHS.63).
     (line 661) sits between ERR.28's table and ERR.31 and belongs at the head of ERR.31's table, and ERR.31 comes
     before ERR.29 and ERR.30; the rule source of `KN5:stale.filter_preview` (line 322) omits KN0.9
     (`closure/manifests/p7-layers.json`). The Used-by cells of `KN2:input.recipe_shape` and
-    `KN2:resource_limit.primitive_ceiling` say "not yet used", but the kernel emits both. Chapter 13 registers none of
-    the five draft codes `c600-command` emits (`KN2:consistency.star_certificate`, `KN5:input.unknown_row`,
-    `KN5:input.argument_form`, `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`); the command table's
-    drafts settle at LP3 (PHS.53).
+    `KN2:resource_limit.primitive_ceiling` say "not yet used", but the kernel emits both; the cell of
+    `KN2:input.word_blocked_prefix` says the same, but the jumbling adapter emits it for a refused word (M5).
+    Chapter 13 registers none of the five draft codes `c600-command` emits (`KN2:consistency.star_certificate`,
+    `KN5:input.unknown_row`, `KN5:input.argument_form`, `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`);
+    the command table's drafts settle at LP3 (PHS.53).
   - For LP3: LB7.1's `LB7:capability.module_grant_missing` is the workspace library's entry-admission fact, built with
     LB7; the checker's own admission reports `LG3:capability.not_granted`, as chapter 02's LG3 table has it.
   - KN5 has two implementations, `c600-session` (M6) and LP3's `c600-command` (pull request 159). The LP2 integrator
@@ -536,9 +585,10 @@ run or not applicable is no pass (PHS.63).
   - M6's remaining rows (15): CT-PS1-08 to CT-PS1-10, CT-PS1-16, CT-PS1-19, CT-PS1-21, CT-PS1-23, CT-PS2-01 to
     CT-PS2-05, and the run records of CT-DET-04, CT-DET-14 and CT-BND-23 (with LP3's grants for CT-DET-04 and
     CT-BND-23).
-  - M5, the jumbled puzzle (15): CT-KN1-02, CT-KN1-03, CT-KN1-06, CT-KN2-02, CT-KN2-03, CT-KN2-06, CT-KN3-01,
-    CT-KN3-03, CT-LG2-12, CT-PS1-11, CT-PS1-14 and CT-PS1-22; CT-ONE-17 and CT-ONE-18, which need a second level, its
-    crossing and `project` (KN1.9); and CT-ONE-19, with LP3's view model.
+  - The jumbled puzzle's rows that M5 leaves to M8 (9): CT-KN1-03, CT-KN1-06, CT-KN2-06, CT-KN3-01, CT-KN3-03,
+    CT-LG2-12, CT-PS1-11, CT-PS1-14 and CT-PS1-22.
+  - A session's second level (3): CT-ONE-17 and CT-ONE-18, which need a second level in the session, its crossing
+    and `project` (KN1.9); and CT-ONE-19, with LP3's view model.
   - Derived states with an open reachability claim and KN2.14's raw-table import, which M4 does not build (3, no
     milestone named): CT-ONE-09, CT-ONE-10 and CT-ONE-28.
   - LG5's module loader and lockfiles (7): CT-LG5-01 to CT-LG5-07. LP3 C4's `c600-module` builds closures and
@@ -601,29 +651,59 @@ run or not applicable is no pass (PHS.63).
 - Tests (`c600-view/tests/view_rows.rs`): CT-RPI-03, CT-RPI-06, CT-RPI-07, CT-RPI-36, CT-RPI-37, CT-RM-02 and
   CT-ONE-30; the limit half of CT-RPI-22; rows 1, 2, 7 and 9 of CT-RM-09's RM.40 table. Supporting tests cover ONE.10's
   reuse after undo, RM.11's profile validation, RM.12's admission ceiling, RM.35's malformed output and RPI.9's bundle
-  faults.
+  faults. C2's next view piece adds CT-RPI-23 (Global and Local stay linked and further views open under every
+  profile fixture; built-in output keeps the interim boundary under either chart evaluator, with a declared fixture
+  chain standing in for a checked vertex stage), the counter half of CT-RPI-26 (hidden, evicted and unchanged views
+  add no rebuild; nothing is timed) and the admission semantics of CT-EV3-08 under fixture ceilings, and three
+  supporting tests: a burst of revisions while the lane is blocked leaves one pending request at the newest; output
+  from an older engine epoch never attaches at the same revision numbers; a scheduled recomputation can neither open
+  nor close a view.
 - Drafts, which freeze with the IR and the command table: the list in the crate documentation, among them Global and
   Local's fixed IDs, `LG3:capability.not_granted` for a recomputation that names a view row (RPI.83 names no code), a
   separate command-ID namespace for scheduled recomputations (LI.25), the status precedence (RPI.13, charter D2), and an
-  LEB128 byte form standing in for H8's canonical output bytes.
+  LEB128 byte form standing in for H8's canonical output bytes. C2's next view piece adds one view model per session
+  profile, which no rule reads yet (LG3.9, RPI.42); a provenance block the host fills for installed output (RPI.45,
+  BND.22); the built-in class declared when a view opens (BND.27); the chart evaluator as the view's declared chain
+  (RPI.28, RPI.68); rebuild counters per view; a command ID on `view.open`, with scheduled IDs refused in both view
+  rows (RPI.83, LI.25); and engine epochs in revisions, bundle digests and the publication bytes (now version 2): a
+  bundle from an older epoch is refused with `refresh_required`, and output attaches only within its own epoch
+  (KN0.2, ONE.60, ONE.63).
+- Not built in the views: CT-RPI-26's gate half (charter E2 and the R-19 captures) and CT-EV3-08's measured half
+  (RM.39's measured ceilings) wait for C9; LQ2's policy table and display refusal wait for the joint setting.
 - `c600-display` is the host side of chapter 10's display plans and RM's feature matrix without a renderer. The
   validator checks RPI.10, RM.11, RM.12 and RM.20 in the order invalid, unsupported, ceiling. A publication installs
   whole or not at all and ends in exactly one KN5.21-style terminal, standalone or scheduled (RM.17 to RM.26, LI.25);
   a mock backend stands in for an adapter (RPI.55, RM.33). Picks resolve by instance ID through the installed source
   map, never through a chart inverse, and stale picks name the field that changed (RM.10, RM.24, RPI.24, RPI.25).
+- Charts and stages (C2's next display piece): exact arithmetic in Q(√5) with checked `i128` parts, the 600-cell and
+  its exact poses in K⁺ (`exact.rs`); chart checks with the exact region test, the vertex test and `admit_chart`, which
+  admits a chart only on established check results and refuses it on a refutation with
+  `EV3:evidence.chart_check_failed` (`chart.rs`); a binary32 CPU reference evaluator and RPI.56's key over the exact
+  fields (`reference.rs`); and the stage output rules and their composition order (`stage.rs`).
 - Display tests (`c600-display/tests/`): CT-RPI-02, CT-RPI-04, CT-RPI-05, CT-RPI-09, CT-RPI-10, CT-RPI-11,
   CT-RPI-27, CT-RM-03 and CT-RM-04; CT-RPI-08's 600-cell-Full rows (F01 to F17, with J02 and J04 unsupported on
   Full); the stale half of CT-RPI-12; RM.37's fifteen rows of CT-RM-07 as fixture payloads over the Full geometry
-  digests.
+  digests. C2's next display piece adds CT-RPI-14 over the drafted chart repertoire (RPI.34 is open), CT-RPI-18 on
+  the CPU reference (its device version, CT-RPI-33, waits for the renderer), CT-RPI-19's Windows leg, CT-RPI-22's
+  chart half (with the views' limit half, CT-RPI-22 runs whole) and the headless part of CT-RPI-32.
 - Display drafts: the list in the crate documentation, among them the validation order, string dependency keys,
   set digests over sorted piece IDs, canonical JSON standing in for the output bytes, form `stop` for every error
-  after acceptance, and a publication to a view that is not open being invalid.
-- Not built: CT-RPI-22's chart half (the display-plan validator now exists; it is C2's next piece); CT-RPI-08's
-  jumbling rows and the posed producer wait for M5; a decoder from the interpreter's values needs list types in the
-  IR (LP2); the user-stage checker (RPI.68 to RPI.80), so F05 and F26 stay unsupported; CT-RM-09's rows 3 to 6, 8
-  and 10 (the raster
-  bound, frame-report stops and device-fault quarantine) need a user-stage checker or a device; RM.38's weight table,
-  device loss and `display_unsupported` belong to the renderer and its backend.
+  after acceptance, and a publication to a view that is not open being invalid. C2's next display piece adds the
+  drafted chart repertoire (stereographic charts declared by their pole, over convex hulls of exact vertices, with the
+  properties domain, injective and section; RPI.34), exact poses only (every float pose is refused, never rounded;
+  RPI.30, LB4.2), Q(√5) arithmetic local to the crate (KN3.2, KN3.3), the fixtures' own precision rule (1e-4 absolute,
+  with an exclusion of 0.05 per vertex; RPI.36), RPI.56's key over the exact fields only, and the stage output rules
+  as diagnostics (RPI.68, RPI.69, RPI.75). C2's draft that every exact chart property is `not_established` now holds
+  only when the validator's context carries no check result for it (RPI.48).
+- Not built: CT-RPI-19's Linux leg (no Linux run in this session); the rest of CT-RPI-32, which needs the stage
+  module's parser and checker (RPI.69 to RPI.71, RPI.77, RM.38's weight table) and a backend for HLSL compilation, the
+  raster bound and frame reports (RPI.72, RPI.78, RM.41); KN3's polytope operations in the kernel, so the region test
+  is local to this crate; charts and properties outside the drafted repertoire, the GPU agreement check (RPI.35) and a
+  production precision rule (RPI.36). CT-RPI-08's jumbling rows and the posed producer wait for M5; a decoder from the
+  interpreter's values needs list types in the IR (LP2); F05 and F26 stay unsupported until the stage checker exists;
+  CT-RM-09's rows 3 to 6, 8 and 10 (the raster bound, frame-report stops and device-fault quarantine) need a stage
+  checker or a device; RM.38's weight table, device loss and `display_unsupported` belong to the renderer and its
+  backend.
 - Evidence kind: source and synthetic. Every ceiling in the tests is a fixture value; nothing is measured, and nothing
   advertises support or a profile (RPI.82, RM.40).
 

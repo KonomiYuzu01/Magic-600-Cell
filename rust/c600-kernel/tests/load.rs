@@ -8,6 +8,8 @@
 //! the changed array into a stored ZIP archive or the changed trees into a gzip member of stored DEFLATE blocks, and a
 //! manifest lists the five files under the model ID of that list. The same copy without a change is the model of
 //! another identity that lead L8 offers the shipped kernel's values to (CT-KN1-01).
+//!
+//! `verify_assets` is the check itself; `Kernel::load` and the jumbling model both load through it.
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -396,4 +398,22 @@ fn an_execution_tree_with_a_parent_at_its_child_is_refused() {
     parent[1] = Value::Int(1);
     let text = refused_copy("tree-parent", &[("execution_trees.json.gz", stored_gzip(trees.canonical().as_bytes()))]);
     assert_eq!(text, "An execution tree is malformed");
+}
+
+/// `verify_assets`, through which the jumbling half loads (M5, R3 of its critical-path read): on the shipped folder it
+/// gives the shipped model ID, the manifest's digest, every listed digest and the bytes of exactly the files asked
+/// for; a file asked for that is not listed is refused.
+#[test]
+fn verify_assets_gives_the_checked_files() {
+    let (files, id) = shipped();
+    let verified = c600_kernel::verify_assets(&assets(), &["puzzle_definition.txt"]).unwrap();
+    assert_eq!(verified.model_id, id);
+    assert_eq!(verified.manifest_sha256, sha256_hex(&fs::read(assets().join("manifest.json")).unwrap()));
+    assert_eq!(verified.digests, files);
+    assert_eq!(verified.files.keys().map(String::as_str).collect::<Vec<_>>(), vec!["puzzle_definition.txt"]);
+    assert_eq!(verified.files["puzzle_definition.txt"], fs::read(assets().join("puzzle_definition.txt")).unwrap());
+    match c600_kernel::verify_assets(&assets(), &["absent.bin"]) {
+        Ok(_) => panic!("a file that is not listed was given"),
+        Err(LoadError(text)) => assert_eq!(text, "manifest.json does not list absent.bin"),
+    }
 }

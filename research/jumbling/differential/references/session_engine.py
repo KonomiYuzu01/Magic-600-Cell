@@ -19,6 +19,7 @@ from differential.leads import census  # noqa: E402,F401
 
 import numpy as np  # noqa: E402
 import sim  # noqa: E402
+from sim import api  # noqa: E402
 from sim.kplus import matrix_from_json  # noqa: E402
 from sim.model import NP  # noqa: E402
 
@@ -82,19 +83,19 @@ class J1SessionEngine:
         table = record["pose_table"]
         if not table or table[0] != {"k": 0} or bool(np.any(ids >= len(table))):
             raise ValueError("pose_table or pose_ids is out of range")
-        state = self.solved()
-        remap = []
+        entries = []
         for pose in table:
             if set(pose) == {"k"}:
                 k = pose["k"]
                 if type(k) is not int or not 0 <= k < len(self.ctx.kplus.perms):
                     raise ValueError("pose_table K+ index is out of range")
-                remap.append(state._intern_k(k))
+                entries.append((k, None))
             elif set(pose) == {"m"}:
-                remap.append(state._intern_matrix(matrix_from_json(pose["m"])))
+                entries.append((-1, matrix_from_json(pose["m"])))
             else:
                 raise ValueError("pose_table entry needs one of k or m")
-        state.pose_id = np.asarray(remap, dtype=np.int32)[ids]
+        # The table keeps the stored order: the record's pose table is rebuilt as it is.
+        state = api.from_pose_table(self.ctx, entries, ids, self.menu, compact=False)
         actual = state.digest()
         if actual != record["digest"]:
             raise ValueError(f"pose digest: computed {actual}, stored {record['digest']}")

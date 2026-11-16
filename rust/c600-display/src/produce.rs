@@ -232,5 +232,6 @@ pub fn fixture_context(geometry: &GeometryInput, limits: LimitProfile) -> Contex
         limits,
         tokens: token_table(),
         words: word_records(),
+        checks: Vec::new(),
     }
 }

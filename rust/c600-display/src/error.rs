@@ -22,6 +22,12 @@ pub mod codes {
     pub const COMMAND_ID_REUSED: &str = "KN5:input.command_id_reused";
     pub const EXPOSED_GEOMETRY_UNAVAILABLE: &str = "KN2:input.exposed_geometry_unavailable";
     pub const FIXED_NU_NONZERO: &str = "KN2:consistency.fixed_nu_nonzero";
+    /// RPI.48: a required chart property or precision check failed; the checked status is withheld.
+    pub const CHART_CHECK_FAILED: &str = "EV3:evidence.chart_check_failed";
+    /// LB4.2, RPI.30: approximate data offered to an exact chart-property check (03-libraries, LB4's catalogue).
+    pub const APPROXIMATE_PROPERTY_INPUT: &str = "LB4:type.approximate_property_input";
+    /// LG2.24, RPI.69: a stage outside the stage rules; its registered form is `diagnostic`.
+    pub const STAGE_RULE_VIOLATION: &str = "LG2:type.stage_rule_violation";
 }
 
 /// The `form` field of ERR.8.
@@ -44,7 +50,8 @@ pub struct Error {
 }
 
 impl Error {
-    /// An error in the code's primary form, `refusal` for every code here.
+    /// An error in form `refusal`; a code registered with another form gets it from [`Error::in_form`] where it is
+    /// raised.
     pub fn new(code: &'static str, summary: impl Into<String>) -> Error {
         Error { code, form: Form::Refusal, context: BTreeMap::new(), summary: summary.into() }
     }

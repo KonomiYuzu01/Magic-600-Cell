@@ -14,6 +14,7 @@ use c600_digest::sha256;
 
 use crate::error::{code, Context, Error, Form, PlanFault};
 use crate::limits::{Field, LimitProfile, OutputAllowance};
+use crate::provenance::Provenance;
 use crate::revision::Base;
 use crate::Digest;
 
@@ -79,8 +80,8 @@ fn put_bytes(out: &mut Vec<u8>, bytes: &[u8]) {
     out.extend_from_slice(bytes);
 }
 
-/// The version byte of this crate's canonical publication bytes.
-pub const CANONICAL_VERSION: u8 = 1;
+/// The version byte of this crate's canonical publication bytes. Version 2 binds the base's engine epoch.
+pub const CANONICAL_VERSION: u8 = 2;
 
 impl Content {
     /// True when the publication has nothing to show: no nodes and no plans.
@@ -91,6 +92,7 @@ impl Content {
     /// The canonical uncompressed bytes of the publication bound to `base` (LI.16 stand-in, draft).
     pub fn canonical_bytes(&self, base: &Base) -> Vec<u8> {
         let mut out = vec![CANONICAL_VERSION];
+        put_uint(&mut out, base.revision.epoch);
         put_uint(&mut out, base.revision.state);
         put_uint(&mut out, base.revision.workspace);
         put_uint(&mut out, base.revision.protection);
@@ -208,4 +210,7 @@ pub struct PublicationInput {
     pub transport: Transport,
     /// The producer's declared output allowance (RM.13).
     pub output: OutputAllowance,
+    /// The block the host filled for the producer (BND.22). The view model stores it as given and refuses nothing on
+    /// it (BND.26).
+    pub provenance: Provenance,
 }

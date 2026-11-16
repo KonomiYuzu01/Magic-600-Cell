@@ -6,6 +6,7 @@ import hashlib as _hashlib
 import numpy as _np
 
 from exact import matmul as _matmul, transpose as _transpose
+from sim import api as _api
 from sim.kplus import matrix_json as _matrix_json, to_tuple as _to_tuple
 from sim.twists import Twist as _Twist
 
@@ -13,7 +14,7 @@ from sim.twists import Twist as _Twist
 def state_record(state) -> dict:
     """Export J1's pose table, little-endian pose ids and exact state digest."""
     table = [{"k": int(p.kidx)} if p.kidx >= 0 else {"m": _matrix_json(p.matrix)}
-             for p in state._poses]
+             for p in _api.pose_entries(state)]
     raw = _np.asarray(state.pose_id, dtype="<u4").tobytes()
     return {
         "pose_table": table,

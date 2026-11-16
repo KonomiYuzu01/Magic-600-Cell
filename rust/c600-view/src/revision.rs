@@ -1,19 +1,23 @@
 //! Revisions, bases and declared inputs (KN0.2, ONE.8, ONE.10, ONE.63, KN7.3).
 //!
-//! A [`Revision`] carries the three counters of KN0.2's `RevisionRef` and its state digest. Counters never decrease
-//! within an engine epoch, and undo advances them, so equal digests can come back with larger counters. A [`Base`]
-//! is ONE.8's pair of a revision and the parts its output depends on. Output attaches to an adopted revision only
-//! when the counters of every declared part are equal (ONE.63). An [`InputKey`] names a read result's declared
-//! inputs, so a result can come back after an undo (ONE.10).
+//! A [`Revision`] carries the engine epoch and the three counters of KN0.2's `RevisionRef` and its state digest.
+//! Counters never decrease within an engine epoch, and undo advances them, so equal digests can come back with larger
+//! counters. A new epoch may start its counters again, so counters name a revision only within their epoch. A
+//! [`Base`] is ONE.8's pair of a revision and the parts its output depends on. Output attaches to an adopted revision
+//! only when it has the same epoch and the counters of every declared part are equal (ONE.63, ONE.70). An
+//! [`InputKey`] names a read result's declared inputs, so a result can come back after an undo (ONE.10).
 
 use crate::Digest;
 
-/// One revision of one session, in one engine epoch (KN0.2).
+/// One revision of one session (KN0.2): its engine epoch, its three counters and its state digest.
 ///
-/// The session, epoch, identity block, mode and head of KN0.2 are not modelled: one [`crate::ViewModel`] serves one
-/// session in one engine epoch and one identity, and every move of `head` advances `state`.
+/// The session, identity block, mode and head of KN0.2 are not modelled: one [`crate::ViewModel`] serves one session
+/// and one identity, and every move of `head` advances `state`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Revision {
+    /// KN0.2's engine epoch, which distinguishes process lifetimes: here a number that grows with each engine start
+    /// (draft).
+    pub epoch: u64,
     /// State revision.
     pub state: u64,
     /// Workspace revision.
@@ -25,9 +29,9 @@ pub struct Revision {
 }
 
 impl Revision {
-    /// A revision from its counters and digest.
-    pub fn new(state: u64, workspace: u64, protection: u64, digest: Digest) -> Revision {
-        Revision { state, workspace, protection, digest }
+    /// A revision from its epoch, counters and digest.
+    pub fn new(epoch: u64, state: u64, workspace: u64, protection: u64, digest: Digest) -> Revision {
+        Revision { epoch, state, workspace, protection, digest }
     }
 
     /// The counter of one part.
@@ -39,17 +43,23 @@ impl Revision {
         }
     }
 
-    /// True when no counter is below `other`'s (KN0.2: counters never decrease).
+    /// True when the revision belongs to a later epoch than `other`, or to the same epoch with no counter below
+    /// `other`'s (KN0.2: counters never decrease within an epoch).
     pub fn not_older_than(&self, other: &Revision) -> bool {
-        self.state >= other.state && self.workspace >= other.workspace && self.protection >= other.protection
+        self.epoch > other.epoch
+            || (self.epoch == other.epoch
+                && self.state >= other.state
+                && self.workspace >= other.workspace
+                && self.protection >= other.protection)
     }
 
-    /// True when the counters of every part in `depends` equal `other`'s.
+    /// True when the revision has `other`'s epoch and the counters of every part in `depends` equal `other`'s. Another
+    /// epoch never matches, whatever `depends` names: its counters name other revisions.
     pub fn same_parts(&self, other: &Revision, depends: Depends) -> bool {
-        depends.parts().all(|part| self.counter(part) == other.counter(part))
+        self.epoch == other.epoch && depends.parts().all(|part| self.counter(part) == other.counter(part))
     }
 
-    /// True when all three counters equal `other`'s.
+    /// True when the epoch and all three counters equal `other`'s.
     pub fn same_counters(&self, other: &Revision) -> bool {
         self.same_parts(other, Depends::ALL)
     }
@@ -139,14 +149,15 @@ impl Base {
 
 /// The declared inputs of a read result (ONE.10, KN7.3).
 ///
-/// The state part is identified by KN0.2's digest, so an undo that returns to an equal digest gives an equal key.
-/// Workspace and protection have no digest in KN0.2, so they are identified by their counters (draft).
+/// The state part is identified by KN0.2's digest, so an undo that returns to an equal digest gives an equal key, in
+/// any epoch (KN7.3, ONE.17). Workspace and protection have no digest in KN0.2, so they are identified by their epoch
+/// and counter (draft).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct InputKey {
     depends: Depends,
     state: Option<Digest>,
-    workspace: Option<u64>,
-    protection: Option<u64>,
+    workspace: Option<(u64, u64)>,
+    protection: Option<(u64, u64)>,
 }
 
 impl InputKey {
@@ -155,8 +166,8 @@ impl InputKey {
         InputKey {
             depends,
             state: depends.contains(Part::State).then_some(revision.digest),
-            workspace: depends.contains(Part::Workspace).then_some(revision.workspace),
-            protection: depends.contains(Part::Protection).then_some(revision.protection),
+            workspace: depends.contains(Part::Workspace).then_some((revision.epoch, revision.workspace)),
+            protection: depends.contains(Part::Protection).then_some((revision.epoch, revision.protection)),
         }
     }
 }

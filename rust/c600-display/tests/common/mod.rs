@@ -10,6 +10,7 @@ use std::sync::{Arc, OnceLock};
 use c600_digest::sha256_hex;
 use c600_display::array::Array;
 use c600_display::error::{Error, Form};
+use c600_display::exact::{self, Q5, V4};
 use c600_display::host::{Host, MockBackend};
 use c600_display::pick::{Partial, Projection};
 use c600_display::plan::*;
@@ -291,4 +292,38 @@ pub fn both_sides(publication: Publication, ctx: Context) -> (Error, Error) {
     assert!(scheduled.installed(ViewId(1)).is_none());
     assert_eq!(scheduled.job_outcome(CommandId(1)), Some(&JobOutcome::Error(failure.clone())));
     (refusal, failure)
+}
+
+/// The vertex (1, 0, 0, 0) of the 600-cell.
+pub const E1: V4 = [Q5::ONE, Q5::ZERO, Q5::ZERO, Q5::ZERO];
+
+/// The vertex (0, 0, 0, 1), on the built-in stereographic pole +w.
+pub const W: V4 = [Q5::ZERO, Q5::ZERO, Q5::ZERO, Q5::ONE];
+
+/// A cell of the 600-cell: (1, 0, 0, 0) and three of its neighbours, pairwise adjacent (product φ/2).
+pub fn cell() -> Vec<V4> {
+    let edge = Q5::new(1, 1, 4).expect("φ/2");
+    let adjacent = |u: &V4, v: &V4| exact::dot(u, v) == Some(edge);
+    let neighbours: Vec<V4> = exact::cell600().into_iter().filter(|v| adjacent(&E1, v)).collect();
+    assert_eq!(neighbours.len(), 12, "a vertex of the 600-cell has 12 neighbours");
+    for (i, a) in neighbours.iter().enumerate() {
+        for (j, b) in neighbours.iter().enumerate().skip(i + 1) {
+            for c in neighbours.iter().skip(j + 1) {
+                if adjacent(a, b) && adjacent(a, c) && adjacent(b, c) {
+                    return vec![E1, *a, *b, *c];
+                }
+            }
+        }
+    }
+    panic!("the 600-cell has a cell at (1, 0, 0, 0)")
+}
+
+/// The sum of exact vectors; for a cell, a direction on its axis.
+pub fn vertex_sum(vertices: &[V4]) -> V4 {
+    vertices.iter().fold([Q5::ZERO; 4], |sum, v| exact::add(&sum, v).expect("small values"))
+}
+
+/// The built-in projection chain of F04 with the stereographic stage.
+pub fn built_in(id: u64) -> Chart {
+    chart(id, &[("rotate", 6), ("stereographic", 0), ("camera3", 9)])
 }
