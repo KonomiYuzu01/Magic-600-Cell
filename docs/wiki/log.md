@@ -5,6 +5,9 @@ Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 ## [2026-11-16] update | The language: M2 to M4, the interpreter, the run-time boundary and the kernel
 `rust/c600-run` runs the IR draft under the `lp1-exec-draft-1` reference meter, which replays the 40 frozen traces exactly, and its run-time boundary gives stored words their provenance blocks, refuses a tool's saved word at preview admission (the saved-word half of CT-LG3-07) and gives a solving run one fixed acknowledgement (BND.43); `rust/c600-kernel` reads 600-cell-Full from `assets/` and replays the oracle cases O01 to O07 exactly through chapter 01's API (`tests/test_kernel_oracle.py`). At the owner's request the three milestones share one pull request; the drafts and what is not built are listed in `rust/README.md`.
 
+## [2026-11-16] update | The language: base-type mismatches are diagnostics
+The checker reports a value whose base type does not fit its use as `LG2:type.mismatch` (LG2.1), with the expected and supplied types at the offending expression's path, instead of refusing the whole program with an `IrError`; a source program's mismatch maps through the source map to its text. Where an exactness rule would also apply, the base type comes first, a draft choice that freezes with the IR, and the misfit value continues as one of unknown type so that one fault gives one finding; what still refuses the whole program is listed in `rust/README.md`.
+
 ## [2026-11-16] decision | Big integers through num-bigint (option A)
 The owner chose option A on M2's question card: LP2's unbounded integers use `num-bigint` 0.5.1 with `num-integer` 0.1.47 and `num-traits` 0.2.19, each MIT OR Apache-2.0 ([decision](decisions/owner-decisions-2026-11-16-big-integers.md)). M2, the interpreter and its reference meter, no longer waits; `rust/README.md` lists the approved crates.
 

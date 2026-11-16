@@ -10,7 +10,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | Crate | What it holds |
 | --- | --- |
 | `c600-ir` | The typed IR draft `c600-ir-draft-1`: data types, and short constructors for hand-built test programs |
-| `c600-check` | The checker over the IR: exactness (LG2.19 to LG2.22), effects, capabilities, views and capability separation (LG3), report order and contract refusal (LG4.1, LG4.3) |
+| `c600-check` | The checker over the IR: base types (LG2.1), exactness (LG2.19 to LG2.22), effects, capabilities, views and capability separation (LG3), report order and contract refusal (LG4.1, LG4.3) |
 | `c600-syntax` | The parser of `.6cs` source files: source byte checks, parsing with recovery, the canonical layout, and lowering into the IR draft with a source map (LG1, LG4.12) |
 | `c600-digest` | SHA-256, raw and in hex, for the other crates |
 | `c600-run` | The interpreter over the IR draft (route RT1) with the `lp1-exec-draft-1` reference meter and generator (M2), and the run-time boundary under capability separation with FP.17's provenance blocks (M3) |
@@ -60,18 +60,35 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   also when an unresolved call or an open effect variable may prepare one.
 - What an own tool may read in a solving session stays open (BND.59): the checker reports the open cell and neither
   grants nor refuses it.
-- A base-type mismatch is an `IrError` that refuses the whole program, not the diagnostic `LG2:type.mismatch` that the
-  frozen catalogue has for it (LG2.1). Lowering does not type programs, so since M7 a source program reaches this
-  error; it names the function and the path. Reporting it as `LG2:type.mismatch` is open work in the checker.
+- Base types (LG2.1). A value whose base type does not fit its use is the diagnostic `LG2:type.mismatch` at the path
+  of the offending expression, with the expected and supplied types in source notation (`Diagnostic::mismatch`); the
+  exactness fields stay empty. This covers arguments, conditions, branches and arms, patterns, operands, field reads,
+  results, workspace writes and reads, previews, receipt reads, budgets and calls of a value that is no function. A
+  result is reported at the expression it returns, the rest of the innermost `let`. A literal pattern has no path of
+  its own, so a pattern that does not fit the scrutinee is reported at the match; it compares as an exact equality
+  does, so an `Int` scrutinee takes a `Nat` pattern. The IR draft has no identity-tower levels, so the types carry
+  none and `LG2:type.level_mismatch` (LG2.3) does not arise yet.
+- One fault, one finding. Where a value's base type does not fit and an exactness rule would also apply to it, the base
+  type comes first: the finding is `LG2:type.mismatch`, and the value's exactness is not checked, because the exactness
+  rules assume a value of the right base type. LG2.22's precedence orders the exactness codes only, so this is a draft
+  choice (16 November 2026) that freezes with the IR (PHS.49). The value continues as one of unknown type (`_`), which
+  fits every use and gets no check of its own, so no finding follows from it; a fault of the place, such as an exact
+  budget set under approximate control, is still reported. A conversion has its own result type: an `approx53` of a
+  `Bool` is a mismatch, and its `Approx<P53>` result at an exact operand is `LG2:type.exact_required` as well.
+- Still an `IrError` that refuses the whole program, because chapters 02 and 13 give it no code: an unbound name, a
+  function declared twice, an unknown or unexported function, a wrong number of arguments, and effect inference that
+  stops before its fixed point. Lowering refuses the first two; a call of an unexported function or with a wrong
+  number of arguments still reaches the checker from source.
 - Qualifiers through calls (LG2.19): a callable enters a slot only if its signature keeps every qualifier (its result
   no more qualified than the slot's, each parameter taking what the slot passes), and a function's own result or
   stored field is checked against its declared bound even when that bound has effect variables. The checker does not
   unify type variables: a result of a bare type variable keeps the qualifier, callable and fields of every argument
   bound to that variable, also through a callable's result, and binding one variable to values of incompatible types
-  is an `IrError`; any other generic result is display-qualified when a generic argument is, and a display value for a
-  generic parameter makes the call a pure display body. A call instantiates the effect variables of its result type,
-  and a closure's own effect variables are kept apart from captured ones. Records keep their field values, so a
-  callable keeps its effects and exact sinks through a record.
+  is `LG2:type.mismatch` at the later argument, with the earlier binding's type expected; any other generic result is
+  display-qualified when a generic argument is, and a display value for a generic parameter makes the call a pure
+  display body. A call instantiates the effect variables of its result type, and a closure's own effect variables are
+  kept apart from captured ones. Records keep their field values, so a callable keeps its effects and exact sinks
+  through a record.
 - Approximate control through calls (LG2.20, LG2.22): a helper whose `Approx<p>` result is selected under approximate
   control passes that control to its callers, so an exact use of the result is `LG2:type.exactness_violation`, not
   `LG2:type.exact_required`; a display-qualified result shows its qualifier instead, so a later exact use erases it. A
@@ -124,7 +141,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   different literals for now.
 - Exact numbers in the checker. `exact_add`, `exact_less` and `exact_eq` take `Rat` and `Q5` values too, and `Nat` and
   `Int` widen to `Rat` and `Rat` to `Q5` (Z ⊂ Q ⊂ Q(√5)) in operands, branches, arguments and results. A `Budget` is
-  a cost and mixes with integers only (LG2.6). Running this arithmetic and its tariffs are KN3's and come with M2.
+  a cost and mixes with integers only (LG2.6): an operand that mixes it with a `Rat` or `Q5` value, like a wider result
+  in a narrower slot, is `LG2:type.mismatch`. Running this arithmetic and its tariffs are KN3's and come with M2.
 - Recovery (CT-LG1-04). A damaged declaration becomes a recovery hole with `LG1:syntax.recovery_gap`, and parsing
   resumes at the next `fn`, `view`, `command`, `import` or `export` in column 1. A draft with a hole has no layout and
   does not lower.

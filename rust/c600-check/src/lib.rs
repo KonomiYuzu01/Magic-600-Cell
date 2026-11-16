@@ -4,8 +4,12 @@
 //! rules (LG3.1, LG3.2, LG3.4 to LG3.6), and capabilities, grants and capability separation (LG3.8, LG3.9, LG3.13)
 //! with chapter 07's interim grant table. It reports chapter 02's frozen codes and no others.
 //!
-//! - Malformed IR, such as a base-type mismatch or an unbound name, is an [`IrError`]: the lowering is at fault, and
-//!   chapter 02 has no source diagnostic for it.
+//! - A value whose base type does not fit its use is `LG2:type.mismatch` (LG2.1), with the expected and the supplied
+//!   type in [`Mismatch`]. The check goes on with a value of unknown type, which fits every use and gives no finding of
+//!   its own, so one fault gives one finding. The exactness codes apply where the base type fits (LG2.22).
+//! - A fault with no source diagnostic is an [`IrError`]: a module or function defined twice, an unbound name, an
+//!   unknown or unexported function, a wrong number of arguments, or effect inference that does not converge.
+//!   Lowering refuses most of them before the checker sees them (`rust/README.md`).
 //! - The flow rule (BND.33) stays off until LQ2 sets it, so the checker never emits `LG3:capability.flow_refused`
 //!   (CT-BND-24, CT-ERR-15). [`separation`] computes how capability separation sees a program (BND.41).
 //! - Static success never replaces the engine's run-time checks (LG3.10).
@@ -20,6 +24,8 @@ use c600_ir::{
     ReceiptField, Ty, EXEC_CONTRACT, FORM2_EXEC_CONTRACT, IR_VERSION,
 };
 
+/// `LG2:type.mismatch` (LG2.1).
+pub const TYPE_MISMATCH: &str = "LG2:type.mismatch";
 /// `LG2:type.exactness_violation` (LG2.19, LG2.20, LG2.22).
 pub const EXACTNESS_VIOLATION: &str = "LG2:type.exactness_violation";
 /// `LG2:type.exact_required` (LG2.22).
@@ -34,7 +40,8 @@ pub const IR_VERSION_UNSUPPORTED: &str = "LG4:input.ir_version_unsupported";
 /// Never granted in 1.0, whatever a manifest requests (LG3.8, LG3.9).
 pub const NEVER_GRANTED: [Capability; 3] = [Capability::Network, Capability::Process, Capability::SessionFile];
 
-/// One finding. An exactness finding carries the offending value's type and the two fields of the LP1 vectors.
+/// One finding. An exactness finding carries the offending value's type and the two fields of the LP1 vectors; a
+/// type mismatch carries the expected and the supplied type.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Diagnostic {
     pub code: &'static str,
@@ -48,11 +55,28 @@ pub struct Diagnostic {
     pub value_type: Option<String>,
     pub display_control: bool,
     pub qualifier_erasure: bool,
+    /// The types of an `LG2:type.mismatch`; `None` for every other code.
+    pub mismatch: Option<Mismatch>,
     pub note: String,
 }
 
-/// Malformed IR, where the lowering is at fault, or a base-type mismatch in the program, which the checker does not yet
-/// report as `LG2:type.mismatch` (`rust/README.md`).
+/// The data of an `LG2:type.mismatch` (chapter 13, `type` category): `expected` is the type the context requires and
+/// `supplied` the type of the expression at the diagnostic's path. A literal pattern has no path of its own, so a
+/// pattern that does not fit the scrutinee is reported at the match, with the scrutinee's type expected and the
+/// pattern's supplied.
+///
+/// Types are base types in source notation, without the display qualifier or a function's effect bound, which a
+/// base-type mismatch never involves. `_` stands for an unknown type or any precision, `..` for further record fields
+/// and `A | B` for the choice an overloaded operation takes. The IR draft has no identity-tower levels, so the types
+/// carry none (LG2.3).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Mismatch {
+    pub expected: String,
+    pub supplied: String,
+}
+
+/// A fault that has no source diagnostic, such as an unbound name (see the crate documentation). A base-type mismatch
+/// is `LG2:type.mismatch`, not an `IrError`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IrError(pub String);
 
@@ -271,6 +295,7 @@ pub fn check(program: &Program) -> Result<Report, IrError> {
             value_type: None,
             display_control: false,
             qualifier_erasure: false,
+            mismatch: None,
             note,
         };
         return Ok(Report { diagnostics: vec![refusal], summaries: BTreeMap::new() });
@@ -311,6 +336,7 @@ pub fn admit(
         value_type: None,
         display_control: false,
         qualifier_erasure: false,
+        mismatch: None,
         note,
     };
     for cap in &summary.capabilities {
@@ -367,6 +393,61 @@ pub fn type_name(ty: &Ty) -> String {
         Ty::Receipt => "Receipt".into(),
         Ty::Var(name) => name.clone(),
     }
+}
+
+/// A base type in source notation, as [`Mismatch`] writes it.
+fn type_text(ty: &Ty) -> String {
+    match ty {
+        Ty::Approx(p) => format!("Approx<P{p}>"),
+        Ty::Record(fields) if fields.is_empty() => "record {}".into(),
+        Ty::Record(fields) => {
+            let fields: Vec<String> = fields.iter().map(|(n, f)| format!("{n}: {}", type_text(&f.ty))).collect();
+            format!("record {{ {} }}", fields.join(", "))
+        }
+        Ty::Fn(f) => {
+            let params: Vec<String> = f.params.iter().map(|p| type_text(&p.ty)).collect();
+            format!("fn({}) -> {}", params.join(", "), type_text(&f.result.ty))
+        }
+        other => type_name(other),
+    }
+}
+
+/// The type of a value that replaces one whose base type does not fit its use. It fits every use and gets no check of
+/// its own, so that one fault gives one finding. Source cannot write it: `_` is no name.
+const UNKNOWN: &str = "_";
+
+fn unknown() -> Ty {
+    Ty::Var(UNKNOWN.into())
+}
+
+fn is_unknown(ty: &Ty) -> bool {
+    matches!(ty, Ty::Var(name) if name == UNKNOWN)
+}
+
+/// The type with the type variable `name` replaced by `with` at any depth.
+fn replace_var(ty: &Ty, name: &str, with: &Ty) -> Ty {
+    let q = |q: &QTy| QTy { ty: replace_var(&q.ty, name, with), display: q.display };
+    match ty {
+        Ty::Var(n) if n == name => with.clone(),
+        Ty::Record(fields) => Ty::Record(fields.iter().map(|(n, f)| (n.clone(), q(f))).collect()),
+        Ty::Fn(f) => Ty::Fn(Box::new(FnTy {
+            params: f.params.iter().map(q).collect(),
+            result: q(&f.result),
+            effects: f.effects.clone(),
+        })),
+        other => other.clone(),
+    }
+}
+
+/// The path, below a body, of the expression it returns: the rest of its innermost `let`.
+fn returned(body: &Expr) -> Vec<u32> {
+    let mut path = Vec::new();
+    let mut e = body;
+    while let Expr::Let { body, .. } = e {
+        path.push(1);
+        e = body;
+    }
+    path
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -471,8 +552,11 @@ fn is_exact_number(ty: &Ty) -> bool {
 }
 
 /// Whether a value of type `value` may enter a slot of type `slot`. An approximate value at an exact slot fits here
-/// and is refused by the exactness rules, not as malformed IR.
+/// and is refused by the exactness rules, not as a type mismatch.
 fn fits(slot: &Ty, value: &Ty) -> bool {
+    if is_unknown(value) {
+        return true;
+    }
     match (slot, value) {
         (Ty::Var(_), _) => true,
         (Ty::Approx(p), Ty::Approx(q)) => p == q,
@@ -494,8 +578,12 @@ fn fits(slot: &Ty, value: &Ty) -> bool {
 }
 
 /// The common type of two values, such as two branches or two arguments bound to one type variable: a record widens
-/// field by field, and a callable keeps either result's qualifier and either effect bound (LG2.19, LG3.2).
+/// field by field, and a callable keeps either result's qualifier and either effect bound (LG2.19, LG3.2). With an
+/// unknown type it is unknown.
 fn widen(a: &Ty, b: &Ty) -> Option<Ty> {
+    if is_unknown(a) || is_unknown(b) {
+        return Some(unknown());
+    }
     if a == b {
         return Some(a.clone());
     }
@@ -671,9 +759,18 @@ impl Val {
         Val::new(ty, Qual::Exact)
     }
 
+    /// The value that replaces one whose base type does not fit its use: of unknown type, exact, with no callable and
+    /// no fields, so that it gives no finding of its own.
+    fn unknown() -> Val {
+        Val::exact(unknown())
+    }
+
     /// A value known only by its declared type. A callable's needs are then its bound: whoever supplied it was
     /// checked against that bound.
     fn declared(q: &QTy) -> Val {
+        if is_unknown(&q.ty) {
+            return Val::unknown();
+        }
         let callable = match &q.ty {
             Ty::Fn(f) => Some(Summary::of_bound(&f.effects)),
             _ => None,
@@ -684,6 +781,7 @@ impl Val {
     /// Field `i` of a record value as the record holds it, before projection's qualifier rule.
     fn field(&self, i: usize) -> Val {
         match (&self.fields, &self.ty) {
+            (_, ty) if is_unknown(ty) => Val::unknown(),
             (Some(fields), _) => fields[i].clone(),
             (None, Ty::Record(declared)) => Val::declared(&declared[i].1),
             _ => unreachable!("a field of a {:?} value", self.ty),
@@ -693,6 +791,9 @@ impl Val {
     /// What display branches select is selected under approximate control at every depth, and a callable selected
     /// so is unknown (LG2.20).
     fn steered(self) -> Val {
+        if is_unknown(&self.ty) {
+            return self;
+        }
         let fields = match &self.ty {
             Ty::Record(declared) => Some((0..declared.len()).map(|i| self.field(i).steered()).collect()),
             _ => None,
@@ -702,8 +803,11 @@ impl Val {
 }
 
 /// One of two values: the type is the common type, the qualifiers join, a callable needs what either needs, and
-/// record fields merge one by one. `None` when the types have no common type.
+/// record fields merge one by one. `None` when the types have no common type; unknown with an unknown value.
 fn merge(a: Val, b: Val) -> Option<Val> {
+    if is_unknown(&a.ty) || is_unknown(&b.ty) {
+        return Some(Val::unknown());
+    }
     let ty = widen(&a.ty, &b.ty)?;
     let fields = match &ty {
         Ty::Record(x) if a.fields.is_some() || b.fields.is_some() => {
@@ -754,29 +858,47 @@ fn instance(params: &[QTy], vals: &[Val], except: Option<&str>) -> Qual {
     bound.iter().filter(|(n, _)| Some(n.as_str()) != except).fold(Qual::Exact, |q, (_, v)| q.join(v.qual.container()))
 }
 
+/// An argument that binds the type variable of a call's result to a type with no common type with an earlier binding.
+struct Conflict {
+    arg: usize,
+    var: String,
+    /// The argument's slot with the variable replaced by the earlier binding's type.
+    expected: String,
+    supplied: String,
+}
+
 /// The value of a call. A generic result keeps the qualifier, callable and fields of every argument bound to its
 /// type variable; a display instance, a display-qualified callable and a callee whose body selects its result under
 /// approximate control (`control`) give a display-qualified result (LG2.19, LG2.20). Values of incompatible types
-/// bound to one type variable are malformed IR (the checker does not unify type variables, M1).
-fn result_val(result: &QTy, params: &[QTy], vals: &[Val], callee: Qual, control: bool) -> Result<Val, String> {
+/// bound to one type variable are a [`Conflict`] (the checker does not unify type variables, M1).
+fn result_val(result: &QTy, params: &[QTy], vals: &[Val], callee: Qual, control: bool) -> Result<Val, Conflict> {
     let own = match &result.ty {
         Ty::Var(name) => Some(name.as_str()),
         _ => None,
     };
-    let mut bound = Vec::new();
-    for (p, v) in params.iter().zip(vals) {
-        bindings(p, v, &mut bound);
-    }
     let mut returned: Option<Val> = None;
-    for (_, v) in bound.into_iter().filter(|(n, _)| Some(n.as_str()) == own) {
-        returned = Some(match returned {
-            None => v,
-            Some(r) => merge(r, v).ok_or_else(|| {
-                format!("the type variable {} is bound to values of incompatible types", own.unwrap_or_default())
-            })?,
-        });
+    for (arg, (p, v)) in params.iter().zip(vals).enumerate() {
+        let mut bound = Vec::new();
+        bindings(p, v, &mut bound);
+        for (var, b) in bound.into_iter().filter(|(n, _)| Some(n.as_str()) == own) {
+            returned = Some(match returned {
+                None => b,
+                Some(r) => {
+                    let earlier = r.ty.clone();
+                    merge(r, b).ok_or_else(|| Conflict {
+                        arg,
+                        expected: type_text(&replace_var(&p.ty, &var, &earlier)),
+                        supplied: type_text(&v.ty),
+                        var,
+                    })?
+                }
+            });
+        }
     }
     let mut v = returned.unwrap_or_else(|| instantiated(result, params, vals));
+    if is_unknown(&v.ty) {
+        return Ok(v);
+    }
     if result.display {
         v.qual = v.qual.join(Qual::Display { control: false });
     }
@@ -974,6 +1096,7 @@ impl<'p> Checker<'p> {
                             value_type: None,
                             display_control: false,
                             qualifier_erasure: false,
+                            mismatch: None,
                             note: format!(
                                 "{cap:?} access is never granted in 1.0, even when a manifest requests it (LG3.8)"
                             ),
@@ -1016,6 +1139,28 @@ impl<'p> Checker<'p> {
     /// Record a finding at the current position. `value` is the offending value's type name with the vectors'
     /// display-control and qualifier-erasure fields.
     fn push(&mut self, code: &'static str, value: Option<(String, bool, bool)>, note: String) {
+        self.record(code, value, None, note);
+    }
+
+    /// `LG2:type.mismatch` at the current position (LG2.1).
+    fn mismatch(&mut self, expected: String, supplied: String, what: &str) {
+        let note = format!("{what}: {supplied} where {expected} is expected (LG2.1)");
+        self.record(TYPE_MISMATCH, None, Some(Mismatch { expected, supplied }), note);
+    }
+
+    /// A value at the current position whose base type does not fit its use. Its exactness is not checked: where
+    /// both would apply, the base type comes first. The caller goes on with [`Val::unknown`] in its place.
+    fn misfit(&mut self, expected: &str, v: &Val, what: &str) {
+        self.mismatch(expected.to_string(), type_text(&v.ty), what);
+    }
+
+    fn record(
+        &mut self,
+        code: &'static str,
+        value: Option<(String, bool, bool)>,
+        mismatch: Option<Mismatch>,
+        note: String,
+    ) {
         if !self.emitting {
             return;
         }
@@ -1036,6 +1181,7 @@ impl<'p> Checker<'p> {
                 value_type,
                 display_control,
                 qualifier_erasure,
+                mismatch,
                 note,
             },
         });
@@ -1053,6 +1199,15 @@ impl<'p> Checker<'p> {
         self.path.push(i as u32);
         let r = f(self);
         self.path.pop();
+        r
+    }
+
+    /// Run `f` at the relative path `rel` below the current position.
+    fn within<T>(&mut self, rel: &[u32], f: impl FnOnce(&mut Self) -> T) -> T {
+        let depth = self.path.len();
+        self.path.extend_from_slice(rel);
+        let r = f(self);
+        self.path.truncate(depth);
         r
     }
 
@@ -1099,8 +1254,11 @@ impl<'p> Checker<'p> {
 
     /// An exact-use site. LG2.22's precedence: a display condition, a value under approximate control or an erased
     /// qualifier is an exactness violation; a direct approximate scalar at an exact operand or a conversion back to
-    /// exact is `exact_required`.
+    /// exact is `exact_required`. A value of unknown type gets no check.
     fn exact_use(&mut self, site: Site, v: &Val, what: &str) {
+        if is_unknown(&v.ty) {
+            return;
+        }
         match v.qual {
             Qual::Exact => {}
             Qual::Cond => self.exactness(
@@ -1154,6 +1312,9 @@ impl<'p> Checker<'p> {
     /// argument's effect variables are the callee's own and take whatever the callable needs; in a result or a stored
     /// field they are the enclosing function's and bound the callable like any effect (LG3.2).
     fn callables(&mut self, slot: &QTy, v: &Val, what: &str, own: bool) {
+        if is_unknown(&v.ty) {
+            return;
+        }
         match &slot.ty {
             Ty::Fn(fty) => match &v.callable {
                 None => self.effect(format!("{what}: an unknown callable is neither exact nor pure (LG2.19, LG3.2)")),
@@ -1179,6 +1340,9 @@ impl<'p> Checker<'p> {
     /// The value keeps its qualifiers in the slot: as a whole, in a callable's signature and in each record field.
     /// A value refused as a whole is reported once.
     fn qualifiers(&mut self, slot: &QTy, v: &Val, what: &str, own: bool) {
+        if is_unknown(&v.ty) {
+            return;
+        }
         if exact_slot(slot, own) && v.qual != Qual::Exact {
             self.exact_use(Site::Boundary, v, what);
             return;
@@ -1200,15 +1364,20 @@ impl<'p> Checker<'p> {
         }
     }
 
-    fn arguments(&mut self, params: &[QTy], vals: &[Val], what: &str) -> Result<(), IrError> {
+    /// The arguments enter their slots. An argument whose base type does not fit is reported and replaced by
+    /// [`Val::unknown`].
+    fn arguments(&mut self, params: &[QTy], vals: &mut [Val], what: &str) -> Result<(), IrError> {
         if params.len() != vals.len() {
             return Err(self.err(format!("{what} takes {} arguments, not {}", params.len(), vals.len())));
         }
-        for (i, (slot, v)) in params.iter().zip(vals).enumerate() {
-            if !fits(&slot.ty, &v.ty) {
-                return Err(self.err(format!("argument {i} of {what}: {:?} does not fit {:?}", v.ty, slot.ty)));
+        for (i, (slot, v)) in params.iter().zip(vals.iter_mut()).enumerate() {
+            let arg = format!("argument {i} of {what}");
+            if fits(&slot.ty, &v.ty) {
+                self.at(i, |c| c.slot(slot, v, &arg, false));
+            } else {
+                self.at(i, |c| c.misfit(&type_text(&slot.ty), v, &arg));
+                *v = Val::unknown();
             }
-            self.at(i, |c| c.slot(slot, v, &format!("argument {i} of {what}"), false));
         }
         Ok(())
     }
@@ -1222,12 +1391,13 @@ impl<'p> Checker<'p> {
         params: &[QTy],
         result: &QTy,
         summary: Option<&Summary>,
-        vals: &[Val],
+        vals: &mut [Val],
         callee: Qual,
         control: bool,
         what: &str,
     ) -> Result<(Val, Summary), IrError> {
         self.arguments(params, vals, what)?;
+        let vals: &[Val] = vals;
         let needs = match summary {
             Some(summary) => {
                 let needs = substitute(summary, params, vals);
@@ -1262,7 +1432,17 @@ impl<'p> Checker<'p> {
                 needs
             }
         };
-        let v = result_val(result, params, vals, callee, control).map_err(|m| self.err(format!("{what}: {m}")))?;
+        let v = match result_val(result, params, vals, callee, control) {
+            Ok(v) => v,
+            Err(Conflict { arg, var, expected, supplied }) => {
+                let note = format!(
+                    "argument {arg} of {what} binds the result's type variable {var} to a type that has no common \
+                     type with an earlier binding"
+                );
+                self.at(arg, |c| c.mismatch(expected, supplied, &note));
+                Val::unknown()
+            }
+        };
         Ok((v, needs))
     }
 
@@ -1273,10 +1453,15 @@ impl<'p> Checker<'p> {
         (module.name.clone(), module.functions[self.cur.1].name.clone())
     }
 
-    /// A function's or closure's result. An approximate or display input requires a display-qualified result (LG2.19).
-    fn result(&mut self, slot: &QTy, v: &Val, display_input: Option<&Ty>, what: &str) -> Result<(), IrError> {
+    /// A function's or closure's result, whose returned expression is at `at` below the current position, and
+    /// whether its base type fits. An approximate or display input requires a display-qualified result (LG2.19).
+    fn result(&mut self, slot: &QTy, v: &Val, display_input: Option<&Ty>, what: &str, at: &[u32]) -> bool {
         if !fits(&slot.ty, &v.ty) {
-            return Err(self.err(format!("{what}: {:?} does not fit {:?}", v.ty, slot.ty)));
+            self.within(at, |c| c.misfit(&type_text(&slot.ty), v, what));
+            return false;
+        }
+        if is_unknown(&v.ty) {
+            return true;
         }
         if exact_slot(slot, true) && v.qual == Qual::Exact {
             if let Some(input) = display_input {
@@ -1290,12 +1475,17 @@ impl<'p> Checker<'p> {
             }
         }
         self.slot(slot, v, what, true);
-        Ok(())
+        true
     }
 
-    fn join(&self, a: Val, b: Val, what: &str) -> Result<Val, IrError> {
+    /// The value of two branches or arms. When `b`, at child `at`, has no common type with `a`, it is reported and
+    /// the value is unknown.
+    fn join(&mut self, a: Val, b: Val, at: usize, what: &str) -> Val {
         let (ta, tb) = (a.ty.clone(), b.ty.clone());
-        merge(a, b).ok_or_else(|| self.err(format!("{what} have types {ta:?} and {tb:?}")))
+        merge(a, b).unwrap_or_else(|| {
+            self.at(at, |c| c.mismatch(type_text(&ta), type_text(&tb), what));
+            Val::unknown()
+        })
     }
 
     /// A function's needs, and whether its body computes or selects its result under approximate control.
@@ -1316,12 +1506,13 @@ impl<'p> Checker<'p> {
         let walked = self.expr(&f.body, &mut env);
         self.display = 0;
         let (v, s) = walked?;
-        self.result(&f.result, &v, display_input, "the result")?;
+        let fit = self.result(&f.result, &v, display_input, "the result", &returned(&f.body));
         // An exact result slot refuses a steered value above; callers see no second finding. A display-qualified
         // result shows callers its qualifier, so a later exact use erases it (LG2.22). The bit carries the control
         // only through a result whose declared type cannot show it, such as `Approx<p>`: its exact use is then a
         // value selected under approximate control, not a direct approximate scalar (`exact_required`).
-        let control = !f.result.display && !exact_slot(&f.result, true) && v.qual == (Qual::Display { control: true });
+        let control =
+            fit && !f.result.display && !exact_slot(&f.result, true) && v.qual == (Qual::Display { control: true });
         if f.kind == FnKind::View {
             for e in [Effect::ChangeWorkspace, Effect::PreparePreview] {
                 if s.effects.contains(&e) {
@@ -1380,43 +1571,48 @@ impl<'p> Checker<'p> {
             }
             Expr::If { cond, then, els } => {
                 let (cv, mut s) = self.at(0, |c| c.expr(cond, env))?;
-                if !matches!(cv.ty, Ty::Bool | Ty::ApproxBool) {
-                    return Err(self.err(format!("an if condition of type {:?}", cv.ty)));
+                if fits(&Ty::Bool, &cv.ty) {
+                    self.at(0, |c| c.exact_use(Site::Control, &cv, "an ordinary if condition"));
+                } else {
+                    self.at(0, |c| c.misfit("Bool", &cv, "an if condition"));
                 }
-                self.at(0, |c| c.exact_use(Site::Control, &cv, "an ordinary if condition"));
                 let (tv, ts) = self.at(1, |c| c.expr(then, env))?;
                 let (ev, es) = self.at(2, |c| c.expr(els, env))?;
                 s.add(&ts);
                 s.add(&es);
-                Ok((self.join(tv, ev, "the branches of an if")?, s))
+                Ok((self.join(tv, ev, 2, "the else branch of an if"), s))
             }
             Expr::Match { scrutinee, arms, default } => {
                 let (sv, mut s) = self.at(0, |c| c.expr(scrutinee, env))?;
                 self.at(0, |c| c.exact_use(Site::Control, &sv, "a match scrutinee"));
                 let mut out: Option<Val> = None;
                 for (i, (lit, arm)) in arms.iter().enumerate() {
-                    if !fits(&lit_type(lit), &sv.ty) {
-                        return Err(self.err(format!("a {:?} pattern on a {:?} scrutinee", lit_type(lit), sv.ty)));
+                    // A pattern has no path of its own, so the match is the offending range; a pattern compares with
+                    // the scrutinee as an exact equality does.
+                    let pattern = lit_type(lit);
+                    if !fits(&pattern, &sv.ty) && !fits(&sv.ty, &pattern) {
+                        let what = format!("the pattern of arm {i} of a match");
+                        self.mismatch(type_text(&sv.ty), type_text(&pattern), &what);
                     }
                     let (av, a_s) = self.at(i + 1, |c| c.expr(arm, env))?;
                     s.add(&a_s);
                     out = Some(match out {
                         None => av,
-                        Some(o) => self.join(o, av, "the arms of a match")?,
+                        Some(o) => self.join(o, av, i + 1, &format!("arm {i} of a match")),
                     });
                 }
                 let (dv, ds) = self.at(arms.len() + 1, |c| c.expr(default, env))?;
                 s.add(&ds);
                 let v = match out {
                     None => dv,
-                    Some(o) => self.join(o, dv, "the arms of a match")?,
+                    Some(o) => self.join(o, dv, arms.len() + 1, "the `_` arm of a match"),
                 };
                 Ok((v, s))
             }
             Expr::DisplayIf { cond, then, els } => {
                 let (cv, mut s) = self.at(0, |c| c.expr(cond, env))?;
-                if cv.ty != Ty::ApproxBool {
-                    return Err(self.err(format!("display_if takes an ApproxBool condition, not {:?} (LG2.20)", cv.ty)));
+                if cv.ty != Ty::ApproxBool && !is_unknown(&cv.ty) {
+                    self.at(0, |c| c.misfit("ApproxBool", &cv, "a display_if condition"));
                 }
                 // The branches are lazy pure display expressions under approximate control (LG2.20).
                 self.steer += 1;
@@ -1424,14 +1620,14 @@ impl<'p> Checker<'p> {
                 let els = self.at(2, |c| c.in_display(|c| c.expr(els, env)));
                 self.steer -= 1;
                 let ((tv, ts), (ev, es)) = (then?, els?);
-                let v = self.join(tv, ev, "display branches (LG2.20)")?;
+                let v = self.join(tv, ev, 2, "the else branch of a display_if");
                 s.add(&ts);
                 s.add(&es);
                 Ok((v.steered(), s))
             }
             Expr::Call { callee, args } => {
                 let mut s = Summary::default();
-                let mut vals = Vec::with_capacity(args.len());
+                let mut vals: Vec<Val> = Vec::with_capacity(args.len());
                 for (i, a) in args.iter().enumerate() {
                     let (v, a_s) = self.at(i, |c| c.expr(a, env))?;
                     s.add(&a_s);
@@ -1448,7 +1644,7 @@ impl<'p> Checker<'p> {
                         let control = self.controls[mi][fi];
                         let what = format!("`{name}`");
                         let (v, needs) =
-                            self.call(&params, &f.result, Some(&summary), &vals, Qual::Exact, control, &what)?;
+                            self.call(&params, &f.result, Some(&summary), &mut vals, Qual::Exact, control, &what)?;
                         s.add(&needs);
                         Ok((v, s))
                     }
@@ -1457,11 +1653,27 @@ impl<'p> Checker<'p> {
                         s.add(&fs);
                         let fty = match &fv.ty {
                             Ty::Fn(fty) => (**fty).clone(),
-                            other => return Err(self.err(format!("a call of a {other:?} value"))),
+                            other => {
+                                if !is_unknown(other) {
+                                    let params: Vec<String> = vals.iter().map(|v| type_text(&v.ty)).collect();
+                                    let expected = format!("fn({}) -> _", params.join(", "));
+                                    self.at(args.len(), |c| c.misfit(&expected, &fv, "a called value"));
+                                }
+                                // What the call needs is unknown (LG3.2).
+                                s.unresolved.insert("<a value of unknown type>".into());
+                                return Ok((Val::unknown(), s));
+                            }
                         };
                         let callable = fv.callable.as_ref();
-                        let (v, needs) =
-                            self.call(&fty.params, &fty.result, callable, &vals, fv.qual, false, "a function value")?;
+                        let (v, needs) = self.call(
+                            &fty.params,
+                            &fty.result,
+                            callable,
+                            &mut vals,
+                            fv.qual,
+                            false,
+                            "a function value",
+                        )?;
                         s.add(&needs);
                         Ok((v, s))
                     }
@@ -1517,7 +1729,9 @@ impl<'p> Checker<'p> {
                 };
                 self.steer = steer;
                 let (bv, bs) = walked?;
-                self.result(&result, &bv, display_input.as_ref(), "the closure's result")?;
+                let mut at = vec![0];
+                at.extend(returned(body));
+                self.result(&result, &bv, display_input.as_ref(), "the closure's result", &at);
                 // With an exact result slot a display capture was refused above; the value carries no second finding.
                 let qual = if exact_slot(&result, true) { Qual::Exact } else { captured };
                 let ty = Ty::Fn(Box::new(FnTy { params: param_tys, result, effects: bs.bound() }));
@@ -1555,7 +1769,13 @@ impl<'p> Checker<'p> {
                     Ty::Record(fields) => fields.iter().position(|(n, _)| n == field),
                     _ => None,
                 };
-                let index = index.ok_or_else(|| self.err(format!("no field `{field}` on a {:?}", rv.ty)))?;
+                let Some(index) = index else {
+                    if !is_unknown(&rv.ty) {
+                        let expected = format!("record {{ {field}: _, .. }}");
+                        self.at(0, |c| c.misfit(&expected, &rv, &format!("a read of field `{field}`")));
+                    }
+                    return Ok((Val::unknown(), s));
+                };
                 let mut v = rv.field(index);
                 // Projection cannot extract an exact result from a display-qualified aggregate (LG2.19).
                 v.qual = match rv.qual {
@@ -1575,12 +1795,16 @@ impl<'p> Checker<'p> {
                 self.operation(&mut s, own, "a snapshot read");
                 let mut v = Val::declared(ty);
                 let stored = self.stored.get(query.as_str()).cloned().unwrap_or_default();
+                let mut reported = false;
                 for field in stored {
                     if !fits(&ty.ty, &field.ty) {
-                        return Err(self.err(format!(
-                            "a read of `{query}` as {:?}, which the program stores as {:?}",
-                            ty.ty, field.ty
-                        )));
+                        // The read is reported once, against the first write it does not fit.
+                        if !reported {
+                            let what = format!("a read of `{query}`, which a workspace write of the program stores");
+                            self.mismatch(type_text(&field.ty), type_text(&ty.ty), &what);
+                            reported = true;
+                        }
+                        continue;
                     }
                     // Decoding retains the qualifier the program stores; a read declared with a weaker one would
                     // erase it at the storage boundary (LG2.19).
@@ -1597,11 +1821,12 @@ impl<'p> Checker<'p> {
             }
             Expr::WriteWorkspace { ty, value, .. } => {
                 let (v, mut s) = self.at(0, |c| c.expr(value, env))?;
-                if !fits(&ty.ty, &v.ty) {
-                    return Err(self.err(format!("a workspace field of type {:?} given a {:?}", ty.ty, v.ty)));
+                if fits(&ty.ty, &v.ty) {
+                    // Display values may be stored only in typed display fields (LG2.19).
+                    self.at(0, |c| c.slot(ty, &v, "a workspace field", true));
+                } else {
+                    self.at(0, |c| c.misfit(&type_text(&ty.ty), &v, "a workspace field"));
                 }
-                // Display values may be stored only in typed display fields (LG2.19).
-                self.at(0, |c| c.slot(ty, &v, "a workspace field", true));
                 self.operation(&mut s, needs(&[Effect::ChangeWorkspace], &[]), "a workspace write");
                 Ok((Val::exact(Ty::Unit), s))
             }
@@ -1609,18 +1834,23 @@ impl<'p> Checker<'p> {
                 let (wv, mut s) = self.at(0, |c| c.expr(word, env))?;
                 let (tv, t_s) = self.at(1, |c| c.expr(target, env))?;
                 s.add(&t_s);
-                if wv.ty != Ty::Word || tv.ty != Ty::Target {
-                    return Err(self.err(format!("propose takes a Word and a Target, not {:?} and {:?}", wv.ty, tv.ty)));
+                for (i, (v, ty, what)) in [(&wv, Ty::Word, "a preview's word"), (&tv, Ty::Target, "a preview's target")]
+                    .into_iter()
+                    .enumerate()
+                {
+                    if fits(&ty, &v.ty) {
+                        self.at(i, |c| c.exact_use(Site::Boundary, v, what));
+                    } else {
+                        self.at(i, |c| c.misfit(&type_text(&ty), v, what));
+                    }
                 }
-                self.at(0, |c| c.exact_use(Site::Boundary, &wv, "a preview's word"));
-                self.at(1, |c| c.exact_use(Site::Boundary, &tv, "a preview's target"));
                 self.operation(&mut s, needs(&[Effect::PreparePreview], &[]), "a preview");
                 Ok((Val::exact(Ty::Receipt), s))
             }
             Expr::ReadReceipt { receipt, field } => {
                 let (rv, mut s) = self.at(0, |c| c.expr(receipt, env))?;
-                if rv.ty != Ty::Receipt {
-                    return Err(self.err(format!("a receipt field read on a {:?}", rv.ty)));
+                if !fits(&Ty::Receipt, &rv.ty) {
+                    self.at(0, |c| c.misfit("Receipt", &rv, "a receipt field read"));
                 }
                 let ty = match field {
                     ReceiptField::Id | ReceiptField::Base | ReceiptField::Effect | ReceiptField::EndState => Ty::Text,
@@ -1633,25 +1863,27 @@ impl<'p> Checker<'p> {
                     own.state_reads.insert(StateRead::Outcome);
                     self.operation(&mut s, own, "a preview outcome read");
                 }
-                Ok((Val::new(ty, rv.qual), s))
+                let qual = if rv.ty == Ty::Receipt { rv.qual } else { Qual::Exact };
+                Ok((Val::new(ty, qual), s))
             }
             Expr::UseExact { role, value } => {
                 let (v, mut s) = self.at(0, |c| c.expr(value, env))?;
-                let site = match role {
-                    ExactRole::Budget => {
-                        if !is_integer(&v.ty) && !matches!(v.ty, Ty::Approx(_)) {
-                            return Err(self.err(format!("a budget of type {:?}", v.ty)));
-                        }
-                        Site::Operand
-                    }
-                    ExactRole::Goal | ExactRole::Evidence => Site::Boundary,
-                };
                 let what = format!("an exact {role:?}");
+                let (site, fit) = match role {
+                    ExactRole::Budget => {
+                        (Site::Operand, is_integer(&v.ty) || matches!(v.ty, Ty::Approx(_)) || is_unknown(&v.ty))
+                    }
+                    ExactRole::Goal | ExactRole::Evidence => (Site::Boundary, true),
+                };
+                if !fit {
+                    self.at(0, |c| c.misfit("Nat | Int | Budget", &v, &what));
+                }
                 if self.display > 0 {
                     // Even an exact literal computed in a display context cannot escape as an exact result (LG2.20).
+                    // This is a fault of the place, whatever the value's type.
                     let note = format!("{what} set under approximate control (LG2.20, CT-LG2-05)");
                     self.push(EXACTNESS_VIOLATION, Some((type_name(&v.ty), true, false)), note);
-                } else {
+                } else if fit {
                     self.at(0, |c| c.exact_use(site, &v, &what));
                 }
                 s.exact_sinks.insert((*role, type_name(&v.ty)));
@@ -1716,24 +1948,44 @@ impl<'p> Checker<'p> {
         if vals.len() != arity {
             return Err(self.err(format!("{op:?} takes {arity} operands, not {}", vals.len())));
         }
+        let what = format!("an operand of {op:?}");
         match op {
             Prim::ExactAdd | Prim::ExactLess => {
-                for v in vals {
-                    if !is_exact_number(&v.ty) && !matches!(v.ty, Ty::Approx(_)) {
-                        return Err(self.err(format!("{op:?} on a {:?}", v.ty)));
-                    }
-                }
-                // The result widens along Nat, Int, Rat and Q5; a budget mixes with integers only (LG2.6).
-                let exact: Vec<&Ty> = vals.iter().map(|v| &v.ty).filter(|t| is_exact_number(t)).collect();
-                let field = exact.iter().find(|t| matches!(t, Ty::Rat | Ty::Q5));
-                if let (Some(f), true) = (field, exact.contains(&&Ty::Budget)) {
-                    return Err(self.err(format!("{op:?} of a Budget and a {f:?}")));
-                }
+                // The result widens along Nat, Int, Rat and Q5; a budget is a cost and mixes with integers only, so an
+                // operand that mixes it with a rational or a Q(√5) value does not fit (LG2.6).
+                let mut exact: Vec<&Ty> = Vec::new();
+                let mut unknown_operand = false;
                 for (i, v) in vals.iter().enumerate() {
-                    self.at(i, |c| c.exact_use(Site::Operand, v, &format!("an operand of {op:?}")));
+                    let budget = exact.contains(&&Ty::Budget);
+                    let field = exact.iter().any(|t| matches!(t, Ty::Rat | Ty::Q5));
+                    let fit = match &v.ty {
+                        Ty::Budget => !field,
+                        Ty::Rat | Ty::Q5 => !budget,
+                        t => is_exact_number(t) || matches!(t, Ty::Approx(_)) || is_unknown(t),
+                    };
+                    if !fit {
+                        let expected = if budget {
+                            "Nat | Int | Budget"
+                        } else if field {
+                            "Nat | Int | Rat | Q5"
+                        } else {
+                            "Nat | Int | Rat | Q5 | Budget"
+                        };
+                        self.at(i, |c| c.misfit(expected, v, &what));
+                        unknown_operand = true;
+                        continue;
+                    }
+                    unknown_operand |= is_unknown(&v.ty);
+                    if is_exact_number(&v.ty) {
+                        exact.push(&v.ty);
+                    }
+                    self.at(i, |c| c.exact_use(Site::Operand, v, &what));
                 }
                 if op == Prim::ExactLess {
                     return Ok(Val::exact(Ty::Bool));
+                }
+                if unknown_operand {
+                    return Ok(Val::unknown());
                 }
                 let ty = if exact.contains(&&Ty::Q5) {
                     Ty::Q5
@@ -1749,59 +2001,83 @@ impl<'p> Checker<'p> {
                 Ok(Val::exact(ty))
             }
             Prim::ExactEq => {
-                if !fits(&vals[0].ty, &vals[1].ty) && !fits(&vals[1].ty, &vals[0].ty) {
-                    return Err(self.err(format!("an equality of {:?} and {:?}", vals[0].ty, vals[1].ty)));
-                }
-                for (i, v) in vals.iter().enumerate() {
-                    self.at(i, |c| c.exact_use(Site::Operand, v, "an operand of an exact equality"));
+                let (a, b) = (&vals[0], &vals[1]);
+                let what = "an operand of an exact equality";
+                self.at(0, |c| c.exact_use(Site::Operand, a, what));
+                if fits(&a.ty, &b.ty) || fits(&b.ty, &a.ty) {
+                    self.at(1, |c| c.exact_use(Site::Operand, b, what));
+                } else {
+                    self.at(1, |c| c.misfit(&type_text(&a.ty), b, what));
                 }
                 Ok(Val::exact(Ty::Bool))
             }
             Prim::And | Prim::Or | Prim::Not => {
                 for (i, v) in vals.iter().enumerate() {
-                    if !matches!(v.ty, Ty::Bool | Ty::ApproxBool) {
-                        return Err(self.err(format!("{op:?} on a {:?}", v.ty)));
+                    if fits(&Ty::Bool, &v.ty) {
+                        self.at(i, |c| c.exact_use(Site::Control, v, "a short-circuit exact boolean"));
+                    } else {
+                        self.at(i, |c| c.misfit("Bool", v, &what));
                     }
-                    self.at(i, |c| c.exact_use(Site::Control, v, "a short-circuit exact boolean"));
                 }
                 Ok(Val::exact(Ty::Bool))
             }
             Prim::ToApprox(p) => {
                 let v = &vals[0];
-                if !is_exact_number(&v.ty) {
-                    return Err(self.err(format!("an approximate conversion of a {:?}", v.ty)));
+                if is_exact_number(&v.ty) {
+                    return Ok(Val::new(Ty::Approx(p), Qual::Approx.join(v.qual)));
                 }
-                Ok(Val::new(Ty::Approx(p), Qual::Approx.join(v.qual)))
+                if !is_unknown(&v.ty) {
+                    self.at(0, |c| c.misfit("Nat | Int | Rat | Q5 | Budget", v, "an approximate conversion"));
+                }
+                Ok(Val::new(Ty::Approx(p), Qual::Approx))
             }
             Prim::ToExact => {
                 let v = &vals[0];
-                if !is_integer(&v.ty) && !matches!(v.ty, Ty::Approx(_)) {
-                    return Err(self.err(format!("an exact conversion of a {:?}", v.ty)));
+                let what = "a conversion back to exact";
+                if is_integer(&v.ty) || matches!(v.ty, Ty::Approx(_)) || is_unknown(&v.ty) {
+                    self.at(0, |c| c.exact_use(Site::Convert, v, what));
+                } else {
+                    self.at(0, |c| c.misfit("Approx<_> | Nat | Int | Budget", v, what));
                 }
-                self.at(0, |c| c.exact_use(Site::Convert, v, "a conversion back to exact"));
                 Ok(Val::exact(Ty::Int))
             }
             Prim::ApproxAdd | Prim::ApproxLess => {
-                let p = match (&vals[0].ty, &vals[1].ty) {
-                    (Ty::Approx(p), Ty::Approx(q)) if p == q => *p,
-                    (a, b) => {
-                        return Err(self.err(format!("{op:?} takes two Approx of one precision, not {a:?} and {b:?}")))
+                // The first operand of an approximate type fixes the precision.
+                let mut precision: Option<u32> = None;
+                let mut q = Qual::Approx;
+                let mut unknown_operand = false;
+                for (i, v) in vals.iter().enumerate() {
+                    match (&v.ty, precision) {
+                        (Ty::Approx(p), None) => precision = Some(*p),
+                        (Ty::Approx(p), Some(first)) if *p == first => {}
+                        (t, _) if is_unknown(t) => {
+                            unknown_operand = true;
+                            continue;
+                        }
+                        _ => {
+                            let expected =
+                                precision.map_or_else(|| "Approx<_>".to_string(), |p| format!("Approx<P{p}>"));
+                            self.at(i, |c| c.misfit(&expected, v, &what));
+                            unknown_operand = true;
+                            continue;
+                        }
                     }
-                };
-                let q = vals[0].qual.join(vals[1].qual);
-                Ok(if op == Prim::ApproxAdd {
-                    Val::new(Ty::Approx(p), q)
-                } else {
-                    Val::new(Ty::ApproxBool, cond_of(q))
+                    q = q.join(v.qual);
+                }
+                Ok(match (op, precision) {
+                    (Prim::ApproxLess, _) => Val::new(Ty::ApproxBool, cond_of(q)),
+                    (_, Some(p)) if !unknown_operand => Val::new(Ty::Approx(p), q),
+                    _ => Val::unknown(),
                 })
             }
             Prim::ApproxAnd | Prim::ApproxNot => {
                 let mut q = Qual::Cond;
-                for v in vals {
-                    if v.ty != Ty::ApproxBool {
-                        return Err(self.err(format!("{op:?} on a {:?}", v.ty)));
+                for (i, v) in vals.iter().enumerate() {
+                    if v.ty == Ty::ApproxBool {
+                        q = q.join(v.qual);
+                    } else if !is_unknown(&v.ty) {
+                        self.at(i, |c| c.misfit("ApproxBool", v, &what));
                     }
-                    q = q.join(v.qual);
                 }
                 Ok(Val::new(Ty::ApproxBool, cond_of(q)))
             }
