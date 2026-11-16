@@ -206,3 +206,42 @@ fn effects_and_capabilities_lower_to_the_ir_bound() {
     assert_eq!(bound.capabilities.iter().copied().collect::<Vec<_>>(), [Capability::File, Capability::Clock]);
     assert_eq!(bound.vars.iter().map(String::as_str).collect::<Vec<_>>(), ["E"]);
 }
+
+#[test]
+fn exact_arithmetic_takes_rationals_and_q5_values() {
+    // Z ⊂ Q ⊂ Q(√5): exact addition, ordering and equality take rationals and Q(√5) values, and integers widen to
+    // them in operands, branches, arguments and results (LG1.6).
+    let accepted = [
+        "fn f() -> Rat effects [] {\n    return exact_add(1/2, 1/3);\n}\n",
+        "fn f(x: Rat) -> Rat effects [] {\n    return exact_add(x, 1);\n}\n",
+        "fn f(x: Rat) -> Q5 effects [] {\n    return exact_add(q5(1/2, 1/2), x);\n}\n",
+        "fn f(x: Q5, n: Int) -> Bool effects [] {\n    return exact_less(x, n);\n}\n",
+        "fn f(x: Rat) -> Bool effects [] {\n    return exact_eq(x, 2);\n}\n",
+        "fn f(c: Bool) -> Q5 effects [] {\n    return if(c, 1/2, q5(0/1, 1/1));\n}\n",
+        "fn half(x: Rat) -> Rat effects [] {\n    return x;\n}\n\nfn f() -> Q5 effects [] {\n    return half(3);\n}\n",
+    ];
+    for declaration in accepted {
+        let lowered = lowered(&[&tool(declaration)]).unwrap();
+        let report = check(&lowered.program).unwrap_or_else(|e| panic!("{declaration}: {e}"));
+        assert!(report.diagnostics.is_empty(), "{declaration}: {:#?}", report.diagnostics);
+    }
+    // A wider result does not fit a narrower slot, and a budget is a cost that mixes with integers only (LG2.6).
+    let refused = [
+        ("fn f() -> Int effects [] {\n    return exact_add(1/2, 1);\n}\n", "Rat"),
+        ("fn f(b: Budget) -> Bool effects [] {\n    return exact_less(b, 1/2);\n}\n", "Budget and a Rat"),
+        ("fn f(b: Budget) -> Q5 effects [] {\n    return exact_add(q5(1/1, 0/1), b);\n}\n", "Budget and a Q5"),
+    ];
+    for (declaration, why) in refused {
+        let lowered = lowered(&[&tool(declaration)]).unwrap();
+        match check(&lowered.program) {
+            Ok(report) => panic!("{declaration}: checked, {:#?}", report.diagnostics),
+            Err(e) => assert!(e.to_string().contains(why), "{declaration}: {e}"),
+        }
+    }
+    // An approximate operand at a rational exact addition stays an exactness refusal, not malformed IR.
+    let source = tool("fn f(x: Rat) -> Rat effects [] {\n    return exact_add(approx53(x), 1/2);\n}\n");
+    let lowered = lowered(&[&source]).unwrap();
+    let report = check(&lowered.program).unwrap();
+    assert_eq!(report.diagnostics.len(), 1, "{:#?}", report.diagnostics);
+    assert_eq!(fields(&report.diagnostics[0]).0, "LG2:type.exact_required");
+}

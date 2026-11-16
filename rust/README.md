@@ -100,10 +100,13 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   `preview`, `budget`; `file` and `random` also name their capability), capabilities (`file`, `clock`, `random`,
   `network`, `process`, `session_file`) and generic effect variables. A module's `requires [...]` lists capabilities
   only; an effect there is refused (LG3.8, LG3.9).
-- Exact literals (LG1.5, CT-LG1-05). Integers of any length, rationals with a nonzero denominator and the sign on the
+- Exact literals (LG1.6, CT-LG1-05). Integers of any length, rationals with a nonzero denominator and the sign on the
   numerator, Q(√5) pairs and words keep exact decimal text in the IR; `~53"0.125"` keeps its decimal text and its
   precision. A rational is not reduced to lowest terms until the big-integer answer (M2), so `6/8` and `3/4` are
   different literals for now.
+- Exact numbers in the checker. `exact_add`, `exact_less` and `exact_eq` take `Rat` and `Q5` values too, and `Nat` and
+  `Int` widen to `Rat` and `Rat` to `Q5` (Z ⊂ Q ⊂ Q(√5)) in operands, branches, arguments and results. A `Budget` is
+  a cost and mixes with integers only (LG2.6). Running this arithmetic and its tariffs are KN3's and come with M2.
 - Recovery (CT-LG1-04). A damaged declaration becomes a recovery hole with `LG1:syntax.recovery_gap`, and parsing
   resumes at the next `fn`, `view`, `command`, `import` or `export` in column 1. A draft with a hole has no layout and
   does not lower.
