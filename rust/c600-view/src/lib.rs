@@ -35,13 +35,17 @@
 //! `tests/view_rows.rs` holds CT-RPI-03, CT-RPI-06, CT-RPI-07, CT-RPI-22 (its limit half), CT-RPI-23, CT-RPI-26 (its
 //! counter half), CT-RPI-36, CT-RPI-37, CT-RM-02, the accounting rows 1, 2, 7 and 9 of CT-RM-09, CT-ONE-30 and
 //! CT-EV3-08 (its admission semantics), each test named after its ID. An ID with a named part runs only that part.
+//! It also holds L11's three leads, `l11_a` to `l11_c`: a burst while the view is blocked, output of an older engine
+//! epoch, and a recomputation naming `view.open` or `view.close`.
 //!
 //! # Drafts
 //!
 //! Where a clause leaves a choice open or names no code, this crate takes the smallest reasonable option:
 //!
 //! - RPI.83 names no code for a recomputation that names `view.open` or `view.close`. It is refused with the
-//!   existing `LG3:capability.not_granted`. The command layer states the caller as an [`Origin`].
+//!   existing `LG3:capability.not_granted`. The command layer states the caller as an [`Origin`] and passes the
+//!   command ID of either row; a [`CommandId::Scheduled`] is a recomputation this model started (LI.25), so it is
+//!   refused whatever origin is stated.
 //! - LI.22, RPI.42: Global and Local have the fixed `ViewId`s `global` and `local`. They are always open and always
 //!   visible; hide and show leave them unchanged.
 //! - RPI.83, KN5.21: `view.open` and `view.close` return a `Result` at admission. KN5.21 has no completion kind for
@@ -71,12 +75,20 @@
 //!   resized view back; fallen-back stages return in open order once a recharge fits.
 //! - RM.39, KN7.8: eviction drops a hidden view's output and retained read results and moves its resources to safe
 //!   retirement, so showing it again runs its program.
-//! - KN0.2, RPI.9, ONE.60: one view model serves one session in one engine epoch. A bundle older than the adopted one,
-//!   or reusing its counters with other content, is `refresh_required(EV3:input.display_bundle_mismatch)`;
-//!   re-delivering the identical bundle changes nothing.
-//! - ONE.10, KN7.3, KN7.8: a read result can reappear only for a host-scheduled run of the same view. Its key is the
-//!   state digest and the workspace and protection counters of its declared parts. Reuse is charged as a miss,
-//!   output included. A view keeps at most [`model::CACHE_LIMIT`] results.
+//! - KN0.2, KN5.21, RPI.9, ONE.60: one view model serves one session across engine epochs, so its generations, job
+//!   IDs and scheduled command IDs are never reused. An epoch is a number that grows with each engine start, and
+//!   counters order revisions only within one. A bundle of an older epoch, an older bundle of the adopted epoch, or
+//!   one reusing the adopted epoch and counters with other content is
+//!   `refresh_required(EV3:input.display_bundle_mismatch)`; re-delivering the identical bundle changes nothing. A
+//!   bundle of a newer epoch is adopted whatever its counters.
+//! - KN0.2, ONE.63, ONE.70: output attaches only to a revision of its own epoch, whatever parts it declares: a restart
+//!   ends the old epoch's jobs, and its counters name other revisions in the new epoch. Adopting a newer epoch fences
+//!   every runner and pending publication and counts every further view's dependencies as moved, `Depends::NONE`
+//!   included. The bundle digest and the canonical publication bytes (version 2) bind the epoch.
+//! - ONE.10, ONE.17, KN7.3, KN7.8: a read result can reappear only for a host-scheduled run of the same view. Its key
+//!   is the state digest, which matches in any epoch, and the epoch and counter of a declared workspace or protection
+//!   part. Reuse is a new install bound to the new base and is charged as a miss, output included. A view keeps at
+//!   most [`model::CACHE_LIMIT`] results.
 //! - LI.16, RM.13: the canonical bytes stand in for H8's canonical uncompressed output bytes (a version byte,
 //!   unsigned LEB128 integers and length-prefixed byte strings). The [`Transport`] of a publication is never charged.
 //! - LG3.9, RPI.42, EV3.11: a view model is created for one session's [`Profile`]. No rule here reads it: Global and

@@ -78,6 +78,12 @@ pub enum Origin {
     Recomputation,
 }
 
+/// RPI.83: `view.open` and `view.close` run only inside a command the solver invoked. A [`CommandId::Scheduled`] is a
+/// recomputation this model started (LI.25), so it holds no permission, whatever origin a caller states for it.
+fn solver_command(command: CommandId, origin: Origin) -> bool {
+    origin == Origin::Solver && !matches!(command, CommandId::Scheduled(_))
+}
+
 /// The declared per-frame workload of a view (RM.38, RM.39, RPI.71, RPI.82).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Workload {
@@ -410,7 +416,11 @@ impl ViewModel {
     /// Adoption never waits for program output. It fences runs and pending publications whose declared dependencies
     /// moved (`cancelled(replaced_revision)`), and each further view whose declared dependencies moved records the
     /// newest invalidation: a visible view gets one scheduled run at the newest revision, a hidden view only keeps
-    /// the invalidation (RPI.11, RPI.12). Re-adopting the identical bundle changes nothing.
+    /// the invalidation (RPI.11, RPI.12). Re-adopting the identical bundle changes nothing. A bundle of a newer engine
+    /// epoch is adopted whatever its counters, and every declared dependency counts as moved, `Depends::NONE`
+    /// included: the old epoch's runs and pending publications are fenced and every further view is invalidated as
+    /// above, where a retained read result may come back (KN0.2, ONE.10, ONE.63, ONE.70). A bundle of an older epoch is
+    /// out of order.
     pub fn adopt(&mut self, candidate: &BundleCandidate) -> Result<Revision, Error> {
         let complete = validate_engine_bundle(candidate)?;
         let old = *self.bundle.revision();
@@ -490,18 +500,20 @@ impl ViewModel {
 
     /// `view.open {view, source}`: opens a further view, visible, and schedules its first run.
     ///
-    /// Only a solver-invoked command may open a view; a recomputation gets `LG3:capability.not_granted` (draft).
-    /// Naming an open view, Global or Local included, is `EV3:input.view_id_in_use`. Opening past `frame_work`,
-    /// `view_vertex_evals`, `adapter_cpu_bytes` or `adapter_gpu_bytes` is refused with
+    /// Only a solver-invoked command may open a view. A recomputation gets `LG3:capability.not_granted` (draft): a
+    /// stated [`Origin::Recomputation`], or a [`CommandId::Scheduled`] that this model minted for one, whatever origin
+    /// is stated. Naming an open view, Global or Local included, is `EV3:input.view_id_in_use`. Opening past
+    /// `frame_work`, `view_vertex_evals`, `adapter_cpu_bytes` or `adapter_gpu_bytes` is refused with
     /// `EV3:resource_limit.display_plan_ceiling`; nothing is queued. Returns the view's generation.
     pub fn open_view(
         &mut self,
+        command: CommandId,
         origin: Origin,
         view: ViewId,
         source: ViewSource,
         declared: Declared,
     ) -> Result<u64, Error> {
-        if origin != Origin::Solver {
+        if !solver_command(command, origin) {
             return Err(Error::refusal(code::NOT_GRANTED, Context::View(view.0)));
         }
         if self.views.contains_key(&view) {
@@ -522,15 +534,16 @@ impl ViewModel {
     /// The close is a newer request on the view's lane, so unfinished work there ends
     /// `cancelled(superseded(by: command))` (LI.23). The view's resources move to safe retirement and stay charged
     /// until [`ViewModel::complete_retirement`] (RM.19). Global, Local and unknown views give
-    /// `EV3:input.view_not_closable`; a recomputation gets `LG3:capability.not_granted` (draft). Returns the
-    /// retirement token, or `None` when an eviction already retired the view's resources.
+    /// `EV3:input.view_not_closable`; a recomputation, stated or by its [`CommandId::Scheduled`], gets
+    /// `LG3:capability.not_granted` (draft). Returns the retirement token, or `None` when an eviction already retired
+    /// the view's resources.
     pub fn close_view(
         &mut self,
         command: CommandId,
         origin: Origin,
         view: &ViewId,
     ) -> Result<Option<RetireToken>, Error> {
-        if origin != Origin::Solver {
+        if !solver_command(command, origin) {
             return Err(Error::refusal(code::NOT_GRANTED, Context::View(view.0.clone())));
         }
         if view.is_fixed() || !self.views.contains_key(view) {
@@ -831,11 +844,11 @@ impl ViewModel {
         true
     }
 
-    /// Validates and prepares, rechecks dependencies, charges output and installs (RM.13, RM.17, RM.20, LI.25). `request`
-    /// is the command, its job, its base and its output allowance. `provenance` is the block a standalone publication
-    /// carries; `None` means a run of the view's source, whose block the host fills from the session's profile, the
-    /// view's source and its declared class (BND.22). `remember` keeps a run's read result for ONE.10's reuse; host
-    /// publications and reused results are not kept again.
+    /// Validates and prepares, rechecks dependencies, charges output and installs (RM.13, RM.17, RM.20, LI.25).
+    /// `request` is the command, its job, its base and its output allowance. `provenance` is the block a standalone
+    /// publication carries; `None` means a run of the view's source, whose block the host fills from the session's
+    /// profile, the view's source and its declared class (BND.22). `remember` keeps a run's read result for ONE.10's
+    /// reuse; host publications and reused results are not kept again.
     fn finalize(
         &mut self,
         view: &ViewId,

@@ -7,6 +7,10 @@ use c600_view::*;
 
 const BIG: u64 = 1_000_000;
 
+/// The command ID the command layer gives a solver's `view.open` in these tests; the view model keeps no receipt for
+/// it (RPI.83).
+const OPEN: CommandId = CommandId::Caller(BIG);
+
 /// A complete fixture profile: every field generous, `overdraw` 1, then the overrides.
 fn profile(overrides: &[(&str, u64)]) -> LimitProfile {
     let entries: Vec<(&str, u64, &str)> = Field::ALL
@@ -20,8 +24,13 @@ fn profile(overrides: &[(&str, u64)]) -> LimitProfile {
     LimitProfile::from_entries("fixture-1", &entries).expect("a complete fixture profile")
 }
 
+/// A revision of engine epoch 1.
 fn rev(state: u64, workspace: u64, protection: u64, tag: u8) -> Revision {
-    Revision::new(state, workspace, protection, [tag; 32])
+    rev_in(1, state, workspace, protection, tag)
+}
+
+fn rev_in(epoch: u64, state: u64, workspace: u64, protection: u64, tag: u8) -> Revision {
+    Revision::new(epoch, state, workspace, protection, [tag; 32])
 }
 
 fn part(kind: PartKind, revision: Revision) -> BundlePart {
@@ -62,7 +71,9 @@ fn overlay(name: &str) -> ViewSource {
 
 fn open(model: &mut ViewModel, name: &str, depends: Depends) -> ViewId {
     let view = ViewId::new(name);
-    model.open_view(Origin::Solver, view.clone(), overlay(name), declared(depends, workload(1, 1))).expect("it fits");
+    model
+        .open_view(OPEN, Origin::Solver, view.clone(), overlay(name), declared(depends, workload(1, 1)))
+        .expect("it fits");
     view
 }
 
@@ -451,7 +462,8 @@ fn ct_rpi_23_global_and_local_stay_linked_and_further_views_open_under_every_pro
         assert_eq!(model.session_profile(), session);
         let mut trace = Vec::new();
         for ((view, source), (work, _)) in further.iter().zip(evaluators()) {
-            let opened = model.open_view(Origin::Solver, view.clone(), source.clone(), declared(Depends::STATE, work));
+            let opened =
+                model.open_view(OPEN, Origin::Solver, view.clone(), source.clone(), declared(Depends::STATE, work));
             trace.push(format!("open {view:?}: {opened:?}"));
         }
         for state in 12..=14 {
@@ -503,7 +515,7 @@ fn ct_rpi_23_built_in_output_keeps_the_interim_boundary_under_either_chart_evalu
             for class in BoundaryClass::ALL {
                 let mut model = model_in(session, profile(&[("frame_work", 40)]), rev(11, 1, 1, 11));
                 let decl = Declared { class: Some(class), ..declared(Depends::STATE, work) };
-                model.open_view(Origin::Solver, view.clone(), built_in("repair"), decl).expect("fits");
+                model.open_view(OPEN, Origin::Solver, view.clone(), built_in("repair"), decl).expect("fits");
                 let block = Provenance { profile: session, producer: built_in("repair"), class: Some(class) };
                 model.pump(|job| RunOutcome::Published(content(job.job.0 as u8)));
                 drawn(&model, stage, &block);
@@ -610,15 +622,15 @@ fn ct_rpi_36_view_rows_need_a_solver_command_and_global_and_local_stay_open() {
     let v = ViewId::new("v");
     let decl = declared(Depends::STATE, workload(1, 1));
 
-    let error = model.open_view(Origin::Recomputation, v.clone(), overlay("v"), decl).expect_err("no permission");
+    let error = model.open_view(OPEN, Origin::Recomputation, v.clone(), overlay("v"), decl).expect_err("no permission");
     assert_eq!((error.code, error.form), (code::NOT_GRANTED, Form::Refusal));
     assert_eq!(model.views(), &fixed);
 
-    model.open_view(Origin::Solver, v.clone(), overlay("v"), decl).expect("a solver command opens it");
+    model.open_view(OPEN, Origin::Solver, v.clone(), overlay("v"), decl).expect("a solver command opens it");
     let (_, first) = model.runner(&v).expect("its first run");
     for name in ["v", "global", "local"] {
         let source = ViewSource::BuiltIn { name: "orbit".to_string() };
-        let error = model.open_view(Origin::Solver, ViewId::new(name), source, decl).expect_err("in use");
+        let error = model.open_view(OPEN, Origin::Solver, ViewId::new(name), source, decl).expect_err("in use");
         assert_eq!(error.code, code::VIEW_ID_IN_USE);
         assert_eq!(error.context, Context::View(name.to_string()));
     }
@@ -640,7 +652,8 @@ fn ct_rpi_36_view_rows_need_a_solver_command_and_global_and_local_stay_open() {
     assert_eq!(model.views(), &fixed);
     assert_eq!(model.generation(&v), None);
 
-    let generation = model.open_view(Origin::Solver, v.clone(), overlay("v"), decl).expect("the ID is free again");
+    let generation =
+        model.open_view(OPEN, Origin::Solver, v.clone(), overlay("v"), decl).expect("the ID is free again");
     assert!(generation > model.generation(&ViewId::local()).expect("open"));
 }
 
@@ -656,11 +669,11 @@ fn ct_rpi_37_view_budget_vectors() {
     let w = ViewId::new("w");
     let heavy =
         declared(Depends::STATE, Workload { vertex_evals: 60, cpu_bytes: 10, gpu_bytes: 40, ..Workload::default() });
-    model.open_view(Origin::Solver, v.clone(), overlay("v"), heavy).expect("fits");
+    model.open_view(OPEN, Origin::Solver, v.clone(), overlay("v"), heavy).expect("fits");
     assert_eq!(model.usage().view_vertex_evals, 60);
 
     for _ in 0..100 {
-        let error = model.open_view(Origin::Solver, w.clone(), overlay("w"), heavy).expect_err("over");
+        let error = model.open_view(OPEN, Origin::Solver, w.clone(), overlay("w"), heavy).expect_err("over");
         assert_eq!((error.code, error.form), (code::DISPLAY_PLAN_CEILING, Form::Refusal));
         assert_eq!(ceiling(&error), ("view_vertex_evals", 120, 100));
     }
@@ -671,7 +684,7 @@ fn ct_rpi_37_view_budget_vectors() {
     assert!(model.hide(&v));
     assert_eq!(model.usage().view_vertex_evals, 0);
     assert_eq!(model.usage().adapter_gpu_bytes, 40);
-    model.open_view(Origin::Solver, w.clone(), overlay("w"), heavy).expect("fits beside the hidden view");
+    model.open_view(OPEN, Origin::Solver, w.clone(), overlay("w"), heavy).expect("fits beside the hidden view");
     assert_eq!(model.usage().view_vertex_evals, 60);
     assert_eq!(model.usage().adapter_gpu_bytes, 80);
 
@@ -807,19 +820,19 @@ fn ct_rm_09_row_1_hidden_bytes_stay_charged() {
     let need = declared(Depends::STATE, Workload { gpu_bytes: 70, ..Workload::default() });
     let v = ViewId::new("v");
     let w = ViewId::new("w");
-    model.open_view(Origin::Solver, v.clone(), overlay("v"), need).expect("fits");
+    model.open_view(OPEN, Origin::Solver, v.clone(), overlay("v"), need).expect("fits");
     assert!(model.hide(&v));
     assert_eq!(model.usage().adapter_gpu_bytes, 70);
 
-    let error = model.open_view(Origin::Solver, w.clone(), overlay("w"), need).expect_err("over");
+    let error = model.open_view(OPEN, Origin::Solver, w.clone(), overlay("w"), need).expect_err("over");
     assert_eq!((error.code, error.form), (code::DISPLAY_PLAN_CEILING, Form::Refusal));
     assert_eq!(ceiling(&error), ("adapter_gpu_bytes", 140, 100));
 
     let token = model.close_view(CommandId::Caller(1), Origin::Solver, &v).expect("closed").expect("retiring");
-    let error = model.open_view(Origin::Solver, w.clone(), overlay("w"), need).expect_err("still retiring");
+    let error = model.open_view(OPEN, Origin::Solver, w.clone(), overlay("w"), need).expect_err("still retiring");
     assert_eq!(ceiling(&error), ("adapter_gpu_bytes", 140, 100));
     assert!(model.complete_retirement(token));
-    model.open_view(Origin::Solver, w.clone(), overlay("w"), need).expect("fits after retirement");
+    model.open_view(OPEN, Origin::Solver, w.clone(), overlay("w"), need).expect("fits after retirement");
     assert_eq!(model.usage().adapter_gpu_bytes, 70);
 }
 
@@ -832,7 +845,7 @@ fn ct_rm_09_row_2_retiring_bytes_block_early_reuse() {
     let v = ViewId::new("v");
 
     let mut model = model_at(profile(&[("adapter_gpu_bytes", 100)]), rev(11, 1, 1, 11));
-    model.open_view(Origin::Solver, v.clone(), overlay("v"), need).expect("fits");
+    model.open_view(OPEN, Origin::Solver, v.clone(), overlay("v"), need).expect("fits");
     run_all(&mut model);
     assert!(model.hide(&v));
     let token = model.evict(&v).expect("evicted");
@@ -843,14 +856,14 @@ fn ct_rm_09_row_2_retiring_bytes_block_early_reuse() {
     assert_eq!(ceiling(&error), ("adapter_gpu_bytes", 140, 100));
     assert!(!model.is_visible(&v));
     assert_eq!(model.close_view(CommandId::Caller(1), Origin::Solver, &v), Ok(None));
-    let error = model.open_view(Origin::Solver, v.clone(), overlay("v"), need).expect_err("over");
+    let error = model.open_view(OPEN, Origin::Solver, v.clone(), overlay("v"), need).expect_err("over");
     assert_eq!(ceiling(&error), ("adapter_gpu_bytes", 140, 100));
     assert!(model.complete_retirement(token));
-    model.open_view(Origin::Solver, v.clone(), overlay("v"), need).expect("fits after retirement");
+    model.open_view(OPEN, Origin::Solver, v.clone(), overlay("v"), need).expect("fits after retirement");
     assert_eq!(model.usage().adapter_gpu_bytes, 70);
 
     let mut model = model_at(profile(&[("adapter_gpu_bytes", 140)]), rev(11, 1, 1, 11));
-    model.open_view(Origin::Solver, v.clone(), overlay("v"), need).expect("fits");
+    model.open_view(OPEN, Origin::Solver, v.clone(), overlay("v"), need).expect("fits");
     run_all(&mut model);
     assert!(model.hide(&v));
     model.evict(&v).expect("evicted");
@@ -893,7 +906,7 @@ fn ct_rm_09_row_9_resize_recharges_frame_work() {
     let mut model = model_at(profile(&[("frame_work", 600), ("overdraw", 4)]), rev(11, 1, 1, 11));
     let v = ViewId::new("v");
     let work = Workload { vertex_evals: 10, stage_ops: 10, fragment_ops: 1, pixels: 100, ..Workload::default() };
-    model.open_view(Origin::Solver, v.clone(), overlay("v"), declared(Depends::STATE, work)).expect("fits");
+    model.open_view(OPEN, Origin::Solver, v.clone(), overlay("v"), declared(Depends::STATE, work)).expect("fits");
     run_all(&mut model);
     assert_eq!(model.frame_work_of(&v), Some(500));
     assert_eq!(model.usage().frame_work, 500);
@@ -930,7 +943,7 @@ fn ct_one_30_further_view_keeps_its_base_identity_and_source() {
     let v = ViewId::new("v");
     let source = overlay("v");
     let generation = model
-        .open_view(Origin::Solver, v.clone(), source.clone(), declared(Depends::STATE, workload(1, 1)))
+        .open_view(OPEN, Origin::Solver, v.clone(), source.clone(), declared(Depends::STATE, workload(1, 1)))
         .expect("fits");
     assert_eq!(model.shown_revision(&ViewId::global()), Some(r12));
     assert_eq!(model.shown_revision(&ViewId::local()), Some(r12));
@@ -1013,14 +1026,15 @@ fn ct_ev3_08_admission_semantics_in_every_profile() {
         let mut trace = Vec::new();
 
         // RPI.83: only a solver command opens a view; a recomputation holds no permission.
-        let refused = model.open_view(Origin::Recomputation, v.clone(), built_in("orbit"), heavy);
+        let refused = model.open_view(OPEN, Origin::Recomputation, v.clone(), built_in("orbit"), heavy);
         assert_eq!(refused.map_err(|error| error.code), Err(code::NOT_GRANTED));
         assert_eq!(model.views(), &fixed);
 
         // RPI.81: identity is a `ViewId` in the view namespace and a generation; an ID in use is refused.
-        let generation = model.open_view(Origin::Solver, v.clone(), built_in("orbit"), heavy).expect("admitted");
+        let generation = model.open_view(OPEN, Origin::Solver, v.clone(), built_in("orbit"), heavy).expect("admitted");
         for name in ["v", "global", "local"] {
-            let error = model.open_view(Origin::Solver, ViewId::new(name), overlay(name), light).expect_err("in use");
+            let error =
+                model.open_view(OPEN, Origin::Solver, ViewId::new(name), overlay(name), light).expect_err("in use");
             assert_eq!(error.code, code::VIEW_ID_IN_USE);
         }
         run_recording(&mut model, &mut commands);
@@ -1049,7 +1063,7 @@ fn ct_ev3_08_admission_semantics_in_every_profile() {
         trace.push(format!("{:?}", model.status(&v)));
 
         // RM.39, RPI.82: opening past a ceiling is refused, naming field, request and ceiling, and queues nothing.
-        let error = model.open_view(Origin::Solver, w.clone(), overlay("w"), heavy).expect_err("over");
+        let error = model.open_view(OPEN, Origin::Solver, w.clone(), overlay("w"), heavy).expect_err("over");
         assert_eq!((error.code, ceiling(&error)), (code::DISPLAY_PLAN_CEILING, ("view_vertex_evals", 120, 100)));
         assert_eq!((model.generation(&w), model.pending(&w)), (None, None));
 
@@ -1057,11 +1071,11 @@ fn ct_ev3_08_admission_semantics_in_every_profile() {
         assert!(model.hide(&v));
         let usage = model.usage();
         assert_eq!((usage.view_vertex_evals, usage.adapter_cpu_bytes, usage.adapter_gpu_bytes), (0, 30, 40));
-        model.open_view(Origin::Solver, w.clone(), overlay("w"), heavy).expect("fits beside the hidden view");
+        model.open_view(OPEN, Origin::Solver, w.clone(), overlay("w"), heavy).expect("fits beside the hidden view");
         let error = model.show(&v).expect_err("over");
         assert_eq!(ceiling(&error), ("view_vertex_evals", 120, 100));
         assert!(!model.is_visible(&v));
-        let error = model.open_view(Origin::Solver, x.clone(), overlay("x"), light).expect_err("over");
+        let error = model.open_view(OPEN, Origin::Solver, x.clone(), overlay("x"), light).expect_err("over");
         assert_eq!(ceiling(&error), ("adapter_gpu_bytes", 110, 100));
         trace.push(format!("{:?}", model.usage()));
 
@@ -1070,13 +1084,13 @@ fn ct_ev3_08_admission_semantics_in_every_profile() {
         let refused = model.close_view(CommandId::Caller(2), Origin::Recomputation, &v);
         assert_eq!(refused.map_err(|error| error.code), Err(code::NOT_GRANTED));
         assert_eq!(model.close_view(CommandId::Caller(3), Origin::Solver, &v), Ok(None));
-        let error = model.open_view(Origin::Solver, x.clone(), overlay("x"), light).expect_err("still retiring");
+        let error = model.open_view(OPEN, Origin::Solver, x.clone(), overlay("x"), light).expect_err("still retiring");
         assert_eq!(ceiling(&error), ("adapter_gpu_bytes", 110, 100));
         assert!(model.complete_retirement(token));
-        model.open_view(Origin::Solver, x.clone(), overlay("x"), light).expect("fits after retirement");
+        model.open_view(OPEN, Origin::Solver, x.clone(), overlay("x"), light).expect("fits after retirement");
 
         // RM.25: a reopened ID is a new identity.
-        let reopened = model.open_view(Origin::Solver, v.clone(), built_in("orbit"), light).expect("free again");
+        let reopened = model.open_view(OPEN, Origin::Solver, v.clone(), built_in("orbit"), light).expect("free again");
         assert!(reopened > generation);
         assert_eq!(run_recording(&mut model, &mut commands), 3);
         trace.push(format!("{reopened} {:?} {:?}", model.usage(), model.views()));
@@ -1235,4 +1249,176 @@ fn rpi_09_incomplete_or_mismatched_bundles_install_nothing() {
     let error = model.adopt(&short).expect_err("incomplete");
     assert_eq!(error.context, Context::Bundle(BundleFault::Missing(PartKind::PoseIndices)));
     assert_eq!(*model.adopted(), r13);
+}
+
+// ----- L11's leads
+
+/// L11, lead (a): five revisions in a burst while the view is blocked leave at most one pending request, and the view
+/// moves to the newest. A taken run that does not finish holds the view's runner slot, with a host publication
+/// waiting behind it. After each adoption the stalled run still holds the slot, exactly one admitted request is
+/// unsettled, and Global, Local and the frame show the adopted revision. The waiting publication ends
+/// `cancelled(replaced_revision)`, and the whole burst admits one recomputation, whose base binds when it starts. The
+/// late completion installs nothing, and the one pending run starts and installs at the newest revision (KN7.2,
+/// LI.23, LI.25, ONE.64, RPI.12, RM.22). Not confirmed: the crate already behaved this way.
+#[test]
+fn l11_a_a_burst_of_five_revisions_while_blocked_leaves_one_pending_request_at_the_newest() {
+    let mut model = model_at(profile(&[]), rev(11, 1, 1, 11));
+    let (v, held) = held_view(&mut model, "v");
+    let waiting = CommandId::Caller(1);
+    let input = publication(&model, &v, content(1), OutputAllowance::new(BIG, 16));
+    assert_eq!(model.publish(waiting, &v, input), Status::Accepted);
+    let before = model.counters(&v).expect("open");
+
+    let mut admitted = vec![waiting];
+    for state in 12..=16 {
+        let next = rev(state, 1, 1, state as u8);
+        assert_eq!(model.adopt(&bundle(next)), Ok(next));
+        assert_eq!(model.runner(&v), Some((held.job, held.command)), "the stalled run still holds the slot");
+        let pending = model.pending(&v).expect("one pending request");
+        if !admitted.contains(&pending) {
+            admitted.push(pending);
+        }
+        let unsettled: Vec<CommandId> = admitted
+            .iter()
+            .copied()
+            .filter(|command| !model.receipt(*command).is_some_and(Status::is_terminal))
+            .collect();
+        assert_eq!(unsettled, vec![pending], "one unsettled request after revision {state}");
+        for view in [ViewId::global(), ViewId::local()] {
+            assert_eq!(model.shown_revision(&view), Some(next));
+        }
+        assert_eq!(model.frame_input().revision, next);
+    }
+    let newest = rev(16, 1, 1, 16);
+    assert_eq!(*model.adopted(), newest);
+    assert_eq!(admitted.len(), 2, "the publication and one recomputation for the whole burst");
+    let scheduled = admitted[1];
+    assert!(matches!(scheduled, CommandId::Scheduled(_)));
+    assert_eq!(model.receipt(waiting), Some(&Status::Cancelled(CancelReason::ReplacedRevision)));
+    assert_eq!(model.status(&v), Some(ViewStatus::Busy { waiting: scheduled, held_by: held.command }));
+    assert_eq!(model.counters(&v).map(|counters| counters.recomputations), Some(before.recomputations + 1));
+    assert!(model.take_jobs().is_empty());
+
+    let late = model.finish(held.job, RunOutcome::Published(content(11)));
+    assert_eq!(late, Some(Status::Cancelled(CancelReason::Superseded { by: waiting })));
+    assert!(model.installed(&v).is_none());
+    let jobs = model.take_jobs();
+    assert_eq!(jobs.len(), 1);
+    assert_eq!((jobs[0].command, jobs[0].base.revision), (scheduled, newest));
+    assert!(matches!(model.finish(jobs[0].job, RunOutcome::Published(content(16))), Some(Status::Completed(_))));
+    assert_eq!(model.shown_revision(&v), Some(newest));
+    let after = Counters {
+        recomputations: before.recomputations + 1,
+        program_runs: before.program_runs + 1,
+        charged_runs: before.charged_runs + 1,
+        cache_hits: before.cache_hits,
+        preparations: before.preparations + 1,
+        installs: before.installs + 1,
+    };
+    assert_eq!(model.counters(&v), Some(after));
+}
+
+/// L11, lead (b): output from an older engine epoch never attaches at the same revision numbers. In epoch 1, view v
+/// (state) shows revision 3, and a producer prepared a publication for v at epoch 1, revision 4, which the host never
+/// adopted because the engine stopped. Epoch 2 recovers the session at a revision with the same numbers and other
+/// content: the prepared publication is refused as `stale.display_plan` and installs nothing. A run taken in epoch 2
+/// is still out when the engine restarts again, and epoch 3 recovers at the same numbers and content, so the bundles
+/// differ only in the epoch. Adoption fences the run, its late completion installs nothing, v's old output is drawn
+/// only as its stale presentation, and v runs again in epoch 3. View c declares no dependencies, and its epoch-1 base
+/// matches nothing in epoch 2 either: its equal read result comes back bound to epoch 2, as a new install charged as a
+/// miss. A bundle of an older epoch is then out of order whatever its counters, and a newer epoch may start its
+/// counters again (KN0.2: counters never decrease within an epoch; ONE.10, ONE.63, ONE.70, RPI.9, KN7.8).
+#[test]
+fn l11_b_output_from_an_older_engine_epoch_never_attaches_at_the_same_revision_numbers() {
+    let first = rev_in(1, 3, 1, 1, 3);
+    let mut model = model_at(profile(&[]), first);
+    let v = open(&mut model, "v", Depends::STATE);
+    let c = open(&mut model, "c", Depends::NONE);
+    assert_eq!(run_all(&mut model), 2);
+    let unadopted = Base::new(rev_in(1, 4, 1, 1, 4), Depends::STATE);
+    let prepared =
+        PublicationInput { base: unadopted, ..publication(&model, &v, content(0xE1), OutputAllowance::new(BIG, 16)) };
+
+    let second = rev_in(2, 4, 1, 1, 0x24);
+    assert_eq!(model.adopt(&bundle(second)), Ok(second));
+    assert_eq!(model.installed(&c).map(|installed| installed.base), Some(Base::new(second, Depends::NONE)));
+    let reuse = model
+        .counters(&c)
+        .map(|counters| (counters.program_runs, counters.charged_runs, counters.cache_hits, counters.installs));
+    assert_eq!(reuse, Some((1, 2, 1, 2)));
+    let refused = Error::refusal(code::STALE_DISPLAY_PLAN, Context::Stale { base: unadopted, adopted: second });
+    assert_eq!(model.publish(CommandId::Caller(1), &v, prepared), Status::Refused(refused));
+    let old = Base::new(first, Depends::STATE);
+    assert_eq!(model.installed(&v).map(|installed| installed.base), Some(old));
+    assert_eq!(draw_of(&model, &v), Some(Draw::Stale { base: old }));
+
+    let out = model.take_jobs().into_iter().find(|job| job.view == v).expect("v runs in epoch 2");
+    assert_eq!(out.base.revision, second);
+    let third = rev_in(3, 4, 1, 1, 0x24);
+    assert_eq!(model.adopt(&bundle(third)), Ok(third));
+    assert_eq!(*model.adopted(), third);
+    assert_ne!(model.frame_input().bundle, *validate_engine_bundle(&bundle(second)).expect("complete").digest());
+    assert!(model.is_fenced(out.job));
+    assert_eq!(model.receipt(out.command), Some(&Status::Cancelled(CancelReason::ReplacedRevision)));
+    let late = model.finish(out.job, RunOutcome::Published(content(4)));
+    assert_eq!(late, Some(Status::Cancelled(CancelReason::ReplacedRevision)));
+    assert_eq!(model.installed(&v).map(|installed| installed.base), Some(old));
+    assert_eq!(draw_of(&model, &v), Some(Draw::Stale { base: old }));
+    let jobs = model.take_jobs();
+    assert_eq!(jobs.len(), 1);
+    assert_eq!(jobs[0].base.revision, third);
+    assert!(matches!(model.finish(jobs[0].job, RunOutcome::Published(content(4))), Some(Status::Completed(_))));
+    assert_eq!(model.shown_revision(&v), Some(third));
+
+    let older = rev_in(2, 9, 1, 1, 9);
+    let error = model.adopt(&bundle(older)).expect_err("an older epoch");
+    assert_eq!(error.context, Context::Bundle(BundleFault::OutOfOrder { adopted: third, candidate: older }));
+    assert_eq!(*model.adopted(), third);
+    let restarted = rev_in(4, 1, 1, 1, 0x41);
+    assert_eq!(model.adopt(&bundle(restarted)), Ok(restarted));
+    let jobs = model.take_jobs();
+    assert_eq!(jobs.len(), 1);
+    assert_eq!(jobs[0].base.revision, restarted);
+}
+
+/// L11, lead (c): a recomputation that a revision starts cannot open or close a view. After two adoptions, v's first
+/// recomputation holds the runner slot and the next one waits; each is a `CommandId::Scheduled` that the view model
+/// minted. Naming either as the command of `view.close` or `view.open` is refused with `LG3:capability.not_granted`,
+/// whatever origin the caller states: v stays open with its lane as it was, nothing opens, nothing is cancelled and
+/// nothing is charged. A solver's own command then closes v, and the waiting recomputation ends superseded by it
+/// (RPI.83, LI.25).
+#[test]
+fn l11_c_a_recomputation_a_revision_starts_cannot_open_or_close_a_view() {
+    let mut model = model_at(profile(&[]), rev(11, 1, 1, 11));
+    let v = open(&mut model, "v", Depends::STATE);
+    run_all(&mut model);
+    model.adopt(&bundle(rev(12, 1, 1, 12))).expect("adopted");
+    let running = model.take_jobs().into_iter().find(|job| job.view == v).expect("a recomputation runs");
+    model.adopt(&bundle(rev(13, 1, 1, 13))).expect("adopted");
+    let waiting = model.pending(&v).expect("the next recomputation waits");
+    assert!(matches!(running.command, CommandId::Scheduled(_)) && matches!(waiting, CommandId::Scheduled(_)));
+
+    let snapshot = |model: &ViewModel| {
+        let receipts = (model.receipt(running.command).cloned(), model.receipt(waiting).cloned());
+        let lane = (model.runner(&v), model.pending(&v), model.generation(&v));
+        (model.views().to_vec(), receipts, lane, model.usage(), model.retiring())
+    };
+    let before = snapshot(&model);
+    let not_granted = |name: &str| Error::refusal(code::NOT_GRANTED, Context::View(name.to_string()));
+    let w = ViewId::new("w");
+    for command in [running.command, waiting] {
+        for origin in [Origin::Solver, Origin::Recomputation] {
+            let closed = model.close_view(command, origin, &v);
+            assert_eq!(closed, Err(not_granted("v")), "{command:?} closed v as {origin:?}");
+            let decl = declared(Depends::STATE, workload(1, 1));
+            let opened = model.open_view(command, origin, w.clone(), overlay("w"), decl);
+            assert_eq!(opened, Err(not_granted("w")), "{command:?} opened w as {origin:?}");
+            assert_eq!(snapshot(&model), before);
+        }
+    }
+
+    let close = CommandId::Caller(1);
+    assert!(model.close_view(close, Origin::Solver, &v).expect("a solver command closes v").is_some());
+    assert_eq!(model.receipt(waiting), Some(&Status::Cancelled(CancelReason::Superseded { by: close })));
+    assert_eq!(model.views(), &[ViewId::global(), ViewId::local()]);
 }
