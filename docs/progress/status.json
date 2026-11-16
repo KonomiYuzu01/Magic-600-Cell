@@ -139,7 +139,7 @@
       {"id": "m3-runtime-boundary", "title": "Run-time boundary and stored provenance (M3)", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/155"},
       {"id": "m4-kernel-full", "title": "Kernel API and 600-cell-Full candidate adapter (M4)", "weight": 4, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/155"},
       {"id": "m5-kernel-jumbling", "title": "Jumbling half of the kernel API (M5)", "weight": 3, "done": false, "evidence": null},
-      {"id": "m6-session-store", "title": "Session store, budgets and cancellation end to end (M6)", "weight": 2, "done": false, "evidence": null},
+      {"id": "m6-session-store", "title": "Session store, budgets and cancellation end to end (M6)", "weight": 2, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/160"},
       {"id": "m7-parser", "title": "Parser after LQ13 (M7)", "weight": 3, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/154"},
       {"id": "m8-acceptance", "title": "PHS.19 acceptance and the section 15.3 suite (M8)", "weight": 2, "done": false, "evidence": null}
      ]}
