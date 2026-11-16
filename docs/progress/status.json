@@ -146,10 +146,10 @@
     {"id": "1.0-lp3", "track": "language", "title": "Language first closed loop (LP3)", "status": "in_progress", "acceptance": "PHS.23's six acceptance items have evidence on one frozen candidate and the 82 tests that chapter 12 section 15.4 indexes run whole; the owner signs off LP3.", "acceptance_source": "docs/progress/1.0/language-lp3-plan.md", "blocker": null,
      "items": [
       {"id": "plan", "title": "LP3 plan with milestones, acceptance and the 82-test table", "weight": 1, "done": true, "evidence": "docs/progress/1.0/language-lp3-plan.md"},
-      {"id": "c1-command-layer", "title": "Command layer and the O01 to O07 loop on two routes (C1)", "weight": 3, "done": false, "evidence": null},
-      {"id": "c2-display-views", "title": "Headless display contract and views (C2)", "weight": 2, "done": false, "evidence": null},
+      {"id": "c1-command-layer", "title": "Command layer and the O01 to O07 loop on two routes (C1)", "weight": 3, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/159"},
+      {"id": "c2-display-views", "title": "Headless display contract and views (C2)", "weight": 2, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/161"},
       {"id": "c3-runtime-process", "title": "Runtime in its own process (C3)", "weight": 2, "done": false, "evidence": null},
-      {"id": "c4-module-closure", "title": "Module closure (C4)", "weight": 2, "done": false, "evidence": null},
+      {"id": "c4-module-closure", "title": "Module closure (C4)", "weight": 2, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/162"},
       {"id": "c5-source-route", "title": "Source route and the 600-cell-Full tool (C5)", "weight": 3, "done": false, "evidence": null},
       {"id": "c6-representations", "title": "Representations tool, headless half (C6)", "weight": 2, "done": false, "evidence": null},
       {"id": "c7-durable-receipts", "title": "Durable receipts and undo through the session store (C7)", "weight": 2, "done": false, "evidence": null},
