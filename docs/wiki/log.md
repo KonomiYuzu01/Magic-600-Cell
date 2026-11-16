@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-16] decision | Five ways to save the owner's time
+The owner chose five measures that save their time in the language's development: LQ13 is decided directly from a one-page comparison of the three LX-8 candidates without a human test, so CT-RTE-18 stays not run; LP4's non-author tests run at minimal scale; LP3's owner-machine runs are done together in one or two evenings; questions come at most once per milestone; and each phase exit gets one page of summary ([decision](decisions/owner-decisions-2026-11-16-time-saving.md)). No frozen bar moves; the frozen text that restates the old LQ13 procedure is superseded within the decision's scope.
+
 ## [2026-11-15] decision | Fable 5.2 for three proactive read-only tasks
 The owner chose to use Fable 5.2 beyond escalations for three read-only LP2 tasks, one at a time at effort `high`: attack tests for the M1 checker, crash-consistency tests for the M6 session store and the differential test design for the M4 kernel. `AGENTS.md` records it, and the frozen format packet's `AGENTS.md` pin was refreshed under FP.1 with the old and new identities on the decision page.
 
