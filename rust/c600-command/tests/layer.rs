@@ -196,7 +196,8 @@ fn a_word_commits_undoes_and_redoes() {
     let redo = f.undo(Direction::Redo);
     let Status::Committed(again) = &redo.status else { panic!("{:?}", redo.status) };
     assert_eq!((again.post.as_str(), again.revision.state), (end.digest(), 3));
-    assert_eq!(f.layer.undo_hint(Direction::Undo), Some(ActionHint { order: 3, target: 3 }));
+    // A redo repeats the action it names: the undo stack holds that action again, at the current order (M6).
+    assert_eq!(f.layer.undo_hint(Direction::Undo), Some(ActionHint { order: 3, target: 1 }));
     assert_eq!(f.layer.store().log.len(), 3);
 }
 
@@ -218,7 +219,7 @@ fn a_commit_needs_its_token_and_a_presented_preview() {
         command: "t/1".into(),
         row: "operation.execute".into(),
         args: args_digest(&preview_args(id)),
-        identity: kernel().identity().model_id,
+        identity: f.layer.identity_binding(),
         preview: Some(c600_command::PreviewBinding { id, literal: p.literal.clone(), deps: p.deps.clone() }),
         revision: None,
         hint: None,
@@ -283,9 +284,9 @@ fn a_token_from_before_a_commit_and_its_undo_is_refused() {
     let fresh = f.layer.preview().unwrap().clone();
     assert_eq!((fresh.base.digest(), fresh.deps.state), (start.as_str(), 2));
     let before = f.fixed();
-    // The early press named the committed preview, which is no longer pending.
+    // The early press named the committed preview, and the slot holds another one now (draft ruling 1).
     let old = early.token.clone().unwrap().binding;
-    assert_eq!(code_of(&f.shell.send(&mut f.layer, early)), code::NO_FRESH_PREVIEW);
+    assert_eq!(code_of(&f.shell.send(&mut f.layer, early)), code::PREVIEW_REPLACED);
     // Even a token naming the new preview, if it carries the dependencies from before the commit, is stale at step 6:
     // the digest is equal, the revision is not.
     let mut binding = old.clone();
@@ -520,8 +521,12 @@ fn a_commit_refused_at_each_step_changes_nothing() {
     assert_eq!(code_of(&f.layer.invoke(replay)), code::TOKEN_USED);
     assert_eq!(f.fixed(), before);
 
-    // Step 6: a protection change makes the preview stale even though the set is the same.
-    f.layer.set_protected(kernel().protected_set(&[1]).unwrap());
+    // Step 6: a protection change makes the preview stale even though the set is the same. The change is a durable
+    // action of its own, through `protection.orbit.set`; it keeps the state and the preview.
+    let set = f.shell.invoke(&mut f.layer, "protection.orbit.set", json::object([("orbits", parse("[1]"))])).unwrap();
+    assert!(matches!(set.status, Status::Completed(Completion { kind: CompletionKind::Workspace, .. })));
+    assert_eq!(f.layer.preview_state(p), Some(PreviewState::Presented));
+    let before = f.fixed();
     assert_eq!(code_of(&f.execute()), code::REVISION_CHANGED);
     assert_eq!(f.fixed(), before);
 
@@ -606,7 +611,7 @@ fn the_runtime_reaches_at_most_a_preview() {
             command: binding.command,
             row: "operation.preview".into(),
             args: args_digest(&tokened.args),
-            identity: kernel().identity().model_id,
+            identity: f.layer.identity_binding(),
             preview: None,
             revision: None,
             hint: None,
@@ -634,7 +639,10 @@ fn a_restart_ends_previews_keeps_durable_receipts_and_revives_no_permission() {
     let pending = f.shell.send(&mut f.layer, asked.clone());
     f.layer.restart(Secret::fixed([8; 32]));
     f.shell.restart(Secret::fixed([8; 32]));
-    assert_eq!((f.layer.revision().epoch, f.layer.revision().state), (2, 1));
+    // The next epoch is random, never 1 (L10).
+    let epoch = f.layer.revision().epoch;
+    assert_ne!(epoch, 1);
+    assert_eq!(f.layer.revision().state, 1);
     assert_eq!(f.layer.preview_state(p), Some(PreviewState::Discarded));
     assert_eq!(f.layer.outcome(&committed.command, &committed.request), Some(committed.clone()));
     assert_eq!(f.layer.outcome(&pending.command, &pending.request).unwrap().status, Status::UnknownOutcome);
@@ -652,10 +660,11 @@ fn a_restart_ends_previews_keeps_durable_receipts_and_revives_no_permission() {
     assert_eq!(f.layer.outcome(&committed.command, &committed.request), Some(committed.clone()));
     // A new envelope from the ended epoch is refused, and so is the old epoch's token.
     let mut stale = f.shell.prepare(&f.layer, "operation.preview", draft_args(&word(&[4]))).unwrap();
-    assert_eq!(stale.epoch, 2);
+    assert_eq!(stale.epoch, epoch);
+    assert_eq!(stale.command, format!("shell/{epoch}/6"));
     stale.epoch = 1;
     assert_eq!(code_of(&f.layer.invoke(stale)), code::EPOCH_CHANGED);
-    assert_eq!(code_of(&f.layer.invoke(Invocation { epoch: 2, ..early })), code::TOKEN_INVALID);
+    assert_eq!(code_of(&f.layer.invoke(Invocation { epoch, ..early })), code::TOKEN_INVALID);
     assert_eq!(f.fixed(), before);
     assert!(matches!(f.undo(Direction::Undo).status, Status::Committed(_)));
 }
@@ -698,6 +707,6 @@ fn an_unknown_commit_fate_enters_read_only_recovery() {
             assert_eq!(f.layer.revision().state, 0);
             assert_eq!(f.layer.snapshot().digest(), start);
         }
-        assert_eq!(f.layer.revision().epoch, 2);
+        assert_ne!(f.layer.revision().epoch, 1);
     }
 }
