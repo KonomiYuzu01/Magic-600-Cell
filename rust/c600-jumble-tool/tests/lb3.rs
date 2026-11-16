@@ -134,7 +134,8 @@ fn observed(start: &State, letters: &[Letter]) -> (Value, Vec<State>) {
 }
 
 fn checked(start: &State, letters: &[Letter], unit: Option<&[u32]>, cap: Option<usize>) -> Value {
-    word_check(ctx(), start, letters, unit, cap, None).expect("a word check")
+    let unit: Option<Vec<i64>> = unit.map(|pieces| pieces.iter().map(|&p| i64::from(p)).collect());
+    word_check(ctx(), start, letters, unit.as_deref(), cap.map(|c| c as i64), None).expect("a word check")
 }
 
 /// Applies one literal letter with no protection and returns its status.
@@ -171,7 +172,8 @@ fn ct_lb1_02_a_blocked_cap_refuses_literal_a_a_inverse_and_admits_the_empty_word
     let check = checked(&state, &literal, None, None);
     assert_eq!((flag(&check, "admissible"), int(&check, "failing_letter_index")), (Some(false), 0));
     assert_eq!((text(&check, "failing_status"), int(&check, "applied_letters")), ("blocked", 0));
-    assert_eq!(text(&check, "end_digest"), start);
+    // JI.11: no end-state field covers a refused prefix.
+    assert!(is_null(&check, "end_digest") && text(&check, "end_state_undefined") == "refused_prefix");
     for claim in ["peak_left_height", "excursion", "tame"] {
         assert!(is_null(&check, claim), "a refused word carries no {claim}");
     }

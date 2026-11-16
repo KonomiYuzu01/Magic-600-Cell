@@ -452,7 +452,8 @@ fn ct_rm_07_jumbling_vectors_hold_on_the_real_model() {
     assert_eq!(facts.get("totals"), Some(&Value::Null), "the engine claims no total for a cut-off batch");
     let interrupted = jumble::seam_table(&facts).expect("a listed table");
     assert!(!interrupted.complete && matches!(interrupted.total(), Partial::Undefined(_)), "no total N");
-    let one_cap = seam_facts(engine, &mut state, Scope::Cap(cap), &whole, Rows::Mismatched, None).expect("seam facts");
+    let one_cap =
+        seam_facts(engine, &mut state, Scope::Cap(cap as i64), &whole, Rows::Mismatched, None).expect("seam facts");
     assert!(jumble::seam_table(&one_cap).is_none(), "a cap's answer counts its N_c, never total N");
 
     // Row 15: a certificate point targets its witness piece and grip; off the lattice it has no slot.
