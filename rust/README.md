@@ -26,6 +26,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-runtime` | The runtime in a process of its own (route RT1): the child binary `c600-runtime`, the parent library that starts it and answers its host calls, the wire protocol draft `c600-rt1-wire-1` and the in-process reference path (LP3, C3) |
 | `c600-durable` | LP3 C7's durable conformance cases on M6's session store, test-only: CT-RTE-08's persisted word, CT-EV3-07's durable action order and view part, and CT-LB2-03's work-sheet part (LP3, C7) |
 | `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, in process or on the runtime's own process, the recipe expansion, the source route `c600-lp3-source` and the tool's views (LP3, C5) |
+| `c600-repr` | The representations tool, headless half: layouts and atlases with their source maps, the layout filter, linked selection, chart surveys and user-chart admission over the display contract, the tool's `.6cs` source and `view_aid` manifest, its class review, and what its six rows need from the command layer (LP3, C6) |
 | `c600-input` | The headless input router: synthetic key events to command-layer invocations in chapter 04's routing order, bindings resolved to absolute arguments at the press, the held-key allowlist and the key-map checks (LP3, C5) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
@@ -46,6 +47,9 @@ model.
 The input router depends on the command layer and the kernel crate only, so a key reaches a kernel row with no path to
 the interpreter (ONE.48).
 The jumbling crate depends on the kernel and digest crates and the big-integer crates.
+The representations crate depends on the checker, IR and digest crates, the display contract, the tools crate, whose
+built-in column admits its entries, and the command layer, whose stored table its class review reads; it draws nothing
+and owns no device.
 The durable crate holds tests only; its dev-dependencies are the session store, the module crate, the checker, the
 syntax crate, the interpreter, the kernel and the digest crate.
 
@@ -1090,3 +1094,50 @@ run or not applicable is no pass (PHS.63).
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim; the source-route check's timings are
   informational. The checks ran on Windows only; the Linux leg was not run.
+
+## Status of LP3, C6: the representations tool, headless half
+
+- `c600-repr` is LB6.5's row "Representation, work-set and filter tools", class `view_aid`, over LB4's layouts and
+  atlases, map property checks and linked selection. It draws nothing and owns no device, renderer, clock or session:
+  picks resolve through `c600-display`'s host and the installed source map, exact chart checks are `c600-display`'s, and
+  each entry's admission is `c600_tools::tool::admit_built_in`.
+  - `layout`: sheets and atlases as display plans with their source maps; a layout filter rebuilds the layout, the
+    instance list and the map's entries and leaves the mechanically analysed set alone (LB4.4); a linked selection is
+    computed once for its inputs, and frames only read it (EV3.10).
+  - `chart`: a chart's survey over camera poses, with exact verdicts at exact poses from `c600-display`'s checks and
+    display data between them (LB4.2), and a user chart's admission as far as `c600-display` reaches it (LB4.3).
+  - `tool`: the source [`representations.6cs`](c600-repr/src/representations.6cs) (edition `6cs-draft-1`, syntax
+    candidate A) with five entries, each admitted under the built-in column; the Rust manifest with the class
+    `view_aid`; the review of the class against the exact entry definitions and the row set, which also finds an
+    exported function the manifest does not list and source bytes other than the ones the manifest names; and the form
+    of a review record that names every entry digest (BND.37).
+  - `rows`: what each of the six rows needs from the command layer, which refuses them as not built: a dispatch from a
+    stored row to a built-in tool's entry, the runtime's view and workspace sinks as the job's result, argument forms
+    for the rows' reference types, and a workspace revision that moves. `set.save` also needs a list type in the IR
+    draft. LP3 changes no layer code until KN5's one implementation lands.
+- Tests (`c600-repr/tests/`), each naming its part:
+  - `ct_lb4_03.rs`: CT-LB4-03's 600-cell-Full half. Display instances of two charts map through the installed source map
+    to occurrence, sticker, piece, cell and slot; a chart's inverse value is never consulted for a pick; a layout filter
+    preserves the analysed set. Pose levels are C8's next piece, on M5's kernel.
+  - `ct_lb4_charts.rs`: CT-LB4-01's CPU reference (a declared domain decided by an exact region test and section
+    membership on the posed vertices, boundary cases included; a chart whose vertices pass and whose domain fails inside
+    is refused; an established domain establishes no injectivity); CT-LB4-02, whole (synthetic: replacing the decisions
+    between exact poses changes only display data); CT-LB4-04's admission half and CPU half.
+  - `tool.rs`: the source parses and lowers, and every entry is admitted; CT-BND-15's representations part; CT-LB6-03's
+    representations part (a stash-and-relay, a state-chosen target, a writing view and an exported function the manifest
+    does not list are each found). The record is checked with a fixture reviewer: BM5's review of the tool happens when
+    it ships.
+  - `ct_ev3.rs`: CT-EV3-06's counter half (unchanged frame draws and a workspace-only revision compute no relation;
+    counted, never timed); CT-EV3-07's view half at the command layer (the checker refuses a view that writes the
+    workspace or proposes; after a commit, program calls to the six rows and to `session.undo` are refused, a view
+    overlay row completes as `view_published`, and the revision, the log and the undo hint stay as they were).
+  - `rows.rs`: the requirements name the stored rows as H-08 has them, each row's effects are its entry's, and the layer
+    refuses all six rows; an overlay cannot replace one.
+- Not built: the six rows and a `set.save` entry; the checkers for homomorphism, embedding, isometry and
+  full-dimensional injectivity (CT-LB4-01's rest, which needs KN3's exact polytope operations); the stage checker, HLSL
+  compilation and every device step (CT-LB4-04's rest, the renderer freeze); pose levels and off-lattice relations (C8's
+  next piece, on M5's kernel); the relationship strip; filters of trees, complexes and graphs; a BM5 review record; an
+  explicit workspace command through the command layer (KN5's one implementation).
+- Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
+- Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
+  Linux leg was not run.
