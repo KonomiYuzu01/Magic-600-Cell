@@ -26,7 +26,7 @@ integration, authoring services, the research corpus and the importer stay with 
 | --- | --- | --- |
 | Typed IR draft and checker | May start; LQ21 is answered | Nothing |
 | Interpreter and the `lp1-exec-draft-1` meter | Designed in M2 below | The owner's answer on the big-integer dependency (RTE.18, RTE.70) |
-| Parser | Waits | LX-8, whose human-test protocol the owner sets, and then LQ13 (PHS.20) |
+| Parser | Waits | LQ13 (PHS.20): the owner picks the syntax directly from a one-page comparison of the three LX-8 candidates, with no human test, and CT-RTE-18 stays recorded as not run (owner, 16 November 2026) |
 | Kernel API and candidate adapter, 600-cell-Full half | May start in Rust (LQ8) | Nothing beyond the frozen chapters |
 | Jumbling half of the kernel API | Waits | EN3's review and approval of the jumbling interfaces (PHS.53) |
 | Session store below the language | May start | Nothing beyond chapter 05's frozen core |
@@ -113,4 +113,9 @@ acceptance item blocks LP2's exit (PHS.63); nothing is cut.
 1. The big-integer dependency for M2: `num-bigint` 0.5.1 with `num-integer` 0.1.47 and `num-traits` 0.2.19 (each
    MIT OR Apache-2.0, as read from the verified archives in LX-5's crate run; exact on LX-5's rows and about 3.4 times
    faster in total than the experiment's own limbs), or own limbs with no dependency.
-2. LX-8's human-test protocol, which LQ13 and the parser wait for.
+2. LX-8's human-test protocol, which LQ13 and the parser waited for. Moot since 16 November 2026: the owner picks LQ13
+   directly from a one-page comparison that another session writes, and the parser waits for that choice.
+
+Questions to the owner are batched (owner, 16 November 2026): at most one question card per milestone, each with a
+recommended option. The big-integer card is M2's card; other M2 points follow recorded decisions or conventional
+defaults.
