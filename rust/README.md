@@ -172,6 +172,14 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - The reference meter of chapter 09 (DET.55 to DET.60) replays the 40 frozen contract-vector traces with every field
   compared exactly, and the meter boundary vectors derived from them (`c600-run/tests/traces.rs`). The frozen test
   tariffs are `Tariffs::TEST`, labelled test-only.
+- `traces.rs` also runs seven traces as programs through `Loaded::run` (nested-calls, output-equality,
+  output-retained-at-cutoff, simultaneous-exhaustion, simultaneous-memory-output, step-precedence and generator) and
+  stops each limit one unit below use at the predicted row. Two differences from the vectors come from the fixtures,
+  not from a defect. `nested-calls` completes at the frozen use plus 2 steps, 5 kernel, 16 memory and 5 output: in the
+  draft frame layout every body has at least one slot, so the smallest frame is 24 bytes, while the vectors' zero-slot
+  frames are synthetic (CV.2). RT1 charges an encoding row and then a publication row, as DET.59 allows, where a
+  fixture `emit` is a fused row of known size (CV.5). The other traces wait for child jobs (M6), loops, assertions and
+  multiplication in the IR, streaming words (KN2.10) or form 2; they still replay through the meter.
 - `load` checks the IR identity and the program's names, arities, literals and precisions
   (`LG4:input.ir_version_unsupported`, `LG4:input.ir_rejected`). `Loaded::run` evaluates with an explicit work stack:
   one charge row per operation (DET.55), interruption observed before each operation (DET.56), aliases and owners
@@ -226,19 +234,34 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   O07 equal with no omitted fields (3,201 steps), a tampered state hash to fail at its step, a case with another model
   identity to be refused without a trace, and the KN2.9 agreement of the star cache with per-primitive replay over
   210 stars. `tools/ci/run_headless.py` lists it.
+- The same check runs the M4 differential leads. The new cases N01 to N04 (PHS.18; leads L5 to L7) replay equal over
+  1,687 steps; `tools/oracle/make_new_cases.py` built them in the pinned engine environment, and
+  `tests/fixtures/oracle-new` holds them with their own manifest. A recipe whose JSON 0.4 refuses step by step is one
+  invalid-input step (L1), and so are 32 malformed inputs beyond O07 (L4). Fourteen traces from seven runs in other
+  orders are byte-identical (L2). `core.py`, `session.py` and `make_cases.py` match their pinned digests (L3). The
+  refusal and certificate texts are 0.4's. No float type or literal reaches a decision path in the kernel's or the
+  digest crate's sources (CT-KN2-05).
+- The adapter reads each step's recipe leniently (`json::parse_lenient`) and the rest of a case file strictly. A case
+  with a repeated member name, NaN or an infinity is unreadable to both `compare.py` and the adapter.
+  `Kernel::letters` refuses another model's recipe with `KN1:input.identity_mismatch` (KN1.4).
 - `c600-kernel/tests/load.rs` tests the loader's refusals: a model ID that does not name the file list, a changed or
   missing listed file, a needed file that is not listed, names that are not plain file names in `assets/`, and
   malformed manifests. The checks inside the verified archives (a primitive that is not a permutation of its support,
   malformed offsets, an execution tree whose walk does not end) are not tested yet: such a test has to write a changed
   archive under a new model ID, and the crate only reads archives.
-- Contract tests: CT-KN1-01, the labels half of CT-KN1-05, the 600-cell-Full half of CT-KN2-01 and CT-KN2-04.
+- Contract tests, each a part that names what it leaves to M5 or M6: CT-KN1-01, CT-KN1-04 and the labels half of
+  CT-KN1-05; the 600-cell-Full halves of CT-KN2-01, CT-KN2-04 and CT-KN2-05; the labels half of CT-PS1-04; CT-PS1-12
+  without Strict protection.
 - Draft choices: a failed star certificate or asset check has no code in chapter 13's catalogue yet, so the kernel
   reports a `CertificateError` or `LoadError`; an orbit outside 0 to 34 in a protected set is refused with
   `KN2:input.named_object_invalid`; with one model in `assets/`, the other-identity control changes the case instead
   of loading a second model.
 - Not built: the `positions` row, Strict protection, streaming words (KN2.10, CT-KN2-07), `open_snapshot` by
-  `RevisionRef` (with the session store, M6), the reachability claim of `Derived`, budgets (KN7) and the jumbling half
-  (M5). PHS.18 also asks for the language's new cases through the adapter; they are not written yet.
+  `RevisionRef` (with the session store, M6), the reachability claim of `Derived`, budgets (KN7), an inverse call
+  (O05's inverse recipes come from 0.4's `core.invrecipe` in the case files) and the jumbling half (M5).
+- Open: `Kernel::protection` has no model check and returns a `Protection`, not a `Result`, so it cannot refuse
+  another model's set (KN1.4); that needs an API decision. M6's `state_from_labels` builds a snapshot at the same level
+  from any permutation of the slots, so CT-KN1-04 lists it as no lift; reachability stays the caller's evidence.
 - Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model read the kernel with the
   acceptance check. Its two major findings were fixed before the pull request, and a scoped re-check found no blocking
   finding: R1, the model ID was not tied to the file list; R2, the loader's refusals had no tests (the checks inside the
@@ -248,6 +271,11 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   (draft choices, above); the second half of R5, the ZIP reader's duplicate-name check is quadratic in the member
   count, on digest-verified bytes only. Fixed: the first half of R5, a drive or stream colon in a listed name. No
   action: R6, the KN2.9 agreement and the cached path share the inverse-move handling, which O01 to O03 cover.
+- The LP2 tests' two kernel fixes, the lenient recipe region and `letters`' refusal, each had a fresh Sonnet read; the
+  first read came after its commit on the agent's branch and before integration, the second before its commit. Neither
+  found a blocker or major finding. Its two suggestions, that a repeated name or a non-finite number in a recipe be one
+  invalid step, were refuted: `compare.py` refuses such a case whole, as the adapter does, and
+  `check_unreadable_recipe_json` pins that agreement.
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run. The timings the check
   prints are informational, not performance evidence.
 
@@ -391,3 +419,91 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   PS3.12's dispatch, obligation export (LB5.18), storing the envelope (chapter 05), the command layer, the runtime
   process and the jumbling half.
 - Evidence kind: source and fixture, with synthetic graphs. The checks ran on Windows only.
+
+## LP2 conformance tests (chapter 12, section 15.3)
+
+Section 15.3 lists 248 conformance tests for LP2. A test names each ID it covers: `(whole` when it runs the whole
+definition, alone or with the tests it names, and `(part: ...; not run: ...)` otherwise (PHS.62). A test that is not
+run or not applicable is no pass (PHS.63).
+
+- Where they are:
+  - `c600-check/tests/`: the checker's own tests carry their IDs (`effects.rs`, `exactness.rs`, `mismatch.rs`,
+    `vectors.rs`).
+  - `c600-syntax/tests/`: `conformance_lg1.rs` to `conformance_lg3.rs` write the LG tests in source; `errors.rs` holds
+    CT-ERR-05's encoding half (ERR.10's raw context for each malformed shape); `syntax.rs`, `format.rs` and
+    `lowering.rs` mark M7's tests.
+  - `c600-run/tests/`: `conformance_lg2.rs` to `conformance_lg4.rs` run the LG tests (shared helpers in
+    `conformance/mod.rs`); `conformance_bnd.rs` runs the boundary tests, and `tables.rs` enumerates the grant table
+    and the corpus; `legacy.rs` runs CT-PS1-18's legacy parts; `conformance_det.rs` runs the CT-DET rows on RT1;
+    `canonical_ps1.rs` runs the canonical-profile rows (CT-PS1-01 to CT-PS1-07, CT-DET-23 and, synthetic, CT-KN3-02);
+    `traces.rs` and `values.rs` mark the meter's and the values' rows.
+  - `c600-kernel/tests/`: `kernel.rs`, `load.rs` and `json.rs` run the 600-cell-Full halves of the KN rows, CT-PS1-04
+    and CT-PS1-12 (M4's section).
+  - `c600-evidence/tests/` runs the EVD rows (the evidence library's section), and `c600-session/tests/` names M6's
+    rows without a marker (M6's section).
+  - Python, listed in `tools/ci/run_headless.py`: `tests/test_error_registry.py` checks the code catalogue against
+    chapter 13 and the LP1 edition fixture `tests/fixtures/error_registry/lp1-edition.json`;
+    `tests/test_language_scans.py` scans the workspace's sources; `tests/test_format_inventory.py` runs CT-PS2-06;
+    `tests/test_source_checkout.py` reads every `.6cs` source and every pinned packet file as LF, CRLF and `input`
+    checkouts write them (CT-LG1-02, CT-PS1-05's checkout half); `tests/test_kernel_oracle.py` replays O01 to O07 and
+    N01 to N04 through the kernel (M4's section).
+- Count on this branch: 33 whole, three of them by the union of their parts (CT-LG2-04, CT-LG3-01, CT-LG3-04); 108
+  part; 15 named by M6's tests without a marker (CT-KN4-01 to CT-KN4-04, CT-KN5-01, CT-KN5-04, CT-KN5-06, CT-KN5-09,
+  CT-KN5-11, CT-KN7-01 to CT-KN7-05 and CT-KN7-07; M6's section calls CT-KN4-01's an in-process part); 2 named only as
+  not built (CT-KN2-07, CT-LG4-05); 90 missing.
+- Not run or not applicable, which is no pass (PHS.63), with the check that runs instead: CT-LG3-06's flow-label
+  variant, while the flow rule is off (BND.41) and LQ2 has not set it, so the static-only and run-time variants run
+  (`c600-run/tests/conformance_lg3.rs`); CT-LG1-03's second host context, since CI runs on Windows only and the editor
+  services that host the formatter come with LP4; CT-LG4-01's second admitted route, since RT1 is the only one (LQ9);
+  CT-BND-11's ONE.32 fields in other profiles, which never arise (BND.60); the Linux legs of CT-DET-02, CT-DET-15 and
+  CT-PS1-01, since CI has no Linux cargo job; form 2 in CT-DET-32, since RT1 runs form 1 only (the LP2 plan's
+  selection, which the owner may overrule); and, as before, CT-LG1-01's mixed dependency editions and CT-LG2-05's
+  form 2.
+- Fixed, each found by a test:
+  - A clock reading was an exact `Nat`, so `use_budget(read_clock())` was admitted against LG2.6, LG3.8 and DET.18; it
+    is now `Display<Nat>`, and CT-LG2-06's seconds half runs.
+  - The provenance reader accepted a 65th nested container when the innermost one was empty, above FP.9's json_depth
+    of 64 (CT-PS1-07). A fresh Sonnet read found no blocker or major finding.
+  - The kernel's adapter refused a whole case when one recipe held JSON that 0.4 refuses step by step (L1), and
+    `Kernel::letters` expanded another model's recipe with this model's seeds (KN1.4); M4's section has both.
+  - The evidence library's two fixes (its section).
+- Open, each needing a decision:
+  - Exact sinks take any value: the checker admits `use_evidence(f)` with a function value, and the interpreter passes
+    the value to the host's exact sink without encoding it, so a function or a receipt reaches the host, against RPI.54
+    and RPI.1. The frozen text does not say what a goal or evidence sink accepts.
+  - ERR.6: `c600-kernel/tests/kernel.rs` compares refusal texts, because `c600_kernel::Refusal` has no typed context
+    (CT-ERR-16's typed failed fact); `c600_syntax::LowerError` has no code.
+  - For the owner under PHS.52 (frozen text): in `13-errors.md`, the LB6 closure row `evidence.decomposition_mismatch`
+    (line 661) sits between ERR.28's table and ERR.31 and belongs at the head of ERR.31's table, and ERR.31 comes
+    before ERR.29 and ERR.30; the rule source of `KN5:stale.filter_preview` (line 322) omits KN0.9
+    (`closure/manifests/p7-layers.json`). The Used-by cells of `KN2:input.recipe_shape` and
+    `KN2:resource_limit.primitive_ceiling` say "not yet used", but the kernel emits both.
+  - For LP3: LB7.1's `LB7:capability.module_grant_missing` is the workspace library's entry-admission fact, built with
+    LB7; the checker's own admission reports `LG3:capability.not_granted`, as chapter 02's LG3 table has it.
+  - KN5 has two implementations, `c600-session` (M6) and LP3's `c600-command` (pull request 159). The LP2 integrator
+    picks the one CT-KN5-01 to CT-KN5-13 run against before M8.
+  - `Kernel::protection` has no model check (M4's section).
+  - For M6's store: the kernel's `archive::gunzip` accepts concatenated gzip members and trailing zero padding, so
+    FP.7's strict one-member reader must refuse them itself; run-time `encode` applies no json_depth or integer_digits
+    limit, so the store's writer must check FP.9 before it persists a value.
+  - Gaps: the interpreter does not check a function's kind at run time; `provenance::import` makes the author `own`,
+    so `Author::Imported` never arises (FP.18's example has `own`); `Loaded::run` does not require the entry function
+    to be exported, and `load` does not run the checker again.
+- Missing, by what they wait for:
+  - LP3's lanes, views and shell (38): CT-ONE-03 to CT-ONE-24, CT-ONE-28, CT-LI-01 to CT-LI-07, CT-LI-09 to
+    CT-LI-14, CT-EV4-03 and CT-PS1-13.
+  - M6's remaining rows (15): CT-PS1-08 to CT-PS1-10, CT-PS1-16, CT-PS1-19, CT-PS1-21, CT-PS1-23, CT-PS2-01 to
+    CT-PS2-05, and the run records of CT-DET-04, CT-DET-14 and CT-BND-23 (with LP3's grants for CT-DET-04 and
+    CT-BND-23).
+  - M5, the jumbled puzzle (12): CT-KN1-02, CT-KN1-03, CT-KN1-06, CT-KN2-02, CT-KN2-03, CT-KN2-06, CT-KN3-01,
+    CT-KN3-03, CT-LG2-12, CT-PS1-11, CT-PS1-14 and CT-PS1-22.
+  - LG5's module loader and lockfiles (7, no milestone named): CT-LG5-01 to CT-LG5-07.
+  - KN5's command layer, once its candidate is picked (6): CT-KN5-03, CT-KN5-05, CT-KN5-07, CT-KN5-08, CT-KN5-10 and
+    CT-KN5-12.
+  - A6's exact rotation requests (5, no milestone named): CT-KN3-04 to CT-KN3-06, CT-LG2-16 and CT-DET-16.
+  - The stage checker, RPI.68 to RPI.76 (3, no milestone named): CT-LG2-15, CT-LG3-10 and CT-LG5-08.
+  - Streaming and compressed words, KN2.10 (no milestone named): CT-LG2-14 and CT-LG4-03, and CT-KN2-07, named as not
+    built.
+  - A builder and its build cache (2, no milestone named): CT-DET-21 and CT-DET-22.
+  - A pointwise or whole-state contract form in the IR (no milestone named): CT-LG4-05, named as not built.
+- Evidence kind: source and fixture. The checks ran on Windows only.
