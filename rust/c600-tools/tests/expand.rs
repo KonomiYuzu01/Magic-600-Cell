@@ -89,7 +89,7 @@ fn the_expansion_is_the_kernels_literal() {
     assert_eq!(literal_digest(&[1, -1]), "b15348c8f462384c01e83b6d499c6faf3f96808f5aa07c6bab4b65b36b4445d4");
     let star = parse(r#"[{"kind": "star", "orbit": 2, "node": 0, "sign": 1}]"#);
     let recipe = kernel().recipe(&star).unwrap();
-    assert_eq!(expand(kernel(), &star), Expansion::Literal(kernel().letters(&recipe)));
+    assert_eq!(expand(kernel(), &star), Expansion::Literal(kernel().letters(&recipe).unwrap()));
     assert_eq!(expand(kernel(), &star).letters().map(<[i32]>::len), Some(9230));
     for (text, passes) in [
         (r#"[{"kind": "word", "moves": [0]}]"#, true),

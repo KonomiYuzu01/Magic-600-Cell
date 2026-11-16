@@ -31,7 +31,11 @@ impl Expansion {
 /// Expands a recipe in the 0.4 JSON form through the kernel, with the kernel's limits (KN2).
 pub fn expand(kernel: &Kernel, recipe: &Value) -> Expansion {
     match kernel.recipe(recipe) {
-        Ok(recipe) => Expansion::Literal(kernel.letters(&recipe)),
+        // The recipe is this kernel's own parse, so its model always matches; a refusal would still run nothing.
+        Ok(recipe) => match kernel.letters(&recipe) {
+            Ok(letters) => Expansion::Literal(letters),
+            Err(refusal) => Expansion::Refused(refusal),
+        },
         Err(refusal) => match single_word(recipe) {
             Some(letters) => Expansion::Unchecked { letters, refusal },
             None => Expansion::Refused(refusal),
