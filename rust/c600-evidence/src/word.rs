@@ -538,17 +538,34 @@ impl<'g> Analysis<'g> {
                 }))
     }
 
+    /// The pairs (X, root of neg X) in Reach(S). X need not have an OR node of its own: a statement with no support
+    /// can still be offered a refutation, so a root N in Reach whose negated statement has no root pairs with the key
+    /// (negated statement, N's scope).
+    fn refutation_pairs(&self) -> Vec<(Key, NodeId)> {
+        let mut out = Vec::new();
+        for r in &self.roots {
+            let k = self.key(*r);
+            match self.g.neg_root(k) {
+                NegResolution::One(n) if self.in_reach[n] => out.push((k.clone(), n)),
+                NegResolution::Absent => {
+                    if let Some(neg) = self.g.statement(&k.statement).and_then(|s| s.negation.clone()) {
+                        out.push((Key { statement: neg, scope: k.scope.clone() }, *r));
+                    }
+                }
+                _ => {}
+            }
+        }
+        out
+    }
+
     /// I6 (EVD.42) on live leaves only. Every argument of neg X that holds a live leaf of a basis other than sample is
     /// an offered refutation of X. Draft: an argument whose live leaves are all samples offers no refutation, because
     /// a sample does not entail its statement (EVD.2).
     fn refutation_checks(&mut self) {
-        for x in self.roots.clone() {
-            let xkey = self.key(x);
-            let n = match self.g.neg_root(xkey) {
-                NegResolution::One(n) if self.in_reach[n] => n,
-                _ => continue,
-            };
-            let form = self.form(x).cloned();
+        for (xkey_owned, n) in self.refutation_pairs() {
+            let xkey = &xkey_owned;
+            let x = format!("{:?}", xkey.statement);
+            let form = self.g.statement(&xkey.statement).and_then(|s| s.form.clone());
             let args = self.args.get(&n).cloned().unwrap_or_default();
             for arg in args {
                 let live: Vec<&Leaf> = arg.iter().filter(|l| self.live.contains(l)).map(|l| self.leaf(*l)).collect();
@@ -590,7 +607,7 @@ impl<'g> Analysis<'g> {
                     _ => true,
                 };
                 if !ok {
-                    self.found(Inconsistency::I6, format!("an offered refutation of root {x} fails EVD.42's conditions"));
+                    self.found(Inconsistency::I6, format!("an offered refutation of {x} fails EVD.42's conditions"));
                 }
             }
         }
