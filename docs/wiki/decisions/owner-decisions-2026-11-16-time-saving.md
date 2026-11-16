@@ -4,7 +4,7 @@ type: decision
 status: verified
 visibility: public
 summary: Owner decision of 16 November 2026 - five measures save the owner's time in the language's development - LQ13 is decided directly from a one-page comparison of the three LX-8 candidates without a human test, so CT-RTE-18 stays not run; LP4's non-author tests run at minimal scale; LP3's owner-machine runs are done together in one or two evenings; at most one question card per milestone; one page of summary per phase exit.
-related: [owner-decisions-2026-11-06, owner-decisions-2026-11-14-language-route, owner-decisions-2026-11-15-freeze]
+related: [owner-decisions-2026-11-06, owner-decisions-2026-11-14-language-route, owner-decisions-2026-11-15-freeze, owner-decisions-2026-11-16-lq13]
 supersedes: []
 claims:
   - {id: time-saving-measures, evidence_kind: decision, checked_at: 2026-11-16}
@@ -52,6 +52,7 @@ Not chosen: moving the user shader language (LQ7), or LP5's research library and
   (PHS.13), PHS.14's LX-8 sentence and PHS.56's LP1 owner action; and ADR-L12's waiting LQ13 question. This page edits
   no frozen text; the wording follows in a later versioned change.
 - The LX-8 protocol question in the owner's inbox is superseded.
+- The owner answered LQ13 the same day from that comparison: [candidate A, braces](owner-decisions-2026-11-16-lq13.md).
 
 **Points 2 to 5 change how the work is run; no bar moves.**
 
