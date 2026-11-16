@@ -1,6 +1,6 @@
 [package]
 name = "c600-jumble-tool"
-description = "The built-in jumbling tool's 600 Cell Script source, its manifest and built-in admission, literal words, and the kernel halves of the LB1 and LB3 jumbling tests (LP3, C8, headless half)"
+description = "The built-in jumbling tool's 600 Cell Script source, its manifest and built-in admission, literal words, level-bound protection verdicts and the occupant relation, and the jumbling halves of the LB1, LB3, LB4 and EV3 tests (LP3, C8, headless half)"
 version.workspace = true
 edition.workspace = true
 publish.workspace = true
@@ -13,6 +13,8 @@ c600-tools = { path = "../c600-tools" }
 
 [dev-dependencies]
 c600-check = { path = "../c600-check" }
+c600-display = { path = "../c600-display" }
 c600-ir = { path = "../c600-ir" }
+c600-repr = { path = "../c600-repr" }
 c600-run = { path = "../c600-run" }
 c600-syntax = { path = "../c600-syntax" }
