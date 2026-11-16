@@ -166,8 +166,11 @@ acceptance check and stop condition.
 - C4 (`rust/c600-module`, branch `claude/lp3-module-closure`), built: module closure, its lock and the approval bound
   to the closure digest; CT-RTE-08's source leg and 36 of LX-3's 75 frozen keys of CT-RTE-07 on 600-cell-Full.
   CT-RTE-08's persisted words come with C7; CT-RTE-07's other keys wait for M5, C7, the IR draft and C5.
-- Next, in C2's crates: CT-RPI-14, CT-RPI-18, CT-RPI-19, CT-RPI-23 and CT-RPI-32, the semantics of CT-EV3-08 and the
-  counter half of CT-RPI-26.
+- C2, display next (`rust/c600-display`, branch `claude/lp3-c2-display-next`), built: CT-RPI-14 over the drafted
+  chart repertoire (RPI.34 is open), CT-RPI-18 on the CPU reference, CT-RPI-19's Windows leg, CT-RPI-22's chart half
+  (so CT-RPI-22 runs whole) and the headless part of CT-RPI-32. The rest of CT-RPI-32 needs the stage module's checker
+  and a backend.
+- Next, in C2's crates: CT-RPI-23, the semantics of CT-EV3-08 and the counter half of CT-RPI-26.
 
 Acceptance for each piece: `cargo test --locked --offline` and `cargo fmt --all --check` pass in `rust/`; each listed
 test's part exists and names its part; nothing needs a renderer, a GPU or a timing; no file under
@@ -279,17 +282,17 @@ wait entirely. The milestone is in parentheses.
 | CT-RPI-11 | synthetic | Now (C2) | - |
 | CT-RPI-12 | source | M5 (C8) | The stale half (C2) |
 | CT-RPI-13 | windows | The renderer freeze (C9) | - |
-| CT-RPI-14 | synthetic | Now (C2, next) | - |
-| CT-RPI-18 | synthetic | Now (C2, next) | - |
-| CT-RPI-19 | source | Now, with a Linux run (C2, next) | - |
+| CT-RPI-14 | synthetic | Now (C2) | - |
+| CT-RPI-18 | synthetic | Now (C2) | - |
+| CT-RPI-19 | source | Now, with a Linux run (C2) | - |
 | CT-RPI-21 | windows | The renderer freeze (C9) | - |
-| CT-RPI-22 | source | The display-plan validator, for the chart half (C2, next) | The limit half (C2) |
+| CT-RPI-22 | source | Now (C2) | - |
 | CT-RPI-23 | source | Now (C2, next) | - |
 | CT-RPI-24 | windows | The renderer freeze and M5 (C9) | - |
 | CT-RPI-26 | performance | Owner runs: charter E2 and the renderer gate (C9) | The counter half (C2, next) |
 | CT-RPI-27 | source | Now (C2) | - |
 | CT-RPI-31 | windows | The renderer freeze (C9) | - |
-| CT-RPI-32 | source | Now (C2, next) | - |
+| CT-RPI-32 | source | The stage module's checker (RPI.69 to RPI.71) and a backend (C9) | The headless part (C2) |
 | CT-RPI-33 | windows | The renderer freeze (C9) | - |
 | CT-RPI-34 | windows | The renderer freeze (C9) | - |
 | CT-RPI-36 | source | Now (C2) | - |

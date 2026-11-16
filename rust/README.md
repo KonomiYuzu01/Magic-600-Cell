@@ -437,19 +437,35 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   whole or not at all and ends in exactly one KN5.21-style terminal, standalone or scheduled (RM.17 to RM.26, LI.25);
   a mock backend stands in for an adapter (RPI.55, RM.33). Picks resolve by instance ID through the installed source
   map, never through a chart inverse, and stale picks name the field that changed (RM.10, RM.24, RPI.24, RPI.25).
+- Charts and stages (C2's next display piece): exact arithmetic in Q(√5) with checked `i128` parts, the 600-cell and
+  its exact poses in K⁺ (`exact.rs`); chart checks with the exact region test, the vertex test and `admit_chart`, which
+  admits a chart only on established check results and refuses it on a refutation with
+  `EV3:evidence.chart_check_failed` (`chart.rs`); a binary32 CPU reference evaluator and RPI.56's key over the exact
+  fields (`reference.rs`); and the stage output rules and their composition order (`stage.rs`).
 - Display tests (`c600-display/tests/`): CT-RPI-02, CT-RPI-04, CT-RPI-05, CT-RPI-09, CT-RPI-10, CT-RPI-11,
   CT-RPI-27, CT-RM-03 and CT-RM-04; CT-RPI-08's 600-cell-Full rows (F01 to F17, with J02 and J04 unsupported on
   Full); the stale half of CT-RPI-12; RM.37's fifteen rows of CT-RM-07 as fixture payloads over the Full geometry
-  digests.
+  digests. C2's next display piece adds CT-RPI-14 over the drafted chart repertoire (RPI.34 is open), CT-RPI-18 on
+  the CPU reference (its device version, CT-RPI-33, waits for the renderer), CT-RPI-19's Windows leg, CT-RPI-22's
+  chart half (with the views' limit half, CT-RPI-22 runs whole) and the headless part of CT-RPI-32.
 - Display drafts: the list in the crate documentation, among them the validation order, string dependency keys,
   set digests over sorted piece IDs, canonical JSON standing in for the output bytes, form `stop` for every error
-  after acceptance, and a publication to a view that is not open being invalid.
-- Not built: CT-RPI-22's chart half (the display-plan validator now exists; it is C2's next piece); CT-RPI-08's
-  jumbling rows and the posed producer wait for M5; a decoder from the interpreter's values needs list types in the
-  IR (LP2); the user-stage checker (RPI.68 to RPI.80), so F05 and F26 stay unsupported; CT-RM-09's rows 3 to 6, 8
-  and 10 (the raster
-  bound, frame-report stops and device-fault quarantine) need a user-stage checker or a device; RM.38's weight table,
-  device loss and `display_unsupported` belong to the renderer and its backend.
+  after acceptance, and a publication to a view that is not open being invalid. C2's next display piece adds the
+  drafted chart repertoire (stereographic charts declared by their pole, over convex hulls of exact vertices, with the
+  properties domain, injective and section; RPI.34), exact poses only (every float pose is refused, never rounded;
+  RPI.30, LB4.2), Q(√5) arithmetic local to the crate (KN3.2, KN3.3), the fixtures' own precision rule (1e-4 absolute,
+  with an exclusion of 0.05 per vertex; RPI.36), RPI.56's key over the exact fields only, and the stage output rules
+  as diagnostics (RPI.68, RPI.69, RPI.75). C2's draft that every exact chart property is `not_established` now holds
+  only when the validator's context carries no check result for it (RPI.48).
+- Not built: CT-RPI-19's Linux leg (no Linux run in this session); the rest of CT-RPI-32, which needs the stage
+  module's parser and checker (RPI.69 to RPI.71, RPI.77, RM.38's weight table) and a backend for HLSL compilation, the
+  raster bound and frame reports (RPI.72, RPI.78, RM.41); KN3's polytope operations in the kernel, so the region test
+  is local to this crate; charts and properties outside the drafted repertoire, the GPU agreement check (RPI.35) and a
+  production precision rule (RPI.36). CT-RPI-08's jumbling rows and the posed producer wait for M5; a decoder from the
+  interpreter's values needs list types in the IR (LP2); F05 and F26 stay unsupported until the stage checker exists;
+  CT-RM-09's rows 3 to 6, 8 and 10 (the raster bound, frame-report stops and device-fault quarantine) need a stage
+  checker or a device; RM.38's weight table, device loss and `display_unsupported` belong to the renderer and its
+  backend.
 - Evidence kind: source and synthetic. Every ceiling in the tests is a fixture value; nothing is measured, and nothing
   advertises support or a profile (RPI.82, RM.40).
 
