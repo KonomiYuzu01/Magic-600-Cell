@@ -9,8 +9,8 @@ use c600_command::{Kind, Table};
 use c600_digest::sha256_hex;
 use c600_ir::{Effect, FnKind, Program};
 use c600_repr::tool::{
-    admit, check_record, entry_digest, manifest, review_class, row_within_view_aid, Entry, Finding, Manifest,
-    RecordFault, ReviewRecord, Rule, ENTRIES, MODULE, ROWS, SOURCE, UNEXPRESSED,
+    admit, check_record, entry_digest, manifest, review_class, review_source, row_within_view_aid, Entry, Finding,
+    Manifest, RecordFault, ReviewRecord, Rule, ENTRIES, MODULE, ROWS, SOURCE, UNEXPRESSED,
 };
 use c600_syntax::{format, lower, parse};
 use c600_tools::tool::{admit_built_in, lower_source, targets, BoundaryClass};
@@ -90,7 +90,9 @@ fn the_source_parses_lowers_and_every_entry_is_admitted_under_the_built_in_colum
 /// needs no commit preview, and the mechanical review of the class finds nothing outside it; a commit row, a row the
 /// table does not have, an entry on a row outside the row set and another class are each found. A record names the
 /// tool, the class, the source digest, every entry's digest and the row set, and a record for other source bytes is
-/// refused. Not run: BM5's review has not happened, so no review record of the shipped tool exists; the record
+/// refused, and so is a record whose reviewer is blank. The review of source bytes passes only the bytes the manifest
+/// names: other bytes that lower to an equal program are found, and so are bytes that do not lower. Not run: BM5's
+/// review has not happened, so no review record of the shipped tool exists; the record
 /// checked here carries a fixture reviewer and is no review. The row predicate reads a row's kind, token and preview
 /// rule only: that a query row prepares a commit preview (`operation.preview`) is found by the entry review, not by
 /// the row set.
@@ -114,6 +116,14 @@ fn ct_bnd_15_representations_part_class_declared_rows_within_class_and_record_na
     assert!(manifest.entries.iter().all(|e| manifest.rows.contains(&e.row)));
     let program = program();
     assert_eq!(review_class(&program, &manifest, &table).expect("reviewed"), Vec::new());
+
+    // The review of source bytes: only the bytes the manifest names, and they must lower.
+    let source_rules = |source: &str| {
+        review_source(source, &manifest, &table).expect("reviewed").iter().map(|f| f.rule).collect::<Vec<_>>()
+    };
+    assert_eq!(source_rules(SOURCE), []);
+    assert_eq!(source_rules(&format!("{SOURCE}\n")), [Rule::SourceDigest], "an equal program from other bytes");
+    assert_eq!(source_rules("module"), [Rule::SourceDigest, Rule::SourceUnlowered]);
 
     // What the review finds when the row set leaves the class.
     for commit in ["operation.execute", "session.undo", "twist.apply"] {
@@ -146,6 +156,8 @@ fn ct_bnd_15_representations_part_class_declared_rows_within_class_and_record_na
     assert_eq!(form.entries.values().collect::<BTreeSet<_>>().len(), ENTRIES.len(), "one digest per entry");
     let filled = ReviewRecord { reviewer: "fixture reviewer; no BM5 review exists".to_owned(), ..form.clone() };
     assert_eq!(check_record(&filled, &manifest), Vec::new());
+    let blank = ReviewRecord { reviewer: " \t ".to_owned(), ..form.clone() };
+    assert_eq!(check_record(&blank, &manifest), [RecordFault::NoReviewer], "a blank name is no reviewer");
 
     // A record names the exact source: for other source bytes every entry digest differs.
     let edited = format!("{SOURCE}\n");
@@ -176,7 +188,8 @@ fn ct_bnd_15_representations_part_class_declared_rows_within_class_and_record_na
 /// it: a view aid stores what the solver named. The variants that preview the stored word, read directly or through a
 /// declassifier, are refused with `LG3:capability.not_granted` at the entry and at the proposal, and with the
 /// declassifier enabled still at the proposal; a variant that reads its target from state is refused at the entry.
-/// The review finds each as choosing a target. Not run: LX-3's correction solve, which is the 600-cell-Full tool's
+/// The review finds each as choosing a target. An exported function the manifest does not list is found, so no entry
+/// escapes the review by being left out of the manifest. Not run: LX-3's correction solve, which is the 600-cell-Full tool's
 /// case, and any run of an entry, since no route leads from the rows to the entries yet.
 #[test]
 fn ct_lb6_03_representations_part_class_reviewed_against_entries_and_storage_laundering_refused() {
@@ -254,4 +267,12 @@ fn ct_lb6_03_representations_part_class_reviewed_against_entries_and_storage_lau
     assert_eq!(report.diagnostics.iter().map(|d| d.code).collect::<Vec<_>>(), [EFFECT_UNDECLARED]);
     let findings = review_class(&program, &wider, &table).expect("reviewed");
     assert_eq!(rules(&findings, "writes"), [Rule::CheckerDiagnostic, Rule::WorkspaceOutsideRow]);
+
+    // The same variants left out of the manifest: each export is found as unlisted, and nothing else is.
+    let (program, unlisted) = variant(tail, &[]);
+    let findings = review_class(&program, &unlisted, &table).expect("reviewed");
+    let found: BTreeSet<(Rule, Option<&str>)> = findings.iter().map(|f| (f.rule, f.entry.as_deref())).collect();
+    let names = ["stash", "relay", "relay_declassified", "chooses"];
+    let expected: BTreeSet<(Rule, Option<&str>)> = names.map(|name| (Rule::EntryUnlisted, Some(name))).into();
+    assert_eq!((findings.len(), found), (4, expected));
 }

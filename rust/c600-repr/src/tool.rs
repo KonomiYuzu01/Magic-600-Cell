@@ -9,7 +9,7 @@ use c600_check::{check, Admission, Grant, IrError, Policy};
 use c600_command::{Kind, PreviewRule, Row, Table};
 use c600_digest::sha256_hex;
 use c600_ir::{Effect, FnKind, Function, Program};
-use c600_tools::tool::{admit_built_in, targets, BoundaryClass};
+use c600_tools::tool::{admit_built_in, lower_source, targets, BoundaryClass};
 
 /// The tool's source: edition `6cs-draft-1`, syntax candidate A, in the formatter's canonical layout.
 pub const SOURCE: &str = include_str!("representations.6cs");
@@ -109,6 +109,9 @@ pub enum Rule {
     EntryMissing,
     /// The entry is not exported, or its kind differs from the manifest's.
     EntryDefinition,
+    /// The module exports a function the manifest does not list: the review covers every exported function, so no
+    /// entry escapes it by being left out of the manifest.
+    EntryUnlisted,
     /// The built-in column refuses the entry.
     ColumnRefusal,
     /// The entry's row is not one of the tool's rows, or the tool's row is not in the stored command table.
@@ -126,6 +129,10 @@ pub enum Rule {
     StoresStateDerived,
     /// The entry has an effect a view aid has no use for: a file, randomness or budget effect.
     EffectOutsideClass,
+    /// The source bytes are not the ones whose SHA-256 the manifest names ([`review_source`]).
+    SourceDigest,
+    /// The source does not parse or lower ([`review_source`]).
+    SourceUnlowered,
 }
 
 /// One finding of a class review.
@@ -154,8 +161,10 @@ fn function<'p>(program: &'p Program, module: &str, entry: &str) -> Option<&'p F
 }
 
 /// Reviews the manifest's class against the exact entry definitions in `program` and against the row set in `table`
-/// (BND.37). An empty result means that nothing lies outside the class as this draft reads it; it is the mechanical
-/// part of a review and no review record.
+/// (BND.37). Every exported function of the tool's module is reviewed, and one the manifest does not list is a
+/// finding. An empty result means that nothing lies outside the class as this draft reads it; it is the mechanical
+/// part of a review and no review record. A program carries no source digest: [`review_source`] reviews the source
+/// bytes the manifest names.
 pub fn review_class(program: &Program, manifest: &Manifest, table: &Table) -> Result<Vec<Finding>, IrError> {
     let mut out = Vec::new();
     if manifest.class != BoundaryClass::ViewAid {
@@ -227,6 +236,27 @@ pub fn review_class(program: &Program, manifest: &Manifest, table: &Table) -> Re
             }
         }
     }
+    let listed: BTreeSet<&str> = manifest.entries.iter().map(|e| e.name).collect();
+    let exported = program.modules.iter().filter(|m| m.name == manifest.module).flat_map(|m| &m.functions);
+    for f in exported.filter(|f| f.exported && !listed.contains(f.name.as_str())) {
+        let note = "an exported function the manifest does not list";
+        out.push(finding(Rule::EntryUnlisted, Some(f.name.as_str()), None, note));
+    }
+    Ok(out)
+}
+
+/// Reviews the tool's source bytes: they must be the bytes whose SHA-256 the manifest names, and they must parse and
+/// lower; the program they lower to then gets [`review_class`]. Other bytes are found even when they lower to an
+/// equal program, because a review record names the source digest.
+pub fn review_source(source: &str, manifest: &Manifest, table: &Table) -> Result<Vec<Finding>, IrError> {
+    let mut out = Vec::new();
+    if sha256_hex(source.as_bytes()) != manifest.source_sha256 {
+        out.push(finding(Rule::SourceDigest, None, None, "the source is not the one the manifest names"));
+    }
+    match lower_source(source) {
+        Ok(program) => out.extend(review_class(&program, manifest, table)?),
+        Err(error) => out.push(finding(Rule::SourceUnlowered, None, None, error)),
+    }
     Ok(out)
 }
 
@@ -245,7 +275,7 @@ pub struct ReviewRecord {
 
 impl ReviewRecord {
     /// What a record for `manifest` names, with no reviewer: a form to fill in, not a review. [`check_record`]
-    /// refuses a record without a reviewer.
+    /// refuses a record whose reviewer is empty or blank.
     pub fn form(manifest: &Manifest) -> ReviewRecord {
         ReviewRecord {
             tool: manifest.tool.to_owned(),
@@ -278,7 +308,7 @@ pub enum RecordFault {
 /// result means it does. A record for other source bytes names other entry digests and is refused.
 pub fn check_record(record: &ReviewRecord, manifest: &Manifest) -> Vec<RecordFault> {
     let mut faults = Vec::new();
-    if record.reviewer.is_empty() {
+    if record.reviewer.trim().is_empty() {
         faults.push(RecordFault::NoReviewer);
     }
     if record.tool != manifest.tool {

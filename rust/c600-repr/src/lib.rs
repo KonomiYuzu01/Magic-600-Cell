@@ -44,6 +44,9 @@
 //!   SHA-256 of the module's source bytes ([`tool::entry_digest`]). A review record ([`tool::ReviewRecord`]) names the
 //!   tool, the reviewer, the class, the source digest, every entry digest and the row set. BM5's review has not
 //!   happened: the crate ships the record's form and its check, and no record.
+//! - BND.37, CT-LB6-03: the class review covers every exported function of the tool's module, so an export the
+//!   manifest does not list is a finding; [`tool::review_source`] reviews source bytes only under the manifest that
+//!   names their SHA-256, and finds bytes that do not lower. A blank reviewer name is no reviewer.
 //! - LB4.4: a representation is one display plan whose primitive 0 is its sheet or atlas and whose primitive 1 is a
 //!   set overlay holding the mechanically analysed set with its exact-set digest. A layout filter rebuilds primitive
 //!   0, the instance list and the source map's entries only. Filters of trees, complexes and graphs, and of layouts
