@@ -25,7 +25,8 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-module` | Module closures, lockfiles and their approval binding: the draft manifest and lock forms, resolution by content digest, closure verification and the closure digest, an approval bound to that digest, and load and run through the run-time boundary (LP3, C4) |
 | `c600-runtime` | The runtime in a process of its own (route RT1): the child binary `c600-runtime`, the parent library that starts it and answers its host calls, the wire protocol draft `c600-rt1-wire-1` and the in-process reference path (LP3, C3) |
 | `c600-durable` | LP3 C7's durable conformance cases on M6's session store, test-only: CT-RTE-08's persisted word, CT-EV3-07's durable action order and view part, and CT-LB2-03's work-sheet part (LP3, C7) |
-| `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, the recipe expansion and the source route `c600-lp3-source` (LP3, C5) |
+| `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, in process or on the runtime's own process, the recipe expansion, the source route `c600-lp3-source` and the tool's views (LP3, C5) |
+| `c600-repr` | The representations tool, headless half: layouts and atlases with their source maps, the layout filter, linked selection, chart surveys and user-chart admission over the display contract, the tool's `.6cs` source and `view_aid` manifest, its class review, and what its six rows need from the command layer (LP3, C6) |
 | `c600-input` | The headless input router: synthetic key events to command-layer invocations in chapter 04's routing order, bindings resolved to absolute arguments at the press, the held-key allowlist and the key-map checks (LP3, C5) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
@@ -39,12 +40,16 @@ The module crate depends on the syntax, IR, checker, interpreter and digest crat
 layer.
 The runtime depends on the syntax, checker, interpreter, IR and digest crates and the big-integer crates, and has no
 path to the command layer.
-The tools crate depends on the syntax, checker, interpreter, IR, digest and kernel crates and on the command layer: its
-host bridge connects the in-process interpreter to the command layer as the runtime's host. The runtime's own process
-(C3) is not connected to the bridge yet.
+The tools crate depends on the syntax, checker, interpreter, IR, digest and kernel crates, on the command layer, and on
+the runtime, display and view crates: its host bridge connects the interpreter, in process or in the runtime's own
+process (C3), to the command layer as the runtime's host, and its views build on the display contract and the view
+model.
 The input router depends on the command layer and the kernel crate only, so a key reaches a kernel row with no path to
 the interpreter (ONE.48).
 The jumbling crate depends on the kernel and digest crates and the big-integer crates.
+The representations crate depends on the checker, IR and digest crates, the display contract, the tools crate, whose
+built-in column admits its entries, and the command layer, whose stored table its class review reads; it draws nothing
+and owns no device.
 The durable crate holds tests only; its dev-dependencies are the session store, the module crate, the checker, the
 syntax crate, the interpreter, the kernel and the digest crate.
 
@@ -87,6 +92,23 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   also when an unresolved call or an open effect variable may prepare one.
 - What an own tool may read in a solving session stays open (BND.59): the checker reports the open cell and neither
   grants nor refuses it.
+- The built-in tool column of chapter 07's grant table (draft, LP2; LP3 asked for it): `admit_built_in` admits one entry
+  of a built-in tool in the solving profile against the rows its reviewed class lists (`Row`, BND.57); the IR has no
+  manifest, so the caller supplies them, and each summary lists the rows it may use (`Summary::rows`). It refuses with
+  `LG3:capability.not_granted` an entry that is not exported, an ungranted capability, an entry that both reads state
+  and prepares previews, a row the class does not list or the checker cannot name (an unresolved call, an open effect
+  variable), and a proposal or a word-carrying workspace write whose word the solver did not name to the entry, unless
+  an enabled declassifier covers the write; a write at a type variable, or of a record or callable type that holds a
+  word or a type variable, counts as one that may carry a word. The rule is conservative: it also refuses a named word
+  passed to a helper that proposes or writes it, a write of a record or closure built from named words, and a proposal
+  to a `Target` parameter (a row the checker cannot name). Not built: the column's two exceptions (CT-BND-17,
+  CT-BND-18), the derived-state row (the IR draft has no `derive`), rule 6's check of the facts a view shows and the
+  class review (CT-BND-15).
+- An entry that is no command and changes the workspace or prepares a preview is `LG3:effect.undeclared` at `entry`
+  (LG3.5, LG3.6), on the built-in column and, for a workspace change, in `admit`'s solving profile. This confirms and
+  closes LP3's finding of an exported plain `fn` that proposes: `check` admits it, since a command may call such a
+  helper. In tool authoring and research `propose` goes to a capture (BND.60), and the frozen text does not say whether
+  such a run needs a command entry, so `admit` still admits one there.
 - Base types (LG2.1). A value whose base type does not fit its use is the diagnostic `LG2:type.mismatch` at the path
   of the offending expression, with the expected and supplied types in source notation (`Diagnostic::mismatch`); the
   exactness fields stay empty. This covers arguments, conditions, branches and arms, patterns, operands, field reads,
@@ -122,15 +144,24 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   `LG2:type.exact_required`; a display-qualified result shows its qualifier instead, so a later exact use erases it. A
   call inside a `display_if` branch to a function that may reach the caller again, directly or through a function
   reference, is refused: approximate data cannot bound recursion. A workspace or snapshot read keeps the display
-  qualifier of every field the program stores under that name.
-- Known limits of M1, leads from the Fable attack (owner decision, 15 November 2026) that no test confirms yet: an
-  effect variable of a view's callable parameter instantiated at a call site with a workspace or preview effect is not
-  checked; recursion through a callable parameter whose bound has no effect variable is not traced; and the
-  approximate-control bit follows named functions only, not declared callable types.
-- Not in M1, because they need the runtime (M2, M3): the built-in tool column of the grant table, the fixed
-  acknowledgement of BND.43, the saved-word half of CT-LG3-07, the undo half of CT-LG3-03 and research output that
-  never becomes a solving preview (BND.61). M3 builds the acknowledgement, the saved-word half and BND.61's refusal
-  at run time (below); the built-in tool column and the undo half of CT-LG3-03 stay open.
+  qualifier of every field the program stores under that name, and a read at a type variable keeps the stored
+  qualifier itself, also in a record field (LG2.19; lead L1 of the M7 attack, 16 November 2026).
+- An approximate literal as a match pattern is `LG2:type.exact_required` at the match: it is never read as exact
+  (LG1.7), and a pattern compares as an exact equality does (lead L2 of the M7 attack).
+- The three known limits of M1, leads from the Fable attack (owner decision, 15 November 2026), each confirmed by an
+  attack test (`c600-check/tests/limits.rs`). Closed: an effect variable of a view's callable parameter that a call
+  site instantiates with a workspace or preview effect is `LG3:effect.undeclared` at the call (LG3.5, LG3.6), also
+  through a function value or a record field; recursion through a callable passed to a parameter whose bound has no
+  effect variable is traced (LG2.20); and a function value or closure keeps its approximate-control bit, so an exact
+  use of its result is `LG2:type.exactness_violation` (LG2.22). Open: a callable known only by its declared type
+  carries no control bit, since the IR draft's function type has no place for one, so an exact use of its
+  approximate result is `LG2:type.exact_required`; the refusal holds and only the code differs until the IR freeze
+  (PHS.49). A further lead, not yet fixed: recursion steered inside the callee, where a helper calls its callable
+  parameter in a `display_if` branch and is passed a function that reaches the helper again, is admitted.
+- Not in M1, because they need the runtime (M2, M3): the fixed acknowledgement of BND.43, the saved-word half of
+  CT-LG3-07, the undo half of CT-LG3-03 and research output that never becomes a solving preview (BND.61). M3 builds
+  the acknowledgement, the saved-word half and BND.61's refusal at run time (below); the undo half of CT-LG3-03 stays
+  open.
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
 
 ## Status of M7: the parser
@@ -196,27 +227,32 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - The reference meter of chapter 09 (DET.55 to DET.60) replays the 40 frozen contract-vector traces with every field
   compared exactly, and the meter boundary vectors derived from them (`c600-run/tests/traces.rs`). The frozen test
   tariffs are `Tariffs::TEST`, labelled test-only.
-- `traces.rs` also runs seven traces as programs through `Loaded::run` (nested-calls, output-equality,
-  output-retained-at-cutoff, simultaneous-exhaustion, simultaneous-memory-output, step-precedence and generator) and
-  stops each limit one unit below use at the predicted row. Two differences from the vectors come from the fixtures,
-  not from a defect. `nested-calls` completes at the frozen use plus 2 steps, 5 kernel, 16 memory and 5 output: in the
-  draft frame layout every body has at least one slot, so the smallest frame is 24 bytes, while the vectors' zero-slot
-  frames are synthetic (CV.2). RT1 charges an encoding row and then a publication row, as DET.59 allows, where a
-  fixture `emit` is a fused row of known size (CV.5). The other traces wait for child jobs (M6), loops, assertions and
-  multiplication in the IR, streaming words (KN2.10) or form 2; they still replay through the meter.
+- `c600-run/tests/det65_programs.rs` runs 11 of the 40 traces as programs through `Loaded::run`: nested-calls,
+  equal-to-limit, step-precedence, simultaneous-exhaustion, simultaneous-memory-output, generator, the three display
+  traces, output-equality and output-retained-at-cutoff. Each frozen row and each cutoff (dimension, phase, scope, denied row,
+  source range) equals the vector, under LP3's limit mapping (`c600-runtime/tests/ct_rte_04.rs`): CT-DET-26, 27, 28
+  (synthetic), 29, 31 and 32, all in part, on RT1 only.
+- The other 29 are listed with the reason the IR draft cannot express them: child scopes (6), a generator started,
+  aliased or returned in a call (4), a `let` released before its alias (2), text order (1), byte decoding (2), loops,
+  assertions and flow checks (3), exact multiplication (3), streaming cursors (3) and display form 2 (5). They still
+  replay through the meter.
+- The product output profile is not the fixtures' (CV.5): a realisation publishes values with the fixture's byte
+  counts, and `output-retained-at-cutoff`'s one-byte denied unit gets two bytes of kernel-cost headroom, since no
+  `c600-json-1` unit is shorter than three bytes.
 - `load` checks the IR identity and the program's names, arities, literals and precisions
   (`LG4:input.ir_version_unsupported`, `LG4:input.ir_rejected`). `Loaded::run` evaluates with an explicit work stack:
   one charge row per operation (DET.55), interruption observed before each operation (DET.56), aliases and owners
-  (DET.58), DET.59's priced encoding before publication, the generator `sha256-counter-draft-1` (DET.61) and
-  `display_if` charging the selected branch only (DET.64). A stop names the call path, the operation and its source
-  range.
+  (DET.58), each output unit as one fused row of encoding work, buffer and bytes (DET.56, DET.59), a preview
+  request's priced `encode` pass before `invoke`, the generator `sha256-counter-draft-1` (DET.61) and `display_if`
+  charging the selected branch only (DET.64). A stop names the call path, the operation and its source range.
 - Values: exact `Int`, `Rat` and Q(√5) arithmetic, order and equality with widening, on `num-bigint`; `Approx<p>` for
   p in {24, 53, 113}, rounded to nearest with ties to even; canonical `c600-json-1` bytes with FP.6's exact and `f64`
   forms. Deep values compare, encode and drop without recursion.
-- Drafts, which freeze with the IR (PHS.49): operation names, the stop locator, the frame layout, the receipt request
-  record, the JSON form of a word (LG2.18's word keys stay open) and `DraftTariffs`, test-only tariffs for the rows the
-  frozen vectors do not price. The IR draft has one read construct for snapshots and workspace records; the IR freeze
-  should split it.
+- Drafts, which freeze with the IR (PHS.49): operation names, the stop locator, the frame layout (parameters,
+  captures, `let` slots and operand temporaries; a body's own result has no slot), a value's canonical byte length as
+  retained metadata (so an output unit is one fused row), the receipt request record, the JSON form of a word (LG2.18's
+  word keys stay open) and `DraftTariffs`, test-only tariffs for the rows the frozen vectors do not price. The IR
+  draft has one read construct for snapshots and workspace records; the IR freeze should split it.
 - Evidence kind: source and fixture.
 
 ## Status of M3: the run-time boundary
@@ -281,12 +317,12 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   reports a `CertificateError` or `LoadError`; an orbit outside 0 to 34 in a protected set is refused with
   `KN2:input.named_object_invalid`; with one model in `assets/`, the other-identity control changes the case instead
   of loading a second model.
-- Not built: the `positions` row, Strict protection, streaming words (KN2.10, CT-KN2-07), `open_snapshot` by
-  `RevisionRef` (with the session store, M6), the reachability claim of `Derived`, budgets (KN7), an inverse call
-  (O05's inverse recipes come from 0.4's `core.invrecipe` in the case files) and the jumbling half (M5).
-- Open: `Kernel::protection` has no model check and returns a `Protection`, not a `Result`, so it cannot refuse
-  another model's set (KN1.4); that needs an API decision. M6's `state_from_labels` builds a snapshot at the same level
-  from any permutation of the slots, so CT-KN1-04 lists it as no lift; reachability stays the caller's evidence.
+- Not built: `open_snapshot` by `RevisionRef` (with the session store, M6), the reachability claim of `Derived`,
+  budgets (KN7), an inverse call (O05's inverse recipes come from 0.4's `core.invrecipe` in the case files) and the
+  jumbling half (M5). The `positions` row, Strict protection and streaming words were built after M4 (below).
+- Open: M6's `state_from_labels` builds a snapshot at the same level from any permutation of the slots, so CT-KN1-04
+  lists it as no lift; reachability stays the caller's evidence. The model check on protection was open here and is
+  built after M4 (below).
 - Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model read the kernel with the
   acceptance check. Its two major findings were fixed before the pull request, and a scoped re-check found no blocking
   finding: R1, the model ID was not tied to the file list; R2, the loader's refusals had no tests (the checks inside the
@@ -303,6 +339,26 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   `check_unreadable_recipe_json` pins that agreement.
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run. The timings the check
   prints are informational, not performance evidence.
+- LP2 kernel rows after M4, which LP3 waits for (the crate documentation lists the draft choices):
+  - KN1.4 for protected sets: a nonempty `ProtectedSet` is bound to its model, and `checked_protection`,
+    `strict_protection`, `derive`, `derive_strict` and `replay` refuse another model's set with
+    `KN1:input.identity_mismatch`. `protection` keeps its signature and stays unchecked. The empty set names no model.
+  - Strict protection (KN2.4, KN2.7): `ProtectionMode::Strict`, `strict_protection` and `derive_strict` judge every
+    executed prefix of the literal expansion; `derive` stays Net. On the shipped model every generator moves a sticker
+    of each of the 35 orbits, so Strict refuses any word at prefix 1 once one orbit is protected; the later-prefix
+    tests run on a copy of the model whose generator 1200 leaves orbit 0 alone.
+  - KN2.11's refusal shape (deferred R3): `Refused` has `first_refused_prefix`, the outcome `refusal` and
+    `certificates`, and `Protection` has `first_refused_prefix`. Draft: a Net refusal reports no prefix, since Net
+    judges only the end of the complete operation (LB2.3); its certificates come from the net map.
+  - The `positions` row: `positions(state, pieces)` gives each named piece's home slots, the slots that hold its
+    stickers now and the position that holds them all.
+  - Streaming words (KN2.10): `chunks(recipe, size)` streams a recipe's literal letters with their positions, one
+    step's expansion at a time; `replay(base, set)` takes letters in chunks of any size, judges Strict prefix by
+    prefix and gives no verdict before `finish`; `replay_under_ceiling` counts the 3,000,000 ceiling over all chunks.
+  - Contract tests: CT-PS1-12 whole; the kernel halves (parts) of CT-LB2-02, CT-LB2-03, CT-LB2-04, CT-LG2-12 and
+    CT-LG2-14; CT-KN2-07 as a part: a 100,001-letter Full word replays in chunks equal to its whole derivation. Not run:
+    the recorded words of CT-KN2-07, which are jumbling words, and any Full stream beyond 3,000,000 letters in the test
+    profile.
 
 ## Status of M5: the jumbling half
 
@@ -344,6 +400,30 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   and the comparison checks; R7, the INV-4 half of CT-KN2-05 is not scanned, and the test's docstring says why; R8,
   CT-KN3-02's large entries come from rotations the test chooses, which the engine makes exact and `load` reads back
   with the rotation and the digest checked exactly, and J1's digest agrees on the first.
+- Attack tests from the Fable solver's leads of 16 November 2026: `tests/test_jumbling_rust_attacks.py` (through the
+  adapter), `c600-jumble/tests/refusals.rs` and `c600-jumble/tests/domain.rs`. CT-JI-03 in part (cancellation yields
+  only covered prefixes; the fixed core cell is listed in the identity domain), CT-KN2-04 in part (a blocked word
+  check and refused named objects change nothing) and CT-KN2-02 in part (the free-mode pose's domain ID names the
+  coset g K+: g k keeps it for every k in K+, k g only when g^-1 k g lies in K+); the other tests check JI.3, JI.5,
+  JI.6, JI.9 to JI.12, JI.39, JI.45, JI.52, JI.53, KN1.4 and KN2.14.
+- Fixed after those tests. R6 is reversed: a word check whose prefix is refused makes no end-state assertion (JI.11);
+  its 22 end-state fields are null with `end_state_undefined` "refused_prefix", the start facts, the failing index
+  and the processed range stay, and with a named unit the step flag is false (LB3.8 checks every prefix). A cap
+  outside 0..599 in `word_check`, `prefix_observations` or `seam_facts`, and a negative piece ID in a named unit,
+  were adapter input errors; they are now refused with `KN2:input.named_object_invalid`, and every such refusal
+  names the argument, the supplied IDs and the failed condition (JI.45). A request or a state record may name its
+  `dimension`; any value other than 4 is refused with `KN1:input.unsupported_dimension` before any other field is
+  read (JI.3, JI.45).
+- Drafts: a request or record without a dimension means 4; a refused prefix's processed range is [0, index + 1),
+  the refused letter examined and the suffix unchecked.
+- J1 faults, reported and not fixed: `references/word_check.py` describes a refused prefix's end state and gives a
+  boolean step flag without a named unit (JI.11), and accepts a lattice piece or a mixed-pose set as the unit (JI.9);
+  `sim/api.py`'s `fixture_state` silently replays another prefix for a t outside 0 to the record count, and its
+  `pose_entries` hands out J1's own exact numbers, which take attribute assignment, so the "read-only copy" can change
+  the state's pose table (JI.52). The attack tests keep them as expected failures.
+- Not run, because M8 builds the calls: lead L9 (`label_checkpoint` on a raw table with a turned centre), L15's
+  `repair_list` and `covers` rows (pair order, no rank, a missing cap), L2's `release_check` agreement and L16's
+  `KN2:stale.revision_gone` (the candidate has no snapshot handles).
 - Evidence kind: source and fixture. The comparison ran on Windows only. The timings the check prints are
   informational, not performance evidence.
 
@@ -497,7 +577,7 @@ run or not applicable is no pass (PHS.63).
 
 - Where they are:
   - `c600-check/tests/`: the checker's own tests carry their IDs (`effects.rs`, `exactness.rs`, `mismatch.rs`,
-    `vectors.rs`).
+    `vectors.rs`, and the built-in column's `built_in.rs`, M7 attack leads' `leads.rs` and M1 limits' `limits.rs`).
   - `c600-syntax/tests/`: `conformance_lg1.rs` to `conformance_lg3.rs` write the LG tests in source; `errors.rs` holds
     CT-ERR-05's encoding half (ERR.10's raw context for each malformed shape); `syntax.rs`, `format.rs` and
     `lowering.rs` mark M7's tests.
@@ -505,11 +585,12 @@ run or not applicable is no pass (PHS.63).
     `conformance/mod.rs`); `conformance_bnd.rs` runs the boundary tests, and `tables.rs` enumerates the grant table
     and the corpus; `legacy.rs` runs CT-PS1-18's legacy parts; `conformance_det.rs` runs the CT-DET rows on RT1;
     `canonical_ps1.rs` runs the canonical-profile rows (CT-PS1-01 to CT-PS1-07, CT-DET-23 and, synthetic, CT-KN3-02);
-    `traces.rs` and `values.rs` mark the meter's and the values' rows.
+    `traces.rs` and `values.rs` mark the meter's and the values' rows; `det65_programs.rs` runs 11 of DET.65's 40
+    traces as programs and lists why the other 29 do not run.
   - `c600-kernel/tests/`: `kernel.rs`, `load.rs` and `json.rs` run the 600-cell-Full halves of the KN rows, CT-PS1-04
     and CT-PS1-12 (M4's section).
   - `c600-jumble/tests/`: `crossing.rs` runs CT-KN2-03, and `assets.rs` the jumbling model's asset checks (M5's
-    section).
+    section); `domain.rs` and `refusals.rs` hold the candidate's halves of Fable's M5 attack leads.
   - `c600-evidence/tests/` runs the EVD rows (the evidence library's section).
   - `c600-session/tests/`: M6's tests mark their rows (M6's section), CT-ONE-03 to CT-ONE-05, CT-ONE-11, CT-ONE-21,
     CT-ONE-23 and CT-ONE-24 included. `conformance_rows.rs` runs the session's half of CT-ONE-01 and CT-ONE-02 over
@@ -523,12 +604,15 @@ run or not applicable is no pass (PHS.63).
     `tests/test_source_checkout.py` reads every `.6cs` source and every pinned packet file as LF, CRLF and `input`
     checkouts write them (CT-LG1-02, CT-PS1-05's checkout half); `tests/test_kernel_oracle.py` replays O01 to O07 and
     N01 to N04 through the kernel (M4's section); `tests/test_jumbling_rust_candidate.py` compares the jumbling
-    candidate with J1 (M5's section).
-- Count with LP3's C1 to C5 and M5: 58 whole, two of them with the tests they name (CT-KN4-04, CT-ONE-23) and seven by
-  the union of their parts (CT-LG2-04, CT-LG3-01, CT-LG3-04, and with M5 CT-KN1-05, CT-KN2-01, CT-KN2-04 and CT-KN2-05);
-  116 part; 5 named only by LP3's command-layer tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04,
-  CT-LI-09 and CT-LI-10); 2 named only as not built (CT-KN2-07, CT-LG4-05); 67 missing. CT-KN5-08 counts as missing,
-  since only the documentation in `c600-command/src/layer.rs` names it.
+    candidate with J1 (M5's section); `tests/test_jumbling_rust_attacks.py` runs Fable's M5 attack leads, with J1's
+    faults as expected failures (M5's section).
+- Count with LP3's C1 to C5 and C7, M5 and LP2's first integration batch, as `tools/language/ct_index.py --summary`
+  prints it
+  (`tests/test_ct_index.py` checks the tool): 59 whole, seven of them by the union of their parts (CT-KN1-05,
+  CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01 and CT-LG3-04); 118 part; 5 named only by LP3's command-layer
+  tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04, CT-LI-09 and CT-LI-10); 1 missing despite its name
+  (CT-KN5-08: only the documentation in `c600-command/src/layer.rs` names it); 65 waiting, each with what it waits for
+  in `docs/progress/1.0/lp2-ct-index-notes.md`.
 - Not run or not applicable, which is no pass (PHS.63), with the check that runs instead: CT-LG3-06's flow-label
   variant, while the flow rule is off (BND.41) and LQ2 has not set it, so the static-only and run-time variants run
   (`c600-run/tests/conformance_lg3.rs`); CT-LG1-03's second host context, since CI runs on Windows only and the editor
@@ -898,3 +982,98 @@ run or not applicable is no pass (PHS.63).
   tests use, its branch ports them.
 - Evidence kind: source and fixture. The file-system leg is a short test in a fresh folder, not long-session
   evidence. The checks ran on Windows only; the Linux leg was not run.
+
+## Status of LP3, C5 next: the process host and the tool's views
+
+- The process host, `c600_tools::process::ProcessHost`, runs the 600-cell-Full tool in `c600-runtime`'s child (C3; route
+  RT1, RTE.21). The child gets the source bytes, the manifest's module and entry, the literal word and the limits, and
+  no token, secret, grant or command layer; the boundary and the bridge stay in the caller's process as the runtime's
+  host, so the program still receives only the fixed acknowledgement. One child serves every run, and after a fault the
+  next run starts a fresh one (KN7.13). The child admits the job as tool authoring and the built-in column stays the
+  caller's, because `c600_check::admit` has no author or column parameter.
+- `c600-lp3-source --host process` replays O01 to O07, and `python tests/test_lp3_source_route.py` runs both hosts:
+  compare.py equality on all seven cases, traces byte-identical across the hosts and to the command route's, and step
+  records, receipts and callers equal across the hosts. Four O07 steps (0, 1, 2 and 8) have a letter outside 1 to 1200
+  in magnitude, which the runtime's wire cannot encode: on the process host the job is refused at the start stage
+  (`PS1:input.noncanonical_value`) and has no receipt, and the step record keeps the kernel's refusal, which the check
+  compares with the in-process receipt's error.
+- The tool's views: `c600_tools::views` is host code, since the tool publishes no view (LQ21, LG3.13, charter E6). It
+  builds the display contract's publication of a proposal and its preview on `c600-display`, the content the headless
+  view model installs on `c600-view`, and the presentation report to the shell, which calls `present` only for a frame
+  the built-in chain drew.
+- Tests (`c600-tools/tests/`), each naming its part:
+  - `views.rs`: CT-EV3-01, CT-EV3-02 and CT-EV3-04, whole for the tool's view; CT-EV3-03, whole, its imported half on a
+    fixture import record; CT-BND-19 for the tool's views (node text, derivation, derived subject, preview literal and
+    installed bytes hold only the word the solver named); CT-ONE-29's user-stage part at the adapter (a user-stage frame
+    mints no token and the commit chord finds no fresh preview; a built-in-chain frame's token commits).
+  - `process.rs`: the same summaries, values, shell records, invocations, receipts and layer on both hosts; the job
+    carries only the admitted source; a word with no transfer encoding is refused at the start stage; a runtime that
+    does not start is reported and changes nothing; the binary names the host in every record (CT-BND-11 and CT-BND-07,
+    parts).
+  - `net_oversize.rs`, on both hosts: CT-LB2-02's Net half (an identity word whose prefixes move protected orbits
+    previews clear in Net mode and commits as one transaction, and the prefix alone is refused); CT-LB2-03's oversize
+    refusal (100,001 letters refused whole on both routes with the same code, 100,000 admitted) and its chunking part on
+    the command route.
+  - `lb3_checker.rs`: CT-LB3-07's checker half, as far as capability separation decides it (an outcome table that reads
+    state and prepares previews is refused; a named-word check that answers only the acknowledgement is admitted).
+  - `kn5_retry_lead.rs`: a lead on KN5.21 to KN5.23, confirmed. A refused envelope that reuses a genuine
+    `operation.execute` envelope's command ID, arguments and binding (a token minted with another secret, or a runtime
+    caller) is stored as that command ID's outcome, so the genuine envelope never commits under it; a fresh command ID
+    still commits. The test records today's behaviour; the requirement went to LP2's KN5 implementation.
+- Not built: the shell's own refusal of a user-stage frame (LP2's KN5 implementation adds a presented-frame input to
+  `present`); CT-BND-19's live-twist part (KN3.7's exact rotations); an import row; grip, cell or piece objects for a
+  word's letters (the kernel has no letter-to-grip map); a view declaring both of the manifest's classes (`c600-view`'s
+  `Declared` holds one class); receipts on the process host for words with no transfer encoding; CT-LB2-02's Strict half
+  (the kernel has Net only); named work-sheet reuse; chunked recipes over 100,000 letters on the source route (the
+  tool's entry takes one flat word); CT-LB3-01's checker half and CT-LB3-07's recommendation rule (`c600-check` decides
+  neither); the child's own built-in admission.
+- Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
+- Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim; the source-route check's timings are
+  informational. The checks ran on Windows only; the Linux leg was not run.
+
+## Status of LP3, C6: the representations tool, headless half
+
+- `c600-repr` is LB6.5's row "Representation, work-set and filter tools", class `view_aid`, over LB4's layouts and
+  atlases, map property checks and linked selection. It draws nothing and owns no device, renderer, clock or session:
+  picks resolve through `c600-display`'s host and the installed source map, exact chart checks are `c600-display`'s, and
+  each entry's admission is `c600_tools::tool::admit_built_in`.
+  - `layout`: sheets and atlases as display plans with their source maps; a layout filter rebuilds the layout, the
+    instance list and the map's entries and leaves the mechanically analysed set alone (LB4.4); a linked selection is
+    computed once for its inputs, and frames only read it (EV3.10).
+  - `chart`: a chart's survey over camera poses, with exact verdicts at exact poses from `c600-display`'s checks and
+    display data between them (LB4.2), and a user chart's admission as far as `c600-display` reaches it (LB4.3).
+  - `tool`: the source [`representations.6cs`](c600-repr/src/representations.6cs) (edition `6cs-draft-1`, syntax
+    candidate A) with five entries, each admitted under the built-in column; the Rust manifest with the class
+    `view_aid`; the review of the class against the exact entry definitions and the row set, which also finds an
+    exported function the manifest does not list and source bytes other than the ones the manifest names; and the form
+    of a review record that names every entry digest (BND.37).
+  - `rows`: what each of the six rows needs from the command layer, which refuses them as not built: a dispatch from a
+    stored row to a built-in tool's entry, the runtime's view and workspace sinks as the job's result, argument forms
+    for the rows' reference types, and a workspace revision that moves. `set.save` also needs a list type in the IR
+    draft. LP3 changes no layer code until KN5's one implementation lands.
+- Tests (`c600-repr/tests/`), each naming its part:
+  - `ct_lb4_03.rs`: CT-LB4-03's 600-cell-Full half. Display instances of two charts map through the installed source map
+    to occurrence, sticker, piece, cell and slot; a chart's inverse value is never consulted for a pick; a layout filter
+    preserves the analysed set. Pose levels are C8's next piece, on M5's kernel.
+  - `ct_lb4_charts.rs`: CT-LB4-01's CPU reference (a declared domain decided by an exact region test and section
+    membership on the posed vertices, boundary cases included; a chart whose vertices pass and whose domain fails inside
+    is refused; an established domain establishes no injectivity); CT-LB4-02, whole (synthetic: replacing the decisions
+    between exact poses changes only display data); CT-LB4-04's admission half and CPU half.
+  - `tool.rs`: the source parses and lowers, and every entry is admitted; CT-BND-15's representations part; CT-LB6-03's
+    representations part (a stash-and-relay, a state-chosen target, a writing view and an exported function the manifest
+    does not list are each found). The record is checked with a fixture reviewer: BM5's review of the tool happens when
+    it ships.
+  - `ct_ev3.rs`: CT-EV3-06's counter half (unchanged frame draws and a workspace-only revision compute no relation;
+    counted, never timed); CT-EV3-07's view half at the command layer (the checker refuses a view that writes the
+    workspace or proposes; after a commit, program calls to the six rows and to `session.undo` are refused, a view
+    overlay row completes as `view_published`, and the revision, the log and the undo hint stay as they were).
+  - `rows.rs`: the requirements name the stored rows as H-08 has them, each row's effects are its entry's, and the layer
+    refuses all six rows; an overlay cannot replace one.
+- Not built: the six rows and a `set.save` entry; the checkers for homomorphism, embedding, isometry and
+  full-dimensional injectivity (CT-LB4-01's rest, which needs KN3's exact polytope operations); the stage checker, HLSL
+  compilation and every device step (CT-LB4-04's rest, the renderer freeze); pose levels and off-lattice relations (C8's
+  next piece, on M5's kernel); the relationship strip; filters of trees, complexes and graphs; a BM5 review record; an
+  explicit workspace command through the command layer (KN5's one implementation).
+- Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
+- Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
+  Linux leg was not run.

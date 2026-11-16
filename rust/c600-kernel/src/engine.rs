@@ -17,11 +17,11 @@ const STAR_CACHE: usize = 96;
 const STEP_COUNT: &str = "Recipe must contain 1..256 steps";
 const BAD_STEP: &str = "Bad recipe step";
 const WORD_LENGTH: &str = "Word length must be 1..100000";
-const BAD_PRIMITIVE: &str = "Primitive ID must be an integer in ±1..±1200";
+pub(crate) const BAD_PRIMITIVE: &str = "Primitive ID must be an integer in ±1..±1200";
 const BAD_STAR: &str = "Bad star fields";
 const BAD_NODE: &str = "Frame node out of range";
 const BAD_KIND: &str = "Only word and star steps are accepted";
-const CEILING: &str = "Preview expansion exceeds 3,000,000 primitives; split the batch";
+pub(crate) const CEILING: &str = "Preview expansion exceeds 3,000,000 primitives; split the batch";
 
 /// A net map: sources in increasing order and their destinations.
 pub(crate) type Net = (Vec<i32>, Vec<i32>);

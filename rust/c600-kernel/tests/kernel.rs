@@ -4,17 +4,21 @@
 //! short agreement test through the same API in the test profile, and the kernel-side leads L4, L6 and L9 of the M4
 //! differential tests (work/reviews/leads/2026-11-16-m4-differential-tests.md).
 
+use std::num::NonZeroUsize;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
 use c600_kernel::json::{self, Value};
 use c600_kernel::{
     archive, codes, Derivation, Effect, IdentityBlock, Kernel, Level, ProtectedSet, ProtectionMode, Puzzle, Recipe,
-    Snapshot, Step, SupportRow, Verdict, PROTECTED_MESSAGE,
+    Snapshot, Step, SupportRow, Verdict, PIECES, PROTECTED_MESSAGE, SLOTS,
 };
 
 /// `Digest<literal word>` of `[1, -1]`, which O06 records.
 const ONE_MINUS_ONE: &str = "b15348c8f462384c01e83b6d499c6faf3f96808f5aa07c6bab4b65b36b4445d4";
+/// 0.4's texts for a bad letter and for the compatibility ceiling (`core.py`, `Model.normalize`).
+const BAD_PRIMITIVE: &str = "Primitive ID must be an integer in ±1..±1200";
+const CEILING: &str = "Preview expansion exceeds 3,000,000 primitives; split the batch";
 
 fn repository() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..")
@@ -407,11 +411,252 @@ fn a_word_recipe_and_a_word_agree() {
     assert_eq!(kernel.effect(&from_json).unwrap(), kernel.effect_by_replay(&direct).unwrap());
 }
 
+/// CT-LB2-02 (part: the kernel half on 600-cell-Full; not run: the captured lock, LB2.3's coverage report and
+/// `LB2:protection.incomplete_coverage`, which are LP3's library rows). A word with an identity net map and a
+/// moving prefix passes Net and fails Strict. The refusal has KN2.11's shape: the first refused prefix, the outcome and
+/// certificates, which the one-letter effect confirms. On the shipped model every generator moves a sticker of every
+/// orbit, so Strict refuses any word at its first prefix once one orbit is protected; `tests/load.rs` tests later
+/// prefixes on a changed copy.
+#[test]
+fn ct_lb2_02_strict_refuses_a_word_that_net_accepts() {
+    let kernel = kernel();
+    let (base, every) = (kernel.solved(), kernel.protected_set(&(0..35).collect::<Vec<i64>>()).unwrap());
+    let recipe = kernel.word(&[1, -1]).unwrap();
+    let Derivation::Derived(net) = derive(&base, &recipe, &every) else { panic!("Net refused word([1, -1])") };
+    assert_eq!(net.state.digest(), base.digest());
+    let Derivation::Refused(refused) = kernel.derive_strict(&base, &recipe, &every).unwrap() else {
+        panic!("Strict accepted word([1, -1])");
+    };
+    assert_eq!((refused.first_refused_prefix, refused.protection.first_refused_prefix), (Some(1), Some(1)));
+    assert_eq!((refused.protection.mode, refused.protection.verdict), (ProtectionMode::Strict, Verdict::Moves));
+    assert_eq!((refused.refusal.code, refused.refusal.message.as_str()), (codes::ORBIT_WOULD_MOVE, PROTECTED_MESSAGE));
+    assert_eq!((refused.base.as_str(), refused.word.as_str()), (base.digest(), ONE_MINUS_ONE));
+    assert_eq!(refused.effect, net.effect);
+
+    // The first refused prefix is word([1]): its conflicts are that letter's rows, and Net's refusal of word([1])
+    // gives the same certificates, one per orbit, each a move of the letter.
+    let one = kernel.word(&[1]).unwrap();
+    let Derivation::Refused(single) = derive(&base, &one, &every) else { panic!("Net accepted word([1])") };
+    assert_eq!((single.first_refused_prefix, single.protection.first_refused_prefix), (None, None));
+    assert_eq!(refused.protection.conflicts, single.protection.conflicts);
+    assert_eq!(refused.certificates, single.certificates);
+    assert_eq!(refused.certificates.iter().map(|c| c.orbit).collect::<Vec<_>>(), (0..35).collect::<Vec<_>>());
+    for certificate in &refused.certificates {
+        let at = single.effect.source().binary_search(&certificate.source).expect("the letter moves the source");
+        assert_eq!(single.effect.destination()[at], certificate.destination);
+    }
+    assert_eq!(kernel.strict_protection(&recipe, &every).unwrap(), refused.protection);
+    // Every generator, not only 1, moves a sticker of each of the 35 orbits.
+    for m in 1..=1_200 {
+        let verdict = kernel.strict_protection(&kernel.word(&[m]).unwrap(), &every).unwrap();
+        assert_eq!((verdict.first_refused_prefix, verdict.conflicts.len()), (Some(1), 35), "generator {m}");
+    }
+
+    // Without a protected orbit Strict clears every prefix and derives what Net derives.
+    let clear = kernel.strict_protection(&recipe, &ProtectedSet::none()).unwrap();
+    assert_eq!((clear.verdict, clear.first_refused_prefix, clear.conflicts.len()), (Verdict::Clear, None, 0));
+    let star = star(4, 9, -1);
+    let none = ProtectedSet::none();
+    let (Derivation::Derived(strict), Derivation::Derived(net)) =
+        (kernel.derive_strict(&base, &star, &none).unwrap(), derive(&base, &star, &none))
+    else {
+        panic!("a star was refused without protection");
+    };
+    assert_eq!((strict.state.digest(), &strict.effect), (net.state.digest(), &net.effect));
+    assert_eq!((strict.protection.mode, net.protection.mode), (ProtectionMode::Strict, ProtectionMode::Net));
+}
+
+/// CT-LB2-04 (part: the kernel's `positions` row on 600-cell-Full, which reads identities, slots and orientations;
+/// not run: exact completion, empty candidates, permitted residuals and colours, which are LP3's library rows). On
+/// O03's scrambled initial state every piece's row agrees with the label array and with the progress rows that the
+/// oracle replays check: the pieces out of position and those in position but turned are counted per orbit as 0.4
+/// counts them.
+#[test]
+fn ct_lb2_04_positions_read_identities_slots_and_orientations() {
+    let kernel = kernel();
+    let every: Vec<i64> = (0..PIECES as i64).collect();
+    let solved = kernel.positions(&kernel.solved(), &every).unwrap();
+    assert!(solved.iter().all(|row| row.solved() && row.position_correct() && row.slots == row.home));
+    assert_eq!(solved.iter().map(|row| row.home.len()).sum::<usize>(), SLOTS);
+    assert_eq!(solved.iter().filter(|row| row.orbit < 0).count(), 600);
+    let mut piece_of = vec![usize::MAX; SLOTS];
+    for row in &solved {
+        assert!(row.home.windows(2).all(|pair| pair[0] < pair[1]));
+        for &slot in &row.home {
+            piece_of[slot as usize] = row.piece;
+        }
+    }
+
+    let initial = case("O03").get("initial").cloned().unwrap();
+    let state = derived(&kernel.solved(), &integers(initial.get("moves")));
+    let rows = kernel.positions(&state, &every).unwrap();
+    let (mut position_wrong, mut orientation_wrong) = ([0usize; 35], [0usize; 35]);
+    for row in &rows {
+        for (&home, &slot) in row.home.iter().zip(&row.slots) {
+            assert_eq!(state.labels()[slot as usize], home);
+        }
+        let place = row.position.expect("a twisted state keeps every piece together");
+        assert!(row.slots.iter().all(|&slot| piece_of[slot as usize] == place));
+        assert_eq!(solved[place].orbit, row.orbit);
+        if row.orbit >= 0 && !row.position_correct() {
+            position_wrong[row.orbit as usize] += 1;
+        } else if row.orbit >= 0 && !row.solved() {
+            orientation_wrong[row.orbit as usize] += 1;
+        }
+    }
+    let progress = kernel.progress(&state).unwrap().rows;
+    assert!(progress.iter().any(|row| row.position_wrong > 0) && progress.iter().any(|row| row.orientation_wrong > 0));
+    for row in progress {
+        let counted = (position_wrong[row.orbit], orientation_wrong[row.orbit]);
+        assert_eq!((row.position_wrong, row.orientation_wrong), counted);
+    }
+
+    // Repeats are answered in order; a label array with one piece's stickers split has no position for it.
+    let pair = kernel.positions(&state, &[7, 7]).unwrap();
+    assert_eq!((&pair[0], &pair[1]), (&rows[7], &rows[7]));
+    let mut multi = solved.iter().filter(|row| row.home.len() > 1);
+    let (x, y) = (multi.next().unwrap(), multi.next().unwrap());
+    let (a, b) = (x.home[0], y.home[0]);
+    let mut labels: Vec<i32> = (0..SLOTS as i32).collect();
+    labels.swap(a as usize, b as usize);
+    let split = kernel.state_from_labels(labels).unwrap();
+    let named = [x.piece as i64, y.piece as i64];
+    let [first, second] = &kernel.positions(&split, &named).unwrap()[..] else { panic!("two rows") };
+    assert_eq!((first.position, second.position, first.slots[0], second.slots[0]), (None, None, b, a));
+    for bad in [-1, PIECES as i64] {
+        let refusal = kernel.positions(&state, &[3, bad]).unwrap_err();
+        assert_eq!(
+            (refusal.code, refusal.message.as_str()),
+            (codes::NAMED_OBJECT_INVALID, "Position must be an integer in 0..177119")
+        );
+    }
+    assert!(kernel.positions(&state, &[]).unwrap().is_empty());
+}
+
+/// A seeded word of `n` letters, from the generator of `ct_ps1_12_normalisation_keeps_literal_prefixes_and_the_total`.
+fn seeded_word(n: usize) -> Vec<i64> {
+    let mut seed = 600u64;
+    let mut letter = || {
+        seed = seed.wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1_442_695_040_888_963_407);
+        let m = (seed >> 33) % 2_400;
+        if m < 1_200 {
+            m as i64 + 1
+        } else {
+            1_199 - m as i64
+        }
+    };
+    (0..n).map(|_| letter()).collect()
+}
+
+/// A recipe of `word` cut into word steps of the given sizes.
+fn word_steps(word: &[i64], sizes: &[usize]) -> Recipe {
+    let mut at = 0;
+    let steps = sizes.iter().map(|&size| {
+        let moves = word[at..at + size].iter().map(|&m| Value::Int(m)).collect();
+        at += size;
+        json::object([("kind", Value::String("word".into())), ("moves", Value::Array(moves))])
+    });
+    kernel().recipe(&Value::Array(steps.collect())).unwrap()
+}
+
+/// CT-LG2-14 (part: the kernel's streaming of positions and letters on 600-cell-Full; not run: compressed words and
+/// their exact big-integer lengths, which are library code). Each recipe of O04, star steps included, streams in
+/// chunks of several sizes: the positions run on without a gap, every chunk but the last is full, and the letters
+/// equal the whole expansion and the oracle's independently expanded digest and count (0.4's `Model.expand`).
+#[test]
+fn ct_lg2_14_streamed_positions_and_letters_equal_the_oracle_expansion() {
+    let kernel = kernel();
+    let mut checked = 0;
+    for step in case("O04").get("steps").and_then(Value::as_array).unwrap() {
+        let recipe = kernel.recipe(step.get("recipe").unwrap()).unwrap();
+        let whole = kernel.letters(&recipe).unwrap();
+        for size in [1, 7, 1_000, 100_000] {
+            let mut letters: Vec<i32> = Vec::new();
+            for chunk in kernel.chunks(&recipe, NonZeroUsize::new(size).unwrap()).unwrap() {
+                assert_eq!(chunk.start, letters.len() as u64);
+                letters.extend(&chunk.letters);
+                assert!(chunk.letters.len() == size || (letters.len() == whole.len() && !chunk.letters.is_empty()));
+            }
+            assert_eq!(letters, whole, "size {size}");
+        }
+        let expect = step.get("expect").unwrap();
+        let bytes: Vec<u8> = whole.iter().flat_map(|m| m.to_le_bytes()).collect();
+        let digest = c600_digest::sha256_hex(&bytes);
+        assert_eq!(expect.get("expansion_sha256").and_then(Value::as_str), Some(digest.as_str()));
+        assert_eq!(expect.get("primitive_count").and_then(Value::as_i64), Some(whole.len() as i64));
+        checked += 1;
+    }
+    assert_eq!(checked, 25);
+}
+
+/// CT-KN2-07 (part: a 600-cell-Full word longer than a recipe's 100,000-letter word step passes through the replay
+/// interface in chunks and equals the derivation of the whole word; not run: the recorded words of 672,417, 871,582
+/// and 2,352,984 letters and the 13,231,266-letter stream, which are jumbling words that the jumbling half replays, and
+/// any Full stream beyond 3,000,000 letters in the test profile) and CT-LB2-03 (part: the kernel half; not run: named
+/// work-sheet reuse and the preview, which are LP3's). Chunking keeps the whole operation. Under the ceiling the total
+/// counts over all chunks, and a push that passes 3,000,000 letters is refused whole, with no silent split, as is a
+/// chunk with a bad letter. A refusal is known as soon as its prefix is pushed, and there is no verdict before the end.
+#[test]
+fn ct_kn2_07_and_ct_lb2_03_a_word_replays_in_chunks() {
+    let kernel = kernel();
+    let (base, none) = (derived(&kernel.solved(), &[17, -400, 1013]), ProtectedSet::none());
+    let word = seeded_word(100_001);
+    let Derivation::Derived(whole) = derive(&base, &word_steps(&word, &[100_000, 1]), &none) else {
+        panic!("refused without protection");
+    };
+    let mut replay = kernel.replay(&base, &none).unwrap();
+    for chunk in [&word[..1], &word[1..60_000], &word[60_000..]] {
+        replay.push(chunk).unwrap();
+    }
+    assert_eq!((replay.position(), replay.first_refused_prefix()), (100_001, None));
+    let Derivation::Derived(streamed) = replay.finish() else { panic!("the replay refused") };
+    assert_eq!((streamed.state.digest(), streamed.base.as_str()), (whole.state.digest(), base.digest()));
+    assert_eq!((&streamed.word, &streamed.effect), (&whole.word, &whole.effect));
+    assert_eq!((streamed.protection.mode, streamed.protection.verdict), (ProtectionMode::Strict, Verdict::Clear));
+
+    // Under protection the replay refuses as derive_strict does, from the first chunk on.
+    let every = kernel.protected_set(&(0..35).collect::<Vec<i64>>()).unwrap();
+    let mut replay = kernel.replay(&base, &every).unwrap();
+    replay.push(&[5]).unwrap();
+    assert_eq!(replay.first_refused_prefix(), Some(1));
+    replay.push(&[-5, 9]).unwrap();
+    let (Derivation::Refused(streamed), Derivation::Refused(strict)) =
+        (replay.finish(), kernel.derive_strict(&base, &kernel.word(&[5, -5, 9]).unwrap(), &every).unwrap())
+    else {
+        panic!("a protected word was derived");
+    };
+    assert_eq!((streamed.first_refused_prefix, &streamed.certificates), (Some(1), &strict.certificates));
+    assert_eq!((&streamed.effect, &streamed.protection), (&strict.effect, &strict.protection));
+    assert_eq!((&streamed.word, &streamed.refusal, &streamed.base), (&strict.word, &strict.refusal, &strict.base));
+
+    // The ceiling counts over chunks, and a refused chunk changes nothing.
+    let mut replay = kernel.replay_under_ceiling(&base, &none).unwrap();
+    replay.push(&[1]).unwrap();
+    let over = replay.push(&vec![2; 3_000_000]).unwrap_err();
+    assert_eq!((over.code, over.message.as_str()), (codes::PRIMITIVE_CEILING, CEILING));
+    for bad in [&[3, 0][..], &[1_201], &[-1_201, 4]] {
+        let refusal = replay.push(bad).unwrap_err();
+        assert_eq!((refusal.code, refusal.message.as_str()), (codes::RECIPE_SHAPE, BAD_PRIMITIVE));
+    }
+    assert_eq!(replay.position(), 1);
+    let Derivation::Derived(one) = replay.finish() else { panic!("word([1]) was refused") };
+    assert_eq!(one.state.digest(), derived(&base, &[1]).digest());
+
+    // A word of no letters derives the base state, even with every orbit protected.
+    let Derivation::Derived(empty) = kernel.replay(&base, &every).unwrap().finish() else { panic!("refused") };
+    assert_eq!((empty.state.digest(), empty.effect.primitive_count), (base.digest(), 0));
+    assert_eq!(empty.word, c600_digest::sha256_hex(b""));
+}
+
 #[test]
 fn protected_sets_name_moving_orbits() {
     let kernel = kernel();
     assert_eq!(kernel.protected_set(&[3, 1, 3]).unwrap().orbits(), [1, 3]);
     assert!(kernel.protected_set(&[]).unwrap().orbits().is_empty());
+    // A nonempty set names this model; the empty set names no orbit and so no model.
+    assert_eq!(kernel.protected_set(&[3]).unwrap().model_id(), Some(kernel.identity().model_id.as_str()));
+    assert_eq!(kernel.protected_set(&[]).unwrap(), ProtectedSet::none());
+    assert_eq!(ProtectedSet::none().model_id(), None);
     for bad in [35, -1] {
         let refusal = kernel.protected_set(&[2, bad]).unwrap_err();
         assert_eq!((refusal.code, refusal.message.as_str()), (codes::NAMED_OBJECT_INVALID, "Bad protected orbit list"));
@@ -553,6 +798,8 @@ fn ct_kn1_04_no_public_call_lifts_a_coarser_level() {
             "solved(&self) -> Snapshot {",
             "state_from_labels(&self, labels: Vec<i32>) -> Option<Snapshot> {",
             "derive(&self, base: &Snapshot, recipe: &Recipe, protected: &ProtectedSet) -> Result<Derivation, Error> {",
+            "derive_strict(&self, base: &Snapshot, recipe: &Recipe, set: &ProtectedSet) -> Result<Derivation, Error> {",
+            "finish(self) -> Derivation {",
         ]
     );
     for signature in &signatures {
@@ -589,11 +836,12 @@ fn ct_ps1_04_labels_digest_is_core_state_hash() {
     assert_eq!((next.protection.level, next.protection.mode), (Level::Labels, ProtectionMode::Net));
 }
 
-/// CT-PS1-12 (part: Strict protection is not built, so the clause that chunking leaves Strict protection unchanged is
-/// not run). Normalisation keeps the literal steps in order (PS1.23): no letter is reduced away, every prefix of a
-/// recipe expands to a prefix of its letters, and a word split into chunks of up to 100,000 letters expands, digests
-/// and acts as the same letters. The total stays at most 3,000,000 over every chunk, here and in
-/// `recipe_limits_are_those_of_0_4`, and through a star in `the_ceiling_counts_star_letters`.
+/// CT-PS1-12 (whole, with `strict_protection_judges_each_literal_prefix` in `tests/load.rs`, which runs the Strict
+/// clause at later prefixes on a changed copy of the model). Normalisation keeps the literal steps in order (PS1.23):
+/// no letter is reduced away, every prefix of a recipe expands to a prefix of its letters, and a word split into
+/// chunks of up to 100,000 letters expands, digests, acts and is judged by Strict protection as the same letters. The
+/// total stays at most 3,000,000 over every chunk, here and in `recipe_limits_are_those_of_0_4`, and through a star in
+/// `the_ceiling_counts_star_letters`.
 #[test]
 fn ct_ps1_12_normalisation_keeps_literal_prefixes_and_the_total() {
     let kernel = kernel();
@@ -649,6 +897,12 @@ fn ct_ps1_12_normalisation_keeps_literal_prefixes_and_the_total() {
         let recipe = chunked(sizes);
         assert_eq!(recipe.primitive_count(), 250_000);
         assert_eq!(kernel.letters(&recipe).unwrap(), literal, "{sizes:?}");
+    }
+    // Nor does Strict protection: on the shipped model every letter moves every orbit, so each chunking is refused at
+    // its first prefix (later prefixes on a changed copy in `tests/load.rs`).
+    let protected = kernel.protected_set(&[0]).unwrap();
+    for sizes in [&[100_000, 100_000, 50_000][..], &[1, 99_999, 100_000, 49_999, 1]] {
+        assert_eq!(kernel.strict_protection(&chunked(sizes), &protected).unwrap().first_refused_prefix, Some(1));
     }
     // The net effect of a shorter word does not depend on its chunks either.
     let effect = |sizes: &[usize]| kernel.effect(&chunked(sizes)).unwrap();

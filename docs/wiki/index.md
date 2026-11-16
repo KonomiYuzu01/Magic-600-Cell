@@ -81,6 +81,8 @@ Start here. Each entry: link, one-line summary, status. Rules for pages and oper
 ## Questions
 - [engine-language-rust](questions/engine-language-rust.md) — Answered on 14 November 2026 (LQ8): Rust for the engine, session store, command layer and the language interpreter's host, after the decisive LX-5 and LX-6 runs; the GUI language follows the renderer. `verified`
 - [no-0-4-1-release-open-items](questions/no-0-4-1-release-open-items.md) — Contradiction: the 1.0 engine selection input and the workbench performance boards still assume the cancelled 0.4.1 work. `draft`
+- [lg3-ambient-read-code](questions/lg3-ambient-read-code.md) — Contradiction: LX-3 expects `ambient_read` for P01 to P03; chapter 13 keeps it unused; the checker gives `not_granted`. `draft`
+- [dynamic-code-refusal-code](questions/dynamic-code-refusal-code.md) — Contradiction: dynamic code must be refused but has no chapter 13 code; the module loader and the checker give different codes. `draft`
 
 ## Dialogues
 - [codex-plan-review-2026-09-29](dialogues/codex-plan-review-2026-09-29.md) — Three Codex review rounds behind the approved plan. `verified`

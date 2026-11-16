@@ -18,6 +18,15 @@ for it is the kernel's refusal of the recipe. The literal digest the tool propos
 and a single word's literal digest is the digest of its moves. A negative control negates one letter of one literal word
 before the tool runs: compare.py must then fail at that step.
 
+The source route then runs a second time on the process host (`c600-lp3-source --host process`): the tool's program
+runs in the child process of `c600-runtime` (`rust/c600-runtime`, built here too), and the same boundary and host
+bridge answer it on the command layer. All seven cases run on it. compare.py must again report every trace equal, the
+traces must be byte-identical to the in-process host's, and the receipts file must equal the in-process host's but
+for the host's name and four steps of O07: a word with a letter outside 1 to 1200 in magnitude has no transfer
+encoding, so the process host refuses its job at the start stage and no invocation is made, where the in-process host
+gets the command layer's refusal receipt. For those steps the kernel's refusal of the recipe, kept in the step record,
+must be the error of the in-process host's receipt. The summary line, each case and each step record name the host.
+
 Standard library only. A missing Rust toolchain fails the check: a test that did not run is no pass (PHS.63). A pass is
 headless source and fixture evidence for the source route's draft, not Windows/DirectX, input, long-session or
 performance evidence; the timings it prints are informational.
@@ -42,12 +51,17 @@ INPUTS = ROOT / "work" / "experiments" / "language-lx" / "inputs"
 COMPARE = ROOT / "tools" / "oracle" / "compare.py"
 ORACLE = ("c600-command", "c600-lp3-oracle")
 SOURCE = ("c600-tools", "c600-lp3-source")
+RUNTIME = ("c600-runtime", "c600-runtime")
+IN_PROCESS, PROCESS = "in-process", "process"
 CANDIDATE = "c600-command-lp3-loop"
 STEPS = {"O01": 2400, "O02": 500, "O03": 210, "O04": 25, "O05": 50, "O06": 6, "O07": 10}
 INDEPENDENT = {"O01", "O07"}
 TOTAL_STEPS = 3201
 # The steps whose recipe has no literal word: the kernel refuses the recipe, and it is not one word of integer moves.
 NO_LITERAL = {("O07", index) for index in (3, 4, 5, 6, 7, 9)}
+# The steps whose recipe is one word with a letter outside 1 to 1200 in magnitude: the word has no transfer encoding,
+# so the process host refuses its job at the start stage; in process the tool proposes it and the layer refuses it.
+NO_TRANSFER = {("O07", index) for index in (0, 1, 2, 8)}
 TAMPERED_CASE, TAMPERED_INDEX = "O06", 3
 # Below the CI runner's limit per check (tools/ci/run_headless.py), so a slow step is reported here.
 BUILD_LIMIT_SECONDS = 900
@@ -159,15 +173,18 @@ def trace_route(runner: Path, cases: list[Path], folder: Path, extra: list[str])
     require(out.returncode == 0, f"{runner.stem} exited with {out.returncode}: {out.stderr.strip()}")
     summary = one_line(out, runner.stem)
     require(summary.get("candidate") == CANDIDATE, f"{runner.stem}'s summary names another candidate")
-    print(f"{runner.stem}: model load {summary['load_seconds']} s, all seven cases {summary['total_seconds']} s "
+    host = f" on the {summary['host']} host" if "host" in summary else ""
+    print(f"{runner.stem}{host}: model load {summary['load_seconds']} s, all seven cases {summary['total_seconds']} s "
           f"in the runner, {wall:.1f} s wall")
     return traces, receipts, summary
 
 
-def check_source_traces(cases: list[Path], traces: dict[str, Path], summary: dict) -> dict[str, dict]:
+def check_source_traces(cases: list[Path], traces: dict[str, Path], summary: dict, host: str) -> dict[str, dict]:
     """compare.py reports every source-route trace equal, and the runner's counts match the traces."""
-    require(summary.get("route") == "source" and summary.get("host") == "in-process",
+    require(summary.get("route") == "source" and summary.get("host") == host,
             "the source route's summary names another route or host")
+    require(summary.get("runtime_spawns") == (1 if host == PROCESS else None),
+            f"the {host} host's summary reports {summary.get('runtime_spawns')} runtime processes")
     require(str(summary.get("tools", "")).startswith("c600-tools "), "the source route's summary has no tools build")
     build_string = summary.get("build", "")
     counts = {c["case_id"]: c for c in summary["cases"]}
@@ -187,13 +204,16 @@ def check_source_traces(cases: list[Path], traces: dict[str, Path], summary: dic
         expected = (accepted, accepted, 0) if name in INDEPENDENT else (accepted, accepted, accepted)
         got = (counts[name]["committed"], counts[name]["undone"], counts[name]["redone"])
         require(got == expected, f"{name} on the source route: committed, undone, redone {got}, expected {expected}")
-        runs = STEPS[name] - sum(1 for case_id, _ in NO_LITERAL if case_id == name)
+        refused = sum(1 for case_id, _ in NO_TRANSFER if case_id == name) if host == PROCESS else 0
+        runs = STEPS[name] - sum(1 for case_id, _ in NO_LITERAL if case_id == name) - refused
         require(counts[name]["runs"] == runs, f"{name}: the tool ran {counts[name]['runs']} times instead of {runs}")
+        require(counts[name]["start_refused"] == refused,
+                f"{name}: {counts[name]['start_refused']} jobs refused at the start stage instead of {refused}")
         print(f"  {name}: equal, {report['steps']} steps; {runs} tool runs; committed {got[0]}, undone {got[1]}, "
               f"redone {got[2]}; {counts[name]['receipts']} receipts")
         loaded[name] = trace
     require(steps == TOTAL_STEPS, f"{steps} steps compared on the source route instead of {TOTAL_STEPS}")
-    print(f"PASS: source route, all seven cases equal, {steps} steps, no omitted fields")
+    print(f"PASS: source route on the {host} host, all seven cases equal, {steps} steps, no omitted fields")
     return loaded
 
 
@@ -205,6 +225,62 @@ def check_traces_identical(command: dict[str, Path], source: dict[str, Path], co
         require(command[name].read_bytes() == source[name].read_bytes(),
                 f"{name}: the source route's trace differs from the command route's")
     print("PASS: the source route's traces are byte-identical to the command route's")
+
+
+def check_hosts_agree(in_traces: dict[str, Path], process_traces: dict[str, Path], in_file: Path,
+                      process_file: Path) -> None:
+    """The process host's traces and receipts are the in-process host's but for the host's name and NO_TRANSFER."""
+    for name in STEPS:
+        require(in_traces[name].read_bytes() == process_traces[name].read_bytes(),
+                f"{name}: the process host's trace differs from the in-process host's")
+    in_cases = {c["case_id"]: c for c in json.loads(in_file.read_text(encoding="utf-8"))["cases"]}
+    process_cases = {c["case_id"]: c for c in json.loads(process_file.read_text(encoding="utf-8"))["cases"]}
+    require(set(in_cases) == set(process_cases) == set(STEPS), "the hosts' receipts files name other cases")
+    receipts = named = 0
+    seen = set()
+    for name in STEPS:
+        a, b = in_cases[name], process_cases[name]
+        require(a["host"] == IN_PROCESS and b["host"] == PROCESS, f"{name}: a case record names another host")
+        require(set(a) == set(b) and a["tail"] == b["tail"] and len(a["steps"]) == len(b["steps"]) == STEPS[name],
+                f"{name}: the hosts' case records differ in form")
+        ia = ib = 0
+        for ra, rb in zip(a["steps"], b["steps"]):
+            where = f"{name} step {ra['index']}"
+            given = ra["literal"] is not None
+            require(ra["host"] == (IN_PROCESS if given else None) and rb["host"] == (PROCESS if given else None),
+                    f"{where}: the step record does not name the host its word was given to")
+            named += given
+            require(ra["start_refusal"] is None, f"{where}: a start-stage refusal on the in-process host")
+            start = rb["start_refusal"]
+            skipped = {"host", "start_refusal"} | ({"receipts"} if start is not None else set())
+            require({key: v for key, v in ra.items() if key not in skipped}
+                    == {key: v for key, v in rb.items() if key not in skipped},
+                    f"{where}: the hosts' step records differ")
+            na, nb = ra["receipts"], rb["receipts"]
+            if start is None:
+                require(a["receipts"][ia:ia + na] == b["receipts"][ib:ib + nb]
+                        and a["callers"][ia:ia + na] == b["callers"][ib:ib + nb],
+                        f"{where}: the hosts' receipts or callers differ")
+                receipts += na
+            else:
+                seen.add((name, ra["index"]))
+                require((na, nb) == (1, 0) and start.get("stage") == "start" and len(start.get("codes", [])) == 1,
+                        f"{where}: not one start-stage refusal in place of one receipt")
+                status = a["receipts"][ia]["status"]
+                require(status == {"name": "refused", "error": start["recipe_refusal"]}
+                        and str(start["recipe_refusal"].get("code", "")).startswith("KN2:"),
+                        f"{where}: the in-process receipt is not the kernel's refusal of the recipe")
+            ia += na
+            ib += nb
+        tail = a["tail"]
+        require(len(a["receipts"]) - ia == tail and len(b["receipts"]) - ib == tail
+                and a["receipts"][ia:] == b["receipts"][ib:] and a["callers"][ia:] == b["callers"][ib:],
+                f"{name}: the hosts' undo and redo receipts differ")
+        receipts += tail
+    require(seen == NO_TRANSFER, f"the start-stage refusals are at {sorted(seen)}, expected {sorted(NO_TRANSFER)}")
+    print(f"PASS: the process host's traces are byte-identical to the in-process host's, and its receipts are the same "
+          f"({receipts} receipts with their callers; {named} step records name each host); {len(seen)} words of O07 "
+          f"with no transfer encoding are refused at the job's start stage instead of by the command layer")
 
 
 def single_word_literal(recipe: object) -> str | None:
@@ -341,21 +417,30 @@ def main() -> int:
         recipes = read_recipes(cases)
         oracle = build(cargo, *ORACLE)
         source = build(cargo, *SOURCE)
+        runtime = build(cargo, *RUNTIME)
         with tempfile.TemporaryDirectory(prefix="c600-lp3-source-") as name:
             folder = Path(name)
             command_traces, command_receipts, command_summary = trace_route(
                 oracle, cases, folder / "command", ["--route", "command"])
             source_traces, source_receipts, source_summary = trace_route(source, cases, folder / "source", [])
-            traces = check_source_traces(cases, source_traces, source_summary)
+            traces = check_source_traces(cases, source_traces, source_summary, IN_PROCESS)
             check_traces_identical(command_traces, source_traces, command_summary, source_summary)
             check_receipts(command_receipts, source_receipts, traces, recipes)
             check_tampered_literal(source, cases, folder / "tampered")
+            process_traces, process_receipts, process_summary = trace_route(
+                source, cases, folder / "process", ["--host", PROCESS, "--runtime", str(runtime)])
+            check_source_traces(cases, process_traces, process_summary, PROCESS)
+            require(process_summary.get("build") == source_summary.get("build")
+                    and process_summary.get("tools") == source_summary.get("tools"),
+                    "the two hosts' runs report different builds")
+            check_hosts_agree(source_traces, process_traces, source_receipts, process_receipts)
     except (Failed, OSError, KeyError, ValueError, TypeError, IndexError) as error:
         print(f"FAIL: {error}")
         return 1
     print(f"whole check {time.monotonic() - start:.1f} s")
     print("PASS: O01 to O07 replay exactly on the source route: each proposal comes from the 600-cell-Full tool's "
-          "program through the host bridge, and the traces and receipts agree with the command route")
+          "program through the host bridge, and the traces and receipts agree with the command route; all seven cases "
+          "replay the same with the program in the runtime's own process")
     return 0
 
 

@@ -61,6 +61,13 @@ pub(crate) struct Model {
     pub move_offsets: Vec<i32>,
     pub move_source: Vec<i32>,
     pub move_destination: Vec<i32>,
+    /// Per generator 1 to 1,200 (index 0 to 1,199), bit `o` is set when the primitive moves a sticker of orbit `o`
+    /// (0 to 34). Strict protection reads it once per literal letter.
+    pub move_orbits: Vec<u64>,
+    /// The home slots of each piece in increasing order: piece `p`'s are
+    /// `piece_slots[piece_offsets[p]..piece_offsets[p + 1]]`.
+    pub piece_offsets: Vec<i32>,
+    pub piece_slots: Vec<i32>,
     pub trees: Vec<Tree>,
     pub atlas: Vec<Atlas>,
     pub census: Vec<Census>,
@@ -267,7 +274,26 @@ impl Model {
                 mark[d as usize] = 0;
             }
         }
-        let slot_orbit = slot_piece.iter().map(|&p| piece_orbit[p as usize]).collect();
+        let slot_orbit: Vec<i32> = slot_piece.iter().map(|&p| piece_orbit[p as usize]).collect();
+        // A listed pair whose source is its destination moves nothing, so it marks no orbit.
+        let move_orbits = (0..GENERATORS)
+            .map(|i| {
+                let range = move_offsets[i] as usize..move_offsets[i + 1] as usize;
+                let pairs = move_source[range.clone()].iter().zip(&move_destination[range]);
+                pairs.filter(|(s, d)| s != d).fold(0u64, |mask, (&s, _)| match slot_orbit[s as usize] {
+                    orbit if orbit >= 0 => mask | 1 << orbit,
+                    _ => mask,
+                })
+            })
+            .collect();
+        // A counting sort of the slots by piece; face_offsets counts each piece's slots (checked above).
+        let mut next = face_offsets[..PIECES].to_vec();
+        let mut piece_slots = vec![0i32; SLOTS];
+        for (slot, &piece) in slot_piece.iter().enumerate() {
+            let at = &mut next[piece as usize];
+            piece_slots[*at as usize] = slot as i32;
+            *at += 1;
+        }
 
         let census = json::parse(&census_bytes).map_err(|e| fail(format!("census.json: {e}")))?;
         let rows = census.get("orbits").and_then(Value::as_array).filter(|rows| rows.len() == ORBITS);
@@ -355,10 +381,23 @@ impl Model {
             move_offsets,
             move_source,
             move_destination,
+            move_orbits,
+            piece_offsets: face_offsets,
+            piece_slots,
             trees,
             atlas,
             census,
         })
+    }
+
+    /// The home slots of piece `p`, in increasing order.
+    pub(crate) fn home_slots(&self, p: usize) -> &[i32] {
+        &self.piece_slots[self.piece_offsets[p] as usize..self.piece_offsets[p + 1] as usize]
+    }
+
+    /// The orbits primitive `m` moves, as a bit set over orbits 0 to 34; an inverse moves the same stickers.
+    pub(crate) fn letter_orbits(&self, m: i32) -> u64 {
+        self.move_orbits[(m.unsigned_abs() - 1) as usize]
     }
 
     /// The source and destination lists of primitive `m`; an inverse swaps them.
