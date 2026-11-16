@@ -509,7 +509,9 @@ impl<'g> Analysis<'g> {
     }
 
     /// EVD.42's admission guard for refuting a plain existence statement E by a completed exhaustive search of
-    /// exactly its declared finite set.
+    /// exactly its declared finite set. EVD.59 computes an exhaustive leaf's `covered` from its SearchRecord's
+    /// declared set, so that declared set must equal E's `covers` as well as the leaf's stored `covered` set: a
+    /// stored set copied from the statement does not stand in for a different declared set (section 9, E3).
     fn exhaustive_guard(&self, q: &Leaf, e: &Key) -> bool {
         let Some(st) = self.g.statement(&e.statement) else {
             return false;
@@ -518,7 +520,8 @@ impl<'g> Analysis<'g> {
             return false;
         };
         st.form == Some(Form::Existence)
-            && matches!(e.scope.covers, Covers::SearchSet { .. })
+            && matches!(&e.scope.covers, Covers::SearchSet { family, alphabet, bounds }
+                if *family == r.declared.family && *alphabet == r.declared.alphabet && *bounds == r.declared.bounds)
             && q.grade.basis == Basis::ExhaustiveComputation
             && r.target == e.statement
             && q.covered.as_ref() == Some(&Covered::of_scope(&e.scope))
