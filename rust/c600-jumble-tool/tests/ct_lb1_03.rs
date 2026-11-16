@@ -232,8 +232,10 @@ fn ct_lb1_03_an_inverse_returns_an_admitted_path_to_its_start() {
 /// "a constructed conjugate gets no admissibility guarantee"). At the state after 12 records of the I_a journal, cap
 /// `open` admits the letter (open, a) and cap `blocked` refuses (blocked, a). The conjugate of the admitted letter by
 /// the refused one is constructed like any word, and playing it is refused at its first prefix, with a straddling
-/// certificate and the state unchanged; the unplayed suffix stays unchecked. A power of the refused letter is refused
-/// the same way, and its zeroth power, the empty word, is admitted and ends at the start.
+/// certificate at the refused cap and the state unchanged; the unplayed suffix stays unchecked. A power of the refused
+/// letter and the refused letter followed by its inverse (LB1.9's example) are refused the same way; the admitted
+/// letter, its inverse and then the refused letter are refused at the third prefix, after a return to the start; and
+/// the zeroth power, the empty word, is admitted and ends at the start.
 #[test]
 fn ct_lb1_03_a_constructed_conjugate_gets_no_admissibility_guarantee() {
     let ctx = ctx();
@@ -254,7 +256,8 @@ fn ct_lb1_03_a_constructed_conjugate_gets_no_admissibility_guarantee() {
 
     let observations = observed(&state, &admitted);
     assert_eq!(observations.get("complete"), Some(&Value::Bool(true)), "the letter is admitted");
-    for word in [&conjugate, &setup.power(2)] {
+    let and_back = setup.concat(&setup.inverse()).expect("one alphabet");
+    for word in [&conjugate, &setup.power(2), &and_back] {
         let observations = observed(&state, word);
         assert_eq!(observations.get("complete"), Some(&Value::Bool(false)));
         assert_eq!(observations.get("first_refused"), Some(&Value::Int(0)));
@@ -262,8 +265,21 @@ fn ct_lb1_03_a_constructed_conjugate_gets_no_admissibility_guarantee() {
         let rows = rows(&observations);
         assert_eq!(rows.len(), 1, "the batch stops at the refused prefix");
         assert_eq!((text(&rows[0], "status"), text(&rows[0], "after")), ("blocked", start.as_str()));
-        assert_ne!(rows[0].get("certificate"), Some(&Value::Null), "a blocked letter carries its certificate");
+        let certificate = rows[0].get("certificate").expect("a blocked letter carries its straddling certificate");
+        assert_eq!(certificate.get("grip"), Some(&Value::Int(blocked as i64)), "the straddle is at the refused cap");
+        assert_eq!(certificate.get("points_checked_against_all_constraints"), Some(&Value::Bool(true)));
     }
+    // A refusal at a later prefix: the admitted letter and its inverse return to the start, and the refused letter
+    // after them is refused at the third prefix, with the start unchanged.
+    let late = admitted.concat(&admitted.inverse()).and_then(|w| w.concat(&setup)).expect("one alphabet");
+    let observations = observed(&state, &late);
+    assert_eq!(observations.get("complete"), Some(&Value::Bool(false)));
+    assert_eq!(observations.get("first_refused"), Some(&Value::Int(2)));
+    let rows = rows(&observations);
+    assert_eq!(rows.len(), 3, "each prefix up to the refused one is checked");
+    let statuses: Vec<&str> = rows.iter().map(|row| text(row, "status")).collect();
+    assert_eq!(statuses, ["admissible", "admissible", "blocked"]);
+    assert_eq!((text(&rows[1], "after"), text(&rows[2], "after")), (start.as_str(), start.as_str()));
     let empty = setup.power(0);
     let observations = observed(&state, &empty);
     assert_eq!(observations.get("complete"), Some(&Value::Bool(true)));

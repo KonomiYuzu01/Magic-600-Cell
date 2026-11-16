@@ -135,7 +135,7 @@ fn ct_lb3_02_each_level_finds_both_clear_and_moves() {
         .expect("rows of the same pieces");
     assert_eq!(label.protected(), &[zero.min(moving), zero.max(moving)][..]);
     assert_eq!(label.answer(Puzzle::Full), Ok(&Finding::Moves(vec![moving])));
-    assert!(label.answer(Puzzle::Jumbling).is_err());
+    assert_eq!(label.answer(Puzzle::Jumbling), Err(Crossing { held: Level::Labels, asked: Level::Poses }));
     let other = Verdict::labels(&positions(&solved, &[moving]), &positions(&turned, &[zero]), solved.digest());
     assert_eq!(other, Err(RowsDiffer));
 
@@ -148,6 +148,6 @@ fn ct_lb3_02_each_level_finds_both_clear_and_moves() {
     assert_eq!(outcome.status, Status::Admissible);
     let pose = Verdict::poses(outcome.protection.as_ref().expect("a protection report"), &read);
     assert_eq!(pose.answer(Puzzle::Jumbling), Ok(&Finding::Clear));
-    assert!(pose.answer(Puzzle::Full).is_err());
+    assert_eq!(pose.answer(Puzzle::Full), Err(Crossing { held: Level::Poses, asked: Level::Labels }));
     assert_ne!(state.digest(ctx), read, "the admitted twist turned cap 0");
 }
