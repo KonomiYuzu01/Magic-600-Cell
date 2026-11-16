@@ -351,6 +351,23 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
     CT-LG2-14; CT-KN2-07 as a part: a 100,001-letter Full word replays in chunks equal to its whole derivation. Not run:
     the recorded words of CT-KN2-07, which are jumbling words, and any Full stream beyond 3,000,000 letters in the test
     profile.
+- KN3 (LP2): `c600_kernel::exact` decides the sign of a + b√5 exactly for 128-bit a and b (`sign5`, a² against 5b²
+  in 256 bits) and evaluates sums of products of integers, √5 and 5 with checked arithmetic that reports overflow
+  instead of deciding. `c600_kernel::request` holds A6's bytes (state contract, in force since 15 November 2026): the
+  wire limits, the four KN2 codes of KN3.7 and KN3.8, the FP.5 binding with its canonical text, the search limit, the
+  request digest, builders for C, H and M lines, and the producer's token writer from a binary64 bit pattern (KN3.9).
+- Contract tests, in part: CT-KN3-01 (Lucas and Fibonacci pairs at |a² − 5b²| = 4 up to the 128-bit limit, the range
+  limits, exact zeros of contact type), CT-KN3-04 (the binding and the search limit) and CT-KN3-06 (bit patterns to
+  exact tokens, both zeros to `0:0`, non-finite patterns refused). The rest of these rows runs in M5's
+  `c600-jumble/tests/kn3.rs`.
+- Draft choices: the bytes, limits and fixed-width signs live here with the standard library only, and a request's
+  meaning, over unbounded integers, in `c600_jumble::rotation`; the shell passes a bit pattern, so no float type enters
+  the kernel; a non-finite producer input and a malformed binding refuse with `KN2:input.rotation_request_malformed`;
+  N or D above `u128` refuses with `KN2:resource_limit.rotation_search_bound`.
+- Open: the A2 filter (KN3.5, CT-KN3-03) has no home yet. INV-4 allows its float, but CT-KN2-05's scans keep float
+  types and literals out of `c600-kernel` and `c600-jumble`, so it needs a crate of its own or a recorded scan
+  exception; the integrator decides. Not built: the shell's gesture producer, F2 and F5 (ν), and the cost of an exact
+  operation by operand size (KN3.6).
 
 ## Status of M5: the jumbling half
 
@@ -375,10 +392,12 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   of CT-KN2-01, CT-KN2-04, CT-KN1-05 (poses) and CT-KN2-05 (no `f32` or `f64` in the kernel crates), which run whole
   with M4's halves; CT-JI-03. CT-KN2-02 in part: heights and domain IDs against `trees.py` and the library's
   histograms on H6030's compared states, the recorded fixture prefixes and u1, and the free-mode Cayley rotation.
-- Not built, for M8: CT-KN1-03, CT-KN1-04, CT-KN1-06, CT-KN2-06, CT-KN2-07, CT-KN3-01, CT-KN3-03 to CT-KN3-06, R-11
-  (CT-LG2-12), and CT-KN2-02's cases b20, b06-14, b14 and b03; the observations rim_summary, covers, repair_list, nu,
-  checkpoints, release_check and derivation with reachability; Strict protection; and the holding caps of seam cells
-  and tree positions past the first step.
+- Not built, for M8: CT-KN1-03, CT-KN1-04's jumbling half, CT-KN1-06, CT-KN2-06, CT-KN3-03 (the A2 filter), the
+  jumbling words of CT-KN2-07, CT-KN3-01's small-margin set, R-11's jumbling property (CT-LG2-12), and CT-KN2-02's
+  cases b20, b06-14, b14 and b03; the observations rim_summary, covers, repair_list, nu, checkpoints, release_check and
+  derivation with reachability; Strict protection on the jumbled puzzle; and the holding caps of seam cells and tree
+  positions past the first step. Built since M5: KN3's exact rotation requests (below; CT-KN3-05 whole, CT-KN3-01,
+  CT-KN3-04 and CT-KN3-06 in part) and the kernel rows for 600-cell-Full (M4's section).
 - Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model read the change with the
   acceptance check. Its three major findings were fixed before the pull request, and a scoped re-check found no
   blocking finding: R1, a word whose later letter was malformed, or met an engine error, left its earlier letters
@@ -418,6 +437,30 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   `KN2:stale.revision_gone` (the candidate has no snapshot handles).
 - Evidence kind: source and fixture. The comparison ran on Windows only. The timings the check prints are
   informational, not performance evidence.
+- KN3.4 and KN3.7 to KN3.9 under A6 (`c600_jumble::rotation`): `Request::decode` reads C, H and M lines with unbounded
+  integers, refuses malformed, noncanonical and oversize bytes, and compares the re-encoded bytes. `resolve` builds the
+  exact rotation in A1's frame at the binding's cap and chooses: free mode over A1's grid with A1's tie order, half-turn
+  candidates for H and for C at ω·ω ≥ 13130, and the squared distance exact in Q; menu mode by exact membership or a
+  drag scored by the squared Frobenius distance in Q(√5), the smallest index winning ties. The record holds the
+  binding, the request digest, the choice (with the complete tie list for a drag) and the exact matrix; `replay` reads
+  it back through the exact rotation check and runs no chooser. On 600-cell-Full, `retained_word` turns a retained
+  item into its A4 word and refuses a jumble item with `KN5:input.menu_word_needs_jumble_on` (JI.35). The A6 codes join
+  `codes`.
+- Contract tests (`c600-jumble/tests/kn3.rs` and `rotation::tests`): CT-KN3-05 whole (LX-9's vectors: the quarter
+  turn's drag picks 15 of the ties 15, 29, 40 and 43; the reversed menu's order digest is 1a87a420…, old bindings
+  refuse and its drag picks 16, the old 43; and H requests: the frame axes' half-turns are the direct members 11, 1
+  and 10, H(1,1,0), H(0,1,-1) and H(1,2,3) refuse with `KN2:input.twist_off_menu`, and the H(1,1,0) drag picks 23 of
+  the ties 23, 24, 41 and 54 at (9 − 3√5)/2); in part CT-KN3-04 (not run: a search for N ≥ 1 near the limit),
+  CT-KN3-06 (not run: the shell's gesture producer) and CT-LG2-16's kernel half (not run: the language half).
+- Draft choices (`rotation`'s documentation): half-turn candidates are the canonical integer axes with every
+  |component| ≤ N, at denominator 1; free mode compares the whole grid, (2N+1)³·D Cayley points and the half-turns,
+  with no budget or cancellation and no pruning except at N = 0, where the grid is the identity alone and one
+  comparison decides; the order of refusals; 600-cell-Full resolves against the pinned menu and refuses a free binding
+  with `KN2:input.menu_binding_mismatch`.
+- Unchanged: selection 2 (a journal's float request is an adapter error) and `CONTRACT_REVISION`, which still names
+  A1 to A4 although the state contract's revision is now `state-contract 2026-11-15 A1-A6`; renaming it changes the
+  identity block J1 is compared with, so it waits for the integrator. KN3.3's exact double description is `dd`; no
+  separate polytope API was added.
 
 ## Status of M6: the session store
 
@@ -582,7 +625,9 @@ run or not applicable is no pass (PHS.63).
   - `c600-kernel/tests/`: `kernel.rs`, `load.rs` and `json.rs` run the 600-cell-Full halves of the KN rows, CT-PS1-04
     and CT-PS1-12 (M4's section).
   - `c600-jumble/tests/`: `crossing.rs` runs CT-KN2-03, and `assets.rs` the jumbling model's asset checks (M5's
-    section); `domain.rs` and `refusals.rs` hold the candidate's halves of Fable's M5 attack leads.
+    section); `domain.rs` and `refusals.rs` hold the candidate's halves of Fable's M5 attack leads; `kn3.rs` runs
+    KN3's exact rotation requests under A6 (CT-KN3-05 whole, CT-KN3-04, CT-KN3-06 and CT-LG2-16's kernel half in part),
+    with `c600_kernel::exact`'s unit tests for CT-KN3-01's part.
   - `c600-evidence/tests/` runs the EVD rows (the evidence library's section).
   - `c600-session/tests/`: M6's tests mark their rows (M6's section), CT-ONE-03 to CT-ONE-05, CT-ONE-11, CT-ONE-21,
     CT-ONE-23 and CT-ONE-24 included. `conformance_rows.rs` runs the session's half of CT-ONE-01 and CT-ONE-02 over
@@ -598,12 +643,12 @@ run or not applicable is no pass (PHS.63).
     N01 to N04 through the kernel (M4's section); `tests/test_jumbling_rust_candidate.py` compares the jumbling
     candidate with J1 (M5's section); `tests/test_jumbling_rust_attacks.py` runs Fable's M5 attack leads, with J1's
     faults as expected failures (M5's section).
-- Count with LP3's C1 to C5, M5 and LP2's first integration batch, as `tools/language/ct_index.py --summary` prints it
-  (`tests/test_ct_index.py` checks the tool): 59 whole, seven of them by the union of their parts (CT-KN1-05,
-  CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01 and CT-LG3-04); 118 part; 5 named only by LP3's command-layer
-  tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04, CT-LI-09 and CT-LI-10); 1 missing despite its name
-  (CT-KN5-08: only the documentation in `c600-command/src/layer.rs` names it); 65 waiting, each with what it waits for
-  in `docs/progress/1.0/lp2-ct-index-notes.md`.
+- Count with LP3's C1 to C5, M5, LP2's first integration batch and KN3's exact requests, as `tools/language/ct_index.py
+  --summary` prints it (`tests/test_ct_index.py` checks the tool): 60 whole, seven of them by the union of their parts
+  (CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01 and CT-LG3-04); 122 part; 5 named only by LP3's
+  command-layer tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04, CT-LI-09 and CT-LI-10); 1 missing
+  despite its name (CT-KN5-08: only the documentation in `c600-command/src/layer.rs` names it); 60 waiting, each with
+  what it waits for in `docs/progress/1.0/lp2-ct-index-notes.md`.
 - Not run or not applicable, which is no pass (PHS.63), with the check that runs instead: CT-LG3-06's flow-label
   variant, while the flow rule is off (BND.41) and LQ2 has not set it, so the static-only and run-time variants run
   (`c600-run/tests/conformance_lg3.rs`); CT-LG1-03's second host context, since CI runs on Windows only and the editor
@@ -663,8 +708,8 @@ run or not applicable is no pass (PHS.63).
   - M6's remaining rows (15): CT-PS1-08 to CT-PS1-10, CT-PS1-16, CT-PS1-19, CT-PS1-21, CT-PS1-23, CT-PS2-01 to
     CT-PS2-05, and the run records of CT-DET-04, CT-DET-14 and CT-BND-23 (with LP3's grants for CT-DET-04 and
     CT-BND-23).
-  - The jumbled puzzle's rows that M5 leaves to M8 (9): CT-KN1-03, CT-KN1-06, CT-KN2-06, CT-KN3-01, CT-KN3-03,
-    CT-LG2-12, CT-PS1-11, CT-PS1-14 and CT-PS1-22.
+  - The jumbled puzzle's rows that M5 leaves to M8 (7): CT-KN1-03, CT-KN1-06, CT-KN2-06, CT-KN3-03, CT-PS1-11,
+    CT-PS1-14 and CT-PS1-22.
   - A session's second level (3): CT-ONE-17 and CT-ONE-18, which need a second level in the session, its crossing
     and `project` (KN1.9); and CT-ONE-19, with LP3's view model.
   - Derived states with an open reachability claim and KN2.14's raw-table import, which M4 does not build (3, no
@@ -672,10 +717,10 @@ run or not applicable is no pass (PHS.63).
   - LG5's module loader and lockfiles (7): CT-LG5-01 to CT-LG5-07. LP3 C4's `c600-module` builds closures and
     lockfiles, but its tests name none of these rows.
   - KN5's command layer, once its candidate is picked (2): CT-KN5-05 and CT-KN5-08.
-  - A6's exact rotation requests (5, no milestone named): CT-KN3-04 to CT-KN3-06, CT-LG2-16 and CT-DET-16.
+  - A6's request determinism (1, no milestone named): CT-DET-16; KN3's tests do not name it yet.
   - The stage checker, RPI.68 to RPI.76 (3, no milestone named): CT-LG2-15, CT-LG3-10 and CT-LG5-08.
-  - Streaming and compressed words, KN2.10 (no milestone named): CT-LG2-14 and CT-LG4-03, and CT-KN2-07, named as not
-    built.
+  - Compressed words, KN2.10 (no milestone named): CT-LG4-03; the kernel's streaming runs CT-LG2-14 and CT-KN2-07 in
+    part (M4's section).
   - A builder and its build cache (2, no milestone named): CT-DET-21 and CT-DET-22.
   - A pointwise or whole-state contract form in the IR (no milestone named): CT-LG4-05, named as not built.
 - Evidence kind: source and fixture. The checks ran on Windows only.
