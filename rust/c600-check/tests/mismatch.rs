@@ -53,6 +53,13 @@ fn an_argument_must_fit_its_parameter() {
 fn a_called_value_must_be_a_function() {
     // The call's expected type lists the arguments' types; the result is unknown.
     assert_only(&f(Ty::Nat, call_value(nat(1), vec![word(&[1])])), "f", "1", "fn(Word) -> _", "Nat");
+    // A function value called with another number of arguments: the count is part of its type.
+    let g = closure(vec![param("w", exact(Ty::Word))], exact(Ty::Bool), boolean(true));
+    let body = let_("g", g, call_value(var("g"), vec![word(&[1]), word(&[2])]));
+    assert_only(&f(Ty::Bool, body), "f", "1.2", "fn(Word, Word) -> _", "fn(Word) -> Bool");
+    let g = helper("g", vec![param("w", exact(Ty::Word))], exact(Ty::Word), var("w"));
+    let p = tool(vec![g, helper("f", vec![], exact(Ty::Word), call_value(fn_ref("g"), vec![]))]);
+    assert_only(&p, "f", "0", "fn() -> _", "fn(Word) -> Word");
 }
 
 #[test]

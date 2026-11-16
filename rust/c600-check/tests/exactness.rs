@@ -479,8 +479,9 @@ fn lg2_1_a_base_type_mismatch_is_a_diagnostic_not_an_error() {
 
 #[test]
 fn faults_without_a_source_diagnostic_are_errors() {
-    // An unbound name, a function defined twice, a call of an unexported function and a wrong number of arguments
-    // have no code in chapters 02 and 13. Lowering refuses the first two before the checker sees them.
+    // An unbound name, a function defined twice, a call of an unexported function and a named function called with a
+    // wrong number of arguments have no code in chapters 02 and 13. Lowering refuses each of them before the checker
+    // sees them. A function value called with another number of arguments is a mismatch (`mismatch.rs`).
     assert!(check(&tool(vec![helper("f", vec![], exact(Ty::Nat), var("z"))])).is_err());
     let twice = tool(vec![helper("f", vec![], exact(Ty::Nat), nat(1)), helper("f", vec![], exact(Ty::Nat), nat(2))]);
     assert!(check(&twice).is_err());

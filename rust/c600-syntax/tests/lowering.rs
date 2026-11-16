@@ -97,6 +97,14 @@ fn a_base_type_mismatch_is_reported_at_its_source_text() {
             "Word",
             "Nat",
         ),
+        // a function value called with another number of arguments: the count is part of its type
+        (
+            "fn f() -> Nat effects [] {\n    let g = fn(x: Nat) -> Nat {\n        return x;\n    };\n    \
+             return g(1, 2);\n}\n",
+            "g",
+            "fn(Nat, Nat) -> _",
+            "fn(Nat) -> Nat",
+        ),
     ]);
 }
 
@@ -194,6 +202,48 @@ fn lowered_err(sources: &[&str]) -> String {
         Ok(_) => panic!("lowered: {sources:?}"),
         Err(e) => e.to_string(),
     }
+}
+
+/// A lowering refusal's message and the text of `sources[i]` it points at.
+fn refused_at<'s>(sources: &[&'s str], i: usize) -> (String, &'s str) {
+    match lowered(sources) {
+        Ok(_) => panic!("lowered: {sources:?}"),
+        Err(e) => {
+            let span = e.span.unwrap_or_else(|| panic!("no source range: {e}"));
+            (e.message, &sources[i][span.start..span.end])
+        }
+    }
+}
+
+#[test]
+fn a_call_of_a_module_function_gives_one_argument_per_parameter_and_an_import_needs_an_export() {
+    // A program's own function, like a reserved operation, takes one argument per parameter.
+    let own = tool(
+        "fn g(n: Nat, w: Word) -> Word effects [] {\n    return w;\n}\n\n\
+         fn f() -> Word effects [] {\n    return g(1);\n}\n",
+    );
+    assert_eq!(refused_at(&[&own], 0), ("`g` takes 2 arguments".into(), "g(1)"));
+    let helpers = "edition \"6cs-draft-1\";\nmodule helpers requires [];\n\n\
+                   export fn twice(x: Nat) -> Nat effects [] {\n    return exact_add(x, x);\n}\n\n\
+                   fn secret(x: Nat) -> Nat effects [] {\n    return twice(x);\n}\n";
+    let client = |body: &str| {
+        format!(
+            "edition \"6cs-draft-1\";\nmodule client requires [];\nimport h \"{}\";\n\n\
+             fn f() -> Nat effects [] {{\n    {body}\n}}\n",
+            sha256_hex(helpers.as_bytes())
+        )
+    };
+    // An imported function likewise, named as the call writes it.
+    let wrong = client("return h.twice(1, 2);");
+    assert_eq!(refused_at(&[helpers, &wrong], 1), ("`h.twice` takes 1 argument".into(), "h.twice(1, 2)"));
+    // Another module calls or names only what a module exports, as the checker requires; its own module calls it.
+    for body in ["return h.secret(1);", "let s = h.secret;\n    return s(1);"] {
+        let private = client(body);
+        let refused = refused_at(&[helpers, &private], 1);
+        assert_eq!(refused, ("module `helpers` does not export `secret`".into(), "secret"), "{body}");
+    }
+    let lowered = lowered(&[helpers, &client("return h.twice(1);")]).unwrap();
+    assert!(check(&lowered.program).unwrap().diagnostics.is_empty());
 }
 
 #[test]
