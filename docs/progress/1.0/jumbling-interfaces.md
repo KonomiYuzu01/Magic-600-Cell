@@ -174,10 +174,12 @@ ENG-0J revision 2. It supplies four portable layer contracts and the H2 command 
 - **JI.52 [D]** M5 of LP2 gives J1 a public API before the language binds to J1 (default 12 of the ecosystem
   partition; LP2's products). It is one added module, `research/jumbling/sim/api.py`, whose functions call J1 as it
   stands: no accepted J1 file changes, and J1 stays the accepted reference while the research is stopped. The module
-  is oracle engineering for the engineering line, not research. The differential harness under
-  `research/jumbling/differential/` then reaches J1 only through this module and J1's public methods (`apply`,
-  `classify`, `survey`, `undo`, `replay`, `digest`, `snapshot`, `checkpoint`, `pose`, `lattice_flags`). The names
-  below are drafts that M5 may change; no entry is dropped, and none changes a result.
+  is oracle engineering for the engineering line, not research. The bindings of the differential harness under
+  `research/jumbling/differential/`, which are its adapters, `candidate/` and `references/` with the lead modules they
+  import (`leads/census.py` and `leads/x5_release.py` today), then reach J1 and the theory code
+  (`research/jumbling/theory/`) only through this module and public names, those without a leading underscore (such
+  as `apply`, `classify`, `survey`, `undo`, `replay`, `digest`, `snapshot`, `checkpoint`, `pose` and
+  `lattice_flags`). The names below are drafts that M5 may change; no entry is dropped, and none changes a result.
 
 | Private use in the harness today | Public entry point | Contract |
 | --- | --- | --- |
@@ -187,12 +189,15 @@ ENG-0J revision 2. It supplies four portable layer contracts and the H2 command 
 | `_groups(off)`, `_anchors(pid, members)` | `pose_groups(state, pieces)`, `anchors(state, pid, members)` | The private methods' values |
 | `_eval(...)`, `_straddle_certificate(...)` | `evaluate(state, ...)`, `straddle_certificate(state, piece, pid, grip, below, above)` | The same exact evaluation, and the certificate after its exact re-check |
 | `_intern_k`, `_intern_matrix`, `_compact()`, `_anchor_cache` | `from_pose_table(ctx, entries, pose_ids, menu)` | A state from a raw pose table, interned and compacted canonically, with empty caches (KN2.14) |
+| `copy.copy` of a state with fresh `pose_id`, `_poses`, `_lookup` and `journal` and an empty `_anchor_cache`; `state.__dict__.update(trial.__dict__)` | `copy_state(state)`, `adopt(state, trial)` | An independent copy that shares only the context, the menu and the exact pose entries, with empty caches; and the hand-over of a finished copy's whole state to the original, called only after the copy's work succeeded, so a refusal leaves the original unchanged |
 | `seams.SeamRestorer._dom` and `_cls` (`research/jumbling/theory/seams.py`) | `seam_restorer(state, menu, domains, inside_sets)` | The restorer over the supplied domains and inside sets |
+| `seams._fixture_state(name, t)` (`research/jumbling/theory/seams.py`), reached through `census.seams` | `fixture_state(ctx, name, t)` | The state after the first t records of the W-J fixture `name`, with an empty journal, and the fixture's menu; a record that J1 does not admit raises an error |
 
-  The harness's own private names, such as `census.seams._fixture_state`, are not J1's and stay. Acceptance:
+  The harness's own private names, such as `nu_refs._runtime`, are neither J1's nor the theory code's and stay. The
+  other lead scripts under `leads/` are recorded measurements, not bindings, and keep their private uses. Acceptance:
   `python research/jumbling/sim/accept.py` and `python research/jumbling/fixtures/wj.py check` give the results
-  recorded before the module; `tests/test_jumbling_*.py` pass; a source scan finds no private member of J1 or of the
-  theory code in `research/jumbling/differential/`; and outside that directory the module is the only change under
+  recorded before the module; `tests/test_jumbling_*.py` pass; a source scan of the bindings finds no private member
+  of J1 or of the theory code; and outside `research/jumbling/differential/` the module is the only change under
   `research/jumbling/`.
 - **JI.53 [D]** A domain ID names the coset g K+ of a pose g. It is the reference `domain_key` in
   `research/jumbling/differential/references/observations.py`: the SHA-256 of the compact JSON of the sorted images
@@ -646,4 +651,7 @@ ENG-0J revision 2. It supplies four portable layer contracts and the H2 command 
   contract pin, A6 in JI.35, the public J1 API and the domain ID. JI.3, JI.35, JI.52 and JI.53 fix them. The read's
   minor points are fixed in JI.1, JI.6, JI.14, JI.46, JI.48, JI.50 and JI.51, except three that are deferred:
   JI.18's "nothing is frozen yet" and the twist rows and live-preview alternative of `command-rows-jumbling.json`
-  go to LP3, and the relationship-strip fields of the view model go to LP4.
+  go to LP3, and the relationship-strip fields of the view model go to LP4. A scoped re-check found the fixes in JI.3,
+  JI.35 and JI.53 complete and JI.52 short of its aim: its table missed the state copy and the fixture replay, and
+  its source scan reached lead scripts that are records, not bindings. JI.52 now names both entry points and scans
+  the bindings only.
