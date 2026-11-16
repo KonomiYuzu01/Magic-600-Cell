@@ -122,13 +122,18 @@ pub enum Ty {
     /// LG2.13's word equality key of a Full word, under LG2.18's free reduction. It is never a `Word` and never
     /// converts to one (CT-LG2-11).
     WordEqualityKey,
+    /// `Set<T>`: distinct exact elements (LG2.20), kept in their canonical key order (DET.9).
+    Set(Box<QTy>),
+    /// `Map<K, V>`: values under distinct exact keys (LG2.20), kept in the keys' canonical key order (DET.9).
+    Map(Box<QTy>, Box<QTy>),
 }
 
 impl Ty {
-    /// The element types of a collection type, in order; empty for other types.
+    /// The element types of a collection type, in order (a map's key, then its value); empty for other types.
     pub fn elements(&self) -> Vec<&QTy> {
         match self {
-            Ty::List(e) => vec![&**e],
+            Ty::List(e) | Ty::Set(e) => vec![&**e],
+            Ty::Map(k, v) => vec![&**k, &**v],
             _ => Vec::new(),
         }
     }
@@ -138,9 +143,26 @@ impl Ty {
         let mut next = || Box::new(parts.remove(0));
         match self {
             Ty::List(_) => Ty::List(next()),
+            Ty::Set(_) => Ty::Set(next()),
+            Ty::Map(..) => {
+                let key = next();
+                Ty::Map(key, next())
+            }
             other => other.clone(),
         }
     }
+
+    /// Whether two types are collections of the same kind.
+    pub fn same_collection(&self, other: &Ty) -> bool {
+        matches!((self, other), (Ty::List(_), Ty::List(_)) | (Ty::Set(_), Ty::Set(_)) | (Ty::Map(..), Ty::Map(..)))
+    }
+}
+
+/// The named order of an ordered collection result (LG4.3): the canonical key order (DET.9) or its reverse. Draft.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Order {
+    Ascending,
+    Descending,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -233,7 +255,8 @@ pub enum Prim {
     ApproxAnd,
     ApproxNot,
     // Collections and words (LP2 drafts until the IR freeze, PHS.49).
-    /// `length(x)`: the element count of a list, or the exact length of a word (LG2.16), as `Nat`.
+    /// `length(x)`: the element count of a list or a set, the entry count of a map, or the exact length of a word
+    /// (LG2.16), as `Nat`.
     Length,
     /// `index(list, i)`: the element at exact position `i`, counted from 0 (LG2.20).
     Index,
@@ -251,6 +274,20 @@ pub enum Prim {
     Compose,
     /// `word_key(w)`: LG2.13's key of a Full word, LG2.18's stack free reduction of adjacent inverse pairs.
     WordKey,
+    /// `contains(c, k)`: whether a set holds the element `k`, or a map the key `k`. `k` is exact (LG2.20).
+    Contains,
+    /// `insert(s, x)`: the set with the element `x` added.
+    Insert,
+    /// `insert(m, k, v)`: the map with `v` under the key `k`, replacing a value under an equal key.
+    InsertEntry,
+    /// `lookup(m, k)`: the value under the key `k`; a missing key is a pointwise failure.
+    Lookup,
+    /// `elements(s, order)`: a set's elements as a `List` in the named order (LG4.3).
+    Elements(Order),
+    /// `keys(m, order)`: a map's keys as a `List` in the named order (LG4.3).
+    Keys(Order),
+    /// `entries(m, order)`: a map's entries as a `List` of `{ key, value }` records in the named order (LG4.3).
+    Entries(Order),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -344,7 +381,9 @@ pub enum Expr {
         value: Box<Expr>,
         field: String,
     },
-    /// A collection of type `ty` (a `List`) from its items in written order. Draft.
+    /// A collection of type `ty` from its items, evaluated in written order. Draft. A `List` keeps that order; a `Set`
+    /// keeps each element once; a `Map`'s items alternate keys and values, and a later key's value replaces an
+    /// earlier one's. Sets and maps take their canonical key order (DET.9).
     Collection {
         ty: Ty,
         items: Vec<Expr>,
@@ -523,6 +562,17 @@ pub mod build {
     /// `List<elem>` with the given items (draft).
     pub fn list(elem: QTy, items: Vec<Expr>) -> Expr {
         Expr::Collection { ty: Ty::List(Box::new(elem)), items }
+    }
+
+    /// `Set<elem>` with the given items (draft).
+    pub fn set(elem: QTy, items: Vec<Expr>) -> Expr {
+        Expr::Collection { ty: Ty::Set(Box::new(elem)), items }
+    }
+
+    /// `Map<key, value>` with the given entries in written order (draft).
+    pub fn map(key: QTy, value: QTy, entries: Vec<(Expr, Expr)>) -> Expr {
+        let items = entries.into_iter().flat_map(|(k, v)| [k, v]).collect();
+        Expr::Collection { ty: Ty::Map(Box::new(key), Box::new(value)), items }
     }
     pub fn field(value: Expr, name: &str) -> Expr {
         Expr::Field { value: Box::new(value), field: name.into() }

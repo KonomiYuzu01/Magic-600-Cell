@@ -171,6 +171,31 @@ fn state_and_preview_operations_take_their_types() {
     assert_only(&tool(vec![keep, look]), "look", "root", "Nat", "Word");
 }
 
+/// Sets and maps in IR (LP2 drafts): an operation takes the collection it names and a key that fits its key type. A
+/// set element or a map key of a type without a canonical key order, or a map with an unpaired key, is malformed IR
+/// (LG2.20), not a diagnostic.
+#[test]
+fn set_and_map_operations_take_their_collections_and_keys() {
+    let nats = || set(exact(Ty::Nat), vec![nat(1), nat(2)]);
+    let names = || map(exact(Ty::Text), exact(Ty::Nat), vec![(text("a"), nat(1))]);
+    let empty = || list(exact(Ty::Nat), vec![]);
+    assert_only(&f(Ty::Bool, prim(Prim::Contains, vec![empty(), nat(1)])), "f", "0", "Set<_> | Map<_, _>", "List<Nat>");
+    assert_only(&f(Ty::Nat, prim(Prim::Lookup, vec![nats(), nat(1)])), "f", "0", "Map<_, _>", "Set<Nat>");
+    assert_only(&f(Ty::Nat, prim(Prim::Lookup, vec![names(), nat(1)])), "f", "1", "Text", "Nat");
+    assert_only(&f(Ty::Bool, prim(Prim::Contains, vec![nats(), text("1")])), "f", "1", "Nat", "Text");
+    let pair = prim(Prim::InsertEntry, vec![names(), text("b"), text("2")]);
+    assert_only(&f(Ty::Map(exact(Ty::Text).into(), exact(Ty::Nat).into()), pair), "f", "2", "Nat", "Text");
+    let malformed = [
+        set(exact(Ty::Receipt), vec![]),
+        set(c600_ir::QTy { ty: Ty::Nat, display: true }, vec![]),
+        map(exact(Ty::Unit), exact(Ty::Nat), vec![]),
+        Expr::Collection { ty: Ty::Map(exact(Ty::Nat).into(), exact(Ty::Nat).into()), items: vec![nat(1)] },
+    ];
+    for body in malformed {
+        assert!(c600_check::check(&f(Ty::Unit, body.clone())).is_err(), "{body:?}");
+    }
+}
+
 #[test]
 fn one_fault_gives_one_finding() {
     // The misfit operand's value is unknown from there on: the sum, the comparison, the condition and the result take

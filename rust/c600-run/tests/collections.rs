@@ -1,12 +1,14 @@
-//! Lists and word operations at run time (LP2 drafts until the IR freeze, PHS.49): their values, canonical bytes and
-//! draft charges. One step per operation (DET.55 names no row for them); `expand_per_letter` per letter built or
-//! scanned and `LIST_PER_ELEMENT` per element built, both recorded as drafts in `c600_run::interp`. The static
-//! halves are `c600-syntax`'s `collections.rs`.
+//! Lists, word operations, sets and maps at run time (LP2 drafts until the IR freeze, PHS.49): their values,
+//! canonical bytes and draft charges. One step per operation (DET.55 names no row for them); `expand_per_letter` per
+//! letter built or scanned, `LIST_PER_ELEMENT` per element built and `compare_per_unit` per unit of a key comparison,
+//! all recorded as drafts in `c600_run::interp`. The static halves are `c600-syntax`'s `collections.rs`.
+
+use std::sync::Arc;
 
 use c600_check::check;
 use c600_run::interp::{code, load, Loaded, NoHost, Options, Run, LIST_PER_ELEMENT};
 use c600_run::meter::{self, Amounts, Outcome, Summary};
-use c600_run::value::{free_reduction, inverse, Value};
+use c600_run::value::{free_reduction, inverse, List, Value};
 use c600_syntax::{lower, parse};
 
 const WIDE: Amounts = Amounts { steps: 1 << 40, kernel_cost: 1 << 40, memory: 1 << 40, output: 1 << 40 };
@@ -149,9 +151,9 @@ fn the_full_word_key_is_free_reduction() {
     assert_eq!((shown.summary.outcome, shown.summary.code), (Outcome::Error, Some(code::NONCANONICAL_VALUE)));
 }
 
-/// CT-LG4-01 (part: lists and words; not run: maps and sets with named orders, LG4.3's other ordered results, and
-/// admitted routes other than RT1): repeated runs give identical result bytes and summaries, and a list's bytes follow
-/// its written order only, however it was built.
+/// CT-LG4-01 (part: lists and words; not run: LG4.3's other ordered results and admitted routes other than RT1; sets
+/// and maps are `ct_lg4_01_set_and_map_results_follow_their_key_order`): repeated runs give identical result bytes
+/// and summaries, and a list's bytes follow its written order only, however it was built.
 #[test]
 fn ct_lg4_01_list_and_word_results_repeat_byte_for_byte() {
     let source = "export fn literal() -> List<Word> effects [] {\n    \
@@ -174,4 +176,156 @@ fn ct_lg4_01_list_and_word_results_repeat_byte_for_byte() {
     let args = || vec![Value::word(&[4, -5, 6]), Value::word(&[-4])];
     let (first, again) = (run(&ops, "ops", args()), run(&ops, "ops", args()));
     assert_eq!((first.summary, first.output), (again.summary, again.output));
+}
+
+const SETS: &str = "export fn written() -> Set<Nat> effects [] {\n    return set<Nat>(3, 1, 2, 1);\n}\n\n\
+    export fn reordered() -> Set<Nat> effects [] {\n    return set<Nat>(2, 3, 1);\n}\n\n\
+    export fn inserted() -> Set<Nat> effects [] {\n    return insert(insert(insert(set<Nat>(), 2), 1), 3);\n}\n\n\
+    export fn ratios() -> List<Set<Rat>> effects [] {\n    \
+    return list<Set<Rat>>(set<Rat>(4/2, 2, 1/2), set<Rat>(1/2, 2, 2/1), insert(set<Rat>(2/1), 2));\n}\n\n\
+    export fn has(s: Set<Nat>, x: Nat) -> Bool effects [] {\n    return contains(s, x);\n}\n\n\
+    export fn listed(s: Set<Nat>) -> record { up: List<Nat>, down: List<Nat>, n: Nat } effects [] {\n    \
+    return record { up = elements(s, ascending), down = elements(s, descending), n = length(s) };\n}\n";
+
+const ONE_TWO_THREE: &str = "[{\"int\":\"1\"},{\"int\":\"2\"},{\"int\":\"3\"}]\n";
+
+/// A set keeps each element once, in canonical key order (DET.9), whatever order it was written or inserted in (LP2
+/// draft). Equal numbers in different representations are one element, and the explicit secondary key keeps the `Int`
+/// before the `Rat`. A set of n written elements is priced at `LIST_PER_ELEMENT` per element and n·⌈log₂ n⌉
+/// comparisons of the widest element, two of its units per comparison at `compare_per_unit` 1, and reserves every
+/// element written; an insertion into n elements adds ⌈log₂(n + 1)⌉ comparisons and reserves the element it adds.
+#[test]
+fn a_set_keeps_each_element_once_in_key_order() {
+    let loaded = build(SETS);
+    let written = run(&loaded, "written", vec![]);
+    assert_eq!(output(&written), ONE_TWO_THREE);
+    // Four written elements of 2 bytes: 8 comparisons of 2 × 2 units; 4 + 4 × 2 bytes reserved, 4 + 3 × 2 kept.
+    assert_eq!(rows(&written.summary, "set"), [(1, 4 * LIST_PER_ELEMENT + 8 * 4, 4 + 4 * 2)]);
+    assert_eq!(written.value.as_ref().map(Value::size), Some(4 + 3 * 2));
+    let reordered = run(&loaded, "reordered", vec![]);
+    assert_eq!(output(&reordered), ONE_TWO_THREE);
+    assert_eq!(rows(&reordered.summary, "set"), [(1, 3 * LIST_PER_ELEMENT + 6 * 4, 4 + 3 * 2)]);
+    let inserted = run(&loaded, "inserted", vec![]);
+    assert_eq!(output(&inserted), ONE_TWO_THREE);
+    assert_eq!(rows(&inserted.summary, "set"), [(1, 0, 4)]);
+    assert_eq!(rows(&inserted.summary, "insert"), [(1, 1, 4 + 2), (1, 2 + 4, 6 + 2), (1, 3 + 2 * 4, 8 + 2)]);
+
+    let ratios = run(&loaded, "ratios", vec![]);
+    let half_two = "[{\"rat\":[\"1\",\"2\"]},{\"int\":\"2\"}]";
+    assert_eq!(output(&ratios), format!("[{half_two},{half_two},[{{\"int\":\"2\"}}]]\n"));
+
+    let s = || Value::set(vec![Value::int(3), Value::int(1), Value::int(2)]);
+    for (x, want) in [(2, "true\n"), (4, "false\n")] {
+        let r = run(&loaded, "has", vec![s(), Value::int(x)]);
+        assert_eq!(output(&r), want);
+        // ⌈log₂ 4⌉ comparisons of a 2-byte probe; the boolean is reserved.
+        assert_eq!(rows(&r.summary, "contains"), [(1, 2 * 4, 1)]);
+    }
+    let listed = run(&loaded, "listed", vec![s()]);
+    assert_eq!(
+        output(&listed),
+        "{\"down\":[{\"int\":\"3\"},{\"int\":\"2\"},{\"int\":\"1\"}],\"n\":{\"int\":\"3\"},\
+         \"up\":[{\"int\":\"1\"},{\"int\":\"2\"},{\"int\":\"3\"}]}\n"
+    );
+    assert_eq!(rows(&listed.summary, "elements"), [(1, 3, 4 + 3 * 2), (1, 3, 4 + 3 * 2)]);
+    assert_eq!(rows(&listed.summary, "length"), [(1, 0, 2)]);
+}
+
+const MAPS: &str = "export fn written() -> Map<Nat, Text> effects [] {\n    \
+    return map<Nat, Text>(2, \"b\", 1, \"a\", 2, \"c\");\n}\n\n\
+    export fn inserted() -> Map<Nat, Text> effects [] {\n    \
+    return insert(insert(insert(map<Nat, Text>(), 1, \"a\"), 2, \"b\"), 2, \"c\");\n}\n\n\
+    export fn value_at(m: Map<Nat, Text>, k: Nat) -> Text effects [] {\n    return lookup(m, k);\n}\n\n\
+    export fn has(m: Map<Nat, Text>, k: Nat) -> Bool effects [] {\n    return contains(m, k);\n}\n\n\
+    export fn listed(m: Map<Nat, Text>) -> \
+    record { k: List<Nat>, e: List<record { key: Nat, value: Text }>, n: Nat } effects [] {\n    \
+    return record { k = keys(m, descending), e = entries(m, ascending), n = length(m) };\n}\n";
+
+const ONE_A_TWO_C: &str = "[{\"key\":{\"int\":\"1\"},\"value\":\"a\"},{\"key\":{\"int\":\"2\"},\"value\":\"c\"}]\n";
+
+/// A map keeps one entry per key, a `{ key, value }` record, in the canonical key order of its keys (DET.9), and a
+/// later key's value replaces an earlier one's (LP2 draft). A map is priced as a set of its keys and reserves every
+/// entry written. A lookup lends its value as a field read does, and a missing key stops with
+/// `LG4:input.pointwise_failed` before its step; `keys` and `entries` give their named order (LG4.3).
+#[test]
+fn a_map_keeps_one_entry_per_key_in_key_order() {
+    let loaded = build(MAPS);
+    let written = run(&loaded, "written", vec![]);
+    assert_eq!(output(&written), ONE_A_TWO_C);
+    // Three entries of a 2-byte key and a one-scalar text, 4 + 2 + (4 + 8) bytes each: 6 comparisons of 2 × 2 units.
+    assert_eq!(rows(&written.summary, "map"), [(1, 3 * LIST_PER_ELEMENT + 6 * 4, 4 + 3 * 18)]);
+    assert_eq!(written.value.as_ref().map(Value::size), Some(4 + 2 * 18));
+    let inserted = run(&loaded, "inserted", vec![]);
+    assert_eq!(output(&inserted), ONE_A_TWO_C);
+    assert_eq!(rows(&inserted.summary, "map"), [(1, 0, 4)]);
+    assert_eq!(rows(&inserted.summary, "insert"), [(1, 1, 4 + 18), (1, 2 + 4, 22 + 18), (1, 3 + 2 * 4, 40 + 18)]);
+
+    let m = || Value::map(vec![(Value::int(2), Value::text("c")), (Value::int(1), Value::text("a"))]);
+    let found = run(&loaded, "value_at", vec![m(), Value::int(2)]);
+    assert_eq!(output(&found), "\"c\"\n");
+    assert_eq!(rows(&found.summary, "lookup"), [(1, 2 * 4, 0)]);
+    let missing = run(&loaded, "value_at", vec![m(), Value::int(3)]);
+    assert_eq!((missing.summary.outcome, missing.summary.code), (Outcome::Error, Some(meter::code::POINTWISE_FAILED)));
+    assert!(rows(&missing.summary, "lookup").is_empty(), "the failed lookup is not charged as a step");
+    for (k, want) in [(1, "true\n"), (3, "false\n")] {
+        assert_eq!(output(&run(&loaded, "has", vec![m(), Value::int(k)])), want);
+    }
+    let listed = run(&loaded, "listed", vec![m()]);
+    let entries = ONE_A_TWO_C.trim_end();
+    let want = format!("{{\"e\":{entries},\"k\":[{{\"int\":\"2\"}},{{\"int\":\"1\"}}],\"n\":{{\"int\":\"2\"}}}}\n");
+    assert_eq!(output(&listed), want);
+    assert_eq!(rows(&listed.summary, "keys"), [(1, 2, 4 + 2 * 2)]);
+    assert_eq!(rows(&listed.summary, "entries"), [(1, 2, 4 + 2 * 18)]);
+}
+
+fn refused(loaded: &Loaded, function: &str, args: Vec<Value>) -> &'static str {
+    loaded.run("m", function, args, &mut NoHost, &Options::new(WIDE)).map(|_| ()).unwrap_err().code
+}
+
+/// A set or a map that a host builds out of canonical key order, with a repeated key or with an item that is not an
+/// entry has no canonical form, so it is refused as an entry argument with `PS1:input.noncanonical_value`.
+#[test]
+fn a_host_set_or_map_out_of_key_order_is_refused() {
+    let (sets, maps) = (build(SETS), build(MAPS));
+    let raw = |items: Vec<Value>| Arc::new(List::new(items));
+    let (one, two) = (Value::int(1), Value::int(2));
+    for s in [raw(vec![two.clone(), one.clone()]), raw(vec![one.clone(), one.clone()])] {
+        assert_eq!(refused(&sets, "has", vec![Value::Set(s), one.clone()]), code::NONCANONICAL_VALUE);
+    }
+    let entry = |k: &Value| Value::record(vec![("key", k.clone()), ("value", Value::text("a"))]);
+    for m in [raw(vec![entry(&two), entry(&one)]), raw(vec![entry(&one), entry(&one)]), raw(vec![one.clone()])] {
+        assert_eq!(refused(&maps, "has", vec![Value::Map(m), one.clone()]), code::NONCANONICAL_VALUE);
+    }
+    let canonical = Value::Set(raw(vec![one.clone(), two.clone()]));
+    assert_eq!(output(&run(&sets, "has", vec![canonical, one])), "true\n");
+}
+
+/// CT-LG4-01 (part: sets and maps, whose listings name their order; not run: LG4.3's other ordered results, host
+/// collection layouts other than this interpreter's sorted vectors, and admitted routes other than RT1) and CT-DET-05
+/// (part: insertion order; not run: hash seeds and allocation perturbations, and draw order): repeated runs give
+/// identical result bytes and summaries, and a set's or a map's bytes follow its canonical key order only, whatever
+/// order its elements or entries were written or inserted in.
+#[test]
+fn ct_lg4_01_set_and_map_results_follow_their_key_order() {
+    let (sets, maps) = (build(SETS), build(MAPS));
+    let cases = [
+        (&sets, "written", ONE_TWO_THREE),
+        (&sets, "reordered", ONE_TWO_THREE),
+        (&sets, "inserted", ONE_TWO_THREE),
+        (&maps, "written", ONE_A_TWO_C),
+        (&maps, "inserted", ONE_A_TWO_C),
+    ];
+    for (loaded, f, want) in cases {
+        let (first, again) = (run(loaded, f, vec![]), run(loaded, f, vec![]));
+        assert_eq!(first.summary, again.summary, "{f}");
+        assert_eq!(first.output, again.output, "{f}");
+        assert_eq!(output(&first), want, "{f}");
+    }
+    // Host values built from permuted items are the same value, with the same bytes.
+    let permutations = [[1, 2, 3], [3, 1, 2], [2, 3, 1], [3, 2, 1]];
+    let listed: Vec<Run> = permutations
+        .iter()
+        .map(|p| run(&sets, "listed", vec![Value::set(p.iter().map(|&n| Value::int(n)).collect())]))
+        .collect();
+    assert!(listed.windows(2).all(|w| w[0].output == w[1].output && w[0].summary == w[1].summary));
 }

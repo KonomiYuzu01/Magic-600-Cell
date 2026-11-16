@@ -397,6 +397,8 @@ pub fn type_name(ty: &Ty) -> String {
         Ty::Var(name) => name.clone(),
         Ty::List(_) => "List".into(),
         Ty::WordEqualityKey => "WordEqualityKey".into(),
+        Ty::Set(_) => "Set".into(),
+        Ty::Map(..) => "Map".into(),
     }
 }
 
@@ -414,6 +416,8 @@ fn type_text(ty: &Ty) -> String {
             format!("fn({}) -> {}", params.join(", "), type_text(&f.result.ty))
         }
         Ty::List(e) => format!("List<{}>", type_text(&e.ty)),
+        Ty::Set(e) => format!("Set<{}>", type_text(&e.ty)),
+        Ty::Map(k, v) => format!("Map<{}, {}>", type_text(&k.ty), type_text(&v.ty)),
         other => type_name(other),
     }
 }
@@ -441,7 +445,7 @@ fn replace_var(ty: &Ty, name: &str, with: &Ty) -> Ty {
             result: q(&f.result),
             effects: f.effects.clone(),
         })),
-        list @ Ty::List(_) => list.with_elements(list.elements().into_iter().map(q).collect()),
+        c @ (Ty::List(_) | Ty::Set(_) | Ty::Map(..)) => c.with_elements(c.elements().into_iter().map(q).collect()),
         other => other.clone(),
     }
 }
@@ -510,9 +514,23 @@ fn declared_qual(q: &QTy) -> Qual {
         Ty::ApproxBool => Qual::Cond,
         _ if q.display => Qual::Display { control: false },
         Ty::Record(fields) => fields.iter().fold(Qual::Exact, |acc, (_, f)| acc.join(declared_qual(f).container())),
-        Ty::List(_) => q.ty.elements().into_iter().fold(Qual::Exact, |acc, e| acc.join(declared_qual(e).container())),
+        c @ (Ty::List(_) | Ty::Set(_) | Ty::Map(..)) => {
+            c.elements().into_iter().fold(Qual::Exact, |acc, e| acc.join(declared_qual(e).container()))
+        }
         _ => Qual::Exact,
     }
+}
+
+/// Whether a set element or a map key may have this type (LG2.20; LP2 draft): exact and without the display qualifier
+/// at any depth, and without a callable, a receipt, `Unit` or a type variable, so that its canonical key order (DET.9)
+/// is defined.
+fn key_type(q: &QTy) -> bool {
+    !q.display
+        && match &q.ty {
+            Ty::Unit | Ty::Approx(_) | Ty::ApproxBool | Ty::Fn(_) | Ty::Receipt | Ty::Var(_) => false,
+            Ty::Record(fields) => fields.iter().all(|(_, f)| key_type(f)),
+            other => other.elements().into_iter().all(key_type),
+        }
 }
 
 /// Projection's qualifier rule (LG2.19): an element of a container of qualifier `container`, declared with qualifier
@@ -549,7 +567,7 @@ fn exact_slot(slot: &QTy, own: bool) -> bool {
         Ty::Unit | Ty::Approx(_) | Ty::ApproxBool => false,
         Ty::Var(_) => own,
         Ty::Record(fields) => fields.iter().all(|(_, f)| f.ty == Ty::Unit || exact_slot(f, own)),
-        Ty::List(_) => slot.ty.elements().into_iter().all(|e| exact_slot(e, own)),
+        Ty::List(_) | Ty::Set(_) | Ty::Map(..) => slot.ty.elements().into_iter().all(|e| exact_slot(e, own)),
         _ => true,
     }
 }
@@ -562,7 +580,7 @@ fn admits(slot: &QTy, value: &QTy, own: bool) -> bool {
     match (&slot.ty, &value.ty) {
         (Ty::Fn(s), Ty::Fn(t)) => signature_keeps(s, t, own),
         (Ty::Record(s), Ty::Record(t)) => s.iter().zip(t).all(|((_, sf), (_, tf))| admits(sf, tf, own)),
-        (Ty::List(s), Ty::List(t)) => admits(s, t, own),
+        (s, t) if s.same_collection(t) => s.elements().into_iter().zip(t.elements()).all(|(s, t)| admits(s, t, own)),
         _ => true,
     }
 }
@@ -606,7 +624,7 @@ fn fits(slot: &Ty, value: &Ty) -> bool {
                 && a.params.iter().zip(&b.params).all(|(pa, pb)| matches!(pa.ty, Ty::Var(_)) || fits(&pb.ty, &pa.ty))
                 && fits(&a.result.ty, &b.result.ty)
         }
-        (Ty::List(a), Ty::List(b)) => fits(&a.ty, &b.ty),
+        (a, b) if a.same_collection(b) => a.elements().into_iter().zip(b.elements()).all(|(x, y)| fits(&x.ty, &y.ty)),
         (a, b) => a == b,
     }
 }
@@ -640,7 +658,10 @@ fn widen(a: &Ty, b: &Ty) -> Option<Ty> {
             let result = widen_q(&x.result, &y.result)?;
             Some(Ty::Fn(Box::new(FnTy { params: x.params.clone(), result, effects })))
         }
-        (Ty::List(x), Ty::List(y)) => Some(Ty::List(Box::new(widen_q(x, y)?))),
+        (x, y) if x.same_collection(y) => {
+            let parts = x.elements().into_iter().zip(y.elements()).map(|(p, q)| widen_q(p, q));
+            Some(x.with_elements(parts.collect::<Option<Vec<_>>>()?))
+        }
         _ => None,
     }
 }
@@ -685,7 +706,9 @@ fn rename_vars(q: &QTy, map: &BTreeMap<String, String>) -> QTy {
             }))
         }
         Ty::Record(fields) => Ty::Record(fields.iter().map(|(n, f)| (n.clone(), rename_vars(f, map))).collect()),
-        list @ Ty::List(_) => list.with_elements(list.elements().into_iter().map(|e| rename_vars(e, map)).collect()),
+        c @ (Ty::List(_) | Ty::Set(_) | Ty::Map(..)) => {
+            c.with_elements(c.elements().into_iter().map(|e| rename_vars(e, map)).collect())
+        }
         other => other.clone(),
     };
     QTy { ty, display: q.display }
@@ -892,7 +915,11 @@ fn bindings(slot: &QTy, v: &Val, out: &mut Vec<(String, Val)>) {
                 bindings(&s.result, &result, out);
             }
         }
-        Ty::List(e) if matches!(v.ty, Ty::List(_)) => bindings(e, &v.element(0), out),
+        c if c.same_collection(&v.ty) => {
+            for (i, e) in c.elements().into_iter().enumerate() {
+                bindings(e, &v.element(i), out);
+            }
+        }
         _ => {}
     }
 }
@@ -1821,12 +1848,20 @@ impl<'p> Checker<'p> {
                 Ok((Val { ty: Ty::Record(tys), qual, callable: None, fields: Some(vals) }, s))
             }
             Expr::Collection { ty, items } => {
-                let elements = ty.elements();
-                let Some(element) = elements.first().map(|e| (*e).clone()) else {
-                    return Err(self.err(format!("a collection of type {} (the LP2 draft has List)", type_text(ty))));
-                };
-                if holds_callable(&element.ty) {
+                let elements: Vec<QTy> = ty.elements().into_iter().cloned().collect();
+                if elements.is_empty() {
+                    return Err(self.err(format!("a collection of type {}", type_text(ty))));
+                }
+                if elements.iter().any(|e| holds_callable(&e.ty)) {
                     return Err(self.err(format!("{}: a collection holds no callable (LP2 draft)", type_text(ty))));
+                }
+                // A set's elements and a map's keys are exact, so that their canonical key order is defined (LG2.20).
+                let keyed = matches!(ty, Ty::Set(_) | Ty::Map(..));
+                if keyed && !key_type(&elements[0]) {
+                    return Err(self.err(format!("{}: a set element or a map key is exact (LG2.20)", type_text(ty))));
+                }
+                if matches!(ty, Ty::Map(..)) && items.len() % 2 == 1 {
+                    return Err(self.err(format!("{}: a map's items alternate keys and values", type_text(ty))));
                 }
                 let mut s = Summary::default();
                 // A container with a display element is display-qualified as a whole (LG2.19).
@@ -1834,8 +1869,18 @@ impl<'p> Checker<'p> {
                 for (i, item) in items.iter().enumerate() {
                     let (v, i_s) = self.at(i, |c| c.expr(item, env))?;
                     s.add(&i_s);
+                    let (element, what, key) = match ty {
+                        Ty::List(_) => (&elements[0], "a list element", false),
+                        Ty::Set(_) => (&elements[0], "a set element", true),
+                        _ if i % 2 == 0 => (&elements[0], "a map key", true),
+                        _ => (&elements[1], "a map value", false),
+                    };
                     if !fits(&element.ty, &v.ty) {
-                        self.at(i, |c| c.misfit(&type_text(&element.ty), &v, "a list element"));
+                        self.at(i, |c| c.misfit(&type_text(&element.ty), &v, what));
+                    }
+                    if key {
+                        // An exact collection index accepts exact inputs only (LG2.20).
+                        self.at(i, |c| c.exact_use(Site::Control, &v, what));
                     }
                     qual = qual.join(v.qual.container());
                 }
@@ -2024,6 +2069,8 @@ impl<'p> Checker<'p> {
         let arity = match op {
             Prim::Not | Prim::ToApprox(_) | Prim::ToExact | Prim::ApproxNot => 1,
             Prim::Length | Prim::Inverse | Prim::WordKey => 1,
+            Prim::Elements(_) | Prim::Keys(_) | Prim::Entries(_) => 1,
+            Prim::InsertEntry => 3,
             _ => 2,
         };
         if vals.len() != arity {
@@ -2164,8 +2211,8 @@ impl<'p> Checker<'p> {
             }
             Prim::Length => {
                 let v = &vals[0];
-                if !matches!(v.ty, Ty::List(_) | Ty::Word) && !is_unknown(&v.ty) {
-                    self.at(0, |c| c.misfit("List<_> | Word", v, "a length"));
+                if !matches!(v.ty, Ty::List(_) | Ty::Set(_) | Ty::Map(..) | Ty::Word) && !is_unknown(&v.ty) {
+                    self.at(0, |c| c.misfit("List<_> | Set<_> | Map<_, _> | Word", v, "a length"));
                 }
                 // A length cannot extract an exact result from a display-qualified value (LG2.19).
                 Ok(Val::new(Ty::Nat, project(v.qual, Qual::Exact)))
@@ -2235,6 +2282,64 @@ impl<'p> Checker<'p> {
                 }
                 let ty = if op == Prim::WordKey { Ty::WordEqualityKey } else { Ty::Word };
                 Ok(if unknown_operand { Val::unknown() } else { Val::new(ty, q) })
+            }
+            Prim::Contains | Prim::Insert | Prim::InsertEntry | Prim::Lookup => {
+                let coll = &vals[0];
+                let (key, value) = match (&coll.ty, op) {
+                    (Ty::Set(e), Prim::Contains | Prim::Insert) => (&**e, None),
+                    (Ty::Map(k, v), Prim::Contains | Prim::InsertEntry | Prim::Lookup) => (&**k, Some(&**v)),
+                    (t, _) => {
+                        if !is_unknown(t) {
+                            let wanted = match op {
+                                Prim::Contains => "Set<_> | Map<_, _>",
+                                Prim::Insert => "Set<_>",
+                                _ => "Map<_, _>",
+                            };
+                            self.at(0, |c| c.misfit(wanted, coll, &what));
+                        }
+                        return Ok(Val::unknown());
+                    }
+                };
+                let k = &vals[1];
+                if !fits(&key.ty, &k.ty) {
+                    self.at(1, |c| c.misfit(&type_text(&key.ty), k, "a collection key"));
+                }
+                // An exact collection index accepts exact inputs only (LG2.20).
+                self.at(1, |c| c.exact_use(Site::Control, k, "an exact collection key"));
+                match (op, value) {
+                    // Membership cannot extract an exact result from a display-qualified collection (LG2.19).
+                    (Prim::Contains, _) => Ok(Val::new(Ty::Bool, project(coll.qual, Qual::Exact))),
+                    (Prim::Lookup, _) => Ok(coll.element(1)),
+                    (Prim::InsertEntry, Some(value)) => {
+                        let v = &vals[2];
+                        if !fits(&value.ty, &v.ty) {
+                            self.at(2, |c| c.misfit(&type_text(&value.ty), v, "a map value"));
+                        }
+                        Ok(Val::new(coll.ty.clone(), coll.qual.join(k.qual.container()).join(v.qual.container())))
+                    }
+                    _ => Ok(Val::new(coll.ty.clone(), coll.qual.join(k.qual.container()))),
+                }
+            }
+            Prim::Elements(_) | Prim::Keys(_) | Prim::Entries(_) => {
+                // An ordered result names its order in the IR (LG4.3).
+                let coll = &vals[0];
+                let element = match (&coll.ty, op) {
+                    (Ty::Set(e), Prim::Elements(_)) => (**e).clone(),
+                    (Ty::Map(k, _), Prim::Keys(_)) => (**k).clone(),
+                    (Ty::Map(k, v), Prim::Entries(_)) => {
+                        let fields = vec![("key".to_string(), (**k).clone()), ("value".to_string(), (**v).clone())];
+                        QTy { ty: Ty::Record(fields), display: false }
+                    }
+                    (t, _) => {
+                        if !is_unknown(t) {
+                            let wanted = if matches!(op, Prim::Elements(_)) { "Set<_>" } else { "Map<_, _>" };
+                            self.at(0, |c| c.misfit(wanted, coll, &what));
+                        }
+                        return Ok(Val::unknown());
+                    }
+                };
+                // The list keeps the collection's qualifier (LG2.19).
+                Ok(Val::new(Ty::List(Box::new(element)), coll.qual))
             }
         }
     }

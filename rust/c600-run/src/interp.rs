@@ -28,6 +28,8 @@
 //! | list (LP2 draft) | `value` (the header), then per element `visit` (a move) or `alias` (a borrow), as a record is built |
 //! | `length`, `index` (LP2 drafts) | `length` reserves its integer; `index` lends or retains one element as a field read does, and an index outside the list stops with `LG4:input.pointwise_failed` before its step |
 //! | `push`, `concat`, `inverse`, `conjugate`, `commutator`, `compose`, `word_key` (LP2 drafts) | one step each, priced before the value is built: `expand_per_letter` per letter built or scanned, [`LIST_PER_ELEMENT`] per element built |
+//! | set, map (LP2 drafts) | one step `set` or `map`: [`LIST_PER_ELEMENT`] per element and n·⌈log₂ n⌉ comparisons of the widest key, each `compare_per_unit` per unit of two such keys; it reserves every item written and settles to the built value |
+//! | `contains`, `insert`, `lookup`, `elements`, `keys`, `entries` (LP2 drafts) | one step each: ⌈log₂(n + 1)⌉ comparisons of the probe for a search, [`LIST_PER_ELEMENT`] per element built; `lookup` lends or retains its value as a field read does, and a missing key stops with `LG4:input.pointwise_failed` before its step |
 //! | exact arithmetic | `exact_add`, `exact_less`, `exact_eq`, `not`, `to_approx`, `approx_add`, `approx_less`, `approx_and`, `approx_not` |
 //! | snapshot read, declassifier | `kernel` with the host row's tariff and result bound |
 //! | file read, clock | `read` with the host row's tariff and result bound |
@@ -52,7 +54,7 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicU8, Ordering as Atomic};
 use std::sync::Arc;
 
-use c600_ir::{self as ir, Accounting, Callee, ExactRole, Expr, FnKind, Prim, QTy, ReceiptField, Ty};
+use c600_ir::{self as ir, Accounting, Callee, ExactRole, Expr, FnKind, Order, Prim, QTy, ReceiptField, Ty};
 use num_bigint::{BigInt, Sign};
 
 use crate::approx;
@@ -62,13 +64,18 @@ use crate::meter::{
     Tariffs, GENERATOR_SIZE,
 };
 use crate::rng::{self, Cursor};
-use crate::value::{self, free_reduction, inverse, Closure, List, Record, Text, Value};
+use crate::value::{
+    self, entry_key, entry_value, find, free_reduction, inverse, map_insert, set_insert, Closure, List, Record, Text,
+    Value,
+};
 
 /// The draft price of a built list (LP2): kernel units per element it holds. DET.55 names no row for it.
 ///
 /// The list and word operations' names and prices, the word operations' reuse of `expand_per_letter`, the pointwise
 /// stop of an index outside its list and a list's JSON form are LP2 drafts that change freely until the IR freeze
-/// (PHS.49).
+/// (PHS.49). So are the set and map operations, their prices (a comparison priced as an exact equality walk over two
+/// keys of the bounding size), the canonical key order ([`value::key_order`]), the pointwise stop of a missing key
+/// and their JSON forms.
 pub const LIST_PER_ELEMENT: u128 = 1;
 
 /// The codes the interpreter raises in addition to the meter's (chapter 13).
@@ -256,6 +263,8 @@ enum Kind {
     Record(Vec<Arc<Text>>),
     Field(Box<str>),
     List,
+    Set,
+    Map,
     ReadSnapshot { query: String, ty: QTy },
     PublishView,
     WriteWorkspace { record: String, ty: QTy },
@@ -441,6 +450,15 @@ pub fn load(program: &ir::Program) -> Result<Loaded, Refusal> {
     Ok(compiler.loaded)
 }
 
+/// ⌈log₂ n⌉, and 0 for n ≤ 1: the comparisons of a binary search among n − 1 keys, or the merge levels of n keys.
+fn log2_ceil(n: u128) -> u128 {
+    if n <= 1 {
+        0
+    } else {
+        u128::from(128 - (n - 1).leading_zeros())
+    }
+}
+
 fn arity(op: Prim) -> Option<usize> {
     match op {
         Prim::ExactAdd
@@ -455,6 +473,9 @@ fn arity(op: Prim) -> Option<usize> {
         Prim::ToExact => None,
         Prim::Length | Prim::Inverse | Prim::WordKey => Some(1),
         Prim::Index | Prim::Push | Prim::Concat | Prim::Conjugate | Prim::Commutator | Prim::Compose => Some(2),
+        Prim::Elements(_) | Prim::Keys(_) | Prim::Entries(_) => Some(1),
+        Prim::Contains | Prim::Insert | Prim::Lookup => Some(2),
+        Prim::InsertEntry => Some(3),
     }
 }
 
@@ -667,12 +688,15 @@ impl Compiler {
                 kids(steps, expr.children());
                 Kind::Field(field.as_str().into())
             }
-            Expr::Collection { ty, .. } => {
-                if !matches!(ty, Ty::List(_)) {
-                    return Err(rejected(format!("a collection of type {ty:?}")));
-                }
+            Expr::Collection { ty, items } => {
+                let kind = match ty {
+                    Ty::List(_) => Kind::List,
+                    Ty::Set(_) => Kind::Set,
+                    Ty::Map(..) if items.len() % 2 == 0 => Kind::Map,
+                    _ => return Err(rejected(format!("a collection of type {ty:?} with {} items", items.len()))),
+                };
                 kids(steps, expr.children());
-                Kind::List
+                kind
             }
             Expr::ReadSnapshot { query, ty } => Kind::ReadSnapshot { query: query.clone(), ty: ty.clone() },
             Expr::PublishView { .. } => {
@@ -1097,6 +1121,8 @@ impl<'a> Machine<'a> {
             Kind::Prim(op) => self.prim(n, *op, args),
             Kind::Record(names) => self.record(n, names, args),
             Kind::List => self.list(n, args),
+            Kind::Set => self.keyed(n, false, args),
+            Kind::Map => self.keyed(n, true, args),
             Kind::Field(name) => self.field(n, args.pop().expect("a record"), name, "visit"),
             Kind::ReadReceipt(field) => self.read_receipt(n, args.pop().expect("a receipt"), *field),
             Kind::PublishView => self.output(n, Sink::View, args.pop().expect("a value")),
@@ -1196,6 +1222,13 @@ impl<'a> Machine<'a> {
             | Prim::Commutator
             | Prim::Compose
             | Prim::WordKey => return self.sequence(n, op, args),
+            Prim::Contains
+            | Prim::Insert
+            | Prim::InsertEntry
+            | Prim::Lookup
+            | Prim::Elements(_)
+            | Prim::Keys(_)
+            | Prim::Entries(_) => return self.keyed_op(n, op, args),
         };
         let display = |v: &Value| match v {
             Value::Bool(x) | Value::ApproxBool(x) => Some(*x),
@@ -1315,25 +1348,7 @@ impl<'a> Machine<'a> {
                 return Err(self.fail(Some(n), name, meter::code::POINTWISE_FAILED));
             };
             self.release(index);
-            return match list.origin {
-                Origin::Owned => {
-                    let size = element.size();
-                    self.charge(Some(n), name, 0, size, 0)?;
-                    let owners = self.own(size);
-                    self.release(list);
-                    self.push(element, owners);
-                    Ok(())
-                }
-                origin => {
-                    self.charge(Some(n), name, 0, 0, 0)?;
-                    let origin = match origin {
-                        Origin::Let { slot, .. } => Origin::Let { slot, whole: false },
-                        other => other,
-                    };
-                    self.values.push(Held { value: element, owners: Vec::new(), origin });
-                    Ok(())
-                }
-            };
+            return self.take_part(n, name, 0, list, element);
         }
         let letters = |h: &Held| match &h.value {
             Value::Word(w) => Some(w.clone()),
@@ -1345,7 +1360,7 @@ impl<'a> Machine<'a> {
             (Prim::Length, _, [h]) => {
                 let count = match &h.value {
                     Value::Word(w) => w.len(),
-                    Value::List(l) => l.items().len(),
+                    Value::List(l) | Value::Set(l) | Value::Map(l) => l.items().len(),
                     _ => return Err(self.fail(Some(n), name, code::IR_REJECTED)),
                 };
                 let result = Value::int(count);
@@ -1401,6 +1416,163 @@ impl<'a> Machine<'a> {
                 (LIST_PER_ELEMENT.saturating_mul(count), memory, Box::new(build))
             }
             _ => return Err(self.fail(Some(n), name, code::IR_REJECTED)),
+        };
+        self.charge(Some(n), name, kernel, memory, 0)?;
+        self.settle(memory, result());
+        let result = self.values.pop().expect("the result");
+        for held in args {
+            self.release(held);
+        }
+        self.values.push(result);
+        Ok(())
+    }
+
+    /// One part of a container, taken as a field read takes a field: a borrowed container lends it, and an owned one
+    /// retains it with a charged owner and is released.
+    fn take_part(&mut self, n: NodeId, name: &str, kernel: u128, container: Held, part: Value) -> Result<(), Stop> {
+        match container.origin {
+            Origin::Owned => {
+                let size = part.size();
+                self.charge(Some(n), name, kernel, size, 0)?;
+                let owners = self.own(size);
+                self.release(container);
+                self.push(part, owners);
+            }
+            origin => {
+                self.charge(Some(n), name, kernel, 0, 0)?;
+                let origin = match origin {
+                    Origin::Let { slot, .. } => Origin::Let { slot, whole: false },
+                    other => other,
+                };
+                self.values.push(Held { value: part, owners: Vec::new(), origin });
+            }
+        }
+        Ok(())
+    }
+
+    /// The draft price of `comparisons` key comparisons (LP2): each is priced as an exact equality walk over two keys
+    /// of at most `widest` units, `compare_per_unit` per unit.
+    fn order_price(&self, comparisons: u128, widest: u128) -> u128 {
+        comparisons.saturating_mul(self.draft.compare_per_unit.saturating_mul(widest.saturating_mul(2)))
+    }
+
+    /// A set or a map from its written items, one step (LP2 draft). For n elements or entries it is priced before it
+    /// builds at [`LIST_PER_ELEMENT`] per element and n·⌈log₂ n⌉ comparisons of the widest key, and reserves the size
+    /// of every item written; the reservation then shrinks to the built value, which keeps equal keys once.
+    fn keyed(&mut self, n: NodeId, map: bool, args: Vec<Held>) -> Result<(), Stop> {
+        let name = if map { "map" } else { "set" };
+        let values: Vec<Value> = args.iter().map(|h| h.value.clone()).collect();
+        let step = if map { 2 } else { 1 };
+        let count = (values.len() / step) as u128;
+        let widest = values.iter().step_by(step).map(Value::size).max().unwrap_or(0);
+        let order = self.order_price(count.saturating_mul(log2_ceil(count)), widest);
+        let kernel = LIST_PER_ELEMENT.saturating_mul(count).saturating_add(order);
+        // A map's entry is a `{ key, value }` record.
+        let memory = if map {
+            values.chunks(2).fold(4u128, |s, kv| s.saturating_add(List::size_of(kv)))
+        } else {
+            List::size_of(&values)
+        };
+        self.charge(Some(n), name, kernel, memory, 0)?;
+        let value = if map {
+            let mut items = values.into_iter();
+            let mut entries = Vec::new();
+            while let (Some(k), Some(v)) = (items.next(), items.next()) {
+                entries.push((k, v));
+            }
+            Value::map(entries)
+        } else {
+            Value::set(values)
+        };
+        self.settle(memory, value);
+        let result = self.values.pop().expect("the result");
+        for held in args {
+            self.release(held);
+        }
+        self.values.push(result);
+        Ok(())
+    }
+
+    /// The set and map operations, one step each (LP2 drafts; DET.55 names no row for them), priced before they
+    /// build. A search costs ⌈log₂(n + 1)⌉ comparisons of the probe for n elements or entries; an insertion adds
+    /// [`LIST_PER_ELEMENT`] per element of the built collection, and `elements`, `keys` and `entries` the same per
+    /// element of their list, in the named order (LG4.3). `contains` reserves its boolean; `lookup` lends or retains
+    /// the value as a field read does, and a missing key stops with `LG4:input.pointwise_failed` before the step.
+    fn keyed_op(&mut self, n: NodeId, op: Prim, mut args: Vec<Held>) -> Result<(), Stop> {
+        let name = match op {
+            Prim::Contains => "contains",
+            Prim::Insert | Prim::InsertEntry => "insert",
+            Prim::Lookup => "lookup",
+            Prim::Elements(_) => "elements",
+            Prim::Keys(_) => "keys",
+            _ => "entries",
+        };
+        let (items, is_map) = match &args[0].value {
+            Value::Set(c) => (c.clone(), false),
+            Value::Map(c) => (c.clone(), true),
+            _ => return Err(self.fail(Some(n), name, code::IR_REJECTED)),
+        };
+        let fits = match op {
+            Prim::Contains => true,
+            Prim::Insert | Prim::Elements(_) => !is_map,
+            _ => is_map,
+        };
+        if !fits {
+            return Err(self.fail(Some(n), name, code::IR_REJECTED));
+        }
+        let count = items.items().len() as u128;
+        let search = |m: &Self, key: &Value| m.order_price(log2_ceil(count + 1), key.size());
+        let (kernel, memory, result): (u128, u128, Box<dyn FnOnce() -> Value>) = match op {
+            Prim::Elements(order) | Prim::Keys(order) | Prim::Entries(order) => {
+                let keys = matches!(op, Prim::Keys(_));
+                let memory = if keys {
+                    let key = |e: &Value| entry_key(e).size() + if entry_key(e).is_sequence() { 8 } else { 0 };
+                    items.items().iter().fold(4u128, |s, e| s.saturating_add(key(e)))
+                } else {
+                    args[0].value.size()
+                };
+                let build = move || {
+                    let mut parts: Vec<Value> = match keys {
+                        true => items.items().iter().map(|e| entry_key(e).clone()).collect(),
+                        false => items.items().to_vec(),
+                    };
+                    if order == Order::Descending {
+                        parts.reverse();
+                    }
+                    Value::list(parts)
+                };
+                (LIST_PER_ELEMENT.saturating_mul(count), memory, Box::new(build))
+            }
+            Prim::Contains => {
+                let (collection, key) = (args[0].value.clone(), args[1].value.clone());
+                let kernel = search(self, &key);
+                (kernel, Value::Bool(false).size(), Box::new(move || Value::Bool(find(&collection, &key).is_some())))
+            }
+            Prim::Lookup => {
+                let key = args.pop().expect("a key");
+                let Some(i) = find(&args[0].value, &key.value) else {
+                    return Err(self.fail(Some(n), name, meter::code::POINTWISE_FAILED));
+                };
+                let kernel = search(self, &key.value);
+                self.release(key);
+                let map = args.pop().expect("a map");
+                return self.take_part(n, name, kernel, map, entry_value(&items.items()[i]).clone());
+            }
+            _ => {
+                let key = args[1].value.clone();
+                let value = args.get(2).map(|v| v.value.clone());
+                let kernel = LIST_PER_ELEMENT.saturating_mul(count + 1).saturating_add(search(self, &key));
+                // The built collection is at most the old one and the new element or `{ key, value }` entry.
+                let added = match &value {
+                    Some(v) => List::size_of(&[key.clone(), v.clone()]),
+                    None => key.size() + if key.is_sequence() { 8 } else { 0 },
+                };
+                let build = move || match value {
+                    Some(v) => map_insert(&items, key, v),
+                    None => set_insert(&items, key),
+                };
+                (kernel, args[0].value.size().saturating_add(added), Box::new(build))
+            }
         };
         self.charge(Some(n), name, kernel, memory, 0)?;
         self.settle(memory, result());

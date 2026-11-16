@@ -1,11 +1,12 @@
-//! Lists and word operations in source (LP2 drafts until the IR freeze, PHS.49). Candidate A calls them like
-//! functions: `list<T>(...)`, `length`, `index`, `push`, `concat`, `inverse`, `conjugate`, `commutator`, `compose` and
-//! `word_key`. They lower to the IR's collection form and primitives, and the checker applies LG2.13, LG2.15, LG2.19
-//! and LG2.20 to them. The run-time halves are `c600-run`'s `collections.rs`; the key's CT-LG2-11 and CT-LG2-13 halves
-//! are in `conformance_lg2.rs`.
+//! Lists, word operations, sets and maps in source (LP2 drafts until the IR freeze, PHS.49). Candidate A calls them
+//! like functions: `list<T>(...)`, `length`, `index`, `push`, `concat`, `inverse`, `conjugate`, `commutator`,
+//! `compose`, `word_key`, `set<T>(...)`, `map<K, V>(...)`, `contains`, `insert`, `lookup`, and `elements`, `keys` and
+//! `entries` with a named order, `ascending` or `descending`. They lower to the IR's collection form and primitives,
+//! and the checker applies LG2.13, LG2.15, LG2.19, LG2.20 and LG4.3 to them. The run-time halves are `c600-run`'s
+//! `collections.rs`; the key's CT-LG2-11 and CT-LG2-13 halves are in `conformance_lg2.rs`.
 
 use c600_check::{check, Report, EXACTNESS_VIOLATION, TYPE_MISMATCH};
-use c600_ir::{Expr as Ir, Prim, Ty};
+use c600_ir::{Expr as Ir, Order, Prim, QTy, Ty};
 use c600_syntax::{lower, parse, Lowered};
 
 const HEADER: &str = "edition \"6cs-draft-1\";\nmodule tool requires [];\n\n";
@@ -124,9 +125,9 @@ fn malformed_lists_and_word_operations_do_not_lower() {
 }
 
 /// CT-LG2-05 (part: aggregates under form 1 on the LP2 draft's lists, LG2.19's container row and LG2.20's exact
-/// collection index; not run: maps and sets, which are not built, and form 2, LG2.21): a list with a display element
-/// is display-qualified as a whole, and its length, an element or an equality cannot extract an exact result; an
-/// index is an exact input.
+/// collection index; not run: form 2, LG2.21; sets and maps are `ct_lg2_05_set_elements_and_map_keys_are_exact`): a
+/// list with a display element is display-qualified as a whole, and its length, an element or an equality cannot
+/// extract an exact result; an index is an exact input.
 #[test]
 fn ct_lg2_05_a_list_keeps_the_display_qualifier_of_its_elements() {
     // Exact lists give exact lengths, elements and equalities.
@@ -200,4 +201,140 @@ fn ct_lg2_12_word_operations_accept_the_word_domain() {
     // Words and lists do not mix.
     let (code, _) = only("fn f(w: Word, xs: List<Word>) -> Word effects [] {\n    return concat(w, xs);\n}\n");
     assert_eq!(code, TYPE_MISMATCH);
+}
+
+fn exact(ty: Ty) -> Box<QTy> {
+    Box::new(QTy { ty, display: false })
+}
+
+/// Sets and maps lower to the IR's collection form with `Set<T>` and `Map<K, V>` types and one primitive per
+/// operation; a listing carries its named order in its primitive (LG4.3).
+#[test]
+fn sets_and_maps_lower_to_the_draft_forms() {
+    let source = "fn f(s: Set<Nat>, m: Map<Text, Word>) -> List<Nat> effects [] {\n    \
+                  let a = contains(insert(s, 4), 4);\n    \
+                  let b = contains(insert(m, \"x\", word[+1]), \"x\");\n    \
+                  let c = lookup(m, \"x\");\n    \
+                  let d = keys(m, descending);\n    \
+                  let e = entries(m, ascending);\n    \
+                  let g = exact_add(length(set<Nat>(1, 2)), length(map<Text, Word>(\"y\", word[])));\n    \
+                  return elements(s, ascending);\n}\n";
+    let lowered = lowered(source).unwrap_or_else(|e| panic!("{e}"));
+    let f = &lowered.program.modules[0].functions[0];
+    assert_eq!(f.params[0].ty.ty, Ty::Set(exact(Ty::Nat)));
+    assert_eq!(f.params[1].ty.ty, Ty::Map(exact(Ty::Text), exact(Ty::Word)));
+    let all = expressions(&lowered);
+    let mut ops: Vec<Prim> = all
+        .iter()
+        .filter_map(|e| match e {
+            Ir::Prim { op, .. } => Some(*op),
+            _ => None,
+        })
+        .collect();
+    ops.sort_by_key(|op| format!("{op:?}"));
+    ops.dedup();
+    let want = [
+        Prim::Contains,
+        Prim::Elements(Order::Ascending),
+        Prim::Entries(Order::Ascending),
+        Prim::ExactAdd,
+        Prim::Insert,
+        Prim::InsertEntry,
+        Prim::Keys(Order::Descending),
+        Prim::Length,
+        Prim::Lookup,
+    ];
+    assert_eq!(ops, want);
+    let collections: Vec<(&Ty, usize)> = all
+        .iter()
+        .filter_map(|e| match e {
+            Ir::Collection { ty, items } => Some((ty, items.len())),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(collections.len(), 2, "{collections:?}");
+    assert!(collections.contains(&(&Ty::Set(exact(Ty::Nat)), 2)), "{collections:?}");
+    assert!(collections.contains(&(&Ty::Map(exact(Ty::Text), exact(Ty::Word)), 2)), "{collections:?}");
+    admitted(source);
+}
+
+/// The draft's refusals for sets and maps in source: `set` and `map` name their types, `Set` takes one type argument
+/// and `Map` two, a set element and a map key are exact in their type (LG2.20), a collection holds no function, a map
+/// takes its keys and values in pairs, a listing names its order (LG4.3), and the names are reserved.
+#[test]
+fn malformed_sets_and_maps_do_not_lower() {
+    let refused = [
+        ("fn f() -> Set<Nat> effects [] {\n    return set(1);\n}\n", "one type argument"),
+        ("fn f() -> Map<Nat, Nat> effects [] {\n    return map<Nat>(1, 2);\n}\n", "two type arguments"),
+        ("fn f(m: Map<Nat>) -> Nat effects [] {\n    return 1;\n}\n", "two type arguments"),
+        ("fn f(s: Set<Nat, Nat>) -> Nat effects [] {\n    return 1;\n}\n", "one type argument"),
+        ("fn f() -> Map<Nat, Nat> effects [] {\n    return map<Nat, Nat>(1, 2, 3);\n}\n", "in pairs"),
+        ("fn f(s: Set<Display<Nat>>) -> Nat effects [] {\n    return 1;\n}\n", "LG2.20"),
+        ("fn f(m: Map<Approx<P53>, Nat>) -> Nat effects [] {\n    return 1;\n}\n", "LG2.20"),
+        ("fn f(s: Set<Receipt>) -> Nat effects [] {\n    return 1;\n}\n", "LG2.20"),
+        ("fn f<T>(s: Set<T>) -> Nat effects [] {\n    return 1;\n}\n", "LG2.20"),
+        ("fn f(s: Set<List<Display<Nat>>>) -> Nat effects [] {\n    return 1;\n}\n", "LG2.20"),
+        ("fn f() -> Set<Unit> effects [] {\n    return set<Unit>();\n}\n", "LG2.20"),
+        ("fn f(m: Map<Nat, fn(Nat) -> Nat effects []>) -> Nat effects [] {\n    return 1;\n}\n", "no function"),
+        ("fn f(s: Set<Nat>) -> List<Nat> effects [] {\n    return elements(s);\n}\n", "elements"),
+        ("fn f(s: Set<Nat>) -> List<Nat> effects [] {\n    return elements(s, sideways);\n}\n", "names its order"),
+        ("fn f(m: Map<Nat, Nat>, o: Nat) -> List<Nat> effects [] {\n    return keys(m, o);\n}\n", "names its order"),
+        ("fn f() -> Nat effects [] {\n    let ascending = 1;\n    return ascending;\n}\n", "ascending"),
+        ("fn keys(s: Set<Nat>) -> Nat effects [] {\n    return 1;\n}\n", "keys"),
+    ];
+    for (declaration, says) in refused {
+        let message = match lowered(declaration) {
+            Ok(_) => panic!("lowered: {declaration}"),
+            Err(e) => e,
+        };
+        assert!(message.contains(says), "{declaration}: {message}");
+    }
+    // A map's value need not be a key: it may be display, approximate or a record of either.
+    admitted("fn f(c: Display<Colour>) -> Map<Nat, Display<Colour>> effects [] {\n    return map<Nat, Display<Colour>>(1, c);\n}\n");
+}
+
+/// CT-LG2-05 (part: aggregates under form 1 on the LP2 draft's sets and maps, LG2.19's container row and LG2.20's
+/// exact collection index; not run: form 2, LG2.21): a set element and a map key are exact inputs, so that their key
+/// order is defined, and a display key is refused where it is written, looked up or inserted; a map with a display
+/// value is display-qualified as a whole, and its length, its keys, a membership or a looked-up value cannot extract
+/// an exact result from it.
+#[test]
+fn ct_lg2_05_set_elements_and_map_keys_are_exact() {
+    // Exact sets and maps give exact memberships, values, lengths and listings.
+    admitted("fn f(s: Set<Nat>, x: Nat) -> Bool effects [] {\n    return contains(insert(s, x), x);\n}\n");
+    admitted("fn f(m: Map<Text, Nat>) -> Nat effects [] {\n    return exact_add(lookup(m, \"a\"), length(m));\n}\n");
+    admitted(
+        "fn f(m: Map<Text, Nat>) -> List<Text> effects [] {\n    return keys(insert(m, \"b\", 2), ascending);\n}\n",
+    );
+    // A display key is refused as an element, a probe or an insertion.
+    for declaration in [
+        "fn f(c: Display<Nat>) -> Display<Set<Nat>> effects [] {\n    return set<Nat>(c);\n}\n",
+        "fn f(c: Display<Nat>) -> Display<Map<Nat, Nat>> effects [] {\n    return map<Nat, Nat>(c, 1);\n}\n",
+        "fn f(s: Set<Nat>, c: Display<Nat>) -> Display<Bool> effects [] {\n    return contains(s, c);\n}\n",
+        "fn f(m: Map<Nat, Nat>, c: Display<Nat>) -> Display<Nat> effects [] {\n    return lookup(m, c);\n}\n",
+        "fn f(s: Set<Nat>, c: Display<Nat>) -> Display<Set<Nat>> effects [] {\n    return insert(s, c);\n}\n",
+    ] {
+        assert_eq!(codes(declaration), [EXACTNESS_VIOLATION], "{declaration}");
+    }
+    // A display value makes the whole map display, whether the map's type names it or not.
+    let shown = "fn f(c: Display<Colour>) -> Map<Nat, Colour> effects [] {\n    return map<Nat, Colour>(1, c);\n}\n";
+    assert_eq!(codes(shown), [EXACTNESS_VIOLATION]);
+    admitted(
+        "fn f(c: Display<Colour>) -> Display<Map<Nat, Colour>> effects [] {\n    return map<Nat, Colour>(1, c);\n}\n",
+    );
+    // Its length, its keys, a membership or a looked-up value cannot extract an exact result.
+    for declaration in [
+        "fn f(m: Map<Nat, Display<Colour>>) -> Nat effects [] {\n    return length(m);\n}\n",
+        "fn f(m: Map<Nat, Display<Colour>>) -> List<Nat> effects [] {\n    return keys(m, ascending);\n}\n",
+        "fn f(m: Map<Nat, Display<Colour>>) -> Bool effects [] {\n    return contains(m, 1);\n}\n",
+        "fn f(m: Display<Map<Nat, Colour>>) -> Colour effects [] {\n    return lookup(m, 1);\n}\n",
+    ] {
+        assert_eq!(codes(declaration), [EXACTNESS_VIOLATION], "{declaration}");
+    }
+    admitted("fn f(m: Map<Nat, Display<Colour>>) -> Display<Nat> effects [] {\n    return length(m);\n}\n");
+    // A key must fit the key type, and a listing the collection it lists.
+    let (code, types) = only("fn f(m: Map<Nat, Text>) -> Text effects [] {\n    return lookup(m, \"1\");\n}\n");
+    assert_eq!((code, types), (TYPE_MISMATCH, Some(("Nat".into(), "Text".into()))));
+    let (code, types) = only("fn f(s: Set<Nat>) -> List<Nat> effects [] {\n    return keys(s, ascending);\n}\n");
+    assert_eq!((code, types), (TYPE_MISMATCH, Some(("Map<_, _>".into(), "Set<Nat>".into()))));
 }

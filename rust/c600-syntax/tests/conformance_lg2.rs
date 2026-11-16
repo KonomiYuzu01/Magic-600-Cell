@@ -91,7 +91,8 @@ fn base_types_only(ty: &Ty) -> bool {
         | Ty::Var(_) => true,
         Ty::Record(fields) => fields.iter().all(|(_, f)| base_types_only(&f.ty)),
         Ty::Fn(f) => f.params.iter().all(|p| base_types_only(&p.ty)) && base_types_only(&f.result.ty),
-        Ty::List(e) => base_types_only(&e.ty),
+        Ty::List(e) | Ty::Set(e) => base_types_only(&e.ty),
+        Ty::Map(k, v) => base_types_only(&k.ty) && base_types_only(&v.ty),
     }
 }
 
@@ -103,6 +104,8 @@ fn prim_family(op: Prim) -> &'static str {
         Prim::ToApprox(_) | Prim::ToExact | Prim::ApproxAdd | Prim::ApproxLess | Prim::ApproxAnd => "arithmetic",
         Prim::ApproxNot => "arithmetic",
         Prim::Length | Prim::Index | Prim::Push | Prim::Concat => "collection",
+        Prim::Contains | Prim::Insert | Prim::InsertEntry | Prim::Lookup => "collection",
+        Prim::Elements(_) | Prim::Keys(_) | Prim::Entries(_) => "collection",
         Prim::Inverse | Prim::Conjugate | Prim::Commutator | Prim::Compose => "word",
         Prim::WordKey => "word key",
     }

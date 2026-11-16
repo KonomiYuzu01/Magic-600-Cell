@@ -137,6 +137,13 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   `WordEqualityKey` (LG2.13), which no proposal, word operation, word slot or result takes:
   `LG2:type.word_key_not_executable`, not a mismatch (CT-LG2-11, part). The key is not indexed by puzzle and identity
   yet, since the IR draft has one puzzle.
+- Sets and maps (LP2 drafts until the IR freeze). `Set<T>` and `Map<K, V>` are built by the collection form; a map's
+  items alternate keys and values. A set element and a map key have an exact type with a canonical key order (no
+  display qualifier, approximation, function, receipt, `Unit` or type parameter, at any depth), or the IR is
+  malformed, and every element, key and probe is an exact input (LG2.20). `contains`, `insert` (a set's element or a
+  map's key and value), `lookup` and `length` work on them; a map with a display value is display as a whole
+  (LG2.19). `elements`, `keys` and `entries` give a list in the order their primitive names, ascending or descending
+  (LG4.3). CT-LG2-05's aggregate part for sets and maps.
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
 
 ## Status of M7: the parser
@@ -197,6 +204,10 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   lowering. `list<T>(a, b, ...)` builds a list; `length`, `index`, `push`, `concat`, `inverse`, `conjugate`,
   `commutator`, `compose` and `word_key` are reserved operations called like functions
   (`c600-syntax/tests/collections.rs`).
+- Sets and maps (LP2 drafts). `Set<T>` and `Map<K, V>` are types; a set element or a map key that is not exact in its
+  type is refused at lowering. `set<T>(a, ...)` and `map<K, V>(k, v, ...)` build them; `contains`, `insert`,
+  `lookup`, `elements`, `keys` and `entries` are reserved, and a listing names its order as its second argument,
+  `ascending` or `descending`, which are reserved words.
 - Not run or not applicable, which is no pass (PHS.63): CT-LG1-01's second half, mixed dependency editions, while one
   edition exists; CT-RTE-18 (LQ13 was answered without it).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
@@ -236,6 +247,17 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   LG2.18's Full free reduction and has no output form, so a run that would emit one stops with
   `PS1:input.noncanonical_value`. Tests: `c600-run/tests/collections.rs` (CT-LG2-12's run-time language half and
   CT-LG4-01 for lists and words, parts) and the key halves of CT-LG2-11 and CT-LG2-13 in `conformance_lg2.rs`.
+- Sets and maps (LP2 drafts): `Value::Set` and `Value::Map` (`Value::set`, `Value::map`) keep their elements, or
+  their `{ key, value }` entries, in the canonical key order `value::key_order` (DET.9): exact numbers by value,
+  texts by scalar values, words by letters, aggregates part by part, kinds by a fixed rank, and for equal numbers in
+  different representations the explicit secondary key `Int`, `Rat`, `Q5`. Equal keys are one key; the lowest
+  representation stays, and a map's later value replaces an earlier one. They are sized as lists and encode as JSON
+  arrays in that order; a host value out of that order has no canonical form. Draft prices: `set` and `map` are one
+  step at `LIST_PER_ELEMENT` per element and n·⌈log₂ n⌉ comparisons of the widest key, each `compare_per_unit` per
+  unit of two keys; `contains`, `insert` and `lookup` cost ⌈log₂(n + 1)⌉ comparisons of the probe, an insertion adds
+  `LIST_PER_ELEMENT` per element built, and `elements`, `keys` and `entries` the same per element listed. A missing
+  key stops `lookup` with `LG4:input.pointwise_failed` before its step. Tests: `c600-run/tests/collections.rs`
+  (CT-LG4-01 for sets and maps and CT-DET-05's insertion-order half, parts).
 - Evidence kind: source and fixture.
 
 ## Status of M3: the run-time boundary

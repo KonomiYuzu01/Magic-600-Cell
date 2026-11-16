@@ -156,14 +156,14 @@ fn ct_lg2_13_the_empty_word_is_no_witness_for_an_inverse_pair() {
 /// pair, so equal keys give the empty word no standing as its witness.
 #[test]
 fn ct_lg2_13_the_full_key_cancels_the_pair_not_the_witness() {
-    let source = m("export fn keys() -> record { key: Bool, letters: Bool } effects [] {\n    \
+    let source = m("export fn compared() -> record { key: Bool, letters: Bool } effects [] {\n    \
                     return record { key = exact_eq(word_key(word[+1, -1]), word_key(word[])), \
                     letters = exact_eq(word[+1, -1], word[]) };\n}\n\n\
                     export fn pair() -> Text effects [preview] {\n    \
                     return receipt_id(propose(word[+1, -1], target(\"t\")));\n}\n");
     let (_, loaded) = build(&[&source]);
-    let keys = loaded.run("m", "keys", vec![], &mut NoHost, &Options::new(WIDE)).unwrap();
-    assert_eq!(keys.output.as_deref(), Some(&b"{\"key\":true,\"letters\":false}\n"[..]));
+    let compared = loaded.run("m", "compared", vec![], &mut NoHost, &Options::new(WIDE)).unwrap();
+    assert_eq!(compared.output.as_deref(), Some(&b"{\"key\":true,\"letters\":false}\n"[..]));
     let (mut engine, mut store) = (Engine::default(), Store::default());
     let solving = (Author::BuiltIn, Profile::Solving);
     let previewed = run_as(&source, "pair", solving, vec![], vec![], &mut engine, &mut store, &Options::new(WIDE));

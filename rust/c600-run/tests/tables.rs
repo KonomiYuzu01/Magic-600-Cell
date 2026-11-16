@@ -148,6 +148,8 @@ fn holds(ty: &Ty) -> &'static str {
         Ty::Var(_) => "a type parameter",
         Ty::List(_) => "values of its element type, in order",
         Ty::WordEqualityKey => "a word equality key, which is never letters",
+        Ty::Set(_) => "distinct exact values of its element type, in canonical key order",
+        Ty::Map(..) => "exact keys with values of these types, in canonical key order",
     }
 }
 
@@ -163,6 +165,7 @@ fn value_holds(v: &Value) -> &'static str {
         Value::Receipt(_) => "a preview receipt, read only through its fields",
         Value::List(_) => "values in order",
         Value::WordEqualityKey(_) => "a word equality key, which is never letters",
+        Value::Set(_) | Value::Map(_) => "distinct exact keys, with values for a map, in canonical key order",
     }
 }
 
