@@ -29,11 +29,11 @@
 //! # Decisions of the integrator for M4
 //!
 //! - (a) The 0.4 oracle is judged with Net protection at label level: a recipe is refused only when its net map
-//!   moves a sticker of a protected orbit, so O06's `word([g, -g])` is accepted. Strict protection is not built.
+//!   moves a sticker of a protected orbit, so O06's `word([g, -g])` is accepted. Strict protection came after M4
+//!   (below) and is asked for by name ([`Kernel::derive_strict`]); [`Kernel::derive`] stays Net.
 //! - (b) A recipe is validated whole, under the 0.4 limits and with the 0.4 error texts, before any effect is
 //!   computed: 1 to 256 steps, words of 1 to 100,000 letters, star fields and frame nodes in range, and at most
-//!   3,000,000 primitives in the expansion. Streaming words through the kernel in chunks (KN2.10, CT-KN2-07) is not
-//!   part of M4.
+//!   3,000,000 primitives in the expansion. Streaming words in chunks (KN2.10) came after M4 (below).
 //! - (c) The trace's `model` block comes from the loaded identity: the `model_id` and the manifest's SHA-256.
 //! - (d) `progress_sha256` is the SHA-256 of the canonical JSON of the 35 progress rows, computed from the labels and
 //!   the census as the LX-6 port did. No reference changed, and the cases' `optional_fields` are not used.
@@ -50,11 +50,37 @@
 //! state hash), the 600-cell-Full half of CT-KN2-01 (O01 to O07 through the kernel API) and CT-KN2-04 (a blocked or
 //! invalid recipe leaves every digest unchanged).
 //!
-//! Not built in M4: the `positions` row; Strict protection; streaming words (KN2.10, CT-KN2-07); `open_snapshot` by
-//! `RevisionRef`, which waits for the session store; the reachability claim of `Derived`; budgets (KN7); every
-//! jumbling row and identity (a jumbling identity block is refused). Under Net protection a refusal judges the whole
-//! net map, so [`Refused::first_refused_prefix`] is `None`. A failed star certificate or asset check has no code in
-//! chapter 13's catalogue yet; the kernel reports it as [`CertificateError`] or [`LoadError`].
+//! Not built in M4, and since built (LP2 kernel rows, below): the `positions` row, Strict protection and streaming
+//! words. Not built: `open_snapshot` by `RevisionRef`, which waits for the session store; the reachability claim of
+//! `Derived`; budgets (KN7); every jumbling row and identity (a jumbling identity block is refused). A failed star
+//! certificate or asset check has no code in chapter 13's catalogue yet; the kernel reports it as
+//! [`CertificateError`] or [`LoadError`].
+//!
+//! # LP2 kernel rows after M4
+//!
+//! Built: KN1.4 for protected sets ([`Kernel::checked_protection`]); the KN2.4 rows `positions`
+//! ([`Kernel::positions`]), `protection` with Strict ([`Kernel::strict_protection`], [`Kernel::derive_strict`]) and
+//! `replay` for Full ([`Kernel::replay`]); the streaming of KN2.10 ([`Kernel::chunks`], [`Replay`]); KN2.11's refusal
+//! shape ([`Refused`]). Draft choices:
+//!
+//! - A nonempty [`ProtectedSet`] is bound to the model that built it. The empty set names no orbit, so it belongs to no
+//!   model, and `ProtectedSet::none()` equals `protected_set(&[])`. Every call that takes a set checks it except the
+//!   old [`Kernel::protection`], whose signature is kept. An [`Effect`] names no model, as M4 decided.
+//! - Strict at label level judges, for every executed prefix of the literal expansion, whether its net map moves a
+//!   sticker of a protected orbit. While the earlier letters fix the protected orbits, a prefix moves exactly the
+//!   protected stickers its last letter moves, so the first refused prefix ends at the first letter that moves one,
+//!   read from a per-generator orbit mask. On the shipped model every generator moves a sticker of each of the 35
+//!   orbits, so Strict refuses every word at prefix 1 once any orbit is protected.
+//! - KN2.11's `first_refused_prefix` is a prefix length (1 for the first letter); `outcome` is [`Refused::refusal`];
+//!   `certificates` give, per protected orbit the judged map moves, its smallest moved slot and that sticker's
+//!   destination. Under Net the refusal reports no prefix, since Net judges only the end of the complete operation
+//!   (LB2.3), and its certificates come from the net map.
+//! - `positions` names a piece by its home position, with 0.4's text and `KN2:input.named_object_invalid` for a bad
+//!   one. A label array read back by `state_from_labels` can split a piece; its row then has no position.
+//! - [`Replay`] judges Strict prefix by prefix and has no length bound, since X3's bound is unset;
+//!   [`Kernel::replay_under_ceiling`] counts the 3,000,000-primitive ceiling over all chunks with 0.4's text. A refused
+//!   chunk changes nothing. A word of no letters derives the base state (LB1: an empty expansion is a zero-letter
+//!   word). `c600-digest` has no incremental hash, so the replay keeps the letters' bytes for `Digest<literal word>`.
 
 #![forbid(unsafe_code)]
 
@@ -64,6 +90,7 @@ pub mod json;
 mod model;
 
 use std::fmt;
+use std::num::NonZeroUsize;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
@@ -752,7 +779,8 @@ impl Kernel {
             }
         }
         let (source, destination) = engine::net_from_map(&map);
-        Ok(self.effect_of(source, destination, &self.expansion(recipe)))
+        let letters = self.expansion(recipe);
+        Ok(self.effect_of(source, destination, engine::digest_ints(&letters), letters.len()))
     }
 
     /// The effect of a recipe by replaying every letter of its expansion: the reference of the KN2.9 agreement test.
@@ -766,7 +794,7 @@ impl Kernel {
             engine::apply(&mut map, source, destination, &mut scratch);
         }
         let (source, destination) = engine::net_from_map(&map);
-        Ok(self.effect_of(source, destination, &letters))
+        Ok(self.effect_of(source, destination, engine::digest_ints(&letters), letters.len()))
     }
 
     /// The literal letters of a recipe's expansion. A recipe of another model is refused, since its stars would be
@@ -783,7 +811,8 @@ impl Kernel {
         letters
     }
 
-    fn effect_of(&self, source: Vec<i32>, destination: Vec<i32>, letters: &[i32]) -> Effect {
+    /// The effect of a net map whose literal word has the digest `expansion_sha256` and `primitive_count` letters.
+    fn effect_of(&self, source: Vec<i32>, destination: Vec<i32>, expansion_sha256: String, count: usize) -> Effect {
         let mut bytes = Vec::with_capacity(8 * source.len());
         for value in source.iter().chain(&destination) {
             bytes.extend_from_slice(&value.to_le_bytes());
@@ -793,8 +822,8 @@ impl Kernel {
             net_sha256: c600_digest::sha256_hex(&bytes),
             moved_pieces: support.iter().map(|row| row.pieces).sum(),
             support,
-            expansion_sha256: engine::digest_ints(letters),
-            primitive_count: letters.len(),
+            expansion_sha256,
+            primitive_count: count,
             source,
             destination,
         }
@@ -839,10 +868,15 @@ impl Kernel {
     fn strict(&self, letters: &[i32], protected: &ProtectedSet) -> (Protection, Vec<MovedSticker>) {
         let mask = protected.mask();
         let first = letters.iter().position(|&m| self.model.letter_orbits(m) & mask != 0);
+        self.strict_verdict(protected, first.map(|index| (index as u64 + 1, letters[index])))
+    }
+
+    /// The Strict row for the first refused prefix and its last letter, or for none.
+    fn strict_verdict(&self, protected: &ProtectedSet, first: Option<(u64, i32)>) -> (Protection, Vec<MovedSticker>) {
         let (conflicts, certificates) = match first {
             None => (Vec::new(), Vec::new()),
-            Some(index) => {
-                let (source, destination) = self.model.pairs(letters[index]);
+            Some((_, letter)) => {
+                let (source, destination) = self.model.pairs(letter);
                 let moved: Vec<i32> = source.iter().zip(destination).filter(|(s, d)| s != d).map(|(&s, _)| s).collect();
                 let rows = engine::support(&self.model, &moved);
                 let conflicts = rows.into_iter().filter(|row| protected.contains(row.orbit)).collect();
@@ -855,7 +889,7 @@ impl Kernel {
             protected: protected.orbits.clone(),
             conflicts,
             verdict: if first.is_some() { Verdict::Moves } else { Verdict::Clear },
-            first_refused_prefix: first.map(|index| index as u64 + 1),
+            first_refused_prefix: first.map(|(prefix, _)| prefix),
         };
         (protection, certificates)
     }
@@ -906,11 +940,22 @@ impl Kernel {
             }
             ProtectionMode::Strict => self.strict(&self.expansion(recipe), protected),
         };
-        let word = effect.expansion_sha256.clone();
-        let base_digest = base.digest().to_owned();
+        Ok(self.conclude(base.digest(), base.labels(), effect, protection, certificates))
+    }
+
+    /// The derivation from a judged effect: the refusal with its prefix and certificates, or the derived state.
+    fn conclude(
+        &self,
+        base_digest: &str,
+        base: &[i32],
+        effect: Effect,
+        protection: Protection,
+        certificates: Vec<MovedSticker>,
+    ) -> Derivation {
+        let (base_digest, word) = (base_digest.to_owned(), effect.expansion_sha256.clone());
         if protection.verdict == Verdict::Moves {
             let refusal = Refusal::new(codes::ORBIT_WOULD_MOVE, PROTECTED_MESSAGE);
-            return Ok(Derivation::Refused(Refused {
+            return Derivation::Refused(Refused {
                 base: base_digest,
                 word,
                 first_refused_prefix: protection.first_refused_prefix,
@@ -918,12 +963,51 @@ impl Kernel {
                 certificates,
                 effect,
                 protection,
-            }));
+            });
         }
-        let mut labels = base.labels().to_vec();
+        let mut labels = base.to_vec();
         engine::apply(&mut labels, &effect.source, &effect.destination, &mut Vec::new());
         let state = Snapshot::new(&self.model.model_id, labels);
-        Ok(Derivation::Derived(Derived { state, base: base_digest, word, effect, protection }))
+        Derivation::Derived(Derived { state, base: base_digest, word, effect, protection })
+    }
+
+    /// The literal letters of a recipe in chunks of at most `size` letters, each with the position of its first
+    /// letter (KN2.10). Only one step's expansion is held at a time.
+    pub fn chunks<'a>(&'a self, recipe: &'a Recipe, size: NonZeroUsize) -> Result<Chunks<'a>, Refusal> {
+        self.same_model(&recipe.model_id)?;
+        let (model, steps, size) = (&self.model, &recipe.steps[..], size.get());
+        Ok(Chunks { model, steps, pending: Vec::new(), used: 0, position: 0, size })
+    }
+
+    /// A whole-word replay of literal letters pushed in chunks of any size, judged under Strict protection on every
+    /// executed prefix (KN2.4 `replay`, KN2.10). No length bound applies, since the bound on what the kernel replays
+    /// comes from DT-J1's experiment X3 and is unset. Another model's base or protected set is refused (KN1.4).
+    pub fn replay(&self, base: &Snapshot, protected: &ProtectedSet) -> Result<Replay<'_>, Refusal> {
+        self.replay_with(base, protected, None)
+    }
+
+    /// [`Kernel::replay`] under the 3,000,000-primitive compatibility ceiling, counted over all chunks (LB2.4): a push
+    /// that would pass it is refused with `KN2:resource_limit.primitive_ceiling` and changes nothing.
+    pub fn replay_under_ceiling(&self, base: &Snapshot, protected: &ProtectedSet) -> Result<Replay<'_>, Refusal> {
+        self.replay_with(base, protected, Some(engine::MAX_PRIMITIVES as u64))
+    }
+
+    fn replay_with(&self, base: &Snapshot, set: &ProtectedSet, ceiling: Option<u64>) -> Result<Replay<'_>, Refusal> {
+        self.same_model(base.model_id())?;
+        self.same_set(set)?;
+        Ok(Replay {
+            kernel: self,
+            base: base.digest().to_owned(),
+            labels: base.labels().to_vec(),
+            map: (0..SLOTS as i32).collect(),
+            scratch: Vec::new(),
+            protected: set.clone(),
+            mask: set.mask(),
+            ceiling,
+            length: 0,
+            first: None,
+            bytes: Vec::new(),
+        })
     }
 
     /// The progress rows of a state, as 0.4's `PuzzleState.progress()`.
@@ -932,5 +1016,114 @@ impl Kernel {
         let rows = engine::progress(&self.model, state.labels());
         let text = Value::Array(rows.iter().map(ProgressRow::to_json).collect()).canonical();
         Ok(Progress { sha256: c600_digest::sha256_hex(text.as_bytes()), rows })
+    }
+}
+
+/// A chunk of a recipe's literal letters: `letters[i]` is the letter at position `start + i` of the expansion.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Chunk {
+    pub start: u64,
+    pub letters: Vec<i32>,
+}
+
+/// The literal letters of a recipe in chunks ([`Kernel::chunks`]).
+pub struct Chunks<'a> {
+    model: &'a Model,
+    steps: &'a [Step],
+    pending: Vec<i32>,
+    used: usize,
+    position: u64,
+    size: usize,
+}
+
+impl Iterator for Chunks<'_> {
+    type Item = Chunk;
+
+    fn next(&mut self) -> Option<Chunk> {
+        let mut letters = Vec::new();
+        while letters.len() < self.size {
+            if self.used == self.pending.len() {
+                let Some((step, rest)) = self.steps.split_first() else { break };
+                self.steps = rest;
+                self.pending.clear();
+                self.used = 0;
+                engine::expand(self.model, std::slice::from_ref(step), &mut self.pending);
+                continue;
+            }
+            let take = (self.size - letters.len()).min(self.pending.len() - self.used);
+            letters.extend_from_slice(&self.pending[self.used..self.used + take]);
+            self.used += take;
+        }
+        if letters.is_empty() {
+            return None;
+        }
+        let start = self.position;
+        self.position += letters.len() as u64;
+        Some(Chunk { start, letters })
+    }
+}
+
+/// A whole-word replay fed in chunks ([`Kernel::replay`]). It gives no verdict before [`Replay::finish`], so a part
+/// not yet replayed is never judged safe; a refusal is known as soon as its prefix has been pushed.
+pub struct Replay<'k> {
+    kernel: &'k Kernel,
+    base: String,
+    labels: Vec<i32>,
+    map: Vec<i32>,
+    scratch: Vec<i32>,
+    protected: ProtectedSet,
+    mask: u64,
+    ceiling: Option<u64>,
+    length: u64,
+    /// The first refused prefix and its last letter.
+    first: Option<(u64, i32)>,
+    /// The letters as little-endian 32-bit integers, for `Digest<literal word>`.
+    bytes: Vec<u8>,
+}
+
+impl Replay<'_> {
+    /// Replays the next letters. A chunk with a letter outside ±1..±1,200, or one that would pass the ceiling of
+    /// [`Kernel::replay_under_ceiling`], is refused whole and changes nothing.
+    pub fn push(&mut self, letters: &[i64]) -> Result<(), Refusal> {
+        if !letters.iter().all(|&m| model::valid_primitive(m)) {
+            return Err(Refusal::new(codes::RECIPE_SHAPE, engine::BAD_PRIMITIVE));
+        }
+        if self.ceiling.is_some_and(|ceiling| self.length + letters.len() as u64 > ceiling) {
+            return Err(Refusal::new(codes::PRIMITIVE_CEILING, engine::CEILING));
+        }
+        let model = &self.kernel.model;
+        self.bytes.reserve(4 * letters.len());
+        for (at, &m) in (self.length + 1..).zip(letters) {
+            let m = m as i32;
+            if self.first.is_none() && model.letter_orbits(m) & self.mask != 0 {
+                self.first = Some((at, m));
+            }
+            let (source, destination) = model.pairs(m);
+            engine::apply(&mut self.map, source, destination, &mut self.scratch);
+            self.bytes.extend_from_slice(&m.to_le_bytes());
+        }
+        self.length += letters.len() as u64;
+        Ok(())
+    }
+
+    /// The number of letters replayed so far.
+    pub fn position(&self) -> u64 {
+        self.length
+    }
+
+    /// The first refused prefix so far. `None` says only that no prefix replayed so far is refused.
+    pub fn first_refused_prefix(&self) -> Option<u64> {
+        self.first.map(|(prefix, _)| prefix)
+    }
+
+    /// The end of the word: the derived state, or the refusal at the first refused prefix with its certificates. The
+    /// effect is the whole word's, as in [`Kernel::derive_strict`]. A word of no letters derives the base state.
+    pub fn finish(self) -> Derivation {
+        let kernel = self.kernel;
+        let (source, destination) = engine::net_from_map(&self.map);
+        let word = c600_digest::sha256_hex(&self.bytes);
+        let effect = kernel.effect_of(source, destination, word, self.length as usize);
+        let (protection, certificates) = kernel.strict_verdict(&self.protected, self.first);
+        kernel.conclude(&self.base, &self.labels, effect, protection, certificates)
     }
 }

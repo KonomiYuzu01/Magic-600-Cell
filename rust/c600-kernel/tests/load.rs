@@ -343,6 +343,10 @@ fn ct_kn1_01_values_of_another_model_are_refused() {
     assert_eq!(other.effect_by_replay(&recipe).unwrap_err(), mismatch);
     assert_eq!(other.progress(&state).unwrap_err(), refusal);
     assert_eq!(other.positions(&state, &[0]).unwrap_err(), refusal);
+    let size = std::num::NonZeroUsize::new(5).unwrap();
+    assert_eq!(other.chunks(&recipe, size).err(), Some(refusal.clone()));
+    assert_eq!(other.replay(&state, &none).err(), Some(refusal.clone()));
+    assert_eq!(other.replay_under_ceiling(&state, &none).err(), Some(refusal.clone()));
     // Until the finding of lead L8 was fixed, letters() expanded another model's recipe without a check.
     assert_eq!(other.letters(&recipe).unwrap_err(), refusal);
     assert_eq!(other.letters(&own_recipe).unwrap(), shipped.letters(&recipe).unwrap());
@@ -360,6 +364,8 @@ fn ct_kn1_01_values_of_another_model_are_refused() {
     assert_eq!(other.strict_protection(&recipe, &own_set).unwrap_err(), refusal);
     assert_eq!(other.derive(&own_state, &own_recipe, &set).unwrap_err(), mismatch);
     assert_eq!(other.derive_strict(&own_state, &own_recipe, &set).unwrap_err(), mismatch);
+    assert_eq!(other.replay(&own_state, &set).err(), Some(refusal.clone()));
+    assert_eq!(other.replay_under_ceiling(&own_state, &set).err(), Some(refusal.clone()));
     assert_eq!(other.checked_protection(&effect, &own_set).unwrap(), other.protection(&effect, &own_set));
     assert_eq!(other.checked_protection(&effect, &shipped.protected_set(&[]).unwrap()).unwrap().protected, []);
     assert!(other.derive(&own_state, &own_recipe, &own_set).is_ok());
@@ -374,9 +380,9 @@ fn slot_orbits() -> Vec<i32> {
     slot_piece.iter().map(|&piece| orbit[piece as usize]).collect()
 }
 
-/// CT-LG2-12 (part: the kernel half on 600-cell-Full, that literal prefix protection does not follow the key; R-11's
-/// operations, the jumbling fixtures and the peak height are not run here) and CT-PS1-12 (part: the Strict clause; the
-/// rest in `tests/kernel.rs`). On the shipped model every generator moves every orbit, so this test changes a copy:
+/// CT-LG2-12 (part: the kernel half on 600-cell-Full, that literal prefix protection does not follow the key; not run:
+/// R-11's operations, the jumbling fixtures and the peak height) and CT-PS1-12 (part: the Strict clause; the rest in
+/// `tests/kernel.rs`). On the shipped model every generator moves every orbit, so this test changes a copy:
 /// generator 1200 lists its orbit-0 pairs as fixed (each slot to itself), which keeps it a permutation of its listed
 /// slots and lets it leave orbit 0 alone. With orbit 0 protected, `[1200]` and `[1200, 1, -1]` have the same net map
 /// and the same freely reduced key, and Net accepts both; Strict accepts the first and refuses the second at prefix 2.
