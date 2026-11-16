@@ -210,3 +210,71 @@ class RustJumbleEngine:
         when completed. `cancel_after` is a test hook: the job observes a cancellation at check `cancel_after` + 1."""
         return self.call('repair_list', cap=cap, max_pairs=max_pairs, cancel_after=cancel_after,
                          eval_budget=eval_budget)
+
+    # ---------------------------------------------------------------------- levels and end tests (M8)
+    def project(self, level, *, state=None, values=False):
+        """KN1.9's projection of the current state, or of the stored state `state`, to `level`: total,
+        partial with what is missing, or refused; `values` adds the label or chamber arrays (base64 int32)."""
+        return self.call('project', level=level, state=state, values=values)
+
+    def sticker_test(self, *, state=None):
+        return self.call('sticker_test', state=state)
+
+    def retained_checkpoint(self, *, witness=None, journal=None, state=None):
+        """Section 5's retained-state checkpoint from a witness word of signed primitive ids, or from journal
+        records from solved."""
+        return self.call('retained_checkpoint', witness=None if witness is None else list(witness),
+                         journal=None if journal is None else list(journal), state=state)
+
+    def label_checkpoint(self, reachability, *, nu=None, state=None):
+        """A5's label checkpoint under a reachability claim {kind, evidence} (a witnessed claim names its
+        `journal` from solved), with ν from the ν row when known."""
+        return self.call('label_checkpoint', reachability=reachability,
+                         nu=None if nu is None else [int(x) for x in nu], state=state)
+
+    def retained_word(self, word, *, budget=None):
+        """The primitive twists of a retained word (signed 1-based ids), refused whole at its first refused
+        letter."""
+        return self.call('retained_word', word=[int(m) for m in word], budget=budget)
+
+    @staticmethod
+    def _u32(values):
+        """Integers as base64 little-endian u32, or None."""
+        if values is None:
+            return None
+        import base64
+        import struct
+        values = [int(v) for v in values]
+        return base64.b64encode(struct.pack('<%dI' % len(values), *values)).decode('ascii')
+
+    def gauge(self, sigma=None, t=None, *, state=None):
+        """X·γ of KN1.7 for the gauge (sigma, t), one value per piece (None for the identity), of the current
+        state or of the stored state `state`; the image becomes the current state."""
+        return self.call('gauge', sigma=self._u32(sigma), t=self._u32(t), state=state)
+
+    def gauge_between(self, other, *, state=None):
+        """A gauge γ with X·γ equal to the stored state `other` (sigma and t as base64 u32), or None."""
+        return self.call('gauge_between', other=other, state=state)
+
+    # ------------------------------------------------------------------------ derived states (M8)
+    def derive(self, name, identity, base, *, letters=None, records=None, mode=None, protect=None):
+        """KN2.11's derive(base, word): `base` is {'derived': name} or {'state': name or None, 'journal':
+        records from solved}; the word is `letters` ([grip, item] pairs) or twist `records`; `mode` is 'net'
+        (the default) or 'strict'. The answer is the derived value, kept under `name` and never adopted, or
+        the refusal with its first refused prefix, outcome and certificates."""
+        return self.call('derive', name=name, identity=identity, base=base,
+                         letters=None if letters is None else self._letters(letters),
+                         records=None if records is None else list(records), mode=mode,
+                         protect=None if protect is None else [int(p) for p in protect])
+
+    def import_table(self, name, record, identity, reachability):
+        """KN2.14: a raw pose table as a derived value under `name`, with an open or promised claim."""
+        return self.call('import', name=name, record=record, identity=identity, reachability=reachability)
+
+    def compare(self, a, b, level):
+        """ONE.25's comparison at `level` of two operands, each {'state': name or None} or {'derived': name}."""
+        return self.call('compare', a=a, b=b, level=level)
+
+    def read_derived(self, op, name, **fields):
+        """`project`, `sticker_test`, `retained_checkpoint` or `label_checkpoint` on the derived value `name`."""
+        return self.call(op, derived=name, **fields)

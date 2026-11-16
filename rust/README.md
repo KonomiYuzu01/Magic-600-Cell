@@ -508,12 +508,12 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   of CT-KN2-01, CT-KN2-04, CT-KN1-05 (poses) and CT-KN2-05 (no `f32` or `f64` in the kernel crates), which run whole
   with M4's halves; CT-JI-03. CT-KN2-02 in part: heights and domain IDs against `trees.py` and the library's
   histograms on H6030's compared states, the recorded fixture prefixes and u1, and the free-mode Cayley rotation.
-- Not built, for M8: CT-KN1-03, CT-KN1-04's jumbling half, CT-KN1-06, CT-KN2-06, CT-KN3-03's model inputs (the
-  filter itself is in `c600-a2-filter`, M4's section), the jumbling words of CT-KN2-07, CT-KN3-01's small-margin set, R-11's jumbling property (CT-LG2-12), and CT-KN2-02's
-  cases b20, b06-14, b14 and b03; the observation nu, the checkpoints and derivation with reachability (M8 builds
-  rim_summary, covers, repair_list and release_check, below); Strict protection on the jumbled puzzle; and the holding caps of seam cells and tree
-  positions past the first step. Built since M5: KN3's exact rotation requests (below; CT-KN3-05 whole, CT-KN3-01,
-  CT-KN3-04 and CT-KN3-06 in part) and the kernel rows for 600-cell-Full (M4's section).
+- Not built, for M8: CT-KN3-03's model inputs (the filter itself is in `c600-a2-filter`, M4's section), the jumbling
+  words of CT-KN2-07, CT-KN3-01's small-margin set, R-11's jumbling property (CT-LG2-12), and CT-KN2-02's cases b20,
+  b06-14, b14 and b03; the observation nu (M8 builds rim_summary, covers, repair_list and release_check, below); and the
+  holding caps of seam cells and tree positions past the first step. Built since M5: KN3's exact rotation requests
+  (below; CT-KN3-05 whole, CT-KN3-01, CT-KN3-04 and CT-KN3-06 in part), the kernel rows for 600-cell-Full (M4's
+  section), and M8's levels, end tests and derived values, Strict protection included (below).
 - Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model read the change with the
   acceptance check. Its three major findings were fixed before the pull request, and a scoped re-check found no
   blocking finding: R1, a word whose later letter was malformed, or met an engine error, left its earlier letters
@@ -610,6 +610,48 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
     data is a model-boundary decision.
   - CT-KN2-01, CT-KN2-04 and CT-BND-29 in part; no state changed in the index. No J1 fault was found. Evidence kind:
     source and fixture; the comparison ran on Windows only, and its timings are informational.
+- M8 levels (LP2 plan, section 11; chapter 01, KN1.7 to KN1.11, KN1.14, KN1.17 and KN2.11 to KN2.14; chapter 08,
+  ONE.21 to ONE.28; state contract A3 to A5): `c600-jumble/src/levels.rs` builds KN1.7's level crossings, each map
+  one way from poses down, and KN1.9's projections, total or partial with what is missing (the pieces off the lattice
+  first); A5's end tests, the sticker test, the retained checkpoint and the label checkpoint under a reachability
+  claim; shapes and gauges with their classes S, R and all (KN1.14); and derived values: `derive` from a witnessed
+  snapshot or an earlier derived value under Net or Strict protection at pose level, KN2.14's `import` of a raw pose
+  table with an open or promised claim, and ONE.25's `compare`. The adapter serves them, `rust_jumble.py` calls them,
+  and `tests/test_jumbling_rust_m8_levels.py` compares them with J1 on J1's fixtures (`tools/ci/run_headless.py`
+  lists it). Every word is the caller's or a fixture's; nothing chooses a twist.
+  - A verdict carries its level (KN1.11, JI.4): the sticker test and the label checkpoint answer at the labels level,
+    the retained checkpoint at the pose level, and the adapter's answer names it.
+  - A witnessed claim comes only from a replay from solved or from a derivation, and it speaks only of the state it
+    reached (A4, A5): for another state the label checkpoint answers unknown, and its retained witness shows no ν
+    there.
+  - A raw table with two pieces in one chamber reads (KN2.14 validates form and identity only) but is no label
+    checkpoint: `pieces_collide`, with the collision count, whatever the claim.
+  - The label checkpoint's certificate carries the engine's stamp, `state-contract 2026-11-15 A1-A6` (owner decision,
+    16 November 2026). The ν reference's label certificate stamps A1 to A5, and the levels comparison maps that stamp
+    to the engine's, as the observations comparison maps J1's.
+  - Drafts, in the crate documentation: the label checkpoint answers no for the facts that do not depend on
+    reachability (off the lattice, a displaced centre, a collision, a known nonzero ν) whatever the claim, as J1 does,
+    though ONE.28 can also be read to leave every claim but a witnessed one at unknown; by-theorem and refuted claims
+    answer unknown, since this edition checks no theorem evidence; an unknown level name, an invalid gauge, an import
+    with a witnessed, by-theorem or refuted claim, a malformed table, a journal that does not witness its base, an
+    unknown derived name and a non-twist letter are adapter input errors without a code, as chapter 01, the interfaces
+    and chapter 13 name none; a protected piece outside the model is `KN2:input.named_object_invalid` in `derive`; an
+    invalid letter refuses the word with `KN2:input.word_blocked_prefix`; the default mode is Net, and with no budget
+    an uncertain letter is an engine error; derived values are named by the caller and replace an earlier value of the
+    same name.
+  - Critical-path reads (`AGENTS.md`, Codex minimum): fresh Claude subagents on a smaller model read the three rows. Row
+    3's read found no blocker or major finding (one minor fixed, one rejected, two nits deferred: a derived claim nests
+    its base's evidence one level per derivation, and the lineage root is a digest until M6). The read of rows 1 and 2
+    found three major findings, fixed before the pull request: a verdict named no level, a witnessed claim was not tied
+    to its state, and a collided raw table gave an engine error instead of a verdict. A scoped re-check by a fresh
+    subagent found the three fixed and no new blocker or major finding; one minor point is kept (a witnessed claim made
+    for another state answers unknown even where the labels are the identity, as A4 and A5 allow), and two nits are
+    deferred (an `Undefined` arm that cannot be reached, and the claim's new `at` field, which no J1 reference
+    compares).
+  - Contract tests: CT-KN1-03, CT-KN2-06 and CT-ONE-10 whole; CT-KN1-04 whole by the union of M4's 600-cell-Full half
+    and this jumbling half; CT-KN1-06, CT-PS1-14, CT-ONE-09, CT-ONE-28 and CT-LG2-07's engine half in part, each
+    marker naming what it leaves out. Not built: `nu`, `correction_set_check`, and the session store's checkpoint and
+    import records (M6). No J1 fault was found. Evidence kind: source and fixture; the comparison ran on Windows only.
 
 ## Status of M6: the session store
 
@@ -791,7 +833,8 @@ run or not applicable is no pass (PHS.63).
   - `c600-jumble/tests/`: `crossing.rs` runs CT-KN2-03, and `assets.rs` the jumbling model's asset checks (M5's
     section); `domain.rs` and `refusals.rs` hold the candidate's halves of Fable's M5 attack leads; `kn3.rs` runs
     KN3's exact rotation requests under A6 (CT-KN3-05 whole; CT-KN3-04, CT-KN3-06, CT-DET-16 and CT-LG2-16's kernel
-    half in part), with `c600_kernel::exact`'s unit tests for CT-KN3-01's part.
+    half in part), with `c600_kernel::exact`'s unit tests for CT-KN3-01's part; `observations.rs` and `levels.rs`
+    run M8's observations and its levels, end tests and derived values (M5's section).
   - `c600-evidence/tests/` runs the EVD rows (the evidence library's section).
   - `c600-module/tests/conformance_lg5.rs` runs CT-LG5-01 whole and CT-LG5-02 to CT-LG5-07 in part against LP3 C4's
     loader and lockfiles. The parts leave out the boundary class against chapter 07's reviewed classes, the run
@@ -811,14 +854,15 @@ run or not applicable is no pass (PHS.63).
     checkouts write them (CT-LG1-02, CT-PS1-05's checkout half); `tests/test_kernel_oracle.py` replays O01 to O07 and
     N01 to N04 through the kernel (M4's section); `tests/test_jumbling_rust_candidate.py` compares the jumbling
     candidate with J1 (M5's section); `tests/test_jumbling_rust_attacks.py` runs Fable's M5 attack leads, with J1's
-    faults as expected failures (M5's section).
+    faults as expected failures (M5's section); `tests/test_jumbling_rust_m8_observations.py` and
+    `tests/test_jumbling_rust_m8_levels.py` compare M8's observations and levels with J1 (M5's section).
 - Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them),
-  KN5's stages 1 and 2 and the Linux Rust job, as `tools/language/ct_index.py --summary` prints it
-  (`tests/test_ct_index.py` checks the tool): 63 whole, eight of them by the union of their parts (CT-KN1-05,
-  CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01, CT-LG3-04 and CT-LG5-06); 129 part; 4 named only by LP3's
-  command-layer tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); 1 missing despite
-  its name (CT-KN5-08: only the documentation in `c600-command/src/layer.rs` names it); 51 waiting, each with what it
-  waits for in `docs/progress/1.0/lp2-ct-index-notes.md`.
+  KN5's stages 1 and 2, the Linux Rust job and M8's levels, as `tools/language/ct_index.py --summary` prints it
+  (`tests/test_ct_index.py` checks the tool): 67 whole, nine of them by the union of their parts (CT-KN1-04,
+  CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01, CT-LG3-04 and CT-LG5-06); 132 part; 4 named only
+  by LP3's command-layer tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); 1 missing
+  despite its name (CT-KN5-08: only the documentation in `c600-command/src/layer.rs` names it); 44 waiting, each with
+  what it waits for in `docs/progress/1.0/lp2-ct-index-notes.md`.
 - The headless Linux legs of CT-DET-02, CT-DET-15 and CT-PS1-01 run in the Linux Rust job
   (`.github/workflows/linux-rust.yml`, owner decision of 16 November 2026), against the same pinned bytes as the
   Windows shards, so CT-PS1-01 is whole. The Python comparisons with J1 still run on the Windows shards only.
@@ -863,7 +907,7 @@ run or not applicable is no pass (PHS.63).
   rule source of `KN5:stale.filter_preview` (line 322) omits KN0.9 (`closure/manifests/p7-layers.json`); the Used-by
   cells of `KN2:input.recipe_shape` and `KN2:resource_limit.primitive_ceiling` say "not yet used", but the kernel emits
   both, and the cell of `KN2:input.word_blocked_prefix` says the same, but the jumbling adapter emits it for a refused
-  word (M5).
+  word (M5) and M8's `derive` for a refused letter.
 - Open, each needing a decision:
   - ERR.6: `c600-kernel/tests/kernel.rs` compares refusal texts, because `c600_kernel::Refusal` has no typed context
     (CT-ERR-16's typed failed fact); `c600_syntax::LowerError` has no code.
@@ -892,12 +936,11 @@ run or not applicable is no pass (PHS.63).
   - M6's remaining rows (15): CT-PS1-08 to CT-PS1-10, CT-PS1-16, CT-PS1-19, CT-PS1-21, CT-PS1-23, CT-PS2-01 to
     CT-PS2-05, and the run records of CT-DET-04, CT-DET-14 and CT-BND-23 (with LP3's grants for CT-DET-04 and
     CT-BND-23).
-  - The jumbled puzzle's rows that M5 leaves to M8 (6): CT-KN1-03, CT-KN1-06, CT-KN2-06, CT-PS1-11, CT-PS1-14 and
-    CT-PS1-22.
+  - The session store's jumbling records (2): CT-PS1-11 (a session with a reversed I_a order, another contract or model,
+    or jumble letters with Jumble off is refused) and CT-PS1-22 (the optional jumbling section, and an interrupted
+    episode's recovery), with M6.
   - A session's second level (3): CT-ONE-17 and CT-ONE-18, which need a second level in the session, its crossing
     and `project` (KN1.9); and CT-ONE-19, with LP3's view model.
-  - Derived states with an open reachability claim and KN2.14's raw-table import, which M4 does not build (3, no
-    milestone named): CT-ONE-09, CT-ONE-10 and CT-ONE-28.
   - KN5's command layer, `c600-command` (2): CT-KN5-05, which needs the display refresh after a commit (R-02) that it
     does not build yet, and CT-KN5-08, which only the documentation in `c600-command/src/layer.rs` names.
   - The stage checker, RPI.68 to RPI.76 (3, no milestone named): CT-LG2-15, CT-LG3-10 and CT-LG5-08.

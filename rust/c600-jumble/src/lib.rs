@@ -36,6 +36,7 @@ pub mod b64;
 pub mod dd;
 pub mod eval;
 pub mod kplus;
+pub mod levels;
 pub mod model;
 pub mod observe;
 pub mod q5;

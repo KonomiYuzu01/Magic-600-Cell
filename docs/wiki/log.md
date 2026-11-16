@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-16] update | The language: M8's levels, end tests and derived values
+M8 adds the jumbled puzzle's levels to `rust/c600-jumble` (`src/levels.rs`): level crossings and projections (KN1.7, KN1.9), A5's three end tests under a reachability claim, shapes and gauges (KN1.14), and derived values (`derive` under Net or Strict protection, KN2.14's `import`, ONE.25's `compare`), each verdict naming its level and each compared with J1 on J1's fixtures (`tests/test_jumbling_rust_m8_levels.py`). Section 15.3's index now reads 67 of the 248 LP2 tests whole (9 by the union of their parts), 132 in part and 44 waiting; `nu`, `correction_set_check` and the session store's jumbling records wait.
+
 ## [2026-11-16] decision | Five frozen-text readings (PHS.52)
 The owner chose the recommended option for each of five LP2 readings ([decision](decisions/owner-decisions-2026-11-16-phs52.md)): the command layer's envelope names no caller and the host stamps it from the channel, an ungranted clock read, file read or network request is `LG3:capability.ambient_read` and dynamic code `LG3:capability.not_granted`, and `use_goal` and `use_evidence` take only portable exact data, refused at admission with `LG2:type.mismatch` and at run time with `PS1:input.noncanonical_value`. The two contradiction questions are answered, and the frozen-text changes wait for one amendment at LP3's command-table freeze.
 

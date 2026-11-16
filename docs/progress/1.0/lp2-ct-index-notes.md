@@ -21,13 +21,10 @@ The tool refuses (exit 2) a note for an ID outside the phase's table and an unkn
 | CT-KN2-01 | whole by union | M4's half and M5's jumbling half (`rust/README.md`, the count line; LP2 plan section 11) |
 | CT-KN2-04 | whole by union | with M5 its parts together run the whole definition (`rust/README.md`, the count line) |
 | CT-KN2-05 | whole by union | with M5 its parts together run the whole definition (`rust/README.md`, the count line) |
+| CT-KN1-04 | whole by union | M4's 600-cell-Full half (`c600-kernel/tests/kernel.rs`) and M8's jumbling half (`c600-jumble/tests/levels.rs`) (`rust/README.md`, the count line) |
 | CT-KN5-08 | missing despite name | only the documentation in `c600-command/src/layer.rs` names it (`rust/README.md`, the count line) |
-| CT-KN1-03 | waiting | the jumbled puzzle's row that M5 leaves to M8 (`rust/README.md`, M5's "Not built, for M8"; LP2 plan section 11) |
-| CT-KN1-06 | waiting | the jumbled puzzle's row that M5 leaves to M8 (`rust/README.md`, M5's "Not built, for M8") |
-| CT-KN2-06 | waiting | the jumbled puzzle's row that M5 leaves to M8 (`rust/README.md`, M5's "Not built, for M8") |
-| CT-PS1-11 | waiting | the jumbled puzzle's row that M5 leaves to M8 (`rust/README.md`, missing list) |
-| CT-PS1-14 | waiting | the jumbled puzzle's row that M5 leaves to M8 (`rust/README.md`, missing list) |
-| CT-PS1-22 | waiting | the jumbled puzzle's row that M5 leaves to M8 (`rust/README.md`, missing list) |
+| CT-PS1-11 | waiting | the session store's jumbling records, with M6 (`rust/README.md`, missing list) |
+| CT-PS1-22 | waiting | the session store's jumbling records, with M6 (`rust/README.md`, missing list) |
 | CT-LG2-15 | waiting | the stage checker, RPI.68 to RPI.76, no milestone named (`rust/README.md`, missing list) |
 | CT-LG3-10 | waiting | the stage checker, RPI.68 to RPI.76, no milestone named (`rust/README.md`, missing list) |
 | CT-LG5-08 | waiting | the stage checker, RPI.68 to RPI.76, no milestone named (`rust/README.md`, missing list) |
@@ -51,8 +48,6 @@ The tool refuses (exit 2) a note for an ID outside the phase's table and an unkn
 | CT-DET-04 | waiting | the run record, M6, with LP3's grants (`rust/README.md`, missing list) |
 | CT-DET-14 | waiting | the run record, M6 (`rust/README.md`, missing list) |
 | CT-BND-23 | waiting | the run record, M6, with LP3's grants (`rust/README.md`, missing list) |
-| CT-ONE-09 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
-| CT-ONE-10 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
 | CT-ONE-13 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
 | CT-ONE-14 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
 | CT-ONE-15 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
@@ -60,7 +55,6 @@ The tool refuses (exit 2) a note for an ID outside the phase's table and an unkn
 | CT-ONE-17 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
 | CT-ONE-18 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
 | CT-ONE-19 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
-| CT-ONE-28 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
 | CT-LI-01 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
 | CT-LI-02 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
 | CT-LI-03 | waiting | LP3's lanes, views and shell (`rust/README.md`, missing list) |
