@@ -29,6 +29,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-repr` | The representations tool, headless half: layouts and atlases with their source maps, the layout filter, linked selection, chart surveys and user-chart admission over the display contract, the tool's `.6cs` source and `view_aid` manifest, its class review, and what its six rows need from the command layer (LP3, C6) |
 | `c600-jumble-tool` | The built-in jumbling tool, headless half: its `.6cs` source with two entries that preview a word the solver names, its `checking` manifest and built-in admission, literal jumbling words and their constructors, levels, protection verdicts bound to their level, a slot's current occupant on and off the lattice, and the jumbling halves of LB1's, LB3's, LB4's and EV3's tests (LP3, C8) |
 | `c600-input` | The headless input router: synthetic key events to command-layer invocations in chapter 04's routing order, bindings resolved to absolute arguments at the press, the held-key allowlist and the key-map checks (LP3, C5) |
+| `c600-library` | The base library's first entries as 600 Cell Script: LB1's literal words (`words.power` in `words.6cs`) with their catalogue row, CT-LB1-03's 600-cell-Full half and CT-LB2-02's Strict half on the kernel (LP3, C5) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
@@ -55,6 +56,8 @@ The jumbling tool crate depends on the digest crate, the jumbling crate and the 
 entries under the checker's built-in column; its tests also run the checker, syntax, IR, interpreter and kernel crates.
 The durable crate holds tests only; its dev-dependencies are the session store, the module crate, the checker, the
 syntax crate, the interpreter, the kernel and the digest crate.
+The library crate depends on the IR, syntax and digest crates only, so the tools crate can build on it; its tests
+also run the checker, the interpreter and the kernel.
 
 ## Running the tests
 
@@ -1188,8 +1191,8 @@ run or not applicable is no pass (PHS.63).
 - `c600-tools` holds the built-in 600-cell-Full tool as 600 Cell Script source,
   [`full_600_cell.6cs`](c600-tools/src/full_600_cell.6cs), in edition `6cs-draft-1` (syntax candidate A). Its one
   entry, the exported command `preview_word(w: Word)`, proposes the word the solver named to `operation.preview` and
-  returns the acknowledgement's two fields as a record `{base, id}`. The IR draft has no list types and no word
-  operations, so the library entries of chapter 03 (LB1 to LB4) wait for the IR.
+  returns the acknowledgement's two fields as a record `{base, id}`. The base library's first entry, LB1's literal
+  words, is language code in `c600-library` (section "Status of LP3, C5 library: LB1's literal words").
 - Admission: the checker admits the source with no diagnostic. The entry's only effect is `preview` and it requests no
   capability, so it prepares previews and reads no state (LG3.13, BND.39). `c600-check`'s `Profile::Solving` is the
   column of a solver's own tool, which prepares no preview until the joint setting. `Tool::new` admits the entry with
@@ -1351,9 +1354,10 @@ run or not applicable is no pass (PHS.63).
   `present`); CT-BND-19's live-twist part (KN3.7's exact rotations); an import row; grip, cell or piece objects for a
   word's letters (the kernel has no letter-to-grip map); a view declaring both of the manifest's classes (`c600-view`'s
   `Declared` holds one class); receipts on the process host for words with no transfer encoding; CT-LB2-02's Strict half
-  (the kernel has Net only); named work-sheet reuse; chunked recipes over 100,000 letters on the source route (the
-  tool's entry takes one flat word); CT-LB3-01's checker half and CT-LB3-07's recommendation rule (`c600-check` decides
-  neither); the child's own built-in admission.
+  through the tool's route (the command layer's preview has Net only; the kernel half runs in `c600-library`); named
+  work-sheet reuse; chunked recipes over 100,000 letters on the source route (the tool's entry takes one flat word);
+  CT-LB3-01's checker half and CT-LB3-07's recommendation rule (`c600-check` decides neither); the child's own built-in
+  admission.
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim; the source-route check's timings are
   informational. The checks ran on Windows only; the Linux leg was not run.
@@ -1465,3 +1469,43 @@ run or not applicable is no pass (PHS.63).
 - Drafts, which freeze with the IR and the command table, are in each crate's documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
   Linux leg was not run.
+
+## Status of LP3, C5 library: LB1's literal words
+
+- `c600-library` holds the base library's first entries as 600 Cell Script (LB1.1): chapter 03's row "Literal words"
+  (LB1.8). Its source [`words.6cs`](c600-library/src/words.6cs) (edition `6cs-draft-1`, syntax candidate A, in the
+  canonical layout) is the module `words` with one exported pure function, `power(w: Word, n: Int) -> Word`: `w`
+  written out `n` times, `inverse(w)` written out `-n` times for a negative `n`, and `word[]` for `n = 0`. A power is
+  literal: nothing cancels. Concatenation, inverse, conjugate and commutator are the IR draft's own operations
+  (LG2.15), so the library adds powers and wraps none of them. A client imports the library by the SHA-256 of its
+  source and is lowered with it.
+- The catalogue row with LB1.2's five fields is Rust data, `literal_words`: Entry "Literal words"; Level 600-cell-Full
+  signed generators; Effect pure; Backing library code, `words.power` over `concat` and `inverse`; Notes: construction
+  alone checks no state, and `LB1:input.incompatible_alphabet` cannot arise while the IR draft has one alphabet. A
+  test compares the Effect field with the effects the checker infers for `power`.
+- Tests (`c600-library/tests/`), each naming its part; no conformance ID runs whole:
+  - `ct_lb1_03.rs`: CT-LB1-03's 600-cell-Full half. The language part: the source parses, keeps its canonical layout,
+    lowers to one module that requests no capability and checks with no diagnostic, and `power` has no effect, reads no
+    state, prepares no preview and names no proposal target; `power` and a client that imports it by digest build the
+    expected letters on `c600-run` with no host (`power(word[+1, -2], -2)` is `[+2, -1, +2, -1]`, and
+    `commutator(word[+1], word[+1])` is `[+1, +1, -1, -1]`). The application part: `Kernel::replay`, fed a
+    library-built word in chunks, reports the first prefix that moves a protected orbit as soon as that prefix is in
+    (the first prefix on the shipped model, where every generator moves every orbit), clears every prefix when no orbit
+    is protected, and ends where `Kernel::derive` ends. The inverse part: a power and a commutator are admitted from
+    solved and from a scrambled state, and their inverse, applied from the end, retraces the path prefix by prefix
+    back to the start.
+  - `ct_lb2_02.rs`: CT-LB2-02's Strict half at the kernel, on library-built words with identity net effect whose
+    intermediate prefixes move a protected orbit: Net derives them and ends at the base; Strict refuses them at the
+    first moving prefix with one certificate per protected orbit that prefix moves; a replay gives no verdict before
+    `finish()`, and a replay finished early judges only the letters pushed. The Net half runs through the command
+    layer in `c600-tools/tests/net_oversize.rs`.
+- Drafts, in the crate documentation under "Drafts": the exponent is an `Int`, and a negative power is the inverse
+  written out; `power` recurses through `exact_add`, because the IR draft has no loop, subtraction or negation; a power
+  is a flat word, not a compressed one; the catalogue row is Rust data, because the IR draft and the syntax carry no
+  module manifest; no incompatible-alphabet refusal is built.
+- Not built: jumbling menu letters in the language, which wait for menu words in the IR draft (M5, LP2; C8 builds
+  literal jumbling words in Rust); library entries over kernel rows, such as LB2's star and recipe construction or Net
+  and Strict protection with captured locks, because the IR draft cannot pass a run's input as a query's argument; the
+  command layer's preview in Strict mode (KN5, LP2), so CT-LB2-02's Strict half does not run through the tool's route;
+  the other entries of LB1.8's table, the word and trace keys among them.
+- Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run.

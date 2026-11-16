@@ -57,7 +57,7 @@ and the renderer freeze for its on-screen half, and headless integration does no
 | The on-screen half | Waits | The renderer freeze |
 | Charter E2, the decisive LX-1, LX-2 and LX-4 runs, LX-3's platform coverage, the renderer gate | Waits | The owner's machine, all run together (owner, 16 November 2026) |
 | CT-LB1-06's word keys | Waits | An owner answer on LG2.18's word keys (section 10) |
-| Library entries as language code (LB1.1): collections, exact linear algebra, word construction, word and trace keys, setup search | Waits | Collection types and word operations in the IR draft (LP2; the IR freezes at PHS.49): LP2 deliverables, not built yet (the table below) |
+| Library entries as language code (LB1.1): collections, exact linear algebra, word construction, word and trace keys, setup search | Built in part (C5 library, section 7): LB1's literal words on 600-cell-Full | Jumbling menu letters: menu words in the IR draft (M5, LP2). Entries over kernel rows, such as LB2's star and recipe construction and its Net and Strict protection: a query that takes a run's input as its argument; the IR draft's snapshot read names a literal query only (the IR freezes at PHS.49). The other entries are not written yet; CT-LB1-01's entries also need the F2 and F5 number kinds (the table below), and CT-LB1-06's word keys an owner answer (section 10) |
 
 LP2 deliverables that LP3's tests wait for, not built yet. The LP2 line confirmed on 16 November 2026 that each is
 LP2 work: section 15.3 lists its tests, and PHS.18's product row "Kernel API over both puzzles" and the LP2 plan's
@@ -260,12 +260,20 @@ host ran it. Acceptance:
   Rust layers have no import row; CT-BND-19's part for the tool's views; CT-ONE-29's user-stage part at the host's
   adapter. The shell's own refusal of a user-stage frame waits for LP2's KN5 implementation, which adds a
   presented-frame input to `present`; CT-BND-19's live-twist part waits for KN3.7's exact rotations (section 2).
-- Next, in C5's crate: nothing more runs now. The library entries wait for the IR draft (below), the jumbling halves for
-  M5 (C8), and the parts above for LP2.
+- C5, library (`rust/c600-library`, branch `claude/lp3-library-words`), built: LB1's literal words as language code
+  (LB1.1, LB1.8). The module `words` (`words.6cs`) exports a pure `power`; concatenation, inverse, conjugate and
+  commutator are the IR draft's own operations (LG2.15); the row's catalogue entry is Rust data. Of the tests:
+  CT-LB1-03's 600-cell-Full half (construction reads no state, application checks each prefix through
+  `Kernel::replay`, and an inverse returns an admitted path to its start) and CT-LB2-02's Strict half at the kernel, on
+  library-built words.
+- Next, in C5's crates: the jumbling halves are C8's (section 8), and the parts above wait for LP2.
 
-CT-LB1-01, CT-LB1-03, CT-LB1-06, CT-LB2-01 and CT-BND-18 test library entries, which are language code (LB1.1). They
-need collection types and word operations (concatenation, inverse, powers) that the IR draft `c600-ir-draft-1` does
-not have yet, so they wait for LP2 (section 2).
+CT-LB1-01, CT-LB1-03, CT-LB1-06, CT-LB2-01 and CT-BND-18 test library entries, which are language code (LB1.1). The IR
+draft `c600-ir-draft-1` has the word operations (LG2.15), compressed words (LG2.16) and collection types (LG2.20,
+LG4.3) since LP2's pull request 176, and C5's library writes powers. What the library cannot express yet: jumbling
+menu letters, which wait for menu words in the IR draft (M5, LP2), and entries over kernel rows, which need a query
+that takes a run's input as its argument (the IR draft's snapshot read names a literal query only); CT-LB2-01's
+recipes and reports are such entries. The other library entries these tests need are not written yet (section 2).
 
 C6, the representations tool, headless half (selection 7). Acceptance: CT-LB4-02, the 600-cell-Full half of CT-LB4-03,
 the admission and CPU half of CT-LB4-04, the CPU reference of CT-LB4-01, the counter half of CT-EV3-06, the
@@ -339,10 +347,10 @@ wait entirely. The milestone is in parentheses.
 | CT-LG4-09 | performance | Owner runs: LX-2 (C9) | - |
 | CT-LB1-01 | source | Collection types in the IR draft and the F2 and F5 number kinds, for the library code (LP2) | - |
 | CT-LB1-02 | source | The domain-preserving key and "keys preserve the end digest": an owner answer on LG2.18's word keys; the library entry: collection types in the IR draft (LP2) | The kernel half at a blocked cap, with prefix protection reading literal letters (C8) |
-| CT-LB1-03 | source | Collection types and word operations in the IR draft (LP2) | The jumbling kernel half: literal words of one pinned menu and their constructors (C8) |
+| CT-LB1-03 | source | The jumbling half as language code: menu words in the IR draft (M5, LP2) | The jumbling kernel half: literal words of one pinned menu and their constructors (C8); the 600-cell-Full half as language code: powers in the library, the IR draft's word operations, application prefix by prefix and the inverse's path (C5 library) |
 | CT-LB1-06 | source | Collection types and word operations in the IR draft (LP2); an owner answer on LG2.18's word keys | - |
 | CT-LB2-01 | source | Collection types and word operations in the IR draft, for the library's recipes and reports (LP2) | - |
-| CT-LB2-02 | source | The kernel's Strict protection (LP2) | The Net half (C5) |
+| CT-LB2-02 | source | The command layer's preview in Strict mode (KN5, LP2); the captured lock of LB2's "Net and Strict protection" and LB2.3's coverage report, library entries over kernel rows (section 7) | The Net half (C5); the Strict half at the kernel, on library-built words (C5 library) |
 | CT-LB2-03 | source | Streaming words, KN2.10 (LP2) | The oversize refusal (C5); work sheets (C7) |
 | CT-LB2-04 | source | The kernel's `positions` row, KN2.4 (LP2) | - |
 | CT-LB3-01 | source | M8: the checkpoints, the sticker test and nu (LP2); for the checker half, typed checkpoint and sticker-test results in `c600-check` (LP2) | - |
