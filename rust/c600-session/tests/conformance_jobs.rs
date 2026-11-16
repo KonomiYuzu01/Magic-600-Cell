@@ -378,9 +378,9 @@ fn one_49(change: Change) {
     assert_eq!(again, Some(code::NO_FRESH_PREVIEW), "{name}: the preview can no longer be committed");
 
     // Unused token: it dies with the preview it binds (chapter 08 section 7, step 5).
-    let mut delivery = envelope(&session, "late", Origin::Shell, Row::Execute { preview: pending });
+    let mut delivery = envelope(&session, "late", Row::Execute { preview: pending });
     delivery.token = Some(unused);
-    let refused = session.invoke(delivery);
+    let refused = session.invoke(Origin::Shell, delivery);
     assert_eq!(code(&refused), code::PREVIEW_REPLACED, "{name}: the unused token was refused");
     assert_eq!(session.overview().revision, new, "{name}: the refusal changed nothing");
 

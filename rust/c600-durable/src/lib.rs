@@ -29,8 +29,8 @@
 //!   from the journal's durable bytes through `c600_session::journal::scan` and M6's draft frame form. A
 //!   `Session::record(name)` accessor would replace this.
 //! - **Views on M6** (EV3.2). M6 has no view rows. The tests use what a view stands on in M6 instead: a query job, an
-//!   opened snapshot and a preview, and a program's attempts to write the workspace, from the program origin and from a
-//!   job.
+//!   opened snapshot and a preview, and a program's attempts to write the workspace, on the program's channel and from
+//!   a job.
 //!
 //! # Waiting for LP2's KN5 implementation
 //!

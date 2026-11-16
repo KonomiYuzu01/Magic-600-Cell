@@ -62,7 +62,7 @@ fn ct_ev3_07_an_explicit_workspace_command_joins_the_durable_action_order() {
 }
 
 /// CT-EV3-07, its view part (EV3.2, LB7.2): a view cannot write workspace state or make undo stale. M6 has no view
-/// rows; the test uses what a view stands on in M6. A program's workspace write is refused from the program origin
+/// rows; the test uses what a view stands on in M6. A program's workspace write is refused on the program's channel
 /// and from a job (ONE.77), and the reads a view makes (a query job, an opened snapshot and a preview) are no durable
 /// action: the order, the undo and redo hints, the revision and the journal stay as they were, and the hint taken
 /// before them still undoes the latest action.
@@ -114,9 +114,9 @@ fn ct_lb2_03_reusing_a_named_work_sheet_invalidates_the_old_preview() {
     assert_eq!(info.id, old);
     assert!(!info.fresh);
     assert_eq!(session.shell().mint("x2", &execute).expect_err("a stale preview").code, NO_FRESH_PREVIEW);
-    let mut delivery = envelope(&session, "x1", Origin::Shell, execute);
+    let mut delivery = envelope(&session, "x1", execute);
     delivery.token = Some(early);
-    assert_eq!(code(&session.invoke(delivery)), REVISION_CHANGED);
+    assert_eq!(code(&session.invoke(Origin::Shell, delivery)), REVISION_CHANGED);
     assert_eq!(session.overview().order, 3, "nothing was committed");
 
     let literal_of = |command: &str, word: WordSource| {

@@ -13,16 +13,21 @@ use common::*;
 
 /// An envelope from the shell with a token the shell stub minted for it now.
 fn minted(session: &Session, command: &str, row: Row) -> Envelope {
-    let mut e = envelope(session, command, Origin::Shell, row);
+    let mut e = envelope(session, command, row);
     e.token = Some(session.shell().mint(command, &e.row).unwrap_or_else(|e| panic!("no token: {e}")));
     e
 }
 
-/// Delivers an envelope that must be refused with `expected` and change nothing: not the state, not the counters,
-/// not the pending preview, not the disk.
+/// Delivers an envelope on the shell's channel that must be refused with `expected` and change nothing: not the state,
+/// not the counters, not the pending preview, not the disk.
 fn refused(session: &Session, disk: &MemDisk, envelope: Envelope, expected: &str) {
+    refused_on(session, disk, Origin::Shell, envelope, expected);
+}
+
+/// [`refused`] on the channel of `origin`.
+fn refused_on(session: &Session, disk: &MemDisk, origin: Origin, envelope: Envelope, expected: &str) {
     let (before, preview, writes) = (session.overview(), session.preview(), disk.writes());
-    let receipt = session.invoke(envelope);
+    let receipt = session.invoke(origin, envelope);
     assert_eq!(code(&receipt), expected, "{receipt:?}");
     assert!(matches!(receipt.status, Status::Refused(_)), "{receipt:?}");
     assert_eq!((session.overview(), session.preview(), disk.writes()), (before, preview, writes));
@@ -89,7 +94,7 @@ fn li_33_gate_order() {
     // Two explicit solver actions mint C and D for p; D is held.
     let c = minted(&session, "C", Row::Execute { preview: p });
     let d = minted(&session, "D", Row::Execute { preview: p });
-    let c_receipt = session.invoke(c.clone());
+    let c_receipt = session.invoke(Origin::Shell, c.clone());
     let record = committed(&c_receipt).clone();
     assert_eq!((record.pre.as_str(), record.revision.state), (start.as_str(), base.state + 1));
     assert_eq!(session.preview(), None, "the commit discards p");
@@ -101,7 +106,7 @@ fn li_33_gate_order() {
 
     // The identical retry of C answers C's receipt before any token check (LI.6).
     let order = session.overview().order;
-    assert_eq!(session.invoke(c.clone()), c_receipt);
+    assert_eq!(session.invoke(Origin::Shell, c.clone()), c_receipt);
     assert_eq!(session.overview().order, order);
 
     // A new invocation N with C's consumed token fails step 3.
@@ -130,23 +135,18 @@ fn a_retried_delivery_commits_at_most_once() {
     let (session, disk) = session();
     let p = propose(&session, "p", literal(&[1]));
     let c = minted(&session, "C", Row::Execute { preview: p });
-    let first = session.invoke(c.clone());
+    let first = session.invoke(Origin::Shell, c.clone());
     committed(&first);
     let (order, writes) = (session.overview().order, disk.writes());
     for _ in 0..3 {
-        assert_eq!(session.invoke(c.clone()), first);
+        assert_eq!(session.invoke(Origin::Shell, c.clone()), first);
     }
     assert_eq!((session.overview().order, disk.writes()), (order, writes));
 
     let mut other = c.clone();
     other.row = Row::Execute { preview: p + 1 };
     refused(&session, &disk, other, code::COMMAND_ID_REUSED);
-    refused(
-        &session,
-        &disk,
-        envelope(&session, "C", Origin::Shell, Row::Propose { word: literal(&[2]) }),
-        code::COMMAND_ID_REUSED,
-    );
+    refused(&session, &disk, envelope(&session, "C", Row::Propose { word: literal(&[2]) }), code::COMMAND_ID_REUSED);
     assert_eq!(session.outcome("C", &first.request), first, "a refused reuse does not replace the stored receipt");
 }
 
@@ -164,18 +164,18 @@ fn a_duplicate_during_the_commit_is_not_a_second_commit() {
     disk.hold_write(disk.writes());
     let worker = {
         let (session, c) = (session.clone(), c.clone());
-        std::thread::spawn(move || session.invoke(c))
+        std::thread::spawn(move || session.invoke(Origin::Shell, c))
     };
     disk.wait_held();
     // Only the admission state is touched here: the commit holds the session core while it writes.
-    let during = session.invoke(c.clone());
+    let during = session.invoke(Origin::Shell, c.clone());
     assert_eq!(during.status, Status::Accepted);
-    assert_eq!(code(&session.invoke(other)), code::COMMIT_IN_FLIGHT);
+    assert_eq!(code(&session.invoke(Origin::Shell, other)), code::COMMIT_IN_FLIGHT);
     disk.release();
     let first = worker.join().expect("the commit thread");
     committed(&first);
     assert_eq!(session.overview().order, order + 1);
-    assert_eq!(session.invoke(c.clone()), first);
+    assert_eq!(session.invoke(Origin::Shell, c.clone()), first);
     assert_eq!(session.outcome("C", &first.request), first);
 }
 
@@ -245,7 +245,7 @@ fn undo_and_redo_cover_moves_records_and_protection() {
     assert_eq!(session.overview().protected, vec![0, 1]);
 
     let release = Row::ProtectionSet { orbits: vec![0], confirm: false };
-    refused(&session, &disk, envelope(&session, "p2", Origin::Shell, release), code::CONFIRMATION_REQUIRED);
+    refused(&session, &disk, envelope(&session, "p2", release), code::CONFIRMATION_REQUIRED);
     let hint = session.overview().undo.unwrap();
     refused(&session, &disk, minted(&session, "u0", Row::Undo { hint, confirm: false }), code::CONFIRMATION_REQUIRED);
     committed(&shell(&session, "u1", Row::Undo { hint, confirm: true }));
@@ -278,16 +278,16 @@ fn commit_rows_need_a_genuine_unused_token() {
     let hint = session.overview().undo.unwrap();
     let row = Row::Undo { hint, confirm: false };
 
-    refused(&session, &disk, envelope(&session, "u0", Origin::Shell, row.clone()), code::TOKEN_INVALID);
+    refused(&session, &disk, envelope(&session, "u0", row.clone()), code::TOKEN_INVALID);
     let mut forged = minted(&session, "u1", row.clone());
     forged.token.as_mut().unwrap().mac[0] ^= 1;
     refused(&session, &disk, forged, code::TOKEN_INVALID);
     let (other, _) = common::session();
-    let mut foreign = envelope(&session, "u2", Origin::Shell, row.clone());
+    let mut foreign = envelope(&session, "u2", row.clone());
     foreign.token = Some(other.shell().mint("u2", &row).unwrap());
     refused(&session, &disk, foreign, code::TOKEN_INVALID);
 
-    let mut misdirected = envelope(&session, "u4", Origin::Shell, row.clone());
+    let mut misdirected = envelope(&session, "u4", row.clone());
     misdirected.token = Some(session.shell().mint("u3", &row).unwrap());
     refused(&session, &disk, misdirected, code::TOKEN_MISMATCH);
     let mut changed = minted(&session, "u5", row.clone());
@@ -309,10 +309,10 @@ fn a_token_fits_only_the_row_it_was_minted_for() {
     let undo_row = Row::Undo { hint: session.overview().undo.unwrap(), confirm: false };
     let execute_row = Row::Execute { preview: p };
 
-    let mut e = envelope(&session, "x1", Origin::Shell, execute_row.clone());
+    let mut e = envelope(&session, "x1", execute_row.clone());
     e.token = Some(session.shell().mint("x1", &undo_row).unwrap());
     refused(&session, &disk, e, code::TOKEN_MISMATCH);
-    let mut u = envelope(&session, "x2", Origin::Shell, undo_row);
+    let mut u = envelope(&session, "x2", undo_row);
     u.token = Some(session.shell().mint("x2", &execute_row).unwrap());
     refused(&session, &disk, u, code::TOKEN_MISMATCH);
     committed(&shell(&session, "x3", execute_row));
@@ -346,7 +346,7 @@ fn a_token_without_a_preview_binds_the_revisions_it_was_resolved_at() {
 
     let s4 = minted(&session, "s4", switch());
     set_record(&session, "w", "r", letters(&[5]));
-    committed(&session.invoke(s4));
+    committed(&session.invoke(Origin::Shell, s4));
 }
 
 /// KN5.15, ONE.77: a program delivers no commit row, even with a genuine token, and no session row but its jobs.
@@ -361,9 +361,9 @@ fn a_program_delivers_no_commit_and_no_session_row() {
         ("x2", Row::Undo { hint, confirm: true }),
         ("x3", Row::SwitchLine { line: 0 }),
     ] {
-        let mut e = envelope(&session, command, Origin::Program, row.clone());
+        let mut e = envelope(&session, command, row.clone());
         e.token = Some(session.shell().mint(command, &row).unwrap());
-        refused(&session, &disk, e, code::COMMIT_ROW_REFUSED);
+        refused_on(&session, &disk, Origin::Program, e, code::COMMIT_ROW_REFUSED);
     }
     for (command, row) in [
         ("y1", Row::Propose { word: literal(&[3]) }),
@@ -371,7 +371,7 @@ fn a_program_delivers_no_commit_and_no_session_row() {
         ("y3", Row::WorkspaceSet { record: "r".into(), payload: letters(&[1]), provenance: manual() }),
         ("y4", Row::ProtectionSet { orbits: vec![0], confirm: true }),
     ] {
-        refused(&session, &disk, envelope(&session, command, Origin::Program, row), NOT_GRANTED);
+        refused_on(&session, &disk, Origin::Program, envelope(&session, command, row), NOT_GRANTED);
     }
 }
 
@@ -422,7 +422,7 @@ fn outcomes_are_looked_up_across_a_reopen() {
     let k = shell(&session, "K", Row::Checkpoint { name: "k".into() });
     let q = shell(&session, "Q", Row::Propose { word: literal(&[2]) });
     let u = undo(&session, "U");
-    let old = envelope(&session, "X", Origin::Shell, Row::Propose { word: literal(&[3]) });
+    let old = envelope(&session, "X", Row::Propose { word: literal(&[3]) });
 
     let reopened = reopen(&disk);
     assert_ne!(reopened.epoch(), session.epoch());
@@ -431,8 +431,8 @@ fn outcomes_are_looked_up_across_a_reopen() {
     }
     assert_eq!(reopened.outcome("Q", &q.request).status, Status::UnknownOutcome);
     assert_eq!(code(&reopened.outcome("C", "another request")), code::COMMAND_ID_REUSED);
-    assert_eq!(code(&reopened.invoke(old)), code::EPOCH_CHANGED);
-    let mut stranger = envelope(&reopened, "Y", Origin::Shell, Row::Propose { word: literal(&[3]) });
+    assert_eq!(code(&reopened.invoke(Origin::Shell, old)), code::EPOCH_CHANGED);
+    let mut stranger = envelope(&reopened, "Y", Row::Propose { word: literal(&[3]) });
     stranger.session = "s2".into();
-    assert_eq!(code(&reopened.invoke(stranger)), code::UNKNOWN_SESSION);
+    assert_eq!(code(&reopened.invoke(Origin::Shell, stranger)), code::UNKNOWN_SESSION);
 }

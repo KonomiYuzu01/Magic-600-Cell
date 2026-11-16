@@ -25,7 +25,7 @@ fn a_commit_after_an_undo_keeps_the_old_line() {
     assert_eq!(o.revision.digest, b.post);
 
     assert!(Row::SwitchLine { line: 0 }.is_commit(), "a line switch is a row of kind commit");
-    let bare = session.invoke(envelope(&session, "S0", Origin::Shell, Row::SwitchLine { line: 0 }));
+    let bare = session.invoke(Origin::Shell, envelope(&session, "S0", Row::SwitchLine { line: 0 }));
     assert_eq!(code(&bare), code::TOKEN_INVALID, "a switch without a token is refused");
     let missing = shell(&session, "S1", Row::SwitchLine { line: 2 });
     assert_eq!(code(&missing), codes::NAMED_OBJECT_INVALID);
@@ -91,10 +91,10 @@ fn no_runtime_request_changes_a_line() {
     for (command, row) in
         [("p1", Row::SwitchLine { line: 0 }), ("p2", Row::Undo { hint: before.undo.unwrap(), confirm: false })]
     {
-        // Even with a genuine token the shell minted, a program's commit row is refused.
-        let mut e = envelope(&session, command, Origin::Program, row);
+        // Even with a genuine token the shell minted, a commit row on a program's channel is refused.
+        let mut e = envelope(&session, command, row);
         e.token = Some(session.shell().mint(command, &e.row).expect("a token"));
-        assert_eq!(code(&session.invoke(e)), code::COMMIT_ROW_REFUSED, "{command}");
+        assert_eq!(code(&session.invoke(Origin::Program, e)), code::COMMIT_ROW_REFUSED, "{command}");
     }
     let checkpoint = from_program(&session, "p3", Row::Checkpoint { name: "k".into() });
     assert_eq!(code(&checkpoint), NOT_GRANTED);

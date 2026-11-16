@@ -356,32 +356,31 @@ fn a_lost_state_object_is_rewritten_or_replayed() {
 fn a_retry_after_restart_returns_the_durable_receipt() {
     let (session, disk) = session();
     let preview = propose(&session, "p", literal(&[1]));
-    let mut c = envelope(&session, "C", Origin::Shell, Row::Execute { preview });
+    let mut c = envelope(&session, "C", Row::Execute { preview });
     c.token = Some(session.shell().mint("C", &c.row).unwrap());
-    let c_receipt = session.invoke(c.clone());
+    let c_receipt = session.invoke(Origin::Shell, c.clone());
     committed(&c_receipt);
     let row = Row::WorkspaceSet { record: "r".into(), payload: letters(&[2]), provenance: manual() };
-    let w = envelope(&session, "W", Origin::Shell, row);
-    let w_receipt = session.invoke(w.clone());
-    let mut u =
-        envelope(&session, "U", Origin::Shell, Row::Undo { hint: session.overview().undo.unwrap(), confirm: false });
+    let w = envelope(&session, "W", row);
+    let w_receipt = session.invoke(Origin::Shell, w.clone());
+    let mut u = envelope(&session, "U", Row::Undo { hint: session.overview().undo.unwrap(), confirm: false });
     u.token = Some(session.shell().mint("U", &u.row).unwrap());
-    let u_receipt = session.invoke(u.clone());
+    let u_receipt = session.invoke(Origin::Shell, u.clone());
     committed(&u_receipt);
-    let q = envelope(&session, "Q", Origin::Shell, Row::Propose { word: literal(&[2]) });
-    session.invoke(q.clone());
+    let q = envelope(&session, "Q", Row::Propose { word: literal(&[2]) });
+    session.invoke(Origin::Shell, q.clone());
     let view = durable(&session);
 
     disk.crash();
     let reopened = reopen(&disk);
     let writes = disk.writes();
-    assert_eq!(reopened.invoke(c.clone()), c_receipt);
-    assert_eq!(reopened.invoke(w), w_receipt);
-    assert_eq!(reopened.invoke(u), u_receipt);
-    assert_eq!(code(&reopened.invoke(q)), code::EPOCH_CHANGED);
+    assert_eq!(reopened.invoke(Origin::Shell, c.clone()), c_receipt);
+    assert_eq!(reopened.invoke(Origin::Shell, w), w_receipt);
+    assert_eq!(reopened.invoke(Origin::Shell, u), u_receipt);
+    assert_eq!(code(&reopened.invoke(Origin::Shell, q)), code::EPOCH_CHANGED);
     let mut other = c;
     other.row = Row::Execute { preview: preview + 1 };
-    assert_eq!(code(&reopened.invoke(other)), code::COMMAND_ID_REUSED);
+    assert_eq!(code(&reopened.invoke(Origin::Shell, other)), code::COMMAND_ID_REUSED);
     assert_eq!(disk.writes(), writes, "a retry writes nothing");
     assert_eq!(durable(&reopened), view);
 }

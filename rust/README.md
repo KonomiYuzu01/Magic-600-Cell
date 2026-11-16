@@ -784,8 +784,10 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   (ruling 3; `commit.rs` asserts it during a held write); its request digest includes the origin and the
   authenticator (the layer's excludes the authenticator, LI.5); command IDs are one space for the shell and programs;
   an `epoch_changed` refusal is not kept; and its shell stub mints for a fresh preview that need not be presented
-  (LP3's L4). It also takes its origin from the envelope, which the owner's host rule of 16 November 2026 (PHS.52)
-  excludes: the host stamps the caller from the channel the envelope came on.
+  (LP3's L4). Under the owner's host rule of 16 November 2026 (PHS.52 ruling 4) its envelope names no origin:
+  `Session::invoke(origin, envelope)` takes the origin of the channel the envelope came on, and the request digest
+  and the program gates read that origin (`tests/kn5_command.rs` sends the shell's genuine envelope on a program's
+  channel first).
 - Evidence kind: source and fixture. Failures are injected in memory; `FsDisk` runs in one reopen test, so a pass is no
   evidence of a real disk's behaviour in a crash. The checks ran on Windows only.
 
@@ -926,8 +928,7 @@ run or not applicable is no pass (PHS.63).
     only in memory, with public fields.
   - KN5 has one implementation: LP3's `c600-command`, durable over M6's journal through `c600_session::JournalStore`
     (KN5's stages 1 and 2; LP3's C7 section below). The CT-KN5 parts that run, run against it; M6's `Session::invoke`
-    follows ruling 4's order until its tests move to `c600-command`, but takes its origin from the envelope (M6's
-    section).
+    follows ruling 4's order and the host rule until its tests move to `c600-command` (M6's section).
   - `Kernel::protection` itself checks no model; `Kernel::checked_protection` adds KN1.4's check (M4's section).
   - For M6's store: the kernel's `archive::gunzip` accepts concatenated gzip members and trailing zero padding, so
     FP.7's strict one-member reader must refuse them itself; run-time `encode` applies no json_depth or integer_digits

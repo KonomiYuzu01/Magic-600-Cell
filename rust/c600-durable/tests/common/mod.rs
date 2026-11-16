@@ -71,29 +71,23 @@ impl Drop for TempDir {
     }
 }
 
-pub fn envelope(session: &Session, command: &str, origin: Origin, row: Row) -> Envelope {
-    Envelope {
-        session: session.id().to_owned(),
-        epoch: session.epoch(),
-        command: command.to_owned(),
-        origin,
-        row,
-        token: None,
-    }
+/// An envelope without a token. It names no origin: the channel it is delivered on stamps one (PHS.52 ruling 4).
+pub fn envelope(session: &Session, command: &str, row: Row) -> Envelope {
+    Envelope { session: session.id().to_owned(), epoch: session.epoch(), command: command.to_owned(), row, token: None }
 }
 
-/// Delivers a row from the shell, with a token the shell stub mints for it when it is a commit row.
+/// Delivers a row on the shell's channel, with a token the shell stub mints for it when it is a commit row.
 pub fn shell(session: &Session, command: &str, row: Row) -> Receipt {
-    let mut e = envelope(session, command, Origin::Shell, row);
+    let mut e = envelope(session, command, row);
     if e.row.is_commit() {
         e.token = Some(session.shell().mint(command, &e.row).unwrap_or_else(|e| panic!("no token: {e}")));
     }
-    session.invoke(e)
+    session.invoke(Origin::Shell, e)
 }
 
-/// Delivers a row as a program would: through its host, never with a token.
+/// Delivers a row as a program would: on its host's channel, never with a token.
 pub fn from_program(session: &Session, command: &str, row: Row) -> Receipt {
-    session.invoke(envelope(session, command, Origin::Program, row))
+    session.invoke(Origin::Program, envelope(session, command, row))
 }
 
 /// Proposes a word and returns the preview's ID.

@@ -103,7 +103,9 @@ pub struct JobId {
     pub n: u64,
 }
 
-/// Who delivers an invocation. A program reaches the session only through its host (KN5.15, ONE.77).
+/// Who delivers an invocation. A program reaches the session only through its host (KN5.15, ONE.77). The channel an
+/// envelope came on decides it, never the envelope, which names none: [`crate::Session::invoke`] takes it beside the
+/// envelope (the host rule, PHS.52 ruling 4, owner decision of 16 November 2026).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Origin {
     Shell,
@@ -209,13 +211,12 @@ impl Row {
     }
 }
 
-/// One invocation as it is delivered (LI.5).
+/// One invocation as it is delivered (LI.5). It names no caller: the channel it comes on stamps its [`Origin`].
 #[derive(Clone, Debug)]
 pub struct Envelope {
     pub session: String,
     pub epoch: u64,
     pub command: String,
-    pub origin: Origin,
     pub row: Row,
     pub token: Option<Token>,
 }
