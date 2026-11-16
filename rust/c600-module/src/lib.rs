@@ -67,13 +67,17 @@
 //!   as a draft until C5's host bridge, which decides whether the command layer's preview admission applies it
 //!   instead (integrator, 16 November 2026).
 //! - **Refusal codes** (LG5.11, ERR). A syntax diagnostic keeps its own `LG1` code; a lowering error is
-//!   `LG4:input.ir_rejected`; a session identity outside `supports` is `LG5:input.model_not_supported`.
+//!   `LG4:input.ir_rejected`; a program for another IR version or execution contract is the checker's
+//!   `LG4:input.ir_version_unsupported` in every author column, before the entry is looked up; a session identity
+//!   outside `supports` is `LG5:input.model_not_supported`.
 //! - **CT-RTE-07's canonical result** (RTE.46). [`Outcome::canonical`] writes the outcome, code, stop position, used
 //!   amounts, output bytes, shell answers (refusal codes only, and whether the split refused) and captures, in FP.5's
 //!   canonical JSON. Timing, host and path fields are not in it. A key's ten-run digest hashes these bytes for each of
 //!   its runs (a refusal by its code), the engine side and the store.
-//! - **CT-RTE-07's fixture mapping** (RTE.46, LX-3). The frozen keys use letter names and lists, which the IR draft
-//!   does not have. The tests map the letters `a, b, c, d, D` to `+1, +2, +3, +4, -4`, fixed-order lists to records
+//! - **CT-RTE-07's fixture mapping** (RTE.46, LX-3). The frozen keys use letter names and fixed-order lists. The
+//!   tests map the letters `a, b, c, d, D` to `+1, +2, +3, +4, -4`, and read a negated letter `-n`, which is how the
+//!   IR writes the inverse of the letter `n` (LG2.15), as the inverse `fixture.json` names for that letter (`a`, `b`
+//!   and `c` are their own inverses), so A17's `-1, +4` is the corpus's `a d`. They map fixed-order lists to records
 //!   with fields `c0..c2`, `i0..i2` and `s0..s3`, and the corpus's workspace rows to `read_snapshot` and
 //!   `write_workspace`, which the boundary serves from its store. The corpus's `emit` maps to `publish_view`, the one
 //!   output besides the result. A fixed-length list function (a sum, a first minimum, a table look-up) is unrolled
@@ -121,6 +125,9 @@ pub mod code {
     pub const MODEL_NOT_SUPPORTED: &str = "LG5:input.model_not_supported";
     /// The IR fails validation at load (LG4.1, LG4.2).
     pub const IR_REJECTED: &str = c600_run::interp::code::IR_REJECTED;
+    /// The program asks for an IR version or execution contract that the checker and the interpreter do not run
+    /// (LG4.1, LG5.4).
+    pub const IR_VERSION_UNSUPPORTED: &str = c600_check::IR_VERSION_UNSUPPORTED;
     /// A record's field structure is invalid for an active read (FP.10, PS1.13).
     pub const PERSISTENCE_FORMAT: &str = "PS1:input.persistence_format";
     /// An unknown format and version pair, or a required extension (FP.10, PS2).

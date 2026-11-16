@@ -6,9 +6,10 @@
 //! and stop reasons, the engine side and the store. An allowed key completes with the corpus's value; a refused key
 //! gives the corpus's expected code at the refused operation, installs no preview, keeps the session fields and the
 //! existing workspace provenance, and reads no planted data. A realised budget key (B05, B06) gives the corpus's
-//! outcome, code and used amounts; its stop is the draft's operation path. [`FALSE_REFUSALS`] lists where this leg
-//! differs from the corpus; every refused key gives the corpus's code (P01 to P03 since the owner decision of 16
-//! November 2026 under PHS.52). [`LEFT`] lists the keys not realised, with the reason.
+//! outcome, code and used amounts; its stop is the draft's operation path. [`FALSE_REFUSALS`] and
+//! [`READ_AS_FIXTURE_INVERSES`] list where this leg differs from the corpus; every refused key gives the corpus's
+//! code (P01 to P03 since the owner decision of 16 November 2026 under PHS.52). [`LEFT`] lists the keys not realised,
+//! with the reason.
 //!
 //! Evidence kind: source and synthetic. The fixture is LX-3's fake data, not Full's mechanics; nothing here measures
 //! time or performance.
@@ -34,10 +35,10 @@ const CORPUS: &str =
 const FREEZE_SHA256: &str = "d7eff17503ee95d45ddca0efe38ec3bb09418b0248a6279afe2dce0a90ea6627";
 
 /// The keys realised here, one test each.
-const REALISED: [&str; 36] = [
-    "A01", "A02", "A03", "A04", "A05", "A06", "A07", "A09", "A11", "A12", "A13", "A15", "A20", "A24", "A25", "A33",
-    "A34", "A35", "B05", "B06", "MR03", "MR04", "MR07", "MR08", "MR09", "MR10", "MR11", "MR12", "MR15", "MR16", "P01",
-    "P02", "P03", "P04", "S01", "S02",
+const REALISED: [&str; 39] = [
+    "A01", "A02", "A03", "A04", "A05", "A06", "A07", "A08", "A09", "A11", "A12", "A13", "A15", "A17", "A18", "A20",
+    "A24", "A25", "A33", "A34", "A35", "B05", "B06", "MR03", "MR04", "MR07", "MR08", "MR09", "MR10", "MR11", "MR12",
+    "MR15", "MR16", "P01", "P02", "P03", "P04", "S01", "S02",
 ];
 
 const M5: &str = "waits for M5: a jumbling key";
@@ -51,7 +52,7 @@ const COMMAND: &str =
 /// The keys left, with the reason. The amounts of B01 to B04 and B07 follow LX-3's experiment-only counting fixture
 /// (`profile.json`); lp1-exec-draft-1 prices operations, encodings and memory with its own table, and the corpus asks
 /// for a candidate's mapping to be pinned before comparison (`kernel-stub.md`).
-const LEFT: [(&str, &str); 39] = [
+const LEFT: [(&str, &str); 36] = [
     ("MR01", M5),
     ("MR02", M5),
     ("MR05", M5),
@@ -66,12 +67,9 @@ const LEFT: [(&str, &str); 39] = [
     ("A30", M6),
     ("MR13", "not expressible: the IR draft has no early stop (LX-3 code gap `stop_emission`)"),
     ("MR14", "not expressible: the IR draft has no early stop (LX-3 code gap `stop_emission`)"),
-    ("A08", "not expressible: the IR draft has no word length"),
     ("A10", "not expressible: the IR draft has no exact multiplication or remainder"),
     ("A14", ROW_ARGUMENT),
     ("A16", ROW_ARGUMENT),
-    ("A17", "not expressible: the IR draft has no word inverse"),
-    ("A18", "not expressible: the IR draft has no word concatenation"),
     ("A19", ROW_ARGUMENT),
     ("A21", ROW_ARGUMENT),
     ("A22", ROW_ARGUMENT),
@@ -96,6 +94,12 @@ const LEFT: [(&str, &str); 39] = [
 /// Allowed keys this leg refuses. A25 reads the counts and previews a manually named word in one entry; separation
 /// refuses the preview, which the corpus allows ("Separation may falsely refuse the combination").
 const FALSE_REFUSALS: [&str; 1] = ["A25"];
+
+/// Allowed keys whose value has other literal letters than the corpus's and matches it only under the fixture's
+/// inverse letters ([`named`]). A17's inverse of `D a` is `-1, +4`, because the IR writes a letter's inverse as its
+/// negation; the fixture names `a` its own inverse, so `-1` reads as `a` and the value as the corpus's `a d`, whose
+/// literal letters are `+1, +4`.
+const READ_AS_FIXTURE_INVERSES: [&str; 1] = ["A17"];
 
 const INTS: &str = "record { c0: Int, c1: Int, c2: Int }";
 const BOOLS: &str = "record { c0: Bool, c1: Bool, c2: Bool }";
@@ -156,16 +160,21 @@ impl Trial {
     }
 
     /// Runs `m.<function>` under the given limits.
-    fn exec(
+    fn exec(self, function: &str, author: Author, profile: Profile, inputs: Vec<Vec<u8>>, limits: Amounts) -> Trial {
+        self.call(function, author, profile, vec![Value::target("c0"), Value::word(&[A])], inputs, limits)
+    }
+
+    /// Runs `m.<function>` with `args`, whose blocks are `inputs`, under the given limits.
+    fn call(
         mut self,
         function: &str,
         author: Author,
         profile: Profile,
+        args: Vec<Value>,
         inputs: Vec<Vec<u8>>,
         limits: Amounts,
     ) -> Trial {
         let id = format!("r{}", self.results.len() + 1);
-        let args = vec![Value::target("c0"), Value::word(&[A])];
         let result = ready(&self.package, entry(function, author, profile)).and_then(|r| {
             let request =
                 RunRequest { run: &id, base: "rev-7", args, inputs, pins: pins(), options: Options::new(limits) };
@@ -209,6 +218,33 @@ fn ten(key: impl Fn() -> Trial) -> Trial {
 /// One solving run of a built-in entry `go`, the corpus's usual command.
 fn solving(source: &str) -> Trial {
     Trial::of(source, &[]).run("go", Author::BuiltIn, Profile::Solving)
+}
+
+/// One solving run of a built-in entry `go` whose arguments are the key's own words, each entered by hand.
+fn solving_on(source: &str, words: &[&[i32]]) -> Trial {
+    let args = words.iter().map(|w| Value::word(w)).collect();
+    Trial::of(source, &[]).call("go", Author::BuiltIn, Profile::Solving, args, vec![manual(); words.len()], WIDE)
+}
+
+/// The fixture letter `d`; `D` is its inverse, `-4`.
+const D: i32 = 4;
+
+/// The fixture's names of the letters `+1` to `+4`.
+const NAMES: [&str; 4] = ["a", "b", "c", "d"];
+
+/// A word's letters as the corpus names them. The IR writes the inverse of a letter as its negation (LG2.15), and
+/// `fixture.json` names each letter's inverse (`inverses`): `a`, `b` and `c` are their own inverses and `D` is `d`'s.
+/// So `+n` reads as the fixture's letter `n`, and `-n` as the inverse the fixture names for it. It checks the tests'
+/// letters against the corpus's names; the runs' outputs are compared as exact bytes.
+fn named(letters: &[i32]) -> Vec<String> {
+    let fixture = provenance::parse(&std::fs::read(format!("{CORPUS}fixture.json")).unwrap()).expect("it reads");
+    let inverses = fixture.get("inverses").expect("the fixture's inverse letters");
+    let name = |l: i32| NAMES[l.unsigned_abs() as usize - 1];
+    let read = |l: i32| match l > 0 {
+        true => name(l),
+        false => inverses.get(name(l)).and_then(Json::as_text).expect("an inverse letter"),
+    };
+    letters.iter().map(|&l| read(l).to_string()).collect()
 }
 
 /// No planted data anywhere, no trap call, and the session fields of the fixture.
@@ -300,7 +336,7 @@ fn ct_rte_07_full_corpus_is_frozen_and_every_key_is_accounted_for() {
     assert_eq!(realised.len() + left.len(), REALISED.len() + LEFT.len(), "no key is listed twice");
     assert!(realised.is_disjoint(&left));
     assert_eq!(&realised | &left, ids, "every key is realised or left");
-    assert!(FALSE_REFUSALS.iter().all(|k| realised.contains(k)));
+    assert!(FALSE_REFUSALS.iter().chain(READ_AS_FIXTURE_INVERSES.iter()).all(|k| realised.contains(k)));
 }
 
 /// A01: the counts, in fixed order.
@@ -380,6 +416,14 @@ fn ct_rte_07_full_a07_count_equal() {
          if(exact_eq(f.c2, 0), 1, 0));\n}\n",
     );
     quiet(&ten(|| solving(&source)), &encoded(&Value::int(1)));
+}
+
+/// A08: the length of the solver's word `a a b`, counted letter by letter with no simplification.
+#[test]
+fn ct_rte_07_full_a08_word_length() {
+    let source = root("export fn go(w: Word) -> Int effects [] {\n    return length(w);\n}\n");
+    quiet(&ten(|| solving_on(&source, &[&[A, A, B]])), &encoded(&Value::int(3)));
+    assert_eq!(named(&[A, A, B]), ["a", "a", "b"], "the corpus's input");
 }
 
 /// A09: exact integer arithmetic beyond binary64's exact range.
@@ -500,6 +544,27 @@ fn ct_rte_07_full_a15_display_precision() {
     let bits = u64::from_str_radix("3fd5555555555555", 16).unwrap();
     let (m, k) = (i128::from((bits & ((1 << 52) - 1)) | (1 << 52)), ((bits >> 52) & 0x7ff) as i32 - 1075);
     assert!((3 * m - (1i128 << -k)).abs() <= 1i128 << (-k - 53));
+}
+
+/// A17: the inverse of the solver's word `D a`: its letters reversed, each replaced by its inverse. The IR writes the
+/// inverse of `a` as `-1`, which the fixture names `a` ([`named`]), so the corpus's `a d` is `-1, +4`: a listed
+/// difference ([`READ_AS_FIXTURE_INVERSES`]).
+#[test]
+fn ct_rte_07_full_a17_word_inverse() {
+    let source = root("export fn go(w: Word) -> Word effects [] {\n    return inverse(w);\n}\n");
+    quiet(&ten(|| solving_on(&source, &[&[-D, A]])), &encoded(&Value::word(&[-A, D])));
+    assert_eq!(named(&[-D, A]), ["D", "a"], "the corpus's input");
+    assert_eq!(named(&[-A, D]), ["a", "d"], "the corpus's value");
+    assert!(READ_AS_FIXTURE_INVERSES.contains(&"A17"));
+}
+
+/// A18: the solver's words `a b` and `c`, concatenated in chronological order.
+#[test]
+fn ct_rte_07_full_a18_word_concatenation() {
+    let source =
+        root("export fn go(left: Word, right: Word) -> Word effects [] {\n    return concat(left, right);\n}\n");
+    quiet(&ten(|| solving_on(&source, &[&[A, B], &[C]])), &encoded(&Value::word(&[A, B, C])));
+    assert_eq!(named(&[A, B, C]), ["a", "b", "c"], "the corpus's value");
 }
 
 /// A20: a static explanation; texts compare by scalars, with no locale normalization.
