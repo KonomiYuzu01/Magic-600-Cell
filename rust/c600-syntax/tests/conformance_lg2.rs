@@ -69,7 +69,8 @@ fn assert_types_wait(types: &[&str], waits_for: &str) {
 
 /// Every type of the IR draft, matched without a wildcard. A domain family added to the IR (a piece, a pose, a
 /// sticker class, a state, a verdict, a goal or an equality key) fails to compile here until its CT-LG2 tests exist.
-/// The word equality key (LP2 draft) has them: `ct_lg2_11_*` and `ct_lg2_13_*` below.
+/// The word equality key (LP2 draft) has them: `ct_lg2_11_*` and `ct_lg2_13_*` below. So has the compressed word
+/// (LP2 draft): `ct_lg2_14_*` in `collections.rs` here and in `c600-run`.
 fn base_types_only(ty: &Ty) -> bool {
     match ty {
         Ty::Unit
@@ -88,6 +89,7 @@ fn base_types_only(ty: &Ty) -> bool {
         | Ty::ApproxBool
         | Ty::Receipt
         | Ty::WordEqualityKey
+        | Ty::CompressedWord
         | Ty::Var(_) => true,
         Ty::Record(fields) => fields.iter().all(|(_, f)| base_types_only(&f.ty)),
         Ty::Fn(f) => f.params.iter().all(|p| base_types_only(&p.ty)) && base_types_only(&f.result.ty),
@@ -107,6 +109,7 @@ fn prim_family(op: Prim) -> &'static str {
         Prim::Contains | Prim::Insert | Prim::InsertEntry | Prim::Lookup => "collection",
         Prim::Elements(_) | Prim::Keys(_) | Prim::Entries(_) => "collection",
         Prim::Inverse | Prim::Conjugate | Prim::Commutator | Prim::Compose => "word",
+        Prim::Compress | Prim::Expand => "word",
         Prim::WordKey => "word key",
     }
 }

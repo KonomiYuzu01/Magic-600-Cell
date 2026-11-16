@@ -30,6 +30,7 @@
 //! | `push`, `concat`, `inverse`, `conjugate`, `commutator`, `compose`, `word_key` (LP2 drafts) | one step each, priced before the value is built: `expand_per_letter` per letter built or scanned, [`LIST_PER_ELEMENT`] per element built |
 //! | set, map (LP2 drafts) | one step `set` or `map`: [`LIST_PER_ELEMENT`] per element and n·⌈log₂ n⌉ comparisons of the widest key, each `compare_per_unit` per unit of two such keys; it reserves every item written and settles to the built value |
 //! | `contains`, `insert`, `lookup`, `elements`, `keys`, `entries` (LP2 drafts) | one step each: ⌈log₂(n + 1)⌉ comparisons of the probe for a search, [`LIST_PER_ELEMENT`] per element built; `lookup` lends or retains its value as a field read does, and a missing key stops with `LG4:input.pointwise_failed` before its step |
+//! | `compress`, `expand`, and `concat` and `length` of compressed words (LP2 drafts) | one step each: `compress` costs `expand_per_letter` per letter; `concat` an equality walk over both words, the integer row's addition of their lengths and [`LIST_PER_ELEMENT`] per part of both plus one, and it reserves the parts of both and settles to the built word; `length` reserves its integer and expands nothing; `expand` costs `expand_per_letter` per letter out and [`LIST_PER_ELEMENT`] per part it may visit, 2·(height + count) + 1, and a range past the word's end stops with `LG4:input.pointwise_failed` before its step |
 //! | exact arithmetic | `exact_add`, `exact_less`, `exact_eq`, `not`, `to_approx`, `approx_add`, `approx_less`, `approx_and`, `approx_not` |
 //! | snapshot read, declassifier | `kernel` with the host row's tariff and result bound |
 //! | file read, clock | `read` with the host row's tariff and result bound |
@@ -65,8 +66,8 @@ use crate::meter::{
 };
 use crate::rng::{self, Cursor};
 use crate::value::{
-    self, entry_key, entry_value, find, free_reduction, inverse, map_insert, set_insert, Closure, List, Record, Text,
-    Value,
+    self, entry_key, entry_value, find, free_reduction, inverse, map_insert, set_insert, Closure, Compressed, List,
+    Record, Text, Value,
 };
 
 /// The draft price of a built list (LP2): kernel units per element it holds. DET.55 names no row for it.
@@ -75,7 +76,8 @@ use crate::value::{
 /// stop of an index outside its list and a list's JSON form are LP2 drafts that change freely until the IR freeze
 /// (PHS.49). So are the set and map operations, their prices (a comparison priced as an exact equality walk over two
 /// keys of the bounding size), the canonical key order ([`value::key_order`]), the pointwise stop of a missing key
-/// and their JSON forms.
+/// and their JSON forms. So are the compressed word ([`value::Compressed`]), its parts, its logical layout, its
+/// operations and their prices, and its lack of a JSON form and of an exact equality.
 pub const LIST_PER_ELEMENT: u128 = 1;
 
 /// The codes the interpreter raises in addition to the meter's (chapter 13).
@@ -471,11 +473,11 @@ fn arity(op: Prim) -> Option<usize> {
         | Prim::ApproxAnd => Some(2),
         Prim::Not | Prim::ApproxNot | Prim::ToApprox(_) => Some(1),
         Prim::ToExact => None,
-        Prim::Length | Prim::Inverse | Prim::WordKey => Some(1),
+        Prim::Length | Prim::Inverse | Prim::WordKey | Prim::Compress => Some(1),
         Prim::Index | Prim::Push | Prim::Concat | Prim::Conjugate | Prim::Commutator | Prim::Compose => Some(2),
         Prim::Elements(_) | Prim::Keys(_) | Prim::Entries(_) => Some(1),
         Prim::Contains | Prim::Insert | Prim::Lookup => Some(2),
-        Prim::InsertEntry => Some(3),
+        Prim::InsertEntry | Prim::Expand => Some(3),
     }
 }
 
@@ -883,6 +885,10 @@ fn is_approx(v: &Value) -> bool {
     matches!(v, Value::Approx(_) | Value::ApproxBool(_))
 }
 
+fn is_compressed(v: &Value) -> bool {
+    matches!(v, Value::Compressed(_))
+}
+
 fn receipt_field(field: ReceiptField) -> &'static str {
     match field {
         ReceiptField::Id => "id",
@@ -1221,7 +1227,9 @@ impl<'a> Machine<'a> {
             | Prim::Conjugate
             | Prim::Commutator
             | Prim::Compose
-            | Prim::WordKey => return self.sequence(n, op, args),
+            | Prim::WordKey
+            | Prim::Compress
+            | Prim::Expand => return self.sequence(n, op, args),
             Prim::Contains
             | Prim::Insert
             | Prim::InsertEntry
@@ -1240,7 +1248,8 @@ impl<'a> Machine<'a> {
         let price = match (op, a, b) {
             (Prim::ExactAdd, a, Some(b)) => value::add_price(a, b, &t, &d),
             (Prim::ExactLess, a, Some(b)) => value::compare_price(a, b, &d).map(|k| (k, 1)),
-            (Prim::ExactEq, a, Some(b)) if !is_approx(a) && !is_approx(b) => {
+            // A compressed word has no exact equality (LP2 draft).
+            (Prim::ExactEq, a, Some(b)) if !is_approx(a) && !is_approx(b) && !is_compressed(a) && !is_compressed(b) => {
                 Some((value::equal_price(a, b, &t, &d), 1))
             }
             (Prim::Not, Value::Bool(_), None) => Some((0, 1)),
@@ -1335,8 +1344,13 @@ impl<'a> Machine<'a> {
             Prim::Conjugate => "conjugate",
             Prim::Commutator => "commutator",
             Prim::Compose => "compose",
+            Prim::Compress => "compress",
+            Prim::Expand => "expand",
             _ => "word_key",
         };
+        if op == Prim::Expand {
+            return self.expand(n, name, args);
+        }
         if op == Prim::Index {
             let index = args.pop().expect("an index");
             let list = args.pop().expect("a list");
@@ -1358,13 +1372,20 @@ impl<'a> Machine<'a> {
         let per_letter = self.tariffs.expand_per_letter;
         let (kernel, memory, result): (u128, u128, Box<dyn FnOnce() -> Value>) = match (op, &words, &args[..]) {
             (Prim::Length, _, [h]) => {
-                let count = match &h.value {
-                    Value::Word(w) => w.len(),
-                    Value::List(l) | Value::Set(l) | Value::Map(l) => l.items().len(),
+                let result = match &h.value {
+                    Value::Word(w) => Value::int(w.len()),
+                    Value::List(l) | Value::Set(l) | Value::Map(l) => Value::int(l.items().len()),
+                    // A compressed word's exact length is retained metadata: no part is expanded (LG2.16).
+                    Value::Compressed(c) => Value::int(c.length().clone()),
                     _ => return Err(self.fail(Some(n), name, code::IR_REJECTED)),
                 };
-                let result = Value::int(count);
                 (0, result.size(), Box::new(move || result))
+            }
+            (Prim::Compress, Some(ws), [_]) => {
+                let w = ws[0].clone();
+                let letters = w.len() as u128;
+                let result = Value::Compressed(Arc::new(Compressed::leaf(w)));
+                (per_letter.saturating_mul(letters), result.size(), Box::new(move || result))
             }
             (Prim::WordKey, Some(ws), _) => {
                 let w = ws[0].clone();
@@ -1395,16 +1416,28 @@ impl<'a> Machine<'a> {
                 };
                 (per_letter.saturating_mul(built), 2 * built, Box::new(build))
             }
-            (Prim::Concat, None, [a, b]) => {
-                let (Value::List(x), Value::List(y)) = (&a.value, &b.value) else {
-                    return Err(self.fail(Some(n), name, code::IR_REJECTED));
-                };
-                let (x, y) = (x.clone(), y.clone());
-                let count = (x.items().len() + y.items().len()) as u128;
-                let memory = a.value.size() + b.value.size() - 4;
-                let build = move || Value::List(Arc::new(List::new([x.items(), y.items()].concat())));
-                (LIST_PER_ELEMENT.saturating_mul(count), memory, Box::new(build))
-            }
+            (Prim::Concat, None, [a, b]) => match (&a.value, &b.value) {
+                (Value::List(x), Value::List(y)) => {
+                    let (x, y) = (x.clone(), y.clone());
+                    let count = (x.items().len() + y.items().len()) as u128;
+                    let memory = a.value.size() + b.value.size() - 4;
+                    let build = move || Value::List(Arc::new(List::new([x.items(), y.items()].concat())));
+                    (LIST_PER_ELEMENT.saturating_mul(count), memory, Box::new(build))
+                }
+                // Two compressed words join without expansion. Whether they are one value decides whether the parts
+                // of the second are kept again, so the step prices that comparison and reserves the larger result.
+                (Value::Compressed(x), Value::Compressed(y)) => {
+                    let (x, y) = (x.clone(), y.clone());
+                    let compare = value::equal_price(&a.value, &b.value, &self.tariffs, &self.draft);
+                    let bits = |c: &Compressed| c.length().bits() as u128;
+                    let (add, _) = self.tariffs.integer(meter::IntOp::Add, bits(&x), bits(&y));
+                    let parts = (x.parts() + y.parts() + 1) as u128;
+                    let kernel = compare.saturating_add(add).saturating_add(LIST_PER_ELEMENT.saturating_mul(parts));
+                    let memory = Compressed::concat_bound(&x, &y);
+                    (kernel, memory, Box::new(move || Value::Compressed(Compressed::concat(&x, &y))))
+                }
+                _ => return Err(self.fail(Some(n), name, code::IR_REJECTED)),
+            },
             (Prim::Push, _, [a, b]) => {
                 let Value::List(x) = &a.value else {
                     return Err(self.fail(Some(n), name, code::IR_REJECTED));
@@ -1419,6 +1452,39 @@ impl<'a> Machine<'a> {
         };
         self.charge(Some(n), name, kernel, memory, 0)?;
         self.settle(memory, result());
+        let result = self.values.pop().expect("the result");
+        for held in args {
+            self.release(held);
+        }
+        self.values.push(result);
+        Ok(())
+    }
+
+    /// `expand(c, start, count)`, one step (LP2 draft): the letters of a compressed word at exact positions, priced
+    /// before any part is read at `expand_per_letter` per letter out and [`LIST_PER_ELEMENT`] per part it may visit,
+    /// 2·(height + count) + 1. A range past the word's end stops with `LG4:input.pointwise_failed` before the step; an
+    /// admitted count the host cannot address stops with `KN7:resource_limit.host_exhausted`.
+    fn expand(&mut self, n: NodeId, name: &str, args: Vec<Held>) -> Result<(), Stop> {
+        let (Value::Compressed(c), Value::Int(start), Value::Int(count)) =
+            (&args[0].value, &args[1].value, &args[2].value)
+        else {
+            return Err(self.fail(Some(n), name, code::IR_REJECTED));
+        };
+        if start.sign() == Sign::Minus || count.sign() == Sign::Minus || &(&**start + &**count) > c.length() {
+            return Err(self.fail(Some(n), name, meter::code::POINTWISE_FAILED));
+        }
+        let (c, start) = (c.clone(), (**start).clone());
+        let letters = u128::try_from(&**count).unwrap_or(u128::MAX);
+        let visits = c.height().saturating_add(letters).saturating_mul(2).saturating_add(1);
+        let per_letter = self.tariffs.expand_per_letter;
+        let kernel = per_letter.saturating_mul(letters).saturating_add(LIST_PER_ELEMENT.saturating_mul(visits));
+        let memory = letters.saturating_mul(2);
+        self.charge(Some(n), name, kernel, memory, 0)?;
+        let Ok(count) = usize::try_from(letters) else {
+            return Err(self.fail(Some(n), name, code::HOST_EXHAUSTED));
+        };
+        let word = c.expand(&start, count).expect("a range within the word");
+        self.settle(memory, Value::Word(word.into()));
         let result = self.values.pop().expect("the result");
         for held in args {
             self.release(held);

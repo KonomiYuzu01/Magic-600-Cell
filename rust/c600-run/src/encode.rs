@@ -9,6 +9,7 @@
 //!   letters (LG2.13).
 //! - A set is an array of its distinct elements and a map an array of its `{"key":…,"value":…}` entries, both in
 //!   canonical key order (DET.9; LP2 drafts). A set or map out of that order has no canonical form.
+//! - A compressed word has no form in the LP2 draft; its letters are output after an explicit `expand`.
 //!
 //! The encoder walks with an explicit stack, so a deep value cannot overflow the host stack.
 
@@ -134,8 +135,9 @@ pub fn encode(value: &Value, out: &mut Vec<u8>) -> Result<(), Noncanonical> {
                     }
                 }
             }
-            // A word key is never output as letters (LG2.13); the LP2 draft gives it no canonical form.
-            Value::Closure(_) | Value::Fn(_) | Value::Receipt(_) | Value::WordEqualityKey(_) => {
+            // A word key is never output as letters (LG2.13); the LP2 draft gives it no canonical form. Nor does it give
+            // one to a compressed word, whose output would be its priced expansion (DET.59).
+            Value::Closure(_) | Value::Fn(_) | Value::Receipt(_) | Value::WordEqualityKey(_) | Value::Compressed(_) => {
                 return Err(Noncanonical)
             }
         }

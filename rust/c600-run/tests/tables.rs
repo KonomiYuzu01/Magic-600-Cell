@@ -150,6 +150,7 @@ fn holds(ty: &Ty) -> &'static str {
         Ty::WordEqualityKey => "a word equality key, which is never letters",
         Ty::Set(_) => "distinct exact values of its element type, in canonical key order",
         Ty::Map(..) => "exact keys with values of these types, in canonical key order",
+        Ty::CompressedWord => "letters as parts of literal letters, with their exact length",
     }
 }
 
@@ -166,6 +167,7 @@ fn value_holds(v: &Value) -> &'static str {
         Value::List(_) => "values in order",
         Value::WordEqualityKey(_) => "a word equality key, which is never letters",
         Value::Set(_) | Value::Map(_) => "distinct exact keys, with values for a map, in canonical key order",
+        Value::Compressed(_) => "letters as parts of literal letters, with their exact length",
     }
 }
 

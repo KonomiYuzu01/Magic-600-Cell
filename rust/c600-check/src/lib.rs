@@ -399,6 +399,7 @@ pub fn type_name(ty: &Ty) -> String {
         Ty::WordEqualityKey => "WordEqualityKey".into(),
         Ty::Set(_) => "Set".into(),
         Ty::Map(..) => "Map".into(),
+        Ty::CompressedWord => "CompressedWord".into(),
     }
 }
 
@@ -522,12 +523,14 @@ fn declared_qual(q: &QTy) -> Qual {
 }
 
 /// Whether a set element or a map key may have this type (LG2.20; LP2 draft): exact and without the display qualifier
-/// at any depth, and without a callable, a receipt, `Unit` or a type variable, so that its canonical key order (DET.9)
-/// is defined.
+/// at any depth, and without a callable, a receipt, `Unit`, a type variable or a compressed word, so that its
+/// canonical key order (DET.9) is defined.
 fn key_type(q: &QTy) -> bool {
     !q.display
         && match &q.ty {
-            Ty::Unit | Ty::Approx(_) | Ty::ApproxBool | Ty::Fn(_) | Ty::Receipt | Ty::Var(_) => false,
+            Ty::Unit | Ty::Approx(_) | Ty::ApproxBool | Ty::Fn(_) | Ty::Receipt | Ty::Var(_) | Ty::CompressedWord => {
+                false
+            }
             Ty::Record(fields) => fields.iter().all(|(_, f)| key_type(f)),
             other => other.elements().into_iter().all(key_type),
         }
@@ -553,6 +556,15 @@ fn holds_callable(ty: &Ty) -> bool {
         Ty::Fn(_) => true,
         Ty::Record(fields) => fields.iter().any(|(_, f)| holds_callable(&f.ty)),
         other => other.elements().into_iter().any(|e| holds_callable(&e.ty)),
+    }
+}
+
+/// Whether a type is or holds a compressed word in a record or a collection (LP2 draft).
+fn holds_compressed(ty: &Ty) -> bool {
+    match ty {
+        Ty::CompressedWord => true,
+        Ty::Record(fields) => fields.iter().any(|(_, f)| holds_compressed(&f.ty)),
+        other => other.elements().into_iter().any(|e| holds_compressed(&e.ty)),
     }
 }
 
@@ -2068,9 +2080,9 @@ impl<'p> Checker<'p> {
     fn prim(&mut self, op: Prim, vals: &[Val]) -> Result<Val, IrError> {
         let arity = match op {
             Prim::Not | Prim::ToApprox(_) | Prim::ToExact | Prim::ApproxNot => 1,
-            Prim::Length | Prim::Inverse | Prim::WordKey => 1,
+            Prim::Length | Prim::Inverse | Prim::WordKey | Prim::Compress => 1,
             Prim::Elements(_) | Prim::Keys(_) | Prim::Entries(_) => 1,
-            Prim::InsertEntry => 3,
+            Prim::InsertEntry | Prim::Expand => 3,
             _ => 2,
         };
         if vals.len() != arity {
@@ -2131,6 +2143,14 @@ impl<'p> Checker<'p> {
             Prim::ExactEq => {
                 let (a, b) = (&vals[0], &vals[1]);
                 let what = "an operand of an exact equality";
+                // A compressed word has no exact equality in the LP2 draft: two programs of one expansion differ as
+                // values, so a structural answer is no word equality (LG2.16).
+                if let Some(i) = vals.iter().position(|v| holds_compressed(&v.ty)) {
+                    let note =
+                        "an operand of an exact equality, which a compressed word does not have (compare letters)";
+                    self.at(i, |c| c.misfit("a type without CompressedWord", &vals[i], note));
+                    return Ok(Val::exact(Ty::Bool));
+                }
                 self.at(0, |c| c.exact_use(Site::Operand, a, what));
                 if fits(&a.ty, &b.ty) || fits(&b.ty, &a.ty) {
                     self.at(1, |c| c.exact_use(Site::Operand, b, what));
@@ -2211,8 +2231,9 @@ impl<'p> Checker<'p> {
             }
             Prim::Length => {
                 let v = &vals[0];
-                if !matches!(v.ty, Ty::List(_) | Ty::Set(_) | Ty::Map(..) | Ty::Word) && !is_unknown(&v.ty) {
-                    self.at(0, |c| c.misfit("List<_> | Set<_> | Map<_, _> | Word", v, "a length"));
+                let measured = matches!(v.ty, Ty::List(_) | Ty::Set(_) | Ty::Map(..) | Ty::Word | Ty::CompressedWord);
+                if !measured && !is_unknown(&v.ty) {
+                    self.at(0, |c| c.misfit("List<_> | Set<_> | Map<_, _> | Word | CompressedWord", v, "a length"));
                 }
                 // A length cannot extract an exact result from a display-qualified value (LG2.19).
                 Ok(Val::new(Ty::Nat, project(v.qual, Qual::Exact)))
@@ -2252,7 +2273,7 @@ impl<'p> Checker<'p> {
                 let (a, b) = (&vals[0], &vals[1]);
                 let ty = match (&a.ty, &b.ty) {
                     (x, y) if is_unknown(x) || is_unknown(y) => return Ok(Val::unknown()),
-                    (Ty::Word, _) | (Ty::List(_), _) => {
+                    (Ty::Word, _) | (Ty::List(_), _) | (Ty::CompressedWord, _) => {
                         let common = if fits(&a.ty, &b.ty) { widen(&a.ty, &b.ty) } else { None };
                         if common.is_none() {
                             self.at(1, |c| c.misfit(&type_text(&a.ty), b, "a concatenation"));
@@ -2261,7 +2282,7 @@ impl<'p> Checker<'p> {
                         common
                     }
                     _ => {
-                        self.at(0, |c| c.misfit("Word | List<_>", a, "a concatenation"));
+                        self.at(0, |c| c.misfit("Word | List<_> | CompressedWord", a, "a concatenation"));
                         return Ok(Val::unknown());
                     }
                 };
@@ -2340,6 +2361,35 @@ impl<'p> Checker<'p> {
                 };
                 // The list keeps the collection's qualifier (LG2.19).
                 Ok(Val::new(Ty::List(Box::new(element)), coll.qual))
+            }
+            Prim::Compress => {
+                let w = &vals[0];
+                if is_unknown(&w.ty) {
+                    return Ok(Val::unknown());
+                }
+                if w.ty != Ty::Word {
+                    self.at(0, |c| c.misfit("Word", w, "a compressed word's letters"));
+                    return Ok(Val::unknown());
+                }
+                Ok(Val::new(Ty::CompressedWord, w.qual))
+            }
+            Prim::Expand => {
+                let c = &vals[0];
+                // Exact positions, like an exact collection index, accept exact inputs only (LG2.20).
+                for (i, what) in [(1, "an exact word position"), (2, "an exact letter count")] {
+                    let v = &vals[i];
+                    if fits(&Ty::Nat, &v.ty) {
+                        self.at(i, |s| s.exact_use(Site::Control, v, what));
+                    } else {
+                        self.at(i, |s| s.misfit("Nat", v, what));
+                    }
+                }
+                if c.ty != Ty::CompressedWord && !is_unknown(&c.ty) {
+                    self.at(0, |s| s.misfit("CompressedWord", c, "an expanded word"));
+                    return Ok(Val::unknown());
+                }
+                // An expansion cannot extract exact letters from a display-qualified word (LG2.19).
+                Ok(Val::new(Ty::Word, project(c.qual, Qual::Exact)))
             }
         }
     }

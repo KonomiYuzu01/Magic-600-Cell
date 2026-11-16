@@ -1,15 +1,17 @@
-//! Lists, word operations, sets and maps at run time (LP2 drafts until the IR freeze, PHS.49): their values,
-//! canonical bytes and draft charges. One step per operation (DET.55 names no row for them); `expand_per_letter` per
-//! letter built or scanned, `LIST_PER_ELEMENT` per element built and `compare_per_unit` per unit of a key comparison,
-//! all recorded as drafts in `c600_run::interp`. The static halves are `c600-syntax`'s `collections.rs`.
+//! Lists, word operations, sets, maps and compressed words at run time (LP2 drafts until the IR freeze, PHS.49):
+//! their values, canonical bytes and draft charges. One step per operation (DET.55 names no row for them);
+//! `expand_per_letter` per letter built or scanned, `LIST_PER_ELEMENT` per element built and per part joined or
+//! visited, and `compare_per_unit` per unit of a key or value comparison, all recorded as drafts in `c600_run::interp`.
+//! The static halves are `c600-syntax`'s `collections.rs`.
 
 use std::sync::Arc;
 
 use c600_check::check;
 use c600_run::interp::{code, load, Loaded, NoHost, Options, Run, LIST_PER_ELEMENT};
 use c600_run::meter::{self, Amounts, Outcome, Summary};
-use c600_run::value::{free_reduction, inverse, List, Value};
+use c600_run::value::{free_reduction, inverse, Compressed, List, Value};
 use c600_syntax::{lower, parse};
+use num_bigint::BigInt;
 
 const WIDE: Amounts = Amounts { steps: 1 << 40, kernel_cost: 1 << 40, memory: 1 << 40, output: 1 << 40 };
 const HEADER: &str = "edition \"6cs-draft-1\";\nmodule m requires [];\n\n";
@@ -328,4 +330,117 @@ fn ct_lg4_01_set_and_map_results_follow_their_key_order() {
         .map(|p| run(&sets, "listed", vec![Value::set(p.iter().map(|&n| Value::int(n)).collect())]))
         .collect();
     assert!(listed.windows(2).all(|w| w[0].output == w[1].output && w[0].summary == w[1].summary));
+}
+
+/// DET.57's size of an integer of `bits` bits: a sign byte and at least one magnitude byte.
+fn int_size(bits: u128) -> u128 {
+    1 + bits.div_ceil(8).max(1)
+}
+
+/// CT-LG2-14 (part: the language half: an exact length beyond the machine-integer range without expansion, and the
+/// letters at exact positions equal to those of the word expanded independently; not run: the kernel's streaming in
+/// declared chunks, DET.63's `word_open` and `chunk` rows, cancellation and admission bounds, which are CT-LG4-03 and
+/// M4): a compressed word doubled 70 times has the exact length 3·2⁷⁰, and its first and last letters come out by
+/// priced expansions of four letters (LP2 draft). A word joined to itself adds one part, so the result has 71 parts.
+/// The doublings run ten to a function: the checker recurses per `let`, and about 18 nested ones overflow a 2 MB test
+/// thread in a debug build.
+#[test]
+fn ct_lg2_14_a_compressed_word_has_an_exact_length_beyond_machine_integers() {
+    let lets = |call: &str, from: &str, n: usize| -> String {
+        let mut lines = format!("    let c1 = {call}({from});\n");
+        for k in 2..=n {
+            lines.push_str(&format!("    let c{k} = {call}(c{});\n", k - 1));
+        }
+        lines
+    };
+    let last = 3 * (1u128 << 70) - 4;
+    let source = format!(
+        "fn twice(c: CompressedWord) -> CompressedWord effects [] {{\n    return concat(c, c);\n}}\n\n\
+         fn ten(c: CompressedWord) -> CompressedWord effects [] {{\n{}    return c10;\n}}\n\n\
+         export fn deep() -> record {{ n: Nat, head: Word, tail: Word }} effects [] {{\n    \
+         let c0 = compress(word[+1, -2, +3]);\n{}    \
+         return record {{ n = length(c7), head = expand(c7, 0, 4), tail = expand(c7, {last}, 4) }};\n}}\n",
+        lets("twice", "c", 10),
+        lets("ten", "c0", 7),
+    );
+    let r = run(&build(&source), "deep", vec![]);
+    let n = BigInt::from(3) << 70;
+    assert_eq!(output(&r), format!("{{\"head\":[1,-2,3,1],\"n\":{{\"int\":\"{n}\"}},\"tail\":[3,1,-2,3]}}\n"));
+    // One leaf of three letters: a tag, the leaf's tag, count and letters, and the length, 4 + (4 + 8 + 3 × 2) + 2.
+    assert_eq!(rows(&r.summary, "compress"), [(1, 3, 24)]);
+    // Joining c(k - 1), of k parts, to itself compares the operands, adds two lengths of k + 1 bits and builds 2k + 1
+    // parts, and reserves the size of a join of two different words; the join keeps one more part.
+    let size = |k: u128| 4 + 18 + 20 * (k - 1) + int_size(k + 1);
+    let join = |k: u128| {
+        let kernel = 2 * size(k) + 2 * (k + 1).div_ceil(8) + (2 * k + 1) * LIST_PER_ELEMENT;
+        (1, kernel, 4 + 2 * (18 + 20 * (k - 1)) + 20 + int_size(k + 2))
+    };
+    assert_eq!(rows(&r.summary, "concat")[0], (1, 53, 62));
+    assert_eq!(rows(&r.summary, "concat"), (1..=70).map(join).collect::<Vec<_>>());
+    assert_eq!(rows(&r.summary, "length"), [(1, 0, int_size(72))]);
+    // Four letters out of a word of height 70: per letter, and per part visited, 2 × (70 + 4) + 1.
+    let out = (1, 4 + (2 * (70 + 4) + 1) * LIST_PER_ELEMENT, 8);
+    assert_eq!(rows(&r.summary, "expand"), [out, out]);
+}
+
+const PARTS: &str = "export fn slice(start: Nat, count: Nat) -> Word effects [] {\n    \
+    let a = compress(word[+1, -2]);\n    let x = concat(a, compress(word[+3]));\n    \
+    let z = concat(concat(x, x), a);\n    return expand(z, start, count);\n}\n\n\
+    export fn shown() -> CompressedWord effects [] {\n    return compress(word[+1]);\n}\n";
+
+/// CT-LG2-14 (part: the letters at every range of a compressed word equal those of the same word expanded
+/// independently; not run: as in `ct_lg2_14_a_compressed_word_has_an_exact_length_beyond_machine_integers`): `expand`
+/// gives the letters from an exact position in chronological order, priced before any part is read, and a range past
+/// the end stops with `LG4:input.pointwise_failed` before its step. A compressed word has no output form in the LP2
+/// draft, so a run that would emit one stops with `PS1:input.noncanonical_value`.
+#[test]
+fn ct_lg2_14_expansion_gives_the_letters_at_exact_positions() {
+    let loaded = build(PARTS);
+    let letters = [1, -2, 3, 1, -2, 3, 1, -2];
+    for start in 0..=letters.len() {
+        for count in 0..=letters.len() - start {
+            let r = run(&loaded, "slice", vec![Value::int(start), Value::int(count)]);
+            let want: Vec<String> = letters[start..start + count].iter().map(|l| l.to_string()).collect();
+            assert_eq!(output(&r), format!("[{}]\n", want.join(",")), "{start} {count}");
+            // Six parts of height 3: per letter, and per part visited, 2 × (3 + count) + 1.
+            let c = count as u128;
+            assert_eq!(rows(&r.summary, "expand"), [(1, c + (2 * (3 + c) + 1) * LIST_PER_ELEMENT, 2 * c)]);
+        }
+    }
+    for (start, count) in [(0, 9), (8, 1), (5, 4), (9, 0)] {
+        let r = run(&loaded, "slice", vec![Value::int(start), Value::int(count)]);
+        assert_eq!((r.summary.outcome, r.summary.code), (Outcome::Error, Some(meter::code::POINTWISE_FAILED)));
+        assert!(rows(&r.summary, "expand").is_empty(), "the failed expansion is not charged as a step");
+    }
+    let shown = run(&loaded, "shown", vec![]);
+    assert_eq!((shown.summary.outcome, shown.summary.code), (Outcome::Error, Some(code::NONCANONICAL_VALUE)));
+}
+
+/// A compressed word keeps equal parts once (LP2 draft): a word joined to itself, or to a separately built equal word,
+/// gains one part, so 200 doublings hold 201 parts for 2²⁰⁰ letters, and an empty operand gives the other operand.
+#[test]
+fn a_compressed_word_keeps_equal_parts_once() {
+    let leaf = |letters: &[i32]| Arc::new(Compressed::leaf(letters.into()));
+    let mut c = leaf(&[1]);
+    for _ in 0..200 {
+        c = Compressed::concat(&c, &c);
+    }
+    assert_eq!((c.length(), c.parts(), c.height()), (&(BigInt::from(1) << 200), 201, 200));
+    // A tag, a leaf of one letter, 200 concatenations of two part numbers and a length of 201 bits.
+    assert_eq!(c.size(), 4 + (4 + 8 + 2) + 200 * 20 + int_size(201));
+    let last = (BigInt::from(1) << 200) - 3;
+    assert_eq!(c.expand(&last, 3), Some(vec![1, 1, 1]));
+    assert_eq!(c.expand(&last, 4), None);
+
+    let (u, v) = (leaf(&[1, 2]), leaf(&[1, 2]));
+    let (joined, doubled) = (Compressed::concat(&u, &v), Compressed::concat(&u, &u));
+    assert_eq!((joined.parts(), joined.size()), (doubled.parts(), doubled.size()));
+    assert_eq!(joined.expand(&BigInt::from(0), 4), Some(vec![1, 2, 1, 2]));
+    let mixed = Compressed::concat(&u, &leaf(&[3]));
+    assert_eq!((mixed.parts(), mixed.expand(&BigInt::from(1), 2)), (3, Some(vec![2, 3])));
+
+    let empty = leaf(&[]);
+    assert!(Arc::ptr_eq(&Compressed::concat(&empty, &u), &u));
+    assert!(Arc::ptr_eq(&Compressed::concat(&u, &empty), &u));
+    assert_eq!(empty.expand(&BigInt::from(0), 0), Some(vec![]));
 }

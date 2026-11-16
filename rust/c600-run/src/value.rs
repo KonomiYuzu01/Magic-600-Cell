@@ -48,6 +48,8 @@ pub enum Value {
     Set(Arc<List>),
     /// A map (LP2 draft): its entries, `{ key, value }` records ([`entry`]), in the canonical key order of their keys.
     Map(Arc<List>),
+    /// LG2.16's compressed word (LP2 draft): a straight-line program with its exact length.
+    Compressed(Arc<Compressed>),
 }
 
 /// A list: its elements in order, its logical size and an upper bound of its canonical encoding (LP2 draft).
@@ -88,6 +90,148 @@ impl Drop for List {
         while let Some(v) = stack.pop() {
             take_children(v, &mut stack);
         }
+    }
+}
+
+/// A compressed word (LG2.16, KN2.10; LP2 draft): a straight-line program. Each part is a leaf of literal letters or
+/// the concatenation of two earlier parts, and the last part is the word. Its exact length, an unbounded integer, is
+/// known without expansion. Only the word itself may be empty: a concatenation never takes an empty part, so every
+/// part a reading visits holds letters. The parts' lengths and heights are derived host metadata, not payload.
+#[derive(Debug)]
+pub struct Compressed {
+    parts: Vec<Part>,
+    lengths: Vec<BigInt>,
+    heights: Vec<u128>,
+    /// DET.57's payload of the parts: per part a 4-byte variant tag, then for a leaf its 8-byte letter count and two
+    /// bytes per letter, as a word stores them, and for a concatenation its two 8-byte part numbers.
+    parts_size: u128,
+}
+
+/// One part of a compressed word (LP2 draft).
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Part {
+    Leaf(Arc<[i32]>),
+    /// The concatenation of two earlier parts, by their positions.
+    Concat(usize, usize),
+}
+
+/// The logical payload of a concatenation part (DET.57): its tag and two part numbers.
+const CONCAT_PART: u128 = 20;
+
+impl Compressed {
+    /// The word `letters` as a compressed word of one part.
+    pub fn leaf(letters: Arc<[i32]>) -> Compressed {
+        let mut c = Compressed { parts: Vec::new(), lengths: Vec::new(), heights: Vec::new(), parts_size: 0 };
+        c.push(Part::Leaf(letters));
+        c
+    }
+
+    /// `a` then `b`, without expansion. An empty operand gives the other. Otherwise the result holds the parts of `a`,
+    /// then those of `b` unless the two are one value, then their concatenation: a word joined to itself adds one part.
+    pub fn concat(a: &Arc<Compressed>, b: &Arc<Compressed>) -> Arc<Compressed> {
+        if a.length().is_zero() {
+            return b.clone();
+        }
+        if b.length().is_zero() {
+            return a.clone();
+        }
+        let mut c = Compressed {
+            parts: a.parts.clone(),
+            lengths: a.lengths.clone(),
+            heights: a.heights.clone(),
+            parts_size: a.parts_size,
+        };
+        let first = a.parts.len() - 1;
+        if !Arc::ptr_eq(a, b) && a.parts != b.parts {
+            let shift = a.parts.len();
+            c.parts.extend(b.parts.iter().map(|p| match p {
+                Part::Leaf(l) => Part::Leaf(l.clone()),
+                Part::Concat(i, j) => Part::Concat(i + shift, j + shift),
+            }));
+            c.lengths.extend(b.lengths.iter().cloned());
+            c.heights.extend(b.heights.iter().copied());
+            c.parts_size = c.parts_size.saturating_add(b.parts_size);
+        }
+        let second = c.parts.len() - 1;
+        c.push(Part::Concat(first, second));
+        Arc::new(c)
+    }
+
+    fn push(&mut self, part: Part) {
+        let (length, height, size) = match &part {
+            Part::Leaf(l) => (BigInt::from(l.len()), 0, 12 + 2 * l.len() as u128),
+            Part::Concat(i, j) => {
+                (&self.lengths[*i] + &self.lengths[*j], 1 + self.heights[*i].max(self.heights[*j]), CONCAT_PART)
+            }
+        };
+        self.parts.push(part);
+        self.lengths.push(length);
+        self.heights.push(height);
+        self.parts_size = self.parts_size.saturating_add(size);
+    }
+
+    /// The exact expanded length (LG2.16).
+    pub fn length(&self) -> &BigInt {
+        self.lengths.last().expect("a compressed word has a part")
+    }
+
+    /// The number of parts.
+    pub fn parts(&self) -> usize {
+        self.parts.len()
+    }
+
+    /// The longest chain of concatenations from the word to a leaf.
+    pub fn height(&self) -> u128 {
+        *self.heights.last().expect("a compressed word has a part")
+    }
+
+    /// DET.57's logical size: a 4-byte variant tag, the parts and the exact length as an unbounded integer. The part
+    /// count's 8-byte length is counted where the word is stored, as for a list.
+    pub fn size(&self) -> u128 {
+        4u128.saturating_add(self.parts_size).saturating_add(int_size(self.length()))
+    }
+
+    /// The size of `concat(a, b)` when neither is empty and the two are different values: a bound for any
+    /// concatenation of the two.
+    pub fn concat_bound(a: &Compressed, b: &Compressed) -> u128 {
+        let parts = a.parts_size.saturating_add(b.parts_size).saturating_add(CONCAT_PART);
+        4u128.saturating_add(parts).saturating_add(int_size(&(a.length() + b.length())))
+    }
+
+    /// The `count` letters from the exact position `start` in chronological order (LG4.6), or `None` if the range
+    /// passes the word's end. It descends to the leaf that holds `start`, then reads whole parts in order with an
+    /// explicit stack, so it visits at most 2·(height + count) + 1 parts and expands nothing outside the range.
+    pub fn expand(&self, start: &BigInt, count: usize) -> Option<Vec<i32>> {
+        if start.is_negative() || &(start + BigInt::from(count)) > self.length() {
+            return None;
+        }
+        let mut out = Vec::with_capacity(count);
+        if count == 0 {
+            return Some(out);
+        }
+        let mut pending = Vec::new();
+        let (mut at, mut offset) = (self.parts.len() - 1, start.clone());
+        let (leaf, from) = loop {
+            match &self.parts[at] {
+                Part::Concat(i, j) if offset < self.lengths[*i] => {
+                    pending.push(*j);
+                    at = *i;
+                }
+                Part::Concat(i, j) => {
+                    offset -= &self.lengths[*i];
+                    at = *j;
+                }
+                Part::Leaf(l) => break (l, usize::try_from(&offset).expect("an offset within its leaf")),
+            }
+        };
+        out.extend_from_slice(&leaf[from..leaf.len().min(from.saturating_add(count))]);
+        while out.len() < count {
+            match &self.parts[pending.pop().expect("the range lies within the word")] {
+                Part::Concat(i, j) => pending.extend([*j, *i]),
+                Part::Leaf(l) => out.extend_from_slice(&l[..l.len().min(count - out.len())]),
+            }
+        }
+        Some(out)
     }
 }
 
@@ -152,6 +296,7 @@ fn kind(v: &Value) -> u8 {
         Value::WordEqualityKey(_) => 15,
         Value::Set(_) => 16,
         Value::Map(_) => 17,
+        Value::Compressed(_) => 18,
     }
 }
 
@@ -191,6 +336,8 @@ fn walk_order(a: &Value, b: &Value, ranks: bool) -> Ordering {
                     x.code.cmp(&y.code)
                 }
                 (Value::Fn(x), Value::Fn(y)) => x.cmp(y),
+                // By their parts: no key or equality of a checked program compares compressed words (LP2 draft).
+                (Value::Compressed(x), Value::Compressed(y)) => x.parts.cmp(&y.parts),
                 _ => match (num(a), num(b)) {
                     (Some(x), Some(y)) if ranks => x.rank().cmp(&y.rank()),
                     (Some(_), Some(_)) => compare(a, b).expect("exact numbers"),
@@ -521,6 +668,7 @@ impl Value {
             Value::Closure(c) => c.size,
             Value::Fn(_) => 32,
             Value::List(l) | Value::Set(l) | Value::Map(l) => l.size,
+            Value::Compressed(c) => c.size(),
         }
     }
 
@@ -535,6 +683,7 @@ impl Value {
                 | Value::List(_)
                 | Value::Set(_)
                 | Value::Map(_)
+                | Value::Compressed(_)
         )
     }
 
@@ -553,8 +702,11 @@ impl Value {
             Value::Word(w) => 2 + 6 * w.len() as u128,
             Value::Record(r) => r.bound,
             Value::List(l) | Value::Set(l) | Value::Map(l) => l.bound,
-            // A word key has no canonical form in the LP2 draft: it is never output as letters (LG2.13).
-            Value::Closure(_) | Value::Fn(_) | Value::Receipt(_) | Value::WordEqualityKey(_) => 0,
+            // A word key has no canonical form in the LP2 draft: it is never output as letters (LG2.13). Nor has a
+            // compressed word, whose output would be its expansion (DET.59).
+            Value::Closure(_) | Value::Fn(_) | Value::Receipt(_) | Value::WordEqualityKey(_) | Value::Compressed(_) => {
+                0
+            }
         }
     }
 }
@@ -682,7 +834,8 @@ pub fn compare_price(a: &Value, b: &Value, d: &DraftTariffs) -> Option<u128> {
 }
 
 /// Exact equality. Numbers compare across Int, Rat and Q5; records, receipts and closures compare structurally, with an
-/// explicit stack.
+/// explicit stack. Compressed words compare by their parts, which is no word equality: the checker gives them no exact
+/// equality (LP2 draft), and the interpreter refuses one of two compressed words.
 pub fn equal(a: &Value, b: &Value) -> bool {
     let mut stack = vec![(a, b)];
     while let Some((a, b)) = stack.pop() {
@@ -710,6 +863,7 @@ pub fn equal(a: &Value, b: &Value) -> bool {
                 x.items.len() == y.items.len()
             }
             (Value::Fn(x), Value::Fn(y)) => x == y,
+            (Value::Compressed(x), Value::Compressed(y)) => x.parts == y.parts,
             (Value::Approx(x), Value::Approx(y)) => x == y,
             _ => compare(a, b) == Some(Ordering::Equal),
         };

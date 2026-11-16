@@ -1,9 +1,10 @@
-//! Lists, word operations, sets and maps in source (LP2 drafts until the IR freeze, PHS.49). Candidate A calls them
-//! like functions: `list<T>(...)`, `length`, `index`, `push`, `concat`, `inverse`, `conjugate`, `commutator`,
-//! `compose`, `word_key`, `set<T>(...)`, `map<K, V>(...)`, `contains`, `insert`, `lookup`, and `elements`, `keys` and
-//! `entries` with a named order, `ascending` or `descending`. They lower to the IR's collection form and primitives,
-//! and the checker applies LG2.13, LG2.15, LG2.19, LG2.20 and LG4.3 to them. The run-time halves are `c600-run`'s
-//! `collections.rs`; the key's CT-LG2-11 and CT-LG2-13 halves are in `conformance_lg2.rs`.
+//! Lists, word operations, sets, maps and compressed words in source (LP2 drafts until the IR freeze, PHS.49).
+//! Candidate A calls them like functions: `list<T>(...)`, `length`, `index`, `push`, `concat`, `inverse`, `conjugate`,
+//! `commutator`, `compose`, `word_key`, `set<T>(...)`, `map<K, V>(...)`, `contains`, `insert`, `lookup`, `elements`,
+//! `keys` and `entries` with a named order, `ascending` or `descending`, and `compress` and `expand`. They lower to the
+//! IR's collection form and primitives, and the checker applies LG2.13, LG2.15, LG2.16, LG2.19, LG2.20 and LG4.3 to
+//! them. The run-time halves are `c600-run`'s `collections.rs`; the key's CT-LG2-11 and CT-LG2-13 halves are in
+//! `conformance_lg2.rs`.
 
 use c600_check::{check, Report, EXACTNESS_VIOLATION, TYPE_MISMATCH};
 use c600_ir::{Expr as Ir, Order, Prim, QTy, Ty};
@@ -337,4 +338,68 @@ fn ct_lg2_05_set_elements_and_map_keys_are_exact() {
     assert_eq!((code, types), (TYPE_MISMATCH, Some(("Nat".into(), "Text".into()))));
     let (code, types) = only("fn f(s: Set<Nat>) -> List<Nat> effects [] {\n    return keys(s, ascending);\n}\n");
     assert_eq!((code, types), (TYPE_MISMATCH, Some(("Map<_, _>".into(), "Set<Nat>".into()))));
+}
+
+/// CT-LG2-14 (part, the language half's static rules: `CompressedWord` is a type of its own, `compress` and `expand`
+/// lower to their primitives, and the checker gives a compressed word an exact `Nat` length and joins two without
+/// expansion; not run: the run-time half, `c600-run`'s `collections.rs`, and the kernel's streaming, CT-LG4-03 and
+/// M4): a compressed word is never a `Word`, has no exact equality and is no key (LP2 draft), and an expansion takes
+/// exact natural positions.
+#[test]
+fn ct_lg2_14_a_compressed_word_is_a_type_of_its_own() {
+    let source = "fn f(w: Word, c: CompressedWord) -> record { n: Nat, w: Word } effects [] {\n    \
+                  let d = concat(compress(w), c);\n    return record { n = length(d), w = expand(d, 0, 1) };\n}\n";
+    let joined = lowered(source).unwrap_or_else(|e| panic!("{e}"));
+    assert_eq!(joined.program.modules[0].functions[0].params[1].ty.ty, Ty::CompressedWord);
+    let mut ops: Vec<Prim> = expressions(&joined)
+        .iter()
+        .filter_map(|e| match e {
+            Ir::Prim { op, .. } => Some(*op),
+            _ => None,
+        })
+        .collect();
+    ops.sort_by_key(|op| format!("{op:?}"));
+    assert_eq!(ops, [Prim::Compress, Prim::Concat, Prim::Expand, Prim::Length]);
+    admitted(source);
+    // A compressed word is not a word, and a word is not a compressed word.
+    for (declaration, expected, supplied) in [
+        ("fn f(c: CompressedWord) -> Word effects [] {\n    return inverse(c);\n}\n", "Word", "CompressedWord"),
+        ("fn f(w: Word) -> Word effects [] {\n    return expand(w, 0, 1);\n}\n", "CompressedWord", "Word"),
+        (
+            "fn f(c: CompressedWord) -> CompressedWord effects [] {\n    return compress(c);\n}\n",
+            "Word",
+            "CompressedWord",
+        ),
+        ("fn f(c: CompressedWord) -> Word effects [] {\n    return c;\n}\n", "Word", "CompressedWord"),
+    ] {
+        let (code, types) = only(declaration);
+        assert_eq!((code, types), (TYPE_MISMATCH, Some((expected.into(), supplied.into()))), "{declaration}");
+    }
+    let (code, _) = only("fn f(w: Word, c: CompressedWord) -> Word effects [] {\n    return concat(w, c);\n}\n");
+    assert_eq!(code, TYPE_MISMATCH);
+    // No exact equality, alone or held in a list or a record.
+    for operand in ["CompressedWord", "List<CompressedWord>", "record { c: CompressedWord }"] {
+        let declaration = format!("fn f(c: {operand}) -> Bool effects [] {{\n    return exact_eq(c, c);\n}}\n");
+        let (code, types) = only(&declaration);
+        assert_eq!(code, TYPE_MISMATCH, "{declaration}");
+        assert_eq!(types.map(|(e, _)| e), Some("a type without CompressedWord".to_string()), "{declaration}");
+    }
+    // An expansion's position and count are exact natural numbers (LG2.20).
+    let (code, types) = only("fn f(c: CompressedWord) -> Word effects [] {\n    return expand(c, \"0\", 1);\n}\n");
+    assert_eq!((code, types), (TYPE_MISMATCH, Some(("Nat".into(), "Text".into()))));
+    let shown = "fn f(c: CompressedWord, i: Display<Nat>) -> Display<Word> effects [] {\n    \
+                 return expand(c, 0, i);\n}\n";
+    assert_eq!(codes(shown), [EXACTNESS_VIOLATION]);
+    // It is no set element or map key.
+    for declaration in [
+        "fn f(s: Set<CompressedWord>) -> Nat effects [] {\n    return 1;\n}\n",
+        "fn f(m: Map<CompressedWord, Nat>) -> Nat effects [] {\n    return 1;\n}\n",
+        "fn f(c: CompressedWord) -> Nat effects [] {\n    return length(set<CompressedWord>(c));\n}\n",
+    ] {
+        let message = match lowered(declaration) {
+            Ok(_) => panic!("lowered: {declaration}"),
+            Err(e) => e,
+        };
+        assert!(message.contains("compressed word (LG2.20)"), "{declaration}: {message}");
+    }
 }

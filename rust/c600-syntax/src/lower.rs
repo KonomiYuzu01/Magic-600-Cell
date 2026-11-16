@@ -21,7 +21,7 @@ use crate::Span;
 const KEYWORDS: [&str; 10] = ["fn", "let", "return", "match", "true", "false", "q5", "word", "menu", "_"];
 
 /// The IR's operations, called like functions. A program cannot bind these names either.
-const BUILTINS: [&str; 59] = [
+const BUILTINS: [&str; 61] = [
     "if",
     "display_if",
     "exact_add",
@@ -83,6 +83,9 @@ const BUILTINS: [&str; 59] = [
     "elements",
     "keys",
     "entries",
+    // Compressed words (LP2 drafts).
+    "compress",
+    "expand",
 ];
 
 /// The named orders of an ordered collection result (LG4.3; LP2 draft). A program cannot bind these names either.
@@ -91,7 +94,7 @@ const ORDERS: [&str; 2] = ["ascending", "descending"];
 /// The effect names of an `effects` list (LG3.1). `file` and `random` also name their capability (LG3.8).
 const EFFECTS: [&str; 5] = ["snapshot", "view", "workspace", "preview", "budget"];
 
-const BASE_TYPES: [&str; 15] = [
+const BASE_TYPES: [&str; 16] = [
     "Unit",
     "Bool",
     "Nat",
@@ -107,6 +110,7 @@ const BASE_TYPES: [&str; 15] = [
     "ApproxBool",
     "Receipt",
     "WordEqualityKey",
+    "CompressedWord",
 ];
 
 fn reserved(name: &str) -> bool {
@@ -123,12 +127,14 @@ fn holds_callable(ty: &Ty) -> bool {
 }
 
 /// Whether a set element or a map key may have this type (LG2.20; LP2 draft): exact and without the display qualifier
-/// at any depth, and without a function, a receipt, `Unit` or a type parameter, so that its canonical key order is
-/// defined (DET.9).
+/// at any depth, and without a function, a receipt, `Unit`, a type parameter or a compressed word, so that its
+/// canonical key order is defined (DET.9).
 fn key_type(q: &QTy) -> bool {
     !q.display
         && match &q.ty {
-            Ty::Unit | Ty::Approx(_) | Ty::ApproxBool | Ty::Fn(_) | Ty::Receipt | Ty::Var(_) => false,
+            Ty::Unit | Ty::Approx(_) | Ty::ApproxBool | Ty::Fn(_) | Ty::Receipt | Ty::Var(_) | Ty::CompressedWord => {
+                false
+            }
             Ty::Record(fields) => fields.iter().all(|(_, f)| key_type(f)),
             other => other.elements().into_iter().all(key_type),
         }
@@ -564,7 +570,7 @@ impl Body<'_> {
         if kind != "List" && !key_type(&types[0]) {
             let note = format!(
                 "a `{kind}` element or key is exact, without a display qualifier, an approximation, a function, a \
-                 receipt, `Unit` or a type parameter (LG2.20)"
+                 receipt, `Unit`, a type parameter or a compressed word (LG2.20)"
             );
             return Err(self.err(span, note));
         }
@@ -658,6 +664,8 @@ impl Body<'_> {
             // `insert(s, x)` adds to a set, `insert(m, k, v)` to a map (LP2 drafts).
             "insert" if args.len() == 3 => 3,
             "insert" => 2,
+            // `expand(c, start, count)` (LP2 draft).
+            "expand" => 3,
             "used_steps" | "unused_steps" | "budget_status" | "random_draw" | "read_clock" => 0,
             // `list<T>(a, b, ...)` and `set<T>(a, b, ...)` take their items, `map<K, V>(k, v, ...)` its keys and values
             // in turn (LP2 drafts).
@@ -711,6 +719,8 @@ impl Body<'_> {
             "lookup" => Some(Prim::Lookup),
             "insert" if args.len() == 3 => Some(Prim::InsertEntry),
             "insert" => Some(Prim::Insert),
+            "compress" => Some(Prim::Compress),
+            "expand" => Some(Prim::Expand),
             "exact_add" => Some(Prim::ExactAdd),
             "exact_less" => Some(Prim::ExactLess),
             "exact_eq" => Some(Prim::ExactEq),
@@ -926,6 +936,7 @@ impl Body<'_> {
                             "ApproxBool" => Ty::ApproxBool,
                             "Receipt" => Ty::Receipt,
                             "WordEqualityKey" => Ty::WordEqualityKey,
+                            "CompressedWord" => Ty::CompressedWord,
                             _ => Ty::Var(n.into()),
                         }))
                     }
@@ -1012,6 +1023,7 @@ mod tests {
                 "list" | "set" => format!("{op}<Nat>(1, 2)"),
                 "map" => format!("{op}<Nat, Nat>(1, 2)"),
                 "elements" | "keys" | "entries" => format!("{op}(1, ascending)"),
+                "expand" => format!("{op}(1, 2, 3)"),
                 _ => format!("{op}(1)"),
             };
             let source =

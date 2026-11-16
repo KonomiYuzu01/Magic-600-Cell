@@ -144,6 +144,12 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   map's key and value), `lookup` and `length` work on them; a map with a display value is display as a whole
   (LG2.19). `elements`, `keys` and `entries` give a list in the order their primitive names, ascending or descending
   (LG4.3). CT-LG2-05's aggregate part for sets and maps.
+- Compressed words (LP2 drafts until the IR freeze). `CompressedWord` is a type of its own, never a `Word`:
+  `compress` gives one from a `Word`, `concat` joins two without expansion, `length` gives the exact `Nat` length
+  without expansion (LG2.16), and `expand(c, start, count)` gives the letters from an exact position as a `Word`
+  (LG4.6); the position and the count are exact natural numbers (LG2.20). A compressed word has no exact equality,
+  alone or held in a record or a collection, and is no set element or map key, so no checked program compares two.
+  CT-LG2-14's language half, static part (`c600-syntax/tests/collections.rs`).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
 
 ## Status of M7: the parser
@@ -208,6 +214,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   type is refused at lowering. `set<T>(a, ...)` and `map<K, V>(k, v, ...)` build them; `contains`, `insert`,
   `lookup`, `elements`, `keys` and `entries` are reserved, and a listing names its order as its second argument,
   `ascending` or `descending`, which are reserved words.
+- Compressed words (LP2 drafts). `CompressedWord` is a type, refused as a set element or a map key at lowering;
+  `compress` and `expand` are reserved operations called like functions.
 - Not run or not applicable, which is no pass (PHS.63): CT-LG1-01's second half, mixed dependency editions, while one
   edition exists; CT-RTE-18 (LQ13 was answered without it).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
@@ -258,6 +266,22 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   `LIST_PER_ELEMENT` per element built, and `elements`, `keys` and `entries` the same per element listed. A missing
   key stops `lookup` with `LG4:input.pointwise_failed` before its step. Tests: `c600-run/tests/collections.rs`
   (CT-LG4-01 for sets and maps and CT-DET-05's insertion-order half, parts).
+- Compressed words (LP2 drafts): `Value::Compressed` holds a `value::Compressed`, a straight-line program whose parts
+  are leaves of literal letters or concatenations of two earlier parts, with its exact length. A join of two equal
+  values, compared by value, adds one part, so 70 doublings of three letters keep 71 parts for 3·2⁷⁰ letters; an
+  empty operand gives the other. Its logical size is a 4-byte tag, per leaf 4 + 8 + 2 bytes per letter, per
+  concatenation 20, and the length as an integer; in a container it is a variable sequence. Draft prices: `compress`
+  at `expand_per_letter` per letter; `concat` at the comparison of the two operands, the integer addition of their
+  lengths and `LIST_PER_ELEMENT` per part built, reserving the size of a join of two different words; `length`
+  reserves its integer; `expand` at `expand_per_letter` per letter and `LIST_PER_ELEMENT` per part it may visit,
+  2·(height + count) + 1, reserving 2 bytes per letter, and a range past the end stops it with
+  `LG4:input.pointwise_failed` before its step. A compressed word has no canonical form, so a run that would emit one
+  stops, and an argument that holds one is refused, with `PS1:input.noncanonical_value`. An exact equality with a
+  compressed operand is refused as malformed IR; one held in a record or a collection only the checker refuses.
+  Tests: `c600-run/tests/collections.rs` (CT-LG2-14's language half, part).
+- Not built for compressed words: their inverse, conjugate, commutator and composition, `word_key`, an exact equality
+  and an output form; the kernel's streaming half of CT-LG2-14 (DET.63's `word_open` and `chunk` rows, cancellation
+  and admission bounds; CT-LG4-03, M4).
 - Evidence kind: source and fixture.
 
 ## Status of M3: the run-time boundary

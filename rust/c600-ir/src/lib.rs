@@ -126,6 +126,9 @@ pub enum Ty {
     Set(Box<QTy>),
     /// `Map<K, V>`: values under distinct exact keys (LG2.20), kept in the keys' canonical key order (DET.9).
     Map(Box<QTy>, Box<QTy>),
+    /// LG2.16's compressed word: a straight-line program over literal letters whose exact expanded length is known
+    /// before any expansion (KN2.10). It is never a `Word`: its letters come out by an explicit, priced expansion.
+    CompressedWord,
 }
 
 impl Ty {
@@ -255,14 +258,15 @@ pub enum Prim {
     ApproxAnd,
     ApproxNot,
     // Collections and words (LP2 drafts until the IR freeze, PHS.49).
-    /// `length(x)`: the element count of a list or a set, the entry count of a map, or the exact length of a word
-    /// (LG2.16), as `Nat`.
+    /// `length(x)`: the element count of a list or a set, the entry count of a map, or the exact length of a word or
+    /// a compressed word (LG2.16), as `Nat`. A compressed word's length needs no expansion.
     Length,
     /// `index(list, i)`: the element at exact position `i`, counted from 0 (LG2.20).
     Index,
     /// `push(list, x)`: the list with `x` appended.
     Push,
-    /// `concat(a, b)`: two words or two lists joined in order.
+    /// `concat(a, b)`: two words, two lists or two compressed words joined in order; compressed words join without
+    /// expansion.
     Concat,
     /// `inverse(w)`: the letters in reverse order, each negated (LG2.15).
     Inverse,
@@ -288,6 +292,11 @@ pub enum Prim {
     Keys(Order),
     /// `entries(m, order)`: a map's entries as a `List` of `{ key, value }` records in the named order (LG4.3).
     Entries(Order),
+    /// `compress(w)`: the word `w` as a compressed word of one part (LG2.16).
+    Compress,
+    /// `expand(c, start, count)`: the `count` letters of the compressed word `c` from the exact position `start`,
+    /// counted from 0, as a `Word` in chronological order (LG4.6). A range past the word's end is a pointwise failure.
+    Expand,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
