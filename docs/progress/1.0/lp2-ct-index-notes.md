@@ -16,6 +16,7 @@ The tool refuses (exit 2) a note for an ID outside the phase's table and an unkn
 | CT-LG2-04 | whole by union | the `mismatch.rs` and `exactness.rs` tests together run the whole definition (`rust/README.md`, the count line) |
 | CT-LG3-01 | whole by union | the effects test and the next test together run the whole row (`rust/README.md`, the count line) |
 | CT-LG3-04 | whole by union | its parts together run the whole definition (`rust/README.md`, the count line) |
+| CT-LG5-06 | whole by union | the fork half in `c600-module/tests/conformance_lg5.rs` and the evidence half in `c600-evidence/tests/sinks.rs` together run the whole definition (`rust/README.md`, the count line) |
 | CT-KN1-05 | whole by union | M4's labels half and M5's poses half (`rust/README.md`, the count line; LP2 plan section 11) |
 | CT-KN2-01 | whole by union | M4's half and M5's jumbling half (`rust/README.md`, the count line; LP2 plan section 11) |
 | CT-KN2-04 | whole by union | with M5 its parts together run the whole definition (`rust/README.md`, the count line) |

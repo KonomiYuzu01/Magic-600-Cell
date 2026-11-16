@@ -693,8 +693,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - Tests (`c600-evidence/tests/`): `words.rs` runs the word function's rows and checks (CT-EVD-01, CT-EVD-05,
   CT-EVD-07 to CT-EVD-11, CT-EVD-13, CT-EVD-22); `properties.rs` runs seeded random graphs (CT-EVD-02 to CT-EVD-04,
   CT-EVD-06); `sinks.rs` runs writers, reuse, check reports and the import rules (CT-EVD-17 to CT-EVD-21, CT-EVD-26 to
-  CT-EVD-30, and the evidence halves of CT-LB6-02 and CT-PS1-27); `examples.rs` transcribes section 9's E1 to E3
-  (part of CT-EVD-12).
+  CT-EVD-30, and the evidence halves of CT-LB6-02, CT-LG5-06 and CT-PS1-27); `examples.rs` transcribes section 9's
+  E1 to E3 (part of CT-EVD-12).
 - Fixed, each found by a test: I6 skipped a statement with no OR node of its own, so a bad refutation of an unsupported
   universal read row 1 instead of row 0 (CT-EVD-09); EVD.42's guard compared a leaf's covered set and not the search
   record's declared set, from which EVD.59 takes it, so E3's search refuted its statement instead of reading row 0
@@ -738,6 +738,7 @@ run or not applicable is no pass (PHS.63).
     loader and lockfiles. The parts leave out the boundary class against chapter 07's reviewed classes, the run
     record, the reproduction key and a replay from them (M6), a check at the run itself, EV1's active-version
     bookkeeping, evidence, the classification of forks, and a real module signature; each marker names its own.
+    CT-LG5-06's evidence half runs in `c600-evidence/tests/sinks.rs`, so its two parts together run it whole.
   - `c600-session/tests/`: M6's tests mark their rows (M6's section), CT-ONE-03 to CT-ONE-05, CT-ONE-11, CT-ONE-21,
     CT-ONE-23 and CT-ONE-24 included. `conformance_rows.rs` runs the session's half of CT-ONE-01 and CT-ONE-02 over
     every `Row` variant, CT-ONE-23 and the session's rows of CT-KN5-03 and CT-KN5-10; `conformance_jobs.rs` runs
@@ -752,10 +753,10 @@ run or not applicable is no pass (PHS.63).
     N01 to N04 through the kernel (M4's section); `tests/test_jumbling_rust_candidate.py` compares the jumbling
     candidate with J1 (M5's section); `tests/test_jumbling_rust_attacks.py` runs Fable's M5 attack leads, with J1's
     faults as expected failures (M5's section).
-- Count with LP3's C1 to C5 and C7, M5 and LP2's first and second integration batches, KN3's exact requests among
-  them, as `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool): 61 whole,
-  seven of them by the union of their parts (CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01 and
-  CT-LG3-04); 130 part; 5 named only by LP3's command-layer tests, as parts without a marker (CT-KN5-07, CT-KN5-12,
+- Count with LP3's C1 to C8, M5 and LP2's first and second integration batches, KN3's exact requests among them, as
+  `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool): 62 whole, eight of
+  them by the union of their parts (CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01, CT-LG3-04 and
+  CT-LG5-06); 129 part; 5 named only by LP3's command-layer tests, as parts without a marker (CT-KN5-07, CT-KN5-12,
   CT-LI-04, CT-LI-09 and CT-LI-10); 1 missing despite its name (CT-KN5-08: only the documentation in
   `c600-command/src/layer.rs` names it); 51 waiting, each with what it waits for in
   `docs/progress/1.0/lp2-ct-index-notes.md`.
