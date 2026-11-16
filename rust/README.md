@@ -48,11 +48,11 @@ model.
 The input router depends on the command layer and the kernel crate only, so a key reaches a kernel row with no path to
 the interpreter (ONE.48).
 The jumbling crate depends on the kernel and digest crates and the big-integer crates.
-The representations crate depends on the checker, IR and digest crates, the display contract, the tools crate, whose
-built-in column admits its entries, and the command layer, whose stored table its class review reads; it draws nothing
-and owns no device.
-The jumbling tool crate depends on the digest crate, the jumbling crate and the tools crate, whose built-in column
-admits its entries; its tests also run the checker, syntax, IR, interpreter and kernel crates.
+The representations crate depends on the checker, whose built-in column admits its entries, the IR and digest crates,
+the display contract, the tools crate and the command layer, whose stored table its class review reads; it draws
+nothing and owns no device.
+The jumbling tool crate depends on the digest crate, the jumbling crate and the tools crate, whose `Tool` admits its
+entries under the checker's built-in column; its tests also run the checker, syntax, IR, interpreter and kernel crates.
 The durable crate holds tests only; its dev-dependencies are the session store, the module crate, the checker, the
 syntax crate, the interpreter, the kernel and the digest crate.
 
@@ -910,21 +910,21 @@ run or not applicable is no pass (PHS.63).
   as `cut_off` with `KN7:resource_limit.safety_stop`. The child is killed and reaped, and the next run starts a fresh
   one.
 - Tests (`c600-runtime/tests/`): the child and the in-process run give the same results, charges, stop points, host
-  calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 8 of DET.65's 40 traces as `.6cs` programs on both
-  executors (`ct_rte_04.rs`); the protocol's bounds, canonical encodings, KI.5's record and KN5.15's field list
-  (`protocol.rs`); CT-RTE-10's headless fault half, rehearsals in debug builds that kill, crash, truncate, garble,
-  oversize or hang the child while the session keeps its journal, state hash and pending preview (`faults.rs`).
+  calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 11 of DET.65's 40 traces as `.6cs` programs on both
+  executors (`ct_rte_04.rs`; `nested-calls` and the two output traces since LP2's M2 meter); the protocol's bounds,
+  canonical encodings, KI.5's record and KN5.15's field list (`protocol.rs`); CT-RTE-10's headless fault half,
+  rehearsals in debug builds that kill, crash, truncate, garble, oversize or hang the child while the session keeps
+  its journal, state hash and pending preview (`faults.rs`).
 - Drafts, which freeze with the IR and the command table: the list in the crate documentation, among them the
   framing and message kinds (KI.15, ONE.69), the transfer encoding (DET.59), acknowledgement and retry (KI.5), the
   fault codes (KN7.13), source bytes rather than checked IR in a job (KI.6, ADR-L12.9), and a deadline checked
   between messages only, so a blocking host call is not interrupted.
 - Not built: OS isolation of the child (a job object with kill-on-close, a restricted or AppContainer token,
   filesystem and network confinement); a bound on the parent's queue of frames to a child that stops reading its
-  input (draft 5); LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's other 32 traces need
+  input (draft 5); LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's other 29 traces need
   what the IR draft lacks: child scopes, more than one generator per run, releasing a `let` before its alias, text
-  order, byte decoding, loops and pointwise checks, exact multiplication, streaming cursors, one-row output units,
-  and an executor for `lp1-exec-region-draft-1` (LP2). Two of them, `nested-calls` and the output rows, may be meter
-  mismatches in `c600-run`; LP2 has them.
+  order, byte decoding, loops and pointwise checks, exact multiplication, streaming cursors and an executor for
+  `lp1-exec-region-draft-1` (LP2).
 - Evidence kind: source and synthetic. The fault rehearsals are not LX-2 evidence, and no timing is measured.
 
 ## Status of LP3, C5: the source route
@@ -936,10 +936,12 @@ run or not applicable is no pass (PHS.63).
   operations, so the library entries of chapter 03 (LB1 to LB4) wait for the IR.
 - Admission: the checker admits the source with no diagnostic. The entry's only effect is `preview` and it requests no
   capability, so it prepares previews and reads no state (LG3.13, BND.39). `c600-check`'s `Profile::Solving` is the
-  column of a solver's own tool, which prepares no preview until the joint setting; `tool::admit_built_in` applies the
-  built-in column of chapter 07 section 8 over the checker's report. A variant that also reads state is refused with
-  `LG3:capability.not_granted`. The class (`analysis`, `checking`, after LB6.5) and the row set are declared in the
-  crate's Rust manifest, because the IR and the syntax carry no module manifest yet.
+  column of a solver's own tool, which prepares no preview until the joint setting. `Tool::new` admits the entry with
+  `c600_check::admit_built_in`, LP2's draft of the built-in column of chapter 07 section 8 (pull request 170), and the
+  class rows of `tool::class_rows`: the preview row of each row the manifest names, an LP3 draft, because BND.57's rows
+  by class are not data. A variant that also reads state is refused with `LG3:capability.not_granted`. The class
+  (`analysis`, `checking`, after LB6.5) and the row set are declared in the crate's Rust manifest, because the IR and
+  the syntax carry no module manifest yet.
 - The tool runs on `c600-run` through `Boundary` in the solving profile, in process: C5 was built before the
   runtime's own process (C3) reached main, and moving the tool onto it is C5's next piece. Against an engine double
   that records each proposal, the program receives only the fixed acknowledgement whether the engine built the
@@ -982,9 +984,9 @@ run or not applicable is no pass (PHS.63).
     refused (KN5.15); only a token the shell mints commits the pending preview (CT-ONE-29, part, headless); the bridge
     grants nothing but a proposal.
   - `expand.rs`: every case step expands to its recorded literal word, and the expansion is the kernel's literal.
-- Open: the built-in column lives in this crate because `c600-check` has no author or column parameter on `admit`; it
-  does not judge a reading entry's workspace writes against the class's rows (BND.57). The command layer's receipts
-  carry no program digest; the proposal's provenance block names the digest of the source bytes that ran.
+- Open: the class rows are an LP3 draft until BND.57's rows by class exist as data, and the built-in column's two
+  exceptions (setup search for a named target, the repair list) are not built in `c600-check`. The command layer's
+  receipts carry no program digest; the proposal's provenance block names the digest of the source bytes that ran.
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run. The timings the
   source-route check prints are informational, not performance evidence.
@@ -1021,13 +1023,12 @@ run or not applicable is no pass (PHS.63).
 
 ## Status of LP3, C7: durable receipts on the session store
 
-- KN5 gets one implementation, owned by LP2 under PHS.18 (integrator, 16 November 2026). The LP2 integrator placed it
-  in `c600-command`, which keeps its `Store` trait, with `c600-session` (KN4) implementing the trait, and M6's
-  semantics hold where the frozen text leaves a choice; LP2 writes it on branch `claude/lp2-kn5-one`. Until it lands,
-  LP3 changes neither `c600-command`'s layer, token, receipt, store and shell code nor `c600-session`, and
-  `MemoryStore` stays the layer's stand-in. C7's first piece is therefore `c600-durable`, a test-only crate that
-  drives M6's session store and C4's module closures through their public APIs and changes neither them nor
-  `c600-command`.
+- KN5 has one implementation, owned by LP2 under PHS.18 (integrator, 16 November 2026), in `c600-command`, which
+  keeps its `Store` trait, with `c600-session` (KN4) implementing the trait; M6's semantics hold where the frozen text
+  leaves a choice. Its stages 1 and 2 landed in pull request 174 (c1664c3d): `CommandLayer::open` replays a store's
+  history, and `c600_session::JournalStore` is the layer's store over KN4's journal (C1's section above). C7's first
+  piece, `c600-durable`, came before them: a test-only crate that drives M6's session store and C4's module closures
+  through their public APIs and changes neither them nor `c600-command`.
 - Tests (`c600-durable/tests/`):
   - `ct_rte_08_persisted_word.rs`: CT-RTE-08's persisted-word case, its durable leg (BND.22, BND.84, BND.85, LG5.1,
     LG5.6). An approved own tool stores a word, and the shell persists it through M6's `workspace.set` with the
@@ -1044,9 +1045,11 @@ run or not applicable is no pass (PHS.63).
 - Drafts, in the crate documentation: the shell's `workspace.set` as the host's delivery of a stored word (C5's host
   bridge decides the real path); reading a record back through `c600_session::journal::scan`, since M6 has no record
   reader; M6's stand-ins for views; and `c600_run::boundary::admit_preview` standing in for KN5.26.
-- Waits for LP2's KN5 implementation: durable receipts and undo through the command layer, KN5.26's admission of
-  record words, EV3.2's view rows, LB7.2's work-sheet structure and a session lock. If it changes an API these
-  tests use, its branch ports them.
+- Built by KN5's stages 1 and 2 (LP2): durable receipts and undo through the command layer over `JournalStore`. The
+  tests above still drive M6's own `Session::invoke` and shell stub, which the layer supersedes and LP2 removes once
+  their tests run against it; moving these tests onto the layer over `JournalStore` is C7's next piece. Still waiting
+  for KN5's later stages (LP2): KN5.26's admission of record words, EV3.2's view rows, LB7.2's work-sheet structure
+  and a session lock.
 - Evidence kind: source and fixture. The file-system leg is a short test in a fresh folder, not long-session
   evidence. The checks ran on Windows only; the Linux leg was not run.
 
@@ -1103,7 +1106,8 @@ run or not applicable is no pass (PHS.63).
 - `c600-repr` is LB6.5's row "Representation, work-set and filter tools", class `view_aid`, over LB4's layouts and
   atlases, map property checks and linked selection. It draws nothing and owns no device, renderer, clock or session:
   picks resolve through `c600-display`'s host and the installed source map, exact chart checks are `c600-display`'s, and
-  each entry's admission is `c600_tools::tool::admit_built_in`.
+  each entry's admission is `c600_check::admit_built_in` with the class rows of `tool::class_rows` (an LP3 draft: the
+  snapshot reads, the published view and the workspace records the shipped entries use).
   - `layout`: sheets and atlases as display plans with their source maps; a layout filter rebuilds the layout, the
     instance list and the map's entries and leaves the mechanically analysed set alone (LB4.4); a linked selection is
     computed once for its inputs, and frames only read it (EV3.10).
@@ -1149,10 +1153,10 @@ run or not applicable is no pass (PHS.63).
 
 - `c600-jumble-tool` is LB6.5's row "Named twist/word checker and kept checks", class `checking`: PHS.22's built-in tool
   for jumbling. Its source [`jumble_checker.6cs`](c600-jumble-tool/src/jumble_checker.6cs) (edition `6cs-draft-1`,
-  syntax candidate A) has two entries, `check_named_twist` and `check_named_word`, each admitted under the built-in
-  column through `c600_tools::tool`. Each proposes the literal word the solver named and reads no state, so the tool
-  never chooses or outputs a word by itself. `word` reads a `Word` as literal jumbling letters, cap then item, of the
-  state's menu; a word that is no sequence of letters is refused before any letter is applied.
+  syntax candidate A) has two entries, `check_named_twist` and `check_named_word`, each admitted under the checker's
+  built-in column through `c600_tools::tool`. Each proposes the literal word the solver named and reads no state, so
+  the tool never chooses or outputs a word by itself. `word` reads a `Word` as literal jumbling letters, cap then item,
+  of the state's menu; a word that is no sequence of letters is refused before any letter is applied.
 - `c600-display` gains the jumbling producers (`jumble`): the posed-sticker row J02 from a state's canonical pose table,
   the certified transform J03, the certified overlays J04 (the full named-cap set, the cap-map witness and the named
   cut), J08's seam table from the engine's `seam_facts`, and the slot projection J13, with a fixture support report for

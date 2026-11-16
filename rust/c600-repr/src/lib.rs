@@ -12,8 +12,8 @@
 //! The crate draws nothing and owns no device, renderer, clock or session. It builds on the public APIs of
 //! `c600-display`, `c600-tools`, `c600-check` and `c600-command` and repeats none of their logic: picks are resolved
 //! by `c600-display`'s host through the installed source map, exact chart checks are `c600-display`'s, and each
-//! entry's admission is `c600_tools::tool::admit_built_in`. Every result of its tests is source or synthetic
-//! evidence; none is Windows, DirectX, input, long-session or performance evidence.
+//! entry's admission is `c600_check::admit_built_in` with the class rows of [`tool::class_rows`]. Every result of its
+//! tests is source or synthetic evidence; none is Windows, DirectX, input, long-session or performance evidence.
 //!
 //! # Drafts
 //!
@@ -34,6 +34,10 @@
 //!   it stores is what the solver named; every row is a query, view or workspace row of the stored command table
 //!   that takes no user-action token and needs no commit preview. The review follows no value through an entry's
 //!   body: "reads no state" is the checker's summary of the whole entry.
+//! - BND.57: BND.57's rows by class do not exist as data, so the class lists the grant-table rows the shipped entries
+//!   use ([`tool::class_rows`]): the snapshot reads `filter.preview` and `structure.compare`, a published view, and the
+//!   workspace records `filter.apply` and `structure.layer`. The built-in column refuses an entry that uses another
+//!   row, and it refuses a store of a word the solver did not name at the write (LP2's column, pull request 170).
 //! - BND.37, KN5: the row test in [`tool::row_within_view_aid`] reads a row's kind, token and preview rule and
 //!   nothing else. The stored table has no field that says a query row prepares a commit preview, so
 //!   `operation.preview` passes the row test, and an entry that proposes to it is found by the entry review instead.

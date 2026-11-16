@@ -3,7 +3,9 @@
 
 use std::collections::BTreeSet;
 
-use c600_check::{admit, check, separation, Grant, Policy, Profile, Separation, NOT_GRANTED};
+use c600_check::{
+    admit, admit_built_in, check, separation, Grant, Policy, Profile, Row, Separation, EFFECT_UNDECLARED, NOT_GRANTED,
+};
 use c600_digest::sha256_hex;
 use c600_ir::{Effect, Expr, FnKind, Lit, Ty};
 use c600_run::boundary::Store;
@@ -11,8 +13,21 @@ use c600_run::interp::{Host, Request, RowTariff, Sink};
 use c600_run::value::Value;
 use c600_syntax::{format, lower, parse};
 use c600_tools::tool::{
-    admit_built_in, lower_source, manifest, targets, BoundaryClass, Manifest, Tool, ENTRY, MODULE, ROW, SOURCE,
+    class_rows, lower_source, manifest, targets, BoundaryClass, Manifest, Tool, ENTRY, MODULE, ROW, SOURCE,
 };
+
+/// The shipped tool's class: the prepare-a-preview row of its manifest's row.
+fn class() -> BTreeSet<Row> {
+    class_rows(&manifest())
+}
+
+/// The shipped class with `rows` added: a fixture that tests another rule lists the rows it uses, so that each refusal
+/// shown is the rule under test.
+fn wider(rows: &[Row]) -> BTreeSet<Row> {
+    let mut class = class();
+    class.extend(rows.iter().cloned());
+    class
+}
 
 /// The tool with `body` in place of its entry's body and `effects` as its effect list.
 fn variant(head: &str, effects: &str, body: &str) -> String {
@@ -66,7 +81,7 @@ fn the_checker_admits_the_tool_and_it_only_prepares_previews() {
     let only_previews = Separation { reads_state: false, prepares_previews: true };
     assert_eq!(separation(summary, &Policy::interim()), only_previews);
 
-    let admission = admit_built_in(&program, MODULE, ENTRY, &Grant::none(), &Policy::interim()).unwrap();
+    let admission = admit_built_in(&program, MODULE, ENTRY, &class(), &Grant::none(), &Policy::interim()).unwrap();
     assert!(admission.is_admitted(), "{:#?}", admission.diagnostics);
     assert_eq!((admission.separation, admission.open_cells.len()), (only_previews, 0));
     let tool = Tool::full_600_cell().expect("the shipped tool loads");
@@ -81,7 +96,9 @@ fn the_checker_admits_the_tool_and_it_only_prepares_previews() {
 /// Acceptance item 2, capability separation (LQ21, LG3.13, BND.39). A variant of the tool that also reads state is
 /// refused in the solving profile with `LG3:capability.not_granted`, although the word it proposes is still the
 /// solver's: a snapshot read, and a read of its own preview's effect, which is state-derived (BND.42). The checker
-/// admits each variant as a well-typed program; the refusal is the separation's.
+/// admits each variant as a well-typed program; the refusal is the separation's. The class here also lists the read's
+/// row, so that the separation is the only refusal; under the shipped tool's class the read is also a row the class
+/// does not list (BND.57), a second refusal at `entry`.
 ///
 /// CT-LB6-03 (part, the 600-cell-Full tool: a state read beside the preview is refused under the selected mechanism).
 #[test]
@@ -89,14 +106,19 @@ fn a_variant_that_also_reads_state_is_refused() {
     let snapshot = "    let best = read_snapshot<Word>(\"best_word\");\n    \
                     let r = propose(w, target(\"operation.preview\"));\n";
     let outcome = "    let r = propose(w, target(\"operation.preview\"));\n    let seen = receipt_effect(r);\n";
+    let reads = wider(&[Row::Read("best_word".into()), Row::Outcome]);
     for (what, lets) in [("a snapshot read", snapshot), ("a preview-outcome read", outcome)] {
         let program = lower_source(&variant("export command", "snapshot, preview", &format!("{lets}{ACK}"))).unwrap();
         assert!(check(&program).unwrap().is_admitted(), "{what}: the checker admits the program");
-        let admission = admit_built_in(&program, MODULE, ENTRY, &Grant::none(), &Policy::interim()).unwrap();
+        let admission = admit_built_in(&program, MODULE, ENTRY, &reads, &Grant::none(), &Policy::interim()).unwrap();
         assert_eq!(admission.separation, both(), "{what}");
         assert_eq!(admission.codes(), [NOT_GRANTED], "{what}");
         assert_eq!(admission.diagnostics[0].path, "entry", "{what}");
         assert!(admission.diagnostics[0].note.contains("LG3.13"), "{what}");
+        let shipped = admit_built_in(&program, MODULE, ENTRY, &class(), &Grant::none(), &Policy::interim()).unwrap();
+        let paths: Vec<&str> = shipped.diagnostics.iter().map(|d| d.path.as_str()).collect();
+        assert_eq!((shipped.codes(), paths), (vec![NOT_GRANTED; 2], vec!["entry"; 2]), "{what}");
+        assert!(shipped.diagnostics[1].note.contains("BND.57"), "{what}: the class lists no such row");
         let own = admit(&program, MODULE, ENTRY, Profile::Solving, &Grant::none(), &Policy::interim()).unwrap();
         assert_eq!((own.codes(), own.separation), (vec![NOT_GRANTED], both()), "{what}");
     }
@@ -105,39 +127,42 @@ fn a_variant_that_also_reads_state_is_refused() {
     // word is not the solver's.
     let chosen = "    let r = propose(read_snapshot<Word>(\"best_word\"), target(\"operation.preview\"));\n";
     let program = lower_source(&variant("export command", "snapshot, preview", &format!("{chosen}{ACK}"))).unwrap();
-    let admission = admit_built_in(&program, MODULE, ENTRY, &Grant::none(), &Policy::interim()).unwrap();
+    let admission = admit_built_in(&program, MODULE, ENTRY, &reads, &Grant::none(), &Policy::interim()).unwrap();
     assert_eq!(admission.separation, both());
     let paths: Vec<&str> = admission.diagnostics.iter().map(|d| d.path.as_str()).collect();
     assert_eq!((admission.codes(), paths), (vec![NOT_GRANTED, NOT_GRANTED], vec!["entry", "0"]));
 }
 
 /// The built-in column prepares a preview of a word the solver named (chapter 07 section 8), only inside a command
-/// (LG3.6). A variant that proposes a word it wrote itself is refused at the proposal, though it reads no state; so is
-/// a hand-built body in which a `let` shadows the parameter, and a previewing entry that is a plain function.
+/// (LG3.6). A variant that proposes a word it wrote itself is refused at the proposal with
+/// `LG3:capability.not_granted`, though it reads no state; so is a hand-built body in which a `let` shadows the
+/// parameter. A previewing entry that is a plain function is refused with `LG3:effect.undeclared` at `entry`: the
+/// effect occurs only inside a command (LG3.6).
 #[test]
 fn a_built_in_previews_only_the_word_the_solver_named() {
     let refused = |program: &c600_ir::Program| {
-        let admission = admit_built_in(program, MODULE, ENTRY, &Grant::none(), &Policy::interim()).unwrap();
+        let admission = admit_built_in(program, MODULE, ENTRY, &class(), &Grant::none(), &Policy::interim()).unwrap();
         assert_eq!(admission.separation, Separation { reads_state: false, prepares_previews: true });
-        assert!(admission.codes().iter().all(|&code| code == NOT_GRANTED), "{:#?}", admission.diagnostics);
-        admission.diagnostics.iter().map(|d| d.path.clone()).collect::<Vec<_>>()
+        admission.diagnostics.iter().map(|d| (d.path.clone(), d.code)).collect::<Vec<_>>()
     };
+    let at = |path: &str, code: &'static str| vec![(path.to_owned(), code)];
 
     let own_word = "    let r = propose(word[+1, -2], target(\"operation.preview\"));\n";
     let program = lower_source(&variant("export command", "preview", &format!("{own_word}{ACK}"))).unwrap();
     assert!(check(&program).unwrap().is_admitted());
-    assert_eq!(refused(&program), ["0"]);
+    assert_eq!(refused(&program), at("0", NOT_GRANTED));
 
     let mut program = lower_source(SOURCE).unwrap();
     let entry = &mut program.modules[0].functions[0];
     let body = std::mem::replace(&mut entry.body, Expr::Lit(Lit::Unit));
     let word = Box::new(Expr::Lit(Lit::Word(vec![1, -2])));
     entry.body = Expr::Let { name: "w".into(), value: word, body: Box::new(body) };
-    assert_eq!(refused(&program), ["1.0"], "the shadowed parameter is not the solver's word");
+    assert_eq!(refused(&program), at("1.0", NOT_GRANTED), "the shadowed parameter is not the solver's word");
 
     let helper =
         lower_source(&variant("export fn", "preview", &format!("{}{ACK}", &own_word.replace("word[+1, -2]", "w"))));
-    assert_eq!(refused(&helper.unwrap()), ["entry"], "a preview is prepared only inside a command (LG3.6)");
+    let found = refused(&helper.unwrap());
+    assert_eq!(found, at("entry", EFFECT_UNDECLARED), "a preview is prepared only inside a command (LG3.6)");
 }
 
 /// The engine side of a run, counting every call: a state read answers a word, a proposal a receipt.
@@ -189,14 +214,16 @@ fn attempt(source: &str, entry: &'static str) -> (Option<String>, Counting, Stor
 /// Leads L1 and L3 of the LP3 trap analysis (BND.39, BND.57, LG3.10). The built-in column, author `built_in` in the
 /// solving profile, refuses an entry that reads a snapshot and proposes the word it read (the IR draft has no word
 /// operations, so a word read from state is the word such an entry can compute), and it refuses the relay of such a
-/// word through a workspace record: entry `keep` reads state and writes a record, which the column admits because it
-/// prepares no preview, and entry `relay` reads the record and proposes it. Entry `relay_declassified` reads the record
-/// through a declassifier: under the interim policy that is a state read, and with the declassifier enabled the word is
-/// still not the one the solver named. Each refusal is `LG3:capability.not_granted`. A refused module, and a module with
-/// one checker diagnostic, never loads as a tool, so no run starts and the engine is never called. Through the same
-/// path the shipped tool proposes the solver's word once, and the proposal's provenance block names the digest of the
-/// source bytes that ran: the producer's module digest is computed in [`Tool::new`] from those bytes, and a manifest
-/// naming other bytes is refused (`the_tool_declares_its_class_and_its_rows`).
+/// word through a workspace record at both ends: entry `keep` reads state and writes the word to a record, refused at
+/// the write because a stored word too must be one the solver named (LP2's built-in column), and entry `relay` reads
+/// the record and proposes it, refused at the proposal. Entry `relay_declassified` reads the record through a
+/// declassifier: under the interim policy that is a state read, and with the declassifier enabled the word is still
+/// not the one the solver named. The class here lists every row the fixture uses, so each refusal shown is the rule
+/// under test; each is `LG3:capability.not_granted`. A refused module, and a module with one checker diagnostic, never
+/// loads as a tool, so no run starts and the engine is never called. Through the same path the shipped tool proposes
+/// the solver's word once, and the proposal's provenance block names the digest of the source bytes that ran: the
+/// producer's module digest is computed in [`Tool::new`] from those bytes, and a manifest naming other bytes is refused
+/// (`the_tool_declares_its_class_and_its_rows`).
 ///
 /// CT-LB6-03 (part, the 600-cell-Full tool: a word from state, read directly or through a workspace record, is refused
 /// under the selected mechanism, and a refused or unchecked module never runs).
@@ -220,9 +247,17 @@ fn a_refused_built_in_never_runs_and_the_named_word_previews() {
     let program = lower_source(&relay).unwrap();
     let report = check(&program).unwrap();
     assert!(report.is_admitted(), "{:#?}", report.diagnostics);
-    // `keep` reads state and prepares no preview, so the built-in column admits it: the relay's refusal is `relay`'s.
-    let keep = admit_built_in(&program, MODULE, "keep", &Grant::none(), &Policy::interim()).unwrap();
-    assert!(keep.is_admitted(), "{:#?}", keep.diagnostics);
+    let rows = wider(&[
+        Row::Read("best_word".into()),
+        Row::Read("kept".into()),
+        Row::Workspace("kept".into()),
+        Row::Declassified("kept".into()),
+    ]);
+    // `keep` reads state and prepares no preview; the built-in column refuses it at the write (path `1.0`, the second
+    // `let`'s value), because the word it stores is not one the solver named.
+    let keep = admit_built_in(&program, MODULE, "keep", &rows, &Grant::none(), &Policy::interim()).unwrap();
+    let found: Vec<(&str, &str)> = keep.diagnostics.iter().map(|d| (d.path.as_str(), d.code)).collect();
+    assert_eq!(found, [("1.0", NOT_GRANTED)], "{:#?}", keep.diagnostics);
     assert_eq!(keep.separation, Separation { reads_state: true, prepares_previews: false });
     // With the declassifier enabled, the declassified read is no state read, and the word is still not the solver's.
     let enabled = Policy::enabling(&["kept"]);
@@ -232,7 +267,7 @@ fn a_refused_built_in_never_runs_and_the_named_word_previews() {
         ("relay_declassified", Policy::interim(), both(), vec!["entry", "0"]),
         ("relay_declassified", enabled, previews_only, vec!["0"]),
     ] {
-        let admission = admit_built_in(&program, MODULE, entry, &Grant::none(), &policy).unwrap();
+        let admission = admit_built_in(&program, MODULE, entry, &rows, &Grant::none(), &policy).unwrap();
         let found: Vec<&str> = admission.diagnostics.iter().map(|d| d.path.as_str()).collect();
         assert_eq!((admission.separation, found), (separation, paths), "{entry}");
         assert!(admission.codes().iter().all(|&code| code == NOT_GRANTED), "{entry}: {:#?}", admission.diagnostics);
@@ -283,13 +318,19 @@ fn the_tool_declares_its_class_and_its_rows() {
     let program = lower_source(SOURCE).unwrap();
     let rows: BTreeSet<String> = manifest.rows.iter().map(|row| row.to_string()).collect();
     assert_eq!(targets(&program, MODULE, ENTRY), Ok(rows));
+    assert_eq!(class_rows(&manifest), BTreeSet::from([Row::Preview(ROW.to_owned())]), "the class's rows (draft)");
     assert_eq!(manifest.source_sha256, sha256_hex(SOURCE.as_bytes()));
     assert!(!manifest.principle_record);
     assert_eq!(Tool::full_600_cell().unwrap().manifest, manifest);
 
-    // A tool loads only with a manifest that names its source and the rows its proposals name.
+    // A tool loads only with a manifest that names its source, whose class lists the row its proposals name, and whose
+    // rows are exactly the rows its proposals name.
     let other_source = Manifest { source_sha256: sha256_hex(b"another module"), ..manifest.clone() };
     assert!(Tool::new(SOURCE, other_source).is_err());
+    let extra_row = Manifest { rows: &[ROW, "operation.execute"], ..manifest.clone() };
+    let error = Tool::new(SOURCE, extra_row).err().expect("one row too many");
+    assert!(error.contains("do not name the manifest's rows"), "{error}");
     let other_rows = Manifest { rows: &["operation.execute"], ..manifest };
-    assert!(Tool::new(SOURCE, other_rows).err().is_some_and(|error| error.contains("rows")));
+    let error = Tool::new(SOURCE, other_rows).err().expect("the class lists no row the entry uses");
+    assert!(error.contains("not admitted") && error.contains("BND.57"), "{error}");
 }

@@ -34,15 +34,14 @@
 //!   `checking`; the rows are `operation.preview`. No `PrincipleRecord` and no review record exist (LB6.3, BM5), so
 //!   the review of the class against the entry (CT-BND-15, CT-LB6-03) is not done.
 //! - **Built-in admission.** `c600_check::admit` with `Profile::Solving` is the column of a solver's own, forked or
-//!   imported tool, which prepares no preview until the joint setting, so it refuses this tool. [`tool::admit_built_in`]
-//!   applies the built-in column of chapter 07 section 8 over the checker's report and its capability-separation
-//!   facts: no checker diagnostic; never both a state read and a preview (LG3.13); a previewing entry is an exported
-//!   command (LG3.6) that calls no named function and proposes only a `Word` parameter as given, unshadowed (a word the
-//!   solver named). The built-in column's two exceptions are not built. It does not judge a reading entry's workspace
-//!   writes against the class's rows (BND.57): the manifest's rows are its proposals' targets only, so an entry that
-//!   reads state and writes a workspace record is admitted with no grant (the relay of that record into a proposal is
-//!   refused at the proposal). The API `c600-check` would need: an author or column parameter on `admit`, or an
-//!   `admit_built_in` of its own.
+//!   imported tool, which prepares no preview until the joint setting, so it refuses this tool. [`tool::Tool::new`]
+//!   admits the entry with `c600_check::admit_built_in`, the built-in column of chapter 07 section 8 that LP2 added
+//!   to the checker (pull request 170) when this crate asked for it; this crate keeps no admission rule of its own.
+//!   Draft: BND.57's rows by class do not exist as data, so [`tool::class_rows`] lists the prepare-a-preview row of
+//!   each of the manifest's rows, `operation.preview`, and nothing else. An entry that also reads state, publishes a
+//!   view or writes the workspace therefore uses a row its class does not list and is refused, and a store of a word
+//!   the solver did not name is refused at the write as well as its relay at the proposal. The built-in column's two
+//!   exceptions are not built.
 //! - **Provenance.** The blocks name a draft capability contract, pinned as `c600-tools-draft-1`, and the checker
 //!   pin `c600-check-lp2-draft` over `c600-check`'s source. The word argument enters with a manual block: the solver
 //!   named it. The producer is the tool's module digest and entry, author `built_in`, profile `solving`.
