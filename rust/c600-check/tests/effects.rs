@@ -60,6 +60,8 @@ fn admit_in(p: &Program, profile: Profile, grant: &Grant, policy: &Policy) -> Ad
 // CT-LG3-01: the function and import call graph preserves transitive effects and capability requirements, including
 // higher-order and generic calls.
 
+/// CT-LG3-01 (part: direct, transitive, higher-order and generic calls in IR; the row is whole with the other
+/// `ct_lg3_01_*` tests here and `c600-syntax`'s `conformance_lg3.rs`).
 #[test]
 fn ct_lg3_01_calls_preserve_transitive_effects() {
     let t = || exact(Ty::Var("T".into()));
@@ -87,6 +89,7 @@ fn ct_lg3_01_calls_preserve_transitive_effects() {
     assert!(report(&p).summary("tool", "pure").unwrap().is_pure());
 }
 
+/// CT-LG3-01 (part: recursive calls in IR).
 #[test]
 fn ct_lg3_01_recursion_reaches_its_fixed_point() {
     let n = || var("n");
@@ -107,6 +110,7 @@ fn ct_lg3_01_recursion_reaches_its_fixed_point() {
     assert_eq!(effects(&p, "tool", "again"), [Effect::ChangeWorkspace]);
 }
 
+/// CT-LG3-01 (part: capability requirements across imports in IR).
 #[test]
 fn ct_lg3_01_capability_requirements_cross_imports_and_need_a_declaration() {
     // LG3.9: a module declares its required capabilities; an import supplies none.
@@ -125,6 +129,7 @@ fn ct_lg3_01_capability_requirements_cross_imports_and_need_a_declaration() {
     assert!(report(&program(vec![lib, app().declaring(&[Capability::File])])).is_admitted());
 }
 
+/// CT-LG3-01 (part: annotations, bounds and unresolved callables in IR).
 #[test]
 fn ct_lg3_01_annotations_bounds_and_unresolved_callables_cannot_erase_an_effect() {
     // LG3.2: an annotation restricts what checks; it cannot erase an inferred effect.
@@ -149,6 +154,7 @@ fn ct_lg3_01_annotations_bounds_and_unresolved_callables_cannot_erase_an_effect(
     );
 }
 
+/// CT-LG3-01 (part: callables held in records, in IR).
 #[test]
 fn ct_lg3_01_a_record_keeps_the_effects_of_its_callables() {
     // `run(r: {f: () -> Unit ! b})` calls the callable in its record argument (pull request 149 review).
@@ -185,6 +191,7 @@ fn family(e: Effect) -> &'static str {
     }
 }
 
+/// CT-LG3-02 (part: no effect commits or obtains a token, in IR; not run: overlay rows, which wait for LP3).
 #[test]
 fn ct_lg3_02_no_effect_commits_or_obtains_a_token() {
     let all = [
@@ -210,6 +217,7 @@ fn ct_lg3_02_no_effect_commits_or_obtains_a_token() {
 // CT-LG3-03: views refuse workspace and preview effects through direct and indirect calls. The one undoable action of
 // an invoked workspace change is the runtime's (M2, M3).
 
+/// CT-LG3-03 (part: the static half in IR; not run: the undoable action, which waits for M6 and LP3).
 #[test]
 fn ct_lg3_03_views_refuse_workspace_and_preview_effects() {
     let in_view = |body: Expr, mut functions: Vec<Function>| {
@@ -236,6 +244,7 @@ fn request(cap: Capability) -> Expr {
     }
 }
 
+/// CT-LG3-04 (part: file, clock and randomness in IR; the row is whole with the source and run-time halves).
 #[test]
 fn ct_lg3_04_file_clock_and_randomness_need_a_declaration_and_a_grant() {
     for cap in [Capability::File, Capability::Clock, Capability::Randomness] {
@@ -252,6 +261,7 @@ fn ct_lg3_04_file_clock_and_randomness_need_a_declaration_and_a_grant() {
     }
 }
 
+/// CT-LG3-04 (part: network, process and session files in IR).
 #[test]
 fn ct_lg3_04_network_process_and_session_files_are_never_granted() {
     for cap in NEVER_GRANTED {
@@ -264,6 +274,7 @@ fn ct_lg3_04_network_process_and_session_files_are_never_granted() {
     }
 }
 
+/// CT-LG3-04 (part: a clock read needs the clock capability and has no effect family, LG3.8).
 #[test]
 fn lg3_8_a_clock_read_is_a_requirement_without_an_effect_family() {
     let p = program(vec![module("tool", vec![entry(Ty::Nat, Expr::ReadClock)]).declaring(&[Capability::Clock])]);
@@ -375,6 +386,7 @@ fn ct_bnd_24_flow_refused_is_never_emitted_before_lq2() {
 // The Fable attack on the M1 checker (owner decision, 15 November 2026): each program below slipped past the
 // effect inference before pull request 149 fixed it.
 
+/// CT-LG3-01 (part: generic results that may return a record of callables).
 #[test]
 fn ct_lg3_01_a_generic_result_keeps_the_callables_of_every_record_it_may_return() {
     let t = || exact(Ty::Var("T".into()));
@@ -392,6 +404,7 @@ fn ct_lg3_01_a_generic_result_keeps_the_callables_of_every_record_it_may_return(
     assert_eq!(a.separation, Separation { reads_state: false, prepares_previews: true });
 }
 
+/// CT-LG3-01 (part: closures over callables with effect variables).
 #[test]
 fn ct_lg3_01_a_closure_parameter_does_not_capture_the_effect_variable_of_a_captured_callable() {
     let poly = || exact(fn_ty(vec![], exact(Ty::Unit), bound(&[], &["e"])));
@@ -417,6 +430,7 @@ fn ct_lg3_01_a_closure_parameter_does_not_capture_the_effect_variable_of_a_captu
     assert_eq!(a.open_cells, ["BND.59"]);
 }
 
+/// CT-LG3-01 (part: effect variables in result types).
 #[test]
 fn ct_lg3_01_a_call_instantiates_the_effect_variable_of_its_result_type() {
     let poly = || exact(fn_ty(vec![], exact(Ty::Unit), bound(&[], &["e"])));
