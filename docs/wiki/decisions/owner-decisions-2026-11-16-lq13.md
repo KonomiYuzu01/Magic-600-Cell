@@ -95,7 +95,7 @@ refresh (FP.1).
 | Pin in `candidate.json` | Old | New |
 | --- | --- | --- |
 | Briefing SHA-256 | `97c8e5c0fb0cbf5a4e8d3ee655c9c379cc3cfa326924386b57e6aa5b29c26d45` | `455a465758b7842a42d07a9d963faf0082b87211ccc0152ef71d26faabceb11a` |
-| `input_commit` | `675002412ce73968a23db1732311dc45d63296a2` | the commit of this change that edits the briefing |
+| `input_commit` | `675002412ce73968a23db1732311dc45d63296a2` | `34ea6dfb5cd41d32de4c925fcf6c5549098a5c16`, the commit of this change that edits the briefing |
 
 - The briefing change is confined to section 1: the LQ13 phrases of its 6, 14 and 15 November items and the new
   16 November item. The chapters cite the briefing for its list of superseded 1.0-A3 text (section 2), its record of
