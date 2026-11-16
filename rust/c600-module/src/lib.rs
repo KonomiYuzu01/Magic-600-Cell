@@ -49,12 +49,14 @@
 //!   lives in memory for one session. Its canonical bytes name the session identity, the closure, lock and manifest
 //!   digests, every module digest, the entry, author, profile, grant, enabled declassifiers, checker and contract pins,
 //!   the IR contract and the separation facts.
-//! - **Dynamic code** (RTE.45, LG2.19, LG3.2). An unresolved call in any function of the closure is dynamic code. It is
-//!   refused before any other finding with `LG3:capability.not_granted`, the nearest code: `policy.json` of LX-3 lists
-//!   `dynamic_code` as an open code gap. The surface cannot write one, since lowering refuses an unbound name.
+//! - **Dynamic code** (RTE.45, DET.36, LG2.19, LG3.2). An unresolved call in any function of the closure is dynamic
+//!   code. It is refused before any other finding with `LG3:capability.not_granted`, the code the owner chose on
+//!   16 November 2026 under PHS.52 for the gap `policy.json` of LX-3 lists as `dynamic_code`; `c600-check` reports the
+//!   call with the same code. The surface cannot write one, since lowering refuses an unbound name.
 //! - **Built-in tools** (BND.37, BND.56). `c600-check::admit` checks the own-tool column only. A built-in's approval
 //!   reads `c600-check::check`'s diagnostics, the same capability rows as `admit` (a never-granted or ungranted
-//!   capability is `LG3:capability.not_granted`) and `c600-check::separation`, with no static separation refusal.
+//!   capability is `LG3:capability.not_granted`, or `LG3:capability.ambient_read` where
+//!   `c600_check::Summary::ungranted` says so) and `c600-check::separation`, with no static separation refusal.
 //!   Author `unknown` is never approved (BND.21).
 //! - **Separation at the preview point** (LG3.13, BND.39, BND.42). In the solving profile a proposal whose block may
 //!   read state is refused with `LG3:capability.not_granted` after the boundary's preview admission, which keeps its

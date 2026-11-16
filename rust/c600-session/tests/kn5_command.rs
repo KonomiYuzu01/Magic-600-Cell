@@ -146,15 +146,15 @@ fn a_reopened_session_keeps_its_moves_stacks_and_receipts() {
     assert_eq!(lost.status, Status::UnknownOutcome);
     // A retried delivery of A answers its receipt and changes nothing; other content under A's ID is refused.
     let before = g.kept();
-    assert_eq!(g.layer.invoke(press_a.clone()), a);
+    assert_eq!(g.layer.invoke(&Caller::Shell, press_a.clone()), a);
     let mut reused = press_a.clone();
     reused.args = json::object([("preview", Value::Int(99))]);
-    assert_eq!(code_of(&g.layer.invoke(reused)), code::COMMAND_ID_REUSED);
+    assert_eq!(code_of(&g.layer.invoke(&Caller::Shell, reused)), code::COMMAND_ID_REUSED);
     assert_eq!(g.layer.outcome(&a.command, &a.request).as_ref(), Some(&a));
     assert_eq!(g.kept(), before);
     // A press of the earlier open, delivered now, is an unknown envelope of another epoch: nothing runs.
     assert_eq!(early.epoch, epoch);
-    assert_eq!(code_of(&g.layer.invoke(early)), code::EPOCH_CHANGED);
+    assert_eq!(code_of(&g.layer.invoke(&Caller::Shell, early)), code::EPOCH_CHANGED);
     assert_eq!(g.kept(), before);
     // The stacks replayed: the redo reaches B's state again, and the new shell's command IDs name the new epoch.
     let r = g.step(Direction::Redo, false);
@@ -216,7 +216,7 @@ fn every_open_draws_a_new_epoch() {
         epochs.push(epoch);
         let before = g.kept();
         for envelope in [undo.clone(), query.clone()] {
-            let receipt = g.layer.invoke(envelope);
+            let receipt = g.layer.invoke(&Caller::Shell, envelope);
             assert!(matches!(receipt.status, Status::Refused(_)), "{:?}", receipt.status);
         }
         assert_eq!(g.kept(), before);
@@ -386,7 +386,7 @@ fn a_workspace_completion_and_its_receipt_are_one_durable_frame() {
     assert_eq!(g.layer.revision().workspace, 1);
     assert_eq!(g.layer.outcome(&asked.command, &done.request), Some(done.clone()));
     let writes = disk.writes();
-    assert_eq!(g.layer.invoke(asked), done);
+    assert_eq!(g.layer.invoke(&Caller::Shell, asked), done);
     assert_eq!(disk.writes(), writes);
 }
 

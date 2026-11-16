@@ -37,7 +37,7 @@
 //! | view, workspace and file output | `publish_view` or `emit`: one fused row per output unit, its encoding work, buffer and bytes in one admission (DET.56, DET.59); the buffer is released after the publication |
 //! | `propose` | `encode` of the request, then `invoke` with the host row's tariff and the request bytes as output |
 //! | receipt field | `read_receipt`; a field the host withheld stops with `LG3:capability.not_granted` (BND.42) |
-//! | exact sink | `use_exact` |
+//! | exact sink | `encode` of the value, then `use_exact`; the host gets the canonical bytes, and the buffer is released after the hand-over (PHS.52, owner decision of 16 November 2026) |
 //! | display accounting | `accounting`, read after its own step |
 //! | random draw | `rng_draw` (DET.61) |
 //!
@@ -1144,10 +1144,14 @@ impl<'a> Machine<'a> {
                 if is_approx(&held.value) {
                     return Err(self.fail(Some(n), "use_exact", code::IR_REJECTED));
                 }
+                // The host gets the canonical bytes, as at every sink; a value with none, a function or a receipt
+                // among them, stops the run before the host is asked (PHS.52, owner decision of 16 November 2026).
+                let (bytes, buffer) = self.encode(Some(n), &held.value)?;
                 self.charge(Some(n), "use_exact", 0, 0, 0)?;
-                if let Err(c) = self.host.sink(&Sink::Exact { role: *role }, &held.value, &[]) {
+                if let Err(c) = self.host.sink(&Sink::Exact { role: *role }, &held.value, &bytes) {
                     return Err(self.fail(Some(n), "use_exact", c));
                 }
+                self.meter.drop_owner(buffer, true);
                 self.release(held);
                 self.push(Value::Unit, Vec::new());
                 Ok(())

@@ -12,6 +12,8 @@ use c600_ir::{Capability, ExactRole, Expr, Function, Lit, Prim, QTy, Ty, FORM2_E
 use support::{codes, fields, less, mismatch, only, report, tint, tool, xy};
 
 const V: &str = EXACTNESS_VIOLATION;
+/// What a goal or an evidence sink expects, in a mismatch (PHS.52, 16 November 2026).
+const PORTABLE: &str = "a type without Fn, Receipt, WordEqualityKey, CompressedWord or a type variable";
 
 fn boolean(b: bool) -> Expr {
     Expr::Lit(Lit::Bool(b))
@@ -285,11 +287,14 @@ fn ct_lg2_05_a_generic_body_with_a_display_instance_is_a_pure_display_body() {
         let name = callee.name.clone();
         tool(vec![callee, command("go", xy(), exact(Ty::Unit), call(&name, vec![arg]))])
     };
-    // An exact goal set from the argument.
+    // An exact goal set from the argument. A value of a type variable may stand for a function or a receipt, so the
+    // goal refuses it whatever the instance (PHS.52, 16 November 2026); a display instance also steers the goal.
     let aim = helper("aim", vec![param("v", t())], exact(Ty::Unit), use_exact(ExactRole::Goal, var("v")));
-    assert!(report(&go(aim.clone(), word(&[1]))).is_admitted());
-    let d = only(&go(aim, steered()));
-    assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("go", "root", (V, Some("T"), true, false)));
+    assert_eq!(mismatch(&only(&go(aim.clone(), word(&[1])))), (TYPE_MISMATCH, "aim", "0", PORTABLE, "T"));
+    let r = report(&go(aim, steered()));
+    assert_eq!(r.codes(), [TYPE_MISMATCH, V]);
+    let d = &r.diagnostics[1];
+    assert_eq!((d.function.as_str(), d.path.as_str(), fields(d)), ("go", "root", (V, Some("T"), true, false)));
     // An effect.
     let log =
         helper("log", vec![param("v", t())], exact(Ty::Unit), let_("r", propose(word(&[4]), target("t")), unit()));
@@ -538,15 +543,51 @@ fn ct_lg2_05_a_type_variable_bound_through_a_callable_result_keeps_its_qualifier
     let sent = propose(call("pipe", vec![steered(), same]), target("t"));
     let d = only(&tool(vec![pipe, command("go", xy(), exact(Ty::Receipt), sent)]));
     assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("go", "0", (V, Some("Word"), false, true)));
-    // The same binding reaches an exact goal inside the callee: the call runs a display instance of it.
+    // The same binding reaches an exact goal inside the callee: the call runs a display instance of it. The goal also
+    // refuses a value of a type variable (PHS.52, 16 November 2026).
     let aim = helper(
         "aim",
         vec![param("f", exact(fn_ty(vec![], t(), bound(&[], &["e"]))))],
         exact(Ty::Unit),
         use_exact(ExactRole::Goal, call_value(var("f"), vec![])),
     );
-    let d = only(&tool(vec![aim, command("go", xy(), exact(Ty::Unit), call("aim", vec![steered()]))]));
-    assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("go", "root", (V, Some("T"), true, false)));
+    let r = report(&tool(vec![aim, command("go", xy(), exact(Ty::Unit), call("aim", vec![steered()]))]));
+    assert_eq!(r.codes(), [TYPE_MISMATCH, V]);
+    assert_eq!(mismatch(&r.diagnostics[0]), (TYPE_MISMATCH, "aim", "0", PORTABLE, "T"));
+    let d = &r.diagnostics[1];
+    assert_eq!((d.function.as_str(), d.path.as_str(), fields(d)), ("go", "root", (V, Some("T"), true, false)));
+}
+
+/// Goal and evidence sinks take portable data (owner decision of 16 November 2026 under PHS.52): a value whose type
+/// is or holds a callable, a receipt, a word equality key or a compressed word is a type mismatch at the value, so
+/// none reaches the host; an approximate value keeps its exactness code (LG2.22).
+#[test]
+fn phs52_goal_and_evidence_sinks_take_portable_data() {
+    let callee = helper("h", vec![], exact(Ty::Nat), nat(1));
+    let receipt = || propose(word(&[1]), target("t"));
+    for role in [ExactRole::Goal, ExactRole::Evidence] {
+        let sink =
+            |value: Expr| tool(vec![callee.clone(), command("go", xy(), exact(Ty::Unit), use_exact(role, value))]);
+        for value in [
+            word(&[1]),
+            record(vec![("n", nat(1)), ("w", word(&[2]))]),
+            list(exact(Ty::Word), vec![word(&[1]), word(&[2])]),
+        ] {
+            assert!(report(&sink(value)).is_admitted(), "{role:?}");
+        }
+        for (value, supplied) in [
+            (fn_ref("h"), "fn() -> Nat"),
+            (receipt(), "Receipt"),
+            (prim(Prim::WordKey, vec![word(&[1])]), "WordEqualityKey"),
+            (prim(Prim::Compress, vec![word(&[1])]), "CompressedWord"),
+            (record(vec![("f", fn_ref("h"))]), "record { f: fn() -> Nat }"),
+            (list(exact(Ty::Receipt), vec![receipt()]), "List<Receipt>"),
+        ] {
+            assert_eq!(mismatch(&only(&sink(value))), (TYPE_MISMATCH, "go", "0", PORTABLE, supplied), "{role:?}");
+        }
+        let approximate = only(&sink(Expr::Lit(Lit::Approx { decimal: "0.5".into(), precision: 53 })));
+        assert_eq!(fields(&approximate), (V, Some("Approx"), false, true), "{role:?}");
+    }
 }
 
 /// CT-LG2-05 (part: generic results of callables, form 1).

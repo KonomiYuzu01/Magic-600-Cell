@@ -53,7 +53,7 @@ fn process_host_runs_the_tool_in_the_runtimes_child_with_the_same_bridge_and_rec
             let [one] = &sent[..] else { panic!("{case}: one invocation") };
             let invocation = &one.invocation;
             assert_eq!((invocation.command.as_str(), invocation.row.as_str()), (&*format!("{run}/1"), ROW), "{case}");
-            assert_eq!(invocation.caller, Caller::Runtime { run: run.into() }, "{case}");
+            assert_eq!(one.caller, Caller::Runtime { run: run.into() }, "{case}");
             assert!(invocation.token.is_none(), "{case}");
             assert_eq!(invocation.args.canonical(), word_args(word).canonical(), "{case}");
             assert_eq!(fingerprint(&layer), before, "{case}: a preview changes no state");

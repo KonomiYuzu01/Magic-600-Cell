@@ -183,14 +183,7 @@ impl Fixture {
         };
         change(&mut binding);
         let token = Some(Token::mint(&Secret::fixed(SECRET), binding));
-        Invocation {
-            command,
-            row: "operation.execute".into(),
-            args,
-            token,
-            caller: Caller::Shell,
-            epoch: revision.epoch,
-        }
+        Invocation { command, row: "operation.execute".into(), args, token, epoch: revision.epoch }
     }
 
     /// What no refusal may change: the state digest, the revision, the protected set and the durable log.
@@ -199,10 +192,15 @@ impl Fixture {
         (r.digest.clone(), format!("{r:?}"), self.layer.protected().orbits().to_vec(), self.layer.store().log.len())
     }
 
-    /// Delivers `invocation`, which must be refused with `expected` and change nothing.
+    /// Delivers `invocation` on the shell's channel, which must be refused with `expected` and change nothing.
     fn refused(&mut self, invocation: Invocation, expected: &str, what: &str) -> Receipt {
+        self.refused_on(&Caller::Shell, invocation, expected, what)
+    }
+
+    /// Delivers `invocation` on `caller`'s channel, which must be refused with `expected` and change nothing.
+    fn refused_on(&mut self, caller: &Caller, invocation: Invocation, expected: &str, what: &str) -> Receipt {
         let before = self.fixed();
-        let receipt = self.layer.invoke(invocation);
+        let receipt = self.layer.invoke(caller, invocation);
         assert_eq!(receipt.status.code(), Some(expected), "{what}: {:?}", receipt.status);
         assert!(matches!(receipt.status, Status::Refused(_)), "{what}: {:?}", receipt.status);
         assert_eq!(self.fixed(), before, "{what}");
@@ -214,7 +212,7 @@ impl Fixture {
 /// first under the genuine press's command ID never takes the ID, so the genuine press then commits once; every
 /// envelope's retry answers its own stored receipt; a later envelope whose request digest equals the committed one's is
 /// a retry of it whatever its authenticator, since the retry lookup precedes authentication (chapter 08 section 7), and
-/// it commits nothing; not run: the shell's transport), L11 (a), L18 (c), draft ruling 4. The control case sends no
+/// it commits nothing; not run: the shell's transport), L11 (a), L18 (c), ruling 4. The control case sends no
 /// first envelope.
 #[test]
 fn an_envelope_that_does_not_authenticate_never_takes_the_command_id() {
@@ -227,36 +225,41 @@ fn an_envelope_that_does_not_authenticate_never_takes_the_command_id() {
         let first = match attack {
             "forged" => {
                 let forged = Token::mint(&Secret::fixed([9; 32]), token.binding.clone());
-                Some(Invocation { token: Some(forged), ..genuine.clone() })
+                Some((Caller::Shell, Invocation { token: Some(forged), ..genuine.clone() }))
             }
-            "runtime" => Some(Invocation { caller: Caller::Runtime { run: "run-1".into() }, ..genuine.clone() }),
+            // The genuine envelope sent on a run's channel: the host stamps the runtime as its caller (ruling 4).
+            "runtime" => Some((Caller::Runtime { run: "run-1".into() }, genuine.clone())),
             _ => None,
         };
-        let refusal = first.clone().map(|first| {
+        let refusal = first.clone().map(|(caller, first)| {
             let expected = if attack == "forged" { code::TOKEN_INVALID } else { code::COMMIT_ROW_REFUSED };
-            f.refused(first, expected, attack)
+            f.refused_on(&caller, first, expected, attack)
         });
-        let receipt = f.layer.invoke(genuine.clone());
+        let receipt = f.layer.invoke(&Caller::Shell, genuine.clone());
         assert!(committed(&receipt), "{attack}: {:?}", receipt.status);
         assert_eq!(f.layer.outcome(&genuine.command, &receipt.request), Some(receipt.clone()), "{attack}");
         let fixed = f.fixed();
-        assert_eq!(f.layer.invoke(genuine.clone()), receipt, "{attack}");
-        if let (Some(first), Some(refusal)) = (first, refusal) {
-            assert_eq!(f.layer.invoke(first), refusal, "{attack}");
+        assert_eq!(f.layer.invoke(&Caller::Shell, genuine.clone()), receipt, "{attack}");
+        if let (Some((caller, first)), Some(refusal)) = (first, refusal) {
+            assert_eq!(f.layer.invoke(&caller, first), refusal, "{attack}");
         }
         let late = Token::mint(&Secret::fixed([10; 32]), token.binding.clone());
-        assert_eq!(f.layer.invoke(Invocation { token: Some(late), ..genuine.clone() }), receipt, "{attack}");
+        assert_eq!(
+            f.layer.invoke(&Caller::Shell, Invocation { token: Some(late), ..genuine.clone() }),
+            receipt,
+            "{attack}"
+        );
         let mut other = genuine.clone();
         other.args = preview_args(p + 1);
-        assert_eq!(code_of(&f.layer.invoke(other)), code::COMMAND_ID_REUSED, "{attack}");
+        assert_eq!(code_of(&f.layer.invoke(&Caller::Shell, other)), code::COMMAND_ID_REUSED, "{attack}");
         assert_eq!(f.fixed(), fixed, "{attack}");
         assert_eq!(f.layer.store().log.len(), 1, "{attack}");
     }
 }
 
 /// CT-KN5-01 (part: a press whose preview ended before its delivery is refused by how the preview ended, and nothing
-/// changes: a slot that holds another preview answers `preview_replaced`, an empty slot `no_fresh_preview` (draft
-/// ruling 1), and a token for a preview never presented `no_fresh_preview`; not run: the display's frame report),
+/// changes: a slot that holds another preview answers `preview_replaced`, an empty slot `no_fresh_preview`
+/// (ruling 1), and a token for a preview never presented `no_fresh_preview`; not run: the display's frame report),
 /// CT-ONE-04 (part: the same cases; not run: the shell's display), CT-ONE-05 (part: a preview replaced or cancelled
 /// after the press; not run: the input timing), L3.
 #[test]
@@ -419,7 +422,7 @@ fn a_refusal_is_answered_once_and_accepted_is_never_shown() {
     f.layer.hold_commit_lane(true);
     let busy = f.refused(held.clone(), code::COMMIT_IN_FLIGHT, "a held lane");
     f.layer.hold_commit_lane(false);
-    assert_eq!(f.layer.invoke(held.clone()), busy);
+    assert_eq!(f.layer.invoke(&Caller::Shell, held.clone()), busy);
     assert_eq!(f.layer.outcome(&held.command, &busy.request), Some(busy.clone()));
     assert_eq!(f.layer.store().log.len(), 0);
     let press = f.press(p);
@@ -428,7 +431,7 @@ fn a_refusal_is_answered_once_and_accepted_is_never_shown() {
     for (sent, answer) in [(&held, &busy), (&press, &receipt)] {
         let mut other = sent.clone();
         other.args = preview_args(p + 1);
-        let reused = f.layer.invoke(other);
+        let reused = f.layer.invoke(&Caller::Shell, other);
         assert_eq!(code_of(&reused), code::COMMAND_ID_REUSED);
         let kept = f.layer.outcome(&sent.command, &answer.request).unwrap();
         assert_eq!(&kept, answer);
@@ -455,10 +458,10 @@ fn an_unknown_id_is_unknown_and_a_stale_envelope_keeps_its_refusal_for_the_epoch
     f.shell.restart(Secret::fixed(SECRET));
     let stale = f.refused(early.clone(), code::EPOCH_CHANGED, "an envelope of the ended epoch");
     assert_eq!(f.layer.outcome(&early.command, &stale.request), Some(stale.clone()));
-    assert_eq!(f.layer.invoke(early.clone()), stale);
+    assert_eq!(f.layer.invoke(&Caller::Shell, early.clone()), stale);
     let epoch = f.layer.revision().epoch;
     let other = Invocation { epoch, args: draft_args(&word(&[2])), ..early.clone() };
-    assert_eq!(code_of(&f.layer.invoke(other)), code::COMMAND_ID_REUSED);
+    assert_eq!(code_of(&f.layer.invoke(&Caller::Shell, other)), code::COMMAND_ID_REUSED);
     assert_eq!(f.layer.outcome(&early.command, &stale.request), Some(stale.clone()));
     assert_eq!(f.layer.run_jobs(), 0);
     f.layer.restart(Secret::fixed(SECRET));
@@ -480,15 +483,15 @@ fn a_workspace_completion_keeps_its_receipt_across_a_restart_and_a_reopen() {
     assert!(matches!(done.status, Status::Completed(Completion { kind: CompletionKind::Workspace, .. })));
     assert_eq!(f.layer.store().log.len(), 1);
     assert_eq!(f.layer.store().log[0].kind, TransactionKind::Workspace);
-    assert_eq!(f.layer.invoke(asked.clone()), done);
+    assert_eq!(f.layer.invoke(&Caller::Shell, asked.clone()), done);
     f.layer.restart(Secret::fixed(SECRET));
     assert_eq!(f.layer.outcome(&asked.command, &done.request), Some(done.clone()));
-    assert_eq!(f.layer.invoke(asked.clone()), done);
+    assert_eq!(f.layer.invoke(&Caller::Shell, asked.clone()), done);
     assert_eq!(f.layer.store().log.len(), 1);
     let store = f.layer.store().clone();
     let mut reopened = CommandLayer::open(kernel(), Table::h08(), Secret::fixed(SECRET), store).unwrap();
     assert_eq!(reopened.outcome(&asked.command, &done.request), Some(done.clone()));
-    assert_eq!(reopened.invoke(asked), done);
+    assert_eq!(reopened.invoke(&Caller::Shell, asked), done);
     assert_eq!((reopened.store().log.len(), reopened.revision().workspace), (1, 1));
 }
 
@@ -534,7 +537,7 @@ fn every_bound_field_of_a_token_is_checked() {
         f.refused(press, expected, field);
     }
     let control = f.forge(99, |_| {});
-    assert!(committed(&f.layer.invoke(control)));
+    assert!(committed(&f.layer.invoke(&Caller::Shell, control)));
 }
 
 /// L10 (draft): every open and every restart draws a new random epoch, also with one injected secret, so an earlier
@@ -566,7 +569,7 @@ fn one_injected_secret_never_repeats_an_epoch() {
             // the current epoch under a new command ID, its binding still names the ended one (draft ruling 5). After
             // the restart, the refusals of the epoch before answer `unknown_outcome` (KN5.23).
             for envelope in [&undo, &asked] {
-                let receipt = layer.invoke(envelope.clone());
+                let receipt = layer.invoke(&Caller::Shell, envelope.clone());
                 if restart {
                     assert_eq!(receipt.status, Status::UnknownOutcome, "{}", envelope.row);
                 } else {
@@ -574,7 +577,7 @@ fn one_injected_secret_never_repeats_an_epoch() {
                 }
             }
             let relabelled = Invocation { command: format!("{}/{epoch}", undo.command), epoch, ..undo.clone() };
-            assert_eq!(code_of(&layer.invoke(relabelled)), code::TOKEN_MISMATCH);
+            assert_eq!(code_of(&layer.invoke(&Caller::Shell, relabelled)), code::TOKEN_MISMATCH);
             assert_eq!(layer.run_jobs(), 0);
             assert_eq!((layer.revision().clone(), layer.store().log.len()), before);
             // A new shell's command IDs carry the epoch, so they meet no earlier shell's.
@@ -589,7 +592,7 @@ fn one_injected_secret_never_repeats_an_epoch() {
 
 /// CT-KN5-04 (part: the runtime's and the shell's command IDs are separate spaces, and the request digest covers the
 /// caller, so a runtime envelope under the shell's next command ID neither takes the ID nor reaches the shell as its
-/// receipt; not run: the host's run IDs), L11 (b), draft ruling 4.
+/// receipt; not run: the host's run IDs), L11 (b), ruling 4.
 #[test]
 fn the_runtime_and_the_shell_keep_separate_command_ids() {
     let mut f = fixture(&[]);
@@ -599,10 +602,9 @@ fn the_runtime_and_the_shell_keep_separate_command_ids() {
         row: "operation.preview".into(),
         args: draft_args(&word(&[1])),
         token: None,
-        caller: runtime.clone(),
         epoch: 1,
     };
-    let proposed = f.layer.invoke(theirs.clone());
+    let proposed = f.layer.invoke(&runtime, theirs.clone());
     assert!(running(&proposed), "{:?}", proposed.status);
     assert_eq!(f.layer.run_jobs(), 1);
     let mine = f.shell.prepare(&f.layer, "operation.preview", draft_args(&word(&[1]))).unwrap();
@@ -613,7 +615,7 @@ fn the_runtime_and_the_shell_keep_separate_command_ids() {
     assert_eq!(f.layer.run_jobs(), 1);
     let theirs_now = f.layer.kernel_outcome(&runtime, "shell/1", &proposed.request);
     assert!(matches!(theirs_now.status, Status::Completed(_)) && theirs_now.job == proposed.job);
-    assert_eq!(f.layer.invoke(theirs), theirs_now);
+    assert_eq!(f.layer.invoke(&runtime, theirs), theirs_now);
     let mine_now = f.layer.outcome("shell/1", &pressed.request).unwrap();
     assert!(matches!(mine_now.status, Status::Completed(_)) && mine_now.job == pressed.job);
     let crossed = f.layer.kernel_outcome(&Caller::Shell, "shell/1", &proposed.request);
@@ -621,24 +623,24 @@ fn the_runtime_and_the_shell_keep_separate_command_ids() {
 }
 
 /// CT-KN5-04 (part: a runtime envelope without the token its row takes does not authenticate, so its refusal is kept
-/// for its own envelope and never takes the runtime's command ID; not run: the host's run IDs), draft ruling 4.
+/// for its own envelope and never takes the runtime's command ID; not run: the host's run IDs), ruling 4.
 #[test]
 fn a_runtime_envelope_without_its_rows_token_never_takes_the_command_id() {
     let mut f = fixture(&[]);
+    let runtime = Caller::Runtime { run: "run-1".into() };
     let scramble = Invocation {
         command: "run-1/1".into(),
         row: "jumble.scramble".into(),
         args: json::object([("policy", Value::String("uniform".into()))]),
         token: None,
-        caller: Caller::Runtime { run: "run-1".into() },
         epoch: f.layer.revision().epoch,
     };
-    let refused = f.layer.invoke(scramble.clone());
+    let refused = f.layer.invoke(&runtime, scramble.clone());
     assert_eq!(code_of(&refused), code::TOKEN_INVALID);
     let proposal = Invocation { row: "operation.preview".into(), args: draft_args(&word(&[1])), ..scramble.clone() };
-    let admitted = f.layer.invoke(proposal);
+    let admitted = f.layer.invoke(&runtime, proposal);
     assert!(running(&admitted), "the command ID is still free: {:?}", admitted.status);
-    assert_eq!(f.layer.invoke(scramble), refused, "the refusal answers its own envelope again");
+    assert_eq!(f.layer.invoke(&runtime, scramble), refused, "the refusal answers its own envelope again");
 }
 
 /// CT-KN5-10 (part: the layer's public functions that take `&mut self` are the allowlisted entry points, its test

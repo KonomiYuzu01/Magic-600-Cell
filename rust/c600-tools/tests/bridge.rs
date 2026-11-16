@@ -121,7 +121,7 @@ fn each_proposal_is_one_runtime_preview_and_the_program_gets_the_fixed_acknowled
             let [one] = &sent[..] else { panic!("{case}: one invocation") };
             let invocation = &one.invocation;
             assert_eq!((invocation.command.as_str(), invocation.row.as_str()), (&*format!("{run}/1"), ROW), "{case}");
-            assert_eq!(invocation.caller, Caller::Runtime { run: run.into() }, "{case}");
+            assert_eq!(one.caller, Caller::Runtime { run: run.into() }, "{case}");
             assert_eq!(invocation.epoch, layer.revision().epoch, "{case}");
             assert!(invocation.token.is_none(), "{case}");
             assert_eq!(invocation.args.canonical(), word_args(&word).canonical(), "{case}");
@@ -249,19 +249,18 @@ fn only_a_token_the_shell_mints_commits_the_pending_preview() {
         row: "operation.execute".into(),
         args: args.clone(),
         token: None,
-        caller: Caller::Shell,
         epoch,
     };
-    assert_eq!(layer.invoke(bare).status.code(), Some(code::TOKEN_INVALID));
+    assert_eq!(layer.invoke(&Caller::Shell, bare).status.code(), Some(code::TOKEN_INVALID));
     let genuine = shell.prepare(&layer, "operation.execute", args.clone()).unwrap();
     let mut other = genuine.clone();
     other.token = Some(Token::mint(&Secret::fixed([6; 32]), genuine.token.clone().unwrap().binding));
-    assert_eq!(layer.invoke(other).status.code(), Some(code::TOKEN_INVALID));
+    assert_eq!(layer.invoke(&Caller::Shell, other).status.code(), Some(code::TOKEN_INVALID));
     let mut forged = shell.prepare(&layer, "operation.execute", args).unwrap();
     let mut token = forged.token.take().unwrap();
     token.binding.nonce += 1000;
     forged.token = Some(token);
-    assert_eq!(layer.invoke(forged).status.code(), Some(code::TOKEN_INVALID));
+    assert_eq!(layer.invoke(&Caller::Shell, forged).status.code(), Some(code::TOKEN_INVALID));
     assert_eq!(fingerprint(&layer), before);
     assert_eq!(layer.preview_state(id), Some(PreviewState::Presented));
 

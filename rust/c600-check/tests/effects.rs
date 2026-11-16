@@ -5,7 +5,8 @@
 mod support;
 
 use c600_check::{
-    admit, separation, Admission, Grant, Policy, Profile, Separation, EFFECT_UNDECLARED, NEVER_GRANTED, NOT_GRANTED,
+    admit, separation, Admission, Grant, Policy, Profile, Separation, AMBIENT_READ, EFFECT_UNDECLARED, NEVER_GRANTED,
+    NOT_GRANTED,
 };
 use c600_ir::build::*;
 use c600_ir::{Callee, Capability, Effect, Expr, FnKind, Function, Prim, Program, ReceiptField, Ty};
@@ -147,11 +148,8 @@ fn ct_lg3_01_annotations_bounds_and_unresolved_callables_cannot_erase_an_effect(
     let r = report(&tool(vec![reader(), run, helper("g", vec![], exact(Ty::Nat), call("run", vec![fn_ref("count")]))]));
     assert_eq!(r.codes(), [EFFECT_UNDECLARED]);
     assert_eq!((r.diagnostics[0].function.as_str(), r.diagnostics[0].path.as_str()), ("g", "0"));
-    // An unresolved callable is never treated as pure.
-    assert_eq!(
-        codes(&tool(vec![helper("f", vec![], exact(Ty::Nat), unresolved("mystery", Ty::Nat))])),
-        [EFFECT_UNDECLARED]
-    );
+    // An unresolved callable is never treated as pure: it is dynamic code (DET.36, RTE.45; PHS.52, 16 November 2026).
+    assert_eq!(codes(&tool(vec![helper("f", vec![], exact(Ty::Nat), unresolved("mystery", Ty::Nat))])), [NOT_GRANTED]);
 }
 
 /// CT-LG3-01 (part: callables held in records, in IR).
@@ -209,7 +207,7 @@ fn ct_lg3_02_no_effect_commits_or_obtains_a_token() {
     assert!(report(&p).is_admitted());
     assert_eq!(effects(&p, "tool", "go"), [Effect::PreparePreview]);
     // The only way to name a commit is an unresolved callable, which is refused.
-    assert_eq!(codes(&tool(vec![entry(Ty::Unit, unresolved("commit", Ty::Unit))])), [EFFECT_UNDECLARED]);
+    assert_eq!(codes(&tool(vec![entry(Ty::Unit, unresolved("commit", Ty::Unit))])), [NOT_GRANTED]);
     // A helper cannot hide a preview under another effect.
     assert_eq!(codes(&tool(vec![previewer().with_effects(bound(&[Effect::ChangeView], &[]))])), [EFFECT_UNDECLARED]);
 }
@@ -260,25 +258,51 @@ fn ct_lg3_04_file_clock_and_randomness_need_a_declaration_and_a_grant() {
         let declaring = |caps: &[Capability]| {
             program(vec![module("tool", vec![command("go", vec![], result_of(cap), request(cap))]).declaring(caps)])
         };
+        // A clock or a file read without a grant is an ambient read (PHS.52, 16 November 2026).
+        let refused = if cap == Capability::Randomness { NOT_GRANTED } else { AMBIENT_READ };
         for profile in PROFILES {
             let run = |p: Program, grant: Grant| admit_in(&p, profile, &grant, &Policy::interim()).codes();
             let case = format!("{cap:?} in {profile:?}");
-            assert_eq!(run(declaring(&[]), Grant::none()), [EFFECT_UNDECLARED, NOT_GRANTED], "{case}");
+            assert_eq!(run(declaring(&[]), Grant::none()), [EFFECT_UNDECLARED, refused], "{case}");
             assert_eq!(run(declaring(&[]), Grant::of(&[cap])), [EFFECT_UNDECLARED], "{case}");
-            assert_eq!(run(declaring(&[cap]), Grant::none()), [NOT_GRANTED], "{case}");
+            assert_eq!(run(declaring(&[cap]), Grant::none()), [refused], "{case}");
             assert!(run(declaring(&[cap]), Grant::of(&[cap])).is_empty(), "{case}");
         }
     }
 }
 
-/// CT-LG3-04 (part: network, process and session files in IR).
+/// CT-LG3-04 (part: the code of an ungranted file capability; owner decision of 16 November 2026 under PHS.52). An
+/// entry that may read a file, itself or through a callable whose bound holds the file capability, is refused as an
+/// ambient read; an entry that only writes a file is refused as authority not granted.
+#[test]
+fn phs52_an_ungranted_file_is_an_ambient_read_only_where_it_may_be_read() {
+    let write = Expr::FileWrite { path: "out.txt".into(), value: Box::new(nat(1)) };
+    let file = c600_ir::EffectBound { capabilities: [Capability::File].into(), ..bound(&[Effect::GrantedFile], &[]) };
+    let reader = fn_ty(vec![], exact(Ty::Nat), file);
+    let through = command("go", vec![param("f", exact(reader))], exact(Ty::Nat), call_value(var("f"), vec![]));
+    for (go, refused) in [
+        (entry(Ty::Unit, write.clone()), NOT_GRANTED),
+        (entry(Ty::Nat, request(Capability::File)), AMBIENT_READ),
+        (entry(Ty::Unit, let_("n", request(Capability::File), write)), AMBIENT_READ),
+        (through, AMBIENT_READ),
+    ] {
+        let p = program(vec![module("tool", vec![go]).declaring(&[Capability::File])]);
+        for profile in PROFILES {
+            assert_eq!(admit_in(&p, profile, &Grant::none(), &Policy::interim()).codes(), [refused], "{profile:?}");
+        }
+    }
+}
+
+/// CT-LG3-04 (part: network, process and session files in IR). A manifest's network request is an ambient read
+/// (PHS.52, 16 November 2026).
 #[test]
 fn ct_lg3_04_network_process_and_session_files_are_never_granted() {
     for cap in NEVER_GRANTED {
         let p = program(vec![module("tool", vec![entry(Ty::Nat, nat(1))]).declaring(&[cap])]);
+        let refused = if cap == Capability::Network { AMBIENT_READ } else { NOT_GRANTED };
         for profile in PROFILES {
             let a = admit_in(&p, profile, &Grant::of(&NEVER_GRANTED), &Policy::interim());
-            assert_eq!(a.codes(), [NOT_GRANTED], "{cap:?} in {profile:?}");
+            assert_eq!(a.codes(), [refused], "{cap:?} in {profile:?}");
             assert_eq!(a.diagnostics[0].path, "manifest");
         }
     }

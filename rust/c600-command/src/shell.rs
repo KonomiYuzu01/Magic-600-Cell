@@ -172,13 +172,14 @@ impl Shell {
         let token = self.mint(layer, &command, &found, &args);
         self.sent.push(command.clone());
         let epoch = layer.revision().epoch;
-        Ok(Invocation { command, row: row.to_owned(), args, token, caller: Caller::Shell, epoch })
+        Ok(Invocation { command, row: row.to_owned(), args, token, epoch })
     }
 
-    /// Sends a prepared invocation. A commit or a completed cancel ends the presented preview.
+    /// Sends a prepared invocation on the shell's channel, which stamps [`Caller::Shell`] (ruling 4). A commit or a
+    /// completed cancel ends the presented preview.
     pub fn send<S: Store>(&mut self, layer: &mut CommandLayer<S>, invocation: Invocation) -> Receipt {
         let cancel = invocation.row == "operation.preview.cancel";
-        let receipt = layer.invoke(invocation);
+        let receipt = layer.invoke(&Caller::Shell, invocation);
         if matches!(receipt.status, Status::Committed(_)) || (cancel && matches!(receipt.status, Status::Completed(_)))
         {
             self.presented = None;

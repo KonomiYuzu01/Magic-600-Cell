@@ -216,13 +216,13 @@ fn ct_ev3_07_view_half_a_representation_view_cannot_write_workspace_or_stale_und
     assert_eq!(before.0.workspace, 0);
 
     for (i, row) in ROWS.iter().enumerate() {
-        let receipt = session.layer.invoke(session.runtime_call(&format!("rt/{i}"), row));
+        let receipt = session.layer.invoke(&program_channel(), session.runtime_call(&format!("rt/{i}"), row));
         assert_eq!(receipt.status.code(), Some(code::ROW_NOT_BUILT), "{row}: {:?}", receipt.status);
         assert_eq!(session.fixed(), before, "{row}");
     }
     let mut undo = session.runtime_call("rt/undo", "session.undo");
     undo.args = json::object([("hint", hint.to_json())]);
-    let receipt = session.layer.invoke(undo);
+    let receipt = session.layer.invoke(&program_channel(), undo);
     assert_eq!(receipt.status.code(), Some(code::COMMIT_ROW_REFUSED), "{:?}", receipt.status);
     assert_eq!(session.fixed(), before);
 
@@ -231,7 +231,7 @@ fn ct_ev3_07_view_half_a_representation_view_cannot_write_workspace_or_stale_und
     session.layer.register_overlay("tool.representation", Kind::View, &[], overlay).expect("a view overlay row");
     let from_shell =
         session.shell.invoke(&mut session.layer, "tool.representation", json::object([])).expect("prepared");
-    let from_program = session.layer.invoke(session.runtime_call("rt/view", "tool.representation"));
+    let from_program = session.layer.invoke(&program_channel(), session.runtime_call("rt/view", "tool.representation"));
     for receipt in [from_shell, from_program] {
         assert!(matches!(receipt.status, Status::Running(_) | Status::Cancelled(_)), "{:?}", receipt.status);
     }
