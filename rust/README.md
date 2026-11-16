@@ -799,10 +799,10 @@ run or not applicable is no pass (PHS.63).
 - Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them),
   KN5's stages 1 and 2 and the Linux Rust job, as `tools/language/ct_index.py --summary` prints it
   (`tests/test_ct_index.py` checks the tool): 63 whole, eight of them by the union of their parts (CT-KN1-05,
-  CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01, CT-LG3-04 and CT-LG5-06); 129 part; 4 named only by LP3's command-layer tests, as parts without a marker
-  (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); 1 missing despite its name (CT-KN5-08: only the documentation in
-  `c600-command/src/layer.rs` names it); 51 waiting, each with what it waits for in
-  `docs/progress/1.0/lp2-ct-index-notes.md`.
+  CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01, CT-LG3-04 and CT-LG5-06); 129 part; 4 named only by LP3's
+  command-layer tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); 1 missing despite
+  its name (CT-KN5-08: only the documentation in `c600-command/src/layer.rs` names it); 51 waiting, each with what it
+  waits for in `docs/progress/1.0/lp2-ct-index-notes.md`.
 - The headless Linux legs of CT-DET-02, CT-DET-15 and CT-PS1-01 run in the Linux Rust job
   (`.github/workflows/linux-rust.yml`, owner decision of 16 November 2026), against the same pinned bytes as the
   Windows shards, so CT-PS1-01 is whole. The Python comparisons with J1 still run on the Windows shards only.
