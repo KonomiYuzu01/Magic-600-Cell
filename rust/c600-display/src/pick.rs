@@ -4,7 +4,8 @@
 
 use std::collections::BTreeMap;
 
-use crate::plan::{InstanceId, Lineage, ObjectId, PlanId, PreviewId, SourceLink, StateRef, ViewId};
+use crate::error::codes;
+use crate::plan::{InstanceId, Level, Lineage, ObjectId, PlanId, PreviewId, SourceLink, StateRef, ViewId};
 use crate::validate::PlanSubject;
 
 /// KN0.4's typed partial result.
@@ -143,11 +144,14 @@ pub struct Resolution {
 
 /// The kernel's exact projection to slots for a bound subject (RPI.23).
 pub trait Projection {
-    /// The slot of a sticker or piece at `subject`, or why there is none (off the lattice, no slot is invented).
+    /// The slot of a sticker or piece at `subject`, or why there is none (off the lattice, no slot is invented; a
+    /// subject at a level the projection does not hold, [`codes::LEVEL_NOT_HELD`]).
     fn slot(&self, subject: &StateRef, object: &ObjectId) -> Partial<u32>;
 }
 
-/// The projection of a 600-cell-Full label state: sticker `h` is in the slot whose label is `h`.
+/// The projection of a 600-cell-Full label state: sticker `h` is in the slot whose label is `h`. It holds the label
+/// level only: a pose-level subject gets [`codes::LEVEL_NOT_HELD`] before any digest is compared (KN1.8, KN1.10), so
+/// no slot is lifted from labels into poses, even under a digest equal to its own.
 pub struct LabelProjection {
     slot_of: Vec<u32>,
     digest: String,
@@ -168,6 +172,9 @@ impl LabelProjection {
 
 impl Projection for LabelProjection {
     fn slot(&self, subject: &StateRef, object: &ObjectId) -> Partial<u32> {
+        if subject.level() != Level::Labels {
+            return Partial::Undefined(codes::LEVEL_NOT_HELD.to_owned());
+        }
         if subject.digest() != self.digest {
             return Partial::Undefined("the projection is for another subject".to_owned());
         }

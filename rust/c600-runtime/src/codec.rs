@@ -5,10 +5,12 @@
 //! has no form), so it cannot carry a value between processes. This encoding keeps every variant: a tag byte, then
 //! the payload. It accepts only values in their canonical form (a rational in lowest terms with a positive
 //! denominator, an element of Q(√5) with `d > 0` and `gcd(a, b, d) = 1`, a normalised approximation of a supported
-//! precision, letters of magnitude 1 to 1200, records whose field names are distinct), so equal values have equal
-//! bytes. Values are walked with an explicit
-//! stack in both directions, so a deep value cannot overflow either process's stack.
+//! precision, letters of magnitude 1 to 1200, records whose field names are distinct, a freely reduced word key, a
+//! set's elements and a map's keys strictly increasing in the canonical key order), so equal values have equal bytes.
+//! Values are walked with an explicit stack in both directions, so a deep value cannot overflow either process's
+//! stack. A compressed word has no transfer form yet: `c600-run` lends no way to read or rebuild its parts.
 
+use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::sync::Arc;
 
@@ -18,7 +20,7 @@ use c600_run::interp::{self, Request, RowTariff, Sink};
 use c600_run::meter::{
     self, Amounts, ChildRecord, DraftTariffs, Interruption, Outcome, Position, Row, SourceRange, Summary, Tariffs,
 };
-use c600_run::value::{Closure, List, Quad, Ratio, Record, Text, Value};
+use c600_run::value::{entry, value_order, Closure, List, Quad, Ratio, Record, Text, Value};
 use num_bigint::{BigInt, Sign};
 use num_integer::Integer;
 use num_traits::{One, Signed, Zero};
@@ -49,8 +51,12 @@ mod tag {
     pub const CLOSURE: u8 = 13;
     pub const FN: u8 = 14;
     pub const RECEIPT: u8 = 15;
-    /// A list of the LP2 IR draft. Draft until C3 gives the new IR forms their transfer form.
+    /// LP2's draft collections (C3 draft): a list's elements in order, a word key's letters, a set's elements, and a
+    /// map's entries, each as its key then its value; a set's elements and a map's keys in canonical key order.
     pub const LIST: u8 = 16;
+    pub const WORD_KEY: u8 = 17;
+    pub const SET: u8 = 18;
+    pub const MAP: u8 = 19;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -107,6 +113,57 @@ fn canonical_approx(x: &Approx) -> bool {
 
 fn canonical_word(letters: &[i32]) -> bool {
     letters.iter().all(|l| (1..=1200).contains(&l.unsigned_abs()))
+}
+
+/// LG2.18: no letter is followed by its inverse. It never overflows, so a letter out of range reaches its own refusal.
+fn freely_reduced(letters: &[i32]) -> bool {
+    letters.windows(2).all(|w| w[0].checked_neg() != Some(w[1]))
+}
+
+/// Strictly increasing in the canonical key order without its secondary key (DET.9; `c600_run::value::value_order`),
+/// so no two are one key: an `Int` and a `Rat` of one number are one.
+fn increasing<'a>(mut keys: impl Iterator<Item = &'a Value>) -> bool {
+    let Some(mut last) = keys.next() else { return true };
+    keys.all(|k| {
+        let less = value_order(last, k) == Ordering::Less;
+        last = k;
+        less
+    })
+}
+
+/// A map entry's key and value: the record `{ key, value }` with exactly these fields in this order
+/// (`c600_run::value::entry`).
+fn entry_parts(item: &Value) -> Option<(&Value, &Value)> {
+    let Value::Record(r) = item else { return None };
+    match r.fields() {
+        [(k, key), (v, value)] if k.as_str() == "key" && v.as_str() == "value" => Some((key, value)),
+        _ => None,
+    }
+}
+
+/// A word's or a word key's letters: the tag, the count, then each letter.
+fn encode_letters(t: u8, letters: &[i32], e: &mut Enc) -> Result<(), Unencodable> {
+    if !canonical_word(letters) {
+        return Err(Unencodable("a letter outside 1 to 1200"));
+    }
+    e.u8(t);
+    e.count(letters.len());
+    for l in letters {
+        e.i32(*l);
+    }
+    Ok(())
+}
+
+fn decode_letters(d: &mut Dec) -> Result<Vec<i32>, Malformed> {
+    let n = d.count(4)?;
+    let mut letters = Vec::with_capacity(n);
+    for _ in 0..n {
+        letters.push(d.i32()?);
+    }
+    if !canonical_word(&letters) {
+        return Err(Malformed::new("a letter outside 1 to 1200"));
+    }
+    Ok(letters)
 }
 
 enum Item<'a> {
@@ -182,16 +239,7 @@ pub fn encode_value(value: &Value, e: &mut Enc) -> Result<(), Unencodable> {
                 e.u8(tag::COLOUR);
                 e.text(t.as_str());
             }
-            Value::Word(w) => {
-                if !canonical_word(w) {
-                    return Err(Unencodable("a letter outside 1 to 1200"));
-                }
-                e.u8(tag::WORD);
-                e.count(w.len());
-                for l in w.iter() {
-                    e.i32(*l);
-                }
-            }
+            Value::Word(w) => encode_letters(tag::WORD, w, e)?,
             Value::Record(r) | Value::Receipt(r) => {
                 if r.fields().iter().map(|(n, _)| n.as_str()).collect::<BTreeSet<_>>().len() != r.fields().len() {
                     return Err(Unencodable("a record with a repeated field"));
@@ -222,11 +270,39 @@ pub fn encode_value(value: &Value, e: &mut Enc) -> Result<(), Unencodable> {
                     stack.push(Item::Value(v));
                 }
             }
-            // The other LP2 draft forms have no transfer form until C3 gives them one. They are named, so that a later
-            // form is a compile error here rather than a silent refusal.
-            Value::WordEqualityKey(_) | Value::Set(_) | Value::Map(_) | Value::Compressed(_) => {
-                return Err(Unencodable("an LP2 draft value without a transfer form"))
+            Value::WordEqualityKey(w) => {
+                if !freely_reduced(w) {
+                    return Err(Unencodable("a word key that is not freely reduced"));
+                }
+                encode_letters(tag::WORD_KEY, w, e)?;
             }
+            Value::Set(s) => {
+                if !increasing(s.items().iter()) {
+                    return Err(Unencodable("a set outside the canonical key order"));
+                }
+                e.u8(tag::SET);
+                e.count(s.items().len());
+                for v in s.items().iter().rev() {
+                    stack.push(Item::Value(v));
+                }
+            }
+            Value::Map(m) => {
+                let Some(entries) = m.items().iter().map(entry_parts).collect::<Option<Vec<_>>>() else {
+                    return Err(Unencodable("a map entry that is not a { key, value } record"));
+                };
+                if !increasing(entries.iter().map(|(k, _)| *k)) {
+                    return Err(Unencodable("a map outside the canonical key order"));
+                }
+                e.u8(tag::MAP);
+                e.count(entries.len());
+                for (k, v) in entries.into_iter().rev() {
+                    stack.push(Item::Value(v));
+                    stack.push(Item::Value(k));
+                }
+            }
+            // No transfer form until `c600-run` lends a way to read and rebuild the parts. Named, so that a later form
+            // is a compile error here rather than a silent refusal.
+            Value::Compressed(_) => return Err(Unencodable("a compressed word without a transfer form")),
         }
     }
     Ok(())
@@ -239,10 +315,44 @@ pub fn value_bytes(value: &Value) -> Result<Vec<u8>, Unencodable> {
     Ok(e.bytes)
 }
 
+/// What a sequence frame builds.
+#[derive(Clone, Copy)]
+enum Seq {
+    List,
+    Set,
+    /// Keys and values alternate.
+    Map,
+}
+
 enum Frame {
     Record { receipt: bool, left: usize, fields: Vec<(Arc<Text>, Value)>, name: Option<Arc<Text>> },
     Closure { code: usize, left: usize, captures: Vec<Value> },
-    List { left: usize, items: Vec<Value> },
+    Seq { kind: Seq, left: usize, items: Vec<Value> },
+}
+
+/// A decoded list, set or map. A set's elements and a map's keys must be strictly increasing in the canonical key
+/// order.
+fn sequence(kind: Seq, items: Vec<Value>) -> Result<Value, Malformed> {
+    Ok(match kind {
+        Seq::List => Value::List(Arc::new(List::new(items))),
+        Seq::Set => {
+            if !increasing(items.iter()) {
+                return Err(Malformed::new("a set outside the canonical key order"));
+            }
+            Value::Set(Arc::new(List::new(items)))
+        }
+        Seq::Map => {
+            if !increasing(items.iter().step_by(2)) {
+                return Err(Malformed::new("a map outside the canonical key order"));
+            }
+            let mut items = items.into_iter();
+            let mut entries = Vec::with_capacity(items.len() / 2);
+            while let (Some(k), Some(v)) = (items.next(), items.next()) {
+                entries.push(entry(k, v));
+            }
+            Value::Map(Arc::new(List::new(entries)))
+        }
+    })
 }
 
 fn text_value(d: &mut Dec) -> Result<Arc<Text>, Malformed> {
@@ -287,16 +397,13 @@ pub fn decode_value(d: &mut Dec) -> Result<Value, Malformed> {
             tag::TARGET => Value::Target(text_value(d)?),
             tag::TAG => Value::Tag(text_value(d)?),
             tag::COLOUR => Value::Colour(text_value(d)?),
-            tag::WORD => {
-                let n = d.count(4)?;
-                let mut letters = Vec::with_capacity(n);
-                for _ in 0..n {
-                    letters.push(d.i32()?);
+            tag::WORD => Value::Word(decode_letters(d)?.into()),
+            tag::WORD_KEY => {
+                let letters = decode_letters(d)?;
+                if !freely_reduced(&letters) {
+                    return Err(Malformed::new("a word key that is not freely reduced"));
                 }
-                if !canonical_word(&letters) {
-                    return Err(Malformed::new("a letter outside 1 to 1200"));
-                }
-                Value::Word(letters.into())
+                Value::WordEqualityKey(letters.into())
             }
             tag::RECORD | tag::RECEIPT => {
                 let receipt = tag == tag::RECEIPT;
@@ -325,12 +432,18 @@ pub fn decode_value(d: &mut Dec) -> Result<Value, Malformed> {
                 }
             }
             tag::FN => Value::Fn(d.usize()?),
-            tag::LIST => {
-                let n = d.count(1)?;
-                if n == 0 {
-                    Value::List(Arc::new(List::new(Vec::new())))
+            tag::LIST | tag::SET | tag::MAP => {
+                // An element takes at least its tag; a map entry, its key's and its value's.
+                let (kind, per) = match tag {
+                    tag::LIST => (Seq::List, 1),
+                    tag::SET => (Seq::Set, 1),
+                    _ => (Seq::Map, 2),
+                };
+                let left = d.count(per)? * per;
+                if left == 0 {
+                    sequence(kind, Vec::new())?
                 } else {
-                    stack.push(Frame::List { left: n, items: Vec::with_capacity(n.min(64)) });
+                    stack.push(Frame::Seq { kind, left, items: Vec::with_capacity(left.min(64)) });
                     continue;
                 }
             }
@@ -350,7 +463,7 @@ pub fn decode_value(d: &mut Dec) -> Result<Value, Malformed> {
                     *left -= 1;
                     *left
                 }
-                Frame::List { left, items } => {
+                Frame::Seq { left, items, .. } => {
                     items.push(value);
                     *left -= 1;
                     *left
@@ -368,7 +481,7 @@ pub fn decode_value(d: &mut Dec) -> Result<Value, Malformed> {
                 Some(Frame::Record { receipt: false, fields, .. }) => Value::Record(Arc::new(Record::new(fields))),
                 Some(Frame::Record { receipt: true, fields, .. }) => Value::Receipt(Arc::new(Record::new(fields))),
                 Some(Frame::Closure { code, captures, .. }) => Value::Closure(Arc::new(Closure::new(code, captures))),
-                Some(Frame::List { items, .. }) => Value::List(Arc::new(List::new(items))),
+                Some(Frame::Seq { kind, items, .. }) => sequence(kind, items)?,
                 None => return Err(Malformed::new("a value frame went missing")),
             };
         }
@@ -526,14 +639,22 @@ fn ty(t: &Ty, e: &mut Enc, depth: usize) -> Result<(), Unencodable> {
             e.u8(17);
             e.text(name);
         }
-        // LP2 draft forms: a list has tag 18; the others have no transfer form until C3 gives them one.
+        // LP2's draft collection types. A compressed word's type crosses although its value has no transfer form yet.
         Ty::List(element) => {
             e.u8(18);
             qty(element, e, depth + 1)?;
         }
-        Ty::WordEqualityKey | Ty::Set(_) | Ty::Map(..) | Ty::CompressedWord => {
-            return Err(Unencodable("an LP2 draft type without a transfer form"))
+        Ty::WordEqualityKey => e.u8(19),
+        Ty::Set(element) => {
+            e.u8(20);
+            qty(element, e, depth + 1)?;
         }
+        Ty::Map(key, value) => {
+            e.u8(21);
+            qty(key, e, depth + 1)?;
+            qty(value, e, depth + 1)?;
+        }
+        Ty::CompressedWord => e.u8(22),
     }
     Ok(())
 }
@@ -607,6 +728,13 @@ fn decode_ty_at(d: &mut Dec, depth: usize) -> Result<Ty, Malformed> {
         16 => Ty::Receipt,
         17 => Ty::Var(d.text()?.to_string()),
         18 => Ty::List(Box::new(decode_qty_at(d, depth + 1)?)),
+        19 => Ty::WordEqualityKey,
+        20 => Ty::Set(Box::new(decode_qty_at(d, depth + 1)?)),
+        21 => {
+            let key = decode_qty_at(d, depth + 1)?;
+            Ty::Map(Box::new(key), Box::new(decode_qty_at(d, depth + 1)?))
+        }
+        22 => Ty::CompressedWord,
         _ => return Err(Malformed::new("an unknown type tag")),
     })
 }

@@ -99,8 +99,10 @@ rotation plane for a twist, so a jumbling transform has no swept preview. Both w
 Found with C8's next piece, 16 November 2026. The kernel's label protection (`ProtectedSet`) covers the moving orbits 0
 to 34 only, so a centre piece has no label-level protection row, and CT-LB3-02's label verdict is composed from KN2.4's
 `positions` rows; M5 protects one letter, so Strict protection of a whole word waits for M8. Sent to the LP2 integrator
-the same day. On LP3's side, `c600-display`'s `LabelProjection` binds a state digest but carries no level (C2), so
-CT-LB4-03's "no lift from labels" rests on the digest that binds the subject.
+the same day. On LP3's side, `c600-display`'s slot projections bound a state digest but carried no level (C2), so
+CT-LB4-03's "no lift from labels" rested on the digest that binds the subject. Fixed the same day: each projection holds
+one level and answers a subject at the other level with `KN1:input.level_not_held` before any digest is compared
+(KN1.8, KN1.10); CT-RPI-12's off-lattice part and both halves of CT-LB4-03 check it under a planted equal digest.
 
 ## 3. Integrator selections (the owner may overrule them)
 

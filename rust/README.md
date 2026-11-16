@@ -1029,6 +1029,8 @@ run or not applicable is no pass (PHS.63).
   whole or not at all and ends in exactly one KN5.21-style terminal, standalone or scheduled (RM.17 to RM.26, LI.25);
   a mock backend stands in for an adapter (RPI.55, RM.33). Picks resolve by instance ID through the installed source
   map, never through a chart inverse, and stale picks name the field that changed (RM.10, RM.24, RPI.24, RPI.25).
+  Each slot projection holds one level: a subject at the other level gets no slot, with reason
+  `KN1:input.level_not_held`, before any digest is compared (KN1.8, KN1.10).
 - Charts and stages (C2's next display piece): exact arithmetic in Q(√5) with checked `i128` parts, the 600-cell and
   its exact poses in K⁺ (`exact.rs`); chart checks with the exact region test, the vertex test and `admit_chart`, which
   admits a chart only on established check results and refuses it on a refutation with
@@ -1106,7 +1108,8 @@ run or not applicable is no pass (PHS.63).
   message kinds, and a canonical value encoding that refuses every noncanonical form on both sides. The parent
   answers a repeated, unacknowledged call from its record and never calls the host twice for one call, and a new
   call must acknowledge the last answer, so at most one answer is open (KI.5). No message has a field for a token
-  or any other authority (KN5.15).
+  or any other authority (KN5.15). LP2's draft collections cross with one encoding each: lists, word keys (freely
+  reduced), and sets and maps in canonical key order. A compressed word does not cross yet (crate draft 15).
 - Faults: a child that is lost, does not start, names another protocol, sends a malformed or oversized frame or
   breaks the call protocol ends the run as `error` with `KN7:resource_limit.runtime_lost`; a passed deadline ends it
   as `cut_off` with `KN7:resource_limit.safety_stop`. The child is killed and reaped, and the next run starts a fresh
@@ -1114,16 +1117,19 @@ run or not applicable is no pass (PHS.63).
 - Tests (`c600-runtime/tests/`): the child and the in-process run give the same results, charges, stop points, host
   calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 11 of DET.65's 40 traces as `.6cs` programs on both
   executors (`ct_rte_04.rs`; `nested-calls` and the two output traces since LP2's M2 meter); the protocol's bounds,
-  canonical encodings, KI.5's record and KN5.15's field list (`protocol.rs`); CT-RTE-10's headless fault half,
-  rehearsals in debug builds that kill, crash, truncate, garble, oversize or hang the child while the session keeps
-  its journal, state hash and pending preview (`faults.rs`).
+  canonical encodings, KI.5's record and KN5.15's field list (`protocol.rs`); LP2's draft collections, their
+  canonical forms and refusals on both sides, and their runs through the child (`collections.rs`); CT-RTE-10's
+  headless fault half, rehearsals in debug builds that kill, crash, truncate, garble, oversize or hang the child
+  while the session keeps its journal, state hash and pending preview (`faults.rs`).
 - Drafts, which freeze with the IR and the command table: the list in the crate documentation, among them the
   framing and message kinds (KI.15, ONE.69), the transfer encoding (DET.59), acknowledgement and retry (KI.5), the
   fault codes (KN7.13), source bytes rather than checked IR in a job (KI.6, ADR-L12.9), and a deadline checked
   between messages only, so a blocking host call is not interrupted.
 - Not built: OS isolation of the child (a job object with kill-on-close, a restricted or AppContainer token,
   filesystem and network confinement); a bound on the parent's queue of frames to a child that stops reading its
-  input (draft 5); LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's other 29 traces need
+  input (draft 5); a compressed word's transfer form, which needs a way to read and rebuild its parts from
+  `c600-run` (asked of LP2; draft 15); LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's
+  other 29 traces need
   what the IR draft lacks: child scopes, more than one generator per run, releasing a `let` before its alias, text
   order, byte decoding, loops and pointwise checks, exact multiplication, streaming cursors and an executor for
   `lp1-exec-region-draft-1` (LP2).
@@ -1392,7 +1398,8 @@ run or not applicable is no pass (PHS.63).
     menu; "none: off the lattice" and `unknown` as two values in one result; never the old occupant; the coverage and
     missing part of a partial result kept; a slot outside the model refused).
   - `c600-jumble-tool/tests/ct_lb4_03.rs`: CT-LB4-03's jumbling half (eight display instances of six objects resolved at
-    five levels on the pose-level subject; a 600-cell-Full label projection answers nothing for it; a planted chart
+    five levels on the pose-level subject; a 600-cell-Full label projection holds no pose level, so it answers
+    `KN1:input.level_not_held` for it, also under that subject's own digest; a planted chart
     inverse is never called; four layout filters, one by pose, keep the analysed set, the posed row and the subject).
   - `c600-display/tests/jumbling.rs`: CT-RPI-08's jumbling rows (produced and validated; unsupported and missing data
     explicit), CT-RPI-12's off-lattice part on a real jumbling state (with C2's stale half, CT-RPI-12 runs whole) and
@@ -1405,8 +1412,8 @@ run or not applicable is no pass (PHS.63).
   than the identity has an `unknown` occupant); J10's exposed-face geometry; a comparison of the posed arrays with the
   J1 fixture's later stages; label-level protection rows for every piece, centre pieces included (the kernel's
   `ProtectedSet` covers the moving orbits 0 to 34, so CT-LB3-02's label verdict is composed from `positions` rows);
-  LB3.4's projection from poses to labels with its checkpoints; a level in `c600-display`'s slot projections (C2); the
-  relationship strip's data contract (chapter 06, RPI.65).
+  LB3.4's projection from poses to labels with its checkpoints; the relationship strip's data contract (chapter 06,
+  RPI.65).
 - Drafts, which freeze with the IR and the command table, are in each crate's documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
   Linux leg was not run.

@@ -74,6 +74,9 @@
 //!   identity pose with its home slot and a piece off the lattice with `undefined(off_lattice)`. `c600_jumble` has no
 //!   slot action of K+, so a sticker of a piece at another lattice pose is `undefined` with its own reason, not a
 //!   computed slot; a piece, as on 600-cell-Full, has no single slot.
+//! - KN1.8, KN1.10: each slot projection holds one level, the label projection ([`pick::LabelProjection`]) labels and
+//!   the pose projection poses ([`plan::StateRef::level`]). A subject at the other level is
+//!   `undefined(KN1:input.level_not_held)` before any digest is compared, so nothing is lifted from labels into poses.
 //! - RM.6, F03: a transform without the engine's plane has no swept preview ([`validate::swept_preview`]); its
 //!   endpoints are state revisions with `to > from`.
 //! - RM.6: exact-set digests are the SHA-256 of sorted piece IDs as little-endian u32, or of canonical object text

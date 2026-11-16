@@ -12,7 +12,7 @@ use c600_display::array::Array;
 use c600_display::codes;
 use c600_display::crosswalk::{exposed_geometry, survey_state, SurveyState};
 use c600_display::jumble::{self, Missing, PoseProjection};
-use c600_display::pick::{Partial, PickMode, PickReply, Requested};
+use c600_display::pick::{LabelProjection, Partial, PickMode, PickReply, Projection, Requested};
 use c600_display::plan::*;
 use c600_display::validate::{swept_preview, validate, validate_engine_bundle, Context, K_PLUS};
 use c600_jumble::observe::{seam_facts, Batch, Rows, Scope};
@@ -285,9 +285,10 @@ fn reply(host: &c600_display::host::Host<c600_display::host::MockBackend>, insta
 /// CT-RPI-12, off-lattice part (RPI.23, RPI.25), on a real jumbling state off the lattice: a slot request for a
 /// sticker or piece off the lattice is a partial answer with reason `off_lattice` and no invented slot; a sticker
 /// at the identity pose resolves to its home slot; the partial answer differs from another subject's partial answer,
-/// from an unknown one (a level the occurrence has no target at) and from a stale one, which is checked first. The stale half itself
-/// is C2's test in `picking.rs`; a slot of a piece at a non-identity lattice pose is not computed (no K⁺ slot action
-/// in `c600_jumble`).
+/// from a projection at the other level (`KN1:input.level_not_held`, both ways, under a planted equal digest), from
+/// an unknown one (a level the occurrence has no target at) and from a stale one, which is checked first. The stale
+/// half itself is C2's test in `picking.rs`; a slot of a piece at a non-identity lattice pose is not computed (no K⁺
+/// slot action in `c600_jumble`).
 #[test]
 fn ct_rpi_12_off_lattice_partial_answers_stay_distinct_on_a_jumbling_state() {
     let world = world();
@@ -337,6 +338,32 @@ fn ct_rpi_12_off_lattice_partial_answers_stay_distinct_on_a_jumbling_state() {
     assert_eq!(missing, ["slot: the projection is for another subject"], "not reported as off the lattice");
     let unknown = resolve(1, PickMode::Explicit, Requested::Cell, &projection);
     assert!(matches!(unknown, Ok(Some(Partial::Undefined(_)))), "{unknown:?}");
+
+    // A projection at the other level is neither (KN1.8, KN1.10), and the level is read before any digest. The solved
+    // label state of 600-cell-Full has the off-lattice piece's sticker at home, the old occupant's answer; bound to
+    // this subject's own pose digest, it still gives that sticker no slot. The pose projection likewise answers
+    // nothing for a label-level snapshot whose digest string is its own.
+    let solved = kernel().solved();
+    assert_eq!(solved.labels()[home_of(off) as usize], home_of(off) as i32, "the label state has it at home");
+    let lifted = LabelProjection::new(solved.labels(), &state.digest(engine));
+    let Ok(Some(Partial::Partial { covered, missing })) =
+        host.resolve_pick(&reply(&host, 1), PickMode::Explicit, Requested::Slot, &lifted)
+    else {
+        panic!("a label projection gives a pose-level subject no slot")
+    };
+    assert_eq!(
+        (covered.target, missing),
+        (ObjectId::Sticker(home_of(off)), vec![format!("slot: {}", codes::LEVEL_NOT_HELD)])
+    );
+    let labels = StateRef::Snapshot(RevisionRef { mode: Mode::JumbleOff, ..base.clone() });
+    assert_eq!((labels.level(), labels.digest()), (Level::Labels, state.digest(engine).as_str()));
+    let answer = projection.slot(&labels, &ObjectId::Sticker(home_of(home)));
+    assert_eq!(answer, Partial::Undefined(codes::LEVEL_NOT_HELD.to_owned()), "no slot from poses at the label level");
+    assert_eq!(
+        projection.slot(&StateRef::Snapshot(base.clone()), &ObjectId::Sticker(home_of(home))),
+        Partial::Total(home_of(home)),
+        "the same request at the pose level has its slot"
+    );
 
     // Stale is checked first and is neither: explicit work gets its reason, a passive reply is dropped.
     let delayed = reply(&host, 1);

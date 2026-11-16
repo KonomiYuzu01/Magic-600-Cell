@@ -10,7 +10,8 @@
 //! What runs: eight instances of six canonical objects in an atlas of two charts and on a sheet, resolved at the
 //! occurrence, sticker, piece, cell and slot levels on the pose-level subject (Jumble on, the identity block with the
 //! I_a menu, the pose digest); a slot answer at the identity, off the lattice and at another lattice pose, each with
-//! its own reason, and a 600-cell-Full label projection that answers nothing for that subject; the atlas's occurrences
+//! its own reason, and a 600-cell-Full label projection that holds no pose level, so it answers nothing for that
+//! subject even under the subject's own digest; the atlas's occurrences
 //! drawn at one point, two pieces sharing one pose index, and a planted inverse that nothing calls; and four layout
 //! filters, one of them by pose, that leave the analysed set (the engine's certified inside set of the last twist), the
 //! posed row, the subject and the base as they were, validate, install and move no state. Not run: a layout evaluated
@@ -315,7 +316,7 @@ fn fixture() -> &'static Fixture {
 /// projection (J13): a sticker at the identity is in its home slot, a sticker or piece off the lattice has no slot
 /// (`off_lattice`), and a sticker at another lattice pose has no slot the kernel can name, with its own reason. No
 /// slot is lifted from labels: the solved label state of 600-cell-Full has every sticker at home, and its projection
-/// answers nothing for the pose-level subject.
+/// answers `KN1:input.level_not_held` for the pose-level subject, also when it is bound to that subject's own digest.
 #[test]
 fn ct_lb4_03_jumbling_half_display_instances_map_to_canonical_ids_at_pose_level() {
     let f = fixture();
@@ -383,16 +384,22 @@ fn ct_lb4_03_jumbling_half_display_instances_map_to_canonical_ids_at_pose_level(
     let (covered, missing) = partial_slot(&host, 6, &projection);
     assert_eq!((covered.target, missing.len()), (ObjectId::Cell(7), 1), "a cell has no slot");
 
-    // No lift from labels into poses. In the solved label state of 600-cell-Full every sticker is in its home slot,
-    // the old occupant's answer; that projection is bound to a label digest and answers nothing for the pose-level
-    // subject, so the slot level falls back to the occurrence and names the missing slot.
+    // No lift from labels into poses (KN1.8, KN1.10). In the solved label state of 600-cell-Full every sticker is in
+    // its home slot, the old occupant's answer. The label projection holds the label level only, so it answers nothing
+    // for the pose-level subject, whether it is bound to its own label digest or to this subject's pose digest: the
+    // slot level falls back to the occurrence and names the level, never the digest.
     let solved = kernel().solved();
     assert_eq!(solved.labels()[off as usize], off as i32, "the label state has the sticker at home");
-    let labels = LabelProjection::new(solved.labels(), solved.digest());
-    for (id, target) in [(1, ObjectId::Sticker(off)), (5, ObjectId::Sticker(still))] {
-        let (covered, missing) = partial_slot(&host, id, &labels);
-        assert_eq!((covered.target, missing), (target, vec![ANOTHER_SUBJECT.to_owned()]), "instance {id}");
+    let not_held = vec![format!("slot: {}", codes::LEVEL_NOT_HELD)];
+    for digest in [solved.digest().to_owned(), f.state.digest(engine)] {
+        let labels = LabelProjection::new(solved.labels(), &digest);
+        for (id, target) in [(1, ObjectId::Sticker(off)), (5, ObjectId::Sticker(still))] {
+            let (covered, missing) = partial_slot(&host, id, &labels);
+            assert_eq!((covered.target, missing), (target, not_held.clone()), "instance {id}");
+        }
     }
+    assert_ne!(not_held[0], ANOTHER_SUBJECT, "a level not held is not another subject");
+    assert_ne!(not_held[0], off_lattice[0], "nor off the lattice");
 }
 
 /// CT-LB4-03 (part, the jumbling half: a chart inverse value cannot identify a pick). All six occurrences of the atlas
