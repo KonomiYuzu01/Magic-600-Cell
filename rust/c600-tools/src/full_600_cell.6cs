@@ -1,0 +1,7 @@
+edition "6cs-draft-1";
+module full_600_cell requires [];
+
+export command preview_word(w: Word) -> record { base: Text, id: Text } effects [preview] {
+    let r = propose(w, target("operation.preview"));
+    return record { base = receipt_base(r), id = receipt_id(r) };
+}

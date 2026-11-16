@@ -795,7 +795,8 @@ fn probe(requires: &str, body: &str, key: &str) {
 /// P01: the clock probe.
 #[test]
 fn ct_rte_07_full_p01_clock() {
-    let body = "export fn go(t: Target, w: Word) -> Nat effects [clock, view] {\n    let leak = read_clock();\n    \
+    let body =
+        "export fn go(t: Target, w: Word) -> Display<Nat> effects [clock, view] {\n    let leak = read_clock();\n    \
                 let shown = publish_view(leak);\n    return leak;\n}\n";
     probe("clock", body, "P01");
 }

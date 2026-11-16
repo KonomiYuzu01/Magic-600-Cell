@@ -17,23 +17,31 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-run` | The interpreter over the IR draft (route RT1) with the `lp1-exec-draft-1` reference meter and generator (M2), and the run-time boundary under capability separation with FP.17's provenance blocks (M3) |
 | `c600-kernel` | The 600-cell-Full kernel read straight from `assets/`, its chapter 01 API, and the oracle adapter `c600-oracle-adapter` (M4) |
 | `c600-session` | The session store below the language: the journal, revisions, snapshots, the commit path, undo, branches and program jobs (M6) |
+| `c600-evidence` | Chapter 06's evidence library as pure code: statements, keys and scopes, the AND/OR graph, grades and editions, the two standing passes, the word function with EVD.32's rows and EVD.40's checks, `CheckReport` admission, EVD.52's import rules and EVD.64's writer check |
 | `c600-command` | The command layer over H-08's stored table (KN5, chapter 08 section 7), the shell's tokens and key routes, and the loop runner `c600-lp3-oracle` (LP3, C1) |
 | `c600-view` | The headless view model, view lane and view budget: Global, Local and further views, revision binding and statuses, visibility, and the views' limits and allowances (LP3, C2) |
 | `c600-display` | The headless display contract: display plans and publications, the host validator, the publication state machine over a mock backend, picks and frame stamps, and RM.37's jumbling crosswalk as fixtures (LP3, C2) |
 | `c600-module` | Module closures, lockfiles and their approval binding: the draft manifest and lock forms, resolution by content digest, closure verification and the closure digest, an approval bound to that digest, and load and run through the run-time boundary (LP3, C4) |
 | `c600-runtime` | The runtime in a process of its own (route RT1): the child binary `c600-runtime`, the parent library that starts it and answers its host calls, the wire protocol draft `c600-rt1-wire-1` and the in-process reference path (LP3, C3) |
+| `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, the recipe expansion and the source route `c600-lp3-source` (LP3, C5) |
+| `c600-input` | The headless input router: synthetic key events to command-layer invocations in chapter 04's routing order, bindings resolved to absolute arguments at the press, the held-key allowlist and the key-map checks (LP3, C5) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
 checker; its tests run checked source programs, so the checker and the syntax crate are its dev-dependencies. The
 kernel depends on the digest crate only. The session crate depends on the kernel, the interpreter, the IR and digest
-crates; its job tests run checked source programs too. The command layer depends on the kernel and digest crates
-only, so it has no path to the interpreter (ONE.48). The view model depends on the digest crate only, and the display
-contract on the digest and kernel crates.
+crates; its job tests run checked source programs too. The evidence library depends on the digest crate only.
+The command layer depends on the kernel and digest crates only, so it has no path to the interpreter (ONE.48). The
+view model depends on the digest crate only, and the display contract on the digest and kernel crates.
 The module crate depends on the syntax, IR, checker, interpreter and digest crates, and has no path to the command
 layer.
 The runtime depends on the syntax, checker, interpreter, IR and digest crates and the big-integer crates, and has no
-path to the command layer; C5's host bridge connects them.
+path to the command layer.
+The tools crate depends on the syntax, checker, interpreter, IR, digest and kernel crates and on the command layer: its
+host bridge connects the in-process interpreter to the command layer as the runtime's host. The runtime's own process
+(C3) is not connected to the bridge yet.
+The input router depends on the command layer and the kernel crate only, so a key reaches a kernel row with no path to
+the interpreter (ONE.48).
 
 ## Running the tests
 
@@ -183,6 +191,14 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - The reference meter of chapter 09 (DET.55 to DET.60) replays the 40 frozen contract-vector traces with every field
   compared exactly, and the meter boundary vectors derived from them (`c600-run/tests/traces.rs`). The frozen test
   tariffs are `Tariffs::TEST`, labelled test-only.
+- `traces.rs` also runs seven traces as programs through `Loaded::run` (nested-calls, output-equality,
+  output-retained-at-cutoff, simultaneous-exhaustion, simultaneous-memory-output, step-precedence and generator) and
+  stops each limit one unit below use at the predicted row. Two differences from the vectors come from the fixtures,
+  not from a defect. `nested-calls` completes at the frozen use plus 2 steps, 5 kernel, 16 memory and 5 output: in the
+  draft frame layout every body has at least one slot, so the smallest frame is 24 bytes, while the vectors' zero-slot
+  frames are synthetic (CV.2). RT1 charges an encoding row and then a publication row, as DET.59 allows, where a
+  fixture `emit` is a fused row of known size (CV.5). The other traces wait for child jobs (M6), loops, assertions and
+  multiplication in the IR, streaming words (KN2.10) or form 2; they still replay through the meter.
 - `load` checks the IR identity and the program's names, arities, literals and precisions
   (`LG4:input.ir_version_unsupported`, `LG4:input.ir_rejected`). `Loaded::run` evaluates with an explicit work stack:
   one charge row per operation (DET.55), interruption observed before each operation (DET.56), aliases and owners
@@ -238,19 +254,34 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   O07 equal with no omitted fields (3,201 steps), a tampered state hash to fail at its step, a case with another model
   identity to be refused without a trace, and the KN2.9 agreement of the star cache with per-primitive replay over
   210 stars. `tools/ci/run_headless.py` lists it.
+- The same check runs the M4 differential leads. The new cases N01 to N04 (PHS.18; leads L5 to L7) replay equal over
+  1,687 steps; `tools/oracle/make_new_cases.py` built them in the pinned engine environment, and
+  `tests/fixtures/oracle-new` holds them with their own manifest. A recipe whose JSON 0.4 refuses step by step is one
+  invalid-input step (L1), and so are 32 malformed inputs beyond O07 (L4). Fourteen traces from seven runs in other
+  orders are byte-identical (L2). `core.py`, `session.py` and `make_cases.py` match their pinned digests (L3). The
+  refusal and certificate texts are 0.4's. No float type or literal reaches a decision path in the kernel's or the
+  digest crate's sources (CT-KN2-05).
+- The adapter reads each step's recipe leniently (`json::parse_lenient`) and the rest of a case file strictly. A case
+  with a repeated member name, NaN or an infinity is unreadable to both `compare.py` and the adapter.
+  `Kernel::letters` refuses another model's recipe with `KN1:input.identity_mismatch` (KN1.4).
 - `c600-kernel/tests/load.rs` tests the loader's refusals: a model ID that does not name the file list, a changed or
   missing listed file, a needed file that is not listed, names that are not plain file names in `assets/`, and
   malformed manifests. The checks inside the verified archives (a primitive that is not a permutation of its support,
   malformed offsets, an execution tree whose walk does not end) are not tested yet: such a test has to write a changed
   archive under a new model ID, and the crate only reads archives.
-- Contract tests: CT-KN1-01, the labels half of CT-KN1-05, the 600-cell-Full half of CT-KN2-01 and CT-KN2-04.
+- Contract tests, each a part that names what it leaves to M5 or M6: CT-KN1-01, CT-KN1-04 and the labels half of
+  CT-KN1-05; the 600-cell-Full halves of CT-KN2-01, CT-KN2-04 and CT-KN2-05; the labels half of CT-PS1-04; CT-PS1-12
+  without Strict protection.
 - Draft choices: a failed star certificate or asset check has no code in chapter 13's catalogue yet, so the kernel
   reports a `CertificateError` or `LoadError`; an orbit outside 0 to 34 in a protected set is refused with
   `KN2:input.named_object_invalid`; with one model in `assets/`, the other-identity control changes the case instead
   of loading a second model.
 - Not built: the `positions` row, Strict protection, streaming words (KN2.10, CT-KN2-07), `open_snapshot` by
-  `RevisionRef` (with the session store, M6), the reachability claim of `Derived`, budgets (KN7) and the jumbling half
-  (M5). PHS.18 also asks for the language's new cases through the adapter; they are not written yet.
+  `RevisionRef` (with the session store, M6), the reachability claim of `Derived`, budgets (KN7), an inverse call
+  (O05's inverse recipes come from 0.4's `core.invrecipe` in the case files) and the jumbling half (M5).
+- Open: `Kernel::protection` has no model check and returns a `Protection`, not a `Result`, so it cannot refuse
+  another model's set (KN1.4); that needs an API decision. M6's `state_from_labels` builds a snapshot at the same level
+  from any permutation of the slots, so CT-KN1-04 lists it as no lift; reachability stays the caller's evidence.
 - Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model read the kernel with the
   acceptance check. Its two major findings were fixed before the pull request, and a scoped re-check found no blocking
   finding: R1, the model ID was not tied to the file list; R2, the loader's refusals had no tests (the checks inside the
@@ -260,6 +291,11 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   (draft choices, above); the second half of R5, the ZIP reader's duplicate-name check is quadratic in the member
   count, on digest-verified bytes only. Fixed: the first half of R5, a drive or stream colon in a listed name. No
   action: R6, the KN2.9 agreement and the cached path share the inverse-move handling, which O01 to O03 cover.
+- The LP2 tests' two kernel fixes, the lenient recipe region and `letters`' refusal, each had a fresh Sonnet read; the
+  first read came after its commit on the agent's branch and before integration, the second before its commit. Neither
+  found a blocker or major finding. Its two suggestions, that a repeated name or a non-finite number in a recipe be one
+  invalid step, were refuted: `compare.py` refuses such a case whole, as the adapter does, and
+  `check_unreadable_recipe_json` pins that agreement.
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run. The timings the check
   prints are informational, not performance evidence.
 
@@ -377,6 +413,128 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   the undo chain), and L10's rows 1 to 7 are covered. L8 and L9 are deferred.
 - Evidence kind: source and fixture. Failures are injected in memory; `FsDisk` runs in one reopen test, so a pass is no
   evidence of a real disk's behaviour in a crash. The checks ran on Windows only.
+
+## Status of the evidence library: chapter 06
+
+- `c600-evidence` holds chapter 06 as pure code. It reads and writes no file, clock, process or session (EVD.54), and a
+  word is a function of the graph's facts and a pinned edition, `evidence-draft-1` (EVD.14). Where chapter 06 leaves an
+  encoding or a detail open, the crate takes a draft, and its documentation (`c600-evidence/src/lib.rs`) lists each
+  one; none is a decision of the chapter. The trial threshold stays the owner's (EVD.29), so the tests use the trial
+  set and its up-subsets only.
+- Tests (`c600-evidence/tests/`): `words.rs` runs the word function's rows and checks (CT-EVD-01, CT-EVD-05,
+  CT-EVD-07 to CT-EVD-11, CT-EVD-13, CT-EVD-22); `properties.rs` runs seeded random graphs (CT-EVD-02 to CT-EVD-04,
+  CT-EVD-06); `sinks.rs` runs writers, reuse, check reports and the import rules (CT-EVD-17 to CT-EVD-21, CT-EVD-26 to
+  CT-EVD-30, and the evidence halves of CT-LB6-02 and CT-PS1-27); `examples.rs` transcribes section 9's E1 to E3
+  (part of CT-EVD-12).
+- Fixed, each found by a test: I6 skipped a statement with no OR node of its own, so a bad refutation of an unsupported
+  universal read row 1 instead of row 0 (CT-EVD-09); EVD.42's guard compared a leaf's covered set and not the search
+  record's declared set, from which EVD.59 takes it, so E3's search refuted its statement instead of reading row 0
+  with `inconsistent_fields` (CT-EVD-12).
+- Open, across chapters, with no frozen text to change: FP.20 carries a search record only inside a leaf, but EVD.32's
+  row 5 and E3's truncated beam and cancelled runs need one for a key with no leaf, so the crate attaches it to the
+  key's OR node as a draft; and a checked witness of an existence statement also offers a refutation of its universal
+  negation, so without scope membership both words read row 0.
+- Not built: the label-table importer and its corpus walk (EVD.48 to EVD.51), the FP.19 and FP.20 wire encoding, KN6's
+  checkers (the library only admits their reports), EV5's display and teaching, the independence display (EVD.28),
+  PS3.12's dispatch, obligation export (LB5.18), storing the envelope (chapter 05), the command layer, the runtime
+  process and the jumbling half.
+- Evidence kind: source and fixture, with synthetic graphs. The checks ran on Windows only.
+
+## LP2 conformance tests (chapter 12, section 15.3)
+
+Section 15.3 lists 248 conformance tests for LP2. A test names each ID it covers: `(whole` when it runs the whole
+definition, alone or with the tests it names, and `(part: ...; not run: ...)` otherwise (PHS.62). A test that is not
+run or not applicable is no pass (PHS.63).
+
+- Where they are:
+  - `c600-check/tests/`: the checker's own tests carry their IDs (`effects.rs`, `exactness.rs`, `mismatch.rs`,
+    `vectors.rs`).
+  - `c600-syntax/tests/`: `conformance_lg1.rs` to `conformance_lg3.rs` write the LG tests in source; `errors.rs` holds
+    CT-ERR-05's encoding half (ERR.10's raw context for each malformed shape); `syntax.rs`, `format.rs` and
+    `lowering.rs` mark M7's tests.
+  - `c600-run/tests/`: `conformance_lg2.rs` to `conformance_lg4.rs` run the LG tests (shared helpers in
+    `conformance/mod.rs`); `conformance_bnd.rs` runs the boundary tests, and `tables.rs` enumerates the grant table
+    and the corpus; `legacy.rs` runs CT-PS1-18's legacy parts; `conformance_det.rs` runs the CT-DET rows on RT1;
+    `canonical_ps1.rs` runs the canonical-profile rows (CT-PS1-01 to CT-PS1-07, CT-DET-23 and, synthetic, CT-KN3-02);
+    `traces.rs` and `values.rs` mark the meter's and the values' rows.
+  - `c600-kernel/tests/`: `kernel.rs`, `load.rs` and `json.rs` run the 600-cell-Full halves of the KN rows, CT-PS1-04
+    and CT-PS1-12 (M4's section).
+  - `c600-evidence/tests/` runs the EVD rows (the evidence library's section). `c600-session/tests/` names M6's rows
+    without a marker (M6's section), and so does `c600-command/tests/layer.rs` for LP3 C1's parts (the C1 section).
+  - Python, listed in `tools/ci/run_headless.py`: `tests/test_error_registry.py` checks the code catalogue against
+    chapter 13 and the LP1 edition fixture `tests/fixtures/error_registry/lp1-edition.json`;
+    `tests/test_language_scans.py` scans the workspace's sources; `tests/test_format_inventory.py` runs CT-PS2-06;
+    `tests/test_source_checkout.py` reads every `.6cs` source and every pinned packet file as LF, CRLF and `input`
+    checkouts write them (CT-LG1-02, CT-PS1-05's checkout half); `tests/test_kernel_oracle.py` replays O01 to O07 and
+    N01 to N04 through the kernel (M4's section).
+- Count on this branch, with LP3's C1 to C4 from main: 33 whole, three of them by the union of their parts
+  (CT-LG2-04, CT-LG3-01, CT-LG3-04); 108 part; 15 named by M6's tests without a marker (CT-KN4-01 to CT-KN4-04,
+  CT-KN5-01, CT-KN5-04, CT-KN5-06, CT-KN5-09, CT-KN5-11, CT-KN7-01 to CT-KN7-05 and CT-KN7-07; M6's section calls
+  CT-KN4-01's an in-process part); 13 more named only by LP3's command-layer tests, as parts without a marker
+  (CT-KN5-03, CT-KN5-07, CT-KN5-12, CT-ONE-03 to CT-ONE-05, CT-ONE-11, CT-ONE-20 to CT-ONE-22, CT-LI-04, CT-LI-09 and
+  CT-LI-10); 2 named only as not built (CT-KN2-07, CT-LG4-05); 77 missing. CT-KN5-08 counts as missing, since only the
+  documentation in `c600-command/src/layer.rs` names it.
+- Not run or not applicable, which is no pass (PHS.63), with the check that runs instead: CT-LG3-06's flow-label
+  variant, while the flow rule is off (BND.41) and LQ2 has not set it, so the static-only and run-time variants run
+  (`c600-run/tests/conformance_lg3.rs`); CT-LG1-03's second host context, since CI runs on Windows only and the editor
+  services that host the formatter come with LP4; CT-LG4-01's second admitted route, since RT1 is the only one (LQ9);
+  CT-BND-11's ONE.32 fields in other profiles, which never arise (BND.60); the Linux legs of CT-DET-02, CT-DET-15 and
+  CT-PS1-01, since CI has no Linux cargo job; form 2 in CT-DET-32, since RT1 runs form 1 only (the LP2 plan's
+  selection, which the owner may overrule); ERR.1 for the five codes `c600-command` names as drafts that chapter 13
+  does not register, which `tests/test_language_scans.py` lists exactly (`UNREGISTERED_DRAFTS`); and, as before,
+  CT-LG1-01's mixed dependency editions and CT-LG2-05's form 2.
+- Fixed, each found by a test:
+  - A clock reading was an exact `Nat`, so `use_budget(read_clock())` was admitted against LG2.6, LG3.8 and DET.18; it
+    is now `Display<Nat>`, and CT-LG2-06's seconds half runs. LP3 C4's clock probe P01
+    (`c600-module/tests/ct_rte_07_full.rs`) now returns `Display<Nat>`, so it still reaches the grant check.
+  - The provenance reader accepted a 65th nested container when the innermost one was empty, above FP.9's json_depth
+    of 64 (CT-PS1-07). A fresh Sonnet read found no blocker or major finding.
+  - The kernel's adapter refused a whole case when one recipe held JSON that 0.4 refuses step by step (L1), and
+    `Kernel::letters` expanded another model's recipe with this model's seeds (KN1.4); M4's section has both.
+  - The evidence library's two fixes (its section).
+- Open, each needing a decision:
+  - Exact sinks take any value: the checker admits `use_evidence(f)` with a function value, and the interpreter passes
+    the value to the host's exact sink without encoding it, so a function or a receipt reaches the host, against RPI.54
+    and RPI.1. The frozen text does not say what a goal or evidence sink accepts.
+  - ERR.6: `c600-kernel/tests/kernel.rs` compares refusal texts, because `c600_kernel::Refusal` has no typed context
+    (CT-ERR-16's typed failed fact); `c600_syntax::LowerError` has no code.
+  - For the owner under PHS.52 (frozen text): in `13-errors.md`, the LB6 closure row `evidence.decomposition_mismatch`
+    (line 661) sits between ERR.28's table and ERR.31 and belongs at the head of ERR.31's table, and ERR.31 comes
+    before ERR.29 and ERR.30; the rule source of `KN5:stale.filter_preview` (line 322) omits KN0.9
+    (`closure/manifests/p7-layers.json`). The Used-by cells of `KN2:input.recipe_shape` and
+    `KN2:resource_limit.primitive_ceiling` say "not yet used", but the kernel emits both. Chapter 13 registers none of
+    the five draft codes `c600-command` emits (`KN2:consistency.star_certificate`, `KN5:input.unknown_row`,
+    `KN5:input.argument_form`, `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`); the command table's
+    drafts settle at LP3 (PHS.53).
+  - For LP3: LB7.1's `LB7:capability.module_grant_missing` is the workspace library's entry-admission fact, built with
+    LB7; the checker's own admission reports `LG3:capability.not_granted`, as chapter 02's LG3 table has it.
+  - KN5 has two implementations, `c600-session` (M6) and LP3's `c600-command` (pull request 159). The LP2 integrator
+    picks the one CT-KN5-01 to CT-KN5-13 run against before M8.
+  - `Kernel::protection` has no model check (M4's section).
+  - For M6's store: the kernel's `archive::gunzip` accepts concatenated gzip members and trailing zero padding, so
+    FP.7's strict one-member reader must refuse them itself; run-time `encode` applies no json_depth or integer_digits
+    limit, so the store's writer must check FP.9 before it persists a value.
+  - Gaps: the interpreter does not check a function's kind at run time; `provenance::import` makes the author `own`,
+    so `Author::Imported` never arises (FP.18's example has `own`); `Loaded::run` does not require the entry function
+    to be exported, and `load` does not run the checker again.
+- Missing, by what they wait for:
+  - LP3's lanes, views and shell (28): CT-ONE-06 to CT-ONE-10, CT-ONE-12 to CT-ONE-19, CT-ONE-23, CT-ONE-24,
+    CT-ONE-28, CT-LI-01 to CT-LI-03, CT-LI-05 to CT-LI-07, CT-LI-11 to CT-LI-14, CT-EV4-03 and CT-PS1-13.
+  - M6's remaining rows (15): CT-PS1-08 to CT-PS1-10, CT-PS1-16, CT-PS1-19, CT-PS1-21, CT-PS1-23, CT-PS2-01 to
+    CT-PS2-05, and the run records of CT-DET-04, CT-DET-14 and CT-BND-23 (with LP3's grants for CT-DET-04 and
+    CT-BND-23).
+  - M5, the jumbled puzzle (12): CT-KN1-02, CT-KN1-03, CT-KN1-06, CT-KN2-02, CT-KN2-03, CT-KN2-06, CT-KN3-01,
+    CT-KN3-03, CT-LG2-12, CT-PS1-11, CT-PS1-14 and CT-PS1-22.
+  - LG5's module loader and lockfiles (7): CT-LG5-01 to CT-LG5-07. LP3 C4's `c600-module` builds closures and
+    lockfiles, but its tests name none of these rows.
+  - KN5's command layer, once its candidate is picked (3): CT-KN5-05, CT-KN5-08 and CT-KN5-10.
+  - A6's exact rotation requests (5, no milestone named): CT-KN3-04 to CT-KN3-06, CT-LG2-16 and CT-DET-16.
+  - The stage checker, RPI.68 to RPI.76 (3, no milestone named): CT-LG2-15, CT-LG3-10 and CT-LG5-08.
+  - Streaming and compressed words, KN2.10 (no milestone named): CT-LG2-14 and CT-LG4-03, and CT-KN2-07, named as not
+    built.
+  - A builder and its build cache (2, no milestone named): CT-DET-21 and CT-DET-22.
+  - A pointwise or whole-state contract form in the IR (no milestone named): CT-LG4-05, named as not built.
+- Evidence kind: source and fixture. The checks ran on Windows only.
 
 ## Status of LP3, C1: the command layer
 
@@ -518,3 +676,95 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   and an executor for `lp1-exec-region-draft-1` (LP2). Two of them, `nested-calls` and the output rows, may be meter
   mismatches in `c600-run`; LP2 has them.
 - Evidence kind: source and synthetic. The fault rehearsals are not LX-2 evidence, and no timing is measured.
+
+## Status of LP3, C5: the source route
+
+- `c600-tools` holds the built-in 600-cell-Full tool as 600 Cell Script source,
+  [`full_600_cell.6cs`](c600-tools/src/full_600_cell.6cs), in edition `6cs-draft-1` (syntax candidate A). Its one
+  entry, the exported command `preview_word(w: Word)`, proposes the word the solver named to `operation.preview` and
+  returns the acknowledgement's two fields as a record `{base, id}`. The IR draft has no list types and no word
+  operations, so the library entries of chapter 03 (LB1 to LB4) wait for the IR.
+- Admission: the checker admits the source with no diagnostic. The entry's only effect is `preview` and it requests no
+  capability, so it prepares previews and reads no state (LG3.13, BND.39). `c600-check`'s `Profile::Solving` is the
+  column of a solver's own tool, which prepares no preview until the joint setting; `tool::admit_built_in` applies the
+  built-in column of chapter 07 section 8 over the checker's report. A variant that also reads state is refused with
+  `LG3:capability.not_granted`. The class (`analysis`, `checking`, after LB6.5) and the row set are declared in the
+  crate's Rust manifest, because the IR and the syntax carry no module manifest yet.
+- The tool runs on `c600-run` through `Boundary` in the solving profile, in process: C5 was built before the
+  runtime's own process (C3) reached main, and moving the tool onto it is C5's next piece. Against an engine double
+  that records each proposal, the program receives only the fixed acknowledgement whether the engine built the
+  preview, refused it, or preview admission refused the word, and its charges do not depend on the answer (BND.42,
+  BND.43).
+- `expand` is the runner's recipe expansion through the kernel, outside any program. Over O01 to O07 (3,201 steps)
+  each step the oracle accepted or refused for protection expands to a literal word with the recorded
+  `expansion_sha256` and `primitive_count`. Of O07's ten invalid steps, four are single words of integer moves, which
+  pass to the tool unchanged; the other six have no literal word, so the route stops there with the kernel's refusal.
+- The host bridge, `c600_tools::bridge::Bridge`, is the runtime's host on `c600-command`. Each proposal the boundary
+  admits becomes one invocation of `operation.preview` with `Caller::Runtime` for the run, a fresh command ID
+  `<run>/<n>`, the layer's current epoch, the literal word as the absolute argument
+  `{"draft": {"recipe": [{"kind": "word", "moves": [...]}]}}` and no token. The program still receives only the fixed
+  acknowledgement; the layer's receipt goes to the shell. The bridge grants no state read, declassified value, file or
+  workspace access, view, exact sink or clock. The command layer's own rules refuse a runtime invocation of a commit or
+  app row and any runtime invocation carrying a token (ADR-L02, KN5.15), and only a token the shell mints commits the
+  pending preview the runtime proposed.
+- The source route: the binary `c600-lp3-source` replays O01 to O07. Per step the runner expands the case recipe to
+  its literal word, the tool's program runs on that word and proposes it through the bridge, and the shell presents
+  the preview, commits it with the commit chord `Ctrl+Shift+Enter`, and undoes and redoes on the command route's
+  schedule. `python tests/test_lp3_source_route.py` builds `c600-lp3-oracle` and `c600-lp3-source` and passed with:
+  - `tools/oracle/compare.py`: all seven cases equal on the source route, 3,201 steps, no omitted field;
+  - every source-route trace byte-identical to `c600-lp3-oracle --route command`'s;
+  - the two routes' receipts agreeing on status, job, error code and revision after in all 13,553 pairs, and differing
+    only in command ID, caller and request digest; the 289 preview-ready result digests agree once rebased onto the
+    case recipe's draft, and the six O07 recipes with no literal word are the kernel's refusals on both routes;
+  - a negative control: negating the first letter of O06 step 3's literal word before the tool runs makes compare.py
+    fail at that step (`expansion_sha256`).
+
+  CI runs this check through `tools/ci/run_headless.py`.
+- Tests (`c600-tools/tests/`), each naming the conformance parts it covers; no conformance ID runs whole:
+  - `tool.rs`: the source parses and lowers; the checker admits it and it only prepares previews (CT-LB6-03, part); a
+    variant that also reads state is refused (LQ21; CT-LB6-03, part); a built-in previews only the word the solver
+    named; a refused built-in, or a module with one checker diagnostic, never runs and never calls the engine, and a
+    word from state relayed through a workspace record or a declassifier is refused (CT-LB6-03, part); the class and
+    the rows are declared (CT-BND-15, part).
+  - `ack.rs`: the fixed acknowledgement against an engine double (CT-BND-11 and CT-BND-07, parts).
+  - `bridge.rs`: one runtime preview per proposal and the fixed acknowledgement on the command layer (CT-BND-11 and
+    CT-BND-07, parts); no commit or app row for the runtime (ADR-L02, KN5.15); a runtime invocation carrying a token is
+    refused (KN5.15); only a token the shell mints commits the pending preview (CT-ONE-29, part, headless); the bridge
+    grants nothing but a proposal.
+  - `expand.rs`: every case step expands to its recorded literal word, and the expansion is the kernel's literal.
+- Open: the built-in column lives in this crate because `c600-check` has no author or column parameter on `admit`; it
+  does not judge a reading entry's workspace writes against the class's rows (BND.57). The command layer's receipts
+  carry no program digest; the proposal's provenance block names the digest of the source bytes that ran.
+- Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
+- Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run. The timings the
+  source-route check prints are informational, not performance evidence.
+
+## Status of LP3, C5: the input router
+
+- `c600-input` routes synthetic key events in EV4.4's fixed order: a key-capture field, a text field, a focused list
+  or view taking only its navigation keys, then the global map. A key that reaches a binding has its relative names
+  resolved at the press and goes to the command layer through `c600-command`'s public shell API with absolute
+  arguments only (EV4.3). A held key repeats only EV4.6's allowlist (`camera.rotate`, `camera.zoom`, `list.move`,
+  `view.preview.scrub`), read from the row's H-08 `repeat` flag; focus loss releases the held keys and a pending
+  prefix group; busy input gets the layer's refusal as its receipt and is never queued. `KeyMap::apply` runs EV4.7's
+  duplicate, prefix and layout checks per routing class and per declared layout (US QWERTY and French AZERTY) before a
+  map applies. The crate changes no file in `c600-command`.
+- Tests (`c600-input/tests/`), on synthetic events only:
+  - `routing.rs`: CT-EV4-02, among them arguments resolved at the press surviving later camera, focus, hover and
+    filter changes, and the key route giving the same receipts as `Shell::invoke` with the same rows and arguments.
+  - `repeat.rs`: CT-EV4-04's append, preview and commit legs and its busy leg, with repeat events flagged and
+    unflagged, counting the invocations that reach the layer. The twist leg waits for KN3.7's exact rotations (LP2).
+  - `keymap.rs`: CT-EV4-06's synthetic half, ahead of LP4 (chapter 12 section 15.5), among them DT-M1's US and French
+    layout counterexample.
+- Drafts, which freeze with the command table at LP3 (PHS.53) and chapter 05's key-map forms: the list in the crate
+  documentation, among them the routing class names, the chord form (W3C `code` names with Ctrl, Shift, Alt and
+  Meta), the two layout tables, the default global map, the repeat flag's source, and placeholder camera and twist
+  values. Escape closes a pending prefix group or the innermost transient layer and never cancels a preview (DT-M1 C4).
+- Open:
+  - The class rule (no text-class or capture-class binding; list-class bindings reach only the list rows) reports
+    `EV4:input.binding_conflict`, since chapter 13 has no row of its own for it; a dedicated row is a change to
+    chapter 13 (PHS.52).
+  - Two draft key maps exist: the shell's five chords in `c600-command`, which C1's key route uses, and the router's
+    default map. They agree on preview, execute, undo and redo; the shell binds Escape to `operation.preview.cancel`,
+    which DT-M1 C4 rules out. One map remains when the command table freezes (PHS.53).
+- Evidence kind: source and synthetic. No Windows, IME, device or timing claim; CT-EV4-05 stays a windows test (LP4).

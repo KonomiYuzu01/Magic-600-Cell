@@ -49,6 +49,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "c600-evidence"
+version = "0.0.0"
+dependencies = [
+ "c600-digest",
+]
+
+[[package]]
+name = "c600-input"
+version = "0.0.0"
+dependencies = [
+ "c600-command",
+ "c600-kernel",
+]
+
+[[package]]
 name = "c600-ir"
 version = "0.0.0"
 
@@ -116,6 +131,19 @@ dependencies = [
  "c600-check",
  "c600-digest",
  "c600-ir",
+]
+
+[[package]]
+name = "c600-tools"
+version = "0.0.0"
+dependencies = [
+ "c600-check",
+ "c600-command",
+ "c600-digest",
+ "c600-ir",
+ "c600-kernel",
+ "c600-run",
+ "c600-syntax",
 ]
 
 [[package]]

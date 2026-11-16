@@ -34,6 +34,9 @@ fn complete(bytes: &[u8]) -> ParsedFile {
     file
 }
 
+/// CT-LG1-03 (part: the layout of a parsed program equals the pinned bytes, is idempotent and lowers to the same
+/// program, with `ct_lg1_03_a_draft_with_a_hole_has_no_layout`; not run: a second host context, since CI runs on
+/// Windows only and the editor services that host the formatter come with LP4).
 #[test]
 fn ct_lg1_03_formatting_is_canonical_idempotent_and_keeps_the_program() {
     let source = UNFORMATTED.join("\n");
@@ -49,6 +52,7 @@ fn ct_lg1_03_formatting_is_canonical_idempotent_and_keeps_the_program() {
     assert_ne!(a.sources, b.sources, "the source maps follow the text");
 }
 
+/// CT-LG1-03 (part, above: a draft with a recovery hole has no canonical layout).
 #[test]
 fn ct_lg1_03_a_draft_with_a_hole_has_no_layout() {
     let file =

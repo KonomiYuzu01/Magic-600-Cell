@@ -1,15 +1,16 @@
 //! Kernel tests against the model in `assets/` and the frozen oracle cases. `tests/test_kernel_oracle.py` at the
-//! repository root replays all seven cases through the adapter in a release build and runs the full KN2.9 agreement
-//! test there; these tests run the small cases O06 and O07, the first steps of O01 and a short agreement test through
-//! the same API in the test profile.
+//! repository root replays all seven cases, and the new cases N01 to N04, through the adapter in a release build and
+//! runs the full KN2.9 agreement test there; these tests run the small cases O06 and O07, the first steps of O01 and a
+//! short agreement test through the same API in the test profile, and the kernel-side leads L4, L6 and L9 of the M4
+//! differential tests (work/reviews/leads/2026-11-16-m4-differential-tests.md).
 
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
 use c600_kernel::json::{self, Value};
 use c600_kernel::{
-    archive, codes, Derivation, Effect, IdentityBlock, Kernel, ProtectedSet, Puzzle, Recipe, Snapshot, Step,
-    SupportRow, Verdict, PROTECTED_MESSAGE,
+    archive, codes, Derivation, Effect, IdentityBlock, Kernel, Level, ProtectedSet, ProtectionMode, Puzzle, Recipe,
+    Snapshot, Step, SupportRow, Verdict, PROTECTED_MESSAGE,
 };
 
 /// `Digest<literal word>` of `[1, -1]`, which O06 records.
@@ -154,6 +155,9 @@ fn replay(name: &str, limit: usize) -> usize {
     steps.len().min(limit)
 }
 
+/// CT-KN1-01 (part: identity blocks and the registry here; snapshots and recipes of another model in
+/// `tests/load.rs`, `ct_kn1_01_values_of_another_model_are_refused`. A jumbling identity is only refused, since the
+/// jumbling half is M5's, and marking a value as recorded needs the session store, M6).
 #[test]
 fn ct_kn1_01_identity_block_and_registry() {
     let kernel = kernel();
@@ -185,6 +189,8 @@ fn ct_kn1_01_identity_block_and_registry() {
     mismatch(IdentityBlock { contract_rev: Some("r1".into()), ..identity }, "contract_rev");
 }
 
+/// CT-KN1-05 (part: the labels half. `Digest<labels>` is the oracle's state hash on the solved state here, and on
+/// every row of O01 to O07 and N01 to N04 in `tests/test_kernel_oracle.py`; `Digest<poses>` against J1 is M5's).
 #[test]
 fn ct_kn1_05_labels_digest_is_the_oracle_state_hash() {
     let solved = kernel().solved();
@@ -197,21 +203,28 @@ fn ct_kn1_05_labels_digest_is_the_oracle_state_hash() {
     assert_eq!(initial.get("state_hash").and_then(Value::as_str), Some(solved.digest()));
 }
 
+/// CT-KN2-01 (part: O06 whole through the kernel API in the test profile; `tests/test_kernel_oracle.py` replays all
+/// of O01 to O07 and N01 to N04 through the adapter; the J1 harness half is M5's).
 #[test]
 fn ct_kn2_01_full_o06_protection_chain() {
     assert_eq!(replay("O06", usize::MAX), 6);
 }
 
+/// CT-KN2-01 (part: O07 whole here; the rest as for `ct_kn2_01_full_o06_protection_chain`).
 #[test]
 fn ct_kn2_01_full_o07_invalid_inputs() {
     assert_eq!(replay("O07", usize::MAX), 10);
 }
 
+/// CT-KN2-01 (part: the first eight steps of O01 here; the rest as for `ct_kn2_01_full_o06_protection_chain`).
 #[test]
 fn ct_kn2_01_full_o01_first_generators() {
     assert_eq!(replay("O01", 8), 8);
 }
 
+/// CT-KN2-04 (part: a blocked and an invalid recipe; `tests/test_kernel_oracle.py` adds the invalid recipe family of
+/// leads L1 and L4, each an invalid-input step that keeps the state hash. An uncertain word needs the jumbling half,
+/// M5).
 #[test]
 fn ct_kn2_04_blocked_and_invalid_recipes_change_no_digest() {
     let kernel = kernel();
@@ -312,6 +325,22 @@ fn recipes_are_checked_whole_with_the_texts_of_0_4() {
     );
 }
 
+/// Lead L4 (M4), the positive twins of the invalid recipe family in `tools/oracle/invalid_recipes.py`: a star without
+/// `sign` is the star with sign 1, and members that 0.4's `Model.normalize` does not read are ignored, whatever they
+/// hold. `tests/test_oracle.py` checks the family against 0.4 itself.
+#[test]
+fn a_missing_sign_and_extra_keys_are_accepted() {
+    let kernel = kernel();
+    let recipe = |text: &str| kernel.recipe(&parse(text)).unwrap();
+    assert_eq!(recipe(r#"[{"kind": "star", "orbit": 3, "node": 5}]"#), star(3, 5, 1));
+    let extra = r#""moves": [0], "x": {"y": [null, 1.5]}, "": "𐀀""#;
+    assert_eq!(recipe(&format!(r#"[{{"kind": "star", "orbit": 3, "node": 5, "sign": -1, {extra}}}]"#)), star(3, 5, -1));
+    let word = recipe(r#"[{"kind": "word", "moves": [1, -2], "orbit": -1, "node": 1.5, "sign": 0, "Kind": "jump"}]"#);
+    assert_eq!(word, kernel.word(&[1, -2]).unwrap());
+}
+
+/// CT-PS1-12 (part: the 3,000,000 total over 100,000-letter word steps; the rest in
+/// `ct_ps1_12_normalisation_keeps_literal_prefixes_and_the_total`).
 #[test]
 fn recipe_limits_are_those_of_0_4() {
     let kernel = kernel();
@@ -338,6 +367,34 @@ fn recipe_limits_are_those_of_0_4() {
     assert_eq!(over.message, "Preview expansion exceeds 3,000,000 primitives; split the batch");
 }
 
+/// Lead L9 (M4): the ceiling counts a star's letters, the seed and twice the relocation and the path. With L the
+/// star's length, 29 words of 100,000 letters, one of 100,000 - L and the star expand to exactly 3,000,000 letters;
+/// one more letter is refused. `tests/test_oracle.py` checks the same recipes against 0.4's `Model.normalize`.
+#[test]
+fn the_ceiling_counts_star_letters() {
+    let kernel = kernel();
+    let node = kernel.star_nodes(0).unwrap() - 1;
+    let last = star(0, node, 1);
+    let length = last.primitive_count();
+    let word = |n: usize| {
+        json::object([("kind", Value::String("word".into())), ("moves", Value::Array(vec![Value::Int(7); n]))])
+    };
+    let recipe = |extra: usize| {
+        let mut steps = vec![word(100_000); 29];
+        steps.push(word(100_000 - length + extra));
+        steps.push(parse(&format!(r#"{{"kind": "star", "orbit": 0, "node": {node}}}"#)));
+        kernel.recipe(&Value::Array(steps))
+    };
+    let full = recipe(0).unwrap();
+    assert_eq!(full.primitive_count(), 3_000_000);
+    let letters = kernel.letters(&full).unwrap();
+    assert_eq!(letters.len(), 3_000_000);
+    assert_eq!(letters[3_000_000 - length..], kernel.letters(&last).unwrap());
+    let over = recipe(1).unwrap_err();
+    assert_eq!(over.code, codes::PRIMITIVE_CEILING);
+    assert_eq!(over.message, "Preview expansion exceeds 3,000,000 primitives; split the batch");
+}
+
 #[test]
 fn a_word_recipe_and_a_word_agree() {
     let kernel = kernel();
@@ -346,7 +403,7 @@ fn a_word_recipe_and_a_word_agree() {
     assert_eq!(from_json, direct);
     assert_eq!(direct.steps(), [Step::Word(vec![3, -1200, 77])]);
     assert_eq!(direct.model_id(), kernel.identity().model_id);
-    assert_eq!(kernel.letters(&direct), [3, -1200, 77]);
+    assert_eq!(kernel.letters(&direct).unwrap(), [3, -1200, 77]);
     assert_eq!(kernel.effect(&from_json).unwrap(), kernel.effect_by_replay(&direct).unwrap());
 }
 
@@ -369,13 +426,13 @@ fn star_expansion_and_its_inverse() {
         let plus = star(orbit, node, 1);
         let Step::Star(step) = &plus.steps()[0] else { panic!("not a star step") };
         assert_eq!((step.orbit(), step.node(), step.sign()), (orbit, node, 1));
-        let letters = kernel.letters(&plus);
+        let letters = kernel.letters(&plus).unwrap();
         assert_eq!(letters.len(), plus.primitive_count());
         // invword(path) + invword(relocation) + seed + relocation + path
         let inverse_path: Vec<i32> = step.path().iter().rev().map(|m| -m).collect();
         assert!(letters.starts_with(&inverse_path) && letters.ends_with(step.path()));
         let inverted: Vec<i32> = letters.iter().rev().map(|m| -m).collect();
-        assert_eq!(kernel.letters(&star(orbit, node, -1)), inverted);
+        assert_eq!(kernel.letters(&star(orbit, node, -1)).unwrap(), inverted);
     }
     assert_eq!(kernel.star_nodes(35), None);
 }
@@ -393,6 +450,23 @@ fn kn2_9_star_cache_agrees_with_replay_on_the_shortest_orbit() {
             assert_eq!(cached, kernel.effect(&recipe).unwrap());
         }
     }
+}
+
+/// Lead L6 (M4): a star evicted from the 96-entry star cache is computed again with the same net map. A fresh kernel,
+/// whose cache no other test touches, asks for nodes 0 to 96 of the shortest orbit, so node 0 leaves the cache; node 0
+/// with sign -1 then agrees with replay, and node 0 with sign 1 with its first answer.
+#[test]
+fn an_evicted_star_is_recomputed_identically() {
+    let fresh = Kernel::load(&repository().join("assets")).unwrap();
+    let orbit = (0..35).min_by_key(|&orbit| star(orbit, 0, 1).primitive_count()).unwrap();
+    assert!(fresh.star_nodes(orbit).unwrap() > 96, "orbit {orbit} has too few frame nodes");
+    let first = fresh.effect(&star(orbit, 0, 1)).unwrap();
+    for node in 1..=96 {
+        fresh.effect(&star(orbit, node, 1)).unwrap();
+    }
+    let inverse = star(orbit, 0, -1);
+    assert_eq!(fresh.effect(&inverse).unwrap(), fresh.effect_by_replay(&inverse).unwrap());
+    assert_eq!(fresh.effect(&star(orbit, 0, 1)).unwrap(), first);
 }
 
 #[test]
@@ -450,4 +524,144 @@ fn build_hashes_every_source_file() {
     let build = c600_kernel::build();
     let digest = build.strip_prefix(&format!("c600-kernel {} sources-sha256:", env!("CARGO_PKG_VERSION"))).unwrap();
     assert!(digest.len() == 64 && digest.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f')));
+}
+
+/// CT-KN1-04 (part: the 600-cell-Full API of M4, whose one level is labels; the pose level and its projections come
+/// with the jumbling half, M5). An enumeration of the kernel's public functions finds no lift from a coarser level to
+/// a finer one: a state comes only from `solved`, from `derive` on a label snapshot, or from `state_from_labels`, which
+/// reads a stored state back from labels at the same level (M6's store; it decides no reachability), a snapshot's
+/// field and constructor are private, and no public function names a pose.
+#[test]
+fn ct_kn1_04_no_public_call_lifts_a_coarser_level() {
+    // A new level makes this match fail to compile, so that the enumeration below is read again.
+    match Level::Labels {
+        Level::Labels => {}
+    }
+    let source = include_str!("../src/lib.rs");
+    let signatures: Vec<&str> = source.lines().filter_map(|line| line.trim_start().strip_prefix("pub fn ")).collect();
+    assert!(signatures.len() >= 30, "the enumeration found {} public functions", signatures.len());
+    let states: Vec<&str> = signatures
+        .iter()
+        .filter(|signature| {
+            signature.split_once(" -> ").is_some_and(|(_, out)| out.contains("Snapshot") || out.contains("Deriv"))
+        })
+        .copied()
+        .collect();
+    assert_eq!(
+        states,
+        [
+            "solved(&self) -> Snapshot {",
+            "state_from_labels(&self, labels: Vec<i32>) -> Option<Snapshot> {",
+            "derive(&self, base: &Snapshot, recipe: &Recipe, protected: &ProtectedSet) -> Result<Derivation, Error> {",
+        ]
+    );
+    for signature in &signatures {
+        assert!(!signature.to_lowercase().contains("pose"), "{signature}");
+    }
+    // A state is held only by a derived state's public field and the kernel's private solved state, and a snapshot is
+    // built only inside the crate.
+    let fields: Vec<&str> = source.lines().map(str::trim).filter(|line| line.contains(": Snapshot")).collect();
+    assert_eq!(fields, ["pub state: Snapshot,", "solved: Snapshot,"]);
+    assert!(source.contains("pub struct Snapshot(Arc<SnapshotData>);"));
+    assert!(source.contains("\n    fn new(model_id: &str, labels: Vec<i32>) -> Snapshot {"));
+}
+
+/// CT-PS1-04 (part: the labels half. `Digest<poses>` against J1 and the store helper is M5's and M6's. Confusing
+/// levels or hashing render floats cannot be expressed through M4's API, which holds the one level `Labels`, builds a
+/// snapshot only from labels and reads no render float, so no such refusal is run). `Digest<labels>` is the SHA-256
+/// of the labels as little-endian int32 in slot order (PS1.6), which is `core.state_hash`: on the solved state in
+/// `ct_kn1_05_labels_digest_is_the_oracle_state_hash`, on O03's scrambled initial state here, and on every row the
+/// replays compare. A protection verdict carries its level.
+#[test]
+fn ct_ps1_04_labels_digest_is_core_state_hash() {
+    let kernel = kernel();
+    let initial = case("O03").get("initial").cloned().unwrap();
+    let state = derived(&kernel.solved(), &integers(initial.get("moves")));
+    assert_eq!(initial.get("state_hash").and_then(Value::as_str), Some(state.digest()));
+    assert_ne!(state.digest(), kernel.solved().digest());
+    let little: Vec<u8> = state.labels().iter().flat_map(|label| label.to_le_bytes()).collect();
+    let big: Vec<u8> = state.labels().iter().flat_map(|label| label.to_be_bytes()).collect();
+    assert_eq!(state.digest(), c600_digest::sha256_hex(&little));
+    assert_ne!(state.digest(), c600_digest::sha256_hex(&big));
+    let Derivation::Derived(next) = derive(&state, &kernel.word(&[1]).unwrap(), &ProtectedSet::none()) else {
+        panic!("an unprotected twist was refused");
+    };
+    assert_eq!((next.protection.level, next.protection.mode), (Level::Labels, ProtectionMode::Net));
+}
+
+/// CT-PS1-12 (part: Strict protection is not built, so the clause that chunking leaves Strict protection unchanged is
+/// not run). Normalisation keeps the literal steps in order (PS1.23): no letter is reduced away, every prefix of a
+/// recipe expands to a prefix of its letters, and a word split into chunks of up to 100,000 letters expands, digests
+/// and acts as the same letters. The total stays at most 3,000,000 over every chunk, here and in
+/// `recipe_limits_are_those_of_0_4`, and through a star in `the_ceiling_counts_star_letters`.
+#[test]
+fn ct_ps1_12_normalisation_keeps_literal_prefixes_and_the_total() {
+    let kernel = kernel();
+    let digest = |letters: &[i32]| {
+        let bytes: Vec<u8> = letters.iter().flat_map(|m| m.to_le_bytes()).collect();
+        c600_digest::sha256_hex(&bytes)
+    };
+    let steps = [
+        r#"{"kind": "word", "moves": [1, -1, 5]}"#,
+        r#"{"kind": "star", "orbit": 4, "node": 9, "sign": -1}"#,
+        r#"{"kind": "word", "moves": [-5, 5]}"#,
+        r#"{"kind": "star", "orbit": 4, "node": 9}"#,
+    ];
+    let prefix = |count: usize| kernel.recipe(&parse(&format!("[{}]", steps[..count].join(", ")))).unwrap();
+    let mut expected = vec![1, -1, 5];
+    expected.extend(kernel.letters(&star(4, 9, -1)).unwrap());
+    expected.extend([-5, 5]);
+    expected.extend(kernel.letters(&star(4, 9, 1)).unwrap());
+    assert_eq!(kernel.letters(&prefix(4)).unwrap(), expected);
+    for count in 1..=4 {
+        let recipe = prefix(count);
+        let letters = kernel.letters(&recipe).unwrap();
+        assert_eq!(letters.len(), recipe.primitive_count());
+        assert!(expected.starts_with(&letters), "prefix of {count} steps");
+        assert_eq!(kernel.effect(&recipe).unwrap().expansion_sha256, digest(&letters));
+    }
+
+    // A seeded literal word of 250,000 letters in chunks of different sizes.
+    let mut seed = 600u64;
+    let word: Vec<i64> = (0..250_000)
+        .map(|_| {
+            seed = seed.wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1_442_695_040_888_963_407);
+            let m = (seed >> 33) % 2_400;
+            if m < 1_200 {
+                m as i64 + 1
+            } else {
+                1_199 - m as i64
+            }
+        })
+        .collect();
+    let chunked = |sizes: &[usize]| {
+        let mut at = 0;
+        let mut steps = Vec::new();
+        for &size in sizes {
+            let moves = word[at..at + size].iter().map(|&m| Value::Int(m)).collect();
+            steps.push(json::object([("kind", Value::String("word".into())), ("moves", Value::Array(moves))]));
+            at += size;
+        }
+        kernel.recipe(&Value::Array(steps)).unwrap()
+    };
+    let literal: Vec<i32> = word.iter().map(|&m| m as i32).collect();
+    for sizes in [&[100_000, 100_000, 50_000][..], &[50_000, 100_000, 100_000], &[1, 99_999, 100_000, 49_999, 1]] {
+        let recipe = chunked(sizes);
+        assert_eq!(recipe.primitive_count(), 250_000);
+        assert_eq!(kernel.letters(&recipe).unwrap(), literal, "{sizes:?}");
+    }
+    // The net effect of a shorter word does not depend on its chunks either.
+    let effect = |sizes: &[usize]| kernel.effect(&chunked(sizes)).unwrap();
+    let whole = effect(&[600]);
+    assert_eq!(whole.expansion_sha256, digest(&literal[..600]));
+    assert_eq!(effect(&[200, 400]), whole);
+    assert_eq!(effect(&[1, 599]), whole);
+
+    // Thirty full chunks reach the total; one more letter in a chunk of its own is refused.
+    let full =
+        json::object([("kind", Value::String("word".into())), ("moves", Value::Array(vec![Value::Int(1); 100_000]))]);
+    let mut steps = vec![full; 30];
+    assert_eq!(kernel.recipe(&Value::Array(steps.clone())).unwrap().primitive_count(), 3_000_000);
+    steps.push(parse(r#"{"kind": "word", "moves": [1]}"#));
+    assert_eq!(kernel.recipe(&Value::Array(steps)).unwrap_err().code, codes::PRIMITIVE_CEILING);
 }

@@ -192,9 +192,12 @@ fn frozen_digest(vectors: &str, name: &str) -> String {
     entry[at..at + 64].to_string()
 }
 
-/// FP.17, FP.18 and FP.38, CT-FP-02 (part): the four example blocks read and digest as frozen, the runtime builds the
-/// capability-form ones byte for byte, their policy use without the fixture pin is refused with
-/// `PS1:capability.provenance_incompatible`, and a malformed block never reads.
+/// CT-FP-02 (part: complete manual and import blocks under both forms, a pick with no resolving record, a missing
+/// profile, an incompatible form and no permission; not run: a non-null built-in pick under each form, which resolves
+/// only when the session store holds `c600-pick` records (FP.38, M6)) and CT-BND-22 (part: flow-form blocks stay in
+/// their form; the row runs in `conformance_bnd.rs`), with FP.17, FP.18 and FP.38: the four example blocks read and
+/// digest as frozen, the runtime builds the capability-form ones byte for byte, their policy use without the fixture
+/// pin is refused with `PS1:capability.provenance_incompatible`, and a malformed block never reads.
 #[test]
 fn fp18_blocks_validate_and_match_the_frozen_digests() {
     let examples = provenance::parse(&std::fs::read(format!("{PACKET}examples.json")).unwrap()).expect("examples");
@@ -270,8 +273,11 @@ fn fp18_blocks_validate_and_match_the_frozen_digests() {
     assert!(provenance::parse(b"{\"a\":[1,-2,\"\\u00e9\\ud83d\\ude00\"],\"b\":null}").is_some());
 }
 
-/// CT-BND-01, CT-BND-03 and CT-BND-04 (parts): a stored word carries the block the host built, whatever the program
-/// writes, and a later run that reads it through the workspace and a file cites both blocks in read order.
+/// CT-BND-01 (part: workspace and file writes and a forged record; the whole row runs in `conformance_bnd.rs`),
+/// CT-BND-03 (part: the workspace record and file routes; not run: macros, recordings and conversion to source, which
+/// the command layer and the session build (LP3, M6)) and CT-BND-04 (part: two parts read through the workspace and a
+/// file; the whole row runs in `conformance_bnd.rs`): a stored word carries the block the host built, whatever the
+/// program writes, and a later run that reads it through the workspace and a file cites both blocks in read order.
 #[test]
 fn stored_words_carry_the_host_block_and_later_runs_cite_it() {
     let (mut engine, mut store) = (Engine::default(), Store::default());
@@ -308,8 +314,10 @@ fn stored_words_carry_the_host_block_and_later_runs_cite_it() {
     assert!(equal(&store.records[&ws("relayed")].value, &Value::word(&[1, -2])));
 }
 
-/// CT-BND-02 (part): a damaged or legacy part never reads as `read_state: no`, and a damaged block is kept but never
-/// admitted as `own` or `manual` (BND.21, FP.17).
+/// CT-BND-02 (part: a damaged or legacy part joins as `read_state: yes` and is refused at preview admission; not run:
+/// the session's tables and the command layer's rows that admit `own`, which M6 and LP3 build): a damaged or legacy
+/// part never reads as `read_state: no`, and a damaged block is kept but never admitted as `own` or `manual` (BND.21,
+/// FP.17). CT-PS1-18 (part: the run-level join of a legacy part; the rest is in `legacy.rs`).
 #[test]
 fn damaged_and_legacy_parts_never_read_as_no() {
     let solving = (Author::BuiltIn, Profile::Solving);
@@ -342,10 +350,13 @@ fn damaged_and_legacy_parts_never_read_as_no() {
     assert!(cases.iter().all(|o| o.as_deref() == Some(&b"\"run/1\"\n"[..])));
 }
 
-/// CT-BND-07, CT-BND-11 and CT-BND-12 (parts), BND.42 to BND.44: in the solving profile a previewing program receives
-/// one fixed acknowledgement, `{base, id}`, whether the preview was built, refused at admission or refused by the
-/// engine. Its output and every charge row are the same; the shell keeps the full answer. An outcome field is not
-/// granted to it.
+/// CT-BND-07 (part: a built preview, an admission refusal and a stale refusal; the whole row runs in
+/// `conformance_bnd.rs`), CT-BND-11 (part: the solving profile; not run: ONE.32's fields in the other profiles, which
+/// never arise, since BND.60 makes every proposal there a capture) and CT-BND-12 (part: the program's acknowledgement
+/// and the shell's record; not run: the shell's display, LP3), with BND.42 to BND.44: in the solving profile a
+/// previewing program receives one fixed acknowledgement, `{base, id}`, whether the preview was built, refused at
+/// admission or refused by the engine. Its output and every charge row are the same; the shell keeps the full answer.
+/// An outcome field is not granted to it.
 #[test]
 fn a_solving_run_gets_one_fixed_acknowledgement() {
     assert!(!build(PREVIEWER, "go").1, "reading a receipt's ID reads no state (BND.42)");
@@ -384,8 +395,9 @@ fn a_solving_run_gets_one_fixed_acknowledgement() {
     assert!(summaries[3..].iter().all(|s| s == &summaries[3]));
 }
 
-/// BND.60, CT-BND-14 (part): in tool authoring and research, `propose` goes to a capture. The engine builds no
-/// preview, the capture keeps the word and its block for a test to read, and the program gets the acknowledgement.
+/// CT-BND-14 (part: the engine and the program; not run: the session's digest, which the session store keeps (M6)),
+/// with BND.60: in tool authoring and research, `propose` goes to a capture. The engine builds no preview, the capture
+/// keeps the word and its block for a test to read, and the program gets the acknowledgement.
 #[test]
 fn other_profiles_capture_and_build_no_preview() {
     for (author, profile) in [(Author::Own, Profile::ToolAuthoring), (Author::BuiltIn, Profile::Research)] {
@@ -409,11 +421,14 @@ fn other_profiles_capture_and_build_no_preview() {
     }
 }
 
-/// The saved-word half of CT-LG3-07, with BND.61, BND.84 and BND.85: a word a solver's tool saved, through the
-/// workspace or a file, is refused when a solving run proposes it, at preview admission and with
-/// `LG3:capability.not_granted`; so is research output, a tool block nested in the parts, and a part whose content is
-/// missing. A hand-entered word and an imported macro pass. The flow rule stays off (CT-BND-24): reading the state is
-/// recorded, not refused. Parts of CT-BND-13 and CT-BND-26 to CT-BND-30.
+/// CT-LG3-07 (part: laundering through a saved word, refused at the runtime's preview admission; the checker's half
+/// runs in `c600-check`'s `ct_lg3_07_*` tests; not run: a state-reading built-in previewer, since the built-in tool
+/// column waits for the class review (BND.37, `rust/README.md` M1)), CT-BND-13 (whole: research output directly,
+/// through the workspace and through a file) and CT-BND-26 to CT-BND-30 (parts; their rows run in
+/// `conformance_bnd.rs`), with BND.61, BND.84 and BND.85: a word a solver's tool saved, through the workspace or a
+/// file, is refused when a solving run proposes it, at preview admission and with `LG3:capability.not_granted`; so is
+/// research output, a tool block nested in the parts, and a part whose content is missing. A hand-entered word and an
+/// imported macro pass. The flow rule stays off (CT-BND-24): reading the state is recorded, not refused.
 #[test]
 fn saved_tool_words_are_refused_at_preview_admission() {
     let solving = (Author::BuiltIn, Profile::Solving);

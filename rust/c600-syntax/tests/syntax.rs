@@ -65,6 +65,8 @@ fn candidate_a(list: &str) -> Vec<(Json, Vec<u8>)> {
         .collect()
 }
 
+/// CT-LG1-01 (part: a missing header in one file; the other files of a program and the mixed-edition clause are in
+/// `conformance_lg1.rs`): the file is refused at an insertion point and nothing after it is read.
 #[test]
 fn ct_lg1_01_a_missing_header_is_refused_at_an_insertion_point() {
     let file = parse(b"module m requires [];\n\nfn f() -> Int effects [] {\n    return 1;\n}\n");
@@ -74,6 +76,8 @@ fn ct_lg1_01_a_missing_header_is_refused_at_an_insertion_point() {
     assert!(file.module.is_none() && file.items.is_empty() && file.holes.is_empty());
 }
 
+/// CT-LG1-01 (part: an unsupported edition in one file; the other files of a program and the mixed-edition clause
+/// are in `conformance_lg1.rs`): the file is refused at its edition without trying another grammar.
 #[test]
 fn ct_lg1_01_another_edition_is_refused_without_trying_another_grammar() {
     for edition in ["6cs-draft-2", "lx8-0", ""] {
@@ -91,6 +95,9 @@ fn ct_lg1_01_another_edition_is_refused_without_trying_another_grammar() {
     }
 }
 
+/// CT-LG1-02 (part: the checkout's fixture parses, with its pinned SHA-256; the row is whole with the other
+/// `ct_lg1_02_*` test, `ct_err_05_malformed_utf8_gives_the_raw_digest_and_interval` and
+/// `tests/test_source_checkout.py`, which reads every `.6cs` source as LF and CRLF checkouts write it).
 #[test]
 fn ct_lg1_02_the_pinned_fixture_has_its_digest() {
     let bytes = std::fs::read(PINNED).expect("canonical.6cs");
@@ -99,6 +106,7 @@ fn ct_lg1_02_the_pinned_fixture_has_its_digest() {
     assert_eq!(file.digest.as_deref(), Some(PINNED_SHA256));
 }
 
+/// CT-LG1-02 (part, above: CRLF line ends and a byte-order mark are refused, never normalized before hashing).
 #[test]
 fn ct_lg1_02_crlf_and_a_byte_order_mark_are_refused() {
     let bytes = std::fs::read(PINNED).expect("canonical.6cs");
@@ -116,6 +124,7 @@ fn ct_lg1_02_crlf_and_a_byte_order_mark_are_refused() {
     }
 }
 
+/// CT-LG1-02 (part, above: malformed UTF-8 is refused) and CT-ERR-05's encoding context (ERR.10).
 #[test]
 fn ct_err_05_malformed_utf8_gives_the_raw_digest_and_interval() {
     for (input, start, end) in [(&[0x61, 0xff, 0x62][..], 1, 2), (&[0x61, 0xf0, 0x9f, 0x98][..], 1, 4)] {
@@ -127,6 +136,9 @@ fn ct_err_05_malformed_utf8_gives_the_raw_digest_and_interval() {
     }
 }
 
+/// CT-LG1-04 (whole, with `ct_lg1_04_candidate_a_byte_drafts`): each of candidate A's fourteen text drafts keeps its
+/// codes, locations and later independent declarations, also when shifted; a draft with a recovery hole never
+/// lowers, so it never runs, whatever its diagnostics say.
 #[test]
 fn ct_lg1_04_candidate_a_recovery_drafts() {
     let rows = candidate_a("recovery");
@@ -183,6 +195,8 @@ fn ct_lg1_04_candidate_a_recovery_drafts() {
     }
 }
 
+/// CT-LG1-04 (whole, with `ct_lg1_04_candidate_a_recovery_drafts`): the two byte drafts keep their codes and raw
+/// context and never lower.
 #[test]
 fn ct_lg1_04_candidate_a_byte_drafts() {
     let rows = candidate_a("byte_recovery");
@@ -223,6 +237,8 @@ fn let_values(source: &str) -> Vec<Lit> {
     out
 }
 
+/// CT-LG1-05 (whole, with the next test): integer, rational and Q(√5) literals lower as exact decimal text, a
+/// 121-digit integer among them, and an approximate literal keeps its own kind and precision.
 #[test]
 fn ct_lg1_05_exact_literals_stay_exact_and_approximations_keep_their_kind() {
     let big = format!("1{}", "0".repeat(120));
@@ -246,6 +262,8 @@ fn ct_lg1_05_exact_literals_stay_exact_and_approximations_keep_their_kind() {
     );
 }
 
+/// CT-LG1-05 (whole, with the previous test): a zero denominator, an unmarked decimal and a malformed approximation
+/// are refused at their source text.
 #[test]
 fn ct_lg1_05_a_zero_denominator_an_unmarked_decimal_and_a_bad_approximation_are_refused() {
     for (literal, offending) in [

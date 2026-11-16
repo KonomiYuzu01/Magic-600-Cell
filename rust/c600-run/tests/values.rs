@@ -40,6 +40,8 @@ fn bytes(v: &Value) -> Result<String, Noncanonical> {
     Ok(String::from_utf8(out).expect("UTF-8"))
 }
 
+/// CT-PS1-02 (part: exact sums of integers beyond 2^64, reduced rationals and Q(√5) numbers keep their exact value in
+/// the product profile, with no float; the round trips are in `canonical_ps1.rs`).
 #[test]
 fn exact_sums_are_canonical() {
     let half = lit(Lit::Rat { num: "1".into(), den: "2".into() });
@@ -69,6 +71,9 @@ fn exact_sums_are_canonical() {
     );
 }
 
+/// CT-DET-07 and CT-PS1-03 (part: noncanonical integer and natural literals, a zero or negative denominator, an
+/// unsupported precision, a malformed decimal and letters outside a word's fixed range are refused as literals; not
+/// run: the store's readers of persisted values (M6)).
 #[test]
 fn literal_forms_are_checked() {
     for bad in ["01", "-0", "", "+1", "1.0", "1e3"] {
@@ -84,6 +89,8 @@ fn literal_forms_are_checked() {
     assert!(value::literal(&Lit::Word(vec![-1200, 1])).is_some());
 }
 
+/// CT-DET-26 (part: DET.57's logical sizes of values, which every reservation and release of the meter uses; the
+/// rows that use them are in `traces.rs` and `conformance_det.rs`).
 #[test]
 fn sizes_follow_det_57() {
     assert_eq!(Value::int(0).size(), 2);
@@ -96,6 +103,9 @@ fn sizes_follow_det_57() {
     assert_eq!(r.size(), 4 + 1 + (12 + 8));
 }
 
+/// CT-DET-15 (part: approximate fields round to nearest even at their declared precision, against golden values
+/// computed outside this crate, on the platform that runs the test; not run: the headless Linux leg, since CI has no
+/// Linux cargo leg (no owner yet)).
 #[test]
 fn approximations_round_to_nearest_even() {
     let third = lit(Lit::Rat { num: "1".into(), den: "3".into() });
@@ -136,6 +146,8 @@ fn approximations_round_to_nearest_even() {
     assert_eq!(f64_bits(&approx(&third, 113)), None, "a 113-bit third is not a binary64 number");
 }
 
+/// CT-PS1-01 (part: key order, escaping, Unicode and the terminal newline of the product profile on the platform that
+/// runs the test; not run: the headless Linux leg, since CI has no Linux cargo leg (no owner yet)).
 #[test]
 fn canonical_bytes_sort_and_escape() {
     let v = Value::record(vec![
@@ -155,6 +167,8 @@ fn canonical_bytes_sort_and_escape() {
     assert_eq!(bytes(&Value::Fn(0)), Err(Noncanonical));
 }
 
+/// CT-DET-20 (part: values 200,000 records deep compare, encode and drop without host recursion, so depth cannot
+/// overflow the runtime's stack; not run: the journal and the state hash under fault (M6)).
 #[test]
 fn deep_values_drop_and_compare_without_recursion() {
     let mut a = Value::Unit;
