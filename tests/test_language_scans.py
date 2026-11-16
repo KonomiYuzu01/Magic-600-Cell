@@ -617,7 +617,9 @@ class ScanTests(unittest.TestCase):
         fails once per kind, and a slice's `.windows(2)` is no finding."""
         self.assertEqual(windows_problems(), [])
         members = workspace_members()
-        self.assertEqual(len(members), 6, members)
+        core = {"c600-ir", "c600-check", "c600-digest", "c600-syntax", "c600-run", "c600-kernel"}
+        self.assertLessEqual(core, set(members), members)
+        self.assertTrue(all((RUST / member / "Cargo.toml").is_file() for member in members), members)
         self.assertGreaterEqual(sum(len(lexed.code) for lexed in self.sources.values()), 100_000)
         self.assertEqual(shader_sources(), [], "write CT-RPI-20's HLSL half before product shader sources land")
         with tempfile.TemporaryDirectory() as tmp:
