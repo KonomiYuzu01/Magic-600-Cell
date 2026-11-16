@@ -157,6 +157,66 @@ impl Compressed {
         Arc::new(c)
     }
 
+    /// A compressed word from its parts in order, as [`Compressed::part_list`] gives them, for a transfer form. It
+    /// derives the lengths, heights and logical size as `leaf` and `concat` do. It refuses a list without parts, a
+    /// letter of magnitude 0 or above 1200, a concatenation of a part not before it or of an empty part, and a part the
+    /// word does not reach, so only the word itself may be empty, as for a built word. `leaf` checks no letters, so a
+    /// word built from letters outside `Value::Word`'s range is refused here, as a transfer form refuses such a word.
+    /// Any other straight-line program is accepted, also a shape `concat` does not build; such a word equals only a
+    /// word with the same parts. The checks run before any length is derived and use no recursion. The derived lengths
+    /// grow as `concat`'s do, to about n²/2 bits for a chain of n doublings, so a caller decoding untrusted input
+    /// bounds the parts.
+    pub fn from_parts(parts: Vec<Part>) -> Result<Compressed, &'static str> {
+        if parts.is_empty() {
+            return Err("a compressed word without parts");
+        }
+        // A concatenation of two parts that hold letters holds letters, so only a leaf can be empty.
+        let mut empty = Vec::with_capacity(parts.len());
+        for (k, part) in parts.iter().enumerate() {
+            match part {
+                Part::Leaf(l) => {
+                    if l.iter().any(|x| *x == 0 || x.unsigned_abs() > 1200) {
+                        return Err("a letter outside 1 to 1200");
+                    }
+                    empty.push(l.is_empty());
+                }
+                Part::Concat(i, j) => {
+                    if *i >= k || *j >= k {
+                        return Err("a concatenation of a part not before it");
+                    }
+                    if empty[*i] || empty[*j] {
+                        return Err("a concatenation of an empty part");
+                    }
+                    empty.push(false);
+                }
+            }
+        }
+        // A concatenation names only earlier parts, so one pass down from the word marks each part it reaches before
+        // that part's turn comes.
+        let last = parts.len() - 1;
+        let mut reached = vec![false; parts.len()];
+        reached[last] = true;
+        for k in (0..=last).rev() {
+            if !reached[k] {
+                return Err("a part the word does not reach");
+            }
+            if let Part::Concat(i, j) = &parts[k] {
+                reached[*i] = true;
+                reached[*j] = true;
+            }
+        }
+        let mut c = Compressed {
+            parts: Vec::with_capacity(parts.len()),
+            lengths: Vec::with_capacity(parts.len()),
+            heights: Vec::with_capacity(parts.len()),
+            parts_size: 0,
+        };
+        for part in parts {
+            c.push(part);
+        }
+        Ok(c)
+    }
+
     fn push(&mut self, part: Part) {
         let (length, height, size) = match &part {
             Part::Leaf(l) => (BigInt::from(l.len()), 0, 12 + 2 * l.len() as u128),
@@ -178,6 +238,11 @@ impl Compressed {
     /// The number of parts.
     pub fn parts(&self) -> usize {
         self.parts.len()
+    }
+
+    /// The parts in order; the last is the word. [`Compressed::from_parts`] rebuilds the word from them.
+    pub fn part_list(&self) -> &[Part] {
+        &self.parts
     }
 
     /// The longest chain of concatenations from the word to a leaf.

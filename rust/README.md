@@ -335,6 +335,11 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   `LG4:input.pointwise_failed` before its step. A compressed word has no canonical form, so a run that would emit one
   stops, and an argument that holds one is refused, with `PS1:input.noncanonical_value`. An exact equality with a
   compressed operand is refused as malformed IR; one held in a record or a collection only the checker refuses.
+  `part_list` gives the parts in order and `from_parts` rebuilds the word from them, for a transfer form, deriving its
+  lengths, heights and size. It refuses a list without parts, a letter outside 1 to 1200, a concatenation of a part
+  not before it or of an empty part, and a part the word does not reach; it accepts any other straight-line program,
+  also a shape `concat` does not build. The derived lengths reach about n²/2 bits for a chain of n doublings, so a
+  decoder of untrusted input bounds the parts.
   Tests: `c600-run/tests/collections.rs` (CT-LG2-14's language half, part).
 - Not built for compressed words: their inverse, conjugate, commutator and composition, `word_key`, an exact equality
   and an output form; the kernel's streaming half of CT-LG2-14 (DET.63's `word_open` and `chunk` rows, cancellation
