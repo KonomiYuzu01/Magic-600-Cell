@@ -709,14 +709,13 @@ impl<'g> Analysis<'g> {
         })
     }
 
-    /// EVD.32 row 6. Draft: a search job cut off by a stop that is neither a deterministic budget nor a declared
-    /// limit was cut off by wall clock or a resource stop (EVD.35, ERR.16).
+    /// EVD.32 row 6. Draft: a search job cut off reads row 6 when its stop is `other(reason)`, the wall-clock,
+    /// resource or product-ceiling stop of EVD.35 and ERR.16; cut off by a deterministic budget or a declared limit it
+    /// is row 5's, and cut off with stop closed it matches no row of its own.
     fn row6(&self) -> bool {
         let interrupted = |o: &JobOutcome| matches!(o, JobOutcome::Cancelled | JobOutcome::Error);
         for (r, job) in self.pair_searches() {
-            if interrupted(&job)
-                || (job == JobOutcome::CutOff && !matches!(r.stop, Stop::DeterministicBudget | Stop::DeclaredLimit))
-            {
+            if interrupted(&job) || (job == JobOutcome::CutOff && matches!(r.stop, Stop::Other(_))) {
                 return true;
             }
         }
@@ -740,6 +739,24 @@ impl<'g> Analysis<'g> {
             }
         }
         false
+    }
+
+    /// EVD.42: neg S stands at omega0 through an OR child that holds a live exhaustive-computation leaf, which I6 has
+    /// admitted through the finite exhaustive guard.
+    fn refuted_through_guard(&self) -> bool {
+        let Some(n) = self.n_root else {
+            return false;
+        };
+        let Node::Or(or) = &self.g.nodes()[n] else {
+            return false;
+        };
+        let args = self.args.get(&n).cloned().unwrap_or_default();
+        or.children.iter().zip(args).any(|(c, arg)| {
+            self.v0[*c]
+                && arg.iter().any(|l| {
+                    self.live.contains(l) && self.leaf(*l).grade.basis == Basis::ExhaustiveComputation
+                })
+        })
     }
 
     fn has_child_cycle(&self) -> bool {
@@ -847,8 +864,10 @@ pub fn word(g: &Graph, key: &Key, ed: &Edition) -> Result<Word, EvidenceError> {
         w.row = 1;
         w.word = WordKind::Refuted;
         w.claim = Claim::Refuted;
+        // EVD.42: row 1 reached through the finite exhaustive guard prints its scope phrase, as row 3 does.
         w.phrase_required = st.and_then(|s| s.form.as_ref()) == Some(&Form::Existence)
-            && matches!(key.scope.covers, Covers::SearchSet { .. });
+            && matches!(key.scope.covers, Covers::SearchSet { .. })
+            && a.refuted_through_guard();
     } else if s0 && key.scope.covers.is_finite_kind() {
         w.row = 2;
         w.word = WordKind::FiniteInstance;

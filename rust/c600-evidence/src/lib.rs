@@ -18,8 +18,9 @@
 //!   EVD.40 cases found. [`Word::display`] is a draft display; EV5 owns teaching.
 //! - Scope phrase wording (EVD.36): one instance "on one instance"; a search set "{bounds} of family {family} only"; an
 //!   admitted domain "on {name}" (with parameters in brackets when given); every reachable state "for every reachable
-//!   state of {puzzle}"; each guard appends ", for reachable inputs", ", given {name}" or ", under {name}". Row 3 and
-//!   row 1 reached through EVD.42's guard for a plain existence statement over a search set require the phrase.
+//!   state of {puzzle}"; each guard appends ", for reachable inputs", ", given {name}" or ", under {name}". Row 3
+//!   requires the phrase (EVD.36), and so does row 1 reached through EVD.42's finite exhaustive guard, read as: neg S
+//!   stands at ω₀ through an OR child that holds a live exhaustive-computation leaf.
 //! - Edition (EVD.14): `evidence-draft-1` holds all 30 pairs, the product order, an empty invalid-pairs table and the
 //!   trial threshold 𝒰₀. The threshold stays the owner's (EVD.29); tests use 𝒰₀ and its up-subsets only.
 //! - KN1.7 levels: labels stand beside the sticker class and position beside the region class, both read as mutual
@@ -31,13 +32,14 @@
 //! - A leaf's own job: the EVD.61 binding when it states an outcome, else its search record's job.
 //! - Search records and jobs for a key with no leaf (E3's truncated beam, E3's cancelled runs) attach to the key's OR
 //!   node; FP.20 carries a search record inside a leaf only (lead for the integrator).
-//! - Row 6: a search job cut off by a stop that is neither a deterministic budget nor a declared limit reads as cut off
-//!   by wall clock or a resource stop (EVD.35, ERR.16).
+//! - Row 6: a search job cut off reads row 6 when its stop is `other(reason)`, the wall-clock, resource or
+//!   product-ceiling stop (EVD.35, ERR.16); a search job cut off with stop closed matches no row of its own.
 //! - Row 4's named premises: the premises of the canonical alternatives satisfied at ω₁ whose own claim does not stand
 //!   at ω₀.
 //! - I6: an argument of neg X offers a refutation of X when it holds a live leaf whose basis is not sample. A complete
 //!   certificate is a certificate leaf flagged complete by its checker ([`Leaf::complete`]); a mixed(forall) witness is
-//!   a leaf with role [`LeafRole::Witness`].
+//!   a leaf with role [`LeafRole::Witness`], and the witness and the complete negative at it must be live leaves of the
+//!   same argument of neg X. The check also runs for an X with no OR node of its own.
 //! - Leaf roles: chapter 06 names witnesses and transport lemmas but stores no role field, so the library keeps a
 //!   [`LeafRole`] beside the leaf. A transport lemma leaf carries its checked relation Z = X·γ.
 //! - Entry check (EVD.18): a target without a `form` fact counts as universal for I7 (a) at entry too.
