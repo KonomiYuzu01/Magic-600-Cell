@@ -98,7 +98,7 @@ pub fn literal_words() -> CatalogueRow {
 
 /// Parses and lowers one module's source to the IR draft. A parse diagnostic, a recovery hole or a lowering error is
 /// an `Err`. The contract is that of `c600_tools::tool::lower_source`; the library does not depend on the tools
-/// crate, which builds on it.
+/// crate, which depends on the command, runtime, display and view crates.
 pub fn lower_source(source: &str) -> Result<Program, String> {
     lower_sources(&[source])
 }

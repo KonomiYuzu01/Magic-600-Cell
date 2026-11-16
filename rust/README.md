@@ -56,8 +56,8 @@ The jumbling tool crate depends on the digest crate, the jumbling crate and the 
 entries under the checker's built-in column; its tests also run the checker, syntax, IR, interpreter and kernel crates.
 The durable crate holds tests only; its dev-dependencies are the session store, the module crate, the checker, the
 syntax crate, the interpreter, the kernel and the digest crate.
-The library crate depends on the IR, syntax and digest crates only, so the tools crate can build on it; its tests
-also run the checker, the interpreter and the kernel.
+The library crate depends on the IR, syntax and digest crates only; its tests also run the checker, the interpreter
+and the kernel.
 
 ## Running the tests
 
@@ -982,8 +982,9 @@ run or not applicable is no pass (PHS.63).
   fails at its step, and a case with another model identity is refused without a trace. `tools/ci/run_headless.py`
   lists it.
 - Drafts, which freeze with the command table at LP3 (PHS.53): the list in the crate documentation, among them one
-  session per layer with Jumble off, an inline recipe as `WordRef`, `twist.apply` refused until KN3's exact rotations
-  exist, five codes chapter 13 does not register yet, and the envelope's epoch (LI.5).
+  session per layer with Jumble off, an inline recipe as `WordRef`, `twist.apply` refused as a row not built (KN3's
+  exact rotation requests exist since LP2's pull request 176; the row is KN5's), five codes chapter 13 does not register
+  yet, and the envelope's epoch (LI.5).
 - Not built: the durable transaction is `MemoryStore`, a stand-in until M6 is on main, so no receipt here is
   persistence evidence; the source route, the views and the other two tools (LP3 plan, C2 to C8); protection rows;
   every row the crate refuses with `KN5:input.row_not_built`.
@@ -1104,10 +1105,10 @@ run or not applicable is no pass (PHS.63).
   only when the validator's context carries no check result for it (RPI.48).
 - Not built: CT-RPI-19's Linux leg (no Linux run in this session); the rest of CT-RPI-32, which needs the stage
   module's parser and checker (RPI.69 to RPI.71, RPI.77, RM.38's weight table) and a backend for HLSL compilation, the
-  raster bound and frame reports (RPI.72, RPI.78, RM.41); KN3's polytope operations in the kernel, so the region test
-  is local to this crate; charts and properties outside the drafted repertoire, the GPU agreement check (RPI.35) and a
+  raster bound and frame reports (RPI.72, RPI.78, RM.41); KN3's polytope operations beyond `c600_jumble::dd`'s exact
+  vertices, so the region test is local to this crate; charts and properties outside the drafted repertoire, the GPU agreement check (RPI.35) and a
   production precision rule (RPI.36). CT-RPI-08's jumbling rows and the posed producer wait for M5; a decoder from the
-  interpreter's values needs list types in the IR (LP2); F05 and F26 stay unsupported until the stage checker exists;
+  interpreter's values (the IR draft has list types since pull request 176); F05 and F26 stay unsupported until the stage checker exists;
   CT-RM-09's rows 3 to 6, 8 and 10 (the raster bound, frame-report stops and device-fault quarantine) need a stage
   checker or a device; RM.38's weight table, device loss and `display_unsupported` belong to the renderer and its
   backend.
@@ -1178,8 +1179,8 @@ run or not applicable is no pass (PHS.63).
   between messages only, so a blocking host call is not interrupted.
 - Not built: OS isolation of the child (a job object with kill-on-close, a restricted or AppContainer token,
   filesystem and network confinement); a bound on the parent's queue of frames to a child that stops reading its
-  input (draft 5); a compressed word's transfer form, which needs a way to read and rebuild its parts from
-  `c600-run` (asked of LP2; draft 15); LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's
+  input (draft 5); a compressed word's transfer form (draft 15), which `c600-run`'s part list and checked
+  `from_parts` (LP2's pull request 185) now allow; LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's
   other 29 traces need
   what the IR draft lacks: child scopes, more than one generator per run, releasing a `let` before its alias, text
   order, byte decoding, loops and pointwise checks, exact multiplication, streaming cursors and an executor for
@@ -1264,7 +1265,8 @@ run or not applicable is no pass (PHS.63).
   - `routing.rs`: CT-EV4-02, among them arguments resolved at the press surviving later camera, focus, hover and
     filter changes, and the key route giving the same receipts as `Shell::invoke` with the same rows and arguments.
   - `repeat.rs`: CT-EV4-04's append, preview and commit legs and its busy leg, with repeat events flagged and
-    unflagged, counting the invocations that reach the layer. The twist leg waits for KN3.7's exact rotations (LP2).
+    unflagged, counting the invocations that reach the layer. The twist leg waits for `twist.apply` in the command
+    layer (KN5, LP2); KN3.7's exact rotation requests are built (pull request 176).
   - `keymap.rs`: CT-EV4-06's synthetic half, ahead of LP4 (chapter 12 section 15.5), among them DT-M1's US and French
     layout counterexample.
 - Drafts, which freeze with the command table at LP3 (PHS.53) and chapter 05's key-map forms: the list in the crate
@@ -1351,11 +1353,12 @@ run or not applicable is no pass (PHS.63).
     that command ID's outcome: its refusal is kept under its full digest, the genuine envelope commits under the ID,
     and neither retry commits anything more.
 - Not built: the shell's own refusal of a user-stage frame (LP2's KN5 implementation adds a presented-frame input to
-  `present`); CT-BND-19's live-twist part (KN3.7's exact rotations); an import row; grip, cell or piece objects for a
+  `present`); CT-BND-19's live-twist part (`twist.apply` in the command layer, KN5); an import row; grip, cell or piece objects for a
   word's letters (the kernel has no letter-to-grip map); a view declaring both of the manifest's classes (`c600-view`'s
   `Declared` holds one class); receipts on the process host for words with no transfer encoding; CT-LB2-02's Strict half
   through the tool's route (the command layer's preview has Net only; the kernel half runs in `c600-library`); named
-  work-sheet reuse; chunked recipes over 100,000 letters on the source route (the tool's entry takes one flat word);
+  work-sheet reuse; chunked recipes over 100,000 letters on the source route (the tool's entry takes one flat word,
+  though the IR draft now has lists and the kernel chunks words);
   CT-LB3-01's checker half and CT-LB3-07's recommendation rule (`c600-check` decides neither); the child's own built-in
   admission.
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
@@ -1402,7 +1405,7 @@ run or not applicable is no pass (PHS.63).
   - `rows.rs`: the requirements name the stored rows as H-08 has them, each row's effects are its entry's, and the layer
     refuses all six rows; an overlay cannot replace one.
 - Not built: the six rows; the checkers for homomorphism, embedding, isometry and full-dimensional injectivity
-  (CT-LB4-01's rest, which needs KN3's exact polytope operations); the stage checker, HLSL compilation and every device
+  (CT-LB4-01's rest, which needs KN3's exact polytope operations beyond `dd`'s vertices); the stage checker, HLSL compilation and every device
   step (CT-LB4-04's rest, the renderer freeze); the relationship strip (C8 computes one of its typed relations, a slot's
   current occupant, at pose level); filters of trees, complexes and graphs; a BM5 review record; an explicit workspace
   command through the command layer (KN5's one implementation).
@@ -1457,15 +1460,16 @@ run or not applicable is no pass (PHS.63).
     explicit), CT-RPI-12's off-lattice part on a real jumbling state (with C2's stale half, CT-RPI-12 runs whole) and
     CT-RM-07's jumbling half on M5's model (rows 1 to 8 and 15).
 - Not built: Jumble on in the command layer and oracle equality against M5's fixtures (KN5's one implementation, LP2);
-  M8's items (nu, the checkpoints, the sticker test, a whole word's Net and Strict protection, the repair list, covers,
-  release order, the correction catalogue, and the rows J01 and J06 to J12); the library entries, which need the IR
-  draft's collection types; CT-LB1-02's key half (LG2.18); BM5's review records; a slot action of K⁺ and an engine-named
-  rotation plane in `c600-jumble` (without the slot action, a slot whose K⁺-orbit has a piece at a lattice pose other
-  than the identity has an `unknown` occupant); J10's exposed-face geometry; a comparison of the posed arrays with the
-  J1 fixture's later stages; label-level protection rows for every piece, centre pieces included (the kernel's
-  `ProtectedSet` covers the moving orbits 0 to 34, so CT-LB3-02's label verdict is composed from `positions` rows);
-  LB3.4's projection from poses to labels with its checkpoints; the relationship strip's data contract (chapter 06,
-  RPI.65).
+  ν, the F2 and F5 number kinds and the correction catalogue (LP2); the producers of the rows J01 and J06 to J12 (J10
+  needs exposed-face geometry, J12 needs ν); the jumbling library entries, which need menu words in the IR draft;
+  CT-LB1-02's key half (LG2.18); BM5's review records; an engine-named rotation plane in `c600-jumble`; a comparison of
+  the posed arrays with the J1 fixture's later stages; label-level protection rows for every piece, centre pieces
+  included (the kernel's `ProtectedSet` covers the moving orbits 0 to 34, so CT-LB3-02's label verdict is composed from
+  `positions` rows); the relationship strip's data contract (chapter 06, RPI.65). LP2 has built the slot action of K⁺,
+  LB3.4's projection from poses to labels with its checkpoints, the sticker test, a whole word's Net and Strict
+  protection at pose level, and the repair list, covers and release check (pull requests 176 and 182). C8 does not use
+  them yet, so a slot whose K⁺-orbit has a piece at a lattice pose other than the identity still has an `unknown`
+  occupant.
 - Drafts, which freeze with the IR and the command table, are in each crate's documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
   Linux leg was not run.

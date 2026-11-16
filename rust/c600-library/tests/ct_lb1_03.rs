@@ -69,8 +69,9 @@ fn ct_lb1_03_the_library_source_checks_and_power_reads_no_state() {
     let separated = separation(summary, &Policy::interim());
     assert_eq!(separated, Separation { reads_state: false, prepares_previews: false });
 
+    let power_fn = module.functions.iter().find(|f| f.name == "power").expect("the module defines power");
     let mut all = Vec::new();
-    nodes(&module.functions[0].body, &mut all);
+    nodes(&power_fn.body, &mut all);
     assert!(!all.iter().any(|e| matches!(e, Expr::Propose { .. })), "power names no proposal target");
     let ops: BTreeSet<String> = all
         .iter()
