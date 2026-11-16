@@ -10,8 +10,10 @@ use c600_run::value::Value;
 use c600_session::{code, At, Input, JobKind, JobOutcome, Lane, Origin, Row, Status};
 use common::*;
 
-/// A commit after an undo starts a new line and keeps the old one; exactly one line is active; a switch is a commit
-/// row that needs the shell's token, moves the state to the other line's head, and is undone like any commit.
+/// CT-KN4-04 (whole, with `a_program_job_compares_two_lines_through_snapshots` and
+/// `no_runtime_request_changes_a_line`): a commit after an undo starts a new line and keeps the old one; exactly one
+/// line is active; a switch is a commit row that needs the shell's token, moves the state to the other line's head, and
+/// is undone like any commit.
 #[test]
 fn a_commit_after_an_undo_keeps_the_old_line() {
     let (session, disk) = session();
@@ -43,8 +45,9 @@ fn a_commit_after_an_undo_keeps_the_old_line() {
     assert_eq!(durable(&reopened), durable(&session), "lines and the active line are durable");
 }
 
-/// A program job compares two lines through opened snapshots: one of the old line's head and one of the current
-/// state. Its answer is the number of slots where the two differ, and nothing about the lines changes.
+/// CT-KN4-04 (part: a program views and compares another line): a program job compares two lines through opened
+/// snapshots: one of the old line's head and one of the current state. Its answer is the number of slots where the two
+/// differ, and nothing about the lines changes.
 #[test]
 fn a_program_job_compares_two_lines_through_snapshots() {
     let (session, _disk) = session();
@@ -73,8 +76,10 @@ fn a_program_job_compares_two_lines_through_snapshots() {
     assert_eq!(after, before, "a comparison changes no line");
 }
 
-/// No runtime request creates, switches or changes a line: a program delivers no commit row and no session row, and
-/// a job that asks for a preview or a workspace write is refused by its host.
+/// CT-KN4-04 (part: a program cannot change a line), CT-ONE-23 (part: the job hosts; whole with
+/// `ct_one_02_a_program_delivers_no_commit_row` in `conformance_rows.rs`): no runtime request creates, switches or
+/// changes a line: a program delivers no commit row and no session row, and a job that asks for a preview or a
+/// workspace write is refused by its host.
 #[test]
 fn no_runtime_request_changes_a_line() {
     let (session, disk) = session();
@@ -107,7 +112,8 @@ fn no_runtime_request_changes_a_line() {
 
 /// A snapshot stays as it was opened while the session moves on. A checkpoint's snapshot is read from its stored
 /// state object, after a reopen too; a damaged object is not used, and the state is replayed along the checkpoint's
-/// path (PS1.29). Only revisions this session reached in this engine epoch open.
+/// path (PS1.29). Only revisions this session reached open; one stored in an earlier engine epoch opens again under
+/// the new epoch (ONE.17), while a snapshot of the old epoch is no job input.
 #[test]
 fn snapshots_stay_as_they_were_opened() {
     let (session, disk) = session();
@@ -132,8 +138,11 @@ fn snapshots_stay_as_they_were_opened() {
     assert_eq!(missing.code, codes::NAMED_OBJECT_INVALID);
 
     let reopened = reopen(&disk);
-    let old_epoch = reopened.open_snapshot(At::Revision(a.revision.clone())).unwrap_err();
-    assert_eq!(old_epoch.code, code::EPOCH_CHANGED);
+    let stored = reopened.open_snapshot(At::Revision(a.revision.clone())).expect("a stored revision after a reopen");
+    assert_eq!(stored.state().labels(), held.state().labels());
+    let mut expected = a.revision.clone();
+    expected.epoch = reopened.epoch();
+    assert_eq!(stored.revision, expected, "the same revision, under the new epoch");
     let stale = Input::Handle(held.clone());
     let refused = try_submit(&reopened, "J", job("state", Vec::new(), vec![stale], Lane::Program, JobKind::Query));
     assert_eq!(code(&refused), code::EPOCH_CHANGED, "a snapshot of another epoch is no job input");

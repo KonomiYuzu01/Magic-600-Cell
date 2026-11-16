@@ -2,8 +2,14 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-16] update | The language: LP2's first integration batch
+The checker gains chapter 07 section 8's built-in column as a draft (`admit_built_in`), the entry rule for exported functions, BND.57's rows, fixes for M1's known limits and for two M7 attack leads; the interpreter's meter now holds DET.57's frames and DET.56's fused output row and runs 11 of DET.65's traces as programs; the kernel adds Strict protection, KN2.11's refusal shape, positions, KN1.4's model binding and KN2.10's streamed replay; Fable's M5 attack leads became tests, with J1's faults kept as expected failures. `tools/language/ct_index.py` now computes section 15.3's index: 59 of the 248 LP2 tests whole and 118 in part, 65 waiting with what they wait for.
+
 ## [2026-11-16] update | Two LG3 code contradictions from the LP2 checker
 The LP2 checker's built-in column and entry rule found two codes that the sources disagree on: LX-3's corpus expects `LG3:capability.ambient_read` for P01 to P03, which chapter 13 keeps unused and the checker answers with `LG3:capability.not_granted`, and dynamic code must be refused but has no chapter 13 code, so the module loader and the checker give different ones. Both are contradiction records for an owner ruling (PHS.52); neither changes a rule.
+
+## [2026-11-16] update | The language: section 15.3's session rows that M6 unblocked
+With M5's tests (pull request 167), tests now mark 174 of the 248 LP2 conformance tests that section 15.3 lists, 58 whole and 116 in part (pull request 168): M6's tests mark the rows they name, and three new files in `rust/c600-session/tests/` run the session's rows of CT-ONE-01, CT-ONE-02, CT-ONE-06 to CT-ONE-08, CT-ONE-11, CT-ONE-12, CT-ONE-20 to CT-ONE-23, CT-KN5-03 and CT-KN5-10; `rust/README.md` lists the 74 not yet covered by what they wait for. CT-ONE-21's test found that `open_snapshot` refused a `RevisionRef` stored in an earlier engine epoch, against ONE.17; it now opens the same revision under the new epoch, while a snapshot handle of the old epoch stays no job input.
 
 ## [2026-11-16] update | The language: M5, the jumbling half of the kernel API
 `rust/c600-jumble` is a candidate engine for the rigid jumbling puzzle, built from `assets/` alone through the kernel's asset checks, and `tests/test_jumbling_rust_candidate.py` compares it with J1 through the differential harness step by step (the W-J fixture prefixes with surveys, straddler sets and J1-checked certificates, the first 600 letters of H6030, refusals and a planted difference; `JUMBLING_FULL_REPLAY=1` runs every record and letter), with the jumbling halves of CT-KN1-02, CT-KN1-05, CT-KN2-02 to CT-KN2-05, CT-KN3-02 and CT-JI-03, so section 15.3's index now counts 40 of the 248 LP2 tests whole and 104 in part. The harness bindings reach J1 only through its public API (JI.52); what is not built, for M8, is listed in `rust/README.md`.
