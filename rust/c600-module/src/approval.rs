@@ -2,8 +2,9 @@
 //!
 //! [`admit_program`] is the check an approval rests on. It refuses dynamic code first, then gives `c600-check`'s
 //! findings for the entry's author column: [`c600_check::admit`] for an own, forked or imported tool, and for a
-//! built-in tool the checker's diagnostics with the same capability rows (BND.37, BND.56). [`approve`] binds the
-//! result to the closure digest, so [`crate::load`] refuses any other bytes.
+//! built-in tool the checker's refusal of another IR version first, then its diagnostics with the same capability
+//! rows (BND.37, BND.56). [`approve`] binds the result to the closure digest, so [`crate::load`] refuses any other
+//! bytes.
 
 use std::collections::BTreeSet;
 
@@ -12,7 +13,7 @@ use c600_digest::sha256;
 use c600_ir::{Program, EXEC_CONTRACT, IR_VERSION};
 use c600_run::provenance::{self, digest_ref, Author, Json, Pin, Profile};
 
-use crate::code::{IR_REJECTED, NOT_GRANTED};
+use crate::code::{IR_REJECTED, IR_VERSION_UNSUPPORTED, NOT_GRANTED};
 use crate::{refuse, Closure, Identity, Refusal, APPROVAL_FORMAT, FORM_VERSION};
 
 /// What an approval is asked for: one entry, under one author class, profile, grant and policy (LG3.9, BND.17).
@@ -53,6 +54,11 @@ pub fn admit_program(program: &Program, entry: &Entry) -> Result<Admitted, Refus
             return Err(refuse(NOT_GRANTED, "author `unknown` is never approved: no row admits it (BND.21)"));
         }
         Author::BuiltIn => {
+            // A program for another IR version or execution contract has no summaries: it is refused with the
+            // checker's code before the entry is looked up, as `c600_check::admit` and `admit_built_in` do (LG4.1).
+            if let Some(d) = report.diagnostics.iter().find(|d| d.code == IR_VERSION_UNSUPPORTED) {
+                return Err(finding(d.code, &d.module, &d.function, &d.path, &d.note));
+            }
             let summary = report.summary(&entry.module, &entry.function).ok_or_else(|| no_entry(entry))?;
             let mut findings: Vec<Refusal> =
                 report.diagnostics.iter().map(|d| finding(d.code, &d.module, &d.function, &d.path, &d.note)).collect();

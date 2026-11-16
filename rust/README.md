@@ -1120,27 +1120,29 @@ run or not applicable is no pass (PHS.63).
   the closure digest (RTE.45's `source_bound` variant for route RT1). `load` refuses a closure whose digest differs
   from the approval's, so substituted dependency bytes never run, and `Ready::run` runs the approved entry through
   `c600-run`'s boundary.
-- Tests (`c600-module/tests/`): CT-RTE-08's source leg (`ct_rte_08.rs`, 13 tests): the approval binds every
+- Tests (`c600-module/tests/`): CT-RTE-08's source leg (`ct_rte_08.rs`, 14 tests): the approval binds every
   executed module; substituted, missing and mismatched dependencies are refused; record forms are checked before
-  use; a moved file keeps its closure and its approval; dynamic code is refused; capability separation holds at the
-  preview point. CT-RTE-07 on 600-cell-Full (`ct_rte_07_full.rs`): 36 of LX-3's 75 frozen keys, each run ten times
+  use; a moved file keeps its closure and its approval; dynamic code is refused; a program for another IR version
+  or execution contract is refused with the checker's code in every author column; capability separation holds at
+  the preview point. CT-RTE-07 on 600-cell-Full (`ct_rte_07_full.rs`): 39 of LX-3's 75 frozen keys, each run ten times
   with one SHA-256 over its canonical result, engine side and store, and a check that every key is either realised
   or listed as left, exactly once.
 - Differences from the corpus, listed in the tests: A25 is a false refusal, which the corpus permits (separation
   refuses the preview of an allowed combination). P01 to P03 give the corpus's `LG3:capability.ambient_read` since
-  the owner's decision of 16 November 2026 (PHS.52).
+  the owner's decision of 16 November 2026 (PHS.52). A17's inverse of `D a` is `-1, +4`: the IR writes a letter's
+  inverse as its negation, and `fixture.json` names `a` its own inverse, so the tests read `-1` as `a` and the value
+  as the corpus's `a d`.
 - Drafts, which freeze with the module formats (LG5.10, LQ10): the list in the crate documentation, among them the
   manifest and lock forms (`c600-module-draft` and `c600-lock-draft`, version 1), a null FP.11 identity for both
   records with the model identities in `payload.supports` (a gap for the format review), locations in the lock
   only, the closure digest, the in-memory approval record `c600-approval-draft`, and the separation refusal at the
   preview point, which stays in this crate until C5's host bridge. Dynamic code is `LG3:capability.not_granted` by the
   owner's decision of 16 November 2026 (PHS.52).
-- Not built: CT-RTE-08's persisted words (C7, on M6's store). CT-RTE-07's other 39 keys: 6 jumbling keys (M5); 6
-  keys that need the session store (C7); 15 keys the IR draft cannot express (early stop, word length, inverse and
-  concatenation, exact multiplication and remainder, and a run's input as a query argument; LP2); and 12 budget
-  keys, whose amounts follow LX-3's experiment-only counting fixture rather than `lp1-exec-draft-1`'s prices, or
-  which need host events inside a loop, the host's row cache or the command layer's rows. The Linux leg did not
-  run.
+- Not built: CT-RTE-08's persisted words (C7, on M6's store). CT-RTE-07's other 36 keys: 6 jumbling keys (M5); 6
+  keys that need the session store (C7); 12 keys the IR draft cannot express (early stop, exact multiplication and
+  remainder, and a run's input as a query argument; LP2); and 12 budget keys, whose amounts follow LX-3's
+  experiment-only counting fixture rather than `lp1-exec-draft-1`'s prices, or which need host events inside a
+  loop, the host's row cache or the command layer's rows. The Linux leg did not run.
 - Evidence kind: source and synthetic. No timing is measured.
 
 ## Status of LP3, C3: the runtime in its own process
