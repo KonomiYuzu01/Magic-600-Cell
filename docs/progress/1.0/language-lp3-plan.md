@@ -199,7 +199,10 @@ host ran it. Acceptance:
   traces byte-identical to the command route's, and receipts that agree in all 13,553 pairs apart from their
   envelopes); item 3 (C5 changed no file in `c600-command`); and of item 2, the 600-cell-Full tool parts of CT-LB6-03
   and CT-BND-15, the headless part of CT-ONE-29 and the command-layer parts of CT-BND-07 and CT-BND-11. The tool runs
-  in process. CT-EV4-02 and CT-EV4-04's legs moved to an input router in a crate of its own (`rust/c600-input`).
+  in process.
+- C5, input router (`rust/c600-input`, branch `claude/lp3-input-routing`), built: of item 2, CT-EV4-02 and CT-EV4-04's
+  append, preview and commit legs and its busy leg, on synthetic events through the shell's public API; ahead of LP4,
+  CT-EV4-06's synthetic half. CT-EV4-04's twist leg waits for KN3.7's exact rotations (section 2).
 - Next, C5's next piece: CT-LB2-02's Net half, CT-LB2-03's oversize refusal, the checker halves of CT-LB3-01 and
   CT-LB3-07, CT-BND-19, CT-EV3-01 to CT-EV3-04 with the tool's views, CT-ONE-29's user-stage part (with C2's next
   display piece), and the tool on C3's runtime process with its records naming the host.

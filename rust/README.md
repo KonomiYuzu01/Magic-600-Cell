@@ -24,6 +24,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-module` | Module closures, lockfiles and their approval binding: the draft manifest and lock forms, resolution by content digest, closure verification and the closure digest, an approval bound to that digest, and load and run through the run-time boundary (LP3, C4) |
 | `c600-runtime` | The runtime in a process of its own (route RT1): the child binary `c600-runtime`, the parent library that starts it and answers its host calls, the wire protocol draft `c600-rt1-wire-1` and the in-process reference path (LP3, C3) |
 | `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, the recipe expansion and the source route `c600-lp3-source` (LP3, C5) |
+| `c600-input` | The headless input router: synthetic key events to command-layer invocations in chapter 04's routing order, bindings resolved to absolute arguments at the press, the held-key allowlist and the key-map checks (LP3, C5) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
@@ -39,6 +40,8 @@ path to the command layer.
 The tools crate depends on the syntax, checker, interpreter, IR, digest and kernel crates and on the command layer: its
 host bridge connects the in-process interpreter to the command layer as the runtime's host. The runtime's own process
 (C3) is not connected to the bridge yet.
+The input router depends on the command layer and the kernel crate only, so a key reaches a kernel row with no path to
+the interpreter (ONE.48).
 
 ## Running the tests
 
@@ -735,3 +738,33 @@ run or not applicable is no pass (PHS.63).
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run. The timings the
   source-route check prints are informational, not performance evidence.
+
+## Status of LP3, C5: the input router
+
+- `c600-input` routes synthetic key events in EV4.4's fixed order: a key-capture field, a text field, a focused list
+  or view taking only its navigation keys, then the global map. A key that reaches a binding has its relative names
+  resolved at the press and goes to the command layer through `c600-command`'s public shell API with absolute
+  arguments only (EV4.3). A held key repeats only EV4.6's allowlist (`camera.rotate`, `camera.zoom`, `list.move`,
+  `view.preview.scrub`), read from the row's H-08 `repeat` flag; focus loss releases the held keys and a pending
+  prefix group; busy input gets the layer's refusal as its receipt and is never queued. `KeyMap::apply` runs EV4.7's
+  duplicate, prefix and layout checks per routing class and per declared layout (US QWERTY and French AZERTY) before a
+  map applies. The crate changes no file in `c600-command`.
+- Tests (`c600-input/tests/`), on synthetic events only:
+  - `routing.rs`: CT-EV4-02, among them arguments resolved at the press surviving later camera, focus, hover and
+    filter changes, and the key route giving the same receipts as `Shell::invoke` with the same rows and arguments.
+  - `repeat.rs`: CT-EV4-04's append, preview and commit legs and its busy leg, with repeat events flagged and
+    unflagged, counting the invocations that reach the layer. The twist leg waits for KN3.7's exact rotations (LP2).
+  - `keymap.rs`: CT-EV4-06's synthetic half, ahead of LP4 (chapter 12 section 15.5), among them DT-M1's US and French
+    layout counterexample.
+- Drafts, which freeze with the command table at LP3 (PHS.53) and chapter 05's key-map forms: the list in the crate
+  documentation, among them the routing class names, the chord form (W3C `code` names with Ctrl, Shift, Alt and
+  Meta), the two layout tables, the default global map, the repeat flag's source, and placeholder camera and twist
+  values. Escape closes a pending prefix group or the innermost transient layer and never cancels a preview (DT-M1 C4).
+- Open:
+  - The class rule (no text-class or capture-class binding; list-class bindings reach only the list rows) reports
+    `EV4:input.binding_conflict`, since chapter 13 has no row of its own for it; a dedicated row is a change to
+    chapter 13 (PHS.52).
+  - Two draft key maps exist: the shell's five chords in `c600-command`, which C1's key route uses, and the router's
+    default map. They agree on preview, execute, undo and redo; the shell binds Escape to `operation.preview.cancel`,
+    which DT-M1 C4 rules out. One map remains when the command table freezes (PHS.53).
+- Evidence kind: source and synthetic. No Windows, IME, device or timing claim; CT-EV4-05 stays a windows test (LP4).

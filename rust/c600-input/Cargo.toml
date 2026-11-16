@@ -1,0 +1,10 @@
+[package]
+name = "c600-input"
+description = "The headless input router of LP3: key events to command-layer invocations in chapter 04's routing order, with bindings to absolute arguments and the held-key allowlist (EV4.3 to EV4.7; headless draft)"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+c600-command = { path = "../c600-command" }
+c600-kernel = { path = "../c600-kernel" }
