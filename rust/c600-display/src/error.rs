@@ -28,6 +28,10 @@ pub mod codes {
     pub const APPROXIMATE_PROPERTY_INPUT: &str = "LB4:type.approximate_property_input";
     /// LG2.24, RPI.69: a stage outside the stage rules; its registered form is `diagnostic`.
     pub const STAGE_RULE_VIOLATION: &str = "LG2:type.stage_rule_violation";
+    /// KN1.8, KN1.10, RPI.23: a slot projection asked for a subject at a level it does not hold. A digest of one level
+    /// never compares with a digest of another and nothing lifts labels into poses, so the slot is missing with this
+    /// reason, distinct from `off_lattice` (chapter 13: "distinct from partial off-lattice data").
+    pub const LEVEL_NOT_HELD: &str = "KN1:input.level_not_held";
 }
 
 /// The `form` field of ERR.8.

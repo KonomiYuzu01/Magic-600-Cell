@@ -764,11 +764,7 @@ impl Check<'_> {
     /// finite row-major matrices with the identity at pose 0, and one lattice entry per pose. The subject is at pose
     /// level; its exact digest cannot be recomputed from binary32 arrays, so the producer binds it.
     fn posed(&mut self, posed: &PosedInput, plan: &DisplayPlan, subject: &StateRef) -> Result<(), Error> {
-        let poses_level = match subject {
-            StateRef::Snapshot(revision) => revision.mode == Mode::JumbleOn,
-            StateRef::Derived(derived) => derived.level == Level::Poses,
-        };
-        if !poses_level {
+        if subject.level() != Level::Poses {
             return Err(invalid("a posed row draws a subject at pose level"));
         }
         let d = u64::from(plan.dimension);
