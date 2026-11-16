@@ -5,6 +5,7 @@
 mod support;
 
 use std::sync::Arc;
+use std::time::Duration;
 
 use c600_check::Profile;
 use c600_ir::Capability;
@@ -104,8 +105,8 @@ fn workspace_records_and_files_are_written_once() {
     assert_eq!(session.workspace[0].0, "relayed");
 }
 
-/// A run that proposes a word: the host receives the proposal once and the receipt crosses back. The pending
-/// preview and the journal are the session's and stay as they were.
+/// A run that proposes a word: the host receives the proposal once, takes it as the session's pending preview, and
+/// the receipt crosses back. The journal is the session's and stays as it was.
 #[test]
 fn a_proposed_word_reaches_the_host_once() {
     let mut rt = runtime();
@@ -114,8 +115,8 @@ fn a_proposed_word_reaches_the_host_once() {
         compare(&mut rt, &job(&source, "go", vec![Value::word(&[1, -2, 3])], JobOptions::new(WIDE)), |_| {});
     assert_eq!(output(&end), "\"preview-1\"\n");
     assert_eq!(session.proposals, [(vec![1, -2, 3], "t".to_string())]);
-    let fresh = Session::default();
-    assert_eq!((session.journal, session.preview), (fresh.journal, fresh.preview));
+    assert_eq!(session.preview, Some(vec![1, -2, 3]));
+    assert_eq!(session.journal, Session::default().journal);
 
     // In a solving session the same program is refused at admission on both sides (LG3.16).
     let solving = JobOptions { profile: Profile::Solving, ..JobOptions::new(WIDE) };
@@ -239,7 +240,7 @@ fn an_interruption_from_inside_a_host_call_stops_at_the_same_operation() {
     rt.start().unwrap();
     let canceller = rt.canceller().unwrap();
     let mut there = Session::default();
-    there.on_perform = Some(Box::new(move || canceller.cancel(Interruption::ByUser)));
+    there.on_perform = Some(Box::new(move || assert!(canceller.cancel(Interruption::ByUser), "a run in progress")));
     let b = rt.run(&j, &mut there, None).unwrap();
     assert_same_end(&a, &b);
     here.assert_same(&there);
@@ -250,4 +251,40 @@ fn an_interruption_from_inside_a_host_call_stops_at_the_same_operation() {
     let c = rt.run(&j, &mut Session::default(), None).unwrap();
     assert_eq!(output(&c), "{\"int\":\"43\"}\n");
     assert_eq!(rt.spawns(), 1);
+}
+
+/// A long pure job: it makes no host call, so only an interruption ends it before its safety stop.
+const SPIN: &str = "fn spin(n: Nat, top: Nat) -> Nat effects [] {\n    \
+    return match exact_less(n, top) {\n        \
+    true => exact_add(spin(exact_add(n, 1), top), spin(exact_add(n, 1), top));\n        _ => 0;\n    };\n}\n\n\
+    export fn forever() -> Nat effects [] {\n    return spin(0, 64);\n}\n";
+
+/// DET.56, KN7.6: a cancel sent as soon as a run is in progress is never lost, however it interleaves with the
+/// child's start of the run. Each round raises the cancel from another thread the moment the run is in progress; the
+/// job has no host call, so nothing else can end it before the safety stop, which is a timeout of the test and not a
+/// measurement. Every round ends cancelled, on the same child.
+#[test]
+fn a_cancel_right_after_the_start_is_never_lost() {
+    const ROUNDS: u32 = 200;
+    let j =
+        job(&format!("{}{SPIN}", header("")), "forever", vec![], JobOptions { record: false, ..JobOptions::new(WIDE) });
+    let mut rt = runtime();
+    rt.start().unwrap();
+    let canceller = rt.canceller().unwrap();
+    assert!(!canceller.cancel(Interruption::ByUser), "no run in progress");
+    for round in 0..ROUNDS {
+        let c = canceller.clone();
+        let raise = std::thread::spawn(move || {
+            while !c.cancel(Interruption::ByUser) {
+                std::thread::yield_now();
+            }
+        });
+        let end = rt.run(&j, &mut Session::default(), Some(Duration::from_secs(60)));
+        let end = end.unwrap_or_else(|f| panic!("round {round}: {f}"));
+        let summary = &ran(&end).summary;
+        assert_eq!((summary.outcome, summary.code), (Outcome::Cancelled, Some(CANCELLED_BY_USER)), "round {round}");
+        raise.join().unwrap();
+    }
+    assert_eq!(rt.spawns(), 1);
+    assert!(!canceller.cancel(Interruption::ByUser), "no run in progress");
 }

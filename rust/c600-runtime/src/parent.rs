@@ -4,14 +4,17 @@
 //! end of the run. Whatever happens to the child, the parent returns: the run's end, or a [`Fault`] that says what
 //! was lost. After a fault the child has been killed and reaped, and the next run starts a fresh one. Three threads
 //! per child keep the parent from ever blocking on it: one writes frames to its input, one reads frames from its
-//! output and one keeps the end of its standard error.
+//! output and one keeps the end of its standard error. The reader hands over at most [`READ_AHEAD`] frames before it
+//! waits, so a child that floods its output holds a bounded number of frames in the parent.
 //!
-//! Every forwarded call carries an id and the id of the last call whose answer the child received. The parent keeps
-//! the encoded answer of every call the child has not acknowledged yet, and answers a repeated delivery of such a
-//! call from that record instead of calling the host again (KI.5). A repeated call with another request, a call the
-//! child already acknowledged, a skipped id or an acknowledgement of an unanswered call is a protocol fault.
+//! Every forwarded call carries an id and the id of the last call whose answer the child received. The child is
+//! synchronous: it sends a new call only after the answer to the last one arrived, so a new call must acknowledge
+//! that answer and at most one answer is open. The parent keeps the open answer's bytes until the next call or the end
+//! of the run acknowledges it, and answers a repeated delivery of the open call, as first sent, from that record
+//! instead of calling the host again (KI.5). Anything else is a protocol fault: a new call that does not acknowledge
+//! the last answer, a repeated call with another request or acknowledgement, a call already acknowledged or a
+//! skipped id.
 
-use std::collections::BTreeMap;
 use std::ffi::OsString;
 use std::fmt;
 use std::io::{ErrorKind, Read};
@@ -38,6 +41,10 @@ pub const SAFETY_STOP: &str = "KN7:resource_limit.safety_stop";
 
 /// The bytes of the child's standard error that a fault keeps, from its end.
 pub const STDERR_TAIL: usize = 8 << 10;
+
+/// The frames the output reader hands over before it waits for the parent to take one. The child is synchronous,
+/// so one is enough.
+pub const READ_AHEAD: usize = 1;
 
 /// How to start the runtime process.
 #[derive(Clone, Debug)]
@@ -120,11 +127,16 @@ enum Event {
     End(FrameError),
 }
 
+/// The child's input as [`Canceller`]s reach it. It is emptied when the process ends, so that no handle keeps the
+/// writer thread and the child's input open.
+type CancelInput = Arc<Mutex<Option<Sender<Vec<u8>>>>>;
+
 /// One running child and its threads.
 struct Process {
     child: Arc<Mutex<Child>>,
     id: u32,
     input: Sender<Vec<u8>>,
+    cancel_input: CancelInput,
     events: Receiver<Event>,
     stderr: Arc<Mutex<Vec<u8>>>,
     stderr_done: Receiver<()>,
@@ -162,12 +174,13 @@ impl Process {
         };
         let id = child.id();
         let (input, frames) = mpsc::channel::<Vec<u8>>();
-        let (sender, events) = mpsc::channel();
+        let (sender, events) = mpsc::sync_channel(READ_AHEAD);
         let tail = Arc::new(Mutex::new(Vec::new()));
         let (done, stderr_done) = mpsc::channel();
         let mut process = Process {
             child: Arc::new(Mutex::new(child)),
             id,
+            cancel_input: Arc::new(Mutex::new(Some(input.clone()))),
             input,
             events,
             stderr: Arc::clone(&tail),
@@ -262,6 +275,7 @@ impl Process {
 
 impl Drop for Process {
     fn drop(&mut self) {
+        lock(&self.cancel_input).take();
         let mut child = lock(&self.child);
         let _ = child.kill();
         let _ = child.wait();
@@ -294,64 +308,63 @@ impl Killer {
 }
 
 /// Interrupts the run in progress (DET.56, KN7.6). The run stops at its next continuation with the interruption's
-/// code, as in process.
+/// code, as in process. A handle that outlives its child holds nothing of it.
 #[derive(Clone)]
 pub struct Canceller {
-    input: Sender<Vec<u8>>,
+    input: CancelInput,
     current: Arc<AtomicU64>,
 }
 
 impl Canceller {
-    /// Sends the interruption and returns at once. Between runs it does nothing.
-    pub fn cancel(&self, why: Interruption) {
+    /// Sends the interruption and returns at once: `true` when it went to a run in progress, `false` between runs
+    /// or after the child is gone, when it does nothing. A run is in progress from the moment its frame is queued
+    /// for the child, so the interruption always follows its run.
+    pub fn cancel(&self, why: Interruption) -> bool {
         let run = self.current.load(Ordering::SeqCst);
-        if run != 0 {
-            let mut e = Enc::new();
-            message::encode_cancel(run, why, &mut e);
-            let _ = self.input.send(e.bytes);
+        if run == 0 {
+            return false;
         }
+        let mut e = Enc::new();
+        message::encode_cancel(run, why, &mut e);
+        lock(&self.input).as_ref().is_some_and(|input| input.send(e.bytes).is_ok())
     }
 }
 
-/// The KI.5 record of one run: the encoded answers the child has not acknowledged yet.
+/// The KI.5 record of one run. The child is synchronous, so at most one answer is open: the last one, until the
+/// next call or the end of the run acknowledges it.
 #[derive(Default)]
 struct Record {
-    open: BTreeMap<u64, ([u8; 32], Vec<u8>)>,
-    /// The highest call id answered.
+    /// The request digest and encoded answer of call `last`, until the child acknowledges it.
+    open: Option<([u8; 32], Vec<u8>)>,
+    /// The id of the last call answered, 0 before the first.
     last: u64,
-    /// The highest call id the child acknowledged.
-    acked: u64,
     /// Repeated deliveries answered from the record.
     repeats: u64,
 }
 
 impl Record {
-    fn acknowledge(&mut self, ack: u64) -> Result<(), Failure> {
-        if ack < self.acked || ack > self.last {
-            return Err(failure(
-                FaultKind::Protocol,
-                format!("an acknowledgement of call {ack} after call {} of {}", self.acked, self.last),
-            ));
-        }
-        self.acked = ack;
-        self.open = self.open.split_off(&(ack + 1));
-        Ok(())
-    }
-
-    /// `None` for the next new call, the recorded answer for a repeated delivery.
-    fn repeated(&self, call: u64, digest: &[u8; 32]) -> Result<Option<Vec<u8>>, Failure> {
+    /// `None` for a new call, which must acknowledge the last answer; the recorded answer for a repeated delivery
+    /// of the open call, which carries its request and acknowledgement as first sent.
+    fn admit(&mut self, call: u64, ack: u64, digest: &[u8; 32]) -> Result<Option<Vec<u8>>, Failure> {
+        let protocol = |detail: String| Err(failure(FaultKind::Protocol, detail));
         if call == self.last.saturating_add(1) {
+            if ack != self.last {
+                return protocol(format!("call {call} acknowledges call {ack}, not the last answer ({})", self.last));
+            }
+            self.open = None;
             return Ok(None);
         }
-        if call <= self.acked {
-            return Err(failure(FaultKind::Protocol, format!("call {call} again after its acknowledgement")));
+        if call < self.last || (call == self.last && ack == call) {
+            return protocol(format!("call {call} again after its acknowledgement"));
         }
         if call > self.last {
-            return Err(failure(FaultKind::Protocol, format!("call {call} skips call {}", self.last + 1)));
+            return protocol(format!("call {call} skips call {}", self.last.saturating_add(1)));
         }
-        match self.open.get(&call) {
-            Some((d, answer)) if d == digest => Ok(Some(answer.clone())),
-            _ => Err(failure(FaultKind::Protocol, format!("call {call} again with another request"))),
+        match &self.open {
+            Some((d, _)) if d != digest => protocol(format!("call {call} again with another request")),
+            Some(_) if ack != call - 1 => protocol(format!("call {call} again with another acknowledgement ({ack})")),
+            Some((_, answer)) => Ok(Some(answer.clone())),
+            None => protocol(format!("call {call} again after its acknowledgement")),
         }
     }
 }
@@ -433,7 +446,7 @@ impl Runtime {
 
     /// A handle that interrupts the current child's run in progress.
     pub fn canceller(&self) -> Option<Canceller> {
-        self.process.as_ref().map(|p| Canceller { input: p.input.clone(), current: Arc::clone(&p.current) })
+        self.process.as_ref().map(|p| Canceller { input: Arc::clone(&p.cancel_input), current: Arc::clone(&p.current) })
     }
 
     /// The operating-system id of the current child.
@@ -451,8 +464,10 @@ impl Runtime {
         self.repeats
     }
 
-    /// Runs `job` in the child and serves its host calls from `host`. `deadline` is the wall-clock safety stop for
-    /// the whole run, host calls included; it is not part of the deterministic key (DET.17).
+    /// Runs `job` in the child and serves its host calls from `host`. `deadline` is the wall-clock safety stop of
+    /// the run, measured from its start with host time included; it is not part of the deterministic key (DET.17).
+    /// The parent checks it only while it waits for the child's next message: a host call that blocks is not
+    /// interrupted, and a deadline it passes is noticed after it returns.
     ///
     /// A job that cannot be sent never reaches the child: arguments without a canonical transfer form are refused
     /// at the start stage with `PS1:input.noncanonical_value`, as `Loaded::run` refuses them in process, and a job
@@ -478,7 +493,6 @@ impl Runtime {
         self.next_run = run;
         self.start()?;
         let mut process = self.process.take().expect("a started child");
-        process.current.store(run, Ordering::SeqCst);
         let mut record = Record::default();
         let result = serve(&mut process, run, e.bytes, host, &mut record, started, deadline);
         process.current.store(0, Ordering::SeqCst);
@@ -506,6 +520,8 @@ fn serve(
         process.input.send(frame).map_err(|_| failure(FaultKind::Lost, "the runtime's input closed"))
     };
     send(process, frame)?;
+    // Published only once the run's frame is queued, so a cancel never overtakes its run on the way to the child.
+    process.current.store(run, Ordering::SeqCst);
     let mut codes = Codes::default();
     loop {
         let event = match deadline {
@@ -537,14 +553,13 @@ fn serve(
                 if r != run {
                     return Err(failure(FaultKind::Protocol, format!("a call of run {r} during run {run}")));
                 }
-                record.acknowledge(ack)?;
-                if let Some(answer) = record.repeated(call, &digest)? {
+                if let Some(answer) = record.admit(call, ack, &digest)? {
                     record.repeats += 1;
                     send(process, answer)?;
                     continue;
                 }
                 let answer = encode_answer(run, call, &serve_call(host, &forwarded, &mut codes));
-                record.open.insert(call, (digest, answer.clone()));
+                record.open = Some((digest, answer.clone()));
                 record.last = call;
                 send(process, answer)?;
             }

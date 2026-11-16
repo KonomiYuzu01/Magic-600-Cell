@@ -38,7 +38,8 @@ impl Token {
 }
 
 /// A fake session: committed state (a journal), an engine-owned pending preview, the snapshot it answers, and what
-/// runs published, wrote and proposed. Every host call is logged in order.
+/// runs published, wrote and proposed. A proposal replaces the pending preview; only [`Session::confirm`] changes the
+/// journal. Every host call is logged in order.
 pub struct Session {
     pub journal: Vec<Vec<i32>>,
     pub preview: Option<Vec<i32>>,
@@ -131,6 +132,7 @@ impl Host for Session {
             }
             Request::Propose { word, target, .. } => {
                 self.proposals.push((word.to_vec(), target.to_string()));
+                self.preview = Some(word.to_vec());
                 Ok(Value::receipt(vec![
                     ("base", Value::text("rev-7")),
                     ("effect", Value::text("moves 12 stickers")),

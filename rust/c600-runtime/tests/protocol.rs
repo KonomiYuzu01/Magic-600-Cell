@@ -1,6 +1,7 @@
 //! The protocol itself: no message can carry a user-action token (KN5.15); a lost acknowledgement causes at most an
-//! identical delivery, answered from the parent's record, never a second host call (KI.5); the canonical transfer
-//! encoding keeps every value variant with exactly one encoding and refuses the rest; frames are bounded.
+//! identical delivery, answered from the parent's record, never a second host call, and a new call must acknowledge
+//! the last answer (KI.5); the canonical transfer encoding keeps every value variant with exactly one encoding and
+//! refuses the rest; frames are bounded.
 
 mod support;
 
@@ -190,6 +191,24 @@ fn ki_5_a_stale_or_changed_call_is_a_protocol_fault() {
         assert_eq!(f.kind, FaultKind::Protocol, "{fault}: {f}");
         assert_eq!(f.code(), c600_runtime::parent::RUNTIME_LOST);
         assert_eq!(session.log.len(), 1, "{fault}: the host saw the first call only");
+    }
+}
+
+/// KI.5: the child is synchronous, so a new call must acknowledge the last answer and the parent keeps at most one
+/// answer open. A child that stops acknowledging is a protocol fault at its first unacknowledged call, which the host
+/// never sees.
+#[cfg(debug_assertions)]
+#[test]
+fn ki_5_a_new_call_must_acknowledge_the_last_answer() {
+    for after in [1usize, 3] {
+        let mut rt = runtime();
+        rt.config_mut().env.push((FAULT_VARIABLE.into(), format!("unacked@{after}").into()));
+        let mut session = Session::default();
+        let f = rt.run(&work(), &mut session, None).expect_err("a fault");
+        assert_eq!(f.kind, FaultKind::Protocol, "unacked@{after}: {f}");
+        assert!(f.detail.contains("not the last answer"), "unacked@{after}: {f}");
+        assert_eq!(f.code(), c600_runtime::parent::RUNTIME_LOST);
+        assert_eq!(session.log.len(), after, "unacked@{after}: the host saw the acknowledged calls only");
     }
 }
 

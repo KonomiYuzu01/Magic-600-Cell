@@ -2,8 +2,10 @@
 //!
 //! The child writes `hello`, then runs one job at a time. Each job goes through [`run_in_process`] with a proxy host
 //! that forwards every `tariff`, `perform` and `sink` call to the parent as one `call` message and blocks until its
-//! `answer`. A reader thread drains standard input: it hands `run` and `answer` messages to the main loop and applies
-//! `cancel` to the current run at once, so an interruption reaches the interpreter before the answer that follows it.
+//! `answer`. A reader thread drains standard input: it records each run's number as it reads the `run`, before the
+//! main loop takes the run, hands `run` and `answer` messages to the main loop and applies `cancel` at once. So a
+//! cancel that follows its run is never lost, and an interruption reaches the interpreter before the answer that
+//! follows it.
 //! The child exits when its input ends (the parent is gone) and exits with a message on standard error when the
 //! parent breaks the protocol. Standard output carries frames only.
 
@@ -29,6 +31,8 @@ const PROTOCOL_EXIT: i32 = 2;
 struct Interrupt(AtomicU64);
 
 impl Interrupt {
+    /// Called by the input thread as it reads a `run`, before the main loop can take it, so a `cancel` read after
+    /// the `run` always finds the run's number here.
     fn start(&self, run: u64) {
         self.0.store(run << 2, Ordering::SeqCst);
     }
@@ -111,8 +115,12 @@ struct Proxy<'a> {
 impl Proxy<'_> {
     fn call(&mut self, call: Call) -> Result<Answer, &'static str> {
         let id = self.next_call + 1;
+        #[cfg(debug_assertions)]
+        let ack = self.rehearsed_ack();
+        #[cfg(not(debug_assertions))]
+        let ack = self.ack;
         let mut e = Enc::new();
-        if message::encode_call(self.run, id, self.ack, &call, &mut e).is_err() {
+        if message::encode_call(self.run, id, ack, &call, &mut e).is_err() {
             // A value outside its canonical form or a type beyond the transfer bound cannot cross; the run stops
             // as for a value without a canonical form.
             return Err(interp::code::NONCANONICAL_VALUE);
@@ -196,6 +204,9 @@ pub fn main() {
             match message::decode_to_child(&frame) {
                 Ok(ToChild::Cancel { run, why }) => reader_interrupt.cancel(run, why),
                 Ok(message) => {
+                    if let ToChild::Run { run, .. } = &message {
+                        reader_interrupt.start(*run);
+                    }
                     if tx.send(message).is_err() {
                         return;
                     }
@@ -222,7 +233,7 @@ pub fn main() {
             ToChild::Run { run, job } => (run, job),
             _ => die("an answer outside a run"),
         };
-        interrupt.start(run);
+        // The input thread started the run's interruption when it read the run.
         let mut proxy = Proxy { link: &mut link, run, next_call: 0, ack: 0 };
         let ended = run_in_process(&job, &mut proxy, Some(&*interrupt));
         let ack = proxy.ack;
@@ -277,6 +288,9 @@ mod rehearsal {
         Stale,
         /// Sends another request under the last call's id.
         Changed,
+        /// Sends every new call with an acknowledgement of 0 from this point on, as a child that keeps no record of
+        /// the answers it received.
+        Unacked,
     }
 
     #[derive(Clone, Copy, Debug)]
@@ -302,6 +316,7 @@ mod rehearsal {
             "duplicate" => Kind::Duplicate,
             "stale" => Kind::Stale,
             "changed" => Kind::Changed,
+            "unacked" => Kind::Unacked,
             _ => return None,
         };
         Some(Plan { kind, after: after.parse().ok()? })
@@ -317,6 +332,15 @@ mod rehearsal {
         fn due(&self) -> Option<Kind> {
             let plan = self.link.rehearsal?;
             (self.link.answers >= plan.after).then_some(plan.kind)
+        }
+
+        /// The acknowledgement a new call carries: under `unacked`, 0 instead of the last answered call.
+        pub(super) fn rehearsed_ack(&self) -> u64 {
+            if self.due() == Some(Kind::Unacked) {
+                0
+            } else {
+                self.ack
+            }
         }
 
         /// Called before a call or the result is sent; `payload` is empty for the result.
@@ -365,7 +389,7 @@ mod rehearsal {
                     let _ = self.link.receive();
                     die("the parent answered a stale or changed call");
                 }
-                Kind::Duplicate => {}
+                Kind::Duplicate | Kind::Unacked => {}
             }
             if !payload.is_empty() {
                 self.link.last_call = Some((id, self.ack, payload.to_vec()));
