@@ -47,17 +47,33 @@ and the renderer freeze for its on-screen half, and headless integration does no
 | --- | --- | --- |
 | Command layer, shell tokens and key routes; the oracle loop for 600-cell-Full | Built (C1) | Nothing; the table freezes at LP3 |
 | Headless display contract; views and their budgets | Built (C2) | Nothing |
-| The runtime in its own process | In progress (C3) | Nothing: route RT1 (LQ9) |
+| The runtime in its own process | Built (C3) | Nothing: route RT1 (LQ9) |
 | Module closure | Built (C4) | Nothing |
 | Source route and the 600-cell-Full tool | May start when C1 is on main | C1 |
 | Representations tool, headless half | May start after C5 | C2's views and C5's host bridge |
 | Durable receipts and undo, CT-RTE-08's persisted words, work sheets | In progress (C7) | M6 is on main (pull request 160); CT-RTE-08's persisted words also need C4 |
 | The jumbling tool and every jumbling half | Waits | M5 on main |
-| Tests that read kernel rows LP2 has not built: Strict protection, streaming words (KN2.10), `positions` (KN2.4), KN3's exact rotations and polytope operations | Waits | LP2's kernel; asked of the LP2 line, not built here |
+| Tests that read kernel rows LP2 has not built: Strict protection, streaming words (KN2.10), `positions` (KN2.4), KN3's exact rotations and polytope operations | Waits | LP2's kernel: LP2 deliverables, not built yet (the table below) |
 | The on-screen half | Waits | The renderer freeze |
 | Charter E2, the decisive LX-1, LX-2 and LX-4 runs, LX-3's platform coverage, the renderer gate | Waits | The owner's machine, all run together (owner, 16 November 2026) |
 | CT-LB1-06's word keys | Waits | An owner answer on LG2.18's word keys (section 10) |
-| Library entries as language code (LB1.1): collections, exact linear algebra, word construction, word and trace keys, setup search | Waits | Collection types and word operations in the IR draft (LP2; the IR freezes at PHS.49); asked of the LP2 line |
+| Library entries as language code (LB1.1): collections, exact linear algebra, word construction, word and trace keys, setup search | Waits | Collection types and word operations in the IR draft (LP2; the IR freezes at PHS.49): LP2 deliverables, not built yet (the table below) |
+
+LP2 deliverables that LP3's tests wait for, not built yet. The LP2 line confirmed on 16 November 2026 that each is
+LP2 work: section 15.3 lists its tests, and PHS.18's product row "Kernel API over both puzzles" and the LP2 plan's
+M8 row ("section 15.3 runnable") cover the kernel rows. LP3 builds nothing in LP2's crates.
+
+| LP2 deliverable, not built yet | Rule | LP2 tests | LP3 tests that wait |
+| --- | --- | --- | --- |
+| Strict protection on 600-cell-Full | KN2.4, KN2.7 | None names Strict on 600-cell-Full; CT-KN2-03 and CT-LG2-12 use the `protection` row | CT-LB2-02 |
+| Streaming words | KN2.10 | CT-KN2-07, CT-LG2-14 | CT-LB2-03 |
+| The `positions` row | KN2.4 | None names it | CT-LB2-04 |
+| Exact rotations and `twist.apply` (amendment A6) | KN3.4, KN3.7 to KN3.9 | CT-KN3-04 to CT-KN3-06, CT-LG2-16 | CT-EV4-04's twist leg |
+| Exact polytope operations | KN3.3 | CT-KN3-01, CT-KN3-03 | CT-LB4-01 |
+| The F2 and F5 number kinds | KN3.2 | None names them; the `nu` and `correction_set_check` rows use them (M5) | CT-LB1-01 |
+| Word operations in the IR draft: concatenation, inverse, conjugate, commutator | LG2.13 to LG2.16 | CT-LG2-11 to CT-LG2-14 | CT-LB1-03, CT-LB1-06, CT-LB2-01, CT-BND-18 |
+| Collection types in the IR draft: lists, maps, sets | LG2.20, LG4.3 | None names them; CT-LG4-01 checks host collection layouts | CT-LB1-01, CT-LB1-03, CT-LB1-06, CT-LB2-01, CT-BND-18 |
+| The IR features CT-RTE-04's other 32 traces need, and two meter differences in `c600-run` (`nested-calls`'s frame price; an `emit` row's single charge) | DET.56, DET.57, DET.65 | DET.65's trace vectors in `contract-vectors/vectors.json` | CT-RTE-04 |
 
 ## 3. Integrator selections (the owner may overrule them)
 
@@ -217,11 +233,11 @@ wait entirely. The milestone is in parentheses.
 | --- | --- | --- | --- |
 | CT-KN7-06 | performance | Owner runs: charter E2 under a running program job (C9) | - |
 | CT-LG4-09 | performance | Owner runs: LX-2 (C9) | - |
-| CT-LB1-01 | source | Collection types in the IR draft, for the library code (LP2) | - |
+| CT-LB1-01 | source | Collection types in the IR draft and the F2 and F5 number kinds, for the library code (LP2) | - |
 | CT-LB1-02 | source | M5: a blocked cap (C8) | - |
-| CT-LB1-03 | source | Word operations in the IR draft (LP2); M5 (C8) | - |
+| CT-LB1-03 | source | Collection types and word operations in the IR draft (LP2); M5 (C8) | - |
 | CT-LB1-06 | source | Collection types and word operations in the IR draft (LP2); an owner answer on LG2.18's word keys; M5 for jumbling letters (C8) | - |
-| CT-LB2-01 | source | Collection types in the IR draft, for the library's reports (LP2) | - |
+| CT-LB2-01 | source | Collection types and word operations in the IR draft, for the library's recipes and reports (LP2) | - |
 | CT-LB2-02 | source | The kernel's Strict protection (LP2) | The Net half (C5) |
 | CT-LB2-03 | source | Streaming words, KN2.10 (LP2) | The oversize refusal (C5); work sheets (C7) |
 | CT-LB2-04 | source | The kernel's `positions` row, KN2.4 (LP2) | - |
@@ -280,7 +296,7 @@ wait entirely. The milestone is in parentheses.
 | CT-RPI-37 | synthetic | Now (C2) | - |
 | CT-BND-15 | source | M5: the jumbling tool (C8) | The 600-cell-Full and representations tools (C5, C6) |
 | CT-BND-17 | source | M5: the repair list (C8) | - |
-| CT-BND-18 | source | Collection types in the IR draft, for setup search (LP2) | - |
+| CT-BND-18 | source | Collection types and word operations in the IR draft, for setup search (LP2) | - |
 | CT-BND-19 | source | Now (C5) | - |
 | CT-BND-20 | windows | The renderer freeze (C9) | A held chord commits once; the runtime gets no token (C1) |
 | CT-RTE-04 | source | Child scopes, loops, text order, byte decoding, exact multiplication, streaming and LP1's region executor in the IR draft (LP2) | 8 of DET.65's 40 traces (C3) |
