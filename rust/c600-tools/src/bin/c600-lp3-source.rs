@@ -408,13 +408,13 @@ impl Session<'_> {
         let invocation = &sent.invocation;
         let expected = Caller::Runtime { run: run.clone() };
         if invocation.row != ROW
-            || invocation.caller != expected
+            || sent.caller != expected
             || invocation.token.is_some()
             || invocation.args.canonical() != word_args(word).canonical()
         {
             return Err(disagree("the bridge's invocation is not the runtime's preview of the literal word"));
         }
-        self.keep(&sent.receipt, &invocation.caller);
+        self.keep(&sent.receipt, &sent.caller);
         Ok(Proposed::Sent(sent.receipt.clone()))
     }
 
@@ -459,7 +459,7 @@ impl Session<'_> {
         if self.layer.run_jobs() != 1 {
             return Err(disagree("the preview job did not run"));
         }
-        // The runtime's command IDs are its own scope (draft ruling 4), so the lookup names the caller.
+        // The runtime's command IDs are its own scope (ruling 4), so the lookup names the caller.
         let caller = Caller::Runtime { run: format!("{}-{index}", self.case_id) };
         let built = self.layer.kernel_outcome(&caller, &admitted.command, &admitted.request);
         self.keep(&built, &caller);

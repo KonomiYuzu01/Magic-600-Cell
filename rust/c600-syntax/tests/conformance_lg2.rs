@@ -8,7 +8,7 @@
 
 use c600_check::WORD_KEY_NOT_EXECUTABLE;
 use c600_check::{admit, check, Grant, Policy, Profile, Report};
-use c600_check::{EFFECT_UNDECLARED, EXACTNESS_VIOLATION, EXACT_REQUIRED, NOT_GRANTED, TYPE_MISMATCH};
+use c600_check::{AMBIENT_READ, EFFECT_UNDECLARED, EXACTNESS_VIOLATION, EXACT_REQUIRED, TYPE_MISMATCH};
 use c600_ir::{Capability, Expr as Ir, Prim, Ty};
 use c600_syntax::{lower, parse, LowerError, Lowered};
 
@@ -206,7 +206,8 @@ fn ct_lg2_01_generics_and_inference_keep_precision_unit_and_effect() {
     };
     assert_eq!(only(&call("")).0, EFFECT_UNDECLARED);
     admitted(&call("snapshot"));
-    // Capability: inference through the generic finds the file requirement but grants nothing (LG3.9).
+    // Capability: inference through the generic finds the file requirement but grants nothing (LG3.9); the file read
+    // is an ambient read (owner, 16 November 2026, PHS.52).
     let source = format!(
         "edition \"6cs-draft-1\";\nmodule tool requires [file];\n\n{APPLY}\
          fn load(w: Word) -> Word effects [file] {{\n    let n = file_read<Nat>(\"data\");\n    return w;\n}}\n\n\
@@ -214,7 +215,7 @@ fn ct_lg2_01_generics_and_inference_keep_precision_unit_and_effect() {
     );
     let program = lowered(&source).unwrap_or_else(|e| panic!("{e}")).program;
     let run = |grant: &Grant| admit(&program, "tool", "go", Profile::ToolAuthoring, grant, &Policy::interim()).unwrap();
-    assert_eq!(run(&Grant::none()).codes(), [NOT_GRANTED]);
+    assert_eq!(run(&Grant::none()).codes(), [AMBIENT_READ]);
     assert!(run(&Grant::of(&[Capability::File])).is_admitted());
 }
 

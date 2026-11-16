@@ -2,7 +2,9 @@
 //! The IR-level cases are `c600-check`'s `effects.rs`; the run-time halves of CT-LG3-04 to CT-LG3-06 and CT-LG3-09
 //! are in `c600-run`'s `conformance_lg3.rs`.
 
-use c600_check::{admit, check, Grant, Policy, Profile, Report, EFFECT_UNDECLARED, NEVER_GRANTED, NOT_GRANTED};
+use c600_check::{
+    admit, check, Grant, Policy, Profile, Report, AMBIENT_READ, EFFECT_UNDECLARED, NEVER_GRANTED, NOT_GRANTED,
+};
 use c600_ir::{Capability, Effect, Program};
 use c600_syntax::{lower, parse, sha256_hex, LowerError, Lowered};
 
@@ -144,33 +146,50 @@ fn ct_lg3_03_views_refuse_workspace_and_preview_effects_in_source() {
 /// CT-LG3-04 (part: the static half in source; the IR half is `c600-check`'s `ct_lg3_04_*` and the run-time refusal is
 /// `c600-run`'s `ct_lg3_04_an_ungranted_request_fails_at_run_time`, and the row is whole with them): file, clock and
 /// randomness need a declaration and a grant in every profile; network, process and session files are refused even
-/// when the manifest requests them and the run grants them.
+/// when the manifest requests them and the run grants them. An ungranted clock or file read and a network request are
+/// `LG3:capability.ambient_read`, the rest `LG3:capability.not_granted` (owner, 16 November 2026, PHS.52).
 #[test]
 fn ct_lg3_04_requests_need_a_declaration_and_a_grant_in_source() {
     let requests = [
-        ("file", Capability::File, "fn f() -> Nat effects [file] {\n    return file_read<Nat>(\"data\");\n}\n"),
-        ("clock", Capability::Clock, "fn f() -> Display<Nat> effects [clock] {\n    return read_clock();\n}\n"),
-        ("random", Capability::Randomness, "fn f() -> Nat effects [random] {\n    return random_draw();\n}\n"),
+        (
+            "file",
+            Capability::File,
+            "fn f() -> Nat effects [file] {\n    return file_read<Nat>(\"data\");\n}\n",
+            AMBIENT_READ,
+        ),
+        (
+            "clock",
+            Capability::Clock,
+            "fn f() -> Display<Nat> effects [clock] {\n    return read_clock();\n}\n",
+            AMBIENT_READ,
+        ),
+        (
+            "random",
+            Capability::Randomness,
+            "fn f() -> Nat effects [random] {\n    return random_draw();\n}\n",
+            NOT_GRANTED,
+        ),
     ];
-    for (word, cap, declaration) in requests {
+    for (word, cap, declaration, code) in requests {
         for profile in PROFILES {
             let run = |requires: &str, grant: &Grant| {
                 let p = program(&[&tool(requires, declaration)]);
                 admit(&p, "tool", "f", profile, grant, &Policy::interim()).unwrap().codes()
             };
             let case = format!("{word} in {profile:?}");
-            assert_eq!(run("", &Grant::none()), [EFFECT_UNDECLARED, NOT_GRANTED], "{case}");
+            assert_eq!(run("", &Grant::none()), [EFFECT_UNDECLARED, code], "{case}");
             assert_eq!(run("", &Grant::of(&[cap])), [EFFECT_UNDECLARED], "{case}");
-            assert_eq!(run(word, &Grant::none()), [NOT_GRANTED], "{case}");
+            assert_eq!(run(word, &Grant::none()), [code], "{case}");
             assert!(run(word, &Grant::of(&[cap])).is_empty(), "{case}");
         }
     }
-    for (word, cap) in ["network", "process", "session_file"].into_iter().zip(NEVER_GRANTED) {
+    let codes = [AMBIENT_READ, NOT_GRANTED, NOT_GRANTED];
+    for ((word, cap), code) in ["network", "process", "session_file"].into_iter().zip(NEVER_GRANTED).zip(codes) {
         let p = program(&[&tool(word, "fn f() -> Nat effects [] {\n    return 1;\n}\n")]);
         assert_eq!(p.modules[0].capabilities.iter().copied().collect::<Vec<_>>(), [cap]);
         for profile in PROFILES {
             let a = admit(&p, "tool", "f", profile, &Grant::of(&NEVER_GRANTED), &Policy::interim()).unwrap();
-            assert_eq!(a.codes(), [NOT_GRANTED], "{word} in {profile:?}");
+            assert_eq!(a.codes(), [code], "{word} in {profile:?}");
         }
     }
 }

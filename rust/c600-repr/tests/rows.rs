@@ -92,7 +92,7 @@ fn the_layer_refuses_all_six_rows_and_an_overlay_cannot_replace_one() {
         };
         assert_eq!(refused, Some(code::ROW_NOT_BUILT), "{} from the shell", need.row);
 
-        let receipt = session.layer.invoke(session.runtime_call(&format!("rt/{i}"), need.row));
+        let receipt = session.layer.invoke(&program_channel(), session.runtime_call(&format!("rt/{i}"), need.row));
         assert_eq!(receipt.status.code(), Some(code::ROW_NOT_BUILT), "{} from a program", need.row);
 
         let overlay = Overlay { module: MODULE.to_owned(), entry: need.entry.unwrap_or("filter_counts").to_owned() };

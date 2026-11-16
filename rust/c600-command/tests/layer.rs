@@ -225,30 +225,23 @@ fn a_commit_needs_its_token_and_a_presented_preview() {
         hint: None,
     };
     let token = Some(Token::mint(&Secret::fixed(SECRET), binding));
-    let unpresented = Invocation {
-        command: "t/1".into(),
-        row: "operation.execute".into(),
-        args: preview_args(id),
-        token,
-        caller: Caller::Shell,
-        epoch: 1,
-    };
-    assert_eq!(code_of(&f.layer.invoke(unpresented)), code::NO_FRESH_PREVIEW);
+    let unpresented =
+        Invocation { command: "t/1".into(), row: "operation.execute".into(), args: preview_args(id), token, epoch: 1 };
+    assert_eq!(code_of(&f.layer.invoke(&Caller::Shell, unpresented)), code::NO_FRESH_PREVIEW);
     let no_token = Invocation {
         command: "t/2".into(),
         row: "operation.execute".into(),
         args: preview_args(id),
         token: None,
-        caller: Caller::Shell,
         epoch: 1,
     };
-    assert_eq!(code_of(&f.layer.invoke(no_token)), code::TOKEN_INVALID);
+    assert_eq!(code_of(&f.layer.invoke(&Caller::Shell, no_token)), code::TOKEN_INVALID);
 
     // A token bound to other arguments.
     f.present(id);
     let mut other = f.shell.prepare(&f.layer, "operation.execute", preview_args(id)).unwrap();
     other.args = preview_args(id + 7);
-    assert_eq!(code_of(&f.layer.invoke(other)), code::TOKEN_MISMATCH);
+    assert_eq!(code_of(&f.layer.invoke(&Caller::Shell, other)), code::TOKEN_MISMATCH);
     assert_eq!(f.fixed(), before);
     assert!(matches!(f.execute().status, Status::Committed(_)));
 }
@@ -284,7 +277,7 @@ fn a_token_from_before_a_commit_and_its_undo_is_refused() {
     let fresh = f.layer.preview().unwrap().clone();
     assert_eq!((fresh.base.digest(), fresh.deps.state), (start.as_str(), 2));
     let before = f.fixed();
-    // The early press named the committed preview, and the slot holds another one now (draft ruling 1).
+    // The early press named the committed preview, and the slot holds another one now (ruling 1).
     let old = early.token.clone().unwrap().binding;
     assert_eq!(code_of(&f.shell.send(&mut f.layer, early)), code::PREVIEW_REPLACED);
     // Even a token naming the new preview, if it carries the dependencies from before the commit, is stale at step 6:
@@ -300,10 +293,9 @@ fn a_token_from_before_a_commit_and_its_undo_is_refused() {
         row: "operation.execute".into(),
         args: preview_args(q),
         token: Some(Token::mint(&Secret::fixed(SECRET), binding)),
-        caller: Caller::Shell,
         epoch: 1,
     };
-    assert_eq!(code_of(&f.layer.invoke(revisited)), code::REVISION_CHANGED);
+    assert_eq!(code_of(&f.layer.invoke(&Caller::Shell, revisited)), code::REVISION_CHANGED);
     assert_eq!(f.fixed(), before);
     assert!(matches!(f.execute().status, Status::Committed(_)));
 }
@@ -333,13 +325,13 @@ fn a_retried_delivery_commits_at_most_once() {
     let p = f.preview(&word(&[1]));
     f.present(p);
     let invocation = f.shell.prepare(&f.layer, "operation.execute", preview_args(p)).unwrap();
-    let first = f.layer.invoke(invocation.clone());
+    let first = f.layer.invoke(&Caller::Shell, invocation.clone());
     assert!(matches!(first.status, Status::Committed(_)));
-    assert_eq!(f.layer.invoke(invocation.clone()), first);
+    assert_eq!(f.layer.invoke(&Caller::Shell, invocation.clone()), first);
     assert_eq!(f.layer.store().log.len(), 1);
     let mut other = invocation;
     other.args = preview_args(p + 1);
-    assert_eq!(code_of(&f.layer.invoke(other)), code::COMMAND_ID_REUSED);
+    assert_eq!(code_of(&f.layer.invoke(&Caller::Shell, other)), code::COMMAND_ID_REUSED);
 }
 
 /// CT-KN5-06 (R-10).
@@ -507,18 +499,18 @@ fn a_commit_refused_at_each_step_changes_nothing() {
     // Step 3: a forged authenticator, then a spent token.
     let mut forged = f.shell.prepare(&f.layer, "operation.execute", preview_args(p)).unwrap();
     forged.token = Some(Token::mint(&Secret::fixed([9; 32]), forged.token.unwrap().binding));
-    assert_eq!(code_of(&f.layer.invoke(forged)), code::TOKEN_INVALID);
+    assert_eq!(code_of(&f.layer.invoke(&Caller::Shell, forged)), code::TOKEN_INVALID);
     let spent = f.shell.prepare(&f.layer, "operation.execute", preview_args(p)).unwrap();
     // Step 4: the lane is busy; the token authenticated, so it is spent. Lane admission comes before step 5, so a
     // genuine token bound to other arguments is refused as busy too.
     let mut other = f.shell.prepare(&f.layer, "operation.execute", preview_args(p)).unwrap();
     other.args = preview_args(p + 7);
     f.layer.hold_commit_lane(true);
-    assert_eq!(code_of(&f.layer.invoke(spent.clone())), code::COMMIT_IN_FLIGHT);
-    assert_eq!(code_of(&f.layer.invoke(other)), code::COMMIT_IN_FLIGHT);
+    assert_eq!(code_of(&f.layer.invoke(&Caller::Shell, spent.clone())), code::COMMIT_IN_FLIGHT);
+    assert_eq!(code_of(&f.layer.invoke(&Caller::Shell, other)), code::COMMIT_IN_FLIGHT);
     f.layer.hold_commit_lane(false);
     let replay = Invocation { command: "replay/1".into(), ..spent };
-    assert_eq!(code_of(&f.layer.invoke(replay)), code::TOKEN_USED);
+    assert_eq!(code_of(&f.layer.invoke(&Caller::Shell, replay)), code::TOKEN_USED);
     assert_eq!(f.fixed(), before);
 
     // Step 6: a protection change makes the preview stale even though the set is the same. The change is a durable
@@ -587,17 +579,16 @@ fn the_runtime_reaches_at_most_a_preview() {
         row: row.into(),
         args,
         token: None,
-        caller: runtime.clone(),
         epoch: 1,
     };
-    let proposal = f.layer.invoke(call("rt/1", "operation.preview", draft_args(&word(&[1]))));
+    let proposal = f.layer.invoke(&runtime, call("rt/1", "operation.preview", draft_args(&word(&[1]))));
     assert!(matches!(proposal.status, Status::Running(_)));
     assert_eq!(f.layer.run_jobs(), 1);
     let rows: Vec<String> =
         f.layer.table().rows().filter(|r| matches!(r.kind, Kind::Commit | Kind::App)).map(|r| r.id.clone()).collect();
     assert_eq!(rows.len(), 19);
     for row in rows {
-        let receipt = f.layer.invoke(call(&format!("rt/{row}"), &row, json::object([])));
+        let receipt = f.layer.invoke(&runtime, call(&format!("rt/{row}"), &row, json::object([])));
         assert_eq!(code_of(&receipt), code::COMMIT_ROW_REFUSED, "{row}");
     }
     let mut tokened = call("rt/2", "operation.preview", draft_args(&word(&[2])));
@@ -617,7 +608,7 @@ fn the_runtime_reaches_at_most_a_preview() {
             hint: None,
         },
     ));
-    assert_eq!(code_of(&f.layer.invoke(tokened)), code::TOKEN_INVALID);
+    assert_eq!(code_of(&f.layer.invoke(&runtime, tokened)), code::TOKEN_INVALID);
     // The run is over; the solver commits its preview with nothing of the run.
     f.present(proposal.job.unwrap());
     assert!(matches!(f.execute().status, Status::Committed(_)));
@@ -649,13 +640,13 @@ fn a_restart_ends_previews_keeps_durable_receipts_and_revives_no_permission() {
     // A transport retry keeps its whole envelope, its epoch included, so it finds its receipt across the restart and
     // starts nothing (KN5.21, LI.5, LI.30).
     let before = f.fixed();
-    assert_eq!(f.layer.invoke(press.clone()), committed);
-    assert_eq!(f.layer.invoke(asked).status, Status::UnknownOutcome);
+    assert_eq!(f.layer.invoke(&Caller::Shell, press.clone()), committed);
+    assert_eq!(f.layer.invoke(&Caller::Shell, asked).status, Status::UnknownOutcome);
     assert_eq!(f.fixed(), before);
     // The same command ID with other content, or a lookup with another digest, is refused; the record stays.
     let mut reused = press.clone();
     reused.args = preview_args(c + 9);
-    assert_eq!(code_of(&f.layer.invoke(reused)), code::COMMAND_ID_REUSED);
+    assert_eq!(code_of(&f.layer.invoke(&Caller::Shell, reused)), code::COMMAND_ID_REUSED);
     assert_eq!(code_of(&f.layer.outcome(&committed.command, &pending.request).unwrap()), code::COMMAND_ID_REUSED);
     assert_eq!(f.layer.outcome(&committed.command, &committed.request), Some(committed.clone()));
     // A new envelope from the ended epoch is refused, and so is the old epoch's token.
@@ -663,8 +654,8 @@ fn a_restart_ends_previews_keeps_durable_receipts_and_revives_no_permission() {
     assert_eq!(stale.epoch, epoch);
     assert_eq!(stale.command, format!("shell/{epoch}/6"));
     stale.epoch = 1;
-    assert_eq!(code_of(&f.layer.invoke(stale)), code::EPOCH_CHANGED);
-    assert_eq!(code_of(&f.layer.invoke(Invocation { epoch, ..early })), code::TOKEN_INVALID);
+    assert_eq!(code_of(&f.layer.invoke(&Caller::Shell, stale)), code::EPOCH_CHANGED);
+    assert_eq!(code_of(&f.layer.invoke(&Caller::Shell, Invocation { epoch, ..early })), code::TOKEN_INVALID);
     assert_eq!(f.fixed(), before);
     assert!(matches!(f.undo(Direction::Undo).status, Status::Committed(_)));
 }
@@ -696,7 +687,7 @@ fn an_unknown_commit_fate_enters_read_only_recovery() {
         let outcome = f.layer.outcome(&receipt.command, &receipt.request).unwrap();
         // A retry of the press finds the settled outcome and commits nothing a second time (KN5.21, KN5.23).
         let settled = (f.layer.revision().clone(), f.layer.snapshot().digest().to_owned());
-        assert_eq!(f.layer.invoke(press), outcome);
+        assert_eq!(f.layer.invoke(&Caller::Shell, press), outcome);
         assert_eq!((f.layer.revision().clone(), f.layer.snapshot().digest().to_owned()), settled);
         if written {
             assert!(matches!(outcome.status, Status::Committed(_)));

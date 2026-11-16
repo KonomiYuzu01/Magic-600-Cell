@@ -12,7 +12,9 @@ use std::path::{Path, PathBuf};
 
 use c600_check::{admit, check, separation, Grant, Policy, TYPE_MISMATCH};
 use c600_digest::sha256;
-use c600_ir::build::{exact, fn_ref, helper, module, program, propose, publish_view, target, unit, write_workspace};
+use c600_ir::build::{
+    exact, fn_ref, helper, module, program, propose, publish_view, target, unit, use_exact, write_workspace,
+};
 use c600_ir::{Capability, Effect, ExactRole, Expr, Lit, Program, QTy, ReceiptField, Ty};
 use c600_run::boundary::{admit_preview, Boundary, Context, Pins, Place, Store, Stored};
 use c600_run::interp::code::{IR_REJECTED, NONCANONICAL_VALUE};
@@ -562,7 +564,8 @@ fn handing(output: Expr) -> Program {
 /// plans, the adapter and the backends are built in LP3): the language has no renderer call, backend handle or callback
 /// (RPI.1). The interpreter's requests and sinks carry names, types, letters, canonical bytes and an exact role only,
 /// as their typed enumeration shows; no IR type or run-time value is a handle; a function of the program never reaches
-/// a view, workspace or file sink, since the canonical encoding refuses it before the host is asked. Every package in
+/// a view, workspace, file or exact sink, since the canonical encoding refuses it before the host is asked (the exact
+/// sink since the owner decision of 16 November 2026 under PHS.52). Every package in
 /// `Cargo.lock` is a workspace member or one of the four approved numeric crates, so no renderer, graphics or windowing
 /// crate is linked; every member forbids unsafe code and no product source holds an `unsafe` block or an `extern`
 /// declaration, so nothing calls a foreign renderer API.
@@ -613,6 +616,8 @@ fn ct_rpi_01_no_renderer_call_handle_or_callback_crosses_the_boundary() {
         publish_view(fn_ref("f")),
         write_workspace("kept", exact(Ty::Unit), closure.clone()),
         Expr::FileWrite { path: "out".into(), value: Box::new(fn_ref("f")) },
+        use_exact(ExactRole::Evidence, fn_ref("f")),
+        use_exact(ExactRole::Goal, closure.clone()),
         publish_view(closure),
     ];
     for output in outputs {

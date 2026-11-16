@@ -4,7 +4,7 @@
 
 mod common;
 
-use c600_command::{code, digest, draft_args, word_draft, Caller, Receipt, Status};
+use c600_command::{code, digest, draft_args, word_draft, Receipt, Status};
 use c600_input::{
     default_specs, resolve_binding, Chord, Destination, Focus, KeyEvent, KeyMap, Layout, Resolution, Routed,
     RoutingClass, RoutingContext, LIST_ROWS,
@@ -263,7 +263,7 @@ fn resolved_arguments_survive_later_camera_focus_hover_and_filter_changes() {
 
 /// CT-EV4-02, the route leg (EV4.3, EV4.5): the key route and the command route (`Shell::invoke` with the same row and
 /// absolute arguments) give receipts that agree on everything except the command ID and the request digest. Both
-/// routes send as the shell, so the callers agree too.
+/// routes send on the shell's channel, so the layer files both receipts in the shell's command-ID space (ruling 4).
 #[test]
 fn the_key_route_and_the_command_route_give_the_same_receipts() {
     let mut keys = fixture("key", "us-qwerty");
@@ -286,7 +286,8 @@ fn the_key_route_and_the_command_route_give_the_same_receipts() {
         let routed = keys.tap(chord);
         let dispatch = routed.dispatch().unwrap_or_else(|| panic!("{chord}: {routed:?}")).clone();
         let invocation = &dispatch.invocation;
-        assert_eq!(invocation.caller, Caller::Shell);
+        let filed = keys.layer.outcome(&dispatch.receipt.command, &dispatch.receipt.request);
+        assert_eq!(filed.as_ref(), Some(&dispatch.receipt), "{chord}: the shell's lookup answers the key route");
         let receipt = cmds.shell.invoke(&mut cmds.layer, &invocation.row, invocation.args.clone()).unwrap();
         assert_eq!(dispatch.receipt.job, receipt.job, "{chord}");
         assert_eq!(dispatch.receipt.status, receipt.status, "{chord}");

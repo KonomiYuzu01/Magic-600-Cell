@@ -2,8 +2,16 @@
 //!
 //! The checker implements form 1 of the exactness contract (LG2.19, LG2.20, LG2.22), effect inference and the view
 //! rules (LG3.1, LG3.2, LG3.4 to LG3.6), and capabilities, grants and capability separation (LG3.8, LG3.9, LG3.13)
-//! with chapter 07's interim grant table. It reports chapter 02's frozen codes and no others.
+//! with chapter 07's interim grant table. It reports chapter 02's frozen codes and, by the owner's decision below,
+//! chapter 13's `LG3:capability.ambient_read`, and no others.
 //!
+//! - Owner decisions of 16 November 2026 under PHS.52 (`docs/wiki/decisions/owner-decisions-2026-11-16-phs52.md`): a
+//!   clock or a network capability, and a file capability where the entry may read a file, that the run does not hold
+//!   or that 1.0 never grants is `LG3:capability.ambient_read`; randomness, process and session-file access and a file
+//!   that is only written stay `LG3:capability.not_granted` ([`Summary::ungranted`]). A call that resolves to no
+//!   checked function is dynamic code, `LG3:capability.not_granted` at the call (DET.36, RTE.45). A goal or an
+//!   evidence sink takes portable data only: a value whose type is or holds a callable, a receipt, a word equality key
+//!   or a compressed word, or is a type variable, is `LG2:type.mismatch`.
 //! - A value whose base type does not fit its use is `LG2:type.mismatch` (LG2.1), with the expected and the supplied
 //!   type in [`Mismatch`]. The check goes on with a value of unknown type, which fits every use and gives no finding of
 //!   its own, so one fault gives one finding. The exactness codes apply where the base type fits (LG2.22). A function
@@ -37,6 +45,9 @@ pub const WORD_KEY_NOT_EXECUTABLE: &str = "LG2:type.word_key_not_executable";
 pub const EFFECT_UNDECLARED: &str = "LG3:effect.undeclared";
 /// `LG3:capability.not_granted` (LG3.8, LG3.9; chapter 07 section 8).
 pub const NOT_GRANTED: &str = "LG3:capability.not_granted";
+/// `LG3:capability.ambient_read` (INV-10; LX-3): a clock, file or network read requested without a grant (chapter 13;
+/// owner decision of 16 November 2026 under PHS.52).
+pub const AMBIENT_READ: &str = "LG3:capability.ambient_read";
 /// `LG4:input.ir_version_unsupported` (LG4.1).
 pub const IR_VERSION_UNSUPPORTED: &str = "LG4:input.ir_version_unsupported";
 
@@ -187,6 +198,8 @@ pub struct Summary {
     /// The grant-table rows that evaluating this may use (BND.57). Open effect variables and unresolved calls add none:
     /// they stay in `vars` and `unresolved`.
     pub rows: BTreeSet<Row>,
+    /// Evaluating this may read a file: a file read, or a call of a callable whose bound holds the file capability.
+    reads_file: bool,
     /// On a callable: it is a view, so whatever its effect variables take, it changes no workspace and prepares no
     /// preview (LG3.5, LG3.6). Needs that a caller accumulates do not inherit it.
     view: bool,
@@ -205,6 +218,15 @@ impl Summary {
         self.unresolved.extend(other.unresolved.iter().cloned());
         self.reaches.extend(other.reaches.iter().cloned());
         self.rows.extend(other.rows.iter().cloned());
+        self.reads_file |= other.reads_file;
+    }
+
+    /// The code that refuses the capability `cap` when the run does not hold it or 1.0 never grants it (LG3.8, LG3.9):
+    /// `LG3:capability.ambient_read` for a clock or a network capability, and for a file capability when evaluating
+    /// this may read a file; `LG3:capability.not_granted` otherwise (chapter 13; owner decision of 16 November 2026
+    /// under PHS.52).
+    pub fn ungranted(&self, cap: Capability) -> &'static str {
+        ungranted(cap, self.reads_file)
     }
 
     /// Whether the summary has an effect, a capability requirement or an open effect variable.
@@ -217,6 +239,7 @@ impl Summary {
             effects: bound.effects.clone(),
             capabilities: bound.capabilities.clone(),
             vars: bound.vars.clone(),
+            reads_file: bound.capabilities.contains(&Capability::File),
             ..Summary::default()
         };
         if s.effects.contains(&Effect::ReadSnapshot) {
@@ -379,13 +402,16 @@ pub fn admit(
         note,
     };
     for cap in &summary.capabilities {
-        if NEVER_GRANTED.contains(cap) {
-            diagnostics.push(refuse(format!("{cap:?} access is never granted in 1.0 (LG3.8)")));
+        let note = if NEVER_GRANTED.contains(cap) {
+            format!("{cap:?} access is never granted in 1.0 (LG3.8)")
         } else if !grant.capabilities.contains(cap) {
-            diagnostics.push(refuse(format!(
-                "the run grants no {cap:?} capability; a declaration or an import supplies none (LG3.9)"
-            )));
-        }
+            format!("the run grants no {cap:?} capability; a declaration or an import supplies none (LG3.9)")
+        } else {
+            continue;
+        };
+        let mut d = refuse(note);
+        d.code = summary.ungranted(*cap);
+        diagnostics.push(d);
     }
     let separation = separation(&summary, policy);
     let mut open_cells = Vec::new();
@@ -437,10 +463,11 @@ fn entry_fn<'p>(program: &'p Program, module: &str, function: &str) -> Option<&'
 /// at the view), and with `LG3:capability.not_granted`:
 ///
 /// - at `entry`: an entry that is not exported; a capability that is never granted (LG3.8) or that `grant` does not
-///   hold (LG3.9); an entry that both reads state-derived data and prepares previews (LG3.13, BND.39); a row the
-///   entry may use that `class_rows` does not list, and a row the checker cannot name (`Row::Unknown`, an unresolved
-///   call or an open effect variable), because a built-in tool's rows are listed by its class (BND.57); a preview or
-///   a word-carrying workspace write in a function the entry reaches, because the solver names a word to the entry;
+///   hold (LG3.9), which is `LG3:capability.ambient_read` where [`Summary::ungranted`] says so; an entry that both
+///   reads state-derived data and prepares previews (LG3.13, BND.39); a row the entry may use that `class_rows` does
+///   not list, and a row the checker cannot name (`Row::Unknown`, an unresolved call or an open effect variable),
+///   because a built-in tool's rows are listed by its class (BND.57); a preview or a word-carrying workspace write in a
+///   function the entry reaches, because the solver names a word to the entry;
 /// - at the proposal's or write's path: a proposal whose word, or a workspace write of a word-carrying type whose
 ///   value, is not a `Word` parameter of the entry as given, unshadowed (a word the solver named), or for a write a
 ///   read through a declassifier the policy enables (chapter 07 section 8, built-in column).
@@ -502,9 +529,9 @@ pub fn admit_built_in(
     }
     for cap in &summary.capabilities {
         if NEVER_GRANTED.contains(cap) {
-            refuse(NOT_GRANTED, "entry", format!("{cap:?} access is never granted in 1.0 (LG3.8)"));
+            refuse(summary.ungranted(*cap), "entry", format!("{cap:?} access is never granted in 1.0 (LG3.8)"));
         } else if !grant.capabilities.contains(cap) {
-            refuse(NOT_GRANTED, "entry", format!("the run grants no {cap:?} capability (LG3.9)"));
+            refuse(summary.ungranted(*cap), "entry", format!("the run grants no {cap:?} capability (LG3.9)"));
         }
     }
     let separation = separation(&summary, policy);
@@ -820,6 +847,23 @@ fn holds_callable(ty: &Ty) -> bool {
     }
 }
 
+/// What a goal or an evidence sink takes, in a mismatch's `expected`.
+const PORTABLE: &str = "a type without Fn, Receipt, WordEqualityKey, CompressedWord or a type variable";
+
+/// Whether a goal or an evidence sink takes a value of this type (owner decision of 16 November 2026 under PHS.52):
+/// portable data with a canonical encoding, so no callable, receipt, word equality key (LG2.13) or compressed word
+/// (DET.59) at any depth, and no type variable, which may stand for one of them (the checker does not unify type
+/// variables, M1). An unknown type fits. Whether an approximate value may enter is the exactness rules' question
+/// (LG2.22).
+fn portable(ty: &Ty) -> bool {
+    match ty {
+        _ if is_unknown(ty) => true,
+        Ty::Fn(_) | Ty::Receipt | Ty::Var(_) | Ty::WordEqualityKey | Ty::CompressedWord => false,
+        Ty::Record(fields) => fields.iter().all(|(_, f)| portable(&f.ty)),
+        other => other.elements().into_iter().all(|e| portable(&e.ty)),
+    }
+}
+
 /// Whether a type is or holds a compressed word in a record or a collection (LP2 draft).
 fn holds_compressed(ty: &Ty) -> bool {
     match ty {
@@ -1026,6 +1070,15 @@ fn needs(effects: &[Effect], capabilities: &[Capability]) -> Summary {
         effects: effects.iter().copied().collect(),
         capabilities: capabilities.iter().copied().collect(),
         ..Summary::default()
+    }
+}
+
+/// [`Summary::ungranted`], given whether evaluation may read a file.
+fn ungranted(cap: Capability, reads_file: bool) -> &'static str {
+    match cap {
+        Capability::Clock | Capability::Network => AMBIENT_READ,
+        Capability::File if reads_file => AMBIENT_READ,
+        Capability::File | Capability::Randomness | Capability::Process | Capability::SessionFile => NOT_GRANTED,
     }
 }
 
@@ -1471,7 +1524,8 @@ impl<'p> Checker<'p> {
                     self.found.push(Found {
                         key: (mi, None, Vec::new()),
                         diagnostic: Diagnostic {
-                            code: NOT_GRANTED,
+                            // A manifest's network request is an ambient read (chapter 13; PHS.52).
+                            code: ungranted(cap, false),
                             module: module.name.clone(),
                             function: String::new(),
                             path: "manifest".into(),
@@ -2092,9 +2146,12 @@ impl<'p> Checker<'p> {
                         Ok((v, s))
                     }
                     Callee::Unresolved { name, result } => {
-                        self.effect(format!(
-                            "the unresolved callable `{name}` is neither exact nor pure (LG2.19, LG3.2)"
-                        ));
+                        // Dynamic code (owner decision of 16 November 2026 under PHS.52).
+                        let note = format!(
+                            "the unresolved callable `{name}` is dynamic code, which no grant admits (DET.36, RTE.45); \
+                             it is neither exact nor pure (LG2.19, LG3.2)"
+                        );
+                        self.push(NOT_GRANTED, None, note);
                         s.unresolved.insert(name.clone());
                         Ok((Val::declared(result), s))
                     }
@@ -2339,14 +2396,16 @@ impl<'p> Checker<'p> {
             Expr::UseExact { role, value } => {
                 let (v, mut s) = self.at(0, |c| c.expr(value, env))?;
                 let what = format!("an exact {role:?}");
-                let (site, fit) = match role {
-                    ExactRole::Budget => {
-                        (Site::Operand, is_integer(&v.ty) || matches!(v.ty, Ty::Approx(_)) || is_unknown(&v.ty))
-                    }
-                    ExactRole::Goal | ExactRole::Evidence => (Site::Boundary, true),
+                let (site, fit, expected) = match role {
+                    ExactRole::Budget => (
+                        Site::Operand,
+                        is_integer(&v.ty) || matches!(v.ty, Ty::Approx(_)) || is_unknown(&v.ty),
+                        "Nat | Int | Budget",
+                    ),
+                    ExactRole::Goal | ExactRole::Evidence => (Site::Boundary, portable(&v.ty), PORTABLE),
                 };
                 if !fit {
-                    self.at(0, |c| c.misfit("Nat | Int | Budget", &v, &what));
+                    self.at(0, |c| c.misfit(expected, &v, &what));
                 }
                 if self.display > 0 {
                     // Even an exact literal computed in a display context cannot escape as an exact result (LG2.20).
@@ -2380,7 +2439,9 @@ impl<'p> Checker<'p> {
             }
             Expr::FileRead { ty, .. } => {
                 let mut s = Summary::default();
-                self.operation(&mut s, needs(&[Effect::GrantedFile], &[Capability::File]), "a file read");
+                let mut own = needs(&[Effect::GrantedFile], &[Capability::File]);
+                own.reads_file = true;
+                self.operation(&mut s, own, "a file read");
                 Ok((Val::declared(&QTy { ty: ty.clone(), display: false }), s))
             }
             Expr::FileWrite { value, .. } => {
