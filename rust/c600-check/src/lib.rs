@@ -131,6 +131,9 @@ pub struct Summary {
     pub exact_sinks: BTreeSet<(ExactRole, String)>,
     /// Calls the checker could not resolve; they are neither exact nor pure (LG2.19, LG3.2).
     pub unresolved: BTreeSet<String>,
+    /// The named functions, by module and function name, that evaluating this may call directly or through a
+    /// function reference. Recursion control reads it (LG2.20).
+    pub reaches: BTreeSet<(String, String)>,
 }
 
 impl Summary {
@@ -141,6 +144,7 @@ impl Summary {
         self.state_reads.extend(other.state_reads.iter().cloned());
         self.exact_sinks.extend(other.exact_sinks.iter().cloned());
         self.unresolved.extend(other.unresolved.iter().cloned());
+        self.reaches.extend(other.reaches.iter().cloned());
     }
 
     /// Whether the summary has an effect, a capability requirement or an open effect variable.
@@ -320,12 +324,17 @@ pub fn admit(
     let separation = separation(&summary, policy);
     let mut open_cells = Vec::new();
     if profile == Profile::Solving {
-        if summary.effects.contains(&Effect::PreparePreview) {
-            diagnostics.push(refuse(
-                "an own, forked or imported tool prepares no preview in a solving session until the joint setting \
-                 (chapter 07 section 8, BND.56; LG3.16)"
-                    .into(),
-            ));
+        // An unresolved call or an open effect variable may prepare a preview, so it is refused as one.
+        if separation.prepares_previews {
+            let what = if summary.effects.contains(&Effect::PreparePreview) {
+                "an own, forked or imported tool"
+            } else {
+                "an unresolved call or open effect variable may prepare a preview, and an own, forked or imported tool"
+            };
+            diagnostics.push(refuse(format!(
+                "{what} prepares no preview in a solving session until the joint setting (chapter 07 section 8, \
+                 BND.56; LG3.16)"
+            )));
         }
         if separation.reads_state {
             // What an own tool may read in a solving session is open (BND.59).
@@ -448,16 +457,6 @@ fn signature_keeps(s: &FnTy, t: &FnTy, own: bool) -> bool {
     s.params.iter().zip(&t.params).all(|(sp, tp)| admits(tp, sp, false)) && admits(&s.result, &t.result, own)
 }
 
-/// Whether a type mentions a type variable.
-fn generic(ty: &Ty) -> bool {
-    match ty {
-        Ty::Var(_) => true,
-        Ty::Record(fields) => fields.iter().any(|(_, f)| generic(&f.ty)),
-        Ty::Fn(f) => f.params.iter().any(|p| generic(&p.ty)) || generic(&f.result.ty),
-        _ => false,
-    }
-}
-
 fn is_numeric(ty: &Ty) -> bool {
     matches!(ty, Ty::Nat | Ty::Int | Ty::Budget)
 }
@@ -484,7 +483,8 @@ fn fits(slot: &Ty, value: &Ty) -> bool {
     }
 }
 
-/// The common type of two branches.
+/// The common type of two values, such as two branches or two arguments bound to one type variable: a record widens
+/// field by field, and a callable keeps either result's qualifier and either effect bound (LG2.19, LG3.2).
 fn widen(a: &Ty, b: &Ty) -> Option<Ty> {
     if a == b {
         return Some(a.clone());
@@ -492,15 +492,63 @@ fn widen(a: &Ty, b: &Ty) -> Option<Ty> {
     match (a, b) {
         (Ty::Nat, Ty::Int) | (Ty::Int, Ty::Nat) => Some(Ty::Int),
         (Ty::Nat, Ty::Budget) | (Ty::Budget, Ty::Nat) => Some(Ty::Budget),
-        (Ty::Fn(x), Ty::Fn(y)) if x.params == y.params && x.result == y.result => {
+        (Ty::Record(x), Ty::Record(y)) if x.len() == y.len() => x
+            .iter()
+            .zip(y)
+            .map(|((nx, qx), (ny, qy))| if nx == ny { Some((nx.clone(), widen_q(qx, qy)?)) } else { None })
+            .collect::<Option<Vec<_>>>()
+            .map(Ty::Record),
+        (Ty::Fn(x), Ty::Fn(y)) if x.params == y.params => {
             let mut effects = x.effects.clone();
             effects.effects.extend(y.effects.effects.iter().copied());
             effects.capabilities.extend(y.effects.capabilities.iter().copied());
             effects.vars.extend(y.effects.vars.iter().cloned());
-            Some(Ty::Fn(Box::new(FnTy { params: x.params.clone(), result: x.result.clone(), effects })))
+            let result = widen_q(&x.result, &y.result)?;
+            Some(Ty::Fn(Box::new(FnTy { params: x.params.clone(), result, effects })))
         }
         _ => None,
     }
+}
+
+fn widen_q(a: &QTy, b: &QTy) -> Option<QTy> {
+    Some(QTy { ty: widen(&a.ty, &b.ty)?, display: a.display || b.display })
+}
+
+/// The effect variables a type mentions at any depth.
+fn effect_vars(q: &QTy, out: &mut BTreeSet<String>) {
+    match &q.ty {
+        Ty::Fn(f) => {
+            out.extend(f.effects.vars.iter().cloned());
+            for p in &f.params {
+                effect_vars(p, out);
+            }
+            effect_vars(&f.result, out);
+        }
+        Ty::Record(fields) => {
+            for (_, f) in fields {
+                effect_vars(f, out);
+            }
+        }
+        _ => {}
+    }
+}
+
+/// The type with its effect variables renamed by `map`.
+fn rename_vars(q: &QTy, map: &BTreeMap<String, String>) -> QTy {
+    let ty = match &q.ty {
+        Ty::Fn(f) => {
+            let mut effects = f.effects.clone();
+            effects.vars = f.effects.vars.iter().map(|v| map.get(v).unwrap_or(v).clone()).collect();
+            Ty::Fn(Box::new(FnTy {
+                params: f.params.iter().map(|p| rename_vars(p, map)).collect(),
+                result: rename_vars(&f.result, map),
+                effects,
+            }))
+        }
+        Ty::Record(fields) => Ty::Record(fields.iter().map(|(n, f)| (n.clone(), rename_vars(f, map))).collect()),
+        other => other.clone(),
+    };
+    QTy { ty, display: q.display }
 }
 
 fn lit_type(lit: &Lit) -> Ty {
@@ -572,6 +620,16 @@ fn free_names<'a>(e: &'a Expr, bound: &mut Vec<&'a str>, out: &mut BTreeSet<&'a 
                 free_names(child, bound, out);
             }
         }
+    }
+}
+
+/// The typed fields an expression's workspace writes store, by record.
+fn writes<'a>(e: &'a Expr, out: &mut BTreeMap<&'a str, Vec<&'a QTy>>) {
+    if let Expr::WriteWorkspace { record, ty, .. } = e {
+        out.entry(record.as_str()).or_default().push(ty);
+    }
+    for child in children(e) {
+        writes(child, out);
     }
 }
 
@@ -668,14 +726,13 @@ impl Val {
     }
 }
 
-/// One of two values: the qualifiers join, a callable needs what either needs, and record fields merge one by one.
-/// The type is the common type, or the first value's where the checker cannot tell (it does not unify type
-/// variables in M1).
-fn merge(a: Val, b: Val) -> Val {
-    let ty = widen(&a.ty, &b.ty).unwrap_or_else(|| a.ty.clone());
-    let fields = match (&a.ty, &b.ty) {
-        (Ty::Record(x), Ty::Record(y)) if x.len() == y.len() && (a.fields.is_some() || b.fields.is_some()) => {
-            Some((0..x.len()).map(|i| merge(a.field(i), b.field(i))).collect())
+/// One of two values: the type is the common type, the qualifiers join, a callable needs what either needs, and
+/// record fields merge one by one. `None` when the types have no common type.
+fn merge(a: Val, b: Val) -> Option<Val> {
+    let ty = widen(&a.ty, &b.ty)?;
+    let fields = match &ty {
+        Ty::Record(x) if a.fields.is_some() || b.fields.is_some() => {
+            Some((0..x.len()).map(|i| merge(a.field(i), b.field(i))).collect::<Option<Vec<_>>>()?)
         }
         _ => None,
     };
@@ -686,7 +743,7 @@ fn merge(a: Val, b: Val) -> Val {
         }
         _ => None,
     };
-    Val { ty, qual: a.qual.join(b.qual), callable, fields }
+    Some(Val { ty, qual: a.qual.join(b.qual), callable, fields })
 }
 
 /// What the arguments bind the callee's type variables to where a result can come from: a parameter or record field
@@ -710,21 +767,23 @@ fn bindings(slot: &QTy, v: &Val, out: &mut Vec<(String, Val)>) {
     }
 }
 
-/// The qualifier a display instance adds to a call (LG2.19): a display value for a generic parameter that is not
-/// itself a display input makes the callee's body a display body. `except` leaves out the parameters of the
-/// result's own type variable, whose qualifier the result keeps as it is.
+/// The qualifier a display instance adds to a call (LG2.19): a display value bound to a type variable of a parameter
+/// that is not itself a display input, directly, in a record field or as a callable's result, makes the callee's
+/// body a display body. `except` leaves out the result's own type variable, whose qualifier the result keeps as it
+/// is.
 fn instance(params: &[QTy], vals: &[Val], except: Option<&str>) -> Qual {
-    params
-        .iter()
-        .zip(vals)
-        .filter(|(p, _)| !matches!(p.ty, Ty::Fn(_)) && generic(&p.ty) && declared_qual(p) == Qual::Exact)
-        .filter(|(p, _)| !matches!((&p.ty, except), (Ty::Var(n), Some(e)) if n == e))
-        .fold(Qual::Exact, |q, (_, v)| q.join(v.qual.container()))
+    let mut bound = Vec::new();
+    for (p, v) in params.iter().zip(vals).filter(|(p, _)| declared_qual(p) == Qual::Exact) {
+        bindings(p, v, &mut bound);
+    }
+    bound.iter().filter(|(n, _)| Some(n.as_str()) != except).fold(Qual::Exact, |q, (_, v)| q.join(v.qual.container()))
 }
 
 /// The value of a call. A generic result keeps the qualifier, callable and fields of every argument bound to its
-/// type variable; a display instance and a display-qualified callable give a display-qualified result (LG2.19).
-fn result_val(result: &QTy, params: &[QTy], vals: &[Val], callee: Qual) -> Val {
+/// type variable; a display instance, a display-qualified callable and a callee whose body selects its result under
+/// approximate control (`control`) give a display-qualified result (LG2.19, LG2.20). Values of incompatible types
+/// bound to one type variable are malformed IR (the checker does not unify type variables, M1).
+fn result_val(result: &QTy, params: &[QTy], vals: &[Val], callee: Qual, control: bool) -> Result<Val, String> {
     let own = match &result.ty {
         Ty::Var(name) => Some(name.as_str()),
         _ => None,
@@ -733,13 +792,50 @@ fn result_val(result: &QTy, params: &[QTy], vals: &[Val], callee: Qual) -> Val {
     for (p, v) in params.iter().zip(vals) {
         bindings(p, v, &mut bound);
     }
-    let returned = own.and_then(|name| bound.into_iter().filter(|(n, _)| n == name).map(|(_, v)| v).reduce(merge));
-    let mut v = returned.unwrap_or_else(|| Val::declared(result));
+    let mut returned: Option<Val> = None;
+    for (_, v) in bound.into_iter().filter(|(n, _)| Some(n.as_str()) == own) {
+        returned = Some(match returned {
+            None => v,
+            Some(r) => merge(r, v).ok_or_else(|| {
+                format!("the type variable {} is bound to values of incompatible types", own.unwrap_or_default())
+            })?,
+        });
+    }
+    let mut v = returned.unwrap_or_else(|| instantiated(result, params, vals));
     if result.display {
         v.qual = v.qual.join(Qual::Display { control: false });
     }
+    if control {
+        v.qual = v.qual.join(Qual::Display { control: true });
+    }
     v.qual = v.qual.join(instance(params, vals, own)).join(callee.container());
-    v
+    Ok(v)
+}
+
+/// A value of the declared type `q` that a call returns: each callable in it, itself or in a record field, needs its
+/// bound with the call's effect variables instantiated (LG3.2).
+fn instantiated(q: &QTy, params: &[QTy], vals: &[Val]) -> Val {
+    match &q.ty {
+        Ty::Fn(f) => {
+            let callable = substitute(&Summary::of_bound(&f.effects), params, vals);
+            let ty = Ty::Fn(Box::new(FnTy {
+                params: f.params.clone(),
+                result: f.result.clone(),
+                effects: callable.bound(),
+            }));
+            Val { ty, qual: declared_qual(q), callable: Some(callable), fields: None }
+        }
+        Ty::Record(fields) => {
+            let field_vals: Vec<Val> = fields.iter().map(|(_, f)| instantiated(f, params, vals)).collect();
+            let tys = fields
+                .iter()
+                .zip(&field_vals)
+                .map(|((n, f), v)| (n.clone(), QTy { ty: v.ty.clone(), display: f.display }))
+                .collect();
+            Val { ty: Ty::Record(tys), qual: declared_qual(q), callable: None, fields: Some(field_vals) }
+        }
+        _ => Val::declared(q),
+    }
 }
 
 /// The callee's needs with its effect variables replaced by the needs of the callables passed for them, as
@@ -811,10 +907,17 @@ struct Checker<'p> {
     modules: BTreeMap<&'p str, usize>,
     functions: Vec<BTreeMap<&'p str, usize>>,
     table: Vec<Vec<Summary>>,
+    /// Whether each function's body computes or selects its result under approximate control (LG2.20, LG2.22).
+    controls: Vec<Vec<bool>>,
+    /// The typed fields the program's own workspace writes store, by record (LG2.19, storage row).
+    stored: BTreeMap<&'p str, Vec<&'p QTy>>,
     emitting: bool,
     /// How many display contexts enclose the current expression: display branches, and the bodies of functions and
     /// closures with an approximate or display input or capture (LG2.19, LG2.20).
     display: u32,
+    /// How many display branches of the current body enclose the current expression; a closure's body runs when it
+    /// is called and starts at zero (LG2.20).
+    steer: u32,
     cur: (usize, usize),
     path: Vec<u32>,
     found: Vec<Found>,
@@ -837,13 +940,21 @@ impl<'p> Checker<'p> {
             functions.push(names);
         }
         let table = program.modules.iter().map(|m| vec![Summary::default(); m.functions.len()]).collect();
+        let controls = program.modules.iter().map(|m| vec![false; m.functions.len()]).collect();
+        let mut stored = BTreeMap::new();
+        for f in program.modules.iter().flat_map(|m| &m.functions) {
+            writes(&f.body, &mut stored);
+        }
         Ok(Checker {
             program,
             modules,
             functions,
             table,
+            controls,
+            stored,
             emitting: false,
             display: 0,
+            steer: 0,
             cur: (0, 0),
             path: Vec::new(),
             found: Vec::new(),
@@ -857,9 +968,10 @@ impl<'p> Checker<'p> {
             let mut changed = false;
             for mi in 0..self.table.len() {
                 for fi in 0..self.table[mi].len() {
-                    let s = self.function(mi, fi)?;
-                    if s != self.table[mi][fi] {
+                    let (s, control) = self.function(mi, fi)?;
+                    if s != self.table[mi][fi] || control != self.controls[mi][fi] {
                         self.table[mi][fi] = s;
+                        self.controls[mi][fi] = control;
                         changed = true;
                     }
                 }
@@ -895,8 +1007,8 @@ impl<'p> Checker<'p> {
                 }
             }
             for fi in 0..module.functions.len() {
-                let s = self.function(mi, fi)?;
-                if s != self.table[mi][fi] {
+                let (s, control) = self.function(mi, fi)?;
+                if s != self.table[mi][fi] || control != self.controls[mi][fi] {
                     return Err(IrError("effect inference stopped before its fixed point".into()));
                 }
             }
@@ -1059,19 +1171,21 @@ impl<'p> Checker<'p> {
     /// A value entering a typed slot: an argument, or with `own` a result or a stored field, whose type variables are
     /// the enclosing function's own.
     fn slot(&mut self, slot: &QTy, v: &Val, what: &str, own: bool) {
-        self.callables(slot, v, what);
+        self.callables(slot, v, what, own);
         self.qualifiers(slot, v, what, own);
     }
 
-    /// Every callable in the value, itself or in a record field at any depth, stays within its slot's bound.
-    fn callables(&mut self, slot: &QTy, v: &Val, what: &str) {
+    /// Every callable in the value, itself or in a record field at any depth, stays within its slot's bound. An
+    /// argument's effect variables are the callee's own and take whatever the callable needs; in a result or a stored
+    /// field they are the enclosing function's and bound the callable like any effect (LG3.2).
+    fn callables(&mut self, slot: &QTy, v: &Val, what: &str, own: bool) {
         match &slot.ty {
             Ty::Fn(fty) => match &v.callable {
                 None => self.effect(format!("{what}: an unknown callable is neither exact nor pure (LG2.19, LG3.2)")),
-                // A bound without effect variables admits no exact sink: the callee may call it under approximate
-                // control (LG2.20).
+                // A bound admits no exact sink: whoever calls the callable may do so under approximate control
+                // (LG2.20).
                 Some(callable)
-                    if fty.effects.vars.is_empty()
+                    if (own || fty.effects.vars.is_empty())
                         && !(callable.within(&fty.effects) && callable.exact_sinks.is_empty()) =>
                 {
                     self.effect(format!("{what}: the callable needs {}, beyond its bound (LG3.2)", describe(callable)))
@@ -1080,7 +1194,7 @@ impl<'p> Checker<'p> {
             },
             Ty::Record(fields) => {
                 for (i, (name, f)) in fields.iter().enumerate() {
-                    self.callables(f, &v.field(i), &format!("{what}, field `{name}`"));
+                    self.callables(f, &v.field(i), &format!("{what}, field `{name}`"), own);
                 }
             }
             _ => {}
@@ -1125,7 +1239,9 @@ impl<'p> Checker<'p> {
     }
 
     /// A call: the arguments enter their slots, the callee's needs are instantiated and checked against the context,
-    /// and the result follows `result_val` (LG2.19, LG3.2). `summary` is `None` for an unknown callable.
+    /// and the result follows `result_val` (LG2.19, LG3.2). `summary` is `None` for an unknown callable; `callee` is
+    /// the callable's qualifier, and `control` says that the callee selects its result under approximate control.
+    #[allow(clippy::too_many_arguments)]
     fn call(
         &mut self,
         params: &[QTy],
@@ -1133,6 +1249,7 @@ impl<'p> Checker<'p> {
         summary: Option<&Summary>,
         vals: &[Val],
         callee: Qual,
+        control: bool,
         what: &str,
     ) -> Result<(Val, Summary), IrError> {
         self.arguments(params, vals, what)?;
@@ -1140,13 +1257,26 @@ impl<'p> Checker<'p> {
             Some(summary) => {
                 let needs = substitute(summary, params, vals);
                 let call = format!("the call of {what}");
-                if instance(params, vals, None) == Qual::Exact {
-                    self.leaf(&needs, &call);
-                } else {
+                if callee != Qual::Exact {
+                    // A display-qualified callable runs a display body, which is pure (LG2.19, LG2.20).
+                    let call = format!("{call}, a display-qualified callable,");
+                    self.in_display(|c| c.leaf(&needs, &call));
+                } else if instance(params, vals, None) != Qual::Exact {
                     // A display value for a generic parameter makes the callee's body a display body, which is pure
                     // (LG2.19, LG2.20).
                     let call = format!("{call}, whose type variable takes a display value,");
                     self.in_display(|c| c.leaf(&needs, &call));
+                } else {
+                    self.leaf(&needs, &call);
+                }
+                if self.steer > 0 && needs.reaches.contains(&self.current()) {
+                    self.exactness(
+                        EXACTNESS_VIOLATION,
+                        &result.ty,
+                        true,
+                        false,
+                        format!("{call} recurses under approximate control; approximate data cannot bound recursion (LG2.20)"),
+                    );
                 }
                 needs
             }
@@ -1157,7 +1287,15 @@ impl<'p> Checker<'p> {
                 needs
             }
         };
-        Ok((result_val(result, params, vals, callee), needs))
+        let v = result_val(result, params, vals, callee, control).map_err(|m| self.err(format!("{what}: {m}")))?;
+        Ok((v, needs))
+    }
+
+    /// The current function's module and name.
+    fn current(&self) -> (String, String) {
+        let program = self.program;
+        let module = &program.modules[self.cur.0];
+        (module.name.clone(), module.functions[self.cur.1].name.clone())
     }
 
     /// A function's or closure's result. An approximate or display input requires a display-qualified result (LG2.19).
@@ -1181,13 +1319,12 @@ impl<'p> Checker<'p> {
     }
 
     fn join(&self, a: Val, b: Val, what: &str) -> Result<Val, IrError> {
-        if widen(&a.ty, &b.ty).is_none() {
-            return Err(self.err(format!("{what} have types {:?} and {:?}", a.ty, b.ty)));
-        }
-        Ok(merge(a, b))
+        let (ta, tb) = (a.ty.clone(), b.ty.clone());
+        merge(a, b).ok_or_else(|| self.err(format!("{what} have types {ta:?} and {tb:?}")))
     }
 
-    fn function(&mut self, mi: usize, fi: usize) -> Result<Summary, IrError> {
+    /// A function's needs, and whether its body computes or selects its result under approximate control.
+    fn function(&mut self, mi: usize, fi: usize) -> Result<(Summary, bool), IrError> {
         let program = self.program;
         let module = &program.modules[mi];
         let f = &module.functions[fi];
@@ -1200,10 +1337,16 @@ impl<'p> Checker<'p> {
         let display_input = f.params.iter().find(|p| declared_qual(&p.ty) != Qual::Exact).map(|p| &p.ty.ty);
         // A function with an approximate or display input has a pure display body (LG2.19).
         self.display = u32::from(display_input.is_some());
+        self.steer = 0;
         let walked = self.expr(&f.body, &mut env);
         self.display = 0;
         let (v, s) = walked?;
         self.result(&f.result, &v, display_input, "the result")?;
+        // An exact result slot refuses a steered value above; callers see no second finding. A display-qualified
+        // result shows callers its qualifier, so a later exact use erases it (LG2.22). The bit carries the control
+        // only through a result whose declared type cannot show it, such as `Approx<p>`: its exact use is then a
+        // value selected under approximate control, not a direct approximate scalar (`exact_required`).
+        let control = !f.result.display && !exact_slot(&f.result, true) && v.qual == (Qual::Display { control: true });
         if f.kind == FnKind::View {
             for e in [Effect::ChangeWorkspace, Effect::PreparePreview] {
                 if s.effects.contains(&e) {
@@ -1224,7 +1367,7 @@ impl<'p> Checker<'p> {
         if !undeclared.is_empty() {
             self.effect(format!("module `{}` does not declare {} (LG3.8, LG3.9)", module.name, undeclared.join(", ")));
         }
-        Ok(s)
+        Ok((s, control))
     }
 
     fn expr(&mut self, e: &'p Expr, env: &mut Env) -> Result<(Val, Summary), IrError> {
@@ -1238,7 +1381,8 @@ impl<'p> Checker<'p> {
                 let (mi, fi) = self.resolve(module.as_deref(), name)?;
                 let program = self.program;
                 let f = &program.modules[mi].functions[fi];
-                let summary = self.table[mi][fi].clone();
+                let mut summary = self.table[mi][fi].clone();
+                summary.reaches.insert((program.modules[mi].name.clone(), f.name.clone()));
                 let ty = Ty::Fn(Box::new(FnTy {
                     params: f.params.iter().map(|p| p.ty.clone()).collect(),
                     result: f.result.clone(),
@@ -1295,9 +1439,12 @@ impl<'p> Checker<'p> {
                 if cv.ty != Ty::ApproxBool {
                     return Err(self.err(format!("display_if takes an ApproxBool condition, not {:?} (LG2.20)", cv.ty)));
                 }
-                // The branches are lazy pure display expressions (LG2.20).
-                let (tv, ts) = self.at(1, |c| c.in_display(|c| c.expr(then, env)))?;
-                let (ev, es) = self.at(2, |c| c.in_display(|c| c.expr(els, env)))?;
+                // The branches are lazy pure display expressions under approximate control (LG2.20).
+                self.steer += 1;
+                let then = self.at(1, |c| c.in_display(|c| c.expr(then, env)));
+                let els = self.at(2, |c| c.in_display(|c| c.expr(els, env)));
+                self.steer -= 1;
+                let ((tv, ts), (ev, es)) = (then?, els?);
                 let v = self.join(tv, ev, "display branches (LG2.20)")?;
                 s.add(&ts);
                 s.add(&es);
@@ -1317,9 +1464,12 @@ impl<'p> Checker<'p> {
                         let program = self.program;
                         let f = &program.modules[mi].functions[fi];
                         let params: Vec<QTy> = f.params.iter().map(|p| p.ty.clone()).collect();
-                        let summary = self.table[mi][fi].clone();
+                        let mut summary = self.table[mi][fi].clone();
+                        summary.reaches.insert((program.modules[mi].name.clone(), f.name.clone()));
+                        let control = self.controls[mi][fi];
                         let what = format!("`{name}`");
-                        let (v, needs) = self.call(&params, &f.result, Some(&summary), &vals, Qual::Exact, &what)?;
+                        let (v, needs) =
+                            self.call(&params, &f.result, Some(&summary), &vals, Qual::Exact, control, &what)?;
                         s.add(&needs);
                         Ok((v, s))
                     }
@@ -1332,7 +1482,7 @@ impl<'p> Checker<'p> {
                         };
                         let callable = fv.callable.as_ref();
                         let (v, needs) =
-                            self.call(&fty.params, &fty.result, callable, &vals, fv.qual, "a function value")?;
+                            self.call(&fty.params, &fty.result, callable, &vals, fv.qual, false, "a function value")?;
                         s.add(&needs);
                         Ok((v, s))
                     }
@@ -1356,30 +1506,42 @@ impl<'p> Checker<'p> {
                         None => return Err(self.err(format!("unbound name `{name}` in a closure"))),
                     }
                 }
+                // The effect variables of the closure's parameters are its own: a call instantiates them, apart from
+                // those of the callables it captures, so they get names of their own (LG3.2).
+                let mut own = BTreeSet::new();
+                for p in params {
+                    effect_vars(&p.ty, &mut own);
+                }
+                let (module, function) = self.current();
+                let place = format!("{module}.{function}@{}", path_text(&self.path));
+                let renamed: BTreeMap<String, String> =
+                    own.into_iter().map(|v| (v.clone(), format!("{v}'{place}"))).collect();
+                let param_tys: Vec<QTy> = params.iter().map(|p| rename_vars(&p.ty, &renamed)).collect();
+                let result = rename_vars(result, &renamed);
                 // A closure capturing display data is display-qualified as a whole (LG2.19).
                 let captured = inner.vars.iter().fold(Qual::Exact, |q, (_, v)| q.join(v.qual.container()));
-                let display_input = params
+                let display_input = param_tys
                     .iter()
-                    .find(|p| declared_qual(&p.ty) != Qual::Exact)
-                    .map(|p| p.ty.ty.clone())
+                    .find(|t| declared_qual(t) != Qual::Exact)
+                    .map(|t| t.ty.clone())
                     .or_else(|| inner.vars.iter().find(|(_, v)| v.qual != Qual::Exact).map(|(_, v)| v.ty.clone()));
-                for p in params {
-                    inner.vars.push((p.name.clone(), Val::declared(&p.ty)));
+                for (p, t) in params.iter().zip(&param_tys) {
+                    inner.vars.push((p.name.clone(), Val::declared(t)));
                 }
-                // An approximate or display input or capture makes the body a pure display body (LG2.19).
-                let (bv, bs) = if display_input.is_some() {
-                    self.at(0, |c| c.in_display(|c| c.expr(body, &mut inner)))?
+                // An approximate or display input or capture makes the body a pure display body (LG2.19). The body
+                // runs when the closure is called, and the call is checked where it happens.
+                let steer = std::mem::replace(&mut self.steer, 0);
+                let walked = if display_input.is_some() {
+                    self.at(0, |c| c.in_display(|c| c.expr(body, &mut inner)))
                 } else {
-                    self.at(0, |c| c.expr(body, &mut inner))?
+                    self.at(0, |c| c.expr(body, &mut inner))
                 };
-                self.result(result, &bv, display_input.as_ref(), "the closure's result")?;
+                self.steer = steer;
+                let (bv, bs) = walked?;
+                self.result(&result, &bv, display_input.as_ref(), "the closure's result")?;
                 // With an exact result slot a display capture was refused above; the value carries no second finding.
-                let qual = if exact_slot(result, true) { Qual::Exact } else { captured };
-                let ty = Ty::Fn(Box::new(FnTy {
-                    params: params.iter().map(|p| p.ty.clone()).collect(),
-                    result: result.clone(),
-                    effects: bs.bound(),
-                }));
+                let qual = if exact_slot(&result, true) { Qual::Exact } else { captured };
+                let ty = Ty::Fn(Box::new(FnTy { params: param_tys, result, effects: bs.bound() }));
                 Ok((Val { ty, qual, callable: Some(bs), fields: None }, Summary::default()))
             }
             Expr::Prim { op, args } => {
@@ -1427,12 +1589,27 @@ impl<'p> Checker<'p> {
                 };
                 Ok((v, s))
             }
-            Expr::ReadSnapshot { ty, .. } => {
+            Expr::ReadSnapshot { query, ty } => {
                 let mut s = Summary::default();
                 let mut own = needs(&[Effect::ReadSnapshot], &[]);
                 own.state_reads.insert(StateRead::Snapshot);
                 self.operation(&mut s, own, "a snapshot read");
-                Ok((Val::declared(&QTy { ty: ty.clone(), display: false }), s))
+                let mut v = Val::declared(ty);
+                let stored = self.stored.get(query.as_str()).cloned().unwrap_or_default();
+                for field in stored {
+                    if !fits(&ty.ty, &field.ty) {
+                        return Err(self.err(format!(
+                            "a read of `{query}` as {:?}, which the program stores as {:?}",
+                            ty.ty, field.ty
+                        )));
+                    }
+                    // Decoding retains the qualifier the program stores; a read declared with a weaker one would
+                    // erase it at the storage boundary (LG2.19).
+                    if !admits(ty, field, false) {
+                        v.qual = v.qual.join(declared_qual(field).container());
+                    }
+                }
+                Ok((v, s))
             }
             Expr::PublishView { value } => {
                 let (_, mut s) = self.at(0, |c| c.expr(value, env))?;

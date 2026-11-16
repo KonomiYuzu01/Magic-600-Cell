@@ -37,17 +37,31 @@ one is listed here with its licence.
 - Capability separation: the checker records each entry's separation form (reads state, prepares previews) while the
   flow rule is off (BND.41) and never emits `LG3:capability.flow_refused` before LQ2 sets that rule (CT-BND-24,
   CT-ERR-15). Under chapter 07's interim grant table an own, forked or imported tool prepares no preview in a solving
-  session until the joint setting (BND.56, LG3.16), so the checker refuses one with `LG3:capability.not_granted`.
+  session until the joint setting (BND.56, LG3.16), so the checker refuses one with `LG3:capability.not_granted`,
+  also when an unresolved call or an open effect variable may prepare one.
 - What an own tool may read in a solving session stays open (BND.59): the checker reports the open cell and neither
   grants nor refuses it.
 - A base-type mismatch in a hand-built program is an `IrError`, not a diagnostic: the frozen catalogue has no code for
   it, and until the parser exists such a mismatch is a lowering fault.
 - Qualifiers through calls (LG2.19): a callable enters a slot only if its signature keeps every qualifier (its result
-  no more qualified than the slot's, each parameter taking what the slot passes). The checker does not unify type
-  variables: a result of a bare type variable keeps the qualifier, callable and fields of every argument bound to that
-  variable, any other generic result is display-qualified when a generic argument is, and a display value for a
-  generic parameter makes the call a pure display body. Records keep their field values, so a callable keeps its
-  effects and exact sinks through a record.
+  no more qualified than the slot's, each parameter taking what the slot passes), and a function's own result or
+  stored field is checked against its declared bound even when that bound has effect variables. The checker does not
+  unify type variables: a result of a bare type variable keeps the qualifier, callable and fields of every argument
+  bound to that variable, also through a callable's result, and binding one variable to values of incompatible types
+  is an `IrError`; any other generic result is display-qualified when a generic argument is, and a display value for a
+  generic parameter makes the call a pure display body. A call instantiates the effect variables of its result type,
+  and a closure's own effect variables are kept apart from captured ones. Records keep their field values, so a
+  callable keeps its effects and exact sinks through a record.
+- Approximate control through calls (LG2.20, LG2.22): a helper whose `Approx<p>` result is selected under approximate
+  control passes that control to its callers, so an exact use of the result is `LG2:type.exactness_violation`, not
+  `LG2:type.exact_required`; a display-qualified result shows its qualifier instead, so a later exact use erases it. A
+  call inside a `display_if` branch to a function that may reach the caller again, directly or through a function
+  reference, is refused: approximate data cannot bound recursion. A workspace or snapshot read keeps the display
+  qualifier of every field the program stores under that name.
+- Known limits of M1, leads from the Fable attack (owner decision, 15 November 2026) that no test confirms yet: an
+  effect variable of a view's callable parameter instantiated at a call site with a workspace or preview effect is not
+  checked; recursion through a callable parameter whose bound has no effect variable is not traced; and the
+  approximate-control bit follows named functions only, not declared callable types.
 - Not in M1, because they need the runtime (M2, M3): the built-in tool column of the grant table, the fixed
   acknowledgement of BND.43, the saved-word half of CT-LG3-07, the undo half of CT-LG3-03 and research output that
   never becomes a solving preview (BND.61).

@@ -18,7 +18,7 @@ fn effects(p: &Program, module: &str, function: &str) -> Vec<Effect> {
 }
 
 fn snapshot() -> Expr {
-    read_snapshot("n", Ty::Nat)
+    read_snapshot("n", exact(Ty::Nat))
 }
 
 fn preview() -> Expr {
@@ -370,4 +370,65 @@ fn ct_bnd_24_flow_refused_is_never_emitted_before_lq2() {
             }
         }
     }
+}
+
+// The Fable attack on the M1 checker (owner decision, 15 November 2026): each program below slipped past the
+// effect inference before pull request 149 fixed it.
+
+#[test]
+fn ct_lg3_01_a_generic_result_keeps_the_callables_of_every_record_it_may_return() {
+    let t = || exact(Ty::Var("T".into()));
+    let holder = |b| exact(Ty::Record(vec![("f".into(), exact(fn_ty(vec![], exact(Ty::Unit), b)))]));
+    let nothing = closure(vec![], exact(Ty::Unit), unit());
+    let quiet = helper("quiet", vec![], holder(bound(&[], &[])), record(vec![("f", nothing)]));
+    let loud =
+        helper("loud", vec![], holder(bound(&[Effect::PreparePreview], &[])), record(vec![("f", fn_ref("prepare"))]));
+    let second = helper("second", vec![param("a", t()), param("b", t())], t(), var("b"));
+    let picked = call("second", vec![call("quiet", vec![]), call("loud", vec![])]);
+    let p = tool(vec![previewer(), quiet, loud, second, entry(Ty::Unit, call_value(field(picked, "f"), vec![]))]);
+    assert_eq!(effects(&p, "tool", "go"), [Effect::PreparePreview]);
+    let a = admit_in(&p, Profile::Solving, &Grant::none(), &Policy::interim());
+    assert_eq!(a.codes(), [NOT_GRANTED]);
+    assert_eq!(a.separation, Separation { reads_state: false, prepares_previews: true });
+}
+
+#[test]
+fn ct_lg3_01_a_closure_parameter_does_not_capture_the_effect_variable_of_a_captured_callable() {
+    let poly = || exact(fn_ty(vec![], exact(Ty::Unit), bound(&[], &["e"])));
+    let run = || {
+        let both = closure(
+            vec![param("g", poly())],
+            exact(Ty::Unit),
+            let_("u", call_value(var("f"), vec![]), call_value(var("g"), vec![])),
+        );
+        let nothing = closure(vec![], exact(Ty::Unit), unit());
+        helper("run", vec![param("f", poly())], exact(Ty::Unit), call_value(both, vec![nothing]))
+    };
+    let go = |f: &str| entry(Ty::Unit, call("run", vec![fn_ref(f)]));
+    let previews = tool(vec![previewer(), run(), go("prepare")]);
+    assert_eq!(effects(&previews, "tool", "go"), [Effect::PreparePreview]);
+    let a = admit_in(&previews, Profile::Solving, &Grant::none(), &Policy::interim());
+    assert_eq!(a.codes(), [NOT_GRANTED]);
+    assert_eq!(a.separation, Separation { reads_state: false, prepares_previews: true });
+    let peek = helper("peek", vec![], exact(Ty::Unit), let_("n", snapshot(), unit()));
+    let reads = tool(vec![peek, run(), go("peek")]);
+    let a = admit_in(&reads, Profile::Solving, &Grant::none(), &Policy::interim());
+    assert_eq!(a.separation, Separation { reads_state: true, prepares_previews: false });
+    assert_eq!(a.open_cells, ["BND.59"]);
+}
+
+#[test]
+fn ct_lg3_01_a_call_instantiates_the_effect_variable_of_its_result_type() {
+    let poly = || exact(fn_ty(vec![], exact(Ty::Unit), bound(&[], &["e"])));
+    let same = || helper("same", vec![param("f", poly())], poly(), var("f"));
+    let handed_back = || call_value(call("same", vec![fn_ref("prepare")]), vec![]);
+    let direct = tool(vec![previewer(), same(), entry(Ty::Unit, handed_back())]);
+    assert_eq!(effects(&direct, "tool", "go"), [Effect::PreparePreview]);
+    let wash = helper("wash", vec![param("g", poly())], exact(Ty::Unit), handed_back());
+    let nothing = closure(vec![], exact(Ty::Unit), unit());
+    let washed = tool(vec![previewer(), same(), wash, entry(Ty::Unit, call("wash", vec![nothing]))]);
+    assert_eq!(effects(&washed, "tool", "go"), [Effect::PreparePreview]);
+    let a = admit_in(&washed, Profile::Solving, &Grant::none(), &Policy::interim());
+    assert_eq!(a.codes(), [NOT_GRANTED]);
+    assert_eq!(a.separation, Separation { reads_state: false, prepares_previews: true });
 }

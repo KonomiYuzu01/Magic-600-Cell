@@ -328,7 +328,7 @@ fn ct_lg2_05_storage_keeps_the_qualifier() {
         "go",
         vec![],
         exact(Ty::Unit),
-        use_exact(ExactRole::Goal, read_snapshot("workspace.saved_condition", Ty::ApproxBool)),
+        use_exact(ExactRole::Goal, read_snapshot("workspace.saved_condition", exact(Ty::ApproxBool))),
     )]);
     assert_eq!(fields(&only(&decoded)), (V, Some("ApproxBool"), false, false));
     // A word chosen by display_if, stored in an exact field.
@@ -408,7 +408,7 @@ fn lg2_20_display_branches_and_display_bodies_are_pure() {
         "peek",
         xy(),
         exact(Ty::Unit),
-        publish_view(display_if(less(), read_snapshot("tint", Ty::Colour), colour("blue"))),
+        publish_view(display_if(less(), read_snapshot("tint", exact(Ty::Colour)), colour("blue"))),
     )]);
     let d = only(&read);
     assert_eq!((d.code, d.path.as_str()), (EFFECT_UNDECLARED, "0.1"));
@@ -479,4 +479,112 @@ fn malformed_ir_is_an_error_not_a_diagnostic() {
     assert!(check(&private).is_err());
     let exact_condition = tool(vec![helper("f", vec![], display(Ty::Nat), display_if(boolean(true), nat(1), nat(2)))]);
     assert!(check(&exact_condition).is_err());
+}
+
+// The Fable attack on the M1 checker (owner decision, 15 November 2026): each program below slipped past the checker
+// before pull request 149 fixed it. The leads were confirmed by these tests; the fixes are the checker's.
+
+#[test]
+fn ct_lg2_05_a_type_variable_bound_through_a_callable_result_keeps_its_qualifier() {
+    let t = || exact(Ty::Var("T".into()));
+    let u = || exact(Ty::Var("U".into()));
+    let steered = || closure(vec![], display(Ty::Word), display_if(less(), word("w1"), word("w2")));
+    let pipe = helper(
+        "pipe",
+        vec![
+            param("f", exact(fn_ty(vec![], t(), bound(&[], &["e"])))),
+            param("g", exact(fn_ty(vec![t()], u(), bound(&[], &["d"])))),
+        ],
+        u(),
+        call_value(var("g"), vec![call_value(var("f"), vec![])]),
+    );
+    let same = closure(vec![param("w", exact(Ty::Word))], exact(Ty::Word), var("w"));
+    let sent = propose(call("pipe", vec![steered(), same]), target("t"));
+    let d = only(&tool(vec![pipe, command("go", xy(), exact(Ty::Receipt), sent)]));
+    assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("go", "0", (V, Some("Word"), false, true)));
+    // The same binding reaches an exact goal inside the callee: the call runs a display instance of it.
+    let aim = helper(
+        "aim",
+        vec![param("f", exact(fn_ty(vec![], t(), bound(&[], &["e"]))))],
+        exact(Ty::Unit),
+        use_exact(ExactRole::Goal, call_value(var("f"), vec![])),
+    );
+    let d = only(&tool(vec![aim, command("go", xy(), exact(Ty::Unit), call("aim", vec![steered()]))]));
+    assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("go", "root", (V, Some("T"), true, false)));
+}
+
+#[test]
+fn ct_lg2_05_a_generic_result_keeps_the_result_qualifier_of_every_callable_it_may_return() {
+    let t = || exact(Ty::Var("T".into()));
+    let second = helper("second", vec![param("a", t()), param("b", t())], t(), var("b"));
+    let fixed = || closure(vec![], exact(Ty::Word), word("w1"));
+    let steered = || closure(vec![], display(Ty::Word), display_if(less(), word("w2"), word("w3")));
+    for args in [vec![fixed(), steered()], vec![steered(), fixed()]] {
+        let chosen = call_value(call("second", args), vec![]);
+        let d =
+            only(&tool(vec![second.clone(), command("go", xy(), exact(Ty::Receipt), propose(chosen, target("t")))]));
+        assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("go", "0", (V, Some("Word"), false, true)));
+    }
+}
+
+#[test]
+fn ct_lg2_05_a_display_instance_cannot_hand_back_a_closure_that_previews_its_argument() {
+    let t = || exact(Ty::Var("T".into()));
+    let previews = || bound(&[c600_ir::Effect::PreparePreview], &[]);
+    let later = helper(
+        "later",
+        vec![param("v", t()), param("k", exact(fn_ty(vec![t()], exact(Ty::Unit), previews())))],
+        exact(fn_ty(vec![], exact(Ty::Unit), previews())),
+        closure(vec![], exact(Ty::Unit), call_value(var("k"), vec![var("v")])),
+    );
+    let send = || {
+        closure(vec![param("w", exact(Ty::Word))], exact(Ty::Unit), let_("r", propose(var("w"), target("t")), unit()))
+    };
+    let go = |arg: Expr| command("go", xy(), exact(Ty::Unit), call_value(call("later", vec![arg, send()]), vec![]));
+    assert!(report(&tool(vec![later.clone(), go(word("w1"))])).is_admitted());
+    // A steered argument makes the handed-back callable display-qualified: calling it is a display region.
+    let d = only(&tool(vec![later, go(display_if(less(), word("w1"), word("w2")))]));
+    assert_eq!((d.function.as_str(), d.path.as_str(), d.code), ("go", "root", EFFECT_UNDECLARED));
+}
+
+#[test]
+fn lg2_20_a_captured_effect_variable_cannot_hide_exact_evidence_from_a_display_branch() {
+    let poly = || exact(fn_ty(vec![], exact(Ty::Unit), bound(&[], &["e"])));
+    let both = closure(
+        vec![param("g", poly())],
+        exact(Ty::Unit),
+        let_("u", call_value(var("f"), vec![]), call_value(var("g"), vec![])),
+    );
+    let nothing = closure(vec![], exact(Ty::Unit), unit());
+    let run = helper("run", vec![param("f", poly())], exact(Ty::Unit), call_value(both, vec![nothing]));
+    let ev = helper("ev", vec![], exact(Ty::Unit), use_exact(ExactRole::Evidence, word("e1")));
+    let go = command("go", xy(), exact(Ty::Unit), display_if(less(), call("run", vec![fn_ref("ev")]), unit()));
+    let d = only(&tool(vec![ev, run, go]));
+    assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("go", "1", (V, Some("Word"), true, false)));
+}
+
+#[test]
+fn ct_lg2_05_a_stored_display_field_is_not_decoded_as_exact() {
+    let keep = command("keep", xy(), exact(Ty::Unit), write_workspace("tint", display(Ty::Colour), tint()));
+    let chosen =
+        match_(read_snapshot("tint", exact(Ty::Colour)), vec![(Lit::Colour("red".into()), word("w1"))], word("w2"));
+    let d = only(&tool(vec![keep, command("go", vec![], exact(Ty::Receipt), propose(chosen, target("t")))]));
+    assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("go", "0.0", (V, Some("Colour"), false, true)));
+}
+
+#[test]
+fn lg2_20_approximate_data_cannot_bound_recursion() {
+    let ab = vec![param("a", exact(approx())), param("b", exact(approx()))];
+    let again = call("count", vec![prim(Prim::ApproxAdd, vec![var("a"), var("a")]), var("b")]);
+    let count = helper("count", ab, display(Ty::Nat), display_if(approx_less(var("a"), var("b")), again, nat(0)));
+    let d = only(&tool(vec![count]));
+    assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("count", "1", (V, Some("Nat"), true, false)));
+}
+
+#[test]
+fn lg2_22_an_approx_selected_under_approximate_control_keeps_its_precedence_through_a_helper() {
+    let pick = helper("pick", xy(), exact(approx()), display_if(less(), to_approx(var("x")), to_approx(var("y"))));
+    let add = helper("add", xy(), exact(Ty::Nat), exact_add(call("pick", vec![var("x"), var("y")]), nat(1)));
+    let d = only(&tool(vec![pick, add]));
+    assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("add", "0", (V, Some("Approx"), true, false)));
 }

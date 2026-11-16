@@ -277,9 +277,11 @@ pub enum Expr {
         value: Box<Expr>,
         field: String,
     },
+    /// A snapshot or workspace read. The type carries the stored field's display qualifier: decoding retains it
+    /// (LG2.19, storage row).
     ReadSnapshot {
         query: String,
-        ty: Ty,
+        ty: QTy,
     },
     PublishView {
         value: Box<Expr>,
@@ -405,7 +407,7 @@ pub mod build {
     pub fn field(value: Expr, name: &str) -> Expr {
         Expr::Field { value: Box::new(value), field: name.into() }
     }
-    pub fn read_snapshot(query: &str, ty: Ty) -> Expr {
+    pub fn read_snapshot(query: &str, ty: QTy) -> Expr {
         Expr::ReadSnapshot { query: query.into(), ty }
     }
     pub fn publish_view(value: Expr) -> Expr {
