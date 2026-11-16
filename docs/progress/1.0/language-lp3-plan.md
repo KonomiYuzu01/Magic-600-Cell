@@ -197,6 +197,8 @@ acceptance check and stop condition.
   to the closure digest; CT-RTE-08's source leg and 36 of LX-3's 75 frozen keys of CT-RTE-07 on 600-cell-Full;
   three more (A08, A17 and A18: a word's length, inverse and concatenation) with LP2's batch 2 (pull request 176),
   39 in all. CT-RTE-08's persisted words come with C7; CT-RTE-07's other keys wait for M5, C7, the IR draft and C5.
+  A built-in approval of a program for another IR version now gives the checker's code, as the other author columns
+  do (a gap LP2's conformance tests for LG5 found).
 - C2, display next (`rust/c600-display`, branch `claude/lp3-c2-display-next`), built: CT-RPI-14 over the drafted
   chart repertoire (RPI.34 is open), CT-RPI-18 on the CPU reference, CT-RPI-19's Windows leg, CT-RPI-22's chart half
   (so CT-RPI-22 runs whole) and the headless part of CT-RPI-32. The rest of CT-RPI-32 needs the stage module's checker

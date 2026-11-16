@@ -1042,10 +1042,11 @@ run or not applicable is no pass (PHS.63).
   the closure digest (RTE.45's `source_bound` variant for route RT1). `load` refuses a closure whose digest differs
   from the approval's, so substituted dependency bytes never run, and `Ready::run` runs the approved entry through
   `c600-run`'s boundary.
-- Tests (`c600-module/tests/`): CT-RTE-08's source leg (`ct_rte_08.rs`, 13 tests): the approval binds every
+- Tests (`c600-module/tests/`): CT-RTE-08's source leg (`ct_rte_08.rs`, 14 tests): the approval binds every
   executed module; substituted, missing and mismatched dependencies are refused; record forms are checked before
-  use; a moved file keeps its closure and its approval; dynamic code is refused; capability separation holds at the
-  preview point. CT-RTE-07 on 600-cell-Full (`ct_rte_07_full.rs`): 39 of LX-3's 75 frozen keys, each run ten times
+  use; a moved file keeps its closure and its approval; dynamic code is refused; a program for another IR version
+  or execution contract is refused with the checker's code in every author column; capability separation holds at
+  the preview point. CT-RTE-07 on 600-cell-Full (`ct_rte_07_full.rs`): 39 of LX-3's 75 frozen keys, each run ten times
   with one SHA-256 over its canonical result, engine side and store, and a check that every key is either realised
   or listed as left, exactly once.
 - Differences from the corpus, listed in the tests: A25 is a false refusal, which the corpus permits (separation

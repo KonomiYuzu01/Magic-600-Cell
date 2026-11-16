@@ -65,7 +65,9 @@
 //!   as a draft until C5's host bridge, which decides whether the command layer's preview admission applies it
 //!   instead (integrator, 16 November 2026).
 //! - **Refusal codes** (LG5.11, ERR). A syntax diagnostic keeps its own `LG1` code; a lowering error is
-//!   `LG4:input.ir_rejected`; a session identity outside `supports` is `LG5:input.model_not_supported`.
+//!   `LG4:input.ir_rejected`; a program for another IR version or execution contract is the checker's
+//!   `LG4:input.ir_version_unsupported` in every author column, before the entry is looked up; a session identity
+//!   outside `supports` is `LG5:input.model_not_supported`.
 //! - **CT-RTE-07's canonical result** (RTE.46). [`Outcome::canonical`] writes the outcome, code, stop position, used
 //!   amounts, output bytes, shell answers (refusal codes only, and whether the split refused) and captures, in FP.5's
 //!   canonical JSON. Timing, host and path fields are not in it. A key's ten-run digest hashes these bytes for each of
@@ -121,6 +123,9 @@ pub mod code {
     pub const MODEL_NOT_SUPPORTED: &str = "LG5:input.model_not_supported";
     /// The IR fails validation at load (LG4.1, LG4.2).
     pub const IR_REJECTED: &str = c600_run::interp::code::IR_REJECTED;
+    /// The program asks for an IR version or execution contract that the checker and the interpreter do not run
+    /// (LG4.1, LG5.4).
+    pub const IR_VERSION_UNSUPPORTED: &str = c600_check::IR_VERSION_UNSUPPORTED;
     /// A record's field structure is invalid for an active read (FP.10, PS1.13).
     pub const PERSISTENCE_FORMAT: &str = "PS1:input.persistence_format";
     /// An unknown format and version pair, or a required extension (FP.10, PS2).
