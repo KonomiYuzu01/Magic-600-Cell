@@ -583,6 +583,23 @@ impl Kernel {
         self.solved.clone()
     }
 
+    /// The state with these labels, if they are a permutation of the slots. This is how a stored state object is read
+    /// back (LP2, M6). It does not decide whether the state is reachable: that stays the caller's evidence, such as
+    /// the stored object's digest.
+    pub fn state_from_labels(&self, labels: Vec<i32>) -> Option<Snapshot> {
+        if labels.len() != SLOTS {
+            return None;
+        }
+        let mut seen = vec![false; SLOTS];
+        for &label in &labels {
+            let slot = usize::try_from(label).ok().filter(|&slot| slot < SLOTS)?;
+            if std::mem::replace(&mut seen[slot], true) {
+                return None;
+            }
+        }
+        Some(Snapshot::new(&self.model.model_id, labels))
+    }
+
     /// The number of frame nodes in `orbit`'s execution tree.
     pub fn star_nodes(&self, orbit: usize) -> Option<usize> {
         self.model.trees.get(orbit).map(|tree| tree.parent.len())

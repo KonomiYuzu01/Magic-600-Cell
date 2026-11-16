@@ -52,6 +52,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "c600-session"
+version = "0.0.0"
+dependencies = [
+ "c600-check",
+ "c600-digest",
+ "c600-ir",
+ "c600-kernel",
+ "c600-run",
+ "c600-syntax",
+]
+
+[[package]]
 name = "c600-syntax"
 version = "0.0.0"
 dependencies = [
