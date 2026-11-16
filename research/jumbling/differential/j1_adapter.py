@@ -1,8 +1,7 @@
 """J1 observations for the differential harness; no candidate implementation.
 
-Explicit private dependency: State._commit(twist, inside, journal). Named-cap
-straddlers and exact certificate checks use differential.straddlers, whose
-module documents its additional private J1 dependencies.
+J1 is reached through sim.api (JI.52) and public names. Named-cap straddlers
+and exact certificate checks use differential.straddlers.
 """
 
 import sys
@@ -14,21 +13,12 @@ import hashlib
 
 import numpy as np
 import sim
+from sim import api
 from sim.twists import Twist, TwistError, TwistMenu
 
 from .harness import EMPTY_MOVED_SET, HarnessInputError, StepResult, moved_set_hash
 from .menu_order import order_digest
 from .straddlers import check_certificate, straddler_set
-
-
-class _ObservedState(sim.State):
-    """Capture the inside set at J1's successful commit, without classifying again."""
-
-    committed_inside = None
-
-    def _commit(self, twist, inside, journal):
-        super()._commit(twist, inside, journal)
-        self.committed_inside = inside.copy()
 
 
 class J1Engine:
@@ -67,7 +57,7 @@ class J1Engine:
                     raise HarnessInputError('J1 changed the menu item order')
             except (TwistError, ValueError, KeyError, TypeError) as exc:
                 raise HarnessInputError(f'cannot load J1 menu: {exc}') from exc
-        self._state = _ObservedState(self._ctx, menu=loaded)
+        self._state = sim.State(self._ctx, menu=loaded)
         self._menu = loaded
         self._cap_twists = {}
         return self._observe('start')
@@ -92,14 +82,10 @@ class J1Engine:
             twist = self._cap_twists[grip][item]
         else:
             raise HarnessInputError('unknown J1 step kind')
-        state.committed_inside = None
-        outcome = state.apply(twist)
+        outcome, inside = api.apply_with_inside(state, twist)
         if outcome.status != 'admissible':
             return self._refused(outcome.status)
-        if state.committed_inside is None:
-            raise AssertionError('J1 admitted a twist without committing its inside set')
-        return self._observe(outcome.status, outcome.moved,
-                             moved_set_hash(state.committed_inside.tolist()))
+        return self._observe(outcome.status, outcome.moved, moved_set_hash(inside.tolist()))
 
     def survey(self, grips):
         letters = {'admissible': 'a', 'blocked': 'b', 'uncertain': 'u'}

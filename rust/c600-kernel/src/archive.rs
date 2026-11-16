@@ -6,6 +6,8 @@
 //!   Python's `gzip.decompress` does.
 //! - [`Zip`]: a ZIP archive as NumPy's `savez` writes it, with ZIP64 extra fields in the local headers.
 //! - [`read_npy`]: an NPY array (format versions 1 and 2) of little-endian `int32` or `int16`.
+//! - [`read_npy_raw`]: the same container with `<f8` allowed too, its payload left undecoded (the jumbling crate reads
+//!   binary64 bit patterns as exact dyadic rationals).
 //!
 //! Every reader checks what its container declares: signatures, CRC-32 values, sizes and lengths. Nothing is
 //! repaired, and every output is bounded by a caller's limit. Error messages never quote the input.
@@ -600,8 +602,37 @@ pub struct Npy {
     pub values: Vec<i32>,
 }
 
+/// A C-order NPY array whose little-endian payload the caller decodes itself.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NpyRaw {
+    /// `"<i4"`, `"<i2"` or `"<f8"`.
+    pub descr: String,
+    pub shape: Vec<usize>,
+    /// The payload bytes, `width` bytes per value in C order.
+    pub data: Vec<u8>,
+}
+
+/// Reads an NPY file of format version 1.0 or 2.0 holding `<i4`, `<i2` or `<f8` values in C order, without decoding
+/// them. `<f8` payloads are binary64 bit patterns: the jumbling crate reads them as exact dyadic rationals, so no
+/// float type is involved (CT-KN2-05).
+pub fn read_npy_raw(bytes: &[u8]) -> Result<NpyRaw, ArchiveError> {
+    let (descr, shape, data) = npy_parts(bytes, &[("<i4", 4), ("<i2", 2), ("<f8", 8)])?;
+    Ok(NpyRaw { descr, shape, data: data.to_vec() })
+}
+
 /// Reads an NPY file of format version 1.0 or 2.0 holding little-endian `int32` or `int16` values in C order.
 pub fn read_npy(bytes: &[u8]) -> Result<Npy, ArchiveError> {
+    let (descr, shape, data) = npy_parts(bytes, &[("<i4", 4), ("<i2", 2)])?;
+    let values = if descr == "<i4" {
+        data.chunks_exact(4).map(|b| i32::from_le_bytes([b[0], b[1], b[2], b[3]])).collect()
+    } else {
+        data.chunks_exact(2).map(|b| i16::from_le_bytes([b[0], b[1]]) as i32).collect()
+    };
+    Ok(Npy { descr, shape, values })
+}
+
+/// The dtype, shape and payload of an NPY file whose dtype is one of `accepted` (name and byte width).
+fn npy_parts<'a>(bytes: &'a [u8], accepted: &[(&str, usize)]) -> Result<(String, Vec<usize>, &'a [u8]), ArchiveError> {
     if bytes.len() < 10 || &bytes[..6] != b"\x93NUMPY" {
         return Err(ArchiveError("Not an NPY array"));
     }
@@ -619,10 +650,9 @@ pub fn read_npy(bytes: &[u8]) -> Result<Npy, ArchiveError> {
     if fortran {
         return Err(ArchiveError("Fortran-order NPY arrays are not read"));
     }
-    let width = match descr.as_str() {
-        "<i4" => 4,
-        "<i2" => 2,
-        _ => return Err(ArchiveError("Unsupported NPY dtype")),
+    let width = match accepted.iter().find(|(name, _)| *name == descr) {
+        Some(&(_, width)) => width,
+        None => return Err(ArchiveError("Unsupported NPY dtype")),
     };
     let count = shape
         .iter()
@@ -632,12 +662,7 @@ pub fn read_npy(bytes: &[u8]) -> Result<Npy, ArchiveError> {
     if Some(data.len()) != count.checked_mul(width) {
         return Err(ArchiveError("NPY data length disagrees with its shape"));
     }
-    let values = if width == 4 {
-        data.chunks_exact(4).map(|b| i32::from_le_bytes([b[0], b[1], b[2], b[3]])).collect()
-    } else {
-        data.chunks_exact(2).map(|b| i16::from_le_bytes([b[0], b[1]]) as i32).collect()
-    };
-    Ok(Npy { descr, shape, values })
+    Ok((descr, shape, data))
 }
 
 /// Parses the header dictionary NumPy writes: `{'descr': ..., 'fortran_order': ..., 'shape': (...), }`.

@@ -1,0 +1,18 @@
+[package]
+name = "c600-jumble"
+description = "The jumbling half of the kernel API: exact poses over Q(sqrt 5), K+, piece regions and twists (LP2, M5)"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+c600-digest = { path = "../c600-digest" }
+c600-kernel = { path = "../c600-kernel" }
+# Approved by the owner on 16 November 2026 (option A), pinned exactly; the archives are vendored in ../vendor.
+num-bigint = { version = "=0.5.1", default-features = false, features = ["std"] }
+num-integer = { version = "=0.1.47", default-features = false, features = ["std"] }
+num-traits = { version = "=0.2.19", default-features = false, features = ["std"] }
+
+[[bin]]
+name = "c600-jumble-adapter"
+path = "src/bin/adapter.rs"
