@@ -71,9 +71,10 @@ fn half_turn(axis: [i64; 3]) -> Candidate {
 
 /// CT-KN3-04 (part: free mode on the jumbling puzzle with explicit N and D: grid members return themselves at
 /// distance zero; C=(69264588888054800706886561/2^79,0,0) with N=1, D=16 gives H(1,0,0); `LX9B1|C|1:1|0:0|0:0` with
-/// N=0, D=1 gives the identity at squared distance 8/5; M refuses with `KN2:input.menu_binding_mismatch`; bounds
-/// outside the search limit refuse with `KN2:resource_limit.rotation_search_bound` with no search; the decoding half
-/// is the unit test `rotation::tests`; not run: a search near the limit, which is research-only and unbudgeted).
+/// N=0, D=1 gives the identity at squared distance 8/5; at N=0 the grid is the identity alone, so N=0 with the largest
+/// admitted D=2^40 returns it after one comparison; M refuses with `KN2:input.menu_binding_mismatch`; bounds outside
+/// the search limit refuse with `KN2:resource_limit.rotation_search_bound` with no search; the decoding half is the
+/// unit test `rotation::tests`; not run: a search for N ≥ 1 near the limit, which is research-only and unbudgeted).
 #[test]
 fn free_mode_chooses_the_nearest_grid_point_exactly() {
     let ctx = ctx();
@@ -113,6 +114,20 @@ fn free_mode_chooses_the_nearest_grid_point_exactly() {
         assert_eq!(resolution.request_digest, wire::request_digest(&resolution.binding.request));
     }
 
+    // At N = 0 the grid is the identity alone, at every denominator, and no half-turn axis: the search stops at
+    // denominator 1, so even the largest admitted D returns at once.
+    for d in [2, 1 << 40] {
+        for (request, distance) in [
+            (b"LX9B1|C|1:1|0:0|0:0\n".to_vec(), Q5::of(8, 0, 5)),
+            (wire::half_turn_request(["1:0", "0:0", "0:0"]), Q5::of(8, 0, 1)),
+        ] {
+            let text = String::from_utf8_lossy(&request).into_owned();
+            let resolution = rotation::resolve(ctx, None, &free(request, 0, d)).expect(&text);
+            let expected = Choice::Free { chosen: cayley(1, [0, 0, 0]), distance, comparisons: 1 };
+            assert_eq!(resolution.choice, expected, "{text}, D={d}");
+        }
+    }
+
     // The resolved rotation is `twist.apply`'s input on the jumbling puzzle.
     let resolution = rotation::resolve(ctx, None, &free(wire::cayley_request(["3:3", "0:0", "0:0"]), 1, 16)).unwrap();
     let mut state = State::new(None);
@@ -141,10 +156,14 @@ fn free_mode_chooses_the_nearest_grid_point_exactly() {
     assert_eq!(chooser_runs(), runs, "a refused request runs no chooser");
 }
 
-/// CT-KN3-05 (whole: at cap 0 against the pinned I_a menu, a direct off-menu C request refuses with
-/// `KN2:input.twist_off_menu`; the quarter-turn C=(1,0,0) drag scores all 60 items exactly, picks 15 with the complete
-/// tie list 15, 29, 40, 43 and records the winner, the ties, the distance and both digests; the reversed menu keeps
-/// its set digest, changes its order digest to 1a87a420…, refuses old bindings and old M requests with
+/// CT-KN3-05 (whole: at cap 0 against the pinned I_a menu, direct off-menu requests refuse with
+/// `KN2:input.twist_off_menu`, the C request C=(1,0,0) and the H requests H(1,1,0), H(0,1,-1) and H(1,2,3); the
+/// menu's half-turns H(1,0,0), H(0,1,0) and H(0,0,1) are the direct members 11, 1 and 10, matched against the fixture's
+/// exact matrices, and each one's drag picks it alone at distance zero; the quarter-turn C=(1,0,0) drag
+/// scores all 60 items exactly, picks 15 with the complete tie list 15, 29, 40, 43 and records the winner, the ties,
+/// the distance and both digests; the H(1,1,0) drag picks 23 with the complete tie list 23, 24, 41, 54 at
+/// (9 − 3√5)/2, and the H(1,2,3) drag picks 25 alone at (45 − 15√5)/14; the reversed menu keeps its set digest,
+/// changes its order digest to 1a87a420…, refuses old bindings and old M requests with
 /// `KN2:input.menu_binding_mismatch`, and its drag picks the smallest new index 16, the old 43) and CT-LG2-16 (part:
 /// a menu drag resolves through the kernel call and records its choice; not run: the language half).
 #[test]
@@ -179,6 +198,50 @@ fn a_drag_scores_the_pinned_order_and_reversing_the_menu_rebinds_it() {
         (Some(&Value::String(SET.into())), Some(&Value::String(ORDER.into())))
     );
     assert_eq!(record.get("request_digest"), Some(&Value::String(c600_digest::sha256_hex(&quarter))));
+
+    // H requests take the same two paths. The menu holds the half-turns about the frame's three axes (A4's retained
+    // items, as the fixture's exact matrices, not `half_turn_matrix`), so each one is a direct member and its own
+    // drag's only item at distance zero; no other rational axis is on the menu.
+    let members = [(["1:0", "0:0", "0:0"], 11, 47), (["0:0", "1:0", "0:0"], 1, 1), (["0:0", "0:0", "1:0"], 10, 35)];
+    for (axis, at, kidx) in members {
+        let half = wire::half_turn_request(axis);
+        let direct = rotation::resolve(ctx, Some(&menu), &bound(half.clone(), Operation::MenuDirect, &menu)).unwrap();
+        assert_eq!((&direct.choice, twists[at].kidx), (&Choice::MenuDirect { index: at }, Some(kidx)), "H{axis:?}");
+        assert_eq!(direct.twist.matrix, twists[at].matrix, "H{axis:?}");
+        let own = rotation::resolve(ctx, Some(&menu), &bound(half, Operation::MenuDrag, &menu)).unwrap();
+        assert_eq!(own.choice, Choice::MenuDrag { index: at, ties: vec![at], distance: Q5::zero() }, "H{axis:?}");
+    }
+    for axis in [["1:0", "1:0", "0:0"], ["0:0", "1:0", "-1:0"], ["1:0", "2:0", "3:0"]] {
+        let half = wire::half_turn_request(axis);
+        assert_eq!(
+            refusal(Some(&menu), &bound(half, Operation::MenuDirect, &menu)),
+            codes::TWIST_OFF_MENU,
+            "H{axis:?}"
+        );
+    }
+    // Off-menu drags. For two half-turns at one cap, Σ(R − M)² = 8 − 8(u·v)²: u = (1,1,0)/√2 against the icosahedral
+    // axis v = (φ, 1, 1/φ)/2 gives (9 − 3√5)/2, where four items tie exactly, and u = (1,2,3)/√14 against
+    // v = (1, 1/φ, φ)/2 gives (45 − 15√5)/14.
+    let drags = [
+        (["1:0", "1:0", "0:0"], &[23, 24, 41, 54][..], Q5::of(9, -3, 2)),
+        (["1:0", "2:0", "3:0"], &[25][..], Q5::of(45, -15, 14)),
+    ];
+    for (axis, expected_ties, expected_distance) in drags {
+        let half = wire::half_turn_request(axis);
+        let requested = Request::decode(&half).expect("canonical").matrix(ctx, 0).expect("an H request");
+        let pulled = rotation::resolve(ctx, Some(&menu), &bound(half, Operation::MenuDrag, &menu)).unwrap();
+        let Choice::MenuDrag { index, ties, distance } = &pulled.choice else { panic!("a drag choice") };
+        assert_eq!(
+            (*index, ties.as_slice(), distance),
+            (expected_ties[0], expected_ties, &expected_distance),
+            "H{axis:?}"
+        );
+        for (i, twist) in twists.iter().enumerate() {
+            let d = frobenius2(&requested, &twist.matrix);
+            assert!(if ties.contains(&i) { d == *distance } else { d > *distance }, "H{axis:?}, item {i}");
+        }
+        assert_eq!(pulled.twist.matrix, twists[*index].matrix, "H{axis:?}");
+    }
 
     // Direct members: the identity by C, every item by M; M with a drag, an index past the menu or another menu
     // refuses.

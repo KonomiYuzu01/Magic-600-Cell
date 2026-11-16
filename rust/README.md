@@ -371,12 +371,15 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   `codes`.
 - Contract tests (`c600-jumble/tests/kn3.rs` and `rotation::tests`): CT-KN3-05 whole (LX-9's vectors: the quarter
   turn's drag picks 15 of the ties 15, 29, 40 and 43; the reversed menu's order digest is 1a87a420…, old bindings
-  refuse and its drag picks 16, the old 43); in part CT-KN3-04 (not run: a search near the limit), CT-KN3-06 (not run:
-  the shell's gesture producer) and CT-LG2-16's kernel half (not run: the language half).
+  refuse and its drag picks 16, the old 43; and H requests: the frame axes' half-turns are the direct members 11, 1
+  and 10, H(1,1,0), H(0,1,-1) and H(1,2,3) refuse with `KN2:input.twist_off_menu`, and the H(1,1,0) drag picks 23 of
+  the ties 23, 24, 41 and 54 at (9 − 3√5)/2); in part CT-KN3-04 (not run: a search for N ≥ 1 near the limit),
+  CT-KN3-06 (not run: the shell's gesture producer) and CT-LG2-16's kernel half (not run: the language half).
 - Draft choices (`rotation`'s documentation): half-turn candidates are the canonical integer axes with every
   |component| ≤ N, at denominator 1; free mode compares the whole grid, (2N+1)³·D Cayley points and the half-turns,
-  with no pruning, budget or cancellation; the order of refusals; 600-cell-Full resolves against the pinned menu and
-  refuses a free binding with `KN2:input.menu_binding_mismatch`.
+  with no budget or cancellation and no pruning except at N = 0, where the grid is the identity alone and one
+  comparison decides; the order of refusals; 600-cell-Full resolves against the pinned menu and refuses a free binding
+  with `KN2:input.menu_binding_mismatch`.
 - Unchanged: selection 2 (a journal's float request is an adapter error) and `CONTRACT_REVISION`, which still names
   A1 to A4 although the state contract's revision is now `state-contract 2026-11-15 A1-A6`; renaming it changes the
   identity block J1 is compared with, so it waits for the integrator. KN3.3's exact double description is `dd`; no

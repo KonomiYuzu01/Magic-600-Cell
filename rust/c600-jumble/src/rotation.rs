@@ -19,8 +19,9 @@
 //!    (1, axis, after the Cayley point (1, axis)), which is A1's order with half-turns after Cayley points.
 //! 2. Free mode enumerates every grid candidate in A1's tie order: (2N+1)³·D Cayley points and, when eligible,
 //!    the half-turn axes. Its cost is that count of exact comparisons (KN3.6), reported as `comparisons` and not
-//!    journalled; nothing is pruned. Free mode is research-only (JI.35), and no budget or cancellation (KN7) is built
-//!    for it here.
+//!    journalled; nothing is pruned, except at N = 0, where the grid is the identity alone and the search stops at
+//!    denominator 1 after one comparison. Free mode is research-only (JI.35), and no budget or cancellation (KN7) is
+//!    built for it here, so a search for N ≥ 1 near the limit runs its whole count.
 //! 3. Distances: free mode records the squared Frobenius distance in Q, 8(1 − (q·c)²/(|q|²|c|²)) for the request and
 //!    candidate quaternions q and c; a drag scores the 4 × 4 matrices at the cap by Σ(R − M)² in Q(√5).
 //! 4. Order of refusals: decoding (`rotation_request_malformed`), the binding's shape, a cap outside 0..599
@@ -363,7 +364,10 @@ fn free_search(q: &[BigInt; 4], n: i64, d: u128, half_turns: bool) -> (Candidate
             best = Some((cand, score, cc));
         }
     };
-    for den in 1..=d {
+    // At N = 0 every grid point is the identity, which A1's order takes at denominator 1, and no half-turn axis
+    // exists: the larger denominators only repeat it and lose the tie, so they are not compared.
+    let last = if n == 0 { 1 } else { d };
+    for den in 1..=last {
         for x in -n..=n {
             for y in -n..=n {
                 for z in -n..=n {
