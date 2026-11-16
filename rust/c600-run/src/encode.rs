@@ -21,7 +21,7 @@ enum Task<'a> {
     Byte(u8),
 }
 
-fn string(s: &str, out: &mut Vec<u8>) {
+pub(crate) fn string(s: &str, out: &mut Vec<u8>) {
     out.push(b'"');
     for c in s.chars() {
         match c {
