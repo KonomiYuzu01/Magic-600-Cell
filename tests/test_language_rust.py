@@ -1,8 +1,10 @@
 """Run the Rust tests of 600 Cell Script: `cargo test --locked --offline` in rust/ (LP2 plan, section 3).
 
-The workspace uses the standard library only, so the run needs no network, and a lockfile that does not match the
-manifests fails it. A missing Rust toolchain fails the check: a test that did not run is no pass (PHS.63). A pass is
-headless source and fixture evidence, not Windows/DirectX, input, long-session or performance evidence.
+The workspace uses the standard library and the owner-approved big-integer crates, which are vendored in rust/vendor,
+so the run needs no network, and a lockfile that does not match the manifests fails it. The kernel's oracle replay
+runs in release in its own check, `tests/test_kernel_oracle.py`. A missing Rust toolchain fails the check: a test
+that did not run is no pass (PHS.63). A pass is headless source and fixture evidence, not Windows/DirectX, input,
+long-session or performance evidence.
 """
 from __future__ import annotations
 

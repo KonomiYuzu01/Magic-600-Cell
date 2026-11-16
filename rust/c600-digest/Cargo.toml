@@ -1,0 +1,8 @@
+[package]
+name = "c600-digest"
+description = "SHA-256 for 600 Cell Script: source digests and the counter-addressed generator (LP2)"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
