@@ -247,3 +247,31 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   action: R6, the KN2.9 agreement and the cached path share the inverse-move handling, which O01 to O03 cover.
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run. The timings the check
   prints are informational, not performance evidence.
+
+## Status of LP3, C5: the source route
+
+- `c600-tools` holds the built-in 600-cell-Full tool as 600 Cell Script source,
+  [`full_600_cell.6cs`](c600-tools/src/full_600_cell.6cs), in edition `6cs-draft-1` (syntax candidate A). Its one
+  entry, the exported command `preview_word(w: Word)`, proposes the word the solver named to `operation.preview` and
+  returns the acknowledgement's two fields as a record `{base, id}`. The IR draft has no list types and no word
+  operations, so the library entries of chapter 03 (LB1 to LB4) wait for the IR.
+- Admission: the checker admits the source with no diagnostic. The entry's only effect is `preview` and it requests no
+  capability, so it prepares previews and reads no state (LG3.13, BND.39). `c600-check`'s `Profile::Solving` is the
+  column of a solver's own tool, which prepares no preview until the joint setting; `tool::admit_built_in` applies the
+  built-in column of chapter 07 section 8 over the checker's report. A variant that also reads state is refused with
+  `LG3:capability.not_granted`. The class (`analysis`, `checking`, after LB6.5) and the row set are declared in the
+  crate's Rust manifest, because the IR and the syntax carry no module manifest yet.
+- The tool runs on `c600-run` through `Boundary` in the solving profile, in process (the runtime's own process, C3,
+  is not on main). Against an engine double that records each proposal, the program receives only the fixed
+  acknowledgement whether the engine built the preview, refused it, or preview admission refused the word, and its
+  charges do not depend on the answer (BND.42, BND.43).
+- `expand` is the runner's recipe expansion through the kernel, outside any program. Over O01 to O07 (3,201 steps)
+  each step the oracle accepted or refused for protection expands to a literal word with the recorded
+  `expansion_sha256` and `primitive_count`. Of O07's ten invalid steps, four are single words of integer moves, which
+  pass to the tool unchanged; the other six have no literal word, so the route stops there with the kernel's refusal.
+- Tests (`c600-tools/tests/`): `tool.rs`, `ack.rs` and `expand.rs`, with parts of CT-LB6-03, CT-BND-15, CT-BND-07 and
+  CT-BND-11, each naming its part. No conformance ID runs whole.
+- Not built: the host bridge onto `c600-command`, the binary `c600-lp3-source` and `tests/test_lp3_source_route.py`.
+  They wait for the command layer (C1) on main.
+- Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
+- Evidence kind: source and fixture.
