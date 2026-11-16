@@ -11,8 +11,9 @@ The differential checks of the M4 leads follow (work/reviews/leads/2026-11-16-m4
 until a check confirms them): L3, the frozen cases still match `core.py`, `session.py` and `make_cases.py`; question
 4, the kernel's refusal texts are 0.4's; L2, a trace does not depend on which cases ran before it in the process; L4
 and L1, type, shape, limit and JSON confusions beyond O07 are `invalid-input` steps with O07's unchanged state
-(`tests/test_oracle.py` checks that 0.4 refuses each of them); and CT-KN2-05, no float on a decision path of the
-kernel's sources.
+(`tests/test_oracle.py` checks that 0.4 refuses each of them); L5 to L7, the language's new reference cases N01 to
+N04 of `tools/oracle/make_new_cases.py` (PHS.18; tests/fixtures/oracle-new) replay equal; and CT-KN2-05, no float on
+a decision path of the kernel's sources.
 
 Last, the adapter's `agree` command runs the KN2.9 agreement test: the star cache's net maps against per-primitive
 replay for the first, middle and last frame node of every orbit and both signs (210 stars), and the word [1, -1]. It
@@ -46,8 +47,11 @@ WORKSPACE = ROOT / "rust"
 KERNEL = WORKSPACE / "c600-kernel"
 ASSETS = ROOT / "assets"
 INPUTS = ROOT / "work" / "experiments" / "language-lx" / "inputs"
+NEW_INPUTS = ROOT / "tests" / "fixtures" / "oracle-new"
+NEW_MANIFEST = "MANIFEST-oracle-new.json"
 COMPARE = ROOT / "tools" / "oracle" / "compare.py"
 GENERATOR = "tools/oracle/make_cases.py"
+NEW_GENERATOR = "tools/oracle/make_new_cases.py"
 ADAPTER = "c600-oracle-adapter"
 CANDIDATE = "c600-kernel-full-candidate"
 STEPS = {"O01": 2400, "O02": 500, "O03": 210, "O04": 25, "O05": 50, "O06": 6, "O07": 10}
@@ -140,6 +144,91 @@ def verify_inputs() -> list[Path]:
     print(f"inputs: {len(paths)} case files match MANIFEST-oracle.json; core.py, session.py and make_cases.py have "
           "the digests the manifest and every case's generator block name")
     return paths
+
+
+def verify_new_inputs() -> list[Path]:
+    """The language's new cases N01 to N04 (PHS.18; leads L5 to L7), checked against MANIFEST-oracle-new.json and the
+    reference: `core.py`, `session.py` and `make_new_cases.py` must have the digests the manifest and every case's
+    generator block name. Each case must also hold what its lead asks for, so a regenerated case cannot silently stop
+    testing it."""
+    manifest = json.loads((NEW_INPUTS / NEW_MANIFEST).read_text(encoding="utf-8"))
+    reference = {"core_sha256": sha256_file(ROOT / "core.py"), "session_sha256": sha256_file(ROOT / "session.py"),
+                 "script_sha256": sha256_file(ROOT / NEW_GENERATOR)}
+    require(manifest["script"] == NEW_GENERATOR and all(manifest[key] == value for key, value in reference.items()),
+            f"core.py, session.py or make_new_cases.py differs from the digests {NEW_MANIFEST} pins")
+    require(sorted(manifest["files"]) == [f"{name}.json.gz" for name in NEW_STEPS],
+            f"{NEW_MANIFEST} lists other case files")
+    paths = []
+    for name, steps in NEW_STEPS.items():
+        path = NEW_INPUTS / f"{name}.json.gz"
+        entry = manifest["files"][path.name]
+        data = path.read_bytes()
+        require(len(data) == entry["bytes"] and hashlib.sha256(data).hexdigest() == entry["sha256"],
+                f"{path.name} differs from {NEW_MANIFEST}")
+        case = json.loads(gzip.decompress(data))
+        generator = case["generator"]
+        require(generator["script"] == NEW_GENERATOR
+                and all(generator[key] == value for key, value in reference.items()),
+                f"{path.name} names another make_new_cases.py, core.py or session.py than the checked-in ones")
+        require(case["case_id"] == name and len(case["steps"]) == steps, f"{path.name} does not hold {steps} steps")
+        NEW_CASE_CHECKS[name]([step["expect"] for step in case["steps"]], case)
+        paths.append(path)
+    print(f"inputs: {len(paths)} new case files match {NEW_MANIFEST} and hold what leads L5 to L7 ask for")
+    return paths
+
+
+def l5_planner_shapes(expects: list[dict], case: dict) -> None:
+    """N01: every recipe is star-only, and the fifth of each orbit, a star and its own inverse, has an empty net,
+    keeps the state and expands to twice the star's letters."""
+    empty = hashlib.sha256(b"").hexdigest()
+    for index, step in enumerate(case["steps"]):
+        require(all(part["kind"] == "star" for part in step["recipe"]), "N01 holds a word")
+        if index % 5 == 4:
+            expect = expects[index]
+            require(expect["accepted"] and expect["net_moved_stickers"] == 0 and expect["net_sha256"] == empty
+                    and expect["support"] == [] and expect["state_hash"] == expects[index - 1]["state_hash"]
+                    and expect["primitive_count"] % 2 == 0 and expect["primitive_count"] > 0,
+                    f"N01 step {index}, a star and its inverse, does not have an empty net")
+    require(any(len(step["recipe"]) == 8 for step in case["steps"]), "N01 holds no eight-star commutator")
+
+
+def l6_node_tour(expects: list[dict], case: dict) -> None:
+    """N02: every step is one star and is accepted; the last 35 repeat a star of each orbit seen before."""
+    steps = case["steps"]
+    require(all(len(step["recipe"]) == 1 and step["recipe"][0]["kind"] == "star" for step in steps)
+            and all(expect["accepted"] for expect in expects), "N02 holds a step that is not one accepted star")
+    again = [step["recipe"] for step in steps[-35:]]
+    require([recipe[0]["orbit"] for recipe in again] == list(range(35))
+            and all(recipe in [step["recipe"] for step in steps[:-35]] for recipe in again),
+            "N02 does not end with a star of every orbit seen before")
+
+
+def l7_several_protected(expects: list[dict], case: dict) -> None:
+    """N03: the star whose whole support is protected is refused with every support row in conflict, a star that
+    moves some protected orbits is refused with just those rows, an allowed star is accepted and a generator, which
+    moves every orbit, is refused."""
+    protected = set(case["protected"])
+    require(len(protected) >= 3, "N03 protects fewer than three orbits")
+    require([expect["error"] for expect in expects] == ["protected", "protected", None, "protected"],
+            "N03's steps are not refused, refused, accepted, refused")
+    require(expects[0]["conflicts"] == expects[0]["support"], "N03's first star does not conflict on all its support")
+    rows = [row for row in expects[1]["support"] if row["orbit"] in protected]
+    require(expects[1]["conflicts"] == rows and rows != expects[1]["support"],
+            "N03's second star does not conflict on just its protected rows")
+
+
+def l7_all_protected(expects: list[dict], case: dict) -> None:
+    """N04: with every orbit protected, a star and its inverse (an empty net) are accepted, a generator and a star
+    conjugated by it are refused."""
+    require(case["protected"] == list(range(35)), "N04 does not protect every orbit")
+    require([expect["error"] for expect in expects] == [None, "protected", "protected"]
+            and expects[0]["net_moved_stickers"] == 0, "N04's steps are not accepted, refused, refused")
+
+
+# The step counts of N01 to N04 and the check of what each case holds.
+NEW_STEPS = {"N01": 175, "N02": 1505, "N03": 4, "N04": 3}
+NEW_CASE_CHECKS = {"N01": l5_planner_shapes, "N02": l6_node_tour, "N03": l7_several_protected,
+                   "N04": l7_all_protected}
 
 
 def rust_text(source: str, name: str) -> str:
@@ -278,7 +367,8 @@ def trace_command(adapter: Path, pairs: list[tuple[Path, Path]]) -> list[str]:
 
 
 def check_traces(adapter: Path, cases: list[Path], folder: Path) -> tuple[dict[str, Path], dict]:
-    """CT-KN2-01 (part: the 600-cell-Full half, O01 to O07; the J1 harness half is M5's) and CT-KN2-04 (part: the blocked and invalid steps of 600-cell-Full keep the state and progress
+    """CT-KN2-01 (part: the 600-cell-Full half, O01 to O07 here and N01 to N04 in `check_new_cases`; the J1 harness
+    half is M5's) and CT-KN2-04 (part: the blocked and invalid steps of 600-cell-Full keep the state and progress
     digests; uncertain words exist only in the jumbling half, M5)."""
     traces = {case.name[:3]: folder / f"{case.name[:3]}.trace.json" for case in cases}
     start = time.monotonic()
@@ -412,6 +502,30 @@ def check_invalid_steps(adapter: Path, cases: list[Path], folder: Path, lead: st
           + ", ".join(name for name, _ in recipes[:6]) + (", ..." if len(recipes) > 6 else ""))
 
 
+def check_new_cases(adapter: Path, cases: list[Path], folder: Path) -> float:
+    """Leads L5 to L7 and CT-KN2-01 (part: as in `check_traces`): the language's new cases N01 to N04 (PHS.18) replay
+    equal in one adapter process: star-only recipes in the planner's shapes, star nodes beyond first, middle and last
+    with re-entry after eviction, and protection with several and with all orbits protected."""
+    traces = {case.name[:3]: folder / f"{case.name[:3]}.trace.json" for case in cases}
+    start = time.monotonic()
+    out = run(trace_command(adapter, [(case, traces[case.name[:3]]) for case in cases]))
+    seconds = time.monotonic() - start
+    require(out.returncode == 0, f"the adapter's trace command exited with {out.returncode} on N01 to N04: "
+                                 f"{out.stderr.strip()}")
+    summary = one_line(out, "the adapter's trace command")
+    print(f"trace N01 to N04: {seconds:.1f} s wall; per case: "
+          + ", ".join(f"{c['case_id']} {c['steps']} steps {c['seconds']} s" for c in summary["cases"]))
+    for case in cases:
+        name = case.name[:3]
+        code, report, line = compare(case, traces[name])
+        print(f"compare {name}: exit {code} {line}")
+        require(code == 0 and report.get("status") == "equal" and report.get("omitted_fields") == []
+                and report.get("case_id") == name and report.get("steps") == NEW_STEPS[name],
+                f"compare.py did not report {name} equal with every field")
+    print(f"PASS: L5 to L7, the new cases N01 to N04 equal, {sum(NEW_STEPS.values())} steps, no omitted fields")
+    return seconds
+
+
 def check_agreement(adapter: Path) -> dict:
     out = run([str(adapter), "agree", "--assets", str(ASSETS)])
     require(out.returncode == 0, f"the adapter's agree command exited with {out.returncode}: {out.stderr.strip()}")
@@ -433,6 +547,7 @@ def main() -> int:
     start = time.monotonic()
     try:
         cases = verify_inputs()
+        new_cases = verify_new_inputs()
         check_refusal_texts()
         check_ct_kn2_05_no_float_on_a_decision_path()
         adapter = build(cargo)
@@ -444,13 +559,16 @@ def main() -> int:
             order = check_order_independence(adapter, cases, traces, folder)
             check_invalid_steps(adapter, cases, folder, "L4", invalid_recipes.type_and_limit_family())
             check_invalid_steps(adapter, cases, folder, "L1", invalid_recipes.json_edges())
+            new = check_new_cases(adapter, new_cases, folder)
         agreement = check_agreement(adapter)
     except (Failed, OSError, KeyError, ValueError) as error:
         print(f"FAIL: {error}")
         return 1
     print(f"timings (release): model load {summary['load_seconds']} s, oracle run {summary['total_seconds']} s, "
-          f"order runs {order:.1f} s, agreement {agreement['seconds']} s; whole check {time.monotonic() - start:.1f} s")
-    print("PASS: the kernel replays O01 to O07 exactly through its API, and the star cache agrees with replay")
+          f"order runs {order:.1f} s, new cases {new:.1f} s, agreement {agreement['seconds']} s; whole check "
+          f"{time.monotonic() - start:.1f} s")
+    print("PASS: the kernel replays O01 to O07 and N01 to N04 exactly through its API, and the star cache agrees "
+          "with replay")
     return 0
 
 

@@ -22,7 +22,7 @@ sys.path.insert(0, str(ROOT))
 import numpy as np
 
 from core import Model, PuzzleState, canonical, invrecipe
-from tools.oracle import compare, invalid_recipes, make_cases, replay_trace
+from tools.oracle import compare, invalid_recipes, make_cases, make_new_cases, replay_trace
 
 
 class OracleTests(unittest.TestCase):
@@ -261,6 +261,33 @@ class OracleTests(unittest.TestCase):
                         self.model.normalize([full] * 29 + [last, star])
                 else:
                     self.assertEqual(self.model.normalize([full] * 29 + [last, star])[1], 3_000_000)
+
+    def test_new_cases_regenerate_to_the_tracked_cases(self):
+        """PHS.18 (M4 leads L5 to L7): `tools/oracle/make_new_cases.py` writes N01 to N04 and their manifest as
+        tests/fixtures/oracle-new tracks them, so the new cases are the reference's and stay reproducible. Only the
+        interpreter and NumPy versions and the gzip digests are left out, since they name the environment and its zlib
+        build; the pinned engine environment writes the tracked bytes exactly, and `tests/test_kernel_oracle.py` checks
+        them against the manifest before it replays them through the Rust kernel."""
+        out = self.directory / "new-cases"
+        make_new_cases.write_new_cases(out, self.model)
+        tracked = ROOT / "tests" / "fixtures" / "oracle-new"
+        names = sorted(path.name for path in tracked.iterdir())
+        self.assertEqual(sorted(path.name for path in out.iterdir()), names)
+
+        def without_environment(block):
+            return {key: value for key, value in block.items() if key not in ("python", "numpy")}
+
+        for name in names:
+            with self.subTest(file=name):
+                new, old = (folder / name for folder in (out, tracked))
+                if name == make_new_cases.MANIFEST:
+                    new, old = (json.loads(path.read_text(encoding="utf-8")) for path in (new, old))
+                    # The file entries hold the gzip sizes and digests.
+                    self.assertEqual(set(new.pop("files")), set(old.pop("files")))
+                else:
+                    new, old = (json.loads(gzip.decompress(path.read_bytes())) for path in (new, old))
+                    new["generator"], old["generator"] = map(without_environment, (new["generator"], old["generator"]))
+                self.assertEqual(without_environment(new), without_environment(old))
 
     def test_streaming_candidate_fails_invalid_suffixes(self):
         case = self.cases["O07"]
