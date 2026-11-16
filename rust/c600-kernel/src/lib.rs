@@ -643,13 +643,13 @@ impl Kernel {
             }
         }
         let (source, destination) = engine::net_from_map(&map);
-        Ok(self.effect_of(source, destination, &self.letters(recipe)))
+        Ok(self.effect_of(source, destination, &self.expansion(recipe)))
     }
 
     /// The effect of a recipe by replaying every letter of its expansion: the reference of the KN2.9 agreement test.
     pub fn effect_by_replay(&self, recipe: &Recipe) -> Result<Effect, Error> {
         self.same_model(&recipe.model_id)?;
-        let letters = self.letters(recipe);
+        let letters = self.expansion(recipe);
         let mut map: Vec<i32> = (0..SLOTS as i32).collect();
         let mut scratch = Vec::new();
         for &m in &letters {
@@ -660,8 +660,15 @@ impl Kernel {
         Ok(self.effect_of(source, destination, &letters))
     }
 
-    /// The literal letters of a recipe's expansion.
-    pub fn letters(&self, recipe: &Recipe) -> Vec<i32> {
+    /// The literal letters of a recipe's expansion. A recipe of another model is refused, since its stars would be
+    /// expanded with this model's seeds and relocations (KN1.4).
+    pub fn letters(&self, recipe: &Recipe) -> Result<Vec<i32>, Refusal> {
+        self.same_model(&recipe.model_id)?;
+        Ok(self.expansion(recipe))
+    }
+
+    /// The letters of a recipe whose model the caller has checked.
+    fn expansion(&self, recipe: &Recipe) -> Vec<i32> {
         let mut letters = Vec::with_capacity(recipe.length);
         engine::expand(&self.model, &recipe.steps, &mut letters);
         letters

@@ -387,9 +387,9 @@ fn the_ceiling_counts_star_letters() {
     };
     let full = recipe(0).unwrap();
     assert_eq!(full.primitive_count(), 3_000_000);
-    let letters = kernel.letters(&full);
+    let letters = kernel.letters(&full).unwrap();
     assert_eq!(letters.len(), 3_000_000);
-    assert_eq!(letters[3_000_000 - length..], kernel.letters(&last));
+    assert_eq!(letters[3_000_000 - length..], kernel.letters(&last).unwrap());
     let over = recipe(1).unwrap_err();
     assert_eq!(over.code, codes::PRIMITIVE_CEILING);
     assert_eq!(over.message, "Preview expansion exceeds 3,000,000 primitives; split the batch");
@@ -403,7 +403,7 @@ fn a_word_recipe_and_a_word_agree() {
     assert_eq!(from_json, direct);
     assert_eq!(direct.steps(), [Step::Word(vec![3, -1200, 77])]);
     assert_eq!(direct.model_id(), kernel.identity().model_id);
-    assert_eq!(kernel.letters(&direct), [3, -1200, 77]);
+    assert_eq!(kernel.letters(&direct).unwrap(), [3, -1200, 77]);
     assert_eq!(kernel.effect(&from_json).unwrap(), kernel.effect_by_replay(&direct).unwrap());
 }
 
@@ -426,13 +426,13 @@ fn star_expansion_and_its_inverse() {
         let plus = star(orbit, node, 1);
         let Step::Star(step) = &plus.steps()[0] else { panic!("not a star step") };
         assert_eq!((step.orbit(), step.node(), step.sign()), (orbit, node, 1));
-        let letters = kernel.letters(&plus);
+        let letters = kernel.letters(&plus).unwrap();
         assert_eq!(letters.len(), plus.primitive_count());
         // invword(path) + invword(relocation) + seed + relocation + path
         let inverse_path: Vec<i32> = step.path().iter().rev().map(|m| -m).collect();
         assert!(letters.starts_with(&inverse_path) && letters.ends_with(step.path()));
         let inverted: Vec<i32> = letters.iter().rev().map(|m| -m).collect();
-        assert_eq!(kernel.letters(&star(orbit, node, -1)), inverted);
+        assert_eq!(kernel.letters(&star(orbit, node, -1)).unwrap(), inverted);
     }
     assert_eq!(kernel.star_nodes(35), None);
 }
@@ -607,13 +607,13 @@ fn ct_ps1_12_normalisation_keeps_literal_prefixes_and_the_total() {
     ];
     let prefix = |count: usize| kernel.recipe(&parse(&format!("[{}]", steps[..count].join(", ")))).unwrap();
     let mut expected = vec![1, -1, 5];
-    expected.extend(kernel.letters(&star(4, 9, -1)));
+    expected.extend(kernel.letters(&star(4, 9, -1)).unwrap());
     expected.extend([-5, 5]);
-    expected.extend(kernel.letters(&star(4, 9, 1)));
-    assert_eq!(kernel.letters(&prefix(4)), expected);
+    expected.extend(kernel.letters(&star(4, 9, 1)).unwrap());
+    assert_eq!(kernel.letters(&prefix(4)).unwrap(), expected);
     for count in 1..=4 {
         let recipe = prefix(count);
-        let letters = kernel.letters(&recipe);
+        let letters = kernel.letters(&recipe).unwrap();
         assert_eq!(letters.len(), recipe.primitive_count());
         assert!(expected.starts_with(&letters), "prefix of {count} steps");
         assert_eq!(kernel.effect(&recipe).unwrap().expansion_sha256, digest(&letters));
@@ -646,7 +646,7 @@ fn ct_ps1_12_normalisation_keeps_literal_prefixes_and_the_total() {
     for sizes in [&[100_000, 100_000, 50_000][..], &[50_000, 100_000, 100_000], &[1, 99_999, 100_000, 49_999, 1]] {
         let recipe = chunked(sizes);
         assert_eq!(recipe.primitive_count(), 250_000);
-        assert_eq!(kernel.letters(&recipe), literal, "{sizes:?}");
+        assert_eq!(kernel.letters(&recipe).unwrap(), literal, "{sizes:?}");
     }
     // The net effect of a shorter word does not depend on its chunks either.
     let effect = |sizes: &[usize]| kernel.effect(&chunked(sizes)).unwrap();
