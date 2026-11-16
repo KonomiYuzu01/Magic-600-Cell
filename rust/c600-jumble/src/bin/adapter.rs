@@ -460,6 +460,9 @@ impl Adapter {
                     omega.iter().map(Q5::from_json_any).collect::<Result<_, _>>().map_err(Fail::Input)?;
                 json::object([("record", observe::cayley_record(&self.ctx, grip, &omega))])
             }
+            "project" | "sticker_test" | "retained_checkpoint" | "label_checkpoint" | "retained_word" => {
+                self.levels(op, request)?
+            }
             other => return Err(input(format!("unknown op {other}"))),
         };
         Ok(Some(result))
@@ -655,6 +658,211 @@ fn main() {
         };
         if writeln!(out, "{response}").and_then(|_| out.flush()).is_err() {
             break;
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------- levels and end tests (LP2, M8)
+
+/// A boolean flag, false when absent.
+fn flag(value: Option<&Value>, what: &str) -> Result<bool, Fail> {
+    match value {
+        None | Some(Value::Null) => Ok(false),
+        Some(Value::Bool(b)) => Ok(*b),
+        _ => Err(input(format!("{what} must be a boolean"))),
+    }
+}
+
+/// A word of signed 1-based primitive ids (generator k is id k + 1), as J1's `primitive` reads them.
+fn signed_ids(value: Option<&Value>, what: &str) -> Result<Vec<i64>, Fail> {
+    let items = value.and_then(Value::as_array).ok_or_else(|| input(format!("{what} must be a list")))?;
+    items
+        .iter()
+        .map(|v| match v {
+            Value::Int(n) if (1..=1200u64).contains(&n.unsigned_abs()) => Ok(*n),
+            _ => Err(input(format!("{what} lists signed 1-based primitive ids, 1 to 1200 in absolute value"))),
+        })
+        .collect()
+}
+
+/// ν as the ν row gives it: 45 values, the 43 bits in 0..1 and the two values modulo 5 in 0..4.
+fn nu_values(value: Option<&Value>) -> Result<Option<Vec<i64>>, Fail> {
+    let items = match value {
+        None | Some(Value::Null) => return Ok(None),
+        Some(Value::Array(items)) if items.len() == c600_jumble::levels::NU_LEN => items,
+        _ => return Err(input("nu must list 45 values")),
+    };
+    let mut out = Vec::with_capacity(items.len());
+    for (index, item) in items.iter().enumerate() {
+        let modulus = if index < 43 { 2 } else { 5 };
+        match item {
+            Value::Int(n) if (0..modulus).contains(n) => out.push(*n),
+            _ => return Err(input(format!("nu value {index} must be an integer in 0..{}", modulus - 1))),
+        }
+    }
+    Ok(Some(out))
+}
+
+/// The result of an end test, naming the state it read (KN0.6).
+fn naming(mut result: Value, state_digest: String) -> Value {
+    if let Value::Object(fields) = &mut result {
+        fields.insert("state".into(), Value::String(state_digest));
+    }
+    result
+}
+
+/// The requests of `c600_jumble::levels`. Each reads the current state, or the stored state that `state` names (see
+/// `keep`), and changes nothing, except `retained_word`:
+///
+/// - `project` (`level`, optional `values`): KN1.9's projection, total, partial with what is missing (the pieces off
+///   the lattice first), or refused with `KN1:input.level_not_held`; `values` adds the label or chamber arrays as
+///   base64 little-endian 32-bit integers;
+/// - `sticker_test`, `retained_checkpoint` (`witness`, a word of signed primitive ids, or `journal`, records from
+///   solved) and `label_checkpoint` (`reachability` `{kind, evidence}`, where a witnessed claim names its `journal`
+///   from solved instead of evidence, and optional `nu`, 45 values from the ν row): the end tests of A5;
+/// - `retained_word` (`word`, optional `budget`): the primitive twists of a retained word, one after another, refused
+///   whole, with nothing changed, at its first refused letter.
+impl Adapter {
+    fn read_state(&self, request: &Value) -> Result<&State, Fail> {
+        match request.get("state") {
+            None | Some(Value::Null) => self.state.as_ref().ok_or_else(|| input("start must come first")),
+            Some(Value::String(name)) => self.states.get(name).ok_or_else(|| input(format!("no stored state {name}"))),
+            _ => Err(input("state must name a stored state or be null")),
+        }
+    }
+
+    /// Journal records from solved, each read as `apply` reads a record step, with the moved count it states.
+    fn journal(&self, value: Option<&Value>) -> Result<Option<(Vec<Twist>, Vec<Option<usize>>)>, Fail> {
+        let records = match value {
+            None | Some(Value::Null) => return Ok(None),
+            Some(Value::Array(records)) => records,
+            _ => return Err(input("a journal must be a list of records")),
+        };
+        let (mut twists, mut moved) = (Vec::with_capacity(records.len()), Vec::with_capacity(records.len()));
+        for (index, record) in records.iter().enumerate() {
+            match Twist::from_record(&self.ctx, record) {
+                Ok(twist) => twists.push(twist),
+                Err(RecordError::Invalid(message) | RecordError::Unsupported(message)) => {
+                    return Err(input(format!("journal record {index}: {message}")))
+                }
+            }
+            moved.push(match record.get("moved") {
+                None | Some(Value::Null) => None,
+                Some(Value::Int(n)) if *n >= 0 => Some(*n as usize),
+                _ => return Err(input(format!("journal record {index}: moved must be a non-negative integer"))),
+            });
+        }
+        Ok(Some((twists, moved)))
+    }
+
+    fn levels(&mut self, op: &str, request: &Value) -> Result<Value, Fail> {
+        use c600_jumble::levels::{self, Level, ReachKind, Reachability, Verdict, Witness};
+        let engine = |e: c600_jumble::state::EngineError| Fail::Engine(e.0);
+        match op {
+            "project" => {
+                let name =
+                    request.get("level").and_then(Value::as_str).ok_or_else(|| input("project needs a level"))?;
+                let level = Level::parse(name).ok_or_else(|| input(format!("{name} is no level of KN1.7")))?;
+                let values = flag(request.get("values"), "values")?;
+                let state = self.read_state(request)?;
+                let projection = levels::project(&self.ctx, state, level).map_err(engine)?;
+                Ok(projection.to_json(level, &state.digest(&self.ctx), values))
+            }
+            "sticker_test" => {
+                let state = self.read_state(request)?;
+                let verdict = levels::sticker_test(&self.ctx, state).map_err(engine)?;
+                Ok(naming(verdict.to_json(), state.digest(&self.ctx)))
+            }
+            "retained_checkpoint" => {
+                let word = match request.get("witness") {
+                    None | Some(Value::Null) => None,
+                    value => Some(signed_ids(value, "witness")?),
+                };
+                let journal = self.journal(request.get("journal"))?;
+                let state = self.read_state(request)?;
+                let witness = match (&word, &journal) {
+                    (Some(word), None) => Witness::Word(word.as_slice()),
+                    (None, Some((twists, _))) => Witness::Journal(twists.as_slice()),
+                    _ => return Err(input("a retained checkpoint needs a witness word or a journal, not both")),
+                };
+                let verdict = levels::retained_checkpoint(&self.ctx, state, witness).map_err(engine)?;
+                Ok(naming(verdict.to_json(), state.digest(&self.ctx)))
+            }
+            "label_checkpoint" => {
+                let claim = request.get("reachability").ok_or_else(|| input("a label checkpoint needs a claim"))?;
+                let kind = claim.get("kind").and_then(Value::as_str).and_then(ReachKind::parse).ok_or_else(|| {
+                    input("reachability kind must be witnessed, by_theorem, promised, refuted or open")
+                })?;
+                let journal = self.journal(claim.get("journal"))?;
+                let nu = nu_values(request.get("nu"))?;
+                let state = self.read_state(request)?;
+                let digest = state.digest(&self.ctx);
+                let reach = match (kind, journal) {
+                    (ReachKind::Witnessed, Some((twists, moved))) => {
+                        let shown =
+                            levels::witness(&self.ctx, state, state.menu_arc(), &twists, Some(moved.as_slice()))
+                                .map_err(engine)?;
+                        match shown {
+                            Ok(reach) => reach,
+                            Err(reason) => {
+                                let reason = format!("the journal does not witness this state: {reason}");
+                                return Ok(naming(Verdict::Unknown(reason).to_json(), digest));
+                            }
+                        }
+                    }
+                    (ReachKind::Witnessed, None) => {
+                        return Err(input("a witnessed claim names its journal from solved"))
+                    }
+                    (_, Some(_)) => return Err(input("only a witnessed claim names a journal")),
+                    (kind, None) => Reachability::stated(kind, claim.get("evidence").cloned().unwrap_or(Value::Null))
+                        .ok_or_else(|| input("a witnessed claim names its journal from solved"))?,
+                };
+                let verdict = levels::label_checkpoint(&self.ctx, state, &reach, nu.as_deref()).map_err(engine)?;
+                Ok(naming(verdict.to_json(), digest))
+            }
+            "retained_word" => {
+                let word = signed_ids(request.get("word"), "word")?;
+                let budget = budget(request.get("budget"))?;
+                let twists: Vec<Twist> = word
+                    .iter()
+                    .map(|&mid| levels::primitive(&self.ctx, mid))
+                    .collect::<Result<_, _>>()
+                    .map_err(engine)?;
+                let saved = self.state()?.clone();
+                let mut moved: Vec<u32> = Vec::new();
+                for (index, twist) in twists.iter().enumerate() {
+                    let Adapter { ctx, state, .. } = self;
+                    let state = state.as_mut().ok_or_else(|| input("start must come first"))?;
+                    let outcome = match state.apply(ctx, twist, budget, &[]) {
+                        Ok(outcome) => outcome,
+                        Err(error) => {
+                            self.state = Some(saved);
+                            return Err(Fail::Engine(error.0));
+                        }
+                    };
+                    if outcome.status != Status::Admissible {
+                        self.state = Some(saved);
+                        let message = format!("letter {index} of the retained word is {}", outcome.status.as_str());
+                        let mut result =
+                            self.refused_json(outcome.status.as_str(), Some(codes::WORD_BLOCKED_PREFIX), &message)?;
+                        if let Value::Object(fields) = &mut result {
+                            fields.insert("applied".into(), int(0));
+                            fields.insert("refused_at".into(), int(index as i64));
+                        }
+                        return Ok(result);
+                    }
+                    moved.extend_from_slice(&outcome.inside);
+                }
+                moved.sort_unstable();
+                moved.dedup();
+                let mut result = self.step_json("admissible", moved.len(), &moved_set_hash(&moved))?;
+                if let Value::Object(fields) = &mut result {
+                    fields.insert("applied".into(), int(twists.len() as i64));
+                    fields.insert("refused_at".into(), Value::Null);
+                }
+                Ok(result)
+            }
+            other => Err(input(format!("unknown op {other}"))),
         }
     }
 }

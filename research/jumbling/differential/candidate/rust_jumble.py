@@ -191,3 +191,29 @@ class RustJumbleEngine:
     def cayley(self, grip, omega):
         """The record of the exact Cayley rotation with parameter omega (three [a, b, d] triples) at grip."""
         return self.call('cayley', grip=grip, omega=[list(w) for w in omega])['record']
+
+    # ---------------------------------------------------------------------- levels and end tests (M8)
+    def project(self, level, *, state=None, values=False):
+        """KN1.9's projection of the current state, or of the stored state `state`, to `level`: total,
+        partial with what is missing, or refused; `values` adds the label or chamber arrays (base64 int32)."""
+        return self.call('project', level=level, state=state, values=values)
+
+    def sticker_test(self, *, state=None):
+        return self.call('sticker_test', state=state)
+
+    def retained_checkpoint(self, *, witness=None, journal=None, state=None):
+        """Section 5's retained-state checkpoint from a witness word of signed primitive ids, or from journal
+        records from solved."""
+        return self.call('retained_checkpoint', witness=None if witness is None else list(witness),
+                         journal=None if journal is None else list(journal), state=state)
+
+    def label_checkpoint(self, reachability, *, nu=None, state=None):
+        """A5's label checkpoint under a reachability claim {kind, evidence} (a witnessed claim names its
+        `journal` from solved), with ν from the ν row when known."""
+        return self.call('label_checkpoint', reachability=reachability,
+                         nu=None if nu is None else [int(x) for x in nu], state=state)
+
+    def retained_word(self, word, *, budget=None):
+        """The primitive twists of a retained word (signed 1-based ids), refused whole at its first refused
+        letter."""
+        return self.call('retained_word', word=[int(m) for m in word], budget=budget)
