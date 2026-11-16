@@ -10,7 +10,7 @@ use c600_check::{
     admit, admit_built_in, check, Admission, Grant, Policy, Profile, Row, Separation, EFFECT_UNDECLARED, NOT_GRANTED,
 };
 use c600_ir::build::*;
-use c600_ir::{Callee, Effect, Expr, Function, Program, Ty};
+use c600_ir::{Callee, Effect, Expr, Function, Prim, Program, Ty};
 use support::tool;
 
 /// The row c600-tools' built-in tool lists: proposals to `operation.preview`.
@@ -192,6 +192,35 @@ fn a_workspace_write_of_a_callable_may_carry_a_word() {
     assert_eq!(found(&built_in(&tool(vec![keep(Ty::Var("T".into()), var("x"))]), &kept, &Policy::interim())), refused);
     assert_eq!(found(&built_in(&tool(vec![keep(Ty::Word, var("w"))]), &kept, &Policy::interim())), refused);
     assert!(built_in(&tool(vec![keep(Ty::Nat, nat(1))]), &kept, &Policy::interim()).is_admitted());
+}
+
+/// CT-BND-15 (part: the workspace-change row of the built-in column for a write of a collection, a compressed word or a
+/// word equality key, LP2 drafts). A list, set or map with a word among its elements, keys or values holds the word,
+/// and a compressed word or a key holds its letters, so their write is refused at the write; conservatively also when
+/// they are built from the word the solver named. A collection whose type holds no word is written.
+#[test]
+fn a_workspace_write_of_a_collection_or_compressed_word_may_carry_a_word() {
+    let kept = rows(&[Row::Workspace("kept".into())]);
+    let keep =
+        |ty: Ty, value: Expr| command("go", w(), exact(Ty::Unit), write_workspace("kept", exact(ty), value)).exported();
+    let words = || Box::new(exact(Ty::Word));
+    let refused = [(NOT_GRANTED, "root")];
+    let cases = [
+        (Ty::List(words()), list(exact(Ty::Word), vec![word(&[1])])),
+        (Ty::List(words()), list(exact(Ty::Word), vec![var("w")])),
+        (Ty::Set(words()), set(exact(Ty::Word), vec![var("w")])),
+        (Ty::Map(Box::new(exact(Ty::Nat)), words()), map(exact(Ty::Nat), exact(Ty::Word), vec![(nat(1), var("w"))])),
+        (Ty::Map(words(), Box::new(exact(Ty::Nat))), map(exact(Ty::Word), exact(Ty::Nat), vec![(var("w"), nat(1))])),
+        (Ty::CompressedWord, prim(Prim::Compress, vec![var("w")])),
+        (Ty::WordEqualityKey, prim(Prim::WordKey, vec![var("w")])),
+    ];
+    for (ty, value) in cases {
+        let p = tool(vec![keep(ty.clone(), value)]);
+        assert_eq!(found(&built_in(&p, &kept, &Policy::interim())), refused, "{ty:?}");
+    }
+    let counts = list(exact(Ty::Nat), vec![nat(1)]);
+    assert!(built_in(&tool(vec![keep(Ty::List(Box::new(exact(Ty::Nat))), counts)]), &kept, &Policy::interim())
+        .is_admitted());
 }
 
 /// LG3.5 and LG3.6 at the entry: a run whose entry is no command changes no workspace and prepares no preview. The

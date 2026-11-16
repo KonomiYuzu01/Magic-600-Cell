@@ -12,7 +12,8 @@ phase), scans the test sources for PHS.62 markers and reads the hand-maintained 
 - not applicable: a note says so;
 - waiting: a note says what it waits for (it overrides named and missing, never a marker).
 
-A marker applies to the IDs before it on the same line, back to the previous marker on that line.
+A marker applies to the IDs before it on the same line, back to the previous marker on that line. It may name the
+evidence kind first, one of the table's columns, as in `CT-XXX-NN (synthetic, part: ...)`.
 Read only. Standard library only. Usage:
 
     python tools/language/ct_index.py [--phase LP2] [--summary | --markdown | --json] [--root DIR]
@@ -35,7 +36,7 @@ NOTE_KINDS = ("whole by union", "not applicable", "waiting", "missing despite na
 STATES = ("whole", "part", "named", "missing", "not applicable", "waiting")
 
 ID_RE = re.compile(r"CT-[A-Z0-9]+-\d{2}")
-MARK_RE = re.compile(r"\((whole|parts?)\b")
+MARK_RE = re.compile(r"\((?:(?:" + "|".join(COLUMNS) + r"), )?(whole|parts?)\b")
 COMMENT_PREFIX = re.compile(r"^\s*(?:///|//!|//|#)\s?")
 MAX_MARKER_TEXT = 1500
 
@@ -134,7 +135,8 @@ def scan_text(text: str) -> dict[str, dict]:
                 lowered = span.lower()
                 at = lowered.find("not run:")
                 if at >= 0:
-                    note = span[at + len("not run:"):].strip().rstrip(")").strip()
+                    note = span[at + len("not run:"):].strip()
+                    note = (note[:-1] if note.endswith(")") else note).strip()  # the marker's own parenthesis
                     if note:
                         item["not_run"].append(note)
         offset = line_end

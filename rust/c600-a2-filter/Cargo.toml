@@ -1,0 +1,9 @@
+[package]
+name = "c600-a2-filter"
+description = "The A2 filter (state contract A2, KN3.5): a binary64 sign test with a proven error bound that falls back to the exact path of c600-kernel (LP2)"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+c600-kernel = { path = "../c600-kernel" }

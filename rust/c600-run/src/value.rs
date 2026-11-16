@@ -40,6 +40,381 @@ pub enum Value {
     Fn(usize),
     /// A preview receipt (BND.42): the fields the host supplied. A field it withholds is absent.
     Receipt(Arc<Record>),
+    /// A list (LP2 draft): its elements in order.
+    List(Arc<List>),
+    /// LG2.13's word equality key: the letters after LG2.18's free reduction. It is never a `Word`.
+    WordEqualityKey(Arc<[i32]>),
+    /// A set (LP2 draft): its distinct elements in canonical key order ([`key_order`], DET.9).
+    Set(Arc<List>),
+    /// A map (LP2 draft): its entries, `{ key, value }` records ([`entry`]), in the canonical key order of their keys.
+    Map(Arc<List>),
+    /// LG2.16's compressed word (LP2 draft): a straight-line program with its exact length.
+    Compressed(Arc<Compressed>),
+}
+
+/// A list: its elements in order, its logical size and an upper bound of its canonical encoding (LP2 draft).
+#[derive(Debug)]
+pub struct List {
+    items: Vec<Value>,
+    size: u128,
+    bound: u128,
+}
+
+impl List {
+    /// DET.57: a 4-byte variant tag and the owned elements, each variable sequence among them with its 8-byte
+    /// length, as a record stores its fields. The list's own 8-byte length is counted where it is stored.
+    pub fn new(items: Vec<Value>) -> List {
+        let size = List::size_of(&items);
+        let bound = items.iter().fold(2u128, |s, v| s.saturating_add(v.bound()).saturating_add(1));
+        List { items, size, bound }
+    }
+
+    /// The logical size of a list, set or map over these items, before it is built.
+    pub fn size_of(items: &[Value]) -> u128 {
+        items.iter().fold(4u128, |s, v| s.saturating_add(v.size()).saturating_add(if v.is_sequence() { 8 } else { 0 }))
+    }
+
+    pub fn items(&self) -> &[Value] {
+        &self.items
+    }
+
+    /// The logical size of a list header over these elements: the variant tag and the sequence lengths.
+    pub fn header(items: &[Value]) -> u128 {
+        Record::header(items)
+    }
+}
+
+impl Drop for List {
+    fn drop(&mut self) {
+        let mut stack = std::mem::take(&mut self.items);
+        while let Some(v) = stack.pop() {
+            take_children(v, &mut stack);
+        }
+    }
+}
+
+/// A compressed word (LG2.16, KN2.10; LP2 draft): a straight-line program. Each part is a leaf of literal letters or
+/// the concatenation of two earlier parts, and the last part is the word. Its exact length, an unbounded integer, is
+/// known without expansion. Only the word itself may be empty: a concatenation never takes an empty part, so every
+/// part a reading visits holds letters. The parts' lengths and heights are derived host metadata, not payload.
+#[derive(Debug)]
+pub struct Compressed {
+    parts: Vec<Part>,
+    lengths: Vec<BigInt>,
+    heights: Vec<u128>,
+    /// DET.57's payload of the parts: per part a 4-byte variant tag, then for a leaf its 8-byte letter count and two
+    /// bytes per letter, as a word stores them, and for a concatenation its two 8-byte part numbers.
+    parts_size: u128,
+}
+
+/// One part of a compressed word (LP2 draft).
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Part {
+    Leaf(Arc<[i32]>),
+    /// The concatenation of two earlier parts, by their positions.
+    Concat(usize, usize),
+}
+
+/// The logical payload of a concatenation part (DET.57): its tag and two part numbers.
+const CONCAT_PART: u128 = 20;
+
+impl Compressed {
+    /// The word `letters` as a compressed word of one part.
+    pub fn leaf(letters: Arc<[i32]>) -> Compressed {
+        let mut c = Compressed { parts: Vec::new(), lengths: Vec::new(), heights: Vec::new(), parts_size: 0 };
+        c.push(Part::Leaf(letters));
+        c
+    }
+
+    /// `a` then `b`, without expansion. An empty operand gives the other. Otherwise the result holds the parts of `a`,
+    /// then those of `b` unless the two are one value, then their concatenation: a word joined to itself adds one part.
+    pub fn concat(a: &Arc<Compressed>, b: &Arc<Compressed>) -> Arc<Compressed> {
+        if a.length().is_zero() {
+            return b.clone();
+        }
+        if b.length().is_zero() {
+            return a.clone();
+        }
+        let mut c = Compressed {
+            parts: a.parts.clone(),
+            lengths: a.lengths.clone(),
+            heights: a.heights.clone(),
+            parts_size: a.parts_size,
+        };
+        let first = a.parts.len() - 1;
+        if !Arc::ptr_eq(a, b) && a.parts != b.parts {
+            let shift = a.parts.len();
+            c.parts.extend(b.parts.iter().map(|p| match p {
+                Part::Leaf(l) => Part::Leaf(l.clone()),
+                Part::Concat(i, j) => Part::Concat(i + shift, j + shift),
+            }));
+            c.lengths.extend(b.lengths.iter().cloned());
+            c.heights.extend(b.heights.iter().copied());
+            c.parts_size = c.parts_size.saturating_add(b.parts_size);
+        }
+        let second = c.parts.len() - 1;
+        c.push(Part::Concat(first, second));
+        Arc::new(c)
+    }
+
+    fn push(&mut self, part: Part) {
+        let (length, height, size) = match &part {
+            Part::Leaf(l) => (BigInt::from(l.len()), 0, 12 + 2 * l.len() as u128),
+            Part::Concat(i, j) => {
+                (&self.lengths[*i] + &self.lengths[*j], 1 + self.heights[*i].max(self.heights[*j]), CONCAT_PART)
+            }
+        };
+        self.parts.push(part);
+        self.lengths.push(length);
+        self.heights.push(height);
+        self.parts_size = self.parts_size.saturating_add(size);
+    }
+
+    /// The exact expanded length (LG2.16).
+    pub fn length(&self) -> &BigInt {
+        self.lengths.last().expect("a compressed word has a part")
+    }
+
+    /// The number of parts.
+    pub fn parts(&self) -> usize {
+        self.parts.len()
+    }
+
+    /// The longest chain of concatenations from the word to a leaf.
+    pub fn height(&self) -> u128 {
+        *self.heights.last().expect("a compressed word has a part")
+    }
+
+    /// DET.57's logical size: a 4-byte variant tag, the parts and the exact length as an unbounded integer. The part
+    /// count's 8-byte length is counted where the word is stored, as for a list.
+    pub fn size(&self) -> u128 {
+        4u128.saturating_add(self.parts_size).saturating_add(int_size(self.length()))
+    }
+
+    /// The size of `concat(a, b)` when neither is empty and the two are different values: a bound for any
+    /// concatenation of the two.
+    pub fn concat_bound(a: &Compressed, b: &Compressed) -> u128 {
+        let parts = a.parts_size.saturating_add(b.parts_size).saturating_add(CONCAT_PART);
+        4u128.saturating_add(parts).saturating_add(int_size(&(a.length() + b.length())))
+    }
+
+    /// The `count` letters from the exact position `start` in chronological order (LG4.6), or `None` if the range
+    /// passes the word's end. It descends to the leaf that holds `start`, then reads whole parts in order with an
+    /// explicit stack, so it visits at most 2·(height + count) + 1 parts and expands nothing outside the range.
+    pub fn expand(&self, start: &BigInt, count: usize) -> Option<Vec<i32>> {
+        if start.is_negative() || &(start + BigInt::from(count)) > self.length() {
+            return None;
+        }
+        let mut out = Vec::with_capacity(count);
+        if count == 0 {
+            return Some(out);
+        }
+        let mut pending = Vec::new();
+        let (mut at, mut offset) = (self.parts.len() - 1, start.clone());
+        let (leaf, from) = loop {
+            match &self.parts[at] {
+                Part::Concat(i, j) if offset < self.lengths[*i] => {
+                    pending.push(*j);
+                    at = *i;
+                }
+                Part::Concat(i, j) => {
+                    offset -= &self.lengths[*i];
+                    at = *j;
+                }
+                Part::Leaf(l) => break (l, usize::try_from(&offset).expect("an offset within its leaf")),
+            }
+        };
+        out.extend_from_slice(&leaf[from..leaf.len().min(from.saturating_add(count))]);
+        while out.len() < count {
+            match &self.parts[pending.pop().expect("the range lies within the word")] {
+                Part::Concat(i, j) => pending.extend([*j, *i]),
+                Part::Leaf(l) => out.extend_from_slice(&l[..l.len().min(count - out.len())]),
+            }
+        }
+        Some(out)
+    }
+}
+
+/// LG2.18's key of a Full word: a stack scan in chronological order that cancels only adjacent inverse pairs.
+pub fn free_reduction(letters: &[i32]) -> Vec<i32> {
+    let mut stack: Vec<i32> = Vec::with_capacity(letters.len());
+    for &l in letters {
+        if stack.last() == Some(&-l) {
+            stack.pop();
+        } else {
+            stack.push(l);
+        }
+    }
+    stack
+}
+
+/// The inverse of a word: its letters in reverse order, each negated (LG2.15).
+pub fn inverse(letters: &[i32]) -> Vec<i32> {
+    letters.iter().rev().map(|l| -l).collect()
+}
+
+/// The canonical key order (DET.9; LP2 draft), a total order on values. Exact numbers compare by value, `false` comes
+/// before `true`, texts compare by their scalar values, words and word keys by their letters, and lists, sets, maps,
+/// records and closures by their parts in order, each lexicographically with a prefix first; values of different
+/// kinds compare by kind. Equal numbers in different representations, an `Int` and a `Rat` of one value, have their
+/// representation as the explicit secondary key: `Int`, then `Rat`, then `Q5`.
+pub fn key_order(a: &Value, b: &Value) -> Ordering {
+    walk_order(a, b, false).then_with(|| walk_order(a, b, true))
+}
+
+/// The canonical key order without its secondary key: the order of key equality, under which an `Int` and a `Rat` of
+/// one value are one key, as exact equality has it.
+pub fn value_order(a: &Value, b: &Value) -> Ordering {
+    walk_order(a, b, false)
+}
+
+/// One step of a key comparison.
+enum Step<'a> {
+    Pair(&'a Value, &'a Value),
+    Name(&'a str, &'a str),
+    Count(usize, usize),
+}
+
+/// The rank of a value's kind, which orders values of different kinds.
+fn kind(v: &Value) -> u8 {
+    match v {
+        Value::Unit => 0,
+        Value::Bool(_) => 1,
+        Value::Int(_) | Value::Rat(_) | Value::Q5(_) => 2,
+        Value::Approx(_) => 3,
+        Value::ApproxBool(_) => 4,
+        Value::Text(_) => 5,
+        Value::Target(_) => 6,
+        Value::Word(_) => 7,
+        Value::Tag(_) => 8,
+        Value::Colour(_) => 9,
+        Value::Record(_) => 10,
+        Value::Closure(_) => 11,
+        Value::Fn(_) => 12,
+        Value::Receipt(_) => 13,
+        Value::List(_) => 14,
+        Value::WordEqualityKey(_) => 15,
+        Value::Set(_) => 16,
+        Value::Map(_) => 17,
+        Value::Compressed(_) => 18,
+    }
+}
+
+/// Two values in key order, walked with an explicit stack so that a deep key cannot overflow the host stack. With
+/// `ranks`, equal numbers compare by their representation.
+fn walk_order(a: &Value, b: &Value, ranks: bool) -> Ordering {
+    let mut stack = vec![Step::Pair(a, b)];
+    while let Some(step) = stack.pop() {
+        let order = match step {
+            Step::Count(x, y) => x.cmp(&y),
+            Step::Name(x, y) => x.cmp(y),
+            Step::Pair(a, b) => match (a, b) {
+                (Value::Bool(x), Value::Bool(y)) | (Value::ApproxBool(x), Value::ApproxBool(y)) => x.cmp(y),
+                (Value::Approx(x), Value::Approx(y)) => {
+                    let parts = |v: &Approx| (v.precision, v.negative, v.mantissa, v.exponent);
+                    parts(x).cmp(&parts(y))
+                }
+                (Value::Text(x), Value::Text(y))
+                | (Value::Target(x), Value::Target(y))
+                | (Value::Tag(x), Value::Tag(y))
+                | (Value::Colour(x), Value::Colour(y)) => x.as_str().cmp(y.as_str()),
+                (Value::Word(x), Value::Word(y)) | (Value::WordEqualityKey(x), Value::WordEqualityKey(y)) => x.cmp(y),
+                (Value::List(x), Value::List(y)) | (Value::Set(x), Value::Set(y)) | (Value::Map(x), Value::Map(y)) => {
+                    parts(&mut stack, &x.items, &y.items);
+                    Ordering::Equal
+                }
+                (Value::Record(x), Value::Record(y)) | (Value::Receipt(x), Value::Receipt(y)) => {
+                    stack.push(Step::Count(x.fields.len(), y.fields.len()));
+                    for ((kx, vx), (ky, vy)) in x.fields.iter().zip(&y.fields).rev() {
+                        stack.push(Step::Pair(vx, vy));
+                        stack.push(Step::Name(kx.as_str(), ky.as_str()));
+                    }
+                    Ordering::Equal
+                }
+                (Value::Closure(x), Value::Closure(y)) => {
+                    parts(&mut stack, &x.captures, &y.captures);
+                    x.code.cmp(&y.code)
+                }
+                (Value::Fn(x), Value::Fn(y)) => x.cmp(y),
+                // By their parts: no key or equality of a checked program compares compressed words (LP2 draft).
+                (Value::Compressed(x), Value::Compressed(y)) => x.parts.cmp(&y.parts),
+                _ => match (num(a), num(b)) {
+                    (Some(x), Some(y)) if ranks => x.rank().cmp(&y.rank()),
+                    (Some(_), Some(_)) => compare(a, b).expect("exact numbers"),
+                    _ => kind(a).cmp(&kind(b)),
+                },
+            },
+        };
+        if order != Ordering::Equal {
+            return order;
+        }
+    }
+    Ordering::Equal
+}
+
+/// Pushes two sequences for a lexicographic comparison: their parts in order, then their counts.
+fn parts<'a>(stack: &mut Vec<Step<'a>>, x: &'a [Value], y: &'a [Value]) {
+    stack.push(Step::Count(x.len(), y.len()));
+    for (p, q) in x.iter().zip(y).rev() {
+        stack.push(Step::Pair(p, q));
+    }
+}
+
+/// A map entry: the record `{ key, value }` (LP2 draft).
+pub fn entry(key: Value, value: Value) -> Value {
+    Value::record(vec![("key", key), ("value", value)])
+}
+
+/// The key of a map entry.
+pub fn entry_key(entry: &Value) -> &Value {
+    match entry {
+        Value::Record(r) if r.fields.len() == 2 => &r.fields[0].1,
+        other => other,
+    }
+}
+
+/// The value of a map entry.
+pub fn entry_value(entry: &Value) -> &Value {
+    match entry {
+        Value::Record(r) if r.fields.len() == 2 => &r.fields[1].1,
+        other => other,
+    }
+}
+
+/// The position of the element or key `k` in a set or a map (LP2 draft): a binary search in canonical key order.
+pub fn find(collection: &Value, k: &Value) -> Option<usize> {
+    match collection {
+        Value::Set(s) => s.items.binary_search_by(|e| value_order(e, k)).ok(),
+        Value::Map(m) => m.items.binary_search_by(|e| value_order(entry_key(e), k)).ok(),
+        _ => None,
+    }
+}
+
+/// The set with the element `x` (LP2 draft). Of equal elements in different representations, the first in
+/// [`key_order`] stays.
+pub fn set_insert(set: &List, x: Value) -> Value {
+    let mut items = set.items.clone();
+    match set.items.binary_search_by(|e| value_order(e, &x)) {
+        Ok(i) if key_order(&x, &items[i]) == Ordering::Less => items[i] = x,
+        Ok(_) => {}
+        Err(i) => items.insert(i, x),
+    }
+    Value::Set(Arc::new(List::new(items)))
+}
+
+/// The map with the value `v` under the key `k` (LP2 draft), which replaces a value under an equal key. Of equal keys
+/// in different representations, the first in [`key_order`] stays.
+pub fn map_insert(map: &List, k: Value, v: Value) -> Value {
+    let mut items = map.items.clone();
+    match map.items.binary_search_by(|e| value_order(entry_key(e), &k)) {
+        Ok(i) => {
+            let old = entry_key(&map.items[i]);
+            let k = if key_order(&k, old) == Ordering::Less { k } else { old.clone() };
+            items[i] = entry(k, v);
+        }
+        Err(i) => items.insert(i, entry(k, v)),
+    }
+    Value::Map(Arc::new(List::new(items)))
 }
 
 /// A text with its scalar count, which sizes and output bounds need without a walk (DET.57, DET.62).
@@ -169,6 +544,11 @@ fn take_children(value: Value, out: &mut Vec<Value>) {
                 out.append(&mut c.captures);
             }
         }
+        Value::List(l) | Value::Set(l) | Value::Map(l) => {
+            if let Some(mut l) = Arc::into_inner(l) {
+                out.append(&mut l.items);
+            }
+        }
         _ => {}
     }
 }
@@ -234,6 +614,40 @@ impl Value {
         Value::Record(Arc::new(Record::new(fields.into_iter().map(|(k, v)| (Text::new(k), v)).collect())))
     }
 
+    /// A list of these elements in order (LP2 draft).
+    pub fn list(items: Vec<Value>) -> Value {
+        Value::List(Arc::new(List::new(items)))
+    }
+
+    /// A set of these elements (LP2 draft): each kept once, in canonical key order. Of equal elements in different
+    /// representations, the first in [`key_order`] stays, so the set does not depend on the written order.
+    pub fn set(mut items: Vec<Value>) -> Value {
+        items.sort_by(key_order);
+        items.dedup_by(|later, earlier| value_order(earlier, later) == Ordering::Equal);
+        Value::Set(Arc::new(List::new(items)))
+    }
+
+    /// A map of these entries in written order (LP2 draft), kept in the canonical key order of their keys. A later
+    /// entry's value replaces an earlier one's under an equal key; of equal keys in different representations, the
+    /// first in [`key_order`] stays.
+    pub fn map(mut entries: Vec<(Value, Value)>) -> Value {
+        // A stable sort keeps the written order among equal keys, so the last of each run is the latest entry.
+        entries.sort_by(|a, b| value_order(&a.0, &b.0));
+        let mut kept: Vec<(Value, Value)> = Vec::with_capacity(entries.len());
+        for (k, v) in entries {
+            match kept.last_mut() {
+                Some(last) if value_order(&last.0, &k) == Ordering::Equal => {
+                    if key_order(&k, &last.0) == Ordering::Less {
+                        last.0 = k;
+                    }
+                    last.1 = v;
+                }
+                _ => kept.push((k, v)),
+            }
+        }
+        Value::Map(Arc::new(List::new(kept.into_iter().map(|(k, v)| entry(k, v)).collect())))
+    }
+
     pub fn receipt(fields: Vec<(&str, Value)>) -> Value {
         Value::Receipt(Arc::new(Record::new(fields.into_iter().map(|(k, v)| (Text::new(k), v)).collect())))
     }
@@ -249,16 +663,28 @@ impl Value {
             Value::Approx(x) => approx::width(x.precision),
             Value::Text(t) | Value::Target(t) => t.scalars.saturating_mul(4),
             Value::Tag(_) | Value::Colour(_) => 4,
-            Value::Word(w) => 2 * w.len() as u128,
+            Value::Word(w) | Value::WordEqualityKey(w) => 2 * w.len() as u128,
             Value::Record(r) | Value::Receipt(r) => r.size,
             Value::Closure(c) => c.size,
             Value::Fn(_) => 32,
+            Value::List(l) | Value::Set(l) | Value::Map(l) => l.size,
+            Value::Compressed(c) => c.size(),
         }
     }
 
     /// Whether the value is a variable sequence, which a record field stores with an 8-byte length (DET.57).
     pub fn is_sequence(&self) -> bool {
-        matches!(self, Value::Text(_) | Value::Target(_) | Value::Word(_))
+        matches!(
+            self,
+            Value::Text(_)
+                | Value::Target(_)
+                | Value::Word(_)
+                | Value::WordEqualityKey(_)
+                | Value::List(_)
+                | Value::Set(_)
+                | Value::Map(_)
+                | Value::Compressed(_)
+        )
     }
 
     /// An upper bound of the value's canonical encoding in bytes, without the terminal line feed (FP.5, FP.6). It is
@@ -275,7 +701,12 @@ impl Value {
             Value::Text(t) | Value::Target(t) | Value::Tag(t) | Value::Colour(t) => text_bound(t),
             Value::Word(w) => 2 + 6 * w.len() as u128,
             Value::Record(r) => r.bound,
-            Value::Closure(_) | Value::Fn(_) | Value::Receipt(_) => 0,
+            Value::List(l) | Value::Set(l) | Value::Map(l) => l.bound,
+            // A word key has no canonical form in the LP2 draft: it is never output as letters (LG2.13). Nor has a
+            // compressed word, whose output would be its expansion (DET.59).
+            Value::Closure(_) | Value::Fn(_) | Value::Receipt(_) | Value::WordEqualityKey(_) | Value::Compressed(_) => {
+                0
+            }
         }
     }
 }
@@ -403,7 +834,8 @@ pub fn compare_price(a: &Value, b: &Value, d: &DraftTariffs) -> Option<u128> {
 }
 
 /// Exact equality. Numbers compare across Int, Rat and Q5; records, receipts and closures compare structurally, with an
-/// explicit stack.
+/// explicit stack. Compressed words compare by their parts, which is no word equality: the checker gives them no exact
+/// equality (LP2 draft), and the interpreter refuses one of two compressed words.
 pub fn equal(a: &Value, b: &Value) -> bool {
     let mut stack = vec![(a, b)];
     while let Some((a, b)) = stack.pop() {
@@ -425,8 +857,13 @@ pub fn equal(a: &Value, b: &Value) -> bool {
             | (Value::Target(x), Value::Target(y))
             | (Value::Tag(x), Value::Tag(y))
             | (Value::Colour(x), Value::Colour(y)) => x.as_str() == y.as_str(),
-            (Value::Word(x), Value::Word(y)) => x == y,
+            (Value::Word(x), Value::Word(y)) | (Value::WordEqualityKey(x), Value::WordEqualityKey(y)) => x == y,
+            (Value::List(x), Value::List(y)) | (Value::Set(x), Value::Set(y)) | (Value::Map(x), Value::Map(y)) => {
+                stack.extend(x.items.iter().zip(&y.items));
+                x.items.len() == y.items.len()
+            }
             (Value::Fn(x), Value::Fn(y)) => x == y,
+            (Value::Compressed(x), Value::Compressed(y)) => x.parts == y.parts,
             (Value::Approx(x), Value::Approx(y)) => x == y,
             _ => compare(a, b) == Some(Ordering::Equal),
         };

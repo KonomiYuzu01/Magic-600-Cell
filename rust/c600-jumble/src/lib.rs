@@ -40,6 +40,7 @@ pub mod model;
 pub mod observe;
 pub mod q5;
 pub mod regions;
+pub mod rotation;
 pub mod state;
 pub mod twist;
 
@@ -67,6 +68,10 @@ pub mod codes {
     pub const WORD_BLOCKED_PREFIX: &str = "KN2:input.word_blocked_prefix";
     /// A request or record header names a dimension other than [`super::DIMENSION`] (JI.3, JI.45).
     pub const UNSUPPORTED_DIMENSION: &str = "KN1:input.unsupported_dimension";
+    /// Exact rotation requests (A6, KN3.7 to KN3.9; [`crate::rotation`]).
+    pub use c600_kernel::request::codes::{MENU_BINDING_MISMATCH, ROTATION_REQUEST_MALFORMED, ROTATION_SEARCH_BOUND};
+    /// A jumble menu item while Jumble is off: 600-cell-Full takes retained items only (JI.35).
+    pub const MENU_WORD_NEEDS_JUMBLE_ON: &str = "KN5:input.menu_word_needs_jumble_on";
 }
 
 /// The one dimension this edition admits (JI.3).

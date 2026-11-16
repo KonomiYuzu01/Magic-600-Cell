@@ -20,9 +20,9 @@ state record reader), JI.6 (sparse height bins), JI.53 and LB3.1 (a free-mode po
 (J1's public API: refusals, one classification, read-only pose entries and the fixture's prefix range).
 
 Not run here, because the candidate does not build the call (M8, LP2 plan, section 11): `label_checkpoint`,
-`retained_checkpoint` and `sticker_test` (lead L9), `repair_list` and `covers` (lead L15's ordering, rank and
-missing-cap rows), `release_check` (lead L2's agreement) and snapshot handles (lead L16's `KN2:stale.revision_gone`).
-Not applicable is no pass (PHS.63).
+`retained_checkpoint` and `sticker_test` (lead L9) and snapshot handles (lead L16's `KN2:stale.revision_gone`). Not
+applicable is no pass (PHS.63). Lead L15's ordering, rank and missing-cap rows for `repair_list` and `covers`, and
+lead L2's `release_check` agreement, run in `tests/test_jumbling_rust_m8_observations.py` against J1.
 
 The adapter is built with `cargo build --release --locked --offline` in rust/. A pass is source and fixture evidence.
 """

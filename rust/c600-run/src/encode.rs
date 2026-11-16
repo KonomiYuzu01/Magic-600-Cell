@@ -5,10 +5,17 @@
 //! - Exact numbers are `{"int":"…"}`, `{"rat":["n","d"]}` and `{"q5":["a","b","d"]}`; an approximation is
 //!   `{"f64":"<16 lowercase hex digits>"}`.
 //! - A word is an array of its signed letters. This JSON form is an M2 draft; LG2.18's word keys stay open.
+//! - A list is an array of its elements in order (LP2 draft). A word equality key has no form: it is never output as
+//!   letters (LG2.13).
+//! - A set is an array of its distinct elements and a map an array of its `{"key":…,"value":…}` entries, both in
+//!   canonical key order (DET.9; LP2 drafts). A set or map out of that order has no canonical form.
+//! - A compressed word has no form in the LP2 draft; its letters are output after an explicit `expand`.
 //!
 //! The encoder walks with an explicit stack, so a deep value cannot overflow the host stack.
 
-use crate::value::{Text, Value};
+use std::cmp::Ordering;
+
+use crate::value::{entry_key, value_order, Text, Value};
 
 /// Why a value has no canonical form: a closure, a function, a receipt, an approximation that is not exactly a
 /// binary64 number, or a record with a repeated key.
@@ -113,9 +120,45 @@ pub fn encode(value: &Value, out: &mut Vec<u8>) -> Result<(), Noncanonical> {
                     }
                 }
             }
-            Value::Closure(_) | Value::Fn(_) | Value::Receipt(_) => return Err(Noncanonical),
+            // A list is a JSON array of its elements in order; a set's elements and a map's `{ key, value }` entries
+            // are arrays in canonical key order, which a value built outside a run must already have (LP2 drafts).
+            Value::List(l) | Value::Set(l) | Value::Map(l) => {
+                if !in_key_order(value) {
+                    return Err(Noncanonical);
+                }
+                out.push(b'[');
+                stack.push(Task::Byte(b']'));
+                for (i, item) in l.items().iter().enumerate().rev() {
+                    stack.push(Task::Value(item));
+                    if i > 0 {
+                        stack.push(Task::Byte(b','));
+                    }
+                }
+            }
+            // A word key is never output as letters (LG2.13); the LP2 draft gives it no canonical form. Nor does it give
+            // one to a compressed word, whose output would be its priced expansion (DET.59).
+            Value::Closure(_) | Value::Fn(_) | Value::Receipt(_) | Value::WordEqualityKey(_) | Value::Compressed(_) => {
+                return Err(Noncanonical)
+            }
         }
     }
     out.push(b'\n');
     Ok(())
+}
+
+/// Whether a set holds distinct elements in canonical key order, and a map `{ key, value }` entries under distinct keys
+/// in that order (DET.9). Other values pass.
+fn in_key_order(value: &Value) -> bool {
+    let increasing = |keys: Vec<&Value>| keys.windows(2).all(|w| value_order(w[0], w[1]) == Ordering::Less);
+    match value {
+        Value::Set(s) => increasing(s.items().iter().collect()),
+        Value::Map(m) => {
+            let entry = |e: &Value| match e {
+                Value::Record(r) => r.fields().iter().map(|(k, _)| k.as_str()).eq(["key", "value"]),
+                _ => false,
+            };
+            m.items().iter().all(entry) && increasing(m.items().iter().map(entry_key).collect())
+        }
+        _ => true,
+    }
 }
