@@ -456,6 +456,17 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   was refused as stale; L7, `create` reported an unknown header fate as a failure and wrote to a disk it then refused.
   All five are fixed. L4 and L6 became the seeded replay test and its oracle (the durable view, receipts, contents and
   the undo chain), and L10's rows 1 to 7 are covered. L8 and L9 are deferred.
+- KN5 (LP2): `JournalStore` (`src/command_store.rs`) implements c600-command's `Store` and `Reopen` over the journal,
+  in a draft frame format of its own (`c600-command-journal-draft-1`, not the frozen migration format), so the command
+  layer runs durably on this crate's disks; the dependency runs from this crate to c600-command only. Tests:
+  `tests/kn5_command.rs`. M6's `Shell`, `Session::invoke` and `Session::shell` are superseded by that layer and are
+  removed once their tests run against it.
+- Until then M6's own `invoke` differs from the layer's KN5 rulings: it stores `accepted` under the command ID before
+  its gates (ruling 3; `commit.rs` asserts it during a held write); a refusal before authentication (a bad
+  authenticator, or a program's commit or non-job row) takes the command ID, whose request digest includes the
+  authenticator, so such an envelope sent first under the shell's next command ID makes the genuine press
+  `KN5:input.command_id_reused` (ruling 4); command IDs are one space for the shell and programs; and its shell stub
+  mints for a fresh preview that need not be presented (LP3's L4).
 - Evidence kind: source and fixture. Failures are injected in memory; `FsDisk` runs in one reopen test, so a pass is no
   evidence of a real disk's behaviour in a crash. The checks ran on Windows only.
 
@@ -619,6 +630,39 @@ run or not applicable is no pass (PHS.63).
   as `command_id_reused` because the request digest used the layer's current epoch, not the envelope's; R2 (minor),
   the token's binding was checked before commit-lane admission; R3 (nit), the outcome lookup ignored the request
   digest. A scoped re-check found all three fixed and no new blocking finding.
+- KN5 over M6 (LP2): `CommandLayer::open` replays a store's history through the kernel and restores the revision, the
+  protected set, the undo and redo stacks and the durable receipts. `c600_session::JournalStore` is that store over
+  KN4's journal and `MemoryStore` keeps its contract in memory; this replaces the not-built note on the durable
+  transaction above. Every open and every restart draws a fresh random epoch the session never had (L10).
+  `protection.orbit.set` is built, and undo and redo walk M6's move tree, a protection change included, with
+  `confirm` to release an orbit (LI.26). A workspace overlay's completion is durable with its receipt (KN5.23). An
+  action that does not move the puzzle keeps the state revision, the preview and the jobs (KN5.18). The layer's test
+  hooks exist only in debug builds or with the `test-hooks` feature (L15).
+- KN5 tests (`c600-command/tests/kn5.rs`, from the Fable KN5 attack leads L3 to L11, L15 and L18): parts of
+  CT-KN5-01, CT-KN5-04, CT-KN5-09, CT-KN5-10, CT-KN5-11, CT-ONE-03, CT-ONE-04, CT-ONE-05, CT-ONE-11, CT-ONE-21 and
+  CT-LI-09. `c600-session/tests/kn5_command.rs` runs the layer over the journal: parts of CT-ONE-21, CT-ONE-22,
+  CT-KN4-02 and CT-KN5-04. Each test names its part; none runs a whole definition.
+- KN5 drafts (listed in the crate documentation): ruling 1, a press whose preview ended answers
+  `KN5:stale.no_fresh_preview` when the slot is empty and `KN5:stale.preview_replaced` when it holds another preview;
+  ruling 2, an undo checks its hint before its bound revisions, so a raced undo is `KN5:stale.undo_superseded`; ruling
+  3, no receipt or lookup answers `accepted`; ruling 5, `KN5:auth.token_invalid` for a failed authenticator and
+  `KN5:stale.token_mismatch` for another session or epoch; ruling 7, `session.checkpoint.save` follows the table (a
+  commit row with a token; not built), where M6's `session.checkpoint` takes none; ruling 8, LI's clauses are drafts;
+  `KN4:input.session_exists`, a sixth code chapter 13 does not register.
+- Frozen-text readings for the owner (PHS.52). (1) Ruling 4 reads KN5.21 and KN5.23 so: command IDs are scoped per
+  caller and the request digest covers the caller; a refusal of an envelope that does not authenticate (a bad
+  authenticator, a missing token, or a caller that may not use the row or hold a token) is kept for its epoch under
+  the envelope's full digest, authenticator included, and never takes the command ID, so a forged or runtime envelope
+  sent first cannot block the solver's press; every other answer takes the ID. The frozen order puts the retry lookup
+  before authentication (chapter 08 section 7), so an envelope whose request digest equals a recorded command's gets
+  that receipt whatever its authenticator, and commits nothing. This is security-relevant. (2) LI.33's vector answers
+  `preview_replaced` for a token whose preview was committed and whose slot is now empty; ruling 1 answers
+  `no_fresh_preview`. Chapter 08's error table ("no longer the pending one") reads either way, so the vector is not
+  followed until the owner rules.
+- KN5 not built yet: KN5.26's admission matrix (L1, L2), ruling 6 (the host stamps a runtime proposal's block; a
+  `file` overlay without a granted file capability), L12 to L14, L16, L17, and CT-ONE-29's `FrameChain` and
+  `PresentedFrame`. No host caller is built. No session lock exists (LP3's L9), so two opens of one journal can
+  interleave.
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run. The timings the loop
   check prints are informational, not performance evidence.
 

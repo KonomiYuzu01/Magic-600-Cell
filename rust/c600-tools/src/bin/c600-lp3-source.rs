@@ -372,9 +372,10 @@ impl Session<'_> {
         if self.layer.run_jobs() != 1 {
             return Err(disagree("the preview job did not run"));
         }
-        let built = self.layer.outcome(&admitted.command, &admitted.request);
-        let built = built.ok_or_else(|| disagree("the preview has no receipt"))?;
-        self.keep(&built, &Caller::Runtime { run: format!("{}-{index}", self.case_id) });
+        // The runtime's command IDs are its own scope (draft ruling 4), so the lookup names the caller.
+        let caller = Caller::Runtime { run: format!("{}-{index}", self.case_id) };
+        let built = self.layer.kernel_outcome(&caller, &admitted.command, &admitted.request);
+        self.keep(&built, &caller);
         if !matches!(built.status, Status::Completed(Completion { kind: CompletionKind::PreviewReady, .. })) {
             return Err(unexpected("operation.preview", &built.status));
         }

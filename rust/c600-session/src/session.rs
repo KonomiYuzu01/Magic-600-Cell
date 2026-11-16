@@ -394,12 +394,14 @@ impl Session {
     }
 
     /// The shell stub: it mints user-action tokens. Only the shell holds it; no runtime operation reaches it.
+    /// Superseded by c600-command's shell and layer over [`crate::JournalStore`]; removed once its tests run there.
     pub fn shell(&self) -> Shell<'_> {
         Shell(self)
     }
 
     /// Delivers one invocation and returns its receipt. A job's receipt is `running`; its terminal receipt comes from
     /// [`Session::wait_job`] or [`Session::outcome`].
+    /// Superseded by c600-command's `CommandLayer::invoke` over [`crate::JournalStore`]; removed once its tests run there.
     pub fn invoke(&self, envelope: Envelope) -> Receipt {
         let inner = &*self.0;
         let request = wire::request_digest(&envelope);
@@ -601,6 +603,7 @@ impl Inner {
 }
 
 /// The shell stub (KN5.14): it mints a token for one commit invocation the shell is about to deliver.
+/// Superseded by c600-command's `Shell` over [`crate::JournalStore`]; removed once its tests run there.
 pub struct Shell<'a>(&'a Session);
 
 impl Shell<'_> {

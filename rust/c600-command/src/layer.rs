@@ -9,11 +9,21 @@
 //! leaves every digest and counter unchanged (CT-ONE-11).
 //!
 //! `session.undo` and `session.redo` take LI.9's hint and a token and use the commit lane with no `not_busy` gate
-//! (KN5.20). An undo derives the inverse of the action's recipe from the current state through the kernel, under the
-//! protection set in force (LI.26's normal permission path), and adopts the result only when it equals the action's
-//! pre-state digest; a redo derives the recipe again and checks the post-state digest. The journal keeps recipes and
-//! digests, not states. Every commit, undo and redo advances the state revision and cancels the jobs that read the
-//! revision it replaces, except file jobs (KN5.18).
+//! (KN5.20). They follow M6's move tree: every commit adds a node (keyed by its action order) under the head, every
+//! undoable action (a commit or a `protection.orbit.set`) pushes its order on the undo stack and drops the redo stack,
+//! and an undo or redo inverts or repeats the change on top of its stack. A head change derives the inverse of the
+//! node's recipe, or the recipe again, from the current state through the kernel under the protection set in force
+//! (LI.26's normal permission path) and adopts the result only when it reaches the recorded node; a protection change
+//! that releases an orbit needs `confirm`. The journal keeps recipes, digests and protected orbits, not states.
+//!
+//! Only an action that moves the puzzle advances the state revision, ends the pending preview and cancels the jobs that
+//! read the revision it replaces, except file jobs (KN5.18). A protection change advances the workspace and protection
+//! revisions, and a workspace completion the workspace revision; both keep the preview slot and the jobs, and every
+//! durable action takes the next action order (LI.9).
+//!
+//! [`CommandLayer::open`] reopens a session from a [`Reopen`] store: it replays every durable transaction through the
+//! kernel, restores the revision, the protected set, the move tree and the durable receipts, and draws a fresh random
+//! epoch (KN5.23, L10).
 
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::sync::Arc;
@@ -22,12 +32,12 @@ use c600_kernel::json::{self, Value};
 use c600_kernel::{Derivation, Effect, Kernel, ProtectedSet, Protection, Recipe, Snapshot, Step, SupportRow, Verdict};
 
 use crate::receipt::{
-    code, digest, ActionHint, CancelReason, CommitRecord, Completion, CompletionKind, Direction, Error, PreviewDeps,
-    Receipt, ResultRef, Revision, Status,
+    code, digest, ActionHint, CancelReason, Completion, CompletionKind, Direction, Error, PreviewDeps, Receipt,
+    ResultRef, Revision, Status,
 };
-use crate::store::{Fate, MemoryStore, Store, Transaction, TransactionKind};
+use crate::store::{identity_json, Fate, Genesis, MemoryStore, Reopen, Store, Transaction, TransactionKind};
 use crate::table::{Kind, Lane, Overlay, Row, Table};
-use crate::token::{args_digest, Secret, Token, TokenBinding};
+use crate::token::{args_digest, fresh_epoch, Secret, Token, TokenBinding};
 
 /// The mode of every revision here: the jumbling engine joins when M5 is on main.
 pub const MODE: &str = "jumble_off";
@@ -41,6 +51,34 @@ pub enum Caller {
     Shell,
     /// The language runtime, for one run. It never holds a token.
     Runtime { run: String },
+}
+
+impl Caller {
+    /// The caller's command-ID space (draft ruling 4): a record is keyed by it and the command ID, so the runtime's
+    /// IDs never reach the shell's records.
+    pub fn scope(&self) -> &'static str {
+        match self {
+            Caller::Shell => "shell",
+            Caller::Runtime { .. } => "runtime",
+        }
+    }
+
+    pub fn to_json(&self) -> Value {
+        match self {
+            Caller::Shell => Value::String("shell".into()),
+            Caller::Runtime { run } => json::object([("runtime", Value::String(run.clone()))]),
+        }
+    }
+
+    pub fn from_json(value: &Value) -> Option<Caller> {
+        match value {
+            Value::String(name) if name == "shell" => Some(Caller::Shell),
+            Value::Object(fields) if fields.len() == 1 => {
+                Some(Caller::Runtime { run: fields.get("runtime")?.as_str()?.to_owned() })
+            }
+            _ => None,
+        }
+    }
 }
 
 /// LI.5's envelope. `args` holds the absolute arguments, without the token.
@@ -147,33 +185,141 @@ enum JobKind {
 struct Job {
     id: u64,
     command: String,
+    /// The invoking caller's command-ID space.
+    scope: &'static str,
     lane: Lane,
     kind: JobKind,
 }
 
-/// A journal entry. The journal keeps the recipe and both digests.
+/// A node of the move tree: the start (node 0) or a commit, keyed by its action order. The journal keeps the recipe and
+/// the digest, not the state.
 #[derive(Clone, Debug)]
-struct Action {
-    order: u64,
-    event: String,
-    recipe: Recipe,
-    pre: String,
-    post: String,
+struct Node {
+    parent: u64,
+    recipe: Option<Recipe>,
+    digest: String,
+    depth: u64,
 }
 
-enum Stacks {
-    Commit(Action),
+/// An undoable action's change, kept by its action order while an undo or redo can reach it.
+#[derive(Clone, Debug)]
+enum Change {
+    Head { before: u64, after: u64 },
+    Protection { before: Vec<usize>, after: Vec<usize> },
+}
+
+/// What an adoption does to the move tree and the stacks.
+#[derive(Clone, Debug)]
+enum Tree {
+    /// A new undoable action, which drops the redo stack.
+    Push {
+        node: Option<(u64, Node)>,
+        change: Change,
+    },
     Undo,
-    Redo(Action),
+    Redo,
+    /// A workspace completion, which no undo reaches.
+    None,
 }
 
 /// Everything step 10 applies, computed before step 9.
 struct Adoption {
     transaction: Transaction,
-    state: Snapshot,
-    stacks: Stacks,
+    /// The new state of an action that moves the puzzle.
+    state: Option<Snapshot>,
+    /// The new protected set of a protection change.
+    protected: Option<ProtectedSet>,
+    head: u64,
+    tree: Tree,
     /// The preview a word commit commits.
     preview: Option<u64>,
+}
+
+/// Who asked for an action, as its transaction records it.
+struct Meta {
+    caller: Caller,
+    command: String,
+    row: String,
+    request: String,
+    /// Whether the solver confirmed a release (LI.26).
+    confirm: bool,
+}
+
+impl Meta {
+    fn of(invocation: &Invocation, request: &str) -> Meta {
+        Meta {
+            caller: invocation.caller.clone(),
+            command: invocation.command.clone(),
+            row: invocation.row.clone(),
+            request: request.to_owned(),
+            confirm: invocation.args.get("confirm") == Some(&Value::Bool(true)),
+        }
+    }
+
+    /// A stored transaction's, for its replay: a replayed release needs no new confirmation.
+    fn replay(transaction: &Transaction) -> Meta {
+        Meta {
+            caller: transaction.caller.clone(),
+            command: transaction.command.clone(),
+            row: transaction.row.clone(),
+            request: transaction.request.clone(),
+            confirm: true,
+        }
+    }
+}
+
+/// A receipt under its caller's scope and command ID.
+#[derive(Clone, Debug)]
+struct Record {
+    request: String,
+    receipt: Receipt,
+    /// A durable receipt was written with its action's effect and survives a restart and a reopen (KN5.23).
+    durable: bool,
+}
+
+/// A caller's command-ID space and a command ID (draft ruling 4).
+type Key = (&'static str, String);
+
+/// A recipe's steps in the kernel's JSON form, or the steps of its inverse.
+fn steps_json(recipe: &Recipe, inverse: bool) -> Vec<Value> {
+    let step = |step: &Step| match step {
+        Step::Word(letters) => {
+            let moves: Vec<Value> = match inverse {
+                false => letters.iter().map(|&m| Value::Int(m as i64)).collect(),
+                true => letters.iter().rev().map(|&m| Value::Int(-(m as i64))).collect(),
+            };
+            json::object([("kind", Value::String("word".into())), ("moves", Value::Array(moves))])
+        }
+        Step::Star(star) => {
+            let sign = if inverse { -star.sign() } else { star.sign() };
+            json::object([
+                ("kind", Value::String("star".into())),
+                ("orbit", Value::Int(star.orbit() as i64)),
+                ("node", Value::Int(star.node() as i64)),
+                ("sign", Value::Int(sign as i64)),
+            ])
+        }
+    };
+    match inverse {
+        false => recipe.steps().iter().map(step).collect(),
+        true => recipe.steps().iter().rev().map(step).collect(),
+    }
+}
+
+/// Whether a stored transaction agrees with its replay: every field the replay recomputes, the epoch aside.
+fn agrees(planned: &Transaction, stored: &Transaction) -> bool {
+    let epochless = |revision: &Revision| Revision { epoch: 0, ..revision.clone() };
+    planned.kind == stored.kind
+        && planned.event == stored.event
+        && planned.order == stored.order
+        && planned.target == stored.target
+        && planned.literal == stored.literal
+        && planned.pre == stored.pre
+        && planned.post == stored.post
+        && planned.orbits == stored.orbits
+        && planned.job == stored.job
+        && planned.result == stored.result
+        && epochless(&planned.revision) == epochless(&stored.revision)
 }
 
 fn refused(code: &'static str, detail: impl Into<String>) -> Result<(Option<u64>, Status), Error> {
@@ -200,21 +346,31 @@ pub struct CommandLayer<S: Store = MemoryStore> {
     protected: ProtectedSet,
     revision: Revision,
     current: Snapshot,
+    /// The digest of the identity block's canonical JSON, which a token binds (L9).
+    identity: String,
     /// The current durable action-order number (LI.9).
     order: u64,
-    events: u64,
+    /// The move tree: node 0 is the start, every other node a commit under its action order.
+    nodes: BTreeMap<u64, Node>,
+    head: u64,
+    changes: BTreeMap<u64, Change>,
+    undo: Vec<u64>,
+    redo: Vec<u64>,
+    /// Every epoch of the session, so no open or restart draws one again (L10).
+    epochs: BTreeSet<u64>,
     jobs_issued: u64,
     jobs: VecDeque<Job>,
     running: BTreeMap<u64, ProgramJob>,
     program_capacity: usize,
     slot: Option<Preview>,
     history: BTreeMap<u64, PreviewState>,
-    done: Vec<Action>,
-    undone: Vec<Action>,
     used: BTreeSet<u64>,
-    receipts: BTreeMap<String, (String, Receipt)>,
-    /// Command IDs whose transient receipts a restart lost, with their request digests.
-    lost: BTreeMap<String, String>,
+    receipts: BTreeMap<Key, Record>,
+    /// Records whose transient receipts a restart lost, with their request digests.
+    lost: BTreeMap<Key, String>,
+    /// Refusals of envelopes that do not authenticate, kept for the epoch under the envelope's full digest and never
+    /// attached to the command ID (draft ruling 4).
+    retained: BTreeMap<Key, Receipt>,
     commit_held: bool,
     recovery: Option<Error>,
     limbo: Option<Adoption>,
@@ -222,7 +378,52 @@ pub struct CommandLayer<S: Store = MemoryStore> {
 }
 
 impl<S: Store> CommandLayer<S> {
-    /// A layer for `session`, at `initial` with the protected set `protected`, in epoch 1.
+    fn empty(
+        kernel: Arc<Kernel>,
+        table: Table,
+        secret: Secret,
+        store: S,
+        revision: Revision,
+        initial: Snapshot,
+        protected: ProtectedSet,
+    ) -> CommandLayer<S> {
+        let identity = digest(&identity_json(&kernel.identity()));
+        let start = Node { parent: 0, recipe: None, digest: initial.digest().to_owned(), depth: 0 };
+        CommandLayer {
+            kernel,
+            table,
+            secret,
+            store,
+            protected,
+            epochs: BTreeSet::from([revision.epoch]),
+            revision,
+            current: initial,
+            identity,
+            order: 0,
+            nodes: BTreeMap::from([(0, start)]),
+            head: 0,
+            changes: BTreeMap::new(),
+            undo: Vec::new(),
+            redo: Vec::new(),
+            jobs_issued: 0,
+            jobs: VecDeque::new(),
+            running: BTreeMap::new(),
+            program_capacity: 1,
+            slot: None,
+            history: BTreeMap::new(),
+            used: BTreeSet::new(),
+            receipts: BTreeMap::new(),
+            lost: BTreeMap::new(),
+            retained: BTreeMap::new(),
+            commit_held: false,
+            recovery: None,
+            limbo: None,
+            generation: 0,
+        }
+    }
+
+    /// A new session `session` at `initial` with the protected set `protected`, in epoch 1. The store records the
+    /// session's start ([`Store::begin`]); a store that does not answer durably leaves the layer in read-only recovery.
     pub fn new(
         kernel: Arc<Kernel>,
         table: Table,
@@ -243,32 +444,138 @@ impl<S: Store> CommandLayer<S> {
             protection: 0,
             digest: initial.digest().to_owned(),
         };
-        CommandLayer {
-            kernel,
-            table,
-            secret,
-            store,
-            protected,
-            revision,
-            current: initial,
-            order: 0,
-            events: 0,
-            jobs_issued: 0,
-            jobs: VecDeque::new(),
-            running: BTreeMap::new(),
-            program_capacity: 1,
-            slot: None,
-            history: BTreeMap::new(),
-            done: Vec::new(),
-            undone: Vec::new(),
-            used: BTreeSet::new(),
-            receipts: BTreeMap::new(),
-            lost: BTreeMap::new(),
-            commit_held: false,
-            recovery: None,
-            limbo: None,
-            generation: 0,
+        let genesis = Genesis {
+            session: session.to_owned(),
+            identity: kernel.identity(),
+            epoch: 1,
+            labels: initial.labels().to_vec(),
+            digest: initial.digest().to_owned(),
+            orbits: protected.orbits().to_vec(),
+        };
+        let mut layer = Self::empty(kernel, table, secret, store, revision, initial, protected);
+        let fate = layer.store.begin(&genesis);
+        layer.settle_fate(fate, "the session's start");
+        layer
+    }
+
+    /// Reopens the session a [`Reopen`] store holds (KN5.23). Every durable transaction is replayed through the kernel
+    /// from the session's start and must reach its recorded digests and revision; the revision, the protected set, the
+    /// move tree, the stacks and the durable receipts are restored, and the layer starts a fresh random epoch that no
+    /// earlier open of the session drew (L10). A transaction that does not replay, or a record the store could not
+    /// read, leaves the layer in read-only recovery after the last transaction that replayed. A command ID the store
+    /// does not hold answers `unknown_outcome` ([`CommandLayer::kernel_outcome`], LI.30).
+    pub fn open(kernel: Arc<Kernel>, table: Table, secret: Secret, mut store: S) -> Result<CommandLayer<S>, Error>
+    where
+        S: Reopen,
+    {
+        let history = store.history()?;
+        let genesis = &history.genesis;
+        kernel.check_identity(&genesis.identity)?;
+        let initial = kernel.state_from_labels(genesis.labels.clone()).filter(|s| s.digest() == genesis.digest);
+        let Some(initial) = initial else {
+            return Err(Error::new(code::PERSISTENCE_FORMAT, "the session's start state does not match its digest"));
+        };
+        let orbits: Vec<i64> = genesis.orbits.iter().map(|&orbit| orbit as i64).collect();
+        let protected = kernel.protected_set(&orbits)?;
+        if protected.orbits() != genesis.orbits.as_slice() {
+            return Err(Error::new(code::PERSISTENCE_FORMAT, "the session's protected orbits are not in order"));
         }
+        let revision = Revision {
+            session: genesis.session.clone(),
+            epoch: genesis.epoch,
+            identity: kernel.identity().model_id,
+            mode: MODE,
+            head: "e0".to_owned(),
+            state: 0,
+            workspace: 0,
+            protection: 0,
+            digest: initial.digest().to_owned(),
+        };
+        let mut layer = Self::empty(kernel, table, secret, store, revision, initial, protected);
+        layer.epochs.extend(history.epochs.iter().copied());
+        for transaction in &history.transactions {
+            if let Err(error) = layer.replay(transaction) {
+                layer.recovery = Some(error);
+                break;
+            }
+        }
+        if layer.recovery.is_none() {
+            layer.recovery = history.damaged.clone();
+        }
+        layer.next_epoch();
+        Ok(layer)
+    }
+
+    /// Replays one durable transaction at a reopen and adopts it as stored.
+    fn replay(&mut self, stored: &Transaction) -> Result<(), Error> {
+        let broken = |detail: &str| Error::new(code::READ_ONLY_RECOVERY, format!("{}: {detail}", stored.event));
+        if stored.order != self.order + 1 {
+            return Err(broken("the action order is broken"));
+        }
+        let meta = Meta::replay(stored);
+        let planned = match stored.kind {
+            TransactionKind::Commit => {
+                let recipe = self.kernel.recipe(&stored.recipe)?;
+                let none = ProtectedSet::none();
+                match self.kernel.derive(&self.current, &recipe, &none).map_err(kernel_error)? {
+                    Derivation::Derived(d) => self.commit_adoption(meta, recipe, d.state, d.word, None),
+                    Derivation::Refused(r) => return Err(r.refusal.into()),
+                }
+            }
+            TransactionKind::Undo | TransactionKind::Redo => {
+                let (direction, stack) = match stored.kind {
+                    TransactionKind::Undo => (Direction::Undo, &self.undo),
+                    _ => (Direction::Redo, &self.redo),
+                };
+                if stored.target != stack.last().copied() {
+                    return Err(broken("the action does not invert or repeat the top of its stack"));
+                }
+                self.plan_step(meta, direction, &ProtectedSet::none())?
+            }
+            TransactionKind::Protection => {
+                let orbits: Vec<i64> = stored.orbits.iter().map(|&orbit| orbit as i64).collect();
+                let set = self.kernel.protected_set(&orbits)?;
+                self.plan_orbits(meta, set)?
+            }
+            TransactionKind::Workspace => {
+                let (Some(job), Some(result)) = (stored.job, stored.result.clone()) else {
+                    return Err(broken("a workspace completion names no job and result"));
+                };
+                self.jobs_issued = self.jobs_issued.max(job);
+                self.workspace_adoption(meta, job, result)
+            }
+        };
+        if !agrees(&planned.transaction, stored) {
+            return Err(broken("the replay does not reach the recorded action"));
+        }
+        self.adopt(Adoption { transaction: stored.clone(), ..planned });
+        Ok(())
+    }
+
+    /// Draws a fresh random epoch that the session never had and records it (L10).
+    fn next_epoch(&mut self) {
+        let epoch = fresh_epoch(&self.epochs);
+        self.epochs.insert(epoch);
+        self.revision.epoch = epoch;
+        let fate = self.store.begin_epoch(epoch);
+        self.settle_fate(fate, "the new epoch");
+    }
+
+    /// Puts the layer into read-only recovery unless a write of `what` was durable.
+    fn settle_fate(&mut self, fate: Fate, what: &str) {
+        match fate {
+            Fate::Durable => {}
+            Fate::RolledBack(error) => self.recovery = Some(error),
+            Fate::Unknown => {
+                self.recovery =
+                    Some(Error::new(code::COMMIT_FATE, format!("the store cannot say whether {what} landed")))
+            }
+        }
+    }
+
+    /// The digest of the identity block's canonical JSON, which a token binds (L9).
+    pub fn identity_binding(&self) -> String {
+        self.identity.clone()
     }
 
     pub fn kernel(&self) -> &Arc<Kernel> {
@@ -294,6 +601,10 @@ impl<S: Store> CommandLayer<S> {
         &self.store
     }
 
+    /// The store, to inject its faults. A test hook: a write through it bypasses every gate, so it exists only in the
+    /// builds of [`CommandLayer::hold_commit_lane`] (draft; L15).
+    #[cfg(any(debug_assertions, feature = "test-hooks"))]
+    #[doc(hidden)]
     pub fn store_mut(&mut self) -> &mut S {
         &mut self.store
     }
@@ -357,35 +668,51 @@ impl<S: Store> CommandLayer<S> {
     /// `kernel.undo_hint`: the current order and the eligible target for `direction`, read together (LI.9).
     pub fn undo_hint(&self, direction: Direction) -> Option<ActionHint> {
         let stack = match direction {
-            Direction::Undo => &self.done,
-            Direction::Redo => &self.undone,
+            Direction::Undo => &self.undo,
+            Direction::Redo => &self.redo,
         };
-        stack.last().map(|action| ActionHint { order: self.order, target: action.order })
+        stack.last().map(|&target| ActionHint { order: self.order, target })
     }
 
-    /// `kernel.outcome(command, request)` (KN5.23, LI.30): the stored receipt, with no side effect and no lane. A
-    /// command stored with another request digest answers `refused(KN5:input.command_id_reused)` and leaves the stored
-    /// record unchanged; a transient receipt a restart lost answers `unknown_outcome` (CT-ONE-21); an unknown command
-    /// answers `None`.
+    /// The shell's outcome lookup: [`CommandLayer::kernel_outcome`] for a shell command ID, or `None` when the shell's
+    /// command-ID space never saw the ID in this layer's life.
     pub fn outcome(&self, command: &str, request: &str) -> Option<Receipt> {
-        let (stored, receipt) = match self.receipts.get(command) {
-            Some((stored, receipt)) => (stored, Some(receipt)),
-            None => (self.lost.get(command)?, None),
+        let scope = Caller::Shell.scope();
+        let key = (scope, command.to_owned());
+        let seen = self.receipts.contains_key(&key)
+            || self.lost.contains_key(&key)
+            || self.retained.iter().any(|((s, _), receipt)| *s == scope && receipt.command == command);
+        seen.then(|| self.kernel_outcome(&Caller::Shell, command, request))
+    }
+
+    /// `kernel.outcome(command, request)` (KN5.23, LI.30): the stored answer for the caller's command ID, with no side
+    /// effect and no lane. A refusal retained for this epoch answers its envelope's full digest (draft ruling 4); a
+    /// recorded command with another request digest answers `refused(KN5:input.command_id_reused)` and leaves the
+    /// record unchanged; a transient receipt a restart lost, and any command ID never recorded, answer
+    /// `unknown_outcome` (CT-ONE-21, LI.30).
+    pub fn kernel_outcome(&self, caller: &Caller, command: &str, request: &str) -> Receipt {
+        let scope = caller.scope();
+        if let Some(receipt) = self.retained.get(&(scope, request.to_owned())).filter(|r| r.command == command) {
+            return receipt.clone();
+        }
+        let key = (scope, command.to_owned());
+        let answer = |request: &str, status: Status| Receipt {
+            command: command.to_owned(),
+            request: request.to_owned(),
+            job: None,
+            status,
         };
-        let receipt = if stored != request {
+        let reused = || {
             let error = Error::new(code::COMMAND_ID_REUSED, "this command ID was used for other content");
-            Receipt {
-                command: command.to_owned(),
-                request: request.to_owned(),
-                job: None,
-                status: Status::Refused(error),
-            }
-        } else if let Some(receipt) = receipt {
-            receipt.clone()
-        } else {
-            Receipt { command: command.to_owned(), request: stored.clone(), job: None, status: Status::UnknownOutcome }
+            answer(request, Status::Refused(error))
         };
-        Some(receipt)
+        if let Some(record) = self.receipts.get(&key) {
+            return if record.request == request { record.receipt.clone() } else { reused() };
+        }
+        if let Some(stored) = self.lost.get(&key) {
+            return if stored == request { answer(stored, Status::UnknownOutcome) } else { reused() };
+        }
+        answer(request, Status::UnknownOutcome)
     }
 
     /// The adapter's report that the built-in chain drew the pending preview (RM.26, ONE.41).
@@ -402,7 +729,10 @@ impl<S: Store> CommandLayer<S> {
         }
     }
 
-    /// Holds or releases the commit lane, as an unsettled commit of another invocation would (test hook).
+    /// Holds or releases the commit lane, as an unsettled commit of another invocation would. A test hook: it exists
+    /// only in builds with debug assertions or the `test-hooks` feature (draft; L15).
+    #[cfg(any(debug_assertions, feature = "test-hooks"))]
+    #[doc(hidden)]
     pub fn hold_commit_lane(&mut self, held: bool) {
         if self.commit_held != held {
             self.commit_held = held;
@@ -410,57 +740,42 @@ impl<S: Store> CommandLayer<S> {
         }
     }
 
-    /// Changes the protected set and advances the protection revision, as a protection row's commit would. The
-    /// protection rows are not built yet; this is their stand-in.
-    pub fn set_protected(&mut self, protected: ProtectedSet) {
-        self.protected = protected;
-        self.revision.protection += 1;
-        self.generation += 1;
-    }
-
-    /// Replaces the head state without any revision change, as a corrupted head would (fault rehearsal for step 7).
+    /// Replaces the head state without any revision change, as a corrupted head would (fault rehearsal for step 7). A
+    /// test hook, in the same builds as [`CommandLayer::hold_commit_lane`].
+    #[cfg(any(debug_assertions, feature = "test-hooks"))]
     #[doc(hidden)]
     pub fn fault_replace_head(&mut self, state: Snapshot) {
         self.current = state;
     }
 
-    /// Ends the epoch and starts the next with a new per-launch secret (CT-ONE-21). Previews, jobs and handles end;
-    /// durable mutation receipts stay; other receipts become `unknown_outcome`; no token of the old epoch is valid.
-    /// A transaction whose fate was unknown is adopted if the store holds it durably, and dropped otherwise.
+    /// Ends the epoch and starts a fresh random one with a new per-launch secret (CT-ONE-21, L10). Previews, jobs and
+    /// handles end; durable receipts stay; other receipts become `unknown_outcome`, and the refusals retained for the
+    /// epoch are dropped; no token of the old epoch is valid. A transaction whose fate was unknown is adopted if the
+    /// store holds it durably, and dropped otherwise; either way its recovery ends.
     pub fn restart(&mut self, secret: Secret) {
-        let epoch = self.revision.epoch + 1;
         self.secret = secret;
         self.used.clear();
+        self.retained.clear();
         if let Some(p) = self.slot.take() {
             self.history.insert(p.id, PreviewState::Discarded);
         }
         self.jobs.clear();
         self.running.clear();
         self.commit_held = false;
-        self.recovery = None;
-        let mut resolved = None;
         if let Some(adoption) = self.limbo.take() {
+            self.recovery = None;
             if self.store.durable(&adoption.transaction.event) {
-                let record = self.adopt(adoption);
-                resolved = Some(record);
+                self.adopt(adoption);
             }
         }
-        for (command, (request, receipt)) in std::mem::take(&mut self.receipts) {
-            let durable = matches!(receipt.status, Status::Committed(_));
-            match &resolved {
-                Some((request_digest, record)) if *request_digest == request && !durable => {
-                    let receipt = Receipt { status: Status::Committed(record.clone()), ..receipt };
-                    self.receipts.insert(command, (request, receipt));
-                }
-                _ if durable => {
-                    self.receipts.insert(command, (request, receipt));
-                }
-                _ => {
-                    self.lost.insert(command, request);
-                }
+        for (key, record) in std::mem::take(&mut self.receipts) {
+            if record.durable {
+                self.receipts.insert(key, record);
+            } else {
+                self.lost.insert(key, record.request);
             }
         }
-        self.revision.epoch = epoch;
+        self.next_epoch();
         self.generation += 1;
     }
 
@@ -508,6 +823,7 @@ impl<S: Store> CommandLayer<S> {
                     None => Err(Error::new(code::UNDO_SUPERSEDED, "no eligible target")),
                 }
             }
+            "protection.orbit.set" => Ok(()),
             _ if row.overlay.is_some() => match row.lane {
                 Lane::Program => self.program_free(),
                 _ => Ok(()),
@@ -541,10 +857,12 @@ impl<S: Store> CommandLayer<S> {
         Ok(())
     }
 
+    /// The request digest: the envelope without the token's authenticator (LI.5), its caller included (draft ruling 4).
     fn request(&self, invocation: &Invocation) -> String {
         digest(&json::object([
             ("session", Value::String(self.revision.session.clone())),
             ("epoch", Value::Int(invocation.epoch as i64)),
+            ("caller", invocation.caller.to_json()),
             ("command", Value::String(invocation.command.clone())),
             ("row", Value::String(invocation.row.clone())),
             ("args", invocation.args.clone()),
@@ -552,21 +870,63 @@ impl<S: Store> CommandLayer<S> {
         ]))
     }
 
-    /// `invoke(command, row, args) -> Receipt` (KN5.1). A command ID the layer knows is answered by its outcome lookup
-    /// before anything else: the same content returns the stored receipt, so a retried delivery commits at most once,
-    /// also across a restart; other content is refused (CT-KN5-04, LI.30).
+    /// The envelope's full digest: the request digest and the token's authenticator (draft ruling 4).
+    fn envelope(invocation: &Invocation, request: &str) -> String {
+        let authenticator = invocation.token.as_ref().map_or(Value::Null, |t| Value::String(t.authenticator()));
+        digest(&json::object([("request", Value::String(request.to_owned())), ("authenticator", authenticator)]))
+    }
+
+    /// Whether the runtime may invoke a row: never a commit or app row (KN5.15), and not `protection.orbit.set`,
+    /// whose release confirmation is the solver's (draft).
+    fn runtime_may(row: &Row) -> bool {
+        !matches!(row.kind, Kind::Commit | Kind::App) && row.id != "protection.orbit.set"
+    }
+
+    /// Whether the envelope authenticates: its row exists, its caller may invoke the row and hold what it holds, and
+    /// its token, where the row takes one, verifies under this launch's secret (draft ruling 4).
+    fn authentic(&self, invocation: &Invocation) -> bool {
+        let Some(row) = self.table.row(&invocation.row) else {
+            return false;
+        };
+        match (&invocation.caller, &invocation.token) {
+            (Caller::Runtime { .. }, Some(_)) => false,
+            (Caller::Runtime { .. }, None) => Self::runtime_may(row),
+            (Caller::Shell, None) => !row.takes_token(),
+            (Caller::Shell, Some(token)) => row.takes_token() && token.verify(&self.secret),
+        }
+    }
+
+    /// `invoke(command, row, args) -> Receipt` (KN5.1). The retry lookup comes first, before lane admission or a token
+    /// is consumed (chapter 08 section 7): an envelope refused earlier in the epoch without authenticating gets its
+    /// refusal again, and a command ID recorded for the caller is answered by [`CommandLayer::kernel_outcome`], so the
+    /// same content returns the stored receipt and a retried delivery commits at most once, also across a restart or a
+    /// reopen, while other content is refused (CT-KN5-04, LI.30). A refusal of an envelope that does not authenticate
+    /// is retained for the epoch under its full digest and never attaches to the command ID, so a later authentic
+    /// envelope with the ID is treated as the first (draft ruling 4); every other answer attaches to the ID (KN5.21).
     pub fn invoke(&mut self, invocation: Invocation) -> Receipt {
+        let scope = invocation.caller.scope();
         let request = self.request(&invocation);
-        if let Some(receipt) = self.outcome(&invocation.command, &request) {
-            return receipt;
+        let full = Self::envelope(&invocation, &request);
+        let retained = self.retained.get(&(scope, full.clone())).filter(|r| r.command == invocation.command);
+        if let Some(receipt) = retained {
+            return receipt.clone();
+        }
+        let key = (scope, invocation.command.clone());
+        if self.receipts.contains_key(&key) || self.lost.contains_key(&key) {
+            return self.kernel_outcome(&invocation.caller, &invocation.command, &request);
         }
         let (job, status) = match self.dispatch(&invocation, &request) {
             Ok(answer) => answer,
             Err(error) => (None, Status::Refused(error)),
         };
+        if matches!(status, Status::Refused(_)) && !self.authentic(&invocation) {
+            let receipt = Receipt { command: invocation.command.clone(), request: full.clone(), job, status };
+            self.retained.insert((scope, full), receipt.clone());
+            return receipt;
+        }
         let receipt = Receipt { command: invocation.command.clone(), request: request.clone(), job, status };
-        self.receipts.insert(invocation.command, (request, receipt.clone()));
-        receipt
+        let record = self.receipts.entry(key).or_insert(Record { request, receipt, durable: false });
+        record.receipt.clone()
     }
 
     fn dispatch(&mut self, invocation: &Invocation, request: &str) -> Result<(Option<u64>, Status), Error> {
@@ -580,6 +940,9 @@ impl<S: Store> CommandLayer<S> {
             if matches!(row.kind, Kind::Commit | Kind::App) {
                 return refused(code::COMMIT_ROW_REFUSED, format!("the runtime may not invoke `{}` (KN5.15)", row.id));
             }
+            if !Self::runtime_may(&row) {
+                return refused(code::NOT_GRANTED, format!("the runtime may not invoke `{}`", row.id));
+            }
             if invocation.token.is_some() {
                 return refused(code::TOKEN_INVALID, "the runtime never holds a token (KN5.15)");
             }
@@ -590,7 +953,13 @@ impl<S: Store> CommandLayer<S> {
         let Some(args) = invocation.args.as_object() else {
             return refused(code::ARGUMENT_FORM, "the arguments are not an object");
         };
-        if !args.keys().map(String::as_str).eq(row.plain_arguments()) {
+        // A row that confirms a release takes an optional boolean `confirm` beside its table arguments (draft; LI.26).
+        let confirmable = row.has_gate("confirm") || row.action_guard.is_some();
+        if confirmable && args.get("confirm").is_some_and(|confirm| !matches!(confirm, Value::Bool(_))) {
+            return refused(code::ARGUMENT_FORM, "`confirm` is a boolean");
+        }
+        let names = args.keys().map(String::as_str).filter(|name| !(confirmable && *name == "confirm"));
+        if !names.eq(row.plain_arguments()) {
             return refused(code::ARGUMENT_FORM, format!("`{}` takes {:?}", row.id, row.arguments));
         }
         if row.takes_token() != invocation.token.is_some() {
@@ -605,6 +974,7 @@ impl<S: Store> CommandLayer<S> {
             "operation.preview.cancel" => self.cancel(invocation),
             "session.undo" => self.undo(invocation, request, Direction::Undo),
             "session.redo" => self.undo(invocation, request, Direction::Redo),
+            "protection.orbit.set" => self.set_orbits(invocation, request),
             _ if row.overlay.is_some() => self.admit_program(invocation, &row),
             _ => refused(code::ROW_NOT_BUILT, format!("`{}` is not built in the headless layer", row.id)),
         }
@@ -613,11 +983,6 @@ impl<S: Store> CommandLayer<S> {
     fn next_job(&mut self) -> u64 {
         self.jobs_issued += 1;
         self.jobs_issued
-    }
-
-    fn next_event(&mut self) -> String {
-        self.events += 1;
-        format!("e{}", self.events)
     }
 
     // ----- operation.preview -----
@@ -631,7 +996,8 @@ impl<S: Store> CommandLayer<S> {
         self.exclusive_free()?;
         let id = self.next_job();
         let kind = JobKind::Preview { recipe, draft: digest(draft), caller: invocation.caller.clone() };
-        self.jobs.push_back(Job { id, command: invocation.command.clone(), lane: Lane::Exclusive, kind });
+        let (command, scope) = (invocation.command.clone(), invocation.caller.scope());
+        self.jobs.push_back(Job { id, command, scope, lane: Lane::Exclusive, kind });
         self.generation += 1;
         Ok((Some(id), Status::Running(id)))
     }
@@ -654,6 +1020,7 @@ impl<S: Store> CommandLayer<S> {
     }
 
     fn build_preview(&mut self, id: u64, command: &str, recipe: Recipe, draft: &str, caller: Caller) {
+        let key = (caller.scope(), command.to_owned());
         let base = self.current.clone();
         let status = match self.kernel.derive(&base, &recipe, &self.protected) {
             Err(error) => Status::Failed(kernel_error(error)),
@@ -683,13 +1050,14 @@ impl<S: Store> CommandLayer<S> {
                 Status::Completed(Completion { kind: CompletionKind::PreviewReady, revision, result: Some(result) })
             }
         };
-        self.settle(command, status);
+        self.settle(&key, status);
         self.generation += 1;
     }
 
-    fn settle(&mut self, command: &str, status: Status) {
-        if let Some((_, receipt)) = self.receipts.get_mut(command) {
-            receipt.status = status;
+    /// Settles a transient receipt. A durable record is never overwritten.
+    fn settle(&mut self, key: &Key, status: Status) {
+        if let Some(record) = self.receipts.get_mut(key).filter(|record| !record.durable) {
+            record.receipt.status = status;
         }
     }
 
@@ -708,7 +1076,7 @@ impl<S: Store> CommandLayer<S> {
         }
         if let Some(position) = self.jobs.iter().position(|job| job.id == id && job.lane == Lane::Exclusive) {
             let job = self.jobs.remove(position).expect("the position is in range");
-            self.settle(&job.command, Status::Cancelled(CancelReason::ByUser));
+            self.settle(&(job.scope, job.command), Status::Cancelled(CancelReason::ByUser));
             self.history.insert(id, PreviewState::Cancelled);
             self.generation += 1;
             return Ok((None, Status::Completed(done)));
@@ -728,15 +1096,19 @@ impl<S: Store> CommandLayer<S> {
 
     // ----- tokens -----
 
-    /// Step 3: the authenticator, the session and epoch, and the nonce. The nonce is spent once the token
-    /// authenticates, so a press refused at a later step stays spent.
+    /// Step 3: the authenticator (`KN5:auth.token_invalid`), then the session and epoch (`KN5:stale.token_mismatch`,
+    /// draft ruling 5), then the nonce. The nonce is spent once the token passes all three, so a press refused at a
+    /// later step stays spent.
     fn authenticate(&mut self, invocation: &Invocation) -> Result<TokenBinding, Error> {
         let Some(token) = &invocation.token else {
             return Err(Error::new(code::TOKEN_INVALID, "no token"));
         };
+        if !token.verify(&self.secret) {
+            return Err(Error::new(code::TOKEN_INVALID, "the token's authenticator does not verify"));
+        }
         let b = &token.binding;
-        if !token.verify(&self.secret) || b.session != self.revision.session || b.epoch != self.revision.epoch {
-            return Err(Error::new(code::TOKEN_INVALID, "the token does not authenticate for this session and epoch"));
+        if b.session != self.revision.session || b.epoch != self.revision.epoch {
+            return Err(Error::new(code::TOKEN_MISMATCH, "the token belongs to another session or epoch"));
         }
         if !self.used.insert(b.nonce) {
             return Err(Error::new(code::TOKEN_USED, "the token was used"));
@@ -744,12 +1116,12 @@ impl<S: Store> CommandLayer<S> {
         Ok(b.clone())
     }
 
-    /// Step 5's binding: a genuine token's command, row, absolute arguments and identity are this invocation's.
+    /// Step 5's binding: a genuine token's command, row, absolute arguments and identity block are this invocation's.
     fn bound(&self, binding: &TokenBinding, invocation: &Invocation) -> Result<(), Error> {
         if binding.command != invocation.command
             || binding.row != invocation.row
             || binding.args != args_digest(&invocation.args)
-            || binding.identity != self.revision.identity
+            || binding.identity != self.identity
         {
             return Err(Error::new(code::TOKEN_MISMATCH, "the token is bound to another invocation"));
         }
@@ -772,12 +1144,22 @@ impl<S: Store> CommandLayer<S> {
         let binding = self.authenticate(invocation)?;
         self.commit_lane()?;
         self.bound(&binding, invocation)?;
-        let Some(bound) = binding.preview.as_ref().filter(|b| b.id == id) else {
+        let Some(bound) = binding.preview.as_ref() else {
             return refused(code::TOKEN_MISMATCH, "a word commit's token binds the presented preview");
         };
-        let Some(p) = self.slot.as_ref().filter(|p| p.id == id) else {
-            return Err(self.missing_preview(id));
-        };
+        // The token's preview ended: an empty slot is `no_fresh_preview`, a slot holding another preview is
+        // `preview_replaced` (draft ruling 1).
+        match &self.slot {
+            None => return refused(code::NO_FRESH_PREVIEW, format!("preview {} is not pending", bound.id)),
+            Some(p) if p.id != bound.id => {
+                return refused(code::PREVIEW_REPLACED, format!("preview {} was replaced by {}", bound.id, p.id))
+            }
+            Some(_) => {}
+        }
+        if id != bound.id {
+            return refused(code::TOKEN_MISMATCH, "the token binds another preview");
+        }
+        let p = self.slot.as_ref().expect("the slot holds the token's preview");
         if p.state != PreviewState::Presented {
             return refused(code::NO_FRESH_PREVIEW, format!("preview {id} was never presented"));
         }
@@ -796,43 +1178,71 @@ impl<S: Store> CommandLayer<S> {
             (Some(end), Verdict::Clear) => end.clone(),
             _ => return refused(code::ORBIT_WOULD_MOVE, c600_kernel::PROTECTED_MESSAGE),
         };
-        let (recipe, literal, pre) = (p.recipe.clone(), p.literal.clone(), p.base.digest().to_owned());
-        let event = self.next_event();
+        let (recipe, literal) = (p.recipe.clone(), p.literal.clone());
+        let adoption = self.commit_adoption(Meta::of(invocation, request), recipe, end, literal, Some(id));
+        self.transact(adoption)
+    }
+
+    /// A commit of `recipe`, which takes the head from the current state to `end`: a new node under the head.
+    fn commit_adoption(
+        &self,
+        meta: Meta,
+        recipe: Recipe,
+        end: Snapshot,
+        literal: String,
+        preview: Option<u64>,
+    ) -> Adoption {
         let order = self.order + 1;
+        let event = format!("e{order}");
+        let post = end.digest().to_owned();
         let revision = Revision {
             head: event.clone(),
             state: self.revision.state + 1,
-            digest: end.digest().to_owned(),
+            digest: post.clone(),
             ..self.revision.clone()
         };
-        let post = end.digest().to_owned();
-        let action = Action { order, event: event.clone(), recipe, pre: pre.clone(), post: post.clone() };
+        let depth = self.nodes[&self.head].depth + 1;
+        let node = Node { parent: self.head, recipe: Some(recipe.clone()), digest: post.clone(), depth };
         let transaction = Transaction {
             kind: TransactionKind::Commit,
             event,
             order,
             target: None,
-            command: invocation.command.clone(),
-            row: invocation.row.clone(),
-            request: request.to_owned(),
+            caller: meta.caller,
+            command: meta.command,
+            row: meta.row,
+            request: meta.request,
             literal,
-            pre,
+            pre: self.current.digest().to_owned(),
             post,
             revision,
+            recipe: Value::Array(steps_json(&recipe, false)),
+            orbits: self.protected.orbits().to_vec(),
+            confirm: meta.confirm,
+            job: None,
+            result: None,
         };
-        self.transact(Adoption { transaction, state: end, stacks: Stacks::Commit(action), preview: Some(id) })
+        let change = Change::Head { before: self.head, after: order };
+        Adoption {
+            transaction,
+            state: Some(end),
+            protected: None,
+            head: order,
+            tree: Tree::Push { node: Some((order, node)), change },
+            preview,
+        }
     }
 
-    /// Steps 9 and 10.
+    /// Steps 9 and 10: writes the action and adopts it only when the store answers that it is durable.
     fn transact(&mut self, adoption: Adoption) -> Result<(Option<u64>, Status), Error> {
         match self.store.transact(&adoption.transaction) {
             Fate::Durable => {
-                let (_, record) = self.adopt(adoption);
-                Ok((None, Status::Committed(record)))
+                let receipt = self.adopt(adoption);
+                Ok((receipt.job, receipt.status))
             }
             Fate::RolledBack(error) => Ok((None, Status::Failed(error))),
             Fate::Unknown => {
-                self.recovery = Some(Error::new(code::COMMIT_FATE, "the store cannot say whether the commit landed"));
+                self.recovery = Some(Error::new(code::COMMIT_FATE, "the store cannot say whether the action landed"));
                 self.limbo = Some(adoption);
                 self.generation += 1;
                 Ok((None, Status::UnknownOutcome))
@@ -840,35 +1250,60 @@ impl<S: Store> CommandLayer<S> {
         }
     }
 
-    /// Step 10: adopt, discard or commit the pending preview, cancel the jobs on the replaced revision except file
-    /// jobs, and return the request digest and the commit record.
-    fn adopt(&mut self, adoption: Adoption) -> (String, CommitRecord) {
-        let Adoption { transaction, state, stacks, preview } = adoption;
-        let record = CommitRecord {
-            event: transaction.event.clone(),
-            pre: transaction.pre.clone(),
-            post: transaction.post.clone(),
-            revision: transaction.revision.clone(),
-        };
-        self.current = state;
+    /// Step 10: applies a durable action, stores its durable receipt and returns it. Only an action that moves the
+    /// puzzle ends the pending preview (committed when it is the one committed, discarded otherwise) and cancels the
+    /// jobs on the replaced revision, except file jobs (KN5.18).
+    fn adopt(&mut self, adoption: Adoption) -> Receipt {
+        let Adoption { transaction, state, protected, head, tree, preview } = adoption;
+        let moved = state.is_some();
+        if let Some(state) = state {
+            self.current = state;
+        }
+        if let Some(protected) = protected {
+            self.protected = protected;
+        }
         self.revision = transaction.revision.clone();
         self.order = transaction.order;
-        match stacks {
-            Stacks::Commit(action) => {
-                self.done.push(action);
-                self.undone.clear();
+        self.head = head;
+        match tree {
+            Tree::Push { node, change } => {
+                for order in std::mem::take(&mut self.redo) {
+                    self.changes.remove(&order);
+                }
+                if let Some((key, node)) = node {
+                    self.nodes.insert(key, node);
+                }
+                self.changes.insert(transaction.order, change);
+                self.undo.push(transaction.order);
             }
-            Stacks::Undo => {
-                let action = self.done.pop().expect("an undo has a target");
-                self.undone.push(action);
+            Tree::Undo => {
+                if let Some(order) = self.undo.pop() {
+                    self.redo.push(order);
+                }
             }
-            Stacks::Redo(action) => {
-                self.undone.pop();
-                self.done.push(action);
+            Tree::Redo => {
+                if let Some(order) = self.redo.pop() {
+                    self.undo.push(order);
+                }
             }
+            Tree::None => {}
         }
+        let receipt = transaction.receipt();
+        let key = (transaction.caller.scope(), transaction.command.clone());
+        self.lost.remove(&key);
+        let record = Record { request: transaction.request.clone(), receipt: receipt.clone(), durable: true };
+        self.receipts.insert(key, record);
+        if moved {
+            self.end_revision(preview);
+        }
+        self.generation += 1;
+        receipt
+    }
+
+    /// Ends what read the state an action replaced: the pending preview, and every job but file jobs (KN5.18).
+    fn end_revision(&mut self, committed: Option<u64>) {
         if let Some(p) = self.slot.take() {
-            let state = if preview == Some(p.id) { PreviewState::Committed } else { PreviewState::Discarded };
+            let state = if committed == Some(p.id) { PreviewState::Committed } else { PreviewState::Discarded };
             self.history.insert(p.id, state);
         }
         let mut keep = VecDeque::new();
@@ -880,7 +1315,7 @@ impl<S: Store> CommandLayer<S> {
             if job.lane == Lane::Exclusive {
                 self.history.insert(job.id, PreviewState::Discarded);
             }
-            self.settle(&job.command, Status::Cancelled(CancelReason::ReplacedRevision));
+            self.settle(&(job.scope, job.command), Status::Cancelled(CancelReason::ReplacedRevision));
         }
         self.jobs = keep;
         let running = std::mem::take(&mut self.running);
@@ -888,29 +1323,128 @@ impl<S: Store> CommandLayer<S> {
             if program.kind == Kind::File {
                 self.running.insert(id, program);
             } else {
-                self.settle(&program.command, Status::Cancelled(CancelReason::ReplacedRevision));
+                let key = (program.caller.scope(), program.command);
+                self.settle(&key, Status::Cancelled(CancelReason::ReplacedRevision));
             }
         }
-        self.generation += 1;
-        (transaction.request, record)
     }
 
     // ----- session.undo and session.redo -----
 
-    fn inverse(&self, recipe: &Recipe) -> Result<Recipe, Error> {
-        let steps = recipe.steps().iter().rev().map(|step| match step {
-            Step::Word(letters) => json::object([
-                ("kind", Value::String("word".into())),
-                ("moves", Value::Array(letters.iter().rev().map(|&m| Value::Int(-(m as i64))).collect())),
-            ]),
-            Step::Star(star) => json::object([
-                ("kind", Value::String("star".into())),
-                ("orbit", Value::Int(star.orbit() as i64)),
-                ("node", Value::Int(star.node() as i64)),
-                ("sign", Value::Int(-star.sign() as i64)),
-            ]),
-        });
-        Ok(self.kernel.recipe(&Value::Array(steps.collect()))?)
+    /// The recipe from the head to node `to`: the inverses of the nodes up to their common ancestor, then the nodes
+    /// down to `to` (M6's move tree).
+    fn path(&self, to: u64) -> Result<Recipe, Error> {
+        let (mut a, mut b) = (self.head, to);
+        let (mut up, mut down) = (Vec::new(), Vec::new());
+        while self.nodes[&a].depth > self.nodes[&b].depth {
+            up.push(a);
+            a = self.nodes[&a].parent;
+        }
+        while self.nodes[&b].depth > self.nodes[&a].depth {
+            down.push(b);
+            b = self.nodes[&b].parent;
+        }
+        while a != b {
+            up.push(a);
+            a = self.nodes[&a].parent;
+            down.push(b);
+            b = self.nodes[&b].parent;
+        }
+        let recipe = |node: &u64| self.nodes[node].recipe.as_ref().expect("every node but the start is a commit");
+        let mut steps = Vec::new();
+        for node in &up {
+            steps.extend(steps_json(recipe(node), true));
+        }
+        for node in down.iter().rev() {
+            steps.extend(steps_json(recipe(node), false));
+        }
+        Ok(self.kernel.recipe(&Value::Array(steps))?)
+    }
+
+    /// The state at node `to`, derived from the current state along the path under `protected` (LI.26's normal
+    /// permission path); it must reach the node's recorded digest. Returns the state and the path's literal digest.
+    fn walk(&self, to: u64, protected: &ProtectedSet) -> Result<(Snapshot, String), Error> {
+        if self.current.digest() != self.nodes[&self.head].digest {
+            return Err(Error::new(code::STATE_HASH_MISMATCH, "the head hash differs from the head's recorded state"));
+        }
+        if to == self.head {
+            return Err(Error::new(code::STATE_HASH_MISMATCH, "the head is the action's target already"));
+        }
+        let recipe = self.path(to)?;
+        let derived = match self.kernel.derive(&self.current, &recipe, protected).map_err(kernel_error)? {
+            Derivation::Derived(derived) => derived,
+            Derivation::Refused(refusal) => return Err(refusal.refusal.into()),
+        };
+        if derived.state.digest() != self.nodes[&to].digest {
+            return Err(Error::new(code::STATE_HASH_MISMATCH, "the path does not reach the action's recorded state"));
+        }
+        Ok((derived.state, derived.word))
+    }
+
+    /// Whether going from the protected set in force to `to` releases an orbit.
+    fn releases(&self, to: &[usize]) -> bool {
+        self.protected.orbits().iter().any(|orbit| !to.contains(orbit))
+    }
+
+    /// An undo or redo of the action on top of its stack, through the original permission path: a head change derives
+    /// its path under `protected`, and a protection change that releases an orbit needs `confirm` (LI.26).
+    fn plan_step(&self, meta: Meta, direction: Direction, protected: &ProtectedSet) -> Result<Adoption, Error> {
+        let (stack, kind, tree) = match direction {
+            Direction::Undo => (&self.undo, TransactionKind::Undo, Tree::Undo),
+            Direction::Redo => (&self.redo, TransactionKind::Redo, Tree::Redo),
+        };
+        let Some(&target) = stack.last() else {
+            return Err(Error::new(code::UNDO_SUPERSEDED, "no eligible target"));
+        };
+        let change = self.changes.get(&target).expect("a stacked action keeps its change").clone();
+        let order = self.order + 1;
+        let digest = self.current.digest().to_owned();
+        let mut transaction = Transaction {
+            kind,
+            event: format!("e{order}"),
+            order,
+            target: Some(target),
+            caller: meta.caller,
+            command: meta.command,
+            row: meta.row,
+            request: meta.request,
+            literal: String::new(),
+            pre: digest.clone(),
+            post: digest,
+            revision: self.revision.clone(),
+            recipe: Value::Null,
+            orbits: self.protected.orbits().to_vec(),
+            confirm: meta.confirm,
+            job: None,
+            result: None,
+        };
+        match change {
+            Change::Head { before, after } => {
+                let to = if direction == Direction::Undo { before } else { after };
+                let (state, literal) = self.walk(to, protected)?;
+                transaction.literal = literal;
+                transaction.post = state.digest().to_owned();
+                transaction.revision.head = format!("e{to}");
+                transaction.revision.state += 1;
+                transaction.revision.digest = state.digest().to_owned();
+                Ok(Adoption { transaction, state: Some(state), protected: None, head: to, tree, preview: None })
+            }
+            Change::Protection { before, after } => {
+                let to = if direction == Direction::Undo { before } else { after };
+                if !meta.confirm && self.releases(&to) {
+                    return Err(Error::new(
+                        code::CONFIRMATION_REQUIRED,
+                        "releasing a protected orbit needs confirmation",
+                    ));
+                }
+                let orbits: Vec<i64> = to.iter().map(|&orbit| orbit as i64).collect();
+                let set = self.kernel.protected_set(&orbits)?;
+                transaction.orbits = to;
+                transaction.revision.workspace += 1;
+                transaction.revision.protection += 1;
+                Ok(Adoption { transaction, state: None, protected: Some(set), head: self.head, tree, preview: None })
+            }
+        }
     }
 
     fn undo(
@@ -928,60 +1462,94 @@ impl<S: Store> CommandLayer<S> {
         if binding.hint != Some(hint) {
             return refused(code::TOKEN_MISMATCH, "an undo or redo token binds its hint");
         }
+        // The hint before the bound revisions, so a raced undo is `undo_superseded` (draft ruling 2).
         if self.undo_hint(direction) != Some(hint) {
             return refused(code::UNDO_SUPERSEDED, "the hint's order or target changed");
         }
-        let action = match direction {
-            Direction::Undo => self.done.last(),
-            Direction::Redo => self.undone.last(),
+        if binding.revision != Some((self.revision.state, self.revision.protection)) {
+            return refused(code::REVISION_CHANGED, "the token's state or protection revision changed");
         }
-        .expect("a current hint has a target")
-        .clone();
-        let (from, to) = match direction {
-            Direction::Undo => (&action.post, &action.pre),
-            Direction::Redo => (&action.pre, &action.post),
-        };
-        if self.current.digest() != from {
-            return refused(code::STATE_HASH_MISMATCH, "the head hash differs from the action's");
+        let protected = self.protected.clone();
+        let adoption = self.plan_step(Meta::of(invocation, request), direction, &protected)?;
+        self.transact(adoption)
+    }
+
+    // ----- protection.orbit.set -----
+
+    /// A change of the protected set: the workspace and protection revisions advance, the state and the preview slot
+    /// stay. A release needs `confirm` (LI.26).
+    fn plan_orbits(&self, meta: Meta, set: ProtectedSet) -> Result<Adoption, Error> {
+        let to = set.orbits().to_vec();
+        if !meta.confirm && self.releases(&to) {
+            return Err(Error::new(code::CONFIRMATION_REQUIRED, "releasing a protected orbit needs confirmation"));
         }
-        let recipe = match direction {
-            Direction::Undo => self.inverse(&action.recipe)?,
-            Direction::Redo => action.recipe.clone(),
-        };
-        let derived = match self.kernel.derive(&self.current, &recipe, &self.protected).map_err(kernel_error)? {
-            Derivation::Derived(derived) => derived,
-            Derivation::Refused(refusal) => return Err(refusal.refusal.into()),
-        };
-        if derived.state.digest() != to {
-            return refused(code::STATE_HASH_MISMATCH, "the inverse does not reach the action's recorded state");
-        }
-        let event = self.next_event();
         let order = self.order + 1;
-        let (head, stacks, kind) = match direction {
-            Direction::Undo => {
-                let below = self.done.len().checked_sub(2).map(|i| self.done[i].event.clone());
-                (below.unwrap_or_else(|| "e0".to_owned()), Stacks::Undo, TransactionKind::Undo)
-            }
-            Direction::Redo => {
-                let again = Action { order, event: event.clone(), ..action.clone() };
-                (event.clone(), Stacks::Redo(again), TransactionKind::Redo)
-            }
-        };
-        let revision = Revision { head, state: self.revision.state + 1, digest: to.clone(), ..self.revision.clone() };
+        let digest = self.current.digest().to_owned();
+        let mut revision = self.revision.clone();
+        revision.workspace += 1;
+        revision.protection += 1;
         let transaction = Transaction {
-            kind,
-            event,
+            kind: TransactionKind::Protection,
+            event: format!("e{order}"),
             order,
-            target: Some(action.order),
-            command: invocation.command.clone(),
-            row: invocation.row.clone(),
-            request: request.to_owned(),
-            literal: derived.word.clone(),
-            pre: from.clone(),
-            post: to.clone(),
+            target: None,
+            caller: meta.caller,
+            command: meta.command,
+            row: meta.row,
+            request: meta.request,
+            literal: String::new(),
+            pre: digest.clone(),
+            post: digest,
             revision,
+            recipe: Value::Null,
+            orbits: to.clone(),
+            confirm: meta.confirm,
+            job: None,
+            result: None,
         };
-        self.transact(Adoption { transaction, state: derived.state, stacks, preview: None })
+        let change = Change::Protection { before: self.protected.orbits().to_vec(), after: to };
+        let tree = Tree::Push { node: None, change };
+        Ok(Adoption { transaction, state: None, protected: Some(set), head: self.head, tree, preview: None })
+    }
+
+    fn set_orbits(&mut self, invocation: &Invocation, request: &str) -> Result<(Option<u64>, Status), Error> {
+        let orbits = invocation.args.get("orbits").and_then(Value::as_array);
+        let Some(orbits) = orbits.and_then(|orbits| orbits.iter().map(Value::as_i64).collect::<Option<Vec<_>>>())
+        else {
+            return refused(code::ARGUMENT_FORM, "`orbits` is a list of orbit numbers");
+        };
+        let set = self.kernel.protected_set(&orbits)?;
+        let adoption = self.plan_orbits(Meta::of(invocation, request), set)?;
+        self.transact(adoption)
+    }
+
+    /// A language-defined workspace row's completion: one durable action that advances the workspace revision and
+    /// keeps the state, the preview slot and the jobs (KN5.23).
+    fn workspace_adoption(&self, meta: Meta, job: u64, result: String) -> Adoption {
+        let order = self.order + 1;
+        let digest = self.current.digest().to_owned();
+        let mut revision = self.revision.clone();
+        revision.workspace += 1;
+        let transaction = Transaction {
+            kind: TransactionKind::Workspace,
+            event: format!("e{order}"),
+            order,
+            target: None,
+            caller: meta.caller,
+            command: meta.command,
+            row: meta.row,
+            request: meta.request,
+            literal: String::new(),
+            pre: digest.clone(),
+            post: digest,
+            revision,
+            recipe: Value::Null,
+            orbits: self.protected.orbits().to_vec(),
+            confirm: false,
+            job: Some(job),
+            result: Some(result),
+        };
+        Adoption { transaction, state: None, protected: None, head: self.head, tree: Tree::None, preview: None }
     }
 
     // ----- language-defined rows -----
@@ -993,15 +1561,18 @@ impl<S: Store> CommandLayer<S> {
         }
         let id = self.next_job();
         if row.lane == Lane::View {
-            let superseded: Vec<String> = self
+            let superseded: Vec<u64> = self
                 .jobs
                 .iter()
                 .filter(|job| job.lane == Lane::View && matches!(&job.kind, JobKind::Program(p) if p.row == row.id))
-                .map(|job| job.command.clone())
+                .map(|job| job.id)
                 .collect();
-            self.jobs.retain(|job| !(job.lane == Lane::View && superseded.contains(&job.command)));
-            for command in superseded {
-                self.settle(&command, Status::Cancelled(CancelReason::Superseded(invocation.command.clone())));
+            let (ended, kept) =
+                std::mem::take(&mut self.jobs).into_iter().partition(|job| superseded.contains(&job.id));
+            self.jobs = kept;
+            for job in ended {
+                let reason = CancelReason::Superseded(invocation.command.clone());
+                self.settle(&(job.scope, job.command), Status::Cancelled(reason));
             }
         }
         let program = ProgramJob {
@@ -1017,6 +1588,7 @@ impl<S: Store> CommandLayer<S> {
         self.jobs.push_back(Job {
             id,
             command: invocation.command.clone(),
+            scope: invocation.caller.scope(),
             lane: row.lane,
             kind: JobKind::Program(program),
         });
@@ -1033,26 +1605,49 @@ impl<S: Store> CommandLayer<S> {
         Some(program)
     }
 
-    /// Reports a program job's result. A job a commit or undo cancelled meanwhile stays cancelled, and its result is
-    /// dropped (`None`).
+    /// Reports a program job's result: the host's interface. A job a commit or undo cancelled meanwhile stays
+    /// cancelled, and its result is dropped (`None`). A workspace row's completion is one durable action, written with
+    /// its receipt (KN5.23, L8); in read-only recovery it fails. Other completions stay transient.
     pub fn finish_program_job(&mut self, job: u64, result: Result<Value, Error>) -> Option<Receipt> {
         let program = self.running.remove(&job)?;
+        let key = (program.caller.scope(), program.command.clone());
         let status = match result {
             Err(error) => Status::Failed(error),
+            Ok(_) if program.kind == Kind::Workspace && self.recovery.is_some() => {
+                Status::Failed(Error::new(code::READ_ONLY_RECOVERY, "the session is in read-only recovery"))
+            }
+            Ok(value) if program.kind == Kind::Workspace => {
+                let request = self.receipts.get(&key).map(|record| record.request.clone()).unwrap_or_default();
+                let meta = Meta {
+                    caller: program.caller.clone(),
+                    command: program.command.clone(),
+                    row: program.row.clone(),
+                    request,
+                    confirm: false,
+                };
+                let adoption = self.workspace_adoption(meta, job, digest(&value));
+                match self.transact(adoption) {
+                    Ok((_, status)) => status,
+                    Err(error) => Status::Failed(error),
+                }
+            }
             Ok(value) => {
                 let kind = match program.kind {
                     Kind::Query => CompletionKind::Query,
-                    Kind::Workspace => CompletionKind::Workspace,
                     Kind::File => CompletionKind::File,
                     Kind::View => CompletionKind::ViewPublished,
-                    Kind::Commit | Kind::App => unreachable!("an overlay row is never a commit or app row"),
+                    Kind::Workspace | Kind::Commit | Kind::App => {
+                        unreachable!(
+                            "a workspace completion is durable, and an overlay row is never a commit or app row"
+                        )
+                    }
                 };
                 let result = Some(ResultRef { job: Some(job), digest: digest(&value) });
                 Status::Completed(Completion { kind, revision: program.revision.clone(), result })
             }
         };
-        self.settle(&program.command, status);
+        self.settle(&key, status);
         self.generation += 1;
-        self.receipts.get(&program.command).map(|(_, receipt)| receipt.clone())
+        self.receipts.get(&key).map(|record| record.receipt.clone())
     }
 }
