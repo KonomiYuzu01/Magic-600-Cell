@@ -649,8 +649,9 @@ fn collections_cross_the_process_unchanged() {
     // Above the bound on its derived lengths, the answer reaches the run in process, while the parent answers the
     // child's call with `PS1:input.noncanonical_value`: a known difference (crate draft 15).
     let over = Value::Compressed(doublings(16_383));
-    // A result bound as large as `WIDE`'s memory budget would cut the read off before its answer.
-    let wide = RowTariff { kernel_cost: 5, result_bound: 1 << 20 };
+    // The result bound must cover the word's logical size, which counts every part's stored length (LP2's pull request
+    // 186), about 17 MB here. One as large as `WIDE`'s memory budget would cut the read off before its answer.
+    let wide = RowTariff { kernel_cost: 5, result_bound: 1 << 30 };
     let session = || {
         let mut s = Session::default();
         s.snapshots.push(("compressed", wide, over.clone()));
