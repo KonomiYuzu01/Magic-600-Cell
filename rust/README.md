@@ -341,6 +341,28 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   and the comparison checks; R7, the INV-4 half of CT-KN2-05 is not scanned, and the test's docstring says why; R8,
   CT-KN3-02's large entries come from rotations the test chooses, which the engine makes exact and `load` reads back
   with the rotation and the digest checked exactly, and J1's digest agrees on the first.
+- Attack tests from the Fable solver's leads of 16 November 2026: `tests/test_jumbling_rust_attacks.py` (through the
+  adapter) and `c600-jumble/tests/refusals.rs`. CT-JI-03 in part (cancellation yields only covered prefixes; the
+  fixed core cell is listed in the identity domain) and CT-KN2-04 in part (a blocked word check and refused named
+  objects change nothing); the other tests check JI.3, JI.5, JI.6, JI.9 to JI.12, JI.39, JI.45, JI.52, JI.53, KN1.4
+  and KN2.14.
+- Fixed after those tests. R6 is reversed: a word check whose prefix is refused makes no end-state assertion (JI.11);
+  its 22 end-state fields are null with `end_state_undefined` "refused_prefix", the start facts, the failing index
+  and the processed range stay, and with a named unit the step flag is false (LB3.8 checks every prefix). A cap
+  outside 0..599 in `word_check`, `prefix_observations` or `seam_facts`, and a negative piece ID in a named unit,
+  were adapter input errors; they are now refused with `KN2:input.named_object_invalid`, and every such refusal
+  names the argument, the supplied IDs and the failed condition (JI.45). A request or a state record may name its
+  `dimension`; any value other than 4 is refused with `KN1:input.unsupported_dimension` before any other field is
+  read (JI.3, JI.45).
+- Drafts: a request or record without a dimension means 4; a refused prefix's processed range is [0, index + 1),
+  the refused letter examined and the suffix unchecked.
+- J1 faults, reported and not fixed: `references/word_check.py` describes a refused prefix's end state and gives a
+  boolean step flag without a named unit (JI.11), and accepts a lattice piece or a mixed-pose set as the unit (JI.9);
+  `sim/api.py`'s `fixture_state` silently replays another prefix for a t outside 0 to the record count (JI.52). The
+  attack tests keep them as expected failures.
+- Not run, because M8 builds the calls: lead L9 (`label_checkpoint` on a raw table with a turned centre), L15's
+  `repair_list` and `covers` rows (pair order, no rank, a missing cap), L2's `release_check` agreement and L16's
+  `KN2:stale.revision_gone` (the candidate has no snapshot handles).
 - Evidence kind: source and fixture. The comparison ran on Windows only. The timings the check prints are
   informational, not performance evidence.
 
