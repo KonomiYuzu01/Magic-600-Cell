@@ -77,6 +77,7 @@ name = "c600-tools"
 version = "0.0.0"
 dependencies = [
  "c600-check",
+ "c600-command",
  "c600-digest",
  "c600-ir",
  "c600-kernel",

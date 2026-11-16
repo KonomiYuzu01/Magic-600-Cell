@@ -427,9 +427,42 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   each step the oracle accepted or refused for protection expands to a literal word with the recorded
   `expansion_sha256` and `primitive_count`. Of O07's ten invalid steps, four are single words of integer moves, which
   pass to the tool unchanged; the other six have no literal word, so the route stops there with the kernel's refusal.
-- Tests (`c600-tools/tests/`): `tool.rs`, `ack.rs` and `expand.rs`, with parts of CT-LB6-03, CT-BND-15, CT-BND-07 and
-  CT-BND-11, each naming its part. No conformance ID runs whole.
-- Not built: the host bridge onto `c600-command`, the binary `c600-lp3-source` and `tests/test_lp3_source_route.py`.
-  They wait for the command layer (C1) on main.
+- The host bridge, `c600_tools::bridge::Bridge`, is the runtime's host on `c600-command`. Each proposal the boundary
+  admits becomes one invocation of `operation.preview` with `Caller::Runtime` for the run, a fresh command ID
+  `<run>/<n>`, the layer's current epoch, the literal word as the absolute argument
+  `{"draft": {"recipe": [{"kind": "word", "moves": [...]}]}}` and no token. The program still receives only the fixed
+  acknowledgement; the layer's receipt goes to the shell. The bridge grants no state read, declassified value, file or
+  workspace access, view, exact sink or clock. The command layer's own rules refuse a runtime invocation of a commit or
+  app row and any runtime invocation carrying a token (ADR-L02, KN5.15), and only a token the shell mints commits the
+  pending preview the runtime proposed.
+- The source route: the binary `c600-lp3-source` replays O01 to O07. Per step the runner expands the case recipe to
+  its literal word, the tool's program runs on that word and proposes it through the bridge, and the shell presents
+  the preview, commits it with the commit chord `Ctrl+Shift+Enter`, and undoes and redoes on the command route's
+  schedule. `python tests/test_lp3_source_route.py` builds `c600-lp3-oracle` and `c600-lp3-source` and passed with:
+  - `tools/oracle/compare.py`: all seven cases equal on the source route, 3,201 steps, no omitted field;
+  - every source-route trace byte-identical to `c600-lp3-oracle --route command`'s;
+  - the two routes' receipts agreeing on status, job, error code and revision after in all 13,553 pairs, and differing
+    only in command ID, caller and request digest; the 289 preview-ready result digests agree once rebased onto the
+    case recipe's draft, and the six O07 recipes with no literal word are the kernel's refusals on both routes;
+  - a negative control: negating the first letter of O06 step 3's literal word before the tool runs makes compare.py
+    fail at that step (`expansion_sha256`).
+
+  `tools/ci/run_headless.py` does not run this check yet; that file was outside this change.
+- Tests (`c600-tools/tests/`), each naming the conformance parts it covers; no conformance ID runs whole:
+  - `tool.rs`: the source parses and lowers; the checker admits it and it only prepares previews (CT-LB6-03, part); a
+    variant that also reads state is refused (LQ21; CT-LB6-03, part); a built-in previews only the word the solver
+    named; a refused built-in, or a module with one checker diagnostic, never runs and never calls the engine, and a
+    word from state relayed through a workspace record or a declassifier is refused (CT-LB6-03, part); the class and
+    the rows are declared (CT-BND-15, part).
+  - `ack.rs`: the fixed acknowledgement against an engine double (CT-BND-11 and CT-BND-07, parts).
+  - `bridge.rs`: one runtime preview per proposal and the fixed acknowledgement on the command layer (CT-BND-11 and
+    CT-BND-07, parts); no commit or app row for the runtime (ADR-L02, KN5.15); a runtime invocation carrying a token is
+    refused (KN5.15); only a token the shell mints commits the pending preview (CT-ONE-29, part, headless); the bridge
+    grants nothing but a proposal.
+  - `expand.rs`: every case step expands to its recorded literal word, and the expansion is the kernel's literal.
+- Open: the built-in column lives in this crate because `c600-check` has no author or column parameter on `admit`; it
+  does not judge a reading entry's workspace writes against the class's rows (BND.57). The command layer's receipts
+  carry no program digest; the proposal's provenance block names the digest of the source bytes that ran.
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
-- Evidence kind: source and fixture.
+- Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run. The timings the
+  source-route check prints are informational, not performance evidence.

@@ -1,5 +1,5 @@
 //! The 600-cell-Full tool's run on `c600-run` through the run-time boundary, onto an engine double that records each
-//! proposal (LP3, C5, acceptance item 3, first part). The bridge onto the command layer waits for C1 on main.
+//! proposal (LP3, C5, acceptance item 3, first part). The bridge onto the command layer is tested in `bridge.rs`.
 
 use c600_digest::sha256;
 use c600_run::boundary::{Answer, Pins, Store};

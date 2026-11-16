@@ -7,6 +7,7 @@ publish.workspace = true
 
 [dependencies]
 c600-check = { path = "../c600-check" }
+c600-command = { path = "../c600-command" }
 c600-digest = { path = "../c600-digest" }
 c600-ir = { path = "../c600-ir" }
 c600-kernel = { path = "../c600-kernel" }

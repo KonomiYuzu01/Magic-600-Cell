@@ -6,6 +6,9 @@ use std::collections::BTreeSet;
 use c600_check::{admit, check, separation, Grant, Policy, Profile, Separation, NOT_GRANTED};
 use c600_digest::sha256_hex;
 use c600_ir::{Effect, Expr, FnKind, Lit, Ty};
+use c600_run::boundary::Store;
+use c600_run::interp::{Host, Request, RowTariff, Sink};
+use c600_run::value::Value;
 use c600_syntax::{format, lower, parse};
 use c600_tools::tool::{
     admit_built_in, lower_source, manifest, targets, BoundaryClass, Manifest, Tool, ENTRY, MODULE, ROW, SOURCE,
@@ -135,6 +138,133 @@ fn a_built_in_previews_only_the_word_the_solver_named() {
     let helper =
         lower_source(&variant("export fn", "preview", &format!("{}{ACK}", &own_word.replace("word[+1, -2]", "w"))));
     assert_eq!(refused(&helper.unwrap()), ["entry"], "a preview is prepared only inside a command (LG3.6)");
+}
+
+/// The engine side of a run, counting every call: a state read answers a word, a proposal a receipt.
+#[derive(Default)]
+struct Counting {
+    calls: usize,
+    proposed: Vec<Vec<i32>>,
+}
+
+impl Host for Counting {
+    fn tariff(&mut self, _: &Request) -> Result<RowTariff, &'static str> {
+        self.calls += 1;
+        Ok(RowTariff { kernel_cost: 1, result_bound: 4096 })
+    }
+
+    fn perform(&mut self, request: &Request) -> Result<Value, &'static str> {
+        self.calls += 1;
+        match request {
+            Request::Propose { word, .. } => {
+                self.proposed.push(word.to_vec());
+                Ok(Value::receipt(vec![("id", Value::text("preview-1"))]))
+            }
+            _ => Ok(Value::word(&[3, -4])),
+        }
+    }
+
+    fn sink(&mut self, _: &Sink, _: &Value, _: &[u8]) -> Result<(), &'static str> {
+        self.calls += 1;
+        Ok(())
+    }
+}
+
+/// Loads `source` as a built-in tool whose entry is `entry` and, if it loads, runs it on the word `[1, -2]`. Returns
+/// the load's error, the engine side and the store.
+fn attempt(source: &str, entry: &'static str) -> (Option<String>, Counting, Store) {
+    let manifest = Manifest { entry, source_sha256: sha256_hex(source.as_bytes()), ..manifest() };
+    let (mut engine, mut store) = (Counting::default(), Store::default());
+    let error = match Tool::new(source, manifest) {
+        Ok(tool) => {
+            let ran = tool.run(&[1, -2], "attempt", "base", &mut engine, &mut store).expect("the run starts");
+            assert_eq!(ran.shell.len(), 1);
+            None
+        }
+        Err(error) => Some(error),
+    };
+    (error, engine, store)
+}
+
+/// Leads L1 and L3 of the LP3 trap analysis (BND.39, BND.57, LG3.10). The built-in column, author `built_in` in the
+/// solving profile, refuses an entry that reads a snapshot and proposes the word it read (the IR draft has no word
+/// operations, so a word read from state is the word such an entry can compute), and it refuses the relay of such a
+/// word through a workspace record: entry `keep` reads state and writes a record, which the column admits because it
+/// prepares no preview, and entry `relay` reads the record and proposes it. Entry `relay_declassified` reads the record
+/// through a declassifier: under the interim policy that is a state read, and with the declassifier enabled the word is
+/// still not the one the solver named. Each refusal is `LG3:capability.not_granted`. A refused module, and a module with
+/// one checker diagnostic, never loads as a tool, so no run starts and the engine is never called. Through the same
+/// path the shipped tool proposes the solver's word once, and the proposal's provenance block names the digest of the
+/// source bytes that ran: the producer's module digest is computed in [`Tool::new`] from those bytes, and a manifest
+/// naming other bytes is refused (`the_tool_declares_its_class_and_its_rows`).
+///
+/// CT-LB6-03 (part, the 600-cell-Full tool: a word from state, read directly or through a workspace record, is refused
+/// under the selected mechanism, and a refused or unchecked module never runs).
+#[test]
+fn a_refused_built_in_never_runs_and_the_named_word_previews() {
+    let read_and_propose = variant(
+        "export command",
+        "snapshot, preview",
+        &format!("    let r = propose(read_snapshot<Word>(\"best_word\"), target(\"operation.preview\"));\n{ACK}"),
+    );
+    let relay = format!(
+        "edition \"6cs-draft-1\";\nmodule full_600_cell requires [];\n\n\
+         export command keep() -> Unit effects [snapshot, workspace] {{\n    \
+         let w = read_snapshot<Word>(\"best_word\");\n    let a = write_workspace<Word>(\"kept\", w);\n    \
+         return ();\n}}\n\n\
+         export command relay() -> record {{ base: Text, id: Text }} effects [snapshot, preview] {{\n    \
+         let r = propose(read_snapshot<Word>(\"kept\"), target(\"operation.preview\"));\n{ACK}}}\n\n\
+         export command relay_declassified() -> record {{ base: Text, id: Text }} effects [snapshot, preview] {{\n    \
+         let r = propose(declassified<Word>(\"kept\"), target(\"operation.preview\"));\n{ACK}}}\n"
+    );
+    let program = lower_source(&relay).unwrap();
+    let report = check(&program).unwrap();
+    assert!(report.is_admitted(), "{:#?}", report.diagnostics);
+    // `keep` reads state and prepares no preview, so the built-in column admits it: the relay's refusal is `relay`'s.
+    let keep = admit_built_in(&program, MODULE, "keep", &Grant::none(), &Policy::interim()).unwrap();
+    assert!(keep.is_admitted(), "{:#?}", keep.diagnostics);
+    assert_eq!(keep.separation, Separation { reads_state: true, prepares_previews: false });
+    // With the declassifier enabled, the declassified read is no state read, and the word is still not the solver's.
+    let enabled = Policy::enabling(&["kept"]);
+    let previews_only = Separation { reads_state: false, prepares_previews: true };
+    for (entry, policy, separation, paths) in [
+        ("relay", Policy::interim(), both(), vec!["entry", "0"]),
+        ("relay_declassified", Policy::interim(), both(), vec!["entry", "0"]),
+        ("relay_declassified", enabled, previews_only, vec!["0"]),
+    ] {
+        let admission = admit_built_in(&program, MODULE, entry, &Grant::none(), &policy).unwrap();
+        let found: Vec<&str> = admission.diagnostics.iter().map(|d| d.path.as_str()).collect();
+        assert_eq!((admission.separation, found), (separation, paths), "{entry}");
+        assert!(admission.codes().iter().all(|&code| code == NOT_GRANTED), "{entry}: {:#?}", admission.diagnostics);
+    }
+
+    // One checker diagnostic: the entry returns a `Text` where its signature says a record.
+    let unchecked = variant(
+        "export command",
+        "preview",
+        "    let r = propose(w, target(\"operation.preview\"));\n    return receipt_id(r);\n",
+    );
+    assert_eq!(check(&lower_source(&unchecked).unwrap()).unwrap().diagnostics.len(), 1);
+
+    for (what, source, entry) in [
+        ("reads a snapshot and proposes it", &read_and_propose, ENTRY),
+        ("relays a state read through a workspace record", &relay, "relay"),
+        ("relays a record through a declassifier", &relay, "relay_declassified"),
+        ("has one checker diagnostic", &unchecked, ENTRY),
+    ] {
+        let (error, engine, store) = attempt(source, entry);
+        let error = error.unwrap_or_else(|| panic!("{what}: the module loaded as a tool"));
+        assert!(error.contains("not admitted"), "{what}: {error}");
+        assert_eq!((engine.calls, store.blocks.len()), (0, 0), "{what}: nothing ran");
+    }
+    assert!(attempt(&read_and_propose, ENTRY).0.unwrap().contains(NOT_GRANTED));
+
+    let (error, engine, store) = attempt(SOURCE, ENTRY);
+    assert_eq!(error, None);
+    assert_eq!((engine.calls, engine.proposed), (2, vec![vec![1, -2]]), "one tariff and one proposal");
+    let source = sha256_hex(SOURCE.as_bytes());
+    let named = store.blocks.values().filter(|block| String::from_utf8_lossy(block).contains(&source)).count();
+    assert_eq!(named, 1, "the proposal's block names the digest of the source that ran");
 }
 
 /// BND.37 and BND.27: the tool declares its class in its module manifest, the class is one of BND.27's, and the
