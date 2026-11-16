@@ -81,7 +81,26 @@ human evidence on which syntax is easier to learn.
 ## Where it is recorded
 
 - This page.
-- The briefing still says that LQ13 waits for LX-8. Its LQ13 phrases change in one later commit, followed by an FP.1
-  pin refresh of the migration format packet, which pins the briefing.
+- The briefing. On 16 November 2026 the owner agreed to write the day's two decisions into the rule files ("write them
+  all in"). The briefing's 6, 14 and 15 November items no longer say that LQ13 waits, and its new 16 November item
+  names this answer and the [time-saving decision](owner-decisions-2026-11-16-time-saving.md).
 - No progress item is ticked for LX-8 or CT-RTE-18. The checklist has no LQ13 item, and its LP0 item for the owner's
   answers to LQ1 to LQ21 stays open, because LQ2's option set still waits for the joint setting.
+
+## Format packet pin refresh (FP.1)
+
+The briefing is an input of the frozen migration format packet, so this governance-only change needs a recorded pin
+refresh (FP.1).
+
+| Pin in `candidate.json` | Old | New |
+| --- | --- | --- |
+| Briefing SHA-256 | `97c8e5c0fb0cbf5a4e8d3ee655c9c379cc3cfa326924386b57e6aa5b29c26d45` | `455a465758b7842a42d07a9d963faf0082b87211ccc0152ef71d26faabceb11a` |
+| `input_commit` | `675002412ce73968a23db1732311dc45d63296a2` | the commit of this change that edits the briefing |
+
+- The briefing change is confined to section 1: the LQ13 phrases of its 6, 14 and 15 November items and the new
+  16 November item. The chapters cite the briefing for its list of superseded 1.0-A3 text (section 2), its record of
+  the 3 November decision and its older day tables (PHS.68), and none of those changed.
+- No frozen clause, vector or dependency meaning changed: the candidate files and `candidate_sha256` are unchanged, and
+  `check_vectors.py` verifies every other candidate and input pin against the same bytes as before.
+- `CLAUDE.md` now carries points 4 and 5 of the time-saving decision. It is not an input of the packet, so it needs no
+  pin refresh.

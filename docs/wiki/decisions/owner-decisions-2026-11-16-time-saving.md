@@ -80,7 +80,11 @@ Not chosen: moving the user shader language (LQ7), or LP5's research library and
 
 ## Where it is recorded
 
-- This page. Points 4 and 5 are not in `CLAUDE.md`.
-- `AGENTS.md` and the briefing are unchanged; the migration format packet pins both. The briefing's two LQ13 phrases
-  change together with the owner's syntax choice, in one FP.1 pin refresh.
+- This page.
+- `CLAUDE.md` carries points 4 and 5, next to its paragraph on question cards, since the owner agreed on 16 November
+  2026 to write the day's decisions into the rule files ("write them all in"). The text keeps `AGENTS.md` "Ask the
+  owner" and "Merging" as the rule on which decisions need the owner.
+- The briefing's 16 November item records this decision and the [LQ13 answer](owner-decisions-2026-11-16-lq13.md),
+  and its older items no longer say that LQ13 waits. The briefing is an input of the migration format packet; the
+  pin refresh (FP.1) is recorded on the LQ13 page. `AGENTS.md` is unchanged.
 - No progress item is ticked for LX-8 or CT-RTE-18.
