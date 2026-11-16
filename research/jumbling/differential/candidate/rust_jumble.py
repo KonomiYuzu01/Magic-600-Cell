@@ -191,3 +191,22 @@ class RustJumbleEngine:
     def cayley(self, grip, omega):
         """The record of the exact Cayley rotation with parameter omega (three [a, b, d] triples) at grip."""
         return self.call('cayley', grip=grip, omega=[list(w) for w in omega])['record']
+
+    # ------------------------------------------------------------------- M8 observations (JI.6, JI.7)
+    def rim_summary(self, caps=None, *, eval_budget=None):
+        """Every cap's status and rim (or the named caps'), with grip N when all 600 are summarised."""
+        return self.call('rim_summary', caps=None if caps is None else list(caps), eval_budget=eval_budget)
+
+    def release_check(self, letter, *, cap=None, eval_budget=None):
+        """The one-letter word check of a released letter, plus its cap's rim before and after, floor and delta N_c."""
+        return self.call('release_check', letter=list(letter), cap=cap, eval_budget=eval_budget)
+
+    def covers(self, cap, *, eval_budget=None):
+        """JI.12's cover table of a named cap: every meeting cap, in cap-ID order, with the answer in both directions."""
+        return self.call('covers', cap=cap, eval_budget=eval_budget)
+
+    def repair_list(self, cap, *, max_pairs=None, cancel_after=None, eval_budget=None):
+        """JI.12's repair list at a named cap: every pair (x, d) in pinned x order then cap d order, with the rows only
+        when completed. `cancel_after` is a test hook: the job observes a cancellation at check `cancel_after` + 1."""
+        return self.call('repair_list', cap=cap, max_pairs=max_pairs, cancel_after=cancel_after,
+                         eval_budget=eval_budget)
