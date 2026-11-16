@@ -8,7 +8,7 @@ use c600_check::{
     admit, separation, Admission, Grant, Policy, Profile, Separation, EFFECT_UNDECLARED, NEVER_GRANTED, NOT_GRANTED,
 };
 use c600_ir::build::*;
-use c600_ir::{Callee, Capability, Effect, Expr, Function, Prim, Program, ReceiptField, Ty};
+use c600_ir::{Callee, Capability, Effect, Expr, FnKind, Function, Prim, Program, ReceiptField, Ty};
 use support::{codes, report, tool};
 
 const PROFILES: [Profile; 3] = [Profile::Solving, Profile::ToolAuthoring, Profile::Research];
@@ -147,6 +147,27 @@ fn ct_lg3_01_annotations_bounds_and_unresolved_callables_cannot_erase_an_effect(
         codes(&tool(vec![helper("f", vec![], exact(Ty::Nat), unresolved("mystery", Ty::Nat))])),
         [EFFECT_UNDECLARED]
     );
+}
+
+#[test]
+fn ct_lg3_01_a_record_keeps_the_effects_of_its_callables() {
+    // `run(r: {f: () -> Unit ! b})` calls the callable in its record argument (pull request 149 review).
+    let run = |b| {
+        let field_ty = exact(Ty::Record(vec![("f".into(), exact(fn_ty(vec![], exact(Ty::Unit), b)))]));
+        helper("run", vec![param("r", field_ty)], exact(Ty::Unit), call_value(field(var("r"), "f"), vec![]))
+    };
+    let go =
+        |kind| function(kind, "go", vec![], exact(Ty::Unit), call("run", vec![record(vec![("f", fn_ref("prepare"))])]));
+    // A pure-bounded field refuses an effectful callable at the call, as a pure-bounded parameter does.
+    let pure = tool(vec![previewer(), run(bound(&[], &[])), go(FnKind::Command)]);
+    let r = report(&pure);
+    assert_eq!(r.codes(), [EFFECT_UNDECLARED]);
+    assert_eq!((r.diagnostics[0].function.as_str(), r.diagnostics[0].path.as_str()), ("go", "0"));
+    // An effect variable in a field is instantiated through the record (LG3.2), so a view cannot launder a preview.
+    let open = tool(vec![previewer(), run(bound(&[], &["e"])), go(FnKind::Command)]);
+    assert!(report(&open).is_admitted());
+    assert_eq!(effects(&open, "tool", "go"), [Effect::PreparePreview]);
+    assert_eq!(codes(&tool(vec![previewer(), run(bound(&[], &["e"])), go(FnKind::View)])), [EFFECT_UNDECLARED]);
 }
 
 // CT-LG3-02: no program effect can commit or obtain a token; a helper cannot hide that request under another effect.

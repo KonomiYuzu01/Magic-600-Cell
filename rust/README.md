@@ -42,6 +42,12 @@ one is listed here with its licence.
   grants nor refuses it.
 - A base-type mismatch in a hand-built program is an `IrError`, not a diagnostic: the frozen catalogue has no code for
   it, and until the parser exists such a mismatch is a lowering fault.
+- Qualifiers through calls (LG2.19): a callable enters a slot only if its signature keeps every qualifier (its result
+  no more qualified than the slot's, each parameter taking what the slot passes). The checker does not unify type
+  variables: a result of a bare type variable keeps the qualifier, callable and fields of every argument bound to that
+  variable, any other generic result is display-qualified when a generic argument is, and a display value for a
+  generic parameter makes the call a pure display body. Records keep their field values, so a callable keeps its
+  effects and exact sinks through a record.
 - Not in M1, because they need the runtime (M2, M3): the built-in tool column of the grant table, the fixed
   acknowledgement of BND.43, the saved-word half of CT-LG3-07, the undo half of CT-LG3-03 and research output that
   never becomes a solving preview (BND.61).

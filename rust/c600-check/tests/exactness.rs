@@ -6,7 +6,7 @@ mod support;
 
 use c600_check::{check, EFFECT_UNDECLARED, EXACTNESS_VIOLATION, EXACT_REQUIRED, IR_VERSION_UNSUPPORTED};
 use c600_ir::build::*;
-use c600_ir::{Capability, ExactRole, Expr, Lit, Prim, Ty, FORM2_EXEC_CONTRACT};
+use c600_ir::{Capability, ExactRole, Expr, Function, Lit, Prim, QTy, Ty, FORM2_EXEC_CONTRACT};
 use support::{codes, fields, less, only, report, tint, tool, xy};
 
 const V: &str = EXACTNESS_VIOLATION;
@@ -170,6 +170,135 @@ fn ct_lg2_05_closures_cannot_steer_evidence() {
     let p = tool(vec![apply, command("go", xy(), exact(Ty::Bool), let_("c", less(), call("apply", vec![captured])))]);
     let d = only(&p);
     assert_eq!((d.path.as_str(), fields(&d)), ("1.0", (V, Some("Fn"), false, true)));
+}
+
+// CT-LG2-05, higher-order calls: a slot's signature cannot erase a callable's result or parameter qualifier
+// (LG2.19, closure row; pull request 149 review).
+
+#[test]
+fn ct_lg2_05_higher_order_calls_keep_the_result_qualifier_of_a_callable() {
+    let pair = || vec![exact(Ty::Nat), exact(Ty::Nat)];
+    let apply = || {
+        helper(
+            "apply",
+            vec![
+                param("f", exact(fn_ty(pair(), exact(Ty::Bool), bound(&[], &[])))),
+                param("x", exact(Ty::Nat)),
+                param("y", exact(Ty::Nat)),
+            ],
+            exact(Ty::Bool),
+            call_value(var("f"), vec![var("x"), var("y")]),
+        )
+    };
+    let steer = |pick: Function| {
+        let choice = if_(call("apply", vec![fn_ref("pick"), var("x"), var("y")]), word("w1"), word("w2"));
+        tool(vec![pick, apply(), command("go", xy(), exact(Ty::Word), choice)])
+    };
+    // LG2.22's display pick and an approximate condition cannot pass for an exact boolean.
+    let display_pick = helper("pick", xy(), display(Ty::Bool), display_if(less(), boolean(true), boolean(false)));
+    let condition = helper("pick", xy(), exact(Ty::ApproxBool), less());
+    for pick in [display_pick, condition] {
+        let d = only(&steer(pick));
+        assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("go", "0.0", (V, Some("Fn"), false, true)));
+    }
+    let exact_pick = helper("pick", xy(), exact(Ty::Bool), prim(Prim::ExactLess, vec![var("x"), var("y")]));
+    assert!(report(&steer(exact_pick)).is_admitted());
+    // A parameter of another base type is malformed IR.
+    let words =
+        helper("pick", vec![param("a", exact(Ty::Word)), param("b", exact(Ty::Word))], exact(Ty::Bool), boolean(true));
+    assert!(check(&steer(words)).is_err());
+}
+
+#[test]
+fn ct_lg2_05_a_callable_cannot_take_a_display_argument_as_exact() {
+    // The slot passes a display value; a callable with an exact parameter would store it as exact.
+    let apply = helper(
+        "apply",
+        vec![
+            param("f", exact(fn_ty(vec![display(Ty::Nat)], exact(Ty::Unit), bound(&[], &["e"])))),
+            param("x", exact(Ty::Nat)),
+            param("y", exact(Ty::Nat)),
+        ],
+        exact(Ty::Unit),
+        call_value(var("f"), vec![display_if(less(), var("x"), var("y"))]),
+    );
+    let go = || command("go", xy(), exact(Ty::Unit), call("apply", vec![fn_ref("store"), var("x"), var("y")]));
+    let store = helper(
+        "store",
+        vec![param("n", exact(Ty::Nat))],
+        exact(Ty::Unit),
+        write_workspace("k", exact(Ty::Nat), var("n")),
+    );
+    let d = only(&tool(vec![apply.clone(), store, go()]));
+    assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("go", "0", (V, Some("Fn"), false, true)));
+    let shown = helper("store", vec![param("n", display(Ty::Nat))], exact(Ty::Unit), unit());
+    assert!(report(&tool(vec![apply, shown, go()])).is_admitted());
+}
+
+// CT-LG2-05, generics: a generic result keeps the qualifier of every argument it may return, a selection inside a
+// generic body needs a display result, and a display instance runs a pure display body (LG2.19; pull request 149
+// review).
+
+#[test]
+fn ct_lg2_05_a_generic_result_keeps_the_qualifier_of_every_argument_it_may_return() {
+    let t = || exact(Ty::Var("T".into()));
+    let second = helper("second", vec![param("a", t()), param("b", t())], t(), var("b"));
+    let steered = || display_if(less(), word("w2"), word("w3"));
+    for args in [vec![word("w1"), steered()], vec![steered(), word("w1")]] {
+        let go = command("go", xy(), exact(Ty::Receipt), propose(call("second", args), target("t")));
+        let d = only(&tool(vec![second.clone(), go]));
+        assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("go", "0", (V, Some("Word"), true, false)));
+    }
+    let choose = |result: QTy| {
+        let params = vec![param("a", t()), param("b", t()), param("x", exact(Ty::Nat)), param("y", exact(Ty::Nat))];
+        helper("choose", params, result, display_if(less(), var("a"), var("b")))
+    };
+    let d = only(&tool(vec![choose(t())]));
+    assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("choose", "root", (V, Some("T"), true, false)));
+    let chosen = propose(call("choose", vec![word("w1"), word("w2"), var("x"), var("y")]), target("t"));
+    let p = tool(vec![choose(display(Ty::Var("T".into()))), command("go", xy(), exact(Ty::Receipt), chosen)]);
+    let d = only(&p);
+    assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("go", "0", (V, Some("Word"), false, true)));
+}
+
+#[test]
+fn ct_lg2_05_a_generic_body_with_a_display_instance_is_a_pure_display_body() {
+    let t = || exact(Ty::Var("T".into()));
+    let steered = || display_if(less(), word("w1"), word("w2"));
+    let go = |callee: Function, arg: Expr| {
+        let name = callee.name.clone();
+        tool(vec![callee, command("go", xy(), exact(Ty::Unit), call(&name, vec![arg]))])
+    };
+    // An exact goal set from the argument.
+    let aim = helper("aim", vec![param("v", t())], exact(Ty::Unit), use_exact(ExactRole::Goal, var("v")));
+    assert!(report(&go(aim.clone(), word("w1"))).is_admitted());
+    let d = only(&go(aim, steered()));
+    assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("go", "root", (V, Some("T"), true, false)));
+    // An effect.
+    let log = helper("log", vec![param("v", t())], exact(Ty::Unit), let_("r", propose(word("w"), target("t")), unit()));
+    assert!(report(&go(log.clone(), word("w1"))).is_admitted());
+    let d = only(&go(log, steered()));
+    assert_eq!((d.code, d.function.as_str(), d.path.as_str()), (EFFECT_UNDECLARED, "go", "root"));
+    // A result of a concrete type is display-qualified too.
+    let size = helper("size", vec![param("v", t())], exact(Ty::Nat), nat(1));
+    let budget = |arg| use_exact(ExactRole::Budget, call("size", vec![arg]));
+    let p = tool(vec![size, command("go", xy(), exact(Ty::Unit), budget(steered()))]);
+    assert_eq!(fields(&only(&p)), (V, Some("Nat"), true, false));
+}
+
+// CT-LG2-05, aggregates: a callable keeps its exact sinks through a record (LG2.19, aggregate row; LG2.20; pull
+// request 149 review).
+
+#[test]
+fn ct_lg2_05_a_callable_in_a_record_keeps_its_exact_evidence() {
+    let ev = helper("ev", vec![], exact(Ty::Unit), use_exact(ExactRole::Evidence, word("e1")));
+    let called = display_if(less(), call_value(field(var("r"), "f"), vec![]), unit());
+    let p = tool(vec![ev, command("go", xy(), exact(Ty::Unit), let_("r", record(vec![("f", fn_ref("ev"))]), called))]);
+    let r = report(&p);
+    assert_eq!(r.diagnostics.len(), 1, "{:#?}", r.diagnostics);
+    let d = &r.diagnostics[0];
+    assert_eq!((d.function.as_str(), d.path.as_str(), fields(d)), ("go", "1.1", (V, Some("Word"), true, false)));
+    assert!(r.summary("tool", "go").unwrap().exact_sinks.contains(&(ExactRole::Evidence, "Word".to_string())));
 }
 
 #[test]
