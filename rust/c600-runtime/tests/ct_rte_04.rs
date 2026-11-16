@@ -23,40 +23,46 @@
 //! and every host call in order. The run must also map onto the trace: outcome and code, the mapped rows' charges, the
 //! stop at the mapped row with the trace's phase and scope, the source association, and the trace's values.
 //!
-//! # Realised: 8 of 40
+//! # Realised: 11 of 40
 //!
 //! | Trace | Clause | Realisation |
 //! | --- | --- | --- |
 //! | `approx-branch-true` | DET.64 | `pick(1, 2, r)`: `display_if` takes `r.v` (two visits) |
 //! | `approx-branch-false` | DET.64 | `pick(5, 2, r)`: `display_if` takes `x` (one visit) |
 //! | `display-stop-source-range` | DET.56 | `pick(1, 2, r)` stopped on steps at `r.v`, after a non-BMP character |
-//! | `step-precedence` | DET.56 | `show()`: the encoding pass of `publish_view(record { })`, refused on steps |
-//! | `simultaneous-exhaustion` | DET.56 | the same pass, steps admitted, refused on kernel cost |
-//! | `simultaneous-memory-output` | DET.56 | the same pass, kernel cost admitted at its limit, refused on memory |
+//! | `step-precedence` | DET.56 | `show()`: the output unit of `publish_view(record { })`, refused on steps |
+//! | `simultaneous-exhaustion` | DET.56 | the same unit, steps admitted, refused on kernel cost |
+//! | `simultaneous-memory-output` | DET.56 | the same unit, kernel cost admitted at its limit, refused on memory |
 //! | `equal-to-limit` | DET.56 | `limit(7)`: a host read priced as the trace's kernel row, released at scope exit |
 //! | `generator` | DET.61 | `draws()` from the trace's seed and path: two draws, published, then a refused draw |
+//! | `nested-calls` | DET.58 | `outer()` calls `inner()`, which reads `k`; neither frame has a slot (16 bytes) |
+//! | `output-equality` | DET.59 | `equal("abcde")`: one eight-byte unit at equality |
+//! | `output-retained-at-cutoff` | DET.59 | `retain("abcde", "")`: one unit published, the second refused on output |
 //!
 //! The trace's `display_if` condition is a given value that holds no memory. `pick` binds its comparison with `let`,
 //! so the `display_if` row visits a borrowed condition and releases nothing; the comparison's byte is released at the
 //! scope's exit, as overhead. In `display-stop-source-range` the trace's untaken branch is empty; the program's
 //! untaken branch is never observed.
 //!
-//! The abstract `emit` of `"x"` charges its 3-byte encoding to kernel cost, memory and output in one row (DET.59).
-//! The interpreter charges an output unit in two rows: the encoding pass (kernel cost and memory), then the
-//! publication (output). The three DET.56 realisations stop on the encoding pass, which would charge what the trace's
-//! `emit` would to steps, kernel cost and memory, and no output. They exercise steps before kernel cost and memory,
-//! and kernel cost before memory, but no dimension's precedence over output: `simultaneous-memory-output` stops on
-//! memory with the trace's rows, code and phase, while its output headroom is never tested on that row.
+//! An abstract `emit` charges its encoding to kernel cost, memory and output in one row (DET.59), and so does the
+//! interpreter's output unit since LP2's M2 meter: its encoding work, buffer and bytes in one admission, in DET.56's
+//! order. The output profile differs (CV.5): the trace's bytes are PS1.2's retained JSON, the program's are
+//! `c600-json-1`'s, UTF-8 with a terminal line feed. A realisation publishes a value whose bytes are as many as the
+//! trace's: `{}` and a line feed for `"x"` (three), `"abcde"` and a line feed for `"\u00e9"` (eight). The three
+//! DET.56 realisations then exercise steps before everything, kernel cost before memory and output, and memory before
+//! output: `simultaneous-memory-output` stops on memory while its output headroom is short too. The one exception is
+//! `output-retained-at-cutoff`'s refused unit `0`: one byte in the trace, while no unit of the program is shorter
+//! than three. Its kernel-cost headroom gets the two bytes of difference (`kernel_extra`), so it still stops on output
+//! with the trace's refused row.
 //!
 //! The trace's generator key and counter are not observable through a run; the drawn values are, through the
 //! published view.
 //!
-//! # Not realised: 32 of 40
+//! # Not realised: 29 of 40
 //!
 //! [`UNREALISED`] lists each with its reason; the test holds the two lists to the 40 frozen vectors. In short: the IR
 //! has no child scope (6 traces), loop, pointwise assertion, exact multiplication, text order, byte decoding or
-//! streaming cursor; `let` scopes nest; lowered frames have a slot more than the trace's; a run has one generator,
-//! seeded at the entry; the interpreter prices an output unit in two rows; and the region contract
+//! streaming cursor; `let` scopes nest; a run has one generator, seeded at the entry; and the region contract
 //! `lp1-exec-region-draft-1` has no executor yet.
 
 mod support;
@@ -87,13 +93,17 @@ const PROGRAM: &str = "# Realisations of frozen DET.65 traces. \u{1f600} parts b
     fn hold() -> Unit effects [snapshot] {\n    let x = read_snapshot<record { }>(\"k\");\n    return ();\n}\n\n\
     export fn limit(y: Nat) -> Nat effects [snapshot] {\n    let u = hold();\n    return y;\n}\n\n\
     export fn draws() -> Nat effects [random, view] {\n    let a = random_draw();\n    let b = random_draw();\n    \
-    let v = publish_view(record { a = a, b = b });\n    let c = random_draw();\n    return a;\n}\n";
+    let v = publish_view(record { a = a, b = b });\n    let c = random_draw();\n    return a;\n}\n\n\
+    fn inner() -> Unit effects [snapshot] {\n    return read_snapshot<Unit>(\"k\");\n}\n\n\
+    export fn outer() -> Unit effects [snapshot] {\n    return inner();\n}\n\n\
+    export fn equal(t: Text) -> Unit effects [view] {\n    return publish_view(t);\n}\n\n\
+    export fn retain(t: Text, u: Text) -> Unit effects [view] {\n    let a = publish_view(t);\n    \
+    return publish_view(u);\n}\n";
 
 /// The frozen traces this file does not realise, and why.
-const UNREALISED: [(&str, &str); 32] = [
+const UNREALISED: [(&str, &str); 29] = [
     ("alias-release", "`let` scopes nest: `a` outlives its alias `b`, so it cannot be released first"),
     ("alias-still-live", "`let` scopes nest: `a` outlives its alias `b`, so it cannot be released first"),
-    ("nested-calls", "every lowered frame has at least one slot (24 bytes); the trace's frames have none (16)"),
     ("child-allowances", "the IR has no child scope (DET.60 runs on the meter's traces only)"),
     ("child-return-owner", "the IR has no child scope"),
     ("root-before-child", "the IR has no child scope"),
@@ -116,8 +126,6 @@ const UNREALISED: [(&str, &str); 32] = [
     ("streaming", "the interpreter has no streaming cursor: a word crosses whole"),
     ("streaming-complete-split", "the interpreter has no streaming cursor: a word crosses whole"),
     ("streaming-complete-coalesced", "the interpreter has no streaming cursor: a word crosses whole"),
-    ("output-retained-at-cutoff", "an output unit takes two rows (`encode`, then `emit` or `publish_view`)"),
-    ("output-equality", "an output unit takes two rows (`encode`, then `emit` or `publish_view`)"),
     ("form2-equal-limit", "execution contract `lp1-exec-region-draft-1` has no executor yet"),
     ("form2-one-short", "execution contract `lp1-exec-region-draft-1` has no executor yet"),
     ("form2-untaken-branch", "execution contract `lp1-exec-region-draft-1` has no executor yet"),
@@ -135,8 +143,11 @@ struct Realisation {
     setup: fn(&Json, &mut Session),
     /// Every trace row's `at`, in order, and the program row it maps to.
     map: &'static [(&'static str, &'static str)],
-    /// For a stopping trace: steps, kernel cost and memory its stopped operation would charge if admitted.
-    stop_would: Option<[u128; 3]>,
+    /// For a stopping trace: steps, kernel cost, memory and output its stopped operation would charge if admitted.
+    stop_would: Option<[u128; 4]>,
+    /// Kernel-cost headroom added to the trace's before its stopped row: only the output profile's difference
+    /// (module docs).
+    kernel_extra: u128,
     /// The program text of the node that a stop's source range must cover.
     source_node: Option<&'static str>,
     /// Holds the trace's expected values to what the run delivered.
@@ -171,17 +182,28 @@ fn seeded(given: &Json, limits: Amounts) -> JobOptions {
     JobOptions { seed: Some((seed, path.collect())), grant: vec![Capability::Randomness], ..JobOptions::new(limits) }
 }
 
-/// The snapshot `k` is priced as the trace's kernel row: the batch's kernel cost, a reservation of its result and
-/// scratch bytes, and a result of exactly the trace's result size.
+/// The trace's kernel operation, at any depth.
+fn kernel_op(given: &Json) -> &Json {
+    fn find(ops: &[Json]) -> Option<&Json> {
+        ops.iter().find_map(|op| {
+            if op.get("op").and_then(Json::str) == Some("kernel") {
+                return Some(op);
+            }
+            ["body", "then", "else"].iter().find_map(|k| op.get(k).and_then(Json::arr).and_then(|b| find(b)))
+        })
+    }
+    find(given.get("trace").and_then(Json::arr).expect("a trace")).expect("a kernel operation")
+}
+
+/// The snapshot `k` is priced as the trace's kernel row, at any depth: the batch's kernel cost, a reservation of its
+/// result and scratch bytes, and a result of exactly the trace's result size (`Unit` for none, else an empty record).
 fn kernel_snapshot(given: &Json, session: &mut Session) {
-    let k = first_op(given);
-    assert_eq!(text(k, "op"), "kernel");
-    let result = Value::record(vec![]);
-    assert_eq!(result.size(), uint(k, "result_bytes"), "an empty record has the trace's result size");
-    let tariff = RowTariff {
-        kernel_cost: Tariffs::TEST.kernel(uint(k, "items")),
-        result_bound: uint(k, "result_bytes") + uint(k, "scratch"),
-    };
+    let k = kernel_op(given);
+    let bytes = k.get("result_bytes").map_or(0, |_| uint(k, "result_bytes"));
+    let result = if bytes == 0 { Value::Unit } else { Value::record(vec![]) };
+    assert_eq!(result.size(), bytes, "a result of the trace's size");
+    let tariff =
+        RowTariff { kernel_cost: Tariffs::TEST.kernel(uint(k, "items")), result_bound: bytes + uint(k, "scratch") };
     session.snapshots.push(("k", tariff, result));
 }
 
@@ -196,6 +218,16 @@ fn published_draws(values: &[(String, Json)], session: &Session) {
     c600_run::encode::encode(&Value::record(vec![("a", draw("draw-0")), ("b", draw("draw-1"))]), &mut bytes)
         .expect("a canonical record");
     assert_eq!(session.views, vec![bytes], "the drawn values are the trace's");
+}
+
+/// The program's unit has the trace's byte count (module docs): `"abcde"` and a line feed for the trace's
+/// `"\u00e9"`. Only an admitted unit reaches the host.
+fn eight_byte_unit(values: &[(String, Json)], session: &Session) {
+    let [(_, fixture)] = values else { panic!("one unit in the trace's values: {values:?}") };
+    let fixture = hex(fixture.str().expect("hex bytes"));
+    assert_eq!(fixture, b"\"\\u00e9\"", "PS1.2's bytes of \"\u{e9}\"");
+    assert_eq!(session.views, [b"\"abcde\"\n"], "only the admitted unit reaches the host");
+    assert_eq!(session.views[0].len(), fixture.len(), "the program's unit has the trace's byte count");
 }
 
 const PICK_TRUE: &[(&str, &str)] = &[
@@ -215,17 +247,18 @@ fn realisations() -> Vec<Realisation> {
         setup: untouched,
         map: PICK_TRUE,
         stop_would: None,
+        kernel_extra: 0,
         source_node: None,
         values: no_values,
     };
     let show =
-        |trace| Realisation { trace, entry: "show", args: Vec::new, map: SHOW, stop_would: Some([1, 3, 3]), ..base };
+        |trace| Realisation { trace, entry: "show", args: Vec::new, map: SHOW, stop_would: Some([1, 3, 3, 3]), ..base };
     vec![
         Realisation { trace: "approx-branch-true", ..base },
         Realisation { trace: "approx-branch-false", args: || pick_args(5, 2), map: PICK_FALSE, ..base },
         Realisation {
             trace: "display-stop-source-range",
-            stop_would: Some([1, 0, 0]),
+            stop_would: Some([1, 0, 0, 0]),
             source_node: Some("r.v"),
             ..base
         },
@@ -255,8 +288,40 @@ fn realisations() -> Vec<Realisation> {
                 ("draw-1", "m.draws:1.0#rng_draw"),
                 ("denied", "m.draws:1.1.1.0#rng_draw"),
             ],
-            stop_would: Some([1, 3, 33]),
+            stop_would: Some([1, 3, 33, 0]),
             values: published_draws,
+            ..base
+        },
+        Realisation {
+            trace: "nested-calls",
+            entry: "outer",
+            args: Vec::new,
+            setup: kernel_snapshot,
+            map: &[
+                ("outer/call", "entry#call"),
+                ("outer/inner/call", "m.outer:root#call"),
+                ("outer/inner/k", "m.outer:root > m.inner:root#kernel"),
+                ("outer/inner/return", "m.outer:root > m.inner:root#return"),
+                ("outer/return", "m.outer:root#return"),
+            ],
+            ..base
+        },
+        Realisation {
+            trace: "output-equality",
+            entry: "equal",
+            args: || vec![Value::text("abcde")],
+            map: &[("emit", "m.equal:root#publish_view")],
+            values: eight_byte_unit,
+            ..base
+        },
+        Realisation {
+            trace: "output-retained-at-cutoff",
+            entry: "retain",
+            args: || vec![Value::text("abcde"), Value::text("")],
+            map: &[("first", "m.retain:0#publish_view"), ("denied", "m.retain:1#publish_view")],
+            stop_would: Some([1, 3, 3, 3]),
+            kernel_extra: 3 - 1,
+            values: eight_byte_unit,
             ..base
         },
     ]
@@ -383,8 +448,8 @@ fn headroom(id: &str, limit: u128, before: u128) -> u128 {
     limit.checked_sub(before).unwrap_or_else(|| panic!("{id}: a trace above its limit before its stop"))
 }
 
-/// The realisation's limits: the trace's headroom on every mapped row (module docs).
-fn limits(id: &str, trace: &Trace, probe: &Summary, mapped: &[usize]) -> Amounts {
+/// The realisation's limits: the trace's headroom on every mapped row, and for a stop `kernel_extra` (module docs).
+fn limits(id: &str, trace: &Trace, probe: &Summary, mapped: &[usize], kernel_extra: u128) -> Amounts {
     let Some(stop) = &trace.stop else {
         let (l, u) = (trace.limits, trace.used);
         return Amounts {
@@ -406,7 +471,7 @@ fn limits(id: &str, trace: &Trace, probe: &Summary, mapped: &[usize]) -> Amounts
     };
     Amounts {
         steps: p.steps + headroom(id, trace.limits.steps, t.steps),
-        kernel_cost: p.kernel + headroom(id, trace.limits.kernel_cost, t.kernel),
+        kernel_cost: p.kernel + headroom(id, trace.limits.kernel_cost, t.kernel) + kernel_extra,
         memory,
         output: p.output + headroom(id, trace.limits.output, t.output),
     }
@@ -439,10 +504,12 @@ fn realise(rt: &mut Runtime, source: &str, r: &Realisation, vector: &Json) {
     }
     if let Some(would) = r.stop_would {
         let row = &probe.rows[mapped[mapped.len() - 1]];
-        assert_eq!([row.steps, row.kernel_cost, row.memory], would, "{id}: the stopped operation's charge, admitted");
+        let admitted = [row.steps, row.kernel_cost, row.memory, row.output];
+        assert_eq!(admitted, would, "{id}: the stopped operation's charges, admitted");
     }
+    assert!(r.kernel_extra == 0 || r.stop_would.is_some(), "{id}: extra kernel-cost headroom for a stop only");
 
-    let limits = limits(id, &trace, &probe, &mapped);
+    let limits = limits(id, &trace, &probe, &mapped, r.kernel_extra);
     let (end, session) = compare(rt, &job_with(limits), setup);
     let summary = &ran(&end).summary;
 
@@ -457,9 +524,10 @@ fn realise(rt: &mut Runtime, source: &str, r: &Realisation, vector: &Json) {
         assert_eq!(charges(row), *want, "{id}: trace row `{at}` and program row `{}`", row.at);
     }
     assert!(summary.children.is_empty());
+    assert_eq!(summary.live_after_cleanup, 0, "{id}: cleanup releases everything");
 
     match (&trace.stop, &summary.stop) {
-        (None, None) => {}
+        (None, None) => assert_eq!(summary.used, limits, "{id}: the run uses its limits exactly: equality is admitted"),
         (Some(want), Some(got)) => {
             let program_at = r.map.iter().find(|(at, _)| *at == want.at).expect("the stop row is mapped").1;
             assert_eq!(got.at, program_at, "{id}: stop position");
@@ -491,8 +559,8 @@ fn realise(rt: &mut Runtime, source: &str, r: &Realisation, vector: &Json) {
     (r.values)(&trace.values, &session);
 }
 
-/// CT-RTE-04 in part: eight DET.65 traces realised as programs keep their exact results, charges, stopping points
-/// and source associations on both executors; the other 32 are listed with the reason they are not realised.
+/// CT-RTE-04 in part: eleven DET.65 traces realised as programs keep their exact results, charges, stopping points
+/// and source associations on both executors; the other 29 are listed with the reason they are not realised.
 #[test]
 fn ct_rte_04_partial_det65_traces_on_both_executors() {
     let text_of = std::fs::read_to_string(VECTORS).unwrap_or_else(|e| panic!("cannot read {VECTORS}: {e}"));

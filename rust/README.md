@@ -846,21 +846,21 @@ run or not applicable is no pass (PHS.63).
   as `cut_off` with `KN7:resource_limit.safety_stop`. The child is killed and reaped, and the next run starts a fresh
   one.
 - Tests (`c600-runtime/tests/`): the child and the in-process run give the same results, charges, stop points, host
-  calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 8 of DET.65's 40 traces as `.6cs` programs on both
-  executors (`ct_rte_04.rs`); the protocol's bounds, canonical encodings, KI.5's record and KN5.15's field list
-  (`protocol.rs`); CT-RTE-10's headless fault half, rehearsals in debug builds that kill, crash, truncate, garble,
-  oversize or hang the child while the session keeps its journal, state hash and pending preview (`faults.rs`).
+  calls and outputs (`equivalence.rs`); CT-RTE-04 in part, 11 of DET.65's 40 traces as `.6cs` programs on both
+  executors (`ct_rte_04.rs`; `nested-calls` and the two output traces since LP2's M2 meter); the protocol's bounds,
+  canonical encodings, KI.5's record and KN5.15's field list (`protocol.rs`); CT-RTE-10's headless fault half,
+  rehearsals in debug builds that kill, crash, truncate, garble, oversize or hang the child while the session keeps
+  its journal, state hash and pending preview (`faults.rs`).
 - Drafts, which freeze with the IR and the command table: the list in the crate documentation, among them the
   framing and message kinds (KI.15, ONE.69), the transfer encoding (DET.59), acknowledgement and retry (KI.5), the
   fault codes (KN7.13), source bytes rather than checked IR in a job (KI.6, ADR-L12.9), and a deadline checked
   between messages only, so a blocking host call is not interrupted.
 - Not built: OS isolation of the child (a job object with kill-on-close, a restricted or AppContainer token,
   filesystem and network confinement); a bound on the parent's queue of frames to a child that stops reading its
-  input (draft 5); LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's other 32 traces need
+  input (draft 5); LX-2's and LX-4's decisive runs (C9, on the owner's machine). CT-RTE-04's other 29 traces need
   what the IR draft lacks: child scopes, more than one generator per run, releasing a `let` before its alias, text
-  order, byte decoding, loops and pointwise checks, exact multiplication, streaming cursors, one-row output units,
-  and an executor for `lp1-exec-region-draft-1` (LP2). Two of them, `nested-calls` and the output rows, may be meter
-  mismatches in `c600-run`; LP2 has them.
+  order, byte decoding, loops and pointwise checks, exact multiplication, streaming cursors and an executor for
+  `lp1-exec-region-draft-1` (LP2).
 - Evidence kind: source and synthetic. The fault rehearsals are not LX-2 evidence, and no timing is measured.
 
 ## Status of LP3, C5: the source route

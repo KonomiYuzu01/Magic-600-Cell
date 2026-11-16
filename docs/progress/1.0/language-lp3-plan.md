@@ -73,7 +73,7 @@ M8 row ("section 15.3 runnable") cover the kernel rows. LP3 builds nothing in LP
 | The F2 and F5 number kinds | KN3.2 | None names them; the `nu` and `correction_set_check` rows use them (M5) | CT-LB1-01 |
 | Word operations in the IR draft: concatenation, inverse, conjugate, commutator | LG2.13 to LG2.16 | CT-LG2-11 to CT-LG2-14 | CT-LB1-03, CT-LB1-06, CT-LB2-01, CT-BND-18 |
 | Collection types in the IR draft: lists, maps, sets | LG2.20, LG4.3 | None names them; CT-LG4-01 checks host collection layouts | CT-LB1-01, CT-LB1-03, CT-LB1-06, CT-LB2-01, CT-BND-18 |
-| The IR features CT-RTE-04's other 32 traces need, and two meter differences in `c600-run` (`nested-calls`'s frame price; an `emit` row's single charge) | DET.56, DET.57, DET.65 | DET.65's trace vectors in `contract-vectors/vectors.json` | CT-RTE-04 |
+| The IR features CT-RTE-04's other 29 traces need (the two meter differences, `nested-calls`'s frame price and an `emit` row's single charge, were fixed by LP2's M2 meter, PR 170) | DET.56, DET.57, DET.65 | DET.65's trace vectors in `contract-vectors/vectors.json` | CT-RTE-04 |
 
 Found later, on 16 November 2026. KN5's one implementation, which LP2 writes in `c600-command` on branch
 `claude/lp2-kn5-one`, also carries the presented-frame input to `present` that CT-ONE-29's shell-side refusal needs and
@@ -182,7 +182,9 @@ acceptance check and stop condition.
   CT-RPI-07, CT-RPI-36 and CT-RPI-37, the limit half of CT-RPI-22 and rows 1, 2, 7 and 9 of CT-RM-09.
 - C3 (`rust/c600-runtime`, branch `claude/lp3-runtime-process`), built: the runtime in a process of its own; 8 of
   DET.65's 40 traces of CT-RTE-04 and the headless fault half of CT-RTE-10. C5's host bridge makes it a client of the
-  command layer (ADR-L02). CT-RTE-04's other 32 traces wait for the IR draft's features (LP2).
+  command layer (ADR-L02). Under LP2's M2 meter (PR 170) three more traces run on both executors (`nested-calls`,
+  `output-equality`, `output-retained-at-cutoff`): 11 of 40. CT-RTE-04's other 29 traces wait for the IR draft's
+  features (LP2).
 - C4 (`rust/c600-module`, branch `claude/lp3-module-closure`), built: module closure, its lock and the approval bound
   to the closure digest; CT-RTE-08's source leg and 36 of LX-3's 75 frozen keys of CT-RTE-07 on 600-cell-Full.
   CT-RTE-08's persisted words come with C7; CT-RTE-07's other keys wait for M5, C7, the IR draft and C5.
@@ -380,7 +382,7 @@ wait entirely. The milestone is in parentheses.
 | CT-BND-18 | source | Collection types and word operations in the IR draft, for setup search (LP2) | - |
 | CT-BND-19 | source | A live twist's release, which needs KN3.7's exact rotations (LP2) | The tool's views (C5) |
 | CT-BND-20 | windows | The renderer freeze (C9) | A held chord commits once; the runtime gets no token (C1) |
-| CT-RTE-04 | source | Child scopes, loops, text order, byte decoding, exact multiplication, streaming and LP1's region executor in the IR draft (LP2) | 8 of DET.65's 40 traces (C3) |
+| CT-RTE-04 | source | Child scopes, loops, text order, byte decoding, exact multiplication, streaming and LP1's region executor in the IR draft (LP2) | 11 of DET.65's 40 traces (C3, three after LP2's M2 meter) |
 | CT-RTE-07 | source | M5's jumbling keys (C8), M6's store keys (C7), the keys the IR draft cannot express (LP2), the budget keys that need a price mapping, host events in a loop or the command layer (C5), and a Linux run | 36 of LX-3's 75 frozen keys on 600-cell-Full (C4) |
 | CT-RTE-08 | source | Now: module closure (C4); persisted words (C7) | - |
 | CT-RTE-10 | windows | Owner runs: LX-2 (C9) | The headless fault half (C3) |
