@@ -267,7 +267,7 @@ wait entirely. The milestone is in parentheses.
 | CT-EV3-04 | synthetic | Now (C5) | - |
 | CT-EV3-06 | source | M5: off-lattice relations (C8) | Unchanged frames compute no relation (C6) |
 | CT-EV3-07 | source | Now: a view cannot write (C6); the durable action order (C7) | - |
-| CT-EV3-08 | source | The renderer freeze: RM.39's measured ceilings (C9) | The admission semantics (C2, next) |
+| CT-EV3-08 | source | The renderer freeze: RM.39's measured ceilings (C9) | The admission semantics (C2) |
 | CT-EV4-02 | synthetic | Now, on the draft keymap (C5) | - |
 | CT-EV4-04 | synthetic | KN3.7's exact rotations in the kernel, for the twist leg (LP2) | The append, preview and commit legs (C5) |
 | CT-ONE-25 | performance | Owner runs: charter E2 (C9) | - |
@@ -291,9 +291,9 @@ wait entirely. The milestone is in parentheses.
 | CT-RPI-19 | source | Now, with a Linux run (C2) | - |
 | CT-RPI-21 | windows | The renderer freeze (C9) | - |
 | CT-RPI-22 | source | Now (C2) | - |
-| CT-RPI-23 | source | Now (C2, next) | - |
+| CT-RPI-23 | source | Now (C2) | - |
 | CT-RPI-24 | windows | The renderer freeze and M5 (C9) | - |
-| CT-RPI-26 | performance | Owner runs: charter E2 and the renderer gate (C9) | The counter half (C2, next) |
+| CT-RPI-26 | performance | Owner runs: charter E2 and the renderer gate (C9) | The counter half (C2) |
 | CT-RPI-27 | source | Now (C2) | - |
 | CT-RPI-31 | windows | The renderer freeze (C9) | - |
 | CT-RPI-32 | source | The stage module's checker (RPI.69 to RPI.71) and a backend (C9) | The headless part (C2) |
