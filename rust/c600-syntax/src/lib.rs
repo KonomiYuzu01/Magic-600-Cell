@@ -17,13 +17,12 @@ mod format;
 mod lex;
 mod lower;
 mod parse;
-mod sha256;
 
 pub use ast::ParsedFile;
+pub use c600_digest::sha256_hex;
 pub use format::format;
 pub use lower::{lower, LowerError, Lowered, SourceMap};
 pub use parse::parse;
-pub use sha256::sha256_hex;
 
 /// The only edition this parser reads. Like the IR draft's name, it says that its rules may still change before the
 /// syntax freeze (LG1.1, LG1.2).

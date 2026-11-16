@@ -1,0 +1,14 @@
+[package]
+name = "c600-run"
+description = "The 600 Cell Script interpreter over the typed IR draft and the lp1-exec-draft-1 reference meter (LP2, M2)"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+c600-digest = { path = "../c600-digest" }
+c600-ir = { path = "../c600-ir" }
+# Approved by the owner on 16 November 2026 (option A), pinned exactly; the archives are vendored in ../vendor.
+num-bigint = { version = "=0.5.1", default-features = false, features = ["std"] }
+num-integer = { version = "=0.1.47", default-features = false, features = ["std"] }
+num-traits = { version = "=0.2.19", default-features = false, features = ["std"] }
