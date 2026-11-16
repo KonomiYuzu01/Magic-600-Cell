@@ -120,6 +120,8 @@ CHECKS += LANGUAGE_DOCS_CHECKS + [
     ["tests/test_source_checkout.py"],
     # The command layer (LP3) drives O01 to O07 through its rows on the command and key routes, with undo and redo.
     ["tests/test_lp3_loop.py"],
+    # The 600-cell-Full tool (LP3, C5) replays O01 to O07 on the source route through the host bridge.
+    ["tests/test_lp3_source_route.py"],
 ]
 
 TIME_LIMIT_SECONDS = 1200
@@ -218,6 +220,7 @@ SECONDS = {
     "tests/test_kernel_oracle.py": 90,  # an estimate until a CI run measures it
     "tests/test_oracle.py": 35,  # an estimate: 28 to 30 s locally since the invalid-recipe family
     "tests/test_lp3_loop.py": 120,  # an estimate until a CI run measures it
+    "tests/test_lp3_source_route.py": 120,  # an estimate until a CI run measures it
 }
 DEFAULT_SECONDS = 5
 # Parallel Windows jobs for a full run; the longest check (about 14 minutes) bounds the gain.

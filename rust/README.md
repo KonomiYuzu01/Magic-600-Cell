@@ -23,6 +23,8 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-display` | The headless display contract: display plans and publications, the host validator, the publication state machine over a mock backend, picks and frame stamps, and RM.37's jumbling crosswalk as fixtures (LP3, C2) |
 | `c600-module` | Module closures, lockfiles and their approval binding: the draft manifest and lock forms, resolution by content digest, closure verification and the closure digest, an approval bound to that digest, and load and run through the run-time boundary (LP3, C4) |
 | `c600-runtime` | The runtime in a process of its own (route RT1): the child binary `c600-runtime`, the parent library that starts it and answers its host calls, the wire protocol draft `c600-rt1-wire-1` and the in-process reference path (LP3, C3) |
+| `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, the recipe expansion and the source route `c600-lp3-source` (LP3, C5) |
+| `c600-input` | The headless input router: synthetic key events to command-layer invocations in chapter 04's routing order, bindings resolved to absolute arguments at the press, the held-key allowlist and the key-map checks (LP3, C5) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
@@ -34,7 +36,12 @@ view model depends on the digest crate only, and the display contract on the dig
 The module crate depends on the syntax, IR, checker, interpreter and digest crates, and has no path to the command
 layer.
 The runtime depends on the syntax, checker, interpreter, IR and digest crates and the big-integer crates, and has no
-path to the command layer; C5's host bridge connects them.
+path to the command layer.
+The tools crate depends on the syntax, checker, interpreter, IR, digest and kernel crates and on the command layer: its
+host bridge connects the in-process interpreter to the command layer as the runtime's host. The runtime's own process
+(C3) is not connected to the bridge yet.
+The input router depends on the command layer and the kernel crate only, so a key reaches a kernel row with no path to
+the interpreter (ONE.48).
 
 ## Running the tests
 
@@ -669,3 +676,95 @@ run or not applicable is no pass (PHS.63).
   and an executor for `lp1-exec-region-draft-1` (LP2). Two of them, `nested-calls` and the output rows, may be meter
   mismatches in `c600-run`; LP2 has them.
 - Evidence kind: source and synthetic. The fault rehearsals are not LX-2 evidence, and no timing is measured.
+
+## Status of LP3, C5: the source route
+
+- `c600-tools` holds the built-in 600-cell-Full tool as 600 Cell Script source,
+  [`full_600_cell.6cs`](c600-tools/src/full_600_cell.6cs), in edition `6cs-draft-1` (syntax candidate A). Its one
+  entry, the exported command `preview_word(w: Word)`, proposes the word the solver named to `operation.preview` and
+  returns the acknowledgement's two fields as a record `{base, id}`. The IR draft has no list types and no word
+  operations, so the library entries of chapter 03 (LB1 to LB4) wait for the IR.
+- Admission: the checker admits the source with no diagnostic. The entry's only effect is `preview` and it requests no
+  capability, so it prepares previews and reads no state (LG3.13, BND.39). `c600-check`'s `Profile::Solving` is the
+  column of a solver's own tool, which prepares no preview until the joint setting; `tool::admit_built_in` applies the
+  built-in column of chapter 07 section 8 over the checker's report. A variant that also reads state is refused with
+  `LG3:capability.not_granted`. The class (`analysis`, `checking`, after LB6.5) and the row set are declared in the
+  crate's Rust manifest, because the IR and the syntax carry no module manifest yet.
+- The tool runs on `c600-run` through `Boundary` in the solving profile, in process: C5 was built before the
+  runtime's own process (C3) reached main, and moving the tool onto it is C5's next piece. Against an engine double
+  that records each proposal, the program receives only the fixed acknowledgement whether the engine built the
+  preview, refused it, or preview admission refused the word, and its charges do not depend on the answer (BND.42,
+  BND.43).
+- `expand` is the runner's recipe expansion through the kernel, outside any program. Over O01 to O07 (3,201 steps)
+  each step the oracle accepted or refused for protection expands to a literal word with the recorded
+  `expansion_sha256` and `primitive_count`. Of O07's ten invalid steps, four are single words of integer moves, which
+  pass to the tool unchanged; the other six have no literal word, so the route stops there with the kernel's refusal.
+- The host bridge, `c600_tools::bridge::Bridge`, is the runtime's host on `c600-command`. Each proposal the boundary
+  admits becomes one invocation of `operation.preview` with `Caller::Runtime` for the run, a fresh command ID
+  `<run>/<n>`, the layer's current epoch, the literal word as the absolute argument
+  `{"draft": {"recipe": [{"kind": "word", "moves": [...]}]}}` and no token. The program still receives only the fixed
+  acknowledgement; the layer's receipt goes to the shell. The bridge grants no state read, declassified value, file or
+  workspace access, view, exact sink or clock. The command layer's own rules refuse a runtime invocation of a commit or
+  app row and any runtime invocation carrying a token (ADR-L02, KN5.15), and only a token the shell mints commits the
+  pending preview the runtime proposed.
+- The source route: the binary `c600-lp3-source` replays O01 to O07. Per step the runner expands the case recipe to
+  its literal word, the tool's program runs on that word and proposes it through the bridge, and the shell presents
+  the preview, commits it with the commit chord `Ctrl+Shift+Enter`, and undoes and redoes on the command route's
+  schedule. `python tests/test_lp3_source_route.py` builds `c600-lp3-oracle` and `c600-lp3-source` and passed with:
+  - `tools/oracle/compare.py`: all seven cases equal on the source route, 3,201 steps, no omitted field;
+  - every source-route trace byte-identical to `c600-lp3-oracle --route command`'s;
+  - the two routes' receipts agreeing on status, job, error code and revision after in all 13,553 pairs, and differing
+    only in command ID, caller and request digest; the 289 preview-ready result digests agree once rebased onto the
+    case recipe's draft, and the six O07 recipes with no literal word are the kernel's refusals on both routes;
+  - a negative control: negating the first letter of O06 step 3's literal word before the tool runs makes compare.py
+    fail at that step (`expansion_sha256`).
+
+  CI runs this check through `tools/ci/run_headless.py`.
+- Tests (`c600-tools/tests/`), each naming the conformance parts it covers; no conformance ID runs whole:
+  - `tool.rs`: the source parses and lowers; the checker admits it and it only prepares previews (CT-LB6-03, part); a
+    variant that also reads state is refused (LQ21; CT-LB6-03, part); a built-in previews only the word the solver
+    named; a refused built-in, or a module with one checker diagnostic, never runs and never calls the engine, and a
+    word from state relayed through a workspace record or a declassifier is refused (CT-LB6-03, part); the class and
+    the rows are declared (CT-BND-15, part).
+  - `ack.rs`: the fixed acknowledgement against an engine double (CT-BND-11 and CT-BND-07, parts).
+  - `bridge.rs`: one runtime preview per proposal and the fixed acknowledgement on the command layer (CT-BND-11 and
+    CT-BND-07, parts); no commit or app row for the runtime (ADR-L02, KN5.15); a runtime invocation carrying a token is
+    refused (KN5.15); only a token the shell mints commits the pending preview (CT-ONE-29, part, headless); the bridge
+    grants nothing but a proposal.
+  - `expand.rs`: every case step expands to its recorded literal word, and the expansion is the kernel's literal.
+- Open: the built-in column lives in this crate because `c600-check` has no author or column parameter on `admit`; it
+  does not judge a reading entry's workspace writes against the class's rows (BND.57). The command layer's receipts
+  carry no program digest; the proposal's provenance block names the digest of the source bytes that ran.
+- Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
+- Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run. The timings the
+  source-route check prints are informational, not performance evidence.
+
+## Status of LP3, C5: the input router
+
+- `c600-input` routes synthetic key events in EV4.4's fixed order: a key-capture field, a text field, a focused list
+  or view taking only its navigation keys, then the global map. A key that reaches a binding has its relative names
+  resolved at the press and goes to the command layer through `c600-command`'s public shell API with absolute
+  arguments only (EV4.3). A held key repeats only EV4.6's allowlist (`camera.rotate`, `camera.zoom`, `list.move`,
+  `view.preview.scrub`), read from the row's H-08 `repeat` flag; focus loss releases the held keys and a pending
+  prefix group; busy input gets the layer's refusal as its receipt and is never queued. `KeyMap::apply` runs EV4.7's
+  duplicate, prefix and layout checks per routing class and per declared layout (US QWERTY and French AZERTY) before a
+  map applies. The crate changes no file in `c600-command`.
+- Tests (`c600-input/tests/`), on synthetic events only:
+  - `routing.rs`: CT-EV4-02, among them arguments resolved at the press surviving later camera, focus, hover and
+    filter changes, and the key route giving the same receipts as `Shell::invoke` with the same rows and arguments.
+  - `repeat.rs`: CT-EV4-04's append, preview and commit legs and its busy leg, with repeat events flagged and
+    unflagged, counting the invocations that reach the layer. The twist leg waits for KN3.7's exact rotations (LP2).
+  - `keymap.rs`: CT-EV4-06's synthetic half, ahead of LP4 (chapter 12 section 15.5), among them DT-M1's US and French
+    layout counterexample.
+- Drafts, which freeze with the command table at LP3 (PHS.53) and chapter 05's key-map forms: the list in the crate
+  documentation, among them the routing class names, the chord form (W3C `code` names with Ctrl, Shift, Alt and
+  Meta), the two layout tables, the default global map, the repeat flag's source, and placeholder camera and twist
+  values. Escape closes a pending prefix group or the innermost transient layer and never cancels a preview (DT-M1 C4).
+- Open:
+  - The class rule (no text-class or capture-class binding; list-class bindings reach only the list rows) reports
+    `EV4:input.binding_conflict`, since chapter 13 has no row of its own for it; a dedicated row is a change to
+    chapter 13 (PHS.52).
+  - Two draft key maps exist: the shell's five chords in `c600-command`, which C1's key route uses, and the router's
+    default map. They agree on preview, execute, undo and redo; the shell binds Escape to `operation.preview.cancel`,
+    which DT-M1 C4 rules out. One map remains when the command table freezes (PHS.53).
+- Evidence kind: source and synthetic. No Windows, IME, device or timing claim; CT-EV4-05 stays a windows test (LP4).

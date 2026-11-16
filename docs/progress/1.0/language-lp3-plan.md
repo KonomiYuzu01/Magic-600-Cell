@@ -118,7 +118,7 @@ One pull request per milestone; each names the checks that ran.
 | C2 | Headless display contract (`c600-display`); views and their budgets (`c600-view`) | M2 and M3 (on main) | Built |
 | C3 | The runtime in its own process (`c600-runtime`) | M2 and M3 | Built |
 | C4 | Module closure (`c600-module`) | M2 and M7 (on main) | Built |
-| C5 | Source route and the 600-cell-Full tool (`c600-tools`) | C1 | Next |
+| C5 | Source route and the 600-cell-Full tool (`c600-tools`) | C1 | Built in part (section 7) |
 | C6 | Representations tool, headless half | C2, C5 | Next |
 | C7 | Durable receipts and undo through the session store | M6 (on main) and C1 | In progress |
 | C8 | The jumbling tool | M5 on main | Waits |
@@ -194,6 +194,18 @@ host ran it. Acceptance:
    with the tool's views, CT-EV4-02, CT-EV4-04 (the append, preview and commit legs) and CT-ONE-29 that the tool and
    the bridge make reachable, each naming its part.
 3. A change to `c600-command` gets C1's fresh read; C1's item 5 holds.
+
+- C5 (`rust/c600-tools`, branch `claude/lp3-source-route`), built: item 1 (compare.py equality on all 3,201 steps,
+  traces byte-identical to the command route's, and receipts that agree in all 13,553 pairs apart from their
+  envelopes); item 3 (C5 changed no file in `c600-command`); and of item 2, the 600-cell-Full tool parts of CT-LB6-03
+  and CT-BND-15, the headless part of CT-ONE-29 and the command-layer parts of CT-BND-07 and CT-BND-11. The tool runs
+  in process.
+- C5, input router (`rust/c600-input`, branch `claude/lp3-input-routing`), built: of item 2, CT-EV4-02 and CT-EV4-04's
+  append, preview and commit legs and its busy leg, on synthetic events through the shell's public API; ahead of LP4,
+  CT-EV4-06's synthetic half. CT-EV4-04's twist leg waits for KN3.7's exact rotations (section 2).
+- Next, C5's next piece: CT-LB2-02's Net half, CT-LB2-03's oversize refusal, the checker halves of CT-LB3-01 and
+  CT-LB3-07, CT-BND-19, CT-EV3-01 to CT-EV3-04 with the tool's views, CT-ONE-29's user-stage part (with C2's next
+  display piece), and the tool on C3's runtime process with its records naming the host.
 
 CT-LB1-01, CT-LB1-03, CT-LB1-06, CT-LB2-01 and CT-BND-18 test library entries, which are language code (LB1.1). They
 need collection types and word operations (concatenation, inverse, powers) that the IR draft `c600-ir-draft-1` does
