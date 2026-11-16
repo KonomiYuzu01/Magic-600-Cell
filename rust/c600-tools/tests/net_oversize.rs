@@ -62,9 +62,9 @@ fn commit(layer: &mut CommandLayer, shell: &mut Shell) -> Receipt {
 /// base; the shell's chord commits it as one transaction that leaves the state where it was. The moving prefix `g`
 /// alone previews with verdict moves and no end state, and its commit is refused with the kernel's protection code.
 ///
-/// Not built: the Strict half (Strict protection on 600-cell-Full is LP2's; the kernel's protection mode has the one
-/// variant Net, which the match below relies on) and "an incomplete prefix check never returns safe" (the Net check
-/// has no partial coverage to report).
+/// Not built through the tool's route: the Strict half and "an incomplete prefix check never returns safe", because
+/// the command layer's preview has no Strict mode (KN5, LP2). `c600-library/tests/ct_lb2_02.rs` runs both at the
+/// kernel, on words the library builds.
 #[test]
 fn ct_lb2_02_net_half_an_identity_word_with_moving_prefixes_passes_net_through_the_tools_route() {
     let kernel = kernel();
