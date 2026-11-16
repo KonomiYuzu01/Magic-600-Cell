@@ -40,6 +40,7 @@ pub mod model;
 pub mod observe;
 pub mod q5;
 pub mod regions;
+pub mod rotation;
 pub mod state;
 pub mod twist;
 
@@ -65,6 +66,10 @@ pub mod codes {
     pub const PIECE_WOULD_MOVE: &str = "KN2:protection.piece_would_move";
     /// A stored word has a refused prefix at the current input.
     pub const WORD_BLOCKED_PREFIX: &str = "KN2:input.word_blocked_prefix";
+    /// Exact rotation requests (A6, KN3.7 to KN3.9; [`crate::rotation`]).
+    pub use c600_kernel::request::codes::{MENU_BINDING_MISMATCH, ROTATION_REQUEST_MALFORMED, ROTATION_SEARCH_BOUND};
+    /// A jumble menu item while Jumble is off: 600-cell-Full takes retained items only (JI.35).
+    pub const MENU_WORD_NEEDS_JUMBLE_ON: &str = "KN5:input.menu_word_needs_jumble_on";
 }
 
 /// The loaded model with its rotation group and exact piece regions.

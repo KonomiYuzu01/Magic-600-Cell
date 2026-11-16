@@ -300,6 +300,23 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   `check_unreadable_recipe_json` pins that agreement.
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run. The timings the check
   prints are informational, not performance evidence.
+- KN3 (LP2): `c600_kernel::exact` decides the sign of a + b√5 exactly for 128-bit a and b (`sign5`, a² against 5b²
+  in 256 bits) and evaluates sums of products of integers, √5 and 5 with checked arithmetic that reports overflow
+  instead of deciding. `c600_kernel::request` holds A6's bytes (state contract, in force since 15 November 2026): the
+  wire limits, the four KN2 codes of KN3.7 and KN3.8, the FP.5 binding with its canonical text, the search limit, the
+  request digest, builders for C, H and M lines, and the producer's token writer from a binary64 bit pattern (KN3.9).
+- Contract tests, in part: CT-KN3-01 (Lucas and Fibonacci pairs at |a² − 5b²| = 4 up to the 128-bit limit, the range
+  limits, exact zeros of contact type), CT-KN3-04 (the binding and the search limit) and CT-KN3-06 (bit patterns to
+  exact tokens, both zeros to `0:0`, non-finite patterns refused). The rest of these rows runs in M5's
+  `c600-jumble/tests/kn3.rs`.
+- Draft choices: the bytes, limits and fixed-width signs live here with the standard library only, and a request's
+  meaning, over unbounded integers, in `c600_jumble::rotation`; the shell passes a bit pattern, so no float type enters
+  the kernel; a non-finite producer input and a malformed binding refuse with `KN2:input.rotation_request_malformed`;
+  N or D above `u128` refuses with `KN2:resource_limit.rotation_search_bound`.
+- Open: the A2 filter (KN3.5, CT-KN3-03) has no home yet. INV-4 allows its float, but CT-KN2-05's scans keep float
+  types and literals out of `c600-kernel` and `c600-jumble`, so it needs a crate of its own or a recorded scan
+  exception; the integrator decides. Not built: the shell's gesture producer, F2 and F5 (ν), and the cost of an exact
+  operation by operand size (KN3.6).
 
 ## Status of M5: the jumbling half
 
@@ -343,6 +360,27 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   with the rotation and the digest checked exactly, and J1's digest agrees on the first.
 - Evidence kind: source and fixture. The comparison ran on Windows only. The timings the check prints are
   informational, not performance evidence.
+- KN3.4 and KN3.7 to KN3.9 under A6 (`c600_jumble::rotation`): `Request::decode` reads C, H and M lines with unbounded
+  integers, refuses malformed, noncanonical and oversize bytes, and compares the re-encoded bytes. `resolve` builds the
+  exact rotation in A1's frame at the binding's cap and chooses: free mode over A1's grid with A1's tie order, half-turn
+  candidates for H and for C at ω·ω ≥ 13130, and the squared distance exact in Q; menu mode by exact membership or a
+  drag scored by the squared Frobenius distance in Q(√5), the smallest index winning ties. The record holds the
+  binding, the request digest, the choice (with the complete tie list for a drag) and the exact matrix; `replay` reads
+  it back through the exact rotation check and runs no chooser. On 600-cell-Full, `retained_word` turns a retained
+  item into its A4 word and refuses a jumble item with `KN5:input.menu_word_needs_jumble_on` (JI.35). The A6 codes join
+  `codes`.
+- Contract tests (`c600-jumble/tests/kn3.rs` and `rotation::tests`): CT-KN3-05 whole (LX-9's vectors: the quarter
+  turn's drag picks 15 of the ties 15, 29, 40 and 43; the reversed menu's order digest is 1a87a420…, old bindings
+  refuse and its drag picks 16, the old 43); in part CT-KN3-04 (not run: a search near the limit), CT-KN3-06 (not run:
+  the shell's gesture producer) and CT-LG2-16's kernel half (not run: the language half).
+- Draft choices (`rotation`'s documentation): half-turn candidates are the canonical integer axes with every
+  |component| ≤ N, at denominator 1; free mode compares the whole grid, (2N+1)³·D Cayley points and the half-turns,
+  with no pruning, budget or cancellation; the order of refusals; 600-cell-Full resolves against the pinned menu and
+  refuses a free binding with `KN2:input.menu_binding_mismatch`.
+- Unchanged: selection 2 (a journal's float request is an adapter error) and `CONTRACT_REVISION`, which still names
+  A1 to A4 although the state contract's revision is now `state-contract 2026-11-15 A1-A6`; renaming it changes the
+  identity block J1 is compared with, so it waits for the integrator. KN3.3's exact double description is `dd`; no
+  separate polytope API was added.
 
 ## Status of M6: the session store
 
