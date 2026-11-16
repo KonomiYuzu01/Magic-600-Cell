@@ -200,3 +200,7 @@ class RustJumbleEngine:
     def release_check(self, letter, *, cap=None, eval_budget=None):
         """The one-letter word check of a released letter, plus its cap's rim before and after, floor and delta N_c."""
         return self.call('release_check', letter=list(letter), cap=cap, eval_budget=eval_budget)
+
+    def covers(self, cap, *, eval_budget=None):
+        """JI.12's cover table of a named cap: every meeting cap, in cap-ID order, with the answer in both directions."""
+        return self.call('covers', cap=cap, eval_budget=eval_budget)

@@ -7,10 +7,12 @@ undefined fields and refusals included:
 - `rim_summary` against `references/observations.observe` on the recorded I_a@40 stop and the I_a prefixes 10, 20
   and 60 (J1's `tests/test_jumbling_observations.py`);
 - `release_check` against `leads/x5_release.release_check` on census seed 7101 before steps 44, 70 and 97, each
-  step's first letter, and a blocked letter and a bad cap before step 97 (J1's `tests/test_jumbling_leads_repair.py`).
+  step's first letter, and a blocked letter and a bad cap before step 97 (J1's `tests/test_jumbling_leads_repair.py`);
+- `covers` against `leads/covers.covers_query` on census seed 7101 before step 17 at the cap of the step's first
+  letter, and at a blocked and a closed meeting cap (J1's `tests/test_jumbling_leads_covers.py`).
 
-CT-KN2-01 (part: the J1 harness through the kernel API for KN2.4's `rim_summary` and `release_check`; not run:
-`covers`, `repair_list`, `nu` and `correction_set_check`, and the 600-cell-Full oracle O01 to O07).
+CT-KN2-01 (part: the J1 harness through the kernel API for KN2.4's `rim_summary`, `release_check` and `covers`; not
+run: `repair_list`, `nu` and `correction_set_check`, and the 600-cell-Full oracle O01 to O07).
 CT-KN2-04 (part: the release check of a blocked letter leaves the input digest unchanged at J1's state; not run here:
 the off-menu and uncertain letters, which `rust/c600-jumble/tests/observations.rs` runs).
 
@@ -44,7 +46,7 @@ _ENGINES = {}
 
 
 def setUpModule():
-    global np, census, R, obs_refs, O, X5
+    global np, census, R, obs_refs, O, X5, CV
     try:
         import numpy as np
     except ImportError as error:
@@ -55,6 +57,7 @@ def setUpModule():
     from differential.candidate import rust_jumble as R
     from differential.references import obs_refs, observations as O
     from differential.leads import x5_release as X5
+    from differential.leads import covers as CV
     if Path(census.seams.CACHE).resolve().is_relative_to(ROOT):
         raise AssertionError('the centroid cache is inside the repository')
     started = perf_counter()
@@ -307,6 +310,64 @@ class ReleaseCheckTests(TimedCase):
         self.assert_refused(candidate().release_check(word[0], cap=600), 'cap', [600])
         self.assertEqual(candidate().record()['digest'], before)
         self.assertEqual(S.st.digest(), before)
+
+
+class CoversTests(TimedCase):
+    def assert_same(self, answer, reference, label):
+        """The candidate's cover table equals J1's `as_dict` in every field but J1's wall-clock seconds; `by`, which
+        only a cut-off job names, is null."""
+        document = json.loads(json.dumps(reference.as_dict()))
+        self.assertEqual(set(answer) - {'by'}, set(document) - {'seconds'}, label)
+        for key in sorted(set(document) - {'seconds'}):
+            self.assertEqual(answer[key], document[key], (label, key))
+        self.assertIsNone(answer['by'], label)
+
+    def test_census_step_17_matches_j1(self):
+        """J1's covers test (`tests/test_jumbling_leads_covers.py`): census seed 7101 before step 17, at the cap of the
+        step's first letter. The completed table equals `covers_query`: the 80 meeting caps in cap-ID order, the
+        parameters (threshold 10, the pinned menu identity and order digest), and both directions of every answer,
+        with the face counts, the face pieces that straddle a blocked meeting cap and each not-applicable reason. A
+        blocked meeting cap and a closed one, each named in turn, are errors with no answers for both. Nothing
+        changes the state."""
+        word, S = at_census(17)
+        cap = word[0][0]
+        before = S.st.digest()
+        reference = timed('j1 covers', CV.covers_query, S, cap)
+        self.assertEqual(reference.status, 'completed', reference.message)
+        answer = timed('candidate covers', candidate().covers, cap)
+        self.assert_same(answer, reference, f'cap {cap}')
+        self.assertEqual(answer['parameters']['menu_order_digest'], census.I_A_ORDER_DIGEST)
+        reasons = {row['cap']: row['c_covers_d'].get('reason') for row in answer['answers']}
+        blocked = [d for d, reason in reasons.items() if reason == 'blocked']
+        closed = [d for d, reason in reasons.items() if reason == 'closed']
+        self.assertTrue(blocked, 'the state must have a blocked meeting cap')
+        self.assertTrue(any(row['d_covers_c']['straddlers'] for row in answer['answers']))
+        for d in blocked[:1] + closed[:1]:
+            with self.subTest(named=d):
+                error = candidate().covers(d)
+                self.assertEqual((error['status'], error['answers']), ('error', []))
+                self.assert_same(error, timed('j1 covers', CV.covers_query, S, d), f'cap {d}')
+        self.assertEqual(candidate().record()['digest'], before)
+        self.assertEqual(S.st.digest(), before)
+
+    def test_a_bad_cap_and_an_exhausted_budget(self):
+        """Through the adapter: a cap outside 0..599 is refused with KN2:input.named_object_invalid (J1 raises), a
+        request without a cap is an input error, and a budget of zero exact evaluations cuts the job off with
+        KN7:budget.kernel_cost and no answers, so it makes no claim about any meeting cap (KN7.4)."""
+        word, S = at_census(17)
+        before = S.st.digest()
+        for cap in (600, -1):
+            with self.subTest(cap=cap):
+                with self.assertRaisesRegex(ValueError, 'cap must be an integer in 0..599'):
+                    CV.covers_query(S, cap)
+                self.assert_refused(candidate().covers(cap), 'cap', [cap])
+        with self.assertRaises(R.CandidateError) as raised:
+            candidate().call('covers')
+        self.assertEqual(raised.exception.kind, 'input')
+        cut = candidate().covers(word[0][0], eval_budget=0)
+        self.assertEqual((cut['status'], cut['by'], cut['answers']), ('cut_off', 'KN7:budget.kernel_cost', []))
+        self.assertEqual(cut['domain'], list(CV.meeting_caps(word[0][0])))
+        self.assertEqual(candidate().record()['digest'], before)
 
 
 if __name__ == '__main__':

@@ -1,5 +1,6 @@
-//! The JI.6 and JI.7 observations that M5 left to M8 (LP2 plan, section 11): the rim summary of every cap and the
-//! release check of one letter. Each call reads a jumbled state exactly and changes nothing.
+//! The JI.6 and JI.7 observations that M5 left to M8 (LP2 plan, section 11): the rim summary of every cap, the
+//! release check of one letter and the cover table of a named cap (JI.12). Each call reads a jumbled state exactly
+//! and changes nothing.
 //!
 //! The rim of an admissible cap c follows rim.py's `rim_sets`: in every domain whose frame carries n_c to a pole e,
 //! the cut cells at e that the domain holds on at least one side ([`super::cap_cells`]). A cell's upper chamber is
@@ -221,4 +222,196 @@ pub fn release_check(
     fields.insert("letter_cap".to_owned(), int(c as i64));
     fields.extend(rim.into_iter().map(|(name, value)| (name.to_owned(), value)));
     Ok(Value::Object(fields))
+}
+
+// ------------------------------------------------------------------------------------------------ covers (JI.12)
+
+/// A cover needs at least this many face pieces on each side (JI.12; J1's `THRESHOLD`).
+const THRESHOLD: i64 = 10;
+
+/// The number of caps that meet a cap: the 81st largest product n_0·n_x (the cap itself is the first) bounds them.
+const MEETING: usize = 80;
+
+/// KN7.10: a job whose declared allowance cannot admit further work is cut off with this budget's code.
+const KERNEL_COST: &str = "KN7:budget.kernel_cost";
+
+/// The caps meeting cap c (J1's `meeting_caps`), in cap-ID order: every other cap d whose product n_c·n_d is at least
+/// the 81st largest product n_0·n_x, decided in Q(√5). Every cap meets 80.
+fn meeting_caps(ctx: &Context, c: usize) -> Result<Vec<usize>, String> {
+    let poles = &ctx.model.poles;
+    let mut dots: Vec<Q5> = poles.iter().map(|n| dot(&poles[0], n)).collect();
+    dots.sort_by(|x, y| cmp_q5(y, x));
+    let threshold = &dots[MEETING];
+    let caps: Vec<usize> =
+        (0..POLES).filter(|&d| d != c && cmp_q5(&dot(&poles[c], &poles[d]), threshold) != Ordering::Less).collect();
+    if caps.len() != MEETING {
+        return Err(format!("cap {c} meets {} caps, not {MEETING}", caps.len()));
+    }
+    Ok(caps)
+}
+
+/// The piece of every domain's chamber: (domain, chamber) to piece.
+fn holders(dom: &Domains) -> HashMap<(u32, u32), u32> {
+    let mut holder = HashMap::with_capacity(NP);
+    for (d, members) in dom.members.iter().enumerate() {
+        for &p in members {
+            holder.insert((d as u32, dom.cham[p as usize]), p);
+        }
+    }
+    holder
+}
+
+/// One face piece of a cut (J1's `seams.face`): the piece, whether it holds its cell's upper side (inside the cap) or
+/// its lower side (outside), and whether its domain holds the cell on both sides.
+struct FacePiece {
+    piece: u32,
+    inside: bool,
+    aligned: bool,
+}
+
+/// The face of an admissible cap from its cut cells: the holder of every held side of every cell. The core holds a
+/// lattice cell's lower side and is no piece.
+fn face(t: &Tables, holder: &HashMap<(u32, u32), u32>, cells: &[(u32, u32, u8)]) -> Result<Vec<FacePiece>, String> {
+    let held = |d: u32, chamber: u32| {
+        holder.get(&(d, chamber)).copied().ok_or_else(|| format!("no piece of domain {d} holds chamber {chamber}"))
+    };
+    let mut face = Vec::new();
+    for &(d, ti, occ) in cells {
+        let (lo, up) = (t.lo[ti as usize], t.up[ti as usize]);
+        if occ != 1 {
+            face.push(FacePiece { piece: held(d, up)?, inside: true, aligned: occ == 0 });
+        }
+        if occ != 2 && lo != CORE {
+            face.push(FacePiece { piece: held(d, lo)?, inside: false, aligned: occ == 0 });
+        }
+    }
+    Ok(face)
+}
+
+/// One direction of a cover (J1's `exact_covers`): the face pieces of the covered cap's cut that lie inside the
+/// covering cap, counted by side and by alignment, and the face pieces among the covering cap's straddlers (a
+/// straddler is not inside). The covering cap covers when the four counts are equal and at least [`THRESHOLD`].
+fn cover_answer(face: &[FacePiece], inside: &[u32], straddlers: &[u32]) -> Value {
+    let (mut n_in, mut n_out, mut a_in, mut a_out) = (0i64, 0i64, 0i64, 0i64);
+    for f in face.iter().filter(|f| inside.binary_search(&f.piece).is_ok()) {
+        if f.inside {
+            n_in += 1;
+            a_in += f.aligned as i64;
+        } else {
+            n_out += 1;
+            a_out += f.aligned as i64;
+        }
+    }
+    let mut on_face: Vec<u32> = face.iter().map(|f| f.piece).filter(|p| straddlers.binary_search(p).is_ok()).collect();
+    on_face.sort_unstable();
+    let counts = vec![
+        ("inside", int(n_in)),
+        ("outside", int(n_out)),
+        ("aligned_inside", int(a_in)),
+        ("aligned_outside", int(a_out)),
+    ];
+    obj(vec![
+        ("covers", Value::Bool(n_in >= THRESHOLD && n_in == n_out && n_out == a_in && a_in == a_out)),
+        ("counts", obj(counts)),
+        ("straddlers", ids(&on_face)),
+    ])
+}
+
+/// The rim of an admissible cap from its cut cells.
+fn rim_of(cells: &[(u32, u32, u8)]) -> Rim {
+    let mut rim = Rim::default();
+    for &(_, _, occ) in cells {
+        rim.add(occ);
+    }
+    rim
+}
+
+/// JI.12 `covers` (J1's `covers_query`): every cap d meeting the named cap c, in cap-ID order, with the exact answer in
+/// both directions. "d covers c" counts the face pieces of c's cut that lie inside d, and names the face pieces that
+/// straddle d when d is blocked; "c covers d" counts d's face pieces inside c and is not applicable, with its reason,
+/// when d is blocked or closed (N_d = 0). The named cap must be admissible and misaligned: a blocked or closed cap
+/// is an error with no answers. Nothing ranks, marks or orders the caps beyond their IDs. A cap outside 0..599 is
+/// refused (JI.45). When the classification budget leaves a cap uncertain, the job is cut off with
+/// `KN7:budget.kernel_cost` and has no answers (KN7.4). The state never changes.
+pub fn covers(ctx: &Context, state: &mut State, cap: i64, eval_budget: Option<u64>) -> Result<Value, String> {
+    let c = match cap_index("cap", cap) {
+        Ok(c) => c,
+        Err(refused) => return Ok(refused),
+    };
+    let t = tables(ctx)?;
+    let menu = state.menu_arc();
+    let pin = |value: Option<&String>| value.map_or(Value::Null, |s| text(s));
+    let parameters = obj(vec![
+        ("cap", int(c as i64)),
+        ("threshold", int(THRESHOLD)),
+        ("menu_identity", pin(menu.as_ref().map(|m| &m.identity))),
+        ("menu_order_digest", pin(menu.as_ref().map(|m| &m.order))),
+    ]);
+    let domain = meeting_caps(ctx, c)?;
+    let digest = state.digest(ctx);
+    let result = |status: &str, answers: Vec<Value>, message: Option<String>, by: Option<&str>| {
+        obj(vec![
+            ("status", text(status)),
+            ("input_digest", text(&digest)),
+            ("parameters", parameters.clone()),
+            ("domain", Value::Array(domain.iter().map(|&d| int(d as i64)).collect())),
+            ("answers", Value::Array(answers)),
+            ("message", message.map_or(Value::Null, |m| text(&m))),
+            ("by", by.map_or(Value::Null, text)),
+        ])
+    };
+    let cut_off = |x: usize| {
+        let message = format!("cap {x}: the classification budget ends before the cap is classified");
+        result("cut_off", Vec::new(), Some(message), Some(KERNEL_COST))
+    };
+    let named = state.classify(ctx, c, true, false, eval_budget).map_err(|e| e.0)?;
+    if named.uncertain > 0 {
+        return Ok(cut_off(c));
+    }
+    if named.straddle.is_some() {
+        return Ok(result("error", Vec::new(), Some(format!("cap {c}: blocked")), None));
+    }
+    let facts = pose_facts(ctx, t, state)?;
+    let dom = domains(ctx, t, state, &facts)?;
+    let cells_c = cap_cells(ctx, t, &dom, c);
+    if rim_of(&cells_c).n() == 0 {
+        return Ok(result("error", Vec::new(), Some(format!("cap {c}: closed (not misaligned)")), None));
+    }
+    let inside_c = named.inside.unwrap_or_default();
+    let holder = holders(&dom);
+    let face_c = face(t, &holder, &cells_c)?;
+    let mut answers = Vec::with_capacity(domain.len());
+    for &d in &domain {
+        let cl = state.classify(ctx, d, true, false, eval_budget).map_err(|e| e.0)?;
+        if cl.uncertain > 0 {
+            return Ok(cut_off(d));
+        }
+        let blocked = cl.straddle.is_some();
+        let straddlers = if blocked {
+            let set = state.straddler_set(ctx, d, eval_budget).map_err(|e| e.0)?;
+            if set.uncertain > 0 {
+                return Ok(cut_off(d));
+            }
+            set.pieces
+        } else {
+            Vec::new()
+        };
+        let inside_d = cl.inside.unwrap_or_default();
+        let c_covers_d = if blocked {
+            obj(vec![("reason", text("blocked")), ("status", text("not_applicable"))])
+        } else {
+            let cells_d = cap_cells(ctx, t, &dom, d);
+            if rim_of(&cells_d).n() == 0 {
+                obj(vec![("reason", text("closed")), ("status", text("not_applicable"))])
+            } else {
+                cover_answer(&face(t, &holder, &cells_d)?, &inside_c, &[])
+            }
+        };
+        answers.push(obj(vec![
+            ("cap", int(d as i64)),
+            ("d_covers_c", cover_answer(&face_c, &inside_d, &straddlers)),
+            ("c_covers_d", c_covers_d),
+        ]));
+    }
+    Ok(result("completed", answers, None, None))
 }

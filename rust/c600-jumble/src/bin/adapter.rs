@@ -663,8 +663,8 @@ fn main() {
 }
 
 /// The observations of milestone M8 ([`observe::cuts`]; JI.6 and JI.7). Each reads the current state and changes
-/// nothing, and `eval_budget` bounds each classification: `rim_summary` (optional `caps`, the named caps) and
-/// `release_check` (`letter` as [grip, item] of the started menu, optional `cap` for delta-u).
+/// nothing, and `eval_budget` bounds each classification: `rim_summary` (optional `caps`, the named caps),
+/// `release_check` (`letter` as [grip, item] of the started menu, optional `cap` for delta-u) and `covers` (`cap`).
 impl Adapter {
     /// The answer to an M8 observation, or `None` when `op` names none.
     fn m8_observation(&mut self, op: &str, request: &Value) -> Result<Option<Value>, Fail> {
@@ -683,6 +683,13 @@ impl Adapter {
                 let eval_budget = budget(request.get("eval_budget"))?;
                 let state = self.state.as_ref().ok_or_else(|| input("start must come first"))?;
                 observe::cuts::release_check(&self.ctx, state, &letter, cap, eval_budget).map_err(Fail::Engine)?
+            }
+            "covers" => {
+                let cap = optional_cap(request.get("cap"))?.ok_or_else(|| input("covers needs a cap"))?;
+                let eval_budget = budget(request.get("eval_budget"))?;
+                let Adapter { ctx, state, .. } = self;
+                let state = state.as_mut().ok_or_else(|| input("start must come first"))?;
+                observe::cuts::covers(ctx, state, cap, eval_budget).map_err(Fail::Engine)?
             }
             _ => return Ok(None),
         };

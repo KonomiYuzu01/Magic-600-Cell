@@ -1,8 +1,8 @@
 //! The M8 observations of the jumbled puzzle (LP2 plan, section 11; JI.6 and JI.7) at the candidate's observation API:
 //! their refusals, their undefined fields and their agreement with the M5 observations they share facts with. The
 //! comparison with J1 runs through the adapter in `tests/test_jumbling_rust_m8_observations.py`.
-//! CT-KN2-01 (part: the candidate's M8 observations agree with its own seam facts and word check; not run here: the
-//! comparison with J1, which `tests/test_jumbling_rust_m8_observations.py` runs).
+//! CT-KN2-01 (part: the candidate's M8 observations agree with its own seam facts, word check and rim summary; not run
+//! here: the comparison with J1, which `tests/test_jumbling_rust_m8_observations.py` runs).
 //! CT-KN2-04 (part: the release check of a blocked, an off-menu and an uncertain letter leaves the start's digest
 //! unchanged; not run here: words of more than one letter, which the M5 word-check tests cover).
 
@@ -300,4 +300,125 @@ fn release_check_refuses_a_cap_outside_the_model() {
         assert_eq!(answer.get(key), word.get(key), "{key}");
     }
     assert_eq!(int(&answer, "cap"), Some(17));
+}
+
+fn ints(value: &Value, key: &str) -> Vec<i64> {
+    value.get(key).and_then(Value::as_array).expect(key).iter().map(|v| v.as_i64().expect("an integer")).collect()
+}
+
+fn answers(answer: &Value) -> &[Value] {
+    answer.get("answers").and_then(Value::as_array).expect("answers")
+}
+
+/// A cover table that is not completed: its status and message, every meeting cap in the domain and no answers.
+fn assert_no_answers(answer: &Value, status: &str, message: &str, by: Option<&str>) {
+    assert_eq!(text(answer, "status").as_deref(), Some(status));
+    assert_eq!(text(answer, "message").as_deref(), Some(message));
+    assert_eq!(text(answer, "by").as_deref(), by);
+    assert_eq!(ints(answer, "domain").len(), 80);
+    assert!(answers(answer).is_empty(), "{message}: no answer about any meeting cap");
+}
+
+#[test]
+fn covers_refuses_a_cap_outside_the_model_and_answers_no_blocked_or_closed_cap() {
+    let s = Setup::load();
+    let mut state = s.after(3);
+    let before = state.record(&s.ctx);
+    for cap in [600, -1] {
+        let answer = cuts::covers(&s.ctx, &mut state, cap, None).expect("no engine error");
+        assert_invalid(&answer, "cap", &[cap]);
+        assert!(answer.get("answers").is_none(), "a refusal reads nothing");
+    }
+    let grips: Vec<usize> = (0..POLES).collect();
+    let statuses = state.survey(&s.ctx, &grips, None).expect("no engine error");
+    let blocked = statuses.iter().position(|&status| status == Status::Blocked).expect("a blocked cap");
+    let answer = cuts::covers(&s.ctx, &mut state, blocked as i64, None).expect("no engine error");
+    assert_no_answers(&answer, "error", &format!("cap {blocked}: blocked"), None);
+    assert_eq!(state.record(&s.ctx), before);
+    // Every cap of the solved state is closed.
+    let mut solved = State::new(Some(s.menu.clone()));
+    let answer = cuts::covers(&s.ctx, &mut solved, 7, None).expect("no engine error");
+    assert_no_answers(&answer, "error", "cap 7: closed (not misaligned)", None);
+}
+
+#[test]
+fn covers_answers_every_meeting_cap_in_both_directions() {
+    let s = Setup::load();
+    let mut state = s.after(3);
+    let before = state.record(&s.ctx);
+    let summary = cuts::rim_summary(&s.ctx, &mut state, None, None).expect("no engine error");
+    let rim: Vec<&Value> = rows(&summary).iter().collect();
+    let c = rim.iter().position(|row| int(row, "N_c").is_some_and(|n| n > 0)).expect("a misaligned cap");
+    let answer = cuts::covers(&s.ctx, &mut state, c as i64, None).expect("no engine error");
+    assert_eq!(text(&answer, "status").as_deref(), Some("completed"), "{:?}", text(&answer, "message"));
+    assert_eq!((answer.get("message"), answer.get("by")), (Some(&Value::Null), Some(&Value::Null)));
+    assert_eq!(text(&answer, "input_digest"), Some(state.digest(&s.ctx)));
+    let parameters = answer.get("parameters").expect("parameters");
+    assert_eq!((int(parameters, "cap"), int(parameters, "threshold")), (Some(c as i64), Some(10)));
+    assert_eq!(text(parameters, "menu_identity"), Some(s.menu.identity.clone()));
+    assert_eq!(text(parameters, "menu_order_digest"), Some(s.menu.order.clone()));
+    // The domain is the 80 other caps meeting c, in cap-ID order, and the answers follow it with nothing added.
+    let domain = ints(&answer, "domain");
+    assert_eq!(domain.len(), 80);
+    assert!(domain.windows(2).all(|w| w[0] < w[1]) && !domain.contains(&(c as i64)));
+    let caps: Vec<i64> = answers(&answer).iter().map(|row| int(row, "cap").unwrap()).collect();
+    assert_eq!(caps, domain);
+    let covers_flag = |cover: &Value| {
+        let counts = cover.get("counts").expect("counts");
+        let n: Vec<i64> = ["inside", "outside", "aligned_inside", "aligned_outside"]
+            .iter()
+            .map(|key| int(counts, key).expect("a count"))
+            .collect();
+        n[0] >= 10 && n.iter().all(|&x| x == n[0])
+    };
+    let (mut blocked, mut answered, mut closed) = (0, 0, 0);
+    let mut reverse = None;
+    for row in answers(&answer) {
+        let d = int(row, "cap").unwrap() as usize;
+        let (d_covers_c, c_covers_d) = (row.get("d_covers_c").unwrap(), row.get("c_covers_d").unwrap());
+        assert_eq!(d_covers_c.get("covers"), Some(&Value::Bool(covers_flag(d_covers_c))), "cap {d}");
+        let is_blocked = text(rim[d], "status").as_deref() == Some("blocked");
+        if !is_blocked {
+            assert!(ints(d_covers_c, "straddlers").is_empty(), "cap {d}: only a blocked cap has straddlers");
+        }
+        // "c covers d" is not applicable at a blocked or closed d, and answered with counts otherwise.
+        let reason = text(c_covers_d, "reason");
+        if is_blocked {
+            blocked += 1;
+            assert_eq!(reason.as_deref(), Some("blocked"), "cap {d}");
+        } else if int(rim[d], "N_c") == Some(0) {
+            closed += 1;
+            assert_eq!(reason.as_deref(), Some("closed"), "cap {d}");
+        } else {
+            answered += 1;
+            assert_eq!(reason, None, "cap {d}");
+            assert_eq!(c_covers_d.get("covers"), Some(&Value::Bool(covers_flag(c_covers_d))), "cap {d}");
+            assert!(ints(c_covers_d, "straddlers").is_empty(), "cap {d}: c is not blocked");
+            reverse.get_or_insert((d, c_covers_d.clone()));
+        }
+        if reason.is_some() {
+            assert_eq!(text(c_covers_d, "status").as_deref(), Some("not_applicable"), "cap {d}");
+        }
+    }
+    assert!(blocked > 0 && answered > 0 && closed > 0, "{blocked} blocked, {answered} answered, {closed} closed");
+    // "c covers d" in c's table is "d covers c" in d's table: the same face of d, the same inside set of c.
+    let (d, c_covers_d) = reverse.expect("an answered meeting cap");
+    let table = cuts::covers(&s.ctx, &mut state, d as i64, None).expect("no engine error");
+    let row = answers(&table).iter().find(|row| int(row, "cap") == Some(c as i64)).expect("c meets d");
+    assert_eq!(row.get("d_covers_c"), Some(&c_covers_d));
+    assert_eq!(state.record(&s.ctx), before);
+}
+
+#[test]
+fn covers_is_cut_off_when_the_classification_budget_ends() {
+    let s = Setup::load();
+    let mut state = s.after(3);
+    let before = state.record(&s.ctx);
+    let summary = cuts::rim_summary(&s.ctx, &mut state, None, None).expect("no engine error");
+    let c = rows(&summary).iter().position(|row| int(row, "N_c").is_some_and(|n| n > 0)).expect("a misaligned cap");
+    // KN7.4 and KN7.10: a budget of zero exact evaluations leaves the named cap uncertain, so the job makes no claim.
+    let answer = cuts::covers(&s.ctx, &mut state, c as i64, Some(0)).expect("no engine error");
+    let message = format!("cap {c}: the classification budget ends before the cap is classified");
+    assert_no_answers(&answer, "cut_off", &message, Some("KN7:budget.kernel_cost"));
+    assert_eq!(state.record(&s.ctx), before);
 }
