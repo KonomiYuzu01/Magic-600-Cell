@@ -143,7 +143,10 @@
       {"id": "m7-parser", "title": "Parser after LQ13 (M7)", "weight": 3, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/154"},
       {"id": "m8-acceptance", "title": "PHS.19 acceptance and the section 15.3 suite (M8)", "weight": 2, "done": false, "evidence": null},
       {"id": "m8-suite-now", "title": "Section 15.3 tests that can run before M5 and LP3 (part of M8)", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/164"},
-      {"id": "m8-session-rows", "title": "Section 15.3's session rows that M6 unblocked (part of M8)", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/168"}
+      {"id": "m8-session-rows", "title": "Section 15.3's session rows that M6 unblocked (part of M8)", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/168"},
+      {"id": "lp2-batch-1", "title": "LP2's first integration batch (part of M8)", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/170"},
+      {"id": "kn5-one-implementation", "title": "KN5's one implementation, stages 1 and 2 (part of M8)", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/174"},
+      {"id": "lp2-batch-2", "title": "LP2's second integration batch and M8's observation calls (part of M8)", "weight": 1, "done": false, "evidence": null}
      ]},
     {"id": "1.0-lp3", "track": "language", "title": "Language first closed loop (LP3)", "status": "in_progress", "acceptance": "PHS.23's six acceptance items have evidence on one frozen candidate and the 82 tests that chapter 12 section 15.4 indexes run whole; the owner signs off LP3.", "acceptance_source": "docs/progress/1.0/language-lp3-plan.md", "blocker": null,
      "items": [
