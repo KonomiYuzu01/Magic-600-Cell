@@ -365,7 +365,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   cuts the torn remnant of a header, and answers a header whose fate is unknown with
   `KN5:unknown_outcome.commit_fate`.
 - Revisions carry KN0.2's counters and the engine epoch. Snapshots open at the current revision, at an earlier
-  revision of this epoch, or at a checkpoint (LI.11, ONE.76). A commit after an undo starts a new line, one line is
+  revision, or at a checkpoint (LI.11, ONE.76); a revision stored in an earlier engine epoch opens again under the new
+  one, because the reopen rebuilt the same counters (ONE.17). A commit after an undo starts a new line, one line is
   active, and a line switch is a commit row (ONE.73 to ONE.75). The status reads no storage (R-13).
 - The commit path runs chapter 08 section 7 from step 3 in its order. A shell stub does steps 1 and 2: it mints
   single-use tokens bound to the session, epoch, command, row and its arguments, the identity and, for an execute,
@@ -411,7 +412,7 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   the torn-tail rule above, under which a hole inside a frame is damage; a lost state object is written again by the
   next checkpoint of its state, and its checkpoint opens by replay until then; `create` on a disk that holds a frame
   gives `PS1:input.persistence_format`; a checkpoint advances the workspace counter and is not undone; a workspace
-  receipt's result digest is the SHA-256 of its frame; a revision or snapshot of another epoch gives
+  receipt's result digest is the SHA-256 of its frame; a snapshot of another epoch, given as a job input, gives
   `KN2:stale.epoch_changed`; stopping an unknown job gives `KN5:stale.result_gone`; an I/O error at open gives
   `KN4:resource_limit.disk_full`; the first interruption of a job is the one it reports; the four job queries and
   their kernel costs (one unit per 1,024 slots for a whole-state query); a result's coverage is its inputs' revisions
@@ -506,8 +507,13 @@ run or not applicable is no pass (PHS.63).
     and CT-PS1-12 (M4's section).
   - `c600-jumble/tests/`: `crossing.rs` runs CT-KN2-03, and `assets.rs` the jumbling model's asset checks (M5's
     section).
-  - `c600-evidence/tests/` runs the EVD rows (the evidence library's section). `c600-session/tests/` names M6's rows
-    without a marker (M6's section), and so does `c600-command/tests/layer.rs` for LP3 C1's parts (the C1 section).
+  - `c600-evidence/tests/` runs the EVD rows (the evidence library's section).
+  - `c600-session/tests/`: M6's tests mark their rows (M6's section), CT-ONE-03 to CT-ONE-05, CT-ONE-11, CT-ONE-21,
+    CT-ONE-23 and CT-ONE-24 included. `conformance_rows.rs` runs the session's half of CT-ONE-01 and CT-ONE-02 over
+    every `Row` variant, CT-ONE-23 and the session's rows of CT-KN5-03 and CT-KN5-10; `conformance_jobs.rs` runs
+    CT-ONE-06, CT-ONE-07 and CT-ONE-12 for an execute, an undo, a redo and a line switch; `conformance_recovery.rs`
+    runs CT-ONE-08, CT-ONE-11's refusals at each reachable step, CT-ONE-20, CT-ONE-21 with ONE.17's stored
+    references, and CT-ONE-22. `c600-command/tests/layer.rs` names LP3 C1's parts without a marker (the C1 section).
   - Python, listed in `tools/ci/run_headless.py`: `tests/test_error_registry.py` checks the code catalogue against
     chapter 13 and the LP1 edition fixture `tests/fixtures/error_registry/lp1-edition.json`;
     `tests/test_language_scans.py` scans the workspace's sources; `tests/test_format_inventory.py` runs CT-PS2-06;
@@ -515,13 +521,11 @@ run or not applicable is no pass (PHS.63).
     checkouts write them (CT-LG1-02, CT-PS1-05's checkout half); `tests/test_kernel_oracle.py` replays O01 to O07 and
     N01 to N04 through the kernel (M4's section); `tests/test_jumbling_rust_candidate.py` compares the jumbling
     candidate with J1 (M5's section).
-- Count with LP3's C1 to C4 and M5: 40 whole, seven of them by the union of their parts (CT-LG2-04, CT-LG3-01,
-  CT-LG3-04, and with M5 CT-KN1-05, CT-KN2-01, CT-KN2-04 and CT-KN2-05); 104 part; 15 named by M6's tests without a
-  marker (CT-KN4-01 to CT-KN4-04, CT-KN5-01, CT-KN5-04, CT-KN5-06, CT-KN5-09, CT-KN5-11, CT-KN7-01 to CT-KN7-05 and
-  CT-KN7-07; M6's section calls CT-KN4-01's an in-process part); 13 more named only by LP3's command-layer tests, as
-  parts without a marker (CT-KN5-03, CT-KN5-07, CT-KN5-12, CT-ONE-03 to CT-ONE-05, CT-ONE-11, CT-ONE-20 to CT-ONE-22,
-  CT-LI-04, CT-LI-09 and CT-LI-10); 2 named only as not built (CT-KN2-07, CT-LG4-05); 74 missing. CT-KN5-08 counts as
-  missing, since only the documentation in `c600-command/src/layer.rs` names it.
+- Count with LP3's C1 to C5 and M5: 58 whole, two of them with the tests they name (CT-KN4-04, CT-ONE-23) and seven by
+  the union of their parts (CT-LG2-04, CT-LG3-01, CT-LG3-04, and with M5 CT-KN1-05, CT-KN2-01, CT-KN2-04 and CT-KN2-05);
+  116 part; 5 named only by LP3's command-layer tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04,
+  CT-LI-09 and CT-LI-10); 2 named only as not built (CT-KN2-07, CT-LG4-05); 67 missing. CT-KN5-08 counts as missing,
+  since only the documentation in `c600-command/src/layer.rs` names it.
 - Not run or not applicable, which is no pass (PHS.63), with the check that runs instead: CT-LG3-06's flow-label
   variant, while the flow rule is off (BND.41) and LQ2 has not set it, so the static-only and run-time variants run
   (`c600-run/tests/conformance_lg3.rs`); CT-LG1-03's second host context, since CI runs on Windows only and the editor
@@ -529,7 +533,9 @@ run or not applicable is no pass (PHS.63).
   CT-BND-11's ONE.32 fields in other profiles, which never arise (BND.60); the Linux legs of CT-DET-02, CT-DET-15 and
   CT-PS1-01, since CI has no Linux cargo job; form 2 in CT-DET-32, since RT1 runs form 1 only (the LP2 plan's
   selection, which the owner may overrule); ERR.1 for the five codes `c600-command` names as drafts that chapter 13
-  does not register, which `tests/test_language_scans.py` lists exactly (`UNREGISTERED_DRAFTS`); and, as before,
+  does not register, which `tests/test_language_scans.py` lists exactly (`UNREGISTERED_DRAFTS`); the parts of the
+  session's rows that their markers leave to LP3's view, display, command layer and runtime process, to A6's live
+  twist and to M5's crossing, and step 7 of CT-ONE-11, which M6 cannot reach (M6's section); and, as before,
   CT-LG1-01's mixed dependency editions and CT-LG2-05's form 2.
 - Fixed, each found by a test:
   - A clock reading was an exact `Nat`, so `use_budget(read_clock())` was admitted against LG2.6, LG3.8 and DET.18; it
@@ -540,6 +546,13 @@ run or not applicable is no pass (PHS.63).
   - The kernel's adapter refused a whole case when one recipe held JSON that 0.4 refuses step by step (L1), and
     `Kernel::letters` expanded another model's recipe with this model's seeds (KN1.4); M4's section has both.
   - The evidence library's two fixes (its section).
+  - `open_snapshot` refused a `RevisionRef` stored in an earlier engine epoch with `KN2:stale.epoch_changed`, though a
+    different epoch does not invalidate a read (ONE.17, CT-ONE-21). It now opens the same revision under the new
+    epoch; a handle of the old epoch is still no job input, and an event the store no longer holds is
+    `KN2:stale.revision_gone` (`c600-session/src/session.rs`). A fresh Sonnet read found no blocker or major finding.
+    Its minor points need no change: an epoch the store never had is not refused, which the rest of the reference
+    makes harmless, and after damage a reference whose counters lie past the surviving frames is gone even when its
+    head survived, which refuses rather than opens.
 - Open, each needing a decision:
   - Exact sinks take any value: the checker admits `use_evidence(f)` with a function value, and the interpreter passes
     the value to the host's exact sink without encoding it, so a function or a receipt reaches the host, against RPI.54
@@ -567,16 +580,20 @@ run or not applicable is no pass (PHS.63).
     so `Author::Imported` never arises (FP.18's example has `own`); `Loaded::run` does not require the entry function
     to be exported, and `load` does not run the checker again.
 - Missing, by what they wait for:
-  - LP3's lanes, views and shell (28): CT-ONE-06 to CT-ONE-10, CT-ONE-12 to CT-ONE-19, CT-ONE-23, CT-ONE-24,
-    CT-ONE-28, CT-LI-01 to CT-LI-03, CT-LI-05 to CT-LI-07, CT-LI-11 to CT-LI-14, CT-EV4-03 and CT-PS1-13.
+  - LP3's lanes, views and shell (16): CT-ONE-13 to CT-ONE-16, CT-LI-01 to CT-LI-03, CT-LI-05 to CT-LI-07,
+    CT-LI-11 to CT-LI-14, CT-EV4-03 and CT-PS1-13.
   - M6's remaining rows (15): CT-PS1-08 to CT-PS1-10, CT-PS1-16, CT-PS1-19, CT-PS1-21, CT-PS1-23, CT-PS2-01 to
     CT-PS2-05, and the run records of CT-DET-04, CT-DET-14 and CT-BND-23 (with LP3's grants for CT-DET-04 and
     CT-BND-23).
   - The jumbled puzzle's rows that M5 leaves to M8 (9): CT-KN1-03, CT-KN1-06, CT-KN2-06, CT-KN3-01, CT-KN3-03,
     CT-LG2-12, CT-PS1-11, CT-PS1-14 and CT-PS1-22.
+  - A session's second level (3): CT-ONE-17 and CT-ONE-18, which need a second level in the session, its crossing
+    and `project` (KN1.9); and CT-ONE-19, with LP3's view model.
+  - Derived states with an open reachability claim and KN2.14's raw-table import, which M4 does not build (3, no
+    milestone named): CT-ONE-09, CT-ONE-10 and CT-ONE-28.
   - LG5's module loader and lockfiles (7): CT-LG5-01 to CT-LG5-07. LP3 C4's `c600-module` builds closures and
     lockfiles, but its tests name none of these rows.
-  - KN5's command layer, once its candidate is picked (3): CT-KN5-05, CT-KN5-08 and CT-KN5-10.
+  - KN5's command layer, once its candidate is picked (2): CT-KN5-05 and CT-KN5-08.
   - A6's exact rotation requests (5, no milestone named): CT-KN3-04 to CT-KN3-06, CT-LG2-16 and CT-DET-16.
   - The stage checker, RPI.68 to RPI.76 (3, no milestone named): CT-LG2-15, CT-LG3-10 and CT-LG5-08.
   - Streaming and compressed words, KN2.10 (no milestone named): CT-LG2-14 and CT-LG4-03, and CT-KN2-07, named as not

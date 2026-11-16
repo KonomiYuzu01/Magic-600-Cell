@@ -488,7 +488,8 @@ impl Session {
         })
     }
 
-    /// Opens a read-only snapshot of the current revision, of an earlier revision of this epoch, or of a checkpoint.
+    /// Opens a read-only snapshot of the current revision, of an earlier revision (a stored one of an earlier epoch
+    /// included, ONE.17), or of a checkpoint.
     pub fn open_snapshot(&self, at: At) -> Result<SnapshotHandle, Error> {
         let inner = &*self.0;
         let mut core = lock(&inner.core);
@@ -1198,19 +1199,18 @@ impl Core {
         Ok(())
     }
 
-    /// Resolves where a snapshot is opened. A revision must be one this session reached in this epoch, with
-    /// counters it had. A checkpoint opens from its state object when the object matches its digest; a lost or
-    /// damaged object is not used, and the state is replayed along the checkpoint's path from the start instead
-    /// (PS1.29), which must reach the checkpoint's digest.
+    /// Resolves where a snapshot is opened. A revision must be one this session reached, with counters it had. One
+    /// stored in an earlier engine epoch resolves too, because a different epoch does not invalidate a read (ONE.17):
+    /// the reopen replayed the journal and rebuilt the same counters, and the snapshot opens under this epoch. A
+    /// revision the store no longer holds is gone. A checkpoint opens from its state object when the object matches
+    /// its digest; a lost or damaged object is not used, and the state is replayed along the checkpoint's path from
+    /// the start instead (PS1.29), which must reach the checkpoint's digest.
     fn locate(&mut self, kernel: &Kernel, at: At) -> Result<(RevisionRef, Snapshot), Error> {
         match at {
             At::Current => Ok((self.revision(), self.current.clone())),
             At::Revision(r) => {
                 if r.session != self.session {
                     return Err(Error::new(code::UNKNOWN_SESSION, "a revision of another session"));
-                }
-                if r.epoch != self.epoch {
-                    return Err(Error::new(code::EPOCH_CHANGED, "a revision of another engine epoch"));
                 }
                 if r.identity != self.identity || r.mode != Mode::JumbleOff {
                     return Err(Error::new(codes::IDENTITY_MISMATCH, "a revision of another identity or mode"));
@@ -1225,7 +1225,7 @@ impl Core {
                     return Err(Error::new(code::REVISION_GONE, "no such revision"));
                 }
                 let state = self.state_at(kernel, r.head)?;
-                Ok((r, state))
+                Ok((RevisionRef { epoch: self.epoch, ..r }, state))
             }
             At::Checkpoint(name) => {
                 let checkpoint = self
