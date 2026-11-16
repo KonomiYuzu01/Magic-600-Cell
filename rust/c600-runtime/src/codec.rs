@@ -222,8 +222,11 @@ pub fn encode_value(value: &Value, e: &mut Enc) -> Result<(), Unencodable> {
                     stack.push(Item::Value(v));
                 }
             }
-            // The other LP2 draft forms have no transfer form until C3 gives them one.
-            _ => return Err(Unencodable("an LP2 draft value without a transfer form")),
+            // The other LP2 draft forms have no transfer form until C3 gives them one. They are named, so that a later
+            // form is a compile error here rather than a silent refusal.
+            Value::WordEqualityKey(_) | Value::Set(_) | Value::Map(_) | Value::Compressed(_) => {
+                return Err(Unencodable("an LP2 draft value without a transfer form"))
+            }
         }
     }
     Ok(())
@@ -528,7 +531,9 @@ fn ty(t: &Ty, e: &mut Enc, depth: usize) -> Result<(), Unencodable> {
             e.u8(18);
             qty(element, e, depth + 1)?;
         }
-        _ => return Err(Unencodable("an LP2 draft type without a transfer form")),
+        Ty::WordEqualityKey | Ty::Set(_) | Ty::Map(..) | Ty::CompressedWord => {
+            return Err(Unencodable("an LP2 draft type without a transfer form"))
+        }
     }
     Ok(())
 }
