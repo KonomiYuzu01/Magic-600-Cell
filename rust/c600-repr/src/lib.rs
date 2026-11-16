@@ -57,7 +57,8 @@
 //!   with edges or triangles, are not built.
 //! - LB4, linked selection: a representation with no occurrence of the selected object answers
 //!   [`layout::Linked::NoImage`], a case of its own beside the images. An unknown relation (EV3.9) is not modelled
-//!   here: off-lattice relations wait for M5.
+//!   here; `c600_jumble_tool::relation` has one at pose level, a slot's current occupant, with "none: off the
+//!   lattice" and `unknown` as two values (C8).
 //! - EV3.10: a linked selection is computed for its inputs (the selected object, the target plan, its subject and
 //!   base state, and the map's entries) and kept; [`layout::LinkedSelection::frame`] reads it and computes nothing.
 //! - LB4.2: between exact poses a survey takes the display decision for each vertex as a caller-supplied function,
@@ -69,7 +70,9 @@
 //!   The description stands for what the stage checker would read from a checked stage module; that checker, HLSL
 //!   compilation and every device step are not built in `c600-display`.
 //! - EV3.10, CT-EV3-06: the relation counted in this crate's tests is the linked selection above and, in
-//!   `c600-view`, a view's recomputation counters. The relationship strip's typed relations are built nowhere yet.
+//!   `c600-view`, a view's recomputation counters. Of the relationship strip's typed relations, only a slot's current
+//!   occupant at pose level is built, in `c600_jumble_tool::relation` (C8); the strip's data contract (chapter 06,
+//!   RPI.65) is built nowhere yet.
 
 #![forbid(unsafe_code)]
 

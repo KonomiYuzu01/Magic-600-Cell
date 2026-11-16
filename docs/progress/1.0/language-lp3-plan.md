@@ -52,7 +52,7 @@ and the renderer freeze for its on-screen half, and headless integration does no
 | Source route and the 600-cell-Full tool | Built in part (C5, section 7) | The parts section 7 names for LP2; the jumbling halves for M5 (C8) |
 | Representations tool, headless half | Built in part (C6, section 7) | Its six rows: command-layer work in KN5's one implementation (LP2), and a list type in the IR draft for `set.save` |
 | Durable receipts and undo, CT-RTE-08's persisted words, work sheets | Built in part on M6's store (C7, section 8) | C7's tests through the command layer over `JournalStore` (KN5's stages 1 and 2 landed: pull request 174); KN5.26, the view rows, LB7.2's work sheets and the session lock: KN5's later stages (LP2) |
-| The jumbling tool and every jumbling half | Built in part (C8, section 8) | Jumble in the command layer: KN5's one implementation (LP2); M8's items (LP2); collection types in the IR draft (LP2); C8's next piece: the pose levels of CT-LB4-03 and CT-EV3-06's off-lattice relations on C6, CT-LB3-02's crossing and CT-LB1-03's kernel half |
+| The jumbling tool and every jumbling half | Built in part (C8, section 8) | Jumble in the command layer: KN5's one implementation (LP2); M8's items (LP2); collection types in the IR draft (LP2); a slot action of K⁺ and label-level protection rows for every piece in `c600-jumble` (LP2) |
 | Tests that read kernel rows LP2 has not built: Strict protection, streaming words (KN2.10), `positions` (KN2.4), KN3's exact rotations and polytope operations | Waits | LP2's kernel: LP2 deliverables, not built yet (the table below) |
 | The on-screen half | Waits | The renderer freeze |
 | Charter E2, the decisive LX-1, LX-2 and LX-4 runs, LX-3's platform coverage, the renderer gate | Waits | The owner's machine, all run together (owner, 16 November 2026) |
@@ -95,6 +95,12 @@ test moves from "whole now" to "part now". Sent to the LP2 integrator the same d
 Found with C8, the same day. `c600-jumble` offers no slot action of K⁺, so the slot of a piece at a non-identity lattice
 pose is not computed (the answer is `undefined` with its own reason, distinct from `off_lattice`), and it names no
 rotation plane for a twist, so a jumbling transform has no swept preview. Both were sent to the LP2 integrator.
+
+Found with C8's next piece, 16 November 2026. The kernel's label protection (`ProtectedSet`) covers the moving orbits 0
+to 34 only, so a centre piece has no label-level protection row, and CT-LB3-02's label verdict is composed from KN2.4's
+`positions` rows; M5 protects one letter, so Strict protection of a whole word waits for M8. Sent to the LP2 integrator
+the same day. On LP3's side, `c600-display`'s `LabelProjection` binds a state digest but carries no level (C2), so
+CT-LB4-03's "no lift from labels" rests on the digest that binds the subject.
 
 ## 3. Integrator selections (the owner may overrule them)
 
@@ -272,8 +278,8 @@ its rows meet C5's item 1 through the source and command routes; C1's item 5 hol
   changed no layer code before KN5's one implementation landed; `c600_repr::rows` writes what each needs from the layer
   (section 2), and `set.save` has no entry until the IR draft has a list type. Also not built: the checkers for
   homomorphism, embedding, isometry and full-dimensional injectivity (KN3's exact polytope operations, LP2), the stage
-  checker and every device step (the renderer freeze, C9), pose levels and off-lattice relations (C8's next piece, on
-  M5's kernel), the relationship strip, and a BM5 review record, which the tool gets when it ships.
+  checker and every device step (the renderer freeze, C9), the relationship strip (C8 computes one of its typed
+  relations, a slot's current occupant, at pose level), and a BM5 review record, which the tool gets when it ships.
 
 Stop condition for both: each ends when its items pass in CI and its pull request is merged. Each stops earlier under
 C1's conditions, or when a tool needs a kernel row LP2 has not built.
@@ -298,9 +304,15 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
   repair list, covers, release order, the correction catalogue and the rows J01 and J06 to J12), which CT-LB3-01,
   CT-LB3-04, CT-LB3-05 and CT-BND-17 need; the library entries, CT-LB1-06's jumbling half among them, which need the IR
   draft's collection types; CT-LB1-02's key half (LG2.18); BM5's review records; a slot action of K⁺ and an engine-named
-  rotation plane in `c600-jumble` (asked of the LP2 integrator). Next, as one piece: the pose levels of CT-LB4-03 and
-  CT-EV3-06's off-lattice relations on C6, CT-LB3-02's crossing (whose kernel facts M5's `crossing.rs` runs as
-  CT-KN2-03) and CT-LB1-03's kernel half.
+  rotation plane in `c600-jumble` (asked of the LP2 integrator). Built next, as one piece: CT-LB1-03's jumbling kernel
+  half (LB1.8's literal words of one pinned menu and their constructors, with no state access); CT-LB3-02's LP3 side
+  (protection verdicts that carry their level and are refused at the other, beside the kernel facts M5's `crossing.rs`
+  runs as CT-KN2-03); CT-EV3-06's off-lattice half (a slot's current occupant, with "none: off the lattice" and
+  `unknown` as two values, over all 259,800 slots); and CT-LB4-03's jumbling half (J02's posed row through C6's
+  layouts, at pose level). These wait further: the slot action of K⁺, without which a slot whose K⁺-orbit has a piece
+  at a lattice pose other than the identity has an `unknown` occupant and no slot in the pose projection;
+  label-level protection rows for every piece; LB3.4's projection from poses to labels with its checkpoints and Strict
+  protection of a whole word (M8, LP2).
 - **C9, after the renderer freeze, on the owner's machine.** The windows tests CT-ONE-26, CT-RPI-13, CT-RPI-21,
   CT-RPI-24, CT-RPI-31, CT-RPI-33, CT-RPI-34, CT-RM-05, CT-RM-06, CT-RM-10, CT-BND-20 and CT-RTE-10; the performance
   tests CT-KN7-06, CT-LG4-09, CT-EV1-06, CT-ONE-25, CT-RPI-26, CT-RTE-11 and CT-RTE-12; the renderer halves of
@@ -321,14 +333,14 @@ wait entirely. The milestone is in parentheses.
 | CT-LG4-09 | performance | Owner runs: LX-2 (C9) | - |
 | CT-LB1-01 | source | Collection types in the IR draft and the F2 and F5 number kinds, for the library code (LP2) | - |
 | CT-LB1-02 | source | The domain-preserving key and "keys preserve the end digest": an owner answer on LG2.18's word keys; the library entry: collection types in the IR draft (LP2) | The kernel half at a blocked cap, with prefix protection reading literal letters (C8) |
-| CT-LB1-03 | source | Collection types and word operations in the IR draft (LP2); the jumbling kernel half: C8's next piece | - |
+| CT-LB1-03 | source | Collection types and word operations in the IR draft (LP2) | The jumbling kernel half: literal words of one pinned menu and their constructors (C8) |
 | CT-LB1-06 | source | Collection types and word operations in the IR draft (LP2); an owner answer on LG2.18's word keys | - |
 | CT-LB2-01 | source | Collection types and word operations in the IR draft, for the library's recipes and reports (LP2) | - |
 | CT-LB2-02 | source | The kernel's Strict protection (LP2) | The Net half (C5) |
 | CT-LB2-03 | source | Streaming words, KN2.10 (LP2) | The oversize refusal (C5); work sheets (C7) |
 | CT-LB2-04 | source | The kernel's `positions` row, KN2.4 (LP2) | - |
 | CT-LB3-01 | source | M8: the checkpoints, the sticker test and nu (LP2); for the checker half, typed checkpoint and sticker-test results in `c600-check` (LP2) | - |
-| CT-LB3-02 | source | LB3.4's crossing on LP3's side: C8's next piece (M5's `rust/c600-jumble/tests/crossing.rs` runs its kernel facts as CT-KN2-03) | - |
+| CT-LB3-02 | source | LB3.4's projection from poses to labels with its checkpoints, Strict protection of a whole word and label-level protection rows for every piece (M8, LP2) | LP3's side: verdicts that carry their level and are refused at the other (C8; M5's `rust/c600-jumble/tests/crossing.rs` runs the kernel facts as CT-KN2-03) |
 | CT-LB3-03 | source | The sticker-test sentence: M8 (LP2); the library entry: collection types in the IR draft (LP2) | The kernel half: heights (0,0) off the lattice in free mode, and domain IDs by exact coset tests (C8); the agreement with `trees.py` runs in M5's `tests/test_jumbling_rust_candidate.py` |
 | CT-LB3-04 | source | M8: nu, its C5 convention and the correction check (LP2) | - |
 | CT-LB3-05 | source | M8: the named-cap repair list (LP2) | - |
@@ -336,7 +348,7 @@ wait entirely. The milestone is in parentheses.
 | CT-LB3-07 | source | LB3.5's recommendation rule in `c600-check` (LP2); the inspector library entries: collection types in the IR draft (LP2); the rim and survey rows and the correction catalogue: M8 (LP2) | The checker half for outcome tables and named-word checks (C5); the jumbling half on the kernel (C8) |
 | CT-LB4-01 | source | KN3's exact polytope operations in the kernel (LP2) | The CPU reference (C6) |
 | CT-LB4-02 | synthetic | Now (C6) | - |
-| CT-LB4-03 | source | M5: pose levels (C8) | The 600-cell-Full half (C6) |
+| CT-LB4-03 | source | The slot of a sticker at a lattice pose other than the identity: a slot action of K⁺ (LP2); a layout evaluated again at a later revision of a jumbled session (KN5, LP2) | The 600-cell-Full half (C6); the jumbling half at pose level (C8) |
 | CT-LB4-04 | source | The renderer freeze (C9) | Admission and the CPU half (C6) |
 | CT-LB6-03 | source | BM5's review and its record, when the tools ship; LX-3's cases that need word operations in the IR draft (LP2) | The 600-cell-Full, representations and jumbling tools (C5, C6, C8) |
 | CT-EV1-06 | performance | Owner runs: LX-4 (C9) | - |
@@ -344,7 +356,7 @@ wait entirely. The milestone is in parentheses.
 | CT-EV3-02 | synthetic | Now (C5) | - |
 | CT-EV3-03 | source | Now (C5) | - |
 | CT-EV3-04 | synthetic | Now (C5) | - |
-| CT-EV3-06 | source | M5: off-lattice relations (C8) | Unchanged frames compute no relation (C6) |
+| CT-EV3-06 | source | The occupant of a slot whose K⁺-orbit has a piece at a lattice pose other than the identity: a slot action of K⁺ (LP2); the strip's data contract (chapter 06, RPI.65) | Unchanged frames compute no relation (C6); "none: off the lattice" distinct from `unknown`, over all 259,800 slots (C8) |
 | CT-EV3-07 | source | An explicit workspace command through the command layer, in the shared `session.undo` order: KN5's one implementation (LP2; KN5.20, EV4.15) | A view cannot write, at the command layer (C6); the durable action order on M6's store (C7) |
 | CT-EV3-08 | source | The renderer freeze: RM.39's measured ceilings (C9) | The admission semantics (C2) |
 | CT-EV4-02 | synthetic | Now, on the draft keymap (C5) | - |

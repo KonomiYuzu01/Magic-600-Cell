@@ -5,11 +5,22 @@
 //!   manifest with its declared class (BND.27, BND.37) and its admission under the built-in column of chapter 07
 //!   section 8, through `c600_tools::tool`. Each entry prepares a preview of a literal word the solver names and reads
 //!   no state (LG3.13, BND.39). The tool never chooses or outputs a word by itself.
-//! - [`word`] reads the `Word` a solver names as literal jumbling letters for `c600_jumble`'s observations.
+//! - [`word`] reads the `Word` a solver names as literal jumbling letters for `c600_jumble`'s observations, and builds
+//!   LB1.8's literal words of one pinned menu from their letters alone: concatenation, inverse, conjugate, commutator
+//!   and powers, refused with `LB1:input.incompatible_alphabet` across alphabets.
+//! - [`level`] names the level a result reads: poses inside Jumble, labels in 600-cell-Full (KN1.11).
+//! - [`relation`] is one typed relation of the relationship strip at pose level, the current occupant of a sticker
+//!   slot, on and off the lattice (EV3.8, EV3.9).
+//! - [`protection`] holds protection verdicts that carry their level and answer only at it (LB3.4, KN1.11).
 //! - `tests/tool.rs` runs the jumbling tool's parts of CT-LB6-03 and CT-BND-15.
 //! - `tests/lb3.rs` runs the kernel halves of CT-LB1-02, CT-LB3-03, CT-LB3-06 and CT-LB3-07 on `c600_jumble`'s public
 //!   API. The LB1 and LB3 library entries are language code the IR draft cannot express yet, so each test checks the
 //!   facts the library entry would return; the library entries wait for the IR draft's collections.
+//! - `tests/ct_lb1_03.rs` runs CT-LB1-03's jumbling kernel half, `tests/ct_lb3_02.rs` CT-LB3-02's LP3 side (LB3.4),
+//!   `tests/ct_ev3_06.rs` CT-EV3-06's off-lattice half and `tests/ct_lb4_03.rs` CT-LB4-03's jumbling half, the last
+//!   over `c600-display`'s jumbling producers (J02, J13) and `c600-repr`'s layouts. Each test's documentation says what
+//!   runs and what does not. C6's `c600-repr` runs the 600-cell-Full half of CT-LB4-03 and the unchanged-frame half
+//!   of CT-EV3-06 (EV3.10).
 //!
 //! The tool runs in-process, as `c600-tools` runs its tool. Nothing here is a command-layer row: no state of the
 //! jumbled puzzle is previewed, committed or undone through `c600-command`.
@@ -44,8 +55,40 @@
 //! - **Letters (LB1.9, LB3.8).** [`word::letters`] reads a `Word` as pairs of integers, cap then item, the item an
 //!   index in the pinned order of the state's menu, as the reference's letters `[grip, item]`. The reading is Rust for
 //!   the engine side of the tests. How the command layer reads a jumbling word is LP2's KN5 implementation and may
-//!   differ. A word that is no sequence of letters is a [`word::WordError`] with no chapter 13 code: the code belongs
-//!   to the command layer's row.
+//!   differ. A word that is no sequence of letters is a [`word::WordError`] with no chapter 13 code, since that code
+//!   belongs to the command layer's row; only a mix of alphabets carries one, `LB1:input.incompatible_alphabet`.
+//! - **Alphabet (LB1.3, LB1.9, LB1.10).** A literal word's [`word::Alphabet`] is the jumbling identity block of its
+//!   pinned menu: puzzle, model, order-free menu identity, menu-order digest and contract revision. Two words, or a
+//!   word and a state, share an alphabet when their blocks are equal, since only then does an item index name the same
+//!   rotation; free mode has no menu and so no alphabet. The refusal names the first field that differs, in KN1.4's
+//!   order.
+//! - **Word constructors (LB1.8, LB1.9).** The inverse of a letter is the letter at the same cap whose item's matrix is
+//!   the transpose of its own, the inverse rotation, which an inverse-closed menu has; a menu without one is broken
+//!   (`WordError::NoInverse`), never a property of a word. The frozen text fixes no convention, so the conjugate by `s`
+//!   is `s w s⁻¹` and the commutator of `a` and `b` is `a b a⁻¹ b⁻¹`. A power is expanded letter by letter: the empty
+//!   word at 0 and powers of the inverse below 0. No constructor cancels, reduces or reorders letters.
+//! - **Levels (KN1.7, KN1.11).** [`level::Level`] has the two levels a protection verdict or a relation of this crate
+//!   reads: poses inside Jumble and labels in 600-cell-Full, named `poses` and `labels` as `c600-jumble`'s protection
+//!   report names them. The rest of KN1's identity tower is not needed here.
+//! - **Current occupant (EV3.8, EV3.9, KN0.4 to KN0.6).** The occupant of slot t, with home piece A, is A when A is at
+//!   the identity; `unknown(reason)` while a piece of A's K⁺-orbit is at a lattice pose other than the identity, since
+//!   the public API has no slot action to say which position that piece fills; and otherwise "none: off the lattice".
+//!   The rule reads poses, orbit classes and home slots, no label; on a configuration free of collisions it names no
+//!   wrong piece, and its gaps are explicit unknowns. The two missing values are [`relation::Missing`]'s, an undefined
+//!   result's reason is its missing part slot by slot, the empty request is a total empty result, a repeated slot is
+//!   answered once, and a slot outside the model refuses the whole call with `KN2:input.named_object_invalid`. The
+//!   result names the relation, its level, the identity block and the pose digest it read.
+//! - **Protection verdicts (LB3.4, KN1.11, KN2.4).** A [`protection::Verdict`] holds its level, its protected pieces,
+//!   its finding and the digest it read. At pose level it copies `c600-jumble`'s Net report of one twist; at label
+//!   level it is composed from KN2.4's `positions` rows before and after an operation, a piece moving when one of its
+//!   stickers changes slot, because the kernel's own label protection covers moving orbits 0 to 34 only and has no
+//!   row for a centre piece. Asked for a puzzle of the other level, a verdict is refused with
+//!   `KN1:input.level_not_held`, both ways; `LG2:type.level_mismatch` stays the checker's static diagnostic.
+//! - **CT-LB4-03's jumbling fixture (LB4.4, RPI.15).** `c600-repr`'s layouts carry no posed row, so the test adds
+//!   J02's posed row of the base state as primitive 2 of each plan: the plan then draws a pose-level subject, which
+//!   the validator checks, and a filter, which rebuilds primitive 0 only, keeps it. The mechanically analysed set is
+//!   the certified inside set of the state's last twist, J03's moving set: a set the engine certified, not one a
+//!   display computed.
 //! - **Kernel halves (LB3.1, LB3.7, LB3.8).** The tests take the kernel's answers as the library entries' facts:
 //!   `word_check` for LB3.8's `check_named_word`, `prefix_observations` for the chronological observations and
 //!   `heights` for heights and domain IDs. "No protection conflict" in CT-LB3-06 is a run with no protected piece, and
@@ -55,18 +98,30 @@
 //! # What waits
 //!
 //! - Jumble on in the command layer and oracle equality through it: LP2's KN5 implementation. LP3 changes no
-//!   `c600-command` layer code until it lands.
+//!   `c600-command` layer code until it lands. With it waits CT-LB4-03's layout evaluated again at a later revision of
+//!   a jumbled session.
 //! - ν, the checkpoints, the sticker test, the repair list (CT-LB3-05, CT-BND-17) and the correction catalogue: M5 left
 //!   them to milestone M8 (the LP2 plan, section 11). With them wait CT-LB3-01, CT-LB3-04, CT-LB3-03's sticker-test
-//!   sentence and the correction and rim parts of CT-LB3-07.
-//! - LB3.4's crossing (CT-LB3-02): M5's `tests/crossing.rs` runs its kernel facts as CT-KN2-03; LP3's own test is C8's
-//!   next piece.
+//!   sentence, the correction and rim parts of CT-LB3-07, and LB3.4's projection from poses to labels with its
+//!   checkpoints (CT-LB3-02).
+//! - The slot action of K⁺: which position a piece at a lattice pose other than the identity fills. Without it the
+//!   occupant of such a slot is `unknown` (CT-EV3-06) and the pose projection names no slot for it (CT-LB4-03). It
+//!   belongs in `c600-jumble`'s public API (LP2).
+//! - A label-level protection row for every piece, centre pieces included (KN1.11): the kernel's `ProtectedSet` covers
+//!   moving orbits 0 to 34, so CT-LB3-02's label verdict is composed from `positions` rows (LP2). Strict protection of
+//!   a whole word at either level waits with it: M5 protects one letter.
+//! - The relationship strip's data contract (statement reference, claims, evidence and source location; chapter 06,
+//!   RPI.65) and EV3.8's other roles: the occupant relation carries none of them.
+//! - A level in `c600-display`'s slot projections (C2): `LabelProjection` binds a state digest only, so CT-LB4-03's
+//!   "no lift from labels" rests on the digest that binds the subject, not on a level the projection carries.
 //! - CT-LB1-02's domain-preserving key and "keys preserve the end digest": an owner answer on LG2.18's word keys.
 //! - The LB1 and LB3 library entries as language code: collection types and word operations in the IR draft (LP2).
-//! - The pose levels of CT-LB4-03 and the off-lattice relations of CT-EV3-06: `c600-repr` (C6), not yet on main.
 //! - The review of the class against the entries and its record (CT-LB6-03, CT-BND-15): BM5.
 
 #![forbid(unsafe_code)]
 
+pub mod level;
+pub mod protection;
+pub mod relation;
 pub mod tool;
 pub mod word;
