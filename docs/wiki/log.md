@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-16] update | Two LG3 code contradictions from the LP2 checker
+The LP2 checker's built-in column and entry rule found two codes that the sources disagree on: LX-3's corpus expects `LG3:capability.ambient_read` for P01 to P03, which chapter 13 keeps unused and the checker answers with `LG3:capability.not_granted`, and dynamic code must be refused but has no chapter 13 code, so the module loader and the checker give different ones. Both are contradiction records for an owner ruling (PHS.52); neither changes a rule.
+
 ## [2026-11-16] update | The language: M5, the jumbling half of the kernel API
 `rust/c600-jumble` is a candidate engine for the rigid jumbling puzzle, built from `assets/` alone through the kernel's asset checks, and `tests/test_jumbling_rust_candidate.py` compares it with J1 through the differential harness step by step (the W-J fixture prefixes with surveys, straddler sets and J1-checked certificates, the first 600 letters of H6030, refusals and a planted difference; `JUMBLING_FULL_REPLAY=1` runs every record and letter), with the jumbling halves of CT-KN1-02, CT-KN1-05, CT-KN2-02 to CT-KN2-05, CT-KN3-02 and CT-JI-03, so section 15.3's index now counts 40 of the 248 LP2 tests whole and 104 in part. The harness bindings reach J1 only through its public API (JI.52); what is not built, for M8, is listed in `rust/README.md`.
 
