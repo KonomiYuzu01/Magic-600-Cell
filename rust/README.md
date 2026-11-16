@@ -1321,14 +1321,14 @@ run or not applicable is no pass (PHS.63).
   - `chart`: a chart's survey over camera poses, with exact verdicts at exact poses from `c600-display`'s checks and
     display data between them (LB4.2), and a user chart's admission as far as `c600-display` reaches it (LB4.3).
   - `tool`: the source [`representations.6cs`](c600-repr/src/representations.6cs) (edition `6cs-draft-1`, syntax
-    candidate A) with five entries, each admitted under the built-in column; the Rust manifest with the class
+    candidate A) with six entries, each admitted under the built-in column; the Rust manifest with the class
     `view_aid`; the review of the class against the exact entry definitions and the row set, which also finds an
     exported function the manifest does not list and source bytes other than the ones the manifest names; and the form
     of a review record that names every entry digest (BND.37).
   - `rows`: what each of the six rows needs from the command layer, which refuses them as not built: a dispatch from a
     stored row to a built-in tool's entry, the runtime's view and workspace sinks as the job's result, argument forms
-    for the rows' reference types, and a workspace revision that moves. `set.save` also needs a list type in the IR
-    draft. LP3 changes no layer code until KN5's one implementation lands.
+    for the rows' reference types, and a workspace revision that moves. LP3 changes no layer code until KN5's one
+    implementation lands.
 - Tests (`c600-repr/tests/`), each naming its part:
   - `ct_lb4_03.rs`: CT-LB4-03's 600-cell-Full half. Display instances of two charts map through the installed source map
     to occurrence, sticker, piece, cell and slot; a chart's inverse value is never consulted for a pick; a layout filter
@@ -1347,11 +1347,11 @@ run or not applicable is no pass (PHS.63).
     overlay row completes as `view_published`, and the revision, the log and the undo hint stay as they were).
   - `rows.rs`: the requirements name the stored rows as H-08 has them, each row's effects are its entry's, and the layer
     refuses all six rows; an overlay cannot replace one.
-- Not built: the six rows and a `set.save` entry; the checkers for homomorphism, embedding, isometry and
-  full-dimensional injectivity (CT-LB4-01's rest, which needs KN3's exact polytope operations); the stage checker, HLSL
-  compilation and every device step (CT-LB4-04's rest, the renderer freeze); the relationship strip (C8 computes one of
-  its typed relations, a slot's current occupant, at pose level); filters of trees, complexes and graphs; a BM5 review
-  record; an explicit workspace command through the command layer (KN5's one implementation).
+- Not built: the six rows; the checkers for homomorphism, embedding, isometry and full-dimensional injectivity
+  (CT-LB4-01's rest, which needs KN3's exact polytope operations); the stage checker, HLSL compilation and every device
+  step (CT-LB4-04's rest, the renderer freeze); the relationship strip (C8 computes one of its typed relations, a slot's
+  current occupant, at pose level); filters of trees, complexes and graphs; a BM5 review record; an explicit workspace
+  command through the command layer (KN5's one implementation).
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and synthetic. No Windows, DirectX, input or timing claim. The checks ran on Windows only; the
   Linux leg was not run.

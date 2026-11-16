@@ -39,8 +39,8 @@ pub const COMMON: [&str; 4] = [
     "The source route's other end: the runtime's view and workspace sinks delivered to the layer as the program job's \
      result, so that an entry's `publish_view` and `write_workspace` become the row's receipt.",
     "Argument forms for the H-08 types these rows take (FilterRef, RevisionRef, FilterPreviewRef, CanonicalObjectRefs, \
-     CellIdPair, CellId): the layer checks argument names only, and the IR draft has no identity, reference or list \
-     type, so the entries take naturals and text in their place.",
+     CellIdPair, CellId): the layer checks argument names only, and the IR draft has no identity or reference type, so \
+     the entries take naturals, a list of naturals and text in their place.",
     "A workspace revision that moves. The layer's revision keeps `workspace` at 0, and a finished workspace job \
      completes at the revision it was admitted at.",
 ];
@@ -104,7 +104,7 @@ pub const NEEDS: [RowNeed; 6] = [
     },
     RowNeed {
         row: "set.save",
-        entry: None,
+        entry: Some("save_set"),
         kind: Kind::Workspace,
         lane: Lane::None,
         undo: UndoClass::None,
@@ -118,8 +118,7 @@ pub const NEEDS: [RowNeed; 6] = [
                   of the model or `kind` is neither value.",
         undo_entry: "none: H-08 gives the row the undo class `none`, so a saved set is removed by its own row, not by \
                      undo.",
-        layer: "a list argument form for the members and a workspace record of frozen sets; the tool has no entry \
-                until the IR has a list type",
+        layer: "a list argument form for the members and a workspace record of frozen sets",
     },
     RowNeed {
         row: "structure.compare",

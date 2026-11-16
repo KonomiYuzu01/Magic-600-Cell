@@ -27,20 +27,19 @@ pub struct Entry {
     pub kind: FnKind,
 }
 
-/// The tool's entries. `set.save` has none: see [`UNEXPRESSED`].
-pub const ENTRIES: [Entry; 5] = [
+/// The tool's entries, one for each of its rows.
+pub const ENTRIES: [Entry; 6] = [
     Entry { name: "filter_counts", row: "filter.preview", kind: FnKind::View },
     Entry { name: "apply_filter", row: "filter.apply", kind: FnKind::Command },
     Entry { name: "effect_scope", row: "view.effect.scope", kind: FnKind::Command },
+    Entry { name: "save_set", row: "set.save", kind: FnKind::Command },
     Entry { name: "compare_cells", row: "structure.compare", kind: FnKind::Command },
     Entry { name: "layer_predicate", row: "structure.layer", kind: FnKind::Command },
 ];
 
-/// The rows with no entry, each with what the IR draft `c600-ir-draft-1` lacks for it.
-pub const UNEXPRESSED: [(&str, &str); 1] = [(
-    "set.save",
-    "its `members` argument is a list of canonical object references, and the IR draft has no list type",
-)];
+/// The rows with no entry, each with what the IR draft `c600-ir-draft-1` lacks for it. No row lacks an entry since the
+/// IR draft gained lists (LP2, pull request 176).
+pub const UNEXPRESSED: [(&str, &str); 0] = [];
 
 /// The fields of the tool's module manifest that the review reads (BND.27; LG5.2 and PS1.15 define the manifest). The
 /// IR draft and the syntax carry no manifest yet, so it is data here, as in `c600-tools`.
@@ -93,7 +92,7 @@ impl Manifest {
 }
 
 /// The grant-table rows the tool's class lists for the built-in column (BND.57), each named by the operation's literal
-/// data: the two snapshot reads, a published view and the two workspace records of the shipped entries. Draft (LP3):
+/// data: the two snapshot reads, a published view and the three workspace records of the shipped entries. Draft (LP3):
 /// BND.57's rows by class do not exist as data, so the class lists the rows the shipped entries use and nothing else;
 /// an entry that uses another row is refused by the column, and the class review below finds it too.
 pub fn class_rows() -> BTreeSet<GrantRow> {
@@ -102,6 +101,7 @@ pub fn class_rows() -> BTreeSet<GrantRow> {
         GrantRow::Read("structure.compare".into()),
         GrantRow::View,
         GrantRow::Workspace("filter.apply".into()),
+        GrantRow::Workspace("set.save".into()),
         GrantRow::Workspace("structure.layer".into()),
     ])
 }

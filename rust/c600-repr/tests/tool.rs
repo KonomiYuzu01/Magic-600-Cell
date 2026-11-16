@@ -38,10 +38,10 @@ fn rules(findings: &[Finding], entry: &str) -> Vec<Rule> {
 }
 
 /// The tool's source parses with no diagnostic, is in the formatter's canonical layout (edition `6cs-draft-1`, syntax
-/// candidate A) and lowers to the IR draft: one module that requests no capability, with the five exported entries of
+/// candidate A) and lowers to the IR draft: one module that requests no capability, with the six exported entries of
 /// the manifest. The built-in column admits every entry with no capability granted; no entry prepares a preview or
-/// names a proposal target, and the entries' effects are the ones their rows need. `set.save` has no entry, and the
-/// manifest says why.
+/// names a proposal target, and the entries' effects are the ones their rows need. Every row has an entry, `set.save`
+/// included, since the IR draft gained lists.
 #[test]
 fn the_source_parses_lowers_and_every_entry_is_admitted_under_the_built_in_column() {
     let file = parse(SOURCE.as_bytes());
@@ -80,10 +80,10 @@ fn the_source_parses_lowers_and_every_entry_is_admitted_under_the_built_in_colum
     let reading: Vec<&str> = ENTRIES.iter().map(|e| e.name).filter(|name| reads(name).reads_state).collect();
     assert_eq!(reading, ["filter_counts", "compare_cells"]);
 
-    // Every row has an entry or a stated reason for none.
+    // Every row has an entry or a stated reason for none, and since the IR draft gained lists no row lacks an entry.
     let served: BTreeSet<&str> = ENTRIES.iter().map(|e| e.row).chain(UNEXPRESSED.iter().map(|(row, _)| *row)).collect();
     assert_eq!(served, ROWS.iter().copied().collect::<BTreeSet<_>>());
-    assert_eq!(UNEXPRESSED.map(|(row, _)| row), ["set.save"]);
+    assert_eq!((ENTRIES.len(), UNEXPRESSED.len()), (ROWS.len(), 0));
 }
 
 /// CT-BND-15 (part, the representations tool: the class is declared, the row set lies within the class, and the form
