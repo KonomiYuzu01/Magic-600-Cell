@@ -1,6 +1,6 @@
-"""LP2, M8: the jumbled puzzle's level crossings, end tests, shapes and gauges against J1
+"""LP2, M8: the jumbled puzzle's level crossings, end tests, shapes, gauges and derived states against J1
 (`rust/c600-jumble/src/levels.rs` behind the adapter's `project`, `sticker_test`, `retained_checkpoint`,
-`label_checkpoint`, `retained_word`, `gauge` and `gauge_between`).
+`label_checkpoint`, `retained_word`, `gauge`, `gauge_between`, `derive`, `import` and `compare`).
 
 CT-PS1-14 (part: a retained checkpoint's own path, the supplied witness word or the journal's reduction, replays to its
 pose digest as J1's `State.checkpoint` replays it; the certificate of a label checkpoint under the journal's witnessed
@@ -601,9 +601,9 @@ class Gauges(unittest.TestCase):
         return api.copy_state(j1().state)
 
     def run_word(self, name, state):
-        """GAUGE_WORD letter by letter from the stored candidate state `name` and from a copy of the J1 state: per letter
-        the two statuses, the candidate's moved set and J1's inside set; then the candidate's final digest and J1's
-        final state."""
+        """GAUGE_WORD letter by letter from the stored candidate state `name` and from a copy of the J1 state: per
+        letter the two statuses, the candidate's moved set and J1's inside set; then the candidate's final digest and
+        J1's final state."""
         candidate().use(name)
         trial = api.copy_state(state)
         rows, digest = [], None
@@ -708,6 +708,356 @@ class Gauges(unittest.TestCase):
                 with self.assertRaises(R.CandidateError) as raised:
                     candidate().call('gauge_between', **fields)
                 self.assertEqual(raised.exception.kind, 'input')
+
+
+# --------------------------------------------------------------------------------------------------- derived states
+
+DERIVE_PREFIX = 8
+DERIVE_LETTERS = 8
+PIECE_WOULD_MOVE = 'KN2:protection.piece_would_move'
+IDENTITY_MISMATCH = 'KN1:input.identity_mismatch'
+NAMED_OBJECT_INVALID = 'KN2:input.named_object_invalid'
+# Fixed [grip, item] letters under the I_a menu, whose 60 items every grip turns.
+LETTERS = ([0, 7], [1, 23], [13, 41], [77, 5], [0, 59], [599, 30])
+OPEN = {'kind': 'open', 'evidence': None}
+
+
+def j1_twists(state, records):
+    """J1's twists of journal records, read as J1's engine reads a record step."""
+    from sim.twists import Twist
+    return [Twist.from_record(state.ctx, record) for record in records]
+
+
+def j1_run(state, twists):
+    """A copy of a J1 state through `twists`, up to and including the first letter J1 refuses: the copy and, per
+    letter, its status and the inside set J1 committed."""
+    trial, rows = api.copy_state(state), []
+    for twist in twists:
+        outcome, inside = api.apply_with_inside(trial, twist)
+        rows.append((outcome.status, [int(p) for p in inside]))
+        if outcome.status != 'admissible':
+            break
+    return trial, rows
+
+
+def j1_pose(state, piece):
+    """A piece's pose in a J1 state as the candidate's certificates write it: {'k'} on the lattice, {'m'} off it."""
+    from sim.kplus import matrix_json
+    entry = api.pose_entries(state)[int(state.pose_id[piece])]
+    return {'k': int(entry.kidx)} if entry.kidx >= 0 else {'m': matrix_json(entry.matrix)}
+
+
+def first_new_piece(rows, twists):
+    """The first letter after the first, other than the identity, whose inside set holds a piece that no earlier
+    letter's inside set holds, with the first such piece."""
+    seen = set()
+    for index, ((_, inside), twist) in enumerate(zip(rows, twists)):
+        new = [p for p in inside if p not in seen]
+        if index and new and not twist.is_identity:
+            return index, new[0]
+        seen.update(inside)
+    raise AssertionError('no letter after the first moves a piece first')
+
+
+def j1_position_comparison(a, b):
+    """ONE.25's counts at the position level for two J1 states: the lattice pieces both hold, those of them in other
+    chambers, and the lattice pieces only one holds."""
+    sides = [dict(zip(*(values.tolist() for values in j1_chambers(state)))) for state in (a, b)]
+    common = sides[0].keys() & sides[1].keys()
+    return {'level': 'position', 'common': len(common),
+            'differing': sum(sides[0][p] != sides[1][p] for p in common),
+            'a_only': len(sides[0].keys() - sides[1].keys()), 'b_only': len(sides[1].keys() - sides[0].keys())}
+
+
+def protection(mode, piece, verdict, prefix):
+    """KN2.7's pose-level protection report for one protected piece."""
+    return {'level': 'poses', 'mode': mode, 'protected': [piece], 'pieces': [piece] if verdict == 'moves' else [],
+            'verdict': verdict, 'first_refused_prefix': prefix}
+
+
+class DerivedStates(unittest.TestCase):
+    """KN2.11 to KN2.14 and ONE.25 behind the adapter's `derive`, `import` and `compare`, against J1. J1 holds no
+    derived value, so each derivation is checked against J1's run of the same word on a copy of the base, letter by
+    letter: its statuses, inside sets, poses and digests; a refused word against the letter J1 refuses, with J1's
+    check of the straddle certificate; Strict and Net protection against the poses J1 gives the protected piece. Every
+    word here is fixed in the test or read from a fixture; nothing chooses a twist.
+
+    CT-ONE-09 (part: the J1 check of `import`, where a raw table with an open claim gives J1's digest, off count and
+    chambers, and a witnessed, by-theorem or refuted claim, a journal or a malformed table is an input error; not run:
+    the runtime's entry points and table rows, LP3, and the session store's import, M6).
+
+    CT-ONE-28 (part: the J1 check of a wordless import that reads, compares and derives, where its projection, its
+    comparison with a value derived from it on the keys both cover and the derived value's digest are J1's; not run:
+    display, LP3's views, and that no row proposes or adopts either value, LP3's command table and M6).
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        doc = fixture('I_a')
+        cls.menu = doc['menu']
+        cls.records = doc['journal']['records']
+
+    def reach(self, n):
+        """Both engines from solved under the I_a menu through the fixture's first n records: a copy of J1's state,
+        the candidate's identity block and its record."""
+        self.assertEqual(candidate().start(self.menu), j1().start(self.menu))
+        for record in self.records[:n]:
+            step = record_step(record)
+            self.assertEqual(candidate().apply(step), j1().apply(step))
+        return api.copy_state(j1().state), candidate().identity(), candidate().record()
+
+    def base(self, n):
+        """The candidate's current state as a derivation's base, witnessed by the fixture's first n records."""
+        return {'state': None, 'journal': self.records[:n]}
+
+    def assert_refused(self, answer, code, outcome, prefix):
+        self.assertEqual((answer['result'], answer['code'], answer['outcome'], answer['first_refused_prefix']),
+                         ('refused', code, outcome, prefix), answer)
+
+    def test_a_derivation_follows_j1(self):
+        x, identity, before = self.reach(DERIVE_PREFIX)
+        word = self.records[DERIVE_PREFIX:DERIVE_PREFIX + DERIVE_LETTERS]
+        twists = j1_twists(x, word)
+        reached, rows = j1_run(x, twists)
+        self.assertEqual([status for status, _ in rows], ['admissible'] * len(word))
+        answer = candidate().derive('m8/derived', identity, self.base(DERIVE_PREFIX), records=word)
+        self.assertEqual((answer['result'], answer['name']), ('derived', 'm8/derived'), answer)
+        self.assertEqual(answer['ref'], {'digest': reached.digest(), 'level': 'poses', 'identity': identity})
+        self.assertEqual((answer['derivation']['base'], answer['derivation']['letters']), (x.digest(), len(word)))
+        self.assertEqual(answer['lineage'], {'root': 'snapshot', 'digest': x.digest(), 'revision': None})
+        # The fixture's letters are jumble twists: the journal witnesses the value, and no retained word does.
+        self.assertEqual((answer['reachability']['kind'], answer['reachability']['retained']), ('witnessed', False))
+        self.assertEqual((answer['protection']['verdict'], answer['off']), ('clear', reached.off_lattice_count()))
+        self.assertEqual(candidate().record(), before)
+        # Strict refuses at the first letter whose inside set holds the protected piece, with J1's poses of it.
+        index, piece = first_new_piece(rows, twists)
+        after, _ = j1_run(x, twists[:index + 1])
+        moved = {'piece': piece, 'from': j1_pose(x, piece), 'to': j1_pose(after, piece)}
+        strict = candidate().derive('m8/refused', identity, self.base(DERIVE_PREFIX), records=word, mode='strict',
+                                    protect=[piece])
+        self.assert_refused(strict, PIECE_WOULD_MOVE, 'protected', index + 1)
+        self.assertEqual((strict['base'], strict['letters'], strict['certificates']), (x.digest(), len(word), [moved]))
+        self.assertEqual(strict['protection'], protection('strict', piece, 'moves', index + 1))
+        # Net judges the end of the word: the piece's pose in J1's end state decides.
+        net = candidate().derive('m8/net', identity, self.base(DERIVE_PREFIX), records=word, protect=[piece])
+        end = {'piece': piece, 'from': j1_pose(x, piece), 'to': j1_pose(reached, piece)}
+        if end['from'] == end['to']:
+            self.assertEqual((net['result'], net['ref']['digest']), ('derived', reached.digest()), net)
+            self.assertEqual(net['protection'], protection('net', piece, 'clear', None))
+        else:
+            self.assert_refused(net, PIECE_WOULD_MOVE, 'protected', None)
+            self.assertEqual((net['certificates'], net['protection']), ([end], protection('net', piece, 'moves', None)))
+        self.assertEqual(candidate().record(), before)
+
+    def test_letters_follow_j1(self):
+        for n in (0, DERIVE_PREFIX):
+            with self.subTest(prefix=n):
+                x, identity, before = self.reach(n)
+                twists = [x.menu.for_cap(grip)[item] for grip, item in LETTERS]
+                _, rows = j1_run(x, twists)
+                status = rows[-1][0]
+                admitted = len(rows) - (status != 'admissible')
+                answer = candidate().derive('m8/letters', identity, self.base(n), letters=LETTERS)
+                if status != 'admissible':
+                    self.assert_refused(answer, WORD_BLOCKED_PREFIX, status, len(rows))
+                # The letters J1 admits derive J1's configuration.
+                reached, _ = j1_run(x, twists[:admitted])
+                answer = candidate().derive('m8/letters', identity, self.base(n), letters=LETTERS[:admitted])
+                self.assertEqual((answer['result'], answer['ref']['digest']), ('derived', reached.digest()), answer)
+                self.assertEqual(answer['derivation']['letters'], admitted)
+                self.assertEqual(candidate().record(), before)
+
+    def test_a_word_is_refused_whole_where_j1_blocks_its_letter(self):
+        from differential.straddlers import check_certificate
+        x, identity, before = self.reach(GAUGE_PREFIX)
+        word = [1, -1, 3]
+        twists = [sim.primitive(x.ctx, mid) for mid in word]
+        _, rows = j1_run(x, twists)
+        self.assertEqual([status for status, _ in rows], ['admissible', 'admissible', 'blocked'])
+        prior, _ = j1_run(x, twists[:2])
+        answers = []
+        for mode in ('net', 'strict'):
+            answer = candidate().derive('m8/refused', identity, self.base(GAUGE_PREFIX),
+                                        records=primitive_records(word), mode=mode)
+            self.assert_refused(answer, WORD_BLOCKED_PREFIX, 'blocked', 3)
+            self.assertEqual((answer['base'], answer['letters'], answer['protection']), (x.digest(), 3, None))
+            self.assertEqual(len(answer['certificates']), 1, answer)
+            certificate = answer['certificates'][0]
+            self.assertTrue(check_certificate(prior, twists[2].grip, certificate['piece'], certificate), certificate)
+            answers.append(answer)
+        self.assertEqual(answers[0], answers[1])
+        # A letter off the I_a menu: J1 refuses it as invalid, and the word is refused there.
+        cayley = candidate().cayley(0, OMEGA_2)
+        self.assertEqual(j1().apply(record_step(cayley)).status, 'invalid')
+        answer = candidate().derive('m8/refused', identity, self.base(GAUGE_PREFIX), records=[cayley])
+        self.assert_refused(answer, WORD_BLOCKED_PREFIX, 'invalid', 1)
+        self.assertEqual(answer['certificates'], [])
+        # No value is made, and nothing changes.
+        with self.assertRaises(R.CandidateError) as raised:
+            candidate().read_derived('project', 'm8/refused', level='poses')
+        self.assertEqual(raised.exception.kind, 'input')
+        self.assertEqual(candidate().record(), before)
+
+    def test_strict_judges_prefixes_and_net_the_end(self):
+        x, identity, before = self.reach(0)
+        word = [1, 3, -3, -1]
+        twists = [sim.primitive(x.ctx, mid) for mid in word]
+        _, rows = j1_run(x, twists)
+        self.assertEqual([status for status, _ in rows], ['admissible'] * len(word))
+        piece = next(p for p in rows[1][1] if p not in rows[0][1])
+        two, _ = j1_run(x, twists[:2])
+        moved = {'piece': piece, 'from': j1_pose(x, piece), 'to': j1_pose(two, piece)}
+        records = primitive_records(word)
+        strict = candidate().derive('m8/refused', identity, self.base(0), records=records, mode='strict',
+                                    protect=[piece, piece])
+        self.assert_refused(strict, PIECE_WOULD_MOVE, 'protected', 2)
+        self.assertEqual(strict['certificates'], [moved])
+        self.assertEqual(strict['protection'], protection('strict', piece, 'moves', 2))
+        net = candidate().derive('m8/net', identity, self.base(0), records=records, protect=[piece])
+        self.assertEqual((net['result'], net['ref']['digest']), ('derived', x.digest()), net)
+        self.assertEqual(net['protection'], protection('net', piece, 'clear', None))
+        self.assertEqual((net['reachability']['kind'], net['reachability']['retained']), ('witnessed', True))
+        half = candidate().derive('m8/refused', identity, self.base(0), records=records[:2], protect=[piece])
+        self.assert_refused(half, PIECE_WOULD_MOVE, 'protected', None)
+        self.assertEqual((half['certificates'], half['protection']), ([moved], protection('net', piece, 'moves', None)))
+        self.assertEqual(candidate().record(), before)
+
+    def test_a_wordless_import_reads_compares_and_derives(self):
+        x, identity, record = self.reach(DERIVE_PREFIX)
+        off = x.off_lattice_count()
+        imported = candidate().import_table('m8/import', record, identity, OPEN)
+        self.assertEqual((imported['result'], imported['ref']['digest'], imported['off']), ('derived', x.digest(), off))
+        self.assertEqual((imported['derivation'], imported['protection']), (None, None))
+        lineage = {'root': 'import', 'digest': x.digest(), 'revision': None}
+        self.assertEqual(imported['lineage'], lineage)
+        self.assertEqual((imported['reachability']['kind'], imported['reachability']['retained']), ('open', False))
+        # It reads as J1's state reads.
+        position = candidate().read_derived('project', 'm8/import', level='position', values=True)
+        pieces, chambers = j1_chambers(x)
+        self.assertEqual((position['result'], position['missing']),
+                         ('partial', {'off': off, 'uncovered': off, 'collisions': 0}))
+        np.testing.assert_array_equal(uint32(position['value']['piece_ids']), pieces)
+        np.testing.assert_array_equal(uint32(position['value']['chambers']), chambers)
+        # A value derived from it keeps its open claim and its lineage.
+        word = self.records[DERIVE_PREFIX:DERIVE_PREFIX + DERIVE_LETTERS]
+        reached, _ = j1_run(x, j1_twists(x, word))
+        on = candidate().derive('m8/import/on', identity, {'derived': 'm8/import'}, records=word)
+        self.assertEqual((on['result'], on['ref']['digest']), ('derived', reached.digest()), on)
+        self.assertEqual((on['lineage'], on['derivation']['base'], on['reachability']['kind']),
+                         (lineage, x.digest(), 'open'))
+        # The comparison on the lattice pieces both hold, from J1's chambers, with each side's missing part.
+        compared = candidate().compare({'derived': 'm8/import'}, {'derived': 'm8/import/on'}, 'position')
+        counts = j1_position_comparison(x, reached)
+        far = reached.off_lattice_count()
+        self.assertEqual((compared['result'], compared['missing_a'], compared['missing_b']),
+                         ('partial', {'off': off, 'uncovered': off, 'collisions': 0},
+                          {'off': far, 'uncovered': far, 'collisions': 0}), compared)
+        verdict = 'unknown' if not counts['common'] else 'no' if counts['differing'] else 'yes'
+        self.assertEqual(compared['verdict'], verdict, compared)
+        if verdict != 'unknown':
+            self.assertEqual(compared['evidence'], counts)
+        self.assertEqual(compared['states'], [x.digest(), reached.digest()])
+        # A retained letter from the import turns lattice pieces into other chambers: the covered parts differ.
+        turned, rows = j1_run(x, [sim.primitive(x.ctx, 1)])
+        self.assertEqual(rows[0][0], 'admissible')
+        answer = candidate().derive('m8/import/turned', identity, {'derived': 'm8/import'},
+                                    records=primitive_records([1]))
+        self.assertEqual((answer['result'], answer['ref']['digest']), ('derived', turned.digest()), answer)
+        compared = candidate().compare({'derived': 'm8/import'}, {'derived': 'm8/import/turned'}, 'position')
+        counts = j1_position_comparison(x, turned)
+        self.assertGreater(counts['differing'], 0)
+        self.assertEqual((compared['result'], compared['verdict'], compared['evidence']), ('partial', 'no', counts))
+        same = candidate().compare({'derived': 'm8/import'}, {'state': None}, 'poses')
+        self.assertEqual((same['result'], same['verdict'], same['states']), ('total', 'yes', [x.digest()] * 2))
+        self.assertEqual(candidate().record(), record)
+        # The import of the solved table and a value derived from it answer unknown at ν = 0, as their claim is open;
+        # the same word from the solved snapshot keeps a retained witness and answers yes with J1's pose digest.
+        candidate().start(self.menu)
+        candidate().import_table('m8/solved', candidate().record(), identity, OPEN)
+        records = primitive_records(WORDS[0])
+        state = session().replay_retained(WORDS[0])
+        on = candidate().derive('m8/solved/on', identity, {'derived': 'm8/solved'}, records=records)
+        self.assertEqual((on['ref']['digest'], on['reachability']['kind']), (state.digest(), 'open'))
+        for name in ('m8/solved', 'm8/solved/on'):
+            for zeros in (None, [0] * NU_LEN):
+                answer = candidate().read_derived('label_checkpoint', name, nu=zeros)
+                self.assertEqual(answer['verdict'], 'unknown', (name, answer))
+        retained = candidate().derive('m8/retained', identity, self.base(0), records=records)
+        self.assertEqual((retained['ref']['digest'], retained['reachability']['retained']), (state.digest(), True))
+        answer = candidate().read_derived('label_checkpoint', 'm8/retained')
+        self.assertEqual(answer['verdict'], 'yes', answer)
+        certificate = session().label_certificate(state)
+        self.assertEqual((answer['evidence']['pose_digest'], answer['evidence']['nu'], answer['evidence']['nu_source']),
+                         (certificate['pose_digest'], list(certificate['nu']), 'retained_witness'))
+
+    def test_refusals_and_input_errors(self):
+        x, identity, record = self.reach(DERIVE_PREFIX)
+        base = self.base(DERIVE_PREFIX)
+        word = self.records[DERIVE_PREFIX:DERIVE_PREFIX + 2]
+        self.assertEqual(candidate().derive('m8/derived', identity, base, records=word)['result'], 'derived')
+        free = dict(identity, menu_id=None, menu_order=None)
+        refusals = (
+            ('derive', dict(name='m8/refused', identity=free, base=base, records=word), IDENTITY_MISMATCH),
+            ('derive', dict(name='m8/refused', identity=identity, base=base, records=word, protect=[NP]),
+             NAMED_OBJECT_INVALID),
+            ('derive', dict(name='m8/refused', identity=identity, base=base, records=word, protect=[-1]),
+             NAMED_OBJECT_INVALID),
+            ('import', dict(name='m8/refused', record=record, identity=free, reachability=OPEN), IDENTITY_MISMATCH),
+            ('compare', dict(a={'state': None}, b={'derived': 'm8/derived'}, level='sticker_class'), LEVEL_NOT_HELD),
+        )
+        for op, fields, code in refusals:
+            with self.subTest(op=op, code=code):
+                answer = candidate().call(op, **fields)
+                self.assertEqual((answer['result'], answer['code']), ('refused', code), answer)
+                self.assertEqual(candidate().record(), record)
+        bad = (
+            ('derive', dict(identity=identity, base=base, records=word)),
+            ('derive', dict(name='m8/bad', base=base, records=word)),
+            ('derive', dict(name='m8/bad', identity=identity, base={'derived': 'no such value'}, records=word)),
+            ('derive', dict(name='m8/bad', identity=identity, base=dict(base, derived='m8/derived'), records=word)),
+            ('derive', dict(name='m8/bad', identity=identity, base={'state': None}, records=word)),
+            ('derive', dict(name='m8/bad', identity=identity, base=self.base(3), records=word)),
+            ('derive', dict(name='m8/bad', identity=identity, base=3, records=word)),
+            ('derive', dict(name='m8/bad', identity=identity, base=base, records=word, letters=[[0, 0]])),
+            ('derive', dict(name='m8/bad', identity=identity, base=base)),
+            ('derive', dict(name='m8/bad', identity=identity, base=base, records=[{'family': 'nothing'}])),
+            ('derive', dict(name='m8/bad', identity=identity, base=base, records=word, mode='lenient')),
+            ('derive', dict(name='m8/bad', identity=identity, base=base, records=word, protect=['1'])),
+            ('import', dict(name='m8/bad', record=record, identity=identity, reachability={'kind': 'witnessed'})),
+            ('import', dict(name='m8/bad', record=record, identity=identity,
+                            reachability={'kind': 'witnessed', 'journal': []})),
+            ('import', dict(name='m8/bad', record=record, identity=identity,
+                            reachability={'kind': 'by_theorem', 'evidence': None})),
+            ('import', dict(name='m8/bad', record=record, identity=identity,
+                            reachability={'kind': 'refuted', 'evidence': None})),
+            ('import', dict(name='m8/bad', record=record, identity=identity,
+                            reachability={'kind': 'open', 'journal': []})),
+            ('import', dict(name='m8/bad', record={'pose_table': 3}, identity=identity, reachability=OPEN)),
+            ('compare', dict(a={'state': None}, b={'state': None}, level='chamber')),
+            ('compare', dict(a={'state': None}, b={'derived': 'no such value'}, level='poses')),
+            ('compare', dict(a={'state': 'm8/x', 'derived': 'm8/derived'}, b={'state': None}, level='poses')),
+            ('compare', dict(a=3, b={'state': None}, level='poses')),
+            ('project', dict(derived='m8/derived', state='m8/x', level='poses')),
+            ('label_checkpoint', dict(derived='m8/derived', reachability=OPEN)),
+            ('retained_word', dict(derived='m8/derived', word=[1])),
+            ('gauge', dict(derived='m8/derived')),
+            ('gauge_between', dict(derived='m8/derived', other='m8/derived')),
+            ('use', dict(name='m8/derived')),
+        )
+        for op, fields in bad:
+            with self.subTest(op=op, fields=sorted(fields)):
+                with self.assertRaises(R.CandidateError) as raised:
+                    candidate().call(op, **fields)
+                self.assertEqual(raised.exception.kind, 'input')
+                self.assertEqual(candidate().record(), record)
+        for name in ('m8/refused', 'm8/bad'):
+            with self.assertRaises(R.CandidateError):
+                candidate().read_derived('sticker_test', name)
+        # Letters need a base with a menu.
+        candidate().start(None)
+        with self.assertRaises(R.CandidateError) as raised:
+            candidate().derive('m8/bad', candidate().identity(), self.base(0), letters=[[0, 0]])
+        self.assertEqual(raised.exception.kind, 'input')
 
 
 if __name__ == '__main__':

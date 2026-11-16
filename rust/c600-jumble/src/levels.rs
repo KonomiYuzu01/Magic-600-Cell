@@ -45,6 +45,29 @@
 //!   certificate carries the pose digest, `Digest<labels>`, the frame agreement, ν with its source, the reachability
 //!   claim and A5's contract revision. The C5 convention and the certificate program's SHA-256 belong to the ν row,
 //!   which reads them; this crate reads `assets/` alone (PHS.18).
+//!
+//! # Derived states (KN2.7, KN2.8, KN2.11 to KN2.14; ONE.20 to ONE.28)
+//!
+//! [`derive`] executes a word's literal letters on a copy of its base: a [`Snapshot`] (solved, or a state that its
+//! journal from solved witnesses) or an earlier [`Derived`] value. The base's identity block must be the one given
+//! (KN1.4). A blocked or invalid letter refuses the word at that prefix with `KN2:input.word_blocked_prefix`, the
+//! letter's outcome and its straddle certificate (KN2.8); nothing changes and no value is made. Protection is judged
+//! at pose level in the kernel's modes ([`ProtectionMode`]): Net compares each protected piece's pose at the end of
+//! the word with its pose in the base and refuses with no prefix; Strict judges every prefix and refuses at the first
+//! letter that changes a protected piece's pose (KN2.7, LB2.3). Both refuse with `KN2:protection.piece_would_move`
+//! and certify, per such piece, its pose before and after the judged operation. A derived value keeps its base's
+//! identity and lineage, has no revision and is never adopted (KN2.12, ONE.22). Its claim is the base's, carried
+//! along the word ([`Reachability::then`]): a witnessed claim stays witnessed, an open one stays open.
+//!
+//! [`import`] is KN2.14: a raw pose table enters as a derived value with open or promised reachability, never
+//! witnessed, validated for form and identity only, with no derivation and the import's digest as its lineage. It
+//! can be read, projected, compared and derived from (ONE.27), and the values derived from it keep its claim, so a
+//! label checkpoint on them answers unknown at ν = 0 too. [`compare`] is ONE.25: both states are projected to one
+//! level and compared there, totally or on the part that both cover.
+//!
+//! Drafts: a snapshot's lineage is its pose digest, since revisions come from the session store (M6); no
+//! classification budget is taken (KN7 comes with LP3), so an uncertain letter is an engine error; and nothing here
+//! proposes or adopts a derived value, which is the command layer's and the session store's work.
 
 use std::collections::{BTreeMap, HashMap};
 use std::sync::{Arc, Mutex, OnceLock};
@@ -54,7 +77,7 @@ use num_integer::Integer;
 use num_traits::{One, Signed, ToPrimitive, Zero};
 
 use c600_kernel::json::{self, Value};
-use c600_kernel::Refusal;
+use c600_kernel::{IdentityBlock, ProtectionMode, Puzzle, Refusal, Verdict as ProtectionVerdict};
 
 use crate::kplus::{IntMat, ORDER};
 use crate::model::{CELL_SLOTS, NP, NS, SIG_WORDS};
@@ -1390,13 +1413,7 @@ pub fn record_of(poses: &[Pose]) -> Value {
         });
         ids.extend_from_slice(&id.to_le_bytes());
     }
-    let entries = table
-        .iter()
-        .map(|p| match p {
-            Pose::K(k) => json::object([("k", Value::Int(*k as i64))]),
-            Pose::M(m) => json::object([("m", crate::q5::matrix_json(m))]),
-        })
-        .collect();
+    let entries = table.iter().map(pose_json).collect();
     json::object([
         ("pose_table", Value::Array(entries)),
         (
@@ -1497,7 +1514,8 @@ impl Gauge {
     }
 
     /// The finest group the gauge lies in. With σ = id every t_A lies in R_A; it lies in S_A when it fixes the cell of
-    /// each sticker of A, because a rotation of R_A that fixes a sticker's cell carries that sticker region onto itself.
+    /// each sticker of A, because a rotation of R_A that fixes a sticker's cell carries that sticker region onto
+    /// itself.
     pub fn class(&self, ctx: &Context) -> Result<GaugeClass, EngineError> {
         if self.moved() > 0 {
             return Ok(GaugeClass::All);
@@ -1587,8 +1605,8 @@ pub fn act(ctx: &Context, x: &State, gauge: &Gauge) -> Result<State, EngineError
 }
 
 /// A gauge γ with X·γ = Y, or `None` when X and Y have different shapes; equal multisets of posed regions always give
-/// one (KN1.7). σ matches the regions: piece A goes to the lowest piece, not taken yet, that occupies Y's region of A in
-/// X. Then t_A = X[σA]⁻¹·Y[A]. On a collision-free configuration σ is the only match, so γ is the only gauge. The
+/// one (KN1.7). σ matches the regions: piece A goes to the lowest piece, not taken yet, that occupies Y's region of A
+/// in X. Then t_A = X[σA]⁻¹·Y[A]. On a collision-free configuration σ is the only match, so γ is the only gauge. The
 /// menus are not read: a gauge relates configurations.
 pub fn gauge_between(ctx: &Context, x: &State, y: &State) -> Result<Option<Gauge>, EngineError> {
     let t = tables(ctx)?;
@@ -1628,4 +1646,616 @@ pub fn gauge_between(ctx: &Context, x: &State, y: &State) -> Result<Option<Gauge
         turns.push(k);
     }
     Gauge::new(ctx, sigma, turns).map(Some).map_err(|e| engine(format!("the matched gauge is no gauge: {e}")))
+}
+
+// ---------------------------------------------------------------------------------------------- derived states
+
+/// An identity block as JSON: the puzzle, the manifest's `model_id`, and the menu identity, the menu order and the
+/// contract revision, each null when the block has none.
+fn identity_json(block: &IdentityBlock) -> Value {
+    let opt = |value: &Option<String>| value.as_deref().map_or(Value::Null, text);
+    object(vec![
+        ("puzzle", text(if block.puzzle == Puzzle::Full { "full" } else { "jumbling" })),
+        ("model_id", text(&block.model_id)),
+        ("menu_id", opt(&block.menu_id)),
+        ("menu_order", opt(&block.menu_order)),
+        ("contract_rev", opt(&block.contract_rev)),
+    ])
+}
+
+/// A pose as a pose-table entry: `{k}` for a K⁺ pose, `{m}` with its exact matrix otherwise.
+fn pose_json(pose: &Pose) -> Value {
+    match pose {
+        Pose::K(k) => json::object([("k", Value::Int(*k as i64))]),
+        Pose::M(m) => json::object([("m", crate::q5::matrix_json(m))]),
+    }
+}
+
+/// The pose a twist gives a piece that it moves, g·g_A, kept in K⁺ when it lies there (as `State::apply` commits it).
+fn turned(ctx: &Context, twist: &Twist, pose: &Pose) -> Pose {
+    if let (Some(k), Some(t)) = (pose.kidx(), twist.kidx) {
+        return Pose::K(ctx.kplus.compose(t, k));
+    }
+    let g: &Mat4 = match pose {
+        Pose::K(k) => ctx.kplus.matrix(*k, &ctx.model),
+        Pose::M(m) => m.as_ref(),
+    };
+    let m = matmul(&twist.matrix, g);
+    match ctx.kplus.index_of_matrix(&m, &ctx.model) {
+        Some(k) => Pose::K(k),
+        None => Pose::M(Arc::new(m)),
+    }
+}
+
+/// The protection report of a derivation at pose level: KN2.4's `protection` row in the kernel's modes, with the
+/// kernel's verdicts.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct WordProtection {
+    pub mode: ProtectionMode,
+    /// The protected pieces, ascending.
+    pub protected: Vec<u32>,
+    /// The protected pieces whose pose the judged operation changes, ascending: the whole word under Net, the first
+    /// refused prefix under Strict.
+    pub pieces: Vec<u32>,
+    pub verdict: ProtectionVerdict,
+    /// Strict only: the length of the shortest prefix that changes a protected piece's pose (1 for the first letter).
+    /// `None` for a clear verdict and under Net, which judges only the end of the whole word.
+    pub first_refused_prefix: Option<u64>,
+}
+
+impl WordProtection {
+    fn clear(mode: ProtectionMode, protected: Vec<u32>) -> WordProtection {
+        WordProtection {
+            mode,
+            protected,
+            pieces: Vec::new(),
+            verdict: ProtectionVerdict::Clear,
+            first_refused_prefix: None,
+        }
+    }
+
+    pub fn to_json(&self) -> Value {
+        let ids = |pieces: &[u32]| Value::Array(pieces.iter().map(|&p| int(p as usize)).collect());
+        let mode = match self.mode {
+            ProtectionMode::Net => "net",
+            ProtectionMode::Strict => "strict",
+        };
+        let verdict = match self.verdict {
+            ProtectionVerdict::Clear => "clear",
+            ProtectionVerdict::Moves => "moves",
+        };
+        object(vec![
+            ("level", text("poses")),
+            ("mode", text(mode)),
+            ("protected", ids(&self.protected)),
+            ("pieces", ids(&self.pieces)),
+            ("verdict", text(verdict)),
+            ("first_refused_prefix", self.first_refused_prefix.map_or(Value::Null, |n| Value::Int(n as i64))),
+        ])
+    }
+}
+
+/// Where a derived value's history starts (ONE.21): a snapshot, named by its pose digest in this edition, or an
+/// import, named by the imported state's pose digest. Neither names a revision: an import has none, and a snapshot's
+/// revision comes from the session store (M6).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Lineage {
+    Snapshot(String),
+    Import(String),
+}
+
+impl Lineage {
+    pub fn to_json(&self) -> Value {
+        let (root, digest) = match self {
+            Lineage::Snapshot(digest) => ("snapshot", digest),
+            Lineage::Import(digest) => ("import", digest),
+        };
+        object(vec![("root", text(root)), ("digest", text(digest)), ("revision", Value::Null)])
+    }
+}
+
+/// KN2.11's `derivation`: the base's pose digest and `Digest<literal word>` ([`word_digest`]), with the word's
+/// length.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DerivedFrom {
+    pub base: String,
+    pub word: String,
+    pub letters: usize,
+}
+
+impl DerivedFrom {
+    pub fn to_json(&self) -> Value {
+        object(vec![("base", text(&self.base)), ("word", text(&self.word)), ("letters", int(self.letters))])
+    }
+}
+
+/// A base that the caller holds, with its reachability claim: solved, or a state that its journal from solved
+/// witnesses. A derivation changes only a copy of it.
+#[derive(Clone)]
+pub struct Snapshot {
+    state: State,
+    reach: Reachability,
+}
+
+impl std::fmt::Debug for Snapshot {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Snapshot")
+            .field("menu", &self.state.menu().map(|m| m.name.as_str()))
+            .field("off", &self.state.off_lattice_count())
+            .field("reach", &self.reach)
+            .finish_non_exhaustive()
+    }
+}
+
+impl Snapshot {
+    /// The solved state under `menu` (`None` in free mode), witnessed by the empty word.
+    pub fn solved(menu: Option<Arc<Menu>>) -> Snapshot {
+        Snapshot { state: State::new(menu), reach: Reachability::solved() }
+    }
+
+    /// `state` with the witnessed claim of its journal from solved, replayed exactly under the state's own menu, with
+    /// the recorded moved counts when given ([`witness`]); `Err` names why the journal does not witness the state.
+    pub fn witnessed(
+        ctx: &Context,
+        state: State,
+        journal: &[Twist],
+        moved: Option<&[Option<usize>]>,
+    ) -> Result<Result<Snapshot, String>, EngineError> {
+        let menu = state.menu_arc();
+        Ok(witness(ctx, &state, menu, journal, moved)?.map(|reach| Snapshot { state, reach }))
+    }
+
+    pub fn state(&self) -> &State {
+        &self.state
+    }
+
+    pub fn reachability(&self) -> &Reachability {
+        &self.reach
+    }
+}
+
+/// A derived value (KN2.11, KN2.12): a state with its identity block, its derivation (none for an import), its
+/// lineage, its reachability claim and its protection report (none for an import). It has no revision and is never
+/// adopted; nothing here writes it to a session.
+#[derive(Clone)]
+pub struct Derived {
+    state: State,
+    identity: IdentityBlock,
+    derivation: Option<DerivedFrom>,
+    lineage: Lineage,
+    reach: Reachability,
+    protection: Option<WordProtection>,
+}
+
+impl std::fmt::Debug for Derived {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Derived")
+            .field("identity", &self.identity)
+            .field("derivation", &self.derivation)
+            .field("lineage", &self.lineage)
+            .field("reach", &self.reach)
+            .field("protection", &self.protection)
+            .field("off", &self.state.off_lattice_count())
+            .finish_non_exhaustive()
+    }
+}
+
+impl Derived {
+    pub fn state(&self) -> &State {
+        &self.state
+    }
+
+    pub fn identity(&self) -> &IdentityBlock {
+        &self.identity
+    }
+
+    pub fn derivation(&self) -> Option<&DerivedFrom> {
+        self.derivation.as_ref()
+    }
+
+    pub fn lineage(&self) -> &Lineage {
+        &self.lineage
+    }
+
+    pub fn reachability(&self) -> &Reachability {
+        &self.reach
+    }
+
+    pub fn protection(&self) -> Option<&WordProtection> {
+        self.protection.as_ref()
+    }
+
+    /// The pose digest of the value's state: the digest of KN2.11's `DerivedRef`.
+    pub fn digest(&self, ctx: &Context) -> String {
+        self.state.digest(ctx)
+    }
+
+    /// `{result: "derived", ref: {digest, level, identity}, derivation, lineage, reachability, protection, off}`.
+    pub fn to_json(&self, ctx: &Context) -> Value {
+        let reference = object(vec![
+            ("digest", text(&self.digest(ctx))),
+            ("level", text(Level::Poses.name())),
+            ("identity", identity_json(&self.identity)),
+        ]);
+        object(vec![
+            ("result", text("derived")),
+            ("ref", reference),
+            ("derivation", self.derivation.as_ref().map_or(Value::Null, DerivedFrom::to_json)),
+            ("lineage", self.lineage.to_json()),
+            ("reachability", self.reach.to_json()),
+            ("protection", self.protection.as_ref().map_or(Value::Null, WordProtection::to_json)),
+            ("off", int(self.state.off_lattice_count())),
+        ])
+    }
+}
+
+/// A refused derivation: KN2.11's `{first_refused_prefix, outcome, certificates}` with the refusal's code and
+/// message. Nothing changes: the base keeps its digest, and no value is made (KN2.8).
+#[derive(Clone, Debug, PartialEq)]
+pub struct Refused {
+    /// The base's pose digest.
+    pub base: String,
+    /// `Digest<literal word>` of the whole word.
+    pub word: String,
+    pub letters: usize,
+    /// The length of the refused prefix (1 for the first letter). It ends at a blocked or invalid letter and, under
+    /// Strict, at the first letter that changes a protected piece's pose. `None` for a Net refusal, which judges the
+    /// whole word.
+    pub first_refused_prefix: Option<u64>,
+    /// Blocked or invalid, the outcome of the prefix's last letter; protected for a protection refusal.
+    pub outcome: Status,
+    pub refusal: Refusal,
+    /// The blocked letter's straddle certificate; or, per protected piece that the judged operation moves, the piece
+    /// with its pose before and after.
+    pub certificates: Vec<Value>,
+    /// The report of a protection refusal.
+    pub protection: Option<WordProtection>,
+}
+
+impl Refused {
+    pub fn to_json(&self) -> Value {
+        object(vec![
+            ("result", text("refused")),
+            ("code", text(self.refusal.code)),
+            ("message", text(&self.refusal.message)),
+            ("base", text(&self.base)),
+            ("word", text(&self.word)),
+            ("letters", int(self.letters)),
+            ("first_refused_prefix", self.first_refused_prefix.map_or(Value::Null, |n| Value::Int(n as i64))),
+            ("outcome", text(self.outcome.as_str())),
+            ("certificates", Value::Array(self.certificates.clone())),
+            ("protection", self.protection.as_ref().map_or(Value::Null, WordProtection::to_json)),
+        ])
+    }
+}
+
+/// The answer of [`derive`].
+#[derive(Clone, Debug)]
+pub enum Derivation {
+    Derived(Derived),
+    Refused(Refused),
+}
+
+/// The base of a derivation, KN2.11's `StateRef`: a snapshot or an earlier derived value.
+#[derive(Clone, Copy, Debug)]
+pub enum Base<'a> {
+    Snapshot(&'a Snapshot),
+    Derived(&'a Derived),
+}
+
+/// A protected piece with its pose before and after the judged operation.
+fn moved_piece(piece: u32, from: &Pose, to: &Pose) -> Value {
+    object(vec![("piece", int(piece as usize)), ("from", pose_json(from)), ("to", pose_json(to))])
+}
+
+/// KN2.11's `derive(base, word) -> Derived | Refused`, with protection at pose level in the modes of KN2.7.
+///
+/// The inner `Err` refuses the request before any letter runs: the base's identity block is not `identity`
+/// (`KN1:input.identity_mismatch`, KN1.4), or a protected piece names no piece (`KN2:input.named_object_invalid`).
+/// Otherwise the letters execute in order on a copy of the base, each exactly as `State::apply` executes it with no
+/// budget, and the word is refused whole, with nothing changed:
+///
+/// - at its first blocked or invalid letter, with `KN2:input.word_blocked_prefix`, the prefix's length, the letter's
+///   outcome and its straddle certificate (KN2.8);
+/// - under Strict, at the first letter that changes a protected piece's pose, with `KN2:protection.piece_would_move`;
+/// - under Net, when a protected piece's pose at the end of the word is not its pose in the base, with the same code
+///   and no prefix.
+///
+/// A derived value keeps its base's identity and lineage, and its claim is the base's carried along the word. Nothing
+/// is searched or chosen: the word is the caller's.
+pub fn derive(
+    ctx: &Context,
+    base: Base,
+    identity: &IdentityBlock,
+    twists: &[Twist],
+    mode: ProtectionMode,
+    protect: &[u32],
+) -> Result<Result<Derivation, Refusal>, EngineError> {
+    let (start, claim, root) = match base {
+        Base::Snapshot(snapshot) => (&snapshot.state, &snapshot.reach, None),
+        Base::Derived(derived) => (&derived.state, &derived.reach, Some(&derived.lineage)),
+    };
+    if let Err(refusal) = ctx.check_identity(start.menu(), identity) {
+        return Ok(Err(refusal));
+    }
+    if let Some(&p) = protect.iter().find(|&&p| p as usize >= NP) {
+        return Ok(Err(Refusal {
+            code: crate::codes::NAMED_OBJECT_INVALID,
+            message: format!("Protected piece {p} is outside 0..{}", NP - 1),
+        }));
+    }
+    let mut protected = protect.to_vec();
+    protected.sort_unstable();
+    protected.dedup();
+    let base_digest = start.digest(ctx);
+    let word = word_digest(twists);
+    let refused = |first_refused_prefix: Option<u64>,
+                   outcome: Status,
+                   refusal: Refusal,
+                   certificates: Vec<Value>,
+                   protection: WordProtection|
+     -> Result<Result<Derivation, Refusal>, EngineError> {
+        let protection = (protection.verdict == ProtectionVerdict::Moves).then_some(protection);
+        Ok(Ok(Derivation::Refused(Refused {
+            base: base_digest.clone(),
+            word: word.clone(),
+            letters: twists.len(),
+            first_refused_prefix,
+            outcome,
+            refusal,
+            certificates,
+            protection,
+        })))
+    };
+
+    let strict = mode == ProtectionMode::Strict;
+    let guard: &[u32] = if strict { &protected } else { &[] };
+    let mut state = start.clone();
+    for (index, twist) in twists.iter().enumerate() {
+        let prefix = index as u64 + 1;
+        let outcome = state.apply(ctx, twist, None, guard)?;
+        match outcome.status {
+            Status::Admissible => {}
+            Status::Protected => {
+                let report = outcome.protection.ok_or_else(|| engine("a protection refusal has no report"))?;
+                let first = *report.pieces.first().ok_or_else(|| engine("a protection refusal names no piece"))?;
+                let certificates = report
+                    .pieces
+                    .iter()
+                    .map(|&p| {
+                        let from = state.pose_of(p as usize);
+                        moved_piece(p, from, &turned(ctx, twist, from))
+                    })
+                    .collect();
+                let refusal = Refusal {
+                    code: crate::codes::PIECE_WOULD_MOVE,
+                    message: format!("Prefix {prefix} of the word would change the pose of protected piece {first}"),
+                };
+                let protection = WordProtection {
+                    mode,
+                    protected: report.protected,
+                    pieces: report.pieces,
+                    verdict: ProtectionVerdict::Moves,
+                    first_refused_prefix: Some(prefix),
+                };
+                return refused(Some(prefix), Status::Protected, refusal, certificates, protection);
+            }
+            Status::Blocked | Status::Invalid => {
+                let status = outcome.status.as_str();
+                let message = match &outcome.refusal {
+                    Some((_, reason)) => {
+                        format!("The word is refused at prefix {prefix}: its last letter is {status} ({reason})")
+                    }
+                    None => format!("The word is refused at prefix {prefix}: its last letter is {status}"),
+                };
+                let certificates = outcome.straddle.iter().map(|c| c.to_json()).collect();
+                let refusal = Refusal { code: crate::codes::WORD_BLOCKED_PREFIX, message };
+                return refused(
+                    Some(prefix),
+                    outcome.status,
+                    refusal,
+                    certificates,
+                    WordProtection::clear(mode, vec![]),
+                );
+            }
+            Status::Uncertain => return Err(engine("a classification with no budget answered uncertain")),
+        }
+    }
+
+    // Net judges the end of the whole word; under Strict no prefix moved a protected piece, so none has moved.
+    let moved: Vec<u32> =
+        protected.iter().copied().filter(|&p| state.pose_of(p as usize) != start.pose_of(p as usize)).collect();
+    if let Some(&first) = moved.first() {
+        if strict {
+            return Err(engine("a word that passed Strict changed a protected piece's pose"));
+        }
+        let certificates =
+            moved.iter().map(|&p| moved_piece(p, start.pose_of(p as usize), state.pose_of(p as usize))).collect();
+        let refusal = Refusal {
+            code: crate::codes::PIECE_WOULD_MOVE,
+            message: format!("The word would change the pose of protected piece {first}"),
+        };
+        let protection = WordProtection {
+            mode,
+            protected,
+            pieces: moved,
+            verdict: ProtectionVerdict::Moves,
+            first_refused_prefix: None,
+        };
+        return refused(None, Status::Protected, refusal, certificates, protection);
+    }
+
+    let reach = claim.then(&base_digest, twists);
+    let lineage = root.cloned().unwrap_or_else(|| Lineage::Snapshot(base_digest.clone()));
+    Ok(Ok(Derivation::Derived(Derived {
+        identity: ctx.identity(state.menu()),
+        derivation: Some(DerivedFrom { base: base_digest, word, letters: twists.len() }),
+        lineage,
+        reach,
+        protection: Some(WordProtection::clear(mode, protected)),
+        state,
+    })))
+}
+
+/// KN2.14: a raw pose table enters as a derived value with reachability open or promised, read under `menu` and
+/// validated for form and identity only (`State::from_record`). A claim of another kind, or a table that does not
+/// read, is the outer `Err`: a raw table is never witnessed, and this edition checks no theorem evidence. Then its
+/// identity block must be `identity` (KN1.4: the inner `Err`). It has no derivation and no protection report, and its
+/// lineage is its own pose digest (ONE.21).
+pub fn import(
+    ctx: &Context,
+    menu: Option<Arc<Menu>>,
+    record: &Value,
+    identity: &IdentityBlock,
+    reach: Reachability,
+) -> Result<Result<Derived, Refusal>, String> {
+    if !matches!(reach.kind(), ReachKind::Open | ReachKind::Promised) {
+        return Err(format!("a raw table enters with open or promised reachability, not {}", reach.kind().name()));
+    }
+    let state = State::from_record(ctx, menu, record)?;
+    if let Err(refusal) = ctx.check_identity(state.menu(), identity) {
+        return Ok(Err(refusal));
+    }
+    Ok(Ok(Derived {
+        identity: ctx.identity(state.menu()),
+        derivation: None,
+        lineage: Lineage::Import(state.digest(ctx)),
+        reach,
+        protection: None,
+        state,
+    }))
+}
+
+/// The answer of [`compare`]: ONE.25's `Partial<Verdict>`.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Comparison {
+    /// Both projections are total: yes when their digests are equal, no otherwise.
+    Total(Verdict),
+    /// A projection is partial: the verdict on the keys that both cover (slots for labels, pieces for position), with
+    /// what each side misses (nothing for a total side). With no key in common the verdict is unknown.
+    Partial {
+        covered: Verdict,
+        a: Missing,
+        b: Missing,
+    },
+    Undefined(String),
+    /// The level is not held (`KN1:input.level_not_held`), or the identity blocks differ
+    /// (`KN1:input.identity_mismatch`).
+    Refused(Refusal),
+}
+
+impl Comparison {
+    /// `{level, result, verdict, evidence or reason}`, with `missing_a` and `missing_b` for a partial result; a
+    /// refusal gives its code and message.
+    pub fn to_json(&self, level: Level) -> Value {
+        let mut fields = vec![("level", text(level.name()))];
+        let verdict = match self {
+            Comparison::Total(verdict) => {
+                fields.push(("result", text("total")));
+                Some(verdict)
+            }
+            Comparison::Partial { covered, a, b } => {
+                fields.push(("result", text("partial")));
+                fields.push(("missing_a", a.to_json()));
+                fields.push(("missing_b", b.to_json()));
+                Some(covered)
+            }
+            Comparison::Undefined(reason) => {
+                fields.push(("result", text("undefined")));
+                fields.push(("reason", text(reason)));
+                None
+            }
+            Comparison::Refused(refusal) => {
+                fields.push(("result", text("refused")));
+                fields.push(("code", text(refusal.code)));
+                fields.push(("message", text(&refusal.message)));
+                None
+            }
+        };
+        let mut out = object(fields);
+        if let (Some(verdict), Value::Object(map)) = (verdict, &mut out) {
+            if let Value::Object(more) = verdict.to_json() {
+                map.extend(more);
+            }
+        }
+        out
+    }
+}
+
+/// Two covered parts, each with its keys ascending: the keys both cover, those of them whose values differ, and the
+/// keys only the first or only the second covers.
+fn walk<T: PartialEq>(ka: &[u32], va: &[T], kb: &[u32], vb: &[T]) -> [usize; 4] {
+    let (mut i, mut j) = (0, 0);
+    let mut counts = [0usize; 4];
+    while i < ka.len() && j < kb.len() {
+        match ka[i].cmp(&kb[j]) {
+            std::cmp::Ordering::Less => {
+                counts[2] += 1;
+                i += 1;
+            }
+            std::cmp::Ordering::Greater => {
+                counts[3] += 1;
+                j += 1;
+            }
+            std::cmp::Ordering::Equal => {
+                counts[0] += 1;
+                counts[1] += usize::from(va[i] != vb[j]);
+                i += 1;
+                j += 1;
+            }
+        }
+    }
+    counts[2] += ka.len() - i;
+    counts[3] += kb.len() - j;
+    counts
+}
+
+/// ONE.25's `compare(a, b, at: level) -> Partial<Verdict>`. The identity blocks must agree (KN1.4) and the level must
+/// be held (KN1.9); both refusals are results. Both states are projected to the level ([`project`]). Two total values
+/// answer yes when their digests are equal and no otherwise. When either is partial (labels or position off the
+/// lattice), the values are compared on the keys that both cover and each side's missing part is reported: a
+/// difference there answers no, agreement yes, and no common key unknown.
+pub fn compare(ctx: &Context, a: &State, b: &State, at: Level) -> Result<Comparison, EngineError> {
+    if let Err(refusal) = ctx.check_identity(a.menu(), &ctx.identity(b.menu())) {
+        return Ok(Comparison::Refused(refusal));
+    }
+    let (pa, pb) = match (project(ctx, a, at)?, project(ctx, b, at)?) {
+        (Projection::Refused(refusal), _) | (_, Projection::Refused(refusal)) => {
+            return Ok(Comparison::Refused(refusal))
+        }
+        (Projection::Value(pa), Projection::Value(pb)) => (pa, pb),
+    };
+    let (ca, ma, cb, mb) = match (pa, pb) {
+        (Partial::Undefined(reason), _) | (_, Partial::Undefined(reason)) => return Ok(Comparison::Undefined(reason)),
+        (Partial::Total(va), Partial::Total(vb)) => {
+            let (da, db) = (va.digest(), vb.digest());
+            let evidence = object(vec![("level", text(at.name())), ("a", text(&da)), ("b", text(&db))]);
+            return Ok(Comparison::Total(if da == db { Verdict::Yes(evidence) } else { Verdict::No(evidence) }));
+        }
+        (Partial::Total(va), Partial::Partial { covered, missing }) => (va, Missing::default(), covered, missing),
+        (Partial::Partial { covered, missing }, Partial::Total(vb)) => (covered, missing, vb, Missing::default()),
+        (Partial::Partial { covered: ca, missing: ma }, Partial::Partial { covered: cb, missing: mb }) => {
+            (ca, ma, cb, mb)
+        }
+    };
+    let [common, differing, a_only, b_only] = match (&ca, &cb) {
+        (LevelValue::Labels(x), LevelValue::Labels(y)) => walk(&x.slots, &x.labels, &y.slots, &y.labels),
+        (LevelValue::Position(x), LevelValue::Position(y)) => walk(&x.pieces, &x.chambers, &y.pieces, &y.chambers),
+        _ => return Err(engine(format!("a partial value at {} has no keys to compare", at.name()))),
+    };
+    let evidence = object(vec![
+        ("level", text(at.name())),
+        ("common", int(common)),
+        ("differing", int(differing)),
+        ("a_only", int(a_only)),
+        ("b_only", int(b_only)),
+    ]);
+    let covered = if common == 0 {
+        Verdict::Unknown(format!("no key of {} is covered by both values", at.name()))
+    } else if differing > 0 {
+        Verdict::No(evidence)
+    } else {
+        Verdict::Yes(evidence)
+    };
+    Ok(Comparison::Partial { covered, a: ma, b: mb })
 }

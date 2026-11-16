@@ -1,20 +1,25 @@
-//! LP2, M8: the level crossings, end tests, shapes and gauges of the jumbling puzzle (`c600_jumble::levels`; chapter
-//! 01, KN1.7 to KN1.10, KN1.14 and KN1.17; state contract A3 and A5). `tests/test_jumbling_rust_m8_levels.py` runs
-//! the same calls through the adapter against J1. Nothing here chooses a twist: every word below is fixed in the test.
+//! LP2, M8: the level crossings, end tests, shapes, gauges and derived states of the jumbling puzzle
+//! (`c600_jumble::levels`; chapter 01, KN1.7 to KN1.10, KN1.14, KN1.17, KN2.7, KN2.8 and KN2.11 to KN2.14; chapter
+//! 08, ONE.21 to ONE.28; state contract A3 and A5). `tests/test_jumbling_rust_m8_levels.py` runs the same calls
+//! through the adapter against J1. Nothing here chooses a twist: every word below is fixed in the test or read from a
+//! fixture.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
+use c600_jumble::codes;
 use c600_jumble::kplus::ORDER;
 use c600_jumble::levels::{self, Gauge, GaugeClass, RegionKey, Shape};
+use c600_jumble::levels::{Base, Comparison, Derivation, Derived, Lineage, Missing, Refused, Snapshot, WordProtection};
 use c600_jumble::levels::{Level, LevelValue, Partial, Projection, ReachKind, Reachability, Verdict, Witness};
 use c600_jumble::model::{NP, NS};
-use c600_jumble::q5::{matmul, Mat4, Q5};
+use c600_jumble::q5::{matmul, transpose, Mat4, Q5};
 use c600_jumble::state::{Pose, State, Status};
 use c600_jumble::twist::{Menu, Twist};
 use c600_jumble::{observe, Context};
 use c600_kernel::json::{self, Value};
+use c600_kernel::{IdentityBlock, ProtectionMode, Verdict as ProtectionVerdict};
 
 fn repository() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..")
@@ -637,4 +642,405 @@ fn a_gauge_is_checked_piece_by_piece() {
     let x = cayley_state(ctx);
     assert_eq!(levels::act(ctx, &x, &identity).expect("no engine error").digest(ctx), x.digest(ctx));
     assert_eq!(levels::gauge_between(ctx, &x, &x).expect("no engine error"), Some(identity));
+}
+
+// ---------------------------------------------------------------------------------------------- derived states
+
+/// The twists of a fixed word of signed 1-based primitive ids.
+fn primitives(ctx: &Context, word: &[i64]) -> Vec<Twist> {
+    word.iter().map(|&mid| levels::primitive(ctx, mid).expect("a primitive id")).collect()
+}
+
+/// The Cayley twist of [`cayley_state`] and its inverse, the transposed exact matrix at the same grip.
+fn cayley_twists(ctx: &Context) -> (Twist, Twist) {
+    let omega = [Q5::int(2), Q5::zero(), Q5::zero()];
+    let twist = Twist::from_record(ctx, &observe::cayley_record(ctx, 0, &omega)).expect("the Cayley record reads");
+    let inverse = Twist::new(ctx, twist.grip, transpose(&twist.matrix)).expect("the inverse fixes the same pole");
+    (twist, inverse)
+}
+
+/// The Cayley state as a snapshot that its one-letter journal from solved witnesses.
+fn cayley_snapshot(ctx: &Context) -> (Snapshot, Twist) {
+    let (twist, inverse) = cayley_twists(ctx);
+    let journal = [twist];
+    let (state, steps) = run(ctx, &State::new(None), &journal);
+    assert_eq!(steps[0].0, Status::Admissible);
+    let snapshot = Snapshot::witnessed(ctx, state, &journal, None)
+        .expect("no engine error")
+        .expect("the journal witnesses the Cayley state");
+    (snapshot, inverse)
+}
+
+/// The pinned I_a fixture's journal at prefix 8 as a snapshot that the journal witnesses: off the lattice, with
+/// primitive 3 blocked there and primitive 1 admissible.
+fn fixture_snapshot(s: &Setup) -> Snapshot {
+    let ctx = &s.ctx;
+    let fixture = std::fs::read(repository().join("research/jumbling/fixtures/wj-I_a.json")).expect("the fixture");
+    let fixture = json::parse(&fixture).expect("the I_a fixture is JSON");
+    let records = fixture.get("journal").and_then(|j| j.get("records")).and_then(Value::as_array).expect("records");
+    let journal: Vec<Twist> =
+        records[..8].iter().map(|r| Twist::from_record(ctx, r).expect("a record the candidate reads")).collect();
+    let (state, steps) = run(ctx, &State::new(Some(s.menu.clone())), &journal);
+    assert!(steps.iter().all(|(status, _)| *status == Status::Admissible));
+    assert!(state.off_lattice_count() > 0);
+    Snapshot::witnessed(ctx, state, &journal, None).expect("no engine error").expect("the journal witnesses it")
+}
+
+/// `derive` with no engine error and no refusal of the request.
+fn derivation(
+    ctx: &Context,
+    base: Base,
+    identity: &IdentityBlock,
+    twists: &[Twist],
+    mode: ProtectionMode,
+    protect: &[u32],
+) -> Derivation {
+    levels::derive(ctx, base, identity, twists, mode, protect)
+        .expect("no engine error")
+        .expect("the request is not refused")
+}
+
+fn derived(answer: Derivation) -> Derived {
+    match answer {
+        Derivation::Derived(value) => value,
+        Derivation::Refused(refused) => panic!("refused: {refused:?}"),
+    }
+}
+
+fn refused(answer: Derivation) -> Refused {
+    match answer {
+        Derivation::Refused(refused) => refused,
+        Derivation::Derived(value) => panic!("derived: {value:?}"),
+    }
+}
+
+/// A protection certificate: the piece with its K⁺ poses before and after the judged operation.
+fn moved_piece(piece: u32, from: u16, to: u16) -> Value {
+    json::object([
+        ("piece", Value::Int(piece as i64)),
+        ("from", json::object([("k", Value::Int(from as i64))])),
+        ("to", json::object([("k", Value::Int(to as i64))])),
+    ])
+}
+
+/// KN1.4 and chapter 13: a derivation names its base's identity block and protects pieces of the model; otherwise the
+/// request is refused before any letter runs.
+#[test]
+fn a_derivation_refuses_another_identity_or_a_piece_outside_the_model() {
+    let s = setup();
+    let ctx = &s.ctx;
+    let base = Snapshot::solved(Some(s.menu.clone()));
+    let ia = ctx.identity(Some(&*s.menu));
+    let twists = primitives(ctx, &[1]);
+    let refusal = levels::derive(ctx, Base::Snapshot(&base), &ctx.identity(None), &twists, ProtectionMode::Net, &[])
+        .expect("no engine error")
+        .expect_err("another identity block");
+    assert_eq!(refusal.code, codes::IDENTITY_MISMATCH);
+    let refusal = levels::derive(ctx, Base::Snapshot(&base), &ia, &twists, ProtectionMode::Strict, &[3, NP as u32])
+        .expect("no engine error")
+        .expect_err("a piece outside the model");
+    assert_eq!(refusal.code, codes::NAMED_OBJECT_INVALID);
+    // A protected piece outside the letter's cap keeps its pose, so Strict clears the word.
+    let (_, steps) = run(ctx, base.state(), &twists);
+    let still = (0..NP as u32).find(|p| !steps[0].1.contains(p)).expect("a piece outside the cap");
+    let value = derived(derivation(ctx, Base::Snapshot(&base), &ia, &twists, ProtectionMode::Strict, &[still]));
+    assert_eq!(value.identity(), &ia);
+    assert_eq!(value.protection().map(|r| (r.verdict, r.pieces.len())), Some((ProtectionVerdict::Clear, 0)));
+}
+
+/// KN2.8 and KN2.11: a word is refused whole at its first blocked or invalid letter, with the prefix's length, the
+/// letter's outcome and, for a blocked letter, its straddle certificate; the base keeps its digest and no value is
+/// made. The letters before it derive, and their value is witnessed by a journal that is no retained word.
+#[test]
+fn a_word_is_refused_whole_at_its_first_blocked_letter() {
+    let s = setup();
+    let ctx = &s.ctx;
+    let base = fixture_snapshot(s);
+    let ia = ctx.identity(Some(&*s.menu));
+    let before = base.state().digest(ctx);
+    let twists = primitives(ctx, &[1, -1, 3]);
+    for mode in [ProtectionMode::Net, ProtectionMode::Strict] {
+        let answer = refused(derivation(ctx, Base::Snapshot(&base), &ia, &twists, mode, &[]));
+        assert_eq!((answer.first_refused_prefix, answer.outcome), (Some(3), Status::Blocked));
+        assert_eq!(answer.refusal.code, codes::WORD_BLOCKED_PREFIX);
+        assert_eq!((&answer.base, &answer.word, answer.letters), (&before, &levels::word_digest(&twists), 3));
+        assert_eq!(answer.certificates.len(), 1, "{answer:?}");
+        assert_eq!(answer.certificates[0].get("grip").and_then(Value::as_i64), Some(twists[2].grip as i64));
+        assert_eq!(answer.protection, None);
+    }
+    assert_eq!(base.state().digest(ctx), before);
+    let back = derived(derivation(ctx, Base::Snapshot(&base), &ia, &twists[..2], ProtectionMode::Strict, &[]));
+    assert_eq!(back.digest(ctx), before);
+    assert_eq!((back.reachability().kind(), back.reachability().retained()), (ReachKind::Witnessed, false));
+
+    // A letter off the I_a menu is invalid: the word is refused at its prefix with the letter's reason.
+    let (cayley, _) = cayley_twists(ctx);
+    assert!(!s.menu.contains(ctx, &cayley), "the Cayley rotation is not an I_a item");
+    let word = [twists[0].clone(), cayley];
+    let answer = refused(derivation(ctx, Base::Snapshot(&base), &ia, &word, ProtectionMode::Net, &[]));
+    assert_eq!((answer.first_refused_prefix, answer.outcome), (Some(2), Status::Invalid));
+    assert_eq!(answer.refusal.code, codes::WORD_BLOCKED_PREFIX);
+    assert!(answer.certificates.is_empty() && answer.protection.is_none(), "{answer:?}");
+}
+
+/// KN2.7 at pose level: Strict judges every prefix and refuses at the first letter that changes a protected piece's
+/// pose; Net judges the end of the whole word. A word whose net map keeps the piece passes Net and fails Strict; a
+/// word that leaves it moved fails both, Net with no prefix. Each refusal certifies the piece's pose before and after.
+#[test]
+fn strict_judges_every_prefix_and_net_the_end_of_the_word() {
+    let s = setup();
+    let ctx = &s.ctx;
+    let ia = ctx.identity(Some(&*s.menu));
+    let base = Snapshot::solved(Some(s.menu.clone()));
+    let solved = base.state().digest(ctx);
+    let word = primitives(ctx, &[1, 3, -3, -1]);
+    let (_, steps) = run(ctx, base.state(), &word);
+    assert!(steps.iter().all(|(status, _)| *status == Status::Admissible));
+    let p = *steps[1].1.iter().find(|q| !steps[0].1.contains(q)).expect("a piece the second letter moves alone");
+    let (two, _) = run(ctx, base.state(), &word[..2]);
+    let to = two.pose_of(p as usize).kidx().expect("retained letters keep the piece on the lattice");
+    let report = |mode, pieces: Vec<u32>, verdict, first_refused_prefix| WordProtection {
+        mode,
+        protected: vec![p],
+        pieces,
+        verdict,
+        first_refused_prefix,
+    };
+
+    let strict = refused(derivation(ctx, Base::Snapshot(&base), &ia, &word, ProtectionMode::Strict, &[p, p]));
+    assert_eq!((strict.first_refused_prefix, strict.outcome), (Some(2), Status::Protected));
+    assert_eq!(strict.refusal.code, codes::PIECE_WOULD_MOVE);
+    assert_eq!(strict.certificates, vec![moved_piece(p, 0, to)]);
+    assert_eq!(strict.protection, Some(report(ProtectionMode::Strict, vec![p], ProtectionVerdict::Moves, Some(2))));
+
+    let net = derived(derivation(ctx, Base::Snapshot(&base), &ia, &word, ProtectionMode::Net, &[p]));
+    assert_eq!(net.digest(ctx), solved);
+    assert_eq!(net.protection(), Some(&report(ProtectionMode::Net, vec![], ProtectionVerdict::Clear, None)));
+    assert!(net.reachability().retained());
+
+    let open = refused(derivation(ctx, Base::Snapshot(&base), &ia, &word[..2], ProtectionMode::Net, &[p]));
+    assert_eq!((open.first_refused_prefix, open.outcome), (None, Status::Protected));
+    assert_eq!(open.refusal.code, codes::PIECE_WOULD_MOVE);
+    assert_eq!(open.certificates, vec![moved_piece(p, 0, to)]);
+    assert_eq!(open.protection, Some(report(ProtectionMode::Net, vec![p], ProtectionVerdict::Moves, None)));
+
+    // A piece in the cap of a letter and its inverse from solved: Strict refuses at prefix 1, and Net passes the word,
+    // which brings the piece back.
+    let there_and_back = [word[1].clone(), word[2].clone()];
+    let q = run(ctx, base.state(), &there_and_back).1[0].1[0];
+    let first = refused(derivation(ctx, Base::Snapshot(&base), &ia, &there_and_back, ProtectionMode::Strict, &[q]));
+    assert_eq!((first.first_refused_prefix, first.outcome), (Some(1), Status::Protected));
+    let back = derived(derivation(ctx, Base::Snapshot(&base), &ia, &there_and_back, ProtectionMode::Net, &[q]));
+    assert_eq!(back.digest(ctx), solved);
+    // Strict with nothing protected judges nothing.
+    let free = derived(derivation(ctx, Base::Snapshot(&base), &ia, &word, ProtectionMode::Strict, &[]));
+    assert_eq!(free.protection().map(|r| (r.verdict, r.protected.len())), Some((ProtectionVerdict::Clear, 0)));
+}
+
+/// KN2.11, KN2.12, ONE.21 and ONE.22: a derived value keeps its base's identity block and lineage, records its base and
+/// word, and carries the base's claim along the word; a value derived from it continues the lineage. The base is
+/// unchanged, and nothing is adopted.
+#[test]
+fn a_derived_value_keeps_its_identity_lineage_and_claim() {
+    let s = setup();
+    let ctx = &s.ctx;
+    let ia = ctx.identity(Some(&*s.menu));
+    let base = Snapshot::solved(Some(s.menu.clone()));
+    let solved = base.state().digest(ctx);
+    let first = derived(derivation(ctx, Base::Snapshot(&base), &ia, &primitives(ctx, &[1]), ProtectionMode::Net, &[]));
+    let tail = primitives(ctx, &[3, -5]);
+    let second = derived(derivation(ctx, Base::Derived(&first), &ia, &tail, ProtectionMode::Net, &[]));
+    assert_eq!(second.digest(ctx), retained_state(s, &[1, 3, -5]).0.digest(ctx));
+    assert_eq!(base.state().digest(ctx), solved, "the base is unchanged");
+    for value in [&first, &second] {
+        assert_eq!(value.identity(), &ia);
+        assert_eq!(value.lineage(), &Lineage::Snapshot(solved.clone()));
+        assert!(value.reachability().retained());
+    }
+    let from = second.derivation().expect("a derivation");
+    assert_eq!((&from.base, &from.word, from.letters), (&first.digest(ctx), &levels::word_digest(&tail), 2));
+    let verdict = levels::label_checkpoint(ctx, second.state(), second.reachability(), None).expect("no engine error");
+    assert_eq!(evidence_text(&verdict, "nu_source"), Some("retained_witness"), "{verdict:?}");
+
+    // The empty word derives the base's configuration.
+    let same = derived(derivation(ctx, Base::Derived(&second), &ia, &[], ProtectionMode::Strict, &[]));
+    assert_eq!(same.digest(ctx), second.digest(ctx));
+    let record = second.to_json(ctx);
+    let reference = record.get("ref").expect("a reference");
+    assert_eq!(reference.get("digest").and_then(Value::as_str), Some(second.digest(ctx).as_str()));
+    assert_eq!(reference.get("level").and_then(Value::as_str), Some("poses"));
+    assert_eq!(record.get("lineage").and_then(|l| l.get("revision")), Some(&Value::Null));
+}
+
+/// CT-ONE-09 (part: KN2.14's import in c600-jumble, which takes a raw pose table only with an open or promised claim,
+/// validates its form and identity, and makes a derived value with no derivation, no protection report and its own
+/// digest as its lineage; not run: the runtime's entry points and table rows, LP3, and the session store's import, M6).
+#[test]
+fn ct_one_09_a_raw_table_enters_with_an_open_or_promised_claim() {
+    let s = setup();
+    let ctx = &s.ctx;
+    let ia = ctx.identity(Some(&*s.menu));
+    let (state, _) = retained_state(s, &[2, -7, 11]);
+    let record = state.record(ctx);
+    let digest = state.digest(ctx);
+    let import = |record: &Value, identity: &IdentityBlock, claim| {
+        levels::import(ctx, Some(s.menu.clone()), record, identity, claim)
+    };
+    for claim in [stated(ReachKind::ByTheorem), stated(ReachKind::Refuted), Reachability::solved()] {
+        assert!(import(&record, &ia, claim).is_err());
+    }
+    for kind in [ReachKind::Open, ReachKind::Promised] {
+        let value = import(&record, &ia, stated(kind)).expect("the table reads").expect("the identity agrees");
+        assert_eq!(value.digest(ctx), digest);
+        assert_eq!((value.reachability().kind(), value.reachability().retained()), (kind, false));
+        assert_eq!(value.lineage(), &Lineage::Import(digest.clone()));
+        assert!(value.derivation().is_none() && value.protection().is_none());
+        assert_eq!(value.identity(), &ia);
+    }
+    let refusal = import(&record, &ctx.identity(None), stated(ReachKind::Open))
+        .expect("the table reads")
+        .expect_err("another identity block");
+    assert_eq!(refusal.code, codes::IDENTITY_MISMATCH);
+    assert!(import(&Value::Null, &ia, stated(ReachKind::Open)).is_err(), "no pose table");
+}
+
+/// CT-ONE-10 (whole: `label_checkpoint` on a derived value with an open claim answers unknown at ν = 0, for the import
+/// of the solved table, whose identity labels show ν = 0, and for a value derived from it, with ν = 0 supplied or not;
+/// the same word derived from the solved snapshot keeps a retained witness and answers yes).
+#[test]
+fn ct_one_10_a_derived_state_with_an_open_claim_answers_unknown_at_nu_zero() {
+    let s = setup();
+    let ctx = &s.ctx;
+    let ia = ctx.identity(Some(&*s.menu));
+    let solved = State::new(Some(s.menu.clone()));
+    let import = levels::import(ctx, Some(s.menu.clone()), &solved.record(ctx), &ia, stated(ReachKind::Open))
+        .expect("the table reads")
+        .expect("the identity agrees");
+    let word = primitives(ctx, &[1, 3, -5]);
+    let on = derived(derivation(ctx, Base::Derived(&import), &ia, &word, ProtectionMode::Net, &[]));
+    assert_eq!(on.reachability().kind(), ReachKind::Open);
+    let zero = vec![0i64; levels::NU_LEN];
+    for value in [&import, &on] {
+        for nu in [None, Some(zero.as_slice())] {
+            let verdict =
+                levels::label_checkpoint(ctx, value.state(), value.reachability(), nu).expect("no engine error");
+            assert!(matches!(verdict, Verdict::Unknown(_)), "{verdict:?}");
+        }
+    }
+    let snapshot = Snapshot::solved(Some(s.menu.clone()));
+    let retained = derived(derivation(ctx, Base::Snapshot(&snapshot), &ia, &word, ProtectionMode::Net, &[]));
+    assert_eq!(retained.digest(ctx), on.digest(ctx));
+    let verdict = levels::label_checkpoint(ctx, retained.state(), retained.reachability(), Some(zero.as_slice()))
+        .expect("no engine error");
+    assert!(matches!(verdict, Verdict::Yes(_)), "{verdict:?}");
+}
+
+/// CT-ONE-28 (part: a wordless import reads, compares and is a base for `derive`, whose value keeps the import's open
+/// claim and lineage; not run: display, LP3's views, and that no row proposes or adopts either value, LP3's command
+/// table and M6).
+#[test]
+fn ct_one_28_a_wordless_import_reads_compares_and_derives() {
+    let s = setup();
+    let ctx = &s.ctx;
+    let ia = ctx.identity(Some(&*s.menu));
+    let (state, _) = retained_state(s, &[2, -7, 11]);
+    let import = levels::import(ctx, Some(s.menu.clone()), &state.record(ctx), &ia, stated(ReachKind::Open))
+        .expect("the table reads")
+        .expect("the identity agrees");
+    for level in Level::ALL {
+        match (level, levels::project(ctx, import.state(), level).expect("no engine error")) {
+            (Level::StickerClass, Projection::Refused(refusal)) => assert_eq!(refusal.code, levels::LEVEL_NOT_HELD),
+            (_, Projection::Value(Partial::Total(_))) => {
+                let comparison = levels::compare(ctx, import.state(), &state, level).expect("no engine error");
+                assert!(matches!(comparison, Comparison::Total(Verdict::Yes(_))), "{}: {comparison:?}", level.name());
+            }
+            (level, other) => panic!("{}: {other:?}", level.name()),
+        }
+    }
+    let sticker = levels::sticker_test(ctx, import.state()).expect("no engine error");
+    assert_eq!(fact(&sticker), Some("labels_differ"));
+
+    let word = primitives(ctx, &[1]);
+    let on = derived(derivation(ctx, Base::Derived(&import), &ia, &word, ProtectionMode::Strict, &[]));
+    assert_eq!((on.reachability().kind(), on.lineage()), (ReachKind::Open, import.lineage()));
+    assert_eq!(on.derivation().map(|d| d.base.clone()), Some(import.digest(ctx)));
+    assert!(import.derivation().is_none());
+    assert_eq!(on.digest(ctx), run(ctx, &state, &word).0.digest(ctx));
+    let comparison = levels::compare(ctx, on.state(), import.state(), Level::Poses).expect("no engine error");
+    assert!(matches!(comparison, Comparison::Total(Verdict::No(_))), "{comparison:?}");
+}
+
+/// CT-LG2-07 (part: the jumbled puzzle's engine half, where a raw table enters only by `import` with a claim that is
+/// not witnessed and with validation, and a jumbling witness does not assert retained reachability; not run: the
+/// language's state types and their static guard, which wait in c600-syntax for the domain families, and
+/// 600-cell-Full's import, which c600-kernel does not build). A journal with a jumble twist witnesses its state but is
+/// no retained word: a value derived from it by retained letters keeps a witnessed claim that is not retained and
+/// answers unknown at the label checkpoint, while the same configuration derived from solved by retained letters
+/// answers yes.
+#[test]
+fn ct_lg2_07_a_jumbling_witness_does_not_assert_retained_reachability() {
+    let ctx = &setup().ctx;
+    let free = ctx.identity(None);
+    let (snapshot, inverse) = cayley_snapshot(ctx);
+    assert_eq!((snapshot.reachability().kind(), snapshot.reachability().retained()), (ReachKind::Witnessed, false));
+    let back = derived(derivation(ctx, Base::Snapshot(&snapshot), &free, &[inverse], ProtectionMode::Net, &[]));
+    let solved = State::new(None);
+    assert_eq!(back.digest(ctx), solved.digest(ctx));
+    assert_eq!((back.reachability().kind(), back.reachability().retained()), (ReachKind::Witnessed, false));
+    let word = primitives(ctx, &[1]);
+    let on = derived(derivation(ctx, Base::Derived(&back), &free, &word, ProtectionMode::Net, &[]));
+    assert!(!on.reachability().retained());
+    let verdict = levels::label_checkpoint(ctx, on.state(), on.reachability(), None).expect("no engine error");
+    assert!(matches!(verdict, Verdict::Unknown(_)), "{verdict:?}");
+
+    let retained =
+        derived(derivation(ctx, Base::Snapshot(&Snapshot::solved(None)), &free, &word, ProtectionMode::Net, &[]));
+    assert_eq!(retained.digest(ctx), on.digest(ctx));
+    assert!(retained.reachability().retained());
+    let verdict =
+        levels::label_checkpoint(ctx, retained.state(), retained.reachability(), None).expect("no engine error");
+    assert!(matches!(verdict, Verdict::Yes(_)), "{verdict:?}");
+    // A raw table never enters witnessed.
+    assert!(levels::import(ctx, None, &solved.record(ctx), &free, Reachability::solved()).is_err());
+}
+
+/// ONE.25: two values compare at one level. Off the lattice the comparison is made on the keys that both cover, with
+/// each side's missing part; an S-gauge image has equal labels and other poses; the sticker class is not held, and two
+/// identity blocks that differ are refused.
+#[test]
+fn compare_answers_partially_off_the_lattice() {
+    let s = setup();
+    let ctx = &s.ctx;
+    let cayley = cayley_state(ctx);
+    let solved = State::new(None);
+    let off = cayley.off_lattice_count();
+    for level in [Level::Labels, Level::Position] {
+        match levels::compare(ctx, &cayley, &solved, level).expect("no engine error") {
+            Comparison::Partial { covered: Verdict::Yes(evidence), a, b } => {
+                assert_eq!((a.off, a.collisions, b), (off, 0, Missing::default()), "{}", level.name());
+                let count = |key: &str| evidence.get(key).and_then(Value::as_i64);
+                assert_eq!(
+                    (count("differing"), count("a_only"), count("b_only")),
+                    (Some(0), Some(0), Some(a.uncovered as i64)),
+                    "{}",
+                    level.name()
+                );
+            }
+            other => panic!("{}: {other:?}", level.name()),
+        }
+        let itself = levels::compare(ctx, &cayley, &cayley, level).expect("no engine error");
+        assert!(matches!(itself, Comparison::Partial { covered: Verdict::Yes(_), .. }), "{itself:?}");
+    }
+    let not_held = levels::compare(ctx, &cayley, &solved, Level::StickerClass).expect("no engine error");
+    assert!(matches!(&not_held, Comparison::Refused(r) if r.code == levels::LEVEL_NOT_HELD), "{not_held:?}");
+    let other =
+        levels::compare(ctx, &State::new(Some(s.menu.clone())), &solved, Level::Poses).expect("no engine error");
+    assert!(matches!(&other, Comparison::Refused(r) if r.code == codes::IDENTITY_MISMATCH), "{other:?}");
+
+    let x = retained_state(s, &[2, -7, 11]).0;
+    let z = levels::act(ctx, &x, &class_gauge(ctx, GaugeClass::S)).expect("no engine error");
+    let labels = levels::compare(ctx, &x, &z, Level::Labels).expect("no engine error");
+    assert!(matches!(labels, Comparison::Total(Verdict::Yes(_))), "{labels:?}");
+    let poses = levels::compare(ctx, &x, &z, Level::Poses).expect("no engine error");
+    assert!(matches!(poses, Comparison::Total(Verdict::No(_))), "{poses:?}");
 }

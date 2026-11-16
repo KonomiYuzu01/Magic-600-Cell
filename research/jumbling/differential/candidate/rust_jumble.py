@@ -236,3 +236,26 @@ class RustJumbleEngine:
     def gauge_between(self, other, *, state=None):
         """A gauge γ with X·γ equal to the stored state `other` (sigma and t as base64 u32), or None."""
         return self.call('gauge_between', other=other, state=state)
+
+    # ------------------------------------------------------------------------ derived states (M8)
+    def derive(self, name, identity, base, *, letters=None, records=None, mode=None, protect=None):
+        """KN2.11's derive(base, word): `base` is {'derived': name} or {'state': name or None, 'journal':
+        records from solved}; the word is `letters` ([grip, item] pairs) or twist `records`; `mode` is 'net'
+        (the default) or 'strict'. The answer is the derived value, kept under `name` and never adopted, or
+        the refusal with its first refused prefix, outcome and certificates."""
+        return self.call('derive', name=name, identity=identity, base=base,
+                         letters=None if letters is None else self._letters(letters),
+                         records=None if records is None else list(records), mode=mode,
+                         protect=None if protect is None else [int(p) for p in protect])
+
+    def import_table(self, name, record, identity, reachability):
+        """KN2.14: a raw pose table as a derived value under `name`, with an open or promised claim."""
+        return self.call('import', name=name, record=record, identity=identity, reachability=reachability)
+
+    def compare(self, a, b, level):
+        """ONE.25's comparison at `level` of two operands, each {'state': name or None} or {'derived': name}."""
+        return self.call('compare', a=a, b=b, level=level)
+
+    def read_derived(self, op, name, **fields):
+        """`project`, `sticker_test`, `retained_checkpoint` or `label_checkpoint` on the derived value `name`."""
+        return self.call(op, derived=name, **fields)
