@@ -2,6 +2,12 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-16] update | Renderer selection drafts for the owner's signature
+The [selection record](../progress/1.0/renderer-selection.md) holds the gap check, the minimal measurement set and Fable's evaluation: no GPU measurement is needed to rank the three candidates, and Fable ranked S-A2 (Godot 4.7.2 .NET hosting the S-B core) first, S-D second and S-B third. ADR-R01, the [renderer freeze record](decisions/renderer-freeze.md) and the H-10 handoff stay drafts until the owner signs; when W-J runs on the selected candidate is the owner's choice, and nothing is frozen or ticked.
+
+## [2026-11-16] decision | Close the renderer line
+The owner decided how the stage 2.4 renderer line ends: the remaining measurements are cut to the minimum a sound selection needs, Fable evaluates the selection in place of packet E-2.4-05's Astra review, and the owner signs the selection ADR and the renderer freeze, after which the line ends ([decision](decisions/owner-decisions-2026-11-16-renderer-close.md)). The gate is unchanged, and no progress item is ticked.
+
 ## [2026-11-16] update | The language: M8's levels, end tests and derived values
 M8 adds the jumbled puzzle's levels to `rust/c600-jumble` (`src/levels.rs`): level crossings and projections (KN1.7, KN1.9), A5's three end tests under a reachability claim, shapes and gauges (KN1.14), and derived values (`derive` under Net or Strict protection, KN2.14's `import`, ONE.25's `compare`), each verdict naming its level and each compared with J1 on J1's fixtures (`tests/test_jumbling_rust_m8_levels.py`). Section 15.3's index now reads 67 of the 248 LP2 tests whole (9 by the union of their parts), 132 in part and 44 waiting; `nu`, `correction_set_check` and the session store's jumbling records wait.
 
