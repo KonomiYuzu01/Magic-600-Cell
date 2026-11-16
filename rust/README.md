@@ -716,8 +716,6 @@ run or not applicable is no pass (PHS.63).
     and `project` (KN1.9); and CT-ONE-19, with LP3's view model.
   - Derived states with an open reachability claim and KN2.14's raw-table import, which M4 does not build (3, no
     milestone named): CT-ONE-09, CT-ONE-10 and CT-ONE-28.
-  - LG5's module loader and lockfiles (7): CT-LG5-01 to CT-LG5-07. LP3 C4's `c600-module` builds closures and
-    lockfiles, but its tests name none of these rows.
   - KN5's command layer, once its candidate is picked (2): CT-KN5-05 and CT-KN5-08.
   - The stage checker, RPI.68 to RPI.76 (3, no milestone named): CT-LG2-15, CT-LG3-10 and CT-LG5-08.
   - Compressed words, KN2.10 (no milestone named): CT-LG4-03; the kernel's streaming runs CT-LG2-14 and CT-KN2-07 in
