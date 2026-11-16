@@ -97,6 +97,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "c600-repr"
+version = "0.0.0"
+dependencies = [
+ "c600-check",
+ "c600-command",
+ "c600-digest",
+ "c600-display",
+ "c600-ir",
+ "c600-kernel",
+ "c600-syntax",
+ "c600-tools",
+ "c600-view",
+]
+
+[[package]]
 name = "c600-run"
 version = "0.0.0"
 dependencies = [

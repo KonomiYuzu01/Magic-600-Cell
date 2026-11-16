@@ -1,0 +1,19 @@
+[package]
+name = "c600-repr"
+description = "The representations tool, headless half: layouts and atlases, map property checks and linked selection over the display plans, its 600 Cell Script entries and its view-aid manifest (LP3, C6)"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+c600-check = { path = "../c600-check" }
+c600-command = { path = "../c600-command" }
+c600-digest = { path = "../c600-digest" }
+c600-display = { path = "../c600-display" }
+c600-ir = { path = "../c600-ir" }
+c600-tools = { path = "../c600-tools" }
+
+[dev-dependencies]
+c600-kernel = { path = "../c600-kernel" }
+c600-syntax = { path = "../c600-syntax" }
+c600-view = { path = "../c600-view" }
