@@ -113,6 +113,8 @@ CHECKS += LANGUAGE_DOCS_CHECKS + [
     ["tests/test_language_rust.py"],
     # The Rust kernel (LP2, M4) replays the frozen oracle cases O01 to O07 and runs the KN2.9 agreement test.
     ["tests/test_kernel_oracle.py"],
+    # LP2 conformance tests outside the Rust workspace (chapter 12, section 15.3).
+    ["tests/test_format_inventory.py"],
 ]
 
 TIME_LIMIT_SECONDS = 1200
