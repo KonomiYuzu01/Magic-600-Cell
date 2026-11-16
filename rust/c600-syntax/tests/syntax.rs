@@ -65,6 +65,8 @@ fn candidate_a(list: &str) -> Vec<(Json, Vec<u8>)> {
         .collect()
 }
 
+/// CT-LG1-01 (part: a missing header in one file; the other files of a program and the mixed-edition clause are in
+/// `conformance_lg1.rs`): the file is refused at an insertion point and nothing after it is read.
 #[test]
 fn ct_lg1_01_a_missing_header_is_refused_at_an_insertion_point() {
     let file = parse(b"module m requires [];\n\nfn f() -> Int effects [] {\n    return 1;\n}\n");
@@ -74,6 +76,8 @@ fn ct_lg1_01_a_missing_header_is_refused_at_an_insertion_point() {
     assert!(file.module.is_none() && file.items.is_empty() && file.holes.is_empty());
 }
 
+/// CT-LG1-01 (part: an unsupported edition in one file; the other files of a program and the mixed-edition clause
+/// are in `conformance_lg1.rs`): the file is refused at its edition without trying another grammar.
 #[test]
 fn ct_lg1_01_another_edition_is_refused_without_trying_another_grammar() {
     for edition in ["6cs-draft-2", "lx8-0", ""] {
