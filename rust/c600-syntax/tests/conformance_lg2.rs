@@ -195,8 +195,8 @@ fn ct_lg2_01_generics_and_inference_keep_precision_unit_and_effect() {
 }
 
 /// CT-LG2-02 (part, guard only: the IR draft has no identity tower or domain families, so a Full piece, a jumbling
-/// piece, a pose, a sticker class, a label digest and a pose-table index cannot be written yet; the substitution and
-/// unification refusals wait for M4 and M5).
+/// piece, a pose, a sticker class, a label digest and a pose-table index cannot be written yet; not run: the
+/// substitution and unification refusals, which wait for those families in the IR).
 #[test]
 fn ct_lg2_02_identity_types_wait_for_the_domain_families() {
     let types = ["Piece", "Piece<Full>", "Piece<Jumbled>", "Pose", "StickerClass", "LabelDigest", "PoseTableIndex"];
@@ -205,8 +205,9 @@ fn ct_lg2_02_identity_types_wait_for_the_domain_families() {
     assert_guard(EVERYTHING);
 }
 
-/// CT-LG2-03 (part, guard only: levels, projections and labels wait for the identity tower, M4 and M5; no operation of
-/// the IR draft projects between levels or lifts labels to poses, and there is no class to treat as equality yet).
+/// CT-LG2-03 (part, guard only: no operation of the IR draft projects between levels or lifts labels to poses, and
+/// there is no class to treat as equality yet; not run: explicit partial projection, the refusal of a labels read off
+/// the lattice and classes kept apart from equality, which wait for the IR's identity tower).
 #[test]
 fn ct_lg2_03_no_projection_or_lift_exists_before_the_identity_tower() {
     assert_types_wait(&["Labels", "Projection", "Lattice", "Level"], "M4, M5");
@@ -290,8 +291,9 @@ fn ct_lg2_06_a_clock_reading_is_no_deterministic_budget() {
     assert!(codes(shown).is_empty(), "a display result shows a clock reading");
 }
 
-/// CT-LG2-07 (part, guard only: states, derived states, pose tables and reachability claims wait for the domain
-/// families, M4 and M5; a snapshot read gives base-typed data, never a state).
+/// CT-LG2-07 (part, guard only: a snapshot read gives base-typed data, never a state; not run: validating raw pose
+/// data into a state with a reachability claim, and a jumbling witness kept apart from retained reachability, which
+/// wait for the IR's domain families of states, derived states, pose tables and reachability claims).
 #[test]
 fn ct_lg2_07_no_state_enters_from_raw_data_before_the_domain_families() {
     assert_types_wait(&["State", "DerivedState", "PoseTable", "ReachabilityClaim", "Witness"], "M4, M5");
@@ -310,8 +312,9 @@ fn ct_lg2_08_menu_words_and_modes_do_not_lower_yet() {
     assert_types_wait(&["Mode", "Revision"], "M4, M5");
 }
 
-/// CT-LG2-09 (part, guard only: verdicts, partial projections and goal levels wait for the domain families, M4; the
-/// draft has exact booleans only, and an approximate comparison or a status is no condition).
+/// CT-LG2-09 (part, guard only: the draft has exact booleans only, and an approximate comparison or a status is no
+/// condition; not run: unknown passing as false, an off-lattice projection passing as unknown and a goal weakening
+/// its level, which wait for the IR's domain families of verdicts, partial projections and goals).
 #[test]
 fn ct_lg2_09_verdicts_wait_and_a_condition_is_an_exact_boolean() {
     assert_types_wait(&["Verdict", "Unknown", "Goal"], "M4");
@@ -322,8 +325,9 @@ fn ct_lg2_09_verdicts_wait_and_a_condition_is_an_exact_boolean() {
     assert_eq!(status, mismatch("Bool", "Status"));
 }
 
-/// CT-LG2-10 (part, guard only: goals, their levels and checkpoints wait for the domain families, M4; the draft has no
-/// implication between goals to check).
+/// CT-LG2-10 (part, guard only: the draft has no implication between goals to check; not run: the goal fixtures,
+/// equal labels against equal poses and a label checkpoint's retained word, which wait for the IR's domain families
+/// of goals, levels and checkpoints).
 #[test]
 fn ct_lg2_10_goals_wait_for_the_domain_families() {
     let goals = ["Goal", "ExactPose", "StickerTest", "LatticePlacement", "RetainedCheckpoint", "LabelCheckpoint"];

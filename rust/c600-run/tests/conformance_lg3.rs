@@ -149,8 +149,8 @@ fn ct_lg3_05_static_success_cannot_bypass_a_run_time_refusal() {
 }
 
 /// CT-LG3-06 (part: the static-only and the run-time variants of capability separation, checked separately; not
-/// applicable: the flow-label variant, which stays off until LQ2 sets the flow rule, BND.41, so it is no pass; the
-/// integrator records it under PHS.63). The static-only variant classifies each entry and refuses a preview in a
+/// run: the flow-label variant, not applicable while the flow rule stays off until LQ2 sets it, BND.41, so no pass;
+/// the integrator records it under PHS.63). The static-only variant classifies each entry and refuses a preview in a
 /// solving session at admission, leaving a state read to the open cell BND.59; it never emits
 /// `LG3:capability.flow_refused`. The run-time variant reads the stored blocks at preview admission, which the static
 /// variant cannot see: the same built-in entry is refused for a word an own tool saved and previews the same word

@@ -160,8 +160,8 @@ fn replay(name: &str, limit: usize) -> usize {
 }
 
 /// CT-KN1-01 (part: identity blocks and the registry here; snapshots and recipes of another model in
-/// `tests/load.rs`, `ct_kn1_01_values_of_another_model_are_refused`. A jumbling identity is only refused, since the
-/// jumbling half is M5's, and marking a value as recorded needs the session store, M6).
+/// `tests/load.rs`, `ct_kn1_01_values_of_another_model_are_refused`. A jumbling identity is only refused here, since
+/// the jumbling half is M5's; not run: marking a value as recorded, which needs the session store, M6).
 #[test]
 fn ct_kn1_01_identity_block_and_registry() {
     let kernel = kernel();
@@ -771,8 +771,8 @@ fn build_hashes_every_source_file() {
     assert!(digest.len() == 64 && digest.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f')));
 }
 
-/// CT-KN1-04 (part: the 600-cell-Full API of M4, whose one level is labels; the pose level and its projections come
-/// with the jumbling half, M5). An enumeration of the kernel's public functions finds no lift from a coarser level to
+/// CT-KN1-04 (part: the 600-cell-Full API of M4, whose one level is labels; not run: the jumbling half's pose level
+/// and projections, for M8). An enumeration of the kernel's public functions finds no lift from a coarser level to
 /// a finer one: a state comes only from `solved`, from `derive` on a label snapshot, or from `state_from_labels`, which
 /// reads a stored state back from labels at the same level (M6's store; it decides no reachability), a snapshot's
 /// field and constructor are private, and no public function names a pose.
@@ -813,9 +813,9 @@ fn ct_kn1_04_no_public_call_lifts_a_coarser_level() {
     assert!(source.contains("\n    fn new(model_id: &str, labels: Vec<i32>) -> Snapshot {"));
 }
 
-/// CT-PS1-04 (part: the labels half. `Digest<poses>` against J1 and the store helper is M5's and M6's. Confusing
-/// levels or hashing render floats cannot be expressed through M4's API, which holds the one level `Labels`, builds a
-/// snapshot only from labels and reads no render float, so no such refusal is run). `Digest<labels>` is the SHA-256
+/// CT-PS1-04 (part: the labels half; M4's API holds the one level `Labels`, builds a snapshot only from labels and
+/// reads no render float; not run: refusing confused levels or hashed render floats, which that API cannot express,
+/// and `Digest<poses>` against J1 and the store helper, M5's and M6's). `Digest<labels>` is the SHA-256
 /// of the labels as little-endian int32 in slot order (PS1.6), which is `core.state_hash`: on the solved state in
 /// `ct_kn1_05_labels_digest_is_the_oracle_state_hash`, on O03's scrambled initial state here, and on every row the
 /// replays compare. A protection verdict carries its level.
