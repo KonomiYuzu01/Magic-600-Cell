@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-16] update | The language: the Fable attack on the M1 checker
+The first proactive Fable task (owner, 15 November 2026) attacked the M1 checker read-only: all ten of its programs slipped past the checker, and each is now a test with its exact verdict that the checker refuses (pull request 149). Three leads that no test confirms yet stay open as M1 limits in `rust/README.md`.
+
 ## [2026-11-16] decision | LQ13: the syntax is candidate A (braces)
 The owner answered LQ13 after reading a one-page comparison of the three LX-8 candidates: the source syntax of 600 Cell Script follows candidate A, with declaration keywords, braces, local `let` and an explicit `return` ([decision](decisions/owner-decisions-2026-11-16-lq13.md)). The meaning is unchanged, since all three candidates lower the LX-8 corpus to the same IR; CT-RTE-18 stays not run, RTE.63 and the human-protocol fields stay open for any later human test, and no frozen text is edited.
 
