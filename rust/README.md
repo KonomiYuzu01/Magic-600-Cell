@@ -84,6 +84,20 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   also when an unresolved call or an open effect variable may prepare one.
 - What an own tool may read in a solving session stays open (BND.59): the checker reports the open cell and neither
   grants nor refuses it.
+- The built-in tool column of chapter 07's grant table (draft, LP2; LP3 asked for it): `admit_built_in` admits one entry
+  of a built-in tool in the solving profile against the rows its reviewed class lists (`Row`, BND.57); the IR has no
+  manifest, so the caller supplies them, and each summary lists the rows it may use (`Summary::rows`). It refuses with
+  `LG3:capability.not_granted` an entry that is not exported, an ungranted capability, an entry that both reads state
+  and prepares previews, a row the class does not list or the checker cannot name (an unresolved call, an open effect
+  variable), and a proposal or a word-carrying workspace write whose word the solver did not name to the entry, unless
+  an enabled declassifier covers the write. Not built: the column's two exceptions (CT-BND-17, CT-BND-18), the
+  derived-state row (the IR draft has no `derive`), rule 6's check of the facts a view shows and the class review
+  (CT-BND-15).
+- An entry that is no command and changes the workspace or prepares a preview is `LG3:effect.undeclared` at `entry`
+  (LG3.5, LG3.6), on the built-in column and, for a workspace change, in `admit`'s solving profile. This confirms and
+  closes LP3's finding of an exported plain `fn` that proposes: `check` admits it, since a command may call such a
+  helper. In tool authoring and research `propose` goes to a capture (BND.60), and the frozen text does not say whether
+  such a run needs a command entry, so `admit` still admits one there.
 - Base types (LG2.1). A value whose base type does not fit its use is the diagnostic `LG2:type.mismatch` at the path
   of the offending expression, with the expected and supplied types in source notation (`Diagnostic::mismatch`); the
   exactness fields stay empty. This covers arguments, conditions, branches and arms, patterns, operands, field reads,
@@ -119,15 +133,24 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   `LG2:type.exact_required`; a display-qualified result shows its qualifier instead, so a later exact use erases it. A
   call inside a `display_if` branch to a function that may reach the caller again, directly or through a function
   reference, is refused: approximate data cannot bound recursion. A workspace or snapshot read keeps the display
-  qualifier of every field the program stores under that name.
-- Known limits of M1, leads from the Fable attack (owner decision, 15 November 2026) that no test confirms yet: an
-  effect variable of a view's callable parameter instantiated at a call site with a workspace or preview effect is not
-  checked; recursion through a callable parameter whose bound has no effect variable is not traced; and the
-  approximate-control bit follows named functions only, not declared callable types.
-- Not in M1, because they need the runtime (M2, M3): the built-in tool column of the grant table, the fixed
-  acknowledgement of BND.43, the saved-word half of CT-LG3-07, the undo half of CT-LG3-03 and research output that
-  never becomes a solving preview (BND.61). M3 builds the acknowledgement, the saved-word half and BND.61's refusal
-  at run time (below); the built-in tool column and the undo half of CT-LG3-03 stay open.
+  qualifier of every field the program stores under that name, and a read at a type variable keeps the stored
+  qualifier itself, also in a record field (LG2.19; lead L1 of the M7 attack, 16 November 2026).
+- An approximate literal as a match pattern is `LG2:type.exact_required` at the match: it is never read as exact
+  (LG1.7), and a pattern compares as an exact equality does (lead L2 of the M7 attack).
+- The three known limits of M1, leads from the Fable attack (owner decision, 15 November 2026), each confirmed by an
+  attack test (`c600-check/tests/limits.rs`). Closed: an effect variable of a view's callable parameter that a call
+  site instantiates with a workspace or preview effect is `LG3:effect.undeclared` at the call (LG3.5, LG3.6), also
+  through a function value or a record field; recursion through a callable passed to a parameter whose bound has no
+  effect variable is traced (LG2.20); and a function value or closure keeps its approximate-control bit, so an exact
+  use of its result is `LG2:type.exactness_violation` (LG2.22). Open: a callable known only by its declared type
+  carries no control bit, since the IR draft's function type has no place for one, so an exact use of its
+  approximate result is `LG2:type.exact_required`; the refusal holds and only the code differs until the IR freeze
+  (PHS.49). A further lead, not yet fixed: recursion steered inside the callee, where a helper calls its callable
+  parameter in a `display_if` branch and is passed a function that reaches the helper again, is admitted.
+- Not in M1, because they need the runtime (M2, M3): the fixed acknowledgement of BND.43, the saved-word half of
+  CT-LG3-07, the undo half of CT-LG3-03 and research output that never becomes a solving preview (BND.61). M3 builds
+  the acknowledgement, the saved-word half and BND.61's refusal at run time (below); the undo half of CT-LG3-03 stays
+  open.
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
 
 ## Status of M7: the parser
