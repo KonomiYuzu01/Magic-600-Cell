@@ -56,6 +56,8 @@ CHECKS: list[list[str]] = [
     ["tests/test_jumbling_observations.py"],
     ["tests/test_jumbling_word_check.py"],
     ["tests/test_jumbling_session.py"],
+    # J1's public API (JI.52) and the source scan of the harness bindings (LP2, M5).
+    ["tests/test_jumbling_api.py"],
     ["tests/test_scramble.py"],
     ["tests/test_piece_filters.py"],
     ["tests/test_frame_preferences.py"],

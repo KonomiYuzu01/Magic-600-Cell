@@ -29,6 +29,7 @@ for _path in (JUMBLING, STAGE03 / 'scripts'):
         sys.path.insert(0, str(_path))
 
 from nucoords import C2F, C5F, NuCoords, vec  # noqa: E402
+from sim import api  # noqa: E402
 
 NAMES = tuple([f'b{o}' for o in range(35)] + [f'f{o}' for o in C2F] + [f'C5_{o}' for o in C5F])
 MODULI = (2,) * 43 + (5,) * 2
@@ -122,7 +123,7 @@ def centres_home(state):
     if not state.is_lattice():
         raise NuUndefined(f'{state.off_lattice_count()} pieces are off the lattice')
     data, kp = state.ctx.data, state.ctx.kplus
-    k = state._kpose()[state.pose_id[data.centre_pieces]]
+    k = api.piece_kplus(state)[data.centre_pieces]
     return not bool(np.any(kp.perms[k, data.centre_poles] != data.centre_poles))
 
 

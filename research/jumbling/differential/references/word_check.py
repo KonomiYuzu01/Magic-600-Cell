@@ -15,7 +15,6 @@ sys.dont_write_bytecode = True
 
 import argparse
 from collections.abc import Mapping
-import copy
 from dataclasses import asdict, dataclass
 import gzip
 import hashlib
@@ -40,13 +39,8 @@ def _research():
 def copy_state(state):
     """Copy live state data, sharing only context and immutable exact poses."""
     _research()
-    state = getattr(state, 'st', state)
-    trial = copy.copy(state)
-    trial.pose_id = state.pose_id.copy()
-    trial._poses, trial._lookup = list(state._poses), dict(state._lookup)
-    trial.journal = copy.deepcopy(state.journal)
-    trial._anchor_cache = {}
-    return trial
+    from sim import api
+    return api.copy_state(getattr(state, 'st', state))
 
 
 def _menu(state):
@@ -72,13 +66,15 @@ def word_digest(letters):
 def _heights(state):
     """Counts by left height in X5's bins, with X5's maximum above 6."""
     import numpy as np
+    from sim import api
     import trees
 
+    entries = api.pose_entries(state)
     result = dict.fromkeys(COUNT_KEYS, 0)
     result['max_above_6'] = None
     for pid, count in zip(*np.unique(state.pose_id, return_counts=True)):
-        pose = state._poses[int(pid)]
-        height = 0 if pose.kidx >= 0 else trees.dist(trees.factors(state._pose_matrix(int(pid)))[0])
+        pose = entries[int(pid)]
+        height = 0 if pose.kidx >= 0 else trees.dist(trees.factors(api.pose_matrix(state, int(pid)))[0])
         if height not in (0, 2, 4, 6) and height <= 6:
             raise ValueError(f'pose has unexpected I_a left height {height}')
         result[f'n_{height}' if height <= 6 else 'n_above_6'] += int(count)
@@ -173,6 +169,7 @@ def _check(state, letters, unit, cap, journal=False):
     import numpy as np
     import rim
     from differential.j1_state import twists_from_letters
+    from sim import api
 
     start = copy_state(state)
     menu = _menu(start)
@@ -185,7 +182,8 @@ def _check(state, letters, unit, cap, journal=False):
         raise ValueError('cap must be an integer in 0..599')
     before = start.lattice_flags()
     off0 = np.flatnonzero(~before).tolist()
-    poses0 = {p: start._poses[int(start.pose_id[p])].key for p in off0}
+    start_entries = api.pose_entries(start)
+    poses0 = {p: start_entries[int(start.pose_id[p])].key for p in off0}
     heights_before = _heights(start)
     N_before = rim.Domains(start).total_misalignment()
     u_before = _u(start, cap)
@@ -201,7 +199,8 @@ def _check(state, letters, unit, cap, journal=False):
         counts.append(end.off_lattice_count())
     after = end.lattice_flags()
     other = sorted(set(off0) - set(unit))
-    changed = tuple(p for p in off0 if not after[p] and end._poses[int(end.pose_id[p])].key != poses0[p])
+    end_entries = api.pose_entries(end)
+    changed = tuple(p for p in off0 if not after[p] and end_entries[int(end.pose_id[p])].key != poses0[p])
     changed_set = set(changed)
     others_changed = tuple(p for p in other if p in changed_set)
     exact = sum(not after[p] and p not in changed_set for p in other)
