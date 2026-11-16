@@ -9,7 +9,7 @@ use std::sync::Arc;
 use c600_check::check;
 use c600_run::interp::{code, load, Loaded, NoHost, Options, Run, LIST_PER_ELEMENT};
 use c600_run::meter::{self, Amounts, Outcome, Summary};
-use c600_run::value::{free_reduction, inverse, Compressed, List, Value};
+use c600_run::value::{equal, free_reduction, inverse, Compressed, List, Part, Value};
 use c600_syntax::{lower, parse};
 use num_bigint::BigInt;
 
@@ -443,4 +443,89 @@ fn a_compressed_word_keeps_equal_parts_once() {
     assert!(Arc::ptr_eq(&Compressed::concat(&empty, &u), &u));
     assert!(Arc::ptr_eq(&Compressed::concat(&u, &empty), &u));
     assert_eq!(empty.expand(&BigInt::from(0), 0), Some(vec![]));
+}
+
+/// A compressed word's parts rebuild it (LP2 draft; the RT1 transfer form's request): `from_parts` of `part_list`
+/// gives the same parts, length, height, size and letters, and an equal value, for a leaf, the empty word, a join of
+/// two different words, a word joined to itself, a nested join and 200 doublings.
+#[test]
+fn a_compressed_word_is_rebuilt_from_its_parts() {
+    let leaf = |letters: &[i32]| Arc::new(Compressed::leaf(letters.into()));
+    let (u, w) = (leaf(&[1, -2]), leaf(&[1200, -1200, 3]));
+    let joined = Compressed::concat(&u, &w);
+    let mut doubled = leaf(&[5]);
+    for _ in 0..200 {
+        doubled = Compressed::concat(&doubled, &doubled);
+    }
+    let nested = Compressed::concat(&joined, &Compressed::concat(&w, &joined));
+    for c in [u.clone(), leaf(&[]), joined, Compressed::concat(&u, &u), nested, doubled] {
+        let r = Compressed::from_parts(c.part_list().to_vec()).expect("a built word's parts");
+        assert_eq!(r.part_list(), c.part_list());
+        assert_eq!((r.length(), r.parts(), r.height(), r.size()), (c.length(), c.parts(), c.height(), c.size()));
+        let count = usize::try_from(c.length().min(&BigInt::from(7))).unwrap();
+        for start in [BigInt::from(0), c.length() - count] {
+            assert_eq!(r.expand(&start, count), c.expand(&start, count));
+        }
+        assert!(equal(&Value::Compressed(Arc::new(r)), &Value::Compressed(c)));
+    }
+}
+
+/// `from_parts` refuses what no compressed word holds (LP2 draft): no parts, a letter outside 1 to 1200, a
+/// concatenation of a part not before it or of an empty part, and a part the word does not reach. It accepts any other
+/// straight-line program, also a shape `concat` does not build, which equals only a word with the same parts, and it
+/// checks and reads a chain of 100,000 parts without recursion.
+#[test]
+fn from_parts_refuses_what_no_compressed_word_holds() {
+    let leaf = |letters: &[i32]| Part::Leaf(letters.into());
+    let refused = |parts: Vec<Part>| Compressed::from_parts(parts).err();
+    assert_eq!(refused(vec![]), Some("a compressed word without parts"));
+    for letter in [0, 1201, -1201, i32::MIN] {
+        assert_eq!(refused(vec![leaf(&[1, letter])]), Some("a letter outside 1 to 1200"));
+    }
+    // `leaf` checks no letters, so a word built from a letter outside the range has no transfer form.
+    let unchecked = Compressed::leaf([0].into());
+    assert_eq!(refused(unchecked.part_list().to_vec()), Some("a letter outside 1 to 1200"));
+    for parts in [
+        vec![Part::Concat(0, 0)],
+        vec![leaf(&[1]), Part::Concat(0, 1)],
+        vec![leaf(&[1]), Part::Concat(1, 0)],
+        vec![leaf(&[1]), Part::Concat(0, usize::MAX)],
+    ] {
+        assert_eq!(refused(parts), Some("a concatenation of a part not before it"));
+    }
+    for parts in [
+        vec![leaf(&[]), leaf(&[1]), Part::Concat(0, 1)],
+        vec![leaf(&[1]), leaf(&[]), Part::Concat(0, 1)],
+        vec![leaf(&[]), Part::Concat(0, 0)],
+    ] {
+        assert_eq!(refused(parts), Some("a concatenation of an empty part"));
+    }
+    for parts in [
+        vec![leaf(&[1]), leaf(&[2])],
+        vec![leaf(&[]), leaf(&[1])],
+        vec![leaf(&[1]), leaf(&[2]), Part::Concat(0, 0)],
+        vec![leaf(&[1]), Part::Concat(0, 0), leaf(&[2]), Part::Concat(0, 2)],
+    ] {
+        assert_eq!(refused(parts), Some("a part the word does not reach"));
+    }
+
+    // Shapes `concat` does not build: a later part first, and a part that two concatenations share.
+    let swapped = Compressed::from_parts(vec![leaf(&[1]), leaf(&[2]), Part::Concat(1, 0)]).unwrap();
+    assert_eq!((swapped.length(), swapped.height()), (&BigInt::from(2), 1));
+    assert_eq!(swapped.expand(&BigInt::from(0), 2), Some(vec![2, 1]));
+    let shared = Compressed::from_parts(vec![leaf(&[1, 2]), Part::Concat(0, 0), Part::Concat(0, 1)]).unwrap();
+    assert_eq!((shared.length(), shared.height()), (&BigInt::from(6), 2));
+    assert_eq!(shared.expand(&BigInt::from(1), 5), Some(vec![2, 1, 2, 1, 2]));
+    let u = Arc::new(Compressed::leaf([1, 2].into()));
+    let built = Compressed::concat(&u, &Compressed::concat(&u, &u));
+    assert_eq!(built.expand(&BigInt::from(0), 6), shared.expand(&BigInt::from(0), 6));
+    assert!(!equal(&Value::Compressed(Arc::new(shared)), &Value::Compressed(built)));
+
+    // A chain of 100,000 parts, each the part before it joined to the first.
+    let mut chain = vec![leaf(&[7])];
+    chain.extend((1..100_000).map(|k| Part::Concat(k - 1, 0)));
+    let deep = Compressed::from_parts(chain).unwrap();
+    assert_eq!((deep.length(), deep.height()), (&BigInt::from(100_000), 99_999));
+    assert_eq!(deep.expand(&BigInt::from(0), 2), Some(vec![7, 7]));
+    assert_eq!(deep.expand(&BigInt::from(99_998), 2), Some(vec![7, 7]));
 }
