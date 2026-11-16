@@ -5,11 +5,17 @@ Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 ## [2026-11-16] update | The 16 November decisions in the rule files
 At the owner's word ("write them all in"), `CLAUDE.md` carries points 4 and 5 of the [time-saving decision](decisions/owner-decisions-2026-11-16-time-saving.md), and the briefing records that decision and the [LQ13 answer](decisions/owner-decisions-2026-11-16-lq13.md) and no longer says that LQ13 waits. The briefing is an input of the frozen migration format packet, so its pin was refreshed under FP.1 with the old and new identities on the LQ13 page; no frozen clause, vector or dependency meaning changed.
 
+## [2026-11-16] update | The language: the Fable attack on the M1 checker
+The first proactive Fable task (owner, 15 November 2026) attacked the M1 checker read-only: all ten of its programs slipped past the checker, and each is now a test with its exact verdict that the checker refuses (pull request 149). Three leads that no test confirms yet stay open as M1 limits in `rust/README.md`.
+
 ## [2026-11-16] decision | LQ13: the syntax is candidate A (braces)
 The owner answered LQ13 after reading a one-page comparison of the three LX-8 candidates: the source syntax of 600 Cell Script follows candidate A, with declaration keywords, braces, local `let` and an explicit `return` ([decision](decisions/owner-decisions-2026-11-16-lq13.md)). The meaning is unchanged, since all three candidates lower the LX-8 corpus to the same IR; CT-RTE-18 stays not run, RTE.63 and the human-protocol fields stay open for any later human test, and no frozen text is edited.
 
 ## [2026-11-16] decision | Five ways to save the owner's time
 The owner chose five measures that save their time in the language's development: LQ13 is decided directly from a one-page comparison of the three LX-8 candidates without a human test, so CT-RTE-18 stays not run; LP4's non-author tests run at minimal scale; LP3's owner-machine runs are done together in one or two evenings; questions come at most once per milestone; and each phase exit gets one page of summary ([decision](decisions/owner-decisions-2026-11-16-time-saving.md)). No frozen bar moves; the frozen text that restates the old LQ13 procedure is superseded within the decision's scope.
+
+## [2026-11-15] update | The language: LP2 plan and the first checker over the IR draft
+LP2's [plan](../progress/1.0/language-lp2-plan.md) sets eight milestones, and its first, M1, adds the Rust workspace `rust/` with the IR draft `c600-ir-draft-1` and a checker for exactness, effects, capabilities, views and capability separation, tested against the two frozen exactness vectors and the M1 parts of CT-LG2-04, CT-LG2-05 and CT-LG3-01 to CT-LG3-04 and CT-LG3-07; CI runs it through `tests/test_language_rust.py`. Until LQ2 sets the flow rule the checker records the separation form but never emits `LG3:capability.flow_refused`, and it refuses an own tool's preview in a solving session as not granted, as chapter 07's interim table says.
 
 ## [2026-11-15] decision | Fable 5.2 for three proactive read-only tasks
 The owner chose to use Fable 5.2 beyond escalations for three read-only LP2 tasks, one at a time at effort `high`: attack tests for the M1 checker, crash-consistency tests for the M6 session store and the differential test design for the M4 kernel. `AGENTS.md` records it, and the frozen format packet's `AGENTS.md` pin was refreshed under FP.1 with the old and new identities on the decision page.

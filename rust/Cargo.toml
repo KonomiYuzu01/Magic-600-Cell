@@ -1,0 +1,9 @@
+# The Rust workspace of 600 Cell Script (LP2). See README.md.
+[workspace]
+resolver = "2"
+members = ["c600-ir", "c600-check"]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2021"
+publish = false
