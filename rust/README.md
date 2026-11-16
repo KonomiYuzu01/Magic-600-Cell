@@ -19,13 +19,16 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-session` | The session store below the language: the journal, revisions, snapshots, the commit path, undo, branches and program jobs (M6) |
 | `c600-evidence` | Chapter 06's evidence library as pure code: statements, keys and scopes, the AND/OR graph, grades and editions, the two standing passes, the word function with EVD.32's rows and EVD.40's checks, `CheckReport` admission, EVD.52's import rules and EVD.64's writer check |
 | `c600-command` | The command layer over H-08's stored table (KN5, chapter 08 section 7), the shell's tokens and key routes, and the loop runner `c600-lp3-oracle` (LP3, C1) |
+| `c600-view` | The headless view model, view lane and view budget: Global, Local and further views, revision binding and statuses, visibility, and the views' limits and allowances (LP3, C2) |
+| `c600-display` | The headless display contract: display plans and publications, the host validator, the publication state machine over a mock backend, picks and frame stamps, and RM.37's jumbling crosswalk as fixtures (LP3, C2) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
 checker; its tests run checked source programs, so the checker and the syntax crate are its dev-dependencies. The
 kernel depends on the digest crate only. The session crate depends on the kernel, the interpreter, the IR and digest
 crates; its job tests run checked source programs too. The evidence library depends on the digest crate only.
-The command layer depends on the kernel and digest crates only, so it has no path to the interpreter (ONE.48).
+The command layer depends on the kernel and digest crates only, so it has no path to the interpreter (ONE.48). The
+view model depends on the digest crate only, and the display contract on the digest and kernel crates.
 
 ## Running the tests
 
@@ -548,3 +551,41 @@ run or not applicable is no pass (PHS.63).
   digest. A scoped re-check found all three fixed and no new blocking finding.
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run. The timings the loop
   check prints are informational, not performance evidence.
+
+## Status of LP3, C2: display and views
+
+- `c600-view` is the host side of chapter 10's view interfaces without a device: which views are open, which engine
+  revision they show, which program output may attach to it, what the view lane runs next and what the views cost.
+  Global and Local are always open and visible; further views open and close through `view.open` and `view.close`
+  (RPI.81 to RPI.83). A complete engine bundle is adopted whole or not at all (RPI.9, ONE.60, ONE.61); output bound to
+  an older revision shows as stale and is never drawn over a revision it does not match (ONE.12, ONE.63, RPI.13). The
+  view lane keeps one runner and one newest pending request (KN7.2, LI.22 to LI.25, ONE.64). Hidden views do no work
+  (RPI.11, RM.25), and the view budget charges RM.11's limits, RM.13's output allowance and RM.38's frame work.
+- Tests (`c600-view/tests/view_rows.rs`): CT-RPI-03, CT-RPI-06, CT-RPI-07, CT-RPI-36, CT-RPI-37, CT-RM-02 and
+  CT-ONE-30; the limit half of CT-RPI-22; rows 1, 2, 7 and 9 of CT-RM-09's RM.40 table. Supporting tests cover ONE.10's
+  reuse after undo, RM.11's profile validation, RM.12's admission ceiling, RM.35's malformed output and RPI.9's bundle
+  faults.
+- Drafts, which freeze with the IR and the command table: the list in the crate documentation, among them Global and
+  Local's fixed IDs, `LG3:capability.not_granted` for a recomputation that names a view row (RPI.83 names no code), a
+  separate command-ID namespace for scheduled recomputations (LI.25), the status precedence (RPI.13, charter D2), and an
+  LEB128 byte form standing in for H8's canonical output bytes.
+- `c600-display` is the host side of chapter 10's display plans and RM's feature matrix without a renderer. The
+  validator checks RPI.10, RM.11, RM.12 and RM.20 in the order invalid, unsupported, ceiling. A publication installs
+  whole or not at all and ends in exactly one KN5.21-style terminal, standalone or scheduled (RM.17 to RM.26, LI.25);
+  a mock backend stands in for an adapter (RPI.55, RM.33). Picks resolve by instance ID through the installed source
+  map, never through a chart inverse, and stale picks name the field that changed (RM.10, RM.24, RPI.24, RPI.25).
+- Display tests (`c600-display/tests/`): CT-RPI-02, CT-RPI-04, CT-RPI-05, CT-RPI-09, CT-RPI-10, CT-RPI-11,
+  CT-RPI-27, CT-RM-03 and CT-RM-04; CT-RPI-08's 600-cell-Full rows (F01 to F17, with J02 and J04 unsupported on
+  Full); the stale half of CT-RPI-12; RM.37's fifteen rows of CT-RM-07 as fixture payloads over the Full geometry
+  digests.
+- Display drafts: the list in the crate documentation, among them the validation order, string dependency keys,
+  set digests over sorted piece IDs, canonical JSON standing in for the output bytes, form `stop` for every error
+  after acceptance, and a publication to a view that is not open being invalid.
+- Not built: CT-RPI-22's chart half (the display-plan validator now exists; it is C2's next piece); CT-RPI-08's
+  jumbling rows and the posed producer wait for M5; a decoder from the interpreter's values needs list types in the
+  IR (LP2); the user-stage checker (RPI.68 to RPI.80), so F05 and F26 stay unsupported; CT-RM-09's rows 3 to 6, 8
+  and 10 (the raster
+  bound, frame-report stops and device-fault quarantine) need a user-stage checker or a device; RM.38's weight table,
+  device loss and `display_unsupported` belong to the renderer and its backend.
+- Evidence kind: source and synthetic. Every ceiling in the tests is a fixture value; nothing is measured, and nothing
+  advertises support or a profile (RPI.82, RM.40).
