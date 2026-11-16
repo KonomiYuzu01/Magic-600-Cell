@@ -371,9 +371,9 @@ fn ct_det_01_each_run_input_changes_the_result_and_ambient_state_does_not() {
 }
 
 /// CT-DET-02 (part: completed exact runs repeated on the platform that runs the test, against bytes pinned from an
-/// independent computation; not run: the headless Linux leg, since CI runs `cargo test` on its Windows shards only
-/// (no owner yet), and evidence records and the host envelope (M6)): payload bytes, charge rows and checker reports of
-/// completed exact runs repeat byte for byte and match their pinned values.
+/// independent computation, Windows on the headless shards and headless Linux in the Linux Rust job,
+/// `.github/workflows/linux-rust.yml`; not run: evidence records and the host envelope (M6)): payload bytes, charge
+/// rows and checker reports of completed exact runs repeat byte for byte and match their pinned values.
 #[test]
 fn ct_det_02_completed_exact_runs_repeat_their_pinned_bytes() {
     let two = build(&[&source("random", TWO)]);
@@ -845,10 +845,10 @@ fn ct_det_13_outcomes_stay_distinct_and_only_completion_has_a_result() {
     assert_eq!(not_run.code, code::IR_REJECTED);
 }
 
-/// CT-DET-15 (part: exact and approximate display fields on the platform that runs the test, with binary64 as the
-/// reference at the declared precision; not run: the headless Linux leg (no owner yet), and display plans of the maths
-/// library (LP3)): exact fields compare byte for byte; an approximate field equals the binary64 result at its declared
-/// precision; and perturbing an approximate input changes no exact decision.
+/// CT-DET-15 (part: exact and approximate display fields on the platform that runs the test, Windows on the headless
+/// shards and headless Linux in the Linux Rust job, with binary64 as the reference at the declared precision; not
+/// run: display plans of the maths library (LP3)): exact fields compare byte for byte; an approximate field equals the
+/// binary64 result at its declared precision; and perturbing an approximate input changes no exact decision.
 #[test]
 fn ct_det_15_exact_fields_ignore_approximate_perturbation() {
     let loaded = build(&[&source(

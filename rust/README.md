@@ -474,8 +474,9 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 
 ## Status of M5: the jumbling half
 
-- `c600-jumble` is a candidate engine for the rigid jumbling puzzle under the state contract of 9 October 2026 with
-  A1 to A4. It is built from `assets/` alone and reads nothing from the research reference J1 (PHS.18); its import
+- `c600-jumble` is a candidate engine for the rigid jumbling puzzle under the state contract with amendments A1 to
+  A6 (`state-contract 2026-11-15 A1-A6`, the pin JI.3 names; owner decision, 16 November 2026). It is built from
+  `assets/` alone and reads nothing from the research reference J1 (PHS.18); its import
   scan under `differential/independence.py` finds no harness or J1 module in the Python client
   (`research/jumbling/differential/candidate/rust_jumble.py`). The integrator's selections 1 to 6 (exact numbers,
   record families, free mode, Net protection at pose level, batches, the classification budget) are in the crate
@@ -563,10 +564,13 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   with no budget or cancellation and no pruning except at N = 0, where the grid is the identity alone and one
   comparison decides; the order of refusals; 600-cell-Full resolves against the pinned menu and refuses a free binding
   with `KN2:input.menu_binding_mismatch`.
-- Unchanged: selection 2 (a journal's float request is an adapter error) and `CONTRACT_REVISION`, which still names
-  A1 to A4 although the state contract's revision is now `state-contract 2026-11-15 A1-A6`; renaming it changes the
-  identity block J1 is compared with, so it waits for the integrator. KN3.3's exact double description is `dd`; no
-  separate polytope API was added.
+- Unchanged: selection 2 (a journal's float request is an adapter error). `CONTRACT_REVISION` now names
+  `state-contract 2026-11-15 A1-A6` in the identity block and in the repair list's parameters (owner decision,
+  16 November 2026, `docs/wiki/decisions/owner-decisions-2026-11-16-lp2-questions.md`). J1 still stamps
+  `state-contract 2026-10-09 A1-A4`, a known J1 defect that stays in J1; `tests/test_jumbling_rust_m8_observations.py`
+  maps J1's stamp to the engine's in its comparison and nowhere else, and KN1.4 refuses J1's stamp at the candidate
+  (`tests/test_jumbling_rust_attacks.py`, `StampTests`). KN3.3's exact double description is `dd`; no separate
+  polytope API was added.
 - M8 observations (LP2 plan, section 11; JI.6, JI.7 and JI.12): `c600-jumble/src/observe/cuts.rs` builds
   `rim_summary`, `release_check`, `covers` and `repair_list`, exact and read-only. The adapter serves them and
   `rust_jumble.py` calls them. `tests/test_jumbling_rust_m8_observations.py` compares each with J1 on the states J1's
@@ -792,19 +796,21 @@ run or not applicable is no pass (PHS.63).
     N01 to N04 through the kernel (M4's section); `tests/test_jumbling_rust_candidate.py` compares the jumbling
     candidate with J1 (M5's section); `tests/test_jumbling_rust_attacks.py` runs Fable's M5 attack leads, with J1's
     faults as expected failures (M5's section).
-- Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them) and
-  KN5's stages 1 and 2, as `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the
-  tool): 62 whole, eight of them by the union of their parts (CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04,
-  CT-LG3-01, CT-LG3-04 and CT-LG5-06); 130 part; 4 named only by LP3's command-layer tests, as parts without a marker
+- Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them),
+  KN5's stages 1 and 2 and the Linux Rust job, as `tools/language/ct_index.py --summary` prints it
+  (`tests/test_ct_index.py` checks the tool): 63 whole, eight of them by the union of their parts (CT-KN1-05,
+  CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01, CT-LG3-04 and CT-LG5-06); 129 part; 4 named only by LP3's command-layer tests, as parts without a marker
   (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); 1 missing despite its name (CT-KN5-08: only the documentation in
   `c600-command/src/layer.rs` names it); 51 waiting, each with what it waits for in
   `docs/progress/1.0/lp2-ct-index-notes.md`.
+- The headless Linux legs of CT-DET-02, CT-DET-15 and CT-PS1-01 run in the Linux Rust job
+  (`.github/workflows/linux-rust.yml`, owner decision of 16 November 2026), against the same pinned bytes as the
+  Windows shards, so CT-PS1-01 is whole. The Python comparisons with J1 still run on the Windows shards only.
 - Not run or not applicable, which is no pass (PHS.63), with the check that runs instead: CT-LG3-06's flow-label
   variant, while the flow rule is off (BND.41) and LQ2 has not set it, so the static-only and run-time variants run
-  (`c600-run/tests/conformance_lg3.rs`); CT-LG1-03's second host context, since CI runs on Windows only and the editor
-  services that host the formatter come with LP4; CT-LG4-01's second admitted route, since RT1 is the only one (LQ9);
-  CT-BND-11's ONE.32 fields in other profiles, which never arise (BND.60); the Linux legs of CT-DET-02, CT-DET-15 and
-  CT-PS1-01, since CI has no Linux cargo job; form 2 in CT-DET-32, since RT1 runs form 1 only (the LP2 plan's
+  (`c600-run/tests/conformance_lg3.rs`); CT-LG1-03's second host context, since the editor services that host the
+  formatter come with LP4; CT-LG4-01's second admitted route, since RT1 is the only one (LQ9); CT-BND-11's ONE.32
+  fields in other profiles, which never arise (BND.60); form 2 in CT-DET-32, since RT1 runs form 1 only (the LP2 plan's
   selection, which the owner may overrule); ERR.1 for the six codes `c600-command` names as drafts that chapter 13
   does not register, which `tests/test_language_scans.py` lists exactly (`UNREGISTERED_DRAFTS`); the parts of the
   session's rows that their markers leave to LP3's view, display, command layer and runtime process, to A6's live

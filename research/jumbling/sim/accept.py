@@ -51,10 +51,33 @@ from sim.twists import _input_quaternion, nearest_parameter  # noqa: E402
 OUT = HERE / 'acceptance.json'
 WORKERS = 4
 SEED = 20261009
-PRIM = None          # retained slot moves (src, dst, offsets), loaded before the pools fork
+PRIM = None          # retained slot moves (src, dst, offsets); _pool hands them to the workers
 INDEP = None         # shared input of the independent recomputation workers
 COMPARE_STATE = None
 MENU_CONTROLS = None
+
+
+def _share(prim, indep, compare_journal, menu_controls):
+    """Pool initializer. The workers read the four globals above, which only a forked worker
+    inherits, so they arrive here as arguments and every start method works: spawn on Windows,
+    and forkserver, Python 3.14's default on Linux. A forked worker keeps the state and menus it
+    inherited, so under fork nothing changes. Another worker replays the state from its journal and
+    rebuilds the menus from their records, which give the same configuration and the same items in
+    the same order."""
+    global PRIM, INDEP, COMPARE_STATE, MENU_CONTROLS
+    PRIM, INDEP = prim, indep
+    if COMPARE_STATE is None and compare_journal is not None:
+        COMPARE_STATE = sim.State.replay(compare_journal, sim.get_context())
+    if MENU_CONTROLS is None and menu_controls is not None:
+        ctx = sim.get_context()
+        MENU_CONTROLS = [(sim.TwistMenu.from_record(ctx, record), forms) for record, forms in menu_controls]
+
+
+def _pool():
+    """A pool of WORKERS processes that receive the current shared inputs as arguments (_share)."""
+    compare = None if COMPARE_STATE is None else COMPARE_STATE.journal_json()
+    menus = None if MENU_CONTROLS is None else [(menu.record(), forms) for menu, forms in MENU_CONTROLS]
+    return Pool(WORKERS, initializer=_share, initargs=(PRIM, INDEP, compare, menus))
 
 
 def timed(fn, *a):
@@ -187,7 +210,7 @@ def section_generators(ctx):
                                 'sticker (A, f) -> slot(dst(A), perm_k(f)) equals every primitives.npz slot move, '
                                 'and the stickers it fixes are exactly those absent from primitives.npz',
                                 'dest region index = L(src region index) with L = F_f\'^-1 r_k F_f in A4_0']}
-    with Pool(WORKERS) as pool:
+    with _pool() as pool:
         rows = pool.map(_gen_worker, range(1200), chunksize=25)
         a4rows = pool.map(_a4_worker, range(600), chunksize=10)
     keys = ['admissible', 'moved_3097', 'signature_certificates', 'labels_equal_primitives', 'frames_agree',
@@ -397,7 +420,7 @@ def independent_survey(ctx, st):
         out = W.implied(verts)
         caps[x] = {'verts': verts, 'facets': near, 'poles': [e for e in range(600) if e not in out and e != x]}
     INDEP = {'caps': caps}
-    with Pool(WORKERS) as pool:
+    with _pool() as pool:
         built = dict(pool.map(_indep_dd, list(choice.items()), chunksize=64))
     posed, groups, caps_posed = {}, {}, {}
     for p in off.tolist():
@@ -408,7 +431,7 @@ def independent_survey(ctx, st):
         if (pid, choice[p]) not in caps_posed:
             caps_posed[(pid, choice[p])] = [matvec(g, v) for v in caps[choice[p]]['verts']]
     INDEP = {'posed': posed, 'groups': groups, 'caps_posed': caps_posed}
-    with Pool(WORKERS) as pool:
+    with _pool() as pool:
         status = dict(pool.map(_indep_grip, range(600), chunksize=10))
     return status, posed
 
@@ -645,7 +668,7 @@ def _roundtrip_worker(i):
 
 
 def section_round_trips(ctx):
-    with Pool(WORKERS) as pool:
+    with _pool() as pool:
         rows = pool.map(_roundtrip_worker, range(20), chunksize=1)
     return {'sequences': rows, 'count': len(rows), 'seed': SEED,
             'all_length_at_least_8': all(r['length'] >= 8 for r in rows),
@@ -692,7 +715,7 @@ def section_grouped_per_piece(ctx, e2_state, e3_state):
     res = {'seed': SEED + 17, 'method': 'State.classify_per_piece; every off-lattice piece individually; exact integer Q(sqrt5) signs; no superset, anchor or filter'}
     for name, st, grips in states:
         COMPARE_STATE = st
-        with Pool(WORKERS) as pool:
+        with _pool() as pool:
             rows = pool.map(_compare_grip, grips, chunksize=10)
         admissible = sum(r['admissible'] for r in rows)
         res[name] = {'grips': grips, 'off_lattice_pieces': st.off_lattice_count(),
@@ -1045,7 +1068,7 @@ def section_menu_controls(ctx):
         a = np.array([[x * (e // d) for x in aa] for aa, _, d in forms], dtype=object).reshape(-1, 4, 4)
         b = np.array([[x * (e // d) for x in bb] for _, bb, d in forms], dtype=object).reshape(-1, 4, 4)
         MENU_CONTROLS.append((menu, (a, b, e)))
-    with Pool(WORKERS) as pool:
+    with _pool() as pool:
         rows = pool.map(_menu_control_cap, range(600), chunksize=10)
     res = {'transporters_per_cap': 12, 'method': 'exact Q(sqrt5) conjugation by F_c and each K+ product F_c a; integer object arrays, no floats'}
     for i, menu in enumerate(menus):
