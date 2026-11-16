@@ -9,7 +9,8 @@ undefined fields and refusals included:
 - `release_check` against `leads/x5_release.release_check` on census seed 7101 before steps 44, 70 and 97, each
   step's first letter, and a blocked letter and a bad cap before step 97 (J1's `tests/test_jumbling_leads_repair.py`);
 - `covers` against `leads/covers.covers_query` on census seed 7101 before step 17 at the cap of the step's first
-  letter, and at a blocked and a closed meeting cap (J1's `tests/test_jumbling_leads_covers.py`);
+  letter, and at a blocked and a closed meeting cap, and before steps 30 and 33 at the repair's cap, where J1's
+  recorded flags say that c covers d and that d covers c (J1's `tests/test_jumbling_leads_covers.py`);
 - `repair_list` on census seed 7101 before step 97 at cap 458 (J1's `tests/test_jumbling_leads_repair.py`): the
   completed list against J1's recorded density list, every outcome and row through J1's own `compare_recorded`; and
   against `leads/repair_list.repair_list` run live, a 50-pair cut-off, a cancellation at the eleventh check, a zero
@@ -48,14 +49,14 @@ NAMED_OBJECT_INVALID = 'KN2:input.named_object_invalid'
 KERNEL_COST = 'KN7:budget.kernel_cost'
 RIM_FIELDS = ('N_c', 'In_c', 'Out_c', 'A_c', 'F_c', 'at_floor')
 CENSUS_SEED = 7101
-CENSUS_STEPS = (17, 44, 70, 97)
+CENSUS_STEPS = (17, 30, 33, 44, 70, 97)
 
 _SECONDS = {}
 _ENGINES = {}
 
 
 def setUpModule():
-    global np, census, R, obs_refs, O, X5, CV, RL, X1, sim, rim
+    global np, census, R, obs_refs, O, X5, CV, RL, X1, sim, rim, X4
     try:
         import numpy as np
     except ImportError as error:
@@ -68,6 +69,7 @@ def setUpModule():
     from differential.leads import x5_release as X5
     from differential.leads import covers as CV
     from differential.leads import repair_list as RL, x1_walk as X1
+    from differential.leads import x4_covers as X4
     import sim
     import rim
     if Path(census.seams.CACHE).resolve().is_relative_to(ROOT):
@@ -151,8 +153,8 @@ def _clone(S):
 
 @lru_cache(maxsize=1)
 def _census_states():
-    """{n: (word, S)}: J1's restorer before steps 17, 44, 70 and 97 of census seed 7101, in one walk, with each step's
-    recorded word: the states of J1's covers, release-check and repair-list tests."""
+    """{n: (word, S)}: J1's restorer before steps 17, 30, 33, 44, 70 and 97 of census seed 7101, in one walk, with each
+    step's recorded word: the states of J1's covers, recorded-flags, release-check and repair-list tests."""
     started = perf_counter()
     states = {}
     for step in census.walk(CENSUS_SEED, last=max(CENSUS_STEPS)):
@@ -361,6 +363,33 @@ class CoversTests(TimedCase):
                 self.assert_same(error, timed('j1 covers', CV.covers_query, S, d), f'cap {d}')
         self.assertEqual(candidate().record()['digest'], before)
         self.assertEqual(S.st.digest(), before)
+
+    def test_census_steps_30_and_33_match_j1_at_the_recorded_flags(self):
+        """J1's recorded-flags test (`tests/test_jumbling_leads_covers.py`): census seed 7101 before steps 30 and 33,
+        the first repairs (c, x) (d, y) (c, z) whose recorded flags say that c covers d and that d covers c. At the
+        repair's cap c the completed table equals `covers_query`, and the row of d holds in both directions the exact
+        answer of J1's `x4_covers.compare_recorded_flags`, which also checks that J1's float test reproduces both
+        recorded flags; so a true answer in each direction is compared. Nothing changes the state."""
+        flags = X4.recorded_flags()
+        for n, flag in ((30, 'c_covers_d'), (33, 'd_covers_c')):
+            with self.subTest(step=n):
+                word, S = at_census(n)
+                (c, _), (d, _), _ = word
+                before = S.st.digest()
+                reference = timed('j1 covers', CV.covers_query, S, c)
+                self.assertEqual(reference.status, 'completed', reference.message)
+                answer = timed('candidate covers', candidate().covers, c)
+                self.assert_same(answer, reference, f'step {n}, cap {c}')
+                row = next(row for row in answer['answers'] if row['cap'] == d)
+                step = census.Step(n, 'conj', word, None, S)
+                pairs = timed('j1 recorded flags', X4.compare_recorded_flags, step, flags[n])
+                self.assertEqual(sorted(pair['recorded_flag'] for pair in pairs), ['c_covers_d', 'd_covers_c'])
+                for pair in pairs:
+                    name = pair['recorded_flag']
+                    self.assertEqual(row[name], json.loads(json.dumps(pair['exact'])), f'step {n}: {name}')
+                self.assertIs(row[flag]['covers'], True, f'step {n}: {flag}')
+                self.assertEqual(candidate().record()['digest'], before)
+                self.assertEqual(S.st.digest(), before)
 
     def test_a_bad_cap_and_an_exhausted_budget(self):
         """Through the adapter: a cap outside 0..599 is refused with KN2:input.named_object_invalid (J1 raises), a
