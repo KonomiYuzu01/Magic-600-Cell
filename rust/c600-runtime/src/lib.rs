@@ -56,7 +56,7 @@
 //!    confinement of the child.
 //! 5. **Resource bounds** (KI.15, "resource bounds"): [`wire::MAX_FRAME`] both ways, checked before any payload
 //!    byte is allocated; [`codec::TYPE_DEPTH`] for transferred IR types; [`codec::COMPRESSED_LENGTH_BITS`] for the
-//!    lengths a transferred compressed word derives (draft 15); values decode without recursion; every
+//!    lengths that a frame's compressed words derive together (draft 15); values decode without recursion; every
 //!    length is checked against the bytes left before allocation; [`parent::STDERR_TAIL`] bytes of standard error
 //!    are kept; the child keeps at most 1024 distinct host refusal codes of at most 256 bytes. A call above the frame
 //!    bound stops the run with `KN7:resource_limit.host_exhausted`, and so does an answer above it; a job above it is
@@ -108,14 +108,15 @@
 //!     gives them: a leaf as its letters, a concatenation as its two part numbers. The receiver rebuilds the word with
 //!     the checked `Compressed::from_parts`, which derives the lengths, heights and logical size again. Compressed
 //!     words compare by their parts, so equal words have equal bytes. `from_parts` derives a length for every part,
-//!     and a chain of n doublings derives about n²/2 bits, so both sides first bound the derived lengths' bits
-//!     together by [`codec::COMPRESSED_LENGTH_BITS`], a frame's bits: up to 16,382 doublings of one letter cross. A
-//!     word above the bound is refused when encoded and a frame that carries one is malformed. The interpreter
-//!     builds words without that bound, so above it the two executors differ: as a host's answer such a word
-//!     reaches the run in process, while the parent answers the child's call with `PS1:input.noncanonical_value`
-//!     (draft 7). Both executors refuse a compressed word as an argument at the start stage, since it has no
-//!     DET.59 output form, and so no run returns or outputs one; the parent now sends it, and the child refuses it
-//!     with the same detail as `Loaded::run`.
+//!     and a chain of n doublings derives about n²/2 bits, so both sides first bound the derived lengths' bits of
+//!     all the compressed words in a frame together by [`codec::COMPRESSED_LENGTH_BITS`], a frame's bits: one word
+//!     of up to 16,382 doublings of a letter crosses in a frame, or two of up to 11,583. Compressed words above the
+//!     bound are refused when encoded, and a frame that carries them is malformed. The interpreter builds words
+//!     without that bound, so above it the two executors differ: as a host's answer such words reach the run in
+//!     process, while the parent answers the child's call with `PS1:input.noncanonical_value` (draft 7). Both
+//!     executors refuse a compressed word as an argument at the start stage, since it has no DET.59 output form,
+//!     and so no run returns or outputs one; the parent sends one within the bound, and the child refuses it with
+//!     the same detail as `Loaded::run`.
 
 #![forbid(unsafe_code)]
 

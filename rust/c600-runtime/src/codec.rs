@@ -9,8 +9,8 @@
 //! set's elements and a map's keys strictly increasing in the canonical key order, a compressed word's parts as
 //! `Compressed::from_parts` takes them), so equal values have equal bytes. Values are walked with an explicit stack
 //! in both directions, so a deep value cannot overflow either process's stack. A compressed word crosses as its parts
-//! in order, by which compressed words compare, and the receiver rebuilds it with `from_parts` once the parts' derived
-//! lengths are within [`COMPRESSED_LENGTH_BITS`] (C3 draft 15).
+//! in order, by which compressed words compare, and the receiver rebuilds it with `from_parts` once the lengths that
+//! the payload's compressed words derive are within [`COMPRESSED_LENGTH_BITS`] together (C3 draft 15).
 
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
@@ -177,24 +177,26 @@ fn decode_letters(d: &mut Dec) -> Result<Vec<i32>, Malformed> {
     Ok(letters)
 }
 
-/// The most bits that a compressed word's derived part lengths may take together: as many as one frame holds (C3
-/// draft 15). `Compressed::from_parts` derives a length for every part, and a chain of n doublings derives about n²/2
-/// bits in all, so both sides bound them before a word is rebuilt: a word above the bound is refused when encoded and
-/// when decoded. The interpreter builds words without this bound.
+/// The most bits that the derived part lengths of all the compressed words in one payload may take together: as many
+/// as one frame holds (C3 draft 15). `Compressed::from_parts` derives a length for every part, and a chain of n
+/// doublings derives about n²/2 bits in all, so both sides count them in the payload's encoder or decoder before a
+/// word is rebuilt: compressed words above the bound are refused when encoded and when decoded. The bound counts bits:
+/// a length is stored in whole 64-bit limbs, which adds at most one limb per part, and a part takes at least 9 bytes
+/// of the payload. The interpreter builds words without this bound.
 pub const COMPRESSED_LENGTH_BITS: u64 = 8 * MAX_FRAME as u64;
 
-/// The running bound of a compressed word's derived lengths, part by part: a leaf's length has its letter count's
-/// bits, and a concatenation's at most one more than its larger operand's.
+/// The bits of one compressed word's derived lengths, part by part: a leaf's length has its letter count's bits, and
+/// a concatenation's at most one more than its larger operand's.
 #[derive(Default)]
 struct LengthBits {
     bits: Vec<u32>,
-    total: u64,
 }
 
 impl LengthBits {
-    /// Adds the next part. It refuses a concatenation of a part not before it, as `from_parts` does, and a total
-    /// above [`COMPRESSED_LENGTH_BITS`]; no part's bits can then overflow.
-    fn push(&mut self, part: &Part) -> Result<(), &'static str> {
+    /// Adds the next part's bits to `total`, the payload's running count. It refuses a concatenation of a part not
+    /// before it, as `from_parts` does, and a count above [`COMPRESSED_LENGTH_BITS`]; no part's bits can then
+    /// overflow.
+    fn push(&mut self, part: &Part, total: &mut u64) -> Result<(), &'static str> {
         let bits = match part {
             Part::Leaf(l) => usize::BITS - l.len().leading_zeros(),
             Part::Concat(i, j) => match (self.bits.get(*i), self.bits.get(*j)) {
@@ -202,9 +204,9 @@ impl LengthBits {
                 _ => return Err("a concatenation of a part not before it"),
             },
         };
-        self.total += u64::from(bits);
-        if self.total > COMPRESSED_LENGTH_BITS {
-            return Err("a compressed word above the transfer bound");
+        *total += u64::from(bits);
+        if *total > COMPRESSED_LENGTH_BITS {
+            return Err("compressed words above the transfer bound");
         }
         self.bits.push(bits);
         Ok(())
@@ -353,7 +355,7 @@ pub fn encode_value(value: &Value, e: &mut Enc) -> Result<(), Unencodable> {
                 e.count(parts.len());
                 let mut bound = LengthBits::default();
                 for part in parts {
-                    bound.push(part).map_err(Unencodable)?;
+                    bound.push(part, &mut e.derived_bits).map_err(Unencodable)?;
                     match part {
                         Part::Leaf(l) => encode_letters(part_tag::LEAF, l, e)?,
                         Part::Concat(i, j) => {
@@ -504,7 +506,7 @@ pub fn decode_value(d: &mut Dec) -> Result<Value, Malformed> {
                         part_tag::CONCAT => Part::Concat(d.usize()?, d.usize()?),
                         _ => return Err(Malformed::new("an unknown part tag")),
                     };
-                    bound.push(&part).map_err(Malformed::new)?;
+                    bound.push(&part, &mut d.derived_bits).map_err(Malformed::new)?;
                     parts.push(part);
                 }
                 Value::Compressed(Arc::new(Compressed::from_parts(parts).map_err(Malformed::new)?))

@@ -4,8 +4,8 @@
 //! A set or map outside the canonical key order, a map entry that is not a `{ key, value }` record and a word key
 //! that is not freely reduced are refused on both sides. A compressed word crosses as its parts (crate draft 15): it
 //! round-trips with one encoding, and as an answer the run in the child equals the run in process. A part list that
-//! `from_parts` refuses and a word above the bound on its derived lengths are refused on both sides; above that
-//! bound, an answer stops the child's run only. Source and synthetic evidence only.
+//! `from_parts` refuses and compressed words above the bound on a payload's derived lengths are refused on both sides;
+//! above that bound, an answer stops the child's run only. Source and synthetic evidence only.
 
 mod support;
 
@@ -143,7 +143,8 @@ fn collections_round_trip_with_one_encoding() {
 /// builds, round-trips with one encoding and comes back with the same parts, length, height, logical size and
 /// letters. Compressed words compare by their parts, so two words of one expansion keep apart and two words built
 /// alike share an encoding. The letter 1 doubled 16,382 times crosses; doubled once more, it is refused when encoded
-/// and when decoded.
+/// and when decoded. The bound is shared by a payload's words: two words of 11,583 doublings cross together, and two
+/// of 11,584 are refused.
 #[test]
 fn compressed_words_cross_as_their_parts() {
     let bytes = |c: &Arc<Compressed>| codec::value_bytes(&Value::Compressed(c.clone()));
@@ -209,9 +210,28 @@ fn compressed_words_cross_as_their_parts() {
     let got = back(&most);
     assert_eq!((got.length(), got.height()), (&(BigInt::one() << 16_382u32), 16_382));
     assert_same(&decoded(|e| chain(e, 16_382)).unwrap(), &Value::Compressed(most));
-    let why = "a compressed word above the transfer bound";
+    let why = "compressed words above the transfer bound";
     assert_eq!(bytes(&doublings(16_383)), Err(Unencodable(why)));
     assert_eq!(decoded(|e| chain(e, 16_383)).err().as_deref(), Some(why));
+
+    // The bound holds for a payload, not for each word: a list of two words of 11,583 doublings crosses, and one of
+    // two words of 11,584, each within the bound alone, is refused when encoded and when decoded.
+    assert!(2 * derived(11_583) <= COMPRESSED_LENGTH_BITS && 2 * derived(11_584) > COMPRESSED_LENGTH_BITS);
+    let twice = |n: usize| Value::List(Arc::new(List::new(vec![Value::Compressed(doublings(n)); 2])));
+    let two = twice(11_583);
+    let written = codec::value_bytes(&two).unwrap_or_else(|e| panic!("{e:?}"));
+    assert_same(&codec::value_from_bytes(&written).unwrap(), &two);
+    assert_eq!(codec::value_bytes(&twice(11_584)), Err(Unencodable(why)));
+    let pair = |n: u64| {
+        decoded(move |e| {
+            e.u8(16);
+            e.count(2);
+            chain(e, n);
+            chain(e, n);
+        })
+    };
+    assert_same(&pair(11_583).unwrap(), &two);
+    assert_eq!(pair(11_584).err().as_deref(), Some(why));
 }
 
 /// A set or a map outside the canonical key order, a map entry that is not a `{ key, value }` record, a word key that
