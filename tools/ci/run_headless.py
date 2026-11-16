@@ -117,6 +117,7 @@ CHECKS += LANGUAGE_DOCS_CHECKS + [
     ["tests/test_format_inventory.py"],
     ["tests/test_error_registry.py"],
     ["tests/test_language_scans.py"],
+    ["tests/test_source_checkout.py"],
 ]
 
 TIME_LIMIT_SECONDS = 1200
