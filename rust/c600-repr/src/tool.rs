@@ -1,15 +1,15 @@
 //! The representations tool: its source, its module manifest with the class `view_aid` (BND.27, BND.37), the review of
 //! the class against the exact entry definitions and the row set (CT-LB6-03, CT-BND-15), and the form of a review
-//! record that names the entry digests. The admission of each entry is `c600_tools::tool::admit_built_in`, the
-//! built-in column of chapter 07 section 8; nothing of it is copied here.
+//! record that names the entry digests. The admission of each entry is `c600_check::admit_built_in`, the built-in
+//! column of chapter 07 section 8, with the rows of [`class_rows`]; nothing of it is copied here.
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use c600_check::{check, Admission, Grant, IrError, Policy};
+use c600_check::{admit_built_in, check, Admission, Grant, IrError, Policy, Row as GrantRow};
 use c600_command::{Kind, PreviewRule, Row, Table};
 use c600_digest::sha256_hex;
 use c600_ir::{Effect, FnKind, Function, Program};
-use c600_tools::tool::{admit_built_in, lower_source, targets, BoundaryClass};
+use c600_tools::tool::{lower_source, targets, BoundaryClass};
 
 /// The tool's source: edition `6cs-draft-1`, syntax candidate A, in the formatter's canonical layout.
 pub const SOURCE: &str = include_str!("representations.6cs");
@@ -92,10 +92,24 @@ impl Manifest {
     }
 }
 
-/// Admits one entry for a run in the solving profile under the built-in column, with no capability granted and the
-/// interim policy (BND.54).
+/// The grant-table rows the tool's class lists for the built-in column (BND.57), each named by the operation's literal
+/// data: the two snapshot reads, a published view and the two workspace records of the shipped entries. Draft (LP3):
+/// BND.57's rows by class do not exist as data, so the class lists the rows the shipped entries use and nothing else;
+/// an entry that uses another row is refused by the column, and the class review below finds it too.
+pub fn class_rows() -> BTreeSet<GrantRow> {
+    BTreeSet::from([
+        GrantRow::Read("filter.preview".into()),
+        GrantRow::Read("structure.compare".into()),
+        GrantRow::View,
+        GrantRow::Workspace("filter.apply".into()),
+        GrantRow::Workspace("structure.layer".into()),
+    ])
+}
+
+/// Admits one entry for a run in the solving profile under the built-in column (`c600_check::admit_built_in`), with
+/// the rows of [`class_rows`], no capability granted and the interim policy (BND.54).
 pub fn admit(program: &Program, module: &str, entry: &str) -> Result<Admission, IrError> {
-    admit_built_in(program, module, entry, &Grant::none(), &Policy::interim())
+    admit_built_in(program, module, entry, &class_rows(), &Grant::none(), &Policy::interim())
 }
 
 /// What a class review found outside the class.

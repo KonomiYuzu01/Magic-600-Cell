@@ -79,9 +79,10 @@ Found later, on 16 November 2026. KN5's one implementation, which LP2 writes in 
 `claude/lp2-kn5-one`, also carries the presented-frame input to `present` that CT-ONE-29's shell-side refusal needs and
 the requirement from LP3's KN5.21 lead, both accepted by the LP2 integrator. Sent to the LP2 integrator the same day and
 not yet confirmed: `c600-check` rules that decide CT-LB3-01's checker half (typed checkpoint and sticker-test results,
-LB3.2) and CT-LB3-07's recommendation rule (LB3.5); an author or column parameter on `c600_check::admit`, with a field
-in `c600-runtime`'s job options, so the runtime's child applies the built-in column itself; and a list of words in the
-IR, or KN2.10's streaming, for chunked recipes on the source route.
+LB3.2) and CT-LB3-07's recommendation rule (LB3.5); a field in `c600-runtime`'s job options, so the runtime's child
+applies the built-in column itself; and a list of words in the IR, or KN2.10's streaming, for chunked recipes on the
+source route. LP2 built the built-in column as `c600_check::admit_built_in` (PR 170); the three built-in tools admit
+their entries with it, under class rows that are an LP3 draft until BND.57's rows by class exist as data.
 
 Found with C6, the same day. The representations tool's six rows need command-layer work that KN5's one implementation
 now owns: a dispatch from a stored row to a built-in tool's entry, the runtime's view and workspace sinks as a job's

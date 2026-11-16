@@ -4,16 +4,18 @@
 
 use std::collections::BTreeSet;
 
-use c600_check::{check, separation, Grant, Policy, Separation, EFFECT_UNDECLARED, NOT_GRANTED};
+use c600_check::{
+    admit_built_in, check, separation, Grant, Policy, Row as GrantRow, Separation, EFFECT_UNDECLARED, NOT_GRANTED,
+};
 use c600_command::{Kind, Table};
 use c600_digest::sha256_hex;
 use c600_ir::{Effect, FnKind, Program};
 use c600_repr::tool::{
-    admit, check_record, entry_digest, manifest, review_class, review_source, row_within_view_aid, Entry, Finding,
-    Manifest, RecordFault, ReviewRecord, Rule, ENTRIES, MODULE, ROWS, SOURCE, UNEXPRESSED,
+    admit, check_record, class_rows, entry_digest, manifest, review_class, review_source, row_within_view_aid, Entry,
+    Finding, Manifest, RecordFault, ReviewRecord, Rule, ENTRIES, MODULE, ROWS, SOURCE, UNEXPRESSED,
 };
 use c600_syntax::{format, lower, parse};
-use c600_tools::tool::{admit_built_in, lower_source, targets, BoundaryClass};
+use c600_tools::tool::{lower_source, targets, BoundaryClass};
 
 fn program() -> Program {
     lower_source(SOURCE).expect("the shipped source lowers")
@@ -183,11 +185,14 @@ fn ct_bnd_15_representations_part_class_declared_rows_within_class_and_record_na
 
 /// CT-LB6-03 (part, the representations tool: the declared class is reviewed against the exact entry definitions, and
 /// LX-3's storage-laundering and state-based target selection cases are refused under capability separation and at
-/// the preview sink). The shipped entries pass the review. A variant that stores a word read from state is admitted
-/// by the built-in column, because the workspace sink refuses nothing on labels (BND.26), and the class review finds
-/// it: a view aid stores what the solver named. The variants that preview the stored word, read directly or through a
-/// declassifier, are refused with `LG3:capability.not_granted` at the entry and at the proposal, and with the
-/// declassifier enabled still at the proposal; a variant that reads its target from state is refused at the entry.
+/// the preview sink). The shipped entries pass the review. A variant that stores a word read from state is refused by
+/// the built-in column at the write, because a stored word too must be one the solver named (LP2's column), though the
+/// workspace sink refuses nothing on labels (BND.26); the class review finds it as well: a view aid stores what the
+/// solver named. The variants that preview the stored word, read directly or through a declassifier, are refused with
+/// `LG3:capability.not_granted` at the entry and at the proposal, and with the declassifier enabled still at the
+/// proposal; a variant that reads its target from state is refused at the entry twice, for the separation and for a
+/// row the checker cannot name. The column's checks here use a class that also lists the variants' rows, so that each
+/// refusal shown is the rule under test; under the tool's own class ([`class_rows`]) the store's rows are refused too.
 /// The review finds each as choosing a target. An exported function the manifest does not list is found, so no entry
 /// escapes the review by being left out of the manifest. Not run: LX-3's correction solve, which is the 600-cell-Full tool's
 /// case, and any run of an entry, since no route leads from the rows to the entries yet.
@@ -225,10 +230,25 @@ fn ct_lb6_03_representations_part_class_reviewed_against_entries_and_storage_lau
     let (program, wider) = variant(tail, &extra);
     assert!(check(&program).expect("checked").is_admitted(), "each variant is a well-typed program");
 
-    // The store: admitted by the column, found by the class review.
-    let stash = admit(&program, MODULE, "stash").expect("admitted or refused");
-    assert!(stash.is_admitted(), "{:#?}", stash.diagnostics);
+    // The class with the variants' rows added.
+    let rows = BTreeSet::from([
+        GrantRow::Read("best_word".into()),
+        GrantRow::Read("kept".into()),
+        GrantRow::Workspace("kept".into()),
+        GrantRow::Declassified("kept".into()),
+        GrantRow::Preview("operation.preview".into()),
+    ]);
+    let rows: BTreeSet<GrantRow> = class_rows().union(&rows).cloned().collect();
+
+    // The store: refused by the column at the write (the body's root), found by the class review. Under the tool's own
+    // class its snapshot read and its workspace record are rows the class does not list, two more refusals at `entry`.
+    let stash = admit_built_in(&program, MODULE, "stash", &rows, &Grant::none(), &Policy::interim()).expect("admitted");
+    let found: Vec<(&str, &str)> = stash.diagnostics.iter().map(|d| (d.path.as_str(), d.code)).collect();
+    assert_eq!(found, [("root", NOT_GRANTED)], "{:#?}", stash.diagnostics);
     assert_eq!(stash.separation, Separation { reads_state: true, prepares_previews: false });
+    let own_class = admit(&program, MODULE, "stash").expect("admitted or refused");
+    let found: Vec<&str> = own_class.diagnostics.iter().map(|d| d.path.as_str()).collect();
+    assert_eq!((own_class.codes(), found), (vec![NOT_GRANTED; 3], vec!["entry", "entry", "root"]));
 
     // The uses: refused under the selected mechanism.
     let both = Separation { reads_state: true, prepares_previews: true };
@@ -237,9 +257,9 @@ fn ct_lb6_03_representations_part_class_reviewed_against_entries_and_storage_lau
         ("relay", Policy::interim(), both, vec!["entry", "0"]),
         ("relay_declassified", Policy::interim(), both, vec!["entry", "0"]),
         ("relay_declassified", Policy::enabling(&["kept"]), previews_only, vec!["0"]),
-        ("chooses", Policy::interim(), both, vec!["entry"]),
+        ("chooses", Policy::interim(), both, vec!["entry", "entry"]),
     ] {
-        let admission = admit_built_in(&program, MODULE, entry, &Grant::none(), &policy).expect("admitted or refused");
+        let admission = admit_built_in(&program, MODULE, entry, &rows, &Grant::none(), &policy).expect("admitted");
         let found: Vec<&str> = admission.diagnostics.iter().map(|d| d.path.as_str()).collect();
         assert_eq!((admission.separation, found), (separation, paths), "{entry}");
         assert!(admission.codes().iter().all(|&code| code == NOT_GRANTED), "{entry}: {:#?}", admission.diagnostics);
@@ -247,7 +267,7 @@ fn ct_lb6_03_representations_part_class_reviewed_against_entries_and_storage_lau
 
     // The review of the declared class against these entry definitions.
     let findings = review_class(&program, &wider, &table).expect("reviewed");
-    assert_eq!(rules(&findings, "stash"), [Rule::StoresStateDerived]);
+    assert_eq!(rules(&findings, "stash"), [Rule::ColumnRefusal, Rule::StoresStateDerived]);
     for entry in ["relay", "relay_declassified", "chooses"] {
         assert_eq!(rules(&findings, entry), [Rule::ColumnRefusal, Rule::ChoosesTarget], "{entry}");
     }

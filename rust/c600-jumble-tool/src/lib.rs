@@ -37,9 +37,10 @@
 //!   declared class is `checking`, LB6.5's candidate class for the row. No `PrincipleRecord` and no review record
 //!   exist (LB6.3, BM5); the manifest names the SHA-256 of the module's source, the digest a review record will name
 //!   (CT-BND-15).
-//! - **Built-in admission (chapter 07 section 8; LG3.13).** Each entry is admitted with
-//!   `c600_tools::tool::admit_built_in` and loaded with `c600_tools::tool::Tool::new`, under that crate's draft
-//!   capability contract, checker pin and run limits. This crate adds no admission rule.
+//! - **Built-in admission (chapter 07 section 8; LG3.13).** Each entry is loaded with `c600_tools::tool::Tool::new`,
+//!   which admits it with `c600_check::admit_built_in` and the class rows of `c600_tools::tool::class_rows` (the
+//!   preview row of the manifest's row, a draft of that crate), under its draft capability contract, checker pin and
+//!   run limits. This crate adds no admission rule.
 //! - **Letters (LB1.9, LB3.8).** [`word::letters`] reads a `Word` as pairs of integers, cap then item, the item an
 //!   index in the pinned order of the state's menu, as the reference's letters `[grip, item]`. The reading is Rust for
 //!   the engine side of the tests. How the command layer reads a jumbling word is LP2's KN5 implementation and may

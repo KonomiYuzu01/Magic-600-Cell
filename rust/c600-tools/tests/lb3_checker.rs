@@ -7,8 +7,10 @@
 
 use std::collections::BTreeSet;
 
-use c600_check::{admit, check, separation, Grant, Policy, Profile, Separation, StateRead, NOT_GRANTED};
-use c600_tools::tool::{admit_built_in, lower_source};
+use c600_check::{
+    admit, admit_built_in, check, separation, Grant, Policy, Profile, Row, Separation, StateRead, NOT_GRANTED,
+};
+use c600_tools::tool::lower_source;
 
 const MODULE: &str = "jumble_inspector";
 
@@ -43,8 +45,10 @@ return read_snapshot<Word>(\"lowering_word\");\n}\n";
 ///
 /// Not decided by the checker, so not built: a recommendation. `recommend` returns a word read from state through an
 /// entry that prepares no preview; the solving column leaves it to the open cell BND.59 and the built-in column
-/// admits it. The checker has no rule that tells a fact about the solver's named object from a selection the method
-/// made, and the IR draft has no list type, so an all-items table can only be written as a fixed record as above.
+/// admits it when the class lists its read. The checker has no rule that tells a fact about the solver's named object
+/// from a selection the method made, and the IR draft has no list type, so an all-items table can only be written as a
+/// fixed record as above. The fixture's class lists every row its entries use (preview, outcome read, snapshot read),
+/// so each refusal shown is the rule under test and not a missing row (BND.57).
 #[test]
 fn ct_lb3_07_checker_half_outcome_tables_and_named_word_checks() {
     let program = lower_source(INSPECTOR).expect("the fixture lowers");
@@ -53,7 +57,9 @@ fn ct_lb3_07_checker_half_outcome_tables_and_named_word_checks() {
     let (none, interim) = (Grant::none(), Policy::interim());
     let facts = |entry: &str| separation(report.summary(MODULE, entry).expect("the entry's summary"), &interim);
     let solving = |entry: &str| admit(&program, MODULE, entry, Profile::Solving, &none, &interim).unwrap();
-    let built_in = |entry: &str| admit_built_in(&program, MODULE, entry, &none, &interim).unwrap();
+    let class =
+        BTreeSet::from([Row::Preview("operation.preview".into()), Row::Outcome, Row::Read("lowering_word".into())]);
+    let built_in = |entry: &str| admit_built_in(&program, MODULE, entry, &class, &none, &interim).unwrap();
     let both = Separation { reads_state: true, prepares_previews: true };
     let previews = Separation { reads_state: false, prepares_previews: true };
     let reads = Separation { reads_state: true, prepares_previews: false };

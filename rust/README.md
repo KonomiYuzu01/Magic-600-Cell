@@ -48,11 +48,11 @@ model.
 The input router depends on the command layer and the kernel crate only, so a key reaches a kernel row with no path to
 the interpreter (ONE.48).
 The jumbling crate depends on the kernel and digest crates and the big-integer crates.
-The representations crate depends on the checker, IR and digest crates, the display contract, the tools crate, whose
-built-in column admits its entries, and the command layer, whose stored table its class review reads; it draws nothing
-and owns no device.
-The jumbling tool crate depends on the digest crate, the jumbling crate and the tools crate, whose built-in column
-admits its entries; its tests also run the checker, syntax, IR, interpreter and kernel crates.
+The representations crate depends on the checker, whose built-in column admits its entries, the IR and digest crates,
+the display contract, the tools crate and the command layer, whose stored table its class review reads; it draws
+nothing and owns no device.
+The jumbling tool crate depends on the digest crate, the jumbling crate and the tools crate, whose `Tool` admits its
+entries under the checker's built-in column; its tests also run the checker, syntax, IR, interpreter and kernel crates.
 The durable crate holds tests only; its dev-dependencies are the session store, the module crate, the checker, the
 syntax crate, the interpreter, the kernel and the digest crate.
 
@@ -872,10 +872,12 @@ run or not applicable is no pass (PHS.63).
   operations, so the library entries of chapter 03 (LB1 to LB4) wait for the IR.
 - Admission: the checker admits the source with no diagnostic. The entry's only effect is `preview` and it requests no
   capability, so it prepares previews and reads no state (LG3.13, BND.39). `c600-check`'s `Profile::Solving` is the
-  column of a solver's own tool, which prepares no preview until the joint setting; `tool::admit_built_in` applies the
-  built-in column of chapter 07 section 8 over the checker's report. A variant that also reads state is refused with
-  `LG3:capability.not_granted`. The class (`analysis`, `checking`, after LB6.5) and the row set are declared in the
-  crate's Rust manifest, because the IR and the syntax carry no module manifest yet.
+  column of a solver's own tool, which prepares no preview until the joint setting. `Tool::new` admits the entry with
+  `c600_check::admit_built_in`, LP2's draft of the built-in column of chapter 07 section 8 (pull request 170), and the
+  class rows of `tool::class_rows`: the preview row of each row the manifest names, an LP3 draft, because BND.57's rows
+  by class are not data. A variant that also reads state is refused with `LG3:capability.not_granted`. The class
+  (`analysis`, `checking`, after LB6.5) and the row set are declared in the crate's Rust manifest, because the IR and
+  the syntax carry no module manifest yet.
 - The tool runs on `c600-run` through `Boundary` in the solving profile, in process: C5 was built before the
   runtime's own process (C3) reached main, and moving the tool onto it is C5's next piece. Against an engine double
   that records each proposal, the program receives only the fixed acknowledgement whether the engine built the
@@ -918,9 +920,9 @@ run or not applicable is no pass (PHS.63).
     refused (KN5.15); only a token the shell mints commits the pending preview (CT-ONE-29, part, headless); the bridge
     grants nothing but a proposal.
   - `expand.rs`: every case step expands to its recorded literal word, and the expansion is the kernel's literal.
-- Open: the built-in column lives in this crate because `c600-check` has no author or column parameter on `admit`; it
-  does not judge a reading entry's workspace writes against the class's rows (BND.57). The command layer's receipts
-  carry no program digest; the proposal's provenance block names the digest of the source bytes that ran.
+- Open: the class rows are an LP3 draft until BND.57's rows by class exist as data, and the built-in column's two
+  exceptions (setup search for a named target, the repair list) are not built in `c600-check`. The command layer's
+  receipts carry no program digest; the proposal's provenance block names the digest of the source bytes that ran.
 - Drafts, which freeze with the IR and the command table, are in the crate documentation under "Drafts".
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run. The timings the
   source-route check prints are informational, not performance evidence.
@@ -1039,7 +1041,8 @@ run or not applicable is no pass (PHS.63).
 - `c600-repr` is LB6.5's row "Representation, work-set and filter tools", class `view_aid`, over LB4's layouts and
   atlases, map property checks and linked selection. It draws nothing and owns no device, renderer, clock or session:
   picks resolve through `c600-display`'s host and the installed source map, exact chart checks are `c600-display`'s, and
-  each entry's admission is `c600_tools::tool::admit_built_in`.
+  each entry's admission is `c600_check::admit_built_in` with the class rows of `tool::class_rows` (an LP3 draft: the
+  snapshot reads, the published view and the workspace records the shipped entries use).
   - `layout`: sheets and atlases as display plans with their source maps; a layout filter rebuilds the layout, the
     instance list and the map's entries and leaves the mechanically analysed set alone (LB4.4); a linked selection is
     computed once for its inputs, and frames only read it (EV3.10).
@@ -1085,10 +1088,10 @@ run or not applicable is no pass (PHS.63).
 
 - `c600-jumble-tool` is LB6.5's row "Named twist/word checker and kept checks", class `checking`: PHS.22's built-in tool
   for jumbling. Its source [`jumble_checker.6cs`](c600-jumble-tool/src/jumble_checker.6cs) (edition `6cs-draft-1`,
-  syntax candidate A) has two entries, `check_named_twist` and `check_named_word`, each admitted under the built-in
-  column through `c600_tools::tool`. Each proposes the literal word the solver named and reads no state, so the tool
-  never chooses or outputs a word by itself. `word` reads a `Word` as literal jumbling letters, cap then item, of the
-  state's menu; a word that is no sequence of letters is refused before any letter is applied.
+  syntax candidate A) has two entries, `check_named_twist` and `check_named_word`, each admitted under the checker's
+  built-in column through `c600_tools::tool`. Each proposes the literal word the solver named and reads no state, so
+  the tool never chooses or outputs a word by itself. `word` reads a `Word` as literal jumbling letters, cap then item,
+  of the state's menu; a word that is no sequence of letters is refused before any letter is applied.
 - `c600-display` gains the jumbling producers (`jumble`): the posed-sticker row J02 from a state's canonical pose table,
   the certified transform J03, the certified overlays J04 (the full named-cap set, the cap-map witness and the named
   cut), J08's seam table from the engine's `seam_facts`, and the slot projection J13, with a fixture support report for
