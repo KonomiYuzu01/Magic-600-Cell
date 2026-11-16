@@ -127,52 +127,76 @@ fn offsets_ok(offsets: &[i32], total: usize) -> bool {
         && offsets.last().is_some_and(|&last| last as usize == total)
 }
 
+/// The files of `assets/` after the asset checks of [`verify_assets`].
+pub struct VerifiedAssets {
+    /// The manifest's model ID, the SHA-256 of its file list.
+    pub model_id: String,
+    /// The SHA-256 of `manifest.json`.
+    pub manifest_sha256: String,
+    /// Every listed file (`assets/<name>`) with its digest, each checked against the file's bytes.
+    pub digests: BTreeMap<String, String>,
+    /// The bytes of the files asked for, by plain file name.
+    pub files: BTreeMap<String, Vec<u8>>,
+}
+
+/// Reads and checks `assets/` (KN0.1): the manifest names 600-cell-Full, its model ID is the SHA-256 of its file
+/// list, and every listed file has its listed digest. Returns the bytes of the `needed` files, each of which must be
+/// listed. Every check fails closed with a [`LoadError`]. The kernel and the jumbling half both load through this, so
+/// an identity block's model ID always names the files that were read.
+pub fn verify_assets(assets: &Path, needed: &[&str]) -> Result<VerifiedAssets, LoadError> {
+    let manifest_bytes = read(assets, "manifest.json")?;
+    let manifest_sha256 = c600_digest::sha256_hex(&manifest_bytes);
+    let manifest = json::parse(&manifest_bytes).map_err(|e| fail(format!("manifest.json: {e}")))?;
+    if manifest.get("puzzle").and_then(Value::as_str) != Some(PUZZLE) {
+        return Err(fail("manifest.json does not name 600-cell-Full"));
+    }
+    let model_id = match manifest.get("model_id").and_then(Value::as_str) {
+        Some(id) if is_digest(id) => id.to_owned(),
+        _ => return Err(fail("manifest.json has no well-formed model_id")),
+    };
+    let files = manifest.get("files").and_then(Value::as_object).ok_or_else(|| fail("manifest.json lists no files"))?;
+    // The model ID names exactly the listed files and digests: build_assets.py writes it as the SHA-256 of
+    // `json.dumps(files, sort_keys=True, separators=(',', ':'))`. Names are plain ASCII file names, so that text
+    // needs no escapes, and the map's byte order is Python's key order. 0.4 does not check this; the kernel does,
+    // because its identity block rests on the model ID (KN0.1).
+    let mut listed = Vec::with_capacity(files.len());
+    let mut file_list = String::from("{");
+    for (name, digest) in files {
+        let base = plain_name(name)
+            .ok_or_else(|| fail("manifest.json lists a file that is not a plain file name in assets/"))?;
+        let digest = digest.as_str().filter(|d| is_digest(d)).ok_or_else(|| fail("Malformed digest in manifest"))?;
+        if !listed.is_empty() {
+            file_list.push(',');
+        }
+        file_list.push_str(&format!("\"{name}\":\"{digest}\""));
+        listed.push((name, base, digest));
+    }
+    file_list.push('}');
+    if c600_digest::sha256_hex(file_list.as_bytes()) != model_id {
+        return Err(fail("manifest.json's model_id does not match its file list"));
+    }
+    // Verify every listed file, as the 0.4 Model does, and keep the verified bytes of the needed files.
+    let mut digests = BTreeMap::new();
+    let mut kept = BTreeMap::new();
+    for (name, base, digest) in listed {
+        let bytes = read(assets, base)?;
+        if c600_digest::sha256_hex(&bytes) != digest {
+            return Err(fail(format!("Asset hash mismatch: {name}")));
+        }
+        if needed.contains(&base) {
+            kept.insert(base.to_owned(), bytes);
+        }
+        digests.insert(name.clone(), digest.to_owned());
+    }
+    if let Some(missing) = needed.iter().find(|&&name| !kept.contains_key(name)) {
+        return Err(fail(format!("manifest.json does not list {missing}")));
+    }
+    Ok(VerifiedAssets { model_id, manifest_sha256, digests, files: kept })
+}
+
 impl Model {
     pub(crate) fn load(assets: &Path) -> Result<Model, LoadError> {
-        let manifest_bytes = read(assets, "manifest.json")?;
-        let manifest_sha256 = c600_digest::sha256_hex(&manifest_bytes);
-        let manifest = json::parse(&manifest_bytes).map_err(|e| fail(format!("manifest.json: {e}")))?;
-        if manifest.get("puzzle").and_then(Value::as_str) != Some(PUZZLE) {
-            return Err(fail("manifest.json does not name 600-cell-Full"));
-        }
-        let model_id = match manifest.get("model_id").and_then(Value::as_str) {
-            Some(id) if is_digest(id) => id.to_owned(),
-            _ => return Err(fail("manifest.json has no well-formed model_id")),
-        };
-        let files =
-            manifest.get("files").and_then(Value::as_object).ok_or_else(|| fail("manifest.json lists no files"))?;
-        // The model ID names exactly the listed files and digests: build_assets.py writes it as the SHA-256 of
-        // `json.dumps(files, sort_keys=True, separators=(',', ':'))`. Names are plain ASCII file names, so that text
-        // needs no escapes, and the map's byte order is Python's key order. 0.4 does not check this; the kernel does,
-        // because its identity block rests on the model ID (KN0.1).
-        let mut listed = Vec::with_capacity(files.len());
-        let mut file_list = String::from("{");
-        for (name, digest) in files {
-            let base = plain_name(name)
-                .ok_or_else(|| fail("manifest.json lists a file that is not a plain file name in assets/"))?;
-            let digest =
-                digest.as_str().filter(|d| is_digest(d)).ok_or_else(|| fail("Malformed digest in manifest"))?;
-            if !listed.is_empty() {
-                file_list.push(',');
-            }
-            file_list.push_str(&format!("\"{name}\":\"{digest}\""));
-            listed.push((name, base, digest));
-        }
-        file_list.push('}');
-        if c600_digest::sha256_hex(file_list.as_bytes()) != model_id {
-            return Err(fail("manifest.json's model_id does not match its file list"));
-        }
-        // Verify every listed file, as the 0.4 Model does, and keep the verified bytes of the files read below.
-        let mut kept: BTreeMap<&str, Vec<u8>> = BTreeMap::new();
-        for (name, base, digest) in listed {
-            let bytes = read(assets, base)?;
-            if c600_digest::sha256_hex(&bytes) != digest {
-                return Err(fail(format!("Asset hash mismatch: {name}")));
-            }
-            if let Some(needed) = NEEDED.iter().find(|&&needed| needed == base) {
-                kept.insert(*needed, bytes);
-            }
-        }
+        let VerifiedAssets { model_id, manifest_sha256, digests, files: mut kept } = verify_assets(assets, &NEEDED)?;
         let mut take =
             |name: &str| kept.remove(name).ok_or_else(|| fail(format!("manifest.json does not list {name}")));
         let (model_npz, primitives_npz) = (take("model.npz")?, take("primitives.npz")?);
@@ -321,7 +345,7 @@ impl Model {
         Ok(Model {
             model_id,
             manifest_sha256,
-            verified_files: files.len(),
+            verified_files: digests.len(),
             slot_piece,
             piece_orbit,
             slot_orbit,

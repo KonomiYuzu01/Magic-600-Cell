@@ -95,19 +95,17 @@ def table_state(path):
     """Rebuild (State, original table record), as stage 04's table_nu.py does."""
     census, _ = _runtime()
     import numpy as np
+    from sim import api
     from sim.kplus import matrix_from_json
-    from sim.state import State
+    from sim.model import NP
 
     record = json.loads(_bytes(path))
-    state = State(census.restore.ctx, menu=census.menu())
-    ids = np.asarray([state._intern_matrix(matrix_from_json(m)) for m in record['poses']], np.int32)
+    entries = [(-1, matrix_from_json(m)) for m in record['poses']]
     indices = np.asarray(record['pose_id'], np.int64)
-    if (indices.shape != state.pose_id.shape or np.any(indices < 0)
-            or np.any(indices >= len(ids))):
+    if (indices.shape != (NP,) or np.any(indices < 0)
+            or np.any(indices >= len(entries))):
         raise ReferenceDataError('table pose_id: wrong piece count or pose index')
-    state.pose_id = ids[indices]
-    state._compact()
-    state.journal, state._anchor_cache = [], {}
+    state = api.from_pose_table(census.restore.ctx, entries, indices, census.menu())
     actual = state.digest()
     if actual != record['digest']:
         raise TableDigestError(actual, record['digest'])

@@ -63,12 +63,14 @@ def _checked(field, actual, expected):
 
 
 def _tree_summary(state):
+    from sim import api
     _, O, np, _, trees = _modules()
+    entries = api.pose_entries(state)
     pieces, classes, left = Counter(), Counter(), Counter()
     for pid, count in zip(*np.unique(state.pose_id, return_counts=True)):
         pid, count = int(pid), int(count)
-        heights = ((0, 0) if state._poses[pid].kidx >= 0 else
-                   tuple(trees.dist(q) for q in trees.factors(state._pose_matrix(pid))))
+        heights = ((0, 0) if entries[pid].kidx >= 0 else
+                   tuple(trees.dist(q) for q in trees.factors(api.pose_matrix(state, pid))))
         key = '%d,%d' % heights
         pieces[key] += count
         classes[key] += 1
@@ -102,13 +104,14 @@ def deep_reference():
 
 def fixture_state(menu, t):
     """Replay the specified prefix and check both recorded height histograms."""
+    from sim import api
     census, _, _, _, _ = _modules()
     expected = trees_reference(menu, t)
     fixture = _read(JUMBLING / 'fixtures' / f'wj-{menu}.json')
     records = fixture['journal']['records']
     if type(t) is not int or not 0 < t <= len(records):
         raise ValueError('fixture prefix is outside the recorded journal')
-    state, _ = census.seams._fixture_state(menu, t)
+    state, _ = api.fixture_state(census.restore.ctx, menu, t)
     actual = _tree_summary(state)
     for key in ('pieces_by_heights', 'pose_classes_by_heights'):
         _checked(f'{menu}@{t}.{key}', actual[key], expected[key])
@@ -121,9 +124,10 @@ def fixture_state(menu, t):
 
 def stop40_state():
     """I_a@40 followed chronologically by the 62 recorded restorer twists."""
+    from sim import api
     census, _, _, _, _ = _modules()
     reference = stop40_reference()
-    state, menu = census.seams._fixture_state('I_a', 40)
+    state, menu = api.fixture_state(census.restore.ctx, 'I_a', 40)
     restorer = census.seams.SeamRestorer(state, menu)
     for c, i in reference['moves']:
         restorer.apply(c, i)
