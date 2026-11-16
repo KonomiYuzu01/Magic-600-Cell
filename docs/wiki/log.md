@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-16] decision | LQ13: the syntax is candidate A (braces)
+The owner answered LQ13 after reading a one-page comparison of the three LX-8 candidates: the source syntax of 600 Cell Script follows candidate A, with declaration keywords, braces, local `let` and an explicit `return` ([decision](decisions/owner-decisions-2026-11-16-lq13.md)). The meaning is unchanged, since all three candidates lower the LX-8 corpus to the same IR; CT-RTE-18 stays not run, RTE.63 and the human-protocol fields stay open for any later human test, and no frozen text is edited.
+
 ## [2026-11-16] decision | Five ways to save the owner's time
 The owner chose five measures that save their time in the language's development: LQ13 is decided directly from a one-page comparison of the three LX-8 candidates without a human test, so CT-RTE-18 stays not run; LP4's non-author tests run at minimal scale; LP3's owner-machine runs are done together in one or two evenings; questions come at most once per milestone; and each phase exit gets one page of summary ([decision](decisions/owner-decisions-2026-11-16-time-saving.md)). No frozen bar moves; the frozen text that restates the old LQ13 procedure is superseded within the decision's scope.
 
