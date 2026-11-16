@@ -727,6 +727,10 @@ run or not applicable is no pass (PHS.63).
     KN3's exact rotation requests under A6 (CT-KN3-05 whole; CT-KN3-04, CT-KN3-06, CT-DET-16 and CT-LG2-16's kernel
     half in part), with `c600_kernel::exact`'s unit tests for CT-KN3-01's part.
   - `c600-evidence/tests/` runs the EVD rows (the evidence library's section).
+  - `c600-module/tests/conformance_lg5.rs` runs CT-LG5-01 whole and CT-LG5-02 to CT-LG5-07 in part against LP3 C4's
+    loader and lockfiles. The parts leave out the boundary class against chapter 07's reviewed classes, the run
+    record, the reproduction key and a replay from them (M6), a check at the run itself, EV1's active-version
+    bookkeeping, evidence, the classification of forks, and a real module signature; each marker names its own.
   - `c600-session/tests/`: M6's tests mark their rows (M6's section), CT-ONE-03 to CT-ONE-05, CT-ONE-11, CT-ONE-21,
     CT-ONE-23 and CT-ONE-24 included. `conformance_rows.rs` runs the session's half of CT-ONE-01 and CT-ONE-02 over
     every `Row` variant, CT-ONE-23 and the session's rows of CT-KN5-03 and CT-KN5-10; `conformance_jobs.rs` runs
@@ -742,11 +746,11 @@ run or not applicable is no pass (PHS.63).
     candidate with J1 (M5's section); `tests/test_jumbling_rust_attacks.py` runs Fable's M5 attack leads, with J1's
     faults as expected failures (M5's section).
 - Count with LP3's C1 to C5 and C7, M5 and LP2's first and second integration batches, KN3's exact requests among
-  them, as `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool): 60 whole,
+  them, as `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the tool): 61 whole,
   seven of them by the union of their parts (CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01 and
-  CT-LG3-04); 124 part; 5 named only by LP3's command-layer tests, as parts without a marker (CT-KN5-07, CT-KN5-12,
+  CT-LG3-04); 130 part; 5 named only by LP3's command-layer tests, as parts without a marker (CT-KN5-07, CT-KN5-12,
   CT-LI-04, CT-LI-09 and CT-LI-10); 1 missing despite its name (CT-KN5-08: only the documentation in
-  `c600-command/src/layer.rs` names it); 58 waiting, each with what it waits for in
+  `c600-command/src/layer.rs` names it); 51 waiting, each with what it waits for in
   `docs/progress/1.0/lp2-ct-index-notes.md`.
 - Not run or not applicable, which is no pass (PHS.63), with the check that runs instead: CT-LG3-06's flow-label
   variant, while the flow rule is off (BND.41) and LQ2 has not set it, so the static-only and run-time variants run
@@ -792,9 +796,14 @@ run or not applicable is no pass (PHS.63).
     the command table's drafts settle at LP3 (PHS.53).
   - For LP3: LB7.1's `LB7:capability.module_grant_missing` is the workspace library's entry-admission fact, built with
     LB7; the checker's own admission reports `LG3:capability.not_granted`, as chapter 02's LG3 table has it.
+  - For LP3, from the LG5 tests (`c600-module`): a built-in approval of a closure built for another IR version is
+    refused with `LG4:input.ir_rejected`, because the built-in branch looks up the function summary first, while
+    the own path gives `LG4:input.ir_version_unsupported`; the manifest's `boundary` is checked for form only; a run
+    request names no session identity; the caller supplies the author class of a fork or an import; approvals live
+    only in memory, with public fields.
   - KN5 has two implementations, `c600-session` (M6) and LP3's `c600-command` (pull request 159). The LP2 integrator
     picks the one CT-KN5-01 to CT-KN5-13 run against before M8.
-  - `Kernel::protection` has no model check (M4's section).
+  - `Kernel::protection` itself checks no model; `Kernel::checked_protection` adds KN1.4's check (M4's section).
   - For M6's store: the kernel's `archive::gunzip` accepts concatenated gzip members and trailing zero padding, so
     FP.7's strict one-member reader must refuse them itself; run-time `encode` applies no json_depth or integer_digits
     limit, so the store's writer must check FP.9 before it persists a value.
@@ -813,8 +822,6 @@ run or not applicable is no pass (PHS.63).
     and `project` (KN1.9); and CT-ONE-19, with LP3's view model.
   - Derived states with an open reachability claim and KN2.14's raw-table import, which M4 does not build (3, no
     milestone named): CT-ONE-09, CT-ONE-10 and CT-ONE-28.
-  - LG5's module loader and lockfiles (7): CT-LG5-01 to CT-LG5-07. LP3 C4's `c600-module` builds closures and
-    lockfiles, but its tests name none of these rows.
   - KN5's command layer, once its candidate is picked (2): CT-KN5-05 and CT-KN5-08.
   - The stage checker, RPI.68 to RPI.76 (3, no milestone named): CT-LG2-15, CT-LG3-10 and CT-LG5-08.
   - Compressed words, KN2.10 (no milestone named): CT-LG4-03; the kernel's streaming runs CT-LG2-14 and CT-KN2-07 in

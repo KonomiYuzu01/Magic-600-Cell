@@ -34,13 +34,6 @@ The tool refuses (exit 2) a note for an ID outside the phase's table and an unkn
 | CT-DET-21 | waiting | a builder and its build cache, no milestone named (`rust/README.md`, missing list) |
 | CT-DET-22 | waiting | a builder and its build cache, no milestone named (`rust/README.md`, missing list) |
 | CT-LG4-05 | waiting | a pointwise or whole-state contract form in the IR, no milestone named; named only as not built (`rust/README.md`, missing list) |
-| CT-LG5-01 | waiting | LG5's module loader and lockfiles; LP3 C4's `c600-module` builds them but its tests name no row (`rust/README.md`, missing list) |
-| CT-LG5-02 | waiting | LG5's module loader and lockfiles; LP3 C4's `c600-module` builds them but its tests name no row (`rust/README.md`, missing list) |
-| CT-LG5-03 | waiting | LG5's module loader and lockfiles; LP3 C4's `c600-module` builds them but its tests name no row (`rust/README.md`, missing list) |
-| CT-LG5-04 | waiting | LG5's module loader and lockfiles; LP3 C4's `c600-module` builds them but its tests name no row (`rust/README.md`, missing list) |
-| CT-LG5-05 | waiting | LG5's module loader and lockfiles; LP3 C4's `c600-module` builds them but its tests name no row (`rust/README.md`, missing list) |
-| CT-LG5-06 | waiting | LG5's module loader and lockfiles; LP3 C4's `c600-module` builds them but its tests name no row (`rust/README.md`, missing list) |
-| CT-LG5-07 | waiting | LG5's module loader and lockfiles; LP3 C4's `c600-module` builds them but its tests name no row (`rust/README.md`, missing list) |
 | CT-KN5-05 | waiting | KN5's command layer, once the integrator picks `c600-session` or `c600-command` (`rust/README.md`, missing list) |
 | CT-PS1-08 | waiting | M6's remaining rows (`rust/README.md`, missing list) |
 | CT-PS1-09 | waiting | M6's remaining rows (`rust/README.md`, missing list) |
