@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-15] decision | Fable 5.2 for three proactive read-only tasks
+The owner chose to use Fable 5.2 beyond escalations for three read-only LP2 tasks, one at a time at effort `high`: attack tests for the M1 checker, crash-consistency tests for the M6 session store and the differential test design for the M4 kernel. `AGENTS.md` records it, and the frozen format packet's `AGENTS.md` pin was refreshed under FP.1 with the old and new identities on the decision page.
+
 ## [2026-11-15] update | CI runs the language checkers
 The Windows CI job now runs the eight language checkers, so drift against the frozen migration format packet, whose pins cover the briefing and several `docs/progress/1.0/` pages and fail on any mismatch (FP.1), shows on the pull request that causes it; the five that read Markdown in the documentation trees also run in the light checks of a documentation-only pull request (`tools/ci/run_headless.py`).
 
