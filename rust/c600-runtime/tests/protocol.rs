@@ -313,7 +313,7 @@ fn noncanonical_values_are_refused_on_both_sides() {
         e.u8(2);
     })
     .is_err());
-    assert!(decoded(&|e| e.u8(16)).is_err());
+    assert!(decoded(&|e| e.u8(u8::MAX)).is_err());
     assert!(decoded(&|e| {
         e.u8(12);
         e.count(2);

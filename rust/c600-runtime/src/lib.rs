@@ -36,7 +36,10 @@
 //!    fixed-width little-endian integers, minimal sign-magnitude big integers, and a refusal of every noncanonical
 //!    form (a ratio not in lowest terms, an unnormalised `Q5`, an approximation mantissa out of range, a word letter
 //!    outside 1..=1200, a record with a repeated field) on both sides. A closure crosses as its code index and
-//!    captures and means something only to the program of the same run.
+//!    captures and means something only to the program of the same run. LP2's draft collections cross too: a
+//!    list's elements in order, a word key's letters, freely reduced (LG2.18), and a set's elements and a map's
+//!    `{ key, value }` entries, strictly increasing in the canonical key order without its secondary key (DET.9), so
+//!    a written order never reaches the bytes. A compressed word has no form yet (draft 15).
 //! 3. **Acknowledgement and retry** (KI.5; KI.15, "acknowledgement/retry protocol"): every call carries its id and
 //!    the id of the last answer the child received. The child is synchronous, so a new call must acknowledge the
 //!    last answer and at most one answer is open: the parent keeps the open answer's bytes until the next call or the
@@ -60,7 +63,8 @@
 //!    at most [`parent::READ_AHEAD`] frames besides the one it reads, and the KI.5 record at most one answer (draft
 //!    3). Not bounded yet: the parent's queue of frames to the child, which grows by one answer per call or repeated
 //!    delivery while the child sends without reading its input; bounding it without blocking the parent needs a rule
-//!    for `cancel` and is deferred.
+//!    for `cancel` and is deferred. Nor is the time the parent spends checking a decoded set's or map's order, which
+//!    compares elements outside any meter: a crafted frame costs time within the frame bound only.
 //! 6. **Fault codes** (KN7.13, ERR.19, CT-ERR-14; KN7.10, ERR.16, DET.17): a lost runtime is
 //!    `KN7:resource_limit.runtime_lost` with outcome `error`; a passed deadline is `KN7:resource_limit.safety_stop`
 //!    inside `cut_off`, measured from the start of the run with host time included and outside the deterministic
@@ -98,6 +102,12 @@
 //!     compared, printed and dropped recursively. A request whose type is nested deeper has no transfer encoding: in
 //!     the child the call stops the run with `PS1:input.noncanonical_value`, while in process the same call reaches
 //!     the host. The two executors differ there until the checker bounds type depth.
+//! 15. **Compressed words** (KI.15, "canonical transfer encoding"; LG2.16; a known difference): `c600-run` keeps a
+//!     compressed word's parts private, so the value has no transfer form; its type has one. Both executors refuse
+//!     it as an argument at the start stage, since it has no DET.59 output form either, and so no run returns or
+//!     outputs one. As a host's answer it reaches the run in process, while the parent answers the child's call
+//!     with `PS1:input.noncanonical_value` (draft 7). The two differ there until `c600-run` lends a way to read and
+//!     rebuild the parts.
 
 #![forbid(unsafe_code)]
 
