@@ -61,8 +61,9 @@
 //!   own codes; the program still gets the fixed acknowledgement `{base, id}`. The block reads state when the entry's
 //!   static separation does (callees included), when the run read a snapshot, or when a stored part may. BND.39 binds
 //!   the split; `c600-check` calls the refusal of a program that does both the flow rule (BND.33, BND.41), which stays
-//!   off, and `LG3:capability.flow_refused` stays reserved (LX-3's `flow_code_reserved` gap). The integrator decides
-//!   whether this belongs here, in the checker or in the command layer.
+//!   off, and `LG3:capability.flow_refused` stays reserved (LX-3's `flow_code_reserved` gap). The refusal stays here
+//!   as a draft until C5's host bridge, which decides whether the command layer's preview admission applies it
+//!   instead (integrator, 16 November 2026).
 //! - **Refusal codes** (LG5.11, ERR). A syntax diagnostic keeps its own `LG1` code; a lowering error is
 //!   `LG4:input.ir_rejected`; a session identity outside `supports` is `LG5:input.model_not_supported`.
 //! - **CT-RTE-07's canonical result** (RTE.46). [`Outcome::canonical`] writes the outcome, code, stop position, used
