@@ -28,6 +28,14 @@ name = "c600-digest"
 version = "0.0.0"
 
 [[package]]
+name = "c600-input"
+version = "0.0.0"
+dependencies = [
+ "c600-command",
+ "c600-kernel",
+]
+
+[[package]]
 name = "c600-ir"
 version = "0.0.0"
 
