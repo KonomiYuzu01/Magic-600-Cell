@@ -11,9 +11,10 @@ The differential checks of the M4 leads follow (work/reviews/leads/2026-11-16-m4
 until a check confirms them): L3, the frozen cases still match `core.py`, `session.py` and `make_cases.py`; question
 4, the kernel's refusal texts are 0.4's; L2, a trace does not depend on which cases ran before it in the process; L4
 and L1, type, shape, limit and JSON confusions beyond O07 are `invalid-input` steps with O07's unchanged state
-(`tests/test_oracle.py` checks that 0.4 refuses each of them); L5 to L7, the language's new reference cases N01 to
-N04 of `tools/oracle/make_new_cases.py` (PHS.18; tests/fixtures/oracle-new) replay equal; and CT-KN2-05, no float on
-a decision path of the kernel's sources.
+(`tests/test_oracle.py` checks that 0.4 refuses each of them), while a recipe with a repeated member name or a
+non-finite constant makes the whole case unreadable, for compare.py and for the adapter; L5 to L7, the language's new
+reference cases N01 to N04 of `tools/oracle/make_new_cases.py` (PHS.18; tests/fixtures/oracle-new) replay equal; and
+CT-KN2-05, no float on a decision path of the kernel's sources.
 
 Last, the adapter's `agree` command runs the KN2.9 agreement test: the star cache's net maps against per-primitive
 replay for the first, middle and last frame node of every orbit and both signs (210 stars), and the word [1, -1]. It
@@ -61,6 +62,18 @@ TAMPERED_CASE, TAMPERED_INDEX = "O07", 8
 # O01 and O02 hold words only, which never touch the star cache: the first run replays them on a cold cache, the
 # reversed run after every star case. The cases with stars also run alone.
 ALONE = ("O03", "O04", "O05", "O06", "O07")
+# Recipe JSON that `json.loads` reads and 0.4's `Model.normalize` would take as the step word [1], but that the
+# oracle's reader, `tools/oracle/compare.py`, refuses anywhere in a case: a repeated member name, and the constants
+# NaN, Infinity and -Infinity (the read of lead L1's fix asked about both).
+NESTED = invalid_recipes.NESTED_LISTS
+UNREADABLE = (
+    ("a repeated member name", '[{"kind":"word","moves":[1],"moves":[1]}]'),
+    ("NaN in a member 0.4 does not read", '[{"kind":"word","moves":[1],"x":NaN}]'),
+    ("Infinity in a member 0.4 does not read", '[{"kind":"word","moves":[1],"x":Infinity}]'),
+    ("-Infinity in a member 0.4 does not read", '[{"kind":"word","moves":[1],"x":-Infinity}]'),
+    (f"a repeated member name inside {NESTED} nested lists",
+     '[{"kind":"word","moves":[1],"x":' + "[" * NESTED + '{"a":1,"a":1}' + "]" * NESTED + "}]"),
+)
 # The refusal texts of the kernel and the 0.4 source whose ValueError carries each (question 4 of the M4 leads).
 REFUSAL_TEXTS = {
     "engine.rs": ("core.py", ("STEP_COUNT", "BAD_STEP", "WORD_LENGTH", "BAD_PRIMITIVE", "BAD_STAR", "BAD_NODE",
@@ -502,6 +515,24 @@ def check_invalid_steps(adapter: Path, cases: list[Path], folder: Path, lead: st
           + ", ".join(name for name, _ in recipes[:6]) + (", ..." if len(recipes) > 6 else ""))
 
 
+def check_unreadable_recipe_json(adapter: Path, cases: list[Path], traces: dict[str, Path], folder: Path) -> None:
+    """The read of lead L1's fix asked whether a repeated member name or a non-finite constant in a recipe should be
+    one step, as `json.loads` and `Model.normalize` would make it. The oracle's own reader, compare.py, refuses both
+    anywhere in a case, so such a case is unreadable for the oracle: each recipe of `UNREADABLE`, appended to O07, is
+    refused whole by compare.py and by the adapter (exit 2, no trace)."""
+    for offset, (name, recipe) in enumerate(UNREADABLE):
+        path, _ = extended_o07(cases, f"O07-U{offset}", [(name, recipe)], folder)
+        trace = folder / f"O07-U{offset}.trace.json"
+        out = run(trace_command(adapter, [(path, trace)]))
+        require(out.returncode == 2 and not trace.exists() and not out.stdout.strip(),
+                f"the adapter did not refuse a case with {name} whole (exit {out.returncode})")
+        code, report, line = compare(path, traces[TAMPERED_CASE])
+        require(code == 2 and report == {"error": "Unreadable or malformed oracle JSON file", "status": "error"},
+                f"compare.py did not refuse a case with {name} as unreadable: {line}")
+    print(f"PASS: {len(UNREADABLE)} cases whose recipe repeats a member name or holds NaN or an infinity are refused "
+          "whole by compare.py and by the adapter: " + ", ".join(name for name, _ in UNREADABLE))
+
+
 def check_new_cases(adapter: Path, cases: list[Path], folder: Path) -> float:
     """Leads L5 to L7 and CT-KN2-01 (part: as in `check_traces`): the language's new cases N01 to N04 (PHS.18) replay
     equal in one adapter process: star-only recipes in the planner's shapes, star nodes beyond first, middle and last
@@ -559,6 +590,7 @@ def main() -> int:
             order = check_order_independence(adapter, cases, traces, folder)
             check_invalid_steps(adapter, cases, folder, "L4", invalid_recipes.type_and_limit_family())
             check_invalid_steps(adapter, cases, folder, "L1", invalid_recipes.json_edges())
+            check_unreadable_recipe_json(adapter, cases, traces, folder)
             new = check_new_cases(adapter, new_cases, folder)
         agreement = check_agreement(adapter)
     except (Failed, OSError, KeyError, ValueError) as error:
