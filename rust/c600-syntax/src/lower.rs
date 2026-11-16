@@ -158,11 +158,18 @@ fn error(module: &str, span: Span, message: impl Into<String>) -> LowerError {
     LowerError { module: Some(module.into()), span: Some(span), message: message.into() }
 }
 
-/// What a module declares: its capabilities, its function names and its import aliases.
+/// What a module declares: its functions, each with what a call of it needs, and its import aliases.
 struct Scope {
     name: String,
-    functions: BTreeSet<String>,
+    functions: BTreeMap<String, Signature>,
     aliases: BTreeMap<String, String>,
+}
+
+/// What a call of a module function needs: one argument per parameter and, from another module, an export.
+#[derive(Clone, Copy)]
+struct Signature {
+    params: usize,
+    exported: bool,
 }
 
 /// Lowers a set of parsed files, one module each, into one program. Imports resolve by source digest among the
@@ -239,7 +246,7 @@ fn requires(header: &ModuleHeader) -> Result<BTreeSet<Capability>, LowerError> {
 /// The names a module declares: import aliases, resolved by digest, and function names.
 fn declare(file: &ParsedFile, header: &ModuleHeader, digests: &BTreeMap<&str, &str>) -> Result<Scope, LowerError> {
     let module = header.name.text.as_str();
-    let mut scope = Scope { name: module.into(), functions: BTreeSet::new(), aliases: BTreeMap::new() };
+    let mut scope = Scope { name: module.into(), functions: BTreeMap::new(), aliases: BTreeMap::new() };
     for item in &file.items {
         let Item::Import(i) = item else { continue };
         let alias = i.alias.text.as_str();
@@ -259,10 +266,10 @@ fn declare(file: &ParsedFile, header: &ModuleHeader, digests: &BTreeMap<&str, &s
             "is reserved"
         } else if scope.aliases.contains_key(name) {
             "already names an imported module"
-        } else if scope.functions.contains(name) {
+        } else if scope.functions.contains_key(name) {
             "is declared twice"
         } else {
-            scope.functions.insert(name.into());
+            scope.functions.insert(name.into(), Signature { params: d.params.len(), exported: d.exported });
             continue;
         };
         return Err(error(module, d.name.loc.0, format!("`{name}` {why}")));
@@ -375,7 +382,7 @@ impl Body<'_> {
             "is reserved"
         } else if self.is_local(n) {
             "is already bound here, and a binding does not shadow another"
-        } else if self.scope.functions.contains(n) {
+        } else if self.scope.functions.contains_key(n) {
             "names a function of this module"
         } else if self.scope.aliases.contains_key(n) {
             "names an imported module"
@@ -458,7 +465,7 @@ impl Body<'_> {
         if self.is_local(n) {
             return Ok(Ir::Var(n.into()));
         }
-        if self.scope.functions.contains(n) {
+        if self.scope.functions.contains_key(n) {
             return Ok(Ir::FnRef { module: None, name: n.into() });
         }
         let message = if BUILTINS.contains(&n) {
@@ -479,13 +486,24 @@ impl Body<'_> {
         }
     }
 
-    /// Checks that an imported module declares `f`. Whether it exports `f` is the checker's question.
-    fn imported(&self, module: &str, f: &Name) -> R<()> {
-        if self.all.iter().any(|s| s.name == module && s.functions.contains(&f.text)) {
-            Ok(())
-        } else {
-            Err(self.err(f.loc.0, format!("module `{module}` declares no function `{}`", f.text)))
+    /// The signature of `f` in an imported module, which must declare `f` and export it, as the checker requires of
+    /// a function another module calls or names.
+    fn imported(&self, module: &str, f: &Name) -> R<Signature> {
+        let name = f.text.as_str();
+        match self.all.iter().find(|s| s.name == module).and_then(|s| s.functions.get(name)) {
+            None => Err(self.err(f.loc.0, format!("module `{module}` declares no function `{name}`"))),
+            Some(s) if !s.exported => Err(self.err(f.loc.0, format!("module `{module}` does not export `{name}`"))),
+            Some(s) => Ok(*s),
         }
+    }
+
+    /// A call gives one argument per parameter. `callee` is the operation or function as the call writes it.
+    fn takes(&self, callee: &str, params: usize, args: &[Expr], span: Span) -> R<()> {
+        if args.len() == params {
+            return Ok(());
+        }
+        let plural = if params == 1 { "" } else { "s" };
+        Err(self.err(span, format!("`{callee}` takes {params} argument{plural}")))
     }
 
     fn args(&mut self, args: &[Expr], path: &mut Vec<u32>) -> R<Vec<Ir>> {
@@ -503,24 +521,28 @@ impl Body<'_> {
         }
     }
 
-    /// A call of a reserved operation, a module function, an imported function or a callable value. A callable
-    /// value's arguments come first in path order, then the callee.
+    /// A call of a reserved operation, a module function, an imported function or a callable value. A call of a
+    /// reserved operation or a module function gives one argument per parameter; a callable value's number of
+    /// parameters is part of its type, which the checker compares (LG2.1). A callable value's arguments come first
+    /// in path order, then the callee.
     fn call(&mut self, callee: &Expr, type_args: &[TypeExpr], args: &[Expr], span: Span, path: &mut Vec<u32>) -> R<Ir> {
         if let ExprKind::Name(n) = &callee.kind {
             if !self.is_local(n) && BUILTINS.contains(&n.as_str()) {
                 return self.builtin(n, type_args, args, span, path);
             }
-            if !self.is_local(n) && self.scope.functions.contains(n) {
+            if let Some(&signature) = self.scope.functions.get(n).filter(|_| !self.is_local(n)) {
                 self.untyped(type_args, span)?;
+                self.takes(n, signature.params, args, span)?;
                 let args = self.args(args, path)?;
                 return Ok(Ir::Call { callee: Callee::Fn { module: None, name: n.clone() }, args });
             }
         }
         if let ExprKind::Field { value, field } = &callee.kind {
-            if let Some(module) = self.alias_of(value) {
+            if let (ExprKind::Name(alias), Some(module)) = (&value.kind, self.alias_of(value)) {
                 let module = module.to_string();
-                self.imported(&module, field)?;
+                let signature = self.imported(&module, field)?;
                 self.untyped(type_args, span)?;
+                self.takes(&format!("{alias}.{}", field.text), signature.params, args, span)?;
                 let args = self.args(args, path)?;
                 return Ok(Ir::Call { callee: Callee::Fn { module: Some(module), name: field.text.clone() }, args });
             }
@@ -560,10 +582,7 @@ impl Body<'_> {
             "used_steps" | "unused_steps" | "budget_status" | "random_draw" | "read_clock" => 0,
             _ => 1,
         };
-        if args.len() != arity {
-            let plural = if arity == 1 { "" } else { "s" };
-            return Err(self.err(span, format!("`{op}` takes {arity} argument{plural}")));
-        }
+        self.takes(op, arity, args, span)?;
         let prim = match op {
             "exact_add" => Some(Prim::ExactAdd),
             "exact_less" => Some(Prim::ExactLess),

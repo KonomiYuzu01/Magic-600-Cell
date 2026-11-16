@@ -6,10 +6,11 @@
 //!
 //! - A value whose base type does not fit its use is `LG2:type.mismatch` (LG2.1), with the expected and the supplied
 //!   type in [`Mismatch`]. The check goes on with a value of unknown type, which fits every use and gives no finding of
-//!   its own, so one fault gives one finding. The exactness codes apply where the base type fits (LG2.22).
+//!   its own, so one fault gives one finding. The exactness codes apply where the base type fits (LG2.22). A function
+//!   value called with another number of arguments is a mismatch too: the count is part of its type.
 //! - A fault with no source diagnostic is an [`IrError`]: a module or function defined twice, an unbound name, an
-//!   unknown or unexported function, a wrong number of arguments, or effect inference that does not converge.
-//!   Lowering refuses most of them before the checker sees them (`rust/README.md`).
+//!   unknown or unexported function, a named function called with a wrong number of arguments, or effect inference
+//!   that does not converge. Lowering refuses all but the last before the checker sees them (`rust/README.md`).
 //! - The flow rule (BND.33) stays off until LQ2 sets it, so the checker never emits `LG3:capability.flow_refused`
 //!   (CT-BND-24, CT-ERR-15). [`separation`] computes how capability separation sees a program (BND.41).
 //! - Static success never replaces the engine's run-time checks (LG3.10).
@@ -1652,7 +1653,8 @@ impl<'p> Checker<'p> {
                         let (fv, fs) = self.at(args.len(), |c| c.expr(fe, env))?;
                         s.add(&fs);
                         let fty = match &fv.ty {
-                            Ty::Fn(fty) => (**fty).clone(),
+                            // A function value's number of parameters is part of its type.
+                            Ty::Fn(fty) if fty.params.len() == vals.len() => (**fty).clone(),
                             other => {
                                 if !is_unknown(other) {
                                     let params: Vec<String> = vals.iter().map(|v| type_text(&v.ty)).collect();
@@ -1660,7 +1662,7 @@ impl<'p> Checker<'p> {
                                     self.at(args.len(), |c| c.misfit(&expected, &fv, "a called value"));
                                 }
                                 // What the call needs is unknown (LG3.2).
-                                s.unresolved.insert("<a value of unknown type>".into());
+                                s.unresolved.insert("<a value that does not fit its call>".into());
                                 return Ok((Val::unknown(), s));
                             }
                         };

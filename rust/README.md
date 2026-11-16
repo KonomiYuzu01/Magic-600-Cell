@@ -76,9 +76,10 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   budget set under approximate control, is still reported. A conversion has its own result type: an `approx53` of a
   `Bool` is a mismatch, and its `Approx<P53>` result at an exact operand is `LG2:type.exact_required` as well.
 - Still an `IrError` that refuses the whole program, because chapters 02 and 13 give it no code: an unbound name, a
-  function declared twice, an unknown or unexported function, a wrong number of arguments, and effect inference that
-  stops before its fixed point. Lowering refuses the first two; a call of an unexported function or with a wrong
-  number of arguments still reaches the checker from source.
+  function declared twice, an unknown or unexported function, a named function called with a wrong number of
+  arguments, and effect inference that stops before its fixed point. Lowering refuses all but the last at their
+  source text, so from source only the last reaches the checker. A function value called with another number of
+  arguments is `LG2:type.mismatch` at the called value: the count is part of its type, which lowering does not know.
 - Qualifiers through calls (LG2.19): a callable enters a slot only if its signature keeps every qualifier (its result
   no more qualified than the slot's, each parameter taking what the slot passes), and a function's own result or
   stored field is checked against its declared bound even when that bound has effect variables. The checker does not
@@ -129,7 +130,9 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   and `target` take a literal string and give a literal.
 - Names. A name is bound once in a function: a `let` or a parameter does not shadow another binding, a module
   function or an import alias. An import names a module by the SHA-256 of its source file, among the files given to
-  one `lower` call, and the module's functions are written `alias.f`. The module loader, with its lockfile and its LG5
+  one `lower` call, and the module's functions are written `alias.f`. Another module calls or names only a module's
+  exported functions, and a call of a module function, like a call of a reserved operation, gives one argument per
+  parameter; lowering refuses either fault at its source text. The module loader, with its lockfile and its LG5
   refusals, is not built.
 - Effects and capabilities. A declaration's `effects [...]` lists effects (`snapshot`, `view`, `workspace`,
   `preview`, `budget`; `file` and `random` also name their capability), capabilities (`file`, `clock`, `random`,
