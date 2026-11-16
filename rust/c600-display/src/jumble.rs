@@ -20,11 +20,11 @@ use c600_kernel::{IdentityBlock, Puzzle};
 
 use crate::array::Array;
 use crate::crosswalk::{Seam, SeamTable};
-use crate::error::Error;
+use crate::error::{codes, Error};
 use crate::pick::{Partial, Projection};
 use crate::plan::{
-    piece_set_digest, CertKind, CertOverlay, CertPoint, GripStatus, Mode, NamedCut, ObjectId, PointPair, PosedInput,
-    RevisionRef, StateRef, TransformInput,
+    piece_set_digest, CertKind, CertOverlay, CertPoint, GripStatus, Level, Mode, NamedCut, ObjectId, PointPair,
+    PosedInput, RevisionRef, StateRef, TransformInput,
 };
 use crate::produce::{self, GeometryInput};
 use crate::validate::{bundle_names, BoundArray, Context, EngineBundle, LimitProfile, Support, SupportReport};
@@ -274,7 +274,8 @@ pub fn seam_table(facts: &Value) -> Option<SeamTable> {
 /// The exact projection to slots of one jumbling state (RPI.23, J13). A sticker of a piece at the identity pose is
 /// in its home slot. A piece off the lattice has no slot, and none is invented: the answer is `undefined` with reason
 /// `off_lattice`. A piece at another lattice pose has a slot, but `c600_jumble` offers no slot action of K⁺, so the
-/// answer is `undefined` with its own reason, distinct from `off_lattice`.
+/// answer is `undefined` with its own reason, distinct from `off_lattice`. It holds the pose level only: a label-level
+/// subject gets [`codes::LEVEL_NOT_HELD`] before any digest is compared (KN1.8).
 pub struct PoseProjection {
     digest: String,
     slot_piece: Vec<u32>,
@@ -308,6 +309,9 @@ impl PoseProjection {
 
 impl Projection for PoseProjection {
     fn slot(&self, subject: &StateRef, object: &ObjectId) -> Partial<u32> {
+        if subject.level() != Level::Poses {
+            return Partial::Undefined(codes::LEVEL_NOT_HELD.to_owned());
+        }
         if subject.digest() != self.digest {
             return Partial::Undefined("the projection is for another subject".to_owned());
         }

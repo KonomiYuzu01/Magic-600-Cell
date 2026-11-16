@@ -1,7 +1,8 @@
 //! CT-LB4-03, the 600-cell-Full half (LB4.4, INV-6, INV-8): several display instances map to their canonical IDs and
 //! levels through chapter 10's source map, a chart inverse value cannot identify a pick, and a layout filter preserves
-//! the mechanically analysed set. The pose levels wait for M5, so the whole definition does not run. Every result is a
-//! source or synthetic fixture outcome over `c600-display`'s mock backend, not a backend run.
+//! the mechanically analysed set. The pose levels are C8's half (`c600-jumble-tool/tests/ct_lb4_03.rs`), parts of which
+//! wait for LP2, so the whole definition does not run. Every result is a source or synthetic fixture outcome over
+//! `c600-display`'s mock backend, not a backend run.
 
 mod common;
 
@@ -10,6 +11,7 @@ use c600_display::host::{Host, MockBackend};
 use c600_display::pick::{LabelProjection, Partial, PickMode, PickReply, Projection, Requested, Resolution};
 use c600_display::plan::*;
 use c600_display::validate::validate;
+use c600_kernel::{IdentityBlock, Puzzle};
 use c600_repr::layout::{linked, Linked, Representation};
 
 use common::*;
@@ -97,7 +99,8 @@ fn fixture() -> Fixture {
 /// sticker, each under its own instance ID, plan and producing source. The levels are explicit: the sticker level
 /// answers for a sticker occurrence, the piece level only where the occurrence states its piece, the cell level for a
 /// cell, and the slot level through the kernel's exact label projection of the bound subject, which is the label
-/// state of 600-cell-Full. Not run: the pose level of a jumbling subject (M5).
+/// state of 600-cell-Full; that projection answers no pose-level subject, even one with its own digest. The pose level
+/// of a jumbling subject is C8's half (`c600-jumble-tool/tests/ct_lb4_03.rs`).
 #[test]
 fn ct_lb4_03_full_half_display_instances_map_to_canonical_ids_and_levels() {
     let f = fixture();
@@ -158,6 +161,20 @@ fn ct_lb4_03_full_half_display_instances_map_to_canonical_ids_and_levels() {
         }
         other => panic!("expected a partial answer without a slot, got {other:?}"),
     }
+    // The label projection holds the label level only (KN1.8, KN1.10). Asked for a pose-level subject whose digest
+    // string is this subject's own, it gives no slot and names the level, before any digest is compared; nothing is
+    // lifted from labels into poses.
+    let poses = DerivedRef {
+        digest: f.digest.clone(),
+        level: Level::Poses,
+        identity: IdentityBlock { puzzle: Puzzle::Jumbling, ..geometry().identity.clone() },
+    };
+    let not_held = Partial::Undefined(codes::LEVEL_NOT_HELD.to_owned());
+    assert_eq!(projection.slot(&StateRef::Derived(poses), &ObjectId::Sticker(f.home)), not_held);
+    assert_eq!(
+        projection.slot(&StateRef::Snapshot(f.base.clone()), &ObjectId::Sticker(f.home)),
+        Partial::Total(f.slot)
+    );
 
     // Linked selection reads the same map entries: the selected sticker has two images in the atlas and one on the
     // sheet, and an object the sheet does not show has no image there, which is not a relation of the object.

@@ -99,6 +99,18 @@ impl StateRef {
             StateRef::Derived(derived) => &derived.identity,
         }
     }
+
+    /// The level its digest names (KN1.8): a snapshot's follows its mode, labels with Jumble off and poses with Jumble
+    /// on; a derived state's is declared.
+    pub fn level(&self) -> Level {
+        match self {
+            StateRef::Snapshot(revision) => match revision.mode {
+                Mode::JumbleOff => Level::Labels,
+                Mode::JumbleOn => Level::Poses,
+            },
+            StateRef::Derived(derived) => derived.level,
+        }
+    }
 }
 
 /// The lineage of a derived subject (ONE.21): KN2.11's derivation, or EV3.12's imported lineage with its explicit

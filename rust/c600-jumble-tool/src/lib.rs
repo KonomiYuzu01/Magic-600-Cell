@@ -112,8 +112,6 @@
 //!   a whole word at either level waits with it: M5 protects one letter.
 //! - The relationship strip's data contract (statement reference, claims, evidence and source location; chapter 06,
 //!   RPI.65) and EV3.8's other roles: the occupant relation carries none of them.
-//! - A level in `c600-display`'s slot projections (C2): `LabelProjection` binds a state digest only, so CT-LB4-03's
-//!   "no lift from labels" rests on the digest that binds the subject, not on a level the projection carries.
 //! - CT-LB1-02's domain-preserving key and "keys preserve the end digest": an owner answer on LG2.18's word keys.
 //! - The LB1 and LB3 library entries as language code: collection types and word operations in the IR draft (LP2).
 //! - The review of the class against the entries and its record (CT-LB6-03, CT-BND-15): BM5.
