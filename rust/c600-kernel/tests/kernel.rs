@@ -407,11 +407,65 @@ fn a_word_recipe_and_a_word_agree() {
     assert_eq!(kernel.effect(&from_json).unwrap(), kernel.effect_by_replay(&direct).unwrap());
 }
 
+/// CT-LB2-02 (part: the kernel half on 600-cell-Full. The captured lock, LB2.3's coverage report and
+/// `LB2:protection.incomplete_coverage` are LP3's library rows, not run here). A word with an identity net map and a
+/// moving prefix passes Net and fails Strict. The refusal has KN2.11's shape: the first refused prefix, the outcome and
+/// certificates, which the one-letter effect confirms. On the shipped model every generator moves a sticker of every
+/// orbit, so Strict refuses any word at its first prefix once one orbit is protected; `tests/load.rs` tests later
+/// prefixes on a changed copy.
+#[test]
+fn ct_lb2_02_strict_refuses_a_word_that_net_accepts() {
+    let kernel = kernel();
+    let (base, every) = (kernel.solved(), kernel.protected_set(&(0..35).collect::<Vec<i64>>()).unwrap());
+    let recipe = kernel.word(&[1, -1]).unwrap();
+    let Derivation::Derived(net) = derive(&base, &recipe, &every) else { panic!("Net refused word([1, -1])") };
+    assert_eq!(net.state.digest(), base.digest());
+    let Derivation::Refused(refused) = kernel.derive_strict(&base, &recipe, &every).unwrap() else {
+        panic!("Strict accepted word([1, -1])");
+    };
+    assert_eq!((refused.first_refused_prefix, refused.protection.first_refused_prefix), (Some(1), Some(1)));
+    assert_eq!((refused.protection.mode, refused.protection.verdict), (ProtectionMode::Strict, Verdict::Moves));
+    assert_eq!((refused.refusal.code, refused.refusal.message.as_str()), (codes::ORBIT_WOULD_MOVE, PROTECTED_MESSAGE));
+    assert_eq!((refused.base.as_str(), refused.word.as_str()), (base.digest(), ONE_MINUS_ONE));
+    assert_eq!(refused.effect, net.effect);
+
+    // The first refused prefix is word([1]): its conflicts are that letter's rows, and Net's refusal of word([1])
+    // gives the same certificates, one per orbit, each a move of the letter.
+    let one = kernel.word(&[1]).unwrap();
+    let Derivation::Refused(single) = derive(&base, &one, &every) else { panic!("Net accepted word([1])") };
+    assert_eq!((single.first_refused_prefix, single.protection.first_refused_prefix), (None, None));
+    assert_eq!(refused.protection.conflicts, single.protection.conflicts);
+    assert_eq!(refused.certificates, single.certificates);
+    assert_eq!(refused.certificates.iter().map(|c| c.orbit).collect::<Vec<_>>(), (0..35).collect::<Vec<_>>());
+    for certificate in &refused.certificates {
+        let at = single.effect.source().binary_search(&certificate.source).expect("the letter moves the source");
+        assert_eq!(single.effect.destination()[at], certificate.destination);
+    }
+    assert_eq!(kernel.strict_protection(&recipe, &every).unwrap(), refused.protection);
+
+    // Without a protected orbit Strict clears every prefix and derives what Net derives.
+    let clear = kernel.strict_protection(&recipe, &ProtectedSet::none()).unwrap();
+    assert_eq!((clear.verdict, clear.first_refused_prefix, clear.conflicts.len()), (Verdict::Clear, None, 0));
+    let star = star(4, 9, -1);
+    let none = ProtectedSet::none();
+    let (Derivation::Derived(strict), Derivation::Derived(net)) =
+        (kernel.derive_strict(&base, &star, &none).unwrap(), derive(&base, &star, &none))
+    else {
+        panic!("a star was refused without protection");
+    };
+    assert_eq!((strict.state.digest(), &strict.effect), (net.state.digest(), &net.effect));
+    assert_eq!((strict.protection.mode, net.protection.mode), (ProtectionMode::Strict, ProtectionMode::Net));
+}
+
 #[test]
 fn protected_sets_name_moving_orbits() {
     let kernel = kernel();
     assert_eq!(kernel.protected_set(&[3, 1, 3]).unwrap().orbits(), [1, 3]);
     assert!(kernel.protected_set(&[]).unwrap().orbits().is_empty());
+    // A nonempty set names this model; the empty set names no orbit and so no model.
+    assert_eq!(kernel.protected_set(&[3]).unwrap().model_id(), Some(kernel.identity().model_id.as_str()));
+    assert_eq!(kernel.protected_set(&[]).unwrap(), ProtectedSet::none());
+    assert_eq!(ProtectedSet::none().model_id(), None);
     for bad in [35, -1] {
         let refusal = kernel.protected_set(&[2, bad]).unwrap_err();
         assert_eq!((refusal.code, refusal.message.as_str()), (codes::NAMED_OBJECT_INVALID, "Bad protected orbit list"));
@@ -553,6 +607,7 @@ fn ct_kn1_04_no_public_call_lifts_a_coarser_level() {
             "solved(&self) -> Snapshot {",
             "state_from_labels(&self, labels: Vec<i32>) -> Option<Snapshot> {",
             "derive(&self, base: &Snapshot, recipe: &Recipe, protected: &ProtectedSet) -> Result<Derivation, Error> {",
+            "derive_strict(&self, base: &Snapshot, recipe: &Recipe, set: &ProtectedSet) -> Result<Derivation, Error> {",
         ]
     );
     for signature in &signatures {
@@ -589,8 +644,9 @@ fn ct_ps1_04_labels_digest_is_core_state_hash() {
     assert_eq!((next.protection.level, next.protection.mode), (Level::Labels, ProtectionMode::Net));
 }
 
-/// CT-PS1-12 (part: Strict protection is not built, so the clause that chunking leaves Strict protection unchanged is
-/// not run). Normalisation keeps the literal steps in order (PS1.23): no letter is reduced away, every prefix of a
+/// CT-PS1-12 (part: the clause that chunking leaves Strict protection unchanged is in `tests/load.rs`,
+/// `strict_protection_judges_each_literal_prefix`). Normalisation keeps the literal steps in order (PS1.23): no
+/// letter is reduced away, every prefix of a
 /// recipe expands to a prefix of its letters, and a word split into chunks of up to 100,000 letters expands, digests
 /// and acts as the same letters. The total stays at most 3,000,000 over every chunk, here and in
 /// `recipe_limits_are_those_of_0_4`, and through a star in `the_ceiling_counts_star_letters`.

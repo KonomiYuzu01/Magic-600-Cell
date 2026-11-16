@@ -389,16 +389,20 @@ pub enum Level {
     Labels,
 }
 
-/// Net protection judges the net map; Strict, which judges every intermediate state, is not built.
+/// Net protection judges the net map of the whole operation. Strict judges every executed prefix of the literal
+/// expansion (KN2.7, LB2.3), so a word with an identity net map can pass Net and fail Strict.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ProtectionMode {
     Net,
+    Strict,
 }
 
-/// A set of protected moving orbits.
+/// A set of protected moving orbits. A nonempty set is bound to the model that built it, and the checked calls refuse
+/// it in another model's kernel (KN1.4). The empty set names no orbit, so it belongs to no model.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ProtectedSet {
     orbits: Vec<usize>,
+    model_id: Option<String>,
 }
 
 impl ProtectedSet {
@@ -412,8 +416,18 @@ impl ProtectedSet {
         &self.orbits
     }
 
+    /// The model whose orbits the set names; `None` for the empty set.
+    pub fn model_id(&self) -> Option<&str> {
+        self.model_id.as_deref()
+    }
+
     fn contains(&self, orbit: i32) -> bool {
         usize::try_from(orbit).is_ok_and(|orbit| self.orbits.binary_search(&orbit).is_ok())
+    }
+
+    /// The protected orbits as a bit set over orbits 0 to 34.
+    fn mask(&self) -> u64 {
+        self.orbits.iter().fold(0, |mask, &orbit| mask | 1 << orbit)
     }
 }
 
@@ -430,9 +444,22 @@ pub struct Protection {
     pub level: Level,
     pub mode: ProtectionMode,
     pub protected: Vec<usize>,
-    /// The support rows of protected orbits.
+    /// The support rows of protected orbits in the judged map: the net map under Net, the net map of the first
+    /// refused prefix under Strict.
     pub conflicts: Vec<SupportRow>,
     pub verdict: Verdict,
+    /// Strict only: the length of the shortest executed literal prefix whose net map moves a protected sticker.
+    /// `None` for a clear verdict and under Net, which judges only the end of the complete operation.
+    pub first_refused_prefix: Option<u64>,
+}
+
+/// A certificate of a protection refusal: the judged map moves the sticker in slot `source`, of the protected orbit
+/// `orbit`, to slot `destination`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct MovedSticker {
+    pub orbit: usize,
+    pub source: i32,
+    pub destination: i32,
 }
 
 /// A derived state (KN2.11).
@@ -447,14 +474,18 @@ pub struct Derived {
     pub protection: Protection,
 }
 
-/// A refused derivation. The base state is unchanged, and the effect is still reported.
+/// A refused derivation, KN2.11's `{first_refused_prefix, outcome, certificates}`: the outcome is `refusal`. The base
+/// state is unchanged, and the effect is still reported.
 #[derive(Clone, Debug)]
 pub struct Refused {
     pub base: String,
     pub word: String,
-    /// `None` under Net protection, which judges the whole net map rather than a prefix.
+    /// Under Strict, the length of the shortest executed literal prefix that moves a protected sticker. `None` under
+    /// Net, which judges only the end of the complete operation, so the judged operation is the whole word.
     pub first_refused_prefix: Option<u64>,
     pub refusal: Refusal,
+    /// Per protected orbit that the judged map moves, its smallest moved slot and that sticker's destination.
+    pub certificates: Vec<MovedSticker>,
     pub effect: Effect,
     pub protection: Protection,
 }
@@ -579,6 +610,11 @@ impl Kernel {
         }
     }
 
+    /// A nonempty protected set must name this model's orbits; the empty set names none.
+    fn same_set(&self, protected: &ProtectedSet) -> Result<(), Refusal> {
+        protected.model_id.as_deref().map_or(Ok(()), |model_id| self.same_model(model_id))
+    }
+
     /// The solved state.
     pub fn solved(&self) -> Snapshot {
         self.solved.clone()
@@ -631,7 +667,8 @@ impl Kernel {
         }
         set.sort_unstable();
         set.dedup();
-        Ok(ProtectedSet { orbits: set })
+        let model_id = (!set.is_empty()).then(|| self.model.model_id.clone());
+        Ok(ProtectedSet { orbits: set, model_id })
     }
 
     /// The effect of a recipe, with star nets from the star cache.
@@ -709,7 +746,8 @@ impl Kernel {
         }
     }
 
-    /// The Net protection verdict of an effect for a protected set.
+    /// The Net protection verdict of an effect for a protected set. It does not check the set's model; the checked
+    /// form is [`Kernel::checked_protection`].
     pub fn protection(&self, effect: &Effect, protected: &ProtectedSet) -> Protection {
         let conflicts: Vec<SupportRow> =
             effect.support.iter().filter(|row| protected.contains(row.orbit)).cloned().collect();
@@ -720,15 +758,100 @@ impl Kernel {
             protected: protected.orbits.clone(),
             conflicts,
             verdict,
+            first_refused_prefix: None,
         }
     }
 
-    /// Applies a recipe's net map to `base` unless a protected orbit would move (KN2.11). A refusal leaves `base`
-    /// and every digest unchanged and still reports the effect.
+    /// [`Kernel::protection`] with KN1.4's check: a set of another model's orbits is refused with
+    /// `KN1:input.identity_mismatch`. An effect names no model (M4 compares the effects of two identities), so a
+    /// recipe's model is checked where its effect is computed.
+    pub fn checked_protection(&self, effect: &Effect, protected: &ProtectedSet) -> Result<Protection, Refusal> {
+        self.same_set(protected)?;
+        Ok(self.protection(effect, protected))
+    }
+
+    /// The Strict protection verdict of a recipe: the predicate is evaluated on every executed prefix of the literal
+    /// expansion (KN2.7, LB2.3), and a refusal names the shortest refused prefix. Both values are checked (KN1.4).
+    pub fn strict_protection(&self, recipe: &Recipe, protected: &ProtectedSet) -> Result<Protection, Refusal> {
+        self.same_model(&recipe.model_id)?;
+        self.same_set(protected)?;
+        Ok(self.strict(&self.expansion(recipe), protected).0)
+    }
+
+    /// Strict over literal letters, with the certificates of a refusal. Letters run from source to destination, so
+    /// while every earlier letter fixes the protected orbits, the next prefix moves exactly the protected stickers its
+    /// last letter moves. The first refused prefix therefore ends at the first letter that moves a protected sticker,
+    /// and its conflicts and certificates are that letter's.
+    fn strict(&self, letters: &[i32], protected: &ProtectedSet) -> (Protection, Vec<MovedSticker>) {
+        let mask = protected.mask();
+        let first = letters.iter().position(|&m| self.model.letter_orbits(m) & mask != 0);
+        let (conflicts, certificates) = match first {
+            None => (Vec::new(), Vec::new()),
+            Some(index) => {
+                let (source, destination) = self.model.pairs(letters[index]);
+                let moved: Vec<i32> = source.iter().zip(destination).filter(|(s, d)| s != d).map(|(&s, _)| s).collect();
+                let rows = engine::support(&self.model, &moved);
+                let conflicts = rows.into_iter().filter(|row| protected.contains(row.orbit)).collect();
+                (conflicts, self.certificates(source, destination, protected))
+            }
+        };
+        let protection = Protection {
+            level: Level::Labels,
+            mode: ProtectionMode::Strict,
+            protected: protected.orbits.clone(),
+            conflicts,
+            verdict: if first.is_some() { Verdict::Moves } else { Verdict::Clear },
+            first_refused_prefix: first.map(|index| index as u64 + 1),
+        };
+        (protection, certificates)
+    }
+
+    /// Per protected orbit that a map moves, its smallest moved slot and where that sticker goes.
+    fn certificates(&self, source: &[i32], destination: &[i32], protected: &ProtectedSet) -> Vec<MovedSticker> {
+        let mut first: Vec<Option<MovedSticker>> = vec![None; ORBITS];
+        for (&s, &d) in source.iter().zip(destination) {
+            let orbit = self.model.slot_orbit[s as usize];
+            if s == d || !protected.contains(orbit) {
+                continue;
+            }
+            let entry = &mut first[orbit as usize];
+            if entry.is_none_or(|certificate| s < certificate.source) {
+                *entry = Some(MovedSticker { orbit: orbit as usize, source: s, destination: d });
+            }
+        }
+        first.into_iter().flatten().collect()
+    }
+
+    /// Applies a recipe's net map to `base` unless a protected orbit would move under Net protection (KN2.11). A
+    /// refusal leaves `base` and every digest unchanged and still reports the effect. Another model's base, recipe
+    /// or protected set is refused (KN1.4).
     pub fn derive(&self, base: &Snapshot, recipe: &Recipe, protected: &ProtectedSet) -> Result<Derivation, Error> {
+        self.derive_in(ProtectionMode::Net, base, recipe, protected)
+    }
+
+    /// [`Kernel::derive`] under Strict protection: every executed literal prefix is judged, and a refusal reports the
+    /// first refused prefix and its certificates (KN2.7, KN2.11).
+    pub fn derive_strict(&self, base: &Snapshot, recipe: &Recipe, set: &ProtectedSet) -> Result<Derivation, Error> {
+        self.derive_in(ProtectionMode::Strict, base, recipe, set)
+    }
+
+    fn derive_in(
+        &self,
+        mode: ProtectionMode,
+        base: &Snapshot,
+        recipe: &Recipe,
+        protected: &ProtectedSet,
+    ) -> Result<Derivation, Error> {
         self.same_model(base.model_id())?;
+        self.same_set(protected)?;
         let effect = self.effect(recipe)?;
-        let protection = self.protection(&effect, protected);
+        let (protection, certificates) = match mode {
+            ProtectionMode::Net => {
+                let certificates = self.certificates(&effect.source, &effect.destination, protected);
+                (self.protection(&effect, protected), certificates)
+            }
+            ProtectionMode::Strict => self.strict(&self.expansion(recipe), protected),
+        };
         let word = effect.expansion_sha256.clone();
         let base_digest = base.digest().to_owned();
         if protection.verdict == Verdict::Moves {
@@ -736,8 +859,9 @@ impl Kernel {
             return Ok(Derivation::Refused(Refused {
                 base: base_digest,
                 word,
-                first_refused_prefix: None,
+                first_refused_prefix: protection.first_refused_prefix,
                 refusal,
+                certificates,
                 effect,
                 protection,
             }));
