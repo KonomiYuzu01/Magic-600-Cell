@@ -20,7 +20,7 @@ for representations, each demonstrating the complete loop. Its four products:
 
 | Product | Without the owner's machine | Waits for |
 | --- | --- | --- |
-| Three-tool vertical path: source, check, run, view nodes, engine preview, explicit user commit, durable receipt and undo | 600-cell-Full: preview, commit and undo through the command layer with oracle equality (C1), the source route (C5), view nodes (C2, C5). Representations: the headless half (C6) | Durable receipts: M6 (C7). The jumbling tool: M5 (C8) |
+| Three-tool vertical path: source, check, run, view nodes, engine preview, explicit user commit, durable receipt and undo | 600-cell-Full: preview, commit and undo through the command layer with oracle equality (C1), the source route (C5), view nodes (C2, C5). Representations: the headless half (C6) | Durable receipts: C7, now that M6 is on main. The jumbling tool: M5 (C8) |
 | Matching command and key routes, kernel-row keys on ONE.48's direct path | The command and key routes with byte-identical traces and receipts (C1); the source route (C5) | The actual key route on Windows (C9) |
 | Active program views under ONE.11, ONE.12 and ONE.64 | Revision-bound output, latest-wins recomputation and stale-state data, headless (C2) | On screen: the renderer freeze (C9) |
 | Further views and user stages | `view.open`, `view.close` and RPI.82's budget, headless (C2) | User vertex and fragment stages on the selected renderer, advertised only after RPI.79's run (C9) |
@@ -51,7 +51,7 @@ and the renderer freeze for its on-screen half, and headless integration does no
 | Module closure | In progress (C4) | Nothing |
 | Source route and the 600-cell-Full tool | May start when C1 is on main | C1 |
 | Representations tool, headless half | May start after C5 | C2's views and C5's host bridge |
-| Durable receipts and undo, CT-RTE-08's persisted words, work sheets | Waits | M6 on main |
+| Durable receipts and undo, CT-RTE-08's persisted words, work sheets | In progress (C7) | M6 is on main (pull request 160); CT-RTE-08's persisted words also need C4 |
 | The jumbling tool and every jumbling half | Waits | M5 on main |
 | Tests that read kernel rows LP2 has not built: Strict protection, streaming words (KN2.10), `positions` (KN2.4), KN3's exact rotations and polytope operations | Waits | LP2's kernel; asked of the LP2 line, not built here |
 | The on-screen half | Waits | The renderer freeze |
@@ -71,7 +71,8 @@ and the renderer freeze for its on-screen half, and headless integration does no
    layer raises that chapter 13 does not register yet are drafts; registering them changes a frozen chapter, so it goes
    through PHS.52 at C10.
 3. **Session store stand-in.** Step 9's durable transaction sits behind a `Store` trait. `MemoryStore` stands in until
-   M6 is on main, so "durable" means only "kept across the layer's restart". Nothing before C7 is persistence evidence.
+   C7 puts the transaction on M6's store, so "durable" means only "kept across the layer's restart". Nothing before C7
+   is persistence evidence.
 4. **Routes.** The command route invokes rows with absolute arguments. The key route presses the draft keymap's chords
    (Ctrl+Enter, Ctrl+Shift+Enter, Escape, Ctrl+Z, Ctrl+Y), which the shell resolves before the envelope (EV4.3). The
    source route (C5) runs a built-in tool whose program proposes the literal word. The headless key route is source
@@ -103,7 +104,7 @@ One pull request per milestone; each names the checks that ran.
 | C4 | Module closure (`c600-module`) | M2 and M7 (on main) | In progress |
 | C5 | Source route and the 600-cell-Full tool (`c600-tools`) | C1 | Next |
 | C6 | Representations tool, headless half | C2, C5 | Next |
-| C7 | Durable receipts and undo through the session store | M6 on main | Waits |
+| C7 | Durable receipts and undo through the session store | M6 (on main) and C1 | In progress |
 | C8 | The jumbling tool | M5 on main | Waits |
 | C9 | The on-screen half and the owner-machine acceptance runs | The renderer freeze; the owner's runs | Waits |
 | C10 | LP3 exit: H-08 freeze, the whole index on one frozen candidate, the owner's sign-off | C1 to C9 | Waits |
@@ -190,9 +191,9 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
 
 ## 8. C7 to C10: what waits
 
-- **C7, after M6 is on main.** M6's session store replaces `MemoryStore`: durable receipts and undo across a real
-  restart, the persisted-word part of CT-RTE-08, the work sheets of CT-LB2-03 and the durable action order of
-  CT-EV3-07.
+- **C7, now that M6 is on main (pull request 160).** M6's session store replaces `MemoryStore`: durable receipts and
+  undo across a real restart, the persisted-word part of CT-RTE-08, the work sheets of CT-LB2-03 and the durable
+  action order of CT-EV3-07.
 - **C8, after M5 is on main.** The jumbling tool, with Jumble on in the command layer and oracle equality against M5's
   fixtures; CT-LB1-02, the jumbling halves of CT-LB1-03 and CT-LB1-06, CT-LB3-01 to CT-LB3-07, the pose levels of
   CT-LB4-03, CT-LB6-03, CT-BND-15, CT-BND-17, CT-EV3-06, CT-RPI-12 and CT-RM-07.
@@ -206,8 +207,8 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
 
 ## 9. Section 15.4's 82 tests
 
-"Now" means the whole test can run without the owner's machine, the renderer freeze, M5, M6 or a missing kernel row.
-31 tests can run whole now (CT-RPI-19 and CT-RTE-07 also need a Linux run for their records), 23 have a part that can
+"Now" means the whole test can run without the owner's machine, the renderer freeze, M5 or a missing kernel row.
+33 tests can run whole now (CT-RPI-19 and CT-RTE-07 also need a Linux run for their records), 21 have a part that can
 run now, and 28 wait entirely. The milestone is in parentheses.
 
 | Test | Class | Whole run | Part now |
@@ -220,7 +221,7 @@ run now, and 28 wait entirely. The milestone is in parentheses.
 | CT-LB1-06 | source | Collection types and word operations in the IR draft (LP2); an owner answer on LG2.18's word keys; M5 for jumbling letters (C8) | - |
 | CT-LB2-01 | source | Collection types in the IR draft, for the library's reports (LP2) | - |
 | CT-LB2-02 | source | The kernel's Strict protection (LP2) | The Net half (C5) |
-| CT-LB2-03 | source | Streaming words, KN2.10 (LP2); work sheets with M6 (C7) | The oversize refusal (C5) |
+| CT-LB2-03 | source | Streaming words, KN2.10 (LP2) | The oversize refusal (C5); work sheets (C7) |
 | CT-LB2-04 | source | The kernel's `positions` row, KN2.4 (LP2) | - |
 | CT-LB3-01 | source | M5 (C8) | The checker half (C5) |
 | CT-LB3-02 | source | M5 (C8) | - |
@@ -240,7 +241,7 @@ run now, and 28 wait entirely. The milestone is in parentheses.
 | CT-EV3-03 | source | Now (C5) | - |
 | CT-EV3-04 | synthetic | Now (C5) | - |
 | CT-EV3-06 | source | M5: off-lattice relations (C8) | Unchanged frames compute no relation (C6) |
-| CT-EV3-07 | source | M6: the durable action order (C7) | A view cannot write (C6) |
+| CT-EV3-07 | source | Now: a view cannot write (C6); the durable action order (C7) | - |
 | CT-EV3-08 | source | The renderer freeze: RM.39's measured ceilings (C9) | The admission semantics (C2, next) |
 | CT-EV4-02 | synthetic | Now, on the draft keymap (C5) | - |
 | CT-EV4-04 | synthetic | KN3.7's exact rotations in the kernel, for the twist leg (LP2) | The append, preview and commit legs (C5) |
@@ -282,7 +283,7 @@ run now, and 28 wait entirely. The milestone is in parentheses.
 | CT-BND-20 | windows | The renderer freeze (C9) | A held chord commits once; the runtime gets no token (C1) |
 | CT-RTE-04 | source | Now (C3) | - |
 | CT-RTE-07 | source | Now, with a Linux run (C4) | - |
-| CT-RTE-08 | source | M6: persisted words (C7) | Module closure (C4) |
+| CT-RTE-08 | source | Now: module closure (C4); persisted words (C7) | - |
 | CT-RTE-10 | windows | Owner runs: LX-2 (C9) | The headless fault half (C3) |
 | CT-RTE-11 | performance | Owner runs: LX-2 (C9) | - |
 | CT-RTE-12 | performance | Owner runs: LX-4 (C9) | - |
@@ -297,10 +298,10 @@ run now, and 28 wait entirely. The milestone is in parentheses.
 
 ## 10. Stop condition for LP3, and questions to the owner
 
-LP3's offline work stops and reports when every remaining milestone waits for M5, M6, a kernel row, the IR draft's
+LP3's offline work stops and reports when every remaining milestone waits for M5, a kernel row, the IR draft's
 collection types and word operations, the renderer freeze, an owner run or an owner answer, or when an implementation
-would change a frozen file (PHS.52). A failing
-acceptance item blocks LP3's exit (PHS.63); nothing is cut, and no bar moves.
+would change a frozen file (PHS.52). A failing acceptance item blocks LP3's exit (PHS.63); nothing is cut, and no bar
+moves.
 
 Questions are batched (owner, 16 November 2026): at most one card per milestone, each with a recommended option.
 
