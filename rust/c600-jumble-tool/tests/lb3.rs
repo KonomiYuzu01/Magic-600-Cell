@@ -237,7 +237,8 @@ fn cayley(omega: [Q5; 3]) -> Twist {
 /// exact coset tests", with LB3.1's "a lattice test by heights holds only on Γ(Λ)" on two menu-reached states; the
 /// library entry waits for the IR draft's collections. Not run here: the agreement of heights and domain IDs with
 /// `trees.py` on ENG-0J item 8's states and H6030, which M5's `tests/test_jumbling_rust_candidate.py` runs on the same
-/// kernel API (CT-KN2-02) and this test does not repeat; and the sticker-test sentence, which waits for M8).
+/// kernel API (CT-KN2-02: `assert_heights`, called by `FixtureComparisonTests` and `H6030Tests`) and this test does not
+/// repeat; and the sticker-test sentence, which waits for M8).
 ///
 /// On the states after 12 records of the I_a and S4 journals, a pose has heights (0,0) exactly when its domain ID is
 /// the lattice's, and the pieces at heights (0,0) are exactly the pieces on the lattice. In free mode the Cayley
@@ -366,6 +367,11 @@ fn step_flag(start: &State, end: &State, unit: &[u32], admissible: bool) -> bool
 /// on two words: one that lands the unit (true) and one that is admissible and lifts lattice pieces (false). The false
 /// flag refuses nothing: the check reports the word admissible, its prefix observations complete, and each literal
 /// letter applies.
+///
+/// What "separately" covers: the recomputation shares the kernel's per-pose height table (`heights`), its lattice test
+/// (`State::is_lattice_piece`) and `State::apply`; the sums, maxima, tameness and the step flag's conditions are
+/// computed here. The heights themselves are checked against `trees.py` by M5's `assert_heights` in
+/// `tests/test_jumbling_rust_candidate.py`.
 #[test]
 fn ct_lb3_06_peak_excursion_tameness_and_the_step_flag_are_recomputed_separately() {
     let ctx = ctx();
@@ -480,7 +486,7 @@ impl Host for Checker {
             Request::Propose { word, .. } => {
                 let word = word.to_vec();
                 let check = word::letters(ctx(), &self.menu, &word)
-                    .map(|letters| checked(&self.state, &letters, None, Some(0)));
+                    .map(|letters| checked(&self.state, &letters, None, word.first().map(|&cap| cap as usize)));
                 self.proposed.push(word);
                 self.checks.push(check);
                 Ok(c600_run::value::Value::receipt(vec![("id", c600_run::value::Value::text("preview-1"))]))
@@ -531,22 +537,27 @@ fn holds_a_table(value: &Value) -> bool {
 /// catalogue, which M5 left to milestone M8).
 ///
 /// A run of each entry proposes the word the solver named once, as given; read as literal letters, the kernel's check
-/// answers for that word: its digest and length are the named word's, the cap is the named cap, and the state is
-/// unchanged. The answer holds scalars, piece-ID lists and height counts only: no word, no letter list and no table
-/// of outcomes, and none of its fields names a recommendation, a next cap, a ranking or a correction. A refused word
-/// and the empty word have the same fields: a refusal adds nothing, and with no cap named the cap and u fields are
-/// null. A word that is no sequence of letters is not checked.
+/// answers for that word: its digest and length are the named word's, the cap is the named cap (cap 0 for the word,
+/// cap 7 for the twist), and the state is unchanged. The answer holds scalars, piece-ID lists and height counts only:
+/// no word, no letter list and no table of outcomes, and no field's name is a recommendation, a next cap, a ranking
+/// or a correction (a check of names, not of values). A refused word and the empty word have the same fields: a
+/// refusal adds nothing, and with no cap named the cap and u fields are null. A word that is no sequence of letters is
+/// not checked.
 #[test]
 fn ct_lb3_07_a_named_word_check_answers_only_its_named_word() {
     let ctx = ctx();
     let fixture = fixture("I_a");
-    let a = fixture.menu.for_cap(ctx, 0).expect("the menu at cap 0").iter().position(|t| t.kidx.is_none());
-    let a = a.expect("a letter outside K⁺") as i32;
+    let outside = |cap: usize| {
+        let twists = fixture.menu.for_cap(ctx, cap).expect("the menu at the cap");
+        twists.iter().position(|t| t.kidx.is_none()).expect("a letter outside K⁺") as i32
+    };
+    let a = outside(0);
     let named = [[0, a], [0, fixture.inverse(a)]];
+    let twist = [[7, outside(7)]];
     let start = fixture.solved();
     let digest = start.digest(ctx);
     let mut answers = Vec::new();
-    for (entry, pairs) in [(CHECK_WORD, &named[..]), (CHECK_TWIST, &named[..1])] {
+    for (entry, pairs) in [(CHECK_WORD, &named[..]), (CHECK_TWIST, &twist[..])] {
         let word = word::word_of(pairs);
         let mut host =
             Checker { state: start.clone(), menu: fixture.menu.clone(), proposed: Vec::new(), checks: Vec::new() };
@@ -557,12 +568,16 @@ fn ct_lb3_07_a_named_word_check_answers_only_its_named_word() {
         let check = host.checks.pop().expect("one check").expect("the word is letters of the menu");
         let compact: Vec<String> = pairs.iter().map(|[cap, item]| format!("[{cap},{item}]")).collect();
         assert_eq!(text(&check, "word_digest"), sha256_hex(format!("[{}]", compact.join(",")).as_bytes()), "{entry}");
-        assert_eq!((int(&check, "letters"), int(&check, "cap")), (pairs.len() as i64, 0), "{entry}");
+        assert_eq!(
+            (int(&check, "letters"), int(&check, "cap")),
+            (pairs.len() as i64, i64::from(pairs[0][0])),
+            "{entry}"
+        );
         assert_eq!((text(&check, "start_digest"), flag(&check, "admissible")), (&*digest, Some(true)), "{entry}");
         answers.push(check);
     }
     assert_eq!(text(&answers[0], "end_digest"), digest, "the named word a,a⁻¹ ends at solved");
-    assert_ne!(text(&answers[1], "end_digest"), digest, "the named twist a does not");
+    assert_ne!(text(&answers[1], "end_digest"), digest, "the named twist at cap 7 does not");
 
     // A refused word and the empty word have the same fields, and no answer holds a word or an outcome table.
     let state = fixture.after(12);

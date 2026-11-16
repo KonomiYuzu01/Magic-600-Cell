@@ -21,9 +21,10 @@
 //! - **Entries (LB6.5, LB3.8, LG3.6).** The module `jumble_checker` exports two commands, `check_named_twist(t: Word)`
 //!   and `check_named_word(w: Word)`, for LB6.5's candidate "Named twist/word checker and kept checks". Each proposes
 //!   its `Word` parameter as given. The IR draft has no list types and no word operations, so an entry does not test
-//!   that a named twist is one letter; [`word::twist`] does, in Rust. The kept checks (DT-J1 O4) are no entry: a kept
-//!   check proposed again from storage is the storage-laundering case capability separation refuses (BND.39), so the
-//!   solver names the word again, and the table of kept checks is the shell's.
+//!   that a named twist is one letter, and the two entries differ in name only; [`word::twist`] reads one letter, in
+//!   Rust. The kept checks (DT-J1 O4) are no entry: a kept check proposed again from storage is the storage-laundering
+//!   case capability separation refuses (BND.39), so the solver names the word again, and the table of kept checks is
+//!   the shell's.
 //! - **Target and row set (BND.57, LB6.5).** Every entry's target is `operation.preview`, the only preview row the
 //!   command layer on main has, so the row set is that one row. The draft command table's jumbling rows
 //!   (`jumble.release.check`, `operation.check`) are not in the command layer, and LB6.5 leaves ENG-0J's row names to
@@ -54,9 +55,11 @@
 //!
 //! - Jumble on in the command layer and oracle equality through it: LP2's KN5 implementation. LP3 changes no
 //!   `c600-command` layer code until it lands.
-//! - ν, the checkpoints, the sticker test, label protection, the repair list (CT-LB3-05, CT-BND-17) and the correction
-//!   catalogue: M5 left them to milestone M8 (`c600-jumble`'s documentation). With them wait CT-LB3-03's sticker-test
+//! - ν, the checkpoints, the sticker test, the repair list (CT-LB3-05, CT-BND-17) and the correction catalogue: M5 left
+//!   them to milestone M8 (the LP2 plan, section 11). With them wait CT-LB3-01, CT-LB3-04, CT-LB3-03's sticker-test
 //!   sentence and the correction and rim parts of CT-LB3-07.
+//! - LB3.4's crossing (CT-LB3-02): M5's `tests/crossing.rs` runs its kernel facts as CT-KN2-03; LP3's own test is C8's
+//!   next piece.
 //! - CT-LB1-02's domain-preserving key and "keys preserve the end digest": an owner answer on LG2.18's word keys.
 //! - The LB1 and LB3 library entries as language code: collection types and word operations in the IR draft (LP2).
 //! - The pose levels of CT-LB4-03 and the off-lattice relations of CT-EV3-06: `c600-repr` (C6), not yet on main.

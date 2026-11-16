@@ -783,8 +783,8 @@ impl Check<'_> {
             return Err(invalid("a pose index is outside the pose table"));
         }
         let lattice = posed.pose_lattice.as_i32();
-        if lattice.iter().any(|&k| !(-1..K_PLUS).contains(&k)) || lattice[0] < 0 {
-            return Err(invalid("a lattice entry is not -1 or a rotation-group index, or pose 0 is off the lattice"));
+        if lattice.iter().any(|&k| !(-1..K_PLUS).contains(&k)) || lattice[0] != 0 {
+            return Err(invalid("a lattice entry is not -1 or a rotation-group index, or pose 0 is not index 0"));
         }
         let first = &posed.poses.as_f32()[..(d * d) as usize];
         let identity = first.iter().enumerate().all(|(i, &x)| x == if i as u64 % (d + 1) == 0 { 1.0 } else { 0.0 });

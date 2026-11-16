@@ -43,8 +43,10 @@ pub enum Missing {
     Engine(String),
 }
 
-/// The binary32 display value of an exact number: (a + b√5)/d evaluated in binary64 and rounded once. It is display
-/// data only; nothing exact is decided from it.
+/// The binary32 display value of an exact number: (a + b√5)/d evaluated in binary64, each operation rounded, then
+/// rounded to binary32, so it may differ from the correctly rounded value in the last place. `None` when a
+/// coefficient does not fit binary64 or the value is not finite. It is display data only; nothing exact is decided
+/// from it.
 pub fn approximate(x: &Q5) -> Option<f32> {
     let part = |n: String| n.parse::<f64>().ok();
     let (a, b, d) = (part(x.a().to_string())?, part(x.b().to_string())?, part(x.d().to_string())?);
@@ -228,9 +230,12 @@ pub fn grip_status(status: Status) -> GripStatus {
 /// The seam table of a `seam_facts` answer that lists its rows (J08): one entry per mismatched cell, on-grip and
 /// off-grip alike, in the engine's order, and complete only when the engine's batch was. A domain is named by the
 /// rank of its exact key among the table's domains and a cell by the rank of its chamber pair among the table's
-/// cells: identities local to this table, enough to keep entries distinct. `None` when the answer lists no rows or a
-/// row lacks a field; nothing is filled in.
+/// cells: identities local to this table, enough to keep entries distinct. `None` when the answer is not for scope
+/// `all` (a cap's answer counts its N_c, not total N), lists no rows or a row lacks a field; nothing is filled in.
 pub fn seam_table(facts: &Value) -> Option<SeamTable> {
+    if facts.get("scope").and_then(Value::as_str) != Some("all") {
+        return None;
+    }
     let complete = facts.get("complete") == Some(&Value::Bool(true));
     let mut rows = Vec::new();
     for row in facts.get("rows")?.as_array()? {
@@ -327,8 +332,11 @@ pub const ROWS: [&str; 4] = ["J02", "J03", "J04", "J05"];
 /// omits (J01, J06 to J12, F25, F27) are unsupported (RM.15); J13 is the jumbling binding of F18.
 pub fn support_report(limits: &LimitProfile) -> SupportReport {
     let mut report = produce::support_report(limits);
-    for row in ["F01", "F03", "F04"] {
-        let refusal = Error::unsupported(row, "a 600-cell-Full row; the jumbling puzzle uses J02, J03 and J05");
+    for (row, replacement) in [("F01", "J02"), ("F03", "J03"), ("F04", "J05")] {
+        let refusal = Error::unsupported(
+            row,
+            format!("a 600-cell-Full row; the jumbling puzzle uses {replacement} in its place"),
+        );
         report.features.insert(row.to_owned(), Support::Unsupported(refusal));
     }
     for row in ROWS {

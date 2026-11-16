@@ -46,13 +46,15 @@
 //! - RPI.15, J02 (render/1 section 3): a posed row is validated only for a jumbling identity and a pose-level subject
 //!   (a Jumble-on revision or a derived state at level poses): 177120 pose indices inside the table, finite row-major
 //!   d x d matrices with the identity at pose 0, and one lattice entry per pose, -1 or a K+ index below 7200
-//!   ([`validate::K_PLUS`]). A malformed row in a program publication is `EV3:input.display_plan_invalid` under
+//!   ([`validate::K_PLUS`]), pose 0's being index 0. A malformed row in a program publication is `EV3:input.display_plan_invalid` under
 //!   RM.12's precedence; `EV3:input.display_bundle_mismatch` stays the engine bundle's code (RPI.9). The row's array
 //!   hashes are its array descriptors. Its exact state digest is the plan subject's digest, which the validator
 //!   cannot recompute from binary32 arrays: the producer binds it ([`jumble::revision`], [`jumble::bundle`]).
-//! - RPI.15, J02: a pose entry (a + b sqrt 5)/d is evaluated in binary64 and rounded once to binary32
-//!   ([`jumble::approximate`]). The solved state's three arrays equal the hashes the J1 fixture records; the arrays
-//!   of a later J1 stage are not compared here. A pose with no finite binary32 value is missing data, not a row.
+//! - RPI.15, J02: a pose entry (a + b sqrt 5)/d is evaluated in binary64, each operation rounded, and then rounded
+//!   to binary32 ([`jumble::approximate`]). The solved state's three arrays equal the hashes the J1 fixture records;
+//!   the arrays of a later J1 stage (`mid`, `end`) are not compared here, so a non-identity pose matrix's orientation
+//!   (row-major, acting on column vectors) and its rounding are checked only by m·mᵀ = I, which a transposed table
+//!   also passes. A pose with no finite binary32 value is missing data, not a row.
 //! - RPI.17, RM.15: the jumbling fixture report ([`jumble::support_report`]) supports J02 to J05, reports F01, F03
 //!   and F04 unsupported (the jumbling puzzle uses J02, J03 and J05 in their place) and omits J01 and J06 to J12.
 //!   The jumbling context binds the unchanged geometry digests of [`produce::GeometryInput`]; J01's area-weighted

@@ -14,7 +14,7 @@ use c600_display::crosswalk::{exposed_geometry, survey_state, SurveyState};
 use c600_display::jumble::{self, Missing, PoseProjection};
 use c600_display::pick::{Partial, PickMode, PickReply, Requested};
 use c600_display::plan::*;
-use c600_display::validate::{swept_preview, validate, validate_engine_bundle, Context};
+use c600_display::validate::{swept_preview, validate, validate_engine_bundle, Context, K_PLUS};
 use c600_jumble::observe::{seam_facts, Batch, Rows, Scope};
 use c600_jumble::regions::near_poles;
 use c600_jumble::state::{Outcome, State, Status};
@@ -183,8 +183,9 @@ fn ct_rpi_08_jumbling_rows_are_produced_and_validated() {
 
 /// CT-RPI-08, jumbling rows, unsupported and missing-data part (RPI.15, RPI.17, RPI.19): a backend that reports no
 /// J02, a malformed posed payload, a label-level subject, a blocked twist's missing moving set, a transform without
-/// the engine's plane, a named-cap set its budget left incomplete and M5's absent exposed-face geometry each give
-/// their explicit outcome, and nothing is guessed, truncated or installed. Not run: a backend's own refusals.
+/// the engine's plane, a named-cap set its budget left incomplete and an absent exposed-face geometry (the refusal
+/// path; M5 supplies none) each give their explicit outcome, and nothing is guessed, truncated or installed. Not run:
+/// a backend's own refusals.
 #[test]
 fn ct_rpi_08_jumbling_unsupported_and_missing_data_are_explicit() {
     let world = world();
@@ -221,12 +222,26 @@ fn ct_rpi_08_jumbling_unsupported_and_missing_data_are_explicit() {
     infinite[20] = f32::INFINITY;
     let mut lattice = posed.pose_lattice.as_i32();
     lattice.push(-1);
+    let mut negative = posed.pose_index.as_i32();
+    negative[0] = -1;
+    let lattice_with = |pose: usize, entry: i32| {
+        let mut entries = posed.pose_lattice.as_i32();
+        entries[pose] = entry;
+        PosedInput { pose_lattice: Array::i32s(vec![poses], &entries), ..posed.clone() }
+    };
+    assert!(poses > 1, "the twisted state has more than one pose");
     let malformed = [
         PosedInput { pose_index: Array::i32s(vec![short.len() as u64], &short), ..posed.clone() },
         PosedInput { pose_index: Array::i32s(vec![outside.len() as u64], &outside), ..posed.clone() },
         PosedInput { poses: Array::f32s(vec![poses, 4, 4], &turned), ..posed.clone() },
         PosedInput { poses: Array::f32s(vec![poses, 4, 4], &infinite), ..posed.clone() },
         PosedInput { pose_lattice: Array::i32s(vec![poses + 1], &lattice), ..posed.clone() },
+        PosedInput { pose_index: Array::i32s(vec![negative.len() as u64], &negative), ..posed.clone() },
+        lattice_with(1, K_PLUS),
+        lattice_with(1, -2),
+        lattice_with(0, -1),
+        lattice_with(0, 5),
+        PosedInput { poses: Array::f32s(vec![0, 4, 4], &[]), pose_lattice: Array::i32s(vec![0], &[]), ..posed.clone() },
     ];
     for (case, payload) in malformed.into_iter().enumerate() {
         let error = validate(&single(Primitive::Posed(payload), &base), &ctx).expect_err("malformed");
@@ -257,8 +272,9 @@ fn ct_rpi_08_jumbling_unsupported_and_missing_data_are_explicit() {
     }
     assert_eq!(jumble::named_cap_set(engine, &mut blocked, 600, None), Err(Missing::NoSuchCap { cap: 600 }));
 
-    // M5 supplies no certified exposed-face geometry or size profile (J10).
-    let error = exposed_geometry(None, None).expect_err("M5 has no exposed-face geometry");
+    // J10's refusal path: with no certified exposed-face geometry or size profile supplied (M5 supplies none),
+    // nothing is drawn.
+    let error = exposed_geometry(None, None).expect_err("no exposed-face geometry is supplied");
     assert_eq!(error.code, codes::EXPOSED_GEOMETRY_UNAVAILABLE);
 }
 
@@ -268,8 +284,8 @@ fn reply(host: &c600_display::host::Host<c600_display::host::MockBackend>, insta
 
 /// CT-RPI-12, off-lattice part (RPI.23, RPI.25), on a real jumbling state off the lattice: a slot request for a
 /// sticker or piece off the lattice is a partial answer with reason `off_lattice` and no invented slot; a sticker
-/// at the identity pose resolves to its home slot; the partial answer differs from an unknown one (another subject,
-/// or a level the occurrence has no target at) and from a stale one, which is checked first. The stale half itself
+/// at the identity pose resolves to its home slot; the partial answer differs from another subject's partial answer,
+/// from an unknown one (a level the occurrence has no target at) and from a stale one, which is checked first. The stale half itself
 /// is C2's test in `picking.rs`; a slot of a piece at a non-identity lattice pose is not computed (no K⁺ slot action
 /// in `c600_jumble`).
 #[test]
@@ -312,12 +328,13 @@ fn ct_rpi_12_off_lattice_partial_answers_stay_distinct_on_a_jumbling_state() {
     };
     assert_eq!(slot.target, ObjectId::Slot(home_of(home)));
 
-    // Unknown is another answer: a projection of another subject, or a level the occurrence has no target at.
+    // A projection of another subject is a partial answer with its own reason, not `off_lattice`; a level the
+    // occurrence has no target at is unknown.
     let other = PoseProjection::new(engine, &world.solved);
     let Ok(Some(Partial::Partial { missing, .. })) = resolve(1, PickMode::Explicit, Requested::Slot, &other) else {
-        panic!("another subject's projection answers nothing")
+        panic!("another subject's projection gives a partial answer")
     };
-    assert_ne!(missing, ["slot: off_lattice"], "an unknown slot is not reported as off the lattice");
+    assert_eq!(missing, ["slot: the projection is for another subject"], "not reported as off the lattice");
     let unknown = resolve(1, PickMode::Explicit, Requested::Cell, &projection);
     assert!(matches!(unknown, Ok(Some(Partial::Undefined(_)))), "{unknown:?}");
 
@@ -435,6 +452,8 @@ fn ct_rm_07_jumbling_vectors_hold_on_the_real_model() {
     assert_eq!(facts.get("totals"), Some(&Value::Null), "the engine claims no total for a cut-off batch");
     let interrupted = jumble::seam_table(&facts).expect("a listed table");
     assert!(!interrupted.complete && matches!(interrupted.total(), Partial::Undefined(_)), "no total N");
+    let one_cap = seam_facts(engine, &mut state, Scope::Cap(cap), &whole, Rows::Mismatched, None).expect("seam facts");
+    assert!(jumble::seam_table(&one_cap).is_none(), "a cap's answer counts its N_c, never total N");
 
     // Row 15: a certificate point targets its witness piece and grip; off the lattice it has no slot.
     let off = certificate.piece;
