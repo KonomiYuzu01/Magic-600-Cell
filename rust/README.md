@@ -451,7 +451,9 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   refuse and its drag picks 16, the old 43; and H requests: the frame axes' half-turns are the direct members 11, 1
   and 10, H(1,1,0), H(0,1,-1) and H(1,2,3) refuse with `KN2:input.twist_off_menu`, and the H(1,1,0) drag picks 23 of
   the ties 23, 24, 41 and 54 at (9 − 3√5)/2); in part CT-KN3-04 (not run: a search for N ≥ 1 near the limit),
-  CT-KN3-06 (not run: the shell's gesture producer) and CT-LG2-16's kernel half (not run: the language half).
+  CT-KN3-06 (not run: the shell's gesture producer), CT-DET-16 (identical requests give identical choices and records
+  against pinned digests; not run: the shell's gesture producer and another platform) and CT-LG2-16's kernel half
+  (not run: the language half).
 - Draft choices (`rotation`'s documentation): half-turn candidates are the canonical integer axes with every
   |component| ≤ N, at denominator 1; free mode compares the whole grid, (2N+1)³·D Cayley points and the half-turns,
   with no budget or cancellation and no pruning except at N = 0, where the grid is the identity alone and one
@@ -626,8 +628,8 @@ run or not applicable is no pass (PHS.63).
     and CT-PS1-12 (M4's section).
   - `c600-jumble/tests/`: `crossing.rs` runs CT-KN2-03, and `assets.rs` the jumbling model's asset checks (M5's
     section); `domain.rs` and `refusals.rs` hold the candidate's halves of Fable's M5 attack leads; `kn3.rs` runs
-    KN3's exact rotation requests under A6 (CT-KN3-05 whole, CT-KN3-04, CT-KN3-06 and CT-LG2-16's kernel half in part),
-    with `c600_kernel::exact`'s unit tests for CT-KN3-01's part.
+    KN3's exact rotation requests under A6 (CT-KN3-05 whole; CT-KN3-04, CT-KN3-06, CT-DET-16 and CT-LG2-16's kernel
+    half in part), with `c600_kernel::exact`'s unit tests for CT-KN3-01's part.
   - `c600-evidence/tests/` runs the EVD rows (the evidence library's section).
   - `c600-session/tests/`: M6's tests mark their rows (M6's section), CT-ONE-03 to CT-ONE-05, CT-ONE-11, CT-ONE-21,
     CT-ONE-23 and CT-ONE-24 included. `conformance_rows.rs` runs the session's half of CT-ONE-01 and CT-ONE-02 over
@@ -645,9 +647,9 @@ run or not applicable is no pass (PHS.63).
     faults as expected failures (M5's section).
 - Count with LP3's C1 to C5, M5, LP2's first integration batch and KN3's exact requests, as `tools/language/ct_index.py
   --summary` prints it (`tests/test_ct_index.py` checks the tool): 60 whole, seven of them by the union of their parts
-  (CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01 and CT-LG3-04); 122 part; 5 named only by LP3's
+  (CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01 and CT-LG3-04); 123 part; 5 named only by LP3's
   command-layer tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04, CT-LI-09 and CT-LI-10); 1 missing
-  despite its name (CT-KN5-08: only the documentation in `c600-command/src/layer.rs` names it); 60 waiting, each with
+  despite its name (CT-KN5-08: only the documentation in `c600-command/src/layer.rs` names it); 59 waiting, each with
   what it waits for in `docs/progress/1.0/lp2-ct-index-notes.md`.
 - Not run or not applicable, which is no pass (PHS.63), with the check that runs instead: CT-LG3-06's flow-label
   variant, while the flow rule is off (BND.41) and LQ2 has not set it, so the static-only and run-time variants run
@@ -717,7 +719,6 @@ run or not applicable is no pass (PHS.63).
   - LG5's module loader and lockfiles (7): CT-LG5-01 to CT-LG5-07. LP3 C4's `c600-module` builds closures and
     lockfiles, but its tests name none of these rows.
   - KN5's command layer, once its candidate is picked (2): CT-KN5-05 and CT-KN5-08.
-  - A6's request determinism (1, no milestone named): CT-DET-16; KN3's tests do not name it yet.
   - The stage checker, RPI.68 to RPI.76 (3, no milestone named): CT-LG2-15, CT-LG3-10 and CT-LG5-08.
   - Compressed words, KN2.10 (no milestone named): CT-LG4-03; the kernel's streaming runs CT-LG2-14 and CT-KN2-07 in
     part (M4's section).

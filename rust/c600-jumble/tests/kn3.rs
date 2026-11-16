@@ -19,6 +19,14 @@ use c600_kernel::{Derivation, Kernel, ProtectedSet};
 const SET: &str = "fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c";
 const ORDER: &str = "5a0429d2946fbf58b495d8f300e24a3fa164b1d9518ce4a5c3f4ef0a40625c3c";
 const REVERSED_ORDER: &str = "1a87a4209a933f47a568eac9e881697614bf53e1f7411e817f5764a3a5f92a78";
+/// SHA-256 of the canonical records of `identical_requests_give_identical_choices_and_records`'s five requests.
+const RECORD_DIGESTS: [&str; 5] = [
+    "e273d48b633591c3b66b710280067d69676c27c6fd3397184bc6eff0df875926",
+    "a3faf822b9d5cd1da805b6d4ac1890bc656fd291757481f1af9942381ed4b64b",
+    "656efe437ad1a08a2d57aeced94990dd7aba348b6551d19511a44f56accace69",
+    "755c55a3e924b63645de0c283707fdadceeb9b5d2b42f2f21944ecf3639b3c78",
+    "0a14defe1b2e387f0abeb54251cf54c4cd821250a07e2771839b0a0d5e0ecc96",
+];
 
 fn repository() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..")
@@ -365,4 +373,46 @@ fn on_600_cell_full_retained_items_dispatch_and_jumble_items_refuse() {
 
     let resolution = rotation::resolve(ctx, None, &free(wire::cayley_request(["0:0", "0:0", "0:0"]), 0, 1)).unwrap();
     assert_eq!(rotation::retained_word(ctx, &resolution).unwrap_err().code, codes::MENU_BINDING_MISMATCH);
+}
+
+/// CT-DET-16 (synthetic, part: under A6, identical exact request bytes, operation, bounds and menu binding give
+/// identical choices and byte-identical records, resolved again, against a menu built again from the same record and
+/// against pinned record digests, the exact four-way ties of the C=(1,0,0) and H(1,1,0) drags included; each record
+/// replays to its rotation without running a chooser; the kernel half of the producer refuses non-finite binary64
+/// patterns and writes both zeros as `0:0`; not run: the shell's gesture producer, LP3, and a run on another platform)
+#[test]
+fn identical_requests_give_identical_choices_and_records() {
+    let ctx = ctx();
+    let (menu, again) = (pinned(), pinned());
+    let cases = [
+        (false, free(wire::cayley_request(["3:3", "0:0", "1:4"]), 1, 16)),
+        (true, bound(wire::cayley_request(["1:0", "0:0", "0:0"]), Operation::MenuDrag, &menu)),
+        (true, bound(wire::half_turn_request(["1:0", "1:0", "0:0"]), Operation::MenuDrag, &menu)),
+        (true, bound(wire::half_turn_request(["0:0", "1:0", "0:0"]), Operation::MenuDirect, &menu)),
+        (true, bound(wire::menu_request(SET, ORDER, 15), Operation::MenuDirect, &menu)),
+    ];
+    let mut digests = Vec::new();
+    for (with_menu, binding) in &cases {
+        let resolve = |m: &Menu| rotation::resolve(ctx, with_menu.then_some(m), binding).expect("the request resolves");
+        let first = resolve(&menu);
+        let text = first.to_json().canonical();
+        for other in [resolve(&menu), resolve(&again)] {
+            assert_eq!(other.choice, first.choice, "{binding:?}");
+            assert_eq!(other.to_json().canonical(), text, "{binding:?}");
+        }
+        let record = json::parse(text.as_bytes()).expect("the record is JSON");
+        let runs = chooser_runs();
+        let twist = rotation::replay(ctx, &record).expect("the record replays");
+        assert_eq!((chooser_runs(), &twist.matrix), (runs, &first.twist.matrix), "{binding:?}");
+        digests.push(c600_digest::sha256_hex(text.as_bytes()));
+    }
+    assert_eq!(digests, RECORD_DIGESTS);
+
+    // The kernel half of the shell's producer: the infinities and a NaN refuse, and both zeros give one token.
+    for bits in [0x7ff0_0000_0000_0000_u64, 0xfff0_0000_0000_0000, 0x7ff8_0000_0000_0000] {
+        let refused = wire::token_of_binary64(bits).expect_err("a non-finite value has no token");
+        assert_eq!(refused.code, codes::ROTATION_REQUEST_MALFORMED);
+    }
+    assert_eq!(wire::token_of_binary64(0x8000_0000_0000_0000).unwrap(), "0:0");
+    assert_eq!(wire::token_of_binary64(0).unwrap(), "0:0");
 }

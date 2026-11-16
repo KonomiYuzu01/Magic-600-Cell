@@ -28,7 +28,6 @@ The tool refuses (exit 2) a note for an ID outside the phase's table and an unkn
 | CT-PS1-11 | waiting | the jumbled puzzle's row that M5 leaves to M8 (`rust/README.md`, missing list) |
 | CT-PS1-14 | waiting | the jumbled puzzle's row that M5 leaves to M8 (`rust/README.md`, missing list) |
 | CT-PS1-22 | waiting | the jumbled puzzle's row that M5 leaves to M8 (`rust/README.md`, missing list) |
-| CT-DET-16 | waiting | A6's request determinism; KN3's tests (`c600-jumble/tests/kn3.rs`) do not name it yet (`rust/README.md`, missing list) |
 | CT-LG2-15 | waiting | the stage checker, RPI.68 to RPI.76, no milestone named (`rust/README.md`, missing list) |
 | CT-LG3-10 | waiting | the stage checker, RPI.68 to RPI.76, no milestone named (`rust/README.md`, missing list) |
 | CT-LG5-08 | waiting | the stage checker, RPI.68 to RPI.76, no milestone named (`rust/README.md`, missing list) |
