@@ -133,7 +133,10 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   `LG2:type.exact_required`; a display-qualified result shows its qualifier instead, so a later exact use erases it. A
   call inside a `display_if` branch to a function that may reach the caller again, directly or through a function
   reference, is refused: approximate data cannot bound recursion. A workspace or snapshot read keeps the display
-  qualifier of every field the program stores under that name.
+  qualifier of every field the program stores under that name, and a read at a type variable keeps the stored
+  qualifier itself, also in a record field (LG2.19; lead L1 of the M7 attack, 16 November 2026).
+- An approximate literal as a match pattern is `LG2:type.exact_required` at the match: it is never read as exact
+  (LG1.7), and a pattern compares as an exact equality does (lead L2 of the M7 attack).
 - The three known limits of M1, leads from the Fable attack (owner decision, 15 November 2026), each confirmed by an
   attack test (`c600-check/tests/limits.rs`). Closed: an effect variable of a view's callable parameter that a call
   site instantiates with a workspace or preview effect is `LG3:effect.undeclared` at the call (LG3.5, LG3.6), also

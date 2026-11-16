@@ -779,6 +779,22 @@ fn signature_keeps(s: &FnTy, t: &FnTy, own: bool) -> bool {
     s.params.iter().zip(&t.params).all(|(sp, tp)| admits(tp, sp, false)) && admits(&s.result, &t.result, own)
 }
 
+/// A storage read's value `v`, declared as `slot`, of a value the program stores as `stored`: a type variable of the
+/// declared type stands for the stored type and keeps its qualifier, at any depth of a record, since decoding retains
+/// the qualifier (LG2.19). A record holding such a field is display-qualified as a whole.
+fn decoded(v: Val, slot: &QTy, stored: &QTy) -> Val {
+    match (&slot.ty, &stored.ty) {
+        (Ty::Var(_), _) => Val { qual: v.qual.join(declared_qual(stored)), ..v },
+        (Ty::Record(s), Ty::Record(t)) if s.len() == t.len() => {
+            let fields: Vec<Val> =
+                s.iter().zip(t).enumerate().map(|(i, ((_, sf), (_, tf)))| decoded(v.field(i), sf, tf)).collect();
+            let qual = fields.iter().fold(v.qual, |q, f| q.join(f.qual.container()));
+            Val { qual, fields: Some(fields), ..v }
+        }
+        _ => v,
+    }
+}
+
 fn is_integer(ty: &Ty) -> bool {
     matches!(ty, Ty::Nat | Ty::Int | Ty::Budget)
 }
@@ -1862,9 +1878,12 @@ impl<'p> Checker<'p> {
                     // A pattern has no path of its own, so the match is the offending range; a pattern compares with
                     // the scrutinee as an exact equality does.
                     let pattern = lit_type(lit);
+                    let what = format!("the pattern of arm {i} of a match");
                     if !fits(&pattern, &sv.ty) && !fits(&sv.ty, &pattern) {
-                        let what = format!("the pattern of arm {i} of a match");
                         self.mismatch(type_text(&sv.ty), type_text(&pattern), &what);
+                    } else if let Lit::Approx { .. } = lit {
+                        // An approximate literal is never read as exact (LG1.7), so it is no operand of that equality.
+                        self.exact_use(Site::Operand, &Val::new(pattern, Qual::Approx), &what);
                     }
                     let (av, a_s) = self.at(i + 1, |c| c.expr(arm, env))?;
                     s.add(&a_s);
@@ -2094,6 +2113,7 @@ impl<'p> Checker<'p> {
                     if !admits(ty, field, false) {
                         v.qual = v.qual.join(declared_qual(field).container());
                     }
+                    v = decoded(v, ty, field);
                 }
                 Ok((v, s))
             }
