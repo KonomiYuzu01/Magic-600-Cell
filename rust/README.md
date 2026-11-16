@@ -616,11 +616,11 @@ run or not applicable is no pass (PHS.63).
     N01 to N04 through the kernel (M4's section); `tests/test_jumbling_rust_candidate.py` compares the jumbling
     candidate with J1 (M5's section); `tests/test_jumbling_rust_attacks.py` runs Fable's M5 attack leads, with J1's
     faults as expected failures (M5's section).
-- Count with LP3's C1 to C5 and C7, M5 and LP2's first integration batch, as `tools/language/ct_index.py --summary`
-  prints it
+- Count with LP3's C1 to C5 and C7, M5, LP2's first integration batch and KN5's stages 1 and 2, as
+  `tools/language/ct_index.py --summary` prints it
   (`tests/test_ct_index.py` checks the tool): 59 whole, seven of them by the union of their parts (CT-KN1-05,
-  CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01 and CT-LG3-04); 118 part; 5 named only by LP3's command-layer
-  tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04, CT-LI-09 and CT-LI-10); 1 missing despite its name
+  CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01 and CT-LG3-04); 119 part; 4 named only by LP3's command-layer
+  tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); 1 missing despite its name
   (CT-KN5-08: only the documentation in `c600-command/src/layer.rs` names it); 65 waiting, each with what it waits for
   in `docs/progress/1.0/lp2-ct-index-notes.md`.
 - Not run or not applicable, which is no pass (PHS.63), with the check that runs instead: CT-LG3-06's flow-label
@@ -629,7 +629,7 @@ run or not applicable is no pass (PHS.63).
   services that host the formatter come with LP4; CT-LG4-01's second admitted route, since RT1 is the only one (LQ9);
   CT-BND-11's ONE.32 fields in other profiles, which never arise (BND.60); the Linux legs of CT-DET-02, CT-DET-15 and
   CT-PS1-01, since CI has no Linux cargo job; form 2 in CT-DET-32, since RT1 runs form 1 only (the LP2 plan's
-  selection, which the owner may overrule); ERR.1 for the five codes `c600-command` names as drafts that chapter 13
+  selection, which the owner may overrule); ERR.1 for the six codes `c600-command` names as drafts that chapter 13
   does not register, which `tests/test_language_scans.py` lists exactly (`UNREGISTERED_DRAFTS`); the parts of the
   session's rows that their markers leave to LP3's view, display, command layer and runtime process, to A6's live
   twist and to M5's crossing, and step 7 of CT-ONE-11, which M6 cannot reach (M6's section); and, as before,
@@ -662,13 +662,15 @@ run or not applicable is no pass (PHS.63).
     (`closure/manifests/p7-layers.json`). The Used-by cells of `KN2:input.recipe_shape` and
     `KN2:resource_limit.primitive_ceiling` say "not yet used", but the kernel emits both; the cell of
     `KN2:input.word_blocked_prefix` says the same, but the jumbling adapter emits it for a refused word (M5).
-    Chapter 13 registers none of the five draft codes `c600-command` emits (`KN2:consistency.star_certificate`,
-    `KN5:input.unknown_row`, `KN5:input.argument_form`, `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`);
-    the command table's drafts settle at LP3 (PHS.53).
+    Chapter 13 registers none of the six draft codes `c600-command` emits (`KN2:consistency.star_certificate`,
+    `KN5:input.unknown_row`, `KN5:input.argument_form`, `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`,
+    and KN5's `KN4:input.session_exists` for a store that already holds a session); the command table's drafts settle
+    at LP3 (PHS.53).
   - For LP3: LB7.1's `LB7:capability.module_grant_missing` is the workspace library's entry-admission fact, built with
     LB7; the checker's own admission reports `LG3:capability.not_granted`, as chapter 02's LG3 table has it.
-  - KN5 has two implementations, `c600-session` (M6) and LP3's `c600-command` (pull request 159). The LP2 integrator
-    picks the one CT-KN5-01 to CT-KN5-13 run against before M8.
+  - KN5 has one implementation: LP3's `c600-command`, durable over M6's journal through `c600_session::JournalStore`
+    (KN5's stages 1 and 2; LP3's C7 section below). The CT-KN5 parts that run, run against it; M6's `Session::invoke`
+    follows the same draft ruling 4 until its tests move to `c600-command`.
   - `Kernel::protection` has no model check (M4's section).
   - For M6's store: the kernel's `archive::gunzip` accepts concatenated gzip members and trailing zero padding, so
     FP.7's strict one-member reader must refuse them itself; run-time `encode` applies no json_depth or integer_digits
@@ -767,6 +769,20 @@ run or not applicable is no pass (PHS.63).
   `file` overlay without a granted file capability), L12 to L14, L16, L17, and CT-ONE-29's `FrameChain` and
   `PresentedFrame`. No host caller is built. No session lock exists (LP3's L9), so two opens of one journal can
   interleave.
+- The integrator's fresh Claude read of KN5 found one major problem and it is fixed: a restart that could not read
+  the journal back treated an unknown fate as absent. `Store::durable` now answers `None` when the store cannot tell.
+  The transaction then stays unknown and the layer stays in read-only recovery, so no later action takes its order.
+  One minor problem is fixed as well: a runtime envelope without the token its row takes no longer authenticates. Open,
+  deferred as minor:
+  - A retained refusal's receipt carries the envelope's full digest, where KN5.21's receipt has the request digest.
+    So `outcome` given the request digest alone answers `unknown_outcome`.
+  - After a reopen, `invoke` refuses an old-epoch envelope whose command ID was never durable with
+    `KN2:stale.epoch_changed`, and that refusal takes the ID. `kernel_outcome` answers `unknown_outcome` for the same
+    ID.
+  - The caller label is the host's to set, and `protection.orbit.set` takes no token. Until stage 3's admission matrix,
+    a release's `confirm` is not authenticated as the solver's.
+  - Retained refusals are not bounded within an epoch.
+  - The key route cannot send `confirm`, so undoing a protection add by key answers `KN5:input.confirmation_required`.
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run. The timings the loop
   check prints are informational, not performance evidence.
 

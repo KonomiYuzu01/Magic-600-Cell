@@ -249,8 +249,9 @@ pub enum Fate {
 pub trait Store {
     fn transact(&mut self, transaction: &Transaction) -> Fate;
 
-    /// Whether the event is durable: read at a restart to settle a transaction whose fate was unknown.
-    fn durable(&self, event: &str) -> bool;
+    /// Whether the event is durable: read at a restart to settle a transaction whose fate was unknown. `None` when the
+    /// store cannot tell yet, so the fate stays unknown.
+    fn durable(&self, event: &str) -> Option<bool>;
 
     /// Records a new session's start. A store that keeps no history may ignore it.
     fn begin(&mut self, _genesis: &Genesis) -> Fate {
@@ -290,8 +291,8 @@ impl Store for MemoryStore {
         fate
     }
 
-    fn durable(&self, event: &str) -> bool {
-        self.log.iter().any(|t| t.event == event)
+    fn durable(&self, event: &str) -> Option<bool> {
+        Some(self.log.iter().any(|t| t.event == event))
     }
 
     fn begin(&mut self, genesis: &Genesis) -> Fate {

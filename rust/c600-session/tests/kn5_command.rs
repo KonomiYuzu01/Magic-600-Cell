@@ -282,6 +282,48 @@ fn a_failed_append_rolls_back_and_an_unknown_fate_is_settled_by_the_journal() {
     }
 }
 
+/// CT-ONE-22 (part: a restart that cannot read the journal back keeps an unknown fate unknown and stays in read-only
+/// recovery, so no later action takes the unknown one's place in the order; a later restart adopts it, and the reopen
+/// replays every committed action once; not run: a real disk's read errors), KN5.23.
+#[test]
+fn a_restart_that_cannot_read_the_journal_keeps_an_unknown_fate_unknown() {
+    let disk = MemDisk::new();
+    let mut f = create(&disk);
+    f.commit(&word(&[1]));
+    let (_, id) = f.preview(&word(&[2]));
+    let press =
+        f.shell.prepare(&f.layer, "operation.execute", json::object([("preview", Value::Int(id as i64))])).unwrap();
+    // The action's frame is written and synced, the sync still reports an error, and the cut back fails.
+    let next = disk.writes();
+    disk.fail_write(next + 1, Fault::Persisted);
+    disk.fail_write(next + 2, Fault::Error);
+    let receipt = f.shell.send(&mut f.layer, press);
+    assert_eq!(receipt.status, Status::UnknownOutcome);
+    // The restart reads the journal back and syncs it; that sync fails, so the store cannot tell the fate.
+    disk.fail_write(disk.writes(), Fault::Error);
+    f.layer.restart(Secret::fixed(SECRET));
+    f.shell.restart(Secret::fixed(SECRET));
+    assert_eq!(f.layer.recovery().map(|e| e.code), Some(code::COMMIT_FATE), "the fate stays unknown");
+    let refused = f.shell.invoke(&mut f.layer, "operation.preview", draft_args(&word(&[3]))).unwrap();
+    assert_eq!(code_of(&refused), code::READ_ONLY_RECOVERY);
+    let unsettled = f.layer.kernel_outcome(&Caller::Shell, &receipt.command, &receipt.request);
+    assert_eq!(unsettled.status, Status::UnknownOutcome);
+    // The next restart reads the journal, which holds the action, and adopts it.
+    f.layer.restart(Secret::fixed(SECRET));
+    f.shell.restart(Secret::fixed(SECRET));
+    assert!(f.layer.recovery().is_none(), "{:?}", f.layer.recovery());
+    let settled = f.layer.kernel_outcome(&Caller::Shell, &receipt.command, &receipt.request);
+    assert!(matches!(settled.status, Status::Committed(_)), "{:?}", settled.status);
+    f.commit(&word(&[3]));
+    let kept = f.kept();
+    disk.crash();
+    drop(f);
+    let g = reopen(&disk, SECRET);
+    assert!(g.layer.recovery().is_none(), "{:?}", g.layer.recovery());
+    assert_eq!(g.kept(), kept, "every committed action replays once");
+    assert_eq!(g.layer.kernel_outcome(&Caller::Shell, &receipt.command, &receipt.request), settled);
+}
+
 /// CT-ONE-22 (part: a damaged journal opens in read-only recovery after the last action that reads, which refuses
 /// proposals and commits and answers reads; not run: a runtime's reads), KN5.23.
 #[test]

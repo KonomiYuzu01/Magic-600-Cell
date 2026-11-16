@@ -751,7 +751,9 @@ impl<S: Store> CommandLayer<S> {
     /// Ends the epoch and starts a fresh random one with a new per-launch secret (CT-ONE-21, L10). Previews, jobs and
     /// handles end; durable receipts stay; other receipts become `unknown_outcome`, and the refusals retained for the
     /// epoch are dropped; no token of the old epoch is valid. A transaction whose fate was unknown is adopted if the
-    /// store holds it durably, and dropped otherwise; either way its recovery ends.
+    /// store answers that it holds it durably and dropped if the store answers that it does not; either answer ends its
+    /// recovery. While the store cannot tell, the transaction stays unknown and the layer stays in read-only recovery,
+    /// so no later action takes its place in the order; a later restart settles it.
     pub fn restart(&mut self, secret: Secret) {
         self.secret = secret;
         self.used.clear();
@@ -763,9 +765,13 @@ impl<S: Store> CommandLayer<S> {
         self.running.clear();
         self.commit_held = false;
         if let Some(adoption) = self.limbo.take() {
-            self.recovery = None;
-            if self.store.durable(&adoption.transaction.event) {
-                self.adopt(adoption);
+            match self.store.durable(&adoption.transaction.event) {
+                Some(true) => {
+                    self.recovery = None;
+                    self.adopt(adoption);
+                }
+                Some(false) => self.recovery = None,
+                None => self.limbo = Some(adoption),
             }
         }
         for (key, record) in std::mem::take(&mut self.receipts) {
@@ -890,7 +896,7 @@ impl<S: Store> CommandLayer<S> {
         };
         match (&invocation.caller, &invocation.token) {
             (Caller::Runtime { .. }, Some(_)) => false,
-            (Caller::Runtime { .. }, None) => Self::runtime_may(row),
+            (Caller::Runtime { .. }, None) => Self::runtime_may(row) && !row.takes_token(),
             (Caller::Shell, None) => !row.takes_token(),
             (Caller::Shell, Some(token)) => row.takes_token() && token.verify(&self.secret),
         }

@@ -620,6 +620,27 @@ fn the_runtime_and_the_shell_keep_separate_command_ids() {
     assert_eq!(code_of(&crossed), code::COMMAND_ID_REUSED);
 }
 
+/// CT-KN5-04 (part: a runtime envelope without the token its row takes does not authenticate, so its refusal is kept
+/// for its own envelope and never takes the runtime's command ID; not run: the host's run IDs), draft ruling 4.
+#[test]
+fn a_runtime_envelope_without_its_rows_token_never_takes_the_command_id() {
+    let mut f = fixture(&[]);
+    let scramble = Invocation {
+        command: "run-1/1".into(),
+        row: "jumble.scramble".into(),
+        args: json::object([("policy", Value::String("uniform".into()))]),
+        token: None,
+        caller: Caller::Runtime { run: "run-1".into() },
+        epoch: f.layer.revision().epoch,
+    };
+    let refused = f.layer.invoke(scramble.clone());
+    assert_eq!(code_of(&refused), code::TOKEN_INVALID);
+    let proposal = Invocation { row: "operation.preview".into(), args: draft_args(&word(&[1])), ..scramble.clone() };
+    let admitted = f.layer.invoke(proposal);
+    assert!(running(&admitted), "the command ID is still free: {:?}", admitted.status);
+    assert_eq!(f.layer.invoke(scramble), refused, "the refusal answers its own envelope again");
+}
+
 /// CT-KN5-10 (part: the layer's public functions that take `&mut self` are the allowlisted entry points, its test
 /// hooks exist only in builds with debug assertions or the `test-hooks` feature, and the shell reaches the layer
 /// through `invoke` and `present` alone besides reads; not run: calling each entry point against a journal), R-05,

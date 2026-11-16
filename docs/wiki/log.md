@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-16] update | The language: KN5's one implementation, stages 1 and 2
+LP3's command layer (`rust/c600-command`) now runs durably over M6's journal through `c600_session::JournalStore`: an open replays the history through the kernel and draws a fresh epoch, tokens are bound to the session's identity, `protection.orbit.set` and undo over M6's move tree are built, and under draft ruling 4 the refusal of an envelope that does not authenticate never takes a command ID, which closes LP3's KN5.21 lead. Two frozen-text readings wait for the owner (PHS.52); stages 3 to 5 and a session lock are not built, and `rust/README.md` lists the drafts and the gaps.
+
 ## [2026-11-16] update | The language: LP2's first integration batch
 The checker gains chapter 07 section 8's built-in column as a draft (`admit_built_in`), the entry rule for exported functions, BND.57's rows, fixes for M1's known limits and for two M7 attack leads; the interpreter's meter now holds DET.57's frames and DET.56's fused output row and runs 11 of DET.65's traces as programs; the kernel adds Strict protection, KN2.11's refusal shape, positions, KN1.4's model binding and KN2.10's streamed replay; Fable's M5 attack leads became tests, with J1's faults kept as expected failures. `tools/language/ct_index.py` now computes section 15.3's index: 59 of the 248 LP2 tests whole and 118 in part, 65 waiting with what they wait for.
 

@@ -62,7 +62,7 @@ fn kn5_21_lead_closed_a_refused_forgery_leaves_the_command_id_to_the_genuine_env
 
         let answer = shell.send(&mut layer, genuine.clone());
         assert!(matches!(answer.status, Status::Committed(_)), "{case}: the genuine envelope commits: {answer:?}");
-        assert_ne!(refusal.request, answer.request, "{case}: the refusal is not filed under the genuine request digest");
+        assert_ne!(refusal.request, answer.request, "{case}: the refusal is not filed under the genuine digest");
         assert_eq!(layer.outcome(&genuine.command, &answer.request), Some(answer.clone()), "{case}");
         let after = fingerprint(&layer);
         assert_ne!(after, before, "{case}: the commit moved the session");

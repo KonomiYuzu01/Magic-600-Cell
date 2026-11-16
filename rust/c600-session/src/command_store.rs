@@ -248,11 +248,12 @@ impl Store for JournalStore {
         fate
     }
 
-    /// Whether the journal holds the action, read again first when an append's fate was unknown.
-    fn durable(&self, event: &str) -> bool {
+    /// Whether the journal holds the action, read again first when an append's fate was unknown; `None` while that
+    /// reread fails.
+    fn durable(&self, event: &str) -> Option<bool> {
         let mut inner = self.0.borrow_mut();
         inner.settle();
-        !inner.unsettled && inner.held.transactions.iter().any(|t| t.event == event)
+        (!inner.unsettled).then(|| inner.held.transactions.iter().any(|t| t.event == event))
     }
 
     fn begin(&mut self, genesis: &Genesis) -> Fate {
