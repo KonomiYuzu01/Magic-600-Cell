@@ -214,6 +214,7 @@ SECONDS = {
     "tests/test_log_workflow.py": 13, "tests/test_core.py": 12,
     "tests/test_language_rust.py": 60,  # an estimate until a CI run measures it
     "tests/test_kernel_oracle.py": 90,  # an estimate until a CI run measures it
+    "tests/test_oracle.py": 35,  # an estimate: 28 to 30 s locally since the invalid-recipe family
 }
 DEFAULT_SECONDS = 5
 # Parallel Windows jobs for a full run; the longest check (about 14 minutes) bounds the gain.

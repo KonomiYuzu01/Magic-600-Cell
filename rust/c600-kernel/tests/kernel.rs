@@ -528,8 +528,9 @@ fn build_hashes_every_source_file() {
 
 /// CT-KN1-04 (part: the 600-cell-Full API of M4, whose one level is labels; the pose level and its projections come
 /// with the jumbling half, M5). An enumeration of the kernel's public functions finds no lift from a coarser level to
-/// a finer one: a state comes only from `solved` or from `derive` on a label snapshot, a snapshot's field and
-/// constructor are private, and no public function names a pose.
+/// a finer one: a state comes only from `solved`, from `derive` on a label snapshot, or from `state_from_labels`, which
+/// reads a stored state back from labels at the same level (M6's store; it decides no reachability), a snapshot's
+/// field and constructor are private, and no public function names a pose.
 #[test]
 fn ct_kn1_04_no_public_call_lifts_a_coarser_level() {
     // A new level makes this match fail to compile, so that the enumeration below is read again.
@@ -550,6 +551,7 @@ fn ct_kn1_04_no_public_call_lifts_a_coarser_level() {
         states,
         [
             "solved(&self) -> Snapshot {",
+            "state_from_labels(&self, labels: Vec<i32>) -> Option<Snapshot> {",
             "derive(&self, base: &Snapshot, recipe: &Recipe, protected: &ProtectedSet) -> Result<Derivation, Error> {",
         ]
     );

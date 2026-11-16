@@ -816,7 +816,8 @@ fn ct_det_12_concurrent_runs_keep_payloads_and_budget_coverage() {
 fn ct_det_13_outcomes_stay_distinct_and_only_completion_has_a_result() {
     let empty = build(&[&source("", "export fn nothing() -> Unit effects [] {\n    return ();\n}\n")]);
     let add = build(&[&source("", ADD)]);
-    let clock = build(&[&source("clock", "export fn now() -> Nat effects [clock] {\n    return read_clock();\n}\n")]);
+    let clock =
+        build(&[&source("clock", "export fn now() -> Display<Nat> effects [clock] {\n    return read_clock();\n}\n")]);
     let completed = run(&empty, "nothing", vec![], &Options::new(WIDE));
     assert_eq!((completed.summary.outcome, output(&completed)), (Outcome::Completed, "null\n"));
     assert!(matches!(completed.value, Some(Value::Unit)));
@@ -879,7 +880,7 @@ fn ct_det_15_exact_fields_ignore_approximate_perturbation() {
 #[test]
 fn ct_det_17_ambient_access_without_a_grant_is_refused() {
     let programs = [
-        ("clock", "export fn go() -> Nat effects [clock] {\n    return read_clock();\n}\n", "read"),
+        ("clock", "export fn go() -> Display<Nat> effects [clock] {\n    return read_clock();\n}\n", "read"),
         ("file", "export fn go() -> Nat effects [file] {\n    return file_read<Nat>(\"data.txt\");\n}\n", "read"),
         ("random", "export fn go() -> Nat effects [random] {\n    return random_draw();\n}\n", "rng_draw"),
     ];
