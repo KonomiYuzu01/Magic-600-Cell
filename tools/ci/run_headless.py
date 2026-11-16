@@ -115,6 +115,8 @@ CHECKS += LANGUAGE_DOCS_CHECKS + [
     ["tests/test_kernel_oracle.py"],
     # LP2 conformance tests outside the Rust workspace (chapter 12, section 15.3).
     ["tests/test_format_inventory.py"],
+    ["tests/test_error_registry.py"],
+    ["tests/test_language_scans.py"],
 ]
 
 TIME_LIMIT_SECONDS = 1200
