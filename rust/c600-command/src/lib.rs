@@ -8,8 +8,11 @@
 //! invocation envelope (EV4.3), so a key bound to a kernel row reaches the engine with no interpreter step (ONE.48).
 //! This crate depends on the kernel only: it has no path to the language runtime at all.
 //!
-//! Step 9's durable transaction sits behind [`store::Store`]. [`store::MemoryStore`] stands in until LP2's session store
-//! (M6) is merged on main; receipts are durable only in that sense here.
+//! Step 9's durable transaction sits behind [`store::Store`], and [`CommandLayer::open`] replays a store's history
+//! through the kernel ([`store::Reopen`]) to restore the revision, the protected set, the undo and redo history and the
+//! durable receipts. LP2's session store implements both over KN4's journal (`c600_session::JournalStore`, which
+//! depends on this crate and never the reverse); [`store::MemoryStore`] keeps the same contract in memory for the
+//! tests and the oracle loop.
 //!
 //! # Drafts
 //!
@@ -22,7 +25,8 @@
 //!   rotations, which the kernel does not build yet, so the row is refused with `KN5:input.row_not_built`, as is every
 //!   other row this crate does not build yet. The loop uses the operation rows, which are kernel rows too.
 //! - Codes chapter 13 does not register yet: `KN5:input.unknown_row`, `KN5:input.argument_form`,
-//!   `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict` and `KN2:consistency.star_certificate`.
+//!   `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`, `KN4:input.session_exists` and
+//!   `KN2:consistency.star_certificate`.
 //! - The token travels beside the arguments in the envelope, not inside them, so it can bind the absolute arguments
 //!   (LI.6). Its binding enters the request digest; its authenticator does not (LI.5).
 //! - Jobs run when the host calls [`CommandLayer::run_jobs`]; `invoke` answers `running(job)` at once (KN5.2). The
@@ -31,14 +35,52 @@
 //! - A token is spent when it authenticates, so a refused commit consumes its press.
 //! - The envelope carries its originating epoch (LI.5). A command ID the layer knows is answered by its outcome
 //!   lookup, across a restart too; an unknown envelope from another epoch is refused with `KN2:stale.epoch_changed`,
-//!   and its command ID stays used, so a new press takes a new ID.
+//!   and when it authenticates its command ID stays used, so a new press takes a new ID.
 //! - [`CommandLayer::present`] stands in for the adapter's RM.26 report of a frame the built-in chain drew (ONE.41).
 //! - A program may replace the pending preview: its proposal runs inside a command the solver invoked (KN5.12 stays
 //!   open; LI.38's working form).
 //! - `operation.preview.cancel` changes no revision.
-//! - Undo derives the inverse word through the kernel under the protection set in force (LI.26's normal permission
-//!   path); no protection row is built, so no undo releases protection and none needs a confirmation yet. After an
-//!   undo the revision's head is the journal's new head, the event below the undone one (KN5.21).
+//! - Undo and redo walk M6's move tree through the original permission path (LI.26): a move's inverse is derived
+//!   through the kernel under the protected set in force, from a head whose hash matches its node; the undo of a
+//!   protection change restores the set before it and needs `confirm` when it releases an orbit. After an undo the
+//!   revision's head is the node the undo returns to, not the undo's own event (KN5.21).
+//! - Draft ruling 1: a press whose preview ended is refused `KN5:stale.no_fresh_preview` when the slot is empty and
+//!   `KN5:stale.preview_replaced` when it holds another preview; a token for a preview never presented is
+//!   `no_fresh_preview`. LI's vector that answers `preview_replaced` after the pressed preview was committed is not
+//!   followed (a PHS.52 note in `rust/README.md`).
+//! - Draft ruling 2: an undo or redo checks its hint before its bound revisions, so a press raced by any durable action
+//!   is `KN5:stale.undo_superseded`.
+//! - Draft ruling 3: no receipt and no lookup answers `accepted`. A record is written once the gates answered, and a
+//!   refusal never overwrites a stored record.
+//! - Draft ruling 4 (a PHS.52 reading of KN5.21 and KN5.23): command IDs are scoped per caller (the shell, the runtime;
+//!   no host caller is built). A record is keyed by the scope and the ID, and the request digest covers the caller. A
+//!   refusal of an envelope that does not authenticate (a bad authenticator, a missing token, or a caller that may not
+//!   use the row or hold a token) is retained for the epoch under the envelope's full digest, authenticator included,
+//!   which is its receipt's `request`; it never attaches to the command ID. Every other answer attaches to the ID. The
+//!   retry lookup precedes authentication (chapter 08 section 7), so an envelope whose request digest equals a
+//!   recorded one is answered as its retry whatever its authenticator, and commits nothing.
+//! - Draft ruling 5: a token whose authenticator fails is `KN5:auth.token_invalid`; one that verifies but names another
+//!   session or epoch is `KN5:stale.token_mismatch`.
+//! - Draft ruling 7: `session.checkpoint.save` follows `command-table.json`, a commit row that takes a token; it is not
+//!   built yet. M6's `session.checkpoint` takes no token.
+//! - Draft ruling 8: LI's clauses are drafts. The layer follows them where the frozen text is silent, and the tests
+//!   mark those expectations as drafts.
+//! - A commit token binds the SHA-256 of the kernel's identity block ([`identity_json`]) and the preview's
+//!   dependencies (KN0.8); an undo or redo token binds the state and protection revisions and the hint (LI.6).
+//! - `confirm` is an optional boolean argument of a row with the `confirm` gate or an action guard.
+//! - A new session starts in epoch 1. Every open and every restart draws a fresh random epoch of at least 2 that the
+//!   session never had, also under an injected secret (L10). The shell's command IDs are `prefix/n` in epoch 1 and
+//!   `prefix/epoch/n` after it, so a new shell never meets an earlier epoch's IDs; two shells with one prefix in one
+//!   epoch would collide. Preview and job IDs restart after a reopen; the epoch in every binding keeps them apart.
+//! - [`CommandLayer::outcome`] is the shell's lookup and answers `None` for an ID the shell never used in this layer's
+//!   life; [`CommandLayer::kernel_outcome`] is `kernel.outcome` for any caller.
+//! - `protection.orbit.set` is a workspace row with no token; the runtime may not invoke it.
+//! - An action that does not move the puzzle (a protection change, its undo or redo, a workspace completion) keeps the
+//!   state revision, the preview slot and the jobs (KN5.18).
+//! - A workspace overlay's completion is one durable action with its receipt (KN5.23) but is not undoable: the layer
+//!   holds no inverse of a program's write. A rolled-back transaction's `failed` receipt is transient.
+//! - The test hooks (`hold_commit_lane`, `fault_replace_head`, `store_mut`) exist only in builds with debug assertions
+//!   or the `test-hooks` feature (L15).
 //! - The per-launch secret comes from the standard library's random hasher keys, the clock and the process ID, hashed
 //!   with SHA-256. A product build needs an operating-system random source.
 
@@ -57,7 +99,9 @@ pub use receipt::{
     Receipt, ResultRef, Revision, Status,
 };
 pub use shell::{draft_args, word_draft, ArgSource, KeyBinding, Shell};
-pub use store::{Fate, MemoryStore, Store, Transaction, TransactionKind};
+pub use store::{
+    identity_from_json, identity_json, Fate, Genesis, History, MemoryStore, Reopen, Store, Transaction, TransactionKind,
+};
 pub use table::{Kind, Lane, Overlay, PreviewRule, Row, Table, UndoClass};
 pub use token::{PreviewBinding, Secret, Token, TokenBinding};
 

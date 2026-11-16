@@ -543,6 +543,20 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   was refused as stale; L7, `create` reported an unknown header fate as a failure and wrote to a disk it then refused.
   All five are fixed. L4 and L6 became the seeded replay test and its oracle (the durable view, receipts, contents and
   the undo chain), and L10's rows 1 to 7 are covered. L8 and L9 are deferred.
+- KN5 (LP2): `JournalStore` (`src/command_store.rs`) implements c600-command's `Store` and `Reopen` over the journal,
+  in a draft frame format of its own (`c600-command-journal-draft-1`, not the frozen migration format), so the command
+  layer runs durably on this crate's disks; the dependency runs from this crate to c600-command only. Tests:
+  `tests/kn5_command.rs`. M6's `Shell`, `Session::invoke` and `Session::shell` are superseded by that layer and are
+  removed once their tests run against it.
+- M6's own `invoke` keeps the layer's ruling 4: the program gates and the authenticator run before an envelope takes
+  its command ID, and their refusal is kept for the epoch under the command ID and the request digest without taking
+  the ID, so an envelope with a bad authenticator, or a program's commit or non-job row, sent first under the shell's
+  next command ID no longer makes the genuine press `KN5:input.command_id_reused` (`tests/kn5_command.rs`). Until it is
+  removed it still differs from the layer's KN5 rulings: it stores `accepted` under the command ID before steps 5 to 8
+  (ruling 3; `commit.rs` asserts it during a held write); its request digest includes the origin and the
+  authenticator (the layer's excludes the authenticator, LI.5); command IDs are one space for the shell and programs;
+  an `epoch_changed` refusal is not kept; and its shell stub mints for a fresh preview that need not be presented
+  (LP3's L4).
 - Evidence kind: source and fixture. Failures are injected in memory; `FsDisk` runs in one reopen test, so a pass is no
   evidence of a real disk's behaviour in a crash. The checks ran on Windows only.
 
@@ -609,11 +623,11 @@ run or not applicable is no pass (PHS.63).
     N01 to N04 through the kernel (M4's section); `tests/test_jumbling_rust_candidate.py` compares the jumbling
     candidate with J1 (M5's section); `tests/test_jumbling_rust_attacks.py` runs Fable's M5 attack leads, with J1's
     faults as expected failures (M5's section).
-- Count with LP3's C1 to C5 and C7, M5 and LP2's first integration batch, as `tools/language/ct_index.py --summary`
-  prints it
+- Count with LP3's C1 to C8, M5, LP2's first integration batch and KN5's stages 1 and 2, as
+  `tools/language/ct_index.py --summary` prints it
   (`tests/test_ct_index.py` checks the tool): 59 whole, seven of them by the union of their parts (CT-KN1-05,
-  CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01 and CT-LG3-04); 118 part; 5 named only by LP3's command-layer
-  tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04, CT-LI-09 and CT-LI-10); 1 missing despite its name
+  CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01 and CT-LG3-04); 119 part; 4 named only by LP3's command-layer
+  tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); 1 missing despite its name
   (CT-KN5-08: only the documentation in `c600-command/src/layer.rs` names it); 65 waiting, each with what it waits for
   in `docs/progress/1.0/lp2-ct-index-notes.md`.
 - Not run or not applicable, which is no pass (PHS.63), with the check that runs instead: CT-LG3-06's flow-label
@@ -622,7 +636,7 @@ run or not applicable is no pass (PHS.63).
   services that host the formatter come with LP4; CT-LG4-01's second admitted route, since RT1 is the only one (LQ9);
   CT-BND-11's ONE.32 fields in other profiles, which never arise (BND.60); the Linux legs of CT-DET-02, CT-DET-15 and
   CT-PS1-01, since CI has no Linux cargo job; form 2 in CT-DET-32, since RT1 runs form 1 only (the LP2 plan's
-  selection, which the owner may overrule); ERR.1 for the five codes `c600-command` names as drafts that chapter 13
+  selection, which the owner may overrule); ERR.1 for the six codes `c600-command` names as drafts that chapter 13
   does not register, which `tests/test_language_scans.py` lists exactly (`UNREGISTERED_DRAFTS`); the parts of the
   session's rows that their markers leave to LP3's view, display, command layer and runtime process, to A6's live
   twist and to M5's crossing, and step 7 of CT-ONE-11, which M6 cannot reach (M6's section); and, as before,
@@ -655,13 +669,15 @@ run or not applicable is no pass (PHS.63).
     (`closure/manifests/p7-layers.json`). The Used-by cells of `KN2:input.recipe_shape` and
     `KN2:resource_limit.primitive_ceiling` say "not yet used", but the kernel emits both; the cell of
     `KN2:input.word_blocked_prefix` says the same, but the jumbling adapter emits it for a refused word (M5).
-    Chapter 13 registers none of the five draft codes `c600-command` emits (`KN2:consistency.star_certificate`,
-    `KN5:input.unknown_row`, `KN5:input.argument_form`, `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`);
-    the command table's drafts settle at LP3 (PHS.53).
+    Chapter 13 registers none of the six draft codes `c600-command` emits (`KN2:consistency.star_certificate`,
+    `KN5:input.unknown_row`, `KN5:input.argument_form`, `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`,
+    and KN5's `KN4:input.session_exists` for a store that already holds a session); the command table's drafts settle
+    at LP3 (PHS.53).
   - For LP3: LB7.1's `LB7:capability.module_grant_missing` is the workspace library's entry-admission fact, built with
     LB7; the checker's own admission reports `LG3:capability.not_granted`, as chapter 02's LG3 table has it.
-  - KN5 has two implementations, `c600-session` (M6) and LP3's `c600-command` (pull request 159). The LP2 integrator
-    picks the one CT-KN5-01 to CT-KN5-13 run against before M8.
+  - KN5 has one implementation: LP3's `c600-command`, durable over M6's journal through `c600_session::JournalStore`
+    (KN5's stages 1 and 2; LP3's C7 section below). The CT-KN5 parts that run, run against it; M6's `Session::invoke`
+    follows the same draft ruling 4 until its tests move to `c600-command`.
   - `Kernel::protection` has no model check (M4's section).
   - For M6's store: the kernel's `archive::gunzip` accepts concatenated gzip members and trailing zero padding, so
     FP.7's strict one-member reader must refuse them itself; run-time `encode` applies no json_depth or integer_digits
@@ -726,6 +742,54 @@ run or not applicable is no pass (PHS.63).
   as `command_id_reused` because the request digest used the layer's current epoch, not the envelope's; R2 (minor),
   the token's binding was checked before commit-lane admission; R3 (nit), the outcome lookup ignored the request
   digest. A scoped re-check found all three fixed and no new blocking finding.
+- KN5 over M6 (LP2): `CommandLayer::open` replays a store's history through the kernel and restores the revision, the
+  protected set, the undo and redo stacks and the durable receipts. `c600_session::JournalStore` is that store over
+  KN4's journal and `MemoryStore` keeps its contract in memory; this replaces the not-built note on the durable
+  transaction above. Every open and every restart draws a fresh random epoch the session never had (L10).
+  `protection.orbit.set` is built, and undo and redo walk M6's move tree, a protection change included, with
+  `confirm` to release an orbit (LI.26). A workspace overlay's completion is durable with its receipt (KN5.23). An
+  action that does not move the puzzle keeps the state revision, the preview and the jobs (KN5.18). The layer's test
+  hooks exist only in debug builds or with the `test-hooks` feature (L15).
+- KN5 tests (`c600-command/tests/kn5.rs`, from the Fable KN5 attack leads L3 to L11, L15 and L18): parts of
+  CT-KN5-01, CT-KN5-04, CT-KN5-09, CT-KN5-10, CT-KN5-11, CT-ONE-03, CT-ONE-04, CT-ONE-05, CT-ONE-11, CT-ONE-21 and
+  CT-LI-09. `c600-session/tests/kn5_command.rs` runs the layer over the journal: parts of CT-ONE-21, CT-ONE-22,
+  CT-KN4-02 and CT-KN5-04, and CT-KN5-04's attack against M6's own `invoke`. Each test names its part; none runs a
+  whole definition.
+- KN5 drafts (listed in the crate documentation): ruling 1, a press whose preview ended answers
+  `KN5:stale.no_fresh_preview` when the slot is empty and `KN5:stale.preview_replaced` when it holds another preview;
+  ruling 2, an undo checks its hint before its bound revisions, so a raced undo is `KN5:stale.undo_superseded`; ruling
+  3, no receipt or lookup answers `accepted`; ruling 5, `KN5:auth.token_invalid` for a failed authenticator and
+  `KN5:stale.token_mismatch` for another session or epoch; ruling 7, `session.checkpoint.save` follows the table (a
+  commit row with a token; not built), where M6's `session.checkpoint` takes none; ruling 8, LI's clauses are drafts;
+  `KN4:input.session_exists`, a sixth code chapter 13 does not register.
+- Frozen-text readings for the owner (PHS.52). (1) Ruling 4 reads KN5.21 and KN5.23 so: command IDs are scoped per
+  caller and the request digest covers the caller; a refusal of an envelope that does not authenticate (a bad
+  authenticator, a missing token, or a caller that may not use the row or hold a token) is kept for its epoch under
+  the envelope's full digest, authenticator included, and never takes the command ID, so a forged or runtime envelope
+  sent first cannot block the solver's press; every other answer takes the ID. The frozen order puts the retry lookup
+  before authentication (chapter 08 section 7), so an envelope whose request digest equals a recorded command's gets
+  that receipt whatever its authenticator, and commits nothing. This is security-relevant. (2) LI.33's vector answers
+  `preview_replaced` for a token whose preview was committed and whose slot is now empty; ruling 1 answers
+  `no_fresh_preview`. Chapter 08's error table ("no longer the pending one") reads either way, so the vector is not
+  followed until the owner rules.
+- KN5 not built yet: KN5.26's admission matrix (L1, L2), ruling 6 (the host stamps a runtime proposal's block; a
+  `file` overlay without a granted file capability), L12 to L14, L16, L17, and CT-ONE-29's `FrameChain` and
+  `PresentedFrame`. No host caller is built. No session lock exists (LP3's L9), so two opens of one journal can
+  interleave.
+- The integrator's fresh Claude read of KN5 found one major problem and it is fixed: a restart that could not read
+  the journal back treated an unknown fate as absent. `Store::durable` now answers `None` when the store cannot tell.
+  The transaction then stays unknown and the layer stays in read-only recovery, so no later action takes its order.
+  One minor problem is fixed as well: a runtime envelope without the token its row takes no longer authenticates. Open,
+  deferred as minor:
+  - A retained refusal's receipt carries the envelope's full digest, where KN5.21's receipt has the request digest.
+    So `outcome` given the request digest alone answers `unknown_outcome`.
+  - After a reopen, `invoke` refuses an old-epoch envelope whose command ID was never durable with
+    `KN2:stale.epoch_changed`, and that refusal takes the ID. `kernel_outcome` answers `unknown_outcome` for the same
+    ID.
+  - The caller label is the host's to set, and `protection.orbit.set` takes no token. Until stage 3's admission matrix,
+    a release's `confirm` is not authenticated as the solver's.
+  - Retained refusals are not bounded within an epoch.
+  - The key route cannot send `confirm`, so undoing a protection add by key answers `KN5:input.confirmation_required`.
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run. The timings the loop
   check prints are informational, not performance evidence.
 
@@ -959,13 +1023,12 @@ run or not applicable is no pass (PHS.63).
 
 ## Status of LP3, C7: durable receipts on the session store
 
-- KN5 gets one implementation, owned by LP2 under PHS.18 (integrator, 16 November 2026). The LP2 integrator placed it
-  in `c600-command`, which keeps its `Store` trait, with `c600-session` (KN4) implementing the trait, and M6's
-  semantics hold where the frozen text leaves a choice; LP2 writes it on branch `claude/lp2-kn5-one`. Until it lands,
-  LP3 changes neither `c600-command`'s layer, token, receipt, store and shell code nor `c600-session`, and
-  `MemoryStore` stays the layer's stand-in. C7's first piece is therefore `c600-durable`, a test-only crate that
-  drives M6's session store and C4's module closures through their public APIs and changes neither them nor
-  `c600-command`.
+- KN5 has one implementation, owned by LP2 under PHS.18 (integrator, 16 November 2026), in `c600-command`, which
+  keeps its `Store` trait, with `c600-session` (KN4) implementing the trait; M6's semantics hold where the frozen text
+  leaves a choice. Its stages 1 and 2 landed in pull request 174 (c1664c3d): `CommandLayer::open` replays a store's
+  history, and `c600_session::JournalStore` is the layer's store over KN4's journal (C1's section above). C7's first
+  piece, `c600-durable`, came before them: a test-only crate that drives M6's session store and C4's module closures
+  through their public APIs and changes neither them nor `c600-command`.
 - Tests (`c600-durable/tests/`):
   - `ct_rte_08_persisted_word.rs`: CT-RTE-08's persisted-word case, its durable leg (BND.22, BND.84, BND.85, LG5.1,
     LG5.6). An approved own tool stores a word, and the shell persists it through M6's `workspace.set` with the
@@ -982,9 +1045,11 @@ run or not applicable is no pass (PHS.63).
 - Drafts, in the crate documentation: the shell's `workspace.set` as the host's delivery of a stored word (C5's host
   bridge decides the real path); reading a record back through `c600_session::journal::scan`, since M6 has no record
   reader; M6's stand-ins for views; and `c600_run::boundary::admit_preview` standing in for KN5.26.
-- Waits for LP2's KN5 implementation: durable receipts and undo through the command layer, KN5.26's admission of
-  record words, EV3.2's view rows, LB7.2's work-sheet structure and a session lock. If it changes an API these
-  tests use, its branch ports them.
+- Built by KN5's stages 1 and 2 (LP2): durable receipts and undo through the command layer over `JournalStore`. The
+  tests above still drive M6's own `Session::invoke` and shell stub, which the layer supersedes and LP2 removes once
+  their tests run against it; moving these tests onto the layer over `JournalStore` is C7's next piece. Still waiting
+  for KN5's later stages (LP2): KN5.26's admission of record words, EV3.2's view rows, LB7.2's work-sheet structure
+  and a session lock.
 - Evidence kind: source and fixture. The file-system leg is a short test in a fresh folder, not long-session
   evidence. The checks ran on Windows only; the Linux leg was not run.
 
@@ -1021,10 +1086,10 @@ run or not applicable is no pass (PHS.63).
     the command route.
   - `lb3_checker.rs`: CT-LB3-07's checker half, as far as capability separation decides it (an outcome table that reads
     state and prepares previews is refused; a named-word check that answers only the acknowledgement is admitted).
-  - `kn5_retry_lead.rs`: a lead on KN5.21 to KN5.23, confirmed. A refused envelope that reuses a genuine
-    `operation.execute` envelope's command ID, arguments and binding (a token minted with another secret, or a runtime
-    caller) is stored as that command ID's outcome, so the genuine envelope never commits under it; a fresh command ID
-    still commits. The test records today's behaviour; the requirement went to LP2's KN5 implementation.
+  - `kn5_retry_lead.rs`: a lead on KN5.21 to KN5.23, closed by LP2's KN5 implementation (draft ruling 4). A refused
+    envelope that reuses a genuine `operation.execute` envelope's command ID, arguments and binding (a token minted
+    with another secret, or a runtime caller) no longer becomes that command ID's outcome: its refusal is kept under
+    its full digest, the genuine envelope commits under the ID, and neither retry commits anything more.
 - Not built: the shell's own refusal of a user-stage frame (LP2's KN5 implementation adds a presented-frame input to
   `present`); CT-BND-19's live-twist part (KN3.7's exact rotations); an import row; grip, cell or piece objects for a
   word's letters (the kernel has no letter-to-grip map); a view declaring both of the manifest's classes (`c600-view`'s

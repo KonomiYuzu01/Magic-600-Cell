@@ -6,9 +6,13 @@
 //!
 //! The crate uses std only. Its row names, record shapes and Rust shapes are M6 drafts (`rust/README.md`): the
 //! command table freezes at LP3, and the session format is not the frozen migration format.
+//!
+//! [`JournalStore`] carries M6's durable semantics to c600-command's KN5 layer: it implements the layer's `Store` and
+//! `Reopen` over the same journal ([`command_store`]). This crate depends on c600-command, never the reverse.
 
 #![forbid(unsafe_code)]
 
+pub mod command_store;
 pub mod disk;
 pub mod journal;
 
@@ -19,6 +23,7 @@ mod token;
 mod types;
 mod wire;
 
+pub use command_store::JournalStore;
 pub use session::{Options, Session, Shell};
 pub use token::{hmac_sha256, Binding, PreviewBinding, Token};
 pub use types::*;

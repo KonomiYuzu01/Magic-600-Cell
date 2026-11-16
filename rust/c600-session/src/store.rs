@@ -80,6 +80,25 @@ impl Store {
         Ok(Opened { store, records: scan.payloads, damaged, tail: Some(scan.tail) })
     }
 
+    /// Reads the journal again and settles it as an open does, keeping the disk: after a write whose fate was unknown,
+    /// what the journal holds decides it, and the durable length is taken from there. Returns the whole frames and the
+    /// offset of a damaged one, which is left as it is.
+    pub(crate) fn reread(&mut self) -> io::Result<(Vec<Vec<u8>>, Option<u64>)> {
+        let Some(bytes) = self.read(JOURNAL)? else {
+            self.len = 0;
+            return Ok((Vec::new(), None));
+        };
+        let scan = journal::scan(&bytes);
+        self.len = scan.end;
+        match scan.tail {
+            Tail::Damaged(at) => return Ok((scan.payloads, Some(at))),
+            Tail::Torn => self.disk.truncate(JOURNAL, self.len)?,
+            Tail::Clean => {}
+        }
+        self.disk.sync(JOURNAL)?;
+        Ok((scan.payloads, None))
+    }
+
     pub(crate) fn read(&mut self, name: &str) -> io::Result<Option<Vec<u8>>> {
         self.reads += 1;
         self.disk.read(name)

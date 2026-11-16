@@ -14,7 +14,7 @@ use c600_kernel::json::{self, Value};
 use crate::layer::{Caller, CommandLayer, Invocation};
 use crate::receipt::{code, ActionHint, Direction, Error, Receipt, Status};
 use crate::store::Store;
-use crate::table::{Kind, PreviewRule, Row};
+use crate::table::{PreviewRule, Row};
 use crate::token::{args_digest, PreviewBinding, Secret, Token, TokenBinding};
 
 /// Where a bound argument comes from, resolved at the press.
@@ -72,6 +72,8 @@ pub struct Shell {
     prefix: String,
     nonce: u64,
     commands: u64,
+    /// The engine epoch of the last envelope, which names the shell's command IDs after the first epoch (L10).
+    epoch: u64,
     keymap: Vec<KeyBinding>,
     /// The focused context.
     pub context: String,
@@ -90,6 +92,7 @@ impl Shell {
             prefix: prefix.to_owned(),
             nonce: 0,
             commands: 0,
+            epoch: 1,
             keymap: default_keymap(),
             context: "operation".to_owned(),
             draft: None,
@@ -113,10 +116,14 @@ impl Shell {
         self.presented.as_ref()
     }
 
-    /// A fresh command ID.
+    /// A fresh command ID: `prefix/n` in a session's first epoch, `prefix/epoch/n` after it, so a shell's IDs never
+    /// repeat across a restart or a reopen (draft; L10).
     pub fn command_id(&mut self) -> String {
         self.commands += 1;
-        format!("{}/{}", self.prefix, self.commands)
+        match self.epoch {
+            0 | 1 => format!("{}/{}", self.prefix, self.commands),
+            epoch => format!("{}/{epoch}/{}", self.prefix, self.commands),
+        }
     }
 
     /// Presents the engine's pending preview, as the built-in chain's frame report does (RM.26).
@@ -133,9 +140,9 @@ impl Shell {
         }
         self.nonce += 1;
         let revision = layer.revision();
-        let preview = if row.preview == PreviewRule::Required { self.presented.clone() } else { None };
+        let required = row.preview == PreviewRule::Required;
+        let preview = if required { self.presented.clone() } else { None };
         let hint = args.get("hint").and_then(ActionHint::from_json);
-        let plain_commit = row.kind == Kind::Commit && row.preview == PreviewRule::None && row.action_guard.is_none();
         let binding = TokenBinding {
             nonce: self.nonce,
             session: revision.session.clone(),
@@ -143,9 +150,9 @@ impl Shell {
             command: command.to_owned(),
             row: row.id.clone(),
             args: args_digest(args),
-            identity: revision.identity.clone(),
+            identity: layer.identity_binding(),
             preview,
-            revision: plain_commit.then_some((revision.state, revision.protection)),
+            revision: (!required).then_some((revision.state, revision.protection)),
             hint,
         };
         Some(Token::mint(&self.secret, binding))
@@ -160,6 +167,7 @@ impl Shell {
         if found.preview == PreviewRule::Required && self.presented.is_none() {
             return Err(Error::new(code::NO_FRESH_PREVIEW, "no presented preview"));
         }
+        self.epoch = layer.revision().epoch;
         let command = self.command_id();
         let token = self.mint(layer, &command, &found, &args);
         self.sent.push(command.clone());

@@ -26,12 +26,16 @@ pub mod code {
     pub const LANE_FULL: &str = "KN7:busy.lane_full";
     pub const REVISION_REPLACED: &str = "KN7:cancelled.revision_replaced";
     pub const BY_USER: &str = "KN7:cancelled.by_user";
+    pub const NOT_GRANTED: &str = "LG3:capability.not_granted";
+    pub const UNKNOWN_SESSION: &str = "KN4:input.unknown_session";
+    pub const PERSISTENCE_FORMAT: &str = "PS1:input.persistence_format";
 
     /// Drafts that chapter 13 does not register yet.
     pub const UNKNOWN_ROW: &str = "KN5:input.unknown_row";
     pub const ARGUMENT_FORM: &str = "KN5:input.argument_form";
     pub const ROW_NOT_BUILT: &str = "KN5:input.row_not_built";
     pub const OVERLAY_ROW_CONFLICT: &str = "KN5:input.overlay_row_conflict";
+    pub const SESSION_EXISTS: &str = "KN4:input.session_exists";
 }
 
 /// An error with its chapter 13 code.
@@ -86,6 +90,25 @@ impl Revision {
             ("protection", nat(self.protection)),
             ("digest", Value::String(self.digest.clone())),
         ])
+    }
+
+    /// Reads [`Revision::to_json`]'s form strictly; the mode must be this layer's.
+    pub fn from_json(value: &Value) -> Option<Revision> {
+        (value.as_object()?.len() == 9).then_some(())?;
+        let text = |key: &str| value.get(key)?.as_str().map(str::to_owned);
+        let nat = |key: &str| value.get(key)?.as_i64().and_then(|n| u64::try_from(n).ok());
+        (value.get("mode")?.as_str()? == crate::layer::MODE).then_some(())?;
+        Some(Revision {
+            session: text("session")?,
+            epoch: nat("epoch")?,
+            identity: text("identity")?,
+            mode: crate::layer::MODE,
+            head: text("head")?,
+            state: nat("state")?,
+            workspace: nat("workspace")?,
+            protection: nat("protection")?,
+            digest: text("digest")?,
+        })
     }
 }
 
