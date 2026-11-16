@@ -191,3 +191,8 @@ class RustJumbleEngine:
     def cayley(self, grip, omega):
         """The record of the exact Cayley rotation with parameter omega (three [a, b, d] triples) at grip."""
         return self.call('cayley', grip=grip, omega=[list(w) for w in omega])['record']
+
+    # ------------------------------------------------------------------- M8 observations (JI.6, JI.7)
+    def rim_summary(self, caps=None, *, eval_budget=None):
+        """Every cap's status and rim (or the named caps'), with grip N when all 600 are summarised."""
+        return self.call('rim_summary', caps=None if caps is None else list(caps), eval_budget=eval_budget)

@@ -302,6 +302,9 @@ impl Adapter {
         if let Some(refused) = dimension_refusal(request.get("dimension"), "dimension") {
             return Ok(Some(refused));
         }
+        if let Some(result) = self.m8_observation(op, request)? {
+            return Ok(Some(result));
+        }
         let result = match op {
             "start" => {
                 let menu = match request.get("menu") {
@@ -656,5 +659,24 @@ fn main() {
         if writeln!(out, "{response}").and_then(|_| out.flush()).is_err() {
             break;
         }
+    }
+}
+
+/// The observations of milestone M8 ([`observe::cuts`]; JI.6 and JI.7). Each reads the current state and changes
+/// nothing, and `eval_budget` bounds each classification: `rim_summary` (optional `caps`, the named caps).
+impl Adapter {
+    /// The answer to an M8 observation, or `None` when `op` names none.
+    fn m8_observation(&mut self, op: &str, request: &Value) -> Result<Option<Value>, Fail> {
+        let result = match op {
+            "rim_summary" => {
+                let caps = pieces(request.get("caps"), "caps")?;
+                let eval_budget = budget(request.get("eval_budget"))?;
+                let Adapter { ctx, state, .. } = self;
+                let state = state.as_mut().ok_or_else(|| input("start must come first"))?;
+                observe::cuts::rim_summary(ctx, state, caps.as_deref(), eval_budget).map_err(Fail::Engine)?
+            }
+            _ => return Ok(None),
+        };
+        Ok(Some(result))
     }
 }
