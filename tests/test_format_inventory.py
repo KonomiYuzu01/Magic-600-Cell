@@ -209,7 +209,7 @@ class FormatInventoryTests(unittest.TestCase):
                 reader.supported({"format": name, "version": 1})
 
     def test_ct_ps2_06_code_keeps_syntax_and_ir_outside_the_freeze(self) -> None:
-        """CT-PS2-06 (whole): parser fixtures use .6cs; the syntax edition and IR identifier stay drafts outside FP.4."""
+        """CT-PS2-06 (whole): parser fixtures use .6cs; the syntax edition and IR identifier stay drafts, not FP.4."""
         fixtures = sorted(path.name for path in SYNTAX_FIXTURES.iterdir() if path.is_file())
         self.assertTrue(fixtures)
         self.assertEqual([name for name in fixtures if not name.endswith(".6cs")], [])
