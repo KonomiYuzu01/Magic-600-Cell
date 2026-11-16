@@ -1,6 +1,7 @@
 # 600 Cell Script in Rust
 
-The Rust workspace of 600 Cell Script, built under LP2 ([plan](../docs/progress/1.0/language-lp2-plan.md)). The
+The Rust workspace of 600 Cell Script, built under LP2 ([plan](../docs/progress/1.0/language-lp2-plan.md)) and LP3
+([plan](../docs/progress/1.0/language-lp3-plan.md)). The
 engine, the session store, the command layer and the interpreter's host are written in Rust (LQ8), and the language
 runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen architecture is in
 [`docs/architecture/1.0/language/`](../docs/architecture/1.0/language/); nothing here changes it.
@@ -15,11 +16,18 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-digest` | SHA-256, raw and in hex, for the other crates |
 | `c600-run` | The interpreter over the IR draft (route RT1) with the `lp1-exec-draft-1` reference meter and generator (M2), and the run-time boundary under capability separation with FP.17's provenance blocks (M3) |
 | `c600-kernel` | The 600-cell-Full kernel read straight from `assets/`, its chapter 01 API, and the oracle adapter `c600-oracle-adapter` (M4) |
+| `c600-session` | The session store below the language: the journal, revisions, snapshots, the commit path, undo, branches and program jobs (M6) |
+| `c600-command` | The command layer over H-08's stored table (KN5, chapter 08 section 7), the shell's tokens and key routes, and the loop runner `c600-lp3-oracle` (LP3, C1) |
+| `c600-view` | The headless view model, view lane and view budget: Global, Local and further views, revision binding and statuses, visibility, and the views' limits and allowances (LP3, C2) |
+| `c600-display` | The headless display contract: display plans and publications, the host validator, the publication state machine over a mock backend, picks and frame stamps, and RM.37's jumbling crosswalk as fixtures (LP3, C2) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
 checker; its tests run checked source programs, so the checker and the syntax crate are its dev-dependencies. The
-kernel depends on the digest crate only.
+kernel depends on the digest crate only. The session crate depends on the kernel, the interpreter, the IR and digest
+crates; its job tests run checked source programs too. The command layer depends on the kernel and digest crates
+only, so it has no path to the interpreter (ONE.48). The view model depends on the digest crate only, and the display
+contract on the digest and kernel crates.
 
 ## Running the tests
 
@@ -204,7 +212,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   and passes any other read to the engine; the engine's preview call does not take the block yet (KN5.9); the store is
   in memory and returns a stored value as written, and M6's session store decodes by the reader's type.
 - Open: a built-in repair-list pick (CT-BND-29's third case) is refused with `PS1:capability.provenance_incompatible`
-  until the session store resolves `c600-pick` records (M6). The command layer is not built.
+  until the session store resolves `c600-pick` records (M6). The command layer is LP3's `c600-command` (below); the
+  boundary does not reach it yet.
 - Evidence kind: source and fixture.
 
 ## Status of M4: the 600-cell-Full kernel
@@ -247,3 +256,193 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   action: R6, the KN2.9 agreement and the cached path share the inverse-move handling, which O01 to O03 cover.
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run. The timings the check
   prints are informational, not performance evidence.
+
+## Status of M6: the session store
+
+- `c600-session` keeps one session in one journal on a `Disk`: `FsDisk` over a directory, or `MemDisk` in memory for
+  the tests. `MemDisk` fails a chosen write (an error, a partial write, or a write that persisted but reported
+  failure), holds a write so a test can act while it is in flight, tears unsynced appends and loses unsynced data in
+  a crash, and counts reads and writes.
+- The journal: one durable action is one frame (its length, the length's complement, the payload and its SHA-256),
+  appended and synced before the reply (R-06). When the append or its sync fails, the store cuts the journal back and
+  syncs the cut; only a cut that succeeds proves the rollback, answered `failed` with `KN4:resource_limit.disk_full`.
+  Otherwise the receipt is `unknown_outcome`, and the session refuses every row with
+  `KN5:unknown_outcome.read_only_recovery` until it is reopened (KN5.23). Opening syncs what it read before it
+  answers from it, cuts a torn final frame and syncs the cut, and opens any other damage read-only at the last whole
+  frame (ONE.70); when the cut or its sync fails, the open fails and the next one cuts again. A torn final frame is the
+  start of one frame followed by nothing or by zero bytes, as a file system that extends a file before its data
+  arrives leaves it; the complement tells a damaged length from a torn append. A checkpoint's state is an object named
+  by its digest, written and synced before the frame that cites it unless an intact copy is there, and read back
+  through the kernel's new `state_from_labels`; a checkpoint whose object is lost or damaged opens by replaying the
+  journal to it. `Session::create` refuses a disk that holds a whole or a damaged frame before it writes anything,
+  cuts the torn remnant of a header, and answers a header whose fate is unknown with
+  `KN5:unknown_outcome.commit_fate`.
+- Revisions carry KN0.2's counters and the engine epoch. Snapshots open at the current revision, at an earlier
+  revision of this epoch, or at a checkpoint (LI.11, ONE.76). A commit after an undo starts a new line, one line is
+  active, and a line switch is a commit row (ONE.73 to ONE.75). The status reads no storage (R-13).
+- The commit path runs chapter 08 section 7 from step 3 in its order. A shell stub does steps 1 and 2: it mints
+  single-use tokens bound to the session, epoch, command, row and its arguments, the identity and, for an execute,
+  the preview on screen, under a per-launch secret (HMAC-SHA256 over `c600-digest`; KN5.14, KN5.15). A token also
+  binds the `state` and `protection` revisions the action was resolved against: an execute's are its preview's, and
+  undo, redo and a switch must find theirs unchanged (LI.6). Undo and redo take an `ActionHint` (LI.9, LI.26). Outcome
+  lookup answers every durable command across a reopen, and an identical retry gets its durable receipt before the
+  epoch is checked, so a retry after a restart is answered too (KN5.21 to KN5.23, LI.6, LI.30).
+- Program jobs run one exported function of a loaded program on opened snapshots, on the exclusive lane (one job) or
+  the program lane (its declared capacity, 2 by default), under a declared budget with the test tariffs. The job's
+  host answers four whole-state queries on its inputs (`inputs`, `state`, `moved`, `diff`) and grants nothing else. A
+  `diff` answer is cached, and a hit is charged as a computation (KN7.8). A commit, an undo, a redo or a switch cancels
+  the queries that read the replaced revision; file and pinned jobs finish (KN7.5, LI.25). A result is bound to its
+  first input's digest, and `job_result_at` refuses a revision with another digest (KN7.3).
+- Tests (`c600-session/tests/`), each naming the conformance tests it covers:
+  - `store.rs`: CT-KN4-02 at every write of seven kinds of durable action, with three kinds of failure, with and
+    without a crash, and the unproved fate with each kind of failure at the append and at the sync; CT-KN4-03;
+    ONE.70's torn and damaged tails; a session on a directory.
+  - `commit.rs`: CT-KN5-01 with PHS.19's preview-swap row, CT-KN5-04, CT-KN5-06, CT-KN5-11 and LI.33's gate-order
+    trace; KN5.9 to KN5.11; tokens, the row and the revisions a token binds, and the rows a program may deliver; the
+    commit lane under a held write; outcome lookup across a reopen.
+  - `crash.rs`, from the Fable crash-consistency task: a reopen syncs a frame before it serves it; an append torn or
+    zero-filled at every byte of each kind of action is wholly before, writable and cut durably, and a whole one is
+    wholly after; every prefix of a history over the seven kinds opens at its last whole frame with its receipts; a
+    damaged byte anywhere in it opens read-only at the frame before and is never cut, and in the header open and
+    `create` refuse; a failed recovery is done again whole; a lost, emptied or damaged state object is replayed and
+    written again; a retry after a restart gets the durable receipt; `create` is honest about the header; and seeded
+    histories over the seven kinds, refusals included, replay with the same view, receipts, record and checkpoint
+    contents and undo chain.
+  - `branches.rs`: CT-KN4-04; snapshots by revision and by checkpoint.
+  - `jobs.rs`: CT-KN7-01 to CT-KN7-05 and CT-KN7-07 with PHS.19's budget row (five budget cases, each run cold, warm
+    and after an eviction); CT-KN5-09; CT-KN4-01's in-process part: a job's file read or write, workspace write or
+    proposal is refused by its host without touching the store, and a scan of `c600-run`'s source finds no
+    `std::fs`, `path`, `env`, `io`, `os`, `net` or `process` path.
+- Drafts, which freeze with chapter 01's open rows, the command table (LP3) and the persistence encodings: the row
+  names, record shapes and Rust shapes; the journal format, which is not the frozen migration format; the token check
+  order (verify, then unused, then the commit lane, so a token is used up even when the lane is busy); a program
+  delivers job rows only (another commit row gives `KN5:capability.commit_row_refused`, another session row
+  `LG3:capability.not_granted`); a read-only session refuses proposals too; undo, redo and a switch must pass the
+  protection in force; a token for a row without a preview whose `state` or `protection` revision moved gives
+  `KN5:stale.revision_changed`, and an execute token whose word or dependencies are not the pending preview's gives
+  `KN5:stale.token_mismatch`; the shell stub mints under the session core, so it waits for a commit write in flight;
+  the torn-tail rule above, under which a hole inside a frame is damage; a lost state object is written again by the
+  next checkpoint of its state, and its checkpoint opens by replay until then; `create` on a disk that holds a frame
+  gives `PS1:input.persistence_format`; a checkpoint advances the workspace counter and is not undone; a workspace
+  receipt's result digest is the SHA-256 of its frame; a revision or snapshot of another epoch gives
+  `KN2:stale.epoch_changed`; stopping an unknown job gives `KN5:stale.result_gone`; an I/O error at open gives
+  `KN4:resource_limit.disk_full`; the first interruption of a job is the one it reports; the four job queries and
+  their kernel costs (one unit per 1,024 slots for a whole-state query); a result's coverage is its inputs' revisions
+  and the meter's summary. KN5.12 stays open: only the shell proposes in M6, and its proposal replaces the pending
+  preview.
+- Gaps: the secret and the 64-bit epoch number come from std's randomly keyed hasher, the time and the process ID,
+  not from the operating system's generator; `FsDisk` syncs a directory entry on Unix only, and it opens a new handle
+  for each append, cut and sync, so on Linux a sync may miss a write-back error that the writing handle would see,
+  and on Windows a scanner that holds the journal without sharing can fail a commit and its rollback alike (Fable
+  lead L8); there is
+  no session lock, so a second opener could cut a frame that another opener acknowledged (Fable lead L9), and no
+  historical workspace version (a snapshot of an earlier revision holds its state only); a proposal takes
+  literal letters or a record of letters only; the admission and the end of a durable row share one frame; the IDs of
+  proposals, job rows and refusals are not remembered across epochs, and the receipt of a refused or failed durable
+  row lasts for its epoch; undo, redo or a switch that would replay more than 100,000 letters is refused; the core
+  lock is held during disk I/O, a checkpoint's read of its object included, so a status read waits for a write in
+  flight; a journal cut inside its last frame by outside damage, or with zeros written over the end of that frame,
+  reads as a torn append and is cut at open.
+- Not run or not applicable, which is no pass (PHS.63): step 7 of the commit path
+  (`KN5:consistency.state_hash_mismatch`) is never reached by a test, because step 6 refuses every head change first;
+  `KN7:resource_limit.runtime_lost` is tested through the terminal mapping only; the commit lane's refusal is tested
+  with a held write only; the seeded replay histories run in debug at a reduced scale, four histories of 16 actions
+  where the Fable lead asked for 200 of 40, and the crash tests open sessions at sampled offsets while their scans
+  cover every offset; L8's Windows sharing test and L9's two-opener test are not written; L10's job row has no durable
+  record to recover in M6; and the rows the plan leaves out of M6 (section 10).
+- Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model read the store with the
+  acceptance check. Its one major finding was fixed before the pull request, and a scoped re-check found no blocking
+  finding: R1, a line switch's token bound no revision, so it committed after the state had moved. Fixed: R2, a
+  checkpoint's lost object (above); R3, a zero-filled tail read as damage; R5, a genuine token of another row gave the
+  wrong code and now gives `KN5:stale.token_mismatch`; R7, a job count raced a finite job; R8, damage was injected in
+  the last frame only, and no partial write met a failed rollback. Comment added: R4, a refusal at a busy commit lane
+  uses the token up, as chapter 08's step order has it. No action: R6, a read-only session refuses proposals (a
+  draft, above); R12, `state_from_labels` checks a permutation only, and its one caller checks the digest. Deferred:
+  R9, a poisoned lock is recovered silently, with no reachable panic; R10, the core lock is held during I/O (a gap,
+  above); R11, a caller can forge a snapshot handle's public revision fields, which a program cannot reach; R13, the
+  scan for file-system calls looks for `std::` paths only. The re-check's three minor notes are recorded above: the
+  stub's mint waits for a commit write (a draft), a checkpoint reads its object under the core lock, and zeros over
+  the end of the last frame read as a torn append (gaps).
+- Leads from the Fable crash-consistency task (owner decision, 15 November 2026), each now a test in `crash.rs` or a
+  gap above: L1, a reopen served a receipt for a frame it had not synced; L2, a zero-filled tail left the session
+  read-only for good; L3, a checkpoint completed while citing a lost object; L5, an identical retry after a restart
+  was refused as stale; L7, `create` reported an unknown header fate as a failure and wrote to a disk it then refused.
+  All five are fixed. L4 and L6 became the seeded replay test and its oracle (the durable view, receipts, contents and
+  the undo chain), and L10's rows 1 to 7 are covered. L8 and L9 are deferred.
+- Evidence kind: source and fixture. Failures are injected in memory; `FsDisk` runs in one reopen test, so a pass is no
+  evidence of a real disk's behaviour in a crash. The checks ran on Windows only.
+
+## Status of LP3, C1: the command layer
+
+- `c600-command` runs every change to a session through `CommandLayer::invoke` and its gates (KN5.1) over H-08's
+  stored table (`docs/progress/1.0/command-table.json`, 174 rows). A word commit runs chapter 08 section 7's steps in
+  order: the shell's gate and token (steps 1 and 2), the authenticator and the unused nonce (3), commit-lane
+  admission (4), the token's binding and its presented preview (5), `fresh(p)` (6), the head hash (7), the protection
+  recheck (8), the durable transaction (9) and adoption (10). `session.undo` and `session.redo` take LI.9's hint and
+  derive through the kernel under the protection in force (LI.26). Every invocation gets a receipt (KN5.21); a command
+  ID the layer knows is answered by its outcome lookup (KN5.23, LI.30), across a restart too.
+- The shell mints the user-action tokens from a per-launch secret the runtime never receives (KN5.14, KN5.15) and
+  resolves the draft keymap's chords before the envelope (EV4.3), so a key bound to a kernel row reaches the engine
+  with no interpreter step (ONE.48). The runtime reaches at most a preview: the 19 commit and app rows and any token it
+  carries are refused (ADR-L02).
+- Tests (`c600-command/tests/layer.rs`): parts of CT-KN5-01, CT-KN5-03, CT-KN5-04, CT-KN5-06, CT-KN5-07, CT-KN5-09,
+  CT-KN5-11, CT-KN5-12, CT-KN7-04, CT-KN7-05, CT-ONE-03, CT-ONE-04, CT-ONE-05, CT-ONE-11, CT-ONE-20, CT-ONE-21,
+  CT-ONE-22 and CT-LI-10, each naming its part. These tests are indexed in LP2 (chapter 12 section 15.3); they count
+  as run only when their whole definitions run.
+- `tests/test_lp3_loop.py` builds `c600-lp3-oracle` in release and drives O01 to O07 through the command layer on the
+  command route and the key route: `tools/oracle/compare.py` reports every step equal with no omitted fields (3,201
+  steps per route), every accepted step commits once, independent cases undo each commit, chain cases undo and redo
+  every commit onto the recorded states, and the two routes write byte-identical traces and receipts. A tampered trace
+  fails at its step, and a case with another model identity is refused without a trace. `tools/ci/run_headless.py`
+  lists it.
+- Drafts, which freeze with the command table at LP3 (PHS.53): the list in the crate documentation, among them one
+  session per layer with Jumble off, an inline recipe as `WordRef`, `twist.apply` refused until KN3's exact rotations
+  exist, five codes chapter 13 does not register yet, and the envelope's epoch (LI.5).
+- Not built: the durable transaction is `MemoryStore`, a stand-in until M6 is on main, so no receipt here is
+  persistence evidence; the source route, the views and the other two tools (LP3 plan, C2 to C8); protection rows;
+  every row the crate refuses with `KN5:input.row_not_built`.
+- Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model read the crate with the
+  acceptance check and found no blocker. Fixed before the pull request: R1 (major), a retry after a restart was refused
+  as `command_id_reused` because the request digest used the layer's current epoch, not the envelope's; R2 (minor),
+  the token's binding was checked before commit-lane admission; R3 (nit), the outcome lookup ignored the request
+  digest. A scoped re-check found all three fixed and no new blocking finding.
+- Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run. The timings the loop
+  check prints are informational, not performance evidence.
+
+## Status of LP3, C2: display and views
+
+- `c600-view` is the host side of chapter 10's view interfaces without a device: which views are open, which engine
+  revision they show, which program output may attach to it, what the view lane runs next and what the views cost.
+  Global and Local are always open and visible; further views open and close through `view.open` and `view.close`
+  (RPI.81 to RPI.83). A complete engine bundle is adopted whole or not at all (RPI.9, ONE.60, ONE.61); output bound to
+  an older revision shows as stale and is never drawn over a revision it does not match (ONE.12, ONE.63, RPI.13). The
+  view lane keeps one runner and one newest pending request (KN7.2, LI.22 to LI.25, ONE.64). Hidden views do no work
+  (RPI.11, RM.25), and the view budget charges RM.11's limits, RM.13's output allowance and RM.38's frame work.
+- Tests (`c600-view/tests/view_rows.rs`): CT-RPI-03, CT-RPI-06, CT-RPI-07, CT-RPI-36, CT-RPI-37, CT-RM-02 and
+  CT-ONE-30; the limit half of CT-RPI-22; rows 1, 2, 7 and 9 of CT-RM-09's RM.40 table. Supporting tests cover ONE.10's
+  reuse after undo, RM.11's profile validation, RM.12's admission ceiling, RM.35's malformed output and RPI.9's bundle
+  faults.
+- Drafts, which freeze with the IR and the command table: the list in the crate documentation, among them Global and
+  Local's fixed IDs, `LG3:capability.not_granted` for a recomputation that names a view row (RPI.83 names no code), a
+  separate command-ID namespace for scheduled recomputations (LI.25), the status precedence (RPI.13, charter D2), and an
+  LEB128 byte form standing in for H8's canonical output bytes.
+- `c600-display` is the host side of chapter 10's display plans and RM's feature matrix without a renderer. The
+  validator checks RPI.10, RM.11, RM.12 and RM.20 in the order invalid, unsupported, ceiling. A publication installs
+  whole or not at all and ends in exactly one KN5.21-style terminal, standalone or scheduled (RM.17 to RM.26, LI.25);
+  a mock backend stands in for an adapter (RPI.55, RM.33). Picks resolve by instance ID through the installed source
+  map, never through a chart inverse, and stale picks name the field that changed (RM.10, RM.24, RPI.24, RPI.25).
+- Display tests (`c600-display/tests/`): CT-RPI-02, CT-RPI-04, CT-RPI-05, CT-RPI-09, CT-RPI-10, CT-RPI-11,
+  CT-RPI-27, CT-RM-03 and CT-RM-04; CT-RPI-08's 600-cell-Full rows (F01 to F17, with J02 and J04 unsupported on
+  Full); the stale half of CT-RPI-12; RM.37's fifteen rows of CT-RM-07 as fixture payloads over the Full geometry
+  digests.
+- Display drafts: the list in the crate documentation, among them the validation order, string dependency keys,
+  set digests over sorted piece IDs, canonical JSON standing in for the output bytes, form `stop` for every error
+  after acceptance, and a publication to a view that is not open being invalid.
+- Not built: CT-RPI-22's chart half (the display-plan validator now exists; it is C2's next piece); CT-RPI-08's
+  jumbling rows and the posed producer wait for M5; a decoder from the interpreter's values needs list types in the
+  IR (LP2); the user-stage checker (RPI.68 to RPI.80), so F05 and F26 stay unsupported; CT-RM-09's rows 3 to 6, 8
+  and 10 (the raster
+  bound, frame-report stops and device-fault quarantine) need a user-stage checker or a device; RM.38's weight table,
+  device loss and `display_unsupported` belong to the renderer and its backend.
+- Evidence kind: source and synthetic. Every ceiling in the tests is a fixture value; nothing is measured, and nothing
+  advertises support or a profile (RPI.82, RM.40).

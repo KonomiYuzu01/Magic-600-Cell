@@ -1,0 +1,9 @@
+[package]
+name = "c600-view"
+description = "The headless view model, view lane and view budget of 600 Cell Script, with no renderer (LP3 draft)"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+c600-digest = { path = "../c600-digest" }

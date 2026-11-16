@@ -1,0 +1,300 @@
+//! Receipts (KN5.21), revision references (KN0.2), preview dependencies (KN0.8), action hints (LI.9) and the codes
+//! the command layer raises.
+
+use c600_kernel::json::{self, Value};
+
+/// The codes the command layer raises. All but the last group are registered in chapter 13.
+pub mod code {
+    pub const NO_FRESH_PREVIEW: &str = "KN5:stale.no_fresh_preview";
+    pub const TOKEN_INVALID: &str = "KN5:auth.token_invalid";
+    pub const TOKEN_USED: &str = "KN5:stale.token_used";
+    pub const TOKEN_MISMATCH: &str = "KN5:stale.token_mismatch";
+    pub const COMMIT_IN_FLIGHT: &str = "KN5:busy.commit_in_flight";
+    pub const PREVIEW_REPLACED: &str = "KN5:stale.preview_replaced";
+    pub const REVISION_CHANGED: &str = "KN5:stale.revision_changed";
+    pub const STATE_HASH_MISMATCH: &str = "KN5:consistency.state_hash_mismatch";
+    pub const ORBIT_WOULD_MOVE: &str = c600_kernel::codes::ORBIT_WOULD_MOVE;
+    pub const COMMIT_FATE: &str = "KN5:unknown_outcome.commit_fate";
+    pub const READ_ONLY_RECOVERY: &str = "KN5:unknown_outcome.read_only_recovery";
+    pub const UNDO_SUPERSEDED: &str = "KN5:stale.undo_superseded";
+    pub const CONFIRMATION_REQUIRED: &str = "KN5:input.confirmation_required";
+    pub const COMMIT_ROW_REFUSED: &str = "KN5:capability.commit_row_refused";
+    pub const OVERLAY_ROW_KIND: &str = "KN5:input.overlay_row_kind";
+    pub const COMMAND_ID_REUSED: &str = "KN5:input.command_id_reused";
+    pub const RESULT_GONE: &str = "KN5:stale.result_gone";
+    pub const EPOCH_CHANGED: &str = "KN2:stale.epoch_changed";
+    pub const LANE_FULL: &str = "KN7:busy.lane_full";
+    pub const REVISION_REPLACED: &str = "KN7:cancelled.revision_replaced";
+    pub const BY_USER: &str = "KN7:cancelled.by_user";
+
+    /// Drafts that chapter 13 does not register yet.
+    pub const UNKNOWN_ROW: &str = "KN5:input.unknown_row";
+    pub const ARGUMENT_FORM: &str = "KN5:input.argument_form";
+    pub const ROW_NOT_BUILT: &str = "KN5:input.row_not_built";
+    pub const OVERLAY_ROW_CONFLICT: &str = "KN5:input.overlay_row_conflict";
+}
+
+/// An error with its chapter 13 code.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Error {
+    pub code: &'static str,
+    pub detail: String,
+}
+
+impl Error {
+    pub fn new(code: &'static str, detail: impl Into<String>) -> Error {
+        Error { code, detail: detail.into() }
+    }
+
+    pub fn to_json(&self) -> Value {
+        json::object([("code", Value::String(self.code.into())), ("detail", Value::String(self.detail.clone()))])
+    }
+}
+
+impl From<c600_kernel::Refusal> for Error {
+    fn from(refusal: c600_kernel::Refusal) -> Error {
+        Error { code: refusal.code, detail: refusal.message }
+    }
+}
+
+/// KN0.2's revision reference. `identity` is the model ID of the Full identity block; `mode` is `jumble_off` here.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Revision {
+    pub session: String,
+    pub epoch: u64,
+    pub identity: String,
+    pub mode: &'static str,
+    pub head: String,
+    pub state: u64,
+    pub workspace: u64,
+    pub protection: u64,
+    /// The label digest of the state at `head`.
+    pub digest: String,
+}
+
+impl Revision {
+    pub fn to_json(&self) -> Value {
+        let nat = |n: u64| Value::Int(n as i64);
+        json::object([
+            ("session", Value::String(self.session.clone())),
+            ("epoch", nat(self.epoch)),
+            ("identity", Value::String(self.identity.clone())),
+            ("mode", Value::String(self.mode.into())),
+            ("head", Value::String(self.head.clone())),
+            ("state", nat(self.state)),
+            ("workspace", nat(self.workspace)),
+            ("protection", nat(self.protection)),
+            ("digest", Value::String(self.digest.clone())),
+        ])
+    }
+}
+
+/// KN0.8's preview dependencies. A preview is fresh when its dependencies equal the current ones exactly.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PreviewDeps {
+    pub epoch: u64,
+    pub identity: String,
+    pub mode: &'static str,
+    pub state: u64,
+    pub protection: u64,
+    /// The digest of the draft argument the preview was built from.
+    pub draft: String,
+}
+
+impl PreviewDeps {
+    pub fn to_json(&self) -> Value {
+        json::object([
+            ("epoch", Value::Int(self.epoch as i64)),
+            ("identity", Value::String(self.identity.clone())),
+            ("mode", Value::String(self.mode.into())),
+            ("state", Value::Int(self.state as i64)),
+            ("protection", Value::Int(self.protection as i64)),
+            ("draft", Value::String(self.draft.clone())),
+        ])
+    }
+}
+
+/// The direction of `kernel.undo_hint`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Direction {
+    Undo,
+    Redo,
+}
+
+/// LI.9's action hint: the current durable action-order number and the action to invert.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ActionHint {
+    pub order: u64,
+    pub target: u64,
+}
+
+impl ActionHint {
+    pub fn to_json(&self) -> Value {
+        json::object([("order", Value::Int(self.order as i64)), ("target", Value::Int(self.target as i64))])
+    }
+
+    pub fn from_json(value: &Value) -> Option<ActionHint> {
+        let field = |name| value.get(name).and_then(Value::as_i64).and_then(|n| u64::try_from(n).ok());
+        let object = value.as_object()?;
+        (object.len() == 2).then_some(())?;
+        Some(ActionHint { order: field("order")?, target: field("target")? })
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CommitRecord {
+    pub event: String,
+    pub pre: String,
+    pub post: String,
+    pub revision: Revision,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CompletionKind {
+    Query,
+    PreviewReady,
+    Workspace,
+    ViewPublished,
+    File,
+    App,
+}
+
+impl CompletionKind {
+    pub fn name(self) -> &'static str {
+        match self {
+            CompletionKind::Query => "query",
+            CompletionKind::PreviewReady => "preview_ready",
+            CompletionKind::Workspace => "workspace",
+            CompletionKind::ViewPublished => "view_published",
+            CompletionKind::File => "file",
+            CompletionKind::App => "app",
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ResultRef {
+    pub job: Option<u64>,
+    pub digest: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Completion {
+    pub kind: CompletionKind,
+    pub revision: Revision,
+    pub result: Option<ResultRef>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum CancelReason {
+    ByUser,
+    Superseded(String),
+    ReplacedRevision,
+    Budget,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Status {
+    Accepted,
+    Running(u64),
+    Committed(CommitRecord),
+    Completed(Completion),
+    Refused(Error),
+    Failed(Error),
+    Cancelled(CancelReason),
+    UnknownOutcome,
+}
+
+impl Status {
+    /// The status's name in KN5.21.
+    pub fn name(&self) -> &'static str {
+        match self {
+            Status::Accepted => "accepted",
+            Status::Running(_) => "running",
+            Status::Committed(_) => "committed",
+            Status::Completed(_) => "completed",
+            Status::Refused(_) => "refused",
+            Status::Failed(_) => "failed",
+            Status::Cancelled(_) => "cancelled",
+            Status::UnknownOutcome => "unknown_outcome",
+        }
+    }
+
+    pub fn is_terminal(&self) -> bool {
+        !matches!(self, Status::Accepted | Status::Running(_))
+    }
+
+    /// The code of a refusal or failure.
+    pub fn code(&self) -> Option<&'static str> {
+        match self {
+            Status::Refused(error) | Status::Failed(error) => Some(error.code),
+            _ => None,
+        }
+    }
+}
+
+/// KN5.21's receipt.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Receipt {
+    pub command: String,
+    pub request: String,
+    pub job: Option<u64>,
+    pub status: Status,
+}
+
+impl Receipt {
+    pub fn to_json(&self) -> Value {
+        let status = match &self.status {
+            Status::Accepted | Status::UnknownOutcome => {
+                json::object([("name", Value::String(self.status.name().into()))])
+            }
+            Status::Running(job) => {
+                json::object([("name", Value::String("running".into())), ("job", Value::Int(*job as i64))])
+            }
+            Status::Committed(record) => json::object([
+                ("name", Value::String("committed".into())),
+                ("event", Value::String(record.event.clone())),
+                ("pre", Value::String(record.pre.clone())),
+                ("post", Value::String(record.post.clone())),
+                ("revision", record.revision.to_json()),
+            ]),
+            Status::Completed(completion) => json::object([
+                ("name", Value::String("completed".into())),
+                ("kind", Value::String(completion.kind.name().into())),
+                ("revision", completion.revision.to_json()),
+                (
+                    "result",
+                    completion.result.as_ref().map_or(Value::Null, |result| {
+                        json::object([
+                            ("job", result.job.map_or(Value::Null, |job| Value::Int(job as i64))),
+                            ("digest", Value::String(result.digest.clone())),
+                        ])
+                    }),
+                ),
+            ]),
+            Status::Refused(error) | Status::Failed(error) => {
+                json::object([("name", Value::String(self.status.name().into())), ("error", error.to_json())])
+            }
+            Status::Cancelled(reason) => {
+                let reason = match reason {
+                    CancelReason::ByUser => Value::String("by_user".into()),
+                    CancelReason::Superseded(by) => json::object([("superseded", Value::String(by.clone()))]),
+                    CancelReason::ReplacedRevision => Value::String("replaced_revision".into()),
+                    CancelReason::Budget => Value::String("budget".into()),
+                };
+                json::object([("name", Value::String("cancelled".into())), ("reason", reason)])
+            }
+        };
+        json::object([
+            ("command", Value::String(self.command.clone())),
+            ("request", Value::String(self.request.clone())),
+            ("job", self.job.map_or(Value::Null, |job| Value::Int(job as i64))),
+            ("status", status),
+        ])
+    }
+}
+
+/// The SHA-256 of a value's canonical JSON, in hex.
+pub fn digest(value: &Value) -> String {
+    c600_digest::sha256_hex(value.canonical().as_bytes())
+}
