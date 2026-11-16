@@ -51,7 +51,8 @@ integration, authoring services, the research corpus and the importer stay with 
 
 ## 4. Milestones
 
-One pull request per milestone; each names the checks that ran.
+One pull request per milestone; each names the checks that ran. At the owner's request (16 November 2026), M2 to M4
+share one pull request, which names each milestone's checks (section 9).
 
 | Milestone | Content | Depends on |
 | --- | --- | --- |
@@ -177,3 +178,51 @@ Acceptance:
 Stop condition: M7 ends when items 1 to 9 pass in CI and its pull request is merged. It stops earlier, and the owner is
 told, if a rule cannot be implemented without changing a frozen file or choosing an open contract (LG4.8's tariffs,
 the command table, LQ2's policy options), or if it needs a product dependency.
+
+## 9. M2 to M4: the interpreter, the run-time boundary and the 600-cell-Full kernel
+
+The owner asked on 16 November 2026 for M2 to M4 to be built in one go and delivered in one pull request. The drafts
+each milestone settles are listed in `rust/README.md`; they freeze with the IR, the command table or chapter 01's open
+rows, and may change until then.
+
+M2, the interpreter and the `lp1-exec-draft-1` reference meter (crate `rust/c600-run`). Acceptance:
+
+1. `cargo test --locked --offline` passes in `rust/`, in CI through `tests/test_language_rust.py`.
+2. The 40 frozen contract-vector traces replay through the reference meter with every field equal; the meter boundary
+   vectors derived from them stop where the frozen rows predict; a negative control fails.
+3. The interpreter charges one row per operation (DET.55), observes interruption before each operation (DET.56),
+   publishes DET.59's canonical bytes, draws from `sha256-counter-draft-1` (DET.61), charges only the selected
+   `display_if` branch (DET.64), and stops with the call path, the operation and the source range.
+4. Exact arithmetic is exact on `num-bigint`, and `Approx<p>` rounds to nearest with ties to even, against golden
+   values computed independently.
+
+M3, the run-time boundary (`c600-run`'s `provenance` and `boundary` modules). Acceptance:
+
+1. FP.18's four example blocks digest as frozen, and the capability-form blocks are rebuilt byte for byte; a malformed
+   block, a block in another form, a pin the policy does not hold and an unresolved pick give
+   `PS1:capability.provenance_incompatible` (FP.17, FP.38).
+2. A stored word carries the block the host built, through the workspace and through files, whatever the program
+   writes, and a later run cites it (BND.22, BND.24, BND.32).
+3. The saved-word half of CT-LG3-07: a word that an own, forked or imported tool saved, through the workspace or a
+   file, is refused at preview admission with `LG3:capability.not_granted`, and so are research output (BND.61), a
+   nested tool block and a missing part (BND.85); a typed word and an import pass; `LG3:capability.flow_refused` never
+   appears (CT-BND-24).
+4. BND.43: a solving run gets the same output and charge rows whether its preview was built, refused at admission or
+   refused by the engine; in tool authoring and research the engine builds no preview (BND.60).
+
+M4, the kernel API and the 600-cell-Full candidate adapter (crate `rust/c600-kernel`). Acceptance:
+
+1. O01 to O07 run through the kernel API, and `tools/oracle/compare.py` reports each equal with no omitted fields
+   (`tests/test_kernel_oracle.py`, listed in `tools/ci/run_headless.py`); a tampered trace fails at its step, and a case
+   with another model identity is refused without a trace.
+2. The star cache agrees with per-primitive replay (KN2.9).
+3. The model is read from `assets/` with the model ID tied to the file list and every listed digest checked, and the
+   crate takes no external dependency.
+4. Model and protection logic is a critical path: a fresh Claude subagent on a smaller model reads the change before
+   the pull request merges, and its blocking findings are fixed (`AGENTS.md`, "Codex minimum").
+
+For all three, no file under `docs/architecture/1.0/language/` changes, and the eight language checkers still pass.
+
+Stop condition: each milestone ends when its items pass in CI and the shared pull request is merged. Each stops
+earlier, and the owner is told, under M1's conditions. What is not built or not run is recorded in `rust/README.md`;
+non-applicability is no pass (PHS.63).

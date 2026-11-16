@@ -256,6 +256,7 @@ fn fp18_blocks_validate_and_match_the_frozen_digests() {
         edit(&good, "depends", Some(Json::object([("kind", Json::text("not_recorded"))]))),
         edit(&good, "depends", Some(Json::object([("read_state", Json::text("maybe"))]))),
         edit(&good, "profile", Some(Json::text("solving"))),
+        edit(&good, "profile", None),
     ];
     for bad in &malformed {
         let bytes = provenance::canonical(bad);
