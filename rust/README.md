@@ -1023,13 +1023,12 @@ run or not applicable is no pass (PHS.63).
 
 ## Status of LP3, C7: durable receipts on the session store
 
-- KN5 gets one implementation, owned by LP2 under PHS.18 (integrator, 16 November 2026). The LP2 integrator placed it
-  in `c600-command`, which keeps its `Store` trait, with `c600-session` (KN4) implementing the trait, and M6's
-  semantics hold where the frozen text leaves a choice; LP2 writes it on branch `claude/lp2-kn5-one`. Until it lands,
-  LP3 changes neither `c600-command`'s layer, token, receipt, store and shell code nor `c600-session`, and
-  `MemoryStore` stays the layer's stand-in. C7's first piece is therefore `c600-durable`, a test-only crate that
-  drives M6's session store and C4's module closures through their public APIs and changes neither them nor
-  `c600-command`.
+- KN5 has one implementation, owned by LP2 under PHS.18 (integrator, 16 November 2026), in `c600-command`, which
+  keeps its `Store` trait, with `c600-session` (KN4) implementing the trait; M6's semantics hold where the frozen text
+  leaves a choice. Its stages 1 and 2 landed in pull request 174 (c1664c3d): `CommandLayer::open` replays a store's
+  history, and `c600_session::JournalStore` is the layer's store over KN4's journal (C1's section above). C7's first
+  piece, `c600-durable`, came before them: a test-only crate that drives M6's session store and C4's module closures
+  through their public APIs and changes neither them nor `c600-command`.
 - Tests (`c600-durable/tests/`):
   - `ct_rte_08_persisted_word.rs`: CT-RTE-08's persisted-word case, its durable leg (BND.22, BND.84, BND.85, LG5.1,
     LG5.6). An approved own tool stores a word, and the shell persists it through M6's `workspace.set` with the
@@ -1046,9 +1045,11 @@ run or not applicable is no pass (PHS.63).
 - Drafts, in the crate documentation: the shell's `workspace.set` as the host's delivery of a stored word (C5's host
   bridge decides the real path); reading a record back through `c600_session::journal::scan`, since M6 has no record
   reader; M6's stand-ins for views; and `c600_run::boundary::admit_preview` standing in for KN5.26.
-- Waits for LP2's KN5 implementation: durable receipts and undo through the command layer, KN5.26's admission of
-  record words, EV3.2's view rows, LB7.2's work-sheet structure and a session lock. If it changes an API these
-  tests use, its branch ports them.
+- Built by KN5's stages 1 and 2 (LP2): durable receipts and undo through the command layer over `JournalStore`. The
+  tests above still drive M6's own `Session::invoke` and shell stub, which the layer supersedes and LP2 removes once
+  their tests run against it; moving these tests onto the layer over `JournalStore` is C7's next piece. Still waiting
+  for KN5's later stages (LP2): KN5.26's admission of record words, EV3.2's view rows, LB7.2's work-sheet structure
+  and a session lock.
 - Evidence kind: source and fixture. The file-system leg is a short test in a fresh folder, not long-session
   evidence. The checks ran on Windows only; the Linux leg was not run.
 
