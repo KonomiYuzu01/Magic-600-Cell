@@ -78,6 +78,15 @@ pub(crate) fn valid_primitive(m: i64) -> bool {
     m != 0 && m.unsigned_abs() <= GENERATORS as u64
 }
 
+/// The file name in `assets/` of a manifest entry: `assets/` and a plain ASCII name of letters, digits, `.`, `_` and
+/// `-` that is not `.` or `..`, so it cannot leave the folder on any platform (no separator, drive or stream colon).
+fn plain_name(name: &str) -> Option<&str> {
+    let base = name.strip_prefix("assets/")?;
+    let plain = base.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'_' | b'-'))
+        && base.bytes().any(|b| b != b'.');
+    plain.then_some(base)
+}
+
 fn read(assets: &Path, name: &str) -> Result<Vec<u8>, LoadError> {
     fs::read(assets.join(name)).map_err(|_| fail(format!("Cannot read assets/{name}")))
 }
@@ -132,15 +141,30 @@ impl Model {
         };
         let files =
             manifest.get("files").and_then(Value::as_object).ok_or_else(|| fail("manifest.json lists no files"))?;
-        // Verify every listed file, as the 0.4 Model does, and keep the verified bytes of the files read below.
-        let mut kept: BTreeMap<&str, Vec<u8>> = BTreeMap::new();
+        // The model ID names exactly the listed files and digests: build_assets.py writes it as the SHA-256 of
+        // `json.dumps(files, sort_keys=True, separators=(',', ':'))`. Names are plain ASCII file names, so that text
+        // needs no escapes, and the map's byte order is Python's key order. 0.4 does not check this; the kernel does,
+        // because its identity block rests on the model ID (KN0.1).
+        let mut listed = Vec::with_capacity(files.len());
+        let mut file_list = String::from("{");
         for (name, digest) in files {
-            let base = match name.strip_prefix("assets/") {
-                Some(base) if !base.is_empty() && !base.contains(['/', '\\']) && base != "." && base != ".." => base,
-                _ => return Err(fail("manifest.json lists a file outside assets/")),
-            };
+            let base = plain_name(name)
+                .ok_or_else(|| fail("manifest.json lists a file that is not a plain file name in assets/"))?;
             let digest =
                 digest.as_str().filter(|d| is_digest(d)).ok_or_else(|| fail("Malformed digest in manifest"))?;
+            if !listed.is_empty() {
+                file_list.push(',');
+            }
+            file_list.push_str(&format!("\"{name}\":\"{digest}\""));
+            listed.push((name, base, digest));
+        }
+        file_list.push('}');
+        if c600_digest::sha256_hex(file_list.as_bytes()) != model_id {
+            return Err(fail("manifest.json's model_id does not match its file list"));
+        }
+        // Verify every listed file, as the 0.4 Model does, and keep the verified bytes of the files read below.
+        let mut kept: BTreeMap<&str, Vec<u8>> = BTreeMap::new();
+        for (name, base, digest) in listed {
             let bytes = read(assets, base)?;
             if c600_digest::sha256_hex(&bytes) != digest {
                 return Err(fail(format!("Asset hash mismatch: {name}")));

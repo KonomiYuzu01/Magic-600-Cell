@@ -8,9 +8,11 @@
 //!
 //! # Loading
 //!
-//! [`Kernel::load`] reads `assets/manifest.json`, checks the SHA-256 of every file the manifest lists, and reads
-//! `model.npz`, `primitives.npz`, `execution_trees.json.gz`, `census.json` and `seed_atlas.json` from the verified
-//! bytes with this crate's own ZIP, DEFLATE, gzip, NPY and JSON readers ([`archive`], [`json`]). The model's identity
+//! [`Kernel::load`] reads `assets/manifest.json`, checks that each listed name is a plain file name in `assets/` and
+//! that the `model_id` is the SHA-256 of the file list as `build_assets.py` writes it, checks the SHA-256 of every file
+//! the manifest lists, and reads `model.npz`, `primitives.npz`, `execution_trees.json.gz`, `census.json` and
+//! `seed_atlas.json` from the verified bytes with this crate's own ZIP, DEFLATE, gzip, NPY and JSON readers
+//! ([`archive`], [`json`]). The model's identity
 //! is the manifest's `model_id` together with the SHA-256 of the manifest's bytes. Only the arrays that effects,
 //! protection, progress and the star certificates read are kept, and the loader checks the facts its loops rely on
 //! (indices in range, every primitive a permutation of its support, execution trees whose walks end).
