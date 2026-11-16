@@ -16,7 +16,7 @@
 //! first step and the other JI.6 and JI.7 calls.
 
 use std::cmp::Ordering;
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::sync::{Arc, Mutex, OnceLock};
 
 use c600_kernel::json::Value;
@@ -685,9 +685,17 @@ fn counts_value(counts: &BTreeMap<i64, i64>) -> Value {
     Value::Object(map)
 }
 
+/// `delta_n_h`: after minus before for every bin of either side, so a sparse odd bin that `left_counts_json` keeps
+/// is in the delta too and the changes sum to zero (JI.6's sparse histogram; JI.10, JI.11). On I_a states only
+/// the fixed bins occur, so the delta has J1's five keys there; J1's reference refuses an odd height.
 fn delta_counts(before: &BTreeMap<i64, i64>, after: &BTreeMap<i64, i64>) -> Value {
     let (b, a) = (left_counts_json(before), left_counts_json(after));
-    Value::Object(COUNT_KEYS.iter().map(|k| (k.to_string(), int(a[*k] - b[*k]))).collect())
+    let keys: BTreeSet<&String> = b.keys().chain(a.keys()).collect();
+    Value::Object(
+        keys.into_iter()
+            .map(|k| (k.clone(), int(a.get(k).copied().unwrap_or(0) - b.get(k).copied().unwrap_or(0))))
+            .collect(),
+    )
 }
 
 /// JI.6 heights: every occupied pose with its domain ID, heights and branches, the X5 counts and both
@@ -1515,6 +1523,26 @@ pub fn cayley_record(ctx: &Context, grip: usize, omega: &[Q5]) -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn histogram_delta_keeps_odd_bins() {
+        // One S4 letter from solved: 3,097 pieces move from height 0 to height 1 (the review's case on PR 167).
+        let before = BTreeMap::from([(0, 3120)]);
+        let after = BTreeMap::from([(0, 23), (1, 3097)]);
+        let delta = delta_counts(&before, &after);
+        let fields = delta.as_object().unwrap();
+        assert_eq!(fields.get("n_0").and_then(Value::as_i64), Some(-3097));
+        assert_eq!(fields.get("n_1").and_then(Value::as_i64), Some(3097));
+        for key in COUNT_KEYS {
+            assert!(fields.contains_key(key), "{key}");
+        }
+        assert_eq!(fields.values().map(|v| v.as_i64().unwrap()).sum::<i64>(), 0);
+        // On I_a states the delta has J1's five keys only, and heights above 6 share one bin.
+        let ia = delta_counts(&BTreeMap::from([(0, 10), (2, 4)]), &BTreeMap::from([(0, 8), (4, 2), (8, 4)]));
+        let keys: Vec<&str> = ia.as_object().unwrap().keys().map(String::as_str).collect();
+        assert_eq!(keys, COUNT_KEYS.to_vec());
+        assert_eq!(ia.as_object().unwrap().get("n_above_6").and_then(Value::as_i64), Some(4));
+    }
 
     #[test]
     fn valuation_at_two() {
