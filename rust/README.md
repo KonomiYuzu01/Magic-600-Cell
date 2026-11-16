@@ -154,6 +154,28 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   CT-LG3-07, the undo half of CT-LG3-03 and research output that never becomes a solving preview (BND.61). M3 builds
   the acknowledgement, the saved-word half and BND.61's refusal at run time (below); the undo half of CT-LG3-03 stays
   open.
+- Lists and word operations (LP2 drafts until the IR freeze, PHS.49). `List<T>` is a finite sequence in written
+  order, built by the IR's collection form; `length`, `index`, `push` and `concat` work on it. A list with a display
+  element is display-qualified as a whole, so its length, an element or an equality cannot extract an exact result
+  (LG2.19), and an index takes exact inputs only (LG2.20): CT-LG2-05's aggregate part for lists. A list holds no
+  callable in the draft. `inverse`, `conjugate`, `commutator` and `compose` (with `concat` and `length`) take the
+  `Word` domain and give a `Word` (LG2.15, LG2.16; CT-LG2-12's language half, part). `word_key` gives a
+  `WordEqualityKey` (LG2.13), which no proposal, word operation, word slot or result takes:
+  `LG2:type.word_key_not_executable`, not a mismatch (CT-LG2-11, part). The key is not indexed by puzzle and identity
+  yet, since the IR draft has one puzzle.
+- Sets and maps (LP2 drafts until the IR freeze). `Set<T>` and `Map<K, V>` are built by the collection form; a map's
+  items alternate keys and values. A set element and a map key have an exact type with a canonical key order (no
+  display qualifier, approximation, function, receipt, `Unit` or type parameter, at any depth), or the IR is
+  malformed, and every element, key and probe is an exact input (LG2.20). `contains`, `insert` (a set's element or a
+  map's key and value), `lookup` and `length` work on them; a map with a display value is display as a whole
+  (LG2.19). `elements`, `keys` and `entries` give a list in the order their primitive names, ascending or descending
+  (LG4.3). CT-LG2-05's aggregate part for sets and maps.
+- Compressed words (LP2 drafts until the IR freeze). `CompressedWord` is a type of its own, never a `Word`:
+  `compress` gives one from a `Word`, `concat` joins two without expansion, `length` gives the exact `Nat` length
+  without expansion (LG2.16), and `expand(c, start, count)` gives the letters from an exact position as a `Word`
+  (LG4.6); the position and the count are exact natural numbers (LG2.20). A compressed word has no exact equality,
+  alone or held in a record or a collection, and is no set element or map key, so no checked program compares two.
+  CT-LG2-14's language half, static part (`c600-syntax/tests/collections.rs`).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
 
 ## Status of M7: the parser
@@ -213,6 +235,16 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   declared `charge` (LG4.8's tariffs), command metadata (the command table, LP3), binder arms and LX-8's domain types
   such as `Word<Full,Retained>` (the IR's domain families, M4 and M5), and menu words (the jumbled puzzle's alphabet,
   M5). Type arguments on a program's own function are refused: the IR draft has no explicit instantiation.
+- Lists and words (LP2 drafts). `List<T>` and `WordEqualityKey` are types, and a `List` of a function is refused at
+  lowering. `list<T>(a, b, ...)` builds a list; `length`, `index`, `push`, `concat`, `inverse`, `conjugate`,
+  `commutator`, `compose` and `word_key` are reserved operations called like functions
+  (`c600-syntax/tests/collections.rs`).
+- Sets and maps (LP2 drafts). `Set<T>` and `Map<K, V>` are types; a set element or a map key that is not exact in its
+  type is refused at lowering. `set<T>(a, ...)` and `map<K, V>(k, v, ...)` build them; `contains`, `insert`,
+  `lookup`, `elements`, `keys` and `entries` are reserved, and a listing names its order as its second argument,
+  `ascending` or `descending`, which are reserved words.
+- Compressed words (LP2 drafts). `CompressedWord` is a type, refused as a set element or a map key at lowering;
+  `compress` and `expand` are reserved operations called like functions.
 - Not run or not applicable, which is no pass (PHS.63): CT-LG1-01's second half, mixed dependency editions, while one
   edition exists; CT-RTE-18 (LQ13 was answered without it).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
@@ -248,6 +280,42 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   retained metadata (so an output unit is one fused row), the receipt request record, the JSON form of a word (LG2.18's
   word keys stay open) and `DraftTariffs`, test-only tariffs for the rows the frozen vectors do not price. The IR
   draft has one read construct for snapshots and workspace records; the IR freeze should split it.
+- Lists and words (LP2 drafts): `Value::List` (`Value::list`) and `Value::WordEqualityKey`. A list's logical size is
+  a record's, after DET.57's sequence row: a 4-byte tag, 8 bytes per variable-sequence element, and the elements. Its
+  JSON form is an array in written order. Each operation is one step: `length` reserves its integer; `index` lends or
+  retains an element as a field read does, and an index outside the list stops with `LG4:input.pointwise_failed`
+  before its step; the builders are priced before they build, `expand_per_letter` per letter built or scanned and
+  `LIST_PER_ELEMENT` (1) per element built. These prices are drafts, since DET.55 names no row for them. The key is
+  LG2.18's Full free reduction and has no output form, so a run that would emit one stops with
+  `PS1:input.noncanonical_value`. Tests: `c600-run/tests/collections.rs` (CT-LG2-12's run-time language half and
+  CT-LG4-01 for lists and words, parts) and the key halves of CT-LG2-11 and CT-LG2-13 in `conformance_lg2.rs`.
+- Sets and maps (LP2 drafts): `Value::Set` and `Value::Map` (`Value::set`, `Value::map`) keep their elements, or
+  their `{ key, value }` entries, in the canonical key order `value::key_order` (DET.9): exact numbers by value,
+  texts by scalar values, words by letters, aggregates part by part, kinds by a fixed rank, and for equal numbers in
+  different representations the explicit secondary key `Int`, `Rat`, `Q5`. Equal keys are one key; the lowest
+  representation stays, and a map's later value replaces an earlier one. They are sized as lists and encode as JSON
+  arrays in that order; a host value out of that order has no canonical form. Draft prices: `set` and `map` are one
+  step at `LIST_PER_ELEMENT` per element and n·⌈log₂ n⌉ comparisons of the widest key, each `compare_per_unit` per
+  unit of two keys; `contains`, `insert` and `lookup` cost ⌈log₂(n + 1)⌉ comparisons of the probe, an insertion adds
+  `LIST_PER_ELEMENT` per element built, and `elements`, `keys` and `entries` the same per element listed. A missing
+  key stops `lookup` with `LG4:input.pointwise_failed` before its step. Tests: `c600-run/tests/collections.rs`
+  (CT-LG4-01 for sets and maps and CT-DET-05's insertion-order half, parts).
+- Compressed words (LP2 drafts): `Value::Compressed` holds a `value::Compressed`, a straight-line program whose parts
+  are leaves of literal letters or concatenations of two earlier parts, with its exact length. A join of two equal
+  values, compared by value, adds one part, so 70 doublings of three letters keep 71 parts for 3·2⁷⁰ letters; an
+  empty operand gives the other. Its logical size is a 4-byte tag, per leaf 4 + 8 + 2 bytes per letter, per
+  concatenation 20, and the length as an integer; in a container it is a variable sequence. Draft prices: `compress`
+  at `expand_per_letter` per letter; `concat` at the comparison of the two operands, the integer addition of their
+  lengths and `LIST_PER_ELEMENT` per part built, reserving the size of a join of two different words; `length`
+  reserves its integer; `expand` at `expand_per_letter` per letter and `LIST_PER_ELEMENT` per part it may visit,
+  2·(height + count) + 1, reserving 2 bytes per letter, and a range past the end stops it with
+  `LG4:input.pointwise_failed` before its step. A compressed word has no canonical form, so a run that would emit one
+  stops, and an argument that holds one is refused, with `PS1:input.noncanonical_value`. An exact equality with a
+  compressed operand is refused as malformed IR; one held in a record or a collection only the checker refuses.
+  Tests: `c600-run/tests/collections.rs` (CT-LG2-14's language half, part).
+- Not built for compressed words: their inverse, conjugate, commutator and composition, `word_key`, an exact equality
+  and an output form; the kernel's streaming half of CT-LG2-14 (DET.63's `word_open` and `chunk` rows, cancellation
+  and admission bounds; CT-LG4-03, M4).
 - Evidence kind: source and fixture.
 
 ## Status of M3: the run-time boundary

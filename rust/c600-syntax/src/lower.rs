@@ -10,8 +10,8 @@ use std::fmt;
 
 use c600_ir::Expr as Ir;
 use c600_ir::{
-    Accounting, Callee, Capability, Effect, EffectBound, ExactRole, FnKind, FnTy, Function, Lit, Module, Param, Prim,
-    Program, QTy, ReceiptField, Ty,
+    Accounting, Callee, Capability, Effect, EffectBound, ExactRole, FnKind, FnTy, Function, Lit, Module, Order, Param,
+    Prim, Program, QTy, ReceiptField, Ty,
 };
 
 use crate::ast::*;
@@ -21,7 +21,7 @@ use crate::Span;
 const KEYWORDS: [&str; 10] = ["fn", "let", "return", "match", "true", "false", "q5", "word", "menu", "_"];
 
 /// The IR's operations, called like functions. A program cannot bind these names either.
-const BUILTINS: [&str; 41] = [
+const BUILTINS: [&str; 61] = [
     "if",
     "display_if",
     "exact_add",
@@ -63,12 +63,38 @@ const BUILTINS: [&str; 41] = [
     "file_write",
     "random_draw",
     "read_clock",
+    // Lists and words (LP2 drafts).
+    "list",
+    "length",
+    "index",
+    "push",
+    "concat",
+    "inverse",
+    "conjugate",
+    "commutator",
+    "compose",
+    "word_key",
+    // Sets and maps (LP2 drafts).
+    "set",
+    "map",
+    "contains",
+    "insert",
+    "lookup",
+    "elements",
+    "keys",
+    "entries",
+    // Compressed words (LP2 drafts).
+    "compress",
+    "expand",
 ];
+
+/// The named orders of an ordered collection result (LG4.3; LP2 draft). A program cannot bind these names either.
+const ORDERS: [&str; 2] = ["ascending", "descending"];
 
 /// The effect names of an `effects` list (LG3.1). `file` and `random` also name their capability (LG3.8).
 const EFFECTS: [&str; 5] = ["snapshot", "view", "workspace", "preview", "budget"];
 
-const BASE_TYPES: [&str; 14] = [
+const BASE_TYPES: [&str; 16] = [
     "Unit",
     "Bool",
     "Nat",
@@ -83,10 +109,35 @@ const BASE_TYPES: [&str; 14] = [
     "Colour",
     "ApproxBool",
     "Receipt",
+    "WordEqualityKey",
+    "CompressedWord",
 ];
 
 fn reserved(name: &str) -> bool {
-    KEYWORDS.contains(&name) || BUILTINS.contains(&name)
+    KEYWORDS.contains(&name) || BUILTINS.contains(&name) || ORDERS.contains(&name)
+}
+
+/// Whether a type is or holds a function. The LP2 draft's lists hold none, so a callable's needs never hide in one.
+fn holds_callable(ty: &Ty) -> bool {
+    match ty {
+        Ty::Fn(_) => true,
+        Ty::Record(fields) => fields.iter().any(|(_, f)| holds_callable(&f.ty)),
+        other => other.elements().into_iter().any(|e| holds_callable(&e.ty)),
+    }
+}
+
+/// Whether a set element or a map key may have this type (LG2.20; LP2 draft): exact and without the display qualifier
+/// at any depth, and without a function, a receipt, `Unit`, a type parameter or a compressed word, so that its
+/// canonical key order is defined (DET.9).
+fn key_type(q: &QTy) -> bool {
+    !q.display
+        && match &q.ty {
+            Ty::Unit | Ty::Approx(_) | Ty::ApproxBool | Ty::Fn(_) | Ty::Receipt | Ty::Var(_) | Ty::CompressedWord => {
+                false
+            }
+            Ty::Record(fields) => fields.iter().all(|(_, f)| key_type(f)),
+            other => other.elements().into_iter().all(key_type),
+        }
 }
 
 fn capability(name: &str) -> Option<Capability> {
@@ -510,6 +561,30 @@ impl Body<'_> {
         args.iter().enumerate().map(|(i, a)| self.at(path, i, |b, p| b.expr(a, p))).collect()
     }
 
+    /// A `List`, `Set` or `Map` type from its lowered type arguments (LP2 drafts). A collection holds no function, and
+    /// a set element or a map key is exact (LG2.20).
+    fn collection(&self, kind: &str, mut types: Vec<QTy>, span: Span) -> R<Ty> {
+        if types.iter().any(|t| holds_callable(&t.ty)) {
+            return Err(self.err(span, format!("a `{kind}` holds no function in the LP2 draft")));
+        }
+        if kind != "List" && !key_type(&types[0]) {
+            let note = format!(
+                "a `{kind}` element or key is exact, without a display qualifier, an approximation, a function, a \
+                 receipt, `Unit`, a type parameter or a compressed word (LG2.20)"
+            );
+            return Err(self.err(span, note));
+        }
+        let mut next = || Box::new(types.remove(0));
+        Ok(match kind {
+            "List" => Ty::List(next()),
+            "Set" => Ty::Set(next()),
+            _ => {
+                let key = next();
+                Ty::Map(key, next())
+            }
+        })
+    }
+
     fn untyped(&self, type_args: &[TypeExpr], span: Span) -> R<()> {
         if type_args.is_empty() {
             Ok(())
@@ -570,20 +645,82 @@ impl Body<'_> {
     }
 
     fn builtin(&mut self, op: &str, type_args: &[TypeExpr], args: &[Expr], span: Span, path: &mut Vec<u32>) -> R<Ir> {
-        let typed = matches!(op, "read_snapshot" | "write_workspace" | "declassified" | "file_read");
-        if typed != (type_args.len() == 1) || type_args.len() > 1 {
-            let wanted = if typed { "one type argument" } else { "no type argument" };
+        let typed = match op {
+            "read_snapshot" | "write_workspace" | "declassified" | "file_read" | "list" | "set" => 1,
+            "map" => 2,
+            _ => 0,
+        };
+        if type_args.len() != typed {
+            let wanted = ["no type argument", "one type argument", "two type arguments"][typed];
             return Err(self.err(span, format!("`{op}` takes {wanted}")));
         }
         let arity = match op {
             "if" | "display_if" => 3,
             "exact_add" | "exact_less" | "exact_eq" | "and" | "or" | "approx_add" | "approx_less" | "approx_and"
             | "write_workspace" | "propose" | "file_write" => 2,
+            "index" | "push" | "concat" | "conjugate" | "commutator" | "compose" => 2,
+            // An ordered result names its order (LG4.3).
+            "contains" | "lookup" | "elements" | "keys" | "entries" => 2,
+            // `insert(s, x)` adds to a set, `insert(m, k, v)` to a map (LP2 drafts).
+            "insert" if args.len() == 3 => 3,
+            "insert" => 2,
+            // `expand(c, start, count)` (LP2 draft).
+            "expand" => 3,
             "used_steps" | "unused_steps" | "budget_status" | "random_draw" | "read_clock" => 0,
+            // `list<T>(a, b, ...)` and `set<T>(a, b, ...)` take their items, `map<K, V>(k, v, ...)` its keys and values
+            // in turn (LP2 drafts).
+            "list" | "set" | "map" => args.len(),
             _ => 1,
         };
         self.takes(op, arity, args, span)?;
+        if let "list" | "set" | "map" = op {
+            let mut types = Vec::new();
+            for t in type_args {
+                types.push(self.ty(t)?);
+            }
+            if op == "map" && args.len() % 2 == 1 {
+                return Err(self.err(span, "`map` takes its keys and values in pairs"));
+            }
+            let kind = match op {
+                "list" => "List",
+                "set" => "Set",
+                _ => "Map",
+            };
+            let ty = self.collection(kind, types, span)?;
+            return Ok(Ir::Collection { ty, items: self.args(args, path)? });
+        }
+        if let "elements" | "keys" | "entries" = op {
+            let order = match &args[1].kind {
+                ExprKind::Name(name) if name == "ascending" => Order::Ascending,
+                ExprKind::Name(name) if name == "descending" => Order::Descending,
+                _ => {
+                    let note = format!("`{op}` names its order, `ascending` or `descending` (LG4.3)");
+                    return Err(self.err(args[1].loc.0, note));
+                }
+            };
+            let prim = match op {
+                "elements" => Prim::Elements(order),
+                "keys" => Prim::Keys(order),
+                _ => Prim::Entries(order),
+            };
+            return Ok(Ir::Prim { op: prim, args: self.args(&args[..1], path)? });
+        }
         let prim = match op {
+            "length" => Some(Prim::Length),
+            "index" => Some(Prim::Index),
+            "push" => Some(Prim::Push),
+            "concat" => Some(Prim::Concat),
+            "inverse" => Some(Prim::Inverse),
+            "conjugate" => Some(Prim::Conjugate),
+            "commutator" => Some(Prim::Commutator),
+            "compose" => Some(Prim::Compose),
+            "word_key" => Some(Prim::WordKey),
+            "contains" => Some(Prim::Contains),
+            "lookup" => Some(Prim::Lookup),
+            "insert" if args.len() == 3 => Some(Prim::InsertEntry),
+            "insert" => Some(Prim::Insert),
+            "compress" => Some(Prim::Compress),
+            "expand" => Some(Prim::Expand),
             "exact_add" => Some(Prim::ExactAdd),
             "exact_less" => Some(Prim::ExactLess),
             "exact_eq" => Some(Prim::ExactEq),
@@ -748,6 +885,19 @@ impl Body<'_> {
                         }
                         Ok(QTy { ty: q.ty, display: true })
                     }
+                    // `List<T>` (LP2 draft).
+                    "List" | "Set" | "Map" if !self.is_generic(n) => {
+                        let count = if n == "Map" { 2 } else { 1 };
+                        if args.len() != count {
+                            let wanted = if count == 1 { "one type argument" } else { "two type arguments" };
+                            return Err(self.err(loc.0, format!("`{n}` takes {wanted}")));
+                        }
+                        let mut types = Vec::new();
+                        for a in args {
+                            types.push(self.ty(a)?);
+                        }
+                        Ok(exact(self.collection(n, types, loc.0)?))
+                    }
                     "Approx" => {
                         let precision = match args.as_slice() {
                             [TypeExpr::Named { name, args, .. }] if args.is_empty() => match name.text.as_str() {
@@ -785,6 +935,8 @@ impl Body<'_> {
                             "Colour" => Ty::Colour,
                             "ApproxBool" => Ty::ApproxBool,
                             "Receipt" => Ty::Receipt,
+                            "WordEqualityKey" => Ty::WordEqualityKey,
+                            "CompressedWord" => Ty::CompressedWord,
                             _ => Ty::Var(n.into()),
                         }))
                     }
@@ -866,7 +1018,12 @@ mod tests {
                 "if" | "display_if" => format!("{op}(true, 1, 2)"),
                 "used_steps" | "unused_steps" | "budget_status" | "random_draw" | "read_clock" => format!("{op}()"),
                 "exact_add" | "exact_less" | "exact_eq" | "and" | "or" | "approx_add" | "approx_less"
-                | "approx_and" | "propose" => format!("{op}(1, 2)"),
+                | "approx_and" | "propose" | "index" | "push" | "concat" | "conjugate" | "commutator" | "compose"
+                | "contains" | "insert" | "lookup" => format!("{op}(1, 2)"),
+                "list" | "set" => format!("{op}<Nat>(1, 2)"),
+                "map" => format!("{op}<Nat, Nat>(1, 2)"),
+                "elements" | "keys" | "entries" => format!("{op}(1, ascending)"),
+                "expand" => format!("{op}(1, 2, 3)"),
                 _ => format!("{op}(1)"),
             };
             let source =
