@@ -62,7 +62,7 @@ refresh (FP.1).
 | Pin in `candidate.json` | Old | New |
 | --- | --- | --- |
 | `AGENTS.md` SHA-256 | `9b21d4852b0a6094cfcc6e32752100c73d145cde50771b2b81edd5a0ce9ba65e` | `9c473c758e257b58a67d175382582d3d3879aff63d03f5d0e2c281ba5f2f5800` |
-| `input_commit` | `a5b24fe96015e540006f62d8cbd56a3db6d6e1d1` | the commit of this change that edits `AGENTS.md` |
+| `input_commit` | `a5b24fe96015e540006f62d8cbd56a3db6d6e1d1` | `675002412ce73968a23db1732311dc45d63296a2`, the commit of this change that edits `AGENTS.md` |
 
 - The `AGENTS.md` change is confined to the Fable bullet under Roles. The packet and the chapters cite `AGENTS.md` for
   its mechanics, persistence, evidence and authority rules and its "Ask the owner" list, and none of those changed.
