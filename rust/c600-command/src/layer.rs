@@ -490,10 +490,14 @@ impl<S: Store> CommandLayer<S> {
                 }
                 Ok(())
             }
-            "operation.preview.cancel" => match self.slot {
-                Some(_) => Ok(()),
-                None => Err(Error::new(code::NO_FRESH_PREVIEW, "no pending preview")),
-            },
+            // A preview that is still building waits as a job on the exclusive lane, and `cancel` takes it from there.
+            "operation.preview.cancel" => {
+                if self.slot.is_some() || self.jobs.iter().any(|job| job.lane == Lane::Exclusive) {
+                    Ok(())
+                } else {
+                    Err(Error::new(code::NO_FRESH_PREVIEW, "no pending preview"))
+                }
+            }
             "session.undo" | "session.redo" => {
                 if self.commit_held {
                     return Err(Error::new(code::COMMIT_IN_FLIGHT, "another commit is in flight"));
@@ -525,7 +529,13 @@ impl<S: Store> CommandLayer<S> {
 
     fn program_free(&self) -> Result<(), Error> {
         let queued = self.jobs.iter().filter(|job| job.lane == Lane::Program).count();
-        if queued + self.running.len() >= self.program_capacity {
+        // A running view overlay holds the view lane, not the program lane (KN7.2, LI.22).
+        let running = self
+            .running
+            .values()
+            .filter(|program| self.table.row(&program.row).is_some_and(|row| row.lane == Lane::Program))
+            .count();
+        if queued + running >= self.program_capacity {
             return Err(Error::new(code::LANE_FULL, "the program lane is full"));
         }
         Ok(())
