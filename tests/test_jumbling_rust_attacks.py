@@ -519,7 +519,7 @@ class HeightCountTests(unittest.TestCase):
 class FreePoseTests(unittest.TestCase):
     """Lead L10 (part): JI.53 and LB3.1 on a raw free-mode table. The domain ID of the rotation against `trees.py` is
     CT-KN2-02's free-mode case in `tests/test_jumbling_rust_candidate.py`; the coset side (id(g k) = id(g) for k in
-    K+) is not run here."""
+    K+, and id(k g) = id(g) only when g^-1 k g lies in K+) is `rust/c600-jumble/tests/domain.rs`."""
 
     def test_one_piece_at_a_cayley_rotation(self):
         """A raw table with one piece at the exact Cayley rotation R(omega = (2, 0, 0)) at cap 0: one piece off the
@@ -735,8 +735,8 @@ class J1ApiContracts(unittest.TestCase):
         self.assertEqual(sorted(inside.tolist()), self.f.a)
 
     def test_pose_entries_are_immutable(self):
-        """JI.52 (L11): pose_entries is a read-only copy; its entries and their exact matrices cannot be changed, so a
-        caller cannot reach the state's pose table through them."""
+        """JI.52 (L11): pose_entries is a read-only copy; its entries, their exact matrices and the matrices' rows are
+        tuples, which a caller cannot rebind. The numbers inside are the next test's case."""
         entries = self.api.pose_entries(self.after_first)
         self.assertTrue(any(entry.matrix is not None for entry in entries))
         for entry in entries:
@@ -744,6 +744,23 @@ class J1ApiContracts(unittest.TestCase):
             if entry.matrix is not None:
                 self.assertIsInstance(entry.matrix, tuple)
                 self.assertTrue(all(isinstance(row, tuple) for row in entry.matrix))
+
+    @unittest.expectedFailure
+    def test_changing_a_number_of_a_pose_entry_leaves_the_state(self):
+        """JI.52 (L11): the pose entries are a read-only copy, so changing a number in one leaves the state's table as
+        it was. The module hands out J1's own exact numbers, which take attribute assignment, so the change reaches
+        the state's pose table (the test restores the number)."""
+        state = self.api.copy_state(self.after_first)
+        pid, entry = next((pid, e) for pid, e in enumerate(self.api.pose_entries(state)) if e.matrix is not None)
+        number = entry.matrix[0][0]
+        saved = (number.a, number.b, number.d)
+        before = [[(x.a, x.b, x.d) for x in row] for row in self.api.pose_matrix(state, pid)]
+        try:
+            number.a += 1
+            after = [[(x.a, x.b, x.d) for x in row] for row in self.api.pose_matrix(state, pid)]
+        finally:
+            number.a, number.b, number.d = saved
+        self.assertEqual(after, before)
 
     def test_fixture_state_replays_the_first_t_records(self):
         """The precondition of the range fault below: with J1's apply stubbed to admit, fixture_state replays t
