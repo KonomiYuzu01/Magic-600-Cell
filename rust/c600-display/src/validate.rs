@@ -13,6 +13,7 @@ use c600_kernel::{IdentityBlock, Puzzle, PIECES, SLOTS};
 
 use crate::array::{Array, Elem};
 use crate::canonical;
+use crate::chart::{self, Admission, ChartAdmission, ChartCheck};
 use crate::error::{codes, Error};
 use crate::plan::*;
 use crate::source;
@@ -157,6 +158,8 @@ pub struct Context {
     pub tokens: TokenTable,
     /// The records `word()` reads, by key.
     pub words: BTreeMap<Key, WordRecord>,
+    /// The chart check results admission consumes (RPI.48); empty, every claimed property stays `not_established`.
+    pub checks: Vec<ChartCheck>,
 }
 
 /// Who owns a plan's subject (RM.8, RM.9). A program cannot label its own arrays `session` or `preview`.
@@ -196,11 +199,7 @@ pub struct ShownNode {
     pub content: Vec<Shown>,
 }
 
-/// The status of an exact chart property; RPI.34 names no checker yet, so every property is `not_established`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum PropertyStatus {
-    NotEstablished,
-}
+pub use crate::chart::PropertyStatus;
 
 /// A validated publication.
 #[derive(Clone, Debug, PartialEq)]
@@ -215,7 +214,10 @@ pub struct Validated {
     pub nodes: Vec<ShownNode>,
     /// The union of the plans' declared dependencies.
     pub dependencies: BTreeMap<String, String>,
+    /// Every claimed chart property with its status (RPI.34, RPI.48).
     pub properties: Vec<(ChartId, String, PropertyStatus)>,
+    /// Every chart's admission and the coverage of its output (RPI.48).
+    pub charts: Vec<ChartAdmission>,
 }
 
 /// Whether a certified transform may be drawn as swept motion: only with the engine's named plane (RM.6, F03).
@@ -325,6 +327,7 @@ struct Check<'a> {
     shown: Vec<ShownNode>,
     subjects: Vec<PlanSubject>,
     properties: Vec<(ChartId, String, PropertyStatus)>,
+    charts: Vec<ChartAdmission>,
     vertices: u64,
     index_entries: u64,
     overlay_items: u64,
@@ -512,9 +515,15 @@ impl Check<'_> {
                     return Err(invalid(format!("stage {} has a non-finite parameter", stage.name)));
                 }
             }
-            for property in &chart.properties {
-                self.properties.push((chart.chart, property.clone(), PropertyStatus::NotEstablished));
+            let (admission, statuses) = chart::admit_chart(chart, &self.ctx.checks);
+            for (property, status) in statuses {
+                self.properties.push((chart.chart, property, status));
             }
+            let coverage = match &admission {
+                Admission::Refused(error) => Coverage::Undefined(error.code.to_owned()),
+                Admission::Admitted | Admission::NotEstablished(_) => Coverage::Complete,
+            };
+            self.charts.push(ChartAdmission { plan: plan.plan, chart: chart.chart, admission, coverage });
             self.features.insert(feature);
             let admitted = match self.ctx.support.feature(feature) {
                 Ok((_, stages)) => stages,
@@ -821,6 +830,7 @@ pub fn validate(publication: &Publication, ctx: &Context) -> Result<Validated, E
         shown: Vec::new(),
         subjects: Vec::new(),
         properties: Vec::new(),
+        charts: Vec::new(),
         vertices: 0,
         index_entries: 0,
         overlay_items: 0,
@@ -881,6 +891,7 @@ pub fn validate(publication: &Publication, ctx: &Context) -> Result<Validated, E
         nodes: check.shown,
         dependencies,
         properties: check.properties,
+        charts: check.charts,
     })
 }
 
