@@ -611,12 +611,27 @@ fn unnamed_words(body: &Expr, words: &BTreeSet<&str>, policy: &Policy) -> Vec<(S
 /// in a callable's parameters or result, at any depth. A type variable, the unknown type included, may stand for a
 /// word, so it counts as one; a compressed word and a word equality key hold a word's letters (LP2 drafts). A callable
 /// counts by its parameters too, conservatively: one that takes a callback may hand the callback a word it holds.
+/// Every type is named, so a type added later is a compile error here rather than a silent "holds no word".
 fn carries_word(ty: &Ty) -> bool {
     match ty {
         Ty::Word | Ty::CompressedWord | Ty::WordEqualityKey | Ty::Var(_) => true,
         Ty::Record(fields) => fields.iter().any(|(_, f)| carries_word(&f.ty)),
         Ty::Fn(f) => carries_word(&f.result.ty) || f.params.iter().any(|p| carries_word(&p.ty)),
-        other => other.elements().into_iter().any(|e| carries_word(&e.ty)),
+        Ty::List(_) | Ty::Set(_) | Ty::Map(..) => ty.elements().into_iter().any(|e| carries_word(&e.ty)),
+        Ty::Unit
+        | Ty::Bool
+        | Ty::Nat
+        | Ty::Int
+        | Ty::Rat
+        | Ty::Q5
+        | Ty::Text
+        | Ty::Target
+        | Ty::Budget
+        | Ty::Status
+        | Ty::Colour
+        | Ty::Approx(_)
+        | Ty::ApproxBool
+        | Ty::Receipt => false,
     }
 }
 
