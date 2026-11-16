@@ -147,7 +147,8 @@
       {"id": "lp2-batch-1", "title": "LP2's first integration batch (part of M8)", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/170"},
       {"id": "kn5-one-implementation", "title": "KN5's one implementation, stages 1 and 2 (part of M8)", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/174"},
       {"id": "lp2-batch-2", "title": "LP2's second integration batch and M8's observation calls (part of M8)", "weight": 1, "done": true, "evidence": "https://github.com/KonomiYuzu01/Magic-600-Cell/pull/176"},
-      {"id": "phs52-readings", "title": "The owner's PHS.52 readings carried out in the code (part of M8)", "weight": 1, "done": true, "evidence": "877f7925"}
+      {"id": "phs52-readings", "title": "The owner's PHS.52 readings carried out in the code (part of M8)", "weight": 1, "done": true, "evidence": "877f7925"},
+      {"id": "m8-levels", "title": "M8's levels, end tests and derived values (part of M8)", "weight": 1, "done": true, "evidence": "14d8aa2d"}
      ]},
     {"id": "1.0-lp3", "track": "language", "title": "Language first closed loop (LP3)", "status": "in_progress", "acceptance": "PHS.23's six acceptance items have evidence on one frozen candidate and the 82 tests that chapter 12 section 15.4 indexes run whole; the owner signs off LP3.", "acceptance_source": "docs/progress/1.0/language-lp3-plan.md", "blocker": null,
      "items": [
