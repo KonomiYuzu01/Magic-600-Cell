@@ -56,6 +56,8 @@ struct Adapter {
     cap_twists: HashMap<usize, Vec<Twist>>,
     /// Stored states by name (`keep`, kept prefix states) for `use`.
     states: HashMap<String, State>,
+    /// Derived values by name (`derive`, `import`); none becomes the current state (KN2.12).
+    derived: HashMap<String, c600_jumble::levels::Derived>,
 }
 
 fn int(value: i64) -> Value {
@@ -463,6 +465,11 @@ impl Adapter {
                     omega.iter().map(Q5::from_json_any).collect::<Result<_, _>>().map_err(Fail::Input)?;
                 json::object([("record", observe::cayley_record(&self.ctx, grip, &omega))])
             }
+            "project" | "sticker_test" | "retained_checkpoint" | "label_checkpoint" | "retained_word" => {
+                self.levels(op, request)?
+            }
+            "gauge" | "gauge_between" => self.levels(op, request)?,
+            "derive" | "import" | "compare" => self.derived_op(op, request)?,
             other => return Err(input(format!("unknown op {other}"))),
         };
         Ok(Some(result))
@@ -640,7 +647,8 @@ fn main() {
     ]);
     let _ = writeln!(out, "{}", ready.canonical());
     let _ = out.flush();
-    let mut adapter = Adapter { ctx, state: None, cap_twists: HashMap::new(), states: HashMap::new() };
+    let mut adapter =
+        Adapter { ctx, state: None, cap_twists: HashMap::new(), states: HashMap::new(), derived: HashMap::new() };
     let stdin = io::stdin();
     for line in stdin.lock().lines() {
         let Ok(line) = line else { break };
@@ -714,5 +722,530 @@ fn count(value: Option<&Value>, what: &str) -> Result<Option<u64>, Fail> {
         None | Some(Value::Null) => Ok(None),
         Some(Value::Int(n)) if *n >= 0 => Ok(Some(*n as u64)),
         _ => Err(input(format!("{what} must be a non-negative integer or null"))),
+    }
+}
+
+// ----------------------------------------------------------------------------- levels and end tests (LP2, M8)
+
+/// A boolean flag, false when absent.
+fn flag(value: Option<&Value>, what: &str) -> Result<bool, Fail> {
+    match value {
+        None | Some(Value::Null) => Ok(false),
+        Some(Value::Bool(b)) => Ok(*b),
+        _ => Err(input(format!("{what} must be a boolean"))),
+    }
+}
+
+/// A word of signed 1-based primitive ids (generator k is id k + 1), as J1's `primitive` reads them.
+fn signed_ids(value: Option<&Value>, what: &str) -> Result<Vec<i64>, Fail> {
+    let items = value.and_then(Value::as_array).ok_or_else(|| input(format!("{what} must be a list")))?;
+    items
+        .iter()
+        .map(|v| match v {
+            Value::Int(n) if (1..=1200u64).contains(&n.unsigned_abs()) => Ok(*n),
+            _ => Err(input(format!("{what} lists signed 1-based primitive ids, 1 to 1200 in absolute value"))),
+        })
+        .collect()
+}
+
+/// ν as the ν row gives it: 45 values, the 43 bits in 0..1 and the two values modulo 5 in 0..4.
+fn nu_values(value: Option<&Value>) -> Result<Option<Vec<i64>>, Fail> {
+    let items = match value {
+        None | Some(Value::Null) => return Ok(None),
+        Some(Value::Array(items)) if items.len() == c600_jumble::levels::NU_LEN => items,
+        _ => return Err(input("nu must list 45 values")),
+    };
+    let mut out = Vec::with_capacity(items.len());
+    for (index, item) in items.iter().enumerate() {
+        let modulus = if index < 43 { 2 } else { 5 };
+        match item {
+            Value::Int(n) if (0..modulus).contains(n) => out.push(*n),
+            _ => return Err(input(format!("nu value {index} must be an integer in 0..{}", modulus - 1))),
+        }
+    }
+    Ok(Some(out))
+}
+
+/// σ or t of a gauge: one value per piece as base64 little-endian u32, or null for the identity.
+fn gauge_part(value: Option<&Value>, what: &str) -> Result<Option<Vec<u32>>, Fail> {
+    let np = c600_jumble::model::NP;
+    match value {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(text)) => {
+            let bytes = c600_jumble::b64::decode(text).ok_or_else(|| input(format!("{what} is no base64")))?;
+            if bytes.len() != np * 4 {
+                return Err(input(format!("{what} lists {np} little-endian u32 values")));
+            }
+            Ok(Some(bytes.chunks_exact(4).map(|c| u32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect()))
+        }
+        _ => Err(input(format!("{what} must be base64 or null"))),
+    }
+}
+
+/// The result of an end test, naming the state it read (KN0.6); its verdict names the level (KN1.11).
+fn naming(mut result: Value, state_digest: String) -> Value {
+    if let Value::Object(fields) = &mut result {
+        fields.insert("state".into(), Value::String(state_digest));
+    }
+    result
+}
+
+/// The requests of `c600_jumble::levels`. Each reads the current state, or the stored state that `state` names (see
+/// `keep`), and changes nothing, except `retained_word`:
+///
+/// - `project` (`level`, optional `values`): KN1.9's projection, total, partial with what is missing (the pieces off
+///   the lattice first), or refused with `KN1:input.level_not_held`; `values` adds the label or chamber arrays as
+///   base64 little-endian 32-bit integers;
+/// - `sticker_test`, `retained_checkpoint` (`witness`, a word of signed primitive ids, or `journal`, records from
+///   solved) and `label_checkpoint` (`reachability` `{kind, evidence}`, where a witnessed claim names its `journal`
+///   from solved instead of evidence, and optional `nu`, 45 values from the ν row): the end tests of A5;
+/// - `retained_word` (`word`, optional `budget`): the primitive twists of a retained word, one after another, refused
+///   whole, with nothing changed, at its first refused letter;
+/// - `gauge` (`sigma` and `t`, each a base64 little-endian u32 array over the pieces, null for the identity): X·γ of
+///   KN1.7 becomes the current state, with the `source` digest and the gauge's class; an invalid gauge is an input
+///   error;
+/// - `gauge_between` (`other`, a stored state): a gauge γ with X·γ equal to the other state, or null, with whether the
+///   two shape digests are equal. It changes nothing.
+impl Adapter {
+    fn read_state(&self, request: &Value) -> Result<&State, Fail> {
+        match request.get("state") {
+            None | Some(Value::Null) => self.state.as_ref().ok_or_else(|| input("start must come first")),
+            Some(Value::String(name)) => self.states.get(name).ok_or_else(|| input(format!("no stored state {name}"))),
+            _ => Err(input("state must name a stored state or be null")),
+        }
+    }
+
+    /// Journal records from solved, each read as `apply` reads a record step, with the moved count it states.
+    fn journal(&self, value: Option<&Value>) -> Result<Option<(Vec<Twist>, Vec<Option<usize>>)>, Fail> {
+        let records = match value {
+            None | Some(Value::Null) => return Ok(None),
+            Some(Value::Array(records)) => records,
+            _ => return Err(input("a journal must be a list of records")),
+        };
+        let (mut twists, mut moved) = (Vec::with_capacity(records.len()), Vec::with_capacity(records.len()));
+        for (index, record) in records.iter().enumerate() {
+            match Twist::from_record(&self.ctx, record) {
+                Ok(twist) => twists.push(twist),
+                Err(RecordError::Invalid(message) | RecordError::Unsupported(message)) => {
+                    return Err(input(format!("journal record {index}: {message}")))
+                }
+            }
+            moved.push(match record.get("moved") {
+                None | Some(Value::Null) => None,
+                Some(Value::Int(n)) if *n >= 0 => Some(*n as usize),
+                _ => return Err(input(format!("journal record {index}: moved must be a non-negative integer"))),
+            });
+        }
+        Ok(Some((twists, moved)))
+    }
+
+    fn levels(&mut self, op: &str, request: &Value) -> Result<Value, Fail> {
+        use c600_jumble::levels::{self, Level, ReachKind, Reachability, Verdict, Witness};
+        if names_derived(request) {
+            return self.derived_read(op, request);
+        }
+        let engine = |e: c600_jumble::state::EngineError| Fail::Engine(e.0);
+        match op {
+            "project" => {
+                let name =
+                    request.get("level").and_then(Value::as_str).ok_or_else(|| input("project needs a level"))?;
+                let level = Level::parse(name).ok_or_else(|| input(format!("{name} is no level of KN1.7")))?;
+                let values = flag(request.get("values"), "values")?;
+                let state = self.read_state(request)?;
+                let projection = levels::project(&self.ctx, state, level).map_err(engine)?;
+                Ok(projection.to_json(level, &state.digest(&self.ctx), values))
+            }
+            "sticker_test" => {
+                let state = self.read_state(request)?;
+                let verdict = levels::sticker_test(&self.ctx, state).map_err(engine)?;
+                Ok(naming(verdict.to_json_at(levels::STICKER_TEST_LEVEL), state.digest(&self.ctx)))
+            }
+            "retained_checkpoint" => {
+                let word = match request.get("witness") {
+                    None | Some(Value::Null) => None,
+                    value => Some(signed_ids(value, "witness")?),
+                };
+                let journal = self.journal(request.get("journal"))?;
+                let state = self.read_state(request)?;
+                let witness = match (&word, &journal) {
+                    (Some(word), None) => Witness::Word(word.as_slice()),
+                    (None, Some((twists, _))) => Witness::Journal(twists.as_slice()),
+                    _ => return Err(input("a retained checkpoint needs a witness word or a journal, not both")),
+                };
+                let verdict = levels::retained_checkpoint(&self.ctx, state, witness).map_err(engine)?;
+                Ok(naming(verdict.to_json_at(levels::RETAINED_CHECKPOINT_LEVEL), state.digest(&self.ctx)))
+            }
+            "label_checkpoint" => {
+                let claim = request.get("reachability").ok_or_else(|| input("a label checkpoint needs a claim"))?;
+                let kind = claim.get("kind").and_then(Value::as_str).and_then(ReachKind::parse).ok_or_else(|| {
+                    input("reachability kind must be witnessed, by_theorem, promised, refuted or open")
+                })?;
+                let journal = self.journal(claim.get("journal"))?;
+                let nu = nu_values(request.get("nu"))?;
+                let state = self.read_state(request)?;
+                let digest = state.digest(&self.ctx);
+                let reach = match (kind, journal) {
+                    (ReachKind::Witnessed, Some((twists, moved))) => {
+                        let shown =
+                            levels::witness(&self.ctx, state, state.menu_arc(), &twists, Some(moved.as_slice()))
+                                .map_err(engine)?;
+                        match shown {
+                            Ok(reach) => reach,
+                            Err(reason) => {
+                                let reason = format!("the journal does not witness this state: {reason}");
+                                return Ok(naming(
+                                    Verdict::Unknown(reason).to_json_at(levels::LABEL_CHECKPOINT_LEVEL),
+                                    digest,
+                                ));
+                            }
+                        }
+                    }
+                    (ReachKind::Witnessed, None) => {
+                        return Err(input("a witnessed claim names its journal from solved"))
+                    }
+                    (_, Some(_)) => return Err(input("only a witnessed claim names a journal")),
+                    (kind, None) => Reachability::stated(kind, claim.get("evidence").cloned().unwrap_or(Value::Null))
+                        .ok_or_else(|| input("a witnessed claim names its journal from solved"))?,
+                };
+                let verdict = levels::label_checkpoint(&self.ctx, state, &reach, nu.as_deref()).map_err(engine)?;
+                Ok(naming(verdict.to_json_at(levels::LABEL_CHECKPOINT_LEVEL), digest))
+            }
+            "retained_word" => {
+                let word = signed_ids(request.get("word"), "word")?;
+                let budget = budget(request.get("budget"))?;
+                let twists: Vec<Twist> = word
+                    .iter()
+                    .map(|&mid| levels::primitive(&self.ctx, mid))
+                    .collect::<Result<_, _>>()
+                    .map_err(engine)?;
+                let saved = self.state()?.clone();
+                let mut moved: Vec<u32> = Vec::new();
+                for (index, twist) in twists.iter().enumerate() {
+                    let Adapter { ctx, state, .. } = self;
+                    let state = state.as_mut().ok_or_else(|| input("start must come first"))?;
+                    let outcome = match state.apply(ctx, twist, budget, &[]) {
+                        Ok(outcome) => outcome,
+                        Err(error) => {
+                            self.state = Some(saved);
+                            return Err(Fail::Engine(error.0));
+                        }
+                    };
+                    if outcome.status != Status::Admissible {
+                        self.state = Some(saved);
+                        let message = format!("letter {index} of the retained word is {}", outcome.status.as_str());
+                        let mut result =
+                            self.refused_json(outcome.status.as_str(), Some(codes::WORD_BLOCKED_PREFIX), &message)?;
+                        if let Value::Object(fields) = &mut result {
+                            fields.insert("applied".into(), int(0));
+                            fields.insert("refused_at".into(), int(index as i64));
+                        }
+                        return Ok(result);
+                    }
+                    moved.extend_from_slice(&outcome.inside);
+                }
+                moved.sort_unstable();
+                moved.dedup();
+                let mut result = self.step_json("admissible", moved.len(), &moved_set_hash(&moved))?;
+                if let Value::Object(fields) = &mut result {
+                    fields.insert("applied".into(), int(twists.len() as i64));
+                    fields.insert("refused_at".into(), Value::Null);
+                }
+                Ok(result)
+            }
+            "gauge" => {
+                let np = c600_jumble::model::NP;
+                let sigma = gauge_part(request.get("sigma"), "sigma")?.unwrap_or_else(|| (0..np as u32).collect());
+                let t: Vec<u16> = match gauge_part(request.get("t"), "t")? {
+                    None => vec![0; np],
+                    Some(values) => values
+                        .into_iter()
+                        .map(|k| u16::try_from(k).map_err(|_| input("t lists K+ indices")))
+                        .collect::<Result<_, _>>()?,
+                };
+                let gauge = levels::Gauge::new(&self.ctx, sigma, t).map_err(Fail::Input)?;
+                let source = self.read_state(request)?;
+                let image = levels::act(&self.ctx, source, &gauge).map_err(engine)?;
+                let source = source.digest(&self.ctx);
+                let summary = gauge.to_json(&self.ctx, false).map_err(engine)?;
+                self.state = Some(image);
+                self.cap_twists.clear();
+                let mut result = self.step_json("start", 0, EMPTY)?;
+                if let Value::Object(fields) = &mut result {
+                    fields.insert("source".into(), string(&source));
+                    fields.insert("gauge".into(), summary);
+                }
+                Ok(result)
+            }
+            "gauge_between" => {
+                let name = request
+                    .get("other")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| input("gauge_between needs the name of a stored state"))?;
+                let other = self.states.get(name).ok_or_else(|| input(format!("no stored state {name}")))?;
+                let state = self.read_state(request)?;
+                let shape = |s: &State| levels::shape(&self.ctx, s).map(|shape| shape.digest()).map_err(engine);
+                let shapes_equal = shape(state)? == shape(other)?;
+                let gauge = match levels::gauge_between(&self.ctx, state, other).map_err(engine)? {
+                    Some(gauge) => gauge.to_json(&self.ctx, true).map_err(engine)?,
+                    None => Value::Null,
+                };
+                Ok(json::object([
+                    ("state", string(&state.digest(&self.ctx))),
+                    ("other", string(&other.digest(&self.ctx))),
+                    ("shapes_equal", Value::Bool(shapes_equal)),
+                    ("gauge", gauge),
+                ]))
+            }
+            other => Err(input(format!("unknown op {other}"))),
+        }
+    }
+}
+
+// ------------------------------------------------------------------------------------ derived states (LP2, M8)
+
+/// Whether a request, or an operand of `compare`, names a derived value (`derived`) in place of a state.
+fn names_derived(request: &Value) -> bool {
+    !matches!(request.get("derived"), None | Some(Value::Null))
+}
+
+/// A refused request on derived values: `{result: "refused", code, message}`; nothing changes.
+fn derived_refusal(refusal: &c600_kernel::Refusal) -> Value {
+    json::object([("result", string("refused")), ("code", string(refusal.code)), ("message", string(&refusal.message))])
+}
+
+/// The requests on derived values (KN2.11 to KN2.14, ONE.25). A derived value is named by the caller and kept apart
+/// from the stored states; it never becomes the current state (KN2.12), and none of these requests changes the
+/// current state or a stored one. A new value under a name in use replaces the old one, as `keep` does for a stored
+/// state; a refusal stores nothing. Input errors come before refusals.
+///
+/// - `derive` (`name`, `identity`, `base`, `letters` or `records`, optional `mode` and `protect`): KN2.11's
+///   `derive(base, word)`. `base` is `{derived}`, an earlier derived value, or `{state, journal}`: the current state
+///   (`state` null) or a stored state, with its journal of records from solved (`[]` for solved), which must witness
+///   it. The word is `letters`, [grip, item] pairs under the base's menu, or `records`, twist records. `mode` is `net`
+///   (the default) or `strict`, and `protect` lists the protected pieces. The answer is the derived value, stored
+///   under `name`, or the refusal with its first refused prefix, its outcome and its certificates.
+/// - `import` (`name`, `record`, `identity`, `reachability` `{kind, evidence}`, open or promised): KN2.14's raw pose
+///   table, read under the current state's menu and stored under `name`.
+/// - `compare` (`a`, `b`, `level`): ONE.25's comparison of two operands, each `{state}` (a stored state, or null for
+///   the current state) or `{derived}`.
+/// - `project`, `sticker_test`, `retained_checkpoint` and `label_checkpoint` with `derived` in place of `state` read
+///   the derived value; `label_checkpoint` then uses the value's own reachability claim and takes none.
+impl Adapter {
+    /// The derived value that the request's `derived` names.
+    fn derived_value(&self, request: &Value) -> Result<&c600_jumble::levels::Derived, Fail> {
+        match request.get("derived") {
+            Some(Value::String(name)) => {
+                self.derived.get(name).ok_or_else(|| input(format!("no derived value {name}")))
+            }
+            _ => Err(input("derived must name a derived value")),
+        }
+    }
+
+    /// The twists of a word's letters, [grip, item] pairs, under `menu`, the menu of the derivation's base.
+    fn derive_letters(&self, menu: Option<Arc<Menu>>, value: &Value) -> Result<Vec<Twist>, Fail> {
+        let menu = menu.ok_or_else(|| input("letters need a base with a menu"))?;
+        let items = value.as_array().ok_or_else(|| input("letters must be a list of [grip, item]"))?;
+        let mut caps: HashMap<usize, Vec<Twist>> = HashMap::new();
+        let mut out = Vec::with_capacity(items.len());
+        for letter in items {
+            let pair =
+                letter.as_array().filter(|p| p.len() == 2).ok_or_else(|| input("a letter must be [grip, item]"))?;
+            let grip = small_int(Some(&pair[0]), "letter grip", 600)? as usize;
+            let item = small_int(Some(&pair[1]), "letter item", menu.items.len() as i64)? as usize;
+            if !caps.contains_key(&grip) {
+                let twists = menu.for_cap(&self.ctx, grip).map_err(|e| Fail::Engine(e.to_string()))?;
+                caps.insert(grip, twists);
+            }
+            out.push(caps[&grip][item].clone());
+        }
+        Ok(out)
+    }
+
+    /// An operand of `compare`: `{state}`, read as `read_state` reads a request, or `{derived}`.
+    fn operand(&self, value: Option<&Value>, what: &str) -> Result<&State, Fail> {
+        let value =
+            value.filter(|v| v.as_object().is_some()).ok_or_else(|| input(format!("{what} must be a mapping")))?;
+        if !names_derived(value) {
+            return self.read_state(value);
+        }
+        if !matches!(value.get("state"), None | Some(Value::Null)) {
+            return Err(input(format!("{what} names a state or a derived value, not both")));
+        }
+        Ok(self.derived_value(value)?.state())
+    }
+
+    fn derived_op(&mut self, op: &str, request: &Value) -> Result<Value, Fail> {
+        use c600_jumble::levels::{self, Base, Derivation, Level, ReachKind, Reachability, Snapshot};
+        use c600_kernel::ProtectionMode;
+        let engine = |e: c600_jumble::state::EngineError| Fail::Engine(e.0);
+        let given = |key: &str| request.get(key).filter(|v| !matches!(v, Value::Null));
+        let named = |mut result: Value, name: &str| {
+            if let Value::Object(fields) = &mut result {
+                fields.insert("name".into(), string(name));
+            }
+            result
+        };
+        match op {
+            "derive" => {
+                let name = name(request)?;
+                let identity =
+                    parse_identity(request.get("identity").ok_or_else(|| input("derive needs an identity block"))?)?;
+                let mode = match given("mode") {
+                    None => ProtectionMode::Net,
+                    Some(Value::String(s)) if s == "net" => ProtectionMode::Net,
+                    Some(Value::String(s)) if s == "strict" => ProtectionMode::Strict,
+                    _ => return Err(input("mode must be net or strict")),
+                };
+                let protect = pieces(request.get("protect"), "protect")?.unwrap_or_default();
+                let base = given("base")
+                    .filter(|b| b.as_object().is_some())
+                    .ok_or_else(|| input("derive needs a base mapping: {derived} or {state, journal}"))?;
+                // The base's state, and for a state base its journal from solved.
+                let (state, history) = if names_derived(base) {
+                    if !matches!(base.get("state"), None | Some(Value::Null))
+                        || !matches!(base.get("journal"), None | Some(Value::Null))
+                    {
+                        return Err(input("a derived base names no state and no journal"));
+                    }
+                    (self.derived_value(base)?.state(), None)
+                } else {
+                    let history = self
+                        .journal(base.get("journal"))?
+                        .ok_or_else(|| input("a state base names its journal from solved ([] for solved)"))?;
+                    (self.read_state(base)?, Some(history))
+                };
+                let twists = match (given("letters"), given("records")) {
+                    (Some(letters), None) => self.derive_letters(state.menu_arc(), letters)?,
+                    (None, Some(records)) => self.journal(Some(records))?.map(|(twists, _)| twists).unwrap_or_default(),
+                    _ => return Err(input("a derivation names its word as letters or as records, not both")),
+                };
+                let snapshot = match history {
+                    None => None,
+                    Some((journal, moved)) => Some(
+                        Snapshot::witnessed(&self.ctx, state.clone(), &journal, Some(moved.as_slice()))
+                            .map_err(engine)?
+                            .map_err(|reason| input(format!("the journal does not witness the base: {reason}")))?,
+                    ),
+                };
+                if let Err(refusal) = self.ctx.check_identity(state.menu(), &identity) {
+                    return Ok(derived_refusal(&refusal));
+                }
+                let np = c600_jumble::model::NP;
+                if let Some(p) = protect.iter().find(|&&p| !(0..np as i64).contains(&p)) {
+                    let message = format!("Protected piece {p} is outside 0..{}", np - 1);
+                    return Ok(derived_refusal(&c600_kernel::Refusal { code: codes::NAMED_OBJECT_INVALID, message }));
+                }
+                let protect: Vec<u32> = protect.into_iter().map(|p| p as u32).collect();
+                let base = match &snapshot {
+                    Some(snapshot) => Base::Snapshot(snapshot),
+                    None => Base::Derived(self.derived_value(base)?),
+                };
+                match levels::derive(&self.ctx, base, &identity, &twists, mode, &protect).map_err(engine)? {
+                    Err(refusal) => Ok(derived_refusal(&refusal)),
+                    Ok(Derivation::Refused(refused)) => Ok(refused.to_json()),
+                    Ok(Derivation::Derived(derived)) => {
+                        let result = named(derived.to_json(&self.ctx), &name);
+                        self.derived.insert(name, derived);
+                        Ok(result)
+                    }
+                }
+            }
+            "import" => {
+                let name = name(request)?;
+                let record = request.get("record").ok_or_else(|| input("import needs a record"))?;
+                if let Some(refused) = dimension_refusal(record.get("dimension"), "record.dimension") {
+                    return Ok(refused);
+                }
+                let identity =
+                    parse_identity(request.get("identity").ok_or_else(|| input("import needs an identity block"))?)?;
+                let claim = request.get("reachability").ok_or_else(|| input("import needs a reachability claim"))?;
+                let kind = claim.get("kind").and_then(Value::as_str).and_then(ReachKind::parse).ok_or_else(|| {
+                    input("reachability kind must be witnessed, by_theorem, promised, refuted or open")
+                })?;
+                if !matches!(claim.get("journal"), None | Some(Value::Null)) {
+                    return Err(input("a raw table names no journal: it is never witnessed (KN2.14)"));
+                }
+                let reach = Reachability::stated(kind, claim.get("evidence").cloned().unwrap_or(Value::Null))
+                    .ok_or_else(|| input("a raw table is never witnessed (KN2.14)"))?;
+                let menu = self.state()?.menu_arc();
+                match levels::import(&self.ctx, menu, record, &identity, reach).map_err(Fail::Input)? {
+                    Err(refusal) => Ok(derived_refusal(&refusal)),
+                    Ok(derived) => {
+                        let result = named(derived.to_json(&self.ctx), &name);
+                        self.derived.insert(name, derived);
+                        Ok(result)
+                    }
+                }
+            }
+            "compare" => {
+                let name = given("level").and_then(Value::as_str).ok_or_else(|| input("compare needs a level"))?;
+                let level = Level::parse(name).ok_or_else(|| input(format!("{name} is no level of KN1.7")))?;
+                let a = self.operand(request.get("a"), "a")?;
+                let b = self.operand(request.get("b"), "b")?;
+                let comparison = levels::compare(&self.ctx, a, b, level).map_err(engine)?;
+                let mut result = comparison.to_json(level);
+                if let Value::Object(fields) = &mut result {
+                    let digests = vec![string(&a.digest(&self.ctx)), string(&b.digest(&self.ctx))];
+                    fields.insert("states".into(), Value::Array(digests));
+                }
+                Ok(result)
+            }
+            other => Err(input(format!("unknown op {other}"))),
+        }
+    }
+
+    /// `project`, `sticker_test`, `retained_checkpoint` and `label_checkpoint` on the derived value that `derived`
+    /// names, as `levels` reads a state; they change nothing. Another request does not read a derived value.
+    fn derived_read(&self, op: &str, request: &Value) -> Result<Value, Fail> {
+        use c600_jumble::levels::{self, Level, Witness};
+        let engine = |e: c600_jumble::state::EngineError| Fail::Engine(e.0);
+        if !matches!(op, "project" | "sticker_test" | "retained_checkpoint" | "label_checkpoint") {
+            return Err(input(format!("{op} does not read a derived value")));
+        }
+        if !matches!(request.get("state"), None | Some(Value::Null)) {
+            return Err(input("a request names a state or a derived value, not both"));
+        }
+        match op {
+            "project" => {
+                let name =
+                    request.get("level").and_then(Value::as_str).ok_or_else(|| input("project needs a level"))?;
+                let level = Level::parse(name).ok_or_else(|| input(format!("{name} is no level of KN1.7")))?;
+                let values = flag(request.get("values"), "values")?;
+                let state = self.derived_value(request)?.state();
+                let projection = levels::project(&self.ctx, state, level).map_err(engine)?;
+                Ok(projection.to_json(level, &state.digest(&self.ctx), values))
+            }
+            "sticker_test" => {
+                let state = self.derived_value(request)?.state();
+                let verdict = levels::sticker_test(&self.ctx, state).map_err(engine)?;
+                Ok(naming(verdict.to_json_at(levels::STICKER_TEST_LEVEL), state.digest(&self.ctx)))
+            }
+            "retained_checkpoint" => {
+                let word = match request.get("witness") {
+                    None | Some(Value::Null) => None,
+                    value => Some(signed_ids(value, "witness")?),
+                };
+                let journal = self.journal(request.get("journal"))?;
+                let state = self.derived_value(request)?.state();
+                let witness = match (&word, &journal) {
+                    (Some(word), None) => Witness::Word(word.as_slice()),
+                    (None, Some((twists, _))) => Witness::Journal(twists.as_slice()),
+                    _ => return Err(input("a retained checkpoint needs a witness word or a journal, not both")),
+                };
+                let verdict = levels::retained_checkpoint(&self.ctx, state, witness).map_err(engine)?;
+                Ok(naming(verdict.to_json_at(levels::RETAINED_CHECKPOINT_LEVEL), state.digest(&self.ctx)))
+            }
+            _ => {
+                if !matches!(request.get("reachability"), None | Some(Value::Null)) {
+                    return Err(input("a derived value carries its own reachability claim"));
+                }
+                let nu = nu_values(request.get("nu"))?;
+                let derived = self.derived_value(request)?;
+                let state = derived.state();
+                let verdict = levels::label_checkpoint(&self.ctx, state, derived.reachability(), nu.as_deref())
+                    .map_err(engine)?;
+                Ok(naming(verdict.to_json_at(levels::LABEL_CHECKPOINT_LEVEL), state.digest(&self.ctx)))
+            }
+        }
     }
 }

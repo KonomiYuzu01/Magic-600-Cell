@@ -9,10 +9,10 @@
 mod support;
 
 use c600_digest::sha256;
-use c600_ir::{Callee, Expr, Lit, QTy, Ty};
+use c600_ir::{Callee, Expr, Lit, Program, QTy, Ty};
 use c600_module::code::{
-    CONTRACT_MISMATCH, DEPENDENCY_MISSING, DIGEST_MISMATCH, IR_REJECTED, MODEL_NOT_SUPPORTED, NONCANONICAL_VALUE,
-    NOT_GRANTED, PERSISTENCE_FORMAT, PERSISTENCE_VERSION,
+    CONTRACT_MISMATCH, DEPENDENCY_MISSING, DIGEST_MISMATCH, IR_REJECTED, IR_VERSION_UNSUPPORTED, MODEL_NOT_SUPPORTED,
+    NONCANONICAL_VALUE, NOT_GRANTED, PERSISTENCE_FORMAT, PERSISTENCE_VERSION,
 };
 use c600_module::{approve, load, resolve, verify, Closure, Files, Identity, Lock, Manifest};
 use c600_run::boundary::{admit_preview, Answer, Place, Store};
@@ -322,6 +322,28 @@ fn ct_rte_08_dynamic_code_is_refused() {
         assert!(refusal.detail.contains("dynamic code"), "{}", refusal.detail);
     }
     assert_eq!(code(c600_run::interp::load(&program)), IR_REJECTED);
+}
+
+/// LG4.1, LG5.4: a closure whose program asks for another IR version or execution contract is refused with the
+/// checker's `LG4:input.ir_version_unsupported` in every author column, the built-in one included, before the entry is
+/// looked up; the interpreter refuses to load it with the same code.
+#[test]
+fn ct_rte_08_another_ir_version_is_refused_in_every_author_column() {
+    let plain = module("m", &[], &[], "export fn go() -> Int effects [] {\n    return 2;\n}\n");
+    let closure = package(&plain, &[]).verify().unwrap();
+    let programs = [
+        Program { ir_version: "c600-ir-draft-0".into(), ..closure.program.clone() },
+        Program { exec_contract: "lp1-exec-draft-0".into(), ..closure.program.clone() },
+    ];
+    for program in programs {
+        let stale = Closure { program: program.clone(), ..closure.clone() };
+        for author in [Author::Own, Author::ForkedBuiltIn, Author::Imported, Author::BuiltIn] {
+            let refused = approve(&stale, entry("go", author, Profile::ToolAuthoring), contract(), checker());
+            let asked = format!("{} with {}", program.ir_version, program.exec_contract);
+            assert_eq!(code(refused), IR_VERSION_UNSUPPORTED, "{author:?}, {asked}");
+        }
+        assert_eq!(code(c600_run::interp::load(&program)), IR_VERSION_UNSUPPORTED);
+    }
 }
 
 /// The module case of BM2 (BND.39, LG3.13; LX-3 MR11): a callee in another module reads the state, so its caller's
