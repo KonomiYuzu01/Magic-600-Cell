@@ -1,5 +1,5 @@
 //! The host-side display-plan and publication contract of chapter 10 (RPI) and the renderer feature matrix (RM),
-//! for LP3. It has no renderer, no GPU code and no command layer. It has three parts:
+//! for LP3. It has no renderer, no GPU code and no command layer. It has four parts:
 //!
 //! - **Plans and publications** ([`plan`], [`array`], [`source`], [`canonical`], [`validate`]): the types of RPI.5 to
 //!   RPI.8 and RPI.20 to RPI.23 with RM.6/RM.7's payloads, and the host validator of RPI.10, RM.11, RM.12 and RM.20.
@@ -8,6 +8,10 @@
 //!   KN5.21 locally; nothing depends on `c600-command`.
 //! - **Picks and stamps** ([`pick`], [`host`]): RM.10, RM.24, RPI.24 and RPI.25. A pick resolves by instance ID through
 //!   the installed source map, never through a chart inverse.
+//! - **Charts and stages** ([`exact`], [`chart`], [`reference`], [`stage`]): exact chart-property checks at exact poses
+//!   and `admit_chart` (RPI.28 to RPI.30, RPI.34, RPI.48, LB4.2), the binary32 CPU reference evaluation with its
+//!   coverage and reproducibility key (RPI.37, RPI.56), and the headless part of the user-stage contract: declared
+//!   outputs, composition order and presented-preview identity (RPI.68, RPI.69, RPI.75, RPI.76).
 //!
 //! [`produce`] builds the 600-cell-Full producers and fixture contexts; [`crosswalk`] holds RM.37's jumbling vectors
 //! as fixture types. Evidence here is source and synthetic only (RM.30): no Windows/DirectX, input, long-session or
@@ -34,16 +38,17 @@
 //! - RM.8, RM.9: a program publication that carries a preview row is invalid; a preview reaches a view only from the
 //!   engine ([`host::Host::show_preview`]).
 //! - RPI.15, M5: posed stickers and certificate overlays are unsupported on 600-cell-Full; jumbling payloads are
-//!   checked only as fixtures. User stages (F05, F26) are unsupported: the stage checker of RPI.68 to RPI.80 is not
-//!   built.
+//!   checked only as fixtures. User stages (F05, F26) stay unsupported: no stage module reaches the host, and
+//!   [`stage`] checks fixture descriptions only.
 //! - RM.6, F03: a transform without the engine's plane has no swept preview ([`validate::swept_preview`]); its
 //!   endpoints are state revisions with `to > from`.
 //! - RM.6: exact-set digests are the SHA-256 of sorted piece IDs as little-endian u32, or of canonical object text
 //!   one per line ([`plan::piece_set_digest`], [`plan::object_set_digest`]).
-//! - RPI.34: every exact chart property a plan names is `not_established`. RPI.36: the precision is an opaque name.
+//! - RPI.34, RPI.48: a chart property a plan names is established only by check results in
+//!   [`validate::Context::checks`]; with none, it is `not_established`. RPI.36: a plan's precision is an opaque name.
 //! - RM.11: the counted fields are [`validate::COUNTED`]; the stage, fragment, frame, view-vertex and adapter fields
-//!   need the stage checker, the weight table or a backend. `overlay_items` counts overlay objects, certificate pieces
-//!   and two points per certificate pair. RPI.50: every ceiling here is a declared fixture value.
+//!   need the stage module checker (RPI.71), the weight table or a backend. `overlay_items` counts overlay objects,
+//!   certificate pieces and two points per certificate pair. RPI.50: every ceiling here is a declared fixture value.
 //! - RM.13, LI.16: the canonical output bytes are the canonical JSON text of the publication plus its array and source
 //!   bytes; only a scheduled publication is charged against an output allowance.
 //! - KN5.21: a request digest is the SHA-256 of the canonical publication; a scheduled request's digest names its view
@@ -56,23 +61,75 @@
 //! - RPI.10: a publication to a view that is not open is invalid.
 //! - RM.24: one surface per view; the frame stamp lists the host's subject label of every installed plan.
 //! - RPI.55, RM.33: [`host::MockBackend`] stands for an adapter; it says nothing about any candidate backend.
+//! - RPI.34 [O]: the repertoire is the first option, a restricted family with known checkers: the stereographic chart
+//!   declared exactly by its pole ([`chart::Stereographic`]) over regions given as convex hulls of exact vertices, with
+//!   the properties `domain`, `injective` and `section` ([`chart::Property`]). Anything else has no checker, and a
+//!   property without an established check stays `not_established`, never false.
+//! - RPI.30, LB4.2: an exact pose is the identity or a matrix verified to be in K⁺, the 600-cell's rotation group
+//!   (determinant 1, the 120 unit icosians mapped onto themselves). Every float matrix, and every exact matrix outside
+//!   K⁺, is refused with `LB4:type.approximate_property_input` and never rounded. Domain is an exact cone test
+//!   (Carathéodory bases with Cramer signs) with a vertex-sum certificate that the origin is outside; injectivity is a
+//!   theorem for a flat region (four independent vertices, all in their affine hull), refuted by two vertices in the
+//!   domain on one ray; a section is decided on the posed vertices. A verdict's scope names its region, its vertex
+//!   count and its pose.
+//! - KN3.2, KN3.3: the checks compute in Q(√5) with checked i128 parts, local to this crate, because `c600-kernel` has
+//!   neither KN3's polytope operations nor an unbounded Q(√5). An overflow, a zero pole or an unmet precondition
+//!   decides nothing (`not_established`).
+//! - RPI.28, RPI.48: a check result names its chart by content identity ([`chart::identity`]: dimension, precision and
+//!   each stage's name, version, definition and parameter bits, not the claimed properties) and its property by the
+//!   name the plan claims; a property's parameters, such as a section's slab, belong in that name when a plan must tell
+//!   them apart. A check's identity is the digest of its chart, property and scope.
+//! - RPI.48: `admit_chart` admits a chart when each claimed property has an established result for it and none is
+//!   refuted. A refuted result refuses the chart with `EV3:evidence.chart_check_failed`, naming the chart, the property
+//!   and the check, and withholds every claimed property's status; anything else is `not_established`. A chart that
+//!   claims nothing is admitted.
+//! - RPI.48, RM.20: a refused chart does not refuse its publication. The publication installs, that chart's output has
+//!   coverage [`plan::Coverage::Undefined`] with the error's code ([`chart::ChartAdmission`]), the other plans
+//!   continue, and the check results, the session and every receipt are unchanged.
+//! - RPI.36 [O], RPI.35: the reference fixtures declare their own rule ([`reference::PrecisionRule`]): an absolute
+//!   bound per output coordinate against the exact image in Q(√5), outside the exclusion neighbourhood
+//!   1 − u·p ≤ `exclusion` of the pole, for the normalised point u and pole p, where a vertex is missing with reason
+//!   `excluded` (RPI.36's omission option, per vertex; triangles that cross the neighbourhood are not handled). The
+//!   image is written in R⁴, in the pole's orthogonal complement, as (u − (u·p)p) / (1 − u·p).
+//! - RPI.37: the origin is decided exactly at every pose, the singular ray at an exact pose; any other missing point is
+//!   a binary32 display decision (`excluded`, `non_finite`). A missing point enters neither the draw nor the pick list.
+//! - RPI.56: the reproducibility key is the SHA-256 of the exact fields: plan, subject, base, chart identity,
+//!   declaration, pose (an exact pose's identity, or an approximate pose's declared label, never its float bits), the
+//!   vertices' digest, the rule's bits and the exactly decided missing vertices. Approximate values are compared with
+//!   the exact image under the declared rule, never bitwise.
+//! - RPI.68, RPI.69, RPI.75: a stage description ([`stage::StageDescription`]) declares its kind, digest and outputs.
+//!   A vertex stage declares exactly a position and a coverage code, a fragment stage exactly opaque RGB. An alpha,
+//!   discard, depth, stencil or coverage output, a repeated or missing output and a digest that is not 64 lowercase
+//!   hex digits are `LG2:type.stage_rule_violation`, in its registered form `diagnostic`.
+//! - RPI.76, RM.26, ONE.41: a frame draws the view's chain, then a preview by the chain that draws it, then each host
+//!   status once, in the order preview, stale, protection breakthrough, selection. Only a preview drawn by the built-in
+//!   chain is in the presented report and can bind a commit token; drawn through a user stage it is an extra display.
 //!
 //! Not built: a decoder from `c600_run::value::Value` (it has no list type, so it needs an LP2 change), the jumbling
-//! rows of CT-RPI-08 and the posed producer (M5), the user-stage checker, and the ceilings named above that need a
-//! weight table or a backend.
+//! rows of CT-RPI-08 and the posed producer (M5), and the ceilings named above that need a weight table or a backend.
+//! For user stages: the stage module's parser and checker (RPI.69's body rules, RPI.70's operation tiers and RPI.71's
+//! costs need the stage language and RM.38's weight table), and HLSL compilation (RPI.78), the raster bound (RPI.72),
+//! quarantine (RPI.77), frame reports (RM.41) and composition on a device, which need a backend; no user stage reaches
+//! the host, so F05 and F26 stay unsupported and CT-RPI-32 runs only its headless part. For charts: KN3's polytope
+//! operations, any chart or property outside the drafted repertoire (RPI.34 stays open), the GPU agreement check
+//! (RPI.35) and a production precision rule (RPI.36 stays open). CT-RPI-19's headless Linux leg is not run here.
 
 #![forbid(unsafe_code)]
 
 pub mod array;
 pub mod canonical;
+pub mod chart;
 pub mod crosswalk;
 pub mod error;
+pub mod exact;
 pub mod host;
 pub mod pick;
 pub mod plan;
 pub mod produce;
 pub mod receipt;
+pub mod reference;
 pub mod source;
+pub mod stage;
 pub mod validate;
 
 pub use error::{codes, Error, Form};

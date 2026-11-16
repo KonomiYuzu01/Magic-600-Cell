@@ -100,7 +100,7 @@ impl CompleteBundle {
         &self.parts
     }
 
-    /// The SHA-256 of the revision counters and every part's kind and digest, in kind order.
+    /// The SHA-256 of the revision's epoch, counters and digest and every part's kind and digest, in kind order.
     pub fn digest(&self) -> &Digest {
         &self.digest
     }
@@ -136,8 +136,9 @@ pub fn validate_engine_bundle(candidate: &BundleCandidate) -> Result<CompleteBun
             bundle: candidate.revision,
         }));
     }
-    let mut bytes = Vec::with_capacity(32 + parts.len() * 33);
-    for counter in [candidate.revision.state, candidate.revision.workspace, candidate.revision.protection] {
+    let revision = &candidate.revision;
+    let mut bytes = Vec::with_capacity(64 + parts.len() * 33);
+    for counter in [revision.epoch, revision.state, revision.workspace, revision.protection] {
         bytes.extend_from_slice(&counter.to_be_bytes());
     }
     bytes.extend_from_slice(&candidate.revision.digest);

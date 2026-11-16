@@ -47,7 +47,8 @@ pub enum BundleFault {
     Unexpected(PartKind),
     /// A part belongs to another revision than the bundle.
     Mismatched { kind: PartKind, part: Revision, bundle: Revision },
-    /// The bundle is older than the adopted one, or reuses its counters with other content.
+    /// The bundle is older than the adopted one (an older engine epoch, or a lower counter in the adopted epoch), or
+    /// reuses its epoch and counters with other content.
     OutOfOrder { adopted: Revision, candidate: Revision },
 }
 
