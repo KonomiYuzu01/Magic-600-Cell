@@ -446,18 +446,21 @@ run or not applicable is no pass (PHS.63).
     `traces.rs` and `values.rs` mark the meter's and the values' rows.
   - `c600-kernel/tests/`: `kernel.rs`, `load.rs` and `json.rs` run the 600-cell-Full halves of the KN rows, CT-PS1-04
     and CT-PS1-12 (M4's section).
-  - `c600-evidence/tests/` runs the EVD rows (the evidence library's section), and `c600-session/tests/` names M6's
-    rows without a marker (M6's section).
+  - `c600-evidence/tests/` runs the EVD rows (the evidence library's section). `c600-session/tests/` names M6's rows
+    without a marker (M6's section), and so does `c600-command/tests/layer.rs` for LP3 C1's parts (the C1 section).
   - Python, listed in `tools/ci/run_headless.py`: `tests/test_error_registry.py` checks the code catalogue against
     chapter 13 and the LP1 edition fixture `tests/fixtures/error_registry/lp1-edition.json`;
     `tests/test_language_scans.py` scans the workspace's sources; `tests/test_format_inventory.py` runs CT-PS2-06;
     `tests/test_source_checkout.py` reads every `.6cs` source and every pinned packet file as LF, CRLF and `input`
     checkouts write them (CT-LG1-02, CT-PS1-05's checkout half); `tests/test_kernel_oracle.py` replays O01 to O07 and
     N01 to N04 through the kernel (M4's section).
-- Count on this branch: 33 whole, three of them by the union of their parts (CT-LG2-04, CT-LG3-01, CT-LG3-04); 108
-  part; 15 named by M6's tests without a marker (CT-KN4-01 to CT-KN4-04, CT-KN5-01, CT-KN5-04, CT-KN5-06, CT-KN5-09,
-  CT-KN5-11, CT-KN7-01 to CT-KN7-05 and CT-KN7-07; M6's section calls CT-KN4-01's an in-process part); 2 named only as
-  not built (CT-KN2-07, CT-LG4-05); 90 missing.
+- Count on this branch, with LP3's C1 and C2 from main: 33 whole, three of them by the union of their parts
+  (CT-LG2-04, CT-LG3-01, CT-LG3-04); 108 part; 15 named by M6's tests without a marker (CT-KN4-01 to CT-KN4-04,
+  CT-KN5-01, CT-KN5-04, CT-KN5-06, CT-KN5-09, CT-KN5-11, CT-KN7-01 to CT-KN7-05 and CT-KN7-07; M6's section calls
+  CT-KN4-01's an in-process part); 13 more named only by LP3's command-layer tests, as parts without a marker
+  (CT-KN5-03, CT-KN5-07, CT-KN5-12, CT-ONE-03 to CT-ONE-05, CT-ONE-11, CT-ONE-20 to CT-ONE-22, CT-LI-04, CT-LI-09 and
+  CT-LI-10); 2 named only as not built (CT-KN2-07, CT-LG4-05); 77 missing. CT-KN5-08 counts as missing, since only the
+  documentation in `c600-command/src/layer.rs` names it.
 - Not run or not applicable, which is no pass (PHS.63), with the check that runs instead: CT-LG3-06's flow-label
   variant, while the flow rule is off (BND.41) and LQ2 has not set it, so the static-only and run-time variants run
   (`c600-run/tests/conformance_lg3.rs`); CT-LG1-03's second host context, since CI runs on Windows only and the editor
@@ -497,16 +500,15 @@ run or not applicable is no pass (PHS.63).
     so `Author::Imported` never arises (FP.18's example has `own`); `Loaded::run` does not require the entry function
     to be exported, and `load` does not run the checker again.
 - Missing, by what they wait for:
-  - LP3's lanes, views and shell (38): CT-ONE-03 to CT-ONE-24, CT-ONE-28, CT-LI-01 to CT-LI-07, CT-LI-09 to
-    CT-LI-14, CT-EV4-03 and CT-PS1-13.
+  - LP3's lanes, views and shell (28): CT-ONE-06 to CT-ONE-10, CT-ONE-12 to CT-ONE-19, CT-ONE-23, CT-ONE-24,
+    CT-ONE-28, CT-LI-01 to CT-LI-03, CT-LI-05 to CT-LI-07, CT-LI-11 to CT-LI-14, CT-EV4-03 and CT-PS1-13.
   - M6's remaining rows (15): CT-PS1-08 to CT-PS1-10, CT-PS1-16, CT-PS1-19, CT-PS1-21, CT-PS1-23, CT-PS2-01 to
     CT-PS2-05, and the run records of CT-DET-04, CT-DET-14 and CT-BND-23 (with LP3's grants for CT-DET-04 and
     CT-BND-23).
   - M5, the jumbled puzzle (12): CT-KN1-02, CT-KN1-03, CT-KN1-06, CT-KN2-02, CT-KN2-03, CT-KN2-06, CT-KN3-01,
     CT-KN3-03, CT-LG2-12, CT-PS1-11, CT-PS1-14 and CT-PS1-22.
   - LG5's module loader and lockfiles (7, no milestone named): CT-LG5-01 to CT-LG5-07.
-  - KN5's command layer, once its candidate is picked (6): CT-KN5-03, CT-KN5-05, CT-KN5-07, CT-KN5-08, CT-KN5-10 and
-    CT-KN5-12.
+  - KN5's command layer, once its candidate is picked (3): CT-KN5-05, CT-KN5-08 and CT-KN5-10.
   - A6's exact rotation requests (5, no milestone named): CT-KN3-04 to CT-KN3-06, CT-LG2-16 and CT-DET-16.
   - The stage checker, RPI.68 to RPI.76 (3, no milestone named): CT-LG2-15, CT-LG3-10 and CT-LG5-08.
   - Streaming and compressed words, KN2.10 (no milestone named): CT-LG2-14 and CT-LG4-03, and CT-KN2-07, named as not

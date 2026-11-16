@@ -700,20 +700,33 @@ fn ct_evd_21_no_policy_row_capability_or_admission_reads_a_word_or_a_claim() {
 // Reserved and retired codes.
 
 /// CT-BND-24 (whole, with `c600-check`'s `ct_bnd_24_flow_refused_is_never_emitted_before_lq2`) and CT-ERR-15 (part: the
-/// retired and unset flow codes and the recursion reservation; not run: display plans and RM.13's plan ceiling, which
-/// LP3 builds): no product source of any workspace member names `flow_refused`, `display_plan_limit` or
-/// `recursion_exhausted` outside a comment, so neither `LG3:effect.flow_refused` (retired, ERR.24) nor
-/// `LG3:capability.flow_refused` (unset until LQ2) nor the reservations of ERR.25 and ERR.26 can be emitted. Deep
-/// recursion ends at a budget of the settled meter, and an output over its budget stops with `KN7:budget.output`.
+/// retired and unset flow codes, the recursion reservation and the plan reservation in LP3's headless display
+/// contract; not run: the renderer behind its mock backend, which LP3 builds later): no product source of any
+/// workspace member names `flow_refused` or `recursion_exhausted` outside a comment, so neither `LG3:effect.flow_refused`
+/// (retired, ERR.24) nor `LG3:capability.flow_refused` (unset until LQ2) nor ERR.26's reservation can be emitted.
+/// `display_plan_limit` appears once, as `c600-display`'s constant for ERR.25's reservation, and the sources only
+/// compare a code with that constant, so none builds `KN7:budget.display_plan_limit` (RM.13). Deep recursion ends at a
+/// budget of the settled meter, and an output over its budget stops with `KN7:budget.output`.
 #[test]
 fn ct_bnd_24_retired_and_reserved_codes_are_never_emitted() {
     let lines = code_lines();
     assert!(lines.len() > 1000, "the scan reads the product's sources");
+    let mut named = Vec::new();
     for (file, line, text) in &lines {
-        for token in ["flow_refused", "display_plan_limit", "recursion_exhausted"] {
+        for token in ["flow_refused", "recursion_exhausted"] {
             assert!(!text.contains(token), "{}:{line}: {text}", file.display());
         }
+        if text.contains("display_plan_limit") {
+            named.push(format!("{}:{line}", file.display()));
+        }
+        if text.contains("PLAN_LIMIT") {
+            let allowed = text.trim() == "pub const PLAN_LIMIT: &str = \"KN7:budget.display_plan_limit\";"
+                || text.contains("== codes::PLAN_LIMIT");
+            assert!(allowed, "{}:{line} uses the reserved plan budget: {text}", file.display());
+        }
     }
+    assert_eq!(named.len(), 1, "one reservation constant: {named:?}");
+    assert!(named[0].replace('\\', "/").contains("c600-display/src/error.rs"), "{named:?}");
 
     let deep = "edition \"6cs-draft-1\";\nmodule m requires [];\n\n\
         export fn down(n: Nat) -> Nat effects [] {\n    return down(exact_add(n, 1));\n}\n";
