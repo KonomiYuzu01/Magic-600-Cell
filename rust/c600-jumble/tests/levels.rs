@@ -1,13 +1,16 @@
-//! LP2, M8: the level crossings and end tests of the jumbling puzzle (`c600_jumble::levels`; chapter 01, KN1.7 to
-//! KN1.10 and KN1.17; state contract A3 and A5). `tests/test_jumbling_rust_m8_levels.py` runs the same calls through
-//! the adapter against J1. Nothing here chooses a twist: every word below is fixed in the test.
+//! LP2, M8: the level crossings, end tests, shapes and gauges of the jumbling puzzle (`c600_jumble::levels`; chapter
+//! 01, KN1.7 to KN1.10, KN1.14 and KN1.17; state contract A3 and A5). `tests/test_jumbling_rust_m8_levels.py` runs
+//! the same calls through the adapter against J1. Nothing here chooses a twist: every word below is fixed in the test.
 
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
-use c600_jumble::levels::{self, Level, LevelValue, Partial, Projection, ReachKind, Reachability, Verdict, Witness};
+use c600_jumble::kplus::ORDER;
+use c600_jumble::levels::{self, Gauge, GaugeClass, RegionKey, Shape};
+use c600_jumble::levels::{Level, LevelValue, Partial, Projection, ReachKind, Reachability, Verdict, Witness};
 use c600_jumble::model::{NP, NS};
-use c600_jumble::q5::Q5;
+use c600_jumble::q5::{matmul, Mat4, Q5};
 use c600_jumble::state::{Pose, State, Status};
 use c600_jumble::twist::{Menu, Twist};
 use c600_jumble::{observe, Context};
@@ -374,4 +377,264 @@ fn a_witnessed_claim_cannot_be_stated() {
         assert_eq!(ReachKind::parse(kind.name()), Some(kind));
     }
     assert!(Reachability::solved().retained());
+}
+
+// ------------------------------------------------------------------------------------------- shapes and gauges
+
+/// Q of CT-KN1-06: the exact Cayley rotation ω = (2, 0, 0) at cap 0.
+fn cayley_q(ctx: &Context) -> Arc<Mat4> {
+    let omega = [Q5::int(2), Q5::zero(), Q5::zero()];
+    Twist::from_record(ctx, &observe::cayley_record(ctx, 0, &omega)).expect("the Cayley record reads").matrix
+}
+
+/// Piece 4 and the next two pieces of its orbit, each with the K⁺ element that carries its home region onto piece 4's.
+fn congruent_pieces(ctx: &Context) -> [(usize, u16); 3] {
+    let (kp, regions) = (&ctx.kplus, &ctx.regions);
+    let (orbit, to_4) = regions.rep_of(4);
+    let onto = |p: usize| kp.compose(to_4, kp.inv[regions.rep_of(p).1 as usize]);
+    let mut others = (0..NP).filter(|&p| p != 4 && regions.rep_of(p).0 == orbit);
+    let (b, c) = (others.next().expect("a second piece"), others.next().expect("a third piece"));
+    [(4, onto(4)), (b, onto(b)), (c, onto(c))]
+}
+
+/// Solved except for the listed poses: a raw pose table, read for form and identity only (KN2.14).
+fn raw_table(ctx: &Context, posed: &[(usize, Pose)]) -> State {
+    let mut poses = vec![Pose::K(0); NP];
+    for (piece, pose) in posed {
+        poses[*piece] = pose.clone();
+    }
+    levels::state_of(ctx, None, &poses).expect("the raw table reads")
+}
+
+/// σA = g(A) and t_A = g for a K⁺ element g: piece A takes the pose of the piece whose home region is g(Ā₀).
+fn relabel(ctx: &Context, g: u16) -> Gauge {
+    let table = levels::tables(ctx).expect("the level tables");
+    let sigma = (0..NP).map(|a| table.image(ctx, a, g)).collect();
+    Gauge::new(ctx, sigma, vec![g; NP]).expect("a relabel is a gauge")
+}
+
+/// σ swaps two pieces of one orbit. Each comes with the element that carries its home region onto one common region,
+/// so tc⁻¹·tb carries b's home region onto c's.
+fn swap(ctx: &Context, (b, tb): (usize, u16), (c, tc): (usize, u16)) -> Gauge {
+    let kp = &ctx.kplus;
+    let mut sigma: Vec<u32> = (0..NP as u32).collect();
+    sigma.swap(b, c);
+    let mut t = vec![0u16; NP];
+    t[b] = kp.compose(kp.inv[tc as usize], tb);
+    t[c] = kp.compose(kp.inv[tb as usize], tc);
+    Gauge::new(ctx, sigma, t).expect("a swap within an orbit is a gauge")
+}
+
+/// A gauge of the class. S turns every piece of each orbit whose S_A is more than {id} by an element of S_A other than
+/// id; R turns every piece of each orbit with R_A ≠ S_A by an element of R_A outside S_A; `All` is a relabel. The
+/// element is picked at the orbit's representative and carried to each piece by its transport.
+fn class_gauge(ctx: &Context, class: GaugeClass) -> Gauge {
+    let (kp, regions) = (&ctx.kplus, &ctx.regions);
+    if class == GaugeClass::All {
+        return relabel(ctx, kp.gen_idx[0]);
+    }
+    let picks: Vec<Option<u16>> = regions
+        .reps
+        .iter()
+        .map(|&rep| {
+            let r = levels::region_stabiliser(ctx, rep as usize).expect("R_A");
+            let s = levels::sticker_stabiliser(ctx, rep as usize).expect("S_A");
+            match class {
+                GaugeClass::S => s.iter().copied().find(|&k| k != 0),
+                _ => r.iter().copied().find(|k| !s.contains(k)),
+            }
+        })
+        .collect();
+    let t = (0..NP)
+        .map(|a| {
+            let (orbit, tr) = regions.rep_of(a);
+            picks[orbit].map_or(0, |k| kp.compose(tr, kp.compose(k, kp.inv[tr as usize])))
+        })
+        .collect();
+    Gauge::new(ctx, (0..NP as u32).collect(), t).expect("a turn of each piece within its region is a gauge")
+}
+
+/// Each twist from a copy of `from`, with its status and the pieces it moved.
+fn run(ctx: &Context, from: &State, twists: &[Twist]) -> (State, Vec<(Status, Vec<u32>)>) {
+    let mut state = from.clone();
+    let mut steps = Vec::with_capacity(twists.len());
+    for twist in twists {
+        let outcome = state.apply(ctx, twist, None, &[]).expect("no engine error");
+        steps.push((outcome.status, outcome.inside));
+    }
+    (state, steps)
+}
+
+/// KN1.7's stabilisers: S_A lies in R_A, both are groups, the stabilisers of a piece are its representative's carried
+/// by the transport, and the census of the pieces by (|R_A|, |S_A|, stickers) is the one J1's regions give
+/// (`research/jumbling/sim/regions.py`, counted with the same definitions).
+#[test]
+fn region_and_sticker_stabilisers() {
+    let ctx = &setup().ctx;
+    let (kp, regions) = (&ctx.kplus, &ctx.regions);
+    let table = levels::tables(ctx).expect("the level tables");
+    assert_eq!(levels::region_stabiliser(ctx, 4).expect("R_A"), [0, 834]);
+    assert_eq!(levels::sticker_stabiliser(ctx, 4).expect("S_A"), [0]);
+    assert_eq!(levels::region_stabiliser(ctx, 1).expect("R_A"), [0, 5, 25, 80, 208, 209]);
+    assert_eq!(levels::sticker_stabiliser(ctx, 1).expect("S_A"), [0, 5, 25]);
+    assert!(levels::region_stabiliser(ctx, NP).is_err());
+
+    let mut members = vec![0usize; regions.reps.len()];
+    let mut last = vec![0usize; regions.reps.len()];
+    for p in 0..NP {
+        let orbit = regions.rep_of(p).0;
+        members[orbit] += 1;
+        last[orbit] = p;
+    }
+    let closed =
+        |group: &[u16]| group.iter().all(|&i| group.iter().all(|&j| group.binary_search(&kp.compose(i, j)).is_ok()));
+    let mut census: BTreeMap<(usize, usize, usize), usize> = BTreeMap::new();
+    for (orbit, &rep) in regions.reps.iter().enumerate() {
+        let r = levels::region_stabiliser(ctx, rep as usize).expect("R_A");
+        let s = levels::sticker_stabiliser(ctx, rep as usize).expect("S_A");
+        assert!(r.contains(&0) && s.contains(&0) && s.iter().all(|k| r.contains(k)), "orbit {orbit}");
+        assert!(closed(&r) && closed(&s), "orbit {orbit}: the stabilisers are groups");
+        let (r2, s2) = (
+            levels::region_stabiliser(ctx, last[orbit]).expect("R_A"),
+            levels::sticker_stabiliser(ctx, last[orbit]).expect("S_A"),
+        );
+        assert_eq!((r2.len(), s2.len()), (r.len(), s.len()), "orbit {orbit}");
+        *census.entry((r.len(), s.len(), table.slots(rep as usize).len())).or_default() += members[orbit];
+    }
+    let j1 = BTreeMap::from([
+        ((1, 1, 1), 93600),
+        ((1, 1, 2), 43200),
+        ((2, 1, 2), 21600),
+        ((2, 2, 1), 3600),
+        ((3, 3, 1), 9600),
+        ((5, 1, 5), 2880),
+        ((6, 3, 2), 1200),
+        ((10, 1, 5), 720),
+        ((12, 12, 1), 600),
+        ((60, 1, 20), 120),
+    ]);
+    assert_eq!(census, j1);
+}
+
+/// CT-KN1-06 (part: the raw tables and gauges with σ ≠ id; not run: the fixture clause, which
+/// tests/test_jumbling_rust_m8_levels.py runs at sampled fixture prefixes). On the raw tables (R, R, QR) and
+/// (R, QR, QR) of three pieces with congruent home regions, R piece 4's home region and Q the Cayley rotation
+/// ω = (2, 0, 0) at cap 0, the sets of occupied regions are equal while the shapes and the off counts differ, and no
+/// gauge relates the tables. A gauge with σ ≠ id keeps the multiset; on a table that collides, one may even fix it.
+#[test]
+fn ct_kn1_06_equal_shape_is_an_equal_multiset_of_posed_regions() {
+    let ctx = &setup().ctx;
+    let kp = &ctx.kplus;
+    let q = cayley_q(ctx);
+    let [(a, ta), (b, tb), (c, tc)] = congruent_pieces(ctx);
+    let table = levels::tables(ctx).expect("the level tables");
+    assert_eq!(ta, 0);
+    assert_eq!((table.image(ctx, b, tb), table.image(ctx, c, tc)), (a as u32, a as u32));
+    let off = |k: u16| Pose::M(Arc::new(matmul(&q, kp.matrix(k, &ctx.model))));
+    // Piece a stays at home in R.
+    let t1 = raw_table(ctx, &[(b, Pose::K(tb)), (c, off(tc))]);
+    let t2 = raw_table(ctx, &[(b, off(tb)), (c, off(tc))]);
+    let s1 = levels::shape(ctx, &t1).expect("no engine error");
+    let s2 = levels::shape(ctx, &t2).expect("no engine error");
+    assert_eq!((s1.off_regions, s1.off_poses, s1.collisions), (1, 1, 1));
+    assert_eq!((s2.off_regions, s2.off_poses, s2.collisions), (2, 2, 1));
+    let keys = |s: &Shape| s.regions.iter().map(|(key, _)| key.clone()).collect::<Vec<RegionKey>>();
+    assert_eq!(keys(&s1), keys(&s2), "one set of occupied regions");
+    assert_ne!(s1.digest(), s2.digest(), "two multisets");
+    assert_eq!(levels::gauge_between(ctx, &t1, &t2).expect("no engine error"), None);
+    assert_eq!(levels::gauge_between(ctx, &t2, &t1).expect("no engine error"), None);
+
+    let relabelled = relabel(ctx, kp.gen_idx[0]);
+    let swapped = swap(ctx, (b, tb), (c, tc));
+    for (x, sx) in [(&t1, &s1), (&t2, &s2)] {
+        for gauge in [&relabelled, &swapped] {
+            assert_eq!(gauge.class(ctx).expect("no engine error"), GaugeClass::All);
+            assert!(gauge.moved() > 0);
+            let z = levels::act(ctx, x, gauge).expect("no engine error");
+            assert_eq!(levels::shape(ctx, &z).expect("no engine error").digest(), sx.digest());
+            // Swapping the two pieces that share QR fixes (R, QR, QR); every other image is another table.
+            assert_eq!(z.digest(ctx) == x.digest(ctx), std::ptr::eq(x, &t2) && std::ptr::eq(gauge, &swapped));
+            // With a collision the gauge is not unique: the one found carries X onto Z.
+            let found = levels::gauge_between(ctx, x, &z).expect("no engine error").expect("equal shapes");
+            assert_eq!(levels::act(ctx, x, &found).expect("no engine error").digest(ctx), z.digest(ctx));
+        }
+    }
+}
+
+/// CT-KN2-06 (part: the engine against Theorem 1 of KN1.14 with S, R and σ ≠ id gauges, on a retained word on the
+/// lattice and on the Cayley state off it; not run: J1's fixtures, which tests/test_jumbling_rust_m8_levels.py runs
+/// against J1). For Z = X·γ: every surveyed grip has one status from X and from Z, each twist of a fixed word has one
+/// status from both, piece A moves from Z exactly when σA moves from X, and w(Z) = w(X)·γ. The class's level is kept:
+/// labels under 𝒢_S, posed regions under 𝒢_R, the shape under 𝒢; and the gauge between X and Z is γ.
+#[test]
+fn ct_kn2_06_a_gauge_transfers_admissibility_moves_and_images() {
+    let s = setup();
+    let ctx = &s.ctx;
+    let table = levels::tables(ctx).expect("the level tables");
+    let grips = [0usize, 1, 2, 13, 77, 120, 300, 599];
+    let twists: Vec<Twist> = [1, 3, -5].iter().map(|&m| levels::primitive(ctx, m).expect("a primitive")).collect();
+    let gauges = [GaugeClass::S, GaugeClass::R, GaugeClass::All].map(|class| (class, class_gauge(ctx, class)));
+    for (name, x) in [("a retained word", retained_state(s, &[2, -7, 11]).0), ("the Cayley state", cayley_state(ctx))] {
+        let x_survey = x.clone().survey(ctx, &grips, None).expect("no engine error");
+        let (wx, x_steps) = run(ctx, &x, &twists);
+        assert!(x_steps.iter().any(|(status, _)| *status == Status::Admissible), "{name}");
+        for (class, gauge) in &gauges {
+            assert_eq!(gauge.class(ctx).expect("no engine error"), *class);
+            let z = levels::act(ctx, &x, gauge).expect("no engine error");
+            assert_ne!(z.digest(ctx), x.digest(ctx), "{name}, {}", class.name());
+            assert_eq!(z.clone().survey(ctx, &grips, None).expect("no engine error"), x_survey);
+            let (wz, z_steps) = run(ctx, &z, &twists);
+            for ((sx, ix), (sz, iz)) in x_steps.iter().zip(&z_steps) {
+                assert_eq!(sx, sz, "{name}, {}", class.name());
+                let mut mapped: Vec<u32> = iz.iter().map(|&p| gauge.sigma()[p as usize]).collect();
+                mapped.sort_unstable();
+                assert_eq!(&mapped, ix, "{name}, {}", class.name());
+            }
+            assert_eq!(levels::act(ctx, &wx, gauge).expect("no engine error").digest(ctx), wz.digest(ctx));
+
+            let labels = |state: &State| levels::labels(ctx, state).expect("no engine error");
+            let regions = |state: &State| levels::region_keys(ctx, &table, state).expect("no engine error");
+            let shape = |state: &State| levels::shape(ctx, state).expect("no engine error").digest();
+            match class {
+                GaugeClass::S => assert_eq!(labels(&z), labels(&x), "{name}"),
+                GaugeClass::R => {
+                    assert_eq!(regions(&z), regions(&x), "{name}");
+                    assert_ne!(labels(&z), labels(&x), "{name}: R_A turns stickers");
+                }
+                GaugeClass::All => {
+                    assert_eq!(shape(&z), shape(&x), "{name}");
+                    assert_ne!(regions(&z), regions(&x), "{name}");
+                }
+            }
+            assert_eq!(levels::gauge_between(ctx, &x, &z).expect("no engine error").as_ref(), Some(gauge));
+        }
+    }
+}
+
+/// A gauge is checked piece by piece, and the identity acts trivially.
+#[test]
+fn a_gauge_is_checked_piece_by_piece() {
+    let ctx = &setup().ctx;
+    let id: Vec<u32> = (0..NP as u32).collect();
+    assert!(Gauge::new(ctx, id[1..].to_vec(), vec![0; NP - 1]).is_err(), "too short");
+    let mut twice = id.clone();
+    twice[1] = 0;
+    assert!(Gauge::new(ctx, twice, vec![0; NP]).is_err(), "σ is no permutation");
+    let mut far = vec![0u16; NP];
+    far[0] = ORDER as u16;
+    assert!(Gauge::new(ctx, id.clone(), far).is_err(), "t names no K+ element");
+    let g = *ctx.kplus.gen_idx.iter().find(|&&g| g != 0 && g != 834).expect("a generator outside R_4");
+    let mut turned = vec![0u16; NP];
+    turned[4] = g;
+    assert!(Gauge::new(ctx, id.clone(), turned).is_err(), "t carries piece 4's region onto another");
+
+    let identity = Gauge::identity();
+    assert_eq!(Gauge::new(ctx, id, vec![0; NP]).expect("the identity"), identity);
+    assert_eq!(
+        (identity.class(ctx).expect("no engine error"), identity.moved(), identity.turned()),
+        (GaugeClass::S, 0, 0)
+    );
+    let x = cayley_state(ctx);
+    assert_eq!(levels::act(ctx, &x, &identity).expect("no engine error").digest(ctx), x.digest(ctx));
+    assert_eq!(levels::gauge_between(ctx, &x, &x).expect("no engine error"), Some(identity));
 }

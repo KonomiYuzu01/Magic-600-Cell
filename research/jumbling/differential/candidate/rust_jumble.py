@@ -217,3 +217,22 @@ class RustJumbleEngine:
         """The primitive twists of a retained word (signed 1-based ids), refused whole at its first refused
         letter."""
         return self.call('retained_word', word=[int(m) for m in word], budget=budget)
+
+    @staticmethod
+    def _u32(values):
+        """Integers as base64 little-endian u32, or None."""
+        if values is None:
+            return None
+        import base64
+        import struct
+        values = [int(v) for v in values]
+        return base64.b64encode(struct.pack('<%dI' % len(values), *values)).decode('ascii')
+
+    def gauge(self, sigma=None, t=None, *, state=None):
+        """X·γ of KN1.7 for the gauge (sigma, t), one value per piece (None for the identity), of the current
+        state or of the stored state `state`; the image becomes the current state."""
+        return self.call('gauge', sigma=self._u32(sigma), t=self._u32(t), state=state)
+
+    def gauge_between(self, other, *, state=None):
+        """A gauge γ with X·γ equal to the stored state `other` (sigma and t as base64 u32), or None."""
+        return self.call('gauge_between', other=other, state=state)

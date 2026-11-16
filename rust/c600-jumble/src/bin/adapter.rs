@@ -463,6 +463,7 @@ impl Adapter {
             "project" | "sticker_test" | "retained_checkpoint" | "label_checkpoint" | "retained_word" => {
                 self.levels(op, request)?
             }
+            "gauge" | "gauge_between" => self.levels(op, request)?,
             other => return Err(input(format!("unknown op {other}"))),
         };
         Ok(Some(result))
@@ -703,6 +704,22 @@ fn nu_values(value: Option<&Value>) -> Result<Option<Vec<i64>>, Fail> {
     Ok(Some(out))
 }
 
+/// σ or t of a gauge: one value per piece as base64 little-endian u32, or null for the identity.
+fn gauge_part(value: Option<&Value>, what: &str) -> Result<Option<Vec<u32>>, Fail> {
+    let np = c600_jumble::model::NP;
+    match value {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(text)) => {
+            let bytes = c600_jumble::b64::decode(text).ok_or_else(|| input(format!("{what} is no base64")))?;
+            if bytes.len() != np * 4 {
+                return Err(input(format!("{what} lists {np} little-endian u32 values")));
+            }
+            Ok(Some(bytes.chunks_exact(4).map(|c| u32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect()))
+        }
+        _ => Err(input(format!("{what} must be base64 or null"))),
+    }
+}
+
 /// The result of an end test, naming the state it read (KN0.6).
 fn naming(mut result: Value, state_digest: String) -> Value {
     if let Value::Object(fields) = &mut result {
@@ -721,7 +738,12 @@ fn naming(mut result: Value, state_digest: String) -> Value {
 ///   solved) and `label_checkpoint` (`reachability` `{kind, evidence}`, where a witnessed claim names its `journal`
 ///   from solved instead of evidence, and optional `nu`, 45 values from the ν row): the end tests of A5;
 /// - `retained_word` (`word`, optional `budget`): the primitive twists of a retained word, one after another, refused
-///   whole, with nothing changed, at its first refused letter.
+///   whole, with nothing changed, at its first refused letter;
+/// - `gauge` (`sigma` and `t`, each a base64 little-endian u32 array over the pieces, null for the identity): X·γ of
+///   KN1.7 becomes the current state, with the `source` digest and the gauge's class; an invalid gauge is an input
+///   error;
+/// - `gauge_between` (`other`, a stored state): a gauge γ with X·γ equal to the other state, or null, with whether the
+///   two shape digests are equal. It changes nothing.
 impl Adapter {
     fn read_state(&self, request: &Value) -> Result<&State, Fail> {
         match request.get("state") {
@@ -861,6 +883,50 @@ impl Adapter {
                     fields.insert("refused_at".into(), Value::Null);
                 }
                 Ok(result)
+            }
+            "gauge" => {
+                let np = c600_jumble::model::NP;
+                let sigma = gauge_part(request.get("sigma"), "sigma")?.unwrap_or_else(|| (0..np as u32).collect());
+                let t: Vec<u16> = match gauge_part(request.get("t"), "t")? {
+                    None => vec![0; np],
+                    Some(values) => values
+                        .into_iter()
+                        .map(|k| u16::try_from(k).map_err(|_| input("t lists K+ indices")))
+                        .collect::<Result<_, _>>()?,
+                };
+                let gauge = levels::Gauge::new(&self.ctx, sigma, t).map_err(Fail::Input)?;
+                let source = self.read_state(request)?;
+                let image = levels::act(&self.ctx, source, &gauge).map_err(engine)?;
+                let source = source.digest(&self.ctx);
+                let summary = gauge.to_json(&self.ctx, false).map_err(engine)?;
+                self.state = Some(image);
+                self.cap_twists.clear();
+                let mut result = self.step_json("start", 0, EMPTY)?;
+                if let Value::Object(fields) = &mut result {
+                    fields.insert("source".into(), string(&source));
+                    fields.insert("gauge".into(), summary);
+                }
+                Ok(result)
+            }
+            "gauge_between" => {
+                let name = request
+                    .get("other")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| input("gauge_between needs the name of a stored state"))?;
+                let other = self.states.get(name).ok_or_else(|| input(format!("no stored state {name}")))?;
+                let state = self.read_state(request)?;
+                let shape = |s: &State| levels::shape(&self.ctx, s).map(|shape| shape.digest()).map_err(engine);
+                let shapes_equal = shape(state)? == shape(other)?;
+                let gauge = match levels::gauge_between(&self.ctx, state, other).map_err(engine)? {
+                    Some(gauge) => gauge.to_json(&self.ctx, true).map_err(engine)?,
+                    None => Value::Null,
+                };
+                Ok(json::object([
+                    ("state", string(&state.digest(&self.ctx))),
+                    ("other", string(&other.digest(&self.ctx))),
+                    ("shapes_equal", Value::Bool(shapes_equal)),
+                    ("gauge", gauge),
+                ]))
             }
             other => Err(input(format!("unknown op {other}"))),
         }

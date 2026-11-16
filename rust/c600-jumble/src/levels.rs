@@ -58,7 +58,7 @@ use c600_kernel::Refusal;
 
 use crate::kplus::{IntMat, ORDER};
 use crate::model::{CELL_SLOTS, NP, NS, SIG_WORDS};
-use crate::q5::{matmul, Mat4};
+use crate::q5::{matmul, transpose, Mat4};
 use crate::regions::VForm;
 use crate::state::{EngineError, Pose, State, Status};
 use crate::twist::{Menu, Twist};
@@ -1417,4 +1417,215 @@ pub fn state_of(ctx: &Context, menu: Option<Arc<Menu>>, poses: &[Pose]) -> Resul
         return Err(format!("a pose table names {NP} pieces"));
     }
     State::from_record(ctx, menu, &record_of(poses))
+}
+
+// ------------------------------------------------------------------------------------------------------ gauges
+
+/// The three gauge groups of KN1.7, finest first: 𝒢_S keeps the sticker class, 𝒢_R the region class and 𝒢 the shape.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum GaugeClass {
+    /// σ = id and every t_A in S_A.
+    S,
+    /// σ = id and every t_A in R_A.
+    R,
+    /// Any gauge.
+    All,
+}
+
+impl GaugeClass {
+    pub fn name(self) -> &'static str {
+        match self {
+            GaugeClass::S => "S",
+            GaugeClass::R => "R",
+            GaugeClass::All => "all",
+        }
+    }
+}
+
+/// A gauge γ = (σ, t) of KN1.7: σ permutes the pieces, and t_A carries the home region of A onto the home region of σA.
+/// Such a rotation carries a chamber onto a chamber, so it lies in K⁺ (note N1, B.4: a pose is off the lattice exactly
+/// when its region is no chamber), and t_A is kept as its K⁺ index. γ acts on the right ([`act`]).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Gauge {
+    sigma: Vec<u32>,
+    t: Vec<u16>,
+}
+
+impl Gauge {
+    pub fn identity() -> Gauge {
+        Gauge { sigma: (0..NP as u32).collect(), t: vec![0; NP] }
+    }
+
+    /// The gauge with σ and t, each listing every piece. `Err` names the first piece at which σ is no permutation, or
+    /// t_A does not carry A's home region onto σA's.
+    pub fn new(ctx: &Context, sigma: Vec<u32>, t: Vec<u16>) -> Result<Gauge, String> {
+        if sigma.len() != NP || t.len() != NP {
+            return Err(format!("a gauge lists all {NP} pieces in σ and in t"));
+        }
+        let tables = tables(ctx).map_err(|e| e.0)?;
+        let mut taken = vec![false; NP];
+        for (a, (&b, &k)) in sigma.iter().zip(&t).enumerate() {
+            if b as usize >= NP || std::mem::replace(&mut taken[b as usize], true) {
+                return Err(format!("σ is no permutation of the pieces: see piece {a}"));
+            }
+            if k as usize >= ORDER {
+                return Err(format!("t of piece {a} is no K+ index"));
+            }
+            if tables.image(ctx, a, k) != b {
+                return Err(format!("t of piece {a} does not carry its home region onto the home region of piece {b}"));
+            }
+        }
+        Ok(Gauge { sigma, t })
+    }
+
+    pub fn sigma(&self) -> &[u32] {
+        &self.sigma
+    }
+
+    pub fn t(&self) -> &[u16] {
+        &self.t
+    }
+
+    /// The pieces with σA ≠ A.
+    pub fn moved(&self) -> usize {
+        self.sigma.iter().enumerate().filter(|(a, &b)| *a != b as usize).count()
+    }
+
+    /// The pieces with t_A ≠ id.
+    pub fn turned(&self) -> usize {
+        self.t.iter().filter(|&&k| k != 0).count()
+    }
+
+    /// The finest group the gauge lies in. With σ = id every t_A lies in R_A; it lies in S_A when it fixes the cell of
+    /// each sticker of A, because a rotation of R_A that fixes a sticker's cell carries that sticker region onto itself.
+    pub fn class(&self, ctx: &Context) -> Result<GaugeClass, EngineError> {
+        if self.moved() > 0 {
+            return Ok(GaugeClass::All);
+        }
+        let t = tables(ctx)?;
+        let perms = &ctx.kplus.perms;
+        for (a, &k) in self.t.iter().enumerate() {
+            let fixes = |s: &u32| {
+                let f = *s as usize / CELL_SLOTS;
+                perms[k as usize][f] as usize == f
+            };
+            if k != 0 && !t.slots(a).iter().all(fixes) {
+                return Ok(GaugeClass::R);
+            }
+        }
+        Ok(GaugeClass::S)
+    }
+
+    /// `{class, moved, turned}`; with `values`, also σ and t as base64 little-endian u32 arrays, as a state record's
+    /// pose IDs.
+    pub fn to_json(&self, ctx: &Context, values: bool) -> Result<Value, EngineError> {
+        fn raw(values: impl Iterator<Item = u32>) -> Value {
+            text(&b64::encode(&values.flat_map(u32::to_le_bytes).collect::<Vec<u8>>()))
+        }
+        let mut fields = vec![
+            ("class", text(self.class(ctx)?.name())),
+            ("moved", int(self.moved())),
+            ("turned", int(self.turned())),
+        ];
+        if values {
+            fields.push(("sigma", raw(self.sigma.iter().copied())));
+            fields.push(("t", raw(self.t.iter().map(|&k| k as u32))));
+        }
+        Ok(object(fields))
+    }
+}
+
+/// R_A of KN1.7 for piece a, ascending: the rotations that carry A's home region onto itself, which lie in K⁺ (note N1,
+/// B.4). With t the transport of A's orbit representative, R_A = t·R_rep·t⁻¹.
+pub fn region_stabiliser(ctx: &Context, a: usize) -> Result<Vec<u16>, EngineError> {
+    if a >= NP {
+        return Err(engine(format!("piece {a} is outside 0..{NP}")));
+    }
+    let t = tables(ctx)?;
+    let kp = &ctx.kplus;
+    let (o, tr) = ctx.regions.rep_of(a);
+    let row = &t.piece_of[o * ORDER..(o + 1) * ORDER];
+    let back = kp.inv[tr as usize];
+    let mut out: Vec<u16> =
+        (0..ORDER).filter(|&s| row[s] == row[0]).map(|s| kp.compose(tr, kp.compose(s as u16, back))).collect();
+    out.sort_unstable();
+    if out.iter().any(|&k| t.image(ctx, a, k) != a as u32) {
+        return Err(engine(format!("a conjugated stabiliser element moves piece {a}")));
+    }
+    Ok(out)
+}
+
+/// S_A of KN1.7 for piece a, ascending: the elements of R_A that carry each sticker region of A onto itself, that is,
+/// that fix the cell of each of its stickers.
+pub fn sticker_stabiliser(ctx: &Context, a: usize) -> Result<Vec<u16>, EngineError> {
+    let r = region_stabiliser(ctx, a)?;
+    let t = tables(ctx)?;
+    let cells: Vec<usize> = t.slots(a).iter().map(|&s| s as usize / CELL_SLOTS).collect();
+    let perms = &ctx.kplus.perms;
+    Ok(r.into_iter().filter(|&k| cells.iter().all(|&f| perms[k as usize][f] as usize == f)).collect())
+}
+
+/// X·γ of KN1.7: piece A takes the pose X[σA]·t_A, so it occupies the region that σA occupies in X. The image keeps X's
+/// menu and is read back like a raw table (form and identity only, KN2.14).
+pub fn act(ctx: &Context, x: &State, gauge: &Gauge) -> Result<State, EngineError> {
+    let kp = &ctx.kplus;
+    let mut products: HashMap<(u32, u16), Pose> = HashMap::new();
+    let mut poses = Vec::with_capacity(NP);
+    for (&b, &k) in gauge.sigma.iter().zip(&gauge.t) {
+        let id = x.pose_ids()[b as usize];
+        poses.push(match &x.poses()[id as usize] {
+            Pose::K(g) if k == 0 => Pose::K(*g),
+            Pose::K(g) => Pose::K(kp.compose(*g, k)),
+            Pose::M(m) if k == 0 => Pose::M(m.clone()),
+            Pose::M(m) => products
+                .entry((id, k))
+                .or_insert_with(|| Pose::M(Arc::new(matmul(m, kp.matrix(k, &ctx.model)))))
+                .clone(),
+        });
+    }
+    state_of(ctx, x.menu_arc(), &poses).map_err(|e| engine(format!("a gauge image does not read back: {e}")))
+}
+
+/// A gauge γ with X·γ = Y, or `None` when X and Y have different shapes; equal multisets of posed regions always give
+/// one (KN1.7). σ matches the regions: piece A goes to the lowest piece, not taken yet, that occupies Y's region of A in
+/// X. Then t_A = X[σA]⁻¹·Y[A]. On a collision-free configuration σ is the only match, so γ is the only gauge. The
+/// menus are not read: a gauge relates configurations.
+pub fn gauge_between(ctx: &Context, x: &State, y: &State) -> Result<Option<Gauge>, EngineError> {
+    let t = tables(ctx)?;
+    let (from, to) = (region_keys(ctx, &t, x)?, region_keys(ctx, &t, y)?);
+    let mut holders: HashMap<RegionKey, Vec<u32>> = HashMap::new();
+    for (p, key) in from.into_iter().enumerate().rev() {
+        holders.entry(key).or_default().push(p as u32);
+    }
+    let mut sigma = Vec::with_capacity(NP);
+    for key in &to {
+        match holders.get_mut(key).and_then(Vec::pop) {
+            Some(b) => sigma.push(b),
+            None => return Ok(None),
+        }
+    }
+    let kp = &ctx.kplus;
+    let mut quotients: HashMap<(u32, u32), u16> = HashMap::new();
+    let mut turns = Vec::with_capacity(NP);
+    for (a, &b) in sigma.iter().enumerate() {
+        let (ix, iy) = (x.pose_ids()[b as usize], y.pose_ids()[a]);
+        let k = match (&x.poses()[ix as usize], &y.poses()[iy as usize]) {
+            (Pose::K(g), Pose::K(h)) => kp.compose(kp.inv[*g as usize], *h),
+            _ => match quotients.get(&(ix, iy)) {
+                Some(&k) => k,
+                None => {
+                    let m = matmul(&transpose(x.pose_matrix(ctx, ix)), y.pose_matrix(ctx, iy));
+                    let k = kp.index_of_matrix(&m, &ctx.model).ok_or_else(|| {
+                        engine(format!(
+                            "piece {b} of X and piece {a} of Y share a region, but their poses differ outside K+"
+                        ))
+                    })?;
+                    quotients.insert((ix, iy), k);
+                    k
+                }
+            },
+        };
+        turns.push(k);
+    }
+    Gauge::new(ctx, sigma, turns).map(Some).map_err(|e| engine(format!("the matched gauge is no gauge: {e}")))
 }
