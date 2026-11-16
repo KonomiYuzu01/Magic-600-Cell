@@ -317,7 +317,7 @@ fn stored_words_carry_the_host_block_and_later_runs_cite_it() {
 /// CT-BND-02 (part: a damaged or legacy part joins as `read_state: yes` and is refused at preview admission; not run:
 /// the session's tables and the command layer's rows that admit `own`, which M6 and LP3 build): a damaged or legacy
 /// part never reads as `read_state: no`, and a damaged block is kept but never admitted as `own` or `manual` (BND.21,
-/// FP.17).
+/// FP.17). CT-PS1-18 (part: the run-level join of a legacy part; the rest is in `legacy.rs`).
 #[test]
 fn damaged_and_legacy_parts_never_read_as_no() {
     let solving = (Author::BuiltIn, Profile::Solving);
