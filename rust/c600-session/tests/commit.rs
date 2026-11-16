@@ -28,8 +28,10 @@ fn refused(session: &Session, disk: &MemDisk, envelope: Envelope, expected: &str
     assert_eq!((session.overview(), session.preview(), disk.writes()), (before, preview, writes));
 }
 
-/// CT-KN5-01, PHS.19: a preview replaced after it was presented and before the commit is refused by the token's
-/// binding, and nothing changes. A new preview of the same word is still another preview.
+/// CT-KN5-01 (whole), PHS.19: a preview replaced after it was presented and before the commit is refused by the token's
+/// binding, and nothing changes. A new preview of the same word is still another preview. CT-ONE-04 (part: with B
+/// received, a token bound to A is refused; not run: minting from the presented frame, which needs the shell and LP3's
+/// view). CT-ONE-03 (part: a word commit with no fresh preview gets no token, `KN5:stale.no_fresh_preview`).
 #[test]
 fn a_preview_swapped_before_the_commit_is_refused() {
     let (session, disk) = session();
@@ -63,10 +65,11 @@ fn trace() -> (Session, MemDisk, u64, String) {
     (session, disk, p, start)
 }
 
-/// LI.33's gate-order trace. An unread workspace edit leaves p fresh; C commits and discards p; an undo restores
-/// the start digest at a new state; an identical retry of C returns its receipt before any token check; a new
-/// invocation with C's token fails step 3; D fails step 5. In separate runs, an edit of the record p read, or of the
-/// protection, makes D fail step 6. Every refusal leaves the state unchanged.
+/// LI.33's gate-order trace, with CT-ONE-05 (whole) and CT-ONE-11 (part: refusals at steps 3, 5 and 6). An unread
+/// workspace edit leaves p fresh; C commits and discards p; an undo restores the start digest at a new state; an
+/// identical retry of C returns its receipt before any token check; a new invocation with C's token fails step 3; D
+/// fails step 5. In separate runs, an edit of the record p read, or of the protection, makes D fail step 6. Every
+/// refusal leaves the state unchanged.
 #[test]
 fn li_33_gate_order() {
     let (session, disk, p, start) = trace();
@@ -120,8 +123,8 @@ fn li_33_gate_order() {
     }
 }
 
-/// CT-KN5-04, LI.6: the same command ID with other content is refused; an identical retry returns the stored receipt
-/// and commits nothing more.
+/// CT-KN5-04 (whole), LI.6: the same command ID with other content is refused; an identical retry returns the stored
+/// receipt and commits nothing more.
 #[test]
 fn a_retried_delivery_commits_at_most_once() {
     let (session, disk) = session();
@@ -147,8 +150,9 @@ fn a_retried_delivery_commits_at_most_once() {
     assert_eq!(session.outcome("C", &first.request), first, "a refused reuse does not replace the stored receipt");
 }
 
-/// CT-KN5-04, KN5.17: a duplicate delivered while the commit is being written gets the stored provisional receipt
-/// and commits nothing; another commit is refused while the lane is taken; afterwards both lookups answer the commit.
+/// CT-KN5-04 (part: a duplicate while the commit is written), KN5.17: a duplicate delivered while the commit is being
+/// written gets the stored provisional receipt and commits nothing; another commit is refused while the lane is taken;
+/// afterwards both lookups answer the commit.
 #[test]
 fn a_duplicate_during_the_commit_is_not_a_second_commit() {
     let (session, disk) = session();
@@ -175,9 +179,9 @@ fn a_duplicate_during_the_commit_is_not_a_second_commit() {
     assert_eq!(session.outcome("C", &first.request), first);
 }
 
-/// CT-KN5-06, R-10: what is committed and journalled is the preview's own word. A change the caller makes after the
-/// preview, to its own copy or to the record the preview read, changes nothing committed; a changed record makes the
-/// preview stale instead.
+/// CT-KN5-06 (whole), R-10: what is committed and journalled is the preview's own word. A change the caller makes after
+/// the preview, to its own copy or to the record the preview read, changes nothing committed; a changed record makes
+/// the preview stale instead.
 #[test]
 fn a_mutation_after_the_preview_changes_nothing_committed() {
     let (session, disk) = session();
@@ -204,7 +208,8 @@ fn a_mutation_after_the_preview_changes_nothing_committed() {
     assert_eq!(digest(&reopened), r_end, "the journal holds the literal letters, not the record's name");
 }
 
-/// CT-KN5-11, KN5.19, LI.9: an undo whose hint names a superseded action, or a stale order, is refused as stale.
+/// CT-KN5-11 (whole), KN5.19, LI.9: an undo whose hint names a superseded action, or a stale order, is refused as
+/// stale.
 #[test]
 fn an_undo_naming_a_superseded_action_is_refused() {
     let (session, disk) = session();
@@ -263,7 +268,9 @@ fn undo_and_redo_cover_moves_records_and_protection() {
     assert_eq!(durable(&reopened), durable(&session));
 }
 
-/// KN5.14, KN5.15: a commit row needs a genuine token of this session, minted for this invocation, used once.
+/// CT-ONE-03 (part: a commit row without a token, or with a forged, foreign, misdirected or changed one; not run: a
+/// live twist, which waits for A6's exact rotation requests, and a crossing commit, which waits for M5's jumbled
+/// puzzle), KN5.14, KN5.15: a commit row needs a genuine token of this session, minted for this invocation, used once.
 #[test]
 fn commit_rows_need_a_genuine_unused_token() {
     let (session, disk) = session();
@@ -292,8 +299,8 @@ fn commit_rows_need_a_genuine_unused_token() {
     committed(&shell(&session, "u6", row));
 }
 
-/// KN5.14: a token binds the row it was minted for. An undo's token does not carry an execute, and an execute's
-/// token does not carry an undo, though both are genuine and unused.
+/// CT-ONE-03 (part: a token bound to another row), KN5.14: a token binds the row it was minted for. An undo's token
+/// does not carry an execute, and an execute's token does not carry an undo, though both are genuine and unused.
 #[test]
 fn a_token_fits_only_the_row_it_was_minted_for() {
     let (session, disk) = session();
@@ -403,9 +410,10 @@ fn a_switch_keeps_the_active_protection() {
     refused(&session, &disk, minted(&session, "s", Row::SwitchLine { line: 0 }), codes::ORBIT_WOULD_MOVE);
 }
 
-/// KN5.21 to KN5.23, LI.30: a durable action's receipt is rebuilt from the journal and survives a reopen whole; a
-/// transient receipt does not, and the lookup reports missing knowledge as `unknown_outcome`. A delivery from the old
-/// epoch is refused as stale.
+/// CT-ONE-21 (part: durable receipts survive a restart, a lost transient outcome answers `unknown_outcome`, and a
+/// delivery from the old epoch is refused), KN5.21 to KN5.23, LI.30: a durable action's receipt is rebuilt from the
+/// journal and survives a reopen whole; a transient receipt does not, and the lookup reports missing knowledge as
+/// `unknown_outcome`. A delivery from the old epoch is refused as stale.
 #[test]
 fn outcomes_are_looked_up_across_a_reopen() {
     let (session, disk) = session();
