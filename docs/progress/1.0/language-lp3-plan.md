@@ -20,7 +20,7 @@ for representations, each demonstrating the complete loop. Its four products:
 
 | Product | Without the owner's machine | Waits for |
 | --- | --- | --- |
-| Three-tool vertical path: source, check, run, view nodes, engine preview, explicit user commit, durable receipt and undo | 600-cell-Full: preview, commit and undo through the command layer with oracle equality (C1), the source route (C5), view nodes (C2, C5). Representations: the headless half (C6) | Durable receipts: M6 (C7). The jumbling tool: M5 (C8) |
+| Three-tool vertical path: source, check, run, view nodes, engine preview, explicit user commit, durable receipt and undo | 600-cell-Full: preview, commit and undo through the command layer with oracle equality (C1), the source route (C5), view nodes (C2, C5). Representations: the headless half (C6) | Durable receipts: C7, now that M6 is on main. The jumbling tool: M5 (C8) |
 | Matching command and key routes, kernel-row keys on ONE.48's direct path | The command and key routes with byte-identical traces and receipts (C1); the source route (C5) | The actual key route on Windows (C9) |
 | Active program views under ONE.11, ONE.12 and ONE.64 | Revision-bound output, latest-wins recomputation and stale-state data, headless (C2) | On screen: the renderer freeze (C9) |
 | Further views and user stages | `view.open`, `view.close` and RPI.82's budget, headless (C2) | User vertex and fragment stages on the selected renderer, advertised only after RPI.79's run (C9) |
@@ -46,17 +46,18 @@ and the renderer freeze for its on-screen half, and headless integration does no
 | Work | State | Waits for |
 | --- | --- | --- |
 | Command layer, shell tokens and key routes; the oracle loop for 600-cell-Full | Built (C1) | Nothing; the table freezes at LP3 |
-| Headless display contract; views and their budgets | In progress (C2) | Nothing |
+| Headless display contract; views and their budgets | Built (C2) | Nothing |
 | The runtime in its own process | In progress (C3) | Nothing: route RT1 (LQ9) |
 | Module closure | In progress (C4) | Nothing |
 | Source route and the 600-cell-Full tool | May start when C1 is on main | C1 |
 | Representations tool, headless half | May start after C5 | C2's views and C5's host bridge |
-| Durable receipts and undo, CT-RTE-08's persisted words, work sheets | Waits | M6 on main |
+| Durable receipts and undo, CT-RTE-08's persisted words, work sheets | In progress (C7) | M6 is on main (pull request 160); CT-RTE-08's persisted words also need C4 |
 | The jumbling tool and every jumbling half | Waits | M5 on main |
 | Tests that read kernel rows LP2 has not built: Strict protection, streaming words (KN2.10), `positions` (KN2.4), KN3's exact rotations and polytope operations | Waits | LP2's kernel; asked of the LP2 line, not built here |
 | The on-screen half | Waits | The renderer freeze |
 | Charter E2, the decisive LX-1, LX-2 and LX-4 runs, LX-3's platform coverage, the renderer gate | Waits | The owner's machine, all run together (owner, 16 November 2026) |
 | CT-LB1-06's word keys | Waits | An owner answer on LG2.18's word keys (section 10) |
+| Library entries as language code (LB1.1): collections, exact linear algebra, word construction, word and trace keys, setup search | Waits | Collection types and word operations in the IR draft (LP2; the IR freezes at PHS.49); asked of the LP2 line |
 
 ## 3. Integrator selections (the owner may overrule them)
 
@@ -70,7 +71,8 @@ and the renderer freeze for its on-screen half, and headless integration does no
    layer raises that chapter 13 does not register yet are drafts; registering them changes a frozen chapter, so it goes
    through PHS.52 at C10.
 3. **Session store stand-in.** Step 9's durable transaction sits behind a `Store` trait. `MemoryStore` stands in until
-   M6 is on main, so "durable" means only "kept across the layer's restart". Nothing before C7 is persistence evidence.
+   C7 puts the transaction on M6's store, so "durable" means only "kept across the layer's restart". Nothing before C7
+   is persistence evidence.
 4. **Routes.** The command route invokes rows with absolute arguments. The key route presses the draft keymap's chords
    (Ctrl+Enter, Ctrl+Shift+Enter, Escape, Ctrl+Z, Ctrl+Y), which the shell resolves before the envelope (EV4.3). The
    source route (C5) runs a built-in tool whose program proposes the literal word. The headless key route is source
@@ -97,12 +99,12 @@ One pull request per milestone; each names the checks that ran.
 | Milestone | Content | Depends on | State |
 | --- | --- | --- | --- |
 | C1 | Command layer, shell tokens and key routes; O01 to O07 through it on two routes, with undo and redo | M4 (on main) | Built; this plan's pull request |
-| C2 | Headless display contract (`c600-display`); views and their budgets (`c600-view`) | M2 and M3 (on main) | In progress |
+| C2 | Headless display contract (`c600-display`); views and their budgets (`c600-view`) | M2 and M3 (on main) | Built |
 | C3 | The runtime in its own process (`c600-runtime`) | M2 and M3 | In progress |
 | C4 | Module closure (`c600-module`) | M2 and M7 (on main) | In progress |
 | C5 | Source route and the 600-cell-Full tool (`c600-tools`) | C1 | Next |
 | C6 | Representations tool, headless half | C2, C5 | Next |
-| C7 | Durable receipts and undo through the session store | M6 on main | Waits |
+| C7 | Durable receipts and undo through the session store | M6 (on main) and C1 | In progress |
 | C8 | The jumbling tool | M5 on main | Waits |
 | C9 | The on-screen half and the owner-machine acceptance runs | The renderer freeze; the owner's runs | Waits |
 | C10 | LP3 exit: H-08 freeze, the whole index on one frozen candidate, the owner's sign-off | C1 to C9 | Waits |
@@ -137,11 +139,11 @@ told, if a step needs a frozen-file change, an open contract or a product depend
 Each piece is built in its own worktree from main at `b5d3c41a`, with a seven-part packet that names its allowed files,
 acceptance check and stop condition.
 
-- C2, display (`rust/c600-display`, branch `claude/lp3-display`): the headless parts of CT-RPI-02, CT-RPI-04,
-  CT-RPI-05, CT-RPI-08, CT-RPI-09, CT-RPI-10, CT-RPI-11, CT-RPI-27, CT-RM-03 and CT-RM-04, the stale half of CT-RPI-12
-  and the 600-cell-Full half of CT-RM-07.
-- C2, views (`rust/c600-view`, branch `claude/lp3-view`): CT-ONE-30, CT-RM-02, CT-RM-09, CT-RPI-03, CT-RPI-06,
-  CT-RPI-07, CT-RPI-22, CT-RPI-36 and CT-RPI-37.
+- C2, display (`rust/c600-display`, branch `claude/lp3-display`), built: CT-RPI-02, CT-RPI-04, CT-RPI-05, CT-RPI-09,
+  CT-RPI-10, CT-RPI-11, CT-RPI-27, CT-RM-03 and CT-RM-04, CT-RPI-08's 600-cell-Full rows, the stale half of CT-RPI-12
+  and the 600-cell-Full half of CT-RM-07. CT-RPI-08's jumbling rows wait for M5 (C8).
+- C2, views (`rust/c600-view`, branch `claude/lp3-view`), built: CT-ONE-30, CT-RM-02, CT-RPI-03, CT-RPI-06,
+  CT-RPI-07, CT-RPI-36 and CT-RPI-37, the limit half of CT-RPI-22 and rows 1, 2, 7 and 9 of CT-RM-09.
 - C3 (`rust/c600-runtime`, branch `claude/lp3-runtime-process`): the runtime in a process of its own, a client of the
   command layer (ADR-L02); CT-RTE-04's execution-contract mapping and the headless fault half of CT-RTE-10.
 - C4 (`rust/c600-module`, branch `claude/lp3-module-closure`): module closure; CT-RTE-07 and the closure part of
@@ -165,16 +167,19 @@ profile (it prepares previews and reads no state: LG3.13, BND.39), with its clas
 invocation, and only the shell commits (ADR-L02). It runs in-process until C3 is on main, and its records say which
 host ran it. Acceptance:
 
-1. The source route replays O01 to O07. Each step's recipe enters the tool as a pinned absolute argument, and the
-   literal digests, outcomes, receipts and undo results equal the command and key routes'; `tools/oracle/compare.py`
-   reports every step equal.
-2. The parts of CT-LB1-01, CT-LB1-03 (construction and the 600-cell-Full round trip), CT-LB2-01, CT-LB2-02 (the Net
-   half), CT-LB2-03 (the oversize refusal), CT-LB3-01 and CT-LB3-07 (the checker halves), CT-LB6-03 (the
-   600-cell-Full tool), CT-BND-15 (the 600-cell-Full tool), CT-BND-18, CT-BND-19, CT-EV3-01 to CT-EV3-04 with the
-   tool's views, CT-EV4-02, CT-EV4-04 (the append, preview and commit legs) and CT-ONE-29, each naming its part.
-3. CT-LB1-06's 600-cell-Full letter order and its version refusal, only if the owner's answer allows a draft key
-   (section 10).
-4. A change to `c600-command` gets C1's fresh read; C1's item 5 holds.
+1. The source route replays O01 to O07. Each step's literal word, the kernel's state-free expansion of its recipe,
+   enters the tool as a pinned absolute argument; `tools/oracle/compare.py` reports every step equal, the traces equal
+   the command route's byte for byte, and the receipts agree on outcome, literal digest, error code and the revision
+   after, differing only in their envelopes (command ID, caller, request digest).
+2. The parts of CT-LB2-02 (the Net half), CT-LB2-03 (the oversize refusal), CT-LB3-01 and CT-LB3-07 (the checker
+   halves), CT-LB6-03 (the 600-cell-Full tool), CT-BND-15 (the 600-cell-Full tool), CT-BND-19, CT-EV3-01 to CT-EV3-04
+   with the tool's views, CT-EV4-02, CT-EV4-04 (the append, preview and commit legs) and CT-ONE-29 that the tool and
+   the bridge make reachable, each naming its part.
+3. A change to `c600-command` gets C1's fresh read; C1's item 5 holds.
+
+CT-LB1-01, CT-LB1-03, CT-LB1-06, CT-LB2-01 and CT-BND-18 test library entries, which are language code (LB1.1). They
+need collection types and word operations (concatenation, inverse, powers) that the IR draft `c600-ir-draft-1` does
+not have yet, so they wait for LP2 (section 2).
 
 C6, the representations tool, headless half (selection 7). Acceptance: CT-LB4-02, the 600-cell-Full half of CT-LB4-03,
 the admission and CPU half of CT-LB4-04, the CPU reference of CT-LB4-01, the counter half of CT-EV3-06, the
@@ -186,9 +191,9 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
 
 ## 8. C7 to C10: what waits
 
-- **C7, after M6 is on main.** M6's session store replaces `MemoryStore`: durable receipts and undo across a real
-  restart, the persisted-word part of CT-RTE-08, the work sheets of CT-LB2-03 and the durable action order of
-  CT-EV3-07.
+- **C7, now that M6 is on main (pull request 160).** M6's session store replaces `MemoryStore`: durable receipts and
+  undo across a real restart, the persisted-word part of CT-RTE-08, the work sheets of CT-LB2-03 and the durable
+  action order of CT-EV3-07.
 - **C8, after M5 is on main.** The jumbling tool, with Jumble on in the command layer and oracle equality against M5's
   fixtures; CT-LB1-02, the jumbling halves of CT-LB1-03 and CT-LB1-06, CT-LB3-01 to CT-LB3-07, the pose levels of
   CT-LB4-03, CT-LB6-03, CT-BND-15, CT-BND-17, CT-EV3-06, CT-RPI-12 and CT-RM-07.
@@ -202,21 +207,21 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
 
 ## 9. Section 15.4's 82 tests
 
-"Now" means the whole test can run without the owner's machine, the renderer freeze, M5, M6 or a missing kernel row.
-37 tests can run whole now (CT-RPI-19 and CT-RTE-07 also need a Linux run for their records), 23 have a part that can
-run now, and 22 wait entirely. The milestone is in parentheses.
+"Now" means the whole test can run without the owner's machine, the renderer freeze, M5 or a missing kernel row.
+33 tests can run whole now (CT-RPI-19 and CT-RTE-07 also need a Linux run for their records), 21 have a part that can
+run now, and 28 wait entirely. The milestone is in parentheses.
 
 | Test | Class | Whole run | Part now |
 | --- | --- | --- | --- |
 | CT-KN7-06 | performance | Owner runs: charter E2 under a running program job (C9) | - |
 | CT-LG4-09 | performance | Owner runs: LX-2 (C9) | - |
-| CT-LB1-01 | source | Now (C5) | - |
+| CT-LB1-01 | source | Collection types in the IR draft, for the library code (LP2) | - |
 | CT-LB1-02 | source | M5: a blocked cap (C8) | - |
-| CT-LB1-03 | source | M5 (C8) | Construction and the 600-cell-Full round trip (C5) |
-| CT-LB1-06 | source | An owner answer on LG2.18's word keys; M5 for jumbling letters (C8) | 600-cell-Full letter order and version refusal, as a draft (C5) |
-| CT-LB2-01 | source | Now (C5) | - |
+| CT-LB1-03 | source | Word operations in the IR draft (LP2); M5 (C8) | - |
+| CT-LB1-06 | source | Collection types and word operations in the IR draft (LP2); an owner answer on LG2.18's word keys; M5 for jumbling letters (C8) | - |
+| CT-LB2-01 | source | Collection types in the IR draft, for the library's reports (LP2) | - |
 | CT-LB2-02 | source | The kernel's Strict protection (LP2) | The Net half (C5) |
-| CT-LB2-03 | source | Streaming words, KN2.10 (LP2); work sheets with M6 (C7) | The oversize refusal (C5) |
+| CT-LB2-03 | source | Streaming words, KN2.10 (LP2) | The oversize refusal (C5); work sheets (C7) |
 | CT-LB2-04 | source | The kernel's `positions` row, KN2.4 (LP2) | - |
 | CT-LB3-01 | source | M5 (C8) | The checker half (C5) |
 | CT-LB3-02 | source | M5 (C8) | - |
@@ -236,7 +241,7 @@ run now, and 22 wait entirely. The milestone is in parentheses.
 | CT-EV3-03 | source | Now (C5) | - |
 | CT-EV3-04 | synthetic | Now (C5) | - |
 | CT-EV3-06 | source | M5: off-lattice relations (C8) | Unchanged frames compute no relation (C6) |
-| CT-EV3-07 | source | M6: the durable action order (C7) | A view cannot write (C6) |
+| CT-EV3-07 | source | Now: a view cannot write (C6); the durable action order (C7) | - |
 | CT-EV3-08 | source | The renderer freeze: RM.39's measured ceilings (C9) | The admission semantics (C2, next) |
 | CT-EV4-02 | synthetic | Now, on the draft keymap (C5) | - |
 | CT-EV4-04 | synthetic | KN3.7's exact rotations in the kernel, for the twist leg (LP2) | The append, preview and commit legs (C5) |
@@ -250,7 +255,7 @@ run now, and 22 wait entirely. The milestone is in parentheses.
 | CT-RPI-05 | source | Now (C2) | - |
 | CT-RPI-06 | source | Now (C2) | - |
 | CT-RPI-07 | synthetic | Now (C2) | - |
-| CT-RPI-08 | source | Now (C2) | - |
+| CT-RPI-08 | source | M5: the jumbling rows (C8) | The 600-cell-Full rows (C2) |
 | CT-RPI-09 | source | Now (C2) | - |
 | CT-RPI-10 | synthetic | Now (C2) | - |
 | CT-RPI-11 | synthetic | Now (C2) | - |
@@ -260,7 +265,7 @@ run now, and 22 wait entirely. The milestone is in parentheses.
 | CT-RPI-18 | synthetic | Now (C2, next) | - |
 | CT-RPI-19 | source | Now, with a Linux run (C2, next) | - |
 | CT-RPI-21 | windows | The renderer freeze (C9) | - |
-| CT-RPI-22 | source | Now (C2) | - |
+| CT-RPI-22 | source | The display-plan validator, for the chart half (C2, next) | The limit half (C2) |
 | CT-RPI-23 | source | Now (C2, next) | - |
 | CT-RPI-24 | windows | The renderer freeze and M5 (C9) | - |
 | CT-RPI-26 | performance | Owner runs: charter E2 and the renderer gate (C9) | The counter half (C2, next) |
@@ -273,12 +278,12 @@ run now, and 22 wait entirely. The milestone is in parentheses.
 | CT-RPI-37 | synthetic | Now (C2) | - |
 | CT-BND-15 | source | M5: the jumbling tool (C8) | The 600-cell-Full and representations tools (C5, C6) |
 | CT-BND-17 | source | M5: the repair list (C8) | - |
-| CT-BND-18 | source | Now (C5) | - |
+| CT-BND-18 | source | Collection types in the IR draft, for setup search (LP2) | - |
 | CT-BND-19 | source | Now (C5) | - |
 | CT-BND-20 | windows | The renderer freeze (C9) | A held chord commits once; the runtime gets no token (C1) |
 | CT-RTE-04 | source | Now (C3) | - |
 | CT-RTE-07 | source | Now, with a Linux run (C4) | - |
-| CT-RTE-08 | source | M6: persisted words (C7) | Module closure (C4) |
+| CT-RTE-08 | source | Now: module closure (C4); persisted words (C7) | - |
 | CT-RTE-10 | windows | Owner runs: LX-2 (C9) | The headless fault half (C3) |
 | CT-RTE-11 | performance | Owner runs: LX-2 (C9) | - |
 | CT-RTE-12 | performance | Owner runs: LX-4 (C9) | - |
@@ -288,21 +293,22 @@ run now, and 22 wait entirely. The milestone is in parentheses.
 | CT-RM-05 | windows | The renderer freeze (C9) | - |
 | CT-RM-06 | windows | The renderer freeze (C9) | - |
 | CT-RM-07 | source | M5 (C8) | The 600-cell-Full half (C2) |
-| CT-RM-09 | source | Now (C2) | - |
+| CT-RM-09 | source | A user-stage checker and a device, for rows 3 to 6, 8 and 10 (C9) | Rows 1, 2, 7 and 9 (C2) |
 | CT-RM-10 | windows | The renderer freeze (C9) | - |
 
 ## 10. Stop condition for LP3, and questions to the owner
 
-LP3's offline work stops and reports when every remaining milestone waits for M5, M6, a kernel row, the renderer
-freeze, an owner run or an owner answer, or when an implementation would change a frozen file (PHS.52). A failing
-acceptance item blocks LP3's exit (PHS.63); nothing is cut, and no bar moves.
+LP3's offline work stops and reports when every remaining milestone waits for M5, a kernel row, the IR draft's
+collection types and word operations, the renderer freeze, an owner run or an owner answer, or when an implementation
+would change a frozen file (PHS.52). A failing acceptance item blocks LP3's exit (PHS.63); nothing is cut, and no bar
+moves.
 
 Questions are batched (owner, 16 November 2026): at most one card per milestone, each with a recommended option.
 
-- C5: LG2.18's word keys are open (the LP2 plan and `rust/README.md` record it), and CT-LB1-06 needs a key.
-  Recommended: LP3 uses LB1.10's proposed `trace-key/1`, the lexicographically least topological word, as a draft key
-  for 600-cell-Full words; it freezes with the IR, and the jumbling letters wait for M5. The alternative keeps the keys
-  open and leaves CT-LB1-06 waiting.
+- C5: LG2.18's word keys are open (the LP2 plan and `rust/README.md` record it), and CT-LB1-06 needs a key once the
+  IR draft has collection types and word operations. Recommended: LP3 uses LB1.10's proposed `trace-key/1`, the
+  lexicographically least topological word, as a draft key for 600-cell-Full words; it freezes with the IR, and the
+  jumbling letters wait for M5. The alternative keeps the keys open and leaves CT-LB1-06 waiting.
 - C1 to C4: none. The command table's choices are drafts that freeze at LP3.
 - C9: none before the renderer freeze; the owner-machine runs follow PHS.64 and are done together.
 - C10: at the exit, H-08's freeze and the registration of the draft codes in chapter 13 (PHS.52, PHS.53).

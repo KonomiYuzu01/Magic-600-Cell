@@ -28,6 +28,14 @@ name = "c600-digest"
 version = "0.0.0"
 
 [[package]]
+name = "c600-display"
+version = "0.0.0"
+dependencies = [
+ "c600-digest",
+ "c600-kernel",
+]
+
+[[package]]
 name = "c600-ir"
 version = "0.0.0"
 
@@ -70,6 +78,13 @@ dependencies = [
  "c600-check",
  "c600-digest",
  "c600-ir",
+]
+
+[[package]]
+name = "c600-view"
+version = "0.0.0"
+dependencies = [
+ "c600-digest",
 ]
 
 [[package]]
