@@ -326,8 +326,11 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - Compressed words (LP2 drafts): `Value::Compressed` holds a `value::Compressed`, a straight-line program whose parts
   are leaves of literal letters or concatenations of two earlier parts, with its exact length. A join of two equal
   values, compared by value, adds one part, so 70 doublings of three letters keep 71 parts for 3·2⁷⁰ letters; an
-  empty operand gives the other. Its logical size is a 4-byte tag, per leaf 4 + 8 + 2 bytes per letter, per
-  concatenation 20, and the length as an integer; in a container it is a variable sequence. Draft prices: `compress`
+  empty operand gives the other. Its logical size is a 4-byte tag and, per part, its payload (a leaf 4 + 8 + 2 bytes
+  per letter, a concatenation 20) and its exact length as an integer, which a reading needs to find a position; in a
+  container it is a variable sequence. So a chain of n doublings is charged for the about n²/2 bits of lengths it
+  keeps. A join shares its operands' stored lengths instead of copying them, so its work is one step per part, and
+  each word still counts them in full (DET.57). Draft prices: `compress`
   at `expand_per_letter` per letter; `concat` at the comparison of the two operands, the integer addition of their
   lengths and `LIST_PER_ELEMENT` per part built, reserving the size of a join of two different words; `length`
   reserves its integer; `expand` at `expand_per_letter` per letter and `LIST_PER_ELEMENT` per part it may visit,

@@ -366,16 +366,18 @@ fn ct_lg2_14_a_compressed_word_has_an_exact_length_beyond_machine_integers() {
     let r = run(&build(&source), "deep", vec![]);
     let n = BigInt::from(3) << 70;
     assert_eq!(output(&r), format!("{{\"head\":[1,-2,3,1],\"n\":{{\"int\":\"{n}\"}},\"tail\":[3,1,-2,3]}}\n"));
-    // One leaf of three letters: a tag, the leaf's tag, count and letters, and the length, 4 + (4 + 8 + 3 × 2) + 2.
+    // One leaf of three letters: a tag, the leaf's tag, count and letters, and its length, 4 + (4 + 8 + 3 × 2) + 2.
     assert_eq!(rows(&r.summary, "compress"), [(1, 3, 24)]);
-    // Joining c(k - 1), of k parts, to itself compares the operands, adds two lengths of k + 1 bits and builds 2k + 1
-    // parts, and reserves the size of a join of two different words; the join keeps one more part.
-    let size = |k: u128| 4 + 18 + 20 * (k - 1) + int_size(k + 1);
+    // Each part keeps its exact length: the leaf's, 3, has 2 bits and the j-th join's, 3·2ʲ, has j + 2, so c(k - 1), of
+    // k parts, has the parts' payload `parts(k)`. Joining it to itself compares the operands, adds two lengths of k + 1
+    // bits and builds 2k + 1 parts, and reserves the size of a join of two different words; the join keeps one more
+    // part.
+    let parts = |k: u128| 18 + int_size(2) + (1..k).map(|j| 20 + int_size(j + 2)).sum::<u128>();
     let join = |k: u128| {
-        let kernel = 2 * size(k) + 2 * (k + 1).div_ceil(8) + (2 * k + 1) * LIST_PER_ELEMENT;
-        (1, kernel, 4 + 2 * (18 + 20 * (k - 1)) + 20 + int_size(k + 2))
+        let kernel = 2 * (4 + parts(k)) + 2 * (k + 1).div_ceil(8) + (2 * k + 1) * LIST_PER_ELEMENT;
+        (1, kernel, 4 + 2 * parts(k) + 20 + int_size(k + 2))
     };
-    assert_eq!(rows(&r.summary, "concat")[0], (1, 53, 62));
+    assert_eq!(rows(&r.summary, "concat")[0], (1, 53, 66));
     assert_eq!(rows(&r.summary, "concat"), (1..=70).map(join).collect::<Vec<_>>());
     assert_eq!(rows(&r.summary, "length"), [(1, 0, int_size(72))]);
     // Four letters out of a word of height 70: per letter, and per part visited, 2 × (70 + 4) + 1.
@@ -426,8 +428,9 @@ fn a_compressed_word_keeps_equal_parts_once() {
         c = Compressed::concat(&c, &c);
     }
     assert_eq!((c.length(), c.parts(), c.height()), (&(BigInt::from(1) << 200), 201, 200));
-    // A tag, a leaf of one letter, 200 concatenations of two part numbers and a length of 201 bits.
-    assert_eq!(c.size(), 4 + (4 + 8 + 2) + 200 * 20 + int_size(201));
+    // A tag, a leaf of one letter and 200 concatenations of two part numbers, each part with its length: 2ᵏ has k + 1
+    // bits.
+    assert_eq!(c.size(), 4 + (4 + 8 + 2) + 200 * 20 + (0..=200).map(|k| int_size(k + 1)).sum::<u128>());
     let last = (BigInt::from(1) << 200) - 3;
     assert_eq!(c.expand(&last, 3), Some(vec![1, 1, 1]));
     assert_eq!(c.expand(&last, 4), None);
@@ -443,6 +446,30 @@ fn a_compressed_word_keeps_equal_parts_once() {
     assert!(Arc::ptr_eq(&Compressed::concat(&empty, &u), &u));
     assert!(Arc::ptr_eq(&Compressed::concat(&u, &empty), &u));
     assert_eq!(empty.expand(&BigInt::from(0), 0), Some(vec![]));
+}
+
+/// The meter's regression for a doubling chain (LP2 draft): each part keeps its exact length, which a reading needs, so
+/// a chain of n doublings keeps lengths of 1 + 2 + … + (n + 1) bits, about n²/2, and its logical size counts every one.
+/// The memory charged for the chain grows as fast as the lengths the host keeps, where it counted only the word's own
+/// length before, about 20n bytes against n²/16. `from_parts` derives the same size.
+#[test]
+fn a_doubling_chain_is_charged_for_the_lengths_it_keeps() {
+    let mut c = Arc::new(Compressed::leaf([7].into()));
+    let (mut kept, mut sizes) = (1u128, vec![c.size()]);
+    for k in 1..=2000u128 {
+        c = Compressed::concat(&c, &c);
+        kept += k + 1;
+        sizes.push(c.size());
+    }
+    assert_eq!(kept, 2001 * 2002 / 2);
+    // Every kept bit is counted, at least a byte per eight bits, beside each part's own payload.
+    assert!(sizes[2000] >= 4 + (4 + 8 + 2) + 2000 * 20 + kept / 8);
+    // A doubling adds one part, its payload and its length 2ᵏ of k + 1 bits, so the growth itself grows.
+    for k in 1..=2000 {
+        assert_eq!(sizes[k] - sizes[k - 1], 20 + int_size(k as u128 + 1));
+    }
+    let rebuilt = Compressed::from_parts(c.part_list().to_vec()).expect("a built word's parts");
+    assert_eq!(rebuilt.size(), sizes[2000]);
 }
 
 /// A compressed word's parts rebuild it (LP2 draft; the RT1 transfer form's request): `from_parts` of `part_list`
