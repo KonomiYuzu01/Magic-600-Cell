@@ -204,3 +204,9 @@ class RustJumbleEngine:
     def covers(self, cap, *, eval_budget=None):
         """JI.12's cover table of a named cap: every meeting cap, in cap-ID order, with the answer in both directions."""
         return self.call('covers', cap=cap, eval_budget=eval_budget)
+
+    def repair_list(self, cap, *, max_pairs=None, cancel_after=None, eval_budget=None):
+        """JI.12's repair list at a named cap: every pair (x, d) in pinned x order then cap d order, with the rows only
+        when completed. `cancel_after` is a test hook: the job observes a cancellation at check `cancel_after` + 1."""
+        return self.call('repair_list', cap=cap, max_pairs=max_pairs, cancel_after=cancel_after,
+                         eval_budget=eval_budget)

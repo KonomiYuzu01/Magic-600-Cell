@@ -664,7 +664,9 @@ fn main() {
 
 /// The observations of milestone M8 ([`observe::cuts`]; JI.6 and JI.7). Each reads the current state and changes
 /// nothing, and `eval_budget` bounds each classification: `rim_summary` (optional `caps`, the named caps),
-/// `release_check` (`letter` as [grip, item] of the started menu, optional `cap` for delta-u) and `covers` (`cap`).
+/// `release_check` (`letter` as [grip, item] of the started menu, optional `cap` for delta-u), `covers` (`cap`) and
+/// `repair_list` (`cap`, optional `max_pairs`, and `cancel_after`, a test hook for a cancellation observed at check
+/// `cancel_after` + 1).
 impl Adapter {
     /// The answer to an M8 observation, or `None` when `op` names none.
     fn m8_observation(&mut self, op: &str, request: &Value) -> Result<Option<Value>, Fail> {
@@ -691,8 +693,26 @@ impl Adapter {
                 let state = state.as_mut().ok_or_else(|| input("start must come first"))?;
                 observe::cuts::covers(ctx, state, cap, eval_budget).map_err(Fail::Engine)?
             }
+            "repair_list" => {
+                let cap = optional_cap(request.get("cap"))?.ok_or_else(|| input("repair_list needs a cap"))?;
+                let max_pairs = count(request.get("max_pairs"), "max_pairs")?;
+                let cancel_after = count(request.get("cancel_after"), "cancel_after")?;
+                let eval_budget = budget(request.get("eval_budget"))?;
+                let state = self.state.as_ref().ok_or_else(|| input("start must come first"))?;
+                observe::cuts::repair_list(&self.ctx, state, cap, max_pairs, cancel_after, eval_budget)
+                    .map_err(Fail::Engine)?
+            }
             _ => return Ok(None),
         };
         Ok(Some(result))
+    }
+}
+
+/// A non-negative count or null: a repair list's pair budget or its cancellation point.
+fn count(value: Option<&Value>, what: &str) -> Result<Option<u64>, Fail> {
+    match value {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::Int(n)) if *n >= 0 => Ok(Some(*n as u64)),
+        _ => Err(input(format!("{what} must be a non-negative integer or null"))),
     }
 }

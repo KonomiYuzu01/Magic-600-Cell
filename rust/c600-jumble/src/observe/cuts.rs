@@ -1,6 +1,6 @@
 //! The JI.6 and JI.7 observations that M5 left to M8 (LP2 plan, section 11): the rim summary of every cap, the
-//! release check of one letter and the cover table of a named cap (JI.12). Each call reads a jumbled state exactly
-//! and changes nothing.
+//! release check of one letter, and the cover table and the repair list of a named cap (JI.12). Each call reads a
+//! jumbled state exactly and changes nothing; the repair list plays its trial twists on copies of the state.
 //!
 //! The rim of an admissible cap c follows rim.py's `rim_sets`: in every domain whose frame carries n_c to a pole e,
 //! the cut cells at e that the domain holds on at least one side ([`super::cap_cells`]). A cell's upper chamber is
@@ -414,4 +414,446 @@ pub fn covers(ctx: &Context, state: &mut State, cap: i64, eval_budget: Option<u6
         ]));
     }
     Ok(result("completed", answers, None, None))
+}
+
+// ------------------------------------------------------------------------------------------- repair list (JI.12)
+
+/// The tie rule of a repair row's y and z (JI.12; J1's `TIE_RULE`).
+const TIE_RULE: &str = "lowest value, then smaller pinned index";
+
+/// The cut cells of pole 0 and the stabiliser of pole 0 in K⁺, which carry the cells of one domain's cut to the cells
+/// they land on in another domain under a twist ([`score`]).
+struct CellIndex {
+    /// The four poles nearest pole 0, ascending.
+    near0: [u16; 4],
+    /// The index of every cut cell of pole 0, by its upper chamber.
+    local0: HashMap<u32, u32>,
+    /// For each element s of the stabiliser, in `stab0` order, the index of the cell s carries each cell to.
+    sigma: Vec<Vec<u32>>,
+    /// The position in `stab0` of the element carrying near0[0] and near0[1] to near0[j1] and near0[j2].
+    pair: [[usize; 4]; 4],
+}
+
+impl CellIndex {
+    /// Builds the index and checks what [`score`] relies on: every frame F_e carries pole 0 to pole e, pole 0 has
+    /// exactly four nearest poles, and its stabiliser acts on them sharply 2-transitively, so an element of the
+    /// stabiliser is known by the images of the first two.
+    fn build(ctx: &Context, t: &Tables) -> Result<CellIndex, String> {
+        let (kp, poles) = (&ctx.kplus, &ctx.model.poles);
+        if (0..POLES).any(|e| kp.perms[kp.frame_idx[e] as usize][0] as usize != e) {
+            return Err("a frame does not carry pole 0 to its pole".into());
+        }
+        let mut by_dot: Vec<(Q5, usize)> = (1..POLES).map(|e| (dot(&poles[0], &poles[e]), e)).collect();
+        by_dot.sort_by(|x, y| cmp_q5(&y.0, &x.0).then(x.1.cmp(&y.1)));
+        if cmp_q5(&by_dot[0].0, &by_dot[3].0) != Ordering::Equal
+            || cmp_q5(&by_dot[3].0, &by_dot[4].0) != Ordering::Greater
+        {
+            return Err("pole 0 does not have exactly four nearest poles".into());
+        }
+        let near0: [u16; 4] = std::array::from_fn(|j| by_dot[j].1 as u16);
+        let cells = &t.by_pole[0];
+        let local0: HashMap<u32, u32> =
+            cells.iter().enumerate().map(|(i, &ti)| (t.up[ti as usize], i as u32)).collect();
+        if local0.len() != cells.len() {
+            return Err("two cut cells of pole 0 share an upper chamber".into());
+        }
+        let mut sigma = Vec::with_capacity(kp.stab0.len());
+        let mut pair = [[usize::MAX; 4]; 4];
+        for (pos, &s) in kp.stab0.iter().enumerate() {
+            let perm = &kp.perms[s as usize];
+            let at = |j: usize| near0.iter().position(|&n| n == perm[near0[j] as usize]);
+            let (Some(j1), Some(j2)) = (at(0), at(1)) else {
+                return Err(format!("stabiliser element {s} moves a nearest pole of pole 0 away"));
+            };
+            if pair[j1][j2] != usize::MAX {
+                return Err("the stabiliser of pole 0 is not sharply 2-transitive on its nearest poles".into());
+            }
+            pair[j1][j2] = pos;
+            let row = cells
+                .iter()
+                .map(|&ti| {
+                    let image = t.image(ctx, t.up[ti as usize] as usize, s)?;
+                    local0
+                        .get(&image)
+                        .copied()
+                        .ok_or_else(|| format!("stabiliser element {s} moves a cut cell of pole 0"))
+                })
+                .collect::<Result<Vec<u32>, String>>()?;
+            sigma.push(row);
+        }
+        if (0..4).any(|j1| (0..4).any(|j2| j1 != j2 && pair[j1][j2] == usize::MAX)) {
+            return Err("the stabiliser of pole 0 is not transitive on pairs of its nearest poles".into());
+        }
+        Ok(CellIndex { near0, local0, sigma, pair })
+    }
+}
+
+/// One domain's side of a cap's cut (an entry of rim.py's `rim_sets`): the world images of the four poles nearest the
+/// cut's pole in the domain's frame, the cells the domain holds on the upper side (inside the cap) by their index at
+/// pole 0, and a mark for each cell it holds on the lower side.
+struct Side {
+    near: [Vec4; 4],
+    ins: Vec<u32>,
+    outs: Vec<bool>,
+}
+
+/// The sides of an admissible cap's cut, one for each domain with cut cells ([`cap_cells`] lists them domain by
+/// domain). A cell at pole e of a domain's frame has the index of the cell at pole 0 that F_e⁻¹ carries it to.
+fn sides(
+    ctx: &Context,
+    t: &Tables,
+    ix: &CellIndex,
+    dom: &Domains,
+    cells: &[(u32, u32, u8)],
+) -> Result<Vec<Side>, String> {
+    let (kp, poles) = (&ctx.kplus, &ctx.model.poles);
+    let mut sides: Vec<Side> = Vec::new();
+    let mut open: Option<(u32, u16)> = None;
+    for &(d, ti, occ) in cells {
+        let back = match open {
+            Some((current, back)) if current == d => back,
+            _ => {
+                let frame = kp.frame_idx[t.pole[ti as usize] as usize] as usize;
+                let near = std::array::from_fn(|j| {
+                    let n = &poles[kp.perms[frame][ix.near0[j] as usize] as usize];
+                    if d == 0 {
+                        n.clone()
+                    } else {
+                        matvec(&dom.reps[d as usize], n)
+                    }
+                });
+                sides.push(Side { near, ins: Vec::new(), outs: vec![false; ix.local0.len()] });
+                open = Some((d, kp.inv[frame]));
+                kp.inv[frame]
+            }
+        };
+        let up = t.up[ti as usize];
+        let at0 = if back == 0 { up } else { t.image(ctx, up as usize, back)? };
+        let i = *ix.local0.get(&at0).ok_or_else(|| format!("cut cell {ti} has no cell at pole 0"))?;
+        let side = sides.last_mut().ok_or("a cut cell without a side")?;
+        if occ != 1 {
+            side.ins.push(i);
+        }
+        if occ != 2 {
+            side.outs[i as usize] = true;
+        }
+    }
+    Ok(sides)
+}
+
+/// What J1's `Restorer.scores` reads at a cap: blocked, uncertain under the classification budget, or open with N_c
+/// and N_c after each of the cap's twists in menu order (none when N_c = 0, as in J1).
+enum Score {
+    Blocked,
+    Uncertain,
+    Open { now: i64, after: Vec<i64> },
+}
+
+/// A trial state of the repair list, with its domains once they are read.
+struct Trial {
+    state: State,
+    dom: Option<Domains>,
+}
+
+impl Trial {
+    fn new(state: State) -> Trial {
+        Trial { state, dom: None }
+    }
+}
+
+/// J1's `Restorer.scores(c)` on a trial state: c's status and, when c is admissible, N_c and N_c after each twist g of
+/// `twists` (rim.py's `misalignment`). Under g an inside cell of a domain D lands in the domain D' = g·D on the cell
+/// that k carries it to (R_D' k = g R_D, k in K⁺), and it is aligned there when D' holds that cell's lower side; so N_c
+/// after g is In_c + Out_c − 2·(the inside cells landing on a held lower side), and a cell whose domain g·D has no
+/// side at c lands on none. No coset is searched: k = F_e' s F_e⁻¹ with s in the stabiliser of pole 0, and g carries
+/// the world images of two nearest poles of D's side to those of D' exactly when s carries them, which names s.
+fn score(
+    ctx: &Context,
+    t: &Tables,
+    ix: &CellIndex,
+    trial: &mut Trial,
+    c: usize,
+    twists: &[Twist],
+    budget: Option<u64>,
+) -> Result<Score, String> {
+    match trial.state.classify(ctx, c, true, true, budget).map_err(|e| e.0)?.status() {
+        Status::Admissible => {}
+        Status::Blocked => return Ok(Score::Blocked),
+        Status::Uncertain => return Ok(Score::Uncertain),
+        other => return Err(format!("cap {c}: a classification has status {}", other.as_str())),
+    }
+    if trial.dom.is_none() {
+        let facts = pose_facts(ctx, t, &trial.state)?;
+        trial.dom = Some(domains(ctx, t, &trial.state, &facts)?);
+    }
+    let dom = trial.dom.as_ref().ok_or("a trial state without domains")?;
+    let cells = cap_cells(ctx, t, dom, c);
+    let rim = rim_of(&cells);
+    let now = rim.n();
+    if now == 0 {
+        return Ok(Score::Open { now, after: Vec::new() });
+    }
+    let sides = sides(ctx, t, ix, dom, &cells)?;
+    let mut targets: HashMap<&Vec4, Vec<(usize, usize)>> = HashMap::new();
+    for (s, side) in sides.iter().enumerate().filter(|(_, side)| side.outs.contains(&true)) {
+        for (j, v) in side.near.iter().enumerate() {
+            targets.entry(v).or_default().push((s, j));
+        }
+    }
+    let identity = identity4();
+    let mut after = Vec::with_capacity(twists.len());
+    for g in twists {
+        if *g.matrix == identity {
+            after.push(now);
+            continue;
+        }
+        let mut matches = 0i64;
+        for side in sides.iter().filter(|side| !side.ins.is_empty()) {
+            let Some(found) = targets.get(&matvec(&g.matrix, &side.near[0])) else {
+                continue;
+            };
+            let u2 = matvec(&g.matrix, &side.near[1]);
+            for &(s2, j1) in found {
+                let target = &sides[s2];
+                let Some(j2) = target.near.iter().position(|v| *v == u2) else {
+                    continue;
+                };
+                let sigma = ix.sigma.get(ix.pair[j1][j2]).ok_or("a twist carries two nearest poles to one")?;
+                matches += side.ins.iter().filter(|&&i| target.outs[sigma[i as usize] as usize]).count() as i64;
+                break;
+            }
+        }
+        after.push(rim.n_in + rim.n_out - 2 * matches);
+    }
+    Ok(Score::Open { now, after })
+}
+
+/// The item of lowest value, the smaller index on a tie ([`TIE_RULE`]).
+fn lowest(values: &[i64]) -> Result<usize, String> {
+    values.iter().enumerate().min_by_key(|&(k, &v)| (v, k)).map(|(k, _)| k).ok_or_else(|| "a cap without twists".into())
+}
+
+/// Why a repair list stopped before it completed.
+enum Stop {
+    /// The caller's cancellation, observed at a check.
+    Cancelled,
+    /// The pair budget is spent.
+    Pairs,
+    /// The classification budget leaves this cap uncertain.
+    Uncertain(usize),
+}
+
+/// A repair list's input, its meeting caps once found, its budgets, and what it has tried so far.
+struct RepairJob {
+    digest: String,
+    parameters: Value,
+    meeting: Vec<usize>,
+    max_pairs: Option<u64>,
+    cancel_after: Option<u64>,
+    checks: u64,
+    outcomes: Vec<Value>,
+    rows: Vec<Value>,
+    done: Vec<Value>,
+}
+
+impl RepairJob {
+    /// J1's check before an item is opened and before each later meeting cap: the cancellation first, observed at
+    /// check number `cancel_after` + 1, then the pair budget.
+    fn check(&mut self) -> Option<Stop> {
+        self.checks += 1;
+        if self.cancel_after.is_some_and(|n| self.checks > n) {
+            Some(Stop::Cancelled)
+        } else if self.max_pairs.is_some_and(|m| self.outcomes.len() as u64 >= m) {
+            Some(Stop::Pairs)
+        } else {
+            None
+        }
+    }
+
+    /// The answer: only a completed list has rows; the outcomes of a stopped one are coverage, never a negative claim.
+    fn answer(self, status: &str, message: Option<String>, by: Option<&str>) -> Value {
+        let coverage = obj(vec![
+            ("pairs_tried", int(self.outcomes.len() as i64)),
+            ("items_done", Value::Array(self.done)),
+            ("meeting_caps", Value::Array(self.meeting.iter().map(|&d| int(d as i64)).collect())),
+        ]);
+        obj(vec![
+            ("status", text(status)),
+            ("input_digest", text(&self.digest)),
+            ("parameters", self.parameters),
+            ("coverage", coverage),
+            ("rows", if status == "completed" { Value::Array(self.rows) } else { Value::Null }),
+            ("outcomes", Value::Array(self.outcomes)),
+            ("message", message.map_or(Value::Null, |m| text(&m))),
+            ("by", by.map_or(Value::Null, text)),
+        ])
+    }
+
+    fn stopped(self, stop: Stop) -> Value {
+        match stop {
+            Stop::Cancelled => self.answer("cancelled", None, None),
+            Stop::Pairs => self.answer("cut_off", None, Some(KERNEL_COST)),
+            Stop::Uncertain(x) => {
+                let message = format!("cap {x}: the classification budget ends before the cap is classified");
+                self.answer("cut_off", Some(message), Some(KERNEL_COST))
+            }
+        }
+    }
+}
+
+/// Plays a twist on a trial state: `None` once it is applied, the stop when the classification budget leaves its cap
+/// uncertain. Any other refusal is an engine error, since the cap was just read admissible on this state.
+fn play(ctx: &Context, state: &mut State, twist: &Twist, budget: Option<u64>) -> Result<Option<Stop>, String> {
+    let outcome = state.apply(ctx, twist, budget, &[]).map_err(|e| e.0)?;
+    match outcome.status {
+        Status::Admissible => Ok(None),
+        Status::Uncertain => Ok(Some(Stop::Uncertain(twist.grip))),
+        other => Err(format!("cap {}: a twist read admissible is {} when played", twist.grip, other.as_str())),
+    }
+}
+
+/// JI.12 `repair_list` (J1's `repair_list`, ENG-0J section 4) at the named cap c, which must be admissible and
+/// misaligned. Its meeting caps are the caps meeting c that are admissible and misaligned at the input. For each
+/// non-identity item x in the pinned menu order, and each meeting cap d in cap-ID order, the outcome of the pair
+/// (x, d) is read on copies of the state after x: y minimises N_d after x and z minimises N_c after x and y, ties to
+/// the smaller pinned index; delta is the sum of the three own-cut changes, which is the exact change of N; and the
+/// pair is a row (x, d, y, z, delta) when delta < 0. A pair has no delta when d is blocked or closed after x
+/// (`d_blocked_or_closed`), when no item lowers N_d (`d_no_drop`), or when c is blocked or closed after x and y
+/// (`c_blocked_or_closed`). Nothing chooses, ranks or scores a twist, and the input never changes.
+///
+/// Only a completed list has rows. Before each item is opened and before each later meeting cap, the job checks the
+/// caller's cancellation (`cancel_after`: observed at check `cancel_after` + 1) and then the pair budget
+/// (`max_pairs`): a cancelled or cut-off list keeps its outcomes as coverage and supplies no negative claim. A
+/// classification budget that leaves a cap uncertain cuts the job off with `KN7:budget.kernel_cost` (KN7.10). A
+/// blocked or closed named cap is an error with no outcomes, and so is free mode, which pins no menu order. A cap
+/// outside 0..599 is refused (JI.45).
+pub fn repair_list(
+    ctx: &Context,
+    state: &State,
+    cap: i64,
+    max_pairs: Option<u64>,
+    cancel_after: Option<u64>,
+    eval_budget: Option<u64>,
+) -> Result<Value, String> {
+    let c = match cap_index("cap", cap) {
+        Ok(c) => c,
+        Err(refused) => return Ok(refused),
+    };
+    let t = tables(ctx)?;
+    let menu = state.menu_arc();
+    let pin = |value: Option<&String>| value.map_or(Value::Null, |s| text(s));
+    let parameters = obj(vec![
+        ("cap", int(c as i64)),
+        ("menu_identity", pin(menu.as_ref().map(|m| &m.identity))),
+        ("order_digest", pin(menu.as_ref().map(|m| &m.order))),
+        ("tie_rule", text(TIE_RULE)),
+        ("contract_revision", text(crate::CONTRACT_REVISION)),
+    ]);
+    let mut job = RepairJob {
+        digest: state.digest(ctx),
+        parameters,
+        meeting: Vec::new(),
+        max_pairs,
+        cancel_after,
+        checks: 0,
+        outcomes: Vec::new(),
+        rows: Vec::new(),
+        done: Vec::new(),
+    };
+    let Some(menu) = menu else {
+        let message = "free mode pins no menu, so a repair list has no pinned order".to_owned();
+        return Ok(job.answer("error", Some(message), None));
+    };
+    let ix = CellIndex::build(ctx, t)?;
+    let twists_c = menu.for_cap(ctx, c).map_err(|e| e.to_string())?;
+    let mut base = Trial::new(state.clone());
+    let (now_c, after_c) = match score(ctx, t, &ix, &mut base, c, &twists_c, eval_budget)? {
+        Score::Uncertain => return Ok(job.stopped(Stop::Uncertain(c))),
+        Score::Blocked => return Ok(job.answer("error", Some(format!("cap {c} is blocked or uncertain")), None)),
+        Score::Open { now: 0, .. } => {
+            let message = format!("cap {c} is closed (N_c = 0), not misaligned");
+            return Ok(job.answer("error", Some(message), None));
+        }
+        Score::Open { now, after } => (now, after),
+    };
+    let mut neighbours = Vec::new();
+    for d in meeting_caps(ctx, c)? {
+        match base.state.classify(ctx, d, true, true, eval_budget).map_err(|e| e.0)?.status() {
+            Status::Admissible => {}
+            Status::Blocked => continue,
+            Status::Uncertain => return Ok(job.stopped(Stop::Uncertain(d))),
+            other => return Err(format!("cap {d}: a classification has status {}", other.as_str())),
+        }
+        let dom = base.dom.as_ref().ok_or("the input state without domains")?;
+        if rim_of(&cap_cells(ctx, t, dom, d)).n() > 0 {
+            neighbours.push((d, menu.for_cap(ctx, d).map_err(|e| e.to_string())?));
+        }
+    }
+    job.meeting = neighbours.iter().map(|(d, _)| *d).collect();
+    let identity = identity4();
+    let mut stop = None;
+    'items: for x in (0..twists_c.len()).filter(|&x| *twists_c[x].matrix != identity) {
+        if neighbours.is_empty() {
+            job.done.push(int(x as i64));
+            continue;
+        }
+        if let Some(s) = job.check() {
+            stop = Some(s);
+            break;
+        }
+        let mut sx = Trial::new(base.state.clone());
+        if let Some(s) = play(ctx, &mut sx.state, &twists_c[x], eval_budget)? {
+            stop = Some(s);
+            break;
+        }
+        for (index, (d, twists_d)) in neighbours.iter().enumerate() {
+            if index > 0 {
+                if let Some(s) = job.check() {
+                    stop = Some(s);
+                    break 'items;
+                }
+            }
+            let (delta, info) = match score(ctx, t, &ix, &mut sx, *d, twists_d, eval_budget)? {
+                Score::Uncertain => {
+                    stop = Some(Stop::Uncertain(*d));
+                    break 'items;
+                }
+                Score::Blocked | Score::Open { now: 0, .. } => (None, text("d_blocked_or_closed")),
+                Score::Open { now: n_d, after: a_d } => {
+                    let y = lowest(&a_d)?;
+                    if a_d[y] >= n_d {
+                        (None, text("d_no_drop"))
+                    } else {
+                        let mut sxy = Trial::new(sx.state.clone());
+                        if let Some(s) = play(ctx, &mut sxy.state, &twists_d[y], eval_budget)? {
+                            stop = Some(s);
+                            break 'items;
+                        }
+                        match score(ctx, t, &ix, &mut sxy, c, &twists_c, eval_budget)? {
+                            Score::Uncertain => {
+                                stop = Some(Stop::Uncertain(c));
+                                break 'items;
+                            }
+                            Score::Open { now: n_c, after: a_c } if n_c > 0 => {
+                                let z = lowest(&a_c)?;
+                                let delta = (after_c[x] - now_c) + (a_d[y] - n_d) + (a_c[z] - n_c);
+                                if delta < 0 {
+                                    let row = [x as i64, *d as i64, y as i64, z as i64, delta];
+                                    job.rows.push(Value::Array(row.into_iter().map(int).collect()));
+                                }
+                                (Some(delta), pair(y as i64, z as i64))
+                            }
+                            _ => (None, text("c_blocked_or_closed")),
+                        }
+                    }
+                }
+            };
+            job.outcomes.push(Value::Array(vec![int(x as i64), int(*d as i64), delta.map_or(Value::Null, int), info]));
+        }
+        job.done.push(int(x as i64));
+    }
+    Ok(match stop {
+        None => job.answer("completed", None, None),
+        Some(stop) => job.stopped(stop),
+    })
 }

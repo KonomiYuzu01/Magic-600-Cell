@@ -9,12 +9,19 @@ undefined fields and refusals included:
 - `release_check` against `leads/x5_release.release_check` on census seed 7101 before steps 44, 70 and 97, each
   step's first letter, and a blocked letter and a bad cap before step 97 (J1's `tests/test_jumbling_leads_repair.py`);
 - `covers` against `leads/covers.covers_query` on census seed 7101 before step 17 at the cap of the step's first
-  letter, and at a blocked and a closed meeting cap (J1's `tests/test_jumbling_leads_covers.py`).
+  letter, and at a blocked and a closed meeting cap (J1's `tests/test_jumbling_leads_covers.py`);
+- `repair_list` on census seed 7101 before step 97 at cap 458 (J1's `tests/test_jumbling_leads_repair.py`): the
+  completed list against J1's recorded density list, every outcome and row through J1's own `compare_recorded`; and
+  against `leads/repair_list.repair_list` run live, a 50-pair cut-off, a cancellation at the eleventh check, a zero
+  pair budget and the errors at a blocked, a closed and a solved cap.
 
-CT-KN2-01 (part: the J1 harness through the kernel API for KN2.4's `rim_summary`, `release_check` and `covers`; not
-run: `repair_list`, `nu` and `correction_set_check`, and the 600-cell-Full oracle O01 to O07).
+CT-KN2-01 (part: the J1 harness through the kernel API for KN2.4's `rim_summary`, `release_check`, `covers` and
+`repair_list`; not run: `nu` and `correction_set_check`, and the 600-cell-Full oracle O01 to O07).
 CT-KN2-04 (part: the release check of a blocked letter leaves the input digest unchanged at J1's state; not run here:
 the off-menu and uncertain letters, which `rust/c600-jumble/tests/observations.rs` runs).
+CT-BND-29 (part: the built-in repair list that a pick takes its entry from, equal to J1's at census seed 7101; not run
+here: BND.84's producer check of the pick and its record, hand-entered words, imported 0.4 macros and retyping, which
+`rust/c600-run/tests/conformance_bnd.rs` covers in part).
 
 The Rust unit tests of the refusals are in `rust/c600-jumble/tests/observations.rs`. The adapter is built with
 `cargo build --release --locked --offline` in rust/. A missing Rust toolchain or NumPy fails the check: a test that did
@@ -27,6 +34,7 @@ import sys
 sys.dont_write_bytecode = True
 
 import copy
+import dataclasses
 from functools import lru_cache
 import json
 from pathlib import Path
@@ -37,6 +45,7 @@ ROOT = Path(__file__).resolve().parents[1]
 JUMBLING = ROOT / 'research' / 'jumbling'
 FIXTURE_DIR = JUMBLING / 'fixtures'
 NAMED_OBJECT_INVALID = 'KN2:input.named_object_invalid'
+KERNEL_COST = 'KN7:budget.kernel_cost'
 RIM_FIELDS = ('N_c', 'In_c', 'Out_c', 'A_c', 'F_c', 'at_floor')
 CENSUS_SEED = 7101
 CENSUS_STEPS = (17, 44, 70, 97)
@@ -46,7 +55,7 @@ _ENGINES = {}
 
 
 def setUpModule():
-    global np, census, R, obs_refs, O, X5, CV
+    global np, census, R, obs_refs, O, X5, CV, RL, X1, sim, rim
     try:
         import numpy as np
     except ImportError as error:
@@ -58,6 +67,9 @@ def setUpModule():
     from differential.references import obs_refs, observations as O
     from differential.leads import x5_release as X5
     from differential.leads import covers as CV
+    from differential.leads import repair_list as RL, x1_walk as X1
+    import sim
+    import rim
     if Path(census.seams.CACHE).resolve().is_relative_to(ROOT):
         raise AssertionError('the centroid cache is inside the repository')
     started = perf_counter()
@@ -367,6 +379,134 @@ class CoversTests(TimedCase):
         cut = candidate().covers(word[0][0], eval_budget=0)
         self.assertEqual((cut['status'], cut['by'], cut['answers']), ('cut_off', 'KN7:budget.kernel_cost', []))
         self.assertEqual(cut['domain'], list(CV.meeting_caps(word[0][0])))
+        self.assertEqual(candidate().record()['digest'], before)
+
+
+def as_repair_result(answer):
+    """The candidate's repair list as J1's typed result, so that J1's own `compare_recorded` reads it. The candidate
+    keeps no wall-clock timings, so they are empty."""
+    p, coverage = answer['parameters'], answer['coverage']
+    outcomes = tuple((x, d, delta, tuple(info) if isinstance(info, list) else info)
+                     for x, d, delta, info in answer['outcomes'])
+    return RL.RepairListResult(
+        answer['status'], answer['input_digest'],
+        RL.RepairParameters(p['cap'], p['menu_identity'], p['order_digest'], p['tie_rule'], p['contract_revision']),
+        RL.RepairCoverage(coverage['pairs_tried'], tuple(coverage['items_done']), tuple(coverage['meeting_caps'])),
+        None if answer['rows'] is None else tuple(tuple(row) for row in answer['rows']),
+        outcomes, RL.RepairTimings({}, 0.0), answer['message'])
+
+
+class RepairListTests(TimedCase):
+    def assert_same(self, answer, reference, label):
+        """The candidate's repair list equals J1's result in every field but J1's timings: status, input digest,
+        parameters, coverage, rows (null unless completed), every outcome with its undefined delta and reason, and the
+        message. `by` names KN7:budget.kernel_cost for a cut-off job and is null otherwise."""
+        document = json.loads(json.dumps({k: v for k, v in dataclasses.asdict(reference).items() if k != 'timings'}))
+        self.assertEqual(set(answer) - {'by'}, set(document), label)
+        for key in sorted(document):
+            self.assertEqual(answer[key], document[key], (label, key))
+        self.assertEqual(answer['by'], KERNEL_COST if answer['status'] == 'cut_off' else None, label)
+
+    def test_census_step_97_cap_458_matches_the_recorded_list(self):
+        """J1's recorded repair list (`tests/test_jumbling_leads_repair.py`): census seed 7101 before step 97 at cap
+        458. The completed list passes J1's own `compare_recorded` against the 472 recorded outcomes, so every pair
+        (x, d) in pinned x order then cap d order has J1's delta, or J1's reason when it has none, and the one listed
+        row is J1's (6, 513, 7, 0, -2). The coverage, the parameters and the input digest are J1's. Nothing changes the
+        state."""
+        word, S = at_census(97)
+        before = S.st.digest()
+        answer = timed('candidate repair_list', candidate().repair_list, 458)
+        self.assertEqual((answer['status'], answer['message'], answer['by']), ('completed', None, None))
+        density = X1.density_records()[(97, 458)]
+        self.assertEqual(len(density), 472)
+        RL.compare_recorded(as_repair_result(answer), density, step=97)
+        self.assertEqual(answer['rows'], [[6, 513, 7, 0, -2]])
+        self.assertEqual(answer['coverage'], {'pairs_tried': 472, 'items_done': list(range(1, 60)),
+                                              'meeting_caps': [349, 399, 416, 469, 484, 513, 523, 571]})
+        self.assertEqual(answer['input_digest'], before)
+        self.assertEqual(answer['parameters'], {
+            'cap': 458, 'menu_identity': RL.I_A_IDENTITY, 'order_digest': RL.I_A_ORDER_DIGEST,
+            'tie_rule': RL.TIE_RULE, 'contract_revision': RL.contract_revision()})
+        self.assertEqual(candidate().record()['digest'], before)
+
+    def test_a_pair_budget_and_a_cancellation_match_j1(self):
+        """J1's cut-off and cancellation (`tests/test_jumbling_leads_repair.py`) run live on both: a budget of 50
+        pairs stops after items 1 to 6, a cancellation observed at the eleventh check after 10 pairs, and a budget of
+        zero pairs before any trial twist. Each is equal to J1's, outcomes as coverage and no rows, and changes
+        nothing."""
+        word, S = at_census(97)
+        before = S.st.digest()
+        reference = timed('j1 repair_list', RL.repair_list, S, 458, max_pairs=50)
+        answer = timed('candidate repair_list', candidate().repair_list, 458, max_pairs=50)
+        self.assert_same(answer, reference, 'max_pairs 50')
+        self.assertEqual((answer['status'], answer['rows'], answer['coverage']['pairs_tried']), ('cut_off', None, 50))
+        self.assertEqual(answer['coverage']['items_done'], list(range(1, 7)))
+        calls = 0
+
+        def cancel():
+            nonlocal calls
+            calls += 1
+            return calls > 10
+
+        reference = timed('j1 repair_list', RL.repair_list, S, 458, cancel=cancel)
+        answer = timed('candidate repair_list', candidate().repair_list, 458, cancel_after=10)
+        self.assert_same(answer, reference, 'cancelled at the eleventh check')
+        self.assertEqual((answer['status'], answer['rows'], answer['coverage']['pairs_tried']), ('cancelled', None, 10))
+        reference = RL.repair_list(S, 458, max_pairs=0)
+        answer = candidate().repair_list(458, max_pairs=0)
+        self.assert_same(answer, reference, 'max_pairs 0')
+        self.assertEqual((answer['status'], answer['outcomes'], answer['coverage']['items_done']), ('cut_off', [], []))
+        self.assertEqual(candidate().record()['digest'], before)
+        self.assertEqual(S.st.digest(), before)
+
+    def test_blocked_closed_and_solved_caps_are_errors_in_both(self):
+        """Before census step 97, cap 6 is blocked and cap 0 is closed, and at the solved start cap 458 is closed
+        (J1's repair-list tests): each is an error with J1's message, no outcomes, no meeting caps and no rows, and
+        changes nothing."""
+        word, S = at_census(97)
+        before = S.st.digest()
+        for cap in (6, 0):
+            with self.subTest(cap=cap):
+                answer = candidate().repair_list(cap)
+                self.assert_same(answer, RL.repair_list(S, cap), f'cap {cap}')
+                self.assertEqual((answer['status'], answer['coverage']['pairs_tried']), ('error', 0))
+                self.assertTrue(answer['message'])
+        self.assertEqual(candidate().record()['digest'], before)
+        self.assertEqual(S.st.digest(), before)
+        solved = census.seams.SeamRestorer(sim.State(rim.ctx, menu=census.menu()), census.menu())
+        candidate().start(census.menu().record())
+        self.assertEqual(candidate().record()['digest'], solved.st.digest())
+        answer = candidate().repair_list(458)
+        self.assert_same(answer, RL.repair_list(solved, 458), 'solved')
+        self.assertEqual(answer['message'], 'cap 458 is closed (N_c = 0), not misaligned')
+
+    def test_a_bad_cap_a_missing_cap_and_an_exhausted_budget(self):
+        """Through the adapter: a cap outside 0..599 is refused with KN2:input.named_object_invalid (J1 answers an
+        error with no outcomes), a request without a cap and a negative pair budget or cancellation point are input
+        errors (J1 raises for a negative pair budget), and a budget of zero exact evaluations cuts the job off with
+        KN7:budget.kernel_cost before any meeting cap is read, so it makes no claim about any pair (KN7.4)."""
+        word, S = at_census(97)
+        before = S.st.digest()
+        for cap in (600, -1):
+            with self.subTest(cap=cap):
+                reference = RL.repair_list(S, cap)
+                self.assertEqual((reference.status, reference.outcomes, reference.message),
+                                 ('error', (), 'cap must be an integer in 0..599'))
+                self.assert_refused(candidate().repair_list(cap), 'cap', [cap])
+        with self.assertRaises(R.CandidateError) as raised:
+            candidate().call('repair_list')
+        self.assertEqual(raised.exception.kind, 'input')
+        with self.assertRaisesRegex(ValueError, 'max_pairs must be a non-negative integer or None'):
+            RL.repair_list(S, 458, max_pairs=-1)
+        for field in ('max_pairs', 'cancel_after'):
+            with self.subTest(field=field):
+                with self.assertRaises(R.CandidateError) as raised:
+                    candidate().call('repair_list', cap=458, **{field: -1})
+                self.assertEqual(raised.exception.kind, 'input')
+        cut = candidate().repair_list(458, eval_budget=0)
+        self.assertEqual((cut['status'], cut['by'], cut['rows'], cut['outcomes']), ('cut_off', KERNEL_COST, None, []))
+        self.assertEqual(cut['coverage'], {'pairs_tried': 0, 'items_done': [], 'meeting_caps': []})
+        self.assertTrue(cut['message'])
         self.assertEqual(candidate().record()['digest'], before)
 
 
