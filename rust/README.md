@@ -15,11 +15,13 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-digest` | SHA-256, raw and in hex, for the other crates |
 | `c600-run` | The interpreter over the IR draft (route RT1) with the `lp1-exec-draft-1` reference meter and generator (M2), and the run-time boundary under capability separation with FP.17's provenance blocks (M3) |
 | `c600-kernel` | The 600-cell-Full kernel read straight from `assets/`, its chapter 01 API, and the oracle adapter `c600-oracle-adapter` (M4) |
+| `c600-jumble` | The jumbling half of the kernel API (M5): exact poses over Q(√5), K⁺, piece regions, twists and menus, states with their pose tables, the observations, and the adapter `c600-jumble-adapter` that the differential harness drives |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
 checker; its tests run checked source programs, so the checker and the syntax crate are its dev-dependencies. The
-kernel depends on the digest crate only.
+kernel depends on the digest crate only. The jumbling crate depends on the kernel and digest crates and the
+big-integer crates.
 
 ## Running the tests
 
@@ -247,3 +249,46 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   action: R6, the KN2.9 agreement and the cached path share the inverse-move handling, which O01 to O03 cover.
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run. The timings the check
   prints are informational, not performance evidence.
+
+## Status of M5: the jumbling half
+
+- `c600-jumble` is a candidate engine for the rigid jumbling puzzle under the state contract of 9 October 2026 with
+  A1 to A4. It is built from `assets/` alone and reads nothing from the research reference J1 (PHS.18); its import
+  scan under `differential/independence.py` finds no harness or J1 module in the Python client
+  (`research/jumbling/differential/candidate/rust_jumble.py`). The integrator's selections 1 to 6 (exact numbers,
+  record families, free mode, Net protection at pose level, batches, the classification budget) are in the crate
+  documentation.
+- The jumbling model is read through `c600_kernel::verify_assets`, the kernel's asset check made public for it, which
+  `Kernel::load` also calls: plain file names in `assets/`, the puzzle name, the model ID as the SHA-256 of the file
+  list, and the SHA-256 of every listed file. The identity block's model ID therefore names the files that were read.
+  `c600-jumble/tests/assets.rs` tests the refusals, and `c600-kernel/tests/load.rs` the check's result.
+- JI.52: the harness bindings reach J1 only through its public API, `research/jumbling/sim/api.py`.
+- `tests/test_jumbling_rust_candidate.py` builds the adapter in release and compares it with J1 through
+  `harness.compare`, step by step (status, moved count, moved set, pose digest and lattice digest): the first 60
+  records of each W-J fixture with surveys at steps 0 and 30 and the straddler sets of named caps at step 30, every
+  candidate certificate checked by J1; the first 600 letters of H6030; refusals (a blocked twist, a twist outside the
+  menu, a malformed record); and a planted difference, which fails at its step. With `JUMBLING_FULL_REPLAY=1` every
+  record of the three fixtures and all 3,156 letters of H6030 run. `tools/ci/run_headless.py` lists it.
+- Contract tests: the jumbling halves of CT-KN2-01, CT-KN2-04 and CT-KN1-05 (poses), CT-KN1-02, CT-KN2-03
+  (`c600-jumble/tests/crossing.rs`), CT-KN2-05 (no `f32` or `f64` in the kernel crates), CT-KN3-02 and CT-JI-03.
+  CT-KN2-02 in part: heights and domain IDs against `trees.py` and the library's histograms on H6030's compared
+  states, the recorded fixture prefixes and u1, and the free-mode Cayley rotation.
+- Not built, for M8: CT-KN1-03, CT-KN1-04, CT-KN1-06, CT-KN2-06, CT-KN2-07, CT-KN3-01, CT-KN3-03 to CT-KN3-06, R-11
+  (CT-LG2-12), and CT-KN2-02's cases b20, b06-14, b14 and b03; the observations rim_summary, covers, repair_list, nu,
+  checkpoints, release_check and derivation with reachability; Strict protection; and the holding caps of seam cells
+  and tree positions past the first step.
+- Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model read the change with the
+  acceptance check. Its three major findings were fixed before the pull request, and a scoped re-check found no
+  blocking finding: R1, a word whose later letter was malformed, or met an engine error, left its earlier letters
+  applied (the adapter now reads every letter before it applies any, and restores the state on every error); R2, a
+  record step before `start` stopped the adapter with a panic (it is now an input error); R3, the model ID was taken
+  from the manifest unchecked (the model now loads through `verify_assets`, above). Fixed: R4, a record of a family the
+  candidate does not read was refused as `invalid` when its matrix was malformed (the family and a float request are
+  now checked first, so it is an adapter error under selection 2); R5, `seam_facts` on a cap whose classification ran
+  out of budget claimed a complete answer (it now claims nothing, JI.14). No action: R6, a refused word still reports
+  the end state it reached, with `admissible` false and the failing letter's index, as J1's `word_check` reference does
+  and the comparison checks; R7, the INV-4 half of CT-KN2-05 is not scanned, and the test's docstring says why; R8,
+  CT-KN3-02's large entries come from rotations the test chooses, which the engine makes exact and `load` reads back
+  with the rotation and the digest checked exactly, and J1's digest agrees on the first.
+- Evidence kind: source and fixture. The comparison ran on Windows only. The timings the check prints are
+  informational, not performance evidence.

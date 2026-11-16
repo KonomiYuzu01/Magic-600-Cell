@@ -3,6 +3,8 @@
 //! plain file name in `assets/`, and a malformed manifest is refused. Each case writes a manifest, and the small files
 //! it lists, into a fresh folder under the test's temporary directory, so the shipped `assets/` is only read.
 //!
+//! `verify_assets` is the check itself; `Kernel::load` and the jumbling model both load through it.
+//!
 //! Not tested here: the checks of the arrays and trees inside verified archives (a primitive that is not a permutation
 //! of its support, malformed offsets, an execution tree whose walk does not end). Such a test has to write a changed
 //! archive under a new model ID, and the crate only reads archives; these tests are deferred (rust/README.md, M4).
@@ -172,5 +174,23 @@ fn malformed_manifests_are_refused() {
     for (case, manifest, expected) in cases {
         let text = refusal("malformed", &manifest, &[]);
         assert!(text.starts_with(expected), "{case}: {text}");
+    }
+}
+
+/// `verify_assets`, through which the jumbling half loads (M5, R3 of its critical-path read): on the shipped folder it
+/// gives the shipped model ID, the manifest's digest, every listed digest and the bytes of exactly the files asked
+/// for; a file asked for that is not listed is refused.
+#[test]
+fn verify_assets_gives_the_checked_files() {
+    let (files, id) = shipped();
+    let verified = c600_kernel::verify_assets(&assets(), &["puzzle_definition.txt"]).unwrap();
+    assert_eq!(verified.model_id, id);
+    assert_eq!(verified.manifest_sha256, sha256_hex(&fs::read(assets().join("manifest.json")).unwrap()));
+    assert_eq!(verified.digests, files);
+    assert_eq!(verified.files.keys().map(String::as_str).collect::<Vec<_>>(), vec!["puzzle_definition.txt"]);
+    assert_eq!(verified.files["puzzle_definition.txt"], fs::read(assets().join("puzzle_definition.txt")).unwrap());
+    match c600_kernel::verify_assets(&assets(), &["absent.bin"]) {
+        Ok(_) => panic!("a file that is not listed was given"),
+        Err(LoadError(text)) => assert_eq!(text, "manifest.json does not list absent.bin"),
     }
 }

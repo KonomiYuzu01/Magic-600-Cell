@@ -69,6 +69,7 @@ use std::sync::{Arc, Mutex};
 
 use json::Value;
 use model::Model;
+pub use model::{verify_assets, VerifiedAssets};
 
 /// The refusal codes of chapter 13 that this crate uses.
 pub mod codes {

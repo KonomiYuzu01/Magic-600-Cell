@@ -115,6 +115,8 @@ CHECKS += LANGUAGE_DOCS_CHECKS + [
     ["tests/test_language_rust.py"],
     # The Rust kernel (LP2, M4) replays the frozen oracle cases O01 to O07 and runs the KN2.9 agreement test.
     ["tests/test_kernel_oracle.py"],
+    # The Rust jumbling candidate (LP2, M5) against J1 through the differential harness (CT-KN2-01 and others).
+    ["tests/test_jumbling_rust_candidate.py"],
 ]
 
 TIME_LIMIT_SECONDS = 1200
@@ -211,6 +213,7 @@ SECONDS = {
     "tests/test_log_workflow.py": 13, "tests/test_core.py": 12,
     "tests/test_language_rust.py": 60,  # an estimate until a CI run measures it
     "tests/test_kernel_oracle.py": 90,  # an estimate until a CI run measures it
+    "tests/test_jumbling_rust_candidate.py": 420,  # an estimate until a CI run measures it
 }
 DEFAULT_SECONDS = 5
 # Parallel Windows jobs for a full run; the longest check (about 14 minutes) bounds the gain.

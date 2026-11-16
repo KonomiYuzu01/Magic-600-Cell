@@ -24,6 +24,17 @@ name = "c600-ir"
 version = "0.0.0"
 
 [[package]]
+name = "c600-jumble"
+version = "0.0.0"
+dependencies = [
+ "c600-digest",
+ "c600-kernel",
+ "num-bigint",
+ "num-integer",
+ "num-traits",
+]
+
+[[package]]
 name = "c600-kernel"
 version = "0.0.0"
 dependencies = [

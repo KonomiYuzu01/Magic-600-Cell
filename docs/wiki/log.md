@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-16] update | The language: M5, the jumbling half of the kernel API
+`rust/c600-jumble` is a candidate engine for the rigid jumbling puzzle, built from `assets/` alone through the kernel's asset checks, and `tests/test_jumbling_rust_candidate.py` compares it with J1 through the differential harness step by step (the W-J fixture prefixes with surveys, straddler sets and J1-checked certificates, the first 600 letters of H6030, refusals and a planted difference; `JUMBLING_FULL_REPLAY=1` runs every record and letter), with the jumbling halves of CT-KN1-02, CT-KN1-05, CT-KN2-02 to CT-KN2-05, CT-KN3-02 and CT-JI-03. The harness bindings reach J1 only through its public API (JI.52); what is not built, for M8, is listed in `rust/README.md`.
+
 ## [2026-11-16] decision | EN3's jumbling interfaces: the engine half is approved, M5 may start
 The owner approved the engine half of EN3's jumbling interfaces (JI.1 to JI.16, the public J1 API of JI.52, the domain ID of JI.53 and two engine codes) as the input of LP2's M5, after a fresh Claude read found four major problems and a scoped re-check confirmed their fixes ([decision](decisions/owner-decisions-2026-11-16-en3-engine-half.md)). The contract pin is `state-contract 2026-11-15 A1-A6`; the format packet's pin of the draft was refreshed twice under FP.1 with no frozen meaning changed, and the store, command and view halves stay drafts.
 
