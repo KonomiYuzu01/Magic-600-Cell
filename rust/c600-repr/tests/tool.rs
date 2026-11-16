@@ -1,0 +1,257 @@
+//! The representations tool: its 600 Cell Script source, its manifest and class, the review of the class against the
+//! exact entry definitions and the row set, and the form of a review record (LP3, C6, item 5). The tests named after
+//! CT-BND-15 and CT-LB6-03 cover the representations tool's part of each; neither ID runs whole here.
+
+use std::collections::BTreeSet;
+
+use c600_check::{check, separation, Grant, Policy, Separation, EFFECT_UNDECLARED, NOT_GRANTED};
+use c600_command::{Kind, Table};
+use c600_digest::sha256_hex;
+use c600_ir::{Effect, FnKind, Program};
+use c600_repr::tool::{
+    admit, check_record, entry_digest, manifest, review_class, row_within_view_aid, Entry, Finding, Manifest,
+    RecordFault, ReviewRecord, Rule, ENTRIES, MODULE, ROWS, SOURCE, UNEXPRESSED,
+};
+use c600_syntax::{format, lower, parse};
+use c600_tools::tool::{admit_built_in, lower_source, targets, BoundaryClass};
+
+fn program() -> Program {
+    lower_source(SOURCE).expect("the shipped source lowers")
+}
+
+/// The shipped module with more functions after it, and its manifest with more entries.
+fn variant(tail: &str, extra: &[Entry]) -> (Program, Manifest) {
+    let source = format!("{SOURCE}\n{tail}");
+    let file = parse(source.as_bytes());
+    assert!(file.diagnostics.is_empty() && file.holes.is_empty(), "{:#?}", file.diagnostics);
+    let program = lower_source(&source).expect("the variant lowers");
+    let mut entries = ENTRIES.to_vec();
+    entries.extend_from_slice(extra);
+    (program, Manifest { entries, source_sha256: sha256_hex(source.as_bytes()), ..manifest() })
+}
+
+/// The rules of the findings about `entry`, in the review's order.
+fn rules(findings: &[Finding], entry: &str) -> Vec<Rule> {
+    findings.iter().filter(|f| f.entry.as_deref() == Some(entry)).map(|f| f.rule).collect()
+}
+
+/// The tool's source parses with no diagnostic, is in the formatter's canonical layout (edition `6cs-draft-1`, syntax
+/// candidate A) and lowers to the IR draft: one module that requests no capability, with the five exported entries of
+/// the manifest. The built-in column admits every entry with no capability granted; no entry prepares a preview or
+/// names a proposal target, and the entries' effects are the ones their rows need. `set.save` has no entry, and the
+/// manifest says why.
+#[test]
+fn the_source_parses_lowers_and_every_entry_is_admitted_under_the_built_in_column() {
+    let file = parse(SOURCE.as_bytes());
+    assert!(file.diagnostics.is_empty() && file.holes.is_empty(), "{:#?}", file.diagnostics);
+    assert_eq!(file.edition.as_deref(), Some("6cs-draft-1"));
+    assert_eq!(format(&file).as_deref(), Some(SOURCE), "the source is in canonical layout");
+    assert!(!SOURCE.contains('\r'), "LF line endings");
+    let lowered = lower(&[file]).unwrap_or_else(|error| panic!("{error}"));
+    assert_eq!(lowered.source(MODULE).expect("a source map").digest, manifest().source_sha256);
+    let [module] = &lowered.program.modules[..] else { panic!("one module") };
+    assert_eq!(module.name, MODULE);
+    assert!(module.capabilities.is_empty());
+    let defined: Vec<(&str, FnKind, bool)> =
+        module.functions.iter().map(|f| (f.name.as_str(), f.kind, f.exported)).collect();
+    let declared: Vec<(&str, FnKind, bool)> = ENTRIES.iter().map(|e| (e.name, e.kind, true)).collect();
+    assert_eq!(defined, declared);
+
+    let program = program();
+    let report = check(&program).expect("the IR version is supported");
+    assert!(report.is_admitted(), "{:#?}", report.diagnostics);
+    let reads = |entry: &str| {
+        let summary = report.summary(MODULE, entry).expect("a summary");
+        assert!(summary.capabilities.is_empty() && summary.vars.is_empty() && summary.unresolved.is_empty());
+        assert!(!summary.effects.contains(&Effect::PreparePreview), "{entry}");
+        separation(summary, &Policy::interim())
+    };
+    for entry in &ENTRIES {
+        let admission = admit(&program, MODULE, entry.name).expect("the IR version is supported");
+        assert!(admission.is_admitted(), "{}: {:#?}", entry.name, admission.diagnostics);
+        assert!(admission.open_cells.is_empty(), "{}", entry.name);
+        assert_eq!(admission.separation, reads(entry.name));
+        assert!(!admission.separation.prepares_previews, "{}", entry.name);
+        assert_eq!(targets(&program, MODULE, entry.name), Ok(BTreeSet::new()), "{}: no proposal target", entry.name);
+    }
+    // Capability separation (LQ21): the two entries that read state prepare nothing, and the others read nothing.
+    let reading: Vec<&str> = ENTRIES.iter().map(|e| e.name).filter(|name| reads(name).reads_state).collect();
+    assert_eq!(reading, ["filter_counts", "compare_cells"]);
+
+    // Every row has an entry or a stated reason for none.
+    let served: BTreeSet<&str> = ENTRIES.iter().map(|e| e.row).chain(UNEXPRESSED.iter().map(|(row, _)| *row)).collect();
+    assert_eq!(served, ROWS.iter().copied().collect::<BTreeSet<_>>());
+    assert_eq!(UNEXPRESSED.map(|(row, _)| row), ["set.save"]);
+}
+
+/// CT-BND-15 (part, the representations tool: the class is declared, the row set lies within the class, and the form
+/// of a review record names every entry digest). The manifest declares the one class `view_aid`, one of BND.27's. Each
+/// of the six rows is a query, view or workspace row of the stored H-08 table that takes no user-action token and
+/// needs no commit preview, and the mechanical review of the class finds nothing outside it; a commit row, a row the
+/// table does not have, an entry on a row outside the row set and another class are each found. A record names the
+/// tool, the class, the source digest, every entry's digest and the row set, and a record for other source bytes is
+/// refused. Not run: BM5's review has not happened, so no review record of the shipped tool exists; the record
+/// checked here carries a fixture reviewer and is no review. The row predicate reads a row's kind, token and preview
+/// rule only: that a query row prepares a commit preview (`operation.preview`) is found by the entry review, not by
+/// the row set.
+#[test]
+fn ct_bnd_15_representations_part_class_declared_rows_within_class_and_record_names_entry_digests() {
+    let manifest = manifest();
+    assert_eq!(manifest.class, BoundaryClass::ViewAid);
+    assert!(BoundaryClass::ALL.contains(&manifest.class));
+    assert_eq!(manifest.class.name(), "view_aid");
+    assert_eq!((manifest.module, &manifest.rows[..]), (MODULE, &ROWS[..]));
+    assert_eq!(manifest.source_sha256, sha256_hex(SOURCE.as_bytes()));
+    assert!(!manifest.principle_record, "no PrincipleRecord exists (LB6.5)");
+
+    let table = Table::h08();
+    for row in &manifest.rows {
+        let stored = table.row(row).unwrap_or_else(|| panic!("{row} is a stored row"));
+        assert!(row_within_view_aid(stored), "{row}");
+        assert!(matches!(stored.kind, Kind::Query | Kind::View | Kind::Workspace), "{row}");
+        assert!(!stored.takes_token(), "{row}");
+    }
+    assert!(manifest.entries.iter().all(|e| manifest.rows.contains(&e.row)));
+    let program = program();
+    assert_eq!(review_class(&program, &manifest, &table).expect("reviewed"), Vec::new());
+
+    // What the review finds when the row set leaves the class.
+    for commit in ["operation.execute", "session.undo", "twist.apply"] {
+        let mut wider = manifest.clone();
+        wider.rows.push(commit);
+        let findings = review_class(&program, &wider, &table).expect("reviewed");
+        let [finding] = &findings[..] else { panic!("{findings:?}") };
+        assert_eq!((finding.rule, finding.row.as_deref()), (Rule::RowOutsideClass, Some(commit)));
+    }
+    let mut unknown = manifest.clone();
+    unknown.rows.push("filter.no_such_row");
+    let findings = review_class(&program, &unknown, &table).expect("reviewed");
+    assert_eq!(findings.iter().map(|f| f.rule).collect::<Vec<_>>(), [Rule::RowOutsideTool]);
+    let mut narrower = manifest.clone();
+    narrower.rows.retain(|row| *row != "filter.apply");
+    let findings = review_class(&program, &narrower, &table).expect("reviewed");
+    assert_eq!(rules(&findings, "apply_filter"), [Rule::RowOutsideTool]);
+    let other_class = Manifest { class: BoundaryClass::Analysis, ..manifest.clone() };
+    let findings = review_class(&program, &other_class, &table).expect("reviewed");
+    assert_eq!(findings.iter().map(|f| f.rule).collect::<Vec<_>>(), [Rule::ClassNotReviewed]);
+
+    // The record's form: it names every entry digest, and an unfilled form is no record.
+    let form = ReviewRecord::form(&manifest);
+    assert_eq!(check_record(&form, &manifest), [RecordFault::NoReviewer]);
+    assert_eq!(form.entries.keys().map(String::as_str).collect::<BTreeSet<_>>(), ENTRIES.map(|e| e.name).into());
+    for (entry, digest) in &form.entries {
+        assert_eq!(digest, &entry_digest(&manifest.source_sha256, MODULE, entry));
+        assert!(digest.len() == 64 && digest.bytes().all(|b| b.is_ascii_hexdigit()), "{digest}");
+    }
+    assert_eq!(form.entries.values().collect::<BTreeSet<_>>().len(), ENTRIES.len(), "one digest per entry");
+    let filled = ReviewRecord { reviewer: "fixture reviewer; no BM5 review exists".to_owned(), ..form.clone() };
+    assert_eq!(check_record(&filled, &manifest), Vec::new());
+
+    // A record names the exact source: for other source bytes every entry digest differs.
+    let edited = format!("{SOURCE}\n");
+    let other = Manifest { source_sha256: sha256_hex(edited.as_bytes()), ..manifest.clone() };
+    let faults = check_record(&filled, &other);
+    assert!(faults.contains(&RecordFault::Source), "{faults:?}");
+    for entry in &ENTRIES {
+        assert!(faults.contains(&RecordFault::EntryDigest(entry.name.to_owned())), "{faults:?}");
+    }
+    // A record that leaves an entry out, names one the tool does not have, or names other rows or another class.
+    let mut partial = filled.clone();
+    partial.entries.remove("apply_filter");
+    assert_eq!(check_record(&partial, &manifest), [RecordFault::EntryNotNamed("apply_filter".to_owned())]);
+    let mut extra = filled.clone();
+    extra.entries.insert("stash".to_owned(), entry_digest(&manifest.source_sha256, MODULE, "stash"));
+    assert_eq!(check_record(&extra, &manifest), [RecordFault::EntryUnknown("stash".to_owned())]);
+    let mut rows = filled.clone();
+    rows.rows.insert("operation.execute".to_owned());
+    assert_eq!(check_record(&rows, &manifest), [RecordFault::Rows]);
+    let class = ReviewRecord { class: "analysis".to_owned(), ..filled };
+    assert_eq!(check_record(&class, &manifest), [RecordFault::Class]);
+}
+
+/// CT-LB6-03 (part, the representations tool: the declared class is reviewed against the exact entry definitions, and
+/// LX-3's storage-laundering and state-based target selection cases are refused under capability separation and at
+/// the preview sink). The shipped entries pass the review. A variant that stores a word read from state is admitted
+/// by the built-in column, because the workspace sink refuses nothing on labels (BND.26), and the class review finds
+/// it: a view aid stores what the solver named. The variants that preview the stored word, read directly or through a
+/// declassifier, are refused with `LG3:capability.not_granted` at the entry and at the proposal, and with the
+/// declassifier enabled still at the proposal; a variant that reads its target from state is refused at the entry.
+/// The review finds each as choosing a target. Not run: LX-3's correction solve, which is the 600-cell-Full tool's
+/// case, and any run of an entry, since no route leads from the rows to the entries yet.
+#[test]
+fn ct_lb6_03_representations_part_class_reviewed_against_entries_and_storage_laundering_refused() {
+    let table = Table::h08();
+    let shipped = program();
+    assert_eq!(review_class(&shipped, &manifest(), &table).expect("reviewed"), Vec::new());
+    let report = check(&shipped).expect("checked");
+    for entry in &ENTRIES {
+        let summary = report.summary(MODULE, entry.name).expect("a summary");
+        if summary.effects.contains(&Effect::ChangeWorkspace) {
+            assert!(summary.state_reads.is_empty(), "{} stores only what it was given", entry.name);
+            assert_eq!((entry.kind, table.row(entry.row).map(|r| r.kind)), (FnKind::Command, Some(Kind::Workspace)));
+        }
+    }
+
+    let tail = "export command stash() -> Unit effects [snapshot, workspace] {\n    \
+                return write_workspace<Word>(\"kept\", read_snapshot<Word>(\"best_word\"));\n}\n\n\
+                export command relay() -> Text effects [snapshot, preview] {\n    \
+                let r = propose(read_snapshot<Word>(\"kept\"), target(\"operation.preview\"));\n    \
+                return receipt_id(r);\n}\n\n\
+                export command relay_declassified() -> Text effects [snapshot, preview] {\n    \
+                let r = propose(declassified<Word>(\"kept\"), target(\"operation.preview\"));\n    \
+                return receipt_id(r);\n}\n\n\
+                export command chooses(w: Word) -> Text effects [snapshot, preview] {\n    \
+                let r = propose(w, read_snapshot<Target>(\"structure.compare\"));\n    \
+                return receipt_id(r);\n}\n";
+    let extra = [
+        Entry { name: "stash", row: "filter.apply", kind: FnKind::Command },
+        Entry { name: "relay", row: "filter.preview", kind: FnKind::Command },
+        Entry { name: "relay_declassified", row: "filter.preview", kind: FnKind::Command },
+        Entry { name: "chooses", row: "structure.compare", kind: FnKind::Command },
+    ];
+    let (program, wider) = variant(tail, &extra);
+    assert!(check(&program).expect("checked").is_admitted(), "each variant is a well-typed program");
+
+    // The store: admitted by the column, found by the class review.
+    let stash = admit(&program, MODULE, "stash").expect("admitted or refused");
+    assert!(stash.is_admitted(), "{:#?}", stash.diagnostics);
+    assert_eq!(stash.separation, Separation { reads_state: true, prepares_previews: false });
+
+    // The uses: refused under the selected mechanism.
+    let both = Separation { reads_state: true, prepares_previews: true };
+    let previews_only = Separation { reads_state: false, prepares_previews: true };
+    for (entry, policy, separation, paths) in [
+        ("relay", Policy::interim(), both, vec!["entry", "0"]),
+        ("relay_declassified", Policy::interim(), both, vec!["entry", "0"]),
+        ("relay_declassified", Policy::enabling(&["kept"]), previews_only, vec!["0"]),
+        ("chooses", Policy::interim(), both, vec!["entry"]),
+    ] {
+        let admission = admit_built_in(&program, MODULE, entry, &Grant::none(), &policy).expect("admitted or refused");
+        let found: Vec<&str> = admission.diagnostics.iter().map(|d| d.path.as_str()).collect();
+        assert_eq!((admission.separation, found), (separation, paths), "{entry}");
+        assert!(admission.codes().iter().all(|&code| code == NOT_GRANTED), "{entry}: {:#?}", admission.diagnostics);
+    }
+
+    // The review of the declared class against these entry definitions.
+    let findings = review_class(&program, &wider, &table).expect("reviewed");
+    assert_eq!(rules(&findings, "stash"), [Rule::StoresStateDerived]);
+    for entry in ["relay", "relay_declassified", "chooses"] {
+        assert_eq!(rules(&findings, entry), [Rule::ColumnRefusal, Rule::ChoosesTarget], "{entry}");
+    }
+    for entry in &ENTRIES {
+        assert_eq!(rules(&findings, entry.name), [], "{} is as it was", entry.name);
+    }
+    // The manifest of the wider module is not the shipped one: its entry digests differ, so no record of the shipped
+    // tool covers it.
+    let record = ReviewRecord { reviewer: "fixture reviewer".to_owned(), ..ReviewRecord::form(&manifest()) };
+    assert!(check_record(&record, &wider).contains(&RecordFault::Source));
+
+    // A view that writes a workspace record is no well-typed program, and the review reports the checker's finding.
+    let writes = "export view writes() -> Unit effects [snapshot, view, workspace] {\n    \
+                  return write_workspace<Nat>(\"filter.apply\", 1);\n}\n";
+    let (program, wider) = variant(writes, &[Entry { name: "writes", row: "filter.apply", kind: FnKind::View }]);
+    let report = check(&program).expect("checked");
+    assert_eq!(report.diagnostics.iter().map(|d| d.code).collect::<Vec<_>>(), [EFFECT_UNDECLARED]);
+    let findings = review_class(&program, &wider, &table).expect("reviewed");
+    assert_eq!(rules(&findings, "writes"), [Rule::CheckerDiagnostic, Rule::WorkspaceOutsideRow]);
+}
