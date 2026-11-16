@@ -60,8 +60,10 @@
 
 pub mod archive;
 mod engine;
+pub mod exact;
 pub mod json;
 mod model;
+pub mod request;
 
 use std::fmt;
 use std::path::Path;
@@ -103,14 +105,16 @@ pub const PROTECTED_MESSAGE: &str =
     "Protected orbit would move. Remove that protection explicitly or choose a different macro.";
 
 /// The sources of the kernel and its adapter, hashed into [`build`].
-pub const SOURCES: [(&str, &[u8]); 8] = [
+pub const SOURCES: [(&str, &[u8]); 10] = [
     ("c600-kernel/Cargo.toml", include_bytes!("../Cargo.toml")),
     ("c600-kernel/src/archive.rs", include_bytes!("archive.rs")),
     ("c600-kernel/src/bin/c600-oracle-adapter.rs", include_bytes!("bin/c600-oracle-adapter.rs")),
     ("c600-kernel/src/engine.rs", include_bytes!("engine.rs")),
+    ("c600-kernel/src/exact.rs", include_bytes!("exact.rs")),
     ("c600-kernel/src/json.rs", include_bytes!("json.rs")),
     ("c600-kernel/src/lib.rs", include_bytes!("lib.rs")),
     ("c600-kernel/src/model.rs", include_bytes!("model.rs")),
+    ("c600-kernel/src/request.rs", include_bytes!("request.rs")),
     ("c600-digest/src/lib.rs", include_bytes!("../../c600-digest/src/lib.rs")),
 ];
 
