@@ -199,6 +199,9 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - Recovery (CT-LG1-04). A damaged declaration becomes a recovery hole with `LG1:syntax.recovery_gap`, and parsing
   resumes at the next `fn`, `view`, `command`, `import` or `export` in column 1. A draft with a hole has no layout and
   does not lower.
+- Lexing stays linear. A quote that opens no string on its line is scanned to the line's end once, and the quotes that
+  scan stepped over are not scanned again, since they cannot open a string either; the tokens are unchanged (lead L5
+  of the M7 attack, 16 November 2026).
 - Canonical layout (LG1.4, CT-LG1-03). `format` depends on the parsed program only: four-space indents, a blank line
   before each declaration, imports directly after the module line, one `let` or `return` per line, `match` arms and
   closure bodies on lines of their own, and type arguments and generic parameters without spaces (`<T,E>`, as LX-8's
