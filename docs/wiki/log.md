@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-16] update | The language: M6, the session store
+`rust/c600-session` keeps a session in an append-only journal of checksummed frames, each synced before its reply, with revisions, snapshots, checkpoints, branches with one active line, chapter 08's commit path behind a shell stub's single-use tokens, undo and redo with action hints, outcome lookup across a reopen, and program jobs on the exclusive and program lanes under declared budgets, cancelled by a commit that replaces their revision. Its tests cover CT-KN4-02 to CT-KN4-04 and CT-KN4-01's in-process part, CT-KN5-01, CT-KN5-04, CT-KN5-06, CT-KN5-09 and CT-KN5-11, LI.33's gate-order trace, and CT-KN7-01 to CT-KN7-05 and CT-KN7-07 with PHS.19's preview-swap and budget rows, and the Fable task's crash cases; the drafts, the gaps and what is not run are listed in `rust/README.md`.
+
 ## [2026-11-16] decision | EN3's jumbling interfaces: the engine half is approved, M5 may start
 The owner approved the engine half of EN3's jumbling interfaces (JI.1 to JI.16, the public J1 API of JI.52, the domain ID of JI.53 and two engine codes) as the input of LP2's M5, after a fresh Claude read found four major problems and a scoped re-check confirmed their fixes ([decision](decisions/owner-decisions-2026-11-16-en3-engine-half.md)). The contract pin is `state-contract 2026-11-15 A1-A6`; the format packet's pin of the draft was refreshed twice under FP.1 with no frozen meaning changed, and the store, command and view halves stay drafts.
 
