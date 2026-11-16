@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-16] decision | Renderer selection signed: S-A2, W-J option A
+The owner signed the renderer selection ("Sign; choose A.", translated): [ADR-R01](../architecture/1.0/renderer/ADR-R01-renderer-selection.md) is accepted, so the 1.0 renderer is S-A2, the S-B Direct3D 12 core as a shared native library hosted by Godot 4.7.2 .NET, with Godot 4.7.2 .NET and a supported .NET release as product dependencies; the [freeze record](decisions/renderer-freeze.md) is signed and H-10 goes to the design track. W-J on the selected candidate becomes LP3 acceptance runs at C9 with unchanged bars, the renderer line is closed, and the vertical slice and the living test stay with the design line.
+
 ## [2026-11-16] update | Renderer selection drafts for the owner's signature
 The [selection record](../progress/1.0/renderer-selection.md) holds the gap check, the minimal measurement set and Fable's evaluation: no GPU measurement is needed to rank the three candidates, and Fable ranked S-A2 (Godot 4.7.2 .NET hosting the S-B core) first, S-D second and S-B third. ADR-R01, the [renderer freeze record](decisions/renderer-freeze.md) and the H-10 handoff stay drafts until the owner signs; when W-J runs on the selected candidate is the owner's choice, and nothing is frozen or ticked.
 

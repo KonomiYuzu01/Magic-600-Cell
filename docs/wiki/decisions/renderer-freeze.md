@@ -1,13 +1,13 @@
 ---
 id: renderer-freeze
 type: decision
-status: draft
+status: verified
 visibility: public
-summary: Draft renderer freeze record for the owner's signature - S-A2, the S-B Direct3D 12 drawing core as a shared native library hosted by Godot 4.7.2 .NET, selected on build 06d14019 and its three cold W3 runs; W-J on the selected candidate, the product build's gate run and the RPI.80 statement as conditions; risks and deferred items; later changes follow PHS.52. Nothing is frozen until the owner signs.
+summary: Renderer freeze record, signed by the owner on 16 November 2026 with W-J option A - S-A2, the S-B Direct3D 12 drawing core as a shared native library hosted by Godot 4.7.2 .NET, selected on build 06d14019 and its three cold W3 runs; W-J on the selected candidate as LP3 acceptance runs at C9 (a failing run reopens the selection), the product build's gate run and the RPI.80 statement as conditions; risks and deferred items; later changes follow PHS.52.
 related: [owner-decisions-2026-11-16-renderer-close, renderer-candidates, day7-go-no-go-ruling, owner-decisions-2026-10-22, owner-decisions-2026-10-10-anchor, s-b-probe-results, level-2-framework-results, w-j-probe-results]
 supersedes: []
 claims:
-  - {id: freeze-draft, evidence_kind: decision, checked_at: 2026-11-16}
+  - {id: freeze-signed, evidence_kind: decision, checked_at: 2026-11-16}
   - {id: sa2-w3-met, evidence_kind: performance, path: work/experiments/renderer-l2/results/sa2-w3-20261010T175043422Z-summary.json, sha256: 339f629cc1197f5cd35a17337a3166f69f6c5769523e073f8af718bec07d43ed, checked_at: 2026-11-16}
   - {id: sb-w3-met, evidence_kind: performance, path: work/experiments/renderer-sb/results/w3-20261010T164807115Z-summary.json, sha256: 5d3752b3543b443ad29339ae16771bd56d8044876f503c65ae7d6650a39c2cac, checked_at: 2026-11-16}
   - {id: wj-w3-met, evidence_kind: performance, path: work/experiments/renderer-wj/results/w3-20261010T194430557Z-summary.json, sha256: 3cc627af916c9e564851d57b2c853ef389e24ddf5b634629908ce6e0cfa7c868, checked_at: 2026-11-16}
@@ -16,10 +16,10 @@ claims:
   - {id: wj-ib-met, evidence_kind: performance, path: work/experiments/renderer-wj/results/wj-I_b-20261010T193029102Z-summary.json, sha256: 3ce21f3f2b5d70644bc5c013f5517e9c20fd904b3cce5f85ba6d4b34c6857330, checked_at: 2026-11-16}
 ---
 
-# Renderer freeze record (draft)
+# Renderer freeze record
 
-Status: **draft for the owner's signature, 16 November 2026.** Nothing on this page is frozen until the owner signs.
-The signature accepts [ADR-R01](../../architecture/1.0/renderer/ADR-R01-renderer-selection.md) and records this freeze
+Status: **signed by the owner on 16 November 2026, with W-J option A** ([signature](#signature)). The signature
+accepted [ADR-R01](../../architecture/1.0/renderer/ADR-R01-renderer-selection.md) and recorded this freeze
 (`AGENTS.md`, "Ask the owner": accepting ADRs). Owner decision:
 [close the renderer line](owner-decisions-2026-11-16-renderer-close.md). Selection record:
 [renderer-selection](../../progress/1.0/renderer-selection.md).
@@ -41,8 +41,10 @@ product build gets its own identity and passes the unchanged gate before any sup
 
 ## Conditions
 
-1. **W-J on the selected candidate** (ADR-R01.3): option A or option B, as the owner chooses at the signature. Under
-   option A this is a conditional freeze in PHS.52's sense: a failing run reopens the selection, and the owner decides.
+1. **W-J on the selected candidate** (ADR-R01.3), under option A, which the owner chose at the signature. Once the
+   core has the pose path, three cold runs each of S4, I_a and I_b and three cold W3 runs are LP3 acceptance runs at
+   C9 with unchanged bars. This is a conditional freeze in PHS.52's sense: a failing run reopens the selection, and the
+   owner decides.
 2. **The product build** passes the unchanged gate in one run with the advertised combination before any stage or view
    support is advertised (RPI.79, RM.12). It has a release export template, a supported .NET release, the pose path
    and the core's features.
@@ -108,5 +110,19 @@ change updates their wording.
 
 ## Signature
 
-Pending. When the owner signs, this section records the owner's own words, the date and the W-J option, and this
-page's status becomes `verified`.
+The owner signed on 16 November 2026, in chat in Chinese. The question was whether to sign the renderer selection now,
+with option A (sign now; the W-J runs become LP3 acceptance runs at C9 with unchanged bars, and a failing run reopens
+the selection for the owner) and option B (port the pose path and measure first, about an hour at the machine, then
+sign). The owner's words, translated: "Sign; choose A."
+
+Before answering, the owner saw the recommendation (S-A2) and its three reasons, the caveat on reason 2 from the
+protocol's section 4.2, the main risks, and what the signature includes and excludes. The signature:
+
+1. accepted ADR-R01.1 to ADR-R01.5;
+2. recorded this freeze, with its conditions, risks and deferred items; later changes follow PHS.52;
+3. approved Godot 4.7.2 .NET and a supported .NET release as product dependencies;
+4. chose option A for W-J (condition 1);
+5. sent [H-10](../../progress/1.0/renderer-handoff-H-10.md) to the design track.
+
+It did not decide shipping DXC, a Godot source build, the design-system ADR or the feature list. With the signature
+the renderer line ends ([owner decision](owner-decisions-2026-11-16-renderer-close.md)).

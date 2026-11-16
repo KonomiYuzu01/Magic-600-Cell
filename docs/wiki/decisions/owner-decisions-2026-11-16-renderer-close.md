@@ -3,11 +3,12 @@ id: owner-decisions-2026-11-16-renderer-close
 type: decision
 status: verified
 visibility: public
-summary: Owner decision of 16 November 2026 - the stage 2.4 renderer line closes in three steps - the remaining measurements are cut to the minimum a sound selection needs, Fable evaluates the renderer selection in place of packet E-2.4-05's Astra review, and the owner signs the selection ADR and the renderer freeze, after which the renderer line ends; the gate is unchanged.
+summary: Owner decision of 16 November 2026 - the stage 2.4 renderer line closes in three steps - the remaining measurements are cut to the minimum a sound selection needs, Fable evaluates the renderer selection in place of packet E-2.4-05's Astra review, and the owner signs the selection ADR and the renderer freeze, after which the renderer line ends; the gate is unchanged. The owner signed the same day with W-J option A, and the renderer line is closed.
 related: [renderer-candidates, day7-go-no-go-ruling, owner-decisions-2026-10-22, owner-decisions-2026-11-14, owner-decisions-2026-11-15-fable, owner-decisions-2026-11-16-time-saving]
 supersedes: []
 claims:
   - {id: renderer-close-steps, evidence_kind: decision, checked_at: 2026-11-16}
+  - {id: renderer-signed-option-a, evidence_kind: decision, checked_at: 2026-11-16}
 ---
 
 # Owner decision, 16 November 2026: close the renderer line
@@ -64,13 +65,28 @@ minimum, then have Fable evaluate the renderer choice, then let me sign the free
 - **Superseded, within this scope.** E-2.4-05's review command (an Astra review of the filled packet) and its sentence
   that the selection gets the senior model's review.
 
+## The signature
+
+The owner signed on 16 November 2026, in chat in Chinese. The owner's words, translated: "Sign; choose A." The
+signature accepted [ADR-R01](../../architecture/1.0/renderer/ADR-R01-renderer-selection.md): the 1.0 renderer is
+S-A2, the S-B Direct3D 12 drawing core as a shared native library hosted by Godot 4.7.2 .NET. It recorded the
+[renderer freeze](renderer-freeze.md), approved Godot 4.7.2 .NET and a supported .NET release as product dependencies,
+and sent [H-10](../../progress/1.0/renderer-handoff-H-10.md) to the design track. Under option A, W-J on the selected
+candidate runs as LP3 acceptance runs at C9 with unchanged bars, and a failing run reopens the selection.
+
+The renderer line is closed: no further stage 2.4 renderer experiment runs. The vertical slice and the living test
+stay open with the design line, and LP3's on-screen half may start (PHS.24).
+
 ## Where it is recorded
 
 - This page.
 - The [selection record](../../progress/1.0/renderer-selection.md): the gap check, the minimal measurement set and
   Fable's evaluation (16 November 2026).
-- Drafts awaiting the owner's signature: [ADR-R01](../../architecture/1.0/renderer/ADR-R01-renderer-selection.md), the
+- The signed records: [ADR-R01](../../architecture/1.0/renderer/ADR-R01-renderer-selection.md) (accepted), the
   [renderer freeze record](renderer-freeze.md) and the [H-10 handoff](../../progress/1.0/renderer-handoff-H-10.md).
+- The renderer experiment plan (section 6) and the protocol (section 4.6): handoff rows H-09, H-10 and H-11; packet
+  E-2.4-05 notes that Fable's evaluation replaced its Astra review.
 - `AGENTS.md`, `CLAUDE.md` and the briefing are unchanged by this page; the briefing's renderer lines are updated in a
   later batch.
-- No progress item is ticked by this decision.
+- Progress: stage 2.4's items for the selection gate and the renderer window are ticked with the pull request that
+  records the signature. The vertical slice, the living test and the level 2 identity binding stay open.

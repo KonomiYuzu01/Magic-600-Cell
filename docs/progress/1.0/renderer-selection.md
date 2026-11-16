@@ -1,8 +1,9 @@
 # Renderer selection record (stage 2.4)
 
-Status: **draft, awaiting the owner's signature.** The gap check, the minimal measurement set and the Fable evaluation
-are written (16 November 2026). Owner decision: [close the renderer line](../../wiki/decisions/owner-decisions-2026-11-16-renderer-close.md).
-Drafts for the signature: [ADR-R01](../../architecture/1.0/renderer/ADR-R01-renderer-selection.md), the
+Status: **signed.** The gap check, the minimal measurement set and the Fable evaluation were written on 16 November
+2026, and the owner signed the same day with W-J option A. Owner decision:
+[close the renderer line](../../wiki/decisions/owner-decisions-2026-11-16-renderer-close.md). Signed records:
+[ADR-R01](../../architecture/1.0/renderer/ADR-R01-renderer-selection.md) (accepted), the
 [renderer freeze record](../../wiki/decisions/renderer-freeze.md) and the [H-10 handoff](renderer-handoff-H-10.md).
 
 This is the public summary of packet [E-2.4-05](packets/renderer/E-2.4-05-selection.md), filled for the three
@@ -90,7 +91,7 @@ A measurement is kept only if the gate or E-2.4-05's acceptance cannot be judged
 **Result: no GPU measurement is needed to rank the candidates.** If S-B were selected, no GPU evening would be needed,
 but S-B has no shell and needs the most vertical-slice work (section 3). If S-A2 or S-D is selected, W-J item 5 and its
 W3 re-acceptance run on a pose-path build of the shared library: either in one attended evening before the signature,
-or as LP3 acceptance runs on the frozen candidate. The owner chooses.
+or as LP3 acceptance runs on the frozen candidate. The owner chose the LP3 acceptance runs (option A) at the signature.
 
 Risks that come with the deferrals:
 
@@ -191,14 +192,14 @@ S-B only:
 
 | Risk | Evidence | Mark |
 |---|---|---|
-| W-J item 5 and the W3 re-acceptance are unrun on S-A2's pose-path build | Section 2; E-2.4-0J items 5 and 6 | **blocks the signature**, unless the owner signs with them as conditions |
+| W-J item 5 and the W3 re-acceptance are unrun on S-A2's pose-path build | Section 2; E-2.4-0J items 5 and 6 | condition of the freeze: the owner signed with option A, so they are LP3 acceptance runs at C9 |
 | No confirmed-present route; Godot's public API has no swap chain handle | RM.26, ONE.41, RPI.66; the installed Godot .NET API reference | record; it adds engine work to S-A2, and LP3 tests it (CT-RM-06, CT-ONE-26) |
 | The gate evidence ran on the editor binary; export templates are untested | S-A2 harness README; S-A2 card | record; RPI.79 re-runs the gate on the product build |
 | No look is measured; E1 is open | Section 2 | record |
 | RPI.80: no run-time compiler; shipping DXC is an owner item | Chapter 10, RPI.80 and its open table | record; the statement is in ADR-R01 |
 | Device-loss recovery untested; resize with a scene unsupported; system DPI awareness only | S-A2 card (H-09 and level 1); FRAMEWORK-FACTS G10 | record |
 | Build binding rests on the guard, whose attended experiments are unrun | Level 2 card; day-7 ruling, D7-003 | record |
-| Godot 4.7.2 .NET and .NET 8 become product dependencies | Briefing, 15 November 2026 entry | owner item, in the signature |
+| Godot 4.7.2 .NET and .NET 8 become product dependencies | Briefing, 15 November 2026 entry | approved at the signature as Godot 4.7.2 .NET and a supported .NET release (ADR-R01.5) |
 | The tested runtime, .NET 8, left Microsoft's support on 10 November 2026. A supported release such as .NET 10 is a new build identity, and whether Godot 4.7.2 accepts it is not verified here | S-A2 project (`net8.0`); [.NET blog](https://devblogs.microsoft.com/dotnet/dotnet-8-9-end-of-support/) | record; RPI.79's run uses the product build |
 | One 12.328 ms frame in G1's run 1 | G1 | record |
 | The G1 summary lacks the operator's discrete-GPU declaration | Section 2 | record |

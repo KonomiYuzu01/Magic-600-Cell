@@ -1,8 +1,8 @@
-# H-10: the selected renderer (draft)
+# H-10: the selected renderer
 
-Status: **draft.** It goes to the design track when the owner signs
-[ADR-R01](../../architecture/1.0/renderer/ADR-R01-renderer-selection.md) and the
-[renderer freeze](../../wiki/decisions/renderer-freeze.md). It is handoff row H-10 of the
+Status: **handed to the design track** by the owner's signature of 16 November 2026, which accepted
+[ADR-R01](../../architecture/1.0/renderer/ADR-R01-renderer-selection.md) and recorded the
+[renderer freeze](../../wiki/decisions/renderer-freeze.md) with W-J option A. It is handoff row H-10 of the
 [renderer experiment plan](renderer-experiment-plan.md) (section 6) and of the
 [protocol](stage-2-experiment-protocol.md) (section 4.6): the selected renderer, for "the vertical slice and the
 framework-neutral rebuild if not Godot".

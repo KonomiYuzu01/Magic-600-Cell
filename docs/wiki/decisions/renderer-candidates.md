@@ -4,7 +4,7 @@ type: decision
 status: draft
 visibility: public
 summary: Stage 2.4 renderer candidates, the owner's performance gate for choosing one, and optional NVIDIA enhancements.
-related: [owner-decisions-2026-09-29, development-loop]
+related: [owner-decisions-2026-09-29, development-loop, renderer-freeze]
 supersedes: []
 claims:
   - {id: candidates, evidence_kind: decision, checked_at: 2026-09-29}
@@ -28,7 +28,9 @@ All candidates render through Direct3D 12, the vendor-neutral main path. Renderi
 
 The window was 15 working days; the owner decision of [1 October 2026](owner-decisions-2026-10-01.md) shortens it to 12 days (stage days 3 to 14) with the go/no-go on window day 7 (final ruling by Codex Astra). Since [2 October 2026](owner-decisions-2026-10-02.md) these are the owner's working days, and target days may move; the gate does not. NVIDIA-specific work is at most an add-on experiment and is never on the day-7 critical path.
 
-Day-7 go/no-go, 10 October 2026: S-B, S-A2 and S-D all go on their W3 results with the area-centroid anchor ([day7-go-no-go-ruling](day7-go-no-go-ruling.md)). No renderer is selected yet.
+Day-7 go/no-go, 10 October 2026: S-B, S-A2 and S-D all go on their W3 results with the area-centroid anchor ([day7-go-no-go-ruling](day7-go-no-go-ruling.md)).
+
+Selection, 16 November 2026: the owner signed [ADR-R01](../../architecture/1.0/renderer/ADR-R01-renderer-selection.md). The 1.0 renderer is S-A2, the S-B Direct3D 12 drawing core as a shared native library hosted by Godot 4.7.2 .NET, frozen as the [renderer freeze record](renderer-freeze.md) states; the gate below is unchanged.
 
 ## Selection gate: full detail at a stable 30 fps
 

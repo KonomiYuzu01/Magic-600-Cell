@@ -1,9 +1,9 @@
 # ADR-R01: the 1.0 renderer
 
-Status: **Proposed**, 16 November 2026. Only the owner accepts or rejects this record (`AGENTS.md`, "Ask the owner":
-accepting ADRs). Owner decision: [close the renderer line](../../../wiki/decisions/owner-decisions-2026-11-16-renderer-close.md).
-Selection record: [renderer-selection](../../../progress/1.0/renderer-selection.md). Draft freeze record:
-[renderer-freeze](../../../wiki/decisions/renderer-freeze.md). Draft handoff:
+Status: **Accepted** (owner, 16 November 2026, with W-J option A; signature in the
+[freeze record](../../../wiki/decisions/renderer-freeze.md)). Owner decision:
+[close the renderer line](../../../wiki/decisions/owner-decisions-2026-11-16-renderer-close.md). Selection record:
+[renderer-selection](../../../progress/1.0/renderer-selection.md). Handoff:
 [H-10](../../../progress/1.0/renderer-handoff-H-10.md).
 
 The format follows the [language records](../language/adr/README.md): Context, Decision, What this record does not
@@ -44,9 +44,9 @@ decide, Why, Alternatives considered, Consequences, Evidence, and What the owner
 - **ADR-R01.3 W-J on the selected candidate.** The core gains W-J's per-piece pose path with its exact pose check.
   On that build, three cold runs each of fixtures S4, I_a and I_b (E-2.4-0J item 5) and three cold W3 runs (item 6)
   then run with unchanged bars.
-  - *Option A, recommended:* they are LP3 acceptance runs at C9, done together with LP3's other owner-machine runs
-    (owner, 16 November 2026). A failing run reopens this selection, and the owner decides.
-  - *Option B:* they run before the signature, in one attended session, and this item records them as met.
+  - *Option A, chosen by the owner at the signature:* they are LP3 acceptance runs at C9, done together with LP3's
+    other owner-machine runs (owner, 16 November 2026). A failing run reopens this selection, and the owner decides.
+  - *Option B, not chosen:* they would have run before the signature, in one attended session.
 - **ADR-R01.4 RPI.80 statement.**
   - *Run-time compile path:* a checked stage becomes HLSL (RPI.78). DXC compiles it to DXIL off the frame path, under
     a budget, with the built-in chain as the fallback, and the core loads the result as a pipeline state. DXC is not
@@ -168,16 +168,17 @@ section 1.
 These are actual Windows/DirectX and performance results for the build identities named, on the owner's machine.
 They are the opaque baseline: no H-06 feature and no look.
 
-## What the owner accepts
+## What the owner accepted
 
-By signing, the owner:
+The owner signed on 16 November 2026, in chat in Chinese. The owner's words, translated: "Sign; choose A." By
+signing, the owner:
 
-1. accepts ADR-R01.1 to ADR-R01.5;
-2. records the renderer freeze as the [freeze record](../../../wiki/decisions/renderer-freeze.md) states it, with its
+1. accepted ADR-R01.1 to ADR-R01.5;
+2. recorded the renderer freeze as the [freeze record](../../../wiki/decisions/renderer-freeze.md) states it, with its
    conditions, risks and deferred items;
-3. approves Godot 4.7.2 .NET and a supported .NET release as product dependencies;
-4. chooses the timing of W-J: option A (LP3 acceptance runs; recommended) or option B (run before the freeze);
-5. sends [H-10](../../../progress/1.0/renderer-handoff-H-10.md) to the design track.
+3. approved Godot 4.7.2 .NET and a supported .NET release as product dependencies;
+4. chose option A for the timing of W-J: LP3 acceptance runs at C9 (ADR-R01.3);
+5. sent [H-10](../../../progress/1.0/renderer-handoff-H-10.md) to the design track.
 
 The signature does not decide shipping DXC (RPI.80), a Godot source build, the design-system ADR, the feature list
 (H-06), the wording change of the frozen clauses (PHS.52) or any stage or view ceiling (RPI.79).
