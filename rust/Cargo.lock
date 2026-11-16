@@ -127,10 +127,12 @@ dependencies = [
  "c600-check",
  "c600-command",
  "c600-digest",
+ "c600-display",
  "c600-ir",
  "c600-kernel",
  "c600-run",
  "c600-syntax",
+ "c600-view",
 ]
 
 [[package]]
