@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-16] decision | Big integers through num-bigint (option A)
+The owner chose option A on M2's question card: LP2's unbounded integers use `num-bigint` 0.5.1 with `num-integer` 0.1.47 and `num-traits` 0.2.19, each MIT OR Apache-2.0 ([decision](decisions/owner-decisions-2026-11-16-big-integers.md)). M2, the interpreter and its reference meter, no longer waits; `rust/README.md` lists the approved crates.
+
 ## [2026-11-16] update | The language: the M7 parser in Rust
 `rust/c600-syntax` parses `.6cs` files of edition `6cs-draft-1` in candidate A's grammar with the additions the IR draft needs, recovers, formats and lowers into the IR draft with a source map; its tests cover CT-LG1-01 (first half) to CT-LG1-05 and CT-ERR-05, the nine frozen exactness cases written in source, and candidate A's LX-8 drafts and fixtures with the product header (LP2 plan, section 8). The syntax details are drafts listed in `rust/README.md` until the syntax freeze (PHS.49); a source type error still reaches the checker as an `IrError` instead of `LG2:type.mismatch`, an open item for the checker.
 

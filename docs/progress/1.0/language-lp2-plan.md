@@ -25,7 +25,7 @@ integration, authoring services, the research corpus and the importer stay with 
 | Work | State | Waits for |
 | --- | --- | --- |
 | Typed IR draft and checker | May start; LQ21 is answered | Nothing |
-| Interpreter and the `lp1-exec-draft-1` meter | Designed in M2 below | The owner's answer on the big-integer dependency (RTE.18, RTE.70) |
+| Interpreter and the `lp1-exec-draft-1` meter | May start; the big-integer question is answered | Nothing: the owner chose option A, `num-bigint` 0.5.1 with `num-integer` 0.1.47 and `num-traits` 0.2.19 ([owner, 16 November 2026](../../wiki/decisions/owner-decisions-2026-11-16-big-integers.md); RTE.18, RTE.70) |
 | Parser | May start; LQ13 is answered | Nothing: the owner chose LX-8 candidate A (braces) from a one-page comparison of the three candidates, with no human test ([owner, 16 November 2026](../../wiki/decisions/owner-decisions-2026-11-16-lq13.md)); keyword and punctuation details are settled in M7, and CT-RTE-18 stays recorded as not run |
 | Kernel API and candidate adapter, 600-cell-Full half | May start in Rust (LQ8) | Nothing beyond the frozen chapters |
 | Jumbling half of the kernel API | Waits | EN3's review and approval of the jumbling interfaces (PHS.53) |
@@ -57,7 +57,7 @@ One pull request per milestone; each names the checks that ran.
 | --- | --- | --- |
 | M0, done | CI runs the eight language checkers ([pull request 148](https://github.com/KonomiYuzu01/Magic-600-Cell/pull/148)) | - |
 | M1 | IR draft and checker: exactness, effects and capabilities, views, capability separation, grants (section 5) | - |
-| M2 | Interpreter and `lp1-exec-draft-1` reference meter: the 40 frozen traces and the meter boundary vectors | Big-integer answer |
+| M2 | Interpreter and `lp1-exec-draft-1` reference meter: the 40 frozen traces and the meter boundary vectors | Big-integer answer (answered: option A) |
 | M3 | Run-time boundary: stored provenance, the fixed acknowledgement of BND.43, the saved-word half of CT-LG3-07 | M2 |
 | M4 | Kernel API and 600-cell-Full candidate adapter: O01 to O07 through `tools/oracle/` | Rust engine port |
 | M5 | Jumbling half: public J1 API, differential comparisons, W-J fixtures and H6030 | EN3's approval |
@@ -104,15 +104,16 @@ dependency.
 
 ## 6. Stop condition for LP2
 
-LP2 stops and reports to the owner when every remaining milestone waits for an owner answer or another line (the
-big-integer answer, EN3's approval), or when an implementation would change a frozen file (PHS.52). A failing
+LP2 stops and reports to the owner when every remaining milestone waits for an owner answer or another line (EN3's
+approval, for example), or when an implementation would change a frozen file (PHS.52). A failing
 acceptance item blocks LP2's exit (PHS.63); nothing is cut.
 
 ## 7. Questions put to the owner on 15 November 2026
 
 1. The big-integer dependency for M2: `num-bigint` 0.5.1 with `num-integer` 0.1.47 and `num-traits` 0.2.19 (each
    MIT OR Apache-2.0, as read from the verified archives in LX-5's crate run; exact on LX-5's rows and about 3.4 times
-   faster in total than the experiment's own limbs), or own limbs with no dependency.
+   faster in total than the experiment's own limbs), or own limbs with no dependency. Answered on 16 November 2026:
+   option A ([owner decision](../../wiki/decisions/owner-decisions-2026-11-16-big-integers.md)).
 2. LX-8's human-test protocol, which LQ13 and the parser waited for. Moot since 16 November 2026: the owner chose LQ13
    directly from a one-page comparison, candidate A, so the parser waits no longer.
 
@@ -140,8 +141,8 @@ Selections (the owner may overrule them):
    metadata become optional clauses.
 3. **Exact literals** stay exact decimal text in the IR: unbounded integers, rationals with a nonzero denominator and
    the sign on the numerator, and Q(√5) pairs; an approximation keeps its decimal text and its precision (24, 53 or
-   113 bits). No host float and no big-integer crate is involved. Reducing a rational to lowest terms waits for the
-   big-integer answer (M2).
+   113 bits). No host float and no big-integer crate is involved. Reducing a rational to lowest terms comes with M2's
+   big integers.
 4. **What parses but does not lower yet.** Declared charges (LG4.8's tariffs), command metadata (the command table,
    LP3), verdict matches, menu words and LX-8's domain types (the IR's domain families, M4 and M5). Lowering refuses
    each with a message that names what it waits for.

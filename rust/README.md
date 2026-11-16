@@ -26,8 +26,19 @@ the ID and the part (PHS.62). The exactness tests read the frozen
 
 ## Dependencies
 
-None outside the Rust standard library. An external crate needs the owner's approval first (RTE.70), and each approved
-one is listed here with its licence.
+None outside the Rust standard library yet. An external crate needs the owner's approval first (RTE.70), and each
+approved one is listed here with its licence.
+
+Approved on 16 November 2026 for LP2's big integers
+([owner decision](../docs/wiki/decisions/owner-decisions-2026-11-16-big-integers.md)); M2 adds them, pinned exactly
+with the archive checksums of LX-5's crate run:
+
+| Crate | Version | Licence, read from the verified archive |
+| --- | --- | --- |
+| `num-bigint` | 0.5.1 | MIT OR Apache-2.0 |
+| `num-integer` | 0.1.47 | MIT OR Apache-2.0 |
+| `num-traits` | 0.2.19 | MIT OR Apache-2.0 |
+| `autocfg`, a build dependency of `num-traits` | 1.5.1 | Apache-2.0 OR MIT |
 
 ## Status of M1: the IR and the checker
 
@@ -102,7 +113,7 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   only; an effect there is refused (LG3.8, LG3.9).
 - Exact literals (LG1.6, CT-LG1-05). Integers of any length, rationals with a nonzero denominator and the sign on the
   numerator, Q(√5) pairs and words keep exact decimal text in the IR; `~53"0.125"` keeps its decimal text and its
-  precision. A rational is not reduced to lowest terms until the big-integer answer (M2), so `6/8` and `3/4` are
+  precision. A rational is not reduced to lowest terms until M2 brings big integers, so `6/8` and `3/4` are
   different literals for now.
 - Exact numbers in the checker. `exact_add`, `exact_less` and `exact_eq` take `Rat` and `Q5` values too, and `Nat` and
   `Int` widen to `Rat` and `Rat` to `Q5` (Z ⊂ Q ⊂ Q(√5)) in operands, branches, arguments and results. A `Budget` is
