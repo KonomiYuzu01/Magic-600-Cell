@@ -23,6 +23,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-display` | The headless display contract: display plans and publications, the host validator, the publication state machine over a mock backend, picks and frame stamps, and RM.37's jumbling crosswalk as fixtures (LP3, C2) |
 | `c600-module` | Module closures, lockfiles and their approval binding: the draft manifest and lock forms, resolution by content digest, closure verification and the closure digest, an approval bound to that digest, and load and run through the run-time boundary (LP3, C4) |
 | `c600-runtime` | The runtime in a process of its own (route RT1): the child binary `c600-runtime`, the parent library that starts it and answers its host calls, the wire protocol draft `c600-rt1-wire-1` and the in-process reference path (LP3, C3) |
+| `c600-durable` | LP3 C7's durable conformance cases on M6's session store, test-only: CT-RTE-08's persisted word, CT-EV3-07's durable action order and view part, and CT-LB2-03's work-sheet part (LP3, C7) |
 | `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, the recipe expansion and the source route `c600-lp3-source` (LP3, C5) |
 | `c600-input` | The headless input router: synthetic key events to command-layer invocations in chapter 04's routing order, bindings resolved to absolute arguments at the press, the held-key allowlist and the key-map checks (LP3, C5) |
 
@@ -42,6 +43,8 @@ host bridge connects the in-process interpreter to the command layer as the runt
 (C3) is not connected to the bridge yet.
 The input router depends on the command layer and the kernel crate only, so a key reaches a kernel row with no path to
 the interpreter (ONE.48).
+The durable crate holds tests only; its dev-dependencies are the session store, the module crate, the checker, the
+syntax crate, the interpreter, the kernel and the digest crate.
 
 ## Running the tests
 
@@ -798,3 +801,34 @@ run or not applicable is no pass (PHS.63).
     default map. They agree on preview, execute, undo and redo; the shell binds Escape to `operation.preview.cancel`,
     which DT-M1 C4 rules out. One map remains when the command table freezes (PHS.53).
 - Evidence kind: source and synthetic. No Windows, IME, device or timing claim; CT-EV4-05 stays a windows test (LP4).
+
+## Status of LP3, C7: durable receipts on the session store
+
+- KN5 gets one implementation, owned by LP2 under PHS.18 (integrator, 16 November 2026). The LP2 integrator placed it
+  in `c600-command`, which keeps its `Store` trait, with `c600-session` (KN4) implementing the trait, and M6's
+  semantics hold where the frozen text leaves a choice; LP2 writes it on branch `claude/lp2-kn5-one`. Until it lands,
+  LP3 changes neither `c600-command`'s layer, token, receipt, store and shell code nor `c600-session`, and
+  `MemoryStore` stays the layer's stand-in. C7's first piece is therefore `c600-durable`, a test-only crate that
+  drives M6's session store and C4's module closures through their public APIs and changes neither them nor
+  `c600-command`.
+- Tests (`c600-durable/tests/`):
+  - `ct_rte_08_persisted_word.rs`: CT-RTE-08's persisted-word case, its durable leg (BND.22, BND.84, BND.85, LG5.1,
+    LG5.6). An approved own tool stores a word, and the shell persists it through M6's `workspace.set` with the
+    boundary's provenance block. After a power loss on a memory disk, and in a new session on a file-system disk in
+    a fresh folder under Cargo's test directory, the record and its stored receipt come back equal (KN5.23); the
+    block names the module the approval binds and no other; preview admission refuses it; and a solving run that
+    proposes it is refused at admission, with nothing reaching the engine.
+  - `kn5_on_session.rs`: CT-EV3-07's durable action order (a commit, a `workspace.set` and a commit take orders 1 to
+    3, an undo hint taken before the set is refused, the order and all three receipts survive a crash, and undo runs
+    3, 2, 1) and its view part on M6's stand-ins (a query job, an opened snapshot and a preview leave the order, the
+    undo hints, the revision and the journal bytes unchanged, and a program's or a job's workspace write is
+    refused); CT-LB2-03's work-sheet part (setting a named sheet again makes the old preview stale, and a new
+    proposal reads the new content, also after a reopen).
+- Drafts, in the crate documentation: the shell's `workspace.set` as the host's delivery of a stored word (C5's host
+  bridge decides the real path); reading a record back through `c600_session::journal::scan`, since M6 has no record
+  reader; M6's stand-ins for views; and `c600_run::boundary::admit_preview` standing in for KN5.26.
+- Waits for LP2's KN5 implementation: durable receipts and undo through the command layer, KN5.26's admission of
+  record words, EV3.2's view rows, LB7.2's work-sheet structure and a session lock. If it changes an API these
+  tests use, its branch ports them.
+- Evidence kind: source and fixture. The file-system leg is a short test in a fresh folder, not long-session
+  evidence. The checks ran on Windows only; the Linux leg was not run.

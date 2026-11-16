@@ -4,9 +4,9 @@
 //! `workspace.set`, the session ends and a new one opens the same disk, and the word read back keeps the block, names
 //! the module the approval binds, and is refused at preview admission.
 //!
-//! Waits for the KN5 split (crate documentation): M6's own `operation.preview` of the record, which KN5.26 has read
-//! the word's block and parts through the BND.84 adapter in a solving session. `admit_preview` on the read-back block
-//! stands in for it.
+//! Waits for LP2's KN5 implementation (crate documentation): the layer's own `operation.preview` of the record,
+//! which KN5.26 has read the word's block and parts through the BND.84 adapter in a solving session.
+//! `admit_preview` on the read-back block stands in for it.
 
 mod common;
 
@@ -150,7 +150,8 @@ fn durable_leg(disk: &dyn Fn() -> Box<dyn Disk>, power_loss: &dyn Fn()) {
     let refusal = admit_preview(&stored.provenance, &Store::default(), &pins()).expect_err("an own tool's word");
     assert_eq!(refusal.code, NOT_GRANTED);
 
-    // ... and a solving run that proposes it is refused at admission, before the split (BND.39, BND.84).
+    // ... and a solving run that proposes it is refused at admission, with nothing reaching the engine (BND.39,
+    // BND.84).
     let (closure, solver) = approved("go", Author::BuiltIn, Profile::Solving);
     let go = load(&closure, &solver).unwrap_or_else(|r| panic!("{r:?}"));
     let value = Value::word(&LETTERS);
