@@ -170,7 +170,11 @@ acceptance check and stop condition.
   chart repertoire (RPI.34 is open), CT-RPI-18 on the CPU reference, CT-RPI-19's Windows leg, CT-RPI-22's chart half
   (so CT-RPI-22 runs whole) and the headless part of CT-RPI-32. The rest of CT-RPI-32 needs the stage module's checker
   and a backend.
-- Next, in C2's crates: CT-RPI-23, the semantics of CT-EV3-08 and the counter half of CT-RPI-26.
+- C2, views next (`rust/c600-view`, branch `claude/lp3-c2-view-next`), built: CT-RPI-23, whose two parts both run,
+  the counter half of CT-RPI-26 and the admission semantics of CT-EV3-08. Engine epochs now bind revisions, bundles
+  and output, and a scheduled recomputation can neither open nor close a view.
+- Next, in C2's crates: nothing more runs now. CT-RPI-26's gate half and CT-EV3-08's measured half wait for C9, and
+  CT-RM-09's rows 3 to 6, 8 and 10 need a stage checker or a device.
 
 Acceptance for each piece: `cargo test --locked --offline` and `cargo fmt --all --check` pass in `rust/`; each listed
 test's part exists and names its part; nothing needs a renderer, a GPU or a timing; no file under

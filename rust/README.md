@@ -578,11 +578,25 @@ run or not applicable is no pass (PHS.63).
 - Tests (`c600-view/tests/view_rows.rs`): CT-RPI-03, CT-RPI-06, CT-RPI-07, CT-RPI-36, CT-RPI-37, CT-RM-02 and
   CT-ONE-30; the limit half of CT-RPI-22; rows 1, 2, 7 and 9 of CT-RM-09's RM.40 table. Supporting tests cover ONE.10's
   reuse after undo, RM.11's profile validation, RM.12's admission ceiling, RM.35's malformed output and RPI.9's bundle
-  faults.
+  faults. C2's next view piece adds CT-RPI-23 (Global and Local stay linked and further views open under every
+  profile fixture; built-in output keeps the interim boundary under either chart evaluator, with a declared fixture
+  chain standing in for a checked vertex stage), the counter half of CT-RPI-26 (hidden, evicted and unchanged views
+  add no rebuild; nothing is timed) and the admission semantics of CT-EV3-08 under fixture ceilings, and three
+  supporting tests: a burst of revisions while the lane is blocked leaves one pending request at the newest; output
+  from an older engine epoch never attaches at the same revision numbers; a scheduled recomputation can neither open
+  nor close a view.
 - Drafts, which freeze with the IR and the command table: the list in the crate documentation, among them Global and
   Local's fixed IDs, `LG3:capability.not_granted` for a recomputation that names a view row (RPI.83 names no code), a
   separate command-ID namespace for scheduled recomputations (LI.25), the status precedence (RPI.13, charter D2), and an
-  LEB128 byte form standing in for H8's canonical output bytes.
+  LEB128 byte form standing in for H8's canonical output bytes. C2's next view piece adds one view model per session
+  profile, which no rule reads yet (LG3.9, RPI.42); a provenance block the host fills for installed output (RPI.45,
+  BND.22); the built-in class declared when a view opens (BND.27); the chart evaluator as the view's declared chain
+  (RPI.28, RPI.68); rebuild counters per view; a command ID on `view.open`, with scheduled IDs refused in both view
+  rows (RPI.83, LI.25); and engine epochs in revisions, bundle digests and the publication bytes (now version 2): a
+  bundle from an older epoch is refused with `refresh_required`, and output attaches only within its own epoch
+  (KN0.2, ONE.60, ONE.63).
+- Not built in the views: CT-RPI-26's gate half (charter E2 and the R-19 captures) and CT-EV3-08's measured half
+  (RM.39's measured ceilings) wait for C9; LQ2's policy table and display refusal wait for the joint setting.
 - `c600-display` is the host side of chapter 10's display plans and RM's feature matrix without a renderer. The
   validator checks RPI.10, RM.11, RM.12 and RM.20 in the order invalid, unsupported, ceiling. A publication installs
   whole or not at all and ends in exactly one KN5.21-style terminal, standalone or scheduled (RM.17 to RM.26, LI.25);
