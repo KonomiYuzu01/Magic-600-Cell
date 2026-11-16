@@ -10,10 +10,14 @@
 //! - [`expand`] is the source route's recipe expansion: a case step's recipe to its literal word, through the kernel,
 //!   outside the program and without a state read.
 //! - [`case`] reads the frozen oracle cases O01 to O07.
+//! - [`views`] builds the tool's views: the display contract's publication of a proposal and its preview, the content
+//!   the headless view model installs for it, and the adapter's presentation report to the shell.
 //! - The binary `c600-lp3-source` replays O01 to O07 on the source route: each step's proposal comes from a run of the
 //!   tool, and the shell presents and commits the preview on the key route.
 //!
-//! The tool runs in-process; the runtime's own process (C3) is not on main yet.
+//! The tool runs on either of two hosts: in process, on `c600-run` inside the caller's process, or on the process
+//! host ([`process`]), in the child process of `c600-runtime` (C3; route RT1, RTE.21). On both, the same run-time
+//! boundary and the same bridge answer the program in the caller's process, and every record names the host.
 //!
 //! # Drafts
 //!
@@ -57,7 +61,7 @@
 //!   The acknowledgement's `base` is `<session>@<epoch>/<head>`.
 //! - **Source route.** `c600-lp3-source` keeps `c600-lp3-oracle`'s session names, shell prefixes, trace form and
 //!   candidate block (`c600-command-lp3-loop` with the command layer's build), so the two routes' traces compare byte
-//!   for byte; its summary adds the route `source`, this crate's [`build`] and `host: in-process`. Each step's run is
+//!   for byte; its summary adds the route `source`, this crate's [`build`] and the host. Each step's run is
 //!   named `<case>-<index>`. The shell commits with `Ctrl+Shift+Enter`, the draft keymap's chord for
 //!   `operation.execute` (H-08's `key_0_4`), because the keymap binds `Ctrl+Enter` to `operation.preview`, which on
 //!   this route the program invokes; undo and redo are `Ctrl+Z` and `Ctrl+Y`.
@@ -68,18 +72,95 @@
 //! - **Negative control.** `--tamper <case>:<index>` negates the first letter of that step's literal word before the
 //!   tool runs.
 //! - **Build string.** [`build`] covers this crate's sources and the command layer's build string, which covers the
-//!   kernel's. `c600-run`, `c600-check`, `c600-syntax` and `c600-ir` have no build string yet, so it does not cover
-//!   them.
+//!   kernel's. `c600-run`, `c600-check`, `c600-syntax`, `c600-ir` and `c600-runtime` have no build string yet, so it
+//!   does not cover them.
+//! - **Views are built by the host.** The tool prepares previews and reads no state (LQ21, LG3.13), and in a solving
+//!   session only the shell sees a preview object (charter E6), so the tool publishes no view. [`views::proposal_view`]
+//!   is host code: it builds the view from what the run left for the shell and from the engine's preview, and refuses a
+//!   preview that another command built, that is of another word, or that reads another revision (EV3.1, BND.4).
+//! - **Producing digest and ranges.** Every link carries the SHA-256 of the source bytes that ran, the manifest's
+//!   `source_sha256`, and the bytes are pinned with each publication (RM.10). The ranges are the parser's source map
+//!   of the checked program (LG4.12): the entry's declaration, each `propose` call (IR path order) and its word
+//!   argument. [`views::Links::of`] parses and lowers the source again to read that map, because [`tool::Tool`] keeps
+//!   the program and not its source map.
+//! - **Canonical objects.** A view's instances are the orbits the word moves, `ObjectId::Orbit` of the preview
+//!   effect's support rows (EV3.1, EV3.5): the Rust kernel names no grip, cell or piece for a letter, so the view
+//!   claims none. The support plan shows them over the session state and links them to the `propose` call; the derived
+//!   plan shows the same orbits again over the end state and links them to the word argument, so each orbit has two
+//!   instances with one canonical ID. Instance IDs count from 1 through both plans; a plan's map has the plan's ID.
+//! - **Nodes.** The entry is a container node whose text is `<module>.<entry>`; the proposal is a control node whose
+//!   text is the word in literal form (`word[+1, -2]`), then a refusal's code, and whose state content is the SHA-256
+//!   of the preview's canonical summary under the row `operation.preview`. No node is a relation and none carries a
+//!   claim: the review of the class against the entry is not done (see "Manifest and class").
+//! - **Derived display.** The end state of a preview is a derived subject at level `labels` whose lineage is the
+//!   kernel derivation from the session state at the base by the preview's literal digest, with the base revision as
+//!   comparison base (KN2.11, EV3.4). A preview without an end state (a protected orbit would move) has no derived
+//!   plan.
+//! - **Imported display.** [`views::imported_view`] states lineage `imported` with the import digest and the
+//!   comparison base its caller gives, and nothing else (KN2.14, EV3.12). The Rust layers have no import row yet, so
+//!   the import record is the caller's; the tool imports nothing.
+//! - **Revisions.** [`views::revision_ref`] maps a command-layer revision to the display contract's: the head `e<n>`
+//!   becomes `n`, the mode must be `jumble_off` and the identity block must be of the layer's model (KN0.2).
+//!   [`views::model_revision`] gives the view model the same counters and the label digest's 32 bytes. A view depends
+//!   on the state and the protection revision, the two a preview is fresh for (KN0.8).
+//! - **View-model content.** `c600-view` installs opaque bytes and counts. [`views::content`] gives each node as the
+//!   display contract's canonical metadata of a publication holding that node alone, each plan's payload as that of
+//!   the plan with its map, and the pinned source length as `source_bytes`; a retained primitive counts no layout
+//!   row. This stands in until one publication type serves both crates (RPI.10, RM.20).
+//! - **Declared class.** The view model's `Declared` holds one class and the manifest declares two (BND.27, RPI.83),
+//!   so the host states one of the manifest's classes when it opens the view; the tests state `checking`. The view's
+//!   source is the built-in source named after the module.
+//! - **Presentation report.** [`views::report_presented`] calls the shell's `present` only when the composed frame's
+//!   presented report names the layer's pending preview, which `c600-display` gives only for a preview its built-in
+//!   chain drew (RM.26, ONE.41, RPI.76). It adds no token logic. `CommandLayer::present` and `Shell::present` take a
+//!   preview ID and no presented-frame identity, so the layer cannot itself refuse a report of a user-stage frame.
+//! - **Process host** (RTE.21, ONE.69, LQ9; KN5.15; BND.42). [`process::ProcessHost`] sends one job per run to
+//!   `c600-runtime`'s child: the source bytes, the manifest's module and entry, the literal word, [`tool::LIMITS`],
+//!   the test tariffs, no grant and no source ranges, so the run's summary is the in-process host's. The boundary and
+//!   the bridge stay in the caller's process as the `Host` of `c600_runtime::Runtime::run`: the child holds the
+//!   program and its word, and no token, secret or command layer. One child serves every run of a host; after a
+//!   fault the next run starts a fresh one (KN7.13). A run has no wall-clock deadline unless the caller sets one
+//!   (KN7.10, DET.17).
+//! - **Child admission** (ADR-L02, LG3.13, chapter 07 section 8). The child admits a job with `c600_check::admit`,
+//!   which has no built-in column, and its solving column refuses every previewing program. So the job's profile is
+//!   tool authoring, the built-in column stays the caller's ([`tool::Tool::new`]), and the process host sends only
+//!   the source whose digest is the manifest's. The child's own admission of a built-in tool waits for the API named
+//!   under "Built-in admission", and for a field in `c600-runtime`'s job options to carry it.
+//! - **Words with no transfer encoding** (`c600-runtime`'s draft 7, `PS1:input.noncanonical_value`). A word with a
+//!   letter outside 1 to 1200 in magnitude cannot cross to the child: the job is refused at the start stage and
+//!   nothing is proposed. In process the same word runs and the command layer refuses its proposal. The runner takes
+//!   the start-stage refusal as an `invalid-input` step only for a recipe the kernel already refused, and keeps the
+//!   kernel's refusal in the step record. In O07 that is steps 0, 1, 2 and 8: the traces are the same on both hosts,
+//!   and those four steps have no receipt on the process host. It is the one difference between the hosts' records
+//!   beyond the host's name.
+//! - **Host in the records** (plan section 7). `--host in-process|process`, in-process by default; `--runtime` names
+//!   the runtime's binary, by default `c600-runtime` beside the runner (packaging decides later). The summary has
+//!   `host` and `runtime_spawns`, each case of the summary `start_refused`, each case of the receipts file `host`,
+//!   and each step record `host` (null when no word was given to a host) and `start_refusal`.
+//! - **Oversize and chunking** (LB2.3, LB2.4, LB1.11). The bridge never splits a word: one proposal is one word
+//!   step, whatever its length, so the layer refuses an oversized word whole, as it refuses the same draft on the
+//!   command route. The command route's chunking is the 0.4 recipe's word steps. The tool's entry takes one flat
+//!   word, so a valid chunked recipe of more than 100,000 letters is refused on the source route; carrying one needs
+//!   a list of words in the IR or KN2.10's streaming.
+//! - **Net check** (LB2.3, CT-LB2-02's Net half). The tests take the Net check to be the layer's preview verdict at
+//!   label level over a session's protected set, here the orbits one generator moves, and the commit's refusal
+//!   when that verdict is not clear. The kernel has no Strict mode, so the Strict half is not built.
+//! - **Inspector fixtures** (LB3.5, CT-LB3-07's checker half). No LB3 entry exists in the IR, so the test's
+//!   fixtures stand for them: a fixed record of two preview outcomes for an outcome table, and a previewing entry
+//!   that answers the acknowledgement's two fields for a named-word check. The checker decides them by capability
+//!   separation (LG3.13) and the built-in column only; it has no rule for a recommendation read from state.
 
 #![forbid(unsafe_code)]
 
 pub mod bridge;
 pub mod case;
 pub mod expand;
+pub mod process;
 pub mod tool;
+pub mod views;
 
 /// The sources of the built-in tools, the bridge and the source route's runner, hashed into [`build`].
-pub const SOURCES: [(&str, &[u8]); 8] = [
+pub const SOURCES: [(&str, &[u8]); 10] = [
     ("c600-tools/Cargo.toml", include_bytes!("../Cargo.toml")),
     ("c600-tools/src/bin/c600-lp3-source.rs", include_bytes!("bin/c600-lp3-source.rs")),
     ("c600-tools/src/bridge.rs", include_bytes!("bridge.rs")),
@@ -87,7 +168,9 @@ pub const SOURCES: [(&str, &[u8]); 8] = [
     ("c600-tools/src/expand.rs", include_bytes!("expand.rs")),
     ("c600-tools/src/full_600_cell.6cs", include_bytes!("full_600_cell.6cs")),
     ("c600-tools/src/lib.rs", include_bytes!("lib.rs")),
+    ("c600-tools/src/process.rs", include_bytes!("process.rs")),
     ("c600-tools/src/tool.rs", include_bytes!("tool.rs")),
+    ("c600-tools/src/views.rs", include_bytes!("views.rs")),
 ];
 
 /// The build string: the crate version, the SHA-256 of a `sha256sum`-style listing of [`SOURCES`], and the command

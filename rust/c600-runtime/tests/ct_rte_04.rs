@@ -204,7 +204,7 @@ const PICK_TRUE: &[(&str, &str)] = &[
     ("display/then/b", "m.pick:1.1#visit"),
 ];
 const PICK_FALSE: &[(&str, &str)] = &[("display", "m.pick:1#display_if"), ("display/else/a", "m.pick:1.2#visit")];
-const SHOW: &[(&str, &str)] = &[("emit", "m.show:root#encode")];
+const SHOW: &[(&str, &str)] = &[("emit", "m.show:root#publish_view")];
 
 fn realisations() -> Vec<Realisation> {
     let base = Realisation {

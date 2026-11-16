@@ -4,7 +4,7 @@ resolver = "2"
 members = [
     "c600-ir", "c600-check", "c600-digest", "c600-syntax", "c600-run", "c600-kernel", "c600-session",
     "c600-evidence", "c600-command", "c600-view", "c600-display", "c600-module", "c600-runtime", "c600-tools",
-    "c600-input", "c600-jumble",
+    "c600-input", "c600-jumble", "c600-durable",
 ]
 
 [workspace.package]

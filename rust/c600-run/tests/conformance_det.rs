@@ -389,7 +389,7 @@ fn ct_det_02_completed_exact_runs_repeat_their_pinned_bytes() {
     let add = build(&[&source("", ADD)]);
     let r = run(&add, "main", vec![Value::int(5)], &Options::new(WIDE));
     assert_eq!(output(&r), "{\"int\":\"7\"}\n");
-    assert_eq!(r.summary.used, Amounts { steps: 12, kernel_cost: 27, memory: 110, output: 12 });
+    assert_eq!(r.summary.used, Amounts { steps: 11, kernel_cost: 26, memory: 94, output: 12 });
 
     let sums = source(
         "",
@@ -1041,8 +1041,9 @@ impl Host for Previewer {
 /// output unit before dispatch. DET.56 step 2 checks them in that order: with all three one short the stop is kernel
 /// cost, with memory and output short it is memory, with output alone it is output; each denied row keeps only its
 /// step, and nothing is dispatched. The output charge is exactly the request bytes the host prices. Every encoding
-/// pass prices its work as kernel cost on the value's retained bound, apart from the byte charge (DET.59, CV.4), so
-/// the encoding tariff moves only the `encode` rows' kernel cost.
+/// prices its work as kernel cost, apart from the byte charge (DET.59, CV.4): the request's `encode` pass on the
+/// value's retained bound, and the top-level result's fused output unit on its exact bytes. So the encoding tariff
+/// moves only those two rows' kernel cost.
 #[test]
 fn ct_det_27_one_invoke_admission_checks_kernel_then_memory_then_output() {
     let loaded = build(&[&source(
@@ -1068,12 +1069,15 @@ fn ct_det_27_one_invoke_admission_checks_kernel_then_memory_then_output() {
     assert_eq!(host.dispatched, 1);
 
     let encodes: Vec<&Row> = rows.iter().filter(|r| r.at.ends_with("#encode")).collect();
-    assert_eq!(encodes.len(), 2, "the request and the top-level result");
+    assert_eq!(encodes.len(), 1, "the request's pass; the top-level result is one fused `emit` row");
     assert!(encodes.iter().all(|r| r.kernel_cost == r.memory && r.output == 0));
+    let unit = rows.last().unwrap();
+    assert_eq!((unit.at.as_str(), unit.kernel_cost, unit.memory, unit.output), ("entry#emit", 4, 4, 4));
     let (double, _) = go(WIDE, Tariffs { encode_per_byte: 2, ..Tariffs::TEST });
     assert_eq!(double.summary.rows.len(), rows.len());
     for (a, b) in rows.iter().zip(&double.summary.rows) {
-        let kernel = if a.at.ends_with("#encode") { 2 * a.kernel_cost } else { a.kernel_cost };
+        let encoding = a.at.ends_with("#encode") || a.at == "entry#emit";
+        let kernel = if encoding { 2 * a.kernel_cost } else { a.kernel_cost };
         assert_eq!(
             (b.at.as_str(), b.kernel_cost, b.memory, b.output, b.released),
             (a.at.as_str(), kernel, a.memory, a.output, a.released)

@@ -17,6 +17,10 @@
 //! optional `cap` and `keep`); `word_check` (`letters`, optional `unit` and `cap`). Stored states: `keep` (`name`),
 //! `use` (`name`) and `release` (`name`); a kept prefix state is named `prefix/<row index>`. `cayley` (`grip`,
 //! `omega`) returns the record of an exact Cayley rotation for free-mode tests.
+//!
+//! Every request, and the record that `load` reads, may name its `dimension` (JI.3). This edition admits only 4, and
+//! a request or record without one means 4 (a draft: the harness's requests carry none). Any other value is refused
+//! with `KN1:input.unsupported_dimension` before any other field is read, and nothing changes (JI.45).
 
 use std::collections::HashMap;
 use std::io::{self, BufRead, Write};
@@ -85,26 +89,46 @@ fn batch(request: &Value) -> Result<observe::Batch, Fail> {
     })
 }
 
-/// Piece IDs as given (a named unit is checked by the observation, which refuses an ID outside the model).
-fn pieces(value: Option<&Value>, what: &str) -> Result<Option<Vec<u32>>, Fail> {
+/// Piece IDs as given: the observation checks a named unit and refuses an ID outside the model, a negative one too,
+/// with `KN2:input.named_object_invalid` (JI.45). Only a value that is no list of integers is an input error.
+fn pieces(value: Option<&Value>, what: &str) -> Result<Option<Vec<i64>>, Fail> {
     match value {
         None | Some(Value::Null) => Ok(None),
         Some(Value::Array(items)) => items
             .iter()
             .map(|v| match v {
-                Value::Int(n) if (0..=u32::MAX as i64).contains(n) => Ok(*n as u32),
-                _ => Err(input(format!("{what} must list non-negative integers"))),
+                Value::Int(n) => Ok(*n),
+                _ => Err(input(format!("{what} must list integers"))),
             })
-            .collect::<Result<Vec<u32>, Fail>>()
+            .collect::<Result<Vec<i64>, Fail>>()
             .map(Some),
         _ => Err(input(format!("{what} must be a list or null"))),
     }
 }
 
-fn optional_cap(value: Option<&Value>) -> Result<Option<usize>, Fail> {
+/// JI.3 and JI.45: the refusal of a `dimension` other than 4 at `argument` (the request's or a record header's),
+/// with the supplied and the supported dimension; `None` when the dimension is 4 or not given.
+fn dimension_refusal(value: Option<&Value>, argument: &str) -> Option<Value> {
+    match value {
+        None | Some(Value::Null) => None,
+        Some(Value::Int(d)) if *d == c600_jumble::DIMENSION => None,
+        Some(supplied) => Some(json::object([
+            ("status", string("refused")),
+            ("code", string(codes::UNSUPPORTED_DIMENSION)),
+            ("message", string(&format!("{argument}: this edition admits only dimension {}", c600_jumble::DIMENSION))),
+            ("argument", string(argument)),
+            ("supplied", supplied.clone()),
+            ("supported", Value::Array(vec![int(c600_jumble::DIMENSION)])),
+        ])),
+    }
+}
+
+/// A named cap of an observation as given: the observation refuses one outside 0..599 (JI.45).
+fn optional_cap(value: Option<&Value>) -> Result<Option<i64>, Fail> {
     match value {
         None | Some(Value::Null) => Ok(None),
-        cap => Ok(Some(small_int(cap, "cap", 600)? as usize)),
+        Some(Value::Int(n)) => Ok(Some(*n)),
+        _ => Err(input("cap must be an integer or null")),
     }
 }
 
@@ -271,8 +295,14 @@ impl Adapter {
 
     fn handle(&mut self, request: &Value) -> Result<Option<Value>, Fail> {
         let op = request.get("op").and_then(Value::as_str).ok_or_else(|| input("a request needs an op"))?;
+        if op == "quit" {
+            return Ok(None);
+        }
+        // JI.3: the dimension comes first, before any array or other field is read.
+        if let Some(refused) = dimension_refusal(request.get("dimension"), "dimension") {
+            return Ok(Some(refused));
+        }
         let result = match op {
-            "quit" => return Ok(None),
             "start" => {
                 let menu = match request.get("menu") {
                     None | Some(Value::Null) => None,
@@ -345,6 +375,9 @@ impl Adapter {
             }
             "load" => {
                 let record = request.get("record").ok_or_else(|| input("load needs a record"))?;
+                if let Some(refused) = dimension_refusal(record.get("dimension"), "record.dimension") {
+                    return Ok(Some(refused));
+                }
                 let menu = self.state()?.menu_arc();
                 let loaded = State::from_record(&self.ctx, menu, record).map_err(Fail::Input)?;
                 self.state = Some(loaded);
@@ -368,7 +401,7 @@ impl Adapter {
             "seam_facts" => {
                 let scope = match request.get("scope") {
                     Some(Value::String(s)) if s == "all" => observe::Scope::All,
-                    Some(cap @ Value::Int(_)) => observe::Scope::Cap(small_int(Some(cap), "scope cap", 600)? as usize),
+                    Some(Value::Int(cap)) => observe::Scope::Cap(*cap),
                     _ => return Err(input("scope must be all or a cap")),
                 };
                 let rows = match request.get("rows") {
