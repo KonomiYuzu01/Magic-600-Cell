@@ -313,10 +313,10 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   candidate certificate checked by J1; the first 600 letters of H6030; refusals (a blocked twist, a twist outside the
   menu, a malformed record); and a planted difference, which fails at its step. With `JUMBLING_FULL_REPLAY=1` every
   record of the three fixtures and all 3,156 letters of H6030 run. `tools/ci/run_headless.py` lists it.
-- Contract tests: the jumbling halves of CT-KN2-01, CT-KN2-04 and CT-KN1-05 (poses), CT-KN1-02, CT-KN2-03
-  (`c600-jumble/tests/crossing.rs`), CT-KN2-05 (no `f32` or `f64` in the kernel crates), CT-KN3-02 and CT-JI-03.
-  CT-KN2-02 in part: heights and domain IDs against `trees.py` and the library's histograms on H6030's compared
-  states, the recorded fixture prefixes and u1, and the free-mode Cayley rotation.
+- Contract tests: CT-KN1-02, CT-KN2-03 (`c600-jumble/tests/crossing.rs`) and CT-KN3-02 whole; the jumbling halves
+  of CT-KN2-01, CT-KN2-04, CT-KN1-05 (poses) and CT-KN2-05 (no `f32` or `f64` in the kernel crates), which run whole
+  with M4's halves; CT-JI-03. CT-KN2-02 in part: heights and domain IDs against `trees.py` and the library's
+  histograms on H6030's compared states, the recorded fixture prefixes and u1, and the free-mode Cayley rotation.
 - Not built, for M8: CT-KN1-03, CT-KN1-04, CT-KN1-06, CT-KN2-06, CT-KN2-07, CT-KN3-01, CT-KN3-03 to CT-KN3-06, R-11
   (CT-LG2-12), and CT-KN2-02's cases b20, b06-14, b14 and b03; the observations rim_summary, covers, repair_list, nu,
   checkpoints, release_check and derivation with reachability; Strict protection; and the holding caps of seam cells
@@ -497,6 +497,8 @@ run or not applicable is no pass (PHS.63).
     `traces.rs` and `values.rs` mark the meter's and the values' rows.
   - `c600-kernel/tests/`: `kernel.rs`, `load.rs` and `json.rs` run the 600-cell-Full halves of the KN rows, CT-PS1-04
     and CT-PS1-12 (M4's section).
+  - `c600-jumble/tests/`: `crossing.rs` runs CT-KN2-03, and `assets.rs` the jumbling model's asset checks (M5's
+    section).
   - `c600-evidence/tests/` runs the EVD rows (the evidence library's section). `c600-session/tests/` names M6's rows
     without a marker (M6's section), and so does `c600-command/tests/layer.rs` for LP3 C1's parts (the C1 section).
   - Python, listed in `tools/ci/run_headless.py`: `tests/test_error_registry.py` checks the code catalogue against
@@ -504,14 +506,15 @@ run or not applicable is no pass (PHS.63).
     `tests/test_language_scans.py` scans the workspace's sources; `tests/test_format_inventory.py` runs CT-PS2-06;
     `tests/test_source_checkout.py` reads every `.6cs` source and every pinned packet file as LF, CRLF and `input`
     checkouts write them (CT-LG1-02, CT-PS1-05's checkout half); `tests/test_kernel_oracle.py` replays O01 to O07 and
-    N01 to N04 through the kernel (M4's section).
-- Count on this branch, with LP3's C1 to C4 from main: 33 whole, three of them by the union of their parts
-  (CT-LG2-04, CT-LG3-01, CT-LG3-04); 108 part; 15 named by M6's tests without a marker (CT-KN4-01 to CT-KN4-04,
-  CT-KN5-01, CT-KN5-04, CT-KN5-06, CT-KN5-09, CT-KN5-11, CT-KN7-01 to CT-KN7-05 and CT-KN7-07; M6's section calls
-  CT-KN4-01's an in-process part); 13 more named only by LP3's command-layer tests, as parts without a marker
-  (CT-KN5-03, CT-KN5-07, CT-KN5-12, CT-ONE-03 to CT-ONE-05, CT-ONE-11, CT-ONE-20 to CT-ONE-22, CT-LI-04, CT-LI-09 and
-  CT-LI-10); 2 named only as not built (CT-KN2-07, CT-LG4-05); 77 missing. CT-KN5-08 counts as missing, since only the
-  documentation in `c600-command/src/layer.rs` names it.
+    N01 to N04 through the kernel (M4's section); `tests/test_jumbling_rust_candidate.py` compares the jumbling
+    candidate with J1 (M5's section).
+- Count with LP3's C1 to C4 and M5: 40 whole, seven of them by the union of their parts (CT-LG2-04, CT-LG3-01,
+  CT-LG3-04, and with M5 CT-KN1-05, CT-KN2-01, CT-KN2-04 and CT-KN2-05); 104 part; 15 named by M6's tests without a
+  marker (CT-KN4-01 to CT-KN4-04, CT-KN5-01, CT-KN5-04, CT-KN5-06, CT-KN5-09, CT-KN5-11, CT-KN7-01 to CT-KN7-05 and
+  CT-KN7-07; M6's section calls CT-KN4-01's an in-process part); 13 more named only by LP3's command-layer tests, as
+  parts without a marker (CT-KN5-03, CT-KN5-07, CT-KN5-12, CT-ONE-03 to CT-ONE-05, CT-ONE-11, CT-ONE-20 to CT-ONE-22,
+  CT-LI-04, CT-LI-09 and CT-LI-10); 2 named only as not built (CT-KN2-07, CT-LG4-05); 74 missing. CT-KN5-08 counts as
+  missing, since only the documentation in `c600-command/src/layer.rs` names it.
 - Not run or not applicable, which is no pass (PHS.63), with the check that runs instead: CT-LG3-06's flow-label
   variant, while the flow rule is off (BND.41) and LQ2 has not set it, so the static-only and run-time variants run
   (`c600-run/tests/conformance_lg3.rs`); CT-LG1-03's second host context, since CI runs on Windows only and the editor
@@ -540,10 +543,11 @@ run or not applicable is no pass (PHS.63).
     (line 661) sits between ERR.28's table and ERR.31 and belongs at the head of ERR.31's table, and ERR.31 comes
     before ERR.29 and ERR.30; the rule source of `KN5:stale.filter_preview` (line 322) omits KN0.9
     (`closure/manifests/p7-layers.json`). The Used-by cells of `KN2:input.recipe_shape` and
-    `KN2:resource_limit.primitive_ceiling` say "not yet used", but the kernel emits both. Chapter 13 registers none of
-    the five draft codes `c600-command` emits (`KN2:consistency.star_certificate`, `KN5:input.unknown_row`,
-    `KN5:input.argument_form`, `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`); the command table's
-    drafts settle at LP3 (PHS.53).
+    `KN2:resource_limit.primitive_ceiling` say "not yet used", but the kernel emits both; the cell of
+    `KN2:input.word_blocked_prefix` says the same, but the jumbling adapter emits it for a refused word (M5).
+    Chapter 13 registers none of the five draft codes `c600-command` emits (`KN2:consistency.star_certificate`,
+    `KN5:input.unknown_row`, `KN5:input.argument_form`, `KN5:input.row_not_built`, `KN5:input.overlay_row_conflict`);
+    the command table's drafts settle at LP3 (PHS.53).
   - For LP3: LB7.1's `LB7:capability.module_grant_missing` is the workspace library's entry-admission fact, built with
     LB7; the checker's own admission reports `LG3:capability.not_granted`, as chapter 02's LG3 table has it.
   - KN5 has two implementations, `c600-session` (M6) and LP3's `c600-command` (pull request 159). The LP2 integrator
@@ -561,8 +565,8 @@ run or not applicable is no pass (PHS.63).
   - M6's remaining rows (15): CT-PS1-08 to CT-PS1-10, CT-PS1-16, CT-PS1-19, CT-PS1-21, CT-PS1-23, CT-PS2-01 to
     CT-PS2-05, and the run records of CT-DET-04, CT-DET-14 and CT-BND-23 (with LP3's grants for CT-DET-04 and
     CT-BND-23).
-  - M5, the jumbled puzzle (12): CT-KN1-02, CT-KN1-03, CT-KN1-06, CT-KN2-02, CT-KN2-03, CT-KN2-06, CT-KN3-01,
-    CT-KN3-03, CT-LG2-12, CT-PS1-11, CT-PS1-14 and CT-PS1-22.
+  - The jumbled puzzle's rows that M5 leaves to M8 (9): CT-KN1-03, CT-KN1-06, CT-KN2-06, CT-KN3-01, CT-KN3-03,
+    CT-LG2-12, CT-PS1-11, CT-PS1-14 and CT-PS1-22.
   - LG5's module loader and lockfiles (7): CT-LG5-01 to CT-LG5-07. LP3 C4's `c600-module` builds closures and
     lockfiles, but its tests name none of these rows.
   - KN5's command layer, once its candidate is picked (3): CT-KN5-05, CT-KN5-08 and CT-KN5-10.

@@ -1,7 +1,7 @@
 //! Exact twists (grip, g) and twist menus (amendment A4 of the state contract).
 //!
 //! A twist's matrix is authoritative: it must be an exact rotation that fixes the grip's pole. Records of the
-//! families `menu`, `matrix` and `cayley` are read (selection 2 of the LP2 plan, section 10); another family, or a
+//! families `menu`, `matrix` and `cayley` are read (selection 2 of the LP2 plan, section 11); another family, or a
 //! float request (`params.requested`), is an adapter error and no refusal.
 
 use std::collections::HashMap;

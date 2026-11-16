@@ -1,17 +1,20 @@
-"""LP2, M5: the Rust jumbling candidate against J1 (LP2 plan, section 10, acceptance items 3 to 11).
+"""LP2, M5: the Rust jumbling candidate against J1 (LP2 plan, section 11, acceptance items 3 to 11).
 
-CT-KN2-01, jumbling half: `harness.compare` runs J1 and the candidate (`rust/c600-jumble` behind
-`differential/candidate/rust_jumble.py`) step by step on the first 60 records of each W-J fixture, with surveys at
-steps 0 and 30 and the straddler sets of named caps at step 30 (every candidate certificate must pass J1's
-independent check), on the first 600 letters of H6030 and on refusals; a planted difference fails at its step. With
-JUMBLING_FULL_REPLAY=1 every record of the three fixtures and all 3,156 letters of H6030 run. Every compared step
-compares the pose digest, which is CT-KN1-05's poses half.
+CT-KN2-01 (part: the J1 harness; the 600-cell-Full oracle is M4's, in tests/test_kernel_oracle.py): `harness.compare`
+runs J1 and the candidate (`rust/c600-jumble` behind `differential/candidate/rust_jumble.py`) step by step on the
+first 60 records of each W-J fixture, with surveys at steps 0 and 30 and the straddler sets of named caps at step 30
+(every candidate certificate must pass J1's independent check), on the first 600 letters of H6030 and on refusals; a
+planted difference fails at its step. With JUMBLING_FULL_REPLAY=1 every record of the three fixtures and all 3,156
+letters of H6030 run. Every compared step compares the pose digest: CT-KN1-05 (part: Digest<poses>; Digest<labels>
+is M4's, in rust/c600-kernel/tests/kernel.rs).
 
-The other cases: CT-KN1-02 (a word recorded under the reversed I_a order is refused), CT-KN2-02 in part (heights and
-domain IDs against trees.py and the library's histograms on H6030's compared states and on u1, and the free-mode
-Cayley rotation), CT-KN2-04's jumbling half (a refused letter changes nothing), CT-KN2-05 (no float type in the two
-kernel crates), CT-KN3-02 (big integers through the pose table) and CT-JI-03 (seam counts, JI.16's vector and a
-cancelled batch). CT-KN2-03 runs in `cargo test` (`rust/c600-jumble/tests/crossing.rs`).
+The other cases, with PHS.62's markers: CT-KN1-02 (whole: a word recorded under the reversed I_a order is refused);
+CT-KN2-02 (part: heights and domain IDs against trees.py and the library's histograms on H6030's compared states and
+on u1, and the free-mode Cayley rotation; not run: the cases b20, b06-14, b14 and b03, for M8); CT-KN2-04 (part: a
+blocked, an invalid and an uncertain letter of the jumbled puzzle; 600-cell-Full's blocked and invalid recipes are
+M4's); CT-KN2-05 (part: no float type in c600-kernel and c600-jumble; M4's scan adds c600-digest); CT-KN3-02 (whole:
+pose entries beyond 2^64 and a 6,775-digit integer through the pose table); and CT-JI-03 (seam counts, JI.16's vector
+and a cancelled batch). CT-KN2-03 (whole) runs in `cargo test` (`rust/c600-jumble/tests/crossing.rs`).
 
 The adapter is built with `cargo build --release --locked --offline` in rust/ (into the ignored rust/target). A
 missing Rust toolchain or NumPy fails the check: a test that did not run is no pass (PHS.63). A pass is source and
@@ -242,10 +245,11 @@ def blocked_and_admissible(engine, menu, records):
 
 class SourceScanTests(TimedCase):
     def test_no_float_type_in_the_kernel_crates(self):
-        """CT-KN2-05: no f32 or f64 in the sources of c600-kernel and c600-jumble (a file name such as
-        cell_normals.f32 is no type). The INV-4 half of the item (no display plan, A2 filter or float request in these
-        crates) is not scanned: their modules are listed in rust/README.md, and a record's float request
-        (params.requested) is an adapter error (selection 2, RefusalTests)."""
+        """CT-KN2-05 (part: the sources of c600-kernel and c600-jumble; M4's scan adds c600-digest): no f32 or f64
+        in them (a file name such as cell_normals.f32 is no type). INV-4 names no kernel site where a float may stand.
+        The INV-4 half of the item (no display plan, A2 filter or float request in these crates) is not scanned: their
+        modules are listed in rust/README.md, and a record's float request (params.requested) is an adapter error
+        (selection 2, RefusalTests)."""
         sources = sorted((ROOT / 'rust/c600-kernel').rglob('*.rs')) + sorted((ROOT / 'rust/c600-jumble').rglob('*.rs'))
         self.assertTrue(sources)
         found = []
@@ -432,8 +436,8 @@ class RefusalTests(TimedCase):
         self.assertEqual(report.steps_compared, PLANTED_STEP + 1)
 
     def test_refused_letters_leave_the_state_unchanged(self):
-        """CT-KN2-04, jumbling half: a blocked, an invalid and an uncertain (budget) letter each leave the pose digest,
-        the lattice digest and the pose table unchanged; the same budget gives the same outcome again."""
+        """CT-KN2-04 (part: the jumbling half): a blocked, an invalid and an uncertain (budget) letter each leave the
+        pose digest, the lattice digest and the pose table unchanged; the same budget gives the same outcome again."""
         engine = candidate()
         engine.start(self.doc['menu'])
         for record in self.records[:30]:
@@ -491,8 +495,8 @@ class IdentityTests(TimedCase):
         self.assertEqual((candidate().identity()['menu_id'], candidate().identity()['menu_order']), (None, None))
 
     def test_word_under_the_reversed_order_is_refused(self):
-        """CT-KN1-02: a word recorded under the reversed I_a order has the same menu identity and another order
-        digest, and it is refused whole, naming menu_order; nothing changes. The same word under the loaded order
+        """CT-KN1-02 (whole): a word recorded under the reversed I_a order has the same menu identity and another
+        order digest, and it is refused whole, naming menu_order; nothing changes. The same word under the loaded order
         applies."""
         menu = fixture('I_a')['menu']
         reversed_menu = dict(menu, base=menu['base'][::-1])
@@ -515,8 +519,8 @@ class IdentityTests(TimedCase):
 
 class FreeModeTests(TimedCase):
     def test_cayley_rotation_outside_kplus(self):
-        """CT-KN2-02's free-mode case: the Cayley rotation omega = (2,0,0) at cap 0 reads heights (0,0), lies outside
-        K+, and its domain ID (the exact coset key) differs from the identity's; J1 agrees."""
+        """CT-KN2-02 (part: the free-mode case): the Cayley rotation omega = (2,0,0) at cap 0 reads heights (0,0), lies
+        outside K+, and its domain ID (the exact coset key) differs from the identity's; J1 agrees."""
         record = candidate().cayley(0, OMEGA_2)
         steps = H.Steps((record_step(record),))
         report = H.compare(j1(), Observed(candidate(), j1(), (), None), steps)
@@ -531,8 +535,8 @@ class FreeModeTests(TimedCase):
         self.assertEqual([sorted(entry) for entry in table], [['k'], ['m']])
 
     def test_big_integers_round_trip_through_the_pose_table(self):
-        """CT-KN3-02: pose entries beyond 2^64 and a 6,775-digit integer round-trip exactly through the candidate's
-        pose-table output and input; J1's digest agrees on the first."""
+        """CT-KN3-02 (whole): pose entries beyond 2^64 and a 6,775-digit integer round-trip exactly through the
+        candidate's pose-table output and input; J1's digest agrees on the first."""
         with unlimited_integer_digits():
             for omega, digits in (([[2 ** 40, 0, 1], [0, 0, 1], [0, 0, 1]], 25),
                                   ([[10 ** 3387, 0, 1], [0, 0, 1], [0, 0, 1]], 6775)):

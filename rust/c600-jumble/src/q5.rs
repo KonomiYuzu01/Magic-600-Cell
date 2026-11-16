@@ -1,4 +1,4 @@
-//! Exact numbers of Q(√5) (selection 1 of the LP2 plan, section 10).
+//! Exact numbers of Q(√5) (selection 1 of the LP2 plan, section 11).
 //!
 //! A number is the reduced integer triple (a + b√5)/d with d > 0, on `num-bigint`. Vectors and matrices are arrays
 //! of numbers; [`IntVec`] is the integer form (A, B, D) with entries (A_i + B_i√5)/D that the sign kernel works on.

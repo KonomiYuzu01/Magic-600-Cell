@@ -1,7 +1,8 @@
-//! CT-KN2-03 (LP2 plan, section 10, item 7; LB3.4, CT-LB3-02): a protection verdict carries its level. With centre
-//! piece 0 protected, every letter of the pinned I_a menu at grip 0 that turns the piece by a non-identity element of
-//! A4₀ is refused at pose level inside Jumble with the report of selection 4, and nothing changes; the same retained
-//! word, crossed at solved into 600-cell-Full, passes at label level: under M4's kernel no slot of the piece moves.
+//! CT-KN2-03 (whole; LP2 plan, section 11, item 7; LB3.4, CT-LB3-02): a protection verdict carries its level. With
+//! centre piece 0 protected, every letter of the pinned I_a menu at grip 0 that turns the piece by a non-identity
+//! element of A4₀ is refused at pose level inside Jumble with the report of selection 4, and nothing changes; the same
+//! retained word, crossed at solved into 600-cell-Full, passes at label level: under M4's kernel no slot of the piece
+//! moves.
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;

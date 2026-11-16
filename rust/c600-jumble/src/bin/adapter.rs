@@ -3,7 +3,7 @@
 //! Usage: `c600-jumble-adapter <assets directory>`. After loading, the adapter writes one ready line, then answers one
 //! request per line on standard input with one line on standard output: `{"ok":true,"result":...}` or
 //! `{"ok":false,"error":{"kind":"input"|"engine","message":...}}`. A refusal is a result, never an error. An error is
-//! an input the candidate does not read (selection 2 of the LP2 plan, section 10) or a broken invariant.
+//! an input the candidate does not read (selection 2 of the LP2 plan, section 11) or a broken invariant.
 //!
 //! Requests (`op`): `start` (`menu`, a menu record or null for free mode), `apply` (`step`, as the harness gives it,
 //! with optional `budget` and `protect`), `survey` (`grips`, optional `budget`), `straddlers` (`caps`), `certify`

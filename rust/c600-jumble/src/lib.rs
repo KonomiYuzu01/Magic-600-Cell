@@ -6,7 +6,7 @@
 //! (`src/bin/adapter.rs`), and `tests/test_jumbling_rust_candidate.py` runs that comparison (CT-KN2-01, jumbling
 //! half).
 //!
-//! # Selections of the integrator for M5 (LP2 plan, section 10)
+//! # Selections of the integrator for M5 (LP2 plan, section 11)
 //!
 //! 1. Numbers are exact: Q(√5) over big integers, and no floating type is used. The stored pole normals are binary64
 //!    values; each is read as its exact dyadic rational and matched to the unique (p + q√5)/2 with |q| ≤ 12 within
