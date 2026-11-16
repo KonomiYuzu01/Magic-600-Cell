@@ -16,12 +16,13 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-run` | The interpreter over the IR draft (route RT1) with the `lp1-exec-draft-1` reference meter and generator (M2), and the run-time boundary under capability separation with FP.17's provenance blocks (M3) |
 | `c600-kernel` | The 600-cell-Full kernel read straight from `assets/`, its chapter 01 API, and the oracle adapter `c600-oracle-adapter` (M4) |
 | `c600-session` | The session store below the language: the journal, revisions, snapshots, the commit path, undo, branches and program jobs (M6) |
+| `c600-evidence` | Chapter 06's evidence library as pure code: statements, keys and scopes, the AND/OR graph, grades and editions, the two standing passes, the word function with EVD.32's rows and EVD.40's checks, `CheckReport` admission, EVD.52's import rules and EVD.64's writer check |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
 checker; its tests run checked source programs, so the checker and the syntax crate are its dev-dependencies. The
 kernel depends on the digest crate only. The session crate depends on the kernel, the interpreter, the IR and digest
-crates; its job tests run checked source programs too.
+crates; its job tests run checked source programs too. The evidence library depends on the digest crate only.
 
 ## Running the tests
 
@@ -364,3 +365,29 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   the undo chain), and L10's rows 1 to 7 are covered. L8 and L9 are deferred.
 - Evidence kind: source and fixture. Failures are injected in memory; `FsDisk` runs in one reopen test, so a pass is no
   evidence of a real disk's behaviour in a crash. The checks ran on Windows only.
+
+## Status of the evidence library: chapter 06
+
+- `c600-evidence` holds chapter 06 as pure code. It reads and writes no file, clock, process or session (EVD.54), and a
+  word is a function of the graph's facts and a pinned edition, `evidence-draft-1` (EVD.14). Where chapter 06 leaves an
+  encoding or a detail open, the crate takes a draft, and its documentation (`c600-evidence/src/lib.rs`) lists each
+  one; none is a decision of the chapter. The trial threshold stays the owner's (EVD.29), so the tests use the trial
+  set and its up-subsets only.
+- Tests (`c600-evidence/tests/`): `words.rs` runs the word function's rows and checks (CT-EVD-01, CT-EVD-05,
+  CT-EVD-07 to CT-EVD-11, CT-EVD-13, CT-EVD-22); `properties.rs` runs seeded random graphs (CT-EVD-02 to CT-EVD-04,
+  CT-EVD-06); `sinks.rs` runs writers, reuse, check reports and the import rules (CT-EVD-17 to CT-EVD-21, CT-EVD-26 to
+  CT-EVD-30, and the evidence halves of CT-LB6-02 and CT-PS1-27); `examples.rs` transcribes section 9's E1 to E3
+  (part of CT-EVD-12).
+- Fixed, each found by a test: I6 skipped a statement with no OR node of its own, so a bad refutation of an unsupported
+  universal read row 1 instead of row 0 (CT-EVD-09); EVD.42's guard compared a leaf's covered set and not the search
+  record's declared set, from which EVD.59 takes it, so E3's search refuted its statement instead of reading row 0
+  with `inconsistent_fields` (CT-EVD-12).
+- Open, across chapters, with no frozen text to change: FP.20 carries a search record only inside a leaf, but EVD.32's
+  row 5 and E3's truncated beam and cancelled runs need one for a key with no leaf, so the crate attaches it to the
+  key's OR node as a draft; and a checked witness of an existence statement also offers a refutation of its universal
+  negation, so without scope membership both words read row 0.
+- Not built: the label-table importer and its corpus walk (EVD.48 to EVD.51), the FP.19 and FP.20 wire encoding, KN6's
+  checkers (the library only admits their reports), EV5's display and teaching, the independence display (EVD.28),
+  PS3.12's dispatch, obligation export (LB5.18), storing the envelope (chapter 05), the command layer, the runtime
+  process and the jumbling half.
+- Evidence kind: source and fixture, with synthetic graphs. The checks ran on Windows only.
