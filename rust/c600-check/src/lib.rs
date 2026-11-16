@@ -1928,10 +1928,12 @@ impl<'p> Checker<'p> {
                 Ok((Val::exact(Ty::Nat), s))
             }
             Expr::ReadClock => {
-                // The clock is a declared requirement without an effect family (LG3.8).
+                // The clock is a declared requirement without an effect family (LG3.8). Seconds are a display unit
+                // only (LG2.6, DET.18), so a reading is display-qualified: a clock grant cannot make it a deterministic
+                // budget, an exact decision or an exact sink's value (LG3.8).
                 let mut s = Summary::default();
                 self.operation(&mut s, needs(&[], &[Capability::Clock]), "a clock read");
-                Ok((Val::exact(Ty::Nat), s))
+                Ok((Val::new(Ty::Nat, Qual::Display { control: false }), s))
             }
         }
     }

@@ -20,6 +20,7 @@ fn boolean(b: bool) -> Expr {
 // Acceptance check 3 (LG2.22): pure display branches choosing two colours yield a display colour, and storing or
 // exporting it with its qualifier is admitted.
 
+/// CT-LG2-05 (part: LG2.22, a display branch yields a display value; not run: form 2, LG2.21).
 #[test]
 fn lg2_22_display_if_choosing_two_colours_yields_a_display_colour() {
     let shown = tool(vec![view("show", xy(), exact(Ty::Unit), publish_view(tint()))]);
@@ -29,6 +30,7 @@ fn lg2_22_display_if_choosing_two_colours_yields_a_display_colour() {
     assert_eq!(fields(&only(&exact_result)), (V, Some("Colour"), true, false));
 }
 
+/// CT-LG2-05 (part: LG2.22, storing a display value with its qualifier).
 #[test]
 fn lg2_22_storing_the_display_colour_with_its_qualifier_is_admitted() {
     let keep = |field| tool(vec![command("keep", xy(), exact(Ty::Unit), write_workspace("tint", field, tint()))]);
@@ -37,6 +39,7 @@ fn lg2_22_storing_the_display_colour_with_its_qualifier_is_admitted() {
     assert_eq!(fields(&only(&keep(exact(Ty::Colour)))), (V, Some("Colour"), true, false));
 }
 
+/// CT-LG2-05 (part: LG2.22, exporting a display value with its qualifier).
 #[test]
 fn lg2_22_exporting_the_display_colour_with_its_qualifier_is_admitted() {
     let lib = module("lib", vec![helper("tint", xy(), display(Ty::Colour), tint()).exported()]);
@@ -62,6 +65,8 @@ fn lg2_22_exporting_the_display_colour_with_its_qualifier_is_admitted() {
 // CT-LG2-04: explicit exact-to-approximate conversion names its precision; direct casts and helper-mediated
 // approximate-to-exact conversions are refused.
 
+/// CT-LG2-04 (part: the conversion names its precision, in IR; the row is whole with the next test and
+/// `c600-syntax`'s `ct_lg2_04_conversions_in_source`).
 #[test]
 fn ct_lg2_04_exact_to_approximate_conversion_names_its_precision() {
     let widen = tool(vec![helper("widen", vec![param("x", exact(Ty::Nat))], exact(approx()), to_approx(var("x")))]);
@@ -79,6 +84,7 @@ fn ct_lg2_04_exact_to_approximate_conversion_names_its_precision() {
     assert_eq!(mismatch(&only(&narrowed)), (TYPE_MISMATCH, "narrow", "root", "Approx<P24>", "Approx<P53>"));
 }
 
+/// CT-LG2-04 (part: direct and helper-mediated conversions back to exact, in IR).
 #[test]
 fn ct_lg2_04_direct_and_helper_conversions_back_to_exact_are_refused() {
     // A direct cast is LG2.22's direct scalar case.
@@ -109,6 +115,7 @@ fn ct_lg2_04_direct_and_helper_conversions_back_to_exact_are_refused() {
 // CT-LG2-05: approximate comparisons cannot steer a word, target, exact goal, evidence or budget through branches,
 // generics, closures, storage or module calls (form 1; form 2 is not built).
 
+/// CT-LG2-05 (part: branches under form 1; not run: form 2, which is on record and not built, LG2.21).
 #[test]
 fn ct_lg2_05_branches_cannot_steer_a_word_or_an_exact_goal() {
     let word_ = tool(vec![command(
@@ -130,6 +137,7 @@ fn ct_lg2_05_branches_cannot_steer_a_word_or_an_exact_goal() {
     assert_eq!((d.path.as_str(), fields(&d)), ("1", (V, Some("Word"), true, false)));
 }
 
+/// CT-LG2-05 (part: generics, form 1).
 #[test]
 fn ct_lg2_05_generic_substitution_keeps_the_qualifier_of_a_target() {
     let t = || exact(Ty::Var("T".into()));
@@ -146,6 +154,7 @@ fn ct_lg2_05_generic_substitution_keeps_the_qualifier_of_a_target() {
     assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("go", "1", (V, Some("Target"), true, false)));
 }
 
+/// CT-LG2-05 (part: closures, form 1).
 #[test]
 fn ct_lg2_05_closures_cannot_steer_evidence() {
     // Display context propagates into a callee: a closure that builds exact evidence, called in a display branch.
@@ -177,6 +186,7 @@ fn ct_lg2_05_closures_cannot_steer_evidence() {
 // CT-LG2-05, higher-order calls: a slot's signature cannot erase a callable's result or parameter qualifier
 // (LG2.19, closure row; pull request 149 review).
 
+/// CT-LG2-05 (part: higher-order calls, form 1).
 #[test]
 fn ct_lg2_05_higher_order_calls_keep_the_result_qualifier_of_a_callable() {
     let pair = || vec![exact(Ty::Nat), exact(Ty::Nat)];
@@ -212,6 +222,7 @@ fn ct_lg2_05_higher_order_calls_keep_the_result_qualifier_of_a_callable() {
     assert_eq!(mismatch(&d), (TYPE_MISMATCH, "go", "0.0", "fn(Nat, Nat) -> Bool", "fn(Word, Word) -> Bool"));
 }
 
+/// CT-LG2-05 (part: callable parameters, form 1).
 #[test]
 fn ct_lg2_05_a_callable_cannot_take_a_display_argument_as_exact() {
     // The slot passes a display value; a callable with an exact parameter would store it as exact.
@@ -242,6 +253,7 @@ fn ct_lg2_05_a_callable_cannot_take_a_display_argument_as_exact() {
 // generic body needs a display result, and a display instance runs a pure display body (LG2.19; pull request 149
 // review).
 
+/// CT-LG2-05 (part: generic results, form 1).
 #[test]
 fn ct_lg2_05_a_generic_result_keeps_the_qualifier_of_every_argument_it_may_return() {
     let t = || exact(Ty::Var("T".into()));
@@ -264,6 +276,7 @@ fn ct_lg2_05_a_generic_result_keeps_the_qualifier_of_every_argument_it_may_retur
     assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("go", "0", (V, Some("Word"), false, true)));
 }
 
+/// CT-LG2-05 (part: display instances of generic bodies, form 1).
 #[test]
 fn ct_lg2_05_a_generic_body_with_a_display_instance_is_a_pure_display_body() {
     let t = || exact(Ty::Var("T".into()));
@@ -293,6 +306,7 @@ fn ct_lg2_05_a_generic_body_with_a_display_instance_is_a_pure_display_body() {
 // CT-LG2-05, aggregates: a callable keeps its exact sinks through a record (LG2.19, aggregate row; LG2.20; pull
 // request 149 review).
 
+/// CT-LG2-05 (part: callables in records, form 1).
 #[test]
 fn ct_lg2_05_a_callable_in_a_record_keeps_its_exact_evidence() {
     let ev = helper("ev", vec![], exact(Ty::Unit), use_exact(ExactRole::Evidence, word(&[5])));
@@ -305,6 +319,7 @@ fn ct_lg2_05_a_callable_in_a_record_keeps_its_exact_evidence() {
     assert!(r.summary("tool", "go").unwrap().exact_sinks.contains(&(ExactRole::Evidence, "Word".to_string())));
 }
 
+/// CT-LG2-05 (part: module calls and budgets, form 1).
 #[test]
 fn ct_lg2_05_module_calls_cannot_steer_a_budget() {
     let lib = module(
@@ -325,6 +340,7 @@ fn ct_lg2_05_module_calls_cannot_steer_a_budget() {
     assert_eq!((d.module.as_str(), d.path.as_str(), fields(&d)), ("app", "0", (V, Some("Nat"), true, false)));
 }
 
+/// CT-LG2-05 (part: storage, form 1).
 #[test]
 fn ct_lg2_05_storage_keeps_the_qualifier() {
     // A saved display condition decoded as an exact goal (LG2.22): decoding retains the qualifier.
@@ -357,6 +373,7 @@ fn ct_lg2_05_storage_keeps_the_qualifier() {
     assert_eq!(fields(&only(&filed)), (V, Some("Colour"), true, false));
 }
 
+/// CT-LG2-05 (part: projection and matching, form 1).
 #[test]
 fn ct_lg2_05_projection_and_matching_cannot_extract_an_exact_result() {
     // Box<ApproxBool> projected to an exact boolean (LG2.22).
@@ -386,6 +403,7 @@ fn ct_lg2_05_projection_and_matching_cannot_extract_an_exact_result() {
 
 // LG2.20: ordinary control takes exact inputs only, and display branches and display bodies are pure.
 
+/// CT-LG2-05 (part: LG2.20, ordinary control).
 #[test]
 fn lg2_20_ordinary_control_accepts_exact_inputs_only() {
     let short_circuit = tool(vec![command(
@@ -405,6 +423,7 @@ fn lg2_20_ordinary_control_accepts_exact_inputs_only() {
     assert!(report(&exact_condition).is_admitted());
 }
 
+/// CT-LG2-05 (part: LG2.20, pure display branches and bodies).
 #[test]
 fn lg2_20_display_branches_and_display_bodies_are_pure() {
     // A state read inside a display branch.
@@ -500,6 +519,7 @@ fn faults_without_a_source_diagnostic_are_errors() {
 // The Fable attack on the M1 checker (owner decision, 15 November 2026): each program below slipped past the checker
 // before pull request 149 fixed it. The leads were confirmed by these tests; the fixes are the checker's.
 
+/// CT-LG2-05 (part: type variables bound through callable results, form 1).
 #[test]
 fn ct_lg2_05_a_type_variable_bound_through_a_callable_result_keeps_its_qualifier() {
     let t = || exact(Ty::Var("T".into()));
@@ -529,6 +549,7 @@ fn ct_lg2_05_a_type_variable_bound_through_a_callable_result_keeps_its_qualifier
     assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("go", "root", (V, Some("T"), true, false)));
 }
 
+/// CT-LG2-05 (part: generic results of callables, form 1).
 #[test]
 fn ct_lg2_05_a_generic_result_keeps_the_result_qualifier_of_every_callable_it_may_return() {
     let t = || exact(Ty::Var("T".into()));
@@ -543,6 +564,7 @@ fn ct_lg2_05_a_generic_result_keeps_the_result_qualifier_of_every_callable_it_ma
     }
 }
 
+/// CT-LG2-05 (part: closures returned by display instances, form 1).
 #[test]
 fn ct_lg2_05_a_display_instance_cannot_hand_back_a_closure_that_previews_its_argument() {
     let t = || exact(Ty::Var("T".into()));
@@ -563,6 +585,7 @@ fn ct_lg2_05_a_display_instance_cannot_hand_back_a_closure_that_previews_its_arg
     assert_eq!((d.function.as_str(), d.path.as_str(), d.code), ("go", "root", EFFECT_UNDECLARED));
 }
 
+/// CT-LG2-05 (part: LG2.20 with captured effect variables).
 #[test]
 fn lg2_20_a_captured_effect_variable_cannot_hide_exact_evidence_from_a_display_branch() {
     let poly = || exact(fn_ty(vec![], exact(Ty::Unit), bound(&[], &["e"])));
@@ -579,6 +602,7 @@ fn lg2_20_a_captured_effect_variable_cannot_hide_exact_evidence_from_a_display_b
     assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("go", "1", (V, Some("Word"), true, false)));
 }
 
+/// CT-LG2-05 (part: stored display fields, form 1).
 #[test]
 fn ct_lg2_05_a_stored_display_field_is_not_decoded_as_exact() {
     let keep = command("keep", xy(), exact(Ty::Unit), write_workspace("tint", display(Ty::Colour), tint()));
@@ -588,6 +612,7 @@ fn ct_lg2_05_a_stored_display_field_is_not_decoded_as_exact() {
     assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("go", "0.0", (V, Some("Colour"), false, true)));
 }
 
+/// CT-LG2-05 (part: LG2.20, approximate data cannot bound recursion).
 #[test]
 fn lg2_20_approximate_data_cannot_bound_recursion() {
     let ab = vec![param("a", exact(approx())), param("b", exact(approx()))];
@@ -597,6 +622,7 @@ fn lg2_20_approximate_data_cannot_bound_recursion() {
     assert_eq!((d.function.as_str(), d.path.as_str(), fields(&d)), ("count", "1", (V, Some("Nat"), true, false)));
 }
 
+/// CT-LG2-05 (part: LG2.22's precedence through a helper).
 #[test]
 fn lg2_22_an_approx_selected_under_approximate_control_keeps_its_precedence_through_a_helper() {
     let pick = helper("pick", xy(), exact(approx()), display_if(less(), to_approx(var("x")), to_approx(var("y"))));

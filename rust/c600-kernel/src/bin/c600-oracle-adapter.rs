@@ -13,6 +13,9 @@
 //! protection refusal is a `protected` step with its effects and an unchanged state. The trace's `model` block is
 //! the loaded identity and its build string is [`c600_kernel::build`]. A case whose model identity or initial state
 //! differs from the loaded model, a malformed case and a failed model check exit with 2 and write no trace for it.
+//! Inside a step's recipe, a string with a lone surrogate or nesting deeper than [`json::MAX_DEPTH`] reads as null
+//! ([`json::parse_lenient`]), so that step is an `invalid-input` step as in 0.4, which reads it with Python's `json`;
+//! the rest of a case is read strictly.
 //!
 //! `agree` is the KN2.9 agreement test: for every orbit, its first, middle and last frame node and both signs (the
 //! 210 stars of O03), the star cache's net map and every field derived from it must equal those of per-primitive
@@ -103,7 +106,14 @@ fn read_document(path: &Path) -> Result<Value, Failure> {
     } else {
         bytes
     };
-    json::parse(&bytes).map_err(|error| malformed(format!("malformed case JSON: {error}")))
+    json::parse_lenient(&bytes, in_a_recipe).map_err(|error| malformed(format!("malformed case JSON: {error}")))
+}
+
+/// Whether a value of a case is inside a step's recipe. 0.4 reads a recipe as Python's `json` reads it and refuses a
+/// recipe it cannot use as that step alone, so a value there that the strict reader cannot represent reads as null
+/// and the step stays an `invalid-input` step, as in the reference.
+fn in_a_recipe(path: &[Option<String>]) -> bool {
+    matches!(path, [Some(steps), None, Some(recipe), ..] if steps == "steps" && recipe == "recipe")
 }
 
 fn trace(assets: &Path, files: &[String]) -> Result<(), Failure> {
