@@ -1,0 +1,12 @@
+[package]
+name = "c600-syntax"
+description = "The 600 Cell Script parser, formatter and lowering into the typed IR draft (LP2, M7)"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+c600-ir = { path = "../c600-ir" }
+
+[dev-dependencies]
+c600-check = { path = "../c600-check" }

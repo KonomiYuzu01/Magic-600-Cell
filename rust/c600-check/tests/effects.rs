@@ -22,7 +22,7 @@ fn snapshot() -> Expr {
 }
 
 fn preview() -> Expr {
-    propose(word("w"), target("t"))
+    propose(word(&[4]), target("t"))
 }
 
 fn unresolved(name: &str, result: Ty) -> Expr {

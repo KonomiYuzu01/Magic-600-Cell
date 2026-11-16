@@ -51,7 +51,8 @@ pub struct Diagnostic {
     pub note: String,
 }
 
-/// Malformed IR: the lowering is at fault, not the program.
+/// Malformed IR, where the lowering is at fault, or a base-type mismatch in the program, which the checker does not yet
+/// report as `LG2:type.mismatch` (`rust/README.md`).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IrError(pub String);
 
@@ -351,6 +352,8 @@ pub fn type_name(ty: &Ty) -> String {
         Ty::Bool => "Bool".into(),
         Ty::Nat => "Nat".into(),
         Ty::Int => "Int".into(),
+        Ty::Rat => "Rat".into(),
+        Ty::Q5 => "Q5".into(),
         Ty::Text => "Text".into(),
         Ty::Word => "Word".into(),
         Ty::Target => "Target".into(),
@@ -457,8 +460,14 @@ fn signature_keeps(s: &FnTy, t: &FnTy, own: bool) -> bool {
     s.params.iter().zip(&t.params).all(|(sp, tp)| admits(tp, sp, false)) && admits(&s.result, &t.result, own)
 }
 
-fn is_numeric(ty: &Ty) -> bool {
+fn is_integer(ty: &Ty) -> bool {
     matches!(ty, Ty::Nat | Ty::Int | Ty::Budget)
+}
+
+/// The exact numbers: integers, rationals and Q(√5) values (LG1.6). Nat and Int widen to Rat and Rat to Q5, as
+/// Z ⊂ Q ⊂ Q(√5); a budget is a cost and mixes with integers only (LG2.6).
+fn is_exact_number(ty: &Ty) -> bool {
+    is_integer(ty) || matches!(ty, Ty::Rat | Ty::Q5)
 }
 
 /// Whether a value of type `value` may enter a slot of type `slot`. An approximate value at an exact slot fits here
@@ -467,9 +476,10 @@ fn fits(slot: &Ty, value: &Ty) -> bool {
     match (slot, value) {
         (Ty::Var(_), _) => true,
         (Ty::Approx(p), Ty::Approx(q)) => p == q,
-        (Ty::Nat | Ty::Int | Ty::Budget, Ty::Approx(_)) => true,
+        (slot, Ty::Approx(_)) if is_exact_number(slot) => true,
         (Ty::Bool, Ty::ApproxBool) => true,
         (Ty::Int | Ty::Budget, Ty::Nat) => true,
+        (Ty::Rat, Ty::Nat | Ty::Int) | (Ty::Q5, Ty::Nat | Ty::Int | Ty::Rat) => true,
         (Ty::Record(a), Ty::Record(b)) => {
             a.len() == b.len() && a.iter().zip(b).all(|((na, qa), (nb, qb))| na == nb && fits(&qa.ty, &qb.ty))
         }
@@ -492,6 +502,8 @@ fn widen(a: &Ty, b: &Ty) -> Option<Ty> {
     match (a, b) {
         (Ty::Nat, Ty::Int) | (Ty::Int, Ty::Nat) => Some(Ty::Int),
         (Ty::Nat, Ty::Budget) | (Ty::Budget, Ty::Nat) => Some(Ty::Budget),
+        (Ty::Nat | Ty::Int, Ty::Rat) | (Ty::Rat, Ty::Nat | Ty::Int) => Some(Ty::Rat),
+        (Ty::Nat | Ty::Int | Ty::Rat, Ty::Q5) | (Ty::Q5, Ty::Nat | Ty::Int | Ty::Rat) => Some(Ty::Q5),
         (Ty::Record(x), Ty::Record(y)) if x.len() == y.len() => x
             .iter()
             .zip(y)
@@ -557,6 +569,9 @@ fn lit_type(lit: &Lit) -> Ty {
         Lit::Bool(_) => Ty::Bool,
         Lit::Nat(_) => Ty::Nat,
         Lit::Int(_) => Ty::Int,
+        Lit::Rat { .. } => Ty::Rat,
+        Lit::Q5 { .. } => Ty::Q5,
+        Lit::Approx { precision, .. } => Ty::Approx(*precision),
         Lit::Text(_) => Ty::Text,
         Lit::Word(_) => Ty::Word,
         Lit::Target(_) => Ty::Target,
@@ -616,7 +631,7 @@ fn free_names<'a>(e: &'a Expr, bound: &mut Vec<&'a str>, out: &mut BTreeSet<&'a 
             bound.truncate(depth);
         }
         other => {
-            for child in children(other) {
+            for child in other.children() {
                 free_names(child, bound, out);
             }
         }
@@ -628,48 +643,8 @@ fn writes<'a>(e: &'a Expr, out: &mut BTreeMap<&'a str, Vec<&'a QTy>>) {
     if let Expr::WriteWorkspace { record, ty, .. } = e {
         out.entry(record.as_str()).or_default().push(ty);
     }
-    for child in children(e) {
+    for child in e.children() {
         writes(child, out);
-    }
-}
-
-/// The child expressions in path order.
-fn children(e: &Expr) -> Vec<&Expr> {
-    match e {
-        Expr::Lit(_)
-        | Expr::Var(_)
-        | Expr::FnRef { .. }
-        | Expr::ReadSnapshot { .. }
-        | Expr::Accounting(_)
-        | Expr::Declassified { .. }
-        | Expr::FileRead { .. }
-        | Expr::RandomDraw
-        | Expr::ReadClock => Vec::new(),
-        Expr::Let { value, body, .. } => vec![&**value, &**body],
-        Expr::If { cond, then, els } | Expr::DisplayIf { cond, then, els } => vec![&**cond, &**then, &**els],
-        Expr::Match { scrutinee, arms, default } => {
-            let mut out = vec![&**scrutinee];
-            out.extend(arms.iter().map(|(_, arm)| arm));
-            out.push(&**default);
-            out
-        }
-        Expr::Call { callee, args } => {
-            let mut out: Vec<&Expr> = args.iter().collect();
-            if let Callee::Value(f) = callee {
-                out.push(&**f);
-            }
-            out
-        }
-        Expr::Closure { body, .. } => vec![&**body],
-        Expr::Prim { args, .. } => args.iter().collect(),
-        Expr::Record(fields) => fields.iter().map(|(_, f)| f).collect(),
-        Expr::Field { value, .. }
-        | Expr::PublishView { value }
-        | Expr::WriteWorkspace { value, .. }
-        | Expr::UseExact { value, .. }
-        | Expr::FileWrite { value, .. } => vec![&**value],
-        Expr::Propose { word, target } => vec![&**word, &**target],
-        Expr::ReadReceipt { receipt, .. } => vec![&**receipt],
     }
 }
 
@@ -1372,6 +1347,10 @@ impl<'p> Checker<'p> {
 
     fn expr(&mut self, e: &'p Expr, env: &mut Env) -> Result<(Val, Summary), IrError> {
         match e {
+            // An approximate literal is display data from the start, like an explicit conversion (LG1.7, LG2.19).
+            Expr::Lit(Lit::Approx { precision, .. }) => {
+                Ok((Val::new(Ty::Approx(*precision), Qual::Approx), Summary::default()))
+            }
             Expr::Lit(lit) => Ok((Val::exact(lit_type(lit)), Summary::default())),
             Expr::Var(name) => match env.get(name) {
                 Some(v) => Ok((v.clone(), Summary::default())),
@@ -1660,7 +1639,7 @@ impl<'p> Checker<'p> {
                 let (v, mut s) = self.at(0, |c| c.expr(value, env))?;
                 let site = match role {
                     ExactRole::Budget => {
-                        if !is_numeric(&v.ty) && !matches!(v.ty, Ty::Approx(_)) {
+                        if !is_integer(&v.ty) && !matches!(v.ty, Ty::Approx(_)) {
                             return Err(self.err(format!("a budget of type {:?}", v.ty)));
                         }
                         Site::Operand
@@ -1739,17 +1718,28 @@ impl<'p> Checker<'p> {
         }
         match op {
             Prim::ExactAdd | Prim::ExactLess => {
-                for (i, v) in vals.iter().enumerate() {
-                    if !is_numeric(&v.ty) && !matches!(v.ty, Ty::Approx(_)) {
+                for v in vals {
+                    if !is_exact_number(&v.ty) && !matches!(v.ty, Ty::Approx(_)) {
                         return Err(self.err(format!("{op:?} on a {:?}", v.ty)));
                     }
+                }
+                // The result widens along Nat, Int, Rat and Q5; a budget mixes with integers only (LG2.6).
+                let exact: Vec<&Ty> = vals.iter().map(|v| &v.ty).filter(|t| is_exact_number(t)).collect();
+                let field = exact.iter().find(|t| matches!(t, Ty::Rat | Ty::Q5));
+                if let (Some(f), true) = (field, exact.contains(&&Ty::Budget)) {
+                    return Err(self.err(format!("{op:?} of a Budget and a {f:?}")));
+                }
+                for (i, v) in vals.iter().enumerate() {
                     self.at(i, |c| c.exact_use(Site::Operand, v, &format!("an operand of {op:?}")));
                 }
                 if op == Prim::ExactLess {
                     return Ok(Val::exact(Ty::Bool));
                 }
-                let exact: Vec<&Ty> = vals.iter().map(|v| &v.ty).filter(|t| is_numeric(t)).collect();
-                let ty = if exact.is_empty() || exact.iter().any(|t| **t == Ty::Int) {
+                let ty = if exact.contains(&&Ty::Q5) {
+                    Ty::Q5
+                } else if exact.contains(&&Ty::Rat) {
+                    Ty::Rat
+                } else if exact.is_empty() || exact.iter().any(|t| **t == Ty::Int) {
                     Ty::Int
                 } else if exact.iter().any(|t| **t == Ty::Budget) {
                     Ty::Budget
@@ -1778,14 +1768,14 @@ impl<'p> Checker<'p> {
             }
             Prim::ToApprox(p) => {
                 let v = &vals[0];
-                if !is_numeric(&v.ty) {
+                if !is_exact_number(&v.ty) {
                     return Err(self.err(format!("an approximate conversion of a {:?}", v.ty)));
                 }
                 Ok(Val::new(Ty::Approx(p), Qual::Approx.join(v.qual)))
             }
             Prim::ToExact => {
                 let v = &vals[0];
-                if !is_numeric(&v.ty) && !matches!(v.ty, Ty::Approx(_)) {
+                if !is_integer(&v.ty) && !matches!(v.ty, Ty::Approx(_)) {
                     return Err(self.err(format!("an exact conversion of a {:?}", v.ty)));
                 }
                 self.at(0, |c| c.exact_use(Site::Convert, v, "a conversion back to exact"));
