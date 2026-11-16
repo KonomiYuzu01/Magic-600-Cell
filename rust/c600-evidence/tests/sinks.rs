@@ -659,6 +659,10 @@ fn ct_evd_30_independent_checker_comes_from_the_report() {
 /// manifest and `PrincipleRecord`, and the inheritance of cost approvals and records, which this crate does not
 /// build): a changed module digest or fork receives no inherited evidence pass, and original references remain
 /// references that certify nothing about the fork.
+///
+/// CT-LG5-06 (part: the evidence half of LG5.8: the fork inherits no evidence, the parent's pass offered for the
+/// fork's subject is refused, and a citation of the parent stays a citation that checks nothing of the fork; not run:
+/// the fork's new digests and its run grants, which `c600-module/tests/conformance_lg5.rs` runs as the other part).
 #[test]
 fn ct_lb6_02_fork_inherits_no_evidence() {
     let e = ed();

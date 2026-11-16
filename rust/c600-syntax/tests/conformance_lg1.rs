@@ -22,8 +22,8 @@ fn client(header: &str, helpers: &str) -> String {
     )
 }
 
-/// CT-LG1-01 (part: the per-file half across the files of one program; not applicable: "mixed supported dependency
-/// editions keep their meanings", since `6cs-draft-1` is the only supported edition): each file carries its own
+/// CT-LG1-01 (part: the per-file half across the files of one program; not run: "mixed supported dependency editions
+/// keep their meanings", not applicable while `6cs-draft-1` is the only supported edition): each file carries its own
 /// edition. A file without one, or with another, is refused by itself, without trying another grammar; the other
 /// file's header does not apply to it, and the set does not lower.
 #[test]

@@ -116,6 +116,56 @@ pub enum Ty {
     Receipt,
     /// A generic type parameter; substitution preserves the qualifier (LG2.19).
     Var(String),
+    /// `List<T>`: a finite sequence in written order. Draft (LP2) until the IR freeze (PHS.49), like every
+    /// collection and word form below.
+    List(Box<QTy>),
+    /// LG2.13's word equality key of a Full word, under LG2.18's free reduction. It is never a `Word` and never
+    /// converts to one (CT-LG2-11).
+    WordEqualityKey,
+    /// `Set<T>`: distinct exact elements (LG2.20), kept in their canonical key order (DET.9).
+    Set(Box<QTy>),
+    /// `Map<K, V>`: values under distinct exact keys (LG2.20), kept in the keys' canonical key order (DET.9).
+    Map(Box<QTy>, Box<QTy>),
+    /// LG2.16's compressed word: a straight-line program over literal letters whose exact expanded length is known
+    /// before any expansion (KN2.10). It is never a `Word`: its letters come out by an explicit, priced expansion.
+    CompressedWord,
+}
+
+impl Ty {
+    /// The element types of a collection type, in order (a map's key, then its value); empty for other types.
+    pub fn elements(&self) -> Vec<&QTy> {
+        match self {
+            Ty::List(e) | Ty::Set(e) => vec![&**e],
+            Ty::Map(k, v) => vec![&**k, &**v],
+            _ => Vec::new(),
+        }
+    }
+
+    /// The collection type of the same kind with its element types replaced, in [`Ty::elements`] order.
+    pub fn with_elements(&self, mut parts: Vec<QTy>) -> Ty {
+        let mut next = || Box::new(parts.remove(0));
+        match self {
+            Ty::List(_) => Ty::List(next()),
+            Ty::Set(_) => Ty::Set(next()),
+            Ty::Map(..) => {
+                let key = next();
+                Ty::Map(key, next())
+            }
+            other => other.clone(),
+        }
+    }
+
+    /// Whether two types are collections of the same kind.
+    pub fn same_collection(&self, other: &Ty) -> bool {
+        matches!((self, other), (Ty::List(_), Ty::List(_)) | (Ty::Set(_), Ty::Set(_)) | (Ty::Map(..), Ty::Map(..)))
+    }
+}
+
+/// The named order of an ordered collection result (LG4.3): the canonical key order (DET.9) or its reverse. Draft.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Order {
+    Ascending,
+    Descending,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -207,6 +257,46 @@ pub enum Prim {
     ApproxLess,
     ApproxAnd,
     ApproxNot,
+    // Collections and words (LP2 drafts until the IR freeze, PHS.49).
+    /// `length(x)`: the element count of a list or a set, the entry count of a map, or the exact length of a word or
+    /// a compressed word (LG2.16), as `Nat`. A compressed word's length needs no expansion.
+    Length,
+    /// `index(list, i)`: the element at exact position `i`, counted from 0 (LG2.20).
+    Index,
+    /// `push(list, x)`: the list with `x` appended.
+    Push,
+    /// `concat(a, b)`: two words, two lists or two compressed words joined in order; compressed words join without
+    /// expansion.
+    Concat,
+    /// `inverse(w)`: the letters in reverse order, each negated (LG2.15).
+    Inverse,
+    /// `conjugate(x, y)`: x · y · x⁻¹ (LG2.15).
+    Conjugate,
+    /// `commutator(x, y)`: x · y · x⁻¹ · y⁻¹ (LG2.15).
+    Commutator,
+    /// `compose(x, y)`: the action of x, then of y; its letters are x's, then y's, in chronological order (LG2.15).
+    Compose,
+    /// `word_key(w)`: LG2.13's key of a Full word, LG2.18's stack free reduction of adjacent inverse pairs.
+    WordKey,
+    /// `contains(c, k)`: whether a set holds the element `k`, or a map the key `k`. `k` is exact (LG2.20).
+    Contains,
+    /// `insert(s, x)`: the set with the element `x` added.
+    Insert,
+    /// `insert(m, k, v)`: the map with `v` under the key `k`, replacing a value under an equal key.
+    InsertEntry,
+    /// `lookup(m, k)`: the value under the key `k`; a missing key is a pointwise failure.
+    Lookup,
+    /// `elements(s, order)`: a set's elements as a `List` in the named order (LG4.3).
+    Elements(Order),
+    /// `keys(m, order)`: a map's keys as a `List` in the named order (LG4.3).
+    Keys(Order),
+    /// `entries(m, order)`: a map's entries as a `List` of `{ key, value }` records in the named order (LG4.3).
+    Entries(Order),
+    /// `compress(w)`: the word `w` as a compressed word of one part (LG2.16).
+    Compress,
+    /// `expand(c, start, count)`: the `count` letters of the compressed word `c` from the exact position `start`,
+    /// counted from 0, as a `Word` in chronological order (LG4.6). A range past the word's end is a pointwise failure.
+    Expand,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -300,6 +390,13 @@ pub enum Expr {
         value: Box<Expr>,
         field: String,
     },
+    /// A collection of type `ty` from its items, evaluated in written order. Draft. A `List` keeps that order; a `Set`
+    /// keeps each element once; a `Map`'s items alternate keys and values, and a later key's value replaces an
+    /// earlier one's. Sets and maps take their canonical key order (DET.9).
+    Collection {
+        ty: Ty,
+        items: Vec<Expr>,
+    },
     /// A snapshot or workspace read. The type carries the stored field's display qualifier: decoding retains it
     /// (LG2.19, storage row).
     ReadSnapshot {
@@ -375,7 +472,7 @@ impl Expr {
                 out
             }
             Expr::Closure { body, .. } => vec![&**body],
-            Expr::Prim { args, .. } => args.iter().collect(),
+            Expr::Prim { args, .. } | Expr::Collection { items: args, .. } => args.iter().collect(),
             Expr::Record(fields) => fields.iter().map(|(_, f)| f).collect(),
             Expr::Field { value, .. }
             | Expr::PublishView { value }
@@ -469,6 +566,22 @@ pub mod build {
     }
     pub fn record(fields: Vec<(&str, Expr)>) -> Expr {
         Expr::Record(fields.into_iter().map(|(n, e)| (n.to_string(), e)).collect())
+    }
+
+    /// `List<elem>` with the given items (draft).
+    pub fn list(elem: QTy, items: Vec<Expr>) -> Expr {
+        Expr::Collection { ty: Ty::List(Box::new(elem)), items }
+    }
+
+    /// `Set<elem>` with the given items (draft).
+    pub fn set(elem: QTy, items: Vec<Expr>) -> Expr {
+        Expr::Collection { ty: Ty::Set(Box::new(elem)), items }
+    }
+
+    /// `Map<key, value>` with the given entries in written order (draft).
+    pub fn map(key: QTy, value: QTy, entries: Vec<(Expr, Expr)>) -> Expr {
+        let items = entries.into_iter().flat_map(|(k, v)| [k, v]).collect();
+        Expr::Collection { ty: Ty::Map(Box::new(key), Box::new(value)), items }
     }
     pub fn field(value: Expr, name: &str) -> Expr {
         Expr::Field { value: Box::new(value), field: name.into() }

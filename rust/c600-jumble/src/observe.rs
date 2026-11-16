@@ -1674,3 +1674,6 @@ mod tests {
         assert!(p.cancelled);
     }
 }
+
+/// The observations of milestone M8 (JI.6 and JI.7): rim summary, release check, covers and repair list.
+pub mod cuts;

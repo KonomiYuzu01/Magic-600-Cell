@@ -32,6 +32,9 @@ pub(crate) fn lex(source: &str) -> Vec<Token> {
     let b = source.as_bytes();
     let mut tokens = Vec::new();
     let (mut i, mut line, mut column) = (0, 1, 1);
+    // Where the last scan for an unclosed string stopped. Every quote before that point was escaped in that scan, so
+    // its own scan would resume in step and stop there too: it is not scanned again, which keeps lexing linear.
+    let mut unclosed = 0;
     while i < b.len() {
         match b[i] {
             b' ' | b'\t' => {
@@ -49,7 +52,7 @@ pub(crate) fn lex(source: &str) -> Vec<Token> {
                 i = end;
             }
             _ => {
-                let (kind, end) = scan(source, i);
+                let (kind, end) = scan(source, i, &mut unclosed);
                 let text = &source[i..end];
                 tokens.push(Token { kind, text: text.to_string(), span: Span { start: i, end, line, column } });
                 column += text.chars().count();
@@ -61,12 +64,14 @@ pub(crate) fn lex(source: &str) -> Vec<Token> {
     tokens
 }
 
-/// The kind and end of the token at `i`, trying the alternatives in LX-8's order.
-fn scan(s: &str, i: usize) -> (Kind, usize) {
+/// The kind and end of the token at `i`, trying the alternatives in LX-8's order. A quote before `unclosed` cannot
+/// start a string (see `lex`).
+fn scan(s: &str, i: usize, unclosed: &mut usize) -> (Kind, usize) {
     let b = s.as_bytes();
-    if b[i] == b'"' {
-        if let Some(end) = string_end(b, i) {
-            return (Kind::Str, end);
+    if b[i] == b'"' && i >= *unclosed {
+        match string_end(b, i) {
+            Ok(end) => return (Kind::Str, end),
+            Err(stop) => *unclosed = stop,
         }
     }
     if let Some(n) = signed_digits(b, i) {
@@ -118,19 +123,21 @@ fn signed_digits(b: &[u8], from: usize) -> Option<usize> {
     (end > start).then_some(end)
 }
 
-/// The end of a quoted string on one line, with any character escaped by a backslash.
-fn string_end(b: &[u8], i: usize) -> Option<usize> {
+/// The end of a quoted string on one line, with any character escaped by a backslash; or, when the line ends first,
+/// a backslash ends it or the text ends, `Err` with where the scan stopped.
+fn string_end(b: &[u8], i: usize) -> Result<usize, usize> {
     let mut j = i + 1;
-    while j < b.len() {
-        match b[j] {
-            b'"' => return Some(j + 1),
-            b'\n' => return None,
-            b'\\' if b.get(j + 1).is_some_and(|&c| c != b'\n') => j += 2,
-            b'\\' => return None,
-            _ => j += 1,
+    let end = loop {
+        match b.get(j) {
+            Some(b'"') => break Ok(j + 1),
+            Some(b'\\') if b.get(j + 1).is_some_and(|&c| c != b'\n') => j += 2,
+            Some(b'\n' | b'\\') | None => break Err(j),
+            Some(_) => j += 1,
         }
-    }
-    None
+    };
+    #[cfg(test)]
+    tests::EXAMINED.with(|n| n.set(n.get() + (j - i)));
+    end
 }
 
 /// The value of a string token under JSON's escapes: no raw control character and no lone surrogate.
@@ -271,9 +278,51 @@ pub(crate) fn is_digest(s: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::cell::Cell;
+
+    thread_local! {
+        /// The bytes `string_end` has stepped over on this thread.
+        pub(super) static EXAMINED: Cell<usize> = const { Cell::new(0) };
+    }
 
     fn kinds(s: &str) -> Vec<(Kind, String)> {
         lex(s).into_iter().map(|t| (t.kind, t.text)).collect()
+    }
+
+    /// M7 lead L5: a quote and then escaped quotes with no closing one used to scan to the line's end from every quote.
+    #[test]
+    fn unclosed_strings_lex_in_linear_time() {
+        use Kind::*;
+        for n in [10, 100_000, 1_000_000] {
+            let line = format!("\"{}", "\\\"".repeat(n / 2));
+            EXAMINED.with(|e| e.set(0));
+            let toks = lex(&line);
+            assert_eq!(toks.len(), line.len() + 1);
+            assert!(toks[..line.len()].iter().all(|t| t.kind == Bad && t.text.len() == 1), "{n}");
+            assert!(EXAMINED.with(Cell::get) <= line.len(), "{n}");
+        }
+        // The skip ends with the line: a later line's string still closes.
+        let toks: Vec<_> = kinds("\"a\\\"b\n\"c\"").into_iter().map(|(k, _)| k).collect();
+        assert_eq!(toks, [Bad, Id, Bad, Bad, Id, Str, Eof]);
+    }
+
+    /// Why `lex` may skip them: a quote before an unclosed scan's stop does not close either, and stops at the same
+    /// place. Checked on every text of up to eight bytes over a quote, a backslash, a letter and a newline.
+    #[test]
+    fn quotes_inside_an_unclosed_string_stop_at_the_same_place() {
+        let alphabet = b"\"\\a\n";
+        for len in 0..=8 {
+            for code in 0..4usize.pow(len) {
+                let text: Vec<u8> = (0..len).map(|d| alphabet[code / 4usize.pow(d) % 4]).collect();
+                for i in (0..text.len()).filter(|&i| text[i] == b'"') {
+                    if let Err(stop) = string_end(&text, i) {
+                        for k in (i + 1..stop).filter(|&k| text[k] == b'"') {
+                            assert_eq!(string_end(&text, k), Err(stop), "{text:?} {i} {k}");
+                        }
+                    }
+                }
+            }
+        }
     }
 
     #[test]

@@ -75,6 +75,14 @@ class ScannerTests(unittest.TestCase):
         self.assertTrue(found["CT-KN1-01"]["part"] and found["CT-KN1-02"]["part"])
         self.assertTrue(found["CT-KN1-03"]["named"] and not found["CT-KN1-03"]["part"])
 
+    def test_marker_may_name_the_evidence_kind_first(self):
+        text = "/// CT-DET-28 (synthetic, part: x; not run: y (z)), CT-DET-29 (source, whole) and CT-DET-30 (other, part)\n"
+        found = ct_index.scan_text(text)
+        self.assertTrue(found["CT-DET-28"]["part"])
+        self.assertEqual(found["CT-DET-28"]["not_run"], ["y (z)"])
+        self.assertTrue(found["CT-DET-29"]["whole"])
+        self.assertTrue(found["CT-DET-30"]["named"] and not found["CT-DET-30"]["part"])
+
 
 class NotesTests(unittest.TestCase):
     def test_notes_table(self):

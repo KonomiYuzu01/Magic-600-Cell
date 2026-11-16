@@ -6,9 +6,10 @@
 //! needs them, the test runs as a guard: such source does not lower, and the IR's types and operations are matched
 //! without a wildcard, so a family added in M4 or M5 fails to compile here until its tests are written.
 
+use c600_check::WORD_KEY_NOT_EXECUTABLE;
 use c600_check::{admit, check, Grant, Policy, Profile, Report};
 use c600_check::{EFFECT_UNDECLARED, EXACTNESS_VIOLATION, EXACT_REQUIRED, NOT_GRANTED, TYPE_MISMATCH};
-use c600_ir::{Capability, Expr as Ir, Ty};
+use c600_ir::{Capability, Expr as Ir, Prim, Ty};
 use c600_syntax::{lower, parse, LowerError, Lowered};
 
 const HEADER: &str = "edition \"6cs-draft-1\";\nmodule tool requires [];\n\n";
@@ -68,6 +69,8 @@ fn assert_types_wait(types: &[&str], waits_for: &str) {
 
 /// Every type of the IR draft, matched without a wildcard. A domain family added to the IR (a piece, a pose, a
 /// sticker class, a state, a verdict, a goal or an equality key) fails to compile here until its CT-LG2 tests exist.
+/// The word equality key (LP2 draft) has them: `ct_lg2_11_*` and `ct_lg2_13_*` below. So has the compressed word
+/// (LP2 draft): `ct_lg2_14_*` in `collections.rs` here and in `c600-run`.
 fn base_types_only(ty: &Ty) -> bool {
     match ty {
         Ty::Unit
@@ -85,9 +88,29 @@ fn base_types_only(ty: &Ty) -> bool {
         | Ty::Approx(_)
         | Ty::ApproxBool
         | Ty::Receipt
+        | Ty::WordEqualityKey
+        | Ty::CompressedWord
         | Ty::Var(_) => true,
         Ty::Record(fields) => fields.iter().all(|(_, f)| base_types_only(&f.ty)),
         Ty::Fn(f) => f.params.iter().all(|p| base_types_only(&p.ty)) && base_types_only(&f.result.ty),
+        Ty::List(e) | Ty::Set(e) => base_types_only(&e.ty),
+        Ty::Map(k, v) => base_types_only(&k.ty) && base_types_only(&v.ty),
+    }
+}
+
+/// The family of every reserved operation, matched without a wildcard. Only `word_key` makes a key, and no operation
+/// takes one back to letters (`ct_lg2_11_*`).
+fn prim_family(op: Prim) -> &'static str {
+    match op {
+        Prim::ExactAdd | Prim::ExactLess | Prim::ExactEq | Prim::And | Prim::Or | Prim::Not => "arithmetic",
+        Prim::ToApprox(_) | Prim::ToExact | Prim::ApproxAdd | Prim::ApproxLess | Prim::ApproxAnd => "arithmetic",
+        Prim::ApproxNot => "arithmetic",
+        Prim::Length | Prim::Index | Prim::Push | Prim::Concat => "collection",
+        Prim::Contains | Prim::Insert | Prim::InsertEntry | Prim::Lookup => "collection",
+        Prim::Elements(_) | Prim::Keys(_) | Prim::Entries(_) => "collection",
+        Prim::Inverse | Prim::Conjugate | Prim::Commutator | Prim::Compose => "word",
+        Prim::Compress | Prim::Expand => "word",
+        Prim::WordKey => "word key",
     }
 }
 
@@ -97,8 +120,9 @@ fn base_types_only(ty: &Ty) -> bool {
 fn family(e: &Ir) -> &'static str {
     match e {
         Ir::Lit(_) | Ir::Var(_) | Ir::FnRef { .. } | Ir::Closure { .. } | Ir::Record(_) | Ir::Field { .. } => "value",
+        Ir::Collection { .. } => "value",
         Ir::Let { .. } | Ir::If { .. } | Ir::Match { .. } | Ir::DisplayIf { .. } | Ir::Call { .. } => "control",
-        Ir::Prim { .. } => "arithmetic",
+        Ir::Prim { op, .. } => prim_family(*op),
         Ir::ReadSnapshot { .. } | Ir::Declassified { .. } => "snapshot read",
         Ir::PublishView { .. } | Ir::WriteWorkspace { .. } => "view or workspace",
         Ir::FileRead { .. } | Ir::FileWrite { .. } | Ir::RandomDraw | Ir::ReadClock => "granted input or output",
@@ -195,8 +219,8 @@ fn ct_lg2_01_generics_and_inference_keep_precision_unit_and_effect() {
 }
 
 /// CT-LG2-02 (part, guard only: the IR draft has no identity tower or domain families, so a Full piece, a jumbling
-/// piece, a pose, a sticker class, a label digest and a pose-table index cannot be written yet; the substitution and
-/// unification refusals wait for M4 and M5).
+/// piece, a pose, a sticker class, a label digest and a pose-table index cannot be written yet; not run: the
+/// substitution and unification refusals, which wait for those families in the IR).
 #[test]
 fn ct_lg2_02_identity_types_wait_for_the_domain_families() {
     let types = ["Piece", "Piece<Full>", "Piece<Jumbled>", "Pose", "StickerClass", "LabelDigest", "PoseTableIndex"];
@@ -205,8 +229,9 @@ fn ct_lg2_02_identity_types_wait_for_the_domain_families() {
     assert_guard(EVERYTHING);
 }
 
-/// CT-LG2-03 (part, guard only: levels, projections and labels wait for the identity tower, M4 and M5; no operation of
-/// the IR draft projects between levels or lifts labels to poses, and there is no class to treat as equality yet).
+/// CT-LG2-03 (part, guard only: no operation of the IR draft projects between levels or lifts labels to poses, and
+/// there is no class to treat as equality yet; not run: explicit partial projection, the refusal of a labels read off
+/// the lattice and classes kept apart from equality, which wait for the IR's identity tower).
 #[test]
 fn ct_lg2_03_no_projection_or_lift_exists_before_the_identity_tower() {
     assert_types_wait(&["Labels", "Projection", "Lattice", "Level"], "M4, M5");
@@ -290,8 +315,9 @@ fn ct_lg2_06_a_clock_reading_is_no_deterministic_budget() {
     assert!(codes(shown).is_empty(), "a display result shows a clock reading");
 }
 
-/// CT-LG2-07 (part, guard only: states, derived states, pose tables and reachability claims wait for the domain
-/// families, M4 and M5; a snapshot read gives base-typed data, never a state).
+/// CT-LG2-07 (part, guard only: a snapshot read gives base-typed data, never a state; not run: validating raw pose
+/// data into a state with a reachability claim, and a jumbling witness kept apart from retained reachability, which
+/// wait for the IR's domain families of states, derived states, pose tables and reachability claims).
 #[test]
 fn ct_lg2_07_no_state_enters_from_raw_data_before_the_domain_families() {
     assert_types_wait(&["State", "DerivedState", "PoseTable", "ReachabilityClaim", "Witness"], "M4, M5");
@@ -310,8 +336,9 @@ fn ct_lg2_08_menu_words_and_modes_do_not_lower_yet() {
     assert_types_wait(&["Mode", "Revision"], "M4, M5");
 }
 
-/// CT-LG2-09 (part, guard only: verdicts, partial projections and goal levels wait for the domain families, M4; the
-/// draft has exact booleans only, and an approximate comparison or a status is no condition).
+/// CT-LG2-09 (part, guard only: the draft has exact booleans only, and an approximate comparison or a status is no
+/// condition; not run: unknown passing as false, an off-lattice projection passing as unknown and a goal weakening
+/// its level, which wait for the IR's domain families of verdicts, partial projections and goals).
 #[test]
 fn ct_lg2_09_verdicts_wait_and_a_condition_is_an_exact_boolean() {
     assert_types_wait(&["Verdict", "Unknown", "Goal"], "M4");
@@ -322,18 +349,18 @@ fn ct_lg2_09_verdicts_wait_and_a_condition_is_an_exact_boolean() {
     assert_eq!(status, mismatch("Bool", "Status"));
 }
 
-/// CT-LG2-10 (part, guard only: goals, their levels and checkpoints wait for the domain families, M4; the draft has no
-/// implication between goals to check).
+/// CT-LG2-10 (part, guard only: the draft has no implication between goals to check; not run: the goal fixtures,
+/// equal labels against equal poses and a label checkpoint's retained word, which wait for the IR's domain families
+/// of goals, levels and checkpoints).
 #[test]
 fn ct_lg2_10_goals_wait_for_the_domain_families() {
     let goals = ["Goal", "ExactPose", "StickerTest", "LatticePlacement", "RetainedCheckpoint", "LabelCheckpoint"];
     assert_types_wait(&goals, "M4, M5");
 }
 
-/// CT-LG2-11 (part: the proposal binding statically; not run: execution, derivation and protection bindings, which
-/// wait for M4, and the `WordEqualityKey` type and `word_key`, which the IR draft does not have yet; the run-time
-/// half is `c600-run`'s `ct_lg2_11_a_proposal_runs_a_literal_word_only`): `propose` takes a literal word and nothing
-/// else.
+/// CT-LG2-11 (part: the proposal binding statically; not run: execution and protection bindings, which wait for M4;
+/// the key's half is `ct_lg2_11_a_word_equality_key_is_never_literal_letters` and the run-time half is `c600-run`'s
+/// `ct_lg2_11_a_proposal_runs_a_literal_word_only`): `propose` takes a literal word and nothing else.
 #[test]
 fn ct_lg2_11_a_proposal_takes_a_literal_word_only() {
     for (argument, supplied) in
@@ -347,17 +374,47 @@ fn ct_lg2_11_a_proposal_takes_a_literal_word_only() {
         assert_eq!(expected, "Word", "{argument}");
         assert!(supplied.is_empty() || got == supplied, "{argument}: {got}");
     }
-    assert_types_wait(&["WordEqualityKey"], "M4, M5");
-    let message = refused_at_lowering("fn f(w: Word) -> Word effects [] {\n    return word_key(w);\n}\n");
-    assert!(message.contains("not bound"), "{message}");
 }
 
-/// CT-LG2-13 (part: the empty-word half statically; not run: the equality key and its domain test at a straddling
-/// cap, which wait for LG2.13's key type and the jumbled puzzle, M5; the run-time half is `c600-run`'s
-/// `ct_lg2_13_the_empty_word_is_no_witness_for_an_inverse_pair`): an inverse pair is a literal word of its own,
-/// unequal to the empty word.
+/// CT-LG2-11 (part: the `WordEqualityKey` type and `word_key` (LP2 drafts) in source, against the proposal binding,
+/// the word operations (derivation) and a `Word` parameter; not run: execution and protection bindings, which wait
+/// for M4, and a key indexed by puzzle and identity, which waits for the domain families, M4 and M5): a key is never
+/// accepted where literal letters are required, and no source form converts it back.
+#[test]
+fn ct_lg2_11_a_word_equality_key_is_never_literal_letters() {
+    let key = "word_key(word[+1, -2])";
+    let uses = [
+        format!("fn f() -> Receipt effects [preview] {{\n    return propose({key}, target(\"t\"));\n}}\n"),
+        format!("fn f() -> Word effects [] {{\n    return inverse({key});\n}}\n"),
+        format!("fn f() -> Word effects [] {{\n    return compose(word[+1], {key});\n}}\n"),
+        format!("fn g(w: Word) -> Word effects [] {{\n    return w;\n}}\n\nfn f() -> Word effects [] {{\n    return g({key});\n}}\n"),
+        format!("fn f() -> Word effects [] {{\n    return {key};\n}}\n"),
+        format!("fn f() -> Unit effects [workspace] {{\n    return write_workspace<Word>(\"w\", {key});\n}}\n"),
+    ];
+    for declaration in &uses {
+        let (code, types) = only(declaration);
+        assert_eq!(code, WORD_KEY_NOT_EXECUTABLE, "{declaration}");
+        assert_eq!(types, Some(("Word".to_string(), "WordEqualityKey".to_string())), "{declaration}");
+    }
+    admitted("fn f(w: Word) -> WordEqualityKey effects [] {\n    return word_key(inverse(inverse(w)));\n}\n");
+    admitted("fn f(a: WordEqualityKey, b: WordEqualityKey) -> Bool effects [] {\n    return exact_eq(a, b);\n}\n");
+    // A key of a key is no key: `word_key` takes literal letters.
+    let (code, _) = only("fn f(w: Word) -> WordEqualityKey effects [] {\n    return word_key(word_key(w));\n}\n");
+    assert_eq!(code, WORD_KEY_NOT_EXECUTABLE);
+    for literal in ["word[]", "\"k\"", "1"] {
+        let declaration = format!("fn f() -> WordEqualityKey effects [] {{\n    return {literal};\n}}\n");
+        assert_eq!(only(&declaration).0, TYPE_MISMATCH, "{literal}");
+    }
+}
+
+/// CT-LG2-13 (part: the empty-word half statically, with the Full key (LP2 draft); not run: the jumbling key and its
+/// domain test at a straddling cap, which wait for the jumbled puzzle, M5; the run-time halves are `c600-run`'s
+/// `ct_lg2_13_the_empty_word_is_no_witness_for_an_inverse_pair` and
+/// `ct_lg2_13_the_full_key_cancels_the_pair_not_the_witness`): an inverse pair is a literal word of its own, unequal
+/// to the empty word, and comparing keys gives a boolean, never a word to propose.
 #[test]
 fn ct_lg2_13_an_inverse_pair_is_not_the_empty_word() {
+    admitted("fn f() -> Bool effects [] {\n    return exact_eq(word_key(word[+1, -1]), word_key(word[]));\n}\n");
     let source = tool("fn f() -> Bool effects [] {\n    return exact_eq(word[+1, -1], word[]);\n}\n");
     let lowered = lowered(&source).unwrap_or_else(|e| panic!("{e}"));
     assert!(check(&lowered.program).unwrap().is_admitted());

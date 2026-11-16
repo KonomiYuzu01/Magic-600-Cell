@@ -5,7 +5,7 @@
 
 mod support;
 
-use c600_check::{EXACTNESS_VIOLATION, EXACT_REQUIRED, TYPE_MISMATCH};
+use c600_check::{EXACTNESS_VIOLATION, EXACT_REQUIRED, TYPE_MISMATCH, WORD_KEY_NOT_EXECUTABLE};
 use c600_ir::build::*;
 use c600_ir::{ExactRole, Expr, Lit, Prim, Program, ReceiptField, Ty};
 use support::{less, mismatch, only, report, tint, tool, xy};
@@ -140,12 +140,28 @@ fn a_field_read_needs_a_record_with_that_field() {
     assert_only(&f(Ty::Nat, other), "f", "0", "record { a: _, .. }", "record { b: Nat }");
 }
 
-/// CT-LG2-11 (part: a proposal takes a Word, in IR; not run: the WordEqualityKey type, LG2.13, and the other
-/// bindings, which wait for M4).
+/// CT-LG2-11 (part: a proposal takes a Word, in IR, and refuses a `WordEqualityKey` (LP2 draft) with
+/// `LG2:type.word_key_not_executable`, as a word operation and a stored word do; not run: the other bindings, which
+/// wait for M4).
 #[test]
 fn state_and_preview_operations_take_their_types() {
     assert_only(&cmd(Ty::Unit, write_workspace("r", exact(Ty::Word), nat(1))), "f", "0", "Word", "Nat");
     assert_only(&cmd(Ty::Receipt, propose(nat(1), target("t"))), "f", "0", "Word", "Nat");
+    let key = || prim(Prim::WordKey, vec![word(&[1, -1])]);
+    let keyed = [
+        (cmd(Ty::Receipt, propose(key(), target("t"))), "0"),
+        (f(Ty::Word, prim(Prim::Inverse, vec![key()])), "0"),
+        (cmd(Ty::Unit, write_workspace("r", exact(Ty::Word), key())), "0"),
+        (f(Ty::Word, key()), "root"),
+    ];
+    for (p, path) in &keyed {
+        let d = only(p);
+        let (code, function, at, expected, supplied) = mismatch(&d);
+        assert_eq!(
+            (code, function, at, expected, supplied),
+            (WORD_KEY_NOT_EXECUTABLE, "f", *path, "Word", "WordEqualityKey")
+        );
+    }
     assert_only(&cmd(Ty::Receipt, propose(word(&[1]), nat(2))), "f", "1", "Target", "Nat");
     assert_only(&cmd(Ty::Text, read_receipt(nat(1), ReceiptField::Id)), "f", "0", "Receipt", "Nat");
     assert_only(&cmd(Ty::Unit, use_exact(ExactRole::Budget, word(&[1]))), "f", "0", "Nat | Int | Budget", "Word");
@@ -153,6 +169,31 @@ fn state_and_preview_operations_take_their_types() {
     let keep = command("keep", vec![], exact(Ty::Unit), write_workspace("r", exact(Ty::Nat), nat(1)));
     let look = view("look", vec![], exact(Ty::Word), read_snapshot("r", exact(Ty::Word)));
     assert_only(&tool(vec![keep, look]), "look", "root", "Nat", "Word");
+}
+
+/// Sets and maps in IR (LP2 drafts): an operation takes the collection it names and a key that fits its key type. A
+/// set element or a map key of a type without a canonical key order, or a map with an unpaired key, is malformed IR
+/// (LG2.20), not a diagnostic.
+#[test]
+fn set_and_map_operations_take_their_collections_and_keys() {
+    let nats = || set(exact(Ty::Nat), vec![nat(1), nat(2)]);
+    let names = || map(exact(Ty::Text), exact(Ty::Nat), vec![(text("a"), nat(1))]);
+    let empty = || list(exact(Ty::Nat), vec![]);
+    assert_only(&f(Ty::Bool, prim(Prim::Contains, vec![empty(), nat(1)])), "f", "0", "Set<_> | Map<_, _>", "List<Nat>");
+    assert_only(&f(Ty::Nat, prim(Prim::Lookup, vec![nats(), nat(1)])), "f", "0", "Map<_, _>", "Set<Nat>");
+    assert_only(&f(Ty::Nat, prim(Prim::Lookup, vec![names(), nat(1)])), "f", "1", "Text", "Nat");
+    assert_only(&f(Ty::Bool, prim(Prim::Contains, vec![nats(), text("1")])), "f", "1", "Nat", "Text");
+    let pair = prim(Prim::InsertEntry, vec![names(), text("b"), text("2")]);
+    assert_only(&f(Ty::Map(exact(Ty::Text).into(), exact(Ty::Nat).into()), pair), "f", "2", "Nat", "Text");
+    let malformed = [
+        set(exact(Ty::Receipt), vec![]),
+        set(c600_ir::QTy { ty: Ty::Nat, display: true }, vec![]),
+        map(exact(Ty::Unit), exact(Ty::Nat), vec![]),
+        Expr::Collection { ty: Ty::Map(exact(Ty::Nat).into(), exact(Ty::Nat).into()), items: vec![nat(1)] },
+    ];
+    for body in malformed {
+        assert!(c600_check::check(&f(Ty::Unit, body.clone())).is_err(), "{body:?}");
+    }
 }
 
 #[test]

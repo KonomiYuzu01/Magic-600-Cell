@@ -101,12 +101,12 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   `LG3:capability.not_granted` an entry that is not exported, an ungranted capability, an entry that both reads state
   and prepares previews, a row the class does not list or the checker cannot name (an unresolved call, an open effect
   variable), and a proposal or a word-carrying workspace write whose word the solver did not name to the entry, unless
-  an enabled declassifier covers the write; a write at a type variable, or of a record or callable type that holds a
-  word or a type variable, counts as one that may carry a word. The rule is conservative: it also refuses a named word
-  passed to a helper that proposes or writes it, a write of a record or closure built from named words, and a proposal
-  to a `Target` parameter (a row the checker cannot name). Not built: the column's two exceptions (CT-BND-17,
-  CT-BND-18), the derived-state row (the IR draft has no `derive`), rule 6's check of the facts a view shows and the
-  class review (CT-BND-15).
+  an enabled declassifier covers the write; a write at a type variable, of a compressed word or a word equality key, or
+  of a record, list, set, map or callable type that holds a word or a type variable, counts as one that may carry a
+  word. The rule is conservative: it also refuses a named word passed to a helper that proposes or writes it, a write
+  of a record, collection or closure built from named words, and a proposal to a `Target` parameter (a row the
+  checker cannot name). Not built: the column's two exceptions (CT-BND-17, CT-BND-18), the derived-state row (the IR
+  draft has no `derive`), rule 6's check of the facts a view shows and the class review (CT-BND-15).
 - An entry that is no command and changes the workspace or prepares a preview is `LG3:effect.undeclared` at `entry`
   (LG3.5, LG3.6), on the built-in column and, for a workspace change, in `admit`'s solving profile. This confirms and
   closes LP3's finding of an exported plain `fn` that proposes: `check` admits it, since a command may call such a
@@ -165,6 +165,28 @@ with the archive checksums of LX-5's crate run. The archives are vendored in `ve
   CT-LG3-07, the undo half of CT-LG3-03 and research output that never becomes a solving preview (BND.61). M3 builds
   the acknowledgement, the saved-word half and BND.61's refusal at run time (below); the undo half of CT-LG3-03 stays
   open.
+- Lists and word operations (LP2 drafts until the IR freeze, PHS.49). `List<T>` is a finite sequence in written
+  order, built by the IR's collection form; `length`, `index`, `push` and `concat` work on it. A list with a display
+  element is display-qualified as a whole, so its length, an element or an equality cannot extract an exact result
+  (LG2.19), and an index takes exact inputs only (LG2.20): CT-LG2-05's aggregate part for lists. A list holds no
+  callable in the draft. `inverse`, `conjugate`, `commutator` and `compose` (with `concat` and `length`) take the
+  `Word` domain and give a `Word` (LG2.15, LG2.16; CT-LG2-12's language half, part). `word_key` gives a
+  `WordEqualityKey` (LG2.13), which no proposal, word operation, word slot or result takes:
+  `LG2:type.word_key_not_executable`, not a mismatch (CT-LG2-11, part). The key is not indexed by puzzle and identity
+  yet, since the IR draft has one puzzle.
+- Sets and maps (LP2 drafts until the IR freeze). `Set<T>` and `Map<K, V>` are built by the collection form; a map's
+  items alternate keys and values. A set element and a map key have an exact type with a canonical key order (no
+  display qualifier, approximation, function, receipt, `Unit` or type parameter, at any depth), or the IR is
+  malformed, and every element, key and probe is an exact input (LG2.20). `contains`, `insert` (a set's element or a
+  map's key and value), `lookup` and `length` work on them; a map with a display value is display as a whole
+  (LG2.19). `elements`, `keys` and `entries` give a list in the order their primitive names, ascending or descending
+  (LG4.3). CT-LG2-05's aggregate part for sets and maps.
+- Compressed words (LP2 drafts until the IR freeze). `CompressedWord` is a type of its own, never a `Word`:
+  `compress` gives one from a `Word`, `concat` joins two without expansion, `length` gives the exact `Nat` length
+  without expansion (LG2.16), and `expand(c, start, count)` gives the letters from an exact position as a `Word`
+  (LG4.6); the position and the count are exact natural numbers (LG2.20). A compressed word has no exact equality,
+  alone or held in a record or a collection, and is no set element or map key, so no checked program compares two.
+  CT-LG2-14's language half, static part (`c600-syntax/tests/collections.rs`).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
 
 ## Status of M7: the parser
@@ -210,6 +232,9 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - Recovery (CT-LG1-04). A damaged declaration becomes a recovery hole with `LG1:syntax.recovery_gap`, and parsing
   resumes at the next `fn`, `view`, `command`, `import` or `export` in column 1. A draft with a hole has no layout and
   does not lower.
+- Lexing stays linear. A quote that opens no string on its line is scanned to the line's end once, and the quotes that
+  scan stepped over are not scanned again, since they cannot open a string either; the tokens are unchanged (lead L5
+  of the M7 attack, 16 November 2026).
 - Canonical layout (LG1.4, CT-LG1-03). `format` depends on the parsed program only: four-space indents, a blank line
   before each declaration, imports directly after the module line, one `let` or `return` per line, `match` arms and
   closure bodies on lines of their own, and type arguments and generic parameters without spaces (`<T,E>`, as LX-8's
@@ -221,6 +246,16 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   declared `charge` (LG4.8's tariffs), command metadata (the command table, LP3), binder arms and LX-8's domain types
   such as `Word<Full,Retained>` (the IR's domain families, M4 and M5), and menu words (the jumbled puzzle's alphabet,
   M5). Type arguments on a program's own function are refused: the IR draft has no explicit instantiation.
+- Lists and words (LP2 drafts). `List<T>` and `WordEqualityKey` are types, and a `List` of a function is refused at
+  lowering. `list<T>(a, b, ...)` builds a list; `length`, `index`, `push`, `concat`, `inverse`, `conjugate`,
+  `commutator`, `compose` and `word_key` are reserved operations called like functions
+  (`c600-syntax/tests/collections.rs`).
+- Sets and maps (LP2 drafts). `Set<T>` and `Map<K, V>` are types; a set element or a map key that is not exact in its
+  type is refused at lowering. `set<T>(a, ...)` and `map<K, V>(k, v, ...)` build them; `contains`, `insert`,
+  `lookup`, `elements`, `keys` and `entries` are reserved, and a listing names its order as its second argument,
+  `ascending` or `descending`, which are reserved words.
+- Compressed words (LP2 drafts). `CompressedWord` is a type, refused as a set element or a map key at lowering;
+  `compress` and `expand` are reserved operations called like functions.
 - Not run or not applicable, which is no pass (PHS.63): CT-LG1-01's second half, mixed dependency editions, while one
   edition exists; CT-RTE-18 (LQ13 was answered without it).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
@@ -256,6 +291,42 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   retained metadata (so an output unit is one fused row), the receipt request record, the JSON form of a word (LG2.18's
   word keys stay open) and `DraftTariffs`, test-only tariffs for the rows the frozen vectors do not price. The IR
   draft has one read construct for snapshots and workspace records; the IR freeze should split it.
+- Lists and words (LP2 drafts): `Value::List` (`Value::list`) and `Value::WordEqualityKey`. A list's logical size is
+  a record's, after DET.57's sequence row: a 4-byte tag, 8 bytes per variable-sequence element, and the elements. Its
+  JSON form is an array in written order. Each operation is one step: `length` reserves its integer; `index` lends or
+  retains an element as a field read does, and an index outside the list stops with `LG4:input.pointwise_failed`
+  before its step; the builders are priced before they build, `expand_per_letter` per letter built or scanned and
+  `LIST_PER_ELEMENT` (1) per element built. These prices are drafts, since DET.55 names no row for them. The key is
+  LG2.18's Full free reduction and has no output form, so a run that would emit one stops with
+  `PS1:input.noncanonical_value`. Tests: `c600-run/tests/collections.rs` (CT-LG2-12's run-time language half and
+  CT-LG4-01 for lists and words, parts) and the key halves of CT-LG2-11 and CT-LG2-13 in `conformance_lg2.rs`.
+- Sets and maps (LP2 drafts): `Value::Set` and `Value::Map` (`Value::set`, `Value::map`) keep their elements, or
+  their `{ key, value }` entries, in the canonical key order `value::key_order` (DET.9): exact numbers by value,
+  texts by scalar values, words by letters, aggregates part by part, kinds by a fixed rank, and for equal numbers in
+  different representations the explicit secondary key `Int`, `Rat`, `Q5`. Equal keys are one key; the lowest
+  representation stays, and a map's later value replaces an earlier one. They are sized as lists and encode as JSON
+  arrays in that order; a host value out of that order has no canonical form. Draft prices: `set` and `map` are one
+  step at `LIST_PER_ELEMENT` per element and n·⌈log₂ n⌉ comparisons of the widest key, each `compare_per_unit` per
+  unit of two keys; `contains`, `insert` and `lookup` cost ⌈log₂(n + 1)⌉ comparisons of the probe, an insertion adds
+  `LIST_PER_ELEMENT` per element built, and `elements`, `keys` and `entries` the same per element listed. A missing
+  key stops `lookup` with `LG4:input.pointwise_failed` before its step. Tests: `c600-run/tests/collections.rs`
+  (CT-LG4-01 for sets and maps and CT-DET-05's insertion-order half, parts).
+- Compressed words (LP2 drafts): `Value::Compressed` holds a `value::Compressed`, a straight-line program whose parts
+  are leaves of literal letters or concatenations of two earlier parts, with its exact length. A join of two equal
+  values, compared by value, adds one part, so 70 doublings of three letters keep 71 parts for 3·2⁷⁰ letters; an
+  empty operand gives the other. Its logical size is a 4-byte tag, per leaf 4 + 8 + 2 bytes per letter, per
+  concatenation 20, and the length as an integer; in a container it is a variable sequence. Draft prices: `compress`
+  at `expand_per_letter` per letter; `concat` at the comparison of the two operands, the integer addition of their
+  lengths and `LIST_PER_ELEMENT` per part built, reserving the size of a join of two different words; `length`
+  reserves its integer; `expand` at `expand_per_letter` per letter and `LIST_PER_ELEMENT` per part it may visit,
+  2·(height + count) + 1, reserving 2 bytes per letter, and a range past the end stops it with
+  `LG4:input.pointwise_failed` before its step. A compressed word has no canonical form, so a run that would emit one
+  stops, and an argument that holds one is refused, with `PS1:input.noncanonical_value`. An exact equality with a
+  compressed operand is refused as malformed IR; one held in a record or a collection only the checker refuses.
+  Tests: `c600-run/tests/collections.rs` (CT-LG2-14's language half, part).
+- Not built for compressed words: their inverse, conjugate, commutator and composition, `word_key`, an exact equality
+  and an output form; the kernel's streaming half of CT-LG2-14 (DET.63's `word_open` and `chunk` rows, cancellation
+  and admission bounds; CT-LG4-03, M4).
 - Evidence kind: source and fixture.
 
 ## Status of M3: the run-time boundary
@@ -362,6 +433,44 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
     CT-LG2-14; CT-KN2-07 as a part: a 100,001-letter Full word replays in chunks equal to its whole derivation. Not run:
     the recorded words of CT-KN2-07, which are jumbling words, and any Full stream beyond 3,000,000 letters in the test
     profile.
+- KN3 (LP2): `c600_kernel::exact` decides the sign of a + b√5 exactly for 128-bit a and b (`sign5`, a² against 5b²
+  in 256 bits) and evaluates sums of products of integers, √5 and 5 with checked arithmetic that reports overflow
+  instead of deciding. `c600_kernel::request` holds A6's bytes (state contract, in force since 15 November 2026): the
+  wire limits, the four KN2 codes of KN3.7 and KN3.8, the FP.5 binding with its canonical text, the search limit, the
+  request digest, builders for C, H and M lines, and the producer's token writer from a binary64 bit pattern (KN3.9).
+- Contract tests, in part: CT-KN3-01 (Lucas and Fibonacci pairs at |a² − 5b²| = 4 up to the 128-bit limit, the range
+  limits, exact zeros of contact type), CT-KN3-04 (the binding and the search limit) and CT-KN3-06 (bit patterns to
+  exact tokens, both zeros to `0:0`, non-finite patterns refused). The rest of these rows runs in M5's
+  `c600-jumble/tests/kn3.rs`.
+- Draft choices: the bytes, limits and fixed-width signs live here with the standard library only, and a request's
+  meaning, over unbounded integers, in `c600_jumble::rotation`; the shell passes a bit pattern, so no float type enters
+  the kernel; a non-finite producer input and a malformed binding refuse with `KN2:input.rotation_request_malformed`;
+  N or D above `u128` refuses with `KN2:resource_limit.rotation_search_bound`.
+- KN3.5 (LP2): `c600-a2-filter` holds state contract A2's filter. It is a crate of its own because CT-KN2-05's scans
+  keep float types and literals out of `c600-kernel` and `c600-jumble`; INV-4 and ADR-L03.1 allow the filter its
+  float. It evaluates a sum of products of integers, √5 and 5 (the form of `c600_kernel::exact::SumOfProducts`) in
+  binary64 and accepts the sign only when |v̂| > E = fl(Ŝ·4(K + 1)u), at least 3.99 times the proven forward error
+  bound. Near zero, on a non-finite value and past 2^16 terms or 16 factors in a term, `c600_kernel::exact` decides;
+  when its 128-bit path overflows, the decision says so. `Decision` records the version
+  `a2-binary64-sum-of-products-draft-1`, the enclosure, and the accepted sign or the exact fallback result.
+- Contract tests, in part: CT-KN3-03 (`c600-a2-filter/tests/adversarial.rs`, 12,400 cases). Every decision is
+  checked against `c600_kernel::exact` and a wide-integer reference, and every finite enclosure is checked exactly.
+  The cases cover Lucas and Fibonacci pairs, exact contacts of h_A's form and the crossings next to them, conversions
+  that round, the 128-bit limits, cancellation-heavy sums, powers of √5, non-finite values and sums past the limits.
+  Not run: the model's own vertex sets and poses and the E0 controls, because neither kernel crate calls the filter
+  yet.
+- Draft choices: the crate's own `Sum`, because the kernel's `SumOfProducts` keeps its terms private; the limits; the
+  fixed √5 bit pattern; a margin of almost 4 with exact conversions counted as roundings; a fallback on a tie and on
+  a non-finite evaluation, which records no value; a new `FILTER_VERSION` for any change to the bound, the constant,
+  the evaluation order or the limits. The bound needs each operation rounded once to binary64, so the crate refuses
+  to compile for 32-bit x86 without SSE2.
+- Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model read the crate against
+  KN3.5, CT-KN3-03 and state contract A2 and found no blocker or major. Its minor point, that halving E would pass
+  the tests, is the margin the proof allows; the author's deliberate faults (a zero bound, the bound over 2^20, no
+  non-finite check, the summation count left out of K, √5 off by one ulp) each fail them.
+- Not built: the shell's gesture producer, F2 and F5 (ν), the cost of an exact operation by operand size (KN3.6),
+  and a call of the filter from either kernel crate; an accessor for `SumOfProducts`'s terms would let the filter
+  take the kernel's sum directly.
 
 ## Status of M5: the jumbling half
 
@@ -386,10 +495,12 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   of CT-KN2-01, CT-KN2-04, CT-KN1-05 (poses) and CT-KN2-05 (no `f32` or `f64` in the kernel crates), which run whole
   with M4's halves; CT-JI-03. CT-KN2-02 in part: heights and domain IDs against `trees.py` and the library's
   histograms on H6030's compared states, the recorded fixture prefixes and u1, and the free-mode Cayley rotation.
-- Not built, for M8: CT-KN1-03, CT-KN1-04, CT-KN1-06, CT-KN2-06, CT-KN2-07, CT-KN3-01, CT-KN3-03 to CT-KN3-06, R-11
-  (CT-LG2-12), and CT-KN2-02's cases b20, b06-14, b14 and b03; the observations rim_summary, covers, repair_list, nu,
-  checkpoints, release_check and derivation with reachability; Strict protection; and the holding caps of seam cells
-  and tree positions past the first step.
+- Not built, for M8: CT-KN1-03, CT-KN1-04's jumbling half, CT-KN1-06, CT-KN2-06, CT-KN3-03's model inputs (the
+  filter itself is in `c600-a2-filter`, M4's section), the jumbling words of CT-KN2-07, CT-KN3-01's small-margin set, R-11's jumbling property (CT-LG2-12), and CT-KN2-02's
+  cases b20, b06-14, b14 and b03; the observation nu, the checkpoints and derivation with reachability (M8 builds
+  rim_summary, covers, repair_list and release_check, below); Strict protection on the jumbled puzzle; and the holding caps of seam cells and tree
+  positions past the first step. Built since M5: KN3's exact rotation requests (below; CT-KN3-05 whole, CT-KN3-01,
+  CT-KN3-04 and CT-KN3-06 in part) and the kernel rows for 600-cell-Full (M4's section).
 - Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model read the change with the
   acceptance check. Its three major findings were fixed before the pull request, and a scoped re-check found no
   blocking finding: R1, a word whose later letter was malformed, or met an engine error, left its earlier letters
@@ -424,11 +535,62 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   `sim/api.py`'s `fixture_state` silently replays another prefix for a t outside 0 to the record count, and its
   `pose_entries` hands out J1's own exact numbers, which take attribute assignment, so the "read-only copy" can change
   the state's pose table (JI.52). The attack tests keep them as expected failures.
-- Not run, because M8 builds the calls: lead L9 (`label_checkpoint` on a raw table with a turned centre), L15's
-  `repair_list` and `covers` rows (pair order, no rank, a missing cap), L2's `release_check` agreement and L16's
-  `KN2:stale.revision_gone` (the candidate has no snapshot handles).
+- Not run, because the candidate does not build the calls: lead L9 (`label_checkpoint` on a raw table with a turned
+  centre) and L16's `KN2:stale.revision_gone` (the candidate has no snapshot handles). L15's `repair_list` and
+  `covers` rows (J1's pinned pair order, no rank, a cap outside 0..599) and L2's `release_check` agreement run in
+  M8's comparison with J1 (below).
 - Evidence kind: source and fixture. The comparison ran on Windows only. The timings the check prints are
   informational, not performance evidence.
+- KN3.4 and KN3.7 to KN3.9 under A6 (`c600_jumble::rotation`): `Request::decode` reads C, H and M lines with unbounded
+  integers, refuses malformed, noncanonical and oversize bytes, and compares the re-encoded bytes. `resolve` builds the
+  exact rotation in A1's frame at the binding's cap and chooses: free mode over A1's grid with A1's tie order, half-turn
+  candidates for H and for C at ω·ω ≥ 13130, and the squared distance exact in Q; menu mode by exact membership or a
+  drag scored by the squared Frobenius distance in Q(√5), the smallest index winning ties. The record holds the
+  binding, the request digest, the choice (with the complete tie list for a drag) and the exact matrix; `replay` reads
+  it back through the exact rotation check and runs no chooser. On 600-cell-Full, `retained_word` turns a retained
+  item into its A4 word and refuses a jumble item with `KN5:input.menu_word_needs_jumble_on` (JI.35). The A6 codes join
+  `codes`.
+- Contract tests (`c600-jumble/tests/kn3.rs` and `rotation::tests`): CT-KN3-05 whole (LX-9's vectors: the quarter
+  turn's drag picks 15 of the ties 15, 29, 40 and 43; the reversed menu's order digest is 1a87a420…, old bindings
+  refuse and its drag picks 16, the old 43; and H requests: the frame axes' half-turns are the direct members 11, 1
+  and 10, H(1,1,0), H(0,1,-1) and H(1,2,3) refuse with `KN2:input.twist_off_menu`, and the H(1,1,0) drag picks 23 of
+  the ties 23, 24, 41 and 54 at (9 − 3√5)/2); in part CT-KN3-04 (not run: a search for N ≥ 1 near the limit),
+  CT-KN3-06 (not run: the shell's gesture producer), CT-DET-16 (identical requests give identical choices and records
+  against pinned digests; not run: the shell's gesture producer and another platform) and CT-LG2-16's kernel half
+  (not run: the language half).
+- Draft choices (`rotation`'s documentation): half-turn candidates are the canonical integer axes with every
+  |component| ≤ N, at denominator 1; free mode compares the whole grid, (2N+1)³·D Cayley points and the half-turns,
+  with no budget or cancellation and no pruning except at N = 0, where the grid is the identity alone and one
+  comparison decides; the order of refusals; 600-cell-Full resolves against the pinned menu and refuses a free binding
+  with `KN2:input.menu_binding_mismatch`.
+- Unchanged: selection 2 (a journal's float request is an adapter error) and `CONTRACT_REVISION`, which still names
+  A1 to A4 although the state contract's revision is now `state-contract 2026-11-15 A1-A6`; renaming it changes the
+  identity block J1 is compared with, so it waits for the integrator. KN3.3's exact double description is `dd`; no
+  separate polytope API was added.
+- M8 observations (LP2 plan, section 11; JI.6, JI.7 and JI.12): `c600-jumble/src/observe/cuts.rs` builds
+  `rim_summary`, `release_check`, `covers` and `repair_list`, exact and read-only. The adapter serves them and
+  `rust_jumble.py` calls them. `tests/test_jumbling_rust_m8_observations.py` compares each with J1 on the states J1's
+  own tests use, undefined fields and refusals included: the rim summary on the I_a@40 stop and the I_a prefixes 10,
+  20 and 60; on census seed 7101, the release check before steps 44, 70 and 97, the cover table before steps 17, 30
+  and 33 (true answers in both directions included), and the repair list before step 97 at cap 458, whose 472
+  outcomes pass J1's `compare_recorded`, with J1's live cut-off, cancellation and errors.
+  `c600-jumble/tests/observations.rs` tests the refusals and the agreement with M5's seam facts and word check.
+  - A named cap outside 0..599 is refused with `KN2:input.named_object_invalid` (JI.45); a letter's grip outside it
+    stays an input error, as in the word check.
+  - In `covers` and `repair_list`, a classification or pair budget that runs out cuts the job off with
+    `KN7:budget.kernel_cost` and no claim (KN7.4). In `rim_summary` it leaves the caps it could not classify
+    uncertain, with no rim and no grip N.
+  - Drafts: the pair budget `max_pairs`, which JI.6 and JI.12 do not define, takes `KN7:budget.kernel_cost` (KN7.10
+    asks for that budget's code); a cancelled repair list keeps its covered outcomes and names no code; a blocked or
+    closed named cap, and a repair list in free mode, are errors with no code, because no chapter 13 code fits.
+  - Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model found no blocker or
+    major finding. Its minor points are the drafts above, which it found defensible, and engine faults that return a
+    plain error without a code, as the crate's other engine faults do; no change.
+  - Not built: `nu` and `correction_set_check` (JI.13). `nu` needs the label level of A5's crossings; the check needs
+    `nu` and the 36-row correction catalogue, which only research data holds, and shipping that catalogue as model
+    data is a model-boundary decision.
+  - CT-KN2-01, CT-KN2-04 and CT-BND-29 in part; no state changed in the index. No J1 fault was found. Evidence kind:
+    source and fixture; the comparison ran on Windows only, and its timings are informational.
 
 ## Status of M6: the session store
 
@@ -570,8 +732,8 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - Tests (`c600-evidence/tests/`): `words.rs` runs the word function's rows and checks (CT-EVD-01, CT-EVD-05,
   CT-EVD-07 to CT-EVD-11, CT-EVD-13, CT-EVD-22); `properties.rs` runs seeded random graphs (CT-EVD-02 to CT-EVD-04,
   CT-EVD-06); `sinks.rs` runs writers, reuse, check reports and the import rules (CT-EVD-17 to CT-EVD-21, CT-EVD-26 to
-  CT-EVD-30, and the evidence halves of CT-LB6-02 and CT-PS1-27); `examples.rs` transcribes section 9's E1 to E3
-  (part of CT-EVD-12).
+  CT-EVD-30, and the evidence halves of CT-LB6-02, CT-LG5-06 and CT-PS1-27); `examples.rs` transcribes section 9's
+  E1 to E3 (part of CT-EVD-12).
 - Fixed, each found by a test: I6 skipped a statement with no OR node of its own, so a bad refutation of an unsupported
   universal read row 1 instead of row 0 (CT-EVD-09); EVD.42's guard compared a leaf's covered set and not the search
   record's declared set, from which EVD.59 takes it, so E3's search refuted its statement instead of reading row 0
@@ -607,8 +769,15 @@ run or not applicable is no pass (PHS.63).
   - `c600-kernel/tests/`: `kernel.rs`, `load.rs` and `json.rs` run the 600-cell-Full halves of the KN rows, CT-PS1-04
     and CT-PS1-12 (M4's section).
   - `c600-jumble/tests/`: `crossing.rs` runs CT-KN2-03, and `assets.rs` the jumbling model's asset checks (M5's
-    section); `domain.rs` and `refusals.rs` hold the candidate's halves of Fable's M5 attack leads.
+    section); `domain.rs` and `refusals.rs` hold the candidate's halves of Fable's M5 attack leads; `kn3.rs` runs
+    KN3's exact rotation requests under A6 (CT-KN3-05 whole; CT-KN3-04, CT-KN3-06, CT-DET-16 and CT-LG2-16's kernel
+    half in part), with `c600_kernel::exact`'s unit tests for CT-KN3-01's part.
   - `c600-evidence/tests/` runs the EVD rows (the evidence library's section).
+  - `c600-module/tests/conformance_lg5.rs` runs CT-LG5-01 whole and CT-LG5-02 to CT-LG5-07 in part against LP3 C4's
+    loader and lockfiles. The parts leave out the boundary class against chapter 07's reviewed classes, the run
+    record, the reproduction key and a replay from them (M6), a check at the run itself, EV1's active-version
+    bookkeeping, evidence, the classification of forks, and a real module signature; each marker names its own.
+    CT-LG5-06's evidence half runs in `c600-evidence/tests/sinks.rs`, so its two parts together run it whole.
   - `c600-session/tests/`: M6's tests mark their rows (M6's section), CT-ONE-03 to CT-ONE-05, CT-ONE-11, CT-ONE-21,
     CT-ONE-23 and CT-ONE-24 included. `conformance_rows.rs` runs the session's half of CT-ONE-01 and CT-ONE-02 over
     every `Row` variant, CT-ONE-23 and the session's rows of CT-KN5-03 and CT-KN5-10; `conformance_jobs.rs` runs
@@ -623,13 +792,13 @@ run or not applicable is no pass (PHS.63).
     N01 to N04 through the kernel (M4's section); `tests/test_jumbling_rust_candidate.py` compares the jumbling
     candidate with J1 (M5's section); `tests/test_jumbling_rust_attacks.py` runs Fable's M5 attack leads, with J1's
     faults as expected failures (M5's section).
-- Count with LP3's C1 to C8, M5, LP2's first integration batch and KN5's stages 1 and 2, as
-  `tools/language/ct_index.py --summary` prints it
-  (`tests/test_ct_index.py` checks the tool): 59 whole, seven of them by the union of their parts (CT-KN1-05,
-  CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04, CT-LG3-01 and CT-LG3-04); 119 part; 4 named only by LP3's command-layer
-  tests, as parts without a marker (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); 1 missing despite its name
-  (CT-KN5-08: only the documentation in `c600-command/src/layer.rs` names it); 65 waiting, each with what it waits for
-  in `docs/progress/1.0/lp2-ct-index-notes.md`.
+- Count with LP3's C1 to C8, M5, LP2's first and second integration batches (KN3's exact requests among them) and
+  KN5's stages 1 and 2, as `tools/language/ct_index.py --summary` prints it (`tests/test_ct_index.py` checks the
+  tool): 62 whole, eight of them by the union of their parts (CT-KN1-05, CT-KN2-01, CT-KN2-04, CT-KN2-05, CT-LG2-04,
+  CT-LG3-01, CT-LG3-04 and CT-LG5-06); 130 part; 4 named only by LP3's command-layer tests, as parts without a marker
+  (CT-KN5-07, CT-KN5-12, CT-LI-04 and CT-LI-10); 1 missing despite its name (CT-KN5-08: only the documentation in
+  `c600-command/src/layer.rs` names it); 51 waiting, each with what it waits for in
+  `docs/progress/1.0/lp2-ct-index-notes.md`.
 - Not run or not applicable, which is no pass (PHS.63), with the check that runs instead: CT-LG3-06's flow-label
   variant, while the flow rule is off (BND.41) and LQ2 has not set it, so the static-only and run-time variants run
   (`c600-run/tests/conformance_lg3.rs`); CT-LG1-03's second host context, since CI runs on Windows only and the editor
@@ -675,10 +844,15 @@ run or not applicable is no pass (PHS.63).
     at LP3 (PHS.53).
   - For LP3: LB7.1's `LB7:capability.module_grant_missing` is the workspace library's entry-admission fact, built with
     LB7; the checker's own admission reports `LG3:capability.not_granted`, as chapter 02's LG3 table has it.
+  - For LP3, from the LG5 tests (`c600-module`): a built-in approval of a closure built for another IR version is
+    refused with `LG4:input.ir_rejected`, because the built-in branch looks up the function summary first, while
+    the own path gives `LG4:input.ir_version_unsupported`; the manifest's `boundary` is checked for form only; a run
+    request names no session identity; the caller supplies the author class of a fork or an import; approvals live
+    only in memory, with public fields.
   - KN5 has one implementation: LP3's `c600-command`, durable over M6's journal through `c600_session::JournalStore`
     (KN5's stages 1 and 2; LP3's C7 section below). The CT-KN5 parts that run, run against it; M6's `Session::invoke`
     follows the same draft ruling 4 until its tests move to `c600-command`.
-  - `Kernel::protection` has no model check (M4's section).
+  - `Kernel::protection` itself checks no model; `Kernel::checked_protection` adds KN1.4's check (M4's section).
   - For M6's store: the kernel's `archive::gunzip` accepts concatenated gzip members and trailing zero padding, so
     FP.7's strict one-member reader must refuse them itself; run-time `encode` applies no json_depth or integer_digits
     limit, so the store's writer must check FP.9 before it persists a value.
@@ -691,19 +865,17 @@ run or not applicable is no pass (PHS.63).
   - M6's remaining rows (15): CT-PS1-08 to CT-PS1-10, CT-PS1-16, CT-PS1-19, CT-PS1-21, CT-PS1-23, CT-PS2-01 to
     CT-PS2-05, and the run records of CT-DET-04, CT-DET-14 and CT-BND-23 (with LP3's grants for CT-DET-04 and
     CT-BND-23).
-  - The jumbled puzzle's rows that M5 leaves to M8 (9): CT-KN1-03, CT-KN1-06, CT-KN2-06, CT-KN3-01, CT-KN3-03,
-    CT-LG2-12, CT-PS1-11, CT-PS1-14 and CT-PS1-22.
+  - The jumbled puzzle's rows that M5 leaves to M8 (6): CT-KN1-03, CT-KN1-06, CT-KN2-06, CT-PS1-11, CT-PS1-14 and
+    CT-PS1-22.
   - A session's second level (3): CT-ONE-17 and CT-ONE-18, which need a second level in the session, its crossing
     and `project` (KN1.9); and CT-ONE-19, with LP3's view model.
   - Derived states with an open reachability claim and KN2.14's raw-table import, which M4 does not build (3, no
     milestone named): CT-ONE-09, CT-ONE-10 and CT-ONE-28.
-  - LG5's module loader and lockfiles (7): CT-LG5-01 to CT-LG5-07. LP3 C4's `c600-module` builds closures and
-    lockfiles, but its tests name none of these rows.
-  - KN5's command layer, once its candidate is picked (2): CT-KN5-05 and CT-KN5-08.
-  - A6's exact rotation requests (5, no milestone named): CT-KN3-04 to CT-KN3-06, CT-LG2-16 and CT-DET-16.
+  - KN5's command layer, `c600-command` (2): CT-KN5-05, which needs the display refresh after a commit (R-02) that it
+    does not build yet, and CT-KN5-08, which only the documentation in `c600-command/src/layer.rs` names.
   - The stage checker, RPI.68 to RPI.76 (3, no milestone named): CT-LG2-15, CT-LG3-10 and CT-LG5-08.
-  - Streaming and compressed words, KN2.10 (no milestone named): CT-LG2-14 and CT-LG4-03, and CT-KN2-07, named as not
-    built.
+  - Compressed words, KN2.10 (no milestone named): CT-LG4-03; the kernel's streaming runs CT-LG2-14 and CT-KN2-07 in
+    part (M4's section).
   - A builder and its build cache (2, no milestone named): CT-DET-21 and CT-DET-22.
   - A pointwise or whole-state contract form in the IR (no milestone named): CT-LG4-05, named as not built.
 - Evidence kind: source and fixture. The checks ran on Windows only.

@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-16] update | The language: LP2's second integration batch and M8's observation calls
+LP2's second batch adds KN3's exact rotation requests under A6, state contract A2's filter as the std-only crate `c600-a2-filter`, lists, sets, maps, word operations and compressed words as drafts until the IR freeze, LG5's conformance tests against LP3's module loader, and the fix for M7's lead L5; M8 adds the jumbling observations `rim_summary`, `release_check`, `covers` and `repair_list`, each compared with J1, the repair list in a neutral order at a cap the solver names. With KN5, section 15.3's index reads 62 of the 248 LP2 tests whole (8 by the union of their parts), 130 in part and 51 waiting; `nu`, `correction_set_check` and the level crossings are not built yet.
+
 ## [2026-11-16] update | The language: KN5's one implementation, stages 1 and 2
 LP3's command layer (`rust/c600-command`) now runs durably over M6's journal through `c600_session::JournalStore`: an open replays the history through the kernel and draws a fresh epoch, tokens are bound to the session's identity, `protection.orbit.set` and undo over M6's move tree are built, and under draft ruling 4 the refusal of an envelope that does not authenticate never takes a command ID, which closes LP3's KN5.21 lead. Two frozen-text readings wait for the owner (PHS.52); stages 3 to 5 and a session lock are not built, and `rust/README.md` lists the drafts and the gaps.
 
