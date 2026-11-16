@@ -279,8 +279,7 @@ fn ct_evd_06_records_outside_reach_change_no_word() {
         let s = spec.key(0);
         let before = word(&g, &s, &e);
         let reach = brute_reach(&g, &spec, 0);
-        let outside: Vec<Key> =
-            spec.keys().into_iter().filter(|k| !reach.contains(&g.root_of(k).unwrap())).collect();
+        let outside: Vec<Key> = spec.keys().into_iter().filter(|k| !reach.contains(&g.root_of(k).unwrap())).collect();
         let mut g2 = g.clone();
         let mut fresh: Vec<Key> = Vec::new();
         for r in 0..(1 + rng.below(5)) {

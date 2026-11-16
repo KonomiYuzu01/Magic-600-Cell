@@ -68,7 +68,8 @@ fn one_target() -> (Graph, Key) {
 fn refused(writer: Writer, grade: &Grade, citation: &Citation) -> &'static str {
     let (mut g, t) = one_target();
     let before = g.clone();
-    let err = record(&mut g, writer, &t, Leaf::new(&t, grade.clone()), citation).expect_err("the write must be refused");
+    let err =
+        record(&mut g, writer, &t, Leaf::new(&t, grade.clone()), citation).expect_err("the write must be refused");
     assert_eq!(g, before, "a refused write adds no leaf");
     err.code
 }
@@ -234,9 +235,13 @@ fn ct_evd_18_reuse_is_visible_and_names_its_relation() {
     let f = Covers::search_set("R", "retained letters", "three letters");
     let ux = Key::new(sid("U"), scope_in(f.clone(), x.clone()));
     let uz = Key::new(sid("U"), scope_in(f.clone(), z.clone()));
-    let neg = Leaf::new(&ux, exhaustive())
-        .covered(Covered::new(f.clone(), Some(x.clone())))
-        .search(SearchRecord::new(&sid("U"), &f, Complete::Yes, Stop::Closed, JobOutcome::Completed));
+    let neg = Leaf::new(&ux, exhaustive()).covered(Covered::new(f.clone(), Some(x.clone()))).search(SearchRecord::new(
+        &sid("U"),
+        &f,
+        Complete::Yes,
+        Stop::Closed,
+        JobOutcome::Completed,
+    ));
     let mut g = Graph::new();
     g.add_statement(universal("U")).unwrap();
     offer(&mut g, &ux, neg.clone()).unwrap();
@@ -315,7 +320,10 @@ fn ct_evd_19_check_reports_enter_as_one_leaf() {
     // Not applicable: no leaf.
     let mut g = base();
     let before = g.clone();
-    assert_eq!(admit_check_report(&mut g, &s, &report(Verdict::NotApplicable { reason: "kind".into() })).unwrap(), None);
+    assert_eq!(
+        admit_check_report(&mut g, &s, &report(Verdict::NotApplicable { reason: "kind".into() })).unwrap(),
+        None
+    );
     assert_eq!(g, before);
 }
 
@@ -657,9 +665,8 @@ fn ct_lb6_02_fork_inherits_no_evidence() {
     let original = DigestRef::of_source_bytes(b"tool m: version 1");
     let fork = DigestRef::of_source_bytes(b"tool m: version 1, edited");
     assert_ne!(original, fork);
-    let behaves = |src: &DigestRef| {
-        Key::new(sid("tool m behaves"), scope(Covers::OneInstance).with_sources(vec![src.clone()]))
-    };
+    let behaves =
+        |src: &DigestRef| Key::new(sid("tool m behaves"), scope(Covers::OneInstance).with_sources(vec![src.clone()]));
     let ko = behaves(&original);
     let kf = behaves(&fork);
     assert_ne!(ko, kf, "the module digest is part of the scope, so the fork's claim has its own key");

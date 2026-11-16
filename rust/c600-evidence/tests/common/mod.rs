@@ -112,10 +112,16 @@ pub fn t_le(a: &Grade, b: &Grade) -> bool {
 
 pub fn all_grades() -> Vec<Grade> {
     let mut out = Vec::new();
-    for b in [Basis::Theorem, Basis::Certificate, Basis::ExhaustiveComputation, Basis::ExactComputation, Basis::Sample] {
-        for k in
-            [Check::None, Check::Producer, Check::IndependentChecker, Check::ModelReview, Check::HumanReview, Check::FormalProof]
-        {
+    for b in [Basis::Theorem, Basis::Certificate, Basis::ExhaustiveComputation, Basis::ExactComputation, Basis::Sample]
+    {
+        for k in [
+            Check::None,
+            Check::Producer,
+            Check::IndependentChecker,
+            Check::ModelReview,
+            Check::HumanReview,
+            Check::FormalProof,
+        ] {
             out.push(gr(b.clone(), k));
         }
     }
@@ -457,8 +463,7 @@ pub fn scenarios_over(grades: &BTreeSet<Grade>, premises: &BTreeSet<Key>) -> Vec
         let y: Vec<&Grade> = (0..used.len()).filter(|i| ymask & (1 << i) != 0).map(|i| &used[i]).collect();
         let d: BTreeSet<Grade> = all.iter().filter(|g| y.iter().any(|yy| t_le(g, yy))).cloned().collect();
         for tmask in 0..(1u32 << prem.len()) {
-            let t: BTreeSet<Key> =
-                (0..prem.len()).filter(|i| tmask & (1 << i) != 0).map(|i| prem[i].clone()).collect();
+            let t: BTreeSet<Key> = (0..prem.len()).filter(|i| tmask & (1 << i) != 0).map(|i| prem[i].clone()).collect();
             out.push((d.clone(), t));
         }
     }

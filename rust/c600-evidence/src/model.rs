@@ -69,7 +69,14 @@ pub enum Check {
 impl Check {
     /// The six values of EVD.1.
     pub fn all() -> [Check; 6] {
-        [Check::None, Check::Producer, Check::IndependentChecker, Check::ModelReview, Check::HumanReview, Check::FormalProof]
+        [
+            Check::None,
+            Check::Producer,
+            Check::IndependentChecker,
+            Check::ModelReview,
+            Check::HumanReview,
+            Check::FormalProof,
+        ]
     }
 
     /// FP.19's wire name.
@@ -278,9 +285,18 @@ impl DigestRef {
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Covers {
     OneInstance,
-    SearchSet { family: String, alphabet: String, bounds: String },
-    AdmittedDomain { name: String, parameters: String },
-    EveryReachable { puzzle: String },
+    SearchSet {
+        family: String,
+        alphabet: String,
+        bounds: String,
+    },
+    AdmittedDomain {
+        name: String,
+        parameters: String,
+    },
+    EveryReachable {
+        puzzle: String,
+    },
     /// A decoded value outside edition 1's enumeration (I1).
     Other(String),
 }
@@ -478,7 +494,13 @@ pub struct SearchRecord {
 }
 
 impl SearchRecord {
-    pub fn new(target: &StatementId, declared: &Covers, complete: Complete, stop: Stop, job: JobOutcome) -> SearchRecord {
+    pub fn new(
+        target: &StatementId,
+        declared: &Covers,
+        complete: Complete,
+        stop: Stop,
+        job: JobOutcome,
+    ) -> SearchRecord {
         let declared = match declared {
             Covers::SearchSet { family, alphabet, bounds } => {
                 Declared { family: family.clone(), alphabet: alphabet.clone(), bounds: bounds.clone() }

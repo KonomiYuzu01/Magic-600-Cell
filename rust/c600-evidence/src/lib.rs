@@ -70,7 +70,9 @@ pub use edition::{basis_le, check_le, product_le, u0, Edition, EditionError};
 pub use error::{EvidenceError, Inconsistency};
 pub use graph::{Graph, NegResolution, Node, NodeId, OrNode};
 pub use model::*;
-pub use sink::{admit_check_report, check_write, entry_check, offer, record, reuse, CheckReport, Citation, Verdict, Writer};
+pub use sink::{
+    admit_check_report, check_write, entry_check, offer, record, reuse, CheckReport, Citation, Verdict, Writer,
+};
 pub use word::{
     discharge, dominates, effective_job, reduce, scope_phrase, standing, summaries_in_order, summary, val_at, word,
     Alternative, Claim, Diagnostic, Standing, Word, WordKind,

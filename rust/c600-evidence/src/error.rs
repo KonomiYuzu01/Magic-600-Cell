@@ -49,8 +49,7 @@ impl EvidenceError {
     pub fn inconsistent(mut cases: Vec<Inconsistency>, detail: &str) -> EvidenceError {
         cases.sort();
         cases.dedup();
-        let code =
-            if cases.contains(&Inconsistency::I5) { NEGATIVE_WITHOUT_COMPLETION } else { INCONSISTENT_FIELDS };
+        let code = if cases.contains(&Inconsistency::I5) { NEGATIVE_WITHOUT_COMPLETION } else { INCONSISTENT_FIELDS };
         EvidenceError { code, cases, detail: detail.to_string() }
     }
 

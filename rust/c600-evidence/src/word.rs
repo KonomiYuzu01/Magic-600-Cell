@@ -310,7 +310,10 @@ impl<'g> Analysis<'g> {
                         }
                         for gd in &st.guards {
                             if let PremiseClass::Other(v) = &gd.class {
-                                self.found(Inconsistency::I1, format!("{at}: guard class {v:?} outside the enumeration"));
+                                self.found(
+                                    Inconsistency::I1,
+                                    format!("{at}: guard class {v:?} outside the enumeration"),
+                                );
                             }
                         }
                         if let Some(n) = &st.negation {
@@ -325,13 +328,18 @@ impl<'g> Analysis<'g> {
                                 if !level.at_least_as_fine_as(subject) {
                                     self.found(
                                         Inconsistency::I3,
-                                        format!("{at}: scope digest level {level:?} is coarser than subject {subject:?}"),
+                                        format!(
+                                            "{at}: scope digest level {level:?} is coarser than subject {subject:?}"
+                                        ),
                                     );
                                 }
                             }
                         }
                         if st.form == Some(Form::Finite) && or.key.scope.covers != Covers::OneInstance {
-                            self.found(Inconsistency::I7, format!("{at}: a finite statement covers more than one instance"));
+                            self.found(
+                                Inconsistency::I7,
+                                format!("{at}: a finite statement covers more than one instance"),
+                            );
                         }
                     }
                     for r in or.searches.clone() {
@@ -354,7 +362,10 @@ impl<'g> Analysis<'g> {
                     }
                     if let Some(by) = &p.discharged_by {
                         if *by != p.key {
-                            self.found(Inconsistency::I2, format!("premise {id}: a discharge edge between different keys"));
+                            self.found(
+                                Inconsistency::I2,
+                                format!("premise {id}: a discharge edge between different keys"),
+                            );
                         }
                     }
                 }
@@ -411,13 +422,11 @@ impl<'g> Analysis<'g> {
         if negative || exhaustive {
             if let Some(r) = &q.search {
                 match r.complete {
-                    Complete::No => {
-                        self.found(Inconsistency::I5, format!("{at}: negative or exhaustive leaf on an incomplete search"))
+                    Complete::No => self
+                        .found(Inconsistency::I5, format!("{at}: negative or exhaustive leaf on an incomplete search")),
+                    Complete::Yes if job.as_ref().is_some_and(|o| o.did_not_complete()) => {
+                        self.found(Inconsistency::I5, format!("{at}: complete = yes with a job that did not complete"))
                     }
-                    Complete::Yes if job.as_ref().is_some_and(|o| o.did_not_complete()) => self.found(
-                        Inconsistency::I5,
-                        format!("{at}: complete = yes with a job that did not complete"),
-                    ),
                     _ => {}
                 }
             }
@@ -433,7 +442,10 @@ impl<'g> Analysis<'g> {
         if matches!(q.grade.basis, Basis::ExhaustiveComputation | Basis::ExactComputation) {
             if let Some(c) = &q.covered {
                 if !c.covers.is_finite_kind() {
-                    self.found(Inconsistency::I7, format!("{at}: computed leaf covers neither one instance nor a search set"));
+                    self.found(
+                        Inconsistency::I7,
+                        format!("{at}: computed leaf covers neither one instance nor a search set"),
+                    );
                 }
             }
         }
@@ -579,9 +591,9 @@ impl<'g> Analysis<'g> {
                     Some(Form::Universal) => live.iter().any(|q| {
                         q.grade.basis == Basis::Theorem
                             || (q.identity == xkey.scope.identity
-                                && q.membership.iter().any(|m| {
-                                    m.key == *xkey && m.check.check != Check::None && m.check.is_known()
-                                }))
+                                && q.membership
+                                    .iter()
+                                    .any(|m| m.key == *xkey && m.check.check != Check::None && m.check.is_known()))
                     }),
                     Some(Form::Existence) => {
                         let mut has = false;
@@ -599,7 +611,9 @@ impl<'g> Analysis<'g> {
                         }
                         has && !broken
                     }
-                    Some(Form::Mixed(Quantifier::Exists)) => live.iter().any(|q| Self::is_proof_or_complete_certificate(q)),
+                    Some(Form::Mixed(Quantifier::Exists)) => {
+                        live.iter().any(|q| Self::is_proof_or_complete_certificate(q))
+                    }
                     Some(Form::Mixed(Quantifier::Forall)) => {
                         let witness = live.iter().position(|q| q.role == LeafRole::Witness);
                         match witness {
@@ -756,9 +770,9 @@ impl<'g> Analysis<'g> {
         let args = self.args.get(&n).cloned().unwrap_or_default();
         or.children.iter().zip(args).any(|(c, arg)| {
             self.v0[*c]
-                && arg.iter().any(|l| {
-                    self.live.contains(l) && self.leaf(*l).grade.basis == Basis::ExhaustiveComputation
-                })
+                && arg
+                    .iter()
+                    .any(|l| self.live.contains(l) && self.leaf(*l).grade.basis == Basis::ExhaustiveComputation)
         })
     }
 

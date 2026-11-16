@@ -18,14 +18,16 @@ const SCOPE_MISMATCH: &str = "EVD:evidence.scope_mismatch";
 
 fn e1() -> (Graph, Key) {
     let start = poses("b47d8474: start pose");
-    let s1 = Key::new(sid("S1: 104:8,46:4,104:15 from b47d8474 ends at 1db0dd54"), scope_in(Covers::OneInstance, start.clone()));
+    let s1 = Key::new(
+        sid("S1: 104:8,46:4,104:15 from b47d8474 ends at 1db0dd54"),
+        scope_in(Covers::OneInstance, start.clone()),
+    );
     let mut g = Graph::new();
     g.add_statement(Statement::new(s1.statement.clone()).form(Form::Finite).subject(Level::Pose)).unwrap();
     let covered = Covered::new(Covers::OneInstance, Some(start));
     // a1: (certificate, producer) from results/certificates/R01.json, and (theorem, model review) from Theorem MC.
-    let cert = g.add_leaf(
-        Leaf::new(&s1, gr(Basis::Certificate, Check::Producer)).covered(covered.clone()).support("R01.json"),
-    );
+    let cert = g
+        .add_leaf(Leaf::new(&s1, gr(Basis::Certificate, Check::Producer)).covered(covered.clone()).support("R01.json"));
     let mc = g.add_leaf(Leaf::new(&s1, th()).support("Theorem MC"));
     let a1 = g.add_and(&[cert, mc]).unwrap();
     g.add_or_child(&s1, a1).unwrap();
@@ -196,14 +198,12 @@ fn ct_evd_12_e2_conditional_bound() {
     // Offered as a refutation of Sel (witness y plus that search as the negative at y), it is I5, not a refutation.
     let mut g3 = g.clone();
     let not_sel = key("not Sel", Covers::admitted_domain("D[k]", ""));
-    let witness = g3.add_leaf(
-        Leaf::new(&not_sel, exact()).covered(Covered::new(Covers::OneInstance, Some(poses("y")))).witness(),
-    );
-    let negative = g3.add_leaf(
-        Leaf::new(&not_sel, exhaustive())
-            .covered(Covered::new(macros.clone(), Some(poses("y"))))
-            .search(SearchRecord::new(&sid("not Sel"), &macros, Complete::No, Stop::DeterministicBudget, JobOutcome::Completed)),
-    );
+    let witness = g3
+        .add_leaf(Leaf::new(&not_sel, exact()).covered(Covered::new(Covers::OneInstance, Some(poses("y")))).witness());
+    let negative =
+        g3.add_leaf(Leaf::new(&not_sel, exhaustive()).covered(Covered::new(macros.clone(), Some(poses("y")))).search(
+            SearchRecord::new(&sid("not Sel"), &macros, Complete::No, Stop::DeterministicBudget, JobOutcome::Completed),
+        ));
     let and = g3.add_and(&[witness, negative]).unwrap();
     g3.add_or_child(&not_sel, and).unwrap();
     for k in [&sel, &bound] {
@@ -325,7 +325,8 @@ fn ct_evd_12_e3_cut_off_search() {
             "a different declared set, covered computed from it",
             Box::new(|e3, s4| {
                 let mut q = guarded(e3, s4, JobOutcome::Completed);
-                q.search = Some(SearchRecord::new(&e3.statement, &two, Complete::Yes, Stop::Closed, JobOutcome::Completed));
+                q.search =
+                    Some(SearchRecord::new(&e3.statement, &two, Complete::Yes, Stop::Closed, JobOutcome::Completed));
                 q.covered = Some(Covered::new(two.clone(), e3.scope.input.clone()));
                 q
             }),
@@ -334,13 +335,16 @@ fn ct_evd_12_e3_cut_off_search() {
             "a different declared set under a covered set copied from the statement",
             Box::new(|e3, s4| {
                 let mut q = guarded(e3, s4, JobOutcome::Completed);
-                q.search = Some(SearchRecord::new(&e3.statement, &two, Complete::Yes, Stop::Closed, JobOutcome::Completed));
+                q.search =
+                    Some(SearchRecord::new(&e3.statement, &two, Complete::Yes, Stop::Closed, JobOutcome::Completed));
                 q
             }),
         ),
         (
             "partial coverage: a subset of F",
-            Box::new(|e3, s4| guarded(e3, s4, JobOutcome::Completed).covered(Covered::new(two.clone(), e3.scope.input.clone()))),
+            Box::new(|e3, s4| {
+                guarded(e3, s4, JobOutcome::Completed).covered(Covered::new(two.clone(), e3.scope.input.clone()))
+            }),
         ),
         (
             "a superset of F",

@@ -86,7 +86,9 @@ fn case(st: St, n0: bool, cov: &Covers, srch: Srch, job: &Option<JobOutcome>) ->
                 g.attach_job(&s, ProducingJob::new("job-1", o.clone()));
             }
         }
-        Srch::ClosedComplete => g.attach_search(&s, SearchRecord::new(&target, cov, Complete::Yes, Stop::Closed, stated)),
+        Srch::ClosedComplete => {
+            g.attach_search(&s, SearchRecord::new(&target, cov, Complete::Yes, Stop::Closed, stated))
+        }
         Srch::BudgetIncomplete => {
             g.attach_search(&s, SearchRecord::new(&target, cov, Complete::No, Stop::DeterministicBudget, stated))
         }
@@ -190,9 +192,13 @@ fn exhaustive_case(complete: Complete, job: JobOutcome) -> (Graph, Key, Key) {
     let mut g = Graph::new();
     pair(&mut g, universal("S4").label("stage 15 record"), existence("E3"));
     g.root(&e);
-    let leaf = Leaf::new(&s, exhaustive())
-        .covered(Covered::new(f.clone(), Some(input)))
-        .search(SearchRecord::new(&sid("E3"), &f, complete, Stop::Closed, job));
+    let leaf = Leaf::new(&s, exhaustive()).covered(Covered::new(f.clone(), Some(input))).search(SearchRecord::new(
+        &sid("E3"),
+        &f,
+        complete,
+        Stop::Closed,
+        job,
+    ));
     g.support(&s, leaf);
     (g, s, e)
 }
@@ -653,10 +659,16 @@ fn ct_evd_11_refutation_is_asymmetric() {
         g
     };
     let mut g = base3();
-    g.attach_search(&e3, SearchRecord::new(&sid("E3"), &f, Complete::No, Stop::DeterministicBudget, JobOutcome::CutOff));
+    g.attach_search(
+        &e3,
+        SearchRecord::new(&sid("E3"), &f, Complete::No, Stop::DeterministicBudget, JobOutcome::CutOff),
+    );
     assert_eq!(row(&g, &e3, &e), 5);
     let mut g = base3();
-    g.attach_search(&e3, SearchRecord::new(&sid("E3"), &f, Complete::No, Stop::Other("wall clock".into()), JobOutcome::CutOff));
+    g.attach_search(
+        &e3,
+        SearchRecord::new(&sid("E3"), &f, Complete::No, Stop::Other("wall clock".into()), JobOutcome::CutOff),
+    );
     assert_eq!(row(&g, &e3, &e), 6);
     let mut g = base3();
     let cut = SearchRecord::new(&sid("E3"), &f, Complete::No, Stop::Other("wall clock".into()), JobOutcome::CutOff);
@@ -746,7 +758,9 @@ fn ct_evd_11_refutation_is_asymmetric() {
     let mut g = basex();
     g.support(
         &nx,
-        Leaf::new(&nx, gr(Basis::Certificate, Check::IndependentChecker)).covered(Covered::of_scope(&nx.scope)).complete(),
+        Leaf::new(&nx, gr(Basis::Certificate, Check::IndependentChecker))
+            .covered(Covered::of_scope(&nx.scope))
+            .complete(),
     );
     assert_eq!(row(&g, &x2, &e), 1);
     // The finite-set case does not extend to mixed(exists): a completed exhaustive search of exactly its declared set
@@ -763,9 +777,13 @@ fn ct_evd_11_refutation_is_asymmetric() {
     g.root(&xf);
     g.support(
         &nxf,
-        Leaf::new(&nxf, exhaustive())
-            .covered(Covered::of_scope(&nxf.scope))
-            .search(SearchRecord::new(&sid("X over F"), &fx, Complete::Yes, Stop::Closed, JobOutcome::Completed)),
+        Leaf::new(&nxf, exhaustive()).covered(Covered::of_scope(&nxf.scope)).search(SearchRecord::new(
+            &sid("X over F"),
+            &fx,
+            Complete::Yes,
+            Stop::Closed,
+            JobOutcome::Completed,
+        )),
     );
     for k in [&xf, &nxf] {
         let err = word(&g, k, &e).unwrap_err();
@@ -870,7 +888,9 @@ fn ct_evd_22_narrower_support_never_upgrades() {
     let nx = key("not X", d7.clone());
     for leaf in [
         Leaf::new(&nx, th()),
-        Leaf::new(&nx, gr(Basis::Certificate, Check::IndependentChecker)).covered(Covered::of_scope(&nx.scope)).complete(),
+        Leaf::new(&nx, gr(Basis::Certificate, Check::IndependentChecker))
+            .covered(Covered::of_scope(&nx.scope))
+            .complete(),
     ] {
         let mut g = Graph::new();
         pair(

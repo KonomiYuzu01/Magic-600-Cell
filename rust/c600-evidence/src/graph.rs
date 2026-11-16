@@ -83,7 +83,12 @@ impl Graph {
             return *id;
         }
         let id = self.nodes.len();
-        self.nodes.push(Node::Or(OrNode { key: key.clone(), children: Vec::new(), searches: Vec::new(), jobs: Vec::new() }));
+        self.nodes.push(Node::Or(OrNode {
+            key: key.clone(),
+            children: Vec::new(),
+            searches: Vec::new(),
+            jobs: Vec::new(),
+        }));
         self.roots.insert(key.clone(), id);
         id
     }

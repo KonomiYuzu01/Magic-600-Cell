@@ -3,9 +3,7 @@
 
 use crate::error::EvidenceError;
 use crate::graph::{Graph, NodeId};
-use crate::model::{
-    Basis, Check, CheckFact, CheckMode, Covered, Covers, Form, Grade, Key, Leaf, LeafRole, Quantifier,
-};
+use crate::model::{Basis, Check, CheckFact, CheckMode, Covered, Covers, Form, Grade, Key, Leaf, LeafRole, Quantifier};
 
 /// EVD.64's writers.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -225,10 +223,8 @@ pub fn reuse(g: &mut Graph, target: &Key, source: Leaf, transport: Leaf) -> Resu
     if let Some(c) = &source.covered {
         let moved = Covered::new(c.covers.clone(), Some(rel.to.clone()));
         let form = g.statement(&target.statement).and_then(|s| s.form.clone());
-        let computed = matches!(
-            source.grade.basis,
-            Basis::Certificate | Basis::ExhaustiveComputation | Basis::ExactComputation
-        );
+        let computed =
+            matches!(source.grade.basis, Basis::Certificate | Basis::ExhaustiveComputation | Basis::ExactComputation);
         let read_by_i7a = matches!(form, None | Some(Form::Universal) | Some(Form::Mixed(Quantifier::Forall)));
         if computed && read_by_i7a && moved != Covered::of_scope(&target.scope) {
             return Err(EvidenceError::scope_mismatch("the transported leaf would meet I7 (a)"));
