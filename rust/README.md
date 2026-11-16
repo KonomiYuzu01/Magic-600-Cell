@@ -306,12 +306,12 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   reports a `CertificateError` or `LoadError`; an orbit outside 0 to 34 in a protected set is refused with
   `KN2:input.named_object_invalid`; with one model in `assets/`, the other-identity control changes the case instead
   of loading a second model.
-- Not built: the `positions` row, Strict protection, streaming words (KN2.10, CT-KN2-07), `open_snapshot` by
-  `RevisionRef` (with the session store, M6), the reachability claim of `Derived`, budgets (KN7), an inverse call
-  (O05's inverse recipes come from 0.4's `core.invrecipe` in the case files) and the jumbling half (M5).
-- Open: `Kernel::protection` has no model check and returns a `Protection`, not a `Result`, so it cannot refuse
-  another model's set (KN1.4); that needs an API decision. M6's `state_from_labels` builds a snapshot at the same level
-  from any permutation of the slots, so CT-KN1-04 lists it as no lift; reachability stays the caller's evidence.
+- Not built: `open_snapshot` by `RevisionRef` (with the session store, M6), the reachability claim of `Derived`,
+  budgets (KN7), an inverse call (O05's inverse recipes come from 0.4's `core.invrecipe` in the case files) and the
+  jumbling half (M5). The `positions` row, Strict protection and streaming words were built after M4 (below).
+- Open: M6's `state_from_labels` builds a snapshot at the same level from any permutation of the slots, so CT-KN1-04
+  lists it as no lift; reachability stays the caller's evidence. The model check on protection was open here and is
+  built after M4 (below).
 - Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model read the kernel with the
   acceptance check. Its two major findings were fixed before the pull request, and a scoped re-check found no blocking
   finding: R1, the model ID was not tied to the file list; R2, the loader's refusals had no tests (the checks inside the
@@ -328,6 +328,26 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   `check_unreadable_recipe_json` pins that agreement.
 - Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run. The timings the check
   prints are informational, not performance evidence.
+- LP2 kernel rows after M4, which LP3 waits for (the crate documentation lists the draft choices):
+  - KN1.4 for protected sets: a nonempty `ProtectedSet` is bound to its model, and `checked_protection`,
+    `strict_protection`, `derive`, `derive_strict` and `replay` refuse another model's set with
+    `KN1:input.identity_mismatch`. `protection` keeps its signature and stays unchecked. The empty set names no model.
+  - Strict protection (KN2.4, KN2.7): `ProtectionMode::Strict`, `strict_protection` and `derive_strict` judge every
+    executed prefix of the literal expansion; `derive` stays Net. On the shipped model every generator moves a sticker
+    of each of the 35 orbits, so Strict refuses any word at prefix 1 once one orbit is protected; the later-prefix
+    tests run on a copy of the model whose generator 1200 leaves orbit 0 alone.
+  - KN2.11's refusal shape (deferred R3): `Refused` has `first_refused_prefix`, the outcome `refusal` and
+    `certificates`, and `Protection` has `first_refused_prefix`. Draft: a Net refusal reports no prefix, since Net
+    judges only the end of the complete operation (LB2.3); its certificates come from the net map.
+  - The `positions` row: `positions(state, pieces)` gives each named piece's home slots, the slots that hold its
+    stickers now and the position that holds them all.
+  - Streaming words (KN2.10): `chunks(recipe, size)` streams a recipe's literal letters with their positions, one
+    step's expansion at a time; `replay(base, set)` takes letters in chunks of any size, judges Strict prefix by
+    prefix and gives no verdict before `finish`; `replay_under_ceiling` counts the 3,000,000 ceiling over all chunks.
+  - Contract tests: CT-PS1-12 whole; the kernel halves (parts) of CT-LB2-02, CT-LB2-03, CT-LB2-04, CT-LG2-12 and
+    CT-LG2-14; CT-KN2-07 as a part: a 100,001-letter Full word replays in chunks equal to its whole derivation. Not run:
+    the recorded words of CT-KN2-07, which are jumbling words, and any Full stream beyond 3,000,000 letters in the test
+    profile.
 
 ## Status of M5: the jumbling half
 
