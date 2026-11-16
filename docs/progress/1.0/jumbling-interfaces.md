@@ -1,14 +1,16 @@
 # EN3: jumbling interfaces
 
-Status: **draft, 5 November 2026; not a freeze or an owner decision.** This is the EN3 part of
+Status: **draft, 5 November 2026, revised 16 November 2026 for LP2's M5 (JI.52 to JI.54); the owner approved its
+engine half as M5's input on 16 November 2026 (JI.54). Not a freeze.** This is the EN3 part of
 ENG-0J revision 2. It supplies four portable layer contracts and the H2 command delta in
 `docs/progress/1.0/command-rows-jumbling.json`. It contains no implementation or new measurement.
 
 - **JI.1 [D]** Read this draft with `docs/architecture/1.0/language/closure/HANDOFF.md` (H2 to H15),
-  ENG-0J at `docs/progress/1.0/packets/engineering/ENG-0J-jumbling-backend.md`, state contract A1 to A5 at
+  ENG-0J at `docs/progress/1.0/packets/engineering/ENG-0J-jumbling-backend.md`, state contract A1 to A6 at
   `research/jumbling/state-contract.md`, and the settled outcomes of DT-J1 and DT-M1 in
-  `docs/progress/1.0/design-table/topics/`. A5 governs crossings. DT-J1's adopted aids and exclusions stay in force.
-  The working forms on the handoff sheet are integration proposals. EN4 and the second wave still reconcile them.
+  `docs/progress/1.0/design-table/topics/`. A5 governs crossings and A6 fresh rotation requests. DT-J1's adopted aids
+  and exclusions stay in force. The working forms on the handoff sheet are integration proposals; the chapters frozen
+  on 15 November 2026 consume them, and the command rows stay drafts until the command table freezes at LP3 (PHS.53).
 - **JI.2 [B]** This draft consumes, without redefining, chapter 01's `IdentityBlock`, `RevisionRef`, `StateRef`,
   `Partial`, `Verdict`, `Preview`, `JobResult` and snapshot operations; H3's `PreviewDeps`; H4's terminal receipts;
   H5's lanes and availability; H7's word positions; H8's accounting; and chapter 07's `ProvenanceBlock` with H9's
@@ -18,7 +20,12 @@ ENG-0J revision 2. It supplies four portable layer contracts and the H2 command 
   generators remain unchanged. For the current I_a inputs, use ENG-0J's menu identity
   `fddc8532b9184bd1b413c1032b5a7a305dd9fd1f10385d87ba6ec4fd06eb958c` and separate order digest
   `5a0429d2946fbf58b495d8f300e24a3fa164b1d9518ce4a5c3f4ef0a40625c3c`.
-  The contract pin is `state-contract 2026-10-22 A1-A5`. These consume existing pins, not a new model or menu choice.
+  The contract pin is `state-contract 2026-11-15 A1-A6`: the owner accepted A6 on 15 November 2026, and it replaces
+  A1's input map only. J1 (`state-contract 2026-10-09 A1-A4`) stays the reference for sections 1 to 4 and for menu
+  letters, and the nu reference (`state-contract 2026-10-22 A1-A5`) for A5. A request's decoding, binding and drag
+  scoring are checked against KN3.7 to KN3.9, for which no J1 reference exists. A reference's own stamp names the
+  revision it implements; this rule, not equal stamps, decides which reference checks a result. These consume
+  existing pins, not a new model or menu choice.
   Comparison-menu evidence stays separately identified. A menu change within an episode is refused by
   `KN5:input.menu_change_in_episode`.
 
@@ -40,10 +47,11 @@ ENG-0J revision 2. It supplies four portable layer contracts and the H2 command 
 | Call and arguments | Typed result | Contract and refusal |
 | --- | --- | --- |
 | `pose_table(s)`, `pose_ids(s)` | Exact canonical poses, K+ membership per pose, full piece-to-pose map | State section 2, A3; a table and map from different inputs cannot join |
+| `protection(s, pieces, word, mode)` | Net or Strict `Verdict` at level poses | KN1.11: inside Jumble the verdict is pose-level, m_A(w) = 1; it carries its level and never crosses to labels (A3, A5) |
 | `classify(s, letter)` | `admissible(inside, outside, certificates)`, `blocked(certificates)`, `invalid(code)` or `uncertain(reason)` | State section 3; exact A1 rotation, A4 menu membership; no live change on non-admissible outcomes |
 | `survey(s)` | One certified status per grip; coverage identifies any still uncertain grips | State section 3; early exit may prove blocked, but does not claim the full straddler set |
 | `rim_summary(s)` | Per cap: `N_c`, `In_c`, `Out_c`, `A_c`, blocked status and floor, with each field's definedness | ENG-0J section 4 and `rim.py`; no loop over menu outcomes; undefined is never zero |
-| `heights(s)`, `height_counts(s)` | Per exact pose: domain key, tree positions, branches, left/right heights; per piece sparse height histogram, off count, n2/n4/n6, above-6 count and maximum | LB3.1 and `trees.py`; count multiplicities of pieces, not distinct poses; a zero above-6 count has no maximum |
+| `heights(s)`, `height_counts(s)` | Per exact pose: domain ID (JI.53), tree positions, branches, left/right heights; per piece sparse height histogram, off count, n2/n4/n6, above-6 count and maximum | LB3.1 and `trees.py`; count multiplicities of pieces, not distinct poses; a zero above-6 count has no maximum |
 | `straddlers(s, cap)` | `StraddlerSet { cap, pieces, u, certificate_pairs }` | Full set at the solver's named cap; `u = size(pieces)`; each pair is verified against every region constraint |
 | `release_check(s, letter, cap?)` | One-letter `WordObservation`, plus that letter's cap rim after and floor | DT-J1 D1; only a released letter, latest request wins; optional cap supplies delta-u |
 | `word_check(s, word, unit?, cap?)` | `WordObservation` of JI.11 | EH-25, LB3.8; the solver supplies word/unit/cap; not an existence test |
@@ -52,6 +60,7 @@ ENG-0J revision 2. It supplies four portable layer contracts and the H2 command 
 | `nu(s)`, `correction_set_check(s, ids_and_multiplicities)` | `Partial<NuVector>` and the predicted vector after the supplied corrections | A5, JI.13; undefined off lattice; no correction selection |
 | `retained_checkpoint(s)`, `label_checkpoint(s)`, `sticker_test(s)` | Three distinct `Verdict`s and their scoped evidence | A5, LB3.2; a raw pose table with no reachability chain is not a label checkpoint |
 | `replay(s, word)`, `derive(s, word)` | Exact chronological result or first refused prefix, with coverage | KN2.7 to KN2.15; neither adopts a derived value as the session state |
+| `derive_from_pose_table(identity, poses, pose_ids, reachability)` | Derived state with reachability open or promised, as its source says | KN2.14: form and identity are validated; validation says nothing about reachability or collisions, and the state is no label checkpoint (A5) |
 
 - **JI.7 [D]** LB3.9 is served by two additional exact batches and explicit library aggregation over existing reads.
   `Batch<T>` here means a logically complete ordered result streamed in bounded chunks under JI.14, not a new
@@ -65,7 +74,7 @@ ENG-0J revision 2. It supplies four portable layer contracts and the H2 command 
 | D, F, delta-Phi and prefix observations | `prefix_observations(s, word, requested_fields, unit?, cap?) -> Batch<PrefixObservation>` with `WordObservation` | New exact engine batch over KN2.4 replay, JI.10 and JI.11; no caller callbacks |
 | Phi | `height_potential(s) -> Nat` | LB3 exact sum over piece-weighted `heights`; the definition is LB3.1, not a new potential |
 
-- **JI.8 [D]** `SeamCell` carries the exact domain key, domain-frame cut-cell signature, its exact transported
+- **JI.8 [D]** `SeamCell` carries the exact domain ID (JI.53), domain-frame cut-cell signature, its exact transported
   hyperplane, inside/outside occupancy with piece IDs or the fixed core, aligned/mismatched status, and holding
   caps certified to contain the cell. A cell's identity is the pair (domain, cut cell), as in restoration theory
   section 2; coincident geometry does not merge different domains. `seam_facts(all)` enumerates every occupied-side
@@ -127,7 +136,8 @@ ENG-0J revision 2. It supplies four portable layer contracts and the H2 command 
   Chunks carry input/parameter pins and half-open coverage, and only the final completed result certifies full
   coverage. Close, cancellation, failure or end of the run releases the job's handles and buffers; retained derived
   references require separately charged ownership. KN2.2 and ONE.14 to ONE.19 govern snapshots. Copying versus
-  shared buffers, ABI, tariff numbers and buffer-release acknowledgements remain second-wave work after LQ8/LQ9.
+  shared buffers, ABI, tariff numbers and buffer-release acknowledgements remain later work; LQ8 and LQ9 are answered
+  (owner, 14 November 2026), and LP2's M5 records the chunk sizes it implements (JI.54).
   There is no zero-copy or responsiveness claim here.
 - **JI.15 [D]** All job results also pin menu order, contract, algorithm/tie-rule edition, library digest and requested
   parameters. A mismatch is `KN7:stale.job_input_digest`, not an empty list. Read-cache reuse follows ONE.10 only
@@ -158,6 +168,46 @@ ENG-0J revision 2. It supplies four portable layer contracts and the H2 command 
   separately pinned research job finishes on its old input, with no adoption into the new state (KN7.5; owner, 6
   November 2026, LQ4). FR-B03 remains partial until the second wave supplies the route
   binding, release protocol, tariffs and the retained-workflow walk.
+
+### Additions for LP2's M5 (16 November 2026)
+
+- **JI.52 [D]** M5 of LP2 gives J1 a public API before the language binds to J1 (default 12 of the ecosystem
+  partition; LP2's products). It is one added module, `research/jumbling/sim/api.py`, whose functions call J1 as it
+  stands: no accepted J1 file changes, and J1 stays the accepted reference while the research is stopped. The module
+  is oracle engineering for the engineering line, not research. The bindings of the differential harness under
+  `research/jumbling/differential/`, which are its adapters, `candidate/` and `references/` with the lead modules they
+  import (`leads/census.py` and `leads/x5_release.py` today), then reach J1 and the theory code
+  (`research/jumbling/theory/`) only through this module and public names, those without a leading underscore (such
+  as `apply`, `classify`, `survey`, `undo`, `replay`, `digest`, `snapshot`, `checkpoint`, `pose` and
+  `lattice_flags`). The names below are drafts that M5 may change; no entry is dropped, and none changes a result.
+
+| Private use in the harness today | Public entry point | Contract |
+| --- | --- | --- |
+| A `State` subclass that captures `inside` from `_commit(twist, inside, journal)` | `apply_with_inside(state, twist, budget)`, returning the outcome and the inside set | The set J1 committed, with no second classification; a refusal returns the empty set and changes nothing |
+| `_poses`, `_lookup`, `_kpose()` | `pose_entries(state)` | Per pose ID, its K+ index or exact matrix and its key; a read-only copy, local to the state's canonical table |
+| `_pose_matrix(pid)` | `pose_matrix(state, pid)` | The exact matrix of a pose ID |
+| `_groups(off)`, `_anchors(pid, members)` | `pose_groups(state, pieces)`, `anchors(state, pid, members)` | The private methods' values |
+| `_eval(...)`, `_straddle_certificate(...)` | `evaluate(state, ...)`, `straddle_certificate(state, piece, pid, grip, below, above)` | The same exact evaluation, and the certificate after its exact re-check |
+| `_intern_k`, `_intern_matrix`, `_compact()`, `_anchor_cache` | `from_pose_table(ctx, entries, pose_ids, menu)` | A state from a raw pose table, interned and compacted canonically, with empty caches (KN2.14) |
+| `copy.copy` of a state with fresh `pose_id`, `_poses`, `_lookup` and `journal` and an empty `_anchor_cache`; `state.__dict__.update(trial.__dict__)` | `copy_state(state)`, `adopt(state, trial)` | An independent copy that shares only the context, the menu and the exact pose entries, with empty caches; and the hand-over of a finished copy's whole state to the original, called only after the copy's work succeeded, so a refusal leaves the original unchanged |
+| `seams.SeamRestorer._dom` and `_cls` (`research/jumbling/theory/seams.py`) | `seam_restorer(state, menu, domains, inside_sets)` | The restorer over the supplied domains and inside sets |
+| `seams._fixture_state(name, t)` (`research/jumbling/theory/seams.py`), reached through `census.seams` | `fixture_state(ctx, name, t)` | The state after the first t records of the W-J fixture `name`, with an empty journal, and the fixture's menu; a record that J1 does not admit raises an error |
+
+  The harness's own private names, such as `nu_refs._runtime`, are neither J1's nor the theory code's and stay. The
+  other lead scripts under `leads/` are recorded measurements, not bindings, and keep their private uses. Acceptance:
+  `python research/jumbling/sim/accept.py` and `python research/jumbling/fixtures/wj.py check` give the results
+  recorded before the module; `tests/test_jumbling_*.py` pass; a source scan of the bindings finds no private member
+  of J1 or of the theory code; and outside `research/jumbling/differential/` the module is the only change under
+  `research/jumbling/`.
+- **JI.53 [D]** A domain ID names the coset g K+ of a pose g. It is the reference `domain_key` in
+  `research/jumbling/differential/references/observations.py`: the SHA-256 of the compact JSON of the sorted images
+  g v of the 120 unit icosians, each a canonical reduced Q(sqrt(5)) triple. K+ is the rotation group of that vertex
+  set, so two poses g and h have equal domain IDs exactly when g^-1 h lies in K+, and every lattice pose has the
+  identity's ID. The ID is defined for every pose, including poses outside the menu's group and cosets its tree never
+  reaches. Tree positions and heights are functions of the coset that determine it only inside the menu's group
+  (KN1.7, LB3.1); a free-mode pose takes its domain ID from this exact key, never from tree positions. Vector, from
+  CT-KN2-02: the Cayley rotation omega = (2,0,0) at cap 0 reads heights (0,0), lies outside K+, and its domain ID
+  differs from the identity's.
 
 ## 2. Session store
 
@@ -381,12 +431,14 @@ ENG-0J revision 2. It supplies four portable layer contracts and the H2 command 
   no duplicate command is added. Filters use existing `filter.preview`/`filter.apply` with engine results at one
   revision. Repair-row copying resolves a solver-selected result to a pinned word for `macro.add`; the focused
   row or list index alone cannot enter a draft. `job.stop` and preview cancellation keep their existing purposes.
-- **JI.35 [D]** `jumble.twist.menu` accepts only the resolved item of the exact pinned menu table. It rejects an
-  off-menu item with `KN2:input.twist_off_menu`; it does not run A1's rational search to approximate any of I_a's
-  48 jumble items. Axis/angle, drag and seat routes all resolve through that table, with a fixed state-independent
-  metric and pinned-index ties for the menu drag. Exact A1 free-mode requests belong to research, not a new product
-  input row. Under proposed amendment A6 (KN3.7 to KN3.9) a fresh request becomes exact bytes, and JI.3's pin moves
-  to A1-A6 only when A6 is in force. With Jumble off, a retained item dispatches to the equivalent retained action;
+- **JI.35 [D]** `jumble.twist.menu` accepts only a request that resolves to an item of the exact pinned menu table.
+  It rejects an off-menu item with `KN2:input.twist_off_menu`; it does not run A1's rational search to approximate any
+  of I_a's 48 jumble items. Axis/angle, drag and seat routes all resolve to that table under A6, in force since the
+  owner accepted it on 15 November 2026 (KN3.7 to KN3.9): the shell's producer turns a gesture into request bytes, the
+  request and its binding `{request, cap, operation, menu}` are named, journalled arguments, and the kernel scores a
+  menu drag exactly, with pinned-index ties, and records the winner. Exact free-mode requests belong to research, not
+  a new product input row. The twist rows of `command-rows-jumbling.json` still take a resolved letter; they take A6's
+  request and binding when the command table freezes at LP3 (PHS.53). With Jumble off, a retained item dispatches to the equivalent retained action;
   a jumble item returns `KN5:input.menu_word_needs_jumble_on`. With Jumble on, every item uses pose classification
   and pose protection.
   `jumble.twist.append` resolves the same letters into a draft; it never inherits live journal undo. No key, seat,
@@ -445,7 +497,7 @@ ENG-0J revision 2. It supplies four portable layer contracts and the H2 command 
 | Named cut hyperplane (render 5) | Engine cut geometry: pole, exact plane and alpha=121/125, converted display values | Only the named cap; no mesh-derived predicate; malformed plane refused |
 | Projection chain (render 6) | Shell's view parameters: ordered rotate, perspective or stereographic, camera3 stages; model frames supplied by engine | d=4, dimension-compatible stages and finite inputs; unsupported stage returns `EV3:input.display_unsupported`; no substitute projection silently selected |
 | Revision adoption and readback (render 7) | View model complete bundle; adapter's first-frame bound-array digests and element-check record | Compare the exact revision's three state arrays as render 7 requires; failure leaves display out of date, not a failed commit. Actual backend readback evidence remains renderer work |
-| Domain and lattice masks | `heights`, `pose_table`, `pose_ids`: exact domain keys and per-piece membership, with masks | Each mask exactly 177,120 bits and input digest; no membership inferred from floats or stale pose IDs |
+| Domain and lattice masks | `heights`, `pose_table`, `pose_ids`: exact domain IDs (JI.53) and per-piece membership, with masks | Each mask exactly 177,120 bits and input digest; no membership inferred from floats or stale pose IDs |
 | Rim map and counts | `rim_summary`, `height_counts`, `seam_facts(all)`: N_c/floor, blocked, total N, n2/n4/n6 and above-6 count/maximum | No default sort, cap rank or helpful-twist value; preserve undefined fields, including total N when full coverage is missing |
 | Cut-cell and off-grip seam overlays | `seam_facts`: exact cells, domains, occupancies, hyperplanes and certified holding caps, plus derived display geometry | Include off-grip cells; count/byte limits stated before publication; refuse budget overrun, never remove them while claiming a complete N |
 | Exposed-face meshes | Exact region/cut-cell geometry producer: face identity, exact-source digest, converted vertices and topology | Size measurement and geometry production are still outstanding in EN2/renderer line. Missing certified geometry returns `KN2:input.exposed_geometry_unavailable`; no fabricated mesh or support claim |
@@ -532,21 +584,23 @@ ENG-0J revision 2. It supplies four portable layer contracts and the H2 command 
 | `KN2:input.exposed_geometry_unavailable` | KN2 exact geometry producer; JI.41 | Certified geometry or admitted size profile is absent; named feature, exact input reference and which prerequisite is missing | Report feature unavailable; request it only after certified data/profile exists, or explicitly choose a supported feature; invent no mesh or size |
 
 - **JI.46 [D]** These are new requirement rows, not passing tests. The manifest vectors are source-level contract
-  examples. EN2/LP1 implement the tests and the integrator adds these rows to chapter 12.
+  examples. Chapter 12 lists these rows under JI. Each runs in the first phase that builds every component it names:
+  CT-JI-03 with M5 of LP2, and the others at LP3, where the command table freezes (PHS.53). The draft named LP1, which
+  the owner signed on 15 November 2026 without these rows.
 
 | ID | Phase | Acceptance obligation | Class |
 | --- | --- | --- | --- |
-| CT-JI-01 | LP1 | Exit, retained move, undo, redo, branch navigation, restore/import and recovery preserve exactly the roots/void facts of JI.27, including unequal poses with equal labels | source |
-| CT-JI-02 | LP1 | ia16 chunking and named inverse/same-as spans preserve JI.23's bytes/digest; missing, cyclic or unequal parts are refused; exact length precedes admission | source |
-| CT-JI-03 | LP1 | All-scope seam counts include off-grip cells; JI.16's literal prefix observations and unit results agree with exact replay; cancellation yields only covered prefixes | source |
-| CT-JI-04 | LP1 | H2 delta joins once per ID; all five stable-kind amendments apply; no forbidden query or repeating state/draft change exists | source |
-| CT-JI-05 | LP1 | Every JI.41 feature has a producer, validated payload and explicit size/support refusal; mismatched revision arrays never form a bundle | source |
-| CT-JI-06 | LP1 | Live and draft menu routes resolve all intended exact items under pins; wrong order is refused; alternate keymaps replay the same letters; Q7 remains conditional on XM1 | source |
-| CT-JI-07 | LP1 | No solving view, generic journal query or `view.preview.scrub` leaks per-twist scramble data; the shared row carries jumbling by arguments; staged scramble cannot commit without a fresh presented preview and token | source |
-| CT-JI-08 | LP1 | Both entry bindings in JI.25 survive entry/undo/redo/recovery using the entry's own sides; branch navigation preserves current preferences/protection except recorded crossing-level changes | source |
-| CT-JI-09 | LP1 | Exit, protection workspace edit, retained move and both inverse classes form one continuous action chain; monotone voids survive undo and branch selection; original outcome lookup survives undo/restart | source |
-| CT-JI-10 | LP1 | JI.23 local relations resolve earlier A; part/ref targets require closed pinned inputs; missing targets, forward references, cycles and changed inverses refuse annotation admission | source |
-| CT-JI-11 | LP1 | Branch-path, void-exit and exposed-geometry envelopes use JI.45's component, input category, typed facts and continuation; no missing-frame remedy is invented | source |
+| CT-JI-01 | LP3 | Exit, retained move, undo, redo, branch navigation, restore/import and recovery preserve exactly the roots/void facts of JI.27, including unequal poses with equal labels | source |
+| CT-JI-02 | LP3 | ia16 chunking and named inverse/same-as spans preserve JI.23's bytes/digest; missing, cyclic or unequal parts are refused; exact length precedes admission | source |
+| CT-JI-03 | LP2 (M5) | All-scope seam counts include off-grip cells; JI.16's literal prefix observations and unit results agree with exact replay; cancellation yields only covered prefixes | source |
+| CT-JI-04 | LP3 | H2 delta joins once per ID; all five stable-kind amendments apply; no forbidden query or repeating state/draft change exists | source |
+| CT-JI-05 | LP3 | Every JI.41 feature has a producer, validated payload and explicit size/support refusal; mismatched revision arrays never form a bundle | source |
+| CT-JI-06 | LP3 | Live and draft menu routes resolve all intended exact items under pins; wrong order is refused; alternate keymaps replay the same letters; Q7 remains conditional on XM1 | source |
+| CT-JI-07 | LP3 | No solving view, generic journal query or `view.preview.scrub` leaks per-twist scramble data; the shared row carries jumbling by arguments; staged scramble cannot commit without a fresh presented preview and token | source |
+| CT-JI-08 | LP3 | Both entry bindings in JI.25 survive entry/undo/redo/recovery using the entry's own sides; branch navigation preserves current preferences/protection except recorded crossing-level changes | source |
+| CT-JI-09 | LP3 | Exit, protection workspace edit, retained move and both inverse classes form one continuous action chain; monotone voids survive undo and branch selection; original outcome lookup survives undo/restart | source |
+| CT-JI-10 | LP3 | JI.23 local relations resolve earlier A; part/ref targets require closed pinned inputs; missing targets, forward references, cycles and changed inverses refuse annotation admission | source |
+| CT-JI-11 | LP3 | Branch-path, void-exit and exposed-geometry envelopes use JI.45's component, input category, typed facts and continuation; no missing-frame remedy is invented | source |
 
 ## Open decisions and integration
 
@@ -556,9 +610,9 @@ ENG-0J revision 2. It supplies four portable layer contracts and the H2 command 
   questions remain owner items as JI.36, JI.38 and JI.43 state. No change to A5 is needed by this draft. Allowing
   labels-only entry or reviving an exit through restore would change A5 and requires an owner decision; both stay refused.
 - **JI.48 [O]** Built-in rows retain DT-J1's interim boundary and the repair/correction exceptions already
-  recorded. Language callers still pass chapter 07's profile and author-class checks. Under LQ21 flow labels the
-  resulting observations carry their state dependencies; under capability separation a previewing solving program
-  cannot read those observations, including refusal details. H9 supplies `profile:none` only for manual/imported
+  recorded. Language callers still pass chapter 07's profile and author-class checks. LQ21 is answered with
+  capability separation (owner, 14 November 2026): a previewing solving program cannot read those observations,
+  including refusal details. H9 supplies `profile:none` only for manual/imported
   no-run records and grants nothing. If LQ2's joint setting changes callable tiers or sinks, update the policy
   table; these signatures grant no new solving permission. The research library ships in 1.0 (owner, 6 November
   2026, LQ16). Exposure of the research profile stays a joint-setting question (PHS.58), and the research walk
@@ -568,7 +622,8 @@ ENG-0J revision 2. It supplies four portable layer contracts and the H2 command 
 - **JI.50 [D]** Open engineering work: p2a builds the final H-08 table with the real delta; p2b supplies its final
   availability, receipts, lanes and history actions; p3 supplies canonical envelopes, chunk framing/limits and
   durable exit/void encoding; p6 supplies final adapter support and resource lifetimes. The second wave performs
-  H13's traces, finishes the FR-B03 language-kernel annex after LQ8/LQ9, and reconciles every public error and
+  H13's traces, finishes the FR-B03 language-kernel annex (LQ8 and LQ9 are answered, owner, 14 November 2026), and
+  reconciles every public error and
   requirement. Libraries above the kernel are written in the language (owner, 6 November 2026, LQ5). These typed
   results do not change, and the principle/decomposition contract still applies. EN2 owns oracle agreement, X1 to X5, XM1 and mesh
   sizing. No missing measurement or ABI detail is replaced by a default tariff in this draft.
@@ -581,5 +636,23 @@ ENG-0J revision 2. It supplies four portable layer contracts and the H2 command 
   must use this delta without `--draft-without-jumbling`. ENG-0J also requires the finished EN3 candidate's Astra
   review in at least two concurrent shards, coordinated with Claude's review of these Codex-authored changes,
   through `python tools/agents/codex_review.py --kind review --packet <scoped-packet> --model gpt-6-astra
-  --effort max --speed fast`. The integrator supplies the review packets and dispositions. No review, integration
-  check, runtime test, Windows/DirectX result or owner freeze is claimed by the closure check.
+  --effort max --speed fast`. The integrator supplies the review packets and dispositions. Under `AGENTS.md`
+  "Codex minimum" (owner, 14 November 2026) a fresh Claude read replaces that review unless the owner asks for the
+  Astra call; JI.54 records the read for M5. No review, integration check, runtime test, Windows/DirectX result or
+  owner freeze is claimed by the closure check.
+- **JI.54 [D]** LP2's M5 consumes the engine half: JI.1 to JI.16, JI.52, JI.53 and JI.45's codes
+  `KN1:input.unsupported_dimension` and `KN2:input.named_object_invalid`; CT-JI-03 is among its tests. The EH answers
+  of JI.44 bind only through the clauses they cite. The session-store half (JI.17 to JI.31) stays a draft for the
+  jumbling episode store, bound where it consumes the frozen format packet. The command layer, the view model and
+  `command-rows-jumbling.json` (JI.32 to JI.43) stay drafts until LP3 and LP4 (PHS.53). M5's pull request records
+  what this draft leaves to it: what a Net-protection refusal reports, the identity blocks of the S4 and I_b
+  fixtures, the batch budgets and chunk sizes, the internal free-mode entry, and whether JI.16's vector holds as
+  written. On 16 November 2026 a fresh Claude read of this draft for M5's start found four major problems: the
+  contract pin, A6 in JI.35, the public J1 API and the domain ID. JI.3, JI.35, JI.52 and JI.53 fix them. The read's
+  minor points are fixed in JI.1, JI.6, JI.14, JI.46, JI.48, JI.50 and JI.51, except three that are deferred:
+  JI.18's "nothing is frozen yet" and the twist rows and live-preview alternative of `command-rows-jumbling.json`
+  go to LP3, and the relationship-strip fields of the view model go to LP4. A scoped re-check found the fixes in JI.3,
+  JI.35 and JI.53 complete and JI.52 short of its aim: its table missed the state copy and the fixture replay, and
+  its source scan reached lead scripts that are records, not bindings. JI.52 now names both entry points and scans
+  the bindings only. The owner approved this engine half as M5's input on 16 November 2026
+  (`docs/wiki/decisions/owner-decisions-2026-11-16-en3-engine-half.md`); the other halves stay drafts.
