@@ -331,9 +331,10 @@ const EVERY: &str = "edition \"6cs-draft-1\";\nmodule m requires [file, clock, r
     effects [snapshot, view, workspace, preview, budget, file, random, clock] {\n    \
     let n = read_snapshot<Nat>(\"n_c0\");\n    let d = declassified<Nat>(\"example\");\n    \
     let f = file_read<Nat>(\"count\");\n    let c = read_clock();\n    let r = random_draw();\n    \
-    let v = publish_view(record { used = used_steps(), left = unused_steps(), status = budget_status() });\n    \
+    let v = publish_view(record { used = used_steps(), left = unused_steps(), status = budget_status(), \
+    now = c });\n    \
     let k = write_workspace<Word>(\"kept\", w);\n    let b = use_budget(n);\n    let g = use_goal(target(\"t\"));\n    \
-    let e = use_evidence(record { n = n, d = d, f = f, c = c, r = r });\n    \
+    let e = use_evidence(record { n = n, d = d, f = f, r = r });\n    \
     let o = file_write(\"out.6cw\", w);\n    let p = propose(w, target(\"t\"));\n    \
     return record { base = receipt_base(p), id = receipt_id(p) };\n}\n";
 

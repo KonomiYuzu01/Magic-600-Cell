@@ -149,7 +149,7 @@ fn ct_lg3_03_views_refuse_workspace_and_preview_effects_in_source() {
 fn ct_lg3_04_requests_need_a_declaration_and_a_grant_in_source() {
     let requests = [
         ("file", Capability::File, "fn f() -> Nat effects [file] {\n    return file_read<Nat>(\"data\");\n}\n"),
-        ("clock", Capability::Clock, "fn f() -> Nat effects [clock] {\n    return read_clock();\n}\n"),
+        ("clock", Capability::Clock, "fn f() -> Display<Nat> effects [clock] {\n    return read_clock();\n}\n"),
         ("random", Capability::Randomness, "fn f() -> Nat effects [random] {\n    return random_draw();\n}\n"),
     ];
     for (word, cap, declaration) in requests {

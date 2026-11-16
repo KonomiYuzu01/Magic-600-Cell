@@ -113,7 +113,7 @@ fn ct_lg3_04_an_ungranted_request_fails_at_run_time() {
         "file, clock, random",
         "export fn load() -> Nat effects [file] {\n    return file_read<Nat>(\"data\");\n}\n\n\
          export fn save(n: Nat) -> Unit effects [file] {\n    return file_write(\"data\", n);\n}\n\n\
-         export fn now() -> Nat effects [clock] {\n    return read_clock();\n}\n\n\
+         export fn now() -> Display<Nat> effects [clock] {\n    return read_clock();\n}\n\n\
          export fn draw() -> Nat effects [random] {\n    return random_draw();\n}\n",
     );
     let (_, loaded) = build(&[&source]);

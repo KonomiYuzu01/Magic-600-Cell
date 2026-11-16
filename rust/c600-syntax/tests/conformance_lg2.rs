@@ -272,19 +272,22 @@ fn ct_lg2_06_a_budget_mixes_with_integers_only() {
     assert!([EXACTNESS_VIOLATION, EXACT_REQUIRED].contains(&approx), "{approx}");
 }
 
-/// CT-LG2-06 (part: "seconds cannot be a deterministic budget"). Finding: the checker types a clock reading as an
-/// exact `Nat` (`c600-check/src/lib.rs`, `Expr::ReadClock`), so a granted clock reading reaches `use_budget`, against
-/// LG2.6 ("Seconds are a display unit only"), LG3.8 and DET.18. The fix needs a unit for clock readings, a type design
-/// for the integrator, so the test waits.
+/// CT-LG2-06 (part: "seconds cannot be a deterministic budget", LG2.6, LG3.8, DET.18): a clock reading is
+/// display-qualified, because seconds are a display unit only, so a clock grant cannot make it a budget: `use_budget`
+/// of a reading is `LG2:type.exactness_violation`, while a display result may still show it. The checker typed a
+/// reading as an exact `Nat` until this test found it (16 November 2026).
 #[test]
-#[ignore = "finding: a clock reading is an exact Nat and reaches a budget; it waits for a clock-reading unit (LG2.6)"]
 fn ct_lg2_06_a_clock_reading_is_no_deterministic_budget() {
-    let source = "edition \"6cs-draft-1\";\nmodule tool requires [clock];\n\n\
-                  command go() -> Unit effects [budget, clock] {\n    return use_budget(read_clock());\n}\n";
-    let program = lowered(source).unwrap_or_else(|e| panic!("{e}")).program;
-    let admission =
-        admit(&program, "tool", "go", Profile::Research, &Grant::of(&[Capability::Clock]), &Policy::interim()).unwrap();
-    assert!(!admission.is_admitted(), "a clock grant makes seconds a deterministic budget");
+    let codes = |command: &str| {
+        let source = format!("edition \"6cs-draft-1\";\nmodule tool requires [clock];\n\n{command}");
+        let program = lowered(&source).unwrap_or_else(|e| panic!("{e}")).program;
+        let grant = Grant::of(&[Capability::Clock]);
+        admit(&program, "tool", "go", Profile::Research, &grant, &Policy::interim()).unwrap().codes()
+    };
+    let budget = "command go() -> Unit effects [budget, clock] {\n    return use_budget(read_clock());\n}\n";
+    assert_eq!(codes(budget), [EXACTNESS_VIOLATION], "a clock grant makes seconds a deterministic budget");
+    let shown = "command go() -> Display<Nat> effects [clock] {\n    return read_clock();\n}\n";
+    assert!(codes(shown).is_empty(), "a display result shows a clock reading");
 }
 
 /// CT-LG2-07 (part, guard only: states, derived states, pose tables and reachability claims wait for the domain

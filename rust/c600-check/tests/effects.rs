@@ -244,12 +244,22 @@ fn request(cap: Capability) -> Expr {
     }
 }
 
+/// The declared result of a request: a clock reading is display-qualified, since seconds are a display unit only
+/// (LG2.6, DET.18).
+fn result_of(cap: Capability) -> c600_ir::QTy {
+    match cap {
+        Capability::Clock => display(Ty::Nat),
+        _ => exact(Ty::Nat),
+    }
+}
+
 /// CT-LG3-04 (part: file, clock and randomness in IR; the row is whole with the source and run-time halves).
 #[test]
 fn ct_lg3_04_file_clock_and_randomness_need_a_declaration_and_a_grant() {
     for cap in [Capability::File, Capability::Clock, Capability::Randomness] {
-        let declaring =
-            |caps: &[Capability]| program(vec![module("tool", vec![entry(Ty::Nat, request(cap))]).declaring(caps)]);
+        let declaring = |caps: &[Capability]| {
+            program(vec![module("tool", vec![command("go", vec![], result_of(cap), request(cap))]).declaring(caps)])
+        };
         for profile in PROFILES {
             let run = |p: Program, grant: Grant| admit_in(&p, profile, &grant, &Policy::interim()).codes();
             let case = format!("{cap:?} in {profile:?}");
@@ -277,7 +287,8 @@ fn ct_lg3_04_network_process_and_session_files_are_never_granted() {
 /// CT-LG3-04 (part: a clock read needs the clock capability and has no effect family, LG3.8).
 #[test]
 fn lg3_8_a_clock_read_is_a_requirement_without_an_effect_family() {
-    let p = program(vec![module("tool", vec![entry(Ty::Nat, Expr::ReadClock)]).declaring(&[Capability::Clock])]);
+    let go = command("go", vec![], display(Ty::Nat), Expr::ReadClock);
+    let p = program(vec![module("tool", vec![go]).declaring(&[Capability::Clock])]);
     let s = report(&p).summary("tool", "go").unwrap().clone();
     assert!(s.effects.is_empty());
     assert_eq!(s.capabilities.into_iter().collect::<Vec<_>>(), [Capability::Clock]);
