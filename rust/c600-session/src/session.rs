@@ -68,6 +68,9 @@ pub(crate) struct Inner {
 pub(crate) struct Admin {
     /// Receipts by command ID: durable ones rebuilt from the journal, transient ones for this epoch (KN5.23).
     receipts: HashMap<String, Receipt>,
+    /// Refusals of envelopes that did not authenticate, kept for this epoch by command ID and request digest (KN5.23).
+    /// They never take the command ID (c600-command's draft ruling 4).
+    retained: HashMap<(String, String), Receipt>,
     used: HashSet<u64>,
     commit_busy: bool,
     pub(crate) jobs: Jobs,
@@ -411,6 +414,11 @@ impl Session {
             return answer(Status::Refused(Error::new(code::UNKNOWN_SESSION, "another session")));
         }
         let mut admin = lock(&inner.admin);
+        // Draft ruling 4, as in c600-command's layer: an envelope refused earlier in this epoch without authenticating
+        // gets its refusal again. The request digest covers the origin and the authenticator.
+        if let Some(kept) = admin.retained.get(&(envelope.command.clone(), request.clone())) {
+            return kept.clone();
+        }
         // KN5.21, LI.6: a command ID with a receipt is answered from it before any other gate, also when the delivery
         // is a retry from an earlier epoch: an identical request gets the stored receipt, other content is a reuse.
         if let Some(stored) = admin.receipts.get(&envelope.command) {
@@ -424,6 +432,13 @@ impl Session {
         }
         if envelope.epoch != inner.epoch {
             return answer(Status::Refused(Error::new(code::EPOCH_CHANGED, "another engine epoch")));
+        }
+        // An envelope that does not authenticate is refused for the epoch and never takes the command ID, so a forged
+        // envelope or a program's commit row sent first under the shell's ID cannot turn the genuine press into a reuse.
+        if let Err(e) = inner.authenticate(&envelope) {
+            let refusal = answer(Status::Refused(e));
+            admin.retained.insert((envelope.command.clone(), request.clone()), refusal.clone());
+            return refusal;
         }
         admin.receipts.insert(envelope.command.clone(), answer(Status::Accepted));
         if let Err(e) = inner.admit(&mut admin, &envelope) {
@@ -450,6 +465,9 @@ impl Session {
     /// LI.32's outcome lookup: the stored receipt of a command, `unknown_outcome` when none is known.
     pub fn outcome(&self, command: &str, request: &str) -> Receipt {
         let admin = lock(&self.0.admin);
+        if let Some(kept) = admin.retained.get(&(command.to_owned(), request.to_owned())) {
+            return kept.clone();
+        }
         let status = match admin.receipts.get(command) {
             Some(stored) if stored.request == request => return stored.clone(),
             Some(_) => Status::Refused(Error::new(code::COMMAND_ID_REUSED, "the command ID names another request")),
@@ -537,9 +555,9 @@ impl Session {
 }
 
 impl Inner {
-    /// The gates before a row runs: what a program may deliver (KN5.15, ONE.77), the token (KN5.14) and the commit
-    /// lane (KN5.17).
-    fn admit(&self, admin: &mut Admin, envelope: &Envelope) -> Result<(), Error> {
+    /// The gates that decide whether an envelope authenticates: what a program may deliver (KN5.15, ONE.77) and, for a
+    /// commit row, a token that verifies under this epoch's secret (KN5.14). Their refusal never takes the command ID.
+    fn authenticate(&self, envelope: &Envelope) -> Result<(), Error> {
         if envelope.origin == Origin::Program {
             if envelope.row.is_commit() {
                 return Err(Error::new(code::COMMIT_ROW_REFUSED, "a program cannot deliver a commit row"));
@@ -548,12 +566,16 @@ impl Inner {
                 return Err(Error::new(NOT_GRANTED, "the row is not granted to a program"));
             }
         }
-        if envelope.row.is_commit() {
-            let token = envelope
-                .token
-                .as_ref()
-                .filter(|token| self.secret.verify(token))
-                .ok_or_else(|| Error::new(code::TOKEN_INVALID, "no valid user-action token"))?;
+        if envelope.row.is_commit() && !envelope.token.as_ref().is_some_and(|token| self.secret.verify(token)) {
+            return Err(Error::new(code::TOKEN_INVALID, "no valid user-action token"));
+        }
+        Ok(())
+    }
+
+    /// The gates of an authenticated envelope before its row runs: the token's single use (KN5.14) and the commit lane
+    /// (KN5.17).
+    fn admit(&self, admin: &mut Admin, envelope: &Envelope) -> Result<(), Error> {
+        if let Some(token) = envelope.token.as_ref().filter(|_| envelope.row.is_commit()) {
             // Step 3 comes before step 4 (chapter 08 section 7): a token refused at the commit lane was seen and stays
             // used, and a new attempt needs a new token.
             if !admin.used.insert(token.nonce) {

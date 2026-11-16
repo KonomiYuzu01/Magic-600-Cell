@@ -461,12 +461,15 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   layer runs durably on this crate's disks; the dependency runs from this crate to c600-command only. Tests:
   `tests/kn5_command.rs`. M6's `Shell`, `Session::invoke` and `Session::shell` are superseded by that layer and are
   removed once their tests run against it.
-- Until then M6's own `invoke` differs from the layer's KN5 rulings: it stores `accepted` under the command ID before
-  its gates (ruling 3; `commit.rs` asserts it during a held write); a refusal before authentication (a bad
-  authenticator, or a program's commit or non-job row) takes the command ID, whose request digest includes the
-  authenticator, so such an envelope sent first under the shell's next command ID makes the genuine press
-  `KN5:input.command_id_reused` (ruling 4); command IDs are one space for the shell and programs; and its shell stub
-  mints for a fresh preview that need not be presented (LP3's L4).
+- M6's own `invoke` keeps the layer's ruling 4: the program gates and the authenticator run before an envelope takes
+  its command ID, and their refusal is kept for the epoch under the command ID and the request digest without taking
+  the ID, so an envelope with a bad authenticator, or a program's commit or non-job row, sent first under the shell's
+  next command ID no longer makes the genuine press `KN5:input.command_id_reused` (`tests/kn5_command.rs`). Until it is
+  removed it still differs from the layer's KN5 rulings: it stores `accepted` under the command ID before steps 5 to 8
+  (ruling 3; `commit.rs` asserts it during a held write); its request digest includes the origin and the
+  authenticator (the layer's excludes the authenticator, LI.5); command IDs are one space for the shell and programs;
+  an `epoch_changed` refusal is not kept; and its shell stub mints for a fresh preview that need not be presented
+  (LP3's L4).
 - Evidence kind: source and fixture. Failures are injected in memory; `FsDisk` runs in one reopen test, so a pass is no
   evidence of a real disk's behaviour in a crash. The checks ran on Windows only.
 
@@ -641,7 +644,8 @@ run or not applicable is no pass (PHS.63).
 - KN5 tests (`c600-command/tests/kn5.rs`, from the Fable KN5 attack leads L3 to L11, L15 and L18): parts of
   CT-KN5-01, CT-KN5-04, CT-KN5-09, CT-KN5-10, CT-KN5-11, CT-ONE-03, CT-ONE-04, CT-ONE-05, CT-ONE-11, CT-ONE-21 and
   CT-LI-09. `c600-session/tests/kn5_command.rs` runs the layer over the journal: parts of CT-ONE-21, CT-ONE-22,
-  CT-KN4-02 and CT-KN5-04. Each test names its part; none runs a whole definition.
+  CT-KN4-02 and CT-KN5-04, and CT-KN5-04's attack against M6's own `invoke`. Each test names its part; none runs a
+  whole definition.
 - KN5 drafts (listed in the crate documentation): ruling 1, a press whose preview ended answers
   `KN5:stale.no_fresh_preview` when the slot is empty and `KN5:stale.preview_replaced` when it holds another preview;
   ruling 2, an undo checks its hint before its bound revisions, so a raced undo is `KN5:stale.undo_superseded`; ruling

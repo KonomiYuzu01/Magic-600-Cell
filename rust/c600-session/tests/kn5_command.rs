@@ -347,3 +347,49 @@ fn a_workspace_completion_and_its_receipt_are_one_durable_frame() {
     assert_eq!(g.layer.invoke(asked), done);
     assert_eq!(disk.writes(), writes);
 }
+
+/// CT-KN5-04 (part: M6's own `Session::invoke` keeps the command layer's rule: an envelope with a forged authenticator
+/// or a program's commit row, sent first under the shell's command ID, is refused, keeps its refusal for the epoch and
+/// never takes the ID, so the genuine press then commits once, and each envelope's retry answers its own receipt; not
+/// run: the shell's transport), KN5.21, KN5.23, draft ruling 4. The control case sends no first envelope.
+#[test]
+fn m6_invoke_keeps_the_rule_for_an_envelope_that_does_not_authenticate() {
+    use c600_session::{code as m6, Envelope, Origin, Row};
+    for attack in ["forged", "program", "control"] {
+        let (session, disk) = common::session();
+        let preview = common::propose(&session, "p", common::literal(&[1]));
+        let row = Row::Execute { preview };
+        let mut genuine = common::envelope(&session, "C", Origin::Shell, row.clone());
+        genuine.token = Some(session.shell().mint("C", &row).expect("the stub mints for the pending preview"));
+        let first = match attack {
+            "forged" => {
+                let mut forged = genuine.clone();
+                forged.token.as_mut().expect("a token").mac[0] ^= 1;
+                Some(forged)
+            }
+            "program" => Some(Envelope { origin: Origin::Program, ..genuine.clone() }),
+            _ => None,
+        };
+        let (before, writes) = (session.overview(), disk.writes());
+        let refusal = first.clone().map(|first| {
+            let receipt = session.invoke(first);
+            let expected = if attack == "forged" { m6::TOKEN_INVALID } else { m6::COMMIT_ROW_REFUSED };
+            assert_eq!(common::code(&receipt), expected, "{attack}");
+            assert_eq!(session.outcome("C", &receipt.request), receipt, "{attack}: the refusal is kept for the epoch");
+            receipt
+        });
+        assert_eq!((session.overview(), disk.writes()), (before.clone(), writes), "{attack}: nothing changes");
+        let receipt = session.invoke(genuine.clone());
+        common::committed(&receipt);
+        assert_eq!(session.outcome("C", &receipt.request), receipt, "{attack}");
+        let (after, writes) = (session.overview(), disk.writes());
+        assert_eq!(after.revision.state, before.revision.state + 1, "{attack}");
+        assert_eq!(session.invoke(genuine.clone()), receipt, "{attack}: the retry answers the stored receipt");
+        if let (Some(first), Some(refusal)) = (first, refusal) {
+            assert_eq!(session.invoke(first), refusal, "{attack}: the first envelope's retry answers its refusal");
+        }
+        let other = Envelope { row: Row::Execute { preview: preview + 1 }, ..genuine.clone() };
+        assert_eq!(common::code(&session.invoke(other)), m6::COMMAND_ID_REUSED, "{attack}");
+        assert_eq!((session.overview(), disk.writes()), (after, writes), "{attack}: one commit");
+    }
+}
