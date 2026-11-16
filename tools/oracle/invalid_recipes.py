@@ -55,8 +55,16 @@ def type_and_limit_family() -> list[tuple[str, str]]:
 
 
 def json_edges() -> list[tuple[str, str]]:
-    """Lead L1: recipe JSON that Python reads and `Model.normalize` refuses, but a strict reader cannot represent."""
+    """Lead L1: recipe JSON that Python reads and `Model.normalize` refuses, but a strict reader cannot represent or
+    refuses. The read of L1's fix added a repeated member name, of which Python keeps the last, and the literals
+    `NaN`, `Infinity` and `-Infinity`, which Python reads as floats."""
+    deep = "[" * NESTED_LISTS + '{"a":NaN,"a":-Infinity,"b":[Infinity]}' + "]" * NESTED_LISTS
     return [
         (f"a letter inside {NESTED_LISTS} nested lists", word("[" * NESTED_LISTS + "1" + "]" * NESTED_LISTS)),
         ("a kind with a lone surrogate", '[{"kind":"\\ud800"}]'),
+        ("moves repeated, the last with a bool letter", '[{"kind":"word","moves":[1],"moves":[true]}]'),
+        ("letter NaN", word("NaN")),
+        ("star sign Infinity", star(sign="Infinity")),
+        ("star node -Infinity", star(node="-Infinity")),
+        (f"a letter inside {NESTED_LISTS} nested lists around repeated names and NaN", word(deep)),
     ]

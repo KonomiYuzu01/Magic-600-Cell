@@ -231,8 +231,9 @@ class OracleTests(unittest.TestCase):
 
         `tests/test_kernel_oracle.py` requires the Rust kernel's oracle adapter to report each as an `invalid-input`
         step; this makes that expectation the reference's: `json.loads` reads the text and `Model.normalize` raises
-        `ValueError`. Two near misses stay valid: a star without a sign is a star of sign 1, and members 0.4 does not
-        know are ignored, even a deep one or one whose name has a lone surrogate.
+        `ValueError`. Near misses stay valid: a star without a sign is a star of sign 1, members 0.4 does not know are
+        ignored, even a deep one, one whose name has a lone surrogate or one that holds `NaN` or an infinity, and of
+        repeated names the last counts.
         """
         for name, text in invalid_recipes.type_and_limit_family() + invalid_recipes.json_edges():
             with self.subTest(recipe=name), self.assertRaises(ValueError):
@@ -242,6 +243,10 @@ class OracleTests(unittest.TestCase):
         nested = "[" * invalid_recipes.NESTED_LISTS + "]" * invalid_recipes.NESTED_LISTS
         extra = '[{"kind":"word","moves":[1],"deep":' + nested + ',"\\ud800":1}]'
         self.assertEqual(self.model.normalize(json.loads(extra)), self.model.normalize(make_cases.word([1])))
+        repeated = '[{"kind":"word","moves":[true],"moves":[1],"x":NaN,"y":[Infinity,-Infinity]}]'
+        self.assertEqual(self.model.normalize(json.loads(repeated)), self.model.normalize(make_cases.word([1])))
+        last = '[{"kind":"word","kind":"star","orbit":3,"node":5,"sign":1,"sign":-1}]'
+        self.assertEqual(self.model.normalize(json.loads(last)), self.model.normalize([make_cases.star(3, 5, -1)]))
 
     def test_the_ceiling_counts_star_letters(self):
         """Lead L9 (M4): 0.4's 3,000,000-letter ceiling counts a star's letters (seed, relocation and path twice).
