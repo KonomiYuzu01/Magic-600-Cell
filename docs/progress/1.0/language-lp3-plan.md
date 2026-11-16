@@ -194,8 +194,9 @@ acceptance check and stop condition.
   `output-equality`, `output-retained-at-cutoff`): 11 of 40. CT-RTE-04's other 29 traces wait for the IR draft's
   features (LP2).
 - C4 (`rust/c600-module`, branch `claude/lp3-module-closure`), built: module closure, its lock and the approval bound
-  to the closure digest; CT-RTE-08's source leg and 36 of LX-3's 75 frozen keys of CT-RTE-07 on 600-cell-Full.
-  CT-RTE-08's persisted words come with C7; CT-RTE-07's other keys wait for M5, C7, the IR draft and C5.
+  to the closure digest; CT-RTE-08's source leg and 36 of LX-3's 75 frozen keys of CT-RTE-07 on 600-cell-Full;
+  three more (A08, A17 and A18: a word's length, inverse and concatenation) with LP2's batch 2 (pull request 176),
+  39 in all. CT-RTE-08's persisted words come with C7; CT-RTE-07's other keys wait for M5, C7, the IR draft and C5.
 - C2, display next (`rust/c600-display`, branch `claude/lp3-c2-display-next`), built: CT-RPI-14 over the drafted
   chart repertoire (RPI.34 is open), CT-RPI-18 on the CPU reference, CT-RPI-19's Windows leg, CT-RPI-22's chart half
   (so CT-RPI-22 runs whole) and the headless part of CT-RPI-32. The rest of CT-RPI-32 needs the stage module's checker
@@ -398,7 +399,7 @@ wait entirely. The milestone is in parentheses.
 | CT-BND-19 | source | A live twist's release, which needs KN3.7's exact rotations (LP2) | The tool's views (C5) |
 | CT-BND-20 | windows | The renderer freeze (C9) | A held chord commits once; the runtime gets no token (C1) |
 | CT-RTE-04 | source | Child scopes, loops, text order, byte decoding, exact multiplication, streaming and LP1's region executor in the IR draft (LP2) | 11 of DET.65's 40 traces (C3, three after LP2's M2 meter) |
-| CT-RTE-07 | source | M5's jumbling keys (C8), M6's store keys (C7), the keys the IR draft cannot express (LP2), the budget keys that need a price mapping, host events in a loop or the command layer (C5), and a Linux run | 36 of LX-3's 75 frozen keys on 600-cell-Full (C4) |
+| CT-RTE-07 | source | M5's jumbling keys (C8), M6's store keys (C7), the keys the IR draft cannot express (LP2), the budget keys that need a price mapping, host events in a loop or the command layer (C5), and a Linux run | 39 of LX-3's 75 frozen keys on 600-cell-Full (C4) |
 | CT-RTE-08 | source | Now: module closure (C4); persisted words (C7) | - |
 | CT-RTE-10 | windows | Owner runs: LX-2 (C9) | The headless fault half (C3) |
 | CT-RTE-11 | performance | Owner runs: LX-2 (C9) | - |

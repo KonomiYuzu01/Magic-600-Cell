@@ -70,8 +70,10 @@
 //!   amounts, output bytes, shell answers (refusal codes only, and whether the split refused) and captures, in FP.5's
 //!   canonical JSON. Timing, host and path fields are not in it. A key's ten-run digest hashes these bytes for each of
 //!   its runs (a refusal by its code), the engine side and the store.
-//! - **CT-RTE-07's fixture mapping** (RTE.46, LX-3). The frozen keys use letter names and lists, which the IR draft
-//!   does not have. The tests map the letters `a, b, c, d, D` to `+1, +2, +3, +4, -4`, fixed-order lists to records
+//! - **CT-RTE-07's fixture mapping** (RTE.46, LX-3). The frozen keys use letter names and fixed-order lists. The
+//!   tests map the letters `a, b, c, d, D` to `+1, +2, +3, +4, -4`, and read a negated letter `-n`, which is how the
+//!   IR writes the inverse of the letter `n` (LG2.15), as the inverse `fixture.json` names for that letter (`a`, `b`
+//!   and `c` are their own inverses), so A17's `-1, +4` is the corpus's `a d`. They map fixed-order lists to records
 //!   with fields `c0..c2`, `i0..i2` and `s0..s3`, and the corpus's workspace rows to `read_snapshot` and
 //!   `write_workspace`, which the boundary serves from its store. The corpus's `emit` maps to `publish_view`, the one
 //!   output besides the result. A fixed-length list function (a sum, a first minimum, a table look-up) is unrolled
