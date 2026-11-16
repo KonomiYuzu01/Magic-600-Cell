@@ -66,6 +66,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "c600-jumble-tool"
+version = "0.0.0"
+dependencies = [
+ "c600-check",
+ "c600-digest",
+ "c600-ir",
+ "c600-jumble",
+ "c600-kernel",
+ "c600-run",
+ "c600-syntax",
+ "c600-tools",
+]
+
+[[package]]
 name = "c600-kernel"
 version = "0.0.0"
 dependencies = [

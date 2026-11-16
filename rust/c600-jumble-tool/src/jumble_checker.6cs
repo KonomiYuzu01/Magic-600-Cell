@@ -1,0 +1,12 @@
+edition "6cs-draft-1";
+module jumble_checker requires [];
+
+export command check_named_twist(t: Word) -> record { base: Text, id: Text } effects [preview] {
+    let r = propose(t, target("operation.preview"));
+    return record { base = receipt_base(r), id = receipt_id(r) };
+}
+
+export command check_named_word(w: Word) -> record { base: Text, id: Text } effects [preview] {
+    let r = propose(w, target("operation.preview"));
+    return record { base = receipt_base(r), id = receipt_id(r) };
+}
