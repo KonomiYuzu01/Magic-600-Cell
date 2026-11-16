@@ -46,7 +46,7 @@ and the renderer freeze for its on-screen half, and headless integration does no
 | Work | State | Waits for |
 | --- | --- | --- |
 | Command layer, shell tokens and key routes; the oracle loop for 600-cell-Full | Built (C1) | Nothing; the table freezes at LP3 |
-| Headless display contract; views and their budgets | In progress (C2) | Nothing |
+| Headless display contract; views and their budgets | Views built; display in progress (C2) | Nothing |
 | The runtime in its own process | In progress (C3) | Nothing: route RT1 (LQ9) |
 | Module closure | In progress (C4) | Nothing |
 | Source route and the 600-cell-Full tool | May start when C1 is on main | C1 |
@@ -97,7 +97,7 @@ One pull request per milestone; each names the checks that ran.
 | Milestone | Content | Depends on | State |
 | --- | --- | --- | --- |
 | C1 | Command layer, shell tokens and key routes; O01 to O07 through it on two routes, with undo and redo | M4 (on main) | Built; this plan's pull request |
-| C2 | Headless display contract (`c600-display`); views and their budgets (`c600-view`) | M2 and M3 (on main) | In progress |
+| C2 | Headless display contract (`c600-display`); views and their budgets (`c600-view`) | M2 and M3 (on main) | Views built; display in progress |
 | C3 | The runtime in its own process (`c600-runtime`) | M2 and M3 | In progress |
 | C4 | Module closure (`c600-module`) | M2 and M7 (on main) | In progress |
 | C5 | Source route and the 600-cell-Full tool (`c600-tools`) | C1 | Next |
@@ -140,8 +140,8 @@ acceptance check and stop condition.
 - C2, display (`rust/c600-display`, branch `claude/lp3-display`): the headless parts of CT-RPI-02, CT-RPI-04,
   CT-RPI-05, CT-RPI-08, CT-RPI-09, CT-RPI-10, CT-RPI-11, CT-RPI-27, CT-RM-03 and CT-RM-04, the stale half of CT-RPI-12
   and the 600-cell-Full half of CT-RM-07.
-- C2, views (`rust/c600-view`, branch `claude/lp3-view`): CT-ONE-30, CT-RM-02, CT-RM-09, CT-RPI-03, CT-RPI-06,
-  CT-RPI-07, CT-RPI-22, CT-RPI-36 and CT-RPI-37.
+- C2, views (`rust/c600-view`, branch `claude/lp3-view`), built: CT-ONE-30, CT-RM-02, CT-RPI-03, CT-RPI-06,
+  CT-RPI-07, CT-RPI-36 and CT-RPI-37, the limit half of CT-RPI-22 and rows 1, 2, 7 and 9 of CT-RM-09.
 - C3 (`rust/c600-runtime`, branch `claude/lp3-runtime-process`): the runtime in a process of its own, a client of the
   command layer (ADR-L02); CT-RTE-04's execution-contract mapping and the headless fault half of CT-RTE-10.
 - C4 (`rust/c600-module`, branch `claude/lp3-module-closure`): module closure; CT-RTE-07 and the closure part of
@@ -203,8 +203,8 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
 ## 9. Section 15.4's 82 tests
 
 "Now" means the whole test can run without the owner's machine, the renderer freeze, M5, M6 or a missing kernel row.
-37 tests can run whole now (CT-RPI-19 and CT-RTE-07 also need a Linux run for their records), 23 have a part that can
-run now, and 22 wait entirely. The milestone is in parentheses.
+35 tests can run whole now (CT-RPI-19 and CT-RTE-07 also need a Linux run for their records), 24 have a part that can
+run now, and 23 wait entirely. The milestone is in parentheses.
 
 | Test | Class | Whole run | Part now |
 | --- | --- | --- | --- |
@@ -260,7 +260,7 @@ run now, and 22 wait entirely. The milestone is in parentheses.
 | CT-RPI-18 | synthetic | Now (C2, next) | - |
 | CT-RPI-19 | source | Now, with a Linux run (C2, next) | - |
 | CT-RPI-21 | windows | The renderer freeze (C9) | - |
-| CT-RPI-22 | source | Now (C2) | - |
+| CT-RPI-22 | source | The display-plan validator, for the chart half (C2, next) | The limit half (C2) |
 | CT-RPI-23 | source | Now (C2, next) | - |
 | CT-RPI-24 | windows | The renderer freeze and M5 (C9) | - |
 | CT-RPI-26 | performance | Owner runs: charter E2 and the renderer gate (C9) | The counter half (C2, next) |
@@ -288,7 +288,7 @@ run now, and 22 wait entirely. The milestone is in parentheses.
 | CT-RM-05 | windows | The renderer freeze (C9) | - |
 | CT-RM-06 | windows | The renderer freeze (C9) | - |
 | CT-RM-07 | source | M5 (C8) | The 600-cell-Full half (C2) |
-| CT-RM-09 | source | Now (C2) | - |
+| CT-RM-09 | source | A user-stage checker and a device, for rows 3 to 6, 8 and 10 (C9) | Rows 1, 2, 7 and 9 (C2) |
 | CT-RM-10 | windows | The renderer freeze (C9) | - |
 
 ## 10. Stop condition for LP3, and questions to the owner
