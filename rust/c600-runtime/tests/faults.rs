@@ -126,12 +126,17 @@ fn rehearsal_child_panics() {
     recovers(rt, session);
 }
 
-/// Rehearsal: the child aborts.
+/// Rehearsal: the child aborts. Windows reports an abort as a nonzero exit status; on Unix the abort is a signal, so
+/// the child reports no exit status.
 #[test]
 fn rehearsal_child_aborts() {
     let (fault, session, rt) = rehearse("abort@3", None);
     lost(&fault);
-    assert!(fault.exit.is_some_and(|code| code != 0), "{:?}", fault.exit);
+    if cfg!(windows) {
+        assert!(fault.exit.is_some_and(|code| code != 0), "{:?}", fault.exit);
+    } else {
+        assert_eq!(fault.exit, None, "an abort is a signal, not an exit status");
+    }
     assert_eq!(session.log.len(), 3);
     recovers(rt, session);
 }

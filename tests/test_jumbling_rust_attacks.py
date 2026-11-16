@@ -546,13 +546,21 @@ class FreePoseTests(unittest.TestCase):
 
 
 class StampTests(unittest.TestCase):
-    """Lead L13 on the candidate: KN1.4 refuses another contract stamp, naming contract_rev."""
+    """Lead L13 on the candidate: KN1.4 refuses another contract stamp, naming contract_rev. The candidate stamps
+    `state-contract 2026-11-15 A1-A6` (owner decision, 16 November 2026), so J1's own stamp, A1 to A4, is refused
+    too: only the differential comparison maps it."""
+
+    def test_own_stamp_is_the_a6_pin(self):
+        engine = candidate()
+        engine.start(fixture('I_a')['menu'])
+        self.assertEqual(engine.identity()['contract_rev'], 'state-contract 2026-11-15 A1-A6')
 
     def test_other_stamps_are_refused(self):
         engine = candidate()
         start = engine.start(fixture('I_a')['menu'])
         own = engine.identity()
-        for stamp in ('state-contract 2026-10-22 A1-A5', 'state-contract 2099-01-01 A9', None):
+        for stamp in ('state-contract 2026-10-09 A1-A4', 'state-contract 2026-10-22 A1-A5',
+                      'state-contract 2099-01-01 A9', None):
             with self.subTest(stamp=stamp):
                 refused = engine.word(dict(own, contract_rev=stamp), JI16_WORD)
                 self.assertEqual((refused['status'], refused['code'], refused['applied']),

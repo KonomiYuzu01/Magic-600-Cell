@@ -50,9 +50,21 @@ KERNEL_COST = 'KN7:budget.kernel_cost'
 RIM_FIELDS = ('N_c', 'In_c', 'Out_c', 'A_c', 'F_c', 'at_floor')
 CENSUS_SEED = 7101
 CENSUS_STEPS = (17, 30, 33, 44, 70, 97)
+# The state contract stamps, owner decision of 16 November 2026
+# (docs/wiki/decisions/owner-decisions-2026-11-16-lp2-questions.md): the engine stamps the pin JI.3 names; J1 still
+# stamps A1 to A4, a known J1 defect that stays in J1. This comparison maps J1's stamp to the engine's
+# (`engine_stamp`), and nothing else does.
+J1_CONTRACT_REVISION = 'state-contract 2026-10-09 A1-A4'
+ENGINE_CONTRACT_REVISION = 'state-contract 2026-11-15 A1-A6'
 
 _SECONDS = {}
 _ENGINES = {}
+
+
+def engine_stamp(revision):
+    """J1's contract stamp as the engine writes it. Any other value comes back unchanged, so a change of either stamp
+    still fails the comparison."""
+    return ENGINE_CONTRACT_REVISION if revision == J1_CONTRACT_REVISION else revision
 
 
 def setUpModule():
@@ -429,8 +441,12 @@ class RepairListTests(TimedCase):
     def assert_same(self, answer, reference, label):
         """The candidate's repair list equals J1's result in every field but J1's timings: status, input digest,
         parameters, coverage, rows (null unless completed), every outcome with its undefined delta and reason, and the
-        message. `by` names KN7:budget.kernel_cost for a cut-off job and is null otherwise."""
+        message. `by` names KN7:budget.kernel_cost for a cut-off job and is null otherwise. J1's contract stamp in the
+        parameters is mapped to the engine's (`engine_stamp`)."""
         document = json.loads(json.dumps({k: v for k, v in dataclasses.asdict(reference).items() if k != 'timings'}))
+        if document.get('parameters') is not None:
+            parameters = document['parameters']
+            parameters['contract_revision'] = engine_stamp(parameters['contract_revision'])
         self.assertEqual(set(answer) - {'by'}, set(document), label)
         for key in sorted(document):
             self.assertEqual(answer[key], document[key], (label, key))
@@ -453,9 +469,11 @@ class RepairListTests(TimedCase):
         self.assertEqual(answer['coverage'], {'pairs_tried': 472, 'items_done': list(range(1, 60)),
                                               'meeting_caps': [349, 399, 416, 469, 484, 513, 523, 571]})
         self.assertEqual(answer['input_digest'], before)
+        self.assertEqual(RL.contract_revision(), J1_CONTRACT_REVISION)
         self.assertEqual(answer['parameters'], {
             'cap': 458, 'menu_identity': RL.I_A_IDENTITY, 'order_digest': RL.I_A_ORDER_DIGEST,
-            'tie_rule': RL.TIE_RULE, 'contract_revision': RL.contract_revision()})
+            'tie_rule': RL.TIE_RULE, 'contract_revision': engine_stamp(RL.contract_revision())})
+        self.assertEqual(answer['parameters']['contract_revision'], ENGINE_CONTRACT_REVISION)
         self.assertEqual(candidate().record()['digest'], before)
 
     def test_a_pair_budget_and_a_cancellation_match_j1(self):
