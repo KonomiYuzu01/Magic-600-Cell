@@ -22,6 +22,7 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-display` | The headless display contract: display plans and publications, the host validator, the publication state machine over a mock backend, picks and frame stamps, and RM.37's jumbling crosswalk as fixtures (LP3, C2) |
 | `c600-module` | Module closures, lockfiles and their approval binding: the draft manifest and lock forms, resolution by content digest, closure verification and the closure digest, an approval bound to that digest, and load and run through the run-time boundary (LP3, C4) |
 | `c600-runtime` | The runtime in a process of its own (route RT1): the child binary `c600-runtime`, the parent library that starts it and answers its host calls, the wire protocol draft `c600-rt1-wire-1` and the in-process reference path (LP3, C3) |
+| `c600-tools` | The built-in 600-cell-Full tool as `.6cs` source, its admission under the built-in column, the host bridge from the runtime onto the command layer, the recipe expansion and the source route `c600-lp3-source` (LP3, C5) |
 
 The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
 also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
@@ -33,7 +34,10 @@ contract on the digest and kernel crates.
 The module crate depends on the syntax, IR, checker, interpreter and digest crates, and has no path to the command
 layer.
 The runtime depends on the syntax, checker, interpreter, IR and digest crates and the big-integer crates, and has no
-path to the command layer; C5's host bridge connects them.
+path to the command layer.
+The tools crate depends on the syntax, checker, interpreter, IR, digest and kernel crates and on the command layer: its
+host bridge connects the in-process interpreter to the command layer as the runtime's host. The runtime's own process
+(C3) is not connected to the bridge yet.
 
 ## Running the tests
 
@@ -532,10 +536,11 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   built-in column of chapter 07 section 8 over the checker's report. A variant that also reads state is refused with
   `LG3:capability.not_granted`. The class (`analysis`, `checking`, after LB6.5) and the row set are declared in the
   crate's Rust manifest, because the IR and the syntax carry no module manifest yet.
-- The tool runs on `c600-run` through `Boundary` in the solving profile, in process (the runtime's own process, C3,
-  is not on main). Against an engine double that records each proposal, the program receives only the fixed
-  acknowledgement whether the engine built the preview, refused it, or preview admission refused the word, and its
-  charges do not depend on the answer (BND.42, BND.43).
+- The tool runs on `c600-run` through `Boundary` in the solving profile, in process: C5 was built before the
+  runtime's own process (C3) reached main, and moving the tool onto it is C5's next piece. Against an engine double
+  that records each proposal, the program receives only the fixed acknowledgement whether the engine built the
+  preview, refused it, or preview admission refused the word, and its charges do not depend on the answer (BND.42,
+  BND.43).
 - `expand` is the runner's recipe expansion through the kernel, outside any program. Over O01 to O07 (3,201 steps)
   each step the oracle accepted or refused for protection expands to a literal word with the recorded
   `expansion_sha256` and `primitive_count`. Of O07's ten invalid steps, four are single words of integer moves, which
@@ -560,7 +565,7 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   - a negative control: negating the first letter of O06 step 3's literal word before the tool runs makes compare.py
     fail at that step (`expansion_sha256`).
 
-  `tools/ci/run_headless.py` does not run this check yet; that file was outside this change.
+  CI runs this check through `tools/ci/run_headless.py`.
 - Tests (`c600-tools/tests/`), each naming the conformance parts it covers; no conformance ID runs whole:
   - `tool.rs`: the source parses and lowers; the checker admits it and it only prepares previews (CT-LB6-03, part); a
     variant that also reads state is refused (LQ21; CT-LB6-03, part); a built-in previews only the word the solver
