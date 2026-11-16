@@ -126,6 +126,8 @@ CHECKS += LANGUAGE_DOCS_CHECKS + [
     ["tests/test_lp3_source_route.py"],
     # The Rust jumbling candidate (LP2, M5) against J1 through the differential harness (CT-KN2-01 and others).
     ["tests/test_jumbling_rust_candidate.py"],
+    # The section 15.3 conformance index (LP2, M8): every LP2 test ID with exactly one state.
+    ["tests/test_ct_index.py"],
 ]
 
 TIME_LIMIT_SECONDS = 1200
