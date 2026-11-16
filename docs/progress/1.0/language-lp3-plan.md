@@ -57,6 +57,7 @@ and the renderer freeze for its on-screen half, and headless integration does no
 | The on-screen half | Waits | The renderer freeze |
 | Charter E2, the decisive LX-1, LX-2 and LX-4 runs, LX-3's platform coverage, the renderer gate | Waits | The owner's machine, all run together (owner, 16 November 2026) |
 | CT-LB1-06's word keys | Waits | An owner answer on LG2.18's word keys (section 10) |
+| Library entries as language code (LB1.1): collections, exact linear algebra, word construction, word and trace keys, setup search | Waits | Collection types and word operations in the IR draft (LP2; the IR freezes at PHS.49); asked of the LP2 line |
 
 ## 3. Integrator selections (the owner may overrule them)
 
@@ -165,16 +166,19 @@ profile (it prepares previews and reads no state: LG3.13, BND.39), with its clas
 invocation, and only the shell commits (ADR-L02). It runs in-process until C3 is on main, and its records say which
 host ran it. Acceptance:
 
-1. The source route replays O01 to O07. Each step's recipe enters the tool as a pinned absolute argument, and the
-   literal digests, outcomes, receipts and undo results equal the command and key routes'; `tools/oracle/compare.py`
-   reports every step equal.
-2. The parts of CT-LB1-01, CT-LB1-03 (construction and the 600-cell-Full round trip), CT-LB2-01, CT-LB2-02 (the Net
-   half), CT-LB2-03 (the oversize refusal), CT-LB3-01 and CT-LB3-07 (the checker halves), CT-LB6-03 (the
-   600-cell-Full tool), CT-BND-15 (the 600-cell-Full tool), CT-BND-18, CT-BND-19, CT-EV3-01 to CT-EV3-04 with the
-   tool's views, CT-EV4-02, CT-EV4-04 (the append, preview and commit legs) and CT-ONE-29, each naming its part.
-3. CT-LB1-06's 600-cell-Full letter order and its version refusal, only if the owner's answer allows a draft key
-   (section 10).
-4. A change to `c600-command` gets C1's fresh read; C1's item 5 holds.
+1. The source route replays O01 to O07. Each step's literal word, the kernel's state-free expansion of its recipe,
+   enters the tool as a pinned absolute argument; `tools/oracle/compare.py` reports every step equal, the traces equal
+   the command route's byte for byte, and the receipts agree on outcome, literal digest, error code and the revision
+   after, differing only in their envelopes (command ID, caller, request digest).
+2. The parts of CT-LB2-02 (the Net half), CT-LB2-03 (the oversize refusal), CT-LB3-01 and CT-LB3-07 (the checker
+   halves), CT-LB6-03 (the 600-cell-Full tool), CT-BND-15 (the 600-cell-Full tool), CT-BND-19, CT-EV3-01 to CT-EV3-04
+   with the tool's views, CT-EV4-02, CT-EV4-04 (the append, preview and commit legs) and CT-ONE-29 that the tool and
+   the bridge make reachable, each naming its part.
+3. A change to `c600-command` gets C1's fresh read; C1's item 5 holds.
+
+CT-LB1-01, CT-LB1-03, CT-LB1-06, CT-LB2-01 and CT-BND-18 test library entries, which are language code (LB1.1). They
+need collection types and word operations (concatenation, inverse, powers) that the IR draft `c600-ir-draft-1` does
+not have yet, so they wait for LP2 (section 2).
 
 C6, the representations tool, headless half (selection 7). Acceptance: CT-LB4-02, the 600-cell-Full half of CT-LB4-03,
 the admission and CPU half of CT-LB4-04, the CPU reference of CT-LB4-01, the counter half of CT-EV3-06, the
@@ -203,18 +207,18 @@ C1's conditions, or when a tool needs a kernel row LP2 has not built.
 ## 9. Section 15.4's 82 tests
 
 "Now" means the whole test can run without the owner's machine, the renderer freeze, M5, M6 or a missing kernel row.
-35 tests can run whole now (CT-RPI-19 and CT-RTE-07 also need a Linux run for their records), 24 have a part that can
-run now, and 23 wait entirely. The milestone is in parentheses.
+32 tests can run whole now (CT-RPI-19 and CT-RTE-07 also need a Linux run for their records), 22 have a part that can
+run now, and 28 wait entirely. The milestone is in parentheses.
 
 | Test | Class | Whole run | Part now |
 | --- | --- | --- | --- |
 | CT-KN7-06 | performance | Owner runs: charter E2 under a running program job (C9) | - |
 | CT-LG4-09 | performance | Owner runs: LX-2 (C9) | - |
-| CT-LB1-01 | source | Now (C5) | - |
+| CT-LB1-01 | source | Collection types in the IR draft, for the library code (LP2) | - |
 | CT-LB1-02 | source | M5: a blocked cap (C8) | - |
-| CT-LB1-03 | source | M5 (C8) | Construction and the 600-cell-Full round trip (C5) |
-| CT-LB1-06 | source | An owner answer on LG2.18's word keys; M5 for jumbling letters (C8) | 600-cell-Full letter order and version refusal, as a draft (C5) |
-| CT-LB2-01 | source | Now (C5) | - |
+| CT-LB1-03 | source | Word operations in the IR draft (LP2); M5 (C8) | - |
+| CT-LB1-06 | source | Collection types and word operations in the IR draft (LP2); an owner answer on LG2.18's word keys; M5 for jumbling letters (C8) | - |
+| CT-LB2-01 | source | Collection types in the IR draft, for the library's reports (LP2) | - |
 | CT-LB2-02 | source | The kernel's Strict protection (LP2) | The Net half (C5) |
 | CT-LB2-03 | source | Streaming words, KN2.10 (LP2); work sheets with M6 (C7) | The oversize refusal (C5) |
 | CT-LB2-04 | source | The kernel's `positions` row, KN2.4 (LP2) | - |
@@ -273,7 +277,7 @@ run now, and 23 wait entirely. The milestone is in parentheses.
 | CT-RPI-37 | synthetic | Now (C2) | - |
 | CT-BND-15 | source | M5: the jumbling tool (C8) | The 600-cell-Full and representations tools (C5, C6) |
 | CT-BND-17 | source | M5: the repair list (C8) | - |
-| CT-BND-18 | source | Now (C5) | - |
+| CT-BND-18 | source | Collection types in the IR draft, for setup search (LP2) | - |
 | CT-BND-19 | source | Now (C5) | - |
 | CT-BND-20 | windows | The renderer freeze (C9) | A held chord commits once; the runtime gets no token (C1) |
 | CT-RTE-04 | source | Now (C3) | - |
@@ -293,16 +297,17 @@ run now, and 23 wait entirely. The milestone is in parentheses.
 
 ## 10. Stop condition for LP3, and questions to the owner
 
-LP3's offline work stops and reports when every remaining milestone waits for M5, M6, a kernel row, the renderer
-freeze, an owner run or an owner answer, or when an implementation would change a frozen file (PHS.52). A failing
+LP3's offline work stops and reports when every remaining milestone waits for M5, M6, a kernel row, the IR draft's
+collection types and word operations, the renderer freeze, an owner run or an owner answer, or when an implementation
+would change a frozen file (PHS.52). A failing
 acceptance item blocks LP3's exit (PHS.63); nothing is cut, and no bar moves.
 
 Questions are batched (owner, 16 November 2026): at most one card per milestone, each with a recommended option.
 
-- C5: LG2.18's word keys are open (the LP2 plan and `rust/README.md` record it), and CT-LB1-06 needs a key.
-  Recommended: LP3 uses LB1.10's proposed `trace-key/1`, the lexicographically least topological word, as a draft key
-  for 600-cell-Full words; it freezes with the IR, and the jumbling letters wait for M5. The alternative keeps the keys
-  open and leaves CT-LB1-06 waiting.
+- C5: LG2.18's word keys are open (the LP2 plan and `rust/README.md` record it), and CT-LB1-06 needs a key once the
+  IR draft has collection types and word operations. Recommended: LP3 uses LB1.10's proposed `trace-key/1`, the
+  lexicographically least topological word, as a draft key for 600-cell-Full words; it freezes with the IR, and the
+  jumbling letters wait for M5. The alternative keeps the keys open and leaves CT-LB1-06 waiting.
 - C1 to C4: none. The command table's choices are drafts that freeze at LP3.
 - C9: none before the renderer freeze; the owner-machine runs follow PHS.64 and are done together.
 - C10: at the exit, H-08's freeze and the registration of the draft codes in chapter 13 (PHS.52, PHS.53).
