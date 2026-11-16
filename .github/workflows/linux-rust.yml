@@ -1,0 +1,46 @@
+# The Rust tests of 600 Cell Script on a GitHub-hosted Linux runner: the headless Linux leg of
+# M8's acceptance (LP2 plan, M8: PHS.19's acceptance on Windows and headless Linux). Owner
+# decision, 16 November 2026 (docs/wiki/decisions/owner-decisions-2026-11-16-lp2-questions.md):
+# `cargo test --locked --offline` runs in rust/ on ubuntu-24.04, and nothing is installed on the
+# owner's machine. The approved crates are vendored (rust/.cargo/config.toml), so the tests need
+# no network after the checkout. The runner's preinstalled Rust is used, as on the Windows shards.
+# A pass is headless Linux evidence only, not Windows/DirectX, input, long-session or performance
+# evidence. The runner has no personal data and gets no secrets. `--no-fail-fast` runs every test
+# target after a failure, so one run reports every failing target.
+name: Linux Rust tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: linux-rust-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cargo-test:
+    name: cargo test (ubuntu-24.04)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: rust
+    steps:
+      - name: Check out the exact committed bytes
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Print the toolchain identity
+        run: |
+          uname -srm
+          rustc --version --verbose
+          cargo --version
+
+      - name: Run the Rust tests with the locked, vendored crates
+        run: cargo test --locked --offline --no-fail-fast

@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-16] decision | Three LP2 answers: the Linux leg on CI, the A1-A6 stamp, J1's acceptance on Windows
+The owner answered three LP2 questions with the recommended options ([decision](decisions/owner-decisions-2026-11-16-lp2-questions.md)): `.github/workflows/linux-rust.yml` runs `cargo test --locked --offline` in `rust/` on ubuntu-24.04 as M8's headless Linux leg; `c600-jumble` stamps `state-contract 2026-11-15 A1-A6`, while J1's A1-A4 stamp stays as a known J1 defect that only the differential comparison maps; and a change to `research/jumbling/sim/accept.py` alone hands the pool workers their inputs as arguments, so J1's acceptance exits with 0 on Windows with all 32 flags true and the recorded results unchanged apart from timings and two angles that differ in the last digit.
+
 ## [2026-11-16] update | The language: LP2's second integration batch and M8's observation calls
 LP2's second batch adds KN3's exact rotation requests under A6, state contract A2's filter as the std-only crate `c600-a2-filter`, lists, sets, maps, word operations and compressed words as drafts until the IR freeze, LG5's conformance tests against LP3's module loader, and the fix for M7's lead L5; M8 adds the jumbling observations `rim_summary`, `release_check`, `covers` and `repair_list`, each compared with J1, the repair list in a neutral order at a cap the solver names. With KN5, section 15.3's index reads 62 of the 248 LP2 tests whole (8 by the union of their parts), 130 in part and 51 waiting; `nu`, `correction_set_check` and the level crossings are not built yet.
 
