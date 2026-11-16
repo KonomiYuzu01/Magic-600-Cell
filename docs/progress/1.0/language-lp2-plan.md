@@ -26,7 +26,7 @@ integration, authoring services, the research corpus and the importer stay with 
 | --- | --- | --- |
 | Typed IR draft and checker | May start; LQ21 is answered | Nothing |
 | Interpreter and the `lp1-exec-draft-1` meter | Designed in M2 below | The owner's answer on the big-integer dependency (RTE.18, RTE.70) |
-| Parser | Waits | LQ13 (PHS.20): the owner picks the syntax directly from a one-page comparison of the three LX-8 candidates, with no human test, and CT-RTE-18 stays recorded as not run (owner, 16 November 2026) |
+| Parser | May start; LQ13 is answered | Nothing: the owner chose LX-8 candidate A (braces) from a one-page comparison of the three candidates, with no human test ([owner, 16 November 2026](../../wiki/decisions/owner-decisions-2026-11-16-lq13.md)); keyword and punctuation details are settled in M7, and CT-RTE-18 stays recorded as not run |
 | Kernel API and candidate adapter, 600-cell-Full half | May start in Rust (LQ8) | Nothing beyond the frozen chapters |
 | Jumbling half of the kernel API | Waits | EN3's review and approval of the jumbling interfaces (PHS.53) |
 | Session store below the language | May start | Nothing beyond chapter 05's frozen core |
@@ -62,7 +62,7 @@ One pull request per milestone; each names the checks that ran.
 | M4 | Kernel API and 600-cell-Full candidate adapter: O01 to O07 through `tools/oracle/` | Rust engine port |
 | M5 | Jumbling half: public J1 API, differential comparisons, W-J fixtures and H6030 | EN3's approval |
 | M6 | Session store below the language; budgets and cancellation end to end | M2, M4 |
-| M7 | Parser and its lowering into the IR | LQ13 |
+| M7 | Parser and its lowering into the IR | LQ13 (answered: candidate A) |
 | M8 | PHS.19's acceptance on Windows and headless Linux; section 15.3 runnable | M1 to M7 |
 
 ## 5. M1: the IR draft and the checker
@@ -104,8 +104,8 @@ dependency.
 
 ## 6. Stop condition for LP2
 
-LP2 stops and reports to the owner when every remaining milestone waits for an owner answer or another line (LQ13,
-the big-integer answer, EN3's approval), or when an implementation would change a frozen file (PHS.52). A failing
+LP2 stops and reports to the owner when every remaining milestone waits for an owner answer or another line (the
+big-integer answer, EN3's approval), or when an implementation would change a frozen file (PHS.52). A failing
 acceptance item blocks LP2's exit (PHS.63); nothing is cut.
 
 ## 7. Questions put to the owner on 15 November 2026
@@ -113,8 +113,8 @@ acceptance item blocks LP2's exit (PHS.63); nothing is cut.
 1. The big-integer dependency for M2: `num-bigint` 0.5.1 with `num-integer` 0.1.47 and `num-traits` 0.2.19 (each
    MIT OR Apache-2.0, as read from the verified archives in LX-5's crate run; exact on LX-5's rows and about 3.4 times
    faster in total than the experiment's own limbs), or own limbs with no dependency.
-2. LX-8's human-test protocol, which LQ13 and the parser waited for. Moot since 16 November 2026: the owner picks LQ13
-   directly from a one-page comparison that another session writes, and the parser waits for that choice.
+2. LX-8's human-test protocol, which LQ13 and the parser waited for. Moot since 16 November 2026: the owner chose LQ13
+   directly from a one-page comparison, candidate A, so the parser waits no longer.
 
 Questions to the owner are batched (owner, 16 November 2026): at most one question card per milestone, each with a
 recommended option. The big-integer card is M2's card; other M2 points follow recorded decisions or conventional
