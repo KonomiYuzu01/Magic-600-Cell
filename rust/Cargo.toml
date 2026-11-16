@@ -1,7 +1,7 @@
 # The Rust workspace of 600 Cell Script (LP2). See README.md.
 [workspace]
 resolver = "2"
-members = ["c600-ir", "c600-check", "c600-digest", "c600-syntax", "c600-run", "c600-kernel", "c600-command", "c600-view"]
+members = ["c600-ir", "c600-check", "c600-digest", "c600-syntax", "c600-run", "c600-kernel", "c600-command", "c600-view", "c600-display"]
 
 [workspace.package]
 version = "0.0.0"
