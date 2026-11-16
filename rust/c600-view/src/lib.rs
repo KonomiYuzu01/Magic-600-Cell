@@ -12,9 +12,11 @@
 //! - [`publication`]: the content of one `publish_view` call as admission counts it, with its canonical bytes (RPI.10,
 //!   RM.11, RM.13, RM.20).
 //! - [`receipt`]: KN5.21's receipt statuses and LI.28's job-outcome mapping.
+//! - [`provenance`]: LG3.9's [`Profile`]s, BND.27's [`BoundaryClass`] and the [`Provenance`] block that display
+//!   content keeps (RPI.45, BND.22, BND.26).
 //! - [`model`]: the [`ViewModel`]: Global, Local and further views (RPI.42, RPI.81 to RPI.83), the view lane (KN7.2,
-//!   LI.22 to LI.25, ONE.64, RPI.12), revision binding and statuses (ONE.12, ONE.63, ONE.65, RPI.13), visibility
-//!   (RPI.11, RM.25) and the view budget (RM.19, RM.38, RM.39, RPI.82).
+//!   LI.22 to LI.25, ONE.64, RPI.12), revision binding and statuses (ONE.12, ONE.63, ONE.65, RPI.13), visibility and
+//!   its rebuild counters (RPI.11, RM.17, RM.25) and the view budget (RM.19, RM.38, RM.39, RPI.82).
 //!
 //! # Seams
 //!
@@ -30,8 +32,9 @@
 //!
 //! # Contract tests
 //!
-//! `tests/view_rows.rs` holds CT-RPI-03, CT-RPI-06, CT-RPI-07, CT-RPI-22 (its limit half), CT-RPI-36, CT-RPI-37,
-//! CT-RM-02, the accounting rows 1, 2, 7 and 9 of CT-RM-09 and CT-ONE-30, each test named after its ID.
+//! `tests/view_rows.rs` holds CT-RPI-03, CT-RPI-06, CT-RPI-07, CT-RPI-22 (its limit half), CT-RPI-23, CT-RPI-26 (its
+//! counter half), CT-RPI-36, CT-RPI-37, CT-RM-02, the accounting rows 1, 2, 7 and 9 of CT-RM-09, CT-ONE-30 and
+//! CT-EV3-08 (its admission semantics), each test named after its ID. An ID with a named part runs only that part.
 //!
 //! # Drafts
 //!
@@ -76,12 +79,34 @@
 //!   output included. A view keeps at most [`model::CACHE_LIMIT`] results.
 //! - LI.16, RM.13: the canonical bytes stand in for H8's canonical uncompressed output bytes (a version byte,
 //!   unsigned LEB128 integers and length-prefixed byte strings). The [`Transport`] of a publication is never charged.
+//! - LG3.9, RPI.42, EV3.11: a view model is created for one session's [`Profile`]. No rule here reads it: Global and
+//!   Local are linked, further views are admitted and the view budget is charged the same way in every profile.
+//! - RPI.45, BND.22, BND.26: installed output keeps a [`Provenance`] block (the producing profile, the producer and a
+//!   built-in tool's class), and every frame carries it with the output. For a run, the host fills it from the
+//!   session's profile, the view's source and the class declared at open; a runner returns content only. A standalone
+//!   publication carries the block the host states, and it is kept as given, another profile's included. Nothing is
+//!   refused on a block: whether `display` refuses is LQ2's option set (BND.74, question 4).
+//! - BND.27: the host declares a built-in source's class when the view opens ([`Declared`]), read from the tool's
+//!   manifest; `None` stands for a solver's own tool. The crate checks nothing against it.
+//! - RPI.28, RPI.68: a chart's evaluator is the view's declared chain: the built-in stage when its `stage_ops` and
+//!   `fragment_ops` are 0, a checked vertex stage otherwise. The evaluator and a fallback change the [`StageUse`] a
+//!   frame reports and never the block.
+//! - RPI.11, RM.17, RM.25: a rebuild is a host-scheduled recomputation, a program run, a preparation (a payload
+//!   validated and turned into the resources of a new generation, installed or not) or an install, and [`Counters`]
+//!   counts each per view. A reused read result counts as a preparation and an install, not as a program run.
 //!
 //! # Not built
 //!
 //! - CT-RM-09 rows 3 to 6, 8 and 10 (the raster bound `U`, `stage_work_exceeded` frame reports, device faults and
 //!   quarantine) need a user-stage checker or a device.
 //! - CT-RPI-22's chart half (chart admission) needs the display-plan validator.
+//! - CT-RPI-26's gate half, charter E2 with program views active and the R-19 gate captures, is an owner-machine run
+//!   (C9). The counters here are not frame timings, and nothing is timed.
+//! - CT-EV3-08's measured half, RM.39's ceilings from a passing run of the unrelaxed gate, waits for the renderer
+//!   freeze (C9). Every ceiling in the tests is a declared fixture value.
+//! - A user-stage checker: a checked vertex stage is a declared fixture chain here (RPI.68 to RPI.80).
+//! - The policy table and display refusal (BND.28, LQ2's option set): the view model stores the block and decides
+//!   nothing on it.
 //! - RM.38's weight table, device loss (`busy.renderer_unavailable`), `display_unsupported` and command-ID reuse
 //!   belong to the renderer, the backend and the command layer.
 
@@ -91,6 +116,7 @@ pub mod bundle;
 pub mod error;
 pub mod limits;
 pub mod model;
+pub mod provenance;
 pub mod publication;
 pub mod receipt;
 pub mod revision;
@@ -105,6 +131,7 @@ pub use model::{
     Counters, Declared, Draw, FrameInput, FrameView, Installed, Job, Origin, RetireToken, RunOutcome, StageUse, Usage,
     ViewId, ViewModel, ViewSource, ViewStatus, Workload,
 };
+pub use provenance::{BoundaryClass, Profile, Provenance};
 pub use publication::{Content, MapDescriptor, PlanDescriptor, PublicationInput, Transport};
 pub use receipt::{
     CancelReason, CommandId, Completion, CompletionKind, JobId, JobOutcome, JobResult, ResultRef, Status,

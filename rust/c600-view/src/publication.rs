@@ -14,6 +14,7 @@ use c600_digest::sha256;
 
 use crate::error::{code, Context, Error, Form, PlanFault};
 use crate::limits::{Field, LimitProfile, OutputAllowance};
+use crate::provenance::Provenance;
 use crate::revision::Base;
 use crate::Digest;
 
@@ -208,4 +209,7 @@ pub struct PublicationInput {
     pub transport: Transport,
     /// The producer's declared output allowance (RM.13).
     pub output: OutputAllowance,
+    /// The block the host filled for the producer (BND.22). The view model stores it as given and refuses nothing on
+    /// it (BND.26).
+    pub provenance: Provenance,
 }

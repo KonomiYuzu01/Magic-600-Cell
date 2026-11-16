@@ -38,8 +38,14 @@ fn bundle(revision: Revision) -> BundleCandidate {
     BundleCandidate { revision, mode: Mode::JumbleOff, parts }
 }
 
+/// A view model for a session in `session`'s profile.
+fn model_in(session: Profile, profile: LimitProfile, revision: Revision) -> ViewModel {
+    ViewModel::new(session, profile, &bundle(revision), Workload::default(), Workload::default())
+        .expect("Global and Local fit")
+}
+
 fn model_at(profile: LimitProfile, revision: Revision) -> ViewModel {
-    ViewModel::new(profile, &bundle(revision), Workload::default(), Workload::default()).expect("Global and Local fit")
+    model_in(Profile::Solving, profile, revision)
 }
 
 fn workload(vertex_evals: u64, bytes: u64) -> Workload {
@@ -47,7 +53,7 @@ fn workload(vertex_evals: u64, bytes: u64) -> Workload {
 }
 
 fn declared(depends: Depends, workload: Workload) -> Declared {
-    Declared { depends, workload, output: OutputAllowance::new(BIG, 16) }
+    Declared { depends, workload, output: OutputAllowance::new(BIG, 16), class: None }
 }
 
 fn overlay(name: &str) -> ViewSource {
@@ -89,6 +95,8 @@ fn sized(base: &Base, len: usize) -> Content {
         .expect("some node length gives the exact size")
 }
 
+/// A standalone publication bound to the adopted revision, with the block a host would fill for a solver's own tool
+/// in the session's profile.
 fn publication(model: &ViewModel, view: &ViewId, content: Content, output: OutputAllowance) -> PublicationInput {
     PublicationInput {
         generation: model.generation(view).expect("the view is open"),
@@ -96,6 +104,7 @@ fn publication(model: &ViewModel, view: &ViewId, content: Content, output: Outpu
         content,
         transport: Transport::Canonical,
         output,
+        provenance: Provenance { profile: model.session_profile(), producer: overlay("host"), class: None },
     }
 }
 
@@ -222,7 +231,7 @@ fn ct_rpi_06_hidden_view_does_no_work_and_showing_runs_once_at_the_newest_revisi
     let v = open(&mut model, "v", Depends::STATE);
     assert_eq!(run_all(&mut model), 1);
     let before = model.counters(&v).expect("open");
-    assert_eq!((before.program_runs, before.prepares), (1, 1));
+    assert_eq!((before.program_runs, before.installs), (1, 1));
 
     assert!(model.hide(&v));
     for state in 12..=15 {
@@ -240,7 +249,7 @@ fn ct_rpi_06_hidden_view_does_no_work_and_showing_runs_once_at_the_newest_revisi
     model.finish(jobs[0].job, RunOutcome::Published(content(15)));
     assert!(model.take_jobs().is_empty());
     let after = model.counters(&v).expect("open");
-    assert_eq!((after.program_runs, after.prepares), (2, 2));
+    assert_eq!((after.program_runs, after.installs), (2, 2));
 }
 
 /// CT-RPI-06: a view whose declared dependencies did not move does no work, visible or after hide and show.
@@ -407,6 +416,187 @@ fn ct_rpi_22_one_over_limit_plan_installs_nothing() {
         matches!(model.status(&w), Some(ViewStatus::Error { error, .. }) if error.code == code::DISPLAY_PLAN_CEILING)
     );
     assert!(model.installed(&w).is_none());
+}
+
+// ----- CT-RPI-23
+
+fn built_in(name: &str) -> ViewSource {
+    ViewSource::BuiltIn { name: name.to_string() }
+}
+
+/// RPI.28's two chart evaluators as a view's declared chain, with the stage a frame reports for each: the built-in
+/// stage, and a checked vertex stage (RPI.68). No stage checker is built, so the vertex stage is a declared fixture
+/// chain; its `frame_work` is 10 * 3 + 10 * 1 * 1 = 40 at `overdraw` 1.
+fn evaluators() -> [(Workload, StageUse); 2] {
+    let built_in = Workload { vertex_evals: 10, cpu_bytes: 1, gpu_bytes: 1, pixels: 10, ..Workload::default() };
+    [(built_in, StageUse::BuiltIn), (Workload { stage_ops: 3, fragment_ops: 1, ..built_in }, StageUse::User)]
+}
+
+/// What the next frame draws for `view`, when it is visible.
+fn draw_of(model: &ViewModel, view: &ViewId) -> Option<Draw> {
+    model.frame_input().views.into_iter().find(|drawn| drawn.view == *view).map(|drawn| drawn.draw)
+}
+
+/// CT-RPI-23, profiles: under each profile's fixture, Global and Local stay open, visible together and linked to the
+/// adopted revision after every adoption, and neither can be hidden or closed; further views with a built-in source
+/// and with an overlay source open, run and show each revision the same way in every profile (RPI.42, RPI.81, EV3.11,
+/// ONE.65).
+#[test]
+fn ct_rpi_23_global_and_local_stay_linked_and_further_views_open_under_every_profile() {
+    let fixed = [ViewId::global(), ViewId::local()];
+    let further = [(ViewId::new("orbit"), built_in("orbit")), (ViewId::new("mine"), overlay("mine"))];
+    let mut traces = Vec::new();
+    for session in Profile::ALL {
+        let mut model = model_in(session, profile(&[]), rev(11, 1, 1, 11));
+        assert_eq!(model.session_profile(), session);
+        let mut trace = Vec::new();
+        for ((view, source), (work, _)) in further.iter().zip(evaluators()) {
+            let opened = model.open_view(Origin::Solver, view.clone(), source.clone(), declared(Depends::STATE, work));
+            trace.push(format!("open {view:?}: {opened:?}"));
+        }
+        for state in 12..=14 {
+            let next = rev(state, 1, 1, state as u8);
+            model.adopt(&bundle(next)).expect("adopted");
+            for view in &fixed {
+                assert_eq!(model.shown_revision(view), Some(next), "{view:?} is not linked in {session:?}");
+                assert!(model.is_visible(view));
+                assert!(!model.hide(view));
+                let error = model.close_view(CommandId::Caller(state), Origin::Solver, view).expect_err("fixed");
+                assert_eq!(error.code, code::VIEW_NOT_CLOSABLE);
+            }
+            let frame = model.frame_input();
+            assert_eq!(frame.revision, next);
+            let linked: Vec<&ViewId> =
+                frame.views.iter().filter(|drawn| drawn.bundle).map(|drawn| &drawn.view).collect();
+            assert_eq!(linked, vec![&fixed[0], &fixed[1]]);
+            run_all(&mut model);
+            for (view, _) in &further {
+                assert_eq!(model.shown_revision(view), Some(next));
+                trace.push(format!("{view:?}: {:?} {:?}", model.generation(view), model.status(view)));
+            }
+            trace.push(format!("{:?}", model.usage()));
+        }
+        let open: Vec<ViewId> = fixed.iter().chain(further.iter().map(|(view, _)| view)).cloned().collect();
+        assert_eq!(model.views(), open.as_slice());
+        traces.push(trace);
+    }
+    assert!(traces.windows(2).all(|pair| pair[0] == pair[1]), "a profile changed linkage or admission");
+}
+
+/// CT-RPI-23, boundary: built-in output keeps the interim boundary under either chart evaluator. In every profile,
+/// for every class of the interim reading (BND.69) and with the built-in stage or a checked vertex stage, a built-in
+/// source's output is installed and drawn with the block the host filled: the session's profile, the built-in source
+/// and its manifest class. The runner returns content only and cannot set the block; the vertex stage, and its
+/// fallback to the built-in chain, change the drawing chain and never the block. A standalone publication keeps the
+/// block it carries, so output of another profile is not relabelled (RPI.45, RPI.81, BND.22, BND.26, BND.27).
+#[test]
+fn ct_rpi_23_built_in_output_keeps_the_interim_boundary_under_either_chart_evaluator() {
+    let view = ViewId::new("tool");
+    let out = OutputAllowance::new(BIG, 16);
+    let drawn = |model: &ViewModel, expected: StageUse, block: &Provenance| {
+        assert_eq!(model.installed(&view).map(|installed| &installed.provenance), Some(block));
+        let Some(Draw::Output { stage, provenance, .. }) = draw_of(model, &view) else { panic!("no output drawn") };
+        assert_eq!((stage, &provenance), (expected, block));
+    };
+    for session in Profile::ALL {
+        for (work, stage) in evaluators() {
+            for class in BoundaryClass::ALL {
+                let mut model = model_in(session, profile(&[("frame_work", 40)]), rev(11, 1, 1, 11));
+                let decl = Declared { class: Some(class), ..declared(Depends::STATE, work) };
+                model.open_view(Origin::Solver, view.clone(), built_in("repair"), decl).expect("fits");
+                let block = Provenance { profile: session, producer: built_in("repair"), class: Some(class) };
+                model.pump(|job| RunOutcome::Published(content(job.job.0 as u8)));
+                drawn(&model, stage, &block);
+                model.adopt(&bundle(rev(12, 1, 1, 12))).expect("adopted");
+                model.pump(|_| RunOutcome::Published(content(0xEE)));
+                drawn(&model, stage, &block);
+
+                let mut stage = stage;
+                if stage == StageUse::User {
+                    model.resize(&view, 20);
+                    assert!(model.is_fallback(&view), "50 does not fit 40");
+                    stage = StageUse::Fallback;
+                    drawn(&model, stage, &block);
+                }
+
+                let other = Profile::ALL.into_iter().find(|other| *other != session).expect("three profiles");
+                let carried = Provenance { profile: other, ..block.clone() };
+                let input =
+                    PublicationInput { provenance: carried.clone(), ..publication(&model, &view, content(3), out) };
+                assert!(matches!(model.publish(CommandId::Caller(1), &view, input), Status::Completed(_)));
+                drawn(&model, stage, &carried);
+            }
+        }
+    }
+}
+
+// ----- CT-RPI-26, counter half
+
+/// CT-RPI-26, the counter half: hidden and unchanged views add no rebuilds while program views are active (RPI.11,
+/// RPI.62, RM.25). Each frame adopts a new state revision, runs what is due and takes the frame input. The visible
+/// view that depends on the state recomputes, runs, prepares and installs once per frame. A hidden view (with a host
+/// publication waiting), an evicted hidden view, visible views whose declared dependencies did not move, and Global
+/// and Local leave every counter unchanged. Frames without a new revision rebuild nothing anywhere, and showing the
+/// hidden view then rebuilds it once, at the newest revision. Charter E2 and the R-19 gate captures are the
+/// owner-machine half (C9); nothing here is timed.
+#[test]
+fn ct_rpi_26_counter_half_hidden_and_unchanged_views_add_no_rebuilds() {
+    const FRAMES: u64 = 8;
+    let snapshot = |model: &ViewModel, views: &[ViewId]| -> Vec<Counters> {
+        views.iter().map(|view| model.counters(view).expect("open")).collect()
+    };
+    let rebuilds =
+        |counters: Counters| [counters.recomputations, counters.program_runs, counters.preparations, counters.installs];
+    let grown = |after: Counters, before: Counters| -> Vec<u64> {
+        rebuilds(after).iter().zip(rebuilds(before)).map(|(after, before)| after - before).collect()
+    };
+    let mut model = model_at(profile(&[]), rev(11, 1, 1, 11));
+    let active = open(&mut model, "active", Depends::STATE);
+    let hidden = open(&mut model, "hidden", Depends::STATE);
+    let evicted = open(&mut model, "evicted", Depends::STATE);
+    let unchanged = open(&mut model, "unchanged", Depends::of(&[Part::Workspace, Part::Protection]));
+    let constant = open(&mut model, "constant", Depends::NONE);
+    assert_eq!(run_all(&mut model), 5);
+    let quiet = [hidden.clone(), evicted.clone(), unchanged, constant, ViewId::global(), ViewId::local()];
+    let quiet_before = snapshot(&model, &quiet);
+    let active_before = model.counters(&active).expect("open");
+
+    assert!(model.hide(&hidden) && model.hide(&evicted));
+    model.evict(&evicted).expect("evicted");
+    let waiting = CommandId::Caller(1);
+    let input = publication(&model, &hidden, content(1), OutputAllowance::new(BIG, 16));
+    assert_eq!(model.publish(waiting, &hidden, input), Status::Accepted);
+    let mut newest = *model.adopted();
+    for frame in 1..=FRAMES {
+        newest = rev(11 + frame, 1, 1, 11 + frame as u8);
+        model.adopt(&bundle(newest)).expect("adopted");
+        run_all(&mut model);
+        let input = model.frame_input();
+        assert_eq!(input.revision, newest);
+        assert!(input.views.iter().all(|drawn| drawn.view != hidden && drawn.view != evicted));
+        assert_eq!(snapshot(&model, &quiet), quiet_before, "a hidden or unchanged view rebuilt in frame {frame}");
+    }
+    assert_eq!(grown(model.counters(&active).expect("open"), active_before), vec![FRAMES; 4]);
+    assert_eq!(model.receipt(waiting), Some(&Status::Cancelled(CancelReason::ReplacedRevision)));
+
+    let all = model.views().to_vec();
+    let settled = snapshot(&model, &all);
+    for _ in 1..=FRAMES {
+        assert_eq!(model.adopt(&bundle(newest)), Ok(newest));
+        assert_eq!(run_all(&mut model), 0);
+        assert_eq!(model.frame_input().revision, newest);
+    }
+    assert_eq!(snapshot(&model, &all), settled, "a frame without a new revision rebuilt");
+
+    let before = model.counters(&hidden).expect("open");
+    assert_eq!(model.show(&hidden), Ok(true));
+    let mut bases = Vec::new();
+    model.pump(|job| {
+        bases.push(job.base.revision);
+        RunOutcome::Published(content(1))
+    });
+    assert_eq!(bases, vec![newest]);
+    assert_eq!(grown(model.counters(&hidden).expect("open"), before), vec![1; 4]);
 }
 
 // ----- CT-RPI-36
@@ -769,6 +959,139 @@ fn ct_one_30_further_view_keeps_its_base_identity_and_source() {
     assert_eq!(model.source(&v), Some(&source));
     assert_eq!(model.generation(&v), Some(generation));
     assert_eq!(model.shown_revision(&ViewId::global()), model.shown_revision(&ViewId::local()));
+}
+
+// ----- CT-EV3-08, admission semantics
+
+/// A view-lane receipt status. The match is exhaustive, so a commit status or completion kind would not compile here
+/// (RPI.14, RPI.81).
+fn view_lane_status(status: &Status) -> &'static str {
+    match status {
+        Status::Accepted | Status::Running(_) => "open",
+        Status::Completed(Completion { kind: CompletionKind::ViewPublished, .. }) => "view_published",
+        Status::Refused(_) | Status::Failed(_) | Status::Cancelled(_) => "ended",
+    }
+}
+
+/// What a runner can return. The match is exhaustive, so a commit outcome would not compile here (RPI.14).
+fn runner_outcome(outcome: &RunOutcome) -> &'static str {
+    match outcome {
+        RunOutcome::Published(_) => "published",
+        RunOutcome::CutOff(_) => "cut off",
+        RunOutcome::Error(_) => "error",
+    }
+}
+
+/// Runs every startable job, recording its command, and publishes content tagged with the job's state revision.
+fn run_recording(model: &mut ViewModel, commands: &mut Vec<CommandId>) -> usize {
+    model.pump(|job| {
+        commands.push(job.command);
+        let outcome = RunOutcome::Published(content(job.base.revision.state as u8));
+        assert_eq!(runner_outcome(&outcome), "published");
+        outcome
+    })
+}
+
+/// CT-EV3-08, the admission semantics (EV3.11, EV3.13): in every profile, further views are admitted under RPI.81 to
+/// RPI.83 with identity (their `ViewId` and generation), one base revision, source linkage and no program commit
+/// path; Global and Local remain linked and cannot be closed; hidden allocations remain charged; and opening or
+/// showing a view past RM.39's ceilings is refused with `display_plan_ceiling` and queues nothing. The ceilings are
+/// declared fixture values: RM.39's measured ceilings are the renderer-freeze half (C9) and are not run.
+#[test]
+fn ct_ev3_08_admission_semantics_in_every_profile() {
+    let (r11, r12) = (rev(11, 1, 1, 11), rev(12, 1, 1, 12));
+    let (v, w, x) = (ViewId::new("v"), ViewId::new("w"), ViewId::new("x"));
+    let fixed = [ViewId::global(), ViewId::local()];
+    let heavy =
+        declared(Depends::STATE, Workload { vertex_evals: 60, cpu_bytes: 30, gpu_bytes: 40, ..Workload::default() });
+    let light = declared(Depends::STATE, Workload { gpu_bytes: 30, ..Workload::default() });
+    let mut traces = Vec::new();
+    for session in Profile::ALL {
+        let limits = profile(&[("view_vertex_evals", 100), ("adapter_cpu_bytes", 100), ("adapter_gpu_bytes", 100)]);
+        let mut model = model_in(session, limits, r11);
+        let mut commands = Vec::new();
+        let mut trace = Vec::new();
+
+        // RPI.83: only a solver command opens a view; a recomputation holds no permission.
+        let refused = model.open_view(Origin::Recomputation, v.clone(), built_in("orbit"), heavy);
+        assert_eq!(refused.map_err(|error| error.code), Err(code::NOT_GRANTED));
+        assert_eq!(model.views(), &fixed);
+
+        // RPI.81: identity is a `ViewId` in the view namespace and a generation; an ID in use is refused.
+        let generation = model.open_view(Origin::Solver, v.clone(), built_in("orbit"), heavy).expect("admitted");
+        for name in ["v", "global", "local"] {
+            let error = model.open_view(Origin::Solver, ViewId::new(name), overlay(name), light).expect_err("in use");
+            assert_eq!(error.code, code::VIEW_ID_IN_USE);
+        }
+        run_recording(&mut model, &mut commands);
+
+        // RPI.81: one base revision and source linkage (the source, and plans that resolve through installed maps).
+        let installed = model.installed(&v).expect("installed").clone();
+        assert_eq!(installed.base.revision, r11);
+        assert_eq!(model.source(&v), Some(&built_in("orbit")));
+        let maps = &installed.content.maps;
+        assert!(installed.content.plans.iter().all(|plan| maps.iter().any(|map| map.map == plan.source_map)));
+        trace.push(format!("{generation} {:?}", model.status(&v)));
+
+        // ONE.65: Global and Local stay linked and cannot be closed; the further view keeps its one base until it is
+        // republished, and is drawn only as its stale presentation meanwhile.
+        model.adopt(&bundle(r12)).expect("adopted");
+        for view in &fixed {
+            assert_eq!(model.shown_revision(view), Some(r12));
+            let error = model.close_view(CommandId::Caller(1), Origin::Solver, view).expect_err("fixed");
+            assert_eq!(error.code, code::VIEW_NOT_CLOSABLE);
+            assert!(!model.hide(view));
+        }
+        assert_eq!(model.shown_revision(&v), Some(r11));
+        assert_eq!(draw_of(&model, &v), Some(Draw::Stale { base: installed.base }));
+        run_recording(&mut model, &mut commands);
+        assert_eq!(model.shown_revision(&v), Some(r12));
+        trace.push(format!("{:?}", model.status(&v)));
+
+        // RM.39, RPI.82: opening past a ceiling is refused, naming field, request and ceiling, and queues nothing.
+        let error = model.open_view(Origin::Solver, w.clone(), overlay("w"), heavy).expect_err("over");
+        assert_eq!((error.code, ceiling(&error)), (code::DISPLAY_PLAN_CEILING, ("view_vertex_evals", 120, 100)));
+        assert_eq!((model.generation(&w), model.pending(&w)), (None, None));
+
+        // RM.39: a hidden view adds no vertex evaluations and its allocations stay charged.
+        assert!(model.hide(&v));
+        let usage = model.usage();
+        assert_eq!((usage.view_vertex_evals, usage.adapter_cpu_bytes, usage.adapter_gpu_bytes), (0, 30, 40));
+        model.open_view(Origin::Solver, w.clone(), overlay("w"), heavy).expect("fits beside the hidden view");
+        let error = model.show(&v).expect_err("over");
+        assert_eq!(ceiling(&error), ("view_vertex_evals", 120, 100));
+        assert!(!model.is_visible(&v));
+        let error = model.open_view(Origin::Solver, x.clone(), overlay("x"), light).expect_err("over");
+        assert_eq!(ceiling(&error), ("adapter_gpu_bytes", 110, 100));
+        trace.push(format!("{:?}", model.usage()));
+
+        // RM.19: eviction and close move the bytes to safe retirement, still charged until it completes.
+        let token = model.evict(&v).expect("evicted");
+        let refused = model.close_view(CommandId::Caller(2), Origin::Recomputation, &v);
+        assert_eq!(refused.map_err(|error| error.code), Err(code::NOT_GRANTED));
+        assert_eq!(model.close_view(CommandId::Caller(3), Origin::Solver, &v), Ok(None));
+        let error = model.open_view(Origin::Solver, x.clone(), overlay("x"), light).expect_err("still retiring");
+        assert_eq!(ceiling(&error), ("adapter_gpu_bytes", 110, 100));
+        assert!(model.complete_retirement(token));
+        model.open_view(Origin::Solver, x.clone(), overlay("x"), light).expect("fits after retirement");
+
+        // RM.25: a reopened ID is a new identity.
+        let reopened = model.open_view(Origin::Solver, v.clone(), built_in("orbit"), light).expect("free again");
+        assert!(reopened > generation);
+        assert_eq!(run_recording(&mut model, &mut commands), 3);
+        trace.push(format!("{reopened} {:?} {:?}", model.usage(), model.views()));
+
+        // RPI.14: no program commit path. Every request ended on the view lane, and view work never moved the engine
+        // revision or the adopted bundle.
+        assert_eq!(commands.len(), 5);
+        for command in &commands {
+            assert_eq!(model.receipt(*command).map(view_lane_status), Some("view_published"));
+        }
+        assert_eq!(*model.adopted(), r12);
+        assert_eq!(model.bundle(), &validate_engine_bundle(&bundle(r12)).expect("complete"));
+        traces.push(trace);
+    }
+    assert!(traces.windows(2).all(|pair| pair[0] == pair[1]), "a profile changed admission");
 }
 
 // ----- supporting clauses
