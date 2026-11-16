@@ -18,7 +18,7 @@ use c600_run::interp::{self, Request, RowTariff, Sink};
 use c600_run::meter::{
     self, Amounts, ChildRecord, DraftTariffs, Interruption, Outcome, Position, Row, SourceRange, Summary, Tariffs,
 };
-use c600_run::value::{Closure, Quad, Ratio, Record, Text, Value};
+use c600_run::value::{Closure, List, Quad, Ratio, Record, Text, Value};
 use num_bigint::{BigInt, Sign};
 use num_integer::Integer;
 use num_traits::{One, Signed, Zero};
@@ -49,6 +49,8 @@ mod tag {
     pub const CLOSURE: u8 = 13;
     pub const FN: u8 = 14;
     pub const RECEIPT: u8 = 15;
+    /// A list of the LP2 IR draft. Draft until C3 gives the new IR forms their transfer form.
+    pub const LIST: u8 = 16;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -213,6 +215,15 @@ pub fn encode_value(value: &Value, e: &mut Enc) -> Result<(), Unencodable> {
                 e.u8(tag::FN);
                 e.u64(*f as u64);
             }
+            Value::List(l) => {
+                e.u8(tag::LIST);
+                e.count(l.items().len());
+                for v in l.items().iter().rev() {
+                    stack.push(Item::Value(v));
+                }
+            }
+            // The other LP2 draft forms have no transfer form until C3 gives them one.
+            _ => return Err(Unencodable("an LP2 draft value without a transfer form")),
         }
     }
     Ok(())
@@ -228,6 +239,7 @@ pub fn value_bytes(value: &Value) -> Result<Vec<u8>, Unencodable> {
 enum Frame {
     Record { receipt: bool, left: usize, fields: Vec<(Arc<Text>, Value)>, name: Option<Arc<Text>> },
     Closure { code: usize, left: usize, captures: Vec<Value> },
+    List { left: usize, items: Vec<Value> },
 }
 
 fn text_value(d: &mut Dec) -> Result<Arc<Text>, Malformed> {
@@ -310,6 +322,15 @@ pub fn decode_value(d: &mut Dec) -> Result<Value, Malformed> {
                 }
             }
             tag::FN => Value::Fn(d.usize()?),
+            tag::LIST => {
+                let n = d.count(1)?;
+                if n == 0 {
+                    Value::List(Arc::new(List::new(Vec::new())))
+                } else {
+                    stack.push(Frame::List { left: n, items: Vec::with_capacity(n.min(64)) });
+                    continue;
+                }
+            }
             _ => return Err(Malformed::new("an unknown value tag")),
         };
         loop {
@@ -326,6 +347,11 @@ pub fn decode_value(d: &mut Dec) -> Result<Value, Malformed> {
                     *left -= 1;
                     *left
                 }
+                Frame::List { left, items } => {
+                    items.push(value);
+                    *left -= 1;
+                    *left
+                }
             };
             if left > 0 {
                 break;
@@ -339,6 +365,7 @@ pub fn decode_value(d: &mut Dec) -> Result<Value, Malformed> {
                 Some(Frame::Record { receipt: false, fields, .. }) => Value::Record(Arc::new(Record::new(fields))),
                 Some(Frame::Record { receipt: true, fields, .. }) => Value::Receipt(Arc::new(Record::new(fields))),
                 Some(Frame::Closure { code, captures, .. }) => Value::Closure(Arc::new(Closure::new(code, captures))),
+                Some(Frame::List { items, .. }) => Value::List(Arc::new(List::new(items))),
                 None => return Err(Malformed::new("a value frame went missing")),
             };
         }
@@ -496,6 +523,12 @@ fn ty(t: &Ty, e: &mut Enc, depth: usize) -> Result<(), Unencodable> {
             e.u8(17);
             e.text(name);
         }
+        // LP2 draft forms: a list has tag 18; the others have no transfer form until C3 gives them one.
+        Ty::List(element) => {
+            e.u8(18);
+            qty(element, e, depth + 1)?;
+        }
+        _ => return Err(Unencodable("an LP2 draft type without a transfer form")),
     }
     Ok(())
 }
@@ -568,6 +601,7 @@ fn decode_ty_at(d: &mut Dec, depth: usize) -> Result<Ty, Malformed> {
         }
         16 => Ty::Receipt,
         17 => Ty::Var(d.text()?.to_string()),
+        18 => Ty::List(Box::new(decode_qty_at(d, depth + 1)?)),
         _ => return Err(Malformed::new("an unknown type tag")),
     })
 }
