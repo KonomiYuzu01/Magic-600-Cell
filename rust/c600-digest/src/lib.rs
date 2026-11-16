@@ -1,4 +1,7 @@
-//! SHA-256 (FIPS 180-4), written here so that the crate needs no dependency. Source digests use it (LG1.3, LG4.12).
+//! SHA-256 (FIPS 180-4), written here so that no crate needs a dependency for it. Source digests (LG1.3, LG4.12)
+//! and the counter-addressed generator `sha256-counter-draft-1` (DET.61) use it.
+
+#![forbid(unsafe_code)]
 
 const K: [u32; 64] = [
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98,
@@ -15,6 +18,11 @@ const H0: [u32; 8] = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f
 
 /// The SHA-256 of `data` as 64 lowercase hexadecimal digits.
 pub fn sha256_hex(data: &[u8]) -> String {
+    sha256(data).iter().map(|b| format!("{b:02x}")).collect()
+}
+
+/// The SHA-256 of `data`.
+pub fn sha256(data: &[u8]) -> [u8; 32] {
     let mut h = H0;
     let mut message = data.to_vec();
     message.push(0x80);
@@ -53,7 +61,11 @@ pub fn sha256_hex(data: &[u8]) -> String {
             *x = x.wrapping_add(y);
         }
     }
-    h.iter().map(|x| format!("{x:08x}")).collect()
+    let mut out = [0u8; 32];
+    for (chunk, word) in out.chunks_exact_mut(4).zip(h) {
+        chunk.copy_from_slice(&word.to_be_bytes());
+    }
+    out
 }
 
 #[cfg(test)]

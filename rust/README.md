@@ -12,9 +12,14 @@ runs on its own interpreter over the typed IR (route RT1, LQ9). The frozen archi
 | `c600-ir` | The typed IR draft `c600-ir-draft-1`: data types, and short constructors for hand-built test programs |
 | `c600-check` | The checker over the IR: base types (LG2.1), exactness (LG2.19 to LG2.22), effects, capabilities, views and capability separation (LG3), report order and contract refusal (LG4.1, LG4.3) |
 | `c600-syntax` | The parser of `.6cs` source files: source byte checks, parsing with recovery, the canonical layout, and lowering into the IR draft with a source map (LG1, LG4.12) |
+| `c600-digest` | SHA-256, raw and in hex, for the other crates |
+| `c600-run` | The interpreter over the IR draft (route RT1) with the `lp1-exec-draft-1` reference meter and generator (M2), and the run-time boundary under capability separation with FP.17's provenance blocks (M3) |
+| `c600-kernel` | The 600-cell-Full kernel read straight from `assets/`, its chapter 01 API, and the oracle adapter `c600-oracle-adapter` (M4) |
 
-The checker and the syntax crate depend on the IR crate only; the syntax crate's tests also run the checker. The later
-interpreter will depend on the IR and not on the checker.
+The checker depends on the IR crate only, and the syntax crate on the IR and digest crates; the syntax crate's tests
+also run the checker. The interpreter depends on the IR and digest crates and the big-integer crates, not on the
+checker; its tests run checked source programs, so the checker and the syntax crate are its dev-dependencies. The
+kernel depends on the digest crate only.
 
 ## Running the tests
 
@@ -26,12 +31,13 @@ the ID and the part (PHS.62). The exactness tests read the frozen
 
 ## Dependencies
 
-None outside the Rust standard library yet. An external crate needs the owner's approval first (RTE.70), and each
-approved one is listed here with its licence.
+Only the Rust standard library and the crates below. An external crate needs the owner's approval first (RTE.70), and
+each approved one is listed here with its licence.
 
 Approved on 16 November 2026 for LP2's big integers
-([owner decision](../docs/wiki/decisions/owner-decisions-2026-11-16-big-integers.md)); M2 adds them, pinned exactly
-with the archive checksums of LX-5's crate run:
+([owner decision](../docs/wiki/decisions/owner-decisions-2026-11-16-big-integers.md)); M2 added them, pinned exactly
+with the archive checksums of LX-5's crate run. The archives are vendored in `vendor/` with source replacement in
+`.cargo/config.toml`, so the tests need no network:
 
 | Crate | Version | Licence, read from the verified archive |
 | --- | --- | --- |
@@ -96,7 +102,8 @@ with the archive checksums of LX-5's crate run:
   approximate-control bit follows named functions only, not declared callable types.
 - Not in M1, because they need the runtime (M2, M3): the built-in tool column of the grant table, the fixed
   acknowledgement of BND.43, the saved-word half of CT-LG3-07, the undo half of CT-LG3-03 and research output that
-  never becomes a solving preview (BND.61).
+  never becomes a solving preview (BND.61). M3 builds the acknowledgement, the saved-word half and BND.61's refusal
+  at run time (below); the built-in tool column and the undo half of CT-LG3-03 stay open.
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
 
 ## Status of M7: the parser
@@ -108,7 +115,7 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
   missing header gives `LG1:syntax.edition_missing` at an insertion point, another edition gives
   `LG1:syntax.edition_unsupported`, and nothing after the header is read. Source is strict UTF-8 with LF line ends and
   no byte-order mark; anything else is `LG1:syntax.invalid_encoding` with no span, the digest of the raw input and the
-  offending byte interval (CT-ERR-05). Digests are SHA-256, written in the crate (`c600-syntax/src/sha256.rs`).
+  offending byte interval (CT-ERR-05). Digests are SHA-256, from `c600-digest`.
 - Grammar. LX-8's candidate A
   ([description](../work/experiments/language-lx/lx8-surfaces/candidate-a/DESCRIPTION.md)), with these additions
   for the IR draft: `export` before `fn`, `view` or `command`; generic parameters `fn f<T,E>(...)`, which name types
@@ -156,3 +163,87 @@ The syntax details below are drafts, settled under the plan's section 8. They fr
 - Not run or not applicable, which is no pass (PHS.63): CT-LG1-01's second half, mixed dependency editions, while one
   edition exists; CT-RTE-18 (LQ13 was answered without it).
 - Evidence kind: source and fixture. A pass is not Windows/DirectX, input, long-session or performance evidence.
+
+## Status of M2: the interpreter and the meter
+
+- The reference meter of chapter 09 (DET.55 to DET.60) replays the 40 frozen contract-vector traces with every field
+  compared exactly, and the meter boundary vectors derived from them (`c600-run/tests/traces.rs`). The frozen test
+  tariffs are `Tariffs::TEST`, labelled test-only.
+- `load` checks the IR identity and the program's names, arities, literals and precisions
+  (`LG4:input.ir_version_unsupported`, `LG4:input.ir_rejected`). `Loaded::run` evaluates with an explicit work stack:
+  one charge row per operation (DET.55), interruption observed before each operation (DET.56), aliases and owners
+  (DET.58), DET.59's priced encoding before publication, the generator `sha256-counter-draft-1` (DET.61) and
+  `display_if` charging the selected branch only (DET.64). A stop names the call path, the operation and its source
+  range.
+- Values: exact `Int`, `Rat` and Q(√5) arithmetic, order and equality with widening, on `num-bigint`; `Approx<p>` for
+  p in {24, 53, 113}, rounded to nearest with ties to even; canonical `c600-json-1` bytes with FP.6's exact and `f64`
+  forms. Deep values compare, encode and drop without recursion.
+- Drafts, which freeze with the IR (PHS.49): operation names, the stop locator, the frame layout, the receipt request
+  record, the JSON form of a word (LG2.18's word keys stay open) and `DraftTariffs`, test-only tariffs for the rows the
+  frozen vectors do not price. The IR draft has one read construct for snapshots and workspace records; the IR freeze
+  should split it.
+- Evidence kind: source and fixture.
+
+## Status of M3: the run-time boundary
+
+- `provenance` reads, checks and builds FP.17's provenance blocks: a strict `c600-json-1` reader, FP.5's canonical
+  bytes and FP.17's validator as `check_vectors.py` has it. A block that does not read, is in another form or names a
+  pin the policy in force does not hold gives `PS1:capability.provenance_incompatible`. FP.18's four example blocks
+  digest as frozen, and the runtime rebuilds the two capability-form blocks byte for byte.
+- `boundary::Boundary` is the runtime's host adapter for one run. The host builds the block of everything a run
+  stores or proposes (BND.22), with the blocks the run took in as parts (BND.24); workspace records and granted files
+  keep their blocks (BND.32). In a solving run each proposal passes preview admission (BND.61, BND.84, BND.85) and the
+  program gets one fixed acknowledgement whatever the engine answered (BND.42, BND.43), while the shell keeps the full
+  answer. In tool authoring and research a proposal becomes a capture and the engine builds nothing (BND.60). The flow
+  rule stays off (BND.41): `read_state` feeds records only, and `LG3:capability.flow_refused` is never raised
+  (CT-BND-24).
+- Tests (`c600-run/tests/boundary.rs`): the saved-word half of CT-LG3-07, and parts of CT-FP-02, CT-BND-01 to
+  CT-BND-04, CT-BND-07, CT-BND-11 to CT-BND-14, CT-BND-22 and CT-BND-26 to CT-BND-30, each naming its part.
+- Drafts, which freeze with the IR and the command table: the acknowledgement is `{base, id}`, with the proposal
+  number `<run>/<n>` as `id`; records are per run; the adapter serves a read of a name it stores as a workspace record
+  and passes any other read to the engine; the engine's preview call does not take the block yet (KN5.9); the store is
+  in memory and returns a stored value as written, and M6's session store decodes by the reader's type.
+- Open: a built-in repair-list pick (CT-BND-29's third case) is refused with `PS1:capability.provenance_incompatible`
+  until the session store resolves `c600-pick` records (M6). The command layer is not built.
+- Evidence kind: source and fixture.
+
+## Status of M4: the 600-cell-Full kernel
+
+- `Kernel::load` reads `assets/` directly. It checks that each listed name is a plain file name in `assets/` and that
+  the manifest's `model_id` is the SHA-256 of its file list as `build_assets.py` writes it (0.4 does not check this),
+  checks the SHA-256 of every listed file, and reads the archives with the crate's own ZIP, DEFLATE, gzip, NPY and JSON
+  readers, so the kernel needs the standard library and `c600-digest` only. The identity is the manifest's `model_id`
+  with the SHA-256 of the manifest's bytes.
+- The mechanics follow 0.4's `core.py`, with the net-effect star cache under 0.4's guard and frame checks
+  (ADR-L12.7, RTE.18). The integrator's decisions (a) to (e) are in the crate documentation: Net protection at label
+  level; a recipe validated whole, under 0.4's limits and texts, before any effect; the trace's `model` block from the
+  loaded identity; `progress_sha256` as the LX-6 port computed it; and the frozen case files as the only inputs, so no
+  step needs NumPy.
+- `tests/test_kernel_oracle.py` builds the adapter in release and requires `tools/oracle/compare.py` to report O01 to
+  O07 equal with no omitted fields (3,201 steps), a tampered state hash to fail at its step, a case with another model
+  identity to be refused without a trace, and the KN2.9 agreement of the star cache with per-primitive replay over
+  210 stars. `tools/ci/run_headless.py` lists it.
+- `c600-kernel/tests/load.rs` tests the loader's refusals: a model ID that does not name the file list, a changed or
+  missing listed file, a needed file that is not listed, names that are not plain file names in `assets/`, and
+  malformed manifests. The checks inside the verified archives (a primitive that is not a permutation of its support,
+  malformed offsets, an execution tree whose walk does not end) are not tested yet: such a test has to write a changed
+  archive under a new model ID, and the crate only reads archives.
+- Contract tests: CT-KN1-01, the labels half of CT-KN1-05, the 600-cell-Full half of CT-KN2-01 and CT-KN2-04.
+- Draft choices: a failed star certificate or asset check has no code in chapter 13's catalogue yet, so the kernel
+  reports a `CertificateError` or `LoadError`; an orbit outside 0 to 34 in a protected set is refused with
+  `KN2:input.named_object_invalid`; with one model in `assets/`, the other-identity control changes the case instead
+  of loading a second model.
+- Not built: the `positions` row, Strict protection, streaming words (KN2.10, CT-KN2-07), `open_snapshot` by
+  `RevisionRef` (with the session store, M6), the reachability claim of `Derived`, budgets (KN7) and the jumbling half
+  (M5). PHS.18 also asks for the language's new cases through the adapter; they are not written yet.
+- Critical-path read (`AGENTS.md`, Codex minimum): a fresh Claude subagent on a smaller model read the kernel with the
+  acceptance check. Its two major findings were fixed before the pull request, and a scoped re-check found no blocking
+  finding: R1, the model ID was not tied to the file list; R2, the loader's refusals had no tests (the checks inside the
+  archives stay untested, above). Deferred: R3, `Refused` is not yet KN2.11's
+  `{first_refused_prefix: Nat, outcome, certificates}`, because Net protection judges the whole net map and has no
+  first refused prefix, so what a Net refusal reports needs a decision; R4, a failed certificate has no catalogue code
+  (draft choices, above); the second half of R5, the ZIP reader's duplicate-name check is quadratic in the member
+  count, on digest-verified bytes only. Fixed: the first half of R5, a drive or stream colon in a listed name. No
+  action: R6, the KN2.9 agreement and the cached path share the inverse-move handling, which O01 to O03 cover.
+- Evidence kind: source and fixture. The checks ran on Windows only; the Linux leg was not run. The timings the check
+  prints are informational, not performance evidence.

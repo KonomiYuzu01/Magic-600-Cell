@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-16] update | The language: M2 to M4, the interpreter, the run-time boundary and the kernel
+`rust/c600-run` runs the IR draft under the `lp1-exec-draft-1` reference meter, which replays the 40 frozen traces exactly, and its run-time boundary gives stored words their provenance blocks, refuses a tool's saved word at preview admission (the saved-word half of CT-LG3-07) and gives a solving run one fixed acknowledgement (BND.43); `rust/c600-kernel` reads 600-cell-Full from `assets/` and replays the oracle cases O01 to O07 exactly through chapter 01's API (`tests/test_kernel_oracle.py`). At the owner's request the three milestones share one pull request; the drafts and what is not built are listed in `rust/README.md`.
+
 ## [2026-11-16] update | The language: lowering checks calls and exports
 Lowering refuses, at its source text, a call of a module function with a wrong number of arguments and a call or name of an imported function that its module does not export, so neither reaches the checker's `IrError` from source any more. A function value called with another number of arguments is `LG2:type.mismatch` at the called value, because the count is part of its type; `rust/README.md` lists what still refuses the whole program.
 

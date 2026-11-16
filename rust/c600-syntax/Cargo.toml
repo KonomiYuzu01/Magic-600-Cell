@@ -6,6 +6,7 @@ edition.workspace = true
 publish.workspace = true
 
 [dependencies]
+c600-digest = { path = "../c600-digest" }
 c600-ir = { path = "../c600-ir" }
 
 [dev-dependencies]

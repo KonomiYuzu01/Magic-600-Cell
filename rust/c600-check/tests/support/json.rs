@@ -4,7 +4,8 @@
 pub enum Json {
     Null,
     Bool(bool),
-    Num(f64),
+    /// A number keeps its JSON text, so that integers of any size compare exactly.
+    Num(String),
     Str(String),
     Arr(Vec<Json>),
     Obj(Vec<(String, Json)>),
@@ -46,6 +47,14 @@ impl Json {
     pub fn bool(&self) -> Option<bool> {
         match self {
             Json::Bool(b) => Some(*b),
+            _ => None,
+        }
+    }
+
+    /// The text of a number.
+    pub fn num(&self) -> Option<&str> {
+        match self {
+            Json::Num(n) => Some(n),
             _ => None,
         }
     }
@@ -104,7 +113,8 @@ impl Parser<'_> {
             self.i += 1;
         }
         let text = std::str::from_utf8(&self.s[start..self.i]).map_err(|e| e.to_string())?;
-        text.parse::<f64>().map(Json::Num).map_err(|e| format!("bad number `{text}`: {e}"))
+        text.parse::<f64>().map_err(|e| format!("bad number `{text}`: {e}"))?;
+        Ok(Json::Num(text.to_string()))
     }
 
     fn hex4(&mut self) -> Result<u32, String> {

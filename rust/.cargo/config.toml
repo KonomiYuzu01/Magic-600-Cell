@@ -1,0 +1,7 @@
+# The approved crates are vendored, so `cargo test --locked --offline` needs no network (LP2 plan, section 3).
+# Cargo checks each vendored file against .cargo-checksum.json and each package against Cargo.lock.
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "vendor"
