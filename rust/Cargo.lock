@@ -131,6 +131,7 @@ dependencies = [
  "c600-ir",
  "c600-kernel",
  "c600-run",
+ "c600-runtime",
  "c600-syntax",
  "c600-view",
 ]
