@@ -2,6 +2,9 @@
 
 Append-only. Format: `## [YYYY-MM-DD] op | title`, then one or two sentences.
 
+## [2026-11-16] update | The 16 November decisions in the rule files
+At the owner's word ("write them all in"), `CLAUDE.md` carries points 4 and 5 of the [time-saving decision](decisions/owner-decisions-2026-11-16-time-saving.md), and the briefing records that decision and the [LQ13 answer](decisions/owner-decisions-2026-11-16-lq13.md) and no longer says that LQ13 waits. The briefing is an input of the frozen migration format packet, so its pin was refreshed under FP.1 with the old and new identities on the LQ13 page; no frozen clause, vector or dependency meaning changed.
+
 ## [2026-11-16] decision | LQ13: the syntax is candidate A (braces)
 The owner answered LQ13 after reading a one-page comparison of the three LX-8 candidates: the source syntax of 600 Cell Script follows candidate A, with declaration keywords, braces, local `let` and an explicit `return` ([decision](decisions/owner-decisions-2026-11-16-lq13.md)). The meaning is unchanged, since all three candidates lower the LX-8 corpus to the same IR; CT-RTE-18 stays not run, RTE.63 and the human-protocol fields stay open for any later human test, and no frozen text is edited.
 
