@@ -196,3 +196,7 @@ class RustJumbleEngine:
     def rim_summary(self, caps=None, *, eval_budget=None):
         """Every cap's status and rim (or the named caps'), with grip N when all 600 are summarised."""
         return self.call('rim_summary', caps=None if caps is None else list(caps), eval_budget=eval_budget)
+
+    def release_check(self, letter, *, cap=None, eval_budget=None):
+        """The one-letter word check of a released letter, plus its cap's rim before and after, floor and delta N_c."""
+        return self.call('release_check', letter=list(letter), cap=cap, eval_budget=eval_budget)

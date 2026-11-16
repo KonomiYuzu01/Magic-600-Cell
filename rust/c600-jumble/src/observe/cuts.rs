@@ -1,5 +1,5 @@
-//! The JI.6 and JI.7 observations that M5 left to M8 (LP2 plan, section 11): the rim summary of every cap. Each
-//! call reads a jumbled state exactly and changes nothing.
+//! The JI.6 and JI.7 observations that M5 left to M8 (LP2 plan, section 11): the rim summary of every cap and the
+//! release check of one letter. Each call reads a jumbled state exactly and changes nothing.
 //!
 //! The rim of an admissible cap c follows rim.py's `rim_sets`: in every domain whose frame carries n_c to a pole e,
 //! the cut cells at e that the domain holds on at least one side ([`super::cap_cells`]). A cell's upper chamber is
@@ -145,4 +145,80 @@ pub fn rim_summary(
         ("grip_n", if grip_n_undefined.is_none() { int(grip_n) } else { Value::Null }),
         ("grip_n_undefined", grip_n_undefined.map_or(Value::Null, text)),
     ]))
+}
+
+/// The rim of cap c on a state, counted over [`cap_cells`]; it is the cap's rim when c is admissible there.
+fn cap_rim(ctx: &Context, t: &Tables, state: &State, c: usize) -> Result<Rim, String> {
+    let facts = pose_facts(ctx, t, state)?;
+    let dom = domains(ctx, t, state, &facts)?;
+    let mut rim = Rim::default();
+    for (_, _, occ) in cap_cells(ctx, t, &dom, c) {
+        rim.add(occ);
+    }
+    Ok(rim)
+}
+
+/// JI.6 `release_check`: the one-letter [`word_check`] of a released letter, whose fields it carries unchanged
+/// (JI.11), plus the rim of the letter's cap (its grip) before and after the letter, the cap's floor and the change
+/// of N_c. The optional `cap` names the cap whose straddler count supplies delta-u, as in the word check. A refused
+/// letter (its cap blocked, or uncertain under the budget) leaves the end state and both rims undefined, never zero,
+/// with the reason in `rim_undefined`. A twist at an admissible cap moves its inside pieces rigidly, so the cap stays
+/// admissible and its floor F_c is the same after the letter. A `cap` outside 0..599 is refused (JI.45) and nothing is
+/// read; the start state never changes.
+pub fn release_check(
+    ctx: &Context,
+    start: &State,
+    letter: &([i64; 2], Twist),
+    cap: Option<i64>,
+    eval_budget: Option<u64>,
+) -> Result<Value, String> {
+    let checked = word_check(ctx, start, std::slice::from_ref(letter), None, cap, eval_budget)?;
+    let Value::Object(mut fields) = checked else {
+        return Err("a word check answers with an object".into());
+    };
+    if fields.get("status").and_then(Value::as_str) != Some("ok") {
+        return Ok(Value::Object(fields));
+    }
+    let twist = &letter.1;
+    let c = twist.grip;
+    let rim: Vec<(&str, Value)> = match fields.get("failing_status").and_then(Value::as_str) {
+        None => {
+            let t = tables(ctx)?;
+            let before = cap_rim(ctx, t, start, c)?;
+            let mut end = start.clone();
+            let outcome = end.apply(ctx, twist, eval_budget, &[]).map_err(|e| e.0)?;
+            if outcome.status != Status::Admissible {
+                let status = outcome.status.as_str();
+                return Err(format!("cap {c}: the admissible letter is {status} on a second application"));
+            }
+            let after = cap_rim(ctx, t, &end, c)?;
+            if after.floor() != before.floor() {
+                return Err(format!("cap {c}: the floor changed under a twist at the cap"));
+            }
+            vec![
+                ("rim_before", obj(before.fields())),
+                ("rim_after", obj(after.fields())),
+                ("floor", int(before.floor())),
+                ("delta_N_c", int(after.n() - before.n())),
+                ("rim_undefined", Value::Null),
+            ]
+        }
+        Some(status) => {
+            let reason = match status {
+                "blocked" => "cap_not_admissible",
+                "uncertain" => "uncertain_under_budget",
+                _ => "letter_refused",
+            };
+            vec![
+                ("rim_before", Value::Null),
+                ("rim_after", Value::Null),
+                ("floor", Value::Null),
+                ("delta_N_c", Value::Null),
+                ("rim_undefined", text(reason)),
+            ]
+        }
+    };
+    fields.insert("letter_cap".to_owned(), int(c as i64));
+    fields.extend(rim.into_iter().map(|(name, value)| (name.to_owned(), value)));
+    Ok(Value::Object(fields))
 }

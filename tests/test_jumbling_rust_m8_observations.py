@@ -5,8 +5,14 @@ the driver (`differential/candidate/rust_jumble.py`) and compared with J1's refe
 undefined fields and refusals included:
 
 - `rim_summary` against `references/observations.observe` on the recorded I_a@40 stop and the I_a prefixes 10, 20
-  and 60 (J1's `tests/test_jumbling_observations.py`). CT-KN2-01 (part: the J1 harness through the kernel API for
-  KN2.4's `rim_summary`; not run: `release_check`, `covers`, `repair_list`, `nu` and `correction_set_check`).
+  and 60 (J1's `tests/test_jumbling_observations.py`);
+- `release_check` against `leads/x5_release.release_check` on census seed 7101 before steps 44, 70 and 97, each
+  step's first letter, and a blocked letter and a bad cap before step 97 (J1's `tests/test_jumbling_leads_repair.py`).
+
+CT-KN2-01 (part: the J1 harness through the kernel API for KN2.4's `rim_summary` and `release_check`; not run:
+`covers`, `repair_list`, `nu` and `correction_set_check`, and the 600-cell-Full oracle O01 to O07).
+CT-KN2-04 (part: the release check of a blocked letter leaves the input digest unchanged at J1's state; not run here:
+the off-menu and uncertain letters, which `rust/c600-jumble/tests/observations.rs` runs).
 
 The Rust unit tests of the refusals are in `rust/c600-jumble/tests/observations.rs`. The adapter is built with
 `cargo build --release --locked --offline` in rust/. A missing Rust toolchain or NumPy fails the check: a test that did
@@ -18,6 +24,7 @@ import sys
 
 sys.dont_write_bytecode = True
 
+import copy
 from functools import lru_cache
 import json
 from pathlib import Path
@@ -29,13 +36,15 @@ JUMBLING = ROOT / 'research' / 'jumbling'
 FIXTURE_DIR = JUMBLING / 'fixtures'
 NAMED_OBJECT_INVALID = 'KN2:input.named_object_invalid'
 RIM_FIELDS = ('N_c', 'In_c', 'Out_c', 'A_c', 'F_c', 'at_floor')
+CENSUS_SEED = 7101
+CENSUS_STEPS = (17, 44, 70, 97)
 
 _SECONDS = {}
 _ENGINES = {}
 
 
 def setUpModule():
-    global np, census, R, obs_refs, O
+    global np, census, R, obs_refs, O, X5
     try:
         import numpy as np
     except ImportError as error:
@@ -45,6 +54,7 @@ def setUpModule():
     from differential.leads import census
     from differential.candidate import rust_jumble as R
     from differential.references import obs_refs, observations as O
+    from differential.leads import x5_release as X5
     if Path(census.seams.CACHE).resolve().is_relative_to(ROOT):
         raise AssertionError('the centroid cache is inside the repository')
     started = perf_counter()
@@ -108,6 +118,66 @@ def candidate_at_prefix(t):
     candidate().start(doc['menu'])
     for record in doc['journal']['records'][:t]:
         candidate().apply(record_step(record))
+
+
+def _clone(S):
+    """A copy of J1's restorer that J1's own repair-list tests make (`tests/test_jumbling_leads_repair.py`); the
+    context, the immutable matrices and the pose entries are shared."""
+    st = copy.copy(S.st)
+    st.pose_id = S.st.pose_id.copy()
+    st._poses = list(S.st._poses)
+    st._lookup = dict(S.st._lookup)
+    st.journal = list(S.st.journal)
+    st._anchor_cache = {}
+    result = census.seams.SeamRestorer(st, S.M)
+    result.moves = list(S.moves)
+    return result
+
+
+@lru_cache(maxsize=1)
+def _census_states():
+    """{n: (word, S)}: J1's restorer before steps 17, 44, 70 and 97 of census seed 7101, in one walk, with each step's
+    recorded word: the states of J1's covers, release-check and repair-list tests."""
+    started = perf_counter()
+    states = {}
+    for step in census.walk(CENSUS_SEED, last=max(CENSUS_STEPS)):
+        if step.n in CENSUS_STEPS:
+            states[step.n] = ([tuple(letter) for letter in step.word], _clone(step.S))
+    _SECONDS['j1 census walk'] = perf_counter() - started
+    return states
+
+
+@lru_cache(maxsize=1)
+def _candidate_census():
+    """The candidate replays the census record's scramble history and restorer moves once and keeps the state before
+    each of the steps (`keep`); a test selects one with `use`."""
+    started = perf_counter()
+    _, record = census.load(CENSUS_SEED)
+    bounds = [0]
+    for step in record['steps']:
+        bounds.append(bounds[-1] + step['twists'])
+    candidate().start(census.menu().record())
+    letters = [tuple(m) for m in record['history']]
+    done = 0
+    for n in sorted(CENSUS_STEPS):
+        letters += [tuple(m) for m in record['moves'][done:bounds[n - 1]]]
+        done = bounds[n - 1]
+        for grip, item in letters:
+            if candidate().apply(letter_step(grip, item)).status != 'admissible':
+                raise AssertionError(f'census letter ({grip}, {item}) is refused')
+        letters = []
+        candidate().keep(f'census-{n}')
+    _SECONDS['candidate census replay'] = perf_counter() - started
+    return True
+
+
+def at_census(n):
+    """J1's step word and restorer before step n of census seed 7101, with the candidate at the same state."""
+    word, S = _census_states()[n]
+    _candidate_census()
+    if candidate().use(f'census-{n}').digest != S.st.digest():
+        raise AssertionError(f'the candidate and J1 differ before census step {n}')
+    return word, S
 
 
 class TimedCase(unittest.TestCase):
@@ -180,6 +250,63 @@ class RimSummaryTests(TimedCase):
                              ('uncertain', None, 'uncertain_under_budget'))
             self.assertTrue(all(row[field] is None for field in RIM_FIELDS))
         self.assertEqual(candidate().record()['digest'], before)
+
+
+class ReleaseCheckTests(TimedCase):
+    def test_census_releases_match_j1(self):
+        """J1's three release checks (`tests/test_jumbling_leads_repair.py`: census seed 7101 before steps 44, 70 and
+        97, each step's first letter): N_c before and after, the floor, delta N_c and the height counts equal
+        `x5_release.release_check`, and the start digest is J1's input digest. Every field the one-letter word check
+        has is the word check's (JI.11). A twist at an admissible cap changes N only on its cut, so the word check's
+        total delta N is J1's delta N_c too."""
+        for n in (44, 70, 97):
+            with self.subTest(step=n):
+                word, S = at_census(n)
+                c, x = word[0]
+                before = S.st.digest()
+                reference = timed('j1 release_check', X5.release_check, S, c, x)
+                answer = timed('candidate release_check', candidate().release_check, [c, x])
+                self.assertEqual(answer['status'], 'ok')
+                self.assertEqual(answer['start_digest'], reference['input_digest'])
+                self.assertEqual((answer['admissible'], answer['letter_cap'], answer['rim_undefined']), (True, c, None))
+                self.assertEqual(answer['rim_before']['N_c'], reference['N_c_now'])
+                self.assertEqual(answer['rim_after']['N_c'], reference['N_c_after'])
+                self.assertEqual(answer['floor'], reference['floor'])
+                self.assertEqual(answer['rim_after']['F_c'], reference['floor'])
+                self.assertEqual(answer['delta_N_c'], reference['delta_N'])
+                self.assertEqual(answer['delta_N'], reference['delta_N'])
+                for field in ('heights_before', 'heights_after', 'delta_n_h'):
+                    self.assertEqual(answer[field], reference[field], field)
+                word_check = candidate().word_check([[c, x]])
+                for key, value in word_check.items():
+                    self.assertEqual(answer[key], value, key)
+                self.assertEqual(candidate().record()['digest'], before)
+                self.assertEqual(S.st.digest(), before)
+
+    def test_a_blocked_letter_and_a_bad_cap_are_refused_by_both(self):
+        """Before census step 97, cap 6 is blocked (J1's repair-list tests): J1's release check raises, and the
+        candidate's answer is the refused one-letter word check with every rim field undefined and the start digest
+        unchanged (CT-KN2-04 for the release check). A letter's grip outside 0..599 is refused by both (J1 with a
+        ValueError, the adapter as input), and the candidate's optional delta-u cap outside 0..599 with
+        KN2:input.named_object_invalid."""
+        word, S = at_census(97)
+        before = S.st.digest()
+        with self.assertRaisesRegex(ValueError, 'cap 6 is blocked or uncertain'):
+            X5.release_check(S, 6, 1)
+        answer = candidate().release_check([6, 1])
+        self.assertEqual((answer['admissible'], answer['failing_status'], answer['rim_undefined']),
+                         (False, 'blocked', 'cap_not_admissible'))
+        for field in ('rim_before', 'rim_after', 'floor', 'delta_N_c', 'end_digest', 'delta_N', 'heights_after'):
+            self.assertIsNone(answer[field], field)
+        self.assertEqual(answer['start_digest'], before)
+        with self.assertRaisesRegex(ValueError, 'cap must be an integer in 0..599'):
+            X5.release_check(S, 600, 1)
+        with self.assertRaises(R.CandidateError) as raised:
+            candidate().release_check([600, 1])
+        self.assertEqual(raised.exception.kind, 'input')
+        self.assert_refused(candidate().release_check(word[0], cap=600), 'cap', [600])
+        self.assertEqual(candidate().record()['digest'], before)
+        self.assertEqual(S.st.digest(), before)
 
 
 if __name__ == '__main__':

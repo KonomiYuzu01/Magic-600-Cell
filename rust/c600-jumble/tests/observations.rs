@@ -1,16 +1,19 @@
 //! The M8 observations of the jumbled puzzle (LP2 plan, section 11; JI.6 and JI.7) at the candidate's observation API:
 //! their refusals, their undefined fields and their agreement with the M5 observations they share facts with. The
 //! comparison with J1 runs through the adapter in `tests/test_jumbling_rust_m8_observations.py`.
-//! CT-KN2-01 (part: the candidate's M8 observations agree with its own seam facts; not run here: the comparison with
-//! J1, which `tests/test_jumbling_rust_m8_observations.py` runs).
+//! CT-KN2-01 (part: the candidate's M8 observations agree with its own seam facts and word check; not run here: the
+//! comparison with J1, which `tests/test_jumbling_rust_m8_observations.py` runs).
+//! CT-KN2-04 (part: the release check of a blocked, an off-menu and an uncertain letter leaves the start's digest
+//! unchanged; not run here: words of more than one letter, which the M5 word-check tests cover).
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use c600_jumble::model::POLES;
 use c600_jumble::observe::{self, cuts, Batch, Rows, Scope};
+use c600_jumble::q5::Q5;
 use c600_jumble::state::{State, Status};
-use c600_jumble::twist::{Menu, Twist};
+use c600_jumble::twist::{self, Menu, Twist};
 use c600_jumble::{codes, Context};
 use c600_kernel::json::{self, Value};
 
@@ -41,10 +44,21 @@ impl Setup {
     }
 
     /// The letter (grip, item) of the pinned I_a menu.
-    #[allow(dead_code)]
     fn letter(&self, grip: usize, item: usize) -> ([i64; 2], Twist) {
         let twists = self.menu.for_cap(&self.ctx, grip).expect("the menu's twists");
         ([grip as i64, item as i64], twists[item].clone())
+    }
+
+    /// The letter of journal record n: its grip and the item of its `I_a[k]` label, the same rotation as the record.
+    fn record_letter(&self, n: usize) -> ([i64; 2], Twist) {
+        let record = &self.records[n];
+        let grip = int(record, "grip").expect("a grip") as usize;
+        let label = record.get("params").and_then(|p| p.get("label")).and_then(Value::as_str).expect("a label");
+        let item = label.strip_prefix("I_a[").and_then(|l| l.strip_suffix(']')).expect("an I_a label");
+        let letter = self.letter(grip, item.parse().expect("an item index"));
+        let twist = Twist::from_record(&self.ctx, record).expect("a menu record");
+        assert_eq!(letter.1.matrix, twist.matrix, "record {n}: the letter is the record's rotation");
+        letter
     }
 
     /// The state after the first `n` records of the I_a fixture's journal, every one admissible.
@@ -183,4 +197,107 @@ fn named_caps_and_an_exhausted_budget_claim_no_grip_n() {
             assert_eq!(row.get(field), Some(&Value::Null), "{field}");
         }
     }
+}
+
+/// The rim summary's row of cap c.
+fn rim_row(s: &Setup, state: &mut State, c: usize) -> Value {
+    let answer = cuts::rim_summary(&s.ctx, state, Some(&[c as i64]), None).expect("no engine error");
+    rows(&answer)[0].clone()
+}
+
+/// The release check's rim fields, all undefined, with their reason.
+fn assert_no_rim(answer: &Value, reason: &str) {
+    for field in ["rim_before", "rim_after", "floor", "delta_N_c"] {
+        assert_eq!(answer.get(field), Some(&Value::Null), "{field} is undefined, never zero");
+    }
+    assert_eq!(text(answer, "rim_undefined").as_deref(), Some(reason));
+    assert_eq!(answer.get("admissible"), Some(&Value::Bool(false)));
+    assert_eq!(text(answer, "end_state_undefined").as_deref(), Some("refused_prefix"));
+    assert_eq!(answer.get("end_digest"), Some(&Value::Null));
+}
+
+#[test]
+fn release_check_is_the_one_letter_word_check_plus_the_rim_of_its_cap() {
+    let s = Setup::load();
+    for n in [0, 3] {
+        let mut start = s.after(n);
+        let letter = s.record_letter(n);
+        let c = letter.1.grip;
+        let before = start.record(&s.ctx);
+        let answer = cuts::release_check(&s.ctx, &start, &letter, None, None).expect("no engine error");
+        // JI.11: the one-letter release and word checks agree in every shared field at identical inputs.
+        let word = observe::word_check(&s.ctx, &start, std::slice::from_ref(&letter), None, None, None)
+            .expect("no engine error");
+        for (key, value) in word.as_object().expect("a word check is an object") {
+            assert_eq!(answer.get(key), Some(value), "record {n}: {key}");
+        }
+        assert_eq!(answer.get("admissible"), Some(&Value::Bool(true)), "record {n}");
+        assert_eq!(int(&answer, "letter_cap"), Some(c as i64), "record {n}");
+        assert_eq!(answer.get("rim_undefined"), Some(&Value::Null), "record {n}");
+        // The rims are the rim summary's rows of the letter's cap before the letter and on the journal's next state.
+        let mut end = s.after(n + 1);
+        assert_eq!(text(&answer, "end_digest"), Some(end.digest(&s.ctx)), "record {n}");
+        let (row_before, row_after) = (rim_row(&s, &mut start, c), rim_row(&s, &mut end, c));
+        let (rim_before, rim_after) = (answer.get("rim_before").unwrap(), answer.get("rim_after").unwrap());
+        for field in RIM_FIELDS {
+            assert_eq!(rim_before.get(field), row_before.get(field), "record {n}: {field} before");
+            assert_eq!(rim_after.get(field), row_after.get(field), "record {n}: {field} after");
+        }
+        let (n_before, n_after) = (int(rim_before, "N_c").unwrap(), int(rim_after, "N_c").unwrap());
+        assert_eq!(int(&answer, "delta_N_c"), Some(n_after - n_before), "record {n}");
+        assert_eq!(int(&answer, "floor"), int(rim_before, "F_c"), "record {n}");
+        assert_eq!(int(&answer, "floor"), int(rim_after, "F_c"), "record {n}: the floor is the same after");
+        // A twist at an admissible cap changes N only on the cap's cut, so total delta N is delta N_c.
+        assert_eq!(int(&answer, "delta_N"), Some(n_after - n_before), "record {n}");
+        assert_eq!(start.record(&s.ctx), before, "record {n}");
+    }
+}
+
+#[test]
+fn release_check_of_a_refused_letter_has_no_rim_and_changes_nothing() {
+    let s = Setup::load();
+    let mut start = s.after(3);
+    let before = start.record(&s.ctx);
+    let grips: Vec<usize> = (0..POLES).collect();
+    let statuses = start.survey(&s.ctx, &grips, None).expect("no engine error");
+    let blocked = statuses.iter().position(|&status| status == Status::Blocked).expect("a blocked cap");
+    // A blocked, invalid or uncertain letter leaves the start's digest unchanged.
+    let answer = cuts::release_check(&s.ctx, &start, &s.letter(blocked, 1), None, None).expect("no engine error");
+    assert_eq!(text(&answer, "failing_status").as_deref(), Some("blocked"));
+    assert_eq!(int(&answer, "letter_cap"), Some(blocked as i64));
+    assert_no_rim(&answer, "cap_not_admissible");
+    let omega = [Q5::int(2), Q5::int(0), Q5::int(0)];
+    let grip = s.record_letter(3).1.grip;
+    let off_menu = Twist::new(&s.ctx, grip, twist::cayley_matrix(&s.ctx.model.poles[grip], &omega, &s.ctx.model.nn))
+        .expect("an exact rotation fixing the grip's pole");
+    assert!(!s.menu.contains(&s.ctx, &off_menu), "the Cayley rotation is off the menu");
+    let off_menu = ([grip as i64, 0], off_menu);
+    let answer = cuts::release_check(&s.ctx, &start, &off_menu, None, None).expect("no engine error");
+    assert_eq!(text(&answer, "failing_status").as_deref(), Some("invalid"));
+    assert_no_rim(&answer, "letter_refused");
+    // A budget of zero exact evaluations leaves the admissible letter of record 3 uncertain.
+    let answer = cuts::release_check(&s.ctx, &start, &s.record_letter(3), None, Some(0)).expect("no engine error");
+    assert_eq!(text(&answer, "failing_status").as_deref(), Some("uncertain"));
+    assert_no_rim(&answer, "uncertain_under_budget");
+    assert_eq!(start.record(&s.ctx), before);
+}
+
+#[test]
+fn release_check_refuses_a_cap_outside_the_model() {
+    let s = Setup::load();
+    let start = s.after(1);
+    let letter = s.record_letter(1);
+    for cap in [600, -1] {
+        let answer = cuts::release_check(&s.ctx, &start, &letter, Some(cap), None).expect("no engine error");
+        assert_invalid(&answer, "cap", &[cap]);
+        assert!(answer.get("rim_before").is_none(), "a refusal reads nothing");
+    }
+    // A named cap supplies delta-u as in the word check.
+    let answer = cuts::release_check(&s.ctx, &start, &letter, Some(17), None).expect("no engine error");
+    let word = observe::word_check(&s.ctx, &start, std::slice::from_ref(&letter), None, Some(17), None)
+        .expect("no engine error");
+    for key in ["cap", "u_before", "u_after", "delta_u"] {
+        assert_eq!(answer.get(key), word.get(key), "{key}");
+    }
+    assert_eq!(int(&answer, "cap"), Some(17));
 }
