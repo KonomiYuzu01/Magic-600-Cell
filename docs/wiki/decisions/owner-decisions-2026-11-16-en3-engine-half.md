@@ -102,7 +102,7 @@ The second refresh follows this decision. It changes the status line and JI.54:
 | Pin in `candidate.json` | Old | New |
 | --- | --- | --- |
 | Draft SHA-256 | `1fa64e69ddd4f91c02e7c584eaa34850b20fd9bc7d30205ce36e7ba9e03e8589` | `a81cbf90eac8bb09a7d61de060a8b0d652697a80f995949f61efb8a82c333114` |
-| `input_commit` | `37c9f2f28979955cfd202cc16f9b89d6a305c28b` | INPUT_COMMIT_B, the commit of this change that edits the draft |
+| `input_commit` | `37c9f2f28979955cfd202cc16f9b89d6a305c28b` | `21ebadc42450f3588b58bbe218bec6193f2658f9`, the commit of this change that edits the draft |
 
 No frozen clause, vector or dependency meaning changed:
 

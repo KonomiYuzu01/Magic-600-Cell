@@ -1,7 +1,7 @@
 {
   "format": "p3-candidate-inventory-1",
   "candidate_id": "en4-data-core-draft-1",
-  "input_commit": "37c9f2f28979955cfd202cc16f9b89d6a305c28b",
+  "input_commit": "21ebadc42450f3588b58bbe218bec6193f2658f9",
   "candidate": [
     {
       "path": "docs/architecture/1.0/language/architecture/05-persistence.md",
@@ -116,7 +116,7 @@
     },
     {
       "path": "docs/progress/1.0/jumbling-interfaces.md",
-      "sha256": "1fa64e69ddd4f91c02e7c584eaa34850b20fd9bc7d30205ce36e7ba9e03e8589"
+      "sha256": "a81cbf90eac8bb09a7d61de060a8b0d652697a80f995949f61efb8a82c333114"
     },
     {
       "path": "docs/progress/1.0/layer-interfaces.md",
