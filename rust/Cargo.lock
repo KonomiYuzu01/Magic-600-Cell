@@ -32,6 +32,7 @@ name = "c600-display"
 version = "0.0.0"
 dependencies = [
  "c600-digest",
+ "c600-jumble",
  "c600-kernel",
 ]
 

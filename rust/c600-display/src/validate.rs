@@ -21,6 +21,9 @@ use crate::source;
 /// The cells, and so the grips, of the 600-cell.
 pub const CELLS: u32 = 600;
 
+/// The order of K⁺, the retained rotation group a `pose_lattice` entry indexes (render/1 section 3).
+pub const K_PLUS: i32 = 7200;
+
 macro_rules! limits {
     ($($field:ident),* $(,)?) => {
         /// RM.11's versioned `LimitProfile`: a finite ceiling for every field; a missing field is not unlimited.
@@ -614,11 +617,14 @@ impl Check<'_> {
                 }
                 self.tokens(&retained.tokens)?;
             }
-            Primitive::Posed(_) => {
-                return Err(Error::unsupported(
-                    feature,
-                    "posed sticker objects are jumbling rows; their producer waits for M5",
-                ))
+            Primitive::Posed(posed) => {
+                if ctx.identity.puzzle == Puzzle::Full {
+                    return Err(Error::unsupported(
+                        feature,
+                        "posed sticker objects are jumbling rows; their producer waits for M5",
+                    ));
+                }
+                self.posed(posed, plan, subject)?;
             }
             Primitive::Transform(transform) => {
                 if transform.grip >= CELLS || !transform.angle.is_finite() || transform.to <= transform.from {
@@ -750,6 +756,40 @@ impl Check<'_> {
                 }
                 self.index_entries += e;
             }
+        }
+        Ok(())
+    }
+
+    /// The posed-sticker row of a jumbling plan (J02, render/1 section 3): one pose index per piece, a pose table of
+    /// finite row-major matrices with the identity at pose 0, and one lattice entry per pose. The subject is at pose
+    /// level; its exact digest cannot be recomputed from binary32 arrays, so the producer binds it.
+    fn posed(&mut self, posed: &PosedInput, plan: &DisplayPlan, subject: &StateRef) -> Result<(), Error> {
+        let poses_level = match subject {
+            StateRef::Snapshot(revision) => revision.mode == Mode::JumbleOn,
+            StateRef::Derived(derived) => derived.level == Level::Poses,
+        };
+        if !poses_level {
+            return Err(invalid("a posed row draws a subject at pose level"));
+        }
+        let d = u64::from(plan.dimension);
+        posed.pose_index.expect("pose_index", Elem::I32, &[Some(PIECES as u64)])?;
+        let p = posed.pose_lattice.expect("pose_lattice", Elem::I32, &[None])?;
+        posed.poses.expect("poses", Elem::F32, &[Some(p), Some(d), Some(d)])?;
+        if p == 0 {
+            return Err(invalid("the pose table is empty; pose 0 is the identity"));
+        }
+        finite(&posed.poses, "poses")?;
+        if posed.pose_index.as_i32().iter().any(|&i| i < 0 || i as u64 >= p) {
+            return Err(invalid("a pose index is outside the pose table"));
+        }
+        let lattice = posed.pose_lattice.as_i32();
+        if lattice.iter().any(|&k| !(-1..K_PLUS).contains(&k)) || lattice[0] < 0 {
+            return Err(invalid("a lattice entry is not -1 or a rotation-group index, or pose 0 is off the lattice"));
+        }
+        let first = &posed.poses.as_f32()[..(d * d) as usize];
+        let identity = first.iter().enumerate().all(|(i, &x)| x == if i as u64 % (d + 1) == 0 { 1.0 } else { 0.0 });
+        if !identity {
+            return Err(invalid("pose 0 is not the identity"));
         }
         Ok(())
     }

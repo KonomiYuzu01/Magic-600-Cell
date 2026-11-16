@@ -13,9 +13,10 @@
 //!   coverage and reproducibility key (RPI.37, RPI.56), and the headless part of the user-stage contract: declared
 //!   outputs, composition order and presented-preview identity (RPI.68, RPI.69, RPI.75, RPI.76).
 //!
-//! [`produce`] builds the 600-cell-Full producers and fixture contexts; [`crosswalk`] holds RM.37's jumbling vectors
-//! as fixture types. Evidence here is source and synthetic only (RM.30): no Windows/DirectX, input, long-session or
-//! performance result.
+//! [`produce`] builds the 600-cell-Full producers and fixture contexts; [`jumble`] builds the jumbling producers
+//! (posed stickers, certified transforms, certified overlays, the seam table and the slot projection) from M5's kernel,
+//! `c600_jumble`; [`crosswalk`] holds RM.37's jumbling vectors as fixture types. Evidence here is source and
+//! synthetic only (RM.30): no Windows/DirectX, input, long-session or performance result.
 //!
 //! # Drafts
 //!
@@ -37,9 +38,40 @@
 //!   publication is invalid. A relation node with no claim key is invalid.
 //! - RM.8, RM.9: a program publication that carries a preview row is invalid; a preview reaches a view only from the
 //!   engine ([`host::Host::show_preview`]).
-//! - RPI.15, M5: posed stickers and certificate overlays are unsupported on 600-cell-Full; jumbling payloads are
-//!   checked only as fixtures. User stages (F05, F26) stay unsupported: no stage module reaches the host, and
-//!   [`stage`] checks fixture descriptions only.
+//! - RPI.15, M5: posed stickers and certificate overlays are unsupported on 600-cell-Full. On the jumbling puzzle
+//!   the posed row, the certified transform, the certified overlay and the projection chain are produced from M5's
+//!   states ([`jumble`]); of the J07 to J12 payloads only J08's seam table is read from the engine, and the rest
+//!   are still checked only as fixtures. User stages (F05, F26) stay
+//!   unsupported: no stage module reaches the host, and [`stage`] checks fixture descriptions only.
+//! - RPI.15, J02 (render/1 section 3): a posed row is validated only for a jumbling identity and a pose-level subject
+//!   (a Jumble-on revision or a derived state at level poses): 177120 pose indices inside the table, finite row-major
+//!   d x d matrices with the identity at pose 0, and one lattice entry per pose, -1 or a K+ index below 7200
+//!   ([`validate::K_PLUS`]). A malformed row in a program publication is `EV3:input.display_plan_invalid` under
+//!   RM.12's precedence; `EV3:input.display_bundle_mismatch` stays the engine bundle's code (RPI.9). The row's array
+//!   hashes are its array descriptors. Its exact state digest is the plan subject's digest, which the validator
+//!   cannot recompute from binary32 arrays: the producer binds it ([`jumble::revision`], [`jumble::bundle`]).
+//! - RPI.15, J02: a pose entry (a + b sqrt 5)/d is evaluated in binary64 and rounded once to binary32
+//!   ([`jumble::approximate`]). The solved state's three arrays equal the hashes the J1 fixture records; the arrays
+//!   of a later J1 stage are not compared here. A pose with no finite binary32 value is missing data, not a row.
+//! - RPI.17, RM.15: the jumbling fixture report ([`jumble::support_report`]) supports J02 to J05, reports F01, F03
+//!   and F04 unsupported (the jumbling puzzle uses J02, J03 and J05 in their place) and omits J01 and J06 to J12.
+//!   The jumbling context binds the unchanged geometry digests of [`produce::GeometryInput`]; J01's area-weighted
+//!   shrink anchors are not an asset and are not bound.
+//! - J03: a jumbling transform is built only from an admissible outcome's certified inside set
+//!   ([`jumble::transform`]). `c600_jumble` names no rotation plane, so a transform built from it alone has no swept
+//!   preview.
+//! - J04: a full named-cap set is the engine's whole `straddler_set`, each piece with both exact points as compact
+//!   `[a,b,d]` text and their binary32 vectors; a set its budget left incomplete is [`jumble::Missing::Uncertain`],
+//!   never a shorter set. The cap-map witness is a classification's one certificate. The named cut's plane is the
+//!   pole normal and kappa as exact text, and alpha is the model's 121/125. A survey is carried only when supplied.
+//! - J08: a seam table is read from the engine's `seam_facts` answer ([`jumble::seam_table`]): every mismatched cell,
+//!   on-grip or off-grip, with a domain and a cell identity local to that table (ranks of the engine's exact domain
+//!   key and chamber pair). It is complete only when the engine's batch was, so an interrupted batch has no total N.
+//!   It is a payload, not a supported row: no J08 plan is produced or published.
+//! - RPI.23, J13: the jumbling slot projection ([`jumble::PoseProjection`]) answers a sticker of a piece at the
+//!   identity pose with its home slot and a piece off the lattice with `undefined(off_lattice)`. `c600_jumble` has no
+//!   slot action of K+, so a sticker of a piece at another lattice pose is `undefined` with its own reason, not a
+//!   computed slot; a piece, as on 600-cell-Full, has no single slot.
 //! - RM.6, F03: a transform without the engine's plane has no swept preview ([`validate::swept_preview`]); its
 //!   endpoints are state revisions with `to > from`.
 //! - RM.6: exact-set digests are the SHA-256 of sorted piece IDs as little-endian u32, or of canonical object text
@@ -105,8 +137,12 @@
 //!   status once, in the order preview, stale, protection breakthrough, selection. Only a preview drawn by the built-in
 //!   chain is in the presented report and can bind a commit token; drawn through a user stage it is an extra display.
 //!
-//! Not built: a decoder from `c600_run::value::Value` (it has no list type, so it needs an LP2 change), the jumbling
-//! rows of CT-RPI-08 and the posed producer (M5), and the ceilings named above that need a weight table or a backend.
+//! Not built: a decoder from `c600_run::value::Value` (it has no list type, so it needs an LP2 change) and the
+//! ceilings named above that need a weight table or a backend. For the jumbling puzzle: J01's shrink anchors, J06's
+//! backend readback, plans for the J07 to J12 rows and producers for their payloads other than the seam table (domain
+//! and rim summaries, covers and repair, release and word checks, nu), J10's exposed-face geometry, the slot of a
+//! piece at a non-identity lattice pose (it needs a slot action of K+ from `c600_jumble`), an engine-named plane for
+//! a swept preview, and a comparison of the posed arrays with a J1 stage after the start.
 //! For user stages: the stage module's parser and checker (RPI.69's body rules, RPI.70's operation tiers and RPI.71's
 //! costs need the stage language and RM.38's weight table), and HLSL compilation (RPI.78), the raster bound (RPI.72),
 //! quarantine (RPI.77), frame reports (RM.41) and composition on a device, which need a backend; no user stage reaches
@@ -123,6 +159,7 @@ pub mod crosswalk;
 pub mod error;
 pub mod exact;
 pub mod host;
+pub mod jumble;
 pub mod pick;
 pub mod plan;
 pub mod produce;
